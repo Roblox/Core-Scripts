@@ -565,7 +565,7 @@ function showToolTip(button, tip)
 	end
 end
 
-function hideToolTip(button)
+function hideToolTip(button, tip)
 	if button and button:FindFirstChild("ToolTipLabel") and button.ToolTipLabel:IsA("TextLabel") then
 		button.ToolTipLabel.Visible = false
 	end
@@ -601,14 +601,15 @@ local addingPlayerChild = function(child, equipped, addToSlot, inventoryGearButt
 	gearClone.GearReference.Value = child
 	
 	gearClone.MouseEnter:connect(function()
-		local Tool = gearClone.GearReference and gearClone.GearReference.Value
-		if Tool and Tool:IsA("Tool") and Tool.ToolTip ~= "" then
-			showToolTip(gearClone, Tool.ToolTip)
+		if gearClone.GearReference and gearClone.GearReference.Value["ToolTip"] and gearClone.GearReference.Value.ToolTip ~= "" then
+			showToolTip(gearClone, gearClone.GearReference.Value.ToolTip)
 		end
 	end)
 	
-	gearClone.MouseLeave:connect(function(
-		hideToolTip(gearClone)
+	gearClone.MouseLeave:connect(function()
+		if gearClone.GearReference and gearClone.GearReference.Value["ToolTip"] and gearClone.GearReference.Value.ToolTip ~= "" then
+			hideToolTip(gearClone, gearClone.GearReference.Value.ToolTip)
+		end
 	end)
 
 	gearClone.RobloxLocked = true
