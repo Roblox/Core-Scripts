@@ -2867,7 +2867,7 @@ local createReportAbuseDialog = function()
 
 	local gameOrPlayerTable = {"Game","Player"}
 	local gameOrPlayerDropDown = nil
-	gameOrPlayerDropDown = RbxGui.CreateDropDownMenu({"Game","Player"}, 
+	gameOrPlayerDropDown = RbxGui.CreateDropDownMenu(gameOrPlayerTable, 
 		function(gameOrPlayerText) 
 			gameOrPlayer = gameOrPlayerText
 			if gameOrPlayer == "Game" then
