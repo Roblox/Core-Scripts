@@ -4,6 +4,13 @@ local function waitForChild(instance, name)
 	end
 end
 
+-- Very useful for chain-calling waitForChild
+local function waitForChildren(instance, ...)
+	for k,v in pairs({...}) do
+		instance = waitForChild(instance, v)
+	end return instance
+end
+
 local function waitForProperty(instance, property)
 	while not instance[property] do
 		instance.Changed:wait()
@@ -679,13 +686,19 @@ function initializeDevConsole()
 		Dev_Container.Position = UDim2.new(0, pPos.X + delta.X, 0, pPos.Y + delta.Y)
 	end
 
+	local titleBarDown,titleBarDouble = 0,false
 	Dev_TitleBar.TextButton.MouseButton1Down:connect(function(x, y)
-		previousMousePos = Vector2.new(x, y)
+		previousMousePos = Vector2.new(x, y) titleBarDown = tick()
 		pPos = Dev_Container.AbsolutePosition
 	end)
 
 	Dev_TitleBar.TextButton.MouseButton1Up:connect(function(x, y)
-		clean()
+		clean() if tick() - titleBarDown > 0.25 then return end
+		-- Fast double click on titlebar (same as used for moving) will put the console in default size/position
+		if titleBarDouble then Enum.EasingDirection:lol(Enum.EasingDirection.Out)
+			local s,p = UDim2.new(0.5, 20, 0.5, 20),UDim2.new(0, 100, 0, 10)
+			Dev_Container:TweenSizeAndPosition(s, p, Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 1, true)
+		end titleBarDouble = not titleBarDouble
 	end)
 
 	---Handle Dev-Console Size
@@ -760,7 +773,7 @@ function initializeDevConsole()
 	end
 
 	--Refresh Dev-Console Text
-	function refreshTextHolder()
+	local function refreshTextHolderForReal()
 		local childMessages = Dev_TextHolder:GetChildren()
 		
 		local messageList
@@ -835,6 +848,19 @@ function initializeDevConsole()
 		
 		textHolderSize = posOffset
 		
+	end
+	
+	-- Refreshing the textholder every 0.1 (if needed) is good enough, surely fast enough
+	-- We don't want it to update 50x in a tick because there are 50 messages in that tick
+	-- (Whenever for one reason or another a lot of output comes in, it can lag
+	--	This will make it behave better in a situation of a lot of output comming in)
+	local refreshQueued = false
+	function refreshTextHolder()
+		if refreshQueued then return end
+		Delay(0.1,function()
+			refreshQueued = false
+			refreshTextHolderForReal()
+		end) refreshQueued = true
 	end
 
 	--Handle Dev-Console Scrollbar
@@ -1000,36 +1026,26 @@ function initializeDevConsole()
 		end
 	end
 	
+	-- Easy, fast, and working nicely
+	local function numberWithZero(num)
+		return (num < 10 and "0" or "")..num
+	end local str = "%s:%s:%s"
 	function ConvertTimeStamp(timeStamp)
-		local localTime = timeStamp - (os.time() - math.floor(tick()))
+		local localTime = timeStamp - os.time() + math.floor(tick())
 		local dayTime = localTime % 86400
 		
-		local str = ""
-		
 		local hour = math.floor(dayTime/3600)
-		if hour < 10 then
-			str = str.."0"..hour..":"
-		else
-			str = str..hour..":"
-		end
 		
 		dayTime = dayTime - (hour * 3600)
 		local minute = math.floor(dayTime/60)
-		if minute < 10 then
-			str = str.."0"..minute..":"
-		else
-			str = str..minute..":"
-		end
 		
 		dayTime = dayTime - (minute * 60)
-		local second = dayTime
-		if second < 10 then
-			str = str.."0"..second
-		else
-			str = str..second
-		end
 		
-		return str
+		local h = numberWithZero(hour)
+		local m = numberWithZero(minute)
+		local s = numberWithZero(dayTime)
+		
+		return print(str:format(h,m,s))
 	end
 	
 	--Filter
@@ -1404,8 +1420,7 @@ local function createHelpDialog(baseZIndex)
 	
 		devConsoleButton.MouseButton1Click:connect(function()
 			toggleDeveloperConsole()
-			shield.Visible = false
-			game.GuiService:RemoveCenterDialog(shield)
+			resumeGameFunction(shield)
 		end)
 	end
 	
@@ -1413,13 +1428,8 @@ local function createHelpDialog(baseZIndex)
 		
 	-- set up listeners for type of mouse mode, but keep constructing gui at same time
 	delay(0, function()
-		waitForChild(gui,"UserSettingsShield")
-		waitForChild(gui.UserSettingsShield,"Settings")
-		waitForChild(gui.UserSettingsShield.Settings,"SettingsStyle")
-		waitForChild(gui.UserSettingsShield.Settings.SettingsStyle, "GameSettingsMenu")
-		waitForChild(gui.UserSettingsShield.Settings.SettingsStyle.GameSettingsMenu, "CameraField")
-		waitForChild(gui.UserSettingsShield.Settings.SettingsStyle.GameSettingsMenu.CameraField, "DropDownMenuButton")
-		gui.UserSettingsShield.Settings.SettingsStyle.GameSettingsMenu.CameraField.DropDownMenuButton.Changed:connect(function(prop)
+		local ddmb = waitForChildren(gui,"UserSettingsShield","Settings","SettingsStyle","GameSettingsMenu","CameraField", "DropDownMenuButton")
+		ddmbn.Changed:connect(function(prop)
 			if prop ~= "Text" then return end
 			if buttonRow.Button1.Style == Enum.ButtonStyle.RobloxButtonDefault then -- only change if this is the currently selected panel
 				if gui.UserSettingsShield.Settings.SettingsStyle.GameSettingsMenu.CameraField.DropDownMenuButton.Text == "Classic" then
@@ -2857,7 +2867,7 @@ local createReportAbuseDialog = function()
 
 	local gameOrPlayerTable = {"Game","Player"}
 	local gameOrPlayerDropDown = nil
-	gameOrPlayerDropDown = RbxGui.CreateDropDownMenu(gameOrPlayerTable, 
+	gameOrPlayerDropDown = RbxGui.CreateDropDownMenu({"Game","Player"}, 
 		function(gameOrPlayerText) 
 			gameOrPlayer = gameOrPlayerText
 			if gameOrPlayer == "Game" then
@@ -3143,12 +3153,8 @@ end
 delay(0, 
 	function()
 		createReportAbuseDialog().Parent = gui
-		waitForChild(gui,"UserSettingsShield")
-		waitForChild(gui.UserSettingsShield, "Settings")
-		waitForChild(gui.UserSettingsShield.Settings,"SettingsStyle")
-		waitForChild(gui.UserSettingsShield.Settings.SettingsStyle,"GameMainMenu")
-		waitForChild(gui.UserSettingsShield.Settings.SettingsStyle.GameMainMenu, "ReportAbuseButton")
-		gui.UserSettingsShield.Settings.SettingsStyle.GameMainMenu.ReportAbuseButton.Active = true
+		local sstyle = waitForChildren(gui,"UserSettingsShield","Settings","SettingsStyle")
+		waitForChildren(sstyle,"GameMainMenu","ReportAbuseButton").Active = true
 	end)
 
 end --LoadLibrary if
