@@ -117,7 +117,7 @@ function UpdateGui(health)
 		
 	local width = (health / currentHumanoid.MaxHealth)
  	width = math.max(math.min(width,1),0) -- make sure width is between 0 and 1
- 	if width ~= width then width = 0 end -- so called "god" modes result in 1.#IND so now that's solved
+ 	if width ~= width then width = 1 end -- so called "god" modes result in 1.#IND so now that's solved
 		
 	local healthDelta = lastHealth - health
 	lastHealth = health
