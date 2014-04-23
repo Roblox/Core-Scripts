@@ -1,5 +1,9 @@
 if game.CoreGui.Version < 3 then return end -- peace out if we aren't using the right client
 
+-- We're using this service a lot
+-- Using GetService is also much safer
+local Players = game:GetService("Players")
+
 -- A couple of necessary functions
 local function waitForChild(instance, name)
 	while not instance:FindFirstChild(name) do
@@ -54,8 +58,8 @@ end
 
 --- Begin Locals
 waitForChild(game,"Players")
-waitForProperty(game.Players,"LocalPlayer")
-local player = game.Players.LocalPlayer
+waitForProperty(Players,"LocalPlayer")
+local player = Players.LocalPlayer
 
 if not useCoreHealthBar then
 	waitForChild(player, 'PlayerGui')
@@ -147,10 +151,10 @@ function unregisterNumberKeys()
 end
 
 function characterInWorkspace()
-	if game.Players["LocalPlayer"] then
-		if game.Players.LocalPlayer["Character"] then
-			if game.Players.LocalPlayer.Character ~= nil then
-				if game.Players.LocalPlayer.Character.Parent ~= nil then
+	if Players["LocalPlayer"] then
+		if Players.LocalPlayer["Character"] then
+			if Players.LocalPlayer.Character ~= nil then
+				if Players.LocalPlayer.Character.Parent ~= nil then
 					return true
 				end
 			end
@@ -170,8 +174,8 @@ function removeGear(gear)
 	end
 	if emptySlot then
 		if gearSlots[emptySlot].GearReference.Value then
-			if gearSlots[emptySlot].GearReference.Value.Parent == game.Players.LocalPlayer.Character then -- if we currently have this equipped, unequip it
-				gearSlots[emptySlot].GearReference.Value.Parent = game.Players.LocalPlayer.Backpack
+			if gearSlots[emptySlot].GearReference.Value.Parent == Players.LocalPlayer.Character then -- if we currently have this equipped, unequip it
+				gearSlots[emptySlot].GearReference.Value.Parent = Players.LocalPlayer.Backpack
 			end
 
 			if gearSlots[emptySlot].GearReference.Value:IsA("HopperBin") and gearSlots[emptySlot].GearReference.Value.Active then -- this is an active hopperbin
@@ -189,7 +193,7 @@ function removeGear(gear)
 			Enum.EasingDirection.Out, Enum.EasingStyle.Quad,guiTweenSpeed/4,true)]]
 		delay(0,
 			function()
-				gear:remove()
+				gear:Destroy()
 			end)	
 
 		Spawn(function()
@@ -237,35 +241,23 @@ function insertGear(gear, addToSlot)
 		end
 		for i = start, pos + 1, -1 do
 			gearSlots[i] = gearSlots[i - 1]
-			if i == 10 then
-				gearSlots[i].SlotNumber.Text = "0"
-				gearSlots[i].SlotNumberDownShadow.Text = "0"
-				gearSlots[i].SlotNumberUpShadow.Text = "0"
-			else
-				gearSlots[i].SlotNumber.Text = i
-				gearSlots[i].SlotNumberDownShadow.Text = i
-				gearSlots[i].SlotNumberUpShadow.Text = i
-			end
+			gearSlots[i].SlotNumber.Text = i%10
+			gearSlots[i].SlotNumberDownShadow.Text = i%10
+			gearSlots[i].SlotNumberUpShadow.Text = i%10
 		end
 	end
 
 	gearSlots[pos] = gear
-	if pos ~= maxNumLoadoutItems then
-		if(type(tostring(pos)) == "string") then
-			local posString = tostring(pos)
-			gear.SlotNumber.Text = posString
-			gear.SlotNumberDownShadow.Text = posString
-			gear.SlotNumberUpShadow.Text = posString
-		end
-	else -- tenth gear doesn't follow mathematical pattern :(
-		gear.SlotNumber.Text = "0"
-		gear.SlotNumberDownShadow.Text = "0"
-		gear.SlotNumberUpShadow.Text = "0"
-	end
+	
+	-- slotnumbers range as: 1,2,...,9,0
+	-- tenth gear doesn't follow mathematical pattern, hence the haxy stuff below
+	local posString = tostring(pos%10)
+	gear.SlotNumber.Text = posString
+	gear.SlotNumberDownShadow.Text = posString
+	gear.SlotNumberUpShadow.Text = posString
 	gear.Visible = true
 
-	local con = nil
-	con = gear.Kill.Changed:connect(function(prop) kill(prop,con,gear) end)
+	local con con = gear.Kill.Changed:connect(function(prop) kill(prop,con,gear) end)
 end
 
 
@@ -548,7 +540,7 @@ function unequipAllItems(dontEquipThis)
 			if gearSlots[i].GearReference.Value:IsA("HopperBin") then
 				gearSlots[i].GearReference.Value:Disable()
 			elseif gearSlots[i].GearReference.Value:IsA("Tool") then
-				gearSlots[i].GearReference.Value.Parent = game.Players.LocalPlayer.Backpack
+				gearSlots[i].GearReference.Value.Parent = Players.LocalPlayer.Backpack
 			end
 			gearSlots[i].Selected = false
 		end
@@ -565,7 +557,7 @@ function showToolTip(button, tip)
 	end
 end
 
-function hideToolTip(button, tip)
+function hideToolTip(button)
 	if button and button:FindFirstChild("ToolTipLabel") and button.ToolTipLabel:IsA("TextLabel") then
 		button.ToolTipLabel.Visible = false
 	end
@@ -601,14 +593,18 @@ local addingPlayerChild = function(child, equipped, addToSlot, inventoryGearButt
 	gearClone.GearReference.Value = child
 	
 	gearClone.MouseEnter:connect(function()
-		if gearClone.GearReference and gearClone.GearReference.Value["ToolTip"] and gearClone.GearReference.Value.ToolTip ~= "" then
-			showToolTip(gearClone, gearClone.GearReference.Value.ToolTip)
+		local Tool = gearClone.GearReference and gearClone.GearReference.Value
+		-- Actually 'if Tool and' would work fine, since it's seen as true if not nil
+		if Tool ~= nil and Tool:IsA("Tool") and Tool.ToolTip ~= "" then
+			showToolTip(gearClone, Tool.ToolTip)
 		end
 	end)
 	
 	gearClone.MouseLeave:connect(function()
-		if gearClone.GearReference and gearClone.GearReference.Value["ToolTip"] and gearClone.GearReference.Value.ToolTip ~= "" then
-			hideToolTip(gearClone, gearClone.GearReference.Value.ToolTip)
+		local Tool = gearClone.GearReference and gearClone.GearReference.Value
+		-- Actually 'if Tool and' would work fine, since it's seen as true if not nil
+		if Tool ~= nil and Tool:IsA("Tool") and Tool.ToolTip ~= "" then
+			hideToolTip(gearClone)
 		end
 	end)
 
@@ -733,7 +729,7 @@ local addingPlayerChild = function(child, equipped, addToSlot, inventoryGearButt
 			if childCon then childCon:disconnect() end
 			if childChangeCon then childChangeCon:disconnect() end
 			removeFromInventory(child)
-		elseif parent == game.Players.LocalPlayer.Backpack then
+		elseif parent == Players.LocalPlayer.Backpack then
 			normalizeButton(gearClone)
 		end
 	end)
@@ -908,7 +904,7 @@ function coreGuiChanged(coreGuiType,enabled)
 	end
 
 	if not useCoreHealthBar and coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
-		setHealthBarVisible(game.Players.LocalPlayer.PlayerGui, enabled)
+		setHealthBarVisible(Players.LocalPlayer.PlayerGui, enabled)
 	end
 end
 -- End Functions
@@ -995,8 +991,8 @@ player.CharacterRemoving:connect(function()
 end)
 
 player.CharacterAdded:connect(function()	
-	waitForProperty(game.Players,"LocalPlayer")		
-	player = game.Players.LocalPlayer -- make sure we are still looking at the correct character
+	waitForProperty(Players,"LocalPlayer")		
+	player = Players.LocalPlayer -- make sure we are still looking at the correct character
 	waitForChild(player,"Backpack")	
 
 
