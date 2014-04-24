@@ -686,7 +686,7 @@ function initializeDevConsole()
 		Dev_Container.Position = UDim2.new(0, pPos.X + delta.X, 0, pPos.Y + delta.Y)
 	end
 
-	local titleBarDown,titleBarDouble = 0,false
+	local titleBarDown,titleBarCount,titleBarBusy = 0,0,false
 	Dev_TitleBar.TextButton.MouseButton1Down:connect(function(x, y)
 		previousMousePos = Vector2.new(x, y) titleBarDown = tick()
 		pPos = Dev_Container.AbsolutePosition
@@ -694,11 +694,21 @@ function initializeDevConsole()
 
 	Dev_TitleBar.TextButton.MouseButton1Up:connect(function(x, y)
 		clean() if tick() - titleBarDown > 0.25 then return end
-		-- Fast double click on titlebar (same as used for moving) will put the console in default size/position
-		if titleBarDouble then Enum.EasingDirection:lol(Enum.EasingDirection.Out)
-			local s,p = UDim2.new(0.5, 20, 0.5, 20),UDim2.new(0, 100, 0, 10)
-			Dev_Container:TweenSizeAndPosition(s, p, Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 1, true)
-		end titleBarDouble = not titleBarDouble
+		titleBarCount = titleBarCount + 1
+		if not titleBarBusy then
+			titleBarBusy = true
+			local count = titleBarCount
+			Delay(0.25,function()
+				while count ~= titleBarCount do
+					count = titleBarCount wait(0.25)
+				end titleBarBusy = false
+				titleBarCount = 0
+				if count == 2 then
+					local s,p = UDim2.new(0.5, 20, 0.5, 20),UDim2.new(0, 100, 0, 10)
+					Dev_Container:TweenSizeAndPosition(s, p, Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 1, true)
+				end
+			end)
+		end
 	end)
 
 	---Handle Dev-Console Size
@@ -1029,7 +1039,9 @@ function initializeDevConsole()
 	-- Easy, fast, and working nicely
 	local function numberWithZero(num)
 		return (num < 10 and "0" or "")..num
-	end local str = "%s:%s:%s"
+	end
+	-- Standard format of time used here
+	local str = "%s:%s:%s"
 	function ConvertTimeStamp(timeStamp)
 		local localTime = timeStamp - os.time() + math.floor(tick())
 		local dayTime = localTime % 86400
@@ -1420,7 +1432,8 @@ local function createHelpDialog(baseZIndex)
 	
 		devConsoleButton.MouseButton1Click:connect(function()
 			toggleDeveloperConsole()
-			resumeGameFunction(shield)
+ 			shield.Visible = false
+ 			game.GuiService:RemoveCenterDialog(shield)
 		end)
 	end
 	
