@@ -211,8 +211,7 @@ if Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
 end
 
 Game.StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
-	
-	if coreGuiType ~= Enum.CoreGuiType.All or coreGuiType ~= Enum.CoreGuiType.Health then
+	if coreGuiType ~= Enum.CoreGuiType.All and coreGuiType ~= Enum.CoreGuiType.Health then
 		return
 	end
 
