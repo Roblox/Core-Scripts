@@ -293,3 +293,14 @@ game:GetService("MarketplaceService").ClientLuaDialogRequested:connect(function(
 	return true
 					
 end)
+
+Game:GetService("PointsService").PointsAwarded:connect( function(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
+	if userId == Game.Players.LocalPlayer.userId then
+		game:GetService("GuiService"):SendNotification("Points Awarded!",
+			"You received " ..tostring(pointsAwarded) .. " points!",
+			"http://www.roblox.com/asset?id=155363793",
+			5,
+			function()
+			end)
+	end
+end)
