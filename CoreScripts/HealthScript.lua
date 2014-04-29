@@ -183,7 +183,7 @@ end
 function startGui()
 	local character = Game.Players.LocalPlayer.Character
 
-	while (character == nil) do
+	while (character == nil) or (character.Parent == nil) do
 		character = Game.Players.LocalPlayer.Character
 		wait(1/30)
 	end
