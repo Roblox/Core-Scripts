@@ -38,6 +38,9 @@ end
 -- MainBotChatScript
 scriptContext:AddCoreScript(39250920,screenGui,"CoreScripts/MainBotChatScript")
 
+-- Developer Console Script
+scriptContext:AddCoreScript(0,screenGui,"CoreScripts/DeveloperConsole")
+
 -- Popup Script
 scriptContext:AddCoreScript(48488451,screenGui,"CoreScripts/PopupScript")
 -- Friend Notification Script (probably can use this script to expand out to other notifications)
