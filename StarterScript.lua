@@ -50,7 +50,7 @@ scriptContext:AddCoreScript(97188756, screenGui, "CoreScripts/ChatScript")
 -- Purchase Prompt Script
 scriptContext:AddCoreScript(107893730, screenGui, "CoreScripts/PurchasePromptScript")
 -- Health Script
-scriptContext:AddCoreScript(0, screenGui, "CoreScripts/HealthScript")
+scriptContext:AddCoreScript(153556822, screenGui, "CoreScripts/HealthScript")
 
 if not touchEnabled then 
 	-- New Player List
