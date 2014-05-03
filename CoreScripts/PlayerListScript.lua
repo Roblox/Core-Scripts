@@ -1,4 +1,3 @@
-
 --------------------  
 -- Super Util
 -------------------- 
@@ -2822,7 +2821,7 @@ function InsertTeamFrame(nteam)
 	nentry['Frame'].TitleFrame.Title.FontSize = 'Size18'
 	nentry['Frame'].TitleFrame.Position=UDim2.new(nentry['Frame'].TitleFrame.Position.X.Scale,nentry['Frame'].TitleFrame.Position.X.Offset,.1,0)
 	nentry['Frame'].TitleFrame.Size=UDim2.new(nentry['Frame'].TitleFrame.Size.X.Scale,nentry['Frame'].TitleFrame.Size.X.Offset,.8,0)
-	nentry['Frame'].Position = UDim2.new(1,0,((#MiddleFrames) * nentry['Frame'].Size.Y.Scale),0)
+	nentry['Frame'].Position = UDim2.new(0.5,0,((#MiddleFrames) * nentry['Frame'].Size.Y.Scale),0)
 	WaitForChild(nentry['Frame'],'ClickListener').MouseButton1Down:connect(function(nx,ny) StartDrag(nentry,nx,ny) end)
 	nentry['Frame'].ClickListener.BackgroundColor3 = nteam.TeamColor.Color
 	nentry['Frame'].ClickListener.BackgroundTransparency = .7
@@ -2849,9 +2848,7 @@ function InsertTeamFrame(nteam)
 	end
 	nentry['IsHidden'] = false
 	if not nentry['AutoHide'] or #nentry['MyPlayers'] > 0 then
-		
 		nentry['Frame'].Parent = ListFrame
-		nentry['Frame']:TweenPosition(UDim2.new(.5,0,((#MiddleFrames) * nentry['Frame'].Size.Y.Scale),0), "Out", "Linear", BASE_TWEEN,true)
 		AddMiddleBGFrame()
 	else
 		nentry['IsHidden'] = true
