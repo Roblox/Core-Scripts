@@ -39,7 +39,7 @@ end
 scriptContext:AddCoreScript(39250920,screenGui,"CoreScripts/MainBotChatScript")
 
 -- Developer Console Script
-scriptContext:AddCoreScript(0,screenGui,"CoreScripts/DeveloperConsole")
+scriptContext:AddCoreScript(2342342,screenGui,"CoreScripts/DeveloperConsole")
 
 -- Popup Script
 scriptContext:AddCoreScript(48488451,screenGui,"CoreScripts/PopupScript")
@@ -50,7 +50,7 @@ scriptContext:AddCoreScript(97188756, screenGui, "CoreScripts/ChatScript")
 -- Purchase Prompt Script
 scriptContext:AddCoreScript(107893730, screenGui, "CoreScripts/PurchasePromptScript")
 -- Health Script
-scriptContext:AddCoreScript(0, screenGui, "CoreScripts/HealthScript")
+scriptContext:AddCoreScript(123123, screenGui, "CoreScripts/HealthScript")
 
 if not touchEnabled then 
 	-- New Player List
