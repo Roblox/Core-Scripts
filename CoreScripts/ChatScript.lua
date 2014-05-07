@@ -52,6 +52,7 @@ local CoreGuiService = Game:GetService('CoreGui')
 local PlayersService = Game:GetService('Players')
 local DebrisService=  Game:GetService('Debris')
 local GuiService = Game:GetService('GuiService')
+local inputService = game:GetService("UserInputService")
 
 -- Lua Enums
 local Enums do
@@ -512,7 +513,7 @@ end
 -- Check if we are running on a touch device 
 function Chat:IsTouchDevice()
 	local touchEnabled = false 
-	pcall(function() touchEnabled = Game:GetService('UserInputService').TouchEnabled end)	
+	pcall(function() touchEnabled = inputService.TouchEnabled end)	
 	return touchEnabled 
 end
 
@@ -1041,15 +1042,15 @@ function Chat:CreateChatBar()
 		--GuiService:SetGlobalSizeOffsetPixel(0, -20)
 		local success, error = pcall(function() GuiService:SetGlobalGuiInset(0, 0, 0, 20) end) 
 		if not success then 
-			GuiService:SetGlobalSizeOffsetPixel(0, -20)
+			pcall(function() GuiService:SetGlobalSizeOffsetPixel(0, -20) end) -- Doesn't hurt to throw a non-existent function into a pcall
 		end
-		-- CHatHotKey is '/'
+		-- ChatHotKey is '/'
 		GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
 		GuiService.SpecialKeyPressed:connect(function(key) 
 			if key == Enum.SpecialKey.ChatHotkey then 
 				Chat:FocusOnChatBar()
 			end 
-		end)	
+		end)
 
 		self.ClickToChatButton.MouseButton1Click:connect(function()
 			Chat:FocusOnChatBar()
@@ -1160,7 +1161,7 @@ function Chat:CreateGui()
 					if self.ClickToChatButton then 
 						self.ClickToChatButton.Visible = true 
 					end 
-					self.ChatBar.Text = ""								
+					self.ChatBar.Text = ""
 				end 
 				Spawn(function()
 					wait(5.0)
@@ -1169,6 +1170,17 @@ function Chat:CreateGui()
 					end 
 				end)		
 			end)	
+
+			-- Make the escape key clear the chat box (like it used to)
+			inputService.InputBegan:connect(function(input)
+				if (input.KeyCode == Enum.KeyCode.Escape) then
+					if self.ClickToChatButton then 
+						self.ClickToChatButton.Visible = true 
+					end 
+
+					self.ChatBar.Text = ""
+				end
+			end)
 		end 
 	end 
 end
@@ -1285,7 +1297,7 @@ end
 function Chat:LockAllFields(gui)
 	local children = gui:GetChildren()
 	for i = 1, #children do 
-		children[i].RobloxLocked = true 
+		children[i].RobloxLocked = true
 		if #children[i]:GetChildren() > 0 then 
 			Chat:LockAllFields(children[i])
 		end 
