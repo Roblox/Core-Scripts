@@ -405,6 +405,7 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 
 	local resetCameraRotateState = function()
 		cameraTouch = nil
+		userInputService.InCameraGesture = false
 		hasRotatedCamera = false
 		lastPos = nil
 	end
@@ -494,6 +495,7 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 
 		if cameraTouch == nil and not usedByThumbstick then
 			cameraTouch = inputObject
+			userInputService.InCameraGesture = true
 			lastPos = Vector2.new(cameraTouch.Position.x,cameraTouch.Position.y)
 			lastTick = tick()
 		end
@@ -548,6 +550,7 @@ function setupTouchControls()
 		-- kill camera pan if the touch is used by some user controls
 		if inputObject == cameraTouch and inputObject.UserInputState == Enum.UserInputState.Begin then
 			cameraTouch = nil
+			userInputService.InCameraGesture = false
 		end
 	end)
 end
