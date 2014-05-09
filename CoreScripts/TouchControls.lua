@@ -402,6 +402,8 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 	local zoomCameraFunc = userInputService.ZoomCamera
 	local pinchTouches = {}
 	local pinchFrame = nil
+	local pinchInputChangedCon = nil
+	local pinchInputEndedCon = nil
 
 	local resetCameraRotateState = function()
 		cameraTouch = nil
@@ -412,10 +414,12 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 
 	local resetPinchState = function ()
 		pinchTouches = {}
+
+		pinchTime = -1
 		lastPinchScale = nil
 		shouldPinch = false
 		pinchFrame:Destroy() 
-		pinchFrame = nil 
+		pinchFrame = nil
 	end
 
 	local startPinch = function(firstTouch, secondTouch)
@@ -428,11 +432,12 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
     	pinchFrame.Size = UDim2.new(1,0,1,0)
 
     	pinchFrame.InputChanged:connect(function(inputObject)
+    		if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
+
     		if not shouldPinch then 
     			resetPinchState()
     			return
     		end
-			resetCameraRotateState()
 
 			if lastPinchScale == nil then -- first pinch move, just set up scale
 				if inputObject == firstTouch then
@@ -478,10 +483,14 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 	        if shouldPinch then
 	    		table.insert(pinchTouches,inputObject)
 	    		startPinch(pinchTouches[1], pinchTouches[2])
+	    		resetCameraRotateState()
+	    		return true
 	        else -- shouldn't ever get here, but just in case
 	        	pinchTouches = {}
 	        end
 	    end
+
+	    return false
 	end
 
 	parentFrame.InputBegan:connect(function (inputObject)
@@ -489,11 +498,12 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 		if isTouchUsedByJumpButton(inputObject) then return end
 
 		local usedByThumbstick = isTouchUsedByThumbstick(inputObject)
+		local isPinching = false
 		if not usedByThumbstick then
-			pinchGestureReceivedTouch(inputObject)
+			isPinching = pinchGestureReceivedTouch(inputObject)
 		end
 
-		if cameraTouch == nil and not usedByThumbstick then
+		if cameraTouch == nil and not usedByThumbstick and not isPinching then
 			cameraTouch = inputObject
 			userInputService.InCameraGesture = true
 			lastPos = Vector2.new(cameraTouch.Position.x,cameraTouch.Position.y)
