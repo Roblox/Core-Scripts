@@ -66,6 +66,15 @@ Game:GetService("ContentProvider"):Preload(touchControlsSheet)
 ----------------------------------------------------------------------------
 -- Functions
 
+function setCameraTouch(newTouch)
+	cameraTouch = newTouch
+	if newTouch == nil then
+		pcall(function() userInputService.InCameraGesture = false end)
+	else
+		pcall(function() userInputService.InCameraGesture = true end)
+	end
+end
+
 function DistanceBetweenTwoPoints(point1, point2)
     local dx = point2.x - point1.x
     local dy = point2.y - point1.y
@@ -406,8 +415,7 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 	local pinchInputEndedCon = nil
 
 	local resetCameraRotateState = function()
-		cameraTouch = nil
-		userInputService.InCameraGesture = false
+		setCameraTouch(nil)
 		hasRotatedCamera = false
 		lastPos = nil
 	end
@@ -504,8 +512,7 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 		end
 
 		if cameraTouch == nil and not usedByThumbstick and not isPinching then
-			cameraTouch = inputObject
-			userInputService.InCameraGesture = true
+			setCameraTouch(inputObject)
 			lastPos = Vector2.new(cameraTouch.Position.x,cameraTouch.Position.y)
 			lastTick = tick()
 		end
@@ -515,7 +522,10 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 		if cameraTouch ~= inputObject then return end
 
 		local newPos = Vector2.new(cameraTouch.Position.x,cameraTouch.Position.y)
-		local touchDiff = (lastPos - newPos) * CameraRotateSensitivity
+		local touchDiff = Vector2.new(0,0)
+		if lastPos then
+			touchDiff = (lastPos - newPos) * CameraRotateSensitivity
+		end
 
 		-- first time rotating outside deadzone, just setup for next changed event
 		if not hasRotatedCamera and (touchDiff.magnitude > CameraRotateDeadZone) then
@@ -559,8 +569,7 @@ function setupTouchControls()
 
 		-- kill camera pan if the touch is used by some user controls
 		if inputObject == cameraTouch and inputObject.UserInputState == Enum.UserInputState.Begin then
-			cameraTouch = nil
-			userInputService.InCameraGesture = false
+			setCameraTouch(nil)
 		end
 	end)
 end
