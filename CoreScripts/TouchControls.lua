@@ -260,6 +260,9 @@ function constructThumbstick(defaultThumbstickPos, updateFunction, stationaryThu
 		end)
 	end
 
+	thumbstickFrame.Visible = not userInputService.ModalEnabled
+	outerThumbstick.Visible = not userInputService.ModalEnabled
+
 	userInputService.Changed:connect(function(prop)
 		if prop == "ModalEnabled" then
 			thumbstickFrame.Visible = not userInputService.ModalEnabled
@@ -370,6 +373,7 @@ function setupJumpButton( parentFrame )
 		end
 	end)
 
+	jumpButton.Visible = not userInputService.ModalEnabled
 	userInputService.Changed:connect(function(prop)
 		if prop == "ModalEnabled" then
 			jumpButton.Visible = not userInputService.ModalEnabled
