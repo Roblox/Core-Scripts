@@ -54,11 +54,6 @@ function CreateGui()
 		return 
 	end
 	
-	HealthGui = Instance.new("Frame")
-	HealthGui.Name = "HealthGui"
-	HealthGui.BackgroundTransparency = 1
-	HealthGui.Size = UDim2.new(1,0,1,0)
-	
 	local hurtOverlay = Instance.new("ImageLabel")
 	hurtOverlay.Name = "HurtOverlay"
 	hurtOverlay.BackgroundTransparency = 1
@@ -189,6 +184,10 @@ function startGui()
 	end
 
 	currentHumanoid = character:WaitForChild("Humanoid")
+	if not Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
+		return
+	end
+
 	if currentHumanoid then
 		CreateGui()
 		healthChangedConnection = currentHumanoid.HealthChanged:connect(UpdateGui)
@@ -205,25 +204,27 @@ end
 ---------------------------------------------------------------------
 -- Start Script
 
+HealthGui = Instance.new("Frame")
+HealthGui.Name = "HealthGui"
+HealthGui.BackgroundTransparency = 1
+HealthGui.Size = UDim2.new(1,0,1,0)
+
+Game.StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
+	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
+		if guiEnabled and not enabled then
+			if HealthGui then
+				HealthGui.Parent = nil
+			end
+			disconnectPlayerConnections()
+		elseif not guiEnabled and enabled then
+			startGui()
+		end
+		
+		guiEnabled = enabled
+	end
+end)
+
 if Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
 	guiEnabled = true
 	startGui()
 end
-
-Game.StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
-	if coreGuiType ~= Enum.CoreGuiType.All and coreGuiType ~= Enum.CoreGuiType.Health then
-		return
-	end
-
-	if guiEnabled and not enabled then
-		if HealthGui then
-			HealthGui.Parent = nil
-		end
-		disconnectPlayerConnections()
-	elseif not guiEnabled and enabled then
-		startGui()
-	end
-	
-	guiEnabled = enabled
-	
-end)
