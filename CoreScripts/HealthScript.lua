@@ -49,7 +49,7 @@ end
 -- Functions
 
 function CreateGui()
-	if HealthGui then 
+	if HealthGui and #HealthGui:GetChildren() > 0 then 
 		HealthGui.Parent = Game.CoreGui.RobloxGui
 		return 
 	end
@@ -189,6 +189,7 @@ function startGui()
 	end
 
 	if currentHumanoid then
+		print("going to create gui")
 		CreateGui()
 		healthChangedConnection = currentHumanoid.HealthChanged:connect(UpdateGui)
 		humanoidDiedConnection = currentHumanoid.Died:connect(humanoidDied)
