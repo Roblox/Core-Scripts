@@ -189,7 +189,6 @@ function startGui()
 	end
 
 	if currentHumanoid then
-		print("going to create gui")
 		CreateGui()
 		healthChangedConnection = currentHumanoid.HealthChanged:connect(UpdateGui)
 		humanoidDiedConnection = currentHumanoid.Died:connect(humanoidDied)
