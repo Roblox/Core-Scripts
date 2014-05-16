@@ -601,14 +601,16 @@ local addingPlayerChild = function(child, equipped, addToSlot, inventoryGearButt
 	gearClone.GearReference.Value = child
 	
 	gearClone.MouseEnter:connect(function()
-		if gearClone.GearReference and gearClone.GearReference.Value["ToolTip"] and gearClone.GearReference.Value.ToolTip ~= "" then
-			showToolTip(gearClone, gearClone.GearReference.Value.ToolTip)
+		local gear = gearClone.GearReference and gearClone.GearReference.Value
+		if gear:IsA("Tool") and gear.ToolTip ~= "" then
+			showToolTip(gearClone, gear.ToolTip)
 		end
 	end)
 	
 	gearClone.MouseLeave:connect(function()
-		if gearClone.GearReference and gearClone.GearReference.Value["ToolTip"] and gearClone.GearReference.Value.ToolTip ~= "" then
-			hideToolTip(gearClone, gearClone.GearReference.Value.ToolTip)
+		local gear = gearClone.GearReference and gearClone.GearReference.Value
+		if gear:IsA("Tool") and gear.ToolTip ~= "" then
+			hideToolTip(gearClone, gear.ToolTip)
 		end
 	end)
 
