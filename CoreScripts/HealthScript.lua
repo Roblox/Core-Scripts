@@ -165,9 +165,10 @@ function humanoidDied()
 end
 
 function disconnectPlayerConnections()
+	characterAddedConnection:disconnect()
+	if not humanoidDiedConnection then return end
 	humanoidDiedConnection:disconnect()
 	healthChangedConnection:disconnect()
-	characterAddedConnection:disconnect()
 end
 
 function newPlayerCharacter()
@@ -183,18 +184,18 @@ function startGui()
 		wait(1/30)
 	end
 
-	currentHumanoid = character:WaitForChild("Humanoid")
+	currentHumanoid = character:findFirstChild("Humanoid")
 	if not Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
 		return
 	end
 
 	if currentHumanoid then
-		CreateGui()
 		healthChangedConnection = currentHumanoid.HealthChanged:connect(UpdateGui)
 		humanoidDiedConnection = currentHumanoid.Died:connect(humanoidDied)
+		UpdateGui(currentHumanoid.Health)
 	end
-
-	UpdateGui(currentHumanoid.Health)
+		
+	CreateGui()
 
 	characterAddedConnection = Game.Players.LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
 end
