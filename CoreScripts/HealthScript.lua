@@ -129,7 +129,11 @@ function UpdateGui(health)
 
 	local newHealthSize = UDim2.new(width,0,1,0)
 	
-	healthBar:TweenSize(newHealthSize, Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, percentOfTotalHealth * maxBarTweenTime, true)
+	if healthBar:IsDescendantOf(Game) then
+		healthBar:TweenSize(newHealthSize, Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, percentOfTotalHealth * maxBarTweenTime, true)
+	else
+		healthBar.Size = newHealthSize
+	end
 
 	local thresholdForHurtOverlay = currentHumanoid.MaxHealth * (HealthPercentageForOverlay/100)
 	
@@ -144,19 +148,32 @@ function AnimateHurtOverlay()
 	local overlay = HealthGui:FindFirstChild("HurtOverlay")
 	if not overlay then return end
 	
-	-- stop any tweens on overlay
-	overlay:TweenSizeAndPosition(UDim2.new(20, 0, 20, 0), UDim2.new(-10, 0, -10, 0),Enum.EasingDirection.Out,Enum.EasingStyle.Linear,0,true,function()
-		
-		-- show the gui
-		overlay.Size = UDim2.new(1,0,1,0)
-		overlay.Position = UDim2.new(0,0,0,0)
-		overlay.Visible = true
-		
-		-- now tween the hide
-		overlay:TweenSizeAndPosition(UDim2.new(20, 0, 20, 0) ,UDim2.new(-10, 0, -10, 0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,10,false,function()
-			overlay.Visible = false
+	local newSize = UDim2.new(20, 0, 20, 0)
+	local newPos = UDim2.new(-10, 0, -10, 0)
+
+	if overlay:IsDescendantOf(Game) then
+		-- stop any tweens on overlay
+		overlay:TweenSizeAndPosition(newSize,newPos,Enum.EasingDirection.Out,Enum.EasingStyle.Linear,0,true,function()
+			
+			-- show the gui
+			overlay.Size = UDim2.new(1,0,1,0)
+			overlay.Position = UDim2.new(0,0,0,0)
+			overlay.Visible = true
+			
+			-- now tween the hide
+			if overlay:IsDescendantOf(Game) then
+				overlay:TweenSizeAndPosition(newSize,newPos,Enum.EasingDirection.Out,Enum.EasingStyle.Quad,10,false,function()
+					overlay.Visible = false
+				end)
+			else
+				overlay.Size = newSize
+				overlay.Position = newPos
+			end
 		end)
-	end)
+	else
+		overlay.Size = newSize
+		overlay.Position = newPos
+	end
 
 end
 
@@ -165,10 +182,9 @@ function humanoidDied()
 end
 
 function disconnectPlayerConnections()
-	characterAddedConnection:disconnect()
-	if not humanoidDiedConnection then return end
-	humanoidDiedConnection:disconnect()
-	healthChangedConnection:disconnect()
+	if characterAddedConnection then characterAddedConnection:disconnect() end
+	if humanoidDiedConnection then humanoidDiedConnection:disconnect() end
+	if healthChangedConnection then healthChangedConnection:disconnect() end
 end
 
 function newPlayerCharacter()
@@ -177,27 +193,27 @@ function newPlayerCharacter()
 end
 
 function startGui()
-	local character = Game.Players.LocalPlayer.Character
+	characterAddedConnection = Game.Players.LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
 
-	while (character == nil) or (character.Parent == nil) do
-		character = Game.Players.LocalPlayer.Character
-		wait(1/30)
+	local character = Game.Players.LocalPlayer.Character
+	if not character then
+		return
 	end
 
-	currentHumanoid = character:findFirstChild("Humanoid")
+	currentHumanoid = character:WaitForChild("Humanoid")
+	if not currentHumanoid then
+		return
+	end
+
 	if not Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
 		return
 	end
 
-	if currentHumanoid then
-		healthChangedConnection = currentHumanoid.HealthChanged:connect(UpdateGui)
-		humanoidDiedConnection = currentHumanoid.Died:connect(humanoidDied)
-		UpdateGui(currentHumanoid.Health)
-	end
+	healthChangedConnection = currentHumanoid.HealthChanged:connect(UpdateGui)
+	humanoidDiedConnection = currentHumanoid.Died:connect(humanoidDied)
+	UpdateGui(currentHumanoid.Health)
 		
 	CreateGui()
-
-	characterAddedConnection = Game.Players.LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
 end
 
 
