@@ -1307,6 +1307,7 @@ end
 function Chat:CoreGuiChanged(coreGuiType,enabled)
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
 		if self.Frame then self.Frame.Visible = enabled end
+		if self.TapToChatLabel then self.TapToChatLabel.Visible = enabled end 
 
 		if not Chat:IsTouchDevice() and self.ChatBar then 
 			self.ChatBar.Visible = enabled 
