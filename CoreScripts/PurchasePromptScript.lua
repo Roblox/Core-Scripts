@@ -311,7 +311,7 @@ function doAcceptPurchase(currencyPreferredByUser)
 				"&currencyTypeId=" .. tostring(currencyEnumToInt(currentCurrencyType)) .. 
 				"&expectedUnitPrice=" .. tostring(currentCurrencyAmount) ..
 				"&placeId=" .. tostring(Game.PlaceId)
-		local flagExists, flagValue = pcall(function() settings():GetFFlag("AddRequestIdToProductPurchases") end)
+		local flagExists, flagValue = pcall(function() settings():GetFFlag("AddRequestIdToDeveloperProductPurchases") end)
 		if flagExists and flagValue then
 			local h = game:GetService("HttpService")
 			url = url .. "&requestId=" .. h:UrlEncode(h:GenerateGUID())
