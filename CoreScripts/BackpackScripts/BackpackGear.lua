@@ -3,7 +3,6 @@ local function waitForChild(instance, name)
 	assert(instance)
 	assert(name)
 	while not instance:FindFirstChild(name) do
-		print('Waiting for ...', instance, name)
 		instance.ChildAdded:wait()
 	end
 	return instance:FindFirstChild(name)

@@ -19,9 +19,7 @@ local function waitForProperty(instance, property)
 	end
 end
 
--- Responsible for tracking logging items
 local scriptContext = game:GetService("ScriptContext")
-scriptContext:AddCoreScript(59002209, scriptContext, "CoreScripts/Sections")
 
 waitForChild(game:GetService("CoreGui"),"RobloxGui")
 local screenGui = game:GetService("CoreGui"):FindFirstChild("RobloxGui")

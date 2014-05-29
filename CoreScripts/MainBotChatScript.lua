@@ -192,20 +192,17 @@ function highlightColor(frame, tone)
 end
 
 function wanderDialog()
-	print("Wander")
 	mainFrame.Visible = false
 	endDialog()
 	showMessage(characterWanderedOffMessage, characterWanderedOffSize)
 end
 
 function timeoutDialog()
-	print("Timeout")
 	mainFrame.Visible = false
 	endDialog()
 	showMessage(conversationTimedOut, conversationTimedOutSize)
 end
 function normalEndDialog()
-	print("Done")
 	endDialog()
 end
 

@@ -102,7 +102,6 @@ for i = 0, NumSlots do
 
 	if gui.AbsoluteSize.Y <= 320 then 
 		slotFrame.Position = UDim2.new(0, (i-1)* 60, 0, -50)
-		print('Well got here', slotFrame, slotFrame.Position.X.Scale, slotFrame.Position.X.Offset)		
 	end 
 	if gui.AbsoluteSize.Y <= 320 and i == 0 then 
 		slotFrame:Destroy() 
