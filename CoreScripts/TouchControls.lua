@@ -30,7 +30,7 @@ end
 -- Variables
 local screenResolution = Game:GetService("GuiService"):GetScreenResolution()
 function isSmallScreenDevice()
-	return screenResolution.y <= 320
+	return screenResolution.y <= 500
 end
 
 local localPlayer = Game.Players.LocalPlayer
