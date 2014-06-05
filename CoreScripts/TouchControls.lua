@@ -33,7 +33,12 @@ function isSmallScreenDevice()
 	return screenResolution.y <= 500
 end
 
+local GameSettings = UserSettings().GameSettings
+
 local localPlayer = Game.Players.LocalPlayer
+
+local isInThumbstickMode = false
+
 local thumbstickInactiveAlpha = 0.3
 local thumbstickSize = 120
 if isSmallScreenDevice() then 
@@ -41,6 +46,7 @@ if isSmallScreenDevice() then
 end
 
 local touchControlsSheet = "rbxasset://textures/ui/TouchControlsSheet.png"
+local DPadSheet = "rbxasset://textures/ui/DPadSheet.png"
 local ThumbstickDeadZone = 5
 local ThumbstickMaxPercentGive = 0.92
 local thumbstickTouches = {}
@@ -61,10 +67,26 @@ local cameraTouch = nil
 
 -- make sure all of our images are good to go
 Game:GetService("ContentProvider"):Preload(touchControlsSheet)
+Game:GetService("ContentProvider"):Preload(DPadSheet)
 
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
 -- Functions
+
+local isPointInRect = function(point, rectPos, rectSize)
+	if point.x >= rectPos.x and point.x <= (rectPos.x + rectSize.x) then
+		if point.y >= rectPos.y and point.y <= (rectPos.y + rectSize.y) then
+			return true
+		end
+	end
+	
+	return false
+end
+
+
+--
+-- Thumbstick Control
+--
 
 function setCameraTouch(newTouch)
 	cameraTouch = newTouch
@@ -263,16 +285,200 @@ function constructThumbstick(defaultThumbstickPos, updateFunction, stationaryThu
 	thumbstickFrame.Visible = not userInputService.ModalEnabled
 	outerThumbstick.Visible = not userInputService.ModalEnabled
 
-	userInputService.Changed:connect(function(prop)
-		if prop == "ModalEnabled" then
-			thumbstickFrame.Visible = not userInputService.ModalEnabled
-			outerThumbstick.Visible = not userInputService.ModalEnabled
+	thumbstickFrame.InputBegan:connect(startInputTracking)
+	return thumbstickFrame, outerThumbstick
+end
+
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+--
+-- DPad Control
+--
+
+function createDPadArrowButton(name, parent, position, size, image, spriteOffset, spriteSize)
+	local DPadArrow = Instance.new("ImageButton")
+	DPadArrow.Name = name
+	DPadArrow.Image = image
+	DPadArrow.ImageRectOffset = spriteOffset
+	DPadArrow.ImageRectSize = spriteSize
+	DPadArrow.BackgroundTransparency = 1
+	DPadArrow.Size = size
+	DPadArrow.Position = position
+	DPadArrow.Parent = parent
+	return DPadArrow
+end
+
+function createDPad()
+	local DPadFrame = Instance.new("Frame")
+	DPadFrame.Name = "DPadFrame"
+	DPadFrame.Active = true
+	DPadFrame.Size = UDim2.new(0,192,0,192)
+	DPadFrame.Position = UDim2.new(0,10,1,-230)
+	DPadFrame.BackgroundTransparency = 1
+
+	-- local image = "rbxassetid://133293265"
+	local image = DPadSheet
+	local bigSize = UDim2.new(0,64,0,64)
+	local smallSize = UDim2.new(0,23,0,23)
+	local spriteSizeLarge = Vector2.new(128, 128)
+	local spriteSizeSmall = Vector2.new(46, 46)
+
+	createDPadArrowButton("BackButton", DPadFrame, UDim2.new(0.5, -32, 1, -64), bigSize, image, Vector2.new(0, 0), spriteSizeLarge)
+	createDPadArrowButton("ForwardButton", DPadFrame, UDim2.new(0.5, -32, 0, 0), bigSize, image, Vector2.new(0, 258), spriteSizeLarge)
+	createDPadArrowButton("JumpButton", DPadFrame, UDim2.new(0.5, -32, 0.5, -32), bigSize, image, Vector2.new(129, 0), spriteSizeLarge)
+	createDPadArrowButton("LeftButton", DPadFrame, UDim2.new(0, 0, 0.5, -32), bigSize, image, Vector2.new(129,129), spriteSizeLarge)
+	createDPadArrowButton("RightButton", DPadFrame, UDim2.new(1, -64, 0.5, -32), bigSize, image, Vector2.new(0, 129), spriteSizeLarge)
+	createDPadArrowButton("forwardLeftButton", DPadFrame, UDim2.new(0, 35, 0, 35), smallSize, image, Vector2.new(129,258), spriteSizeSmall)
+	createDPadArrowButton("forwardRightButton", DPadFrame, UDim2.new(1, -55, 0, 35), smallSize, image, Vector2.new(176,258), spriteSizeSmall)
+	
+	return DPadFrame
+end
+
+
+function setupDPadControls(DPadFrame)
+	
+	local moveCharacterFunc = localPlayer.MoveCharacter
+	DPadFrame.JumpButton.InputBegan:connect(function(inputObject)
+--		if inputObject.UserInputState == Enum.UserInputState.Begin then
+			localPlayer:JumpCharacter()
+--		end
+	end)
+	
+	local movementTouch = nil
+	local movementVector = Vector2.new(0,0)
+	
+	function setupButton(button,funcToCallBegin,funcToCallEnd)
+		button.InputBegan:connect(function(inputObject)
+			if not movementTouch and inputObject.UserInputType == Enum.UserInputType.Touch and inputObject.UserInputState == Enum.UserInputState.Begin then
+				movementTouch = inputObject
+				funcToCallBegin()
+			end
+		end)
+		button.InputEnded:connect(function(inputObject)
+			if movementTouch == inputObject then
+				if funcToCallEnd then
+					funcToCallEnd()
+				end
+			end
+		end)
+	end
+	
+	local forwardButtonBegin = function()
+		movementVector = Vector2.new(0,-1)
+		moveCharacterFunc(localPlayer, Vector2.new(0,-1), 1)
+		
+		DPadFrame.forwardLeftButton.Visible = true
+		DPadFrame.forwardRightButton.Visible = true
+	end
+	
+	local backwardButtonBegin = function()
+		movementVector = Vector2.new(0,1)
+		moveCharacterFunc(localPlayer, Vector2.new(0,1),1)
+	end
+	
+	local leftButtonBegin = function()
+		movementVector = Vector2.new(-1,0)
+		moveCharacterFunc(localPlayer, Vector2.new(-1,0),1)
+	end
+	
+	local rightButtonBegin = function()
+		movementVector = Vector2.new(1,0)
+		moveCharacterFunc(localPlayer,  Vector2.new(1,0),1)
+	end
+	
+	DPadFrame.InputEnded:connect(function()
+		DPadFrame.forwardLeftButton.Visible = false
+		DPadFrame.forwardRightButton.Visible = false
+	end)
+	
+	local endStep = 0.08
+	local endMovementFunc = function()
+		DPadFrame.forwardLeftButton.Visible = false
+		DPadFrame.forwardRightButton.Visible = false
+		
+		movementTouch = nil
+		
+		Spawn(function()
+			while not movementTouch and movementVector ~= Vector2.new(0,0) do
+				local newX = movementVector.x
+				local newY = movementVector.y
+				
+				if movementVector.x > 0 then
+					newX = movementVector.x - endStep
+					if newX < 0 then newX = 0 end
+				elseif movementVector.x < 0 then
+					newX = movementVector.x + endStep
+					if newX > 0 then newX = 0 end
+				end
+				
+				if movementVector.y > 0 then
+					newY = movementVector.y - endStep
+					if newY < 0 then newY = 0 end
+				elseif movementVector.y < 0 then
+					newY = movementVector.y + endStep
+					if newY > 0 then newY = 0 end
+				end
+				
+				movementVector = Vector2.new(newX,newY)
+				moveCharacterFunc(localPlayer, movementVector,1)
+				wait(1/60)
+			end
+			
+			if movementVector ~= Vector2.new(0,0) then
+				movementVector = Vector2.new(0,0) 
+				moveCharacterFunc(localPlayer,Vector2.new(0,0) ,0)
+			end
+		end)
+	end
+	
+	local removeDiagonalButtons = function()
+		if isPointInRect(movementTouch.Position,DPadFrame.ForwardButton.AbsolutePosition,DPadFrame.ForwardButton.AbsoluteSize) then
+			DPadFrame.forwardLeftButton.Visible = false
+			DPadFrame.forwardRightButton.Visible = false
+		end
+	end
+	
+	setupButton(DPadFrame.ForwardButton,forwardButtonBegin,removeDiagonalButtons)
+	setupButton(DPadFrame.BackButton,backwardButtonBegin,nil)
+	setupButton(DPadFrame.LeftButton,leftButtonBegin,nil)
+	setupButton(DPadFrame.RightButton,rightButtonBegin,nil)
+	
+	local getMovementVector = function(touchPosition)
+		local xDiff = touchPosition.x - (DPadFrame.AbsolutePosition.x + DPadFrame.AbsoluteSize.x/2)
+		local yDiff = touchPosition.y - (DPadFrame.AbsolutePosition.y + DPadFrame.AbsoluteSize.y/2)
+		local vectorNew = Vector2.new(xDiff,yDiff)
+		
+		movementVector = vectorNew.unit
+		return vectorNew.unit
+	end
+	
+	Game:GetService("UserInputService").TouchMoved:connect(function(touchObject)
+		if touchObject == movementTouch then
+			if isPointInRect(movementTouch.Position,DPadFrame.AbsolutePosition,DPadFrame.AbsoluteSize) then
+				moveCharacterFunc(localPlayer, getMovementVector(movementTouch.Position),1)
+			else
+				endMovementFunc()
+			end
+		end
+	end)
+	Game:GetService("UserInputService").TouchEnded:connect(function(touchObject)
+		if touchObject == movementTouch then
+			endMovementFunc()
 		end
 	end)
 
-	thumbstickFrame.InputBegan:connect(startInputTracking)
-	return thumbstickFrame
+
+	DPadFrame.Visible = not userInputService.ModalEnabled
+		
 end
+
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+--
+-- Character Movement
+--
+local characterThumbstick = nil
+local characterOuterThumbstick = nil
 
 function setupCharacterMovement( parentFrame )
 	local lastMovementVector, lastMaxMovement = nil
@@ -300,87 +506,89 @@ function setupCharacterMovement( parentFrame )
 	if isSmallScreenDevice() then
 		thumbstickPos = UDim2.new(0,(thumbstickSize/2) - 10,1,-thumbstickSize - 20)
 	end
-	local characterThumbstick = constructThumbstick(thumbstickPos, moveCharacterFunction, false)
+	
+	characterThumbstick, characterOuterThumbstick  = constructThumbstick(thumbstickPos, moveCharacterFunction, false)
 	characterThumbstick.Name = "CharacterThumbstick"
 	characterThumbstick.Parent = parentFrame
 
 	local refreshCharacterMovement = function()
-		if localPlayer and moveCharacterFunc and lastMovementVector and lastMaxMovement then
+		if localPlayer and isInThumbstickMode and moveCharacterFunc and lastMovementVector and lastMaxMovement then
 			moveCharacterFunc(localPlayer, lastMovementVector, lastMaxMovement)
 		end
 	end
 	return refreshCharacterMovement
 end
 
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+--
+-- Jump Button
+--
+local jumpButton = nil
 
 function setupJumpButton( parentFrame )
-	local jumpButton = Instance.new("ImageButton")
-	jumpButton.Name = "JumpButton"
-	jumpButton.BackgroundTransparency = 1
-	jumpButton.Image = touchControlsSheet
-	jumpButton.ImageRectOffset = Vector2.new(176,222)
-	jumpButton.ImageRectSize = Vector2.new(174,174)
-	jumpButton.Size = UDim2.new(0,jumpButtonSize,0,jumpButtonSize)
-	if isSmallScreenDevice() then 
-		jumpButton.Position = UDim2.new(1, -(jumpButtonSize*2.25), 1, -jumpButtonSize - 20)
-	else
-		jumpButton.Position = UDim2.new(1, -(jumpButtonSize*2.75), 1, -jumpButtonSize - 120)
-	end
-
-	local playerJumpFunc = localPlayer.JumpCharacter
-
-	local doJumpLoop = function ()
-		while currentJumpTouch do
-			if localPlayer then
-				playerJumpFunc(localPlayer)
-			end
-			wait(1/60)
-		end
-	end
-
-	jumpButton.InputBegan:connect(function(inputObject)
-		if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
-		if currentJumpTouch then return end
-		if inputObject == cameraTouch then return end
-		for i, touch in pairs(oldJumpTouches) do
-			if touch == inputObject then
-				return
-			end
-		end
-
-		currentJumpTouch = inputObject
-		jumpButton.ImageRectOffset = Vector2.new(0,222)
-		jumpButton.ImageRectSize = Vector2.new(174,174)
-		doJumpLoop()		
-	end)
-	jumpButton.InputEnded:connect(function (inputObject)
-		if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
-		
+	if (jumpButton == nil) then
+		jumpButton = Instance.new("ImageButton")
+		jumpButton.Name = "JumpButton"
+		jumpButton.BackgroundTransparency = 1
+		jumpButton.Image = touchControlsSheet
 		jumpButton.ImageRectOffset = Vector2.new(176,222)
 		jumpButton.ImageRectSize = Vector2.new(174,174)
-
-		if inputObject == currentJumpTouch then
-			table.insert(oldJumpTouches,currentJumpTouch)
-			currentJumpTouch = nil
+		jumpButton.Size = UDim2.new(0,jumpButtonSize,0,jumpButtonSize)
+		if isSmallScreenDevice() then 
+			jumpButton.Position = UDim2.new(1, -(jumpButtonSize*2.25), 1, -jumpButtonSize - 20)
+		else
+			jumpButton.Position = UDim2.new(1, -(jumpButtonSize*2.75), 1, -jumpButtonSize - 120)
 		end
-	end)
-	userInputService.InputEnded:connect(function ( globalInputObject )
-		for i, touch in pairs(oldJumpTouches) do
-			if touch == globalInputObject then
-				table.remove(oldJumpTouches,i)
-				break
+	
+		local playerJumpFunc = localPlayer.JumpCharacter
+	
+		local doJumpLoop = function ()
+			while currentJumpTouch do
+				if localPlayer then
+					playerJumpFunc(localPlayer)
+				end
+				wait(1/60)
 			end
 		end
-	end)
-
+	
+		jumpButton.InputBegan:connect(function(inputObject)
+			if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
+			if currentJumpTouch then return end
+			if inputObject == cameraTouch then return end
+			for i, touch in pairs(oldJumpTouches) do
+				if touch == inputObject then
+					return
+				end
+			end
+	
+			currentJumpTouch = inputObject
+			jumpButton.ImageRectOffset = Vector2.new(0,222)
+			jumpButton.ImageRectSize = Vector2.new(174,174)
+			doJumpLoop()		
+		end)
+		jumpButton.InputEnded:connect(function (inputObject)
+			if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
+			
+			jumpButton.ImageRectOffset = Vector2.new(176,222)
+			jumpButton.ImageRectSize = Vector2.new(174,174)
+	
+			if inputObject == currentJumpTouch then
+				table.insert(oldJumpTouches,currentJumpTouch)
+				currentJumpTouch = nil
+			end
+		end)
+		userInputService.InputEnded:connect(function ( globalInputObject )
+			for i, touch in pairs(oldJumpTouches) do
+				if touch == globalInputObject then
+					table.remove(oldJumpTouches,i)
+					break
+				end
+			end
+		end)
+		jumpButton.Parent = parentFrame
+	end
 	jumpButton.Visible = not userInputService.ModalEnabled
-	userInputService.Changed:connect(function(prop)
-		if prop == "ModalEnabled" then
-			jumpButton.Visible = not userInputService.ModalEnabled
-		end
-	end)
-
-	jumpButton.Parent = parentFrame
 end
 
 function  isTouchUsedByJumpButton( touch )
@@ -403,6 +611,12 @@ function isTouchUsedByThumbstick(touch)
 
 	return false
 end
+
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+--
+-- Camera Control
+--
 
 function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 	local lastPos = nil
@@ -521,6 +735,7 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 			lastTick = tick()
 		end
 	end)
+	
 	userInputService.InputChanged:connect(function (inputObject)
 		if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
 		if cameraTouch ~= inputObject then return end
@@ -557,16 +772,21 @@ function setupCameraControl(parentFrame, refreshCharacterMoveFunc)
 	end)
 end
 
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+--
+-- Touch Control
+--
+
+local touchControlFrame = nil
+local characterDPad = nil
+
 function setupTouchControls()
-	local touchControlFrame = Instance.new("Frame")
+	touchControlFrame = Instance.new("Frame")
 	touchControlFrame.Name = "TouchControlFrame"
 	touchControlFrame.Size = UDim2.new(1,0,1,0)
 	touchControlFrame.BackgroundTransparency = 1
 	touchControlFrame.Parent = Game.CoreGui.RobloxGui
-
-	local refreshCharacterMoveFunc = setupCharacterMovement(touchControlFrame)
-	setupJumpButton(touchControlFrame)
-	setupCameraControl(touchControlFrame, refreshCharacterMoveFunc)
 
 	userInputService.ProcessedEvent:connect(function(inputObject, processed)
 		if not processed then return end
@@ -576,8 +796,45 @@ function setupTouchControls()
 			setCameraTouch(nil)
 		end
 	end)
+
+	setupJumpButton(touchControlFrame)
+	local refreshCharacterMoveFunc = setupCharacterMovement(touchControlFrame)
+	setupCameraControl(touchControlFrame, refreshCharacterMoveFunc)
+
+	characterDPad = createDPad()
+	characterDPad.Name = "CharacterDPad"
+	characterDPad.Parent = touchControlFrame
+	setupDPadControls(characterDPad)
+	
+	userInputService.Changed:connect(function(prop)
+		if prop == "ModalEnabled" then
+			activateTouchControls()
+		end
+	end)
+
+	activateTouchControls()
 end
 
+function activateTouchControls()	
+	-- set user controlled visibility
+	if userInputService.ModalEnabled then
+		characterThumbstick.Visible = false
+		characterOuterThumbstick.Visible = false
+		jumpButton.Visible = false
+		characterDPad.Visible = false
+	else		
+		if (GameSettings.TouchMovementMode.Name == "Thumbstick" || GameSettings.TouchMovementMode.Name == "Default") then
+			isInThumbstickMode = true
+		else 
+			isInThumbstickMode = false
+		end
+		
+		characterThumbstick.Visible = isInThumbstickMode
+		characterOuterThumbstick.Visible = isInThumbstickMode
+		jumpButton.Visible = isInThumbstickMode
+		characterDPad.Visible = not isInThumbstickMode
+	end
+end
 
 ----------------------------------------------------------------------------
 ----------------------------------------------------------------------------
@@ -588,3 +845,9 @@ if userInputService:IsLuaTouchControls() then
 else
 	script:Destroy()
 end
+
+GameSettings.Changed:connect(function(property)
+	if (property == "TouchMovementMode") then
+		activateTouchControls()
+	end
+end)

@@ -28,6 +28,8 @@ end
 local helpButton = nil
 local updateCameraDropDownSelection = nil
 local updateVideoCaptureDropDownSelection = nil
+local updateSmartCameraDropDownSelection = nil
+local updateTouchMovementDropDownSelection = nil
 local tweenTime = 0.2
 
 local mouseLockLookScreenUrl = "http://www.roblox.com/asset?id=54071825"
@@ -47,10 +49,19 @@ local centerDialogs = {}
 local mainShield = nil
 
 local inStudioMode = UserSettings().GameSettings:InStudioMode()
+--inStudioMode = false
 
 local macClient = false
 local success, isMac = pcall(function() return not game.GuiService.IsWindows end)
 macClient = success and isMac
+--macClient = false
+
+local touchClient = false
+pcall(function() touchClient = game:GetService("UserInputService").TouchEnabled end)
+--touchClient = true
+if touchClient then
+	hasGraphicsSlider = false
+end
 
 local function Color3I(r,g,b)
   return Color3.new(r/255,g/255,b/255)
@@ -570,6 +581,8 @@ local function createGameMainMenu(baseZIndex, shield)
 	robloxHelpButton.Name = "HelpButton"
 	robloxHelpButton.ZIndex = baseZIndex + 4
 	robloxHelpButton.Parent = gameMainMenuFrame
+	robloxHelpButton.Visible =  not touchClient
+
 	helpButton = robloxHelpButton
 			
 	local helpDialog = createHelpDialog(baseZIndex)
@@ -603,12 +616,12 @@ local function createGameMainMenu(baseZIndex, shield)
 	helpShortcut.TextColor3 = Color3.new(0,1,0)
 	helpShortcut.ZIndex = baseZIndex + 4
 	helpShortcut.Parent = robloxHelpButton
-	
+
 	local screenshotButton = createTextButton("Screenshot",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,168,0,50),UDim2.new(0,254,0,256))
 	screenshotButton.Name = "ScreenshotButton"
 	screenshotButton.ZIndex = baseZIndex + 4
 	screenshotButton.Parent = gameMainMenuFrame
-	screenshotButton.Visible = not macClient
+	screenshotButton.Visible = not macClient and not touchClient
 	screenshotButton:SetVerb("Screenshot")
 	
 	local screenshotShortcut = helpShortcut:clone()
@@ -623,7 +636,7 @@ local function createGameMainMenu(baseZIndex, shield)
 	recordVideoButton.Name = "RecordVideoButton"
 	recordVideoButton.ZIndex = baseZIndex + 4
 	recordVideoButton.Parent = gameMainMenuFrame
-	recordVideoButton.Visible = not macClient
+	recordVideoButton.Visible = not macClient and not touchClient
 	recordVideoButton:SetVerb("RecordToggle")
 	
 	local recordVideoShortcut = helpShortcut:clone()
@@ -708,31 +721,8 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	title.BackgroundTransparency = 1
 	title.Parent = gameSettingsMenuFrame
 	
-	local fullscreenText = Instance.new("TextLabel")
-	fullscreenText.Name = "FullscreenText"
-	fullscreenText.Text = "Fullscreen Mode"
-	fullscreenText.Size = UDim2.new(0,124,0,18)
-	fullscreenText.Position = UDim2.new(0,62,0,145)
-	fullscreenText.Font = Enum.Font.Arial
-	fullscreenText.FontSize = Enum.FontSize.Size18
-	fullscreenText.TextColor3 = Color3.new(1,1,1)
-	fullscreenText.ZIndex = baseZIndex + 4
-	fullscreenText.BackgroundTransparency = 1
-	fullscreenText.Parent = gameSettingsMenuFrame
 	
-	local fullscreenShortcut = Instance.new("TextLabel")
-	fullscreenShortcut.Visible = hasGraphicsSlider
-	fullscreenShortcut.Name = "FullscreenShortcutText"
-	fullscreenShortcut.Text = "F11"
-	fullscreenShortcut.BackgroundTransparency = 1
-	fullscreenShortcut.Font = Enum.Font.Arial
-	fullscreenShortcut.FontSize = Enum.FontSize.Size12
-	fullscreenShortcut.Position = UDim2.new(0,186,0,141)
-	fullscreenShortcut.Size = UDim2.new(0,30,0,30)
-	fullscreenShortcut.TextColor3 = Color3.new(0,1,0)
-	fullscreenShortcut.ZIndex = baseZIndex + 4
-	fullscreenShortcut.Parent = gameSettingsMenuFrame
-	
+	--[[
 	local studioText = Instance.new("TextLabel")
 	studioText.Visible = false
 	studioText.Name = "StudioText"
@@ -754,7 +744,262 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	studioShortcut.Parent = gameSettingsMenuFrame
 	
 	local studioCheckbox = nil
+	--]]
+
+
+	local itemTop = 35
+	----------------------------------------------------------------------------------------------------
+	--  C A M E R A    C O N T R O L S
+	----------------------------------------------------------------------------------------------------
+
+	if not touchClient then
+		local cameraLabel = Instance.new("TextLabel")
+		cameraLabel.Name = "CameraLabel"
+		cameraLabel.Text = "Character & Camera Controls"
+		cameraLabel.Font = Enum.Font.Arial
+		cameraLabel.FontSize = Enum.FontSize.Size18
+		cameraLabel.Position = UDim2.new(0,31,0,itemTop + 6)
+		cameraLabel.Size = UDim2.new(0,224,0,18)
+		cameraLabel.TextColor3 = Color3I(255,255,255)
+		cameraLabel.TextXAlignment = Enum.TextXAlignment.Left
+		cameraLabel.BackgroundTransparency = 1
+		cameraLabel.ZIndex = baseZIndex + 4
+		cameraLabel.Parent = gameSettingsMenuFrame
+
+		local mouseLockLabel = game.CoreGui.RobloxGui:FindFirstChild("MouseLockLabel",true)
+
+		local enumItems = Enum.ControlMode:GetEnumItems()
+		local enumNames = {}
+		local enumNameToItem = {}
+		for i,obj in ipairs(enumItems) do
+			enumNames[i] = obj.Name
+			enumNameToItem[obj.Name] = obj
+		end
+
+		local cameraDropDown
+		cameraDropDown, updateCameraDropDownSelection = RbxGui.CreateDropDownMenu(enumNames, 
+			function(text) 
+				UserSettings().GameSettings.ControlMode = enumNameToItem[text] 
+				
+				pcall(function()
+					if mouseLockLabel and UserSettings().GameSettings.ControlMode == Enum.ControlMode["Mouse Lock Switch"] then
+						mouseLockLabel.Visible = true
+					elseif mouseLockLabel then
+						mouseLockLabel.Visible = false
+					end
+				end)
+			end)
+		cameraDropDown.Name = "CameraField"
+		cameraDropDown.ZIndex = baseZIndex + 4
+		cameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+		cameraDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
+		cameraDropDown.Position = UDim2.new(0, 270, 0, itemTop)
+		cameraDropDown.Size = UDim2.new(0,200,0,32)
+		cameraDropDown.Parent = gameSettingsMenuFrame
+
+		itemTop = itemTop + 35
+	end
+
+	----------------------------------------------------------------------------------------------------
+	--  V I D E O   C A P T U R E   S E T T I N G S
+	----------------------------------------------------------------------------------------------------
+
+	local syncVideoCaptureSetting = nil
+
+	if not macClient and not touchClient then
+		local videoCaptureLabel = Instance.new("TextLabel")
+		videoCaptureLabel.Name = "VideoCaptureLabel"
+		videoCaptureLabel.Text = "After Capturing Video"
+		videoCaptureLabel.Font = Enum.Font.Arial
+		videoCaptureLabel.FontSize = Enum.FontSize.Size18
+		videoCaptureLabel.Position = UDim2.new(0,32,0,itemTop + 6)
+		videoCaptureLabel.Size = UDim2.new(0,164,0,18)
+		videoCaptureLabel.BackgroundTransparency = 1
+		videoCaptureLabel.TextColor3 = Color3I(255,255,255)
+		videoCaptureLabel.TextXAlignment = Enum.TextXAlignment.Left
+		videoCaptureLabel.ZIndex = baseZIndex + 4
+		videoCaptureLabel.Parent = gameSettingsMenuFrame
+
+		local videoNames = {}
+		local videoNameToItem = {}
+		videoNames[1] = "Just Save to Disk"
+		videoNameToItem[videoNames[1]] = Enum.UploadSetting["Never"]
+		videoNames[2] = "Upload to YouTube"
+		videoNameToItem[videoNames[2]] = Enum.UploadSetting["Ask me first"]
+
+		local videoCaptureDropDown = nil
+		videoCaptureDropDown, updateVideoCaptureDropDownSelection = RbxGui.CreateDropDownMenu(videoNames, 
+			function(text) 
+				UserSettings().GameSettings.VideoUploadPromptBehavior = videoNameToItem[text]
+			end)
+		videoCaptureDropDown.Name = "VideoCaptureField"
+		videoCaptureDropDown.ZIndex = baseZIndex + 4
+		videoCaptureDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+		videoCaptureDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
+		videoCaptureDropDown.Position = UDim2.new(0, 270, 0, itemTop)
+		videoCaptureDropDown.Size = UDim2.new(0,200,0,32)
+		videoCaptureDropDown.Parent = gameSettingsMenuFrame
+
+		syncVideoCaptureSetting = function()
+			if UserSettings().GameSettings.VideoUploadPromptBehavior == Enum.UploadSetting["Never"] then
+				updateVideoCaptureDropDownSelection(videoNames[1])
+			elseif UserSettings().GameSettings.VideoUploadPromptBehavior == Enum.UploadSetting["Ask me first"] then
+				updateVideoCaptureDropDownSelection(videoNames[2])
+			else
+				UserSettings().GameSettings.VideoUploadPromptBehavior = Enum.UploadSetting["Ask me first"]
+				updateVideoCaptureDropDownSelection(videoNames[2])
+			end
+		end
+		itemTop = itemTop + 35
+	end
 	
+
+	----------------------------------------------------------------------------------------------------
+	--  C U S T O M    C A M E R A    C O N T R O L S
+	----------------------------------------------------------------------------------------------------
+
+	local smartCameraLabel = Instance.new("TextLabel")
+	smartCameraLabel.Name = "SmartCameraLabel"
+	smartCameraLabel.Text = "Camera Mode"
+	smartCameraLabel.Font = Enum.Font.Arial
+	smartCameraLabel.FontSize = Enum.FontSize.Size18
+	smartCameraLabel.Position = UDim2.new(0,31,0,itemTop + 6)
+	smartCameraLabel.Size = UDim2.new(0,224,0,18)
+	smartCameraLabel.TextColor3 = Color3I(255,255,255)
+	smartCameraLabel.TextXAlignment = Enum.TextXAlignment.Left
+	smartCameraLabel.BackgroundTransparency = 1
+	smartCameraLabel.ZIndex = baseZIndex + 4
+	smartCameraLabel.Parent = gameSettingsMenuFrame
+
+	local smartEnumItems = Enum.CameraMode:GetEnumItems()
+	local smartEnumNames = {}
+	local smartEnumNameToItem = {}
+	for i,obj in ipairs(smartEnumItems) do
+		smartEnumNames[i] = obj.Name
+		smartEnumNameToItem[obj.Name] = obj
+	end
+
+	local smartCameraDropDown
+	smartCameraDropDown, updateSmartCameraDropDownSelection = RbxGui.CreateDropDownMenu(smartEnumNames, 
+		function(text) 
+			UserSettings().GameSettings.CameraMode = smartEnumNameToItem[text] 
+		end)
+	smartCameraDropDown.Name = "SmartCameraField"
+	smartCameraDropDown.ZIndex = baseZIndex + 4
+	smartCameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+	smartCameraDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
+	smartCameraDropDown.Position = UDim2.new(0, 270, 0, itemTop)
+	smartCameraDropDown.Size = UDim2.new(0,200,0,32)
+	smartCameraDropDown.Parent = gameSettingsMenuFrame
+
+	itemTop = itemTop + 35
+
+
+	----------------------------------------------------------------------------------------------------
+	--  T O U C H    M O V E M E N T    C O N T R O L S
+	----------------------------------------------------------------------------------------------------
+	if (touchClient) then
+		local touchMovementLabel = Instance.new("TextLabel")
+		touchMovementLabel.Name = "TouchMovementLabel"
+		touchMovementLabel.Text = "Movement Mode"
+		touchMovementLabel.Font = Enum.Font.Arial
+		touchMovementLabel.FontSize = Enum.FontSize.Size18
+		touchMovementLabel.Position = UDim2.new(0,31,0,itemTop + 6)
+		touchMovementLabel.Size = UDim2.new(0,224,0,18)
+		touchMovementLabel.TextColor3 = Color3I(255,255,255)
+		touchMovementLabel.TextXAlignment = Enum.TextXAlignment.Left
+		touchMovementLabel.BackgroundTransparency = 1
+		touchMovementLabel.ZIndex = baseZIndex + 4
+		touchMovementLabel.Parent = gameSettingsMenuFrame
+
+		local touchEnumItems = Enum.TouchMovementMode:GetEnumItems()
+		local touchEnumNames = {}
+		local touchEnumNameToItem = {}
+		for i,obj in ipairs(touchEnumItems) do
+			touchEnumNames[i] = obj.Name
+			touchEnumNameToItem[obj.Name] = obj
+		end
+
+		local touchMovementDropDown
+		touchMovementDropDown, updateTouchMovementDropDownSelection = RbxGui.CreateDropDownMenu(touchEnumNames, 
+			function(text) 
+				UserSettings().GameSettings.TouchMovementMode = touchEnumNameToItem[text] 
+			end)
+		touchMovementDropDown.Name = "touchMovementField"
+		touchMovementDropDown.ZIndex = baseZIndex + 4
+		touchMovementDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+		touchMovementDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
+		touchMovementDropDown.Position = UDim2.new(0, 270, 0, itemTop)
+		touchMovementDropDown.Size = UDim2.new(0,200,0,32)
+		touchMovementDropDown.Parent = gameSettingsMenuFrame
+
+		itemTop = itemTop + 35
+	end
+
+	----------------------------------------------------------------------------------------------------
+	-- F U L L  S C R E E N    M O D E
+	----------------------------------------------------------------------------------------------------
+
+	local fullscreenText = nil
+	local fullscreenShortcut = nil
+	local fullscreenCheckbox = nil
+
+	if not touchClient then
+		fullscreenText = Instance.new("TextLabel")
+		fullscreenText.Name = "FullscreenText"
+		fullscreenText.Text = "Fullscreen Mode"
+		fullscreenText.Size = UDim2.new(0,124,0,18)
+		fullscreenText.Position = UDim2.new(0,62,0,itemTop + 2)
+		fullscreenText.Font = Enum.Font.Arial
+		fullscreenText.FontSize = Enum.FontSize.Size18
+		fullscreenText.TextColor3 = Color3.new(1,1,1)
+		fullscreenText.ZIndex = baseZIndex + 4
+		fullscreenText.BackgroundTransparency = 1
+		fullscreenText.Parent = gameSettingsMenuFrame
+		
+		fullscreenShortcut = Instance.new("TextLabel")
+		fullscreenShortcut.Visible = hasGraphicsSlider
+		fullscreenShortcut.Name = "FullscreenShortcutText"
+		fullscreenShortcut.Text = "F11"
+		fullscreenShortcut.BackgroundTransparency = 1
+		fullscreenShortcut.Font = Enum.Font.Arial
+		fullscreenShortcut.FontSize = Enum.FontSize.Size12
+		fullscreenShortcut.Position = UDim2.new(0,186,0,itemTop - 4)
+		fullscreenShortcut.Size = UDim2.new(0,30,0,30)
+		fullscreenShortcut.TextColor3 = Color3.new(0,1,0)
+		fullscreenShortcut.ZIndex = baseZIndex + 4
+		fullscreenShortcut.Parent = gameSettingsMenuFrame
+		
+		fullscreenCheckbox = createTextButton("",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,25,0,25),UDim2.new(0,30,0,itemTop))
+		fullscreenCheckbox.Name = "FullscreenCheckbox"
+		fullscreenCheckbox.ZIndex = baseZIndex + 4
+		fullscreenCheckbox.Parent = gameSettingsMenuFrame
+		fullscreenCheckbox:SetVerb("ToggleFullScreen")
+		if UserSettings().GameSettings:InFullScreen() then fullscreenCheckbox.Text = "X" end
+		if hasGraphicsSlider then
+			UserSettings().GameSettings.FullscreenChanged:connect(function(isFullscreen)
+				if isFullscreen then
+					fullscreenCheckbox.Text = "X"
+				else
+					fullscreenCheckbox.Text = ""
+				end
+			end)
+		else
+			fullscreenCheckbox.MouseButton1Click:connect(function()
+				if fullscreenCheckbox.Text == "" then
+					fullscreenCheckbox.Text = "X"
+				else
+					fullscreenCheckbox.Text = ""
+				end
+			end)	
+		end
+	end
+
+
+
+	----------------------------------------------------------------------------------------------------
+	-- G R A P H I C S    S L I D E R
+	----------------------------------------------------------------------------------------------------
 	if hasGraphicsSlider then
 		local qualityText = Instance.new("TextLabel")
 		qualityText.Name = "QualityText"
@@ -1133,36 +1378,19 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		end
 	end
 	
-	local fullscreenCheckbox = createTextButton("",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,25,0,25),UDim2.new(0,30,0,144))
-	fullscreenCheckbox.Name = "FullscreenCheckbox"
-	fullscreenCheckbox.ZIndex = baseZIndex + 4
-	fullscreenCheckbox.Parent = gameSettingsMenuFrame
-	fullscreenCheckbox:SetVerb("ToggleFullScreen")
-	if UserSettings().GameSettings:InFullScreen() then fullscreenCheckbox.Text = "X" end
-	if hasGraphicsSlider then
-		UserSettings().GameSettings.FullscreenChanged:connect(function(isFullscreen)
-			if isFullscreen then
-				fullscreenCheckbox.Text = "X"
-			else
-				fullscreenCheckbox.Text = ""
-			end
-		end)
-	else
-		fullscreenCheckbox.MouseButton1Click:connect(function()
-			if fullscreenCheckbox.Text == "" then
-				fullscreenCheckbox.Text = "X"
-			else
-				fullscreenCheckbox.Text = ""
-			end
-		end)	
-	end
-	
+
 	if game:FindFirstChild("NetworkClient") then -- we are playing online
 		setDisabledState(studioText)
 		setDisabledState(studioShortcut)
 		setDisabledState(studioCheckbox)
 	end
 	
+
+	----------------------------------------------------------------------------------------------------
+	--  O K    B U T T O N
+	----------------------------------------------------------------------------------------------------
+
+
 	local backButton
 	if hasGraphicsSlider then
 		backButton = createTextButton("OK",Enum.ButtonStyle.RobloxButtonDefault,Enum.FontSize.Size24,UDim2.new(0,180,0,50),UDim2.new(0,170,0,330))
@@ -1176,109 +1404,30 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	backButton.ZIndex = baseZIndex + 4
 	backButton.Parent = gameSettingsMenuFrame
 	
-	local syncVideoCaptureSetting = nil
-
-	if not macClient then
-		local videoCaptureLabel = Instance.new("TextLabel")
-		videoCaptureLabel.Name = "VideoCaptureLabel"
-		videoCaptureLabel.Text = "After Capturing Video"
-		videoCaptureLabel.Font = Enum.Font.Arial
-		videoCaptureLabel.FontSize = Enum.FontSize.Size18
-		videoCaptureLabel.Position = UDim2.new(0,32,0,100)
-		videoCaptureLabel.Size = UDim2.new(0,164,0,18)
-		videoCaptureLabel.BackgroundTransparency = 1
-		videoCaptureLabel.TextColor3 = Color3I(255,255,255)
-		videoCaptureLabel.TextXAlignment = Enum.TextXAlignment.Left
-		videoCaptureLabel.ZIndex = baseZIndex + 4
-		videoCaptureLabel.Parent = gameSettingsMenuFrame
-
-		local videoNames = {}
-		local videoNameToItem = {}
-		videoNames[1] = "Just Save to Disk"
-		videoNameToItem[videoNames[1]] = Enum.UploadSetting["Never"]
-		videoNames[2] = "Upload to YouTube"
-		videoNameToItem[videoNames[2]] = Enum.UploadSetting["Ask me first"]
-
-		local videoCaptureDropDown = nil
-		videoCaptureDropDown, updateVideoCaptureDropDownSelection = RbxGui.CreateDropDownMenu(videoNames, 
-			function(text) 
-				UserSettings().GameSettings.VideoUploadPromptBehavior = videoNameToItem[text]
-			end)
-		videoCaptureDropDown.Name = "VideoCaptureField"
-		videoCaptureDropDown.ZIndex = baseZIndex + 4
-		videoCaptureDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
-		videoCaptureDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
-		videoCaptureDropDown.Position = UDim2.new(0, 270, 0, 94)
-		videoCaptureDropDown.Size = UDim2.new(0,200,0,32)
-		videoCaptureDropDown.Parent = gameSettingsMenuFrame
-
-		syncVideoCaptureSetting = function()
-			if UserSettings().GameSettings.VideoUploadPromptBehavior == Enum.UploadSetting["Never"] then
-				updateVideoCaptureDropDownSelection(videoNames[1])
-			elseif UserSettings().GameSettings.VideoUploadPromptBehavior == Enum.UploadSetting["Ask me first"] then
-				updateVideoCaptureDropDownSelection(videoNames[2])
-			else
-				UserSettings().GameSettings.VideoUploadPromptBehavior = Enum.UploadSetting["Ask me first"]
-				updateVideoCaptureDropDownSelection(videoNames[2])
-			end
-		end
-	end
-	
-	local cameraLabel = Instance.new("TextLabel")
-	cameraLabel.Name = "CameraLabel"
-	cameraLabel.Text = "Character & Camera Controls"
-	cameraLabel.Font = Enum.Font.Arial
-	cameraLabel.FontSize = Enum.FontSize.Size18
-	cameraLabel.Position = UDim2.new(0,31,0,58)
-	cameraLabel.Size = UDim2.new(0,224,0,18)
-	cameraLabel.TextColor3 = Color3I(255,255,255)
-	cameraLabel.TextXAlignment = Enum.TextXAlignment.Left
-	cameraLabel.BackgroundTransparency = 1
-	cameraLabel.ZIndex = baseZIndex + 4
-	cameraLabel.Parent = gameSettingsMenuFrame
-
-	local mouseLockLabel = game.CoreGui.RobloxGui:FindFirstChild("MouseLockLabel",true)
-
-	local enumItems = Enum.ControlMode:GetEnumItems()
-	local enumNames = {}
-	local enumNameToItem = {}
-	for i,obj in ipairs(enumItems) do
-		enumNames[i] = obj.Name
-		enumNameToItem[obj.Name] = obj
-	end
-
-	local cameraDropDown
-	cameraDropDown, updateCameraDropDownSelection = RbxGui.CreateDropDownMenu(enumNames, 
-		function(text) 
-			UserSettings().GameSettings.ControlMode = enumNameToItem[text] 
-			
-			pcall(function()
-				if mouseLockLabel and UserSettings().GameSettings.ControlMode == Enum.ControlMode["Mouse Lock Switch"] then
-					mouseLockLabel.Visible = true
-				elseif mouseLockLabel then
-					mouseLockLabel.Visible = false
-				end
-			end)
-		end)
-	cameraDropDown.Name = "CameraField"
-	cameraDropDown.ZIndex = baseZIndex + 4
-	cameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
-	cameraDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
-	cameraDropDown.Position = UDim2.new(0, 270, 0, 52)
-	cameraDropDown.Size = UDim2.new(0,200,0,32)
-	cameraDropDown.Parent = gameSettingsMenuFrame
-	
 	return gameSettingsMenuFrame
 end
+
+
+
 
 if LoadLibrary then
   RbxGui = LoadLibrary("RbxGui")
   local baseZIndex = 0
 if UserSettings then
 
+	local settingButtonParent = gui.BottomLeftControl
+	if touchClient then
+		settingButtonParent = gui.TopLeftControl
+	end
+
 	local createSettingsDialog = function()
-		waitForChild(gui,"BottomLeftControl")
-		settingsButton = gui.BottomLeftControl:FindFirstChild("SettingsButton")
+		if touchClient then
+			waitForChild(gui,"TopLeftControl")
+		else
+			waitForChild(gui,"BottomLeftControl")
+		end
+
+		settingsButton = settingButtonParent:FindFirstChild("SettingsButton")
 		
 		if settingsButton == nil then
 			settingsButton = Instance.new("ImageButton")
@@ -1287,8 +1436,12 @@ if UserSettings then
 			settingsButton.BackgroundTransparency = 1
 			settingsButton.Active = false
 			settingsButton.Size = UDim2.new(0,54,0,46)
-			settingsButton.Position = UDim2.new(0,2,0,50)
-			settingsButton.Parent = gui.BottomLeftControl
+			if (touchClient) then
+				settingsButton.Position = UDim2.new(0,2,0,5)
+			else
+				settingsButton.Position = UDim2.new(0,2,0,-2)
+			end
+			settingsButton.Parent = settingButtonParent
 		end
 
 		local shield = Instance.new("TextButton")
@@ -1395,8 +1548,15 @@ if UserSettings then
 						--showFunction
 						function()
 							settingsButton.Active = false
-							updateCameraDropDownSelection(UserSettings().GameSettings.ControlMode.Name)
-						
+							if updateCameraDropDownSelection ~= nil then
+								updateCameraDropDownSelection(UserSettings().GameSettings.ControlMode.Name)
+							end
+							updateSmartCameraDropDownSelection(UserSettings().GameSettings.CameraMode.Name)
+							if updateTouchMovementDropDownSelection ~= nil then
+								updateTouchMovementDropDownSelection(UserSettings().GameSettings.TouchMovementMode.Name)
+							end
+
+
 							if syncVideoCaptureSetting then
   								syncVideoCaptureSetting()
 							end
@@ -1464,8 +1624,14 @@ if UserSettings then
 					--showFunction
 					function()
 						settingsButton.Active = false
-						updateCameraDropDownSelection(UserSettings().GameSettings.ControlMode.Name)
-					
+						if updateCameraDropDownSelection ~= nil then
+							updateCameraDropDownSelection(UserSettings().GameSettings.ControlMode.Name)
+						end
+						updateSmartCameraDropDownSelection(UserSettings().GameSettings.CameraMode.Name)
+						if updateTouchMovementDropDownSelection ~= nil then
+							updateTouchMovementDropDownSelection(UserSettings().GameSettings.TouchMovementMode.Name)
+						end
+						
 						if syncVideoCaptureSetting then
   							syncVideoCaptureSetting()
 						end
@@ -1490,9 +1656,9 @@ if UserSettings then
 	delay(0, function()
 		createSettingsDialog().Parent = gui
 		
-		gui.BottomLeftControl.SettingsButton.Active = true
-		gui.BottomLeftControl.SettingsButton.Position = UDim2.new(0,2,0,-2)
-		
+		settingButtonParent.SettingsButton.Active = true
+--		settingButtonParent.SettingsButton.Position = UDim2.new(0,2,0,-2)
+
 		if mouseLockLabel and UserSettings().GameSettings.ControlMode == Enum.ControlMode["Mouse Lock Switch"] then
 			mouseLockLabel.Visible = true
 		elseif mouseLockLabel then
@@ -1508,8 +1674,11 @@ if UserSettings then
 			leaveGameButton = topLeft:FindFirstChild("Exit")
 			if leaveGameButton then leaveGameButton:Remove() end
 
-			topLeft:Remove()
+			if settingButtonParent ~= topLeft then
+				topLeft:Remove()
+			end
 		end
+		--]]
 	end)
 	
 end --UserSettings call
