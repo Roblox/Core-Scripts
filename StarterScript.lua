@@ -4,7 +4,6 @@
 local scriptContext = game:GetService("ScriptContext")
 local touchEnabled = false
 pcall(function() touchEnabled = game:GetService("UserInputService").TouchEnabled end)
--- touchEnabled = true
 
 -- library registration
 scriptContext:AddCoreScript(60595695, scriptContext,"/Libraries/LibraryRegistration/LibraryRegistration")
@@ -39,22 +38,18 @@ end
 scriptContext:AddCoreScript(39250920,screenGui,"CoreScripts/MainBotChatScript")
 
 -- Developer Console Script
--- prod scriptContext:AddCoreScript(1,screenGui,"CoreScripts/DeveloperConsole")
-scriptContext:AddCoreScript(70381360,screenGui,"CoreScripts/DeveloperConsole")
+scriptContext:AddCoreScript(1,screenGui,"CoreScripts/DeveloperConsole")
 
 -- Popup Script
 scriptContext:AddCoreScript(48488451,screenGui,"CoreScripts/PopupScript")
 -- Friend Notification Script (probably can use this script to expand out to other notifications)
 scriptContext:AddCoreScript(48488398,screenGui,"CoreScripts/NotificationScript")
 -- Chat script
--- prod scriptContext:AddCoreScript(97188756, screenGui, "CoreScripts/ChatScript")	
-scriptContext:AddCoreScript(70355393, screenGui, "CoreScripts/ChatScript")	
+scriptContext:AddCoreScript(97188756, screenGui, "CoreScripts/ChatScript")	
 -- Purchase Prompt Script
--- prod scriptContext:AddCoreScript(107893730, screenGui, "CoreScripts/PurchasePromptScript")
-scriptContext:AddCoreScript(70355652, screenGui, "CoreScripts/PurchasePromptScript")
+scriptContext:AddCoreScript(107893730, screenGui, "CoreScripts/PurchasePromptScript")
 -- Health Script
--- prod scriptContext:AddCoreScript(123123, screenGui, "CoreScripts/HealthScript")
-scriptContext:AddCoreScript(70380080, screenGui, "CoreScripts/HealthScript")
+scriptContext:AddCoreScript(123123, screenGui, "CoreScripts/HealthScript")
 
 if not touchEnabled then 
 	-- New Player List
@@ -81,13 +76,11 @@ if game.CoreGui.Version >= 3 then
 	
 	-- Manager handles all big backpack state changes, other scripts subscribe to this and do things accordingly
 	if game.CoreGui.Version >= 7 then
--- prod		scriptContext:AddCoreScript(89449093,Backpack,"CoreScripts/BackpackScripts/BackpackManager")
-		scriptContext:AddCoreScript(70355426,Backpack,"CoreScripts/BackpackScripts/BackpackManager")
+		scriptContext:AddCoreScript(89449093,Backpack,"CoreScripts/BackpackScripts/BackpackManager")
 	end
 	
 	-- Backpack Gear (handles all backpack gear tab stuff)
--- prod	game:GetService("ScriptContext"):AddCoreScript(89449008,Backpack,"CoreScripts/BackpackScripts/BackpackGear")
-	game:GetService("ScriptContext"):AddCoreScript(70355427,Backpack,"CoreScripts/BackpackScripts/BackpackGear")
+	game:GetService("ScriptContext"):AddCoreScript(89449008,Backpack,"CoreScripts/BackpackScripts/BackpackGear")
 	-- Loadout Script, used for gear hotkeys
 	scriptContext:AddCoreScript(53878057,screenGui.CurrentLoadout,"CoreScripts/BackpackScripts/LoadoutScript")
 	if game.CoreGui.Version >= 8 then
