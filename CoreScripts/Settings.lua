@@ -871,7 +871,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	smartCameraLabel.ZIndex = baseZIndex + 4
 	smartCameraLabel.Parent = gameSettingsMenuFrame
 
-	local smartEnumItems = Enum.CameraMode:GetEnumItems()
+	local smartEnumItems = Enum.CustomCameraMode:GetEnumItems()
 	local smartEnumNames = {}
 	local smartEnumNameToItem = {}
 	for i,obj in ipairs(smartEnumItems) do
