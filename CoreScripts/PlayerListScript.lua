@@ -2182,21 +2182,26 @@ function InitMovingPanel( entry, player)
 	
 	local ReportPlayerButton = MakePopupButton(PopUpPanel,'Report Player',0)
 	ReportPlayerButton.MouseButton1Click:connect(function() OpenAbuseDialog() end)
-	local FriendPlayerButton = MakePopupButton(PopUpPanel,'Friend',1, not showRankMenu and  friendStatus~=Enum.FriendStatus.FriendRequestReceived)
-	FriendPlayerButton.MouseButton1Click:connect(OnFriendButtonSelect)
-	
 
-	if friendStatus==Enum.FriendStatus.Friend then
-		FriendPlayerButton:FindFirstChild('ButtonText').Text='UnFriend Player'
-	elseif friendStatus==Enum.FriendStatus.Unknown or friendStatus==Enum.FriendStatus.NotFriend then
-		FriendPlayerButton:FindFirstChild('ButtonText').Text='Send Request'
-	elseif friendStatus==Enum.FriendStatus.FriendRequestSent then
-		FriendPlayerButton:FindFirstChild('ButtonText').Text='Revoke Request'
-	elseif friendStatus==Enum.FriendStatus.FriendRequestReceived then
-		FriendPlayerButton:FindFirstChild('ButtonText').Text='Accept Friend'
-		local FriendRefuseButton = MakePopupButton(PopUpPanel,'Decline Friend',2,not showRankMenu)
-		FriendRefuseButton.MouseButton1Click:connect(OnFriendRefuseButtonSelect)
-		nextIndex=nextIndex+1
+	local enableFriendRequests = true
+
+	if enableFriendRequests then
+		local FriendPlayerButton = MakePopupButton(PopUpPanel,'Friend',1, not showRankMenu and  friendStatus~=Enum.FriendStatus.FriendRequestReceived)
+		FriendPlayerButton.MouseButton1Click:connect(OnFriendButtonSelect)
+		
+
+		if friendStatus==Enum.FriendStatus.Friend then
+			FriendPlayerButton:FindFirstChild('ButtonText').Text='UnFriend Player'
+		elseif friendStatus==Enum.FriendStatus.Unknown or friendStatus==Enum.FriendStatus.NotFriend then
+			FriendPlayerButton:FindFirstChild('ButtonText').Text='Send Request'
+		elseif friendStatus==Enum.FriendStatus.FriendRequestSent then
+			FriendPlayerButton:FindFirstChild('ButtonText').Text='Revoke Request'
+		elseif friendStatus==Enum.FriendStatus.FriendRequestReceived then
+			FriendPlayerButton:FindFirstChild('ButtonText').Text='Accept Friend'
+			local FriendRefuseButton = MakePopupButton(PopUpPanel,'Decline Friend',2,not showRankMenu)
+			FriendRefuseButton.MouseButton1Click:connect(OnFriendRefuseButtonSelect)
+			nextIndex=nextIndex+1
+		end
 	end
 
 	if showRankMenu then
