@@ -168,11 +168,18 @@ local Chat = {
 			Messages_List = {},
 			MessageThread = nil,
 
-			Admins_List = {'Sorcus', 'Shedletsky', 'Telamon', 'Tarabyte', 'StickMasterLuke', 'OnlyTwentyCharacters', 'FusRoblox', 'SolarCrane', 
-								'HotThoth', 'JediTkacheff', 'Builderman', 'Brighteyes', 'ReeseMcblox', 'GemLocker', 'GongfuTiger', 'Erik.Cassel', 'Matt Dusek', 'Keith',
-								'Totbl', 'LordRugDump', 'David.Baszucki', 'Dbapostle', 'DaveYorkRBX', 'nJay', 'OstrichSized', 'TobotRobot', 'twberg', 'ROBLOX', 'RBAdam', 'Doughtless',
-								'Anaminus', 'Stravant', 'Cr3470r', 'CodeWriter', 'Games', 'AcesWayUpHigh', 'Phil', 'effward', 'mleask'
-								},
+			Admins_List = {
+								'Rbadam', 'Adamintygum', 'androidtest', 'RobloxFrenchie', 'JacksSmirkingRevenge', 'LindaPepita', 'vaiobot', 'Goddessnoob', 'effward', 'Blockhaak', '659223', 'Tone', 
+								'fasterbuilder19', 'Zeuxcg', 'ReeseMcBlox', 'Jeditkacheff', 'whkm1980', 'ChiefJustus', 'Arbolito', 'Noob007', 'Limon', 'cmed', 'Tabemono ', 'autoconfig', 'BrightEyes', 
+								'MrDoomBringer', 'IsolatedEvent', 'OnlyTwentyCharacters', 'LordRugdumph', 'bellavour', 'david.baszucki', 'ibanez2189', 'Sorcus', 'DeeAna00', 'NiqueMonster', 'Thorasaur', 
+								'MSE6', 'CorgiParade', 'Varia', 'pulmoesflor', 'Olive71', 'groundcontroll2', 'GuruKrish', 'IltaLumi', 'OstrichSized', 'jackintheblox', 'SlingshotJunkie', 'gordonrox24', 
+								'sharpnine', 'jmargh', 'JayKorean', 'MajorTom4321', 'Shedletsky', 'supernovacaine', 'FFJosh', 'Doughtless', 'KBUX', 'totallynothere', 'ErzaStar', 'Keith', 'SolarCrane', 
+								'UristMcSparks', 'ITOlaurEN', 'Malcomso', 'Stickmasterluke', 'yumyumcheerios', 'Stravant', 'imaginationsensation', 'Matt Dusek', 'Mcrtest', 'Seranok', 'maxvee', 
+								'Coatp0cketninja', 'Screenme', 'b1tsh1ft', 'Totbl', 'Aquabot8', 'Merely', 'Siekiera', 'flotsamthespork', 'Soggoth', 'Phil', 'OrcaSparkles', 'skullgoblin', 'ArgonPirate', 
+								'NobleDragon', 'Squidcod', 'Raeglyn', 'Robloxsai', 'Briarroze', 'hawkeyebandit', 'Vukota', 'swiftstone', 'Gemlocker', 'Tarabyte', 'Timobius', 'Tobotrobot', 'Foster008', 
+								'Twberg', 'DarthVaden', 'Khanovich', 'CodeWriter', 'VladTheFirst', 'Phaedre', 'gorroth', 'SphinxShen', 'jynj1984', 'RoboYZ', 'ZodiacZak'
+							},
+
 
 			SafeChat_List = {
 								['Use the Chat menu to talk to me.'] = {'/sc 0', true},
