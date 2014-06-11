@@ -73,8 +73,8 @@ local balanceFutureTenseText = "Your balance after this transaction will be "
 local balanceCurrentTenseText = "Your balance is now "
 
 -- robux product arrays
-local bcRobuxProducts 		= 	{90, 200, 300, 400, 500, 1000, 6000, 15000, 35000}
-local nonBcRobuxProducts	= 	{80, 160, 240, 320, 405, 800,  4500, 10000, 22500}
+local bcRobuxProducts 		= 	{90, 200, 300, 400, 500, 1000, 2750, 6000, 15000}
+local nonBcRobuxProducts	= 	{80, 160, 240, 320, 405, 800,  2000, 4500, 10000}
 -------------------------------- End Global Variables ----------------------------------------
 
 
@@ -179,7 +179,13 @@ function getMinimumProductNeededForPurchase(amountNeededToBuy)
 		productAmount = getClosestRobuxProduct(amountNeededToBuy, nonBcRobuxProducts)
 	end
 
-	local productString = "com.roblox.robloxmobile." .. tostring(productAmount) .. "Robux"
+	local appendString = "RobuxNonBC"
+	if isBcMember then
+		appendString = "RobuxBC"
+	end
+
+	local productString = "com.roblox.robloxmobile." .. tostring(productAmount) ..  appendString
+
 	return productAmount, productString
 end
 
