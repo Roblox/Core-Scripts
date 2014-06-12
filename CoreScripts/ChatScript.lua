@@ -170,7 +170,7 @@ local Chat = {
 
 			Admins_List = {
 								'Rbadam', 'Adamintygum', 'androidtest', 'RobloxFrenchie', 'JacksSmirkingRevenge', 'LindaPepita', 'vaiobot', 'Goddessnoob', 'effward', 'Blockhaak', '659223', 'Tone', 
-								'fasterbuilder19', 'Zeuxcg', 'ReeseMcBlox', 'Jeditkacheff', 'whkm1980', 'ChiefJustus', 'Arbolito', 'Noob007', 'Limon', 'cmed', 'Tabemono ', 'autoconfig', 'BrightEyes', 
+								'fasterbuilder19', 'Zeuxcg', 'ReeseMcBlox', 'Jeditkacheff', 'whkm1980', 'ChiefJustus', 'Arbolito', 'Noob007', 'Limon', 'cmed', 'Tabemono', 'autoconfig', 'BrightEyes', 
 								'MrDoomBringer', 'IsolatedEvent', 'OnlyTwentyCharacters', 'LordRugdumph', 'bellavour', 'david.baszucki', 'ibanez2189', 'Sorcus', 'DeeAna00', 'NiqueMonster', 'Thorasaur', 
 								'MSE6', 'CorgiParade', 'Varia', 'pulmoesflor', 'Olive71', 'groundcontroll2', 'GuruKrish', 'IltaLumi', 'OstrichSized', 'jackintheblox', 'SlingshotJunkie', 'gordonrox24', 
 								'sharpnine', 'jmargh', 'JayKorean', 'MajorTom4321', 'Shedletsky', 'supernovacaine', 'FFJosh', 'Doughtless', 'KBUX', 'totallynothere', 'ErzaStar', 'Keith', 'SolarCrane', 
