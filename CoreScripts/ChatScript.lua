@@ -176,7 +176,7 @@ local Chat = {
 								'sharpnine', 'jmargh', 'JayKorean', 'MajorTom4321', 'Shedletsky', 'supernovacaine', 'FFJosh', 'Doughtless', 'KBUX', 'totallynothere', 'ErzaStar', 'Keith', 'SolarCrane', 
 								'UristMcSparks', 'ITOlaurEN', 'Malcomso', 'Stickmasterluke', 'yumyumcheerios', 'Stravant', 'imaginationsensation', 'Matt Dusek', 'Mcrtest', 'Seranok', 'maxvee', 
 								'Coatp0cketninja', 'Screenme', 'b1tsh1ft', 'Totbl', 'Aquabot8', 'Merely', 'Siekiera', 'flotsamthespork', 'Soggoth', 'Phil', 'OrcaSparkles', 'skullgoblin', 'ArgonPirate', 
-								'NobleDragon', 'Squidcod', 'Raeglyn', 'Robloxsai', 'Briarroze', 'hawkeyebandit', 'Vukota', 'swiftstone', 'Gemlocker', 'Tarabyte', 'Timobius', 'Tobotrobot', 'Foster008', 
+								'NobleDragon', 'Squidcod', 'Raeglyn', 'RobloxSai', 'Briarroze', 'hawkeyebandit', 'Vukota', 'swiftstone', 'Gemlocker', 'Tarabyte', 'Timobius', 'Tobotrobot', 'Foster008', 
 								'Twberg', 'DarthVaden', 'Khanovich', 'CodeWriter', 'VladTheFirst', 'Phaedre', 'gorroth', 'SphinxShen', 'jynj1984', 'RoboYZ', 'ZodiacZak'
 							},
 
