@@ -169,15 +169,15 @@ local Chat = {
 			MessageThread = nil,
 
 			Admins_List = {
-								'Rbadam', 'Adamintygum', 'androidtest', 'RobloxFrenchie', 'JacksSmirkingRevenge', 'LindaPepita', 'vaiobot', 'Goddessnoob', 'effward', 'Blockhaak', '659223', 'Tone', 
-								'fasterbuilder19', 'Zeuxcg', 'ReeseMcBlox', 'Jeditkacheff', 'whkm1980', 'ChiefJustus', 'Arbolito', 'Noob007', 'Limon', 'cmed', 'Tabemono', 'autoconfig', 'BrightEyes', 
-								'MrDoomBringer', 'IsolatedEvent', 'OnlyTwentyCharacters', 'LordRugdumph', 'bellavour', 'david.baszucki', 'ibanez2189', 'Sorcus', 'DeeAna00', 'NiqueMonster', 'Thorasaur', 
-								'MSE6', 'CorgiParade', 'Varia', 'pulmoesflor', 'Olive71', 'groundcontroll2', 'GuruKrish', 'IltaLumi', 'OstrichSized', 'jackintheblox', 'SlingshotJunkie', 'gordonrox24', 
-								'sharpnine', 'jmargh', 'JayKorean', 'MajorTom4321', 'Shedletsky', 'supernovacaine', 'FFJosh', 'Doughtless', 'KBUX', 'totallynothere', 'ErzaStar', 'Keith', 'SolarCrane', 
-								'UristMcSparks', 'ITOlaurEN', 'Malcomso', 'Stickmasterluke', 'yumyumcheerios', 'Stravant', 'imaginationsensation', 'Matt Dusek', 'Mcrtest', 'Seranok', 'maxvee', 
-								'Coatp0cketninja', 'Screenme', 'b1tsh1ft', 'Totbl', 'Aquabot8', 'Merely', 'Siekiera', 'flotsamthespork', 'Soggoth', 'Phil', 'OrcaSparkles', 'skullgoblin', 'ArgonPirate', 
-								'NobleDragon', 'Squidcod', 'Raeglyn', 'RobloxSai', 'Briarroze', 'hawkeyebandit', 'Vukota', 'swiftstone', 'Gemlocker', 'Tarabyte', 'Timobius', 'Tobotrobot', 'Foster008', 
-								'Twberg', 'DarthVaden', 'Khanovich', 'CodeWriter', 'VladTheFirst', 'Phaedre', 'gorroth', 'SphinxShen', 'jynj1984', 'RoboYZ', 'ZodiacZak'
+								'Rbadam', 'Adamintygum', 'androidtest', 'RobloxFrenchie', 'JacksSmirkingRevenge', 'LindaPepita', 'vaiobot', 'Goddessnoob', 'effward', 'Blockhaak', 'Drewbda', '659223', 'Tone', 'fasterbuilder19', 'Zeuxcg', 'concol2', 
+								'ReeseMcBlox', 'Jeditkacheff', 'whkm1980', 'ChiefJustus', 'Ellissar', 'Arbolito', 'Noob007', 'Limon', 'cmed', 'hawkington', 'Tabemono', 'autoconfig', 'BrightEyes', 'Monsterinc3D', 'MrDoomBringer', 'IsolatedEvent', 
+								'CountOnConnor', 'Scubasomething', 'OnlyTwentyCharacters', 'LordRugdumph', 'bellavour', 'david.baszucki', 'ibanez2189', 'Sorcus', 'DeeAna00', 'TheLorekt', 'NiqueMonster', 'Thorasaur', 'MSE6', 'CorgiParade', 'Varia', 
+								'4runningwolves', 'pulmoesflor', 'Olive71', 'groundcontroll2', 'GuruKrish', 'Countvelcro', 'IltaLumi', 'juanjuan23', 'OstrichSized', 'jackintheblox', 'SlingshotJunkie', 'gordonrox24', 'sharpnine', 'Motornerve', 'Motornerve', 
+								'watchmedogood', 'jmargh', 'JayKorean', 'Foyle', 'MajorTom4321', 'Shedletsky', 'supernovacaine', 'FFJosh', 'Sickenedmonkey', 'Doughtless', 'KBUX', 'totallynothere', 'ErzaStar', 'Keith', 'Chro', 'SolarCrane', 'GloriousSalt', 
+								'UristMcSparks', 'ITOlaurEN', 'Malcomso', 'Stickmasterluke', 'windlight13', 'yumyumcheerios', 'Stravant', 'ByteMe', 'imaginationsensation', 'Matt.Dusek', 'Mcrtest', 'Seranok', 'maxvee', 'Coatp0cketninja', 'Screenme', 
+								'b1tsh1ft', 'Totbl', 'Aquabot8', 'grossinger', 'Merely', 'CDakkar', 'Siekiera', 'Robloxkidsaccount', 'flotsamthespork', 'Soggoth', 'Phil', 'OrcaSparkles', 'skullgoblin', 'RickROSStheB0SS', 'ArgonPirate', 'NobleDragon', 
+								'Squidcod', 'Raeglyn', 'Robloxsai', 'Briarroze', 'hawkeyebandit', 'DapperBuffalo', 'Vukota', 'swiftstone', 'Gemlocker', 'Loopylens', 'Tarabyte', 'Timobius', 'Tobotrobot', 'Foster008', 'Twberg', 'DarthVaden', 'Khanovich', 
+								'CodeWriter', 'VladTheFirst', 'Phaedre', 'gorroth', 'SphinxShen', 'jynj1984', 'RoboYZ', 'ZodiacZak'
 							},
 
 
