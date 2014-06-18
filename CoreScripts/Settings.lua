@@ -876,13 +876,17 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		smartEnumItems = Enum.CustomCameraMode:GetEnumItems()
 	end)
 	if not success then
-		smartEnumItems = Enum.CameraMode:GetEnumItems()
+--		smartEnumItems = Enum.CameraMode:GetEnumItems()
+		smartEnumItems = 	{ 
+								Default = { Name = "Default", Value = 0 }, 
+								Follow = { Name = "Follow", Value = 1 }, 
+								Classic = { Name = "Classic", Value = 2 }
+							}
 	end
 
 	local smartEnumNames = {}
 	local smartEnumNameToItem = {}
 	for i,obj in ipairs(smartEnumItems) do
-		print("cam enum name =",obj.Name)
 		smartEnumNames[i] = obj.Name
 		smartEnumNameToItem[obj.Name] = obj
 	end
