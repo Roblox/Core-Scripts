@@ -116,7 +116,7 @@ local ADMINS =
 	nobledragon = 1,
 	squidcod = 1,
 	raeglyn = 1,
-	robloxsai = 1,
+	robloxsai = 'http://www.roblox.com/asset/?id=161078086',
 	briarroze = 1,
 	hawkeyebandit = 1,
 	dapperbuffalo = 1,
