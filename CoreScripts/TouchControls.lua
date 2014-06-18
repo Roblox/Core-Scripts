@@ -63,6 +63,7 @@ local CameraRotateDeadZone = CameraRotateSensitivity * 16
 local CameraZoomSensitivity = 0.03
 local PinchZoomDelay = 0.2
 local cameraTouch = nil
+local dpadTouch = nil
 
 
 -- make sure all of our images are good to go
@@ -335,27 +336,25 @@ function createDPad()
 end
 
 
+
+	
 function setupDPadControls(DPadFrame)
 	
 	local moveCharacterFunc = localPlayer.MoveCharacter
 	DPadFrame.JumpButton.InputBegan:connect(function(inputObject)
---		if inputObject.UserInputState == Enum.UserInputState.Begin then
-			localPlayer:JumpCharacter()
---		end
+		localPlayer:JumpCharacter()
 	end)
-	
-	local movementTouch = nil
 	local movementVector = Vector2.new(0,0)
 	
 	function setupButton(button,funcToCallBegin,funcToCallEnd)
 		button.InputBegan:connect(function(inputObject)
-			if not movementTouch and inputObject.UserInputType == Enum.UserInputType.Touch and inputObject.UserInputState == Enum.UserInputState.Begin then
-				movementTouch = inputObject
+			if not dpadTouch and inputObject.UserInputType == Enum.UserInputType.Touch and inputObject.UserInputState == Enum.UserInputState.Begin then
+				dpadTouch = inputObject
 				funcToCallBegin()
 			end
 		end)
 		button.InputEnded:connect(function(inputObject)
-			if movementTouch == inputObject then
+			if dpadTouch == inputObject then
 				if funcToCallEnd then
 					funcToCallEnd()
 				end
@@ -396,10 +395,8 @@ function setupDPadControls(DPadFrame)
 		DPadFrame.forwardLeftButton.Visible = false
 		DPadFrame.forwardRightButton.Visible = false
 		
-		movementTouch = nil
-		
 		Spawn(function()
-			while not movementTouch and movementVector ~= Vector2.new(0,0) do
+			while not dpadTouch and movementVector ~= Vector2.new(0,0) do
 				local newX = movementVector.x
 				local newY = movementVector.y
 				
@@ -432,7 +429,7 @@ function setupDPadControls(DPadFrame)
 	end
 	
 	local removeDiagonalButtons = function()
-		if isPointInRect(movementTouch.Position,DPadFrame.ForwardButton.AbsolutePosition,DPadFrame.ForwardButton.AbsoluteSize) then
+		if isPointInRect(dpadTouch.Position,DPadFrame.ForwardButton.AbsolutePosition,DPadFrame.ForwardButton.AbsoluteSize) then
 			DPadFrame.forwardLeftButton.Visible = false
 			DPadFrame.forwardRightButton.Visible = false
 		end
@@ -453,16 +450,17 @@ function setupDPadControls(DPadFrame)
 	end
 	
 	Game:GetService("UserInputService").TouchMoved:connect(function(touchObject)
-		if touchObject == movementTouch then
-			if isPointInRect(movementTouch.Position,DPadFrame.AbsolutePosition,DPadFrame.AbsoluteSize) then
-				moveCharacterFunc(localPlayer, getMovementVector(movementTouch.Position),1)
+		if touchObject == dpadTouch then
+			if isPointInRect(dpadTouch.Position,DPadFrame.AbsolutePosition,DPadFrame.AbsoluteSize) then
+				moveCharacterFunc(localPlayer, getMovementVector(dpadTouch.Position),1)
 			else
 				endMovementFunc()
 			end
 		end
 	end)
 	Game:GetService("UserInputService").TouchEnded:connect(function(touchObject)
-		if touchObject == movementTouch then
+		if touchObject == dpadTouch then
+			dpadTouch = nil
 			endMovementFunc()
 		end
 	end)
@@ -823,7 +821,7 @@ function activateTouchControls()
 		jumpButton.Visible = false
 		characterDPad.Visible = false
 	else		
-		if (GameSettings.TouchMovementMode.Name == "Thumbstick" || GameSettings.TouchMovementMode.Name == "Default") then
+		if (GameSettings.TouchMovementMode.Name == "Thumbstick" or GameSettings.TouchMovementMode.Name == "Default") then
 			isInThumbstickMode = true
 		else 
 			isInThumbstickMode = false
