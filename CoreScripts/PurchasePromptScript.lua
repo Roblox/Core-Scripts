@@ -73,8 +73,8 @@ local balanceFutureTenseText = "Your balance after this transaction will be "
 local balanceCurrentTenseText = "Your balance is now "
 
 -- robux product arrays
-local bcRobuxProducts 		= 	{90, 200, 300, 400, 500, 1000, 2750, 6000, 15000}
-local nonBcRobuxProducts	= 	{80, 160, 240, 320, 405, 800,  2000, 4500, 10000}
+local bcRobuxProducts 		= 	{90, 180, 270, 360, 450, 1000, 2750}
+local nonBcRobuxProducts	= 	{80, 160, 240, 320, 400, 800,  2000}
 -------------------------------- End Global Variables ----------------------------------------
 
 
