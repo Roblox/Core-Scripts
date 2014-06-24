@@ -32,11 +32,11 @@ end
 -- This function removes trailing and leading white spaces
 -- AFAIK, there is no reason for spam white spaces 
 local function StringTrim(str)
-	-- %S is whitespaces
-	-- When we find the first non space character defined by ^%s 
-	-- we yank out anything in between that and the end of the string 
-	-- Everything else is replaced with %1 which is essentially nothing  	
-	return (str:gsub("^%s*(.-)%s*$", "%1"))
+	-- %s+ stands whitespaces
+	-- We yank out any whitespaces at the begin and end of the string
+	-- After that, we put a tab behind newlines
+	-- That way people can't fake messages on a new line
+	return str:match("^%s*(.-)%s*$"):gsub("\n","\n\t")
 end 
 
 while Game.Players.LocalPlayer == nil do wait(0.03) end
