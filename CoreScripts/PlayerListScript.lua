@@ -1383,7 +1383,7 @@ end
 function PlayerSortFunction(a,b)
  -- prevents flipping out leaderboard
 	if a['Score'] == b['Score'] then
-		return a['Player'].Name:upper() < b['Player'].Name:upper()
+		return a['Player'].Name:upper() > b['Player'].Name:upper()
 	end
 	if not a['Score'] then return false end
 	if not b['Score'] then return true end
