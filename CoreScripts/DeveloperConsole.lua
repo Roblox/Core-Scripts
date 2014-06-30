@@ -38,6 +38,7 @@ function initializeDeveloperConsole()
 	---Dev-Console Variables
 	local LOCAL_CONSOLE = 1
 	local SERVER_CONSOLE = 2
+	local SERVER_STATS = 3
 
 	local MAX_LIST_SIZE = 1000
 
@@ -49,6 +50,7 @@ function initializeDeveloperConsole()
 
 	local localOffset = 0
 	local serverOffset = 0
+	local serverStatsOffset = 0
 	
 	local errorToggleOn = true
 	local warningToggleOn = true
@@ -76,8 +78,8 @@ function initializeDeveloperConsole()
 		Parent = Dev_Body;
 		BackgroundColor3 = Color3.new(0,0,0);
 		BackgroundTransparency = 1.0;
-		Position = UDim2.new(0, 220, 0, 0);
-		Size = UDim2.new(1, -255, 0, 24);
+		Position = UDim2.new(0, 318, 0, 0);
+		Size = UDim2.new(1, -355, 0, 24);
 		ClipsDescendants = true
 	}
 	
@@ -316,7 +318,8 @@ function initializeDeveloperConsole()
 	local Dev_TextHolder = Create'Frame'{
 		Name = 'TextHolder';
 		Parent = Dev_TextBox;
-		BackgroundTransparency = 1;
+		BackgroundColor3 = Color3.new(0,0,0);
+		BackgroundTransparency = 0;
 		Position = UDim2.new(0, 0, 0, 0);
 		Size = UDim2.new(1, 0, 1, 0);
 	}
@@ -326,7 +329,7 @@ function initializeDeveloperConsole()
 		Parent = Dev_Body;
 		BackgroundColor3 = Color3.new(0,0,0);
 		BackgroundTransparency = 1.0;
-		Position = UDim2.new(0, 200, 0, 2);
+		Position = UDim2.new(0, 298, 0, 2);
 		Size = UDim2.new(0, 20, 0, 20);
 	}
 	
@@ -387,6 +390,20 @@ function initializeDeveloperConsole()
 		TextYAlignment = Enum.TextYAlignment.Center;
 	}
 
+	Create'TextButton'{
+		Name = 'ServerStats';
+		Parent = Dev_Body;
+		BackgroundColor3 = Color3.new(0,0,0);
+		BackgroundTransparency = 0.8;
+		Position = UDim2.new(0, 197, 0, 5);
+		Size = UDim2.new(0, 90, 0, 17);
+		Font = "SourceSansBold";
+		FontSize = Enum.FontSize.Size14;
+		Text = "Server Stats";
+		TextColor3 = Color3.new(1, 1, 1);
+		TextYAlignment = Enum.TextYAlignment.Center;
+	}
+
 	local Dev_TitleBar = Create'Frame'{
 		Name = 'TitleBar';
 		Parent = Dev_Container;
@@ -437,6 +454,82 @@ function initializeDeveloperConsole()
 		Text = "Roblox Developer Console";
 		TextYAlignment = Enum.TextYAlignment.Top;
 	}
+	
+	local Dev_StatsChartFrame = Create'Frame'{
+		Name = 'ChartFrame';
+		BackgroundColor3 = Color3.new(0, 0, 0);
+		BackgroundTransparency = 0.5;
+		BorderColor3 = Color3.new(1.0, 1.0, 1.0);
+		Position = UDim2.new(0, 0, 0, 0);
+		Size = UDim2.new(0, 250, 0, 100);
+	}
+	
+	Create'TextLabel'{
+		Name = 'TitleText';
+		Parent = Dev_StatsChartFrame;
+		BackgroundTransparency = 0.5;
+		BackgroundColor3 = Color3.new(255,0,0);
+		Position = UDim2.new(0, 0, 0, 0);
+		Size = UDim2.new(1, 0, 0, 15);
+		Text = "";
+		Font = "SourceSansBold";
+		FontSize = Enum.FontSize.Size14;
+		TextColor3 = Color3.new(1, 1, 1);
+		TextYAlignment = Enum.TextYAlignment.Top;
+	}
+	
+	Create'TextLabel'{
+		Name = 'ChartValue';
+		Parent = Dev_StatsChartFrame;
+		BackgroundTransparency = 1.0;
+		BackgroundColor3 = Color3.new(0,0,0);
+		Position = UDim2.new(0, 5, 0, 39);
+		Size = UDim2.new(0, 100, 0, 15);
+		Text = "";
+		Font = "SourceSansBold";
+		FontSize = Enum.FontSize.Size14;
+		TextColor3 = Color3.new(1, 1, 1);
+		TextYAlignment = Enum.TextYAlignment.Top;
+		TextXAlignment = Enum.TextXAlignment.Left;
+	}
+	
+	Create'TextLabel'{
+		Name = 'ChartMaxValue';
+		Parent = Dev_StatsChartFrame;
+		BackgroundTransparency = 1.0;
+		BackgroundColor3 = Color3.new(0,0,0);
+		Position = UDim2.new(0, 5, 0, 15);
+		Size = UDim2.new(0, 100, 0, 15);
+		Text = "Max: ";
+		Font = "SourceSansBold";
+		FontSize = Enum.FontSize.Size14;
+		TextColor3 = Color3.new(1, 1, 1);
+		TextYAlignment = Enum.TextYAlignment.Top;
+		TextXAlignment = Enum.TextXAlignment.Left;
+	}
+	
+	Create'TextLabel'{
+		Name = 'ChartMinValue';
+		Parent = Dev_StatsChartFrame;
+		BackgroundTransparency = 1.0;
+		BackgroundColor3 = Color3.new(0,0,0);
+		Position = UDim2.new(0, 5, 0, 27);
+		Size = UDim2.new(0, 100, 0, 15);
+		Text = "Min: ";
+		Font = "SourceSansBold";
+		FontSize = Enum.FontSize.Size14;
+		TextColor3 = Color3.new(1, 1, 1);
+		TextYAlignment = Enum.TextYAlignment.Top;
+		TextXAlignment = Enum.TextXAlignment.Left;
+	}
+	
+	local Dev_StatsChartBar = Create'TextLabel'{
+		Name = 'StatsChartBar';
+		BackgroundColor3 = Color3.new(0,255,0);
+		Position = UDim2.new(0, 0, 0, 52);
+		Size = UDim2.new(0, 5, 0, 40);
+		Text = "";
+	}
 
 	---Saved Mouse Information
 	local previousMousePos = nil
@@ -464,7 +557,115 @@ function initializeDeveloperConsole()
 		scrollDownIsDown = false
 	end
 
+	-- Set up server stat charts
+	local numBars = 40
+	local numCharts = 0
+	local charts = {}
+	local statsListenerConnection = nil
+	
+	function initStatsListener()
+		if (statsListenerConnection == nil) then
+			game.NetworkClient:GetChildren()[1]:RequestServerStats(true)
+			statsListenerConnection = game.NetworkClient:GetChildren()[1].StatsReceived:connect(refreshCharts)
+		end
+	end
+	
+	function removeStatsListener()
+		if (statsListenerConnection ~= nil) then
+			game.NetworkClient:GetChildren()[1]:RequestServerStats(false)
+			statsListenerConnection:disconnect()
+			statsListenerConnection = nil
+		end
+	end
+	
+	function createChart(_frame)
+		local chart = {
+			frame = _frame,
+			values = {},
+			bars = {},
+			curIndex = 0
+		}
+		return chart
+	end
+	
+	function setupCharts(name)
+		local newChart = createChart(Dev_StatsChartFrame:Clone())
+		newChart.frame.Parent = Dev_TextHolder
+		newChart.frame.TitleText.Text = name
+		local newPos = 5 + numCharts * 110
+		newChart.frame.Position = UDim2.new(0, 5, 0, newPos);
+		for i = 1, numBars do
+			local bar = Dev_StatsChartBar:Clone()
+			bar.Position = UDim2.new(bar.Position.X.Scale, i * (bar.Size.X.Offset + 1), bar.Position.Y.Scale, bar.Position.Y.Offset)
+			bar.Parent = newChart.frame
+			table.insert(newChart.bars, bar)
+		end
 
+		charts[name] = newChart
+		numCharts = numCharts + 1
+		textHolderSize = newPos + 110
+	end
+	
+	function clearCharts()
+		for i, chart in pairs(charts) do
+			chart.frame.Parent = nil
+			charts[i] = nil
+		end
+		numCharts = 0
+	end
+	
+	function refreshCharts(stats)
+		for name, stat in pairs(stats) do
+			if (charts[name] == nil) then
+				setupCharts(name)
+			end
+			
+			local chart = charts[name]
+			chart.curIndex = chart.curIndex + 1
+			
+			-- remove old data
+			if chart.curIndex > numBars + 1 then
+				chart.curIndex = numBars + 1
+				table.remove(chart.values, 1)
+			end
+			
+			chart.values[chart.curIndex] = stat
+			
+			updateChart(chart)
+		end
+	end
+
+	function updateChart(chart)
+		local maxValue = .0001
+		local minValue = chart.values[chart.curIndex]
+
+		for i = chart.curIndex, chart.curIndex-numBars, -1 do
+			if i == 0 then break end
+			if chart.values[i] > maxValue then maxValue = chart.values[i] end
+			if chart.values[i] < minValue then minValue = chart.values[i] end
+		end
+		
+		chart.frame.ChartValue.Text = "Current: "..chart.values[chart.curIndex]
+		chart.frame.ChartMaxValue.Text = "Max: "..maxValue
+		chart.frame.ChartMinValue.Text = "Min: "..minValue
+
+		for i = 1,numBars do
+
+			if chart.curIndex - i + 1 < 1 then 
+				chart.bars[i].BackgroundTransparency = 1
+			else
+				chart.bars[i].BackgroundTransparency = 0
+
+				chart.bars[i].Size = UDim2.new(chart.bars[i].Size.X.Scale, chart.bars[i].Size.X.Offset, chart.bars[i].Size.Y.Scale, 
+					Dev_StatsChartBar.Size.Y.Offset * (chart.values[chart.curIndex - i + 1] / maxValue))
+		
+				chart.bars[i].Position = UDim2.new(chart.bars[i].Position.X.Scale, chart.bars[i].Position.X.Offset, Dev_StatsChartBar.Position.Y.Scale,
+					Dev_StatsChartBar.Position.Y.Offset + (45 - chart.bars[i].Size.Y.Offset))
+			end
+
+		end
+	end
+	
 	---Handle Dev-Console Position
 	function refreshConsolePosition(x, y)
 		if not previousMousePos then
@@ -510,6 +711,8 @@ function initializeDeveloperConsole()
 
 	Dev_Container.TitleBar.CloseButton.MouseButton1Up:connect(function()
 		clean()
+		removeStatsListener()
+		clearCharts() 
 	end)
 	
 	local optionsHidden = true
@@ -550,6 +753,8 @@ function initializeDeveloperConsole()
 			localOffset = localOffset + value
 		elseif (currentConsole == SERVER_CONSOLE) then
 			serverOffset = serverOffset + value
+		elseif (currentConsole == SERVER_STATS) then
+			serverStatsOffset = serverStatsOffset + value
 		end
 		
 		repositionList()
@@ -559,7 +764,7 @@ function initializeDeveloperConsole()
 	function refreshTextHolderForReal()
 		local childMessages = Dev_TextHolder:GetChildren()
 		
-		local messageList
+		local messageList = {}
 		
 		if (currentConsole == LOCAL_CONSOLE) then
 			messageList = localMessageList
@@ -639,7 +844,7 @@ function initializeDeveloperConsole()
 	--	This will make it behave better in a situation of a lot of output comming in)
 	local refreshQueued = false
 	function refreshTextHolder()
-		if refreshQueued then return end
+		if refreshQueued or currentConsole == SERVER_STATS then return end
 		Delay(0.1,function()
 			refreshQueued = false
 			refreshTextHolderForReal()
@@ -719,6 +924,8 @@ function initializeDeveloperConsole()
 			localOffset = pOffset - offsetChange
 		elseif (currentConsole == SERVER_CONSOLE) then
 			serverOffset = pOffset - offsetChange
+		elseif (currentConsole == SERVER_STATS) then
+			serverStatsOffset = pOffset - offsetChange
 		end
 	end
 
@@ -729,6 +936,8 @@ function initializeDeveloperConsole()
 			pOffset = localOffset
 		elseif (currentConsole == SERVER_CONSOLE) then
 			pOffset = serverOffset
+		elseif (currentConsole == SERVER_STATS) then
+			pOffset = serverStatsOffset
 		end
 		
 	end)
@@ -754,9 +963,11 @@ function initializeDeveloperConsole()
 		if (currentConsole == LOCAL_CONSOLE) then
 			localOffset = math.min(math.max(localOffset, 0), textHolderSize - Dev_Container.Body.TextBox.AbsoluteSize.Y)
 			Dev_TextHolder.Size = UDim2.new(1, 0, 0, textHolderSize)
-			
 		elseif (currentConsole == SERVER_CONSOLE) then
 			serverOffset = math.min(math.max(serverOffset, 0), textHolderSize - Dev_Container.Body.TextBox.AbsoluteSize.Y)
+			Dev_TextHolder.Size = UDim2.new(1, 0, 0, textHolderSize)
+		elseif (currentConsole == SERVER_STATS) then
+			serverStatsOffset = math.min(math.max(serverStatsOffset, 0), textHolderSize - Dev_Container.Body.TextBox.AbsoluteSize.Y)
 			Dev_TextHolder.Size = UDim2.new(1, 0, 0, textHolderSize)
 		end
 			
@@ -784,10 +995,11 @@ function initializeDeveloperConsole()
 				offsetRatio = localOffset / Dev_TextHolder.AbsoluteSize.Y
 			elseif (currentConsole == SERVER_CONSOLE) then
 				offsetRatio = serverOffset / Dev_TextHolder.AbsoluteSize.Y
+			elseif (currentConsole == SERVER_STATS) then
+				offsetRatio = (serverStatsOffset / Dev_TextHolder.AbsoluteSize.Y)
 			end
-			
+
 			local topRatio = math.max(0, backRatio - offsetRatio)
-			
 			local scrollHandleSize = math.max((Dev_ScrollArea.AbsoluteSize.Y) * ratio, 21)
 			
 			local scrollRatio = scrollHandleSize / Dev_ScrollArea.AbsoluteSize.Y
@@ -804,6 +1016,8 @@ function initializeDeveloperConsole()
 				Dev_TextHolder.Position = UDim2.new(0, 0, 1, 0 - textHolderSize + localOffset)
 			elseif (currentConsole == SERVER_CONSOLE) then
 				Dev_TextHolder.Position = UDim2.new(0, 0, 1, 0 - textHolderSize + serverOffset)
+			elseif (currentConsole == SERVER_STATS) then
+				Dev_TextHolder.Position = UDim2.new(0, 0, 1, 0 - textHolderSize + serverStatsOffset)
 			end
 			
 		end
@@ -899,15 +1113,24 @@ function initializeDeveloperConsole()
 
 	--Handle Dev-Console Local/Server Buttons
 	Dev_Container.Body.LocalConsole.MouseButton1Click:connect(function(x, y)
-		if (currentConsole == SERVER_CONSOLE) then
+		if (currentConsole ~= LOCAL_CONSOLE) then
+			
+			if (currentConsole == SERVER_STATS) then 
+				removeStatsListener()
+				clearCharts() 
+			end
+			
 			currentConsole = LOCAL_CONSOLE
 			local localConsole = Dev_Container.Body.LocalConsole
 			local serverConsole = Dev_Container.Body.ServerConsole
+			local serverStats = Dev_Container.Body.ServerStats
 			
 			localConsole.Size = UDim2.new(0, 90, 0, 20)
 			serverConsole.Size = UDim2.new(0, 90, 0, 17)
+			serverStats.Size = UDim2.new(0, 90, 0, 17)
 			localConsole.BackgroundTransparency = 0.6
 			serverConsole.BackgroundTransparency = 0.8
+			serverStats.BackgroundTransparency = 0.8
 			
 			if game:FindFirstChild("Players") and game.Players["LocalPlayer"] then
 				local mouse = game.Players.LocalPlayer:GetMouse()
@@ -936,15 +1159,23 @@ function initializeDeveloperConsole()
 			game:GetService("LogService"):RequestServerOutput()
 		end
 		
-		if (currentConsole == LOCAL_CONSOLE) then
+		if (currentConsole ~= SERVER_CONSOLE) then
+		
+			if (currentConsole == SERVER_STATS) then 
+				removeStatsListener()
+				clearCharts() 
+			end
+			
 			currentConsole = SERVER_CONSOLE
 			local localConsole = Dev_Container.Body.LocalConsole
 			local serverConsole = Dev_Container.Body.ServerConsole
+			local serverStats = Dev_Container.Body.ServerStats
 			
 			serverConsole.Size = UDim2.new(0, 90, 0, 20)
 			localConsole.Size = UDim2.new(0, 90, 0, 17)
 			serverConsole.BackgroundTransparency = 0.6
 			localConsole.BackgroundTransparency = 0.8
+			serverStats.BackgroundTransparency = 0.8
 			
 			if game:FindFirstChild("Players") and game.Players["LocalPlayer"] then
 				local mouse = game.Players.LocalPlayer:GetMouse()
@@ -961,6 +1192,35 @@ function initializeDeveloperConsole()
 
 	---Extra Mouse Handlers for Dev-Console
 	Dev_Container.Body.ServerConsole.MouseButton1Up:connect(function()
+		clean()
+	end)
+
+	Dev_Container.Body.ServerStats.MouseButton1Click:connect(function(x, y)
+		if (currentConsole ~= SERVER_STATS) then
+			currentConsole = SERVER_STATS
+			local localConsole = Dev_Container.Body.LocalConsole
+			local serverConsole = Dev_Container.Body.ServerConsole
+			local serverStats = Dev_Container.Body.ServerStats
+			
+			serverStats.Size = UDim2.new(0, 90, 0, 20)
+			serverConsole.Size = UDim2.new(0, 90, 0, 17)
+			localConsole.Size = UDim2.new(0, 90, 0, 17)
+			serverStats.BackgroundTransparency = 0.6
+			serverConsole.BackgroundTransparency = 0.8
+			localConsole.BackgroundTransparency = 0.8
+			
+			-- clear holder of log entries
+			local messages = Dev_TextHolder:GetChildren()
+			for i = 1, #messages do
+				messages[i].Visible = false
+			end
+			
+			pcall(function() initStatsListener() end)
+
+		end
+	end)
+
+	Dev_Container.Body.ServerStats.MouseButton1Up:connect(function()
 		clean()
 	end)
 	
@@ -1035,4 +1295,10 @@ function ToggleConsole.OnInvoke()
 	initializeDeveloperConsole()
 	Dev_Container.Visible = not Dev_Container.Visible
 	currentlyToggling = false
+	
+	if not Dev_Container.Visible then
+		removeStatsListener()
+		clearCharts() 
+	end
+	
 end
