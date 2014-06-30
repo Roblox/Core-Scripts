@@ -42,7 +42,7 @@ function initializeDeveloperConsole()
 
 	local MAX_LIST_SIZE = 1000
 
-	local minimumSize = Vector2.new(245, 180)
+	local minimumSize = Vector2.new(350, 180)
 	local currentConsole = LOCAL_CONSOLE
 
 	local localMessageList = {}
