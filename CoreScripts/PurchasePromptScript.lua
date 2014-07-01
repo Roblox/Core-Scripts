@@ -493,42 +493,42 @@ function currencyEnumToInt(currencyEnum)
 	end
 end
 
--- oi, this is ugly
+-- oi, this isn't so ugly anymore
 function assetTypeToString(assetType)
-	if assetType == 1 then return "Image"
-	elseif assetType == 2 then return "T-Shirt"
-	elseif assetType == 3 then return "Audio"
-	elseif assetType == 4 then return "Mesh"
-	elseif assetType == 5 then return "Lua"
-	elseif assetType == 6 then return "HTML"
-	elseif assetType == 7 then return "Text"
-	elseif assetType == 8 then return "Hat"
-	elseif assetType == 9 then return "Place"
-	elseif assetType == 10 then return "Model"
-	elseif assetType == 11 then return "Shirt"
-	elseif assetType == 12 then return "Pants"
-	elseif assetType == 13 then return "Decal"
-	elseif assetType == 16 then return "Avatar"
-	elseif assetType == 17 then return "Head"
-	elseif assetType == 18 then return "Face"
-	elseif assetType == 19 then return "Gear"
-	elseif assetType == 21 then return "Badge"
-	elseif assetType == 22 then return "Group Emblem"
-	elseif assetType == 24 then return "Animation"
-	elseif assetType == 25 then return "Arms"
-	elseif assetType == 26 then return "Legs"
-	elseif assetType == 27 then return "Torso"
-	elseif assetType == 28 then return "Right Arm"
-	elseif assetType == 29 then return "Left Arm"
-	elseif assetType == 30 then return "Left Leg"
-	elseif assetType == 31 then return "Right Leg"
-	elseif assetType == 32 then return "Package"
-	elseif assetType == 33 then return "YouTube Video"
-	elseif assetType == 34 then return "Game Pass"
-	elseif assetType == 0 then return "Product"
-	end
-
-	return ""
+	local assetTypes = {
+		[1]  = "Image";
+		[2]  = "T-Shirt";
+		[3]  = "Audio";
+		[4]  = "Mesh";
+		[5]  = "Lua";
+		[6]  = "HTML";
+		[7]  = "Text";
+		[8]  = "Hat";
+		[9]  = "Place";
+		[10] = "Model";
+		[11] = "Shirt";
+		[12] = "Pants";
+		[13] = "Decal";
+		[16] = "Avatar";
+		[17] = "Head";
+		[18] = "Face";
+		[19] = "Gear";
+		[21] = "Badge";
+		[22] = "Group Emblem";
+		[24] = "Animation";
+		[25] = "Arms";
+		[26] = "Legs";
+		[27] = "Torso";
+		[28] = "Right Arm";
+		[29] = "Left Arm";
+		[30] = "Left Leg";
+		[31] = "Right Leg";
+		[32] = "Package";
+		[33] = "YouTube Video";
+		[34] = "Game Pass";
+		[0]  = "Product";
+	}
+	return assetTypes[assetType] or ""
 end
 
 function currencyTypeToString(currencyType)
