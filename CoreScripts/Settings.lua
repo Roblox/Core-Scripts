@@ -49,15 +49,18 @@ local centerDialogs = {}
 local mainShield = nil
 
 local inStudioMode = UserSettings().GameSettings:InStudioMode()
---inStudioMode = false
+-- REMOVE WHEN NOT TESTING
+-- inStudioMode = false
 
 local macClient = false
 local success, isMac = pcall(function() return not game.GuiService.IsWindows end)
 macClient = success and isMac
---macClient = false
+-- REMOVE WHEN NOT TESTING
+--macClient = true
 
 local touchClient = false
 pcall(function() touchClient = game:GetService("UserInputService").TouchEnabled end)
+-- REMOVE WHEN NOT TESTING
 --touchClient = true
 if touchClient then
 	hasGraphicsSlider = false
@@ -512,7 +515,7 @@ local function createResetConfirmationMenu(baseZIndex,shield)
 	frame.Position = UDim2.new(0,0,2,400)
 	frame.ZIndex = baseZIndex + 4
 	
-	local yesButton = createTextButton("Reset",Enum.ButtonStyle.RobloxButtonDefault,Enum.FontSize.Size24,UDim2.new(0,128,0,50),UDim2.new(0,313,0,299))
+	local yesButton = createTextButton("Reset",Enum.ButtonStyle.RobloxButtonDefault,Enum.FontSize.Size24,UDim2.new(0,128,0,50),UDim2.new(0,313,0,280))
 	yesButton.Name = "YesButton"
 	yesButton.ZIndex = baseZIndex + 4
 	yesButton.Parent = frame
@@ -522,7 +525,7 @@ local function createResetConfirmationMenu(baseZIndex,shield)
 		resetLocalCharacter()
 	end)
 	
-	local noButton = createTextButton("Cancel",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,128,0,50),UDim2.new(0,90,0,299))
+	local noButton = createTextButton("Cancel",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,128,0,50),UDim2.new(0,90,0,280))
 	noButton.Name = "NoButton"
 	noButton.Parent = frame
 	noButton.ZIndex = baseZIndex + 4
@@ -555,6 +558,9 @@ local function createResetConfirmationMenu(baseZIndex,shield)
 end
 
 local function createGameMainMenu(baseZIndex, shield)
+
+	local buttonTop = 54
+
 	local gameMainMenuFrame = Instance.new("Frame")
 	gameMainMenuFrame.Name = "GameMainMenu"
 	gameMainMenuFrame.BackgroundTransparency = 1
@@ -563,25 +569,41 @@ local function createGameMainMenu(baseZIndex, shield)
 	gameMainMenuFrame.Parent = settingsFrame
 
 	-- GameMainMenu Children
-	
-	local gameMainMenuTitle = Instance.new("TextLabel")
-	gameMainMenuTitle.Name = "Title"
-	gameMainMenuTitle.Text = "Game Menu"
-	gameMainMenuTitle.BackgroundTransparency = 1
-	gameMainMenuTitle.TextStrokeTransparency = 0
-	gameMainMenuTitle.Font = Enum.Font.ArialBold
-	gameMainMenuTitle.FontSize = Enum.FontSize.Size36
-	gameMainMenuTitle.Size = UDim2.new(1,0,0,36)
-	gameMainMenuTitle.Position = UDim2.new(0,0,0,4)
-	gameMainMenuTitle.TextColor3 = Color3.new(1,1,1)
-	gameMainMenuTitle.ZIndex = baseZIndex + 4
-	gameMainMenuTitle.Parent = gameMainMenuFrame
-	
-	local robloxHelpButton = createTextButton("Help",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,164,0,50),UDim2.new(0,82,0,256))
+
+
+	-- RESUME GAME
+	local resumeGameButton = createTextButton("Resume Game",Enum.ButtonStyle.RobloxButtonDefault,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,buttonTop))
+	resumeGameButton.Name = "resumeGameButton"
+	resumeGameButton.ZIndex = baseZIndex + 4
+	resumeGameButton.Parent = gameMainMenuFrame
+	resumeGameButton.Modal = true
+	resumeGameButton.MouseButton1Click:connect(function() resumeGameFunction(shield) end)
+	buttonTop = buttonTop + 51
+
+	-- RESET CHARACTER
+	local resetButton = createTextButton("Reset Character",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,buttonTop))
+	resetButton.Name = "ResetButton"
+	resetButton.ZIndex = baseZIndex + 4
+	resetButton.Parent = gameMainMenuFrame
+	buttonTop = buttonTop + 51
+
+	-- GAME SETTINGS
+	local gameSettingsButton = createTextButton("Game Settings",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,buttonTop))
+	gameSettingsButton.Name = "SettingsButton"
+	gameSettingsButton.ZIndex = baseZIndex + 4
+	gameSettingsButton.Parent = gameMainMenuFrame
+	buttonTop = buttonTop + 51
+
+	-- HELP BUTTON
+	local robloxHelpButton = createTextButton("Help",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,164,0,50),UDim2.new(0,82,0,buttonTop))
 	robloxHelpButton.Name = "HelpButton"
 	robloxHelpButton.ZIndex = baseZIndex + 4
 	robloxHelpButton.Parent = gameMainMenuFrame
 	robloxHelpButton.Visible =  not touchClient
+	if macClient or touchClient then
+		robloxHelpButton.Size = UDim2.new(0,340,0,50)
+		robloxHelpButton.FontSize = Enum.FontSize.Size24
+	end
 
 	helpButton = robloxHelpButton
 			
@@ -617,7 +639,8 @@ local function createGameMainMenu(baseZIndex, shield)
 	helpShortcut.ZIndex = baseZIndex + 4
 	helpShortcut.Parent = robloxHelpButton
 
-	local screenshotButton = createTextButton("Screenshot",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,168,0,50),UDim2.new(0,254,0,256))
+	-- SCREEN SHOT
+	local screenshotButton = createTextButton("Screenshot",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,168,0,50),UDim2.new(0,254,0,buttonTop))
 	screenshotButton.Name = "ScreenshotButton"
 	screenshotButton.ZIndex = baseZIndex + 4
 	screenshotButton.Parent = gameMainMenuFrame
@@ -630,9 +653,22 @@ local function createGameMainMenu(baseZIndex, shield)
 	screenshotShortcut.Position = UDim2.new(0,118,0,0)
 	screenshotShortcut.Visible = true
 	screenshotShortcut.Parent = screenshotButton
-	
-	
-	local recordVideoButton = createTextButton("Record Video",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,168,0,50),UDim2.new(0,254,0,306))
+	if not touchClient then
+		buttonTop = buttonTop + 51
+	end
+
+	-- REPORT ABUSE
+	local reportAbuseButton = createTextButton("Report Abuse",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,164,0,50),UDim2.new(0,82,0,buttonTop))
+	reportAbuseButton.Name = "ReportAbuseButton"
+	reportAbuseButton.ZIndex = baseZIndex + 4
+	reportAbuseButton.Parent = gameMainMenuFrame
+	if macClient or touchClient then
+		reportAbuseButton.Size = UDim2.new(0,340,0,50)
+		reportAbuseButton.FontSize = Enum.FontSize.Size24
+	end
+
+	-- RECORD VIDEO
+	local recordVideoButton = createTextButton("Record Video",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,168,0,50),UDim2.new(0,254,0,buttonTop))
 	recordVideoButton.Name = "RecordVideoButton"
 	recordVideoButton.ZIndex = baseZIndex + 4
 	recordVideoButton.Parent = gameMainMenuFrame
@@ -656,49 +692,14 @@ local function createGameMainMenu(baseZIndex, shield)
 	stopRecordButton.MouseButton1Click:connect(function() recordVideoClick(recordVideoButton, stopRecordButton) end)
 	stopRecordButton.Visible = false
 	stopRecordButton.Parent = gui
-	
-	local reportAbuseButton = createTextButton("Report Abuse",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size18,UDim2.new(0,164,0,50),UDim2.new(0,82,0,306))
-	reportAbuseButton.Name = "ReportAbuseButton"
-	reportAbuseButton.ZIndex = baseZIndex + 4
-	reportAbuseButton.Parent = gameMainMenuFrame
-	
-	local leaveGameButton = createTextButton("Leave Game",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,358))
+	buttonTop = buttonTop + 51
+
+	-- LEAVE GAME	
+	local leaveGameButton = createTextButton("Leave Game",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,buttonTop))
 	leaveGameButton.Name = "LeaveGameButton"
 	leaveGameButton.ZIndex = baseZIndex + 4
 	leaveGameButton.Parent = gameMainMenuFrame
-	
-	local resumeGameButton = createTextButton("Resume Game",Enum.ButtonStyle.RobloxButtonDefault,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,54))
-	resumeGameButton.Name = "resumeGameButton"
-	resumeGameButton.ZIndex = baseZIndex + 4
-	resumeGameButton.Parent = gameMainMenuFrame
-	resumeGameButton.Modal = true
-	resumeGameButton.MouseButton1Click:connect(function() resumeGameFunction(shield) end)
-	
-	local gameSettingsButton = createTextButton("Game Settings",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,156))
-	gameSettingsButton.Name = "SettingsButton"
-	gameSettingsButton.ZIndex = baseZIndex + 4
-	gameSettingsButton.Parent = gameMainMenuFrame
-	
-	if game:FindFirstChild("LoadingGuiService") and #game.LoadingGuiService:GetChildren() > 0 then
-		local gameSettingsButton = createTextButton("Game Instructions",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,207))
-		gameSettingsButton.Name = "GameInstructions"
-		gameSettingsButton.ZIndex = baseZIndex + 4
-		gameSettingsButton.Parent = gameMainMenuFrame
-		gameSettingsButton.MouseButton1Click:connect(function()
-			if game:FindFirstChild("Players") and game.Players["LocalPlayer"] then
-				local loadingGui = game.Players.LocalPlayer:FindFirstChild("PlayerLoadingGui")
-				if loadingGui then
-					loadingGui.Visible = true
-				end
-			end
-		end)
-	end
-	
-	local resetButton = createTextButton("Reset Character",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,105))
-	resetButton.Name = "ResetButton"
-	resetButton.ZIndex = baseZIndex + 4
-	resetButton.Parent = gameMainMenuFrame
-	
+		
 	return gameMainMenuFrame
 end
 
