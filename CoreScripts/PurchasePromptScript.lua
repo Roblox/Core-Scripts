@@ -22,7 +22,7 @@ baseUrl = string.gsub(baseUrl,"/m.","/www.") --mobile site does not work for thi
 
 local nativePurchaseFinished = nil
 pcall(function() nativePurchaseFinished = Game.MarketplaceService.NativePurchaseFinished end)
-local doNativePurchasing = false
+local doNativePurchasing = true
 
 -- data variables
 local currentProductInfo, currentAssetId, currentCurrencyType, currentCurrencyAmount, currentEquipOnPurchase, currentProductId, currentServerResponseTable, thirdPartyProductName
@@ -179,12 +179,29 @@ function getMinimumProductNeededForPurchase(amountNeededToBuy)
 		productAmount = getClosestRobuxProduct(amountNeededToBuy, nonBcRobuxProducts)
 	end
 
-	local appendString = "RobuxNonBC"
-	if isBcMember then
-		appendString = "RobuxBC"
-	end
+	local isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android)
 
-	local productString = "com.roblox.robloxmobile." .. tostring(productAmount) ..  appendString
+	local prependString = ""
+	local appendString = ""
+	local appPrefix = ""
+
+	if isAndroid then
+		prependString = "robux"
+		if isBcMember then
+			appendString = "bc"
+		end
+		appPrefix = "com.roblox.client."
+	else
+		if isBcMember then
+			appendString = "RobuxBC"
+		else
+			appendString = "RobuxNonBC"
+		end
+
+		appPrefix = "com.roblox.robloxmobile."
+	end
+	
+	local productString = appPrefix .. prependString .. tostring(productAmount) .. appendString
 
 	return productAmount, productString
 end
@@ -198,10 +215,11 @@ function getClosestRobuxProductToBuyItem(productAmount, playerBalanceInRobux)
 end
 
 function canUseNewRobuxToProductFlow()
-	local isIOS = false
-	pcall(function() isIOS = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.IOS) end) -- todo: expand to Android
+	local isTouchPlatform = false
+	pcall(function() isTouchPlatform = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.IOS) or
+										(Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
 
-	if isIOS and nativePurchaseFinished and doNativePurchasing then
+	if isTouchPlatform and nativePurchaseFinished and doNativePurchasing then
 		return true
 	end
 
