@@ -179,7 +179,8 @@ function getMinimumProductNeededForPurchase(amountNeededToBuy)
 		productAmount = getClosestRobuxProduct(amountNeededToBuy, nonBcRobuxProducts)
 	end
 
-	local isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android)
+	local isAndroid = false
+	pcall(function() isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
 
 	local prependString = ""
 	local appendString = ""
@@ -215,11 +216,10 @@ function getClosestRobuxProductToBuyItem(productAmount, playerBalanceInRobux)
 end
 
 function canUseNewRobuxToProductFlow()
-	local isTouchPlatform = false
-	pcall(function() isTouchPlatform = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.IOS) or
-										(Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
+	local isAndroid = false
+	pcall(function() isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
 
-	if isTouchPlatform and nativePurchaseFinished and doNativePurchasing then
+	if isAndroid and nativePurchaseFinished and doNativePurchasing then
 		return true
 	end
 
