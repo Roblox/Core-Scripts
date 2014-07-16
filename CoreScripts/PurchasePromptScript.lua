@@ -218,8 +218,11 @@ end
 function canUseNewRobuxToProductFlow()
 	local isAndroid = false
 	pcall(function() isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
+	
+	local touchEnabled = Game:GetService("UserInputService").TouchEnabled
+	local isTestPlaceId = ((Game.PlaceId == 164519171) or (Game.PlaceId == 164530443) or (Game.PlaceId == 164530771) or (Game.PlaceId == 164530997))
 
-	if isAndroid and nativePurchaseFinished and doNativePurchasing then
+	if (isAndroid or (touchEnabled and isTestPlaceId)) and nativePurchaseFinished and doNativePurchasing then
 		return true
 	end
 
