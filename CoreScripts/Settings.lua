@@ -13,9 +13,6 @@ end
 --Include
 local Create = assert(LoadLibrary("RbxUtility")).Create
 
---FFlags
-local FFlagExists, FFlagValue = pcall(function () return settings():GetFFlag("LoggingConsoleEnabled") end)
-local FFlagLogginConsoleEnabled = FFlagExists and FFlagValue
 
 -- A Few Script Globals
 local gui
@@ -380,50 +377,48 @@ local function createHelpDialog(baseZIndex)
 
 	CreateTextButtons(buttonRow, buttons, UDim.new(0, 0), UDim.new(1,0))
 	
-	if FFlagLogginConsoleEnabled then
-		local devConsoleButton = Create'TextButton'{
-			Name = "DeveloperConsoleButton";
-			Text = "Log";
-			Size = UDim2.new(0,60,0,30);
-			Style = Enum.ButtonStyle.RobloxButton;
-			Position = UDim2.new(1,-65,1,-35);
-			Font = Enum.Font.Arial;
-			FontSize = Enum.FontSize.Size18;
-			TextColor3 = Color3.new(1,1,1);
-			ZIndex = baseZIndex + 4;
-			BackgroundTransparency = 1;
-			Parent = helpDialog;
-		}
-		
-		Create'TextLabel'{
-			Name = "DeveloperConsoleButton";
-			Text = "F9";
-			Size = UDim2.new(0,14,0,14);
-			Position = UDim2.new(1,-6,0, 0);
-			Font = Enum.Font.Arial;
-			FontSize = Enum.FontSize.Size12;
-			TextColor3 = Color3.new(0,1,0);
-			ZIndex = baseZIndex + 4;
-			BackgroundTransparency = 1;
-			Parent = devConsoleButton;
-		}
-		
-		waitForProperty(game.Players, "LocalPlayer")
-		game.Players.LocalPlayer:GetMouse().KeyDown:connect(function(key)
-			if string.byte(key) == 34 then --F9
-				toggleDeveloperConsole()
-			end
-		end)
+	local devConsoleButton = Create'TextButton'{
+		Name = "DeveloperConsoleButton";
+		Text = "Log";
+		Size = UDim2.new(0,60,0,30);
+		Style = Enum.ButtonStyle.RobloxButton;
+		Position = UDim2.new(1,-65,1,-35);
+		Font = Enum.Font.Arial;
+		FontSize = Enum.FontSize.Size18;
+		TextColor3 = Color3.new(1,1,1);
+		ZIndex = baseZIndex + 4;
+		BackgroundTransparency = 1;
+		Parent = helpDialog;
+	}
 	
-		devConsoleButton.MouseButton1Click:connect(function()
+	Create'TextLabel'{
+		Name = "DeveloperConsoleButton";
+		Text = "F9";
+		Size = UDim2.new(0,14,0,14);
+		Position = UDim2.new(1,-6,0, 0);
+		Font = Enum.Font.Arial;
+		FontSize = Enum.FontSize.Size12;
+		TextColor3 = Color3.new(0,1,0);
+		ZIndex = baseZIndex + 4;
+		BackgroundTransparency = 1;
+		Parent = devConsoleButton;
+	}
+	
+	waitForProperty(game.Players, "LocalPlayer")
+	game.Players.LocalPlayer:GetMouse().KeyDown:connect(function(key)
+		if string.byte(key) == 34 then --F9
 			toggleDeveloperConsole()
-			shield.Visible = false
-			game.GuiService:RemoveCenterDialog(shield)
-		end)
-	end
+		end
+	end)
+
+	devConsoleButton.MouseButton1Click:connect(function()
+		toggleDeveloperConsole()
+		shield.Visible = false
+		game.GuiService:RemoveCenterDialog(shield)
+	end)
+
+
 	
-	
-		
 	-- set up listeners for type of mouse mode, but keep constructing gui at same time
 	delay(0, function()
 		waitForChild(gui,"UserSettingsShield")
