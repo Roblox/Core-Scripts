@@ -1424,6 +1424,9 @@ if LoadLibrary then
   local baseZIndex = 0
 if UserSettings then
 
+	waitForChild(gui,"TopLeftControl")
+	waitForChild(gui,"BottomLeftControl")
+	
 	local settingButtonParent = gui.BottomLeftControl
 	if touchClient then
 		settingButtonParent = gui.TopLeftControl
