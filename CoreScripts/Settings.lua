@@ -868,24 +868,14 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	smartCameraLabel.Parent = gameSettingsMenuFrame
 
 	local smartEnumItems = nil
-	local success, errorReason = pcall(function (  )
-		smartEnumItems = Enum.CustomCameraMode:GetEnumItems()
-	end)
-	if not success or smartEnumItems == nil then
---		smartEnumItems = Enum.CameraMode:GetEnumItems()
-		smartEnumItems = 	{ 
-								{ Name = 'Default', Value = 0 }, 
-								{ Name = 'Follow', Value = 1 }, 
-								{ Name = 'Classic', Value = 2 }
-							}
-	end
+	smartEnumItems = Enum.CustomCameraMode:GetEnumItems()
 
 	local smartEnumNames = {}
 	local smartEnumNameToItem = {}
 
 	for i,obj in pairs(smartEnumItems) do
 		smartEnumNames[i] = obj.Name
-		smartEnumNameToItem[obj.Name] = i
+		smartEnumNameToItem[obj.Name] = obj.Value
 	end
 
 	local smartCameraDropDown
