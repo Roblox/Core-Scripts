@@ -21,8 +21,8 @@ local function IsTouchDevice()
 	return Game:GetService('UserInputService').TouchEnabled
 end 
 
-local function IsPhone()	 	
-	if gui.AbsoluteSize.Y <= 320 then 	 	
+local function IsPhone()
+	if game:GetService("GuiService"):GetScreenResolution().Y <= 320 then 	 	
 		return true	 	
 	end 	 	
 	return false 	 	
