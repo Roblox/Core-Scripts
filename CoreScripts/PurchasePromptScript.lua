@@ -752,6 +752,12 @@ function canPurchaseItem()
 			return true, nil, nil, true, descText 
 		end
 	end
+	
+	-- For public models, as there is still the freeButton, indicating it should be
+	-- available, while this function (canPurchaseItem) doesn't count on free stuff
+	if isFreeItem() then
+		return true	
+	end
 
 	purchaseDialog.BodyFrame.AfterBalanceText.Visible = true 
 
@@ -773,7 +779,7 @@ function canPurchaseItem()
 
 	-- now we start talking money, making sure we are going to be able to purchase this
 	if not setCurrencyAmountAndType(tonumber(currentProductInfo["PriceInRobux"]), tonumber(currentProductInfo["PriceInTickets"])) then
-		descText = "We could retrieve the price of the item correctly. Please try again later." 
+		descText = "We couldn't retrieve the price of the item correctly. Please try again later." 
 		return true, nil, nil, true, descText
 	end	
 
