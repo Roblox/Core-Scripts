@@ -31,12 +31,12 @@ end
 -- Users can use enough white spaces to spoof chatting as other players
 -- This function removes trailing and leading white spaces
 -- AFAIK, there is no reason for spam white spaces 
-local function StringTrim(str)
-	-- %S is whitespaces
-	-- When we find the first non space character defined by ^%s 
-	-- we yank out anything in between that and the end of the string 
-	-- Everything else is replaced with %1 which is essentially nothing  	
-	return (str:gsub("^%s*(.-)%s*$", "%1"))
+local function StringTrim(str,nstr)
+	-- %s+ stands whitespaces
+	-- We yank out any whitespaces at the begin and end of the string
+	-- After that, we put a tab behind newlines
+	-- That way people can't fake messages on a new line
+	return str:match("^%s*(.-)%s*$"):gsub("\n","\n"..nstr)
 end 
 
 while Game.Players.LocalPlayer == nil do wait(0.03) end
@@ -692,10 +692,8 @@ function Chat:CreateMessage(cPlayer, message)
 		pName = ''
 	else 
 		pName = cPlayer.Name			
-	end 	
-	message = StringTrim(message)		
-	local pLabel
-	local mLabel 
+	end	
+	local pLabel,mLabel 
 	-- Our history stores upto 50 messages that is 100 textlabels 
 	-- If we ever hit the mark, which would be in every popular game btw 
 	-- we wrap around and reuse the labels 
@@ -768,7 +766,9 @@ function Chat:CreateMessage(cPlayer, message)
 			nString = Chat:ComputeSpaceString(pLabel)
 		else 
 			nString = self.CachedSpaceStrings_List[pName]
-		end 		
+		end
+		
+		message = StringTrim(message,nString)
 
 		mLabel = Gui.Create'TextLabel' 
 						{
