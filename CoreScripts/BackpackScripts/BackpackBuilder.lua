@@ -22,7 +22,7 @@ local function IsTouchDevice()
 end 
 
 local function IsPhone()
-	if game:GetService("GuiService"):GetScreenResolution().Y <= 320 then 	 	
+	if game:GetService("GuiService"):GetScreenResolution().Y <= 500 then 	 	
 		return true	 	
 	end 	 	
 	return false 	 	
