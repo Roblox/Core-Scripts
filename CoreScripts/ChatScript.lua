@@ -155,7 +155,10 @@ local Chat = {
 								LifeTime = 45,		
 								Position = UDim2.new(0, 2, 0.05, 0),
 								DefaultTweenSpeed = 0.15,								
+								HaltTime = 1/15, -- Why would people need to be chatting faster than every 1/15th of a second?
 							},
+			
+			PreviousMessage = tick(), -- Timestamp of previous message
 
 			-- This could be redone by just using the previous and next fields of the Queue
 			-- But the iterators cause issues, will be optimized later 
@@ -1157,18 +1160,21 @@ function Chat:CreateGui()
 				end 
 				if enterPressed and self.ChatBar.Text ~= "" then 
 				
-					local cText = self.ChatBar.Text
-					if string.sub(self.ChatBar.Text, 1, 1)  == '%' then 
-						cText = '(TEAM) ' .. string.sub(cText, 2, #cText)
-						pcall(function() PlayersService:TeamChat(cText) end)						
-					else 
-						pcall(function() PlayersService:Chat(cText) end)						
-					end 					
+					if tick() - Chat.PreviousMessage > Chat.Configuration.HaltTime then -- Make sure that the user isn't deliberately spamming the chat
+						Chat.PreviousMessage = tick()
+						local cText = self.ChatBar.Text
+						if string.sub(self.ChatBar.Text, 1, 1)  == '%' then 
+							cText = '(TEAM) ' .. string.sub(cText, 2, #cText)
+							pcall(function() PlayersService:TeamChat(cText) end)						
+						else 
+							pcall(function() PlayersService:Chat(cText) end)						
+						end 					
 					
-					if self.ClickToChatButton then 
-						self.ClickToChatButton.Visible = true 
-					end 
-					self.ChatBar.Text = ""
+						if self.ClickToChatButton then 
+							self.ClickToChatButton.Visible = true 
+						end 
+						self.ChatBar.Text = ""
+					end
 				end 
 				Spawn(function()
 					wait(5.0)
