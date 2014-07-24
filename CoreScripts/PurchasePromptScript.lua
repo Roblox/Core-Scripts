@@ -20,8 +20,6 @@ local RbxUtility = nil
 local baseUrl = game:GetService("ContentProvider").BaseUrl:lower()
 baseUrl = string.gsub(baseUrl,"/m.","/www.") --mobile site does not work for this stuff!
 
-local nativePurchaseFinished = nil
-pcall(function() nativePurchaseFinished = Game.MarketplaceService.NativePurchaseFinished end)
 local doNativePurchasing = true
 
 -- data variables
@@ -216,17 +214,7 @@ function getClosestRobuxProductToBuyItem(productAmount, playerBalanceInRobux)
 end
 
 function canUseNewRobuxToProductFlow()
-	local isAndroid = false
-	pcall(function() isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
-	
-	local touchEnabled = Game:GetService("UserInputService").TouchEnabled
-	local isTestPlaceId = ((Game.PlaceId == 164519171) or (Game.PlaceId == 164530443) or (Game.PlaceId == 164530771) or (Game.PlaceId == 164530997))
-
-	if (isAndroid or (touchEnabled and isTestPlaceId)) and nativePurchaseFinished and doNativePurchasing then
-		return true
-	end
-
-	return false
+	return (Game:GetService("UserInputService").TouchEnabled and doNativePurchasing)
 end
 
 -- make sure our gui displays the proper purchase data, and set the productid we will try and buy if use specifies a buy action
@@ -1258,7 +1246,7 @@ end)
 
 Game:GetService("GuiService").BrowserWindowClosed:connect(checkIfCanPurchase)
 
-if not nativePurchaseFinished or not canUseNewRobuxToProductFlow() then return end
+if not canUseNewRobuxToProductFlow() then return end
 
 Game.MarketplaceService.NativePurchaseFinished:connect(function(player, productId, wasPurchased)
 	if wasPurchased then
