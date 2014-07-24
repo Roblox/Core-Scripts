@@ -690,11 +690,16 @@ local function createGameMainMenu(baseZIndex, shield)
 	buttonTop = buttonTop + 51
 
 	-- LEAVE GAME	
-	local leaveGameButton = createTextButton("Leave Game",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,buttonTop))
-	leaveGameButton.Name = "LeaveGameButton"
-	leaveGameButton.ZIndex = baseZIndex + 4
-	leaveGameButton.Parent = gameMainMenuFrame
-		
+	local isAndroid = false
+	pcall(function() isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
+
+	if (not isAndroid) then
+		local leaveGameButton = createTextButton("Leave Game",Enum.ButtonStyle.RobloxButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,buttonTop))
+		leaveGameButton.Name = "LeaveGameButton"
+		leaveGameButton.ZIndex = baseZIndex + 4
+		leaveGameButton.Parent = gameMainMenuFrame
+	end
+
 	return gameMainMenuFrame
 end
 
@@ -1539,9 +1544,12 @@ if UserSettings then
 			goToMenu(settingsFrame,"ResetConfirmationMenu","up",UDim2.new(0,525,0,370))
 		end)
 		
-		gameMainMenu.LeaveGameButton.MouseButton1Click:connect(function()
-			goToMenu(settingsFrame,"LeaveConfirmationMenu","down",UDim2.new(0,525,0,300))
-		end)
+		local leaveGameButton = gameMainMenu:FindFirstChild("LeaveGameButton")
+		if (leaveGameButton) then
+			gameMainMenu.LeaveGameButton.MouseButton1Click:connect(function()
+				goToMenu(settingsFrame,"LeaveConfirmationMenu","down",UDim2.new(0,525,0,300))
+			end)
+		end
 		
 		if game.CoreGui.Version >= 4 then -- we can use escape!
 			game:GetService("GuiService").EscapeKeyPressed:connect(function()
