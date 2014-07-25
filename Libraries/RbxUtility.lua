@@ -492,10 +492,6 @@ function Null()
 end
 -------------------- End JSON Parser ------------------------
 
-function warn(message)
-	game:GetService("TestService"):Warn(false, message)
-end
-
 t.DecodeJSON = function(jsonString)
 	pcall(function() warn("RbxUtility.DecodeJSON is deprecated, please use Game:GetService('HttpService'):JSONDecode() instead.") end)
 
