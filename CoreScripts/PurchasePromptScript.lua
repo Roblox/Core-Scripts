@@ -660,8 +660,10 @@ function updateAfterBalanceText(playerBalance, notRightBc, balancePreText)
 end
 
 function isFreeItem()
-	-- if both of these are true, then the item is free, just prompt user if they want to take one
-	return currentProductInfo and currentProductInfo["IsForSale"] == true and currentProductInfo["IsPublicDomain"] == true
+	-- Apparently free items have 'IsForSale' set to false, but 'IsPublicDomain' set to true
+	-- Example: https://api.roblox.com/marketplace/productinfo?assetid=163811695
+	-- I've tested it, if you take it off the public domain, 'IsPublicDomain' is of course false
+	return currentProductInfo and currentProductInfo["IsPublicDomain"] == true
 end
 ---------------------------------------------- End Currency Functions ---------------------------------------------
 
