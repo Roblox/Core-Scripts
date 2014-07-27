@@ -31,12 +31,12 @@ end
 -- Users can use enough white spaces to spoof chatting as other players
 -- This function removes trailing and leading white spaces
 -- AFAIK, there is no reason for spam white spaces 
-local function StringTrim(str)
-	-- %S is whitespaces
-	-- When we find the first non space character defined by ^%s 
-	-- we yank out anything in between that and the end of the string 
-	-- Everything else is replaced with %1 which is essentially nothing  	
-	return (str:gsub("^%s*(.-)%s*$", "%1"))
+local function StringTrim(str,nstr)
+	-- %s+ stands whitespaces
+	-- We yank out any whitespaces at the begin and end of the string
+	-- After that, we put a tab behind newlines
+	-- That way people can't fake messages on a new line
+	return str:match("^%s*(.-)%s*$"):gsub("\n","\n"..nstr)
 end 
 
 while Game.Players.LocalPlayer == nil do wait(0.03) end
@@ -52,6 +52,7 @@ local CoreGuiService = Game:GetService('CoreGui')
 local PlayersService = Game:GetService('Players')
 local DebrisService=  Game:GetService('Debris')
 local GuiService = Game:GetService('GuiService')
+local inputService = game:GetService("UserInputService")
 
 -- Lua Enums
 local Enums do
@@ -154,7 +155,10 @@ local Chat = {
 								LifeTime = 45,		
 								Position = UDim2.new(0, 2, 0.05, 0),
 								DefaultTweenSpeed = 0.15,								
+								HaltTime = 1/15, -- Why would people need to be chatting faster than every 1/15th of a second?
 							},
+			
+			PreviousMessage = tick(), -- Timestamp of previous message
 
 			-- This could be redone by just using the previous and next fields of the Queue
 			-- But the iterators cause issues, will be optimized later 
@@ -167,11 +171,18 @@ local Chat = {
 			Messages_List = {},
 			MessageThread = nil,
 
-			Admins_List = {'Sorcus', 'Shedletsky', 'Telamon', 'Tarabyte', 'StickMasterLuke', 'OnlyTwentyCharacters', 'FusRoblox', 'SolarCrane', 
-								'HotThoth', 'JediTkacheff', 'Builderman', 'Brighteyes', 'ReeseMcblox', 'GemLocker', 'GongfuTiger', 'Erik.Cassel', 'Matt Dusek', 'Keith',
-								'Totbl', 'LordRugDump', 'David.Baszucki', 'Dbapostle', 'DaveYorkRBX', 'nJay', 'OstrichSized', 'TobotRobot', 'twberg', 'ROBLOX', 'RBAdam', 'Doughtless',
-								'Anaminus', 'Stravant', 'Cr3470r', 'CodeWriter', 'Games', 'AcesWayUpHigh', 'Phil', 'effward', 'mleask'
-								},
+			Admins_List = {
+								'Rbadam', 'Adamintygum', 'androidtest', 'RobloxFrenchie', 'JacksSmirkingRevenge', 'LindaPepita', 'vaiobot', 'Goddessnoob', 'effward', 'Blockhaak', 'Drewbda', '659223', 'Tone', 'fasterbuilder19', 'Zeuxcg', 'concol2', 
+								'ReeseMcBlox', 'Jeditkacheff', 'whkm1980', 'ChiefJustus', 'Ellissar', 'Arbolito', 'Noob007', 'Limon', 'cmed', 'hawkington', 'Tabemono', 'autoconfig', 'BrightEyes', 'Monsterinc3D', 'MrDoomBringer', 'IsolatedEvent', 
+								'CountOnConnor', 'Scubasomething', 'OnlyTwentyCharacters', 'LordRugdumph', 'bellavour', 'david.baszucki', 'ibanez2189', 'Sorcus', 'DeeAna00', 'TheLorekt', 'NiqueMonster', 'Thorasaur', 'MSE6', 'CorgiParade', 'Varia', 
+								'4runningwolves', 'pulmoesflor', 'Olive71', 'groundcontroll2', 'GuruKrish', 'Countvelcro', 'IltaLumi', 'juanjuan23', 'OstrichSized', 'jackintheblox', 'SlingshotJunkie', 'gordonrox24', 'sharpnine', 'Motornerve', 'Motornerve', 
+								'watchmedogood', 'jmargh', 'JayKorean', 'Foyle', 'MajorTom4321', 'Shedletsky', 'supernovacaine', 'FFJosh', 'Sickenedmonkey', 'Doughtless', 'KBUX', 'totallynothere', 'ErzaStar', 'Keith', 'Chro', 'SolarCrane', 'GloriousSalt', 
+								'UristMcSparks', 'ITOlaurEN', 'Malcomso', 'Stickmasterluke', 'windlight13', 'yumyumcheerios', 'Stravant', 'ByteMe', 'imaginationsensation', 'Matt.Dusek', 'Mcrtest', 'Seranok', 'maxvee', 'Coatp0cketninja', 'Screenme', 
+								'b1tsh1ft', 'Totbl', 'Aquabot8', 'grossinger', 'Merely', 'CDakkar', 'Siekiera', 'Robloxkidsaccount', 'flotsamthespork', 'Soggoth', 'Phil', 'OrcaSparkles', 'skullgoblin', 'RickROSStheB0SS', 'ArgonPirate', 'NobleDragon', 
+								'Squidcod', 'Raeglyn', 'RobloxSai', 'Briarroze', 'hawkeyebandit', 'DapperBuffalo', 'Vukota', 'swiftstone', 'Gemlocker', 'Loopylens', 'Tarabyte', 'Timobius', 'Tobotrobot', 'Foster008', 'Twberg', 'DarthVaden', 'Khanovich', 
+								'CodeWriter', 'VladTheFirst', 'Phaedre', 'gorroth', 'SphinxShen', 'jynj1984', 'RoboYZ', 'ZodiacZak'
+							},
+
 
 			SafeChat_List = {
 								['Use the Chat menu to talk to me.'] = {'/sc 0', true},
@@ -512,7 +523,7 @@ end
 -- Check if we are running on a touch device 
 function Chat:IsTouchDevice()
 	local touchEnabled = false 
-	pcall(function() touchEnabled = Game:GetService('UserInputService').TouchEnabled end)	
+	pcall(function() touchEnabled = inputService.TouchEnabled end)	
 	return touchEnabled 
 end
 
@@ -684,10 +695,8 @@ function Chat:CreateMessage(cPlayer, message)
 		pName = ''
 	else 
 		pName = cPlayer.Name			
-	end 	
-	message = StringTrim(message)		
-	local pLabel
-	local mLabel 
+	end	
+	local pLabel,mLabel 
 	-- Our history stores upto 50 messages that is 100 textlabels 
 	-- If we ever hit the mark, which would be in every popular game btw 
 	-- we wrap around and reuse the labels 
@@ -760,7 +769,9 @@ function Chat:CreateMessage(cPlayer, message)
 			nString = Chat:ComputeSpaceString(pLabel)
 		else 
 			nString = self.CachedSpaceStrings_List[pName]
-		end 		
+		end
+		
+		message = StringTrim(message,nString)
 
 		mLabel = Gui.Create'TextLabel' 
 						{
@@ -1041,15 +1052,15 @@ function Chat:CreateChatBar()
 		--GuiService:SetGlobalSizeOffsetPixel(0, -20)
 		local success, error = pcall(function() GuiService:SetGlobalGuiInset(0, 0, 0, 20) end) 
 		if not success then 
-			GuiService:SetGlobalSizeOffsetPixel(0, -20)
+			pcall(function() GuiService:SetGlobalSizeOffsetPixel(0, -20) end) -- Doesn't hurt to throw a non-existent function into a pcall
 		end
-		-- CHatHotKey is '/'
+		-- ChatHotKey is '/'
 		GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
 		GuiService.SpecialKeyPressed:connect(function(key) 
 			if key == Enum.SpecialKey.ChatHotkey then 
 				Chat:FocusOnChatBar()
 			end 
-		end)	
+		end)
 
 		self.ClickToChatButton.MouseButton1Click:connect(function()
 			Chat:FocusOnChatBar()
@@ -1149,18 +1160,21 @@ function Chat:CreateGui()
 				end 
 				if enterPressed and self.ChatBar.Text ~= "" then 
 				
-					local cText = self.ChatBar.Text
-					if string.sub(self.ChatBar.Text, 1, 1)  == '%' then 
-						cText = '(TEAM) ' .. string.sub(cText, 2, #cText)
-						pcall(function() PlayersService:TeamChat(cText) end)						
-					else 
-						pcall(function() PlayersService:Chat(cText) end)						
-					end 					
+					if tick() - Chat.PreviousMessage > Chat.Configuration.HaltTime then -- Make sure that the user isn't deliberately spamming the chat
+						Chat.PreviousMessage = tick()
+						local cText = self.ChatBar.Text
+						if string.sub(self.ChatBar.Text, 1, 1)  == '%' then 
+							cText = '(TEAM) ' .. string.sub(cText, 2, #cText)
+							pcall(function() PlayersService:TeamChat(cText) end)						
+						else 
+							pcall(function() PlayersService:Chat(cText) end)						
+						end 					
 					
-					if self.ClickToChatButton then 
-						self.ClickToChatButton.Visible = true 
-					end 
-					self.ChatBar.Text = ""								
+						if self.ClickToChatButton then 
+							self.ClickToChatButton.Visible = true 
+						end 
+						self.ChatBar.Text = ""
+					end
 				end 
 				Spawn(function()
 					wait(5.0)
@@ -1169,6 +1183,17 @@ function Chat:CreateGui()
 					end 
 				end)		
 			end)	
+
+			-- Make the escape key clear the chat box (like it used to)
+			inputService.InputBegan:connect(function(input)
+				if (input.KeyCode == Enum.KeyCode.Escape) then
+					if self.ClickToChatButton then 
+						self.ClickToChatButton.Visible = true 
+					end 
+
+					self.ChatBar.Text = ""
+				end
+			end)
 		end 
 	end 
 end
@@ -1285,7 +1310,7 @@ end
 function Chat:LockAllFields(gui)
 	local children = gui:GetChildren()
 	for i = 1, #children do 
-		children[i].RobloxLocked = true 
+		children[i].RobloxLocked = true
 		if #children[i]:GetChildren() > 0 then 
 			Chat:LockAllFields(children[i])
 		end 
@@ -1295,6 +1320,7 @@ end
 function Chat:CoreGuiChanged(coreGuiType,enabled)
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
 		if self.Frame then self.Frame.Visible = enabled end
+		if self.TapToChatLabel then self.TapToChatLabel.Visible = enabled end 
 
 		if not Chat:IsTouchDevice() and self.ChatBar then 
 			self.ChatBar.Visible = enabled 

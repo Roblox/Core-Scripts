@@ -33,12 +33,13 @@ local characterAddedConnection = nil
 
 local greenBarImage = "http://www.roblox.com/asset/?id=35238053"
 local redBarImage = "http://www.roblox.com/asset/?id=35238036"
+local goldBarImage = "http://www.roblox.com/asset/?id=154646431" -- for god mode
 local hurtOverlayImage = "http://www.roblox.com/asset/?id=34854607"
 
 Game:GetService("ContentProvider"):Preload(greenBarImage)
 Game:GetService("ContentProvider"):Preload(redBarImage)
+Game:GetService("ContentProvider"):Preload(goldBarImage)
 Game:GetService("ContentProvider"):Preload(hurtOverlayImage)
-
 
 while not Game.Players.LocalPlayer do
 	wait(1/60)
@@ -48,15 +49,10 @@ end
 -- Functions
 
 function CreateGui()
-	if HealthGui then 
+	if HealthGui and #HealthGui:GetChildren() > 0 then 
 		HealthGui.Parent = Game.CoreGui.RobloxGui
 		return 
 	end
-	
-	HealthGui = Instance.new("Frame")
-	HealthGui.Name = "HealthGui"
-	HealthGui.BackgroundTransparency = 1
-	HealthGui.Size = UDim2.new(1,0,1,0)
 	
 	local hurtOverlay = Instance.new("ImageLabel")
 	hurtOverlay.Name = "HurtOverlay"
@@ -109,24 +105,35 @@ function UpdateGui(health)
 	if not healthBar then return end
 	
 	-- If more than 1/4 health, bar = green.  Else, bar = red.
-	if (health/currentHumanoid.MaxHealth) > 0.25  then		
-		healthBar.Image = greenBarImage	
+	local percentHealth = (health/currentHumanoid.MaxHealth)
+	
+	if percentHealth ~= percentHealth then
+		percentHealth = 1
+		healthBar.Image = goldBarImage
+	elseif percentHealth > 0.25  then		
+		healthBar.Image = greenBarImage
 	else
 		healthBar.Image = redBarImage
 	end
 		
 	local width = (health / currentHumanoid.MaxHealth)
  	width = math.max(math.min(width,1),0) -- make sure width is between 0 and 1
-		
+ 	if width ~= width then width = 1 end
+
 	local healthDelta = lastHealth - health
 	lastHealth = health
 	
 	local percentOfTotalHealth = math.abs(healthDelta/currentHumanoid.MaxHealth)
 	percentOfTotalHealth = math.max(math.min(percentOfTotalHealth,1),0) -- make sure percentOfTotalHealth is between 0 and 1
+	if percentOfTotalHealth ~= percentOfTotalHealth then percentOfTotalHealth = 1 end
 
 	local newHealthSize = UDim2.new(width,0,1,0)
 	
-	healthBar:TweenSize(newHealthSize, Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, percentOfTotalHealth * maxBarTweenTime, true)
+	if healthBar:IsDescendantOf(Game) then
+		healthBar:TweenSize(newHealthSize, Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, percentOfTotalHealth * maxBarTweenTime, true)
+	else
+		healthBar.Size = newHealthSize
+	end
 
 	local thresholdForHurtOverlay = currentHumanoid.MaxHealth * (HealthPercentageForOverlay/100)
 	
@@ -141,19 +148,32 @@ function AnimateHurtOverlay()
 	local overlay = HealthGui:FindFirstChild("HurtOverlay")
 	if not overlay then return end
 	
-	-- stop any tweens on overlay
-	overlay:TweenSizeAndPosition(UDim2.new(20, 0, 20, 0), UDim2.new(-10, 0, -10, 0),Enum.EasingDirection.Out,Enum.EasingStyle.Linear,0,true,function()
-		
-		-- show the gui
-		overlay.Size = UDim2.new(1,0,1,0)
-		overlay.Position = UDim2.new(0,0,0,0)
-		overlay.Visible = true
-		
-		-- now tween the hide
-		overlay:TweenSizeAndPosition(UDim2.new(20, 0, 20, 0) ,UDim2.new(-10, 0, -10, 0),Enum.EasingDirection.Out,Enum.EasingStyle.Quad,10,false,function()
-			overlay.Visible = false
+	local newSize = UDim2.new(20, 0, 20, 0)
+	local newPos = UDim2.new(-10, 0, -10, 0)
+
+	if overlay:IsDescendantOf(Game) then
+		-- stop any tweens on overlay
+		overlay:TweenSizeAndPosition(newSize,newPos,Enum.EasingDirection.Out,Enum.EasingStyle.Linear,0,true,function()
+			
+			-- show the gui
+			overlay.Size = UDim2.new(1,0,1,0)
+			overlay.Position = UDim2.new(0,0,0,0)
+			overlay.Visible = true
+			
+			-- now tween the hide
+			if overlay:IsDescendantOf(Game) then
+				overlay:TweenSizeAndPosition(newSize,newPos,Enum.EasingDirection.Out,Enum.EasingStyle.Quad,10,false,function()
+					overlay.Visible = false
+				end)
+			else
+				overlay.Size = newSize
+				overlay.Position = newPos
+			end
 		end)
-	end)
+	else
+		overlay.Size = newSize
+		overlay.Position = newPos
+	end
 
 end
 
@@ -162,9 +182,9 @@ function humanoidDied()
 end
 
 function disconnectPlayerConnections()
-	humanoidDiedConnection:disconnect()
-	healthChangedConnection:disconnect()
-	characterAddedConnection:disconnect()
+	if characterAddedConnection then characterAddedConnection:disconnect() end
+	if humanoidDiedConnection then humanoidDiedConnection:disconnect() end
+	if healthChangedConnection then healthChangedConnection:disconnect() end
 end
 
 function newPlayerCharacter()
@@ -173,23 +193,27 @@ function newPlayerCharacter()
 end
 
 function startGui()
-	local character = Game.Players.LocalPlayer.Character
+	characterAddedConnection = Game.Players.LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
 
-	while (character == nil) do
-		character = Game.Players.LocalPlayer.Character
-		wait(1/30)
+	local character = Game.Players.LocalPlayer.Character
+	if not character then
+		return
 	end
 
 	currentHumanoid = character:WaitForChild("Humanoid")
-	if currentHumanoid then
-		CreateGui()
-		healthChangedConnection = currentHumanoid.HealthChanged:connect(UpdateGui)
-		humanoidDiedConnection = currentHumanoid.Died:connect(humanoidDied)
+	if not currentHumanoid then
+		return
 	end
 
-	UpdateGui(currentHumanoid.Health)
+	if not Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
+		return
+	end
 
-	characterAddedConnection = Game.Players.LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
+	healthChangedConnection = currentHumanoid.HealthChanged:connect(UpdateGui)
+	humanoidDiedConnection = currentHumanoid.Died:connect(humanoidDied)
+	UpdateGui(currentHumanoid.Health)
+		
+	CreateGui()
 end
 
 
@@ -197,22 +221,27 @@ end
 ---------------------------------------------------------------------
 -- Start Script
 
+HealthGui = Instance.new("Frame")
+HealthGui.Name = "HealthGui"
+HealthGui.BackgroundTransparency = 1
+HealthGui.Size = UDim2.new(1,0,1,0)
+
+Game.StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
+	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
+		if guiEnabled and not enabled then
+			if HealthGui then
+				HealthGui.Parent = nil
+			end
+			disconnectPlayerConnections()
+		elseif not guiEnabled and enabled then
+			startGui()
+		end
+		
+		guiEnabled = enabled
+	end
+end)
+
 if Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
 	guiEnabled = true
 	startGui()
 end
-
-Game.StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
-	
-	if guiEnabled and not enabled then
-		if HealthGui then
-			HealthGui.Parent = nil
-		end
-		disconnectPlayerConnections()
-	elseif not guiEnabled and enabled then
-		startGui()
-	end
-	
-	guiEnabled = enabled
-	
-end)

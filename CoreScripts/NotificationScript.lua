@@ -57,7 +57,7 @@ function makeFriend(fromPlayer,toPlayer)
 		popup.Visible = false
 		toPlayer:RevokeFriendship(fromPlayer)
 		friendRequestBlacklist[fromPlayer] = true 
-		print("pop up blacklist")
+
 		if yesCon then yesCon:disconnect() end
 		if noCon then noCon:disconnect() end
 		popup:TweenSize(UDim2.new(0,0,0,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quart,1,true,makePopupInvisible())
@@ -292,4 +292,15 @@ game:GetService("MarketplaceService").ClientLuaDialogRequested:connect(function(
 		
 	return true
 					
+end)
+
+Game:GetService("PointsService").PointsAwarded:connect( function(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
+	if userId == Game.Players.LocalPlayer.userId then
+		game:GetService("GuiService"):SendNotification("Points Awarded!",
+			"You received " ..tostring(pointsAwarded) .. " points!",
+			"http://www.roblox.com/asset?id=155363793",
+			5,
+			function()
+			end)
+	end
 end)

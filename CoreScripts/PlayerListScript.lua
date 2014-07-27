@@ -1,127 +1,147 @@
-
 --------------------  
 -- Super Util
 -------------------- 
 
 local ADMINS =
 {
-	aceswayuphigh = 1,
-	adamintygum = 1,
-	afackler11 = 1,
-	aleverns = 1,
-	aquabot8 = 1,
-	arbolito = 1,
-	argforpirates = 1,
-	argonpirate = 1,
-	asmohdian = 1,
-	bellavour = 1,
-	blockhaak = 1,
-	brighteyes = 1,
-	briguy9876 = 1,
-	builderman = 1,
-	cdakkar = 1,
-	chiefjustus = 1,
-	chro = 1,
-	cmed = 1,
-	coatp0cketninja = 1,
-	codewriter = 1,
-	commandercrow = 1,
-	corgiparade = 1,
-	dapperbuffalo = 1,
-	dbapostle = 1,
-	deeana00 = 1,
-	doughtless = 1,
-	dunbar1138 = 1,
-	echodown = 1,
-	ffjosh = 1,
-	effward = 1, 
-	mleask = 1,
-	foyle = 1,
-	gemlocker = 1,
-	goddessnoob = 1,
-	gongfutiger = 1,
-	gordonrox24 = 1,
-	gorroth = 1,
-	grossinger = 1,
-	groundcontroll2 = 1,
-	hawkeyebandit = 1,
-	hawkington = 1,
-	ibanez2189 = 1,
-	iltalumi = 1,
-	inventx = 1,
-	jackssmirkingrevenge = 1,
-	jeditkacheff = 'http://www.roblox.com/asset/?id=134032333',
-	kbux = 1,
-	keith = 1,
-	limon = 1,
-	loopylens = 1,
-	lordrugdumph = 1,
-	majortom4321 = 1,
-	malcomso = 1,
-	maxvee = 1,
-	midwinterfires = 1, 
-	mistersquirrel = 1,
-	morganic = 1,
-	motornerve = 1,
-	mrdoombringer = 1,
-	mse6 = 1,
-	newtrat = 1,
-	niquemonster = 1,
-	nobledragon = 1,
-	noob007 = 1,
-	nrawat1 = 1,
-	olive71 = 1,
-	onlytwentycharacters = 1,
-	orcasparkles = 1,
-	ostrichsized = 1,
-	phaedre = 1,
-	phil = 1,
-	pulmoesflor = 1,
-	raeglyn = 1,
 	rbadam = 1,
+	adamintygum = 1,
+	androidtest = 1,
+	robloxfrenchie = 1,
+	jackssmirkingrevenge = 1,
+	lindapepita = 1,
+	vaiobot = 1,
+	goddessnoob = 1,
+	effward = 1,
+	blockhaak = 1,
+	drewbda = 1,
+	['659223'] = 1,
+	tone = 1,
+	fasterbuilder19 = 1,
+	zeuxcg = 1,
+	concol2 = 1,
 	reesemcblox = 1,
-	robliu = 1,
-	roblowilson = 1,
-	robloxsai = 1,
-	roboyz = 1,
-	saurauss = 1,
-	screenme = 1,
-	scubasomething = 1,
-	seanthornton = 1,
-	shedletsky = 'http://www.roblox.com/asset/?id=105897927',
-	sickenedmonkey = 1,
-	slingshotjunkie = 1,
-	smeaferblox = 1,
-	soggoth = 1,
-	solarcrane = 1,
-	sooraya = 1,
-	sorcus = 'http://www.roblox.com/asset/?id=113059239',
-	squidcod = 1,
-	stickmasterluke = 1,
-	stuball = 1,
+	jeditkacheff = 'http://www.roblox.com/asset/?id=134032333',
+	whkm1980 = 1,
+	chiefjustus = 1,
+	ellissar = 1,
+	arbolito = 1,
+	noob007 = 1,
+	limon = 1,
+	cmed = 1,
+	hawkington = 1,
 	tabemono = 1,
-	tarabyte = 1,
+	autoconfig = 1,
+	brighteyes = 1,
+	monsterinc3d = 1,
+	mrdoombringer = 1,
+	isolatedevent = 1,
+	countonconnor = 1,
+	scubasomething = 1,
+	onlytwentycharacters = 1,
+	lordrugdumph = 1,
+	bellavour = 1,
+	['david.baszucki'] = 1,
+	ibanez2189 = 1,
+	sorcus = 'http://www.roblox.com/asset/?id=113059239',
+	deeana00 = 1,
 	thelorekt = 1,
+	niquemonster = 1,
 	thorasaur = 1,
+	['mse6'] = 1,
+	corgiparade = 1,
+	varia = 1,
+	['4runningwolves'] = 1,
+	pulmoesflor = 1,
+	olive71 = 1,
+	groundcontroll2 = 1,
+	gurukrish = 1,
+	countvelcro = 1,
+	iltalumi = 1,
+	juanjuan23 = 1,
+	ostrichsized = 1,
+	jackintheblox = 1,
+	slingshotjunkie = 1,
+	gordonrox24 = 1,
+	sharpnine = 1,
+	motornerve = 1,
+	motornerve = 1,
+	watchmedogood = 1,
+	jmargh = 1,
+	jaykorean = 1,
+	foyle = 1,
+	majortom4321 = 1,
+	shedletsky = 'http://www.roblox.com/asset/?id=105897927',
+	supernovacaine = 1,
+	ffjosh = 1,
+	sickenedmonkey = 1,
+	doughtless = 1,
+	kbux = 1,
+	totallynothere = 1,
+	erzastar = 1,
+	keith = 1,
+	chro = 1,
+	solarcrane = 1,
+	glorioussalt = 1,
+	uristmcsparks = 1,
+	itolauren = 1,
+	malcomso = 1,
+	stickmasterluke = 1,
+	windlight13 = 1,
+	yumyumcheerios = 1,
+	stravant = 1,
+	byteme = 1,
+	imaginationsensation = 1,
+	['matt.dusek'] = 1,
+	mcrtest = 1,
+	seranok = 1,
+	maxvee = 1,
+	coatp0cketninja = 1,
+	screenme = 1,
+	b1tsh1ft = 1,
+	totbl = 1,
+	aquabot8 = 1,
+	grossinger = 1,
+	merely = 1,
+	cdakkar = 1,
+	siekiera = 1,
+	robloxkidsaccount = 1,
+	flotsamthespork = 1,
+	soggoth = 1,
+	phil = 1,
+	orcasparkles = 1,
+	skullgoblin = 1,
+	rickrosstheb0ss = 1,
+	argonpirate = 1,
+	nobledragon = 1,
+	squidcod = 1,
+	raeglyn = 1,
+	robloxsai = 'http://www.roblox.com/asset/?id=161078086',
+	briarroze = 1,
+	hawkeyebandit = 1,
+	dapperbuffalo = 1,
+	vukota = 1,
+	swiftstone = 1,
+	gemlocker = 1,
+	loopylens = 1,
+	tarabyte = 1,
 	timobius = 1,
 	tobotrobot = 1,
-	tone = 1,
-	totallynothere = 1,
-	totbl = 1,
+	foster008 = 1,
 	twberg = 1,
-	vaiobot = 1,
-	varia = 1,
+	darthvaden = 1,
+	khanovich = 1,
+	codewriter = 1,
 	vladthefirst = 1,
-	wonderboy76 = 1,
-	xerolayne = 1,
-	yesth = 1,
-	yumyumcheerios = 1,
-	zeuxcg = 1,
+	phaedre = 1,
+	gorroth = 1,
+	sphinxshen = 1,
+	jynj1984 = 1,
+	roboyz = 1,
 	zodiaczak = 1,
-	['erik.cassel'] = 1,
-	['david.baszucki'] = 1,
-	['matt dusek'] = 1,
 }
+
+
 
 local Images = {
 	bottomDark = '94691904',
@@ -1363,7 +1383,7 @@ end
 function PlayerSortFunction(a,b)
  -- prevents flipping out leaderboard
 	if a['Score'] == b['Score'] then
-		return a['Player'].Name:upper() < b['Player'].Name:upper()
+		return a['Player'].Name:upper() > b['Player'].Name:upper()
 	end
 	if not a['Score'] then return false end
 	if not b['Score'] then return true end
@@ -2188,21 +2208,26 @@ function InitMovingPanel( entry, player)
 	
 	local ReportPlayerButton = MakePopupButton(PopUpPanel,'Report Player',0)
 	ReportPlayerButton.MouseButton1Click:connect(function() OpenAbuseDialog() end)
-	local FriendPlayerButton = MakePopupButton(PopUpPanel,'Friend',1, not showRankMenu and  friendStatus~=Enum.FriendStatus.FriendRequestReceived)
-	FriendPlayerButton.MouseButton1Click:connect(OnFriendButtonSelect)
-	
 
-	if friendStatus==Enum.FriendStatus.Friend then
-		FriendPlayerButton:FindFirstChild('ButtonText').Text='UnFriend Player'
-	elseif friendStatus==Enum.FriendStatus.Unknown or friendStatus==Enum.FriendStatus.NotFriend then
-		FriendPlayerButton:FindFirstChild('ButtonText').Text='Send Request'
-	elseif friendStatus==Enum.FriendStatus.FriendRequestSent then
-		FriendPlayerButton:FindFirstChild('ButtonText').Text='Revoke Request'
-	elseif friendStatus==Enum.FriendStatus.FriendRequestReceived then
-		FriendPlayerButton:FindFirstChild('ButtonText').Text='Accept Friend'
-		local FriendRefuseButton = MakePopupButton(PopUpPanel,'Decline Friend',2,not showRankMenu)
-		FriendRefuseButton.MouseButton1Click:connect(OnFriendRefuseButtonSelect)
-		nextIndex=nextIndex+1
+	local enableFriendRequests = true
+
+	if enableFriendRequests then
+		local FriendPlayerButton = MakePopupButton(PopUpPanel,'Friend',1, not showRankMenu and  friendStatus~=Enum.FriendStatus.FriendRequestReceived)
+		FriendPlayerButton.MouseButton1Click:connect(OnFriendButtonSelect)
+		
+
+		if friendStatus==Enum.FriendStatus.Friend then
+			FriendPlayerButton:FindFirstChild('ButtonText').Text='UnFriend Player'
+		elseif friendStatus==Enum.FriendStatus.Unknown or friendStatus==Enum.FriendStatus.NotFriend then
+			FriendPlayerButton:FindFirstChild('ButtonText').Text='Send Request'
+		elseif friendStatus==Enum.FriendStatus.FriendRequestSent then
+			FriendPlayerButton:FindFirstChild('ButtonText').Text='Revoke Request'
+		elseif friendStatus==Enum.FriendStatus.FriendRequestReceived then
+			FriendPlayerButton:FindFirstChild('ButtonText').Text='Accept Friend'
+			local FriendRefuseButton = MakePopupButton(PopUpPanel,'Decline Friend',2,not showRankMenu)
+			FriendRefuseButton.MouseButton1Click:connect(OnFriendRefuseButtonSelect)
+			nextIndex=nextIndex+1
+		end
 	end
 
 	if showRankMenu then
@@ -2822,7 +2847,7 @@ function InsertTeamFrame(nteam)
 	nentry['Frame'].TitleFrame.Title.FontSize = 'Size18'
 	nentry['Frame'].TitleFrame.Position=UDim2.new(nentry['Frame'].TitleFrame.Position.X.Scale,nentry['Frame'].TitleFrame.Position.X.Offset,.1,0)
 	nentry['Frame'].TitleFrame.Size=UDim2.new(nentry['Frame'].TitleFrame.Size.X.Scale,nentry['Frame'].TitleFrame.Size.X.Offset,.8,0)
-	nentry['Frame'].Position = UDim2.new(1,0,((#MiddleFrames) * nentry['Frame'].Size.Y.Scale),0)
+	nentry['Frame'].Position = UDim2.new(0.5,0,((#MiddleFrames) * nentry['Frame'].Size.Y.Scale),0)
 	WaitForChild(nentry['Frame'],'ClickListener').MouseButton1Down:connect(function(nx,ny) StartDrag(nentry,nx,ny) end)
 	nentry['Frame'].ClickListener.BackgroundColor3 = nteam.TeamColor.Color
 	nentry['Frame'].ClickListener.BackgroundTransparency = .7
@@ -2849,9 +2874,7 @@ function InsertTeamFrame(nteam)
 	end
 	nentry['IsHidden'] = false
 	if not nentry['AutoHide'] or #nentry['MyPlayers'] > 0 then
-		
 		nentry['Frame'].Parent = ListFrame
-		nentry['Frame']:TweenPosition(UDim2.new(.5,0,((#MiddleFrames) * nentry['Frame'].Size.Y.Scale),0), "Out", "Linear", BASE_TWEEN,true)
 		AddMiddleBGFrame()
 	else
 		nentry['IsHidden'] = true

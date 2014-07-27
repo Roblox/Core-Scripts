@@ -75,7 +75,7 @@ local backquote = "`"
 
 local backpackSize = UDim2.new(0, 600, 0, 400)
 
-if robloxGui.AbsoluteSize.Y <= 320 then 
+if robloxGui.AbsoluteSize.Y <= 500 then 
 	backpackSize = UDim2.new(0, 200, 0, 140)
 end 
 
@@ -433,7 +433,7 @@ end)
 searchButton.MouseButton1Click:connect(doSearch)
 resetButton.MouseButton1Click:connect(resetSearch)
 
-if searchFrame and robloxGui.AbsoluteSize.Y <= 320 then  
+if searchFrame and robloxGui.AbsoluteSize.Y <= 500 then  
 	searchFrame.RobloxLocked = false 
 	searchFrame:Destroy() 
 end 

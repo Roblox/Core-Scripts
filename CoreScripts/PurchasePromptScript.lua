@@ -20,8 +20,10 @@ local RbxUtility = nil
 local baseUrl = game:GetService("ContentProvider").BaseUrl:lower()
 baseUrl = string.gsub(baseUrl,"/m.","/www.") --mobile site does not work for this stuff!
 
+local doNativePurchasing = true
+
 -- data variables
-local currentProductInfo, currentAssetId, currentCurrencyType, currentCurrencyAmount, currentEquipOnPurchase, currentProductId, currentServerResponseTable
+local currentProductInfo, currentAssetId, currentCurrencyType, currentCurrencyAmount, currentEquipOnPurchase, currentProductId, currentServerResponseTable, thirdPartyProductName
 local checkingPlayerFunds = false 
 local purchasingConsumable = false
 
@@ -38,12 +40,6 @@ local spinnerIcons = nil
 local smallScreenThreshold = 450
 local renderSteppedConnection = nil
 
-local modalEnabledFix = false
-local success = pcall(function() modalEnabledFix = settings():GetFFlag("FixModalEnabledOniOS") end)
-if not success then
-	modalEnabledFix = false
-end
-
 -- user facing images
 local assetUrls = {}
 local assetUrl = "http://www.roblox.com/Asset/?id=" 
@@ -59,15 +55,24 @@ local takeHeaderText = "Take Item"
 local buyFailedHeaderText = "An Error Occurred"
 
 local errorPurchasesDisabledText = "In-game purchases are disabled"
+local errorPurchasesBuyRobuxText = "your account does not have enough Robux"
 local errorPurchasesUnknownText = "Roblox is performing maintenance"
 
 local purchaseSucceededText = "Your purchase of itemName succeeded!"
 local purchaseFailedText = "Your purchase of itemName failed because errorReason. Your account has not been charged. Please try again soon."
-local productPurchaseText = "Would you like to buy the itemName assetType for currencyTypecurrencyAmount?"--"Would you like to buy the itemName assetType from assetOwner for currencyTypecurrencyAmount?"
-local productPurchaseTixOnlyText = "Would you like to buy the itemName assetType for currencyAmount currencyType?" --"Would you like to buy the itemName assetType from assetOwner for currencyAmount currencyType?"
+local productPurchaseText = "Would you like to buy the itemName assetType for currencyTypecurrencyAmount?"
+local productPurchaseTixOnlyText = "Would you like to buy the itemName assetType for currencyAmount currencyType?"
 local freeItemPurchaseText = "Would you like to take the assetType itemName for FREE?"
 local freeItemBalanceText = "Your balance of Robux or Tix will not be affected by this transaction."
 local upgradeBCText = "You require an upgrade to your Builders Club membership to purchase this item. Click 'Buy Builders Club' to upgrade."
+local productPurchaseWithMoreRobuxText = "Buy robuxToBuyAmount$R to get itemName assetType."
+local productPurchaseWithMoreRobuxRemainderText = "The remaining purchaseRemainder$R will be credited to your ROBUX balance."
+local balanceFutureTenseText = "Your balance after this transaction will be "
+local balanceCurrentTenseText = "Your balance is now "
+
+-- robux product arrays
+local bcRobuxProducts 		= 	{90, 180, 270, 360, 450, 1000, 2750}
+local nonBcRobuxProducts	= 	{80, 160, 240, 320, 400, 800,  2000}
 -------------------------------- End Global Variables ----------------------------------------
 
 
@@ -115,6 +120,17 @@ function userPurchaseActionsEnded(isSuccess)
 	if isSuccess then -- show the user we bought the item successfully, when they close this dialog we will call signalPromptEnded
 		local newPurchasedSucceededText = string.gsub( purchaseSucceededText,"itemName", tostring(currentProductInfo["Name"]))
 		purchaseDialog.BodyFrame.ItemDescription.Text = newPurchasedSucceededText
+
+		local playerBalance = getPlayerBalance()
+		local keyWord = "robux"
+		if currentCurrencyType == Enum.CurrencyType.Tix then
+			keyWord = "tickets"
+		end
+		
+		local afterBalanceNumber = playerBalance[keyWord]
+		purchaseDialog.BodyFrame.AfterBalanceText.Text = tostring(balanceCurrentTenseText) .. currencyTypeToString(currentCurrencyType) .. tostring(afterBalanceNumber) .. "."
+		purchaseDialog.BodyFrame.AfterBalanceText.Visible = true
+
 		setButtonsVisible(purchaseDialog.BodyFrame.OkPurchasedButton)
 		hidePurchasing()
 	else -- otherwise we didn't purchase, no need to show anything, just signal and close dialog
@@ -132,8 +148,77 @@ function signalPromptEnded(isSuccess)
 	removeCurrentPurchaseInfo()
 end
 
+function getClosestRobuxProduct(amountNeededToBuy, robuxProductArray)
+	local closest = robuxProductArray[1];
+	local closestIndex = 1
+
+	for i = 1, #robuxProductArray do 
+  		if ( math.abs(robuxProductArray[i] - amountNeededToBuy) < math.abs(closest - amountNeededToBuy) ) then
+  			closest = robuxProductArray[i]
+  			closestIndex = i
+  		end
+	end
+
+	if closest < amountNeededToBuy then
+		closest = robuxProductArray[1 + closestIndex]
+	end
+
+	return closest
+end
+
+--todo: get productIds from server instead of embedding values
+function getMinimumProductNeededForPurchase(amountNeededToBuy)
+	local isBcMember = (Game.Players.LocalPlayer.MembershipType ~= Enum.MembershipType.None)
+	local productAmount = nil
+
+	if isBcMember then
+		productAmount = getClosestRobuxProduct(amountNeededToBuy, bcRobuxProducts)
+	else
+		productAmount = getClosestRobuxProduct(amountNeededToBuy, nonBcRobuxProducts)
+	end
+
+	local isAndroid = false
+	pcall(function() isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
+
+	local prependString = ""
+	local appendString = ""
+	local appPrefix = ""
+
+	if isAndroid then
+		prependString = "robux"
+		if isBcMember then
+			appendString = "bc"
+		end
+		appPrefix = "com.roblox.client."
+	else
+		if isBcMember then
+			appendString = "RobuxBC"
+		else
+			appendString = "RobuxNonBC"
+		end
+
+		appPrefix = "com.roblox.robloxmobile."
+	end
+	
+	local productString = appPrefix .. prependString .. tostring(productAmount) .. appendString
+
+	return productAmount, productString
+end
+
+function getClosestRobuxProductToBuyItem(productAmount, playerBalanceInRobux)
+	local amountNeededToBuy = productAmount - playerBalanceInRobux
+	local amountToBuy, productName = getMinimumProductNeededForPurchase(amountNeededToBuy)
+	local remainderAfterPurchase = amountToBuy - productAmount
+
+	return amountToBuy, remainderAfterPurchase, productName
+end
+
+function canUseNewRobuxToProductFlow()
+	return (Game:GetService("UserInputService").TouchEnabled and doNativePurchasing)
+end
+
 -- make sure our gui displays the proper purchase data, and set the productid we will try and buy if use specifies a buy action
-function updatePurchasePromptData(toggleColoredText)
+function updatePurchasePromptData(insufficientFunds)
 	local newItemDescription = ""
 
 	-- id to use when we request a purchase
@@ -145,7 +230,26 @@ function updatePurchasePromptData(toggleColoredText)
 		newItemDescription = string.gsub( freeItemPurchaseText,"itemName", tostring(currentProductInfo["Name"]))
 		newItemDescription = string.gsub( newItemDescription,"assetType", tostring(assetTypeToString(currentProductInfo["AssetTypeId"])) )
 		setHeaderText(takeHeaderText)
-	else -- otherwise item costs something, so different prompt
+	elseif insufficientFunds and canUseNewRobuxToProductFlow() then
+		local purchaseText = productPurchaseWithMoreRobuxText
+
+		local playerBalance = getPlayerBalance()
+		if not playerBalance then
+			newItemDescription = "Could not retrieve your balance. Please try again later."
+		elseif canUseNewRobuxToProductFlow() then
+			local amountToBuy, remainderAfterPurchase, productName = getClosestRobuxProductToBuyItem(currentCurrencyAmount, playerBalance["robux"])
+			thirdPartyProductName = productName
+
+			newItemDescription = string.gsub( purchaseText,"itemName", tostring(currentProductInfo["Name"]))
+			newItemDescription = string.gsub( newItemDescription,"assetType", tostring(assetTypeToString(currentProductInfo["AssetTypeId"])) )
+		    newItemDescription = string.gsub( newItemDescription,"robuxToBuyAmount", tostring(amountToBuy))
+
+		    if remainderAfterPurchase > 0 then
+				newItemDescription = newItemDescription .. " " .. string.gsub( productPurchaseWithMoreRobuxRemainderText,"purchaseRemainder", tostring(remainderAfterPurchase))
+		    end
+		end
+		setHeaderText(buyHeaderText)
+	else
 		local purchaseText = productPurchaseText
 		if currentProductIsTixOnly() then
 			purchaseText = productPurchaseTixOnlyText 
@@ -153,7 +257,6 @@ function updatePurchasePromptData(toggleColoredText)
 
 		newItemDescription = string.gsub( purchaseText,"itemName", tostring(currentProductInfo["Name"]))
 		newItemDescription = string.gsub( newItemDescription,"assetType", tostring(assetTypeToString(currentProductInfo["AssetTypeId"])) )
-		--newItemDescription = string.gsub( newItemDescription,"assetOwner", tostring(currentProductInfo["Creator"]["Name"]) )
 		newItemDescription = string.gsub( newItemDescription,"currencyType", tostring(currencyTypeToString(currentCurrencyType)) )
 	    newItemDescription = string.gsub( newItemDescription,"currencyAmount", tostring(currentCurrencyAmount))
 	    setHeaderText(buyHeaderText)
@@ -172,9 +275,9 @@ function checkIfCanPurchase()
 	if checkingPlayerFunds then
 		local canPurchase, insufficientFunds, notRightBC = canPurchaseItem() -- check again to see if we can buy item
 		if not canPurchase or (insufficientFunds or notRightBC) then -- wait a bit and try a few more times
-			local retries = 1000
+			local retries = 20
 			while retries > 0 and (insufficientFunds or notRightBC) and checkingPlayerFunds and canPurchase do 
-				wait(1/10)
+				wait(0.5)
 				canPurchase, insufficientFunds, notRightBC = canPurchaseItem()
 				retries = retries - 1
 			end
@@ -195,9 +298,7 @@ function closePurchasePrompt()
 		currentlyPrompting = false
 		currentlyPurchasing = false
 
-		if modalEnabledFix then
-			Game:GetService("UserInputService").ModalEnabled = false
-		end
+		Game:GetService("UserInputService").ModalEnabled = false
 	end)
 end
 
@@ -205,7 +306,7 @@ function showPurchasePrompt()
 	local canPurchase, insufficientFunds, notRightBC, override, descText = canPurchaseItem()		
 
 	if canPurchase then
-		updatePurchasePromptData()
+		updatePurchasePromptData(insufficientFunds)
 
 		if override and descText then 
 			purchaseDialog.BodyFrame.ItemDescription.Text = descText
@@ -234,16 +335,13 @@ function showPurchasePrompt()
 							end
 						end
 
-						if modalEnabledFix then
-							Game:GetService("UserInputService").ModalEnabled = true
-						end
+						Game:GetService("UserInputService").ModalEnabled = true
+
 						purchaseDialog:TweenPosition(showPosition, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, tweenTime, true)
 					end,
 					--HideFunction
 					function()
-						if modalEnabledFix then
-							Game:GetService("UserInputService").ModalEnabled = false
-						end
+						Game:GetService("UserInputService").ModalEnabled = false
 						purchaseDialog.Visible = false
 					end)
 	else -- we failed in prompting a purchase, do a decline
@@ -271,19 +369,23 @@ end
 
 -- the user tried to purchase by clicking the purchase button, but something went wrong.
 -- let them know their account was not charged, and that they do not own the item yet. 
-function purchaseFailed(inGamePurchasesDisabled)
+function purchaseFailed(errorType)
 	local name = "Item"
 	if currentProductInfo then name = currentProductInfo["Name"] end
 
 	local newPurchasedFailedText = string.gsub( purchaseFailedText,"itemName", tostring(name))
-	if inGamePurchasesDisabled then
+
+	if errorType == "inGamePurchasesDisabled" then
 		newPurchasedFailedText = string.gsub( newPurchasedFailedText,"errorReason", tostring(errorPurchasesDisabledText) )
+	elseif errorType == "didNotBuyRobux" then
+		newPurchasedFailedText = string.gsub( newPurchasedFailedText,"errorReason", tostring(errorPurchasesBuyRobuxText) )
 	else
 		newPurchasedFailedText = string.gsub( newPurchasedFailedText,"errorReason", tostring(errorPurchasesUnknownText) )
 	end
 
 	purchaseDialog.BodyFrame.ItemDescription.Text = newPurchasedFailedText
 	purchaseDialog.BodyFrame.ItemPreview.Image = errorImageUrl
+	purchaseDialog.BodyFrame.AfterBalanceText.Text = ""
 
 	setButtonsVisible(purchaseDialog.BodyFrame.OkButton)
 
@@ -311,7 +413,7 @@ function doAcceptPurchase(currencyPreferredByUser)
 				"&currencyTypeId=" .. tostring(currencyEnumToInt(currentCurrencyType)) .. 
 				"&expectedUnitPrice=" .. tostring(currentCurrencyAmount) ..
 				"&placeId=" .. tostring(Game.PlaceId)
-		local flagExists, flagValue = pcall(function() settings():GetFFlag("AddRequestIdToProductPurchases") end)
+		local flagExists, flagValue = pcall(function() settings():GetFFlag("AddRequestIdToDeveloperProductPurchases") end)
 		if flagExists and flagValue then
 			local h = game:GetService("HttpService")
 			url = url .. "&requestId=" .. h:UrlEncode(h:GenerateGUID())
@@ -348,7 +450,11 @@ function doAcceptPurchase(currencyPreferredByUser)
 		if response["success"] == false then
 			if response["status"] ~= "AlreadyOwned" then
 				print("web return response of fail on purchase of",currentAssetId,currentProductId)
-				purchaseFailed( (response["status"] == "EconomyDisabled") )
+				if (response["status"] == "EconomyDisabled") then
+					purchaseFailed("inGamePurchasesDisabled")
+				else
+					purchaseFailed()
+				end
 				return
 			end
 		end
@@ -396,42 +502,42 @@ function currencyEnumToInt(currencyEnum)
 	end
 end
 
--- oi, this is ugly
+-- oi, this isn't so ugly anymore
 function assetTypeToString(assetType)
-	if assetType == 1 then return "Image"
-	elseif assetType == 2 then return "T-Shirt"
-	elseif assetType == 3 then return "Audio"
-	elseif assetType == 4 then return "Mesh"
-	elseif assetType == 5 then return "Lua"
-	elseif assetType == 6 then return "HTML"
-	elseif assetType == 7 then return "Text"
-	elseif assetType == 8 then return "Hat"
-	elseif assetType == 9 then return "Place"
-	elseif assetType == 10 then return "Model"
-	elseif assetType == 11 then return "Shirt"
-	elseif assetType == 12 then return "Pants"
-	elseif assetType == 13 then return "Decal"
-	elseif assetType == 16 then return "Avatar"
-	elseif assetType == 17 then return "Head"
-	elseif assetType == 18 then return "Face"
-	elseif assetType == 19 then return "Gear"
-	elseif assetType == 21 then return "Badge"
-	elseif assetType == 22 then return "Group Emblem"
-	elseif assetType == 24 then return "Animation"
-	elseif assetType == 25 then return "Arms"
-	elseif assetType == 26 then return "Legs"
-	elseif assetType == 27 then return "Torso"
-	elseif assetType == 28 then return "Right Arm"
-	elseif assetType == 29 then return "Left Arm"
-	elseif assetType == 30 then return "Left Leg"
-	elseif assetType == 31 then return "Right Leg"
-	elseif assetType == 32 then return "Package"
-	elseif assetType == 33 then return "YouTube Video"
-	elseif assetType == 34 then return "Game Pass"
-	elseif assetType == 0 then return "Product"
-	end
-
-	return ""
+	local assetTypes = {
+		[1]  = "Image";
+		[2]  = "T-Shirt";
+		[3]  = "Audio";
+		[4]  = "Mesh";
+		[5]  = "Lua";
+		[6]  = "HTML";
+		[7]  = "Text";
+		[8]  = "Hat";
+		[9]  = "Place";
+		[10] = "Model";
+		[11] = "Shirt";
+		[12] = "Pants";
+		[13] = "Decal";
+		[16] = "Avatar";
+		[17] = "Head";
+		[18] = "Face";
+		[19] = "Gear";
+		[21] = "Badge";
+		[22] = "Group Emblem";
+		[24] = "Animation";
+		[25] = "Arms";
+		[26] = "Legs";
+		[27] = "Torso";
+		[28] = "Right Arm";
+		[29] = "Left Arm";
+		[30] = "Left Leg";
+		[31] = "Right Leg";
+		[32] = "Package";
+		[33] = "YouTube Video";
+		[34] = "Game Pass";
+		[0]  = "Product";
+	}
+	return assetTypes[assetType] or ""
 end
 
 function currencyTypeToString(currencyType)
@@ -495,13 +601,18 @@ function openBuyCurrencyWindow()
 	game:GetService("GuiService"):OpenBrowserWindow(baseUrl .. "Upgrades/Robux.aspx")
 end
 
+function buyEnoughCurrencyForProduct()
+	showPurchasing()
+	Game.MarketplaceService:PromptNativePurchase(Game.Players.LocalPlayer, thirdPartyProductName)
+end
+
 function openBCUpSellWindow()
 	checkingPlayerFunds = true
 	Game:GetService('GuiService'):OpenBrowserWindow(baseUrl .. "Upgrades/BuildersClubMemberships.aspx")
 end 
 
 -- set up the gui text at the bottom of the prompt (alerts user to how much money they will have left, or if they need to buy more to buy the item)
-function updateAfterBalanceText(playerBalance, notRightBc)
+function updateAfterBalanceText(playerBalance, notRightBc, balancePreText)
 	if isFreeItem() then
 		purchaseDialog.BodyFrame.AfterBalanceText.Text = freeItemBalanceText
 		return true, false
@@ -528,7 +639,7 @@ function updateAfterBalanceText(playerBalance, notRightBc)
 	-- check to see if we have enough of the desired currency to allow a purchase, if not we need to prompt user to buy robux
 	if not notRightBc then 
 		if afterBalanceNumber < 0 and keyWord == "robux" then
-			purchaseDialog.BodyFrame.AfterBalanceText.Text = "You need " .. currencyTypeToString(currentCurrencyType) .. tostring(-afterBalanceNumber) .. " more to buy this, click 'Buy R$' to purchase more."
+			purchaseDialog.BodyFrame.AfterBalanceText.Text = ""
 			return true, true
 		elseif afterBalanceNumber < 0 and keyWord == "tickets" then
 			purchaseDialog.BodyFrame.AfterBalanceText.Text = "You need " .. tostring(-afterBalanceNumber) .. " " .. currencyTypeToString(currentCurrencyType) .. " more to buy this item."
@@ -540,17 +651,19 @@ function updateAfterBalanceText(playerBalance, notRightBc)
 	end
 
 	if currentProductIsTixOnly() then
-		purchaseDialog.BodyFrame.AfterBalanceText.Text = "Your balance after this transaction will be " .. tostring(afterBalanceNumber) .. " " .. currencyTypeToString(currentCurrencyType) .. "."
+		purchaseDialog.BodyFrame.AfterBalanceText.Text = tostring(balancePreText) .. tostring(afterBalanceNumber) .. " " .. currencyTypeToString(currentCurrencyType) .. "."
 	else
-		purchaseDialog.BodyFrame.AfterBalanceText.Text = "Your balance after this transaction will be " .. currencyTypeToString(currentCurrencyType) .. tostring(afterBalanceNumber) .. "."
+		purchaseDialog.BodyFrame.AfterBalanceText.Text = tostring(balancePreText) .. currencyTypeToString(currentCurrencyType) .. tostring(afterBalanceNumber) .. "."
 	end
 	purchaseDialog.BodyFrame.AfterBalanceText.Visible = true
 	return true, false
 end
 
 function isFreeItem()
-	-- if both of these are true, then the item is free, just prompt user if they want to take one
-	return currentProductInfo and currentProductInfo["IsForSale"] == true and currentProductInfo["IsPublicDomain"] == true
+	-- Apparently free items have 'IsForSale' set to false, but 'IsPublicDomain' set to true
+	-- Example: https://api.roblox.com/marketplace/productinfo?assetid=163811695
+	-- I've tested it, if you take it off the public domain, 'IsPublicDomain' is of course false
+	return currentProductInfo and currentProductInfo["IsPublicDomain"] == true
 end
 ---------------------------------------------- End Currency Functions ---------------------------------------------
 
@@ -629,6 +742,12 @@ function canPurchaseItem()
 			return true, nil, nil, true, descText 
 		end
 	end
+	
+	-- For public models, as there is still the freeButton, indicating it should be
+	-- available, while this function (canPurchaseItem) doesn't count on free stuff
+	if isFreeItem() then
+		return true	
+	end
 
 	purchaseDialog.BodyFrame.AfterBalanceText.Visible = true 
 
@@ -650,7 +769,7 @@ function canPurchaseItem()
 
 	-- now we start talking money, making sure we are going to be able to purchase this
 	if not setCurrencyAmountAndType(tonumber(currentProductInfo["PriceInRobux"]), tonumber(currentProductInfo["PriceInTickets"])) then
-		descText = "We could retrieve the price of the item correctly. Please try again later." 
+		descText = "We couldn't retrieve the price of the item correctly. Please try again later." 
 		return true, nil, nil, true, descText
 	end	
 
@@ -664,7 +783,7 @@ function canPurchaseItem()
 		notRightBc = true 		
 	end
 
-	local updatedBalance, insufficientFunds = updateAfterBalanceText(playerBalance, notRightBc)
+	local updatedBalance, insufficientFunds = updateAfterBalanceText(playerBalance, notRightBc, balanceFutureTenseText)
 
 	if notRightBc then 
 		purchaseDialog.BodyFrame.AfterBalanceText.Active = true
@@ -706,6 +825,9 @@ end
 
 ---------------------------------------------- Gui Functions ----------------------------------------------
 function startSpinner()
+	if purchaseDialog.PurchasingFrame.Visible then return end
+	purchaseDialog.PurchasingFrame.Visible = true
+
 	renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(function()
 									purchaseDialog.PurchasingFrame.PurchasingSpinnerOuter.Rotation = purchaseDialog.PurchasingFrame.PurchasingSpinnerOuter.Rotation + 7
 									purchaseDialog.PurchasingFrame.PurchasingSpinnerInner.Rotation = purchaseDialog.PurchasingFrame.PurchasingSpinnerInner.Rotation - 9
@@ -716,17 +838,16 @@ function stopSpinner()
 	if renderSteppedConnection then
 		renderSteppedConnection:disconnect()
 		renderSteppedConnection = nil
+		purchaseDialog.PurchasingFrame.Visible = false
 	end
 end
 
 -- next two functions control the "Purchasing..." overlay
 function showPurchasing()
-	purchaseDialog.PurchasingFrame.Visible = true
 	startSpinner()
 end
 
 function hidePurchasing()
-	purchaseDialog.PurchasingFrame.Visible = false
 	stopSpinner()
 end
 
@@ -858,7 +979,13 @@ function createPurchasePromptGui()
 	buyRobux.AutoButtonColor = false
 	buyRobux.Visible = false
 	buyRobux.ZIndex = 8
-	buyRobux.BuyText.Text = "Buy R$"
+
+	if canUseNewRobuxToProductFlow() then
+		buyRobux.BuyText.Text = "Buy"
+	else
+		buyRobux.BuyText.Text = "Buy R$"
+	end
+
 	buyRobux.MouseEnter:connect(function()
 		buyRobux.HoverFrame.Visible = true
 	end)
@@ -867,7 +994,12 @@ function createPurchasePromptGui()
 	end)
 	buyRobux.MouseButton1Click:connect(function( )
 		buyRobux.HoverFrame.Visible = false
-		openBuyCurrencyWindow()
+
+		if canUseNewRobuxToProductFlow() then
+			buyEnoughCurrencyForProduct()
+		else
+			openBuyCurrencyWindow()
+		end
 	end)
 	buyRobux.Parent = bodyFrame
 
@@ -1066,6 +1198,16 @@ function userPurchaseProductActionsEnded(userIsClosingDialog)
 		if tostring(currentServerResponseTable["isValid"]):lower() == "true" then
 			local newPurchasedSucceededText = string.gsub( purchaseSucceededText,"itemName", tostring(currentProductInfo["Name"]))
 			purchaseDialog.BodyFrame.ItemDescription.Text = newPurchasedSucceededText
+
+			local playerBalance = getPlayerBalance()
+			local keyWord = "robux"
+			if currentCurrencyType == Enum.CurrencyType.Tix then
+				keyWord = "tickets"
+			end
+
+			local afterBalanceNumber = playerBalance[keyWord]
+			purchaseDialog.BodyFrame.AfterBalanceText.Text = tostring(balanceCurrentTenseText) .. currencyTypeToString(currentCurrencyType) .. tostring(afterBalanceNumber) .. "."
+
 			setButtonsVisible(purchaseDialog.BodyFrame.OkPurchasedButton)
 			hidePurchasing()
 		else
@@ -1105,3 +1247,27 @@ Game:GetService("MarketplaceService").ServerPurchaseVerification:connect(functio
 end)
 
 Game:GetService("GuiService").BrowserWindowClosed:connect(checkIfCanPurchase)
+
+if not canUseNewRobuxToProductFlow() then return end
+
+Game.MarketplaceService.NativePurchaseFinished:connect(function(player, productId, wasPurchased)
+	if wasPurchased then
+
+		-- try for 20 seconds to see if we get the funds if we purchased something
+		local retriesLeft = 40
+		local canPurchase, insufficientFunds, notRightBC = canPurchaseItem()
+		while canPurchase and insufficientFunds and retriesLeft > 0 do
+			wait(0.5)
+			canPurchase, insufficientFunds, notRightBC = canPurchaseItem()
+			retriesLeft = retriesLeft - 1
+		end
+
+		if canPurchase and not insufficientFunds and not notRightBC then
+			doAcceptPurchase(Enum.CurrencyType.Robux)
+		else
+			purchaseFailed("didNotBuyRobux")
+		end
+	else
+		purchaseFailed("didNotBuyRobux")
+	end
+end)

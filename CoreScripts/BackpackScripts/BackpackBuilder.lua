@@ -22,7 +22,7 @@ local function IsTouchDevice()
 end 
 
 local function IsPhone()	 	
-	if gui.AbsoluteSize.Y <= 320 then 	 	
+	if Game:GetService("GuiService"):GetScreenResolution().Y <= 500 then 	 	
 		return true	 	
 	end 	 	
 	return false 	 	
@@ -91,7 +91,7 @@ for i = 0, NumSlots do
 	slotFrame.Name = "Slot" .. tostring(i)
 	slotFrame.ZIndex = 4.0
 	if i == 0 then
-		slotFrame.Position = UDim2.new(0.9, 0, 0, 0)
+		slotFrame.Position = UDim2.new(0.9, 48, 0, 0)
 	else
 		slotFrame.Position = UDim2.new((i - 1) * 0.1, (i-1)* 6,0,0)
 	end	
@@ -102,7 +102,6 @@ for i = 0, NumSlots do
 
 	if gui.AbsoluteSize.Y <= 320 then 
 		slotFrame.Position = UDim2.new(0, (i-1)* 60, 0, -50)
-		print('Well got here', slotFrame, slotFrame.Position.X.Scale, slotFrame.Position.X.Offset)		
 	end 
 	if gui.AbsoluteSize.Y <= 320 and i == 0 then 
 		slotFrame:Destroy() 

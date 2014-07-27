@@ -1,10 +1,13 @@
 -- Responsible for giving out tools in personal servers
 
 -- first, lets see if buildTools have already been created
--- create the object in lighting (TODO: move to some sort of "container" object when we have one)
-local toolsArray = game.Lighting:FindFirstChild("BuildToolsModel")
-local ownerArray = game.Lighting:FindFirstChild("OwnerToolsModel")
+-- create the object in ReplicatedStorage if not
+local container = game:GetService("ReplicatedStorage")
+local toolsArray = container:FindFirstChild("BuildToolsModel")
+local ownerArray = container:FindFirstChild("OwnerToolsModel")
 local hasBuildTools = false
+
+local player = game:GetService("Players").LocalPlayer
 
 function getIds(idTable, assetTable)
 	for i = 1, #idTable do
@@ -20,7 +23,7 @@ function getIds(idTable, assetTable)
 	end
 end
 
-function storeInLighting(modelName, assetTable)
+function storeInContainer(modelName, assetTable)
 	local model = Instance.new("Model")
 	model.Archivable = false
 	model.Name = modelName
@@ -29,8 +32,8 @@ function storeInLighting(modelName, assetTable)
 		assetTable[i].Parent = model
 	end
 	
-	if not game.Lighting:FindFirstChild(modelName) then -- no one beat us to it, we get to insert
-		model.Parent = game.Lighting
+	if not container:FindFirstChild(modelName) then -- no one beat us to it, we get to insert
+		model.Parent = container
 	end
 end
 
@@ -47,7 +50,7 @@ if not toolsArray then -- no one has made build tools yet, we get to!
 	table.insert(buildToolIds,73089259) -- WiringTool
 	table.insert(buildToolIds,58921588) -- ClassicTool
 	
-	table.insert(ownerToolIds, 65347268)
+	table.insert(ownerToolIds, 65347268) -- OwnerCameraTool
 
 	-- next, create array of our tools
 	local buildTools = {}
@@ -56,11 +59,11 @@ if not toolsArray then -- no one has made build tools yet, we get to!
 	getIds(buildToolIds, buildTools)
 	getIds(ownerToolIds, ownerTools)
 	
-	storeInLighting("BuildToolsModel",buildTools)
-	storeInLighting("OwnerToolsModel",ownerTools)
+	storeInContainer("BuildToolsModel",buildTools)
+	storeInContainer("OwnerToolsModel",ownerTools)
 	
-	toolsArray = game.Lighting:FindFirstChild("BuildToolsModel")
-	ownerArray = game.Lighting:FindFirstChild("OwnerToolsModel")
+	toolsArray = container:FindFirstChild("BuildToolsModel")
+	ownerArray = container:FindFirstChild("OwnerToolsModel")
 end
 
 local localBuildTools = {}
@@ -72,7 +75,7 @@ function giveBuildTools()
 		for i = 1, #theTools do
 			local toolClone = theTools[i]:clone()
 			if toolClone then
-				toolClone.Parent = game.Players.LocalPlayer.Backpack
+				toolClone.Parent = player:findFirstChild("Backpack")
 				table.insert(localBuildTools,toolClone)
 			end
 		end
@@ -84,31 +87,29 @@ function giveOwnerTools()
 	for i = 1, #theOwnerTools do
 		local ownerToolClone = theOwnerTools[i]:clone()
 		if ownerToolClone then
-			ownerToolClone.Parent = game.Players.LocalPlayer.Backpack
+			ownerToolClone.Parent = player:findFirstChild("Backpack")
 			table.insert(localBuildTools,ownerToolClone)
 		end
 	end
 end
 
 function removeBuildTools()
-	if hasBuildTools then
-		hasBuildTools = false
-		for i = 1, #localBuildTools do
-			localBuildTools[i].Parent = nil
-		end
-		localBuildTools = {}
-	end
+	if not hasBuildTools then return end
+	hasBuildTools = false
+	for k,v in pairs(localBuildTools) do
+		v:Destroy()
+	end localBuildTools = {}
 end
 
-if game.Players.LocalPlayer.HasBuildTools then
+if player.HasBuildTools then
 	giveBuildTools()
 end
-if game.Players.LocalPlayer.PersonalServerRank >= 255 then
+if player.PersonalServerRank >= 255 then
 	giveOwnerTools()
 end
 
 local debounce = false
-game.Players.LocalPlayer.Changed:connect(function(prop)
+player.Changed:connect(function(prop)
 	if prop == "HasBuildTools" then
 		while debounce do
 			wait(0.5)
@@ -116,32 +117,33 @@ game.Players.LocalPlayer.Changed:connect(function(prop)
 		
 		debounce = true
 		
-		if game.Players.LocalPlayer.HasBuildTools then
+		if player.HasBuildTools then
 			giveBuildTools()
 		else
 			removeBuildTools()
 		end
 		
-		if game.Players.LocalPlayer.PersonalServerRank >= 255 then
+		if player.PersonalServerRank >= 255 then
 			giveOwnerTools()
 		end
 		
 		debounce = false
 	elseif prop == "PersonalServerRank" then
-		if game.Players.LocalPlayer.PersonalServerRank >= 255 then
+		if player.PersonalServerRank >= 255 then
 			giveOwnerTools()
-		elseif game.Players.LocalPlayer.PersonalServerRank <= 0 then
-			game.Players.LocalPlayer:Remove() -- you're banned, goodbye!
+		elseif player.PersonalServerRank <= 0 then
+			player:Kick() -- you're banned, goodbye!
+			game:SetMessage("You're banned from this PBS")
 		end
 	end
 end)
 
-game.Players.LocalPlayer.CharacterAdded:connect(function()
+player.CharacterAdded:connect(function()
 	hasBuildTools = false
-	if game.Players.LocalPlayer.HasBuildTools then
+	if player.HasBuildTools then
 		giveBuildTools()
 	end
-	if game.Players.LocalPlayer.PersonalServerRank >= 255 then
+	if player.PersonalServerRank >= 255 then
 		giveOwnerTools()
 	end
 end)

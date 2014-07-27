@@ -492,8 +492,9 @@ function Null()
 end
 -------------------- End JSON Parser ------------------------
 
-
 t.DecodeJSON = function(jsonString)
+	pcall(function() warn("RbxUtility.DecodeJSON is deprecated, please use Game:GetService('HttpService'):JSONDecode() instead.") end)
+
 	if type(jsonString) == "string" then
 		return Decode(jsonString)
 	end
@@ -502,6 +503,7 @@ t.DecodeJSON = function(jsonString)
 end
 
 t.EncodeJSON = function(jsonTable)
+	pcall(function() warn("RbxUtility.EncodeJSON is deprecated, please use Game:GetService('HttpService'):JSONEncode() instead.") end)
 	return Encode(jsonTable)
 end
 
