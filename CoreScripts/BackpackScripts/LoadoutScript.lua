@@ -30,9 +30,6 @@ waitForChild(robloxGui,"CurrentLoadout")
 waitForChild(robloxGui.CurrentLoadout,"TempSlot")
 waitForChild(robloxGui.CurrentLoadout.TempSlot,"SlotNumber")
 
-waitForChild(currentLoadout, 'Background')
-local clBackground = currentLoadout.Background
-
 local function IsTouchDevice()
 	return Game:GetService('UserInputService').TouchEnabled
 end 
@@ -210,9 +207,8 @@ function removeGear(gear)
 				if #player.Backpack:GetChildren() < 1 then 
 					backpackButton.Visible = false  
 				else 					
-					backpackButton.Position = UDim2.new(0.5, -60, 1, -44)
+					backpackButton.Position = UDim2.new(0.5, -7, 1, -55)
 				end 
-				clBackground.Visible = false
 			end 
 		end)
 	end	
@@ -765,12 +761,13 @@ local addingPlayerChild = function(child, equipped, addToSlot, inventoryGearButt
 
 	Spawn(function()
 		while backpackIsOpen() do wait(0.03) end 		
+		backpackButton.Position = UDim2.new(0.5, -7, 1, -55)
+
 		for i = 1, #gearSlots do 
 			if gearSlots[i] ~= 'empty' then 
-				backpackButton.Position = UDim2.new(0.5, -60, 1, -108)
+				backpackButton.Position = UDim2.new(0.5, -7, 1, -108)
 				if backpackEnabled then
 					backpackButton.Visible = true 
-					clBackground.Visible = true 
 				end
 			end 
 		end 
@@ -870,7 +867,6 @@ function setupBackpackListener()
 			firstInstanceOfLoadout = true 
 			if backpackEnabled then
 				backpackButton.Visible = true 			
-				clBackground.Visible = true 
 			end
 		end 
 		addingPlayerChild(child)
@@ -903,7 +899,6 @@ end
 function coreGuiChanged(coreGuiType,enabled)
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
 		backpackButton.Visible = enabled 
-		clBackground.Visible = enabled
 		backpackEnabled = enabled
 
 		if enabled then
@@ -945,7 +940,6 @@ delay(1,function()
 	for i = 1, size do
 		if backpackEnabled then
 			backpackButton.Visible = true 
-			clBackground.Visible = true
 		end
 		addingPlayerChild(backpackChildren[i],false)
 	end
@@ -1012,7 +1006,6 @@ player.CharacterAdded:connect(function()
 		for i = 1, size do
 			if backpackEnabled then
 				backpackButton.Visible = true 
-				clBackground.Visible = true 
 			end
 			addingPlayerChild(backpackChildren[i],false)
 		end
@@ -1039,7 +1032,6 @@ player.CharacterAdded:connect(function()
 		player.Character.Humanoid.Died:connect(function()
 			if backpackEnabled then
 				backpackButton.Visible = false
-				clBackground.Visible = false 
 			end
 			firstInstanceOfLoadout = false 
 			deactivateLoadout()					

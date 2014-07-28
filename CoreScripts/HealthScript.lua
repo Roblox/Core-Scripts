@@ -25,20 +25,21 @@ local HealthGui = nil
 local lastHealth = 100
 local HealthPercentageForOverlay = 5
 local maxBarTweenTime = 0.3
+local greenColor = Color3.new(0.2, 1, 0.2)
+local redColor = Color3.new(1, 0.2, 0.2)
+local yellowColor = Color3.new(1, 1, 0.2)
 
 local guiEnabled = false
 local healthChangedConnection = nil
 local humanoidDiedConnection = nil
 local characterAddedConnection = nil
 
-local greenBarImage = "http://www.roblox.com/asset/?id=35238053"
-local redBarImage = "http://www.roblox.com/asset/?id=35238036"
-local goldBarImage = "http://www.roblox.com/asset/?id=154646431" -- for god mode
+local greenBarImage = "rbxasset://textures/ui/Health-BKG-Center.png"
+local greenBarImageLeft = "rbxasset://textures/ui/Health-BKG-Left-Cap.png"
+local greenBarImageRight = "rbxasset://textures/ui/Health-BKG-Right-Cap.png"
 local hurtOverlayImage = "http://www.roblox.com/asset/?id=34854607"
 
 Game:GetService("ContentProvider"):Preload(greenBarImage)
-Game:GetService("ContentProvider"):Preload(redBarImage)
-Game:GetService("ContentProvider"):Preload(goldBarImage)
 Game:GetService("ContentProvider"):Preload(hurtOverlayImage)
 
 while not Game.Players.LocalPlayer do
@@ -48,12 +49,15 @@ end
 ---------------------------------------------------------------------
 -- Functions
 
+local capHeight = 15
+local capWidth = 7
+
 function CreateGui()
 	if HealthGui and #HealthGui:GetChildren() > 0 then 
 		HealthGui.Parent = Game.CoreGui.RobloxGui
 		return 
 	end
-	
+
 	local hurtOverlay = Instance.new("ImageLabel")
 	hurtOverlay.Name = "HurtOverlay"
 	hurtOverlay.BackgroundTransparency = 1
@@ -65,33 +69,82 @@ function CreateGui()
 	
 	local healthFrame = Instance.new("Frame")
 	healthFrame.Name = "HealthFrame"
-	healthFrame.BackgroundColor3 = Color3.new(0,0,0)
+	healthFrame.BackgroundTransparency = 1
+	healthFrame.BackgroundColor3 = Color3.new(1,1,1)
 	healthFrame.BorderColor3 = Color3.new(0,0,0)
-	healthFrame.Position = UDim2.new(0.5,-85,1,-22)
-	healthFrame.Size = UDim2.new(0,170,0,18)
+	healthFrame.BorderSizePixel = 0
+	healthFrame.Position = UDim2.new(0.5,-85,1,-20)
+	healthFrame.Size = UDim2.new(0,170,0,capHeight)
 	healthFrame.Parent = HealthGui
-	
-	local healthBar = Instance.new("ImageLabel")
+
+
+	local healthBarBackCenter = Instance.new("ImageLabel")
+	healthBarBackCenter.Name = "healthBarBackCenter"
+	healthBarBackCenter.BackgroundTransparency = 1
+	healthBarBackCenter.Image = greenBarImage
+	healthBarBackCenter.Size = UDim2.new(1,-capWidth*2,1,0)
+	healthBarBackCenter.Position = UDim2.new(0,capWidth,0,0)
+	healthBarBackCenter.Parent = healthFrame
+	healthBarBackCenter.ImageColor3 = Color3.new(1,1,1)
+
+	local healthBarBackLeft = Instance.new("ImageLabel")
+	healthBarBackLeft.Name = "healthBarBackLeft"
+	healthBarBackLeft.BackgroundTransparency = 1
+	healthBarBackLeft.Image = greenBarImageLeft
+	healthBarBackLeft.Size = UDim2.new(0,capWidth,1,0)
+	healthBarBackLeft.Position = UDim2.new(0,0,0,0)
+	healthBarBackLeft.Parent = healthFrame
+	healthBarBackLeft.ImageColor3 = Color3.new(1,1,1)
+
+	local healthBarBackRight = Instance.new("ImageLabel")
+	healthBarBackRight.Name = "healthBarBackRight"
+	healthBarBackRight.BackgroundTransparency = 1
+	healthBarBackRight.Image = greenBarImageRight
+	healthBarBackRight.Size = UDim2.new(0,capWidth,1,0)
+	healthBarBackRight.Position = UDim2.new(1,-capWidth,0,0)
+	healthBarBackRight.Parent = healthFrame
+	healthBarBackRight.ImageColor3 = Color3.new(1,1,1)
+
+
+	local healthBar = Instance.new("Frame")
 	healthBar.Name = "HealthBar"
 	healthBar.BackgroundTransparency = 1
-	healthBar.Image = greenBarImage
+	healthBar.BackgroundColor3 = Color3.new(1,1,1)
+	healthBar.BorderColor3 = Color3.new(0,0,0)
+	healthBar.BorderSizePixel = 0
+	healthBar.ClipsDescendants = true
+	healthBar.Position = UDim2.new(0, 0, 0, 0)
 	healthBar.Size = UDim2.new(1,0,1,0)
 	healthBar.Parent = healthFrame
-	
-	local healthLabel = Instance.new("TextLabel")
-	healthLabel.Name = "HealthLabel"
-	
-	healthLabel.Text = "Health  " -- gives room at end of health bar
-	healthLabel.Font = Enum.Font.SourceSansBold
-	healthLabel.FontSize = Enum.FontSize.Size14
-	healthLabel.TextColor3 = Color3.new(1,1,1)
-	healthLabel.TextStrokeTransparency = 0
-	healthLabel.TextXAlignment = Enum.TextXAlignment.Right
-	
-	healthLabel.BackgroundTransparency = 1
-	healthLabel.Size = UDim2.new(1,0,1,0)
-	healthLabel.Parent = healthFrame
-	
+
+
+	local healthBarCenter = Instance.new("ImageLabel")
+	healthBarCenter.Name = "healthBarCenter"
+	healthBarCenter.BackgroundTransparency = 1
+	healthBarCenter.Image = greenBarImage
+	healthBarCenter.Size = UDim2.new(1,-capWidth*2,1,0)
+	healthBarCenter.Position = UDim2.new(0,capWidth,0,0)
+	healthBarCenter.Parent = healthBar
+	healthBarCenter.ImageColor3 = greenColor
+
+	local healthBarLeft = Instance.new("ImageLabel")
+	healthBarLeft.Name = "healthBarLeft"
+	healthBarLeft.BackgroundTransparency = 1
+	healthBarLeft.Image = greenBarImageLeft
+	healthBarLeft.Size = UDim2.new(0,capWidth,1,0)
+	healthBarLeft.Position = UDim2.new(0,0,0,0)
+	healthBarLeft.Parent = healthBar
+	healthBarLeft.ImageColor3 = greenColor
+
+	local healthBarRight = Instance.new("ImageLabel")
+	healthBarRight.Name = "healthBarRight"
+	healthBarRight.BackgroundTransparency = 1
+	healthBarRight.Image = greenBarImageRight
+	healthBarRight.Size = UDim2.new(0,capWidth,1,0)
+	healthBarRight.Position = UDim2.new(1,-capWidth,0,0)
+	healthBarRight.Parent = healthBar
+	healthBarRight.ImageColor3 = greenColor
+
 	HealthGui.Parent = Game.CoreGui.RobloxGui
 end
 
@@ -106,14 +159,19 @@ function UpdateGui(health)
 	
 	-- If more than 1/4 health, bar = green.  Else, bar = red.
 	local percentHealth = (health/currentHumanoid.MaxHealth)
-	
 	if percentHealth ~= percentHealth then
 		percentHealth = 1
-		healthBar.Image = goldBarImage
+		healthBar.healthBarCenter.ImageColor3 = yellowColor
+		healthBar.healthBarRight.ImageColor3 = yellowColor
+		healthBar.healthBarLeft.ImageColor3 = yellowColor
 	elseif percentHealth > 0.25  then		
-		healthBar.Image = greenBarImage
+		healthBar.healthBarCenter.ImageColor3 = greenColor
+		healthBar.healthBarRight.ImageColor3 = greenColor
+		healthBar.healthBarLeft.ImageColor3 = greenColor
 	else
-		healthBar.Image = redBarImage
+		healthBar.healthBarCenter.ImageColor3 = redColor
+		healthBar.healthBarRight.ImageColor3 = redColor
+		healthBar.healthBarLeft.ImageColor3 = redColor
 	end
 		
 	local width = (health / currentHumanoid.MaxHealth)
@@ -129,10 +187,20 @@ function UpdateGui(health)
 
 	local newHealthSize = UDim2.new(width,0,1,0)
 	
-	if healthBar:IsDescendantOf(Game) then
-		healthBar:TweenSize(newHealthSize, Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, percentOfTotalHealth * maxBarTweenTime, true)
+	healthBar.Size = newHealthSize
+
+	local sizeX = healthBar.AbsoluteSize.X
+	if sizeX < capWidth then
+		healthBar.healthBarCenter.Visible = false
+		healthBar.healthBarRight.Visible = false
+	elseif sizeX < (2*capWidth + 1) then
+		healthBar.healthBarCenter.Visible = true
+		healthBar.healthBarCenter.Size = UDim2.new(0,sizeX - capWidth,1,0)
+		healthBar.healthBarRight.Visible = false
 	else
-		healthBar.Size = newHealthSize
+		healthBar.healthBarCenter.Visible = true
+		healthBar.healthBarCenter.Size = UDim2.new(1,-capWidth*2,1,0)
+		healthBar.healthBarRight.Visible = true
 	end
 
 	local thresholdForHurtOverlay = currentHumanoid.MaxHealth * (HealthPercentageForOverlay/100)
@@ -140,6 +208,7 @@ function UpdateGui(health)
 	if healthDelta >= thresholdForHurtOverlay then
 		AnimateHurtOverlay()
 	end
+
 end
 
 function AnimateHurtOverlay()

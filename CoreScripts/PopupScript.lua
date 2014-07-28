@@ -3,7 +3,7 @@
 local popupFrame = Instance.new("Frame")
 popupFrame.Position = UDim2.new(0.5,-165,0.5,-175)
 popupFrame.Size = UDim2.new(0,330,0,350)
-popupFrame.Style = Enum.FrameStyle.RobloxRound
+popupFrame.Style = Enum.FrameStyle.DropShadow
 popupFrame.ZIndex = 4
 popupFrame.Name = "Popup"
 popupFrame.Visible = false
@@ -21,7 +21,7 @@ acceptButton.Position = UDim2.new(0,20,0,270)
 acceptButton.Size = UDim2.new(0,100,0,50)
 acceptButton.Font = Enum.Font.ArialBold
 acceptButton.FontSize = Enum.FontSize.Size24
-acceptButton.Style = Enum.ButtonStyle.RobloxButton
+acceptButton.Style = Enum.ButtonStyle.RobloxRoundButton
 acceptButton.TextColor3 = Color3.new(248/255,248/255,248/255)
 acceptButton.Text = "Yes"
 acceptButton.ZIndex = 5
@@ -43,7 +43,7 @@ okButton.Parent = popupFrame
 
 local popupImage = Instance.new("ImageLabel")
 popupImage.BackgroundTransparency = 1
-popupImage.Position = UDim2.new(0.5,-140,0,0)
+popupImage.Position = UDim2.new(0.5,-140,0,10)
 popupImage.Size = UDim2.new(0,280,0,280)
 popupImage.ZIndex = 3
 popupImage.Name = "PopupImage"

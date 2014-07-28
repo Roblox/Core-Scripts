@@ -169,6 +169,7 @@ local BASE_TWEEN = .25
 local MOUSE_HOLD_TIME = .15
 local MOUSE_DRAG_DISTANCE = 15
 
+local BACKGROUND_TRANSPARENCY = 0.7
 --[[
 	Generic object Create function, which I am using to create Gui's 
 	Thanks to Stravant! 
@@ -194,7 +195,7 @@ end
 	imgName		asset name of image to fill background
 	@Return:	background gui object
 --]]
-function MakeBackgroundGuiObj(imgName)
+function MakeBackgroundGuiObjOld(imgName)
 	return Obj.Create'ImageLabel'
 	{
 		Name = 'Background',
@@ -204,6 +205,20 @@ function MakeBackgroundGuiObj(imgName)
 		Size = UDim2.new(1,0,1,0),
 	}
 end
+
+function MakeBackgroundGuiObj(imgName)
+	return Obj.Create'Frame'
+	{
+		Name = 'Background',
+		BackgroundTransparency = BACKGROUND_TRANSPARENCY,
+		BackgroundColor3 = Color3.new(0,0,0),
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 1, 0, 1),
+		Size = UDim2.new(1,-2,1,-2),
+	}
+end
+
+
 --[[ turns 255 integer color value to a color3 --]]
 function Color3I(r,g,b)
 	return Color3.new(r/255,g/255,b/255)
@@ -264,13 +279,15 @@ function MakePopupButton(nparent,ntext,index,last)
 	{
 		Name = 'ReportButton',
 		BackgroundTransparency = 1,
+		BackgroundColor3 = Color3.new(0, 0, 0),
 		Position = UDim2.new(0,0,1*index,0),
 		Size = UDim2.new(1, 0, 1, 0),
 		ZIndex=7,
 		Obj.Create'TextLabel'
 		{
 			Name = 'ButtonText',
-			BackgroundTransparency = 1,
+			BackgroundTransparency = 0.6,
+			BackgroundColor3 = Color3.new(0, 0, 0),
 			Position = UDim2.new(.07, 0, .07, 0),
 			Size = UDim2.new(.86,0,.86,0),
 			Parent = HeaderFrame,
@@ -284,21 +301,7 @@ function MakePopupButton(nparent,ntext,index,last)
 		},
 		Parent = nparent,
 	}
-	if index==0 then
-		tobj.Image = 'http://www.roblox.com/asset/?id=97108784'
-	elseif last then
-		if index%2==1 then
-			tobj.Image = 'http://www.roblox.com/asset/?id='.. Images['LightPopupBottom']
-		else
-			tobj.Image = 'http://www.roblox.com/asset/?id='.. Images['DarkPopupBottom']
-		end
-	else
-		if index%2==1 then
-			tobj.Image = 'http://www.roblox.com/asset/?id=97112126'
-		else
-			tobj.Image = 'http://www.roblox.com/asset/?id=97109338'
-		end
-	end
+
 	return tobj
 end
 
@@ -384,7 +387,7 @@ local HeaderFrame = Obj.Create"Frame"
 	{
 		Name = 'PlayerName',
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 0, .01, 0),
+		Position = UDim2.new(0, 0, .05, 0),
 		Size = UDim2.new(.98,0,.38,0),
 		Parent = HeaderFrame,
 		Font = 'ArialBold',
@@ -431,7 +434,6 @@ local BottomShiftFrame = Obj.Create"Frame"
 		Position = UDim2.new(0,0,.07,0),
 		Size = UDim2.new(1, 0, .03, 0),
 		Parent = BottomShiftFrame,
-		MakeBackgroundGuiObj('http://www.roblox.com/asset/?id=94754966'),
 	}
 		local ExtendButton = Obj.Create"ImageButton"
 		{
@@ -448,9 +450,9 @@ local BottomShiftFrame = Obj.Create"Frame"
 			Name = 'extendTab',
 			Active = true,
 			BackgroundTransparency = 1,
-			Image = 'http://www.roblox.com/asset/?id=94692731',
+			Image = 'rbxasset://textures/ui/expandPlayerList.png',
 			Position = UDim2.new(.608, 0, .3, 0),
-			Size = UDim2.new(.3,0,.7,0),
+			Size = UDim2.new(0,27,0,11),
 			Parent = BottomFrame,
 		}
 local TopClipFrame = Obj.Create"Frame"
@@ -550,7 +552,7 @@ local MiddleTemplate = Obj.Create"Frame"
 		SizeConstraint = 'RelativeYY',
 		Image = "",
 		ZIndex = 3,
-	},
+	}, 
 	Obj.Create'ImageLabel'
 	{
 		Name = 'FriendLabel',
@@ -567,8 +569,9 @@ local MiddleTemplate = Obj.Create"Frame"
 		Name = 'ClickListener',
 		Active = true,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(.005, 1, 0, 0),
-		Size = UDim2.new(.96,0,1,0),
+		BorderSizePixel = 0,
+		Position = UDim2.new(0, 1, 0, 1),
+		Size = UDim2.new(1, -2,1,-2),
 		ZIndex = 3,
 	},
 	Obj.Create"Frame"
@@ -577,6 +580,7 @@ local MiddleTemplate = Obj.Create"Frame"
 		BackgroundTransparency = 1,
 		Position = UDim2.new(.01, 0, 0, 0),
 		Size = UDim2.new(0,140,1,0),
+		BorderSizePixel = 0,
 		ClipsDescendants=true,
 		Obj.Create"TextLabel"
 		{
@@ -1708,7 +1712,7 @@ function UpdateMinimize()
 		BottomClipFrame.Position = UDim2.new(0,0,-1,0)
 		BottomFrame.Position = UDim2.new(0,0,0,0)
 		FocusFrame.Size=UDim2.new(1,0,HeaderFrameHeight,0)
-		ExtendTab.Image = 'http://www.roblox.com/asset/?id=94692731'
+		ExtendTab.Image = 'rbxasset://textures/ui/expandPlayerList.png'
 	else
 		if not IsMaximized.Value then
 			MainFrame.Size = NormalBounds
@@ -1722,7 +1726,7 @@ function UpdateMinimize()
 		local bottomPositon = (DefaultBottomClipPos+BottomClipFrame.Size.Y.Scale)
 		BottomFrame.Position=UDim2.new(0,0,bottomPositon,0)
 		FocusFrame.Size=UDim2.new(1,0,bottomPositon + HeaderFrameHeight,0)
-		ExtendTab.Image = 'http://www.roblox.com/asset/?id=94825585' 
+		ExtendTab.Image = 'rbxasset://textures/ui/expandPlayerList.png' 
 	end
 end
 
@@ -1747,19 +1751,12 @@ function UpdateMaximize()
 		MainFrame:TweenSizeAndPosition(MaximizedBounds,MaximizedPosition,'Out','Linear',BASE_TWEEN*1.2,true)
 		HeaderScore:TweenPosition(UDim2.new(0,0,HeaderName.Position.Y.Scale,0), "Out", "Linear", BASE_TWEEN*1.2,true)
 		HeaderName:TweenPosition(UDim2.new( - .1, - HeaderScore.TextBounds.x,HeaderName.Position.Y.Scale,0), "Out", "Linear", BASE_TWEEN*1.2,true)
-		HeaderFrame.Background.Image = 'http://www.roblox.com/asset/?id='..Images['LargeHeader']
-		BottomFrame.Background.Image = 'http://www.roblox.com/asset/?id='..Images['LargeBottom']
-		for index, i in ipairs(MiddleFrameBackgrounds) do
-			if (index%2) ~= 1 then
-				i.Background.Image = 'http://www.roblox.com/asset/?id='..Images['LargeDark']
-			else
-				i.Background.Image = 'http://www.roblox.com/asset/?id='..Images['LargeLight']
-			end
-		end
 		for index, i in ipairs(MiddleFrames) do
+
 			if i:FindFirstChild('ClickListener') then
-				i.ClickListener.Size = UDim2.new(.974,0,i.ClickListener.Size.Y.Scale,0)
+				i.ClickListener.Size = UDim2.new(1,-2,i.ClickListener.Size.Y.Scale, i.ClickListener.Size.Y.Offset)
 			end
+
 			for j=1, #ScoreNames,1 do
 				local scoreval = ScoreNames[j]
 				if i:FindFirstChild(scoreval['Name']) then
@@ -1781,18 +1778,9 @@ function UpdateMaximize()
 		end
 		HeaderScore:TweenPosition(UDim2.new(0,0,.4,0), "Out", "Linear", BASE_TWEEN*1.2,true)
 		HeaderName:TweenPosition(UDim2.new(0,0,HeaderName.Position.Y.Scale,0), "Out", "Linear", BASE_TWEEN*1.2,true)
-		HeaderFrame.Background.Image = 'http://www.roblox.com/asset/?id='..Images['NormalHeader']
-		BottomFrame.Background.Image = 'http://www.roblox.com/asset/?id='..Images['NormalBottom']
-		for index, i in ipairs(MiddleFrameBackgrounds) do
-			if index%2 ~= 1 then
-				i.Background.Image = 'http://www.roblox.com/asset/?id='..Images['midDark']
-			else
-				i.Background.Image = 'http://www.roblox.com/asset/?id='..Images['midLight']
-			end
-		end
 		for index, i in ipairs(MiddleFrames) do
-			if i:FindFirstChild('ClickListener') then
-				i.ClickListener.Size = UDim2.new(.96,0,i.ClickListener.Size.Y.Scale,0)
+		if i:FindFirstChild('ClickListener') then
+				i.ClickListener.Size = UDim2.new(1, -2,i.ClickListener.Size.Y.Scale, i.ClickListener.Size.Y.Offset)
 				for j=1, #ScoreNames,1 do
 					local scoreval = ScoreNames[j]
 					if i:FindFirstChild(scoreval['Name']) and scoreval['XOffset'] then
@@ -1947,7 +1935,7 @@ function StartDrag(entry,startx,starty)
 			stopDrag = true 
 
 			if  entry['Player'] and SelectedPlayer and openPanel
-				and entry['Player']~=LocalPlayer and SelectedPlayer.userId>1 and LocalPlayer.userId>1 then
+				and (entry['Player']~=LocalPlayer and (SelectedPlayer.userId>1 and LocalPlayer.userId>1)) then
 				ActivatePlayerEntryPanel(entry)
 			end
 		end
@@ -2074,19 +2062,8 @@ end)
 function AddMiddleBGFrame()
 	local nBGFrame = MiddleBGTemplate:Clone()
 	nBGFrame.Position = UDim2.new(.5,0,((#MiddleFrameBackgrounds) * nBGFrame.Size.Y.Scale),0)
-	if (#MiddleFrameBackgrounds+1)%2 ~= 1 then
-		if IsMaximized.Value then
-			nBGFrame.Background.Image = 'http://www.roblox.com/asset/?id='..Images['LargeDark']
-		else
-			nBGFrame.Background.Image = 'http://www.roblox.com/asset/?id='..Images['midDark']
-		end
-	else
-		if IsMaximized.Value then
-			nBGFrame.Background.Image = 'http://www.roblox.com/asset/?id='..Images['LargeLight']
-		else
-			nBGFrame.Background.Image = 'http://www.roblox.com/asset/?id='..Images['midLight']
-		end
-	end
+	nBGFrame.Background.BackgroundTransparency = 1
+
 	nBGFrame.Parent = ListFrame
 	table.insert(MiddleFrameBackgrounds,nBGFrame)
 	
@@ -2327,6 +2304,9 @@ function InsertPlayerFrame(nplayer)
 	AddingFrameLock = true
 	
 	local nFrame = MiddleTemplate:Clone()
+	nFrame.ClickListener.BackgroundColor3 = Color3.new(0,0,0)
+	nFrame.ClickListener.BackgroundTransparency = BACKGROUND_TRANSPARENCY
+	nFrame.ClickListener.AutoButtonColor=false
 
 	local playerName = nplayer.Name	
 	local clansEnabled, clanTag = pcall(function() nplayer:GetClanTag() end)
@@ -2746,7 +2726,7 @@ function AddNeutralTeam()
 	nentry['Frame'].Position = UDim2.new(1,0,((#MiddleFrames) * nentry['Frame'].Size.Y.Scale),0)
 	WaitForChild(nentry['Frame'],'ClickListener').MouseButton1Down:connect(function(nx,ny) StartDrag(nentry,nx,ny) end)
 	nentry['Frame'].ClickListener.BackgroundColor3 = Color3.new(1,1,1)
-	nentry['Frame'].ClickListener.BackgroundTransparency = .7
+	nentry['Frame'].ClickListener.BackgroundTransparency = BACKGROUND_TRANSPARENCY
 	nentry['Frame'].ClickListener.AutoButtonColor=false
 	nentry['AutoHide'] = true
 	nentry['IsHidden'] = true
@@ -2845,12 +2825,10 @@ function InsertTeamFrame(nteam)
 	WaitForChild(WaitForChild(nentry['Frame'],'TitleFrame'),'Title').Text = nteam.Name
 	nentry['Frame'].TitleFrame.Title.Font = 'ArialBold'
 	nentry['Frame'].TitleFrame.Title.FontSize = 'Size18'
-	nentry['Frame'].TitleFrame.Position=UDim2.new(nentry['Frame'].TitleFrame.Position.X.Scale,nentry['Frame'].TitleFrame.Position.X.Offset,.1,0)
-	nentry['Frame'].TitleFrame.Size=UDim2.new(nentry['Frame'].TitleFrame.Size.X.Scale,nentry['Frame'].TitleFrame.Size.X.Offset,.8,0)
 	nentry['Frame'].Position = UDim2.new(0.5,0,((#MiddleFrames) * nentry['Frame'].Size.Y.Scale),0)
 	WaitForChild(nentry['Frame'],'ClickListener').MouseButton1Down:connect(function(nx,ny) StartDrag(nentry,nx,ny) end)
 	nentry['Frame'].ClickListener.BackgroundColor3 = nteam.TeamColor.Color
-	nentry['Frame'].ClickListener.BackgroundTransparency = .7
+	nentry['Frame'].ClickListener.BackgroundTransparency = BACKGROUND_TRANSPARENCY
 	nentry['Frame'].ClickListener.AutoButtonColor=false
 	AddId = AddId + 1
 	nentry['ID'] = AddId

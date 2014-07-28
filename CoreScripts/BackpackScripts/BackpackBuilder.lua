@@ -22,7 +22,7 @@ local function IsTouchDevice()
 end 
 
 local function IsPhone()	 	
-	if Game:GetService("GuiService"):GetScreenResolution().Y <= 500 then 	 	
+	if Game:GetService("GuiService"):GetScreenResolution().Y <= 500 and IsTouchDevice() then 	 	
 		return true	 	
 	end 	 	
 	return false 	 	
@@ -51,13 +51,6 @@ CLBackground.ZIndex = 0.0;
 CLBackground.Parent = CurrentLoadout
 CLBackground.Visible = false 
 
-local BackgroundUp = Instance.new('ImageLabel')
-BackgroundUp.Size = UDim2.new(1, 0, 0.025, 1)
-BackgroundUp.Position = UDim2.new(0, 0, 0, 0)
-BackgroundUp.Image = 'http://www.roblox.com/asset/?id=97662207'
-BackgroundUp.BackgroundTransparency = 1.0
-BackgroundUp.Parent = CLBackground
-
 local Debounce = Instance.new("BoolValue")
 Debounce.Name = "Debounce"
 Debounce.RobloxLocked = true
@@ -68,9 +61,9 @@ BackpackButton.RobloxLocked = true
 BackpackButton.Visible = false
 BackpackButton.Name = "BackpackButton"
 BackpackButton.BackgroundTransparency = 1
-BackpackButton.Image = "http://www.roblox.com/asset/?id=97617958"
-BackpackButton.Position = UDim2.new(0.5, -60, 1, -108)
-BackpackButton.Size = UDim2.new(0, 120, 0, 18)
+BackpackButton.Image = "rbxasset://textures/ui/Backpack_Open.png"
+BackpackButton.Position = UDim2.new(0.5, -7, 1, -55)
+BackpackButton.Size = UDim2.new(0, 14, 0, 9)
 waitForChild(gui,"ControlFrame")
 BackpackButton.Parent = gui.ControlFrame
 
@@ -88,6 +81,7 @@ for i = 0, NumSlots do
 	slotFrame.BackgroundColor3 = Color3.new(0,0,0)
 	slotFrame.BackgroundTransparency = 1
 	slotFrame.BorderColor3 = Color3.new(1, 1, 1)
+	slotFrame.BorderSizePixel = 0
 	slotFrame.Name = "Slot" .. tostring(i)
 	slotFrame.ZIndex = 4.0
 	if i == 0 then
@@ -119,11 +113,12 @@ TempSlot.RobloxLocked = true
 TempSlot.Parent = CurrentLoadout
 TempSlot.ZIndex = 3.0
 
-	local slotBackground = Instance.new('ImageLabel')
+	local slotBackground = Instance.new('Frame')
 	slotBackground.Name = 'Background'
 	slotBackground.BackgroundTransparency = 1.0
-	slotBackground.Image = 'http://www.roblox.com/asset/?id=97613075'
-	slotBackground.Size = UDim2.new(1, 0, 1, 0)	
+	slotBackground.Style = "DropShadow"
+	slotBackground.Position = UDim2.new(0, -10, 0, -10)	
+	slotBackground.Size = UDim2.new(1, 20, 1, 20)	
 	slotBackground.Parent = TempSlot
 
 	local HighLight = Instance.new('ImageLabel')
@@ -227,7 +222,7 @@ Backpack.Visible = false
 Backpack.Name = "Backpack"
 Backpack.Position = UDim2.new(0.5, 0, 0.5, 0)
 Backpack.BackgroundColor3 = Color3.new(32/255, 32/255, 32/255)
-Backpack.BackgroundTransparency = 0.0
+Backpack.BackgroundTransparency = 0.5
 Backpack.BorderSizePixel = 0
 Backpack.Parent = gui
 Backpack.Active = true
@@ -353,11 +348,11 @@ Backpack.Active = true
 			
 			local SearchBoxFrame = Instance.new("TextButton")
 			SearchBoxFrame.RobloxLocked = true
-			SearchBoxFrame.Position = UDim2.new(0,25,0,0)
-			SearchBoxFrame.Size = UDim2.new(1,-28,0,26)
+			SearchBoxFrame.Position = UDim2.new(0,25,0,-2)
+			SearchBoxFrame.Size = UDim2.new(1,-28,0,30)
 			SearchBoxFrame.Name = "SearchBoxFrame"
 			SearchBoxFrame.Text = ""
-			SearchBoxFrame.Style = Enum.ButtonStyle.RobloxButton
+			SearchBoxFrame.Style = Enum.ButtonStyle.RobloxRoundButton
 			SearchBoxFrame.Parent = SearchFrame
 			
 				-- SearchBoxFrame Children
@@ -427,12 +422,13 @@ Backpack.Active = true
 			GearButton.Parent = GearGrid
 			GearButton.BackgroundTransparency = 1.0
 
-					local slotBackground = Instance.new('ImageLabel')
+					local slotBackground = Instance.new('Frame')
 					slotBackground.Name = 'Background'
 					slotBackground.BackgroundTransparency = 1.0
-					slotBackground.Image = 'http://www.roblox.com/asset/?id=97613075'
-					slotBackground.Size = UDim2.new(1, 0,  1, 0)
+					slotBackground.Size = UDim2.new(1, 16,  1, 16)
+					slotBackground.Position = UDim2.new(0, -8,  0, -8)
 					slotBackground.Parent = GearButton
+					slotBackground.Style = "DropShadow"
 
 
 				-- GearButton Children
@@ -743,6 +739,7 @@ Backpack.Active = true
 		PreviewButton.BackgroundColor3 = Color3.new(0,0,0)
 		PreviewButton.BackgroundTransparency = 0.5
 		PreviewButton.BorderColor3 = Color3.new(1,1,1)
+		PreviewButton.BorderSizePixel = 0
 		PreviewButton.Position = UDim2.new(1.2,-62,1,-50)
 		PreviewButton.Size = UDim2.new(0,125,0,50)
 		PreviewButton.Font = Enum.Font.ArialBold

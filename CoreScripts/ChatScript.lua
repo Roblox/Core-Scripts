@@ -144,7 +144,7 @@ local Chat = {
 
 			-- Stores all the values for configuring chat 
 			Configuration = {								
-								FontSize = Enum.FontSize.Size12, -- 10 is good 				
+								FontSize = Enum.FontSize.Size18, -- 10 is good 				
 								-- Also change this when you are changing the above, this is suboptimal but so is our interface to find FontSize				
 								NumFontSize = 12, 
 								HistoryLength = 20, -- stores up to 50 of the last chat messages for you to scroll through,
@@ -553,27 +553,44 @@ function Chat:UpdateQueue(field, diff)
 		if self.MessageQueue[i] then 						
 			for _, label in pairs(self.MessageQueue[i]) do 						
 				if label and type(label) ~= 'table' and type(label) ~= 'number' then					
-					if label:IsA('TextLabel') or label:IsA('TextButton') then 	
+					if label:IsA('TextLabel') or label:IsA('TextButton') or label:IsA('ImageLabel') then 	
 						if diff then 
 							label.Position = label.Position - UDim2.new(0, 0, diff, 0) 
-						else											
-							if field == self.MessageQueue[i] then 						
-								label.Position = UDim2.new(self.Configuration.XScale, 0, label.Position.Y.Scale - field['Message'].Size.Y.Scale , 0)
+						else	
+							local yOffset = 0		
+							local xOffset = 20						
+							if label:IsA('ImageLabel') then
+								yOffset = 4
+								xOffset = 0
+							end
+							if field == self.MessageQueue[i] then
+								label.Position = UDim2.new(self.Configuration.XScale, xOffset, label.Position.Y.Scale - field['Message'].Size.Y.Scale , yOffset)
 								-- Just to show up popping effect for the latest message in chat 
-								Spawn(function()
-									wait(0.05)							
-									while label.TextTransparency >= 0 do 
-										label.TextTransparency = label.TextTransparency - 0.2
-										wait(0.03) 
-									end 	
-									if label == field['Message'] then 
-										label.TextStrokeTransparency = 0.8
-									else 
-										label.TextStrokeTransparency = 1.0
-									end 		
-								end)
+								if label:IsA('TextLabel') or label:IsA('TextButton') then
+									Spawn(function()					
+										wait(0.05)							
+										while label.TextTransparency >= 0 do 
+											label.TextTransparency = label.TextTransparency - 0.2
+											wait(0.03) 
+										end 	
+										if label == field['Message'] then 
+											label.TextStrokeTransparency = 0.8
+										else 
+											label.TextStrokeTransparency = 1.0
+										end 		
+									end)
+								else 
+									Spawn(function()					
+										wait(0.05)							
+										while label.ImageTransparency >= 0 do 
+											label.ImageTransparency = label.ImageTransparency - 0.2
+											wait(0.03) 
+										end 	
+									end)
+
+								end
 							else 							
-								label.Position = UDim2.new(self.Configuration.XScale, 0, label.Position.Y.Scale - field['Message'].Size.Y.Scale, 0)							
+								label.Position = UDim2.new(self.Configuration.XScale, xOffset, label.Position.Y.Scale - field['Message'].Size.Y.Scale, yOffset)							
 							end  
 							if label.Position.Y.Scale < -0.01 then 							
 								-- NOTE: Remove this fix when Textbounds is fixed
@@ -737,41 +754,28 @@ function Chat:CreateMessage(cPlayer, message)
 	end
 	--else 
 		-- Haven't hit the mark yet, so keep creating 
-		pLabel = Gui.Create'TextLabel' 
+
+	local nString = ""
+
+
+		pLabel = Gui.Create'ImageLabel' 
 					{
 						Name = pName;
-						Text = pName .. ":";
-						TextColor3 = pColor;
-						FontSize = Chat.Configuration.FontSize;
-						TextXAlignment = Enum.TextXAlignment.Left;
-						TextYAlignment = Enum.TextYAlignment.Top;
 						Parent = self.RenderFrame;
-						TextWrapped = false;
-						Size = UDim2.new(1, 0, 0.1, 0);
+						Size = UDim2.new(0, 14, 0, 14);
 						BackgroundTransparency = 1.0;
-						TextTransparency = 1.0;	
-						Position = UDim2.new(0, 0, 1, 0);
+						Position = UDim2.new(0, 0, 1, -10);
 						BorderSizePixel = 0.0; 
-						TextStrokeColor3 = Color3.new(0.5, 0.5, 0.5);
-						TextStrokeTransparency = 0.75;
-						--Active = false;
-					};					
+						Image = "rbxasset://textures/ui/chat_teamButton.png";
+						ImageTransparency = 1.0;
+					};
+
 		local pColor 
 		if cPlayer.Neutral then  
-			pLabel.TextColor3 = Chat:ComputeChatColor(pName)
+			pLabel.ImageColor3 = Chat:ComputeChatColor(pName)
 		else 
-			pLabel.TextColor3 = cPlayer.TeamColor.Color 
+			pLabel.ImageColor3 = cPlayer.TeamColor.Color 
 		end 
-
-		local nString 
-
-		if not self.CachedSpaceStrings_List[pName] then 
-			nString = Chat:ComputeSpaceString(pLabel)
-		else 
-			nString = self.CachedSpaceStrings_List[pName]
-		end
-		
-		message = StringTrim(message,nString)
 
 		mLabel = Gui.Create'TextLabel' 
 						{
@@ -779,6 +783,7 @@ function Chat:CreateMessage(cPlayer, message)
 							-- Max is 3 lines
 							Size = UDim2.new(1, 0, 0.5, 0);							
 							TextColor3 = Chat.Configuration.MessageColor;
+							Font = Enum.Font.SourceSans;
 							FontSize = Chat.Configuration.FontSize;
 							TextXAlignment = Enum.TextXAlignment.Left;	
 							TextYAlignment = Enum.TextYAlignment.Top;						
@@ -787,16 +792,15 @@ function Chat:CreateMessage(cPlayer, message)
 							TextWrapped = true;			
 							BackgroundTransparency = 1.0;						
 							TextTransparency = 1.0;
-							Position = UDim2.new(0, 0, 1, 0);
+							Position = UDim2.new(0, 40, 1, 0);
 							BorderSizePixel = 0.0;
 							TextStrokeColor3 = Color3.new(0, 0, 0);
-							--TextStrokeTransparency = 0.8;
+							TextStrokeTransparency = 0.8;
 							--Active = false;
 						};
-		mLabel.Text = nString .. message;
+		mLabel.Text = nString .. pName .. ": " .. message;
 
 		if not pName then 
-			pLabel.Text = '' 
 			mLabel.TextColor3 = Color3.new(0, 0.4, 1.0)
 		end 
 	--end 
@@ -814,7 +818,6 @@ function Chat:CreateMessage(cPlayer, message)
 	local heightField = mLabel.TextBounds.Y	
 
 	mLabel.Size = UDim2.new(1, 0, heightField/self.RenderFrame.AbsoluteSize.Y, 0)	
-	pLabel.Size = mLabel.Size
 
 	local yPixels = self.RenderFrame.AbsoluteSize.Y
 	local yFieldSize = mLabel.TextBounds.Y
@@ -1077,7 +1080,7 @@ function Chat:CreateGui()
 					Name = 'ChatFrame';
 					--Size = self.Configuration.Size;
 					Size = UDim2.new(0, 500, 0, 120);
-					Position = UDim2.new(0, 0, 0, 5);
+					Position = UDim2.new(0, 0, 0, 55);
 					BackgroundTransparency = 1.0;
 					--ClipsDescendants = true;
 					ZIndex = 0.0;

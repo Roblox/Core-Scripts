@@ -55,7 +55,6 @@ local resetButton = waitForChild(backpack.SearchFrame,"ResetButton")
 
 local robloxGui = waitForChild(Game.CoreGui, 'RobloxGui')
 local currentLoadout = waitForChild(robloxGui, 'CurrentLoadout')
-local loadoutBackground = waitForChild(currentLoadout, 'Background')
 
 local canToggle = true
 local readyForNextEvent = true
@@ -187,8 +186,8 @@ function showBackpack()
 		backpackOpenEvent:Fire(currentTab)
 		canToggle = true
 		readyForNextEvent = true
-		backpackButton.Image = 'http://www.roblox.com/asset/?id=97644093'
-		backpackButton.Position = UDim2.new(0.5, -60, 1, -backpackSize.Y.Offset - 103)
+		backpackButton.Image = "rbxasset://textures/ui/Backpack_Close.png"
+		backpackButton.Position = UDim2.new(0.5, -7, 1, -backpackSize.Y.Offset - 108)
 	end)
 end
 
@@ -203,20 +202,11 @@ function toggleBackpack()
 	backpackIsOpen = not backpackIsOpen
 
 	if backpackIsOpen then				
-		loadoutBackground.Image = 'http://www.roblox.com/asset/?id=97623721'
-		loadoutBackground.Position = UDim2.new(-0.03, 0, -0.17, 0)
-		loadoutBackground.Size = UDim2.new(1.05, 0, 1.25, 0)
-		loadoutBackground.ZIndex = 2.0
-		loadoutBackground.Visible = true
 		showBackpack()
 	else		
-		backpackButton.Position = UDim2.new(0.5, -60, 1, -44)
-		loadoutBackground.Visible = false
+		backpackButton.Position = UDim2.new(0.5, -7, 1, -55)
 		backpackButton.Selected = false		
-		backpackButton.Image = "http://www.roblox.com/asset/?id=97617958"
-		loadoutBackground.Image = 'http://www.roblox.com/asset/?id=96536002'
-		loadoutBackground.Position = UDim2.new(-0.1, 0, -0.1, 0)
-		loadoutBackground.Size = UDim2.new(1.2, 0, 1.2, 0)		
+		backpackButton.Image = "rbxasset://textures/ui/Backpack_Open.png"
 		hideBackpack()
 
 		
@@ -225,9 +215,8 @@ function toggleBackpack()
 			if clChildren[i] and clChildren[i]:IsA('Frame') then 
 				local frame = clChildren[i] 
 				if #frame:GetChildren() > 0 then 
-					backpackButton.Position = UDim2.new(0.5, -60, 1, -108)
+					backpackButton.Position = UDim2.new(0.5, -7, 1, -108)
 					backpackButton.Visible = true
-					loadoutBackground.Visible = true
 					if frame:GetChildren()[1]:IsA('ImageButton') then 
 						local imgButton = frame:GetChildren()[1]
 						imgButton.Active = true 
@@ -365,7 +354,7 @@ function coreGuiChanged(coreGuiType,enabled)
 		searchFrame.Visible = enabled and backpackIsOpen
 
 		currentLoadout.Visible = enabled
-		backpack.Visible = enabled
+		backpack.Visible = false 
 		backpackButton.Visible = enabled
 	end
 end
