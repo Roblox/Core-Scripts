@@ -304,7 +304,17 @@ function initializeDeveloperConsole()
 		Size = UDim2.new(0, 14, 0, 14);
 		Image = "http://www.roblox.com/Asset?id=151205813";
 	}
-
+	
+	local flagExists, flagValue = pcall(function () return settings():GetFFlag("ConsoleCodeExecutionEnabled") end)
+	local codeExecutionEnabled = flagExists and flagValue
+	local isCreator = game.Players.LocalPlayer.userId == game.CreatorId
+	local function shouldShowCommandBar()
+		return codeExecutionEnabled and isCreator
+	end
+	local function getCommandBarOffset()
+		return shouldShowCommandBar() and currentConsole == SERVER_CONSOLE and -22 or 0
+	end
+	
 	local Dev_TextBox = Create'Frame'{
 		Name = 'TextBox';
 		Parent = Dev_Body;
@@ -342,7 +352,63 @@ function initializeDeveloperConsole()
 		Rotation = 0;
 		Image = "http://www.roblox.com/Asset?id=152093917";
 	}
-
+	
+	local Dev_CommandBar = Create'Frame'{
+		Name = "CommandBar";
+		Parent = Dev_Container;
+		BackgroundTransparency = 0;
+		BackgroundColor3 = Color3.new(0, 0, 0);
+		BorderSizePixel = 0;
+		Size = UDim2.new(1, -25, 0, 24);
+		Position = UDim2.new(0, 2, 1, -28);
+		Visible = false;
+		ZIndex = 2;
+		BorderSizePixel = 0;
+	}
+	
+	local Dev_CommandBarTextBox = Create'TextBox'{
+		Name = 'CommandBarTextBox';
+		Parent = Dev_CommandBar;
+		BackgroundTransparency = 1;
+		MultiLine = false;
+		ZIndex = 2;
+		Position = UDim2.new(0, 25, 0, 2);
+		Size = UDim2.new(1, -30, 0, 20);
+		Font = Enum.Font.Legacy;
+		FontSize = Enum.FontSize.Size10;
+		TextColor3 = Color3.new(1, 1, 1);
+		TextXAlignment = Enum.TextXAlignment.Left;
+		TextYAlignment = Enum.TextYAlignment.Center;
+		Text = "Code goes here";
+	}
+	
+	Create'TextLabel'{
+		Name = "PromptLabel";
+		Parent = Dev_CommandBar;
+		BackgroundTransparency = 1;
+		Size = UDim2.new(0, 20, 1, 0);
+		Position = UDim2.new(0, 5, 0, 0);
+		Font = Enum.Font.Legacy;
+		FontSize = Enum.FontSize.Size10;
+		TextColor3 = Color3.new(1, 1, 1);
+		TextXAlignment = Enum.TextXAlignment.Center;
+		TextYAlignment = Enum.TextYAlignment.Center;
+		ZIndex = 2;
+		Text = ">";
+	}
+	
+	Dev_CommandBarTextBox.FocusLost:connect(function(enterPressed)
+		if enterPressed then
+			local code = Dev_CommandBarTextBox.Text
+			game:GetService("LogService"):ExecuteScript(code)
+			Dev_CommandBarTextBox.Text = ""
+			
+			-- scroll to the bottom of the console
+			serverOffset = 0
+			Dev_CommandBarTextBox:CaptureFocus()
+		end
+	end)
+	
 	local Dev_ResizeButton = Create'ImageButton'{
 		Name = 'ResizeButton';
 		Parent = Dev_Body;
@@ -836,6 +902,8 @@ function initializeDeveloperConsole()
 		
 		textHolderSize = posOffset
 		
+		repositionList()
+		
 	end
 
 	-- Refreshing the textholder every 0.1 (if needed) is good enough, surely fast enough
@@ -975,7 +1043,7 @@ function initializeDeveloperConsole()
 
 		if ratio >= 1 then
 			Dev_Container.Body.ScrollBar.Visible = false
-			Dev_Container.Body.TextBox.Size = UDim2.new(1, -4, 1, -28)
+			Dev_Container.Body.TextBox.Size = UDim2.new(1, -4, 1, -28 + getCommandBarOffset())
 			
 			if (currentConsole == LOCAL_CONSOLE) then
 				Dev_TextHolder.Position = UDim2.new(0, 0, 1, 0 - textHolderSize)
@@ -986,7 +1054,7 @@ function initializeDeveloperConsole()
 			
 		else
 			Dev_Container.Body.ScrollBar.Visible = true
-			Dev_Container.Body.TextBox.Size = UDim2.new(1, -25, 1, -28)
+			Dev_Container.Body.TextBox.Size = UDim2.new(1, -25, 1, -28 + getCommandBarOffset())
 			
 			local backRatio = 1 - ratio
 			local offsetRatio
@@ -1055,35 +1123,30 @@ function initializeDeveloperConsole()
 		errorToggleOn = not errorToggleOn
 		Dev_OptionsBar.ErrorToggleButton.CheckFrame.Visible = errorToggleOn
 		refreshTextHolder()
-		repositionList()
 	end)
 	
 	Dev_OptionsBar.WarningToggleButton.MouseButton1Down:connect(function(x, y)
 		warningToggleOn = not warningToggleOn
 		Dev_OptionsBar.WarningToggleButton.CheckFrame.Visible = warningToggleOn
 		refreshTextHolder()
-		repositionList()
 	end)
 	
 	Dev_OptionsBar.InfoToggleButton.MouseButton1Down:connect(function(x, y)
 		infoToggleOn = not infoToggleOn
 		Dev_OptionsBar.InfoToggleButton.CheckFrame.Visible = infoToggleOn
 		refreshTextHolder()
-		repositionList()
 	end)
 	
 	Dev_OptionsBar.OutputToggleButton.MouseButton1Down:connect(function(x, y)
 		outputToggleOn = not outputToggleOn
 		Dev_OptionsBar.OutputToggleButton.CheckFrame.Visible = outputToggleOn
 		refreshTextHolder()
-		repositionList()
 	end)
 	
 	Dev_OptionsBar.WordWrapToggleButton.MouseButton1Down:connect(function(x, y)
 		wordWrapToggleOn = not wordWrapToggleOn
 		Dev_OptionsBar.WordWrapToggleButton.CheckFrame.Visible = wordWrapToggleOn
 		refreshTextHolder()
-		repositionList()
 	end)
 
 	---Dev-Console Message Functionality
@@ -1094,8 +1157,6 @@ function initializeDeveloperConsole()
 		end
 		
 		refreshTextHolder()
-		
-		repositionList()
 	end
 
 	function AddServerMessage(str, messageType, timeStamp)
@@ -1105,8 +1166,6 @@ function initializeDeveloperConsole()
 		end
 		
 		refreshTextHolder()
-		
-		repositionList()
 	end
 
 
@@ -1119,6 +1178,8 @@ function initializeDeveloperConsole()
 				removeStatsListener()
 				clearCharts() 
 			end
+			
+			Dev_Container.CommandBar.Visible = false
 			
 			currentConsole = LOCAL_CONSOLE
 			local localConsole = Dev_Container.Body.LocalConsole
@@ -1140,9 +1201,7 @@ function initializeDeveloperConsole()
 				handleScroll(mouse.X, mouse.Y)
 			end
 			
-			refreshTextHolder()
-			repositionList()
-			
+			refreshTextHolder()			
 		end
 	end)
 
@@ -1160,7 +1219,9 @@ function initializeDeveloperConsole()
 		end
 		
 		if (currentConsole ~= SERVER_CONSOLE) then
-		
+			
+			Dev_Container.CommandBar.Visible = shouldShowCommandBar()
+			
 			if (currentConsole == SERVER_STATS) then 
 				removeStatsListener()
 				clearCharts() 
@@ -1186,7 +1247,6 @@ function initializeDeveloperConsole()
 			end
 			
 			refreshTextHolder()
-			repositionList()
 		end
 	end)
 
@@ -1197,6 +1257,9 @@ function initializeDeveloperConsole()
 
 	Dev_Container.Body.ServerStats.MouseButton1Click:connect(function(x, y)
 		if (currentConsole ~= SERVER_STATS) then
+		
+			Dev_Container.CommandBar.Visible = false
+			
 			currentConsole = SERVER_STATS
 			local localConsole = Dev_Container.Body.LocalConsole
 			local serverConsole = Dev_Container.Body.ServerConsole
