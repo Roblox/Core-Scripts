@@ -1363,8 +1363,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	return gameSettingsMenuFrame
 end
 
-
-
+local showMainMenu = nil 
 
 if LoadLibrary then
   RbxGui = LoadLibrary("RbxGui")
@@ -1501,40 +1500,63 @@ if UserSettings then
 				goToMenu(settingsFrame,"LeaveConfirmationMenu","down",UDim2.new(0,525,0,300))
 			end)
 		end
+
+		showMainMenu = function(overrideMenu, overrideDir, overrideSize)
+			if shield.Visible and overrideMenu then
+				goToMenu(settingsFrame,overrideMenu,overrideDir,overrideSize)
+				return
+			end
+
+			game.GuiService:AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog,
+				--showFunction
+				function()
+					settingsButton.Active = false
+					if updateCameraDropDownSelection ~= nil then
+						updateCameraDropDownSelection(UserSettings().GameSettings.ControlMode.Name)
+					end
+					updateSmartCameraDropDownSelection(UserSettings().GameSettings.CameraMode.Name)
+					if updateTouchMovementDropDownSelection ~= nil then
+						updateTouchMovementDropDownSelection(UserSettings().GameSettings.TouchMovementMode.Name)
+					end
+
+
+					if syncVideoCaptureSetting then
+							syncVideoCaptureSetting()
+					end
+
+					local menuToGoTo = "GameMainMenu"
+					local direction = "right"
+					local menuSize = UDim2.new(0,525,0,430)
+
+					if overrideMenu then
+						menuToGoTo = overrideMenu
+					end
+					if overrideDir then
+						direction = overrideDir
+					end
+					if overrideSize then
+						menuSize = overrideSize
+					end
+
+					goToMenu(settingsFrame,menuToGoTo,direction,menuSize)
+					shield.Visible = true
+					shield.Active = true
+					settingsFrame.Parent:TweenPosition(UDim2.new(0.5, -262,0.5, -200),Enum.EasingDirection.InOut,Enum.EasingStyle.Sine,tweenTime,true)
+					settingsFrame.Parent:TweenSize(UDim2.new(0,525,0,430),Enum.EasingDirection.InOut,Enum.EasingStyle.Sine,tweenTime,true)
+				end,
+				--hideFunction
+				function()
+					settingsFrame.Parent:TweenPosition(UDim2.new(0.5, -262,-0.5, -200),Enum.EasingDirection.InOut,Enum.EasingStyle.Sine,tweenTime,true)
+					settingsFrame.Parent:TweenSize(UDim2.new(0,525,0,430),Enum.EasingDirection.InOut,Enum.EasingStyle.Sine,tweenTime,true)
+					shield.Visible = false
+					settingsButton.Active = true
+				end)
+		end
 		
 		if game.CoreGui.Version >= 4 then -- we can use escape!
 			game:GetService("GuiService").EscapeKeyPressed:connect(function()
 				if currentMenuSelection == nil then
-					game.GuiService:AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog,
-						--showFunction
-						function()
-							settingsButton.Active = false
-							if updateCameraDropDownSelection ~= nil then
-								updateCameraDropDownSelection(UserSettings().GameSettings.ControlMode.Name)
-							end
-							updateSmartCameraDropDownSelection(UserSettings().GameSettings.CameraMode.Name)
-							if updateTouchMovementDropDownSelection ~= nil then
-								updateTouchMovementDropDownSelection(UserSettings().GameSettings.TouchMovementMode.Name)
-							end
-
-
-							if syncVideoCaptureSetting then
-  								syncVideoCaptureSetting()
-							end
-
-							goToMenu(settingsFrame,"GameMainMenu","right",UDim2.new(0,525,0,430))
-							shield.Visible = true
-							shield.Active = true
-							settingsFrame.Parent:TweenPosition(UDim2.new(0.5, -262,0.5, -200),Enum.EasingDirection.InOut,Enum.EasingStyle.Sine,tweenTime,true)
-							settingsFrame.Parent:TweenSize(UDim2.new(0,525,0,430),Enum.EasingDirection.InOut,Enum.EasingStyle.Sine,tweenTime,true)
-						end,
-						--hideFunction
-						function()
-							settingsFrame.Parent:TweenPosition(UDim2.new(0.5, -262,-0.5, -200),Enum.EasingDirection.InOut,Enum.EasingStyle.Sine,tweenTime,true)
-							settingsFrame.Parent:TweenSize(UDim2.new(0,525,0,430),Enum.EasingDirection.InOut,Enum.EasingStyle.Sine,tweenTime,true)
-							shield.Visible = false
-							settingsButton.Active = true
-						end)
+					showMainMenu()
 				elseif #lastMenuSelection > 0 then
 					if #centerDialogs > 0 then
 						for i = 1, #centerDialogs do
@@ -2268,6 +2290,25 @@ if isSaveDialogSupported then
 			end
 		end)
 end
+
+--Spawn a thread to listen to leave game prompts
+Spawn(function()
+	local showLeaveEvent = nil
+	pcall(function() showLeaveEvent = Game:GetService("GuiService").ShowLeaveConfirmation end)
+	if not showLeaveEvent then return end
+
+	function showLeaveConfirmation()
+		showMainMenu("LeaveConfirmationMenu","down",UDim2.new(0,525,0,300))
+	end
+
+	Game:GetService("GuiService").ShowLeaveConfirmation:connect(function( )
+		if currentMenuSelection == nil then
+			showLeaveConfirmation()
+		else
+			resumeGameFunction(gui.UserSettingsShield)
+		end
+	end)
+end)
 
 --Spawn a thread for the Report Abuse dialogs
 delay(0, 
