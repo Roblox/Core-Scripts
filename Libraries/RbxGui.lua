@@ -3041,7 +3041,9 @@ t.CreateSetPanel = function(userIdsForSets, objectSelected, dialogClosed, size, 
 			if newImageUrl ~= insertFrame.Button.ButtonImage.Image then
 				delay(0,function()
 					game:GetService("ContentProvider"):Preload(SmallThumbnailUrl  .. assetId)
-					insertFrame.Button.ButtonImage.Image = SmallThumbnailUrl  .. assetId
+					if insertFrame:findFirstChild("Button") then
+						insertFrame.Button.ButtonImage.Image = SmallThumbnailUrl  .. assetId
+					end
 				end)
 			end
 			table.insert(insertButtonCons,
