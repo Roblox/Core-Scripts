@@ -8,7 +8,7 @@ end
 
 local Dev_Container = Create'Frame'{
 	Name = 'DevConsoleContainer';
-	Parent = Instance.new("ScreenGui",game.Players.LocalPlayer.PlayerGui);
+	Parent = gui;
 	BackgroundColor3 = Color3.new(0,0,0);
 	BackgroundTransparency = 0.9;
 	Position = UDim2.new(0, 100, 0, 10);
