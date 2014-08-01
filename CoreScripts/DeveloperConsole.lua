@@ -1,4 +1,4 @@
-local Create = assert(LoadLibrary("RbxUtility").Create)
+local Create = assert(LoadLibrary("RbxUtility")).Create
 
 if script.Parent:FindFirstChild("ControlFrame") then
 	gui = script.Parent:FindFirstChild("ControlFrame")
