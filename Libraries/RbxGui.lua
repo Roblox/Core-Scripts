@@ -207,12 +207,20 @@ t.CreateMessageDialog = function(title, message, buttons)
 	return frame
 end
 
-t.CreateDropDownMenu = function(items, onSelect, forRoblox)
+t.CreateDropDownMenu = function(items, onSelect, forRoblox, whiteSkin, baseZ)
+	local baseZIndex = 0
+	if (type(baseZ) == "number") then
+		baseZIndex = baseZ
+	end
 	local width = UDim.new(0, 100)
 	local height = UDim.new(0, 32)
 
 	local xPos = 0.055
 	local frame = Instance.new("Frame")
+	local textColor = Color3.new(1,1,1)
+	if (whiteSkin) then
+		textColor = Color3.new(0.5, 0.5, 0.5)
+	end
 	frame.Name = "DropDownMenu"
 	frame.BackgroundTransparency = 1
 	frame.Size = UDim2.new(width, height)
@@ -220,7 +228,7 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox)
 	local dropDownMenu = Instance.new("TextButton")
 	dropDownMenu.Name = "DropDownMenuButton"
 	dropDownMenu.TextWrap = true
-	dropDownMenu.TextColor3 = Color3.new(1,1,1)
+	dropDownMenu.TextColor3 = textColor
 	dropDownMenu.Text = "Choose One"
 	dropDownMenu.Font = Enum.Font.ArialBold
 	dropDownMenu.FontSize = Enum.FontSize.Size18
@@ -228,20 +236,30 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox)
 	dropDownMenu.TextYAlignment = Enum.TextYAlignment.Center
 	dropDownMenu.BackgroundTransparency = 1
 	dropDownMenu.AutoButtonColor = true
-	dropDownMenu.Style = Enum.ButtonStyle.RobloxButton
+	if (whiteSkin) then
+		dropDownMenu.Style = Enum.ButtonStyle.RobloxRoundDropdownButton
+	else
+		dropDownMenu.Style = Enum.ButtonStyle.RobloxButton
+	end
 	dropDownMenu.Size = UDim2.new(1,0,1,0)
 	dropDownMenu.Parent = frame
-	dropDownMenu.ZIndex = 2
+	dropDownMenu.ZIndex = 2 + baseZIndex
 
 	local dropDownIcon = Instance.new("ImageLabel")
 	dropDownIcon.Name = "Icon"
 	dropDownIcon.Active = false
-	dropDownIcon.Image = "http://www.roblox.com/asset/?id=45732894"
+	if (whiteSkin) then
+		dropDownIcon.Image = "rbxasset://textures/ui/dropdown_arrow.png"
+		dropDownIcon.Size = UDim2.new(0,16,0,12)
+		dropDownIcon.Position = UDim2.new(1,-17,0.5, -6)
+	else
+		dropDownIcon.Image = "http://www.roblox.com/asset/?id=45732894"
+		dropDownIcon.Size = UDim2.new(0,11,0,6)
+		dropDownIcon.Position = UDim2.new(1,-11,0.5, -2)
+	end
 	dropDownIcon.BackgroundTransparency = 1
-	dropDownIcon.Size = UDim2.new(0,11,0,6)
-	dropDownIcon.Position = UDim2.new(1,-11,0.5, -2)
 	dropDownIcon.Parent = dropDownMenu
-	dropDownIcon.ZIndex = 2
+	dropDownIcon.ZIndex = 2 + baseZIndex
 	
 	local itemCount = #items
 	local dropDownItemCount = #items
@@ -256,20 +274,24 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox)
 	droppedDownMenu.Text = ""
 	droppedDownMenu.BackgroundTransparency = 1
 	--droppedDownMenu.AutoButtonColor = true
-	droppedDownMenu.Style = Enum.ButtonStyle.RobloxButton
+	if (whiteSkin) then
+		droppedDownMenu.Style = Enum.ButtonStyle.RobloxRoundDropdownButton
+	else
+		droppedDownMenu.Style = Enum.ButtonStyle.RobloxButton
+	end
 	droppedDownMenu.Visible = false
 	droppedDownMenu.Active = true	--Blocks clicks
 	droppedDownMenu.Position = UDim2.new(0,0,0,0)
 	droppedDownMenu.Size = UDim2.new(1,0, (1 + dropDownItemCount)*.8, 0)
 	droppedDownMenu.Parent = frame
-	droppedDownMenu.ZIndex = 2
+	droppedDownMenu.ZIndex = 2 + baseZIndex
 
 	local choiceButton = Instance.new("TextButton")
 	choiceButton.Name = "ChoiceButton"
 	choiceButton.BackgroundTransparency = 1
 	choiceButton.BorderSizePixel = 0
 	choiceButton.Text = "ReplaceMe"
-	choiceButton.TextColor3 = Color3.new(1,1,1)
+	choiceButton.TextColor3 = textColor
 	choiceButton.TextXAlignment = Enum.TextXAlignment.Left
 	choiceButton.TextYAlignment = Enum.TextYAlignment.Center
 	choiceButton.BackgroundColor3 = Color3.new(1, 1, 1)
@@ -281,7 +303,7 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox)
 		choiceButton.Size = UDim2.new(1, 0, .8/((dropDownItemCount + 1)*.8),0) 
 	end
 	choiceButton.TextWrap = true
-	choiceButton.ZIndex = 2
+	choiceButton.ZIndex = 2 + baseZIndex
 
 	local areaSoak = Instance.new("TextButton")
 	areaSoak.Name = "AreaSoak"
@@ -290,7 +312,7 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox)
 	areaSoak.Active = true
 	areaSoak.Size = UDim2.new(1,0,1,0)
 	areaSoak.Visible = false
-	areaSoak.ZIndex = 3
+	areaSoak.ZIndex = 3 + baseZIndex
 
 	local dropDownSelected = false
 
@@ -340,7 +362,7 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox)
 					obj.Position = UDim2.new(0,0,((childNum-scrollBarPosition+1)*.8)/((dropDownItemCount+1)*.8),0)
 					obj.Visible = true
 				end
-				obj.TextColor3 = Color3.new(1,1,1)
+				obj.TextColor3 = textColor
 				obj.BackgroundTransparency = 1
 
 				childNum = childNum + 1
@@ -354,9 +376,9 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox)
 		dropDownMenu.Visible = not dropDownSelected
 		droppedDownMenu.Visible = dropDownSelected
 		if dropDownSelected then
-			setZIndex(4)
+			setZIndex(4 + baseZIndex)
 		else
-			setZIndex(2)
+			setZIndex(2 + baseZIndex)
 		end
 		if useScrollButtons then
 			updateScroll()
@@ -374,9 +396,15 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox)
 					if obj.Text == text then
 						obj.Font = Enum.Font.ArialBold
 						foundItem = true			
-						scrollBarPosition = childNum
+						scrollBarPosition = childNum						
+						if (whiteSkin) then
+							obj.TextColor3 = Color3.new(90/255,142/255,233/255)
+						end
 					else
 						obj.Font = Enum.Font.Arial
+						if (whiteSkin) then
+							obj.TextColor3 = textColor
+						end
 					end
 					childNum = childNum + 1
 				end
@@ -495,9 +523,15 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox)
 		end		
 		button.Text = item
 		button.Parent = droppedDownMenu
+		if (whiteSkin) then
+			button.TextColor3 = textColor
+		end
+
 		button.MouseButton1Click:connect(function()
 			--Remove Highlight
-			button.TextColor3 = Color3.new(1,1,1)
+			if (not whiteSkin) then
+				button.TextColor3 = Color3.new(1,1,1)
+			end
 			button.BackgroundTransparency = 1
 
 			updateSelection(item)
@@ -507,13 +541,17 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox)
 		end)
 		button.MouseEnter:connect(function()
 			--Add Highlight	
-			button.TextColor3 = Color3.new(0,0,0)
+			if (not whiteSkin) then
+				button.TextColor3 = Color3.new(0,0,0)
+			end
 			button.BackgroundTransparency = 0
 		end)
 
 		button.MouseLeave:connect(function()
 			--Remove Highlight
-			button.TextColor3 = Color3.new(1,1,1)
+			if (not whiteSkin) then
+				button.TextColor3 = Color3.new(1,1,1)
+			end
 			button.BackgroundTransparency = 1
 		end)
 	end
@@ -819,6 +857,145 @@ t.CreateSlider = function(steps,width,position)
 	return sliderGui, sliderPosition, sliderSteps
 
 end
+
+
+
+t.CreateSliderNew = function(steps,width,position)
+	local sliderGui = Instance.new("Frame")
+	sliderGui.Size = UDim2.new(1,0,1,0)
+	sliderGui.BackgroundTransparency = 1
+	sliderGui.Name = "SliderGui"
+	
+	local sliderSteps = Instance.new("IntValue")
+	sliderSteps.Name = "SliderSteps"
+	sliderSteps.Value = steps
+	sliderSteps.Parent = sliderGui
+	
+	local areaSoak = Instance.new("TextButton")
+	areaSoak.Name = "AreaSoak"
+	areaSoak.Text = ""
+	areaSoak.BackgroundTransparency = 1
+	areaSoak.Active = false
+	areaSoak.Size = UDim2.new(1,0,1,0)
+	areaSoak.Visible = false
+	areaSoak.ZIndex = 6
+	
+	sliderGui.AncestryChanged:connect(function(child,parent)
+		if parent == nil then
+			areaSoak.Parent = nil
+		else
+			areaSoak.Parent = getScreenGuiAncestor(sliderGui)
+		end
+	end)
+	
+	local sliderPosition = Instance.new("IntValue")
+	sliderPosition.Name = "SliderPosition"
+	sliderPosition.Value = 0
+	sliderPosition.Parent = sliderGui
+	
+	local id = math.random(1,100)
+	
+	local sliderBarImgHeight = 7
+	local sliderBarCapImgWidth = 4
+
+	local bar = Instance.new("ImageButton")
+	bar.BackgroundTransparency = 1
+	bar.Image = "rbxasset://textures/ui/Slider-BKG-Center.png"
+	bar.Name = "Bar"
+	local displayWidth = 200
+	if type(width) == "number" then
+		bar.Size = UDim2.new(0,width - (sliderBarCapImgWidth * 2),0,sliderBarImgHeight)
+		displayWidth = width - (sliderBarCapImgWidth * 2)
+	else
+		bar.Size = UDim2.new(0,200,0,sliderBarImgHeight)
+	end
+	bar.ZIndex = 3
+	bar.Parent = sliderGui	
+	if position["X"] and position["X"]["Scale"] and position["X"]["Offset"] and position["Y"] and position["Y"]["Scale"] and position["Y"]["Offset"] then
+		bar.Position = position
+	end
+
+	local barLeft = bar:clone()
+	barLeft.Name = "BarLeft"
+	barLeft.Image = "rbxasset://textures/ui/Slider-BKG-Left-Cap.png"
+	barLeft.Size = UDim2.new(0, sliderBarCapImgWidth, 0, sliderBarImgHeight)
+	barLeft.Position = UDim2.new(position.X.Scale, position.X.Offset - sliderBarCapImgWidth, position.Y.Scale, position.Y.Offset)
+	barLeft.Parent = sliderGui	
+	barLeft.ZIndex = 3
+
+	local barRight = barLeft:clone()
+	barRight.Name = "BarRight"
+	barRight.Image = "rbxasset://textures/ui/Slider-BKG-Right-Cap.png"
+	barRight.Position = UDim2.new(position.X.Scale, position.X.Offset + displayWidth, position.Y.Scale, position.Y.Offset)
+	barRight.Parent = sliderGui	
+
+	local fillLeft = barLeft:clone()
+	fillLeft.Name = "FillLeft"
+	fillLeft.Image = "rbxasset://textures/ui/Slider-Fill-Left-Cap.png"
+	fillLeft.Parent = sliderGui	
+	fillLeft.ZIndex = 4
+
+	local fill = fillLeft:clone()
+	fill.Name = "Fill"
+	fill.Image = "rbxasset://textures/ui/Slider-Fill-Center.png"
+	fill.Parent = bar	
+	fill.ZIndex = 4
+	fill.Position = UDim2.new(0, 0, 0, 0)
+	fill.Size = UDim2.new(0.5, 0, 1, 0)
+
+
+--	bar.Visible = false
+
+	local slider = Instance.new("ImageButton")
+	slider.Name = "Slider"
+	slider.BackgroundTransparency = 1
+	slider.Image = "rbxasset://textures/ui/slider_new_tab.png"
+	slider.Position = UDim2.new(0,0,0.5,-14)
+	slider.Size = UDim2.new(0,28,0,28)
+	slider.ZIndex = 5
+	slider.Parent = bar
+	
+	local areaSoakMouseMoveCon = nil
+	
+	areaSoak.MouseLeave:connect(function()
+		if areaSoak.Visible then
+			cancelSlide(areaSoak)
+		end
+	end)
+	areaSoak.MouseButton1Up:connect(function()
+		if areaSoak.Visible then
+			cancelSlide(areaSoak)
+		end
+	end)
+	
+	slider.MouseButton1Down:connect(function()
+		areaSoak.Visible = true
+		if areaSoakMouseMoveCon then areaSoakMouseMoveCon:disconnect() end
+		areaSoakMouseMoveCon = areaSoak.MouseMoved:connect(function(x,y)
+			setSliderPos(x,slider,sliderPosition,bar,steps)
+		end)
+	end)
+	
+	slider.MouseButton1Up:connect(function() cancelSlide(areaSoak) end)
+	
+	sliderPosition.Changed:connect(function(prop)
+		sliderPosition.Value = math.min(steps, math.max(1,sliderPosition.Value))
+		local relativePosX = (sliderPosition.Value - 1) / (steps - 1)
+		slider.Position = UDim2.new(relativePosX,-slider.AbsoluteSize.X/2,slider.Position.Y.Scale,slider.Position.Y.Offset)
+		fill.Size = UDim2.new(relativePosX, 0, 1, 0)
+	end)
+	
+	bar.MouseButton1Down:connect(function(x,y)
+		setSliderPos(x,slider,sliderPosition,bar,steps)
+	end)
+
+	return sliderGui, sliderPosition, sliderSteps
+
+end
+
+
+
+
 
 t.CreateTrueScrollingFrame = function()
 	local lowY = nil
@@ -2864,7 +3041,9 @@ t.CreateSetPanel = function(userIdsForSets, objectSelected, dialogClosed, size, 
 			if newImageUrl ~= insertFrame.Button.ButtonImage.Image then
 				delay(0,function()
 					game:GetService("ContentProvider"):Preload(SmallThumbnailUrl  .. assetId)
-					insertFrame.Button.ButtonImage.Image = SmallThumbnailUrl  .. assetId
+					if insertFrame:findFirstChild("Button") then
+						insertFrame.Button.ButtonImage.Image = SmallThumbnailUrl  .. assetId
+					end
 				end)
 			end
 			table.insert(insertButtonCons,
@@ -3826,6 +4005,11 @@ t.Help =
 		end
 		if funcNameOrFunc == "CreateSlider" or funcNameOrFunc == t.CreateSlider then
 			return "Function CreateSlider.  " ..
+				"Arguments: (steps, width, position) " ..
+				"Side effect: returns 2 objects, (sliderGui, sliderPosition).  The 'steps' argument specifies how many different positions the slider can hold along the bar.  'width' specifies in pixels how wide the bar should be (modifiable afterwards if desired). 'position' argument should be a UDim2 for slider positioning. 'sliderPosition' is an IntValue whose current .Value specifies the specific step the slider is currently on."
+		end
+		if funcNameOrFunc == "CreateSliderNew" or funcNameOrFunc == t.CreateSliderNew then
+			return "Function CreateSliderNew.  " ..
 				"Arguments: (steps, width, position) " ..
 				"Side effect: returns 2 objects, (sliderGui, sliderPosition).  The 'steps' argument specifies how many different positions the slider can hold along the bar.  'width' specifies in pixels how wide the bar should be (modifiable afterwards if desired). 'position' argument should be a UDim2 for slider positioning. 'sliderPosition' is an IntValue whose current .Value specifies the specific step the slider is currently on."
 		end
