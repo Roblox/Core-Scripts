@@ -398,8 +398,8 @@ function initializeDeveloperConsole()
 	}
 	
 	Dev_CommandBarTextBox.FocusLost:connect(function(enterPressed)
-		if enterPressed then
-			local code = Dev_CommandBarTextBox.Text
+		local code = Dev_CommandBarTextBox.Text
+		if enterPressed and code ~= "" then
 			game:GetService("LogService"):ExecuteScript(code)
 			Dev_CommandBarTextBox.Text = ""
 			
