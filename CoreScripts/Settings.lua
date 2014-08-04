@@ -55,12 +55,14 @@ macClient = success and isMac
 -- REMOVE WHEN NOT TESTING
 --macClient = true
 
+local customCameraDefaultType = "Default (Classic)"
 local touchClient = false
 pcall(function() touchClient = game:GetService("UserInputService").TouchEnabled end)
 -- REMOVE WHEN NOT TESTING
 --touchClient = true
 if touchClient then
 	hasGraphicsSlider = false
+	customCameraDefaultType = "Default (Follow)"
 end
 
 local function Color3I(r,g,b)
@@ -850,8 +852,12 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	local smartEnumNameToItem = {}
 
 	for i,obj in pairs(smartEnumItems) do
-		smartEnumNames[i] = obj.Name
-		smartEnumNameToItem[obj.Name] = obj.Value
+		local displayName = obj.Name
+		if (obj.Name == "Default") then
+			displayName = customCameraDefaultType
+		end
+		smartEnumNames[i] = displayName
+		smartEnumNameToItem[displayName] = obj.Value
 	end
 
 	local smartCameraDropDown
@@ -891,8 +897,12 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		local touchEnumNames = {}
 		local touchEnumNameToItem = {}
 		for i,obj in ipairs(touchEnumItems) do
-			touchEnumNames[i] = obj.Name
-			touchEnumNameToItem[obj.Name] = obj
+			local displayName = obj.Name
+			if (obj.Name == "Default") then
+				displayName = "Default (Thumbstick)"
+			end
+			touchEnumNames[i] = displayName
+			touchEnumNameToItem[displayName] = obj
 		end
 
 		local touchMovementDropDown
@@ -1514,9 +1524,19 @@ if UserSettings then
 					if updateCameraDropDownSelection ~= nil then
 						updateCameraDropDownSelection(UserSettings().GameSettings.ControlMode.Name)
 					end
-					updateSmartCameraDropDownSelection(UserSettings().GameSettings.CameraMode.Name)
+
+					local cameraMode = UserSettings().GameSettings.CameraMode.Name
+					if (cameraMode == "Default") then
+						cameraMode = customCameraDefaultType
+					end
+					updateSmartCameraDropDownSelection(cameraMode)
+
 					if updateTouchMovementDropDownSelection ~= nil then
-						updateTouchMovementDropDownSelection(UserSettings().GameSettings.TouchMovementMode.Name)
+						local moveMode = UserSettings().GameSettings.TouchMovementMode.Name
+						if (moveMode == "Default") then
+							moveMode = "Default (Thumbstick)"
+						end
+						updateTouchMovementDropDownSelection(moveMode)
 					end
 
 
@@ -1610,9 +1630,19 @@ if UserSettings then
 						if updateCameraDropDownSelection ~= nil then
 							updateCameraDropDownSelection(UserSettings().GameSettings.ControlMode.Name)
 						end
-						updateSmartCameraDropDownSelection(UserSettings().GameSettings.CameraMode.Name)
+	
+						local cameraMode = UserSettings().GameSettings.CameraMode.Name
+						if (cameraMode == "Default") then
+							cameraMode = customCameraDefaultType
+						end
+						updateSmartCameraDropDownSelection(cameraMode)
+	
 						if updateTouchMovementDropDownSelection ~= nil then
-							updateTouchMovementDropDownSelection(UserSettings().GameSettings.TouchMovementMode.Name)
+							local moveMode = UserSettings().GameSettings.TouchMovementMode.Name
+							if (moveMode == "Default") then
+								moveMode = "Default (Thumbstick)"
+							end
+							updateTouchMovementDropDownSelection(moveMode)
 						end
 						
 						if syncVideoCaptureSetting then
