@@ -2398,7 +2398,7 @@ function InsertPlayerFrame(nplayer)
 	nplayer.ChildAdded:connect(function(nchild) 
 		if nchild.Name == 'leaderstats' then
 			while AddingFrameLock do debugprint('in adding leaderstats lock') wait(1/30) end
-			if not nplayer:findFirstChild("leaderstats") then return end
+			if not nplayer:FindFirstChild("leaderstats") then return end
 			AddingFrameLock = true
 			LeaderstatsAdded(nentry)
 			AddingFrameLock = false
