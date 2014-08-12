@@ -139,6 +139,11 @@ local ADMINS =
 	jynj1984 = 1,
 	roboyz = 1,
 	zodiaczak = 1,
+	superman205 = 1,
+	convexrumbler = 1,
+	mpliner476 = 1,
+	geekndestroy = 1,
+	glewis17 = 1,
 }
 
 
