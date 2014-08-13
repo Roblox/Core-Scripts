@@ -1720,16 +1720,26 @@ local createSaveDialogs = function()
 	messageBoxButtons[1].Text = "Save"
 	messageBoxButtons[1].Style = Enum.ButtonStyle.RobloxRoundDefaultButton
 	messageBoxButtons[1].Function = function() save() end 
+	messageBoxButtons[1].ZIndex =  baseZIndex+3
 	messageBoxButtons[2] = {}
 	messageBoxButtons[2].Text = "Cancel"
 	messageBoxButtons[2].Function = function() cancel() end 
+	messageBoxButtons[2].Style = Enum.ButtonStyle.RobloxRoundButton
+	messageBoxButtons[2].ZIndex =  baseZIndex+3
 	messageBoxButtons[3] = {}
 	messageBoxButtons[3].Text = "Don't Save"
 	messageBoxButtons[3].Function = function() dontSave() end 
+	messageBoxButtons[3].Style = Enum.ButtonStyle.RobloxRoundButton
+	messageBoxButtons[3].ZIndex =  baseZIndex+3
 
 	local saveDialogMessageBox = RbxGui.CreateStyledMessageDialog("Unsaved Changes", "Save your changes to ROBLOX before leaving?", "Confirm", messageBoxButtons)
 	saveDialogMessageBox.Visible = true
 	saveDialogMessageBox.Parent = shield
+	saveDialogMessageBox.ZIndex = baseZIndex+2
+	saveDialogMessageBox.Style = Enum.FrameStyle.DropShadow
+	saveDialogMessageBox.Title.ZIndex = baseZIndex+3
+	saveDialogMessageBox.Message.ZIndex = baseZIndex+3
+	saveDialogMessageBox.StyleImage.ZIndex = baseZIndex+3
 
 
 	local errorBoxButtons = {}
@@ -1744,13 +1754,22 @@ local createSaveDialogs = function()
 	errorBoxButtons[buttonOffset] = {}
 	errorBoxButtons[buttonOffset].Text = "Keep Playing"
 	errorBoxButtons[buttonOffset].Function = function() cancel() end 
+	errorBoxButtons[buttonOffset].Style = Enum.ButtonStyle.RobloxRoundButton
+	errorBoxButtons[buttonOffset].ZIndex =  baseZIndex+3
 	errorBoxButtons[buttonOffset+1] = {}
 	errorBoxButtons[buttonOffset+1].Text = "Don't Save"
 	errorBoxButtons[buttonOffset+1].Function = function() dontSave() end 
+	errorBoxButtons[buttonOffset+1].Style = Enum.ButtonStyle.RobloxRoundButton
+	errorBoxButtons[buttonOffset+1].ZIndex =  baseZIndex+3
 
 	local errorDialogMessageBox = RbxGui.CreateStyledMessageDialog("Upload Failed", "Sorry, we could not save your changes to ROBLOX. If this problem continues to occur, please make sure your Roblox account has a verified email address.", "Error", errorBoxButtons)
 	errorDialogMessageBox.Visible = false
 	errorDialogMessageBox.Parent = shield
+	errorDialogMessageBox.ZIndex = baseZIndex+2
+	errorDialogMessageBox.Style = Enum.FrameStyle.DropShadow
+	errorDialogMessageBox.Title.ZIndex = baseZIndex+3
+	errorDialogMessageBox.Message.ZIndex = baseZIndex+3
+	errorDialogMessageBox.StyleImage.ZIndex = baseZIndex+3
 
 	local spinnerDialog = Instance.new("Frame")
 	spinnerDialog.Name = "SpinnerDialog"
@@ -1759,6 +1778,7 @@ local createSaveDialogs = function()
 	spinnerDialog.Position = UDim2.new(.5, -175, .5, -75)
 	spinnerDialog.Visible = false
 	spinnerDialog.Active = true
+	spinnerDialog.ZIndex = baseZIndex+1
 	spinnerDialog.Parent = shield
 
 	local waitingLabel = Instance.new("TextLabel")
@@ -1768,6 +1788,7 @@ local createSaveDialogs = function()
 	waitingLabel.FontSize = Enum.FontSize.Size18
 	waitingLabel.Position = UDim2.new(0.5, 25, 0.5, 0)
 	waitingLabel.TextColor3 = Color3.new(1,1,1)
+	waitingLabel.ZIndex = baseZIndex+2
 	waitingLabel.Parent = spinnerDialog
 
 	local spinnerFrame = Instance.new("Frame")
@@ -1775,17 +1796,19 @@ local createSaveDialogs = function()
 	spinnerFrame.Size = UDim2.new(0, 80, 0, 80)
 	spinnerFrame.Position = UDim2.new(0.5, -150, 0.5, -40)
 	spinnerFrame.BackgroundTransparency = 1
+	spinnerFrame.ZIndex = baseZIndex+2
 	spinnerFrame.Parent = spinnerDialog
 
 	local spinnerIcons = {}
 	local spinnerNum = 1
 	while spinnerNum <= 8 do
 		local spinnerImage = Instance.new("ImageLabel")
-	   spinnerImage.Name = "Spinner"..spinnerNum
+	    spinnerImage.Name = "Spinner"..spinnerNum
 		spinnerImage.Size = UDim2.new(0, 16, 0, 16)
 		spinnerImage.Position = UDim2.new(.5+.3*math.cos(math.rad(45*spinnerNum)), -8, .5+.3*math.sin(math.rad(45*spinnerNum)), -8)
 		spinnerImage.BackgroundTransparency = 1
-	   spinnerImage.Image = "http://www.roblox.com/Asset?id=45880710"
+	    spinnerImage.Image = "http://www.roblox.com/Asset?id=45880710"
+		spinnerImage.ZIndex = baseZIndex+3
 		spinnerImage.Parent = spinnerFrame
 
 	   spinnerIcons[spinnerNum] = spinnerImage

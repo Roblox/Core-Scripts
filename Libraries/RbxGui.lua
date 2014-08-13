@@ -52,6 +52,9 @@ local function CreateButtons(frame, buttons, yPos, ySize)
 		else
 			button.Style = Enum.ButtonStyle.RobloxButton
 		end
+		if obj["ZIndex"] then
+			button.ZIndex = obj.ZIndex
+		end
 		button.Text = obj.Text
 		button.TextColor3 = Color3.new(1,1,1)
 		button.MouseButton1Click:connect(obj.Function)
