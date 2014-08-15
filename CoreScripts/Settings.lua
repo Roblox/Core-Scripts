@@ -1930,18 +1930,32 @@ local createReportAbuseDialog = function()
 	messageBoxButtons[1] = {}
 	messageBoxButtons[1].Text = "Ok"
 	messageBoxButtons[1].Modal = true
+	messageBoxButtons[1].Style = Enum.ButtonStyle.RobloxRoundDefaultButton
+	messageBoxButtons[1].ZIndex = baseZIndex+3
 	messageBoxButtons[1].Function = function() closeAndResetDialog() end 
 	local calmingMessageBox = RbxGui.CreateMessageDialog("Thanks for your report!", "Our moderators will review the chat logs and determine what happened.  The other user is probably just trying to make you mad.\n\nIf anyone used swear words, inappropriate language, or threatened you in real life, please report them for Bad Words or Threats", messageBoxButtons)
 	calmingMessageBox.Visible = false
 	calmingMessageBox.Parent = shield
+	calmingMessageBox.ZIndex = baseZIndex+2
+	calmingMessageBox.Style = Enum.FrameStyle.DropShadow
+	calmingMessageBox.Title.ZIndex = baseZIndex+3
+	calmingMessageBox.Message.ZIndex = baseZIndex+3
 
 	local recordedMessageBox = RbxGui.CreateMessageDialog("Thanks for your report!","We've recorded your report for evaluation.", messageBoxButtons)
 	recordedMessageBox.Visible = false
 	recordedMessageBox.Parent = shield
+	recordedMessageBox.ZIndex = baseZIndex+2
+	recordedMessageBox.Style = Enum.FrameStyle.DropShadow
+	recordedMessageBox.Title.ZIndex = baseZIndex+3
+	recordedMessageBox.Message.ZIndex = baseZIndex+3
 
 	local normalMessageBox = RbxGui.CreateMessageDialog("Thanks for your report!", "Our moderators will review the chat logs and determine what happened.", messageBoxButtons)
 	normalMessageBox.Visible = false
 	normalMessageBox.Parent = shield
+	normalMessageBox.ZIndex = baseZIndex+2
+	normalMessageBox.Style = Enum.FrameStyle.DropShadow
+	normalMessageBox.Title.ZIndex = baseZIndex+3
+	normalMessageBox.Message.ZIndex = baseZIndex+3
 
 	local frame = Instance.new("Frame")
 	frame.Name = "Settings"
