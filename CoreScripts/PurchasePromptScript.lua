@@ -880,6 +880,7 @@ function createPurchasePromptGui()
 	purchaseDialog.Visible = false
 	purchaseDialog.BackgroundColor3 = Color3.new(225/255,225/255,225/255)
 	purchaseDialog.BorderSizePixel = 0
+	purchaseDialog.ZIndex = 8
 	purchaseDialog.Parent = game.CoreGui.RobloxGui
 
 	local bodyFrame = Instance.new("Frame")
