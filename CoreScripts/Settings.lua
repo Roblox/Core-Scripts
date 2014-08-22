@@ -2365,7 +2365,9 @@ Spawn(function()
 	if not showLeaveEvent then return end
 
 	function showLeaveConfirmation()
-		showMainMenu("LeaveConfirmationMenu","down",UDim2.new(0,525,0,300))
+		if showMainMenu then
+			showMainMenu("LeaveConfirmationMenu","down",UDim2.new(0,525,0,300))
+		end
 	end
 
 	Game:GetService("GuiService").ShowLeaveConfirmation:connect(function( )
