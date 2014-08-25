@@ -90,7 +90,8 @@ function resumeGameFunction(shield)
 		game.GuiService:RemoveCenterDialog(shield)
 		settingsButton.Active = true
 		currentMenuSelection = nil
-		lastMenuSelection = {}		
+		lastMenuSelection = {}
+		pcall(function() game:GetService("UserInputService").OverrideMouseIconEnabled = false end)
 	end)
 end
 
@@ -1538,6 +1539,8 @@ if UserSettings then
 						end
 						updateTouchMovementDropDownSelection(moveMode)
 					end
+
+					pcall(function() game:GetService("UserInputService").OverrideMouseIconEnabled = true end)
 
 
 					if syncVideoCaptureSetting then
