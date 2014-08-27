@@ -574,7 +574,7 @@ function Chat:UpdateQueue(field, diff)
 											wait(0.03) 
 										end 	
 										if label == field['Message'] then 
-											label.TextStrokeTransparency = 0.8
+											label.TextStrokeTransparency = 0.6
 										else 
 											label.TextStrokeTransparency = 1.0
 										end 		
@@ -795,7 +795,7 @@ function Chat:CreateMessage(cPlayer, message)
 							Position = UDim2.new(0, 40, 1, 0);
 							BorderSizePixel = 0.0;
 							TextStrokeColor3 = Color3.new(0, 0, 0);
-							TextStrokeTransparency = 0.8;
+							TextStrokeTransparency = 0.6;
 							--Active = false;
 						};
 		mLabel.Text = nString .. pName .. ": " .. message;
