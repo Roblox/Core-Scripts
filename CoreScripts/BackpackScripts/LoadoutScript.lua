@@ -898,6 +898,7 @@ end
 
 function coreGuiChanged(coreGuiType,enabled)
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
+		currentLoadout.Visible = enabled -- Thanks, missing line. you know how to confuse everyone. >.<
 		backpackButton.Visible = enabled 
 		backpackEnabled = enabled
 
