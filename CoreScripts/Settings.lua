@@ -1392,7 +1392,7 @@ if UserSettings then
 		if touchClient then
 			waitForChild(gui,"TopLeftControl")
 		else
-			waitForChild(gui,"BottomLeftControl")
+			settingButtonParent = gui:WaitForChild("BottomLeftControl")
 		end
 
 		settingsButton = settingButtonParent:FindFirstChild("SettingsButton")
@@ -1407,7 +1407,7 @@ if UserSettings then
 			if (touchClient) then
 				settingsButton.Position = UDim2.new(0,2,0,5)
 			else
-				settingsButton.Position = UDim2.new(0,20,0,20)
+				settingsButton.Position = UDim2.new(0, 15, 1, -42)
 			end
 			settingsButton.Parent = settingButtonParent
 		end
