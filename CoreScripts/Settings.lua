@@ -45,6 +45,8 @@ local newGuiPlaces = {0,41324860}
 local centerDialogs = {}
 local mainShield = nil
 
+local testReport = false
+
 local inStudioMode = UserSettings().GameSettings:InStudioMode()
 -- REMOVE WHEN NOT TESTING
 -- inStudioMode = false
@@ -59,7 +61,7 @@ local customCameraDefaultType = "Default (Classic)"
 local touchClient = false
 pcall(function() touchClient = game:GetService("UserInputService").TouchEnabled end)
 -- REMOVE WHEN NOT TESTING
---touchClient = true
+-- touchClient = true
 if touchClient then
 	hasGraphicsSlider = false
 	customCameraDefaultType = "Default (Follow)"
@@ -567,7 +569,7 @@ local function createGameMainMenu(baseZIndex, shield)
 	-- GameMainMenu Children
 
 	-- RESUME GAME
-	local resumeGameButton = createTextButton("Resume Game",Enum.ButtonStyle.RobloxRoundDefaultButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,buttonTop))
+	local resumeGameButton = createTextButton("Resume Game",Enum.ButtonStyle.RobloxRoundDefaultButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0.5,-170,0,buttonTop))
 	resumeGameButton.Name = "resumeGameButton"
 	resumeGameButton.ZIndex = baseZIndex + 4
 	resumeGameButton.Parent = gameMainMenuFrame
@@ -576,21 +578,21 @@ local function createGameMainMenu(baseZIndex, shield)
 	buttonTop = buttonTop + 51
 
 	-- RESET CHARACTER
-	local resetButton = createTextButton("Reset Character",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,buttonTop))
+	local resetButton = createTextButton("Reset Character",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0.5,-170,0,buttonTop))
 	resetButton.Name = "ResetButton"
 	resetButton.ZIndex = baseZIndex + 4
 	resetButton.Parent = gameMainMenuFrame
 	buttonTop = buttonTop + 51
 
 	-- GAME SETTINGS
-	local gameSettingsButton = createTextButton("Game Settings",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,buttonTop))
+	local gameSettingsButton = createTextButton("Game Settings",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0.5,-170,0,buttonTop))
 	gameSettingsButton.Name = "SettingsButton"
 	gameSettingsButton.ZIndex = baseZIndex + 4
 	gameSettingsButton.Parent = gameMainMenuFrame
 	buttonTop = buttonTop + 51
 
 	-- HELP BUTTON
-	local robloxHelpButton = createTextButton("Help",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,164,0,50),UDim2.new(0,82,0,buttonTop))
+	local robloxHelpButton = createTextButton("Help",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,164,0,50),UDim2.new(0,92,0,buttonTop))
 	robloxHelpButton.Name = "HelpButton"
 	robloxHelpButton.ZIndex = baseZIndex + 4
 	robloxHelpButton.Parent = gameMainMenuFrame
@@ -622,7 +624,7 @@ local function createGameMainMenu(baseZIndex, shield)
 	helpButton.Active = true
 	
 	-- SCREEN SHOT
-	local screenshotButton = createTextButton("Screenshot",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,168,0,50),UDim2.new(0,254,0,buttonTop))
+	local screenshotButton = createTextButton("Screenshot",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,168,0,50),UDim2.new(0,264,0,buttonTop))
 	screenshotButton.Name = "ScreenshotButton"
 	screenshotButton.ZIndex = baseZIndex + 4
 	screenshotButton.Parent = gameMainMenuFrame
@@ -634,7 +636,7 @@ local function createGameMainMenu(baseZIndex, shield)
 	end
 
 	-- REPORT ABUSE
-	local reportAbuseButton = createTextButton("Report Abuse",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,164,0,50),UDim2.new(0,82,0,buttonTop))
+	local reportAbuseButton = createTextButton("Report Abuse",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,164,0,50),UDim2.new(0,92,0,buttonTop))
 	reportAbuseButton.Name = "ReportAbuseButton"
 	reportAbuseButton.ZIndex = baseZIndex + 4
 	reportAbuseButton.Parent = gameMainMenuFrame
@@ -644,7 +646,7 @@ local function createGameMainMenu(baseZIndex, shield)
 	end
 
 	-- RECORD VIDEO
-	local recordVideoButton = createTextButton("Record Video",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,168,0,50),UDim2.new(0,254,0,buttonTop))
+	local recordVideoButton = createTextButton("Record Video",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,168,0,50),UDim2.new(0,264,0,buttonTop))
 	recordVideoButton.Name = "RecordVideoButton"
 	recordVideoButton.ZIndex = baseZIndex + 4
 	recordVideoButton.Parent = gameMainMenuFrame
@@ -668,7 +670,7 @@ local function createGameMainMenu(baseZIndex, shield)
 	pcall(function() isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
 
 	if (not isAndroid) then
-		local leaveGameButton = createTextButton("Leave Game",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0,82,0,buttonTop))
+		local leaveGameButton = createTextButton("Leave Game",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0.5,-170,0,buttonTop))
 		leaveGameButton.Name = "LeaveGameButton"
 		leaveGameButton.ZIndex = baseZIndex + 4
 		leaveGameButton.Parent = gameMainMenuFrame
@@ -1492,7 +1494,9 @@ if UserSettings then
 		
 		gameMainMenu.ReportAbuseButton.Visible = game:FindFirstChild("NetworkClient")
 		-- TODO: remove line below when not testing report abuse
-		-- gameMainMenu.ReportAbuseButton.Visible = true
+		if (testReport) then
+			gameMainMenu.ReportAbuseButton.Visible = true
+		end
 		if not gameMainMenu.ReportAbuseButton.Visible then
 			game.ChildAdded:connect(function(child)
 				if child:IsA("NetworkClient") then
@@ -1901,7 +1905,9 @@ end
 local createReportAbuseDialog = function()
 	--Only show things if we are a NetworkClient
 	-- TODO: add line back in when not testing report abuse
-	waitForChild(game,"NetworkClient")
+	if not testReport then
+		waitForChild(game,"NetworkClient")
+	end
 
 	waitForChild(game,"Players")
 	waitForProperty(game.Players, "LocalPlayer")
@@ -1962,8 +1968,8 @@ local createReportAbuseDialog = function()
 
 	local frame = Instance.new("Frame")
 	frame.Name = "Settings"
-	frame.Position = UDim2.new(0.5, -250, 0.5, -200)
-	frame.Size = UDim2.new(0.0, 500, 0.0, 400)
+	frame.Position = UDim2.new(0.5, -240, 0.5, -160)
+	frame.Size = UDim2.new(0.0, 480, 0.0, 320)
 	frame.BackgroundTransparency = 1
 	frame.Active = true
 	frame.Parent = shield
@@ -1976,21 +1982,11 @@ local createReportAbuseDialog = function()
 	settingsFrame.ZIndex = baseZIndex + 1
 	settingsFrame.Parent = frame
 
-	local title = Instance.new("TextLabel")
-	title.Name = "Title"
-	title.Text = "Report Abuse"
-	title.TextColor3 = Color3I(221,221,221)
-	title.Position = UDim2.new(0.5, 0, 0, 25)
-	title.Font = Enum.Font.SourceSansBold
-	title.FontSize = Enum.FontSize.Size48
-	title.ZIndex = baseZIndex + 2
-	title.Parent = settingsFrame
-
 	local description = Instance.new("TextLabel")
 	description.Name = "Description"
 	description.Text = "This will send a complete report to a moderator.  The moderator will review the chat log and take appropriate action."
 	description.TextColor3 = Color3I(221,221,221)
-	description.Position = UDim2.new(0, 10, 0, 55)
+	description.Position = UDim2.new(0, 10, 0, 10)
 	description.Size = UDim2.new(1, -20, 0, 40)
 	description.BackgroundTransparency = 1
 	description.Font = Enum.Font.SourceSans
@@ -2007,7 +2003,7 @@ local createReportAbuseDialog = function()
 	playerLabel.BackgroundTransparency = 1
 	playerLabel.Font = Enum.Font.SourceSans
 	playerLabel.FontSize = Enum.FontSize.Size18
-	playerLabel.Position = UDim2.new(0.025,20,0,137)
+	playerLabel.Position = UDim2.new(0.025,20,0,92)
 	playerLabel.Size 	   = UDim2.new(0.4,0,0,36)
 	playerLabel.TextColor3 = Color3I(255,255,255)
 	playerLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -2020,7 +2016,7 @@ local createReportAbuseDialog = function()
 	gameOrPlayerLabel.BackgroundTransparency = 1
 	gameOrPlayerLabel.Font = Enum.Font.SourceSans
 	gameOrPlayerLabel.FontSize = Enum.FontSize.Size18
-	gameOrPlayerLabel.Position = UDim2.new(0.025,20,0,100)
+	gameOrPlayerLabel.Position = UDim2.new(0.025,20,0,55)
 	gameOrPlayerLabel.Size 	   = UDim2.new(0.4,0,0,36)
 	gameOrPlayerLabel.TextColor3 = Color3I(255,255,255)
 	gameOrPlayerLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -2033,7 +2029,7 @@ local createReportAbuseDialog = function()
 	abuseLabel.Font = Enum.Font.SourceSans
 	abuseLabel.BackgroundTransparency = 1
 	abuseLabel.FontSize = Enum.FontSize.Size18
-	abuseLabel.Position = UDim2.new(0.025,20,0,176)
+	abuseLabel.Position = UDim2.new(0.025,20,0,131)
 	abuseLabel.Size = UDim2.new(0.4,0,0,36)
 	abuseLabel.TextColor3 = Color3I(255,255,255)
 	abuseLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -2071,7 +2067,7 @@ local createReportAbuseDialog = function()
 			end, false, true, baseZIndex)
 		playerDropDown.Name = "PlayersComboBox"
 		playerDropDown.ZIndex = baseZIndex + 2
-		playerDropDown.Position = UDim2.new(.425, 0, 0, 139)
+		playerDropDown.Position = UDim2.new(.425, 0, 0, 94)
 		playerDropDown.Size = UDim2.new(.55,0,0,32)
 		
 		return playerDropDown
@@ -2099,7 +2095,7 @@ local createReportAbuseDialog = function()
 		end, true, true, baseZIndex)
 	gameOrPlayerDropDown.Name = "TypeComboBox"
 	gameOrPlayerDropDown.ZIndex = baseZIndex + 2
-	gameOrPlayerDropDown.Position = UDim2.new(0.425, 0, 0, 100)
+	gameOrPlayerDropDown.Position = UDim2.new(0.425, 0, 0, 55)
 	gameOrPlayerDropDown.Size = UDim2.new(0.55,0,0,32)
 	gameOrPlayerDropDown.Parent = settingsFrame
 
@@ -2113,7 +2109,7 @@ local createReportAbuseDialog = function()
 		end, true, true, baseZIndex)
 	abuseDropDown.Name = "AbuseComboBox"
 	abuseDropDown.ZIndex = baseZIndex + 2
-	abuseDropDown.Position = UDim2.new(0.425, 0, 0, 178)
+	abuseDropDown.Position = UDim2.new(0.425, 0, 0, 133)
 	abuseDropDown.Size = UDim2.new(0.55,0,0,32)
 	abuseDropDown.Parent = settingsFrame
 
@@ -2122,7 +2118,7 @@ local createReportAbuseDialog = function()
 	shortDescriptionLabel.Text = "Short Description: (optional)"
 	shortDescriptionLabel.Font = Enum.Font.SourceSans
 	shortDescriptionLabel.FontSize = Enum.FontSize.Size18
-	shortDescriptionLabel.Position = UDim2.new(0.025,0,0,215)
+	shortDescriptionLabel.Position = UDim2.new(0.025,0,0,165)
 	shortDescriptionLabel.Size = UDim2.new(0.95,0,0,36)
 	shortDescriptionLabel.TextColor3 = Color3I(255,255,255)
 	shortDescriptionLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -2132,8 +2128,8 @@ local createReportAbuseDialog = function()
 
 	local shortDescriptionWrapper = Instance.new("Frame")
 	shortDescriptionWrapper.Name = "ShortDescriptionWrapper"
-	shortDescriptionWrapper.Position = UDim2.new(0.025,0,0,245)
-	shortDescriptionWrapper.Size = UDim2.new(0.95,0,1,-310)
+	shortDescriptionWrapper.Position = UDim2.new(0.025,0,0,195)
+	shortDescriptionWrapper.Size = UDim2.new(0.95,0,1,-250)
 	shortDescriptionWrapper.BackgroundColor3 = Color3I(206,206,206)
 	shortDescriptionWrapper.BorderSizePixel = 0
 	shortDescriptionWrapper.ZIndex = baseZIndex + 2
@@ -2162,8 +2158,8 @@ local createReportAbuseDialog = function()
 	submitReportButton.Modal = true
 	submitReportButton.Font = Enum.Font.SourceSans
 	submitReportButton.FontSize = Enum.FontSize.Size18
-	submitReportButton.Position = UDim2.new(0.1, 0, 1, -55)
-	submitReportButton.Size = UDim2.new(0.35,0,0,50)
+	submitReportButton.Position = UDim2.new(0.1, 0, 1, -50)
+	submitReportButton.Size = UDim2.new(0.35,0,0,40)
 	submitReportButton.AutoButtonColor = true
 	submitReportButton.Style = Enum.ButtonStyle.RobloxRoundDefaultButton 
 	submitReportButton.Text = "Submit Report"
@@ -2197,8 +2193,8 @@ local createReportAbuseDialog = function()
 	cancelButton.Name = "CancelBtn"
 	cancelButton.Font = Enum.Font.SourceSans
 	cancelButton.FontSize = Enum.FontSize.Size18
-	cancelButton.Position = UDim2.new(0.55, 0, 1, -55)
-	cancelButton.Size = UDim2.new(0.35,0,0,50)
+	cancelButton.Position = UDim2.new(0.55, 0, 1, -50)
+	cancelButton.Size = UDim2.new(0.35,0,0,40)
 	cancelButton.AutoButtonColor = true
 	cancelButton.Style = Enum.ButtonStyle.RobloxRoundDefaultButton 
 	cancelButton.Text = "Cancel"
