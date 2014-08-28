@@ -4,14 +4,29 @@
 local buildTools = {}
 local currentTools = {}
 
-local DeleteToolID = 73089190
-local PartSelectionID = 73089166
-local CloneToolID = 73089204
-local RecentPartToolID = 73089229
-local RotateToolID = 73089214
-local ConfigToolID = 73089239
-local WiringToolID = 73089259
-local classicToolID = 58921588
+local BaseUrl = game:GetService("ContentProvider").BaseUrl:lower()
+
+if BaseUrl:find("gametest1") then
+    DeleteToolID = 73089190
+    PartSelectionID = 73089166
+    CloneToolID = 73089204
+    RecentPartToolID = 73089229
+    RotateToolID = 73089214
+    ConfigToolID = 73089239
+    WiringToolID = 73089259
+    classicToolID = 58921588
+end
+
+if BaseUrl:find("gametest2") then
+    DeleteToolID = 70353317
+    PartSelectionID = 70353315
+    CloneToolID = 70353314
+    RecentPartToolID = 70353316
+    RotateToolID = 70353318
+    ConfigToolID = 70353319
+    WiringToolID = 70353320
+    classicToolID = 58921588
+end
 
 local player = nil
 local backpack = nil
