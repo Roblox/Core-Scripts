@@ -552,11 +552,11 @@ local MiddleTemplate = Obj.Create"Frame"
 		Name = 'BCLabel',
 		Active = true,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(.005, 5, .20, 0),
+		Position = UDim2.new(.005, 5, .20, -2),
 		Size = UDim2.new(0,16,0,16),
 		SizeConstraint = 'RelativeYY',
 		Image = "",
-		ZIndex = 3,
+		ZIndex = 4,
 	}, 
 	Obj.Create'ImageLabel'
 	{
@@ -567,7 +567,7 @@ local MiddleTemplate = Obj.Create"Frame"
 		Size = UDim2.new(0,16,0,16),
 		SizeConstraint = 'RelativeYY',
 		Image = "",
-		ZIndex = 3,
+		ZIndex = 4,
 	},
 	Obj.Create"ImageButton"
 	{
