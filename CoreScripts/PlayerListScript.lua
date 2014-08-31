@@ -94,7 +94,6 @@ local ADMINS =
 	imaginationsensation = 1,
 	['matt.dusek'] = 1,
 	mcrtest = 1,
-	seranok = 1,
 	maxvee = 1,
 	coatp0cketninja = 1,
 	screenme = 1,
