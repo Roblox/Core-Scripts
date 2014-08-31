@@ -1080,7 +1080,7 @@ function Chat:CreateGui()
 					Name = 'ChatFrame';
 					--Size = self.Configuration.Size;
 					Size = UDim2.new(0, 500, 0, 120);
-					Position = UDim2.new(0, 0, 0, 0);
+					Position = UDim2.new(0, 0, 0, 5);
 					BackgroundTransparency = 1.0;
 					--ClipsDescendants = true;
 					ZIndex = 0.0;
