@@ -1080,7 +1080,7 @@ function Chat:CreateGui()
 					Name = 'ChatFrame';
 					--Size = self.Configuration.Size;
 					Size = UDim2.new(0, 500, 0, 120);
-					Position = UDim2.new(0, 0, 0, 55);
+					Position = UDim2.new(0, 0, 0, 5);
 					BackgroundTransparency = 1.0;
 					--ClipsDescendants = true;
 					ZIndex = 0.0;
@@ -1127,6 +1127,11 @@ function Chat:CreateGui()
 		if IsPhone() then 
 			self.Frame.Size = UDim2.new(0, 280, 0, 120)
 		end 
+		-- leave space for the settings button on touch devices
+		-- better use the exact same test it uses for its position
+		if game:GetService("UserInputService").TouchEnabled then
+			self.Frame.Position = UDim2.new(0, 0, 0, 55)
+		end
 	end)					
 	
 	self.RenderFrame = self.Frame.ChatRenderFrame 		
