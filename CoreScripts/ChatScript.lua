@@ -569,7 +569,7 @@ function Chat:UpdateQueue(field, diff)
 								if label:IsA('TextLabel') or label:IsA('TextButton') then
 									Spawn(function()					
 										wait(0.05)							
-										while label.TextTransparency >= 0 do 
+										while label.TextTransparency > 0 do 
 											label.TextTransparency = label.TextTransparency - 0.2
 											wait(0.03) 
 										end 	
@@ -582,7 +582,7 @@ function Chat:UpdateQueue(field, diff)
 								else 
 									Spawn(function()					
 										wait(0.05)							
-										while label.ImageTransparency >= 0 do 
+										while label.ImageTransparency > 0 do 
 											label.ImageTransparency = label.ImageTransparency - 0.2
 											wait(0.03) 
 										end 	
