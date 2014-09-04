@@ -9,6 +9,8 @@ local hasBuildTools = false
 
 local player = game:GetService("Players").LocalPlayer
 
+if not player then return end -- I actually got an error serverside of indexing 'local player, a nil value'
+
 function getIds(idTable, assetTable)
 	for i = 1, #idTable do
 		local model = game:GetService("InsertService"):LoadAsset(idTable[i])
