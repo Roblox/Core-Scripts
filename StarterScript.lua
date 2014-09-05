@@ -50,19 +50,12 @@ screenGui:WaitForChild("Backpack")
 local Backpack = screenGui.Backpack
 	
 -- Manager handles all big backpack state changes, other scripts subscribe to this and do things accordingly
-if game.CoreGui.Version >= 7 then
-	scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackManager", Backpack)
-end
+scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackManager", Backpack)
 	
 -- Backpack Gear (handles all backpack gear tab stuff)
 scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackGear", Backpack)
 -- Loadout Script, used for gear hotkeys
 scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/LoadoutScript", screenGui.CurrentLoadout)
-if game.CoreGui.Version >= 8 then
-	-- Wardrobe script handles all character dressing operations
-	scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackWardrobe", Backpack)
-end
-
 
 if touchEnabled then -- touch devices don't use same control frame
 	-- only used for touch device button generation

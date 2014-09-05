@@ -32,7 +32,7 @@ local tweenTime = 0.2
 local mouseLockLookScreenUrl = "http://www.roblox.com/asset?id=54071825"
 local classicLookScreenUrl = "http://www.roblox.com/Asset?id=45915798"
 
-local hasGraphicsSlider = (game:GetService("CoreGui").Version >= 5)
+local hasGraphicsSlider = true
 local GraphicsQualityLevels = 10 -- how many levels we allow on graphics slider
 local recordingVideo = false
 
@@ -1580,31 +1580,29 @@ if UserSettings then
 				end)
 		end
 		
-		if game.CoreGui.Version >= 4 then -- we can use escape!
-			game:GetService("GuiService").EscapeKeyPressed:connect(function()
-				if currentMenuSelection == nil then
-					showMainMenu()
-				elseif #lastMenuSelection > 0 then
-					if #centerDialogs > 0 then
-						for i = 1, #centerDialogs do
-							game.GuiService:RemoveCenterDialog(centerDialogs[i])
-							centerDialogs[i].Visible = false
-						end
-						centerDialogs = {}
+		game:GetService("GuiService").EscapeKeyPressed:connect(function()
+			if currentMenuSelection == nil then
+				showMainMenu()
+			elseif #lastMenuSelection > 0 then
+				if #centerDialogs > 0 then
+					for i = 1, #centerDialogs do
+						game.GuiService:RemoveCenterDialog(centerDialogs[i])
+						centerDialogs[i].Visible = false
 					end
-					
-					goToMenu(lastMenuSelection[#lastMenuSelection]["container"],lastMenuSelection[#lastMenuSelection]["name"],
-						lastMenuSelection[#lastMenuSelection]["direction"],lastMenuSelection[#lastMenuSelection]["lastSize"])
-						
-					table.remove(lastMenuSelection,#lastMenuSelection)
-					if #lastMenuSelection == 1 then -- apparently lua can't reduce count to 0... T_T
-						lastMenuSelection = {}
-					end
-				else
-					resumeGameFunction(shield)
+					centerDialogs = {}
 				end
-			end)
-		end
+				
+				goToMenu(lastMenuSelection[#lastMenuSelection]["container"],lastMenuSelection[#lastMenuSelection]["name"],
+					lastMenuSelection[#lastMenuSelection]["direction"],lastMenuSelection[#lastMenuSelection]["lastSize"])
+					
+				table.remove(lastMenuSelection,#lastMenuSelection)
+				if #lastMenuSelection == 1 then -- apparently lua can't reduce count to 0... T_T
+					lastMenuSelection = {}
+				end
+			else
+				resumeGameFunction(shield)
+			end
+		end)
 			
 		local gameSettingsMenu = createGameSettingsMenu(baseZIndex, shield)
 		gameSettingsMenu.Visible = false

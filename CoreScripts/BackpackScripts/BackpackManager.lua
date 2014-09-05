@@ -1,5 +1,4 @@
 -- This script manages context switches in the backpack (Gear to Wardrobe, etc.) and player state changes.  Also manages global functions across different tabs (currently only search)
-if game.CoreGui.Version < 7 then return end -- peace out if we aren't using the right client
 
 -- basic functions
 local function waitForChild(instance, name)
@@ -39,10 +38,7 @@ local closeButton = backpack.Tabs.CloseButton
 
 waitForChild(backpack.Tabs, "InventoryButton")
 local inventoryButton = backpack.Tabs.InventoryButton
-if game.CoreGui.Version >= 8 then
-	waitForChild(backpack.Tabs, "WardrobeButton")
-	local wardrobeButton = backpack.Tabs.WardrobeButton
-end
+
 waitForChild(backpack.Parent,"ControlFrame")
 local backpackButton = waitForChild(backpack.Parent.ControlFrame,"BackpackButton")
 local currentTab = "gear"
@@ -260,9 +256,7 @@ function updateTabGui(selectedTab)
 	
 	if selectedTab == "gear" then
 		setSelected(inventoryButton)
-		setUnselected(wardrobeButton)
 	elseif selectedTab == "wardrobe" then
-		setSelected(wardrobeButton)
 		setUnselected(inventoryButton)
 	end
 end
@@ -376,12 +370,6 @@ Game.StarterGui.CoreGuiChangedSignal:connect(coreGuiChanged)
 inventoryButton.MouseButton1Click:connect(function() newTabClicked("gear") end)
 inventoryButton.MouseEnter:connect(function() mouseOverTab(inventoryButton) end)
 inventoryButton.MouseLeave:connect(function() mouseLeaveTab(inventoryButton) end)
-
-if game.CoreGui.Version >= 8 then
-	wardrobeButton.MouseButton1Click:connect(function() newTabClicked("wardrobe") end)
-	wardrobeButton.MouseEnter:connect(function() mouseOverTab(wardrobeButton) end)
-	wardrobeButton.MouseLeave:connect(function() mouseLeaveTab(wardrobeButton) end)
-end
 
 closeButton.MouseButton1Click:connect(closeBackpack)
 
