@@ -143,6 +143,7 @@ local ADMINS =
 	mpliner476 = 1,
 	geekndestroy = 1,
 	glewis17 = 1,
+	buckeroob = 1,
 }
 
 
