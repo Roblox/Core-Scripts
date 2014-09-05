@@ -958,10 +958,7 @@ if not backpackAddCon then
 	backpackAddCon = game.Players.LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
 end
 
--- flip it on if we are good
-if game.CoreGui.Version >= 3 then
-	backpackButton.Visible = true
-end
+backpackButton.Visible = true
 
 recalculateScrollLoadout()
 

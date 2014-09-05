@@ -1,5 +1,3 @@
-if game.CoreGui.Version < 3 then return end -- peace out if we aren't using the right client
-
 -- A couple of necessary functions
 local function waitForChild(instance, name)
 	while not instance:FindFirstChild(name) do
