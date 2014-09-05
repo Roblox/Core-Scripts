@@ -94,7 +94,6 @@ local ADMINS =
 	imaginationsensation = 1,
 	['matt.dusek'] = 1,
 	mcrtest = 1,
-	seranok = 1,
 	maxvee = 1,
 	coatp0cketninja = 1,
 	screenme = 1,
@@ -139,6 +138,12 @@ local ADMINS =
 	jynj1984 = 1,
 	roboyz = 1,
 	zodiaczak = 1,
+	superman205 = 1,
+	convexrumbler = 1,
+	mpliner476 = 1,
+	geekndestroy = 1,
+	glewis17 = 1,
+	buckeroob = 1,
 }
 
 
@@ -547,11 +552,11 @@ local MiddleTemplate = Obj.Create"Frame"
 		Name = 'BCLabel',
 		Active = true,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(.005, 5, .20, 0),
+		Position = UDim2.new(.005, 5, .20, -2),
 		Size = UDim2.new(0,16,0,16),
 		SizeConstraint = 'RelativeYY',
 		Image = "",
-		ZIndex = 3,
+		ZIndex = 4,
 	}, 
 	Obj.Create'ImageLabel'
 	{
@@ -562,7 +567,7 @@ local MiddleTemplate = Obj.Create"Frame"
 		Size = UDim2.new(0,16,0,16),
 		SizeConstraint = 'RelativeYY',
 		Image = "",
-		ZIndex = 3,
+		ZIndex = 4,
 	},
 	Obj.Create"ImageButton"
 	{
@@ -2398,6 +2403,7 @@ function InsertPlayerFrame(nplayer)
 	nplayer.ChildAdded:connect(function(nchild) 
 		if nchild.Name == 'leaderstats' then
 			while AddingFrameLock do debugprint('in adding leaderstats lock') wait(1/30) end
+			if not nplayer:FindFirstChild("leaderstats") then return end
 			AddingFrameLock = true
 			LeaderstatsAdded(nentry)
 			AddingFrameLock = false

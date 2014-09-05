@@ -1,5 +1,3 @@
-if game.CoreGui.Version < 3 then return end -- peace out if we aren't using the right client
-
 -- A couple of necessary functions
 local function waitForChild(instance, name)
 	while not instance:FindFirstChild(name) do
@@ -898,6 +896,7 @@ end
 
 function coreGuiChanged(coreGuiType,enabled)
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
+		currentLoadout.Visible = enabled -- Thanks, missing line. you know how to confuse everyone. >.<
 		backpackButton.Visible = enabled 
 		backpackEnabled = enabled
 
