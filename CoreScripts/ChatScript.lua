@@ -790,13 +790,11 @@ function Chat:CreateGui()
 							cText = '(TEAM) ' .. string.sub(cText, 2, #cText)
 							local succ, err = pcall(function() PlayersService:TeamChat(cText) end)
 							if forceChatGUI and not succ then
-								print("TeamChatting")
 								self:PlayerChatted(nil, Player, cText)
 							end
 						else 
 							local succ, err = pcall(function() PlayersService:Chat(cText) end)
 							if forceChatGUI and not succ then
-								print("Chatting")
 								self:PlayerChatted(nil, Player, cText)
 							end
 						end 					
