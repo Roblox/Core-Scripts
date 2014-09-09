@@ -2,16 +2,29 @@
 
 -- first, lets see if buildTools have already been created
 -- create the object in ReplicatedStorage if not
-local container = game:GetService("ReplicatedStorage")
+local container = Game:GetService("ReplicatedStorage")
 local toolsArray = container:FindFirstChild("BuildToolsModel")
 local ownerArray = container:FindFirstChild("OwnerToolsModel")
 local hasBuildTools = false
 
-local player = game:GetService("Players").LocalPlayer
+local function waitForProperty(instance, name)
+	while not instance[name] do
+		instance.Changed:wait()
+	end
+end
+
+waitForProperty(Game.Players,"LocalPlayer")
+waitForProperty(Game.Players.LocalPlayer,"userId")
+
+local player = Game:GetService("Players").LocalPlayer
+if not player then 
+	script:Destroy()
+	return 
+end
 
 function getIds(idTable, assetTable)
 	for i = 1, #idTable do
-		local model = game:GetService("InsertService"):LoadAsset(idTable[i])
+		local model = Game:GetService("InsertService"):LoadAsset(idTable[i])
 		if model then
 			local children = model:GetChildren()
 			for i = 1, #children do
@@ -41,15 +54,27 @@ if not toolsArray then -- no one has made build tools yet, we get to!
 	local buildToolIds = {}
 	local ownerToolIds = {}
 
-	table.insert(buildToolIds,73089166) -- PartSelectionTool
-	table.insert(buildToolIds,73089190) -- DeleteTool
-	table.insert(buildToolIds,73089204) -- CloneTool
-	table.insert(buildToolIds,73089214) -- RotateTool
-	table.insert(buildToolIds,73089229) -- RecentPartTool
-	table.insert(buildToolIds,73089239) -- ConfigTool
-	table.insert(buildToolIds,73089259) -- WiringTool
-	table.insert(buildToolIds,58921588) -- ClassicTool
+	local BaseUrl = game:GetService("ContentProvider").BaseUrl:lower()
+
+	if BaseUrl:find("www.roblox.com") or BaseUrl:find("gametest1") then
+		table.insert(buildToolIds,73089166) -- PartSelectionTool
+		table.insert(buildToolIds,73089190) -- DeleteTool
+		table.insert(buildToolIds,73089204) -- CloneTool
+		table.insert(buildToolIds,73089214) -- RotateTool
+		table.insert(buildToolIds,73089229) -- RecentPartTool
+		table.insert(buildToolIds,73089239) -- ConfigTool
+		table.insert(buildToolIds,73089259) -- WiringTool
+	elseif BaseUrl:find("gametest2") then
+		table.insert(buildToolIds,70353315) -- PartSelectionTool
+		table.insert(buildToolIds,70353317) -- DeleteTool
+		table.insert(buildToolIds,70353314) -- CloneTool
+		table.insert(buildToolIds,70353318) -- RotateTool
+		table.insert(buildToolIds,70353316) -- RecentPartTool
+		table.insert(buildToolIds,70353319) -- ConfigTool
+		table.insert(buildToolIds,70353320) -- WiringTool
+	end
 	
+	table.insert(buildToolIds,58921588) -- ClassicTool
 	table.insert(ownerToolIds, 65347268) -- OwnerCameraTool
 
 	-- next, create array of our tools
@@ -133,7 +158,7 @@ player.Changed:connect(function(prop)
 			giveOwnerTools()
 		elseif player.PersonalServerRank <= 0 then
 			player:Kick() -- you're banned, goodbye!
-			game:SetMessage("You're banned from this PBS")
+			Game:SetMessage("You're banned from this PBS")
 		end
 	end
 end)
