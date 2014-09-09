@@ -904,16 +904,17 @@ end
 function Chat:CullThread()
 	while true do
 		if #self.MessageQueue > 0 then 
-			self.Frame.CanvasSize = UDim2.new(0, 0, 0, #self.MessageQueue*18) -- Update ScrollingFrame CanvasSize when guis are destroyed 
 			for _, field in next, self.MessageQueue do 				
 				if field['SpawnTime'] and field['Player'] and field['Message'] and tick() - field['SpawnTime'] > self.Configuration.LifeTime then 
 					field['Player'].Visible = false 
 					field['Player']:Destroy()
 					field['Message'].Visible = false 
 					field['Message']:Destroy()
-					field = nil
+					self.MessageQueue[_] = nil
 				end 
-			end 
+			end
+			self.Frame.CanvasSize = UDim2.new(0, 0, 0, #self.MessageQueue*18) -- Update ScrollingFrame CanvasSize when guis are destroyed
+			self.Frame.CanvasPosition = self.Frame.CanvasPosition
 		end 
 		wait(5.0)
 	end
