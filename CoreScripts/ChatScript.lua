@@ -5,6 +5,13 @@
 	//NOTE: If you find any bugs or inaccuracies PM Sorcus on ROBLOX or @Canavus on Twitter 
 ]]
 
+-- Services 
+local CoreGuiService = Game:GetService('CoreGui')
+local PlayersService = Game:GetService('Players')
+local DebrisService  = Game:GetService('Debris')
+local GuiService     = Game:GetService('GuiService')
+local inputService   = game:GetService("UserInputService")
+
 local forceChatGUI = false
 
 -- Utility functions + Globals
@@ -20,8 +27,7 @@ local function typedef(obj)
 end 
 
 local function IsPhone()
-	local cGui = Game:GetService('CoreGui')
-	local rGui = WaitForChild(cGui, 'RobloxGui')
+	local rGui = WaitForChild(CoreGuiService, 'RobloxGui')
 	if rGui.AbsoluteSize.Y < 600 then 
 		return true 
 	end 
@@ -41,18 +47,16 @@ end
 
 while Game.Players.LocalPlayer == nil do wait(0.03) end
 
-local Player = Game.Players.LocalPlayer 
-while Player.Character == nil do wait(0.03) end 
-local RbxUtility = LoadLibrary('RbxUtility')
-local Gui = typedef(RbxUtility) 
-local Camera = Game.Workspace.CurrentCamera 
+local Player           = Game.Players.LocalPlayer 
 
--- Services 
-local CoreGuiService = Game:GetService('CoreGui')
-local PlayersService = Game:GetService('Players')
-local DebrisService=  Game:GetService('Debris')
-local GuiService = Game:GetService('GuiService')
-local inputService = game:GetService("UserInputService")
+-- while Player.Character == nil do wait(0.03) end
+if not Player.Character then
+	Player.CharacterAdded:wait() -- Better method. 
+end
+
+local RbxUtility       = LoadLibrary('RbxUtility')
+local Gui              = typedef(RbxUtility) 
+local Camera           = Game.Workspace.CurrentCamera
 
 -- Lua Enums
 local Enums do
@@ -103,90 +107,89 @@ end
 ---------------------------------------------------
 ------------------ Input class -------------------- 
 local Input = {
-						Mouse = Player:GetMouse(),
-						Speed = 0,
-						Simulating = false, 
+	Mouse      = Player:GetMouse(),
+	Speed      = 0,
+	Simulating = false, 
 
-						Configuration = {
-											DefaultSpeed = 1
-										},
-						UserIsScrolling = false
-					}
+	Configuration = {
+		DefaultSpeed = 1
+	},
+	UserIsScrolling = false
+}
 
 ---------------------------------------------------
 ------------------ Chat class --------------------
 local Chat = { 
+	ChatColors = {
+		BrickColor.new("Bright red"),
+		BrickColor.new("Bright blue"),
+		BrickColor.new("Earth green"),
+		BrickColor.new("Bright violet"),
+		BrickColor.new("Bright orange"),
+		BrickColor.new("Bright yellow"),
+		BrickColor.new("Light reddish violet"),
+		BrickColor.new("Brick yellow"),
+	},
 
-			ChatColors = {
-							BrickColor.new("Bright red"),
-							BrickColor.new("Bright blue"),
-							BrickColor.new("Earth green"),
-							BrickColor.new("Bright violet"),
-							BrickColor.new("Bright orange"),
-							BrickColor.new("Bright yellow"),
-							BrickColor.new("Light reddish violet"),
-							BrickColor.new("Brick yellow"),
-						},
+	Gui               = nil,
+	Frame             = nil,
+	RenderFrame       = nil,
+	TapToChatLabel    = nil,
+	ClickToChatButton = nil,
+	
+	-- ScrollingLock     = false, -- Unused variable. 
+	EventListener     = nil, 
 
-			Gui = nil,
-			Frame = nil,
-			RenderFrame = nil,
-			TapToChatLabel = nil,
-			ClickToChatButton = nil,
+	-- This is actually a ring buffer
+	-- Meaning at hitting the historyLength it wraps around 
+	-- Reuses the text objects, so chat atmost uses 100 text objects
+	MessageQueue = {}, 
 
-			ScrollingLock = false,
-			EventListener = nil, 
+	-- Stores all the values for configuring chat 
+	Configuration = {								
+		FontSize          = Enum.FontSize.Size18, -- 10 is good 				
+		-- Also change this when you are changing the above, this is suboptimal but so is our interface to find FontSize				
+		NumFontSize       = 12, 
+		HistoryLength     = 20, -- stores up to 50 of the last chat messages for you to scroll through,
+		Size              = UDim2.new(0.38, 0, 0.20, 0),
+		MessageColor      = Color3.new(1, 1, 1),
+		AdminMessageColor = Color3.new(1, 215/255, 0),								
+		XScale            = 0.025,	
+		LifeTime          = 45,		
+		Position          = UDim2.new(0, 2, 0.05, 0),
+		DefaultTweenSpeed = 0.15,								
+		HaltTime          = 1/15, -- Why would people need to be chatting faster than every 1/15th of a second?
+	},
+	
+	PreviousMessage         = tick(), -- Timestamp of previous message
+	
+	-- This could be redone by just using the previous and next fields of the Queue
+	-- But the iterators cause issues, will be optimized later 
+	SlotPositions_List      = {},	
+	-- To precompute and store all player null strings since its an expensive process 
+	CachedSpaceStrings_List = {},	
+	MouseOnFrame            = false,
+	GotFocus                = false,
+	
+	Messages_List           = {},
+	MessageThread           = nil,
 
-			-- This is actually a ring buffer
-			-- Meaning at hitting the historyLength it wraps around 
-			-- Reuses the text objects, so chat atmost uses 100 text objects
-			MessageQueue = {}, 
-
-			-- Stores all the values for configuring chat 
-			Configuration = {								
-								FontSize = Enum.FontSize.Size18, -- 10 is good 				
-								-- Also change this when you are changing the above, this is suboptimal but so is our interface to find FontSize				
-								NumFontSize = 12, 
-								HistoryLength = 20, -- stores up to 50 of the last chat messages for you to scroll through,
-								Size = UDim2.new(0.38, 0, 0.20, 0),
-								MessageColor = Color3.new(1, 1, 1),
-								AdminMessageColor = Color3.new(1, 215/255, 0),								
-								XScale = 0.025,	
-								LifeTime = 45,		
-								Position = UDim2.new(0, 2, 0.05, 0),
-								DefaultTweenSpeed = 0.15,								
-								HaltTime = 1/15, -- Why would people need to be chatting faster than every 1/15th of a second?
-							},
-			
-			PreviousMessage = tick(), -- Timestamp of previous message
-
-			-- This could be redone by just using the previous and next fields of the Queue
-			-- But the iterators cause issues, will be optimized later 
-			SlotPositions_List = {},	
-			-- To precompute and store all player null strings since its an expensive process 
-			CachedSpaceStrings_List = {},	
-			MouseOnFrame = false,
-			GotFocus = false,
-
-			Messages_List = {},
-			MessageThread = nil,
-
-			Admins_List = {
-								'Rbadam', 'Adamintygum', 'androidtest', 'RobloxFrenchie', 'JacksSmirkingRevenge', 'LindaPepita', 'vaiobot', 'Goddessnoob', 'effward', 'Blockhaak', 'Drewbda', '659223', 'Tone', 'fasterbuilder19', 'Zeuxcg', 'concol2', 
-								'ReeseMcBlox', 'Jeditkacheff', 'whkm1980', 'ChiefJustus', 'Ellissar', 'Arbolito', 'Noob007', 'Limon', 'cmed', 'hawkington', 'Tabemono', 'autoconfig', 'BrightEyes', 'Monsterinc3D', 'MrDoomBringer', 'IsolatedEvent', 
-								'CountOnConnor', 'Scubasomething', 'OnlyTwentyCharacters', 'LordRugdumph', 'bellavour', 'david.baszucki', 'ibanez2189', 'Sorcus', 'DeeAna00', 'TheLorekt', 'NiqueMonster', 'Thorasaur', 'MSE6', 'CorgiParade', 'Varia', 
-								'4runningwolves', 'pulmoesflor', 'Olive71', 'groundcontroll2', 'GuruKrish', 'Countvelcro', 'IltaLumi', 'juanjuan23', 'OstrichSized', 'jackintheblox', 'SlingshotJunkie', 'gordonrox24', 'sharpnine', 'Motornerve', 'Motornerve', 
-								'watchmedogood', 'jmargh', 'JayKorean', 'Foyle', 'MajorTom4321', 'Shedletsky', 'supernovacaine', 'FFJosh', 'Sickenedmonkey', 'Doughtless', 'KBUX', 'totallynothere', 'ErzaStar', 'Keith', 'Chro', 'SolarCrane', 'GloriousSalt', 
-								'UristMcSparks', 'ITOlaurEN', 'Malcomso', 'Stickmasterluke', 'windlight13', 'yumyumcheerios', 'Stravant', 'ByteMe', 'imaginationsensation', 'Matt.Dusek', 'Mcrtest', 'Seranok', 'maxvee', 'Coatp0cketninja', 'Screenme', 
-								'b1tsh1ft', 'Totbl', 'Aquabot8', 'grossinger', 'Merely', 'CDakkar', 'Siekiera', 'Robloxkidsaccount', 'flotsamthespork', 'Soggoth', 'Phil', 'OrcaSparkles', 'skullgoblin', 'RickROSStheB0SS', 'ArgonPirate', 'NobleDragon', 
-								'Squidcod', 'Raeglyn', 'RobloxSai', 'Briarroze', 'hawkeyebandit', 'DapperBuffalo', 'Vukota', 'swiftstone', 'Gemlocker', 'Loopylens', 'Tarabyte', 'Timobius', 'Tobotrobot', 'Foster008', 'Twberg', 'DarthVaden', 'Khanovich', 
-								'CodeWriter', 'VladTheFirst', 'Phaedre', 'gorroth', 'SphinxShen', 'jynj1984', 'RoboYZ', 'ZodiacZak', 'superman205', 'ConvexRumbler', 'mpliner476', 'geekndestroy', 'glewis17', 'BuckerooB',
-							},
-			TempSpaceLabel = nil
-		}
+	Admins_List = {
+		'Rbadam', 'Adamintygum', 'androidtest', 'RobloxFrenchie', 'JacksSmirkingRevenge', 'LindaPepita', 'vaiobot', 'Goddessnoob', 'effward', 'Blockhaak', 'Drewbda', '659223', 'Tone', 'fasterbuilder19', 'Zeuxcg', 'concol2', 
+		'ReeseMcBlox', 'Jeditkacheff', 'whkm1980', 'ChiefJustus', 'Ellissar', 'Arbolito', 'Noob007', 'Limon', 'cmed', 'hawkington', 'Tabemono', 'autoconfig', 'BrightEyes', 'Monsterinc3D', 'MrDoomBringer', 'IsolatedEvent', 
+		'CountOnConnor', 'Scubasomething', 'OnlyTwentyCharacters', 'LordRugdumph', 'bellavour', 'david.baszucki', 'ibanez2189', 'Sorcus', 'DeeAna00', 'TheLorekt', 'NiqueMonster', 'Thorasaur', 'MSE6', 'CorgiParade', 'Varia', 
+		'4runningwolves', 'pulmoesflor', 'Olive71', 'groundcontroll2', 'GuruKrish', 'Countvelcro', 'IltaLumi', 'juanjuan23', 'OstrichSized', 'jackintheblox', 'SlingshotJunkie', 'gordonrox24', 'sharpnine', 'Motornerve', 'Motornerve', 
+		'watchmedogood', 'jmargh', 'JayKorean', 'Foyle', 'MajorTom4321', 'Shedletsky', 'supernovacaine', 'FFJosh', 'Sickenedmonkey', 'Doughtless', 'KBUX', 'totallynothere', 'ErzaStar', 'Keith', 'Chro', 'SolarCrane', 'GloriousSalt', 
+		'UristMcSparks', 'ITOlaurEN', 'Malcomso', 'Stickmasterluke', 'windlight13', 'yumyumcheerios', 'Stravant', 'ByteMe', 'imaginationsensation', 'Matt.Dusek', 'Mcrtest', 'Seranok', 'maxvee', 'Coatp0cketninja', 'Screenme', 
+		'b1tsh1ft', 'Totbl', 'Aquabot8', 'grossinger', 'Merely', 'CDakkar', 'Siekiera', 'Robloxkidsaccount', 'flotsamthespork', 'Soggoth', 'Phil', 'OrcaSparkles', 'skullgoblin', 'RickROSStheB0SS', 'ArgonPirate', 'NobleDragon', 
+		'Squidcod', 'Raeglyn', 'RobloxSai', 'Briarroze', 'hawkeyebandit', 'DapperBuffalo', 'Vukota', 'swiftstone', 'Gemlocker', 'Loopylens', 'Tarabyte', 'Timobius', 'Tobotrobot', 'Foster008', 'Twberg', 'DarthVaden', 'Khanovich', 
+		'CodeWriter', 'VladTheFirst', 'Phaedre', 'gorroth', 'SphinxShen', 'jynj1984', 'RoboYZ', 'ZodiacZak', 'superman205', 'ConvexRumbler', 'mpliner476', 'geekndestroy', 'glewis17', 'BuckerooB',
+	},
+	TempSpaceLabel = nil
+}
 ---------------------------------------------------
 
-local function GetNameValue(pName)
+local function GetPlayerNameColor(pName)
 	local value = 0
 	for index = 1, #pName do 
 		local cValue = string.byte(string.sub(pName, index, index))
@@ -203,14 +206,17 @@ local function GetNameValue(pName)
 end 
 
 function Chat:ComputeChatColor(pName)
-	return self.ChatColors[GetNameValue(pName) + 1].Color
+	return self.ChatColors[GetPlayerNameColor(pName) + 1].Color
 end 
 
 -- This is context based scrolling 
 function Chat:EnableScrolling(toggle)
 	-- Genius idea gone to fail, if we switch the camera type we can effectively lock the 
 	-- camera and do no click scrolling 
-	self.MouseOnFrame = false  
+
+	self.RenderFrame.Active = toggle -- Yep. Same effect.
+
+	--[[self.MouseOnFrame = false  
 	if self.RenderFrame then 
 		self.RenderFrame.MouseEnter:connect(function()			
 			local character = Player.Character 
@@ -235,7 +241,7 @@ function Chat:EnableScrolling(toggle)
 			Camera.CameraType = 'Custom'
 			self.MouseOnFrame = false 
 		end)
-	end 	
+	end--]]
 end 
 
 -- TODO: Scrolling using Mouse wheel 
@@ -248,7 +254,9 @@ end
 -- Check if we are running on a touch device 
 function Chat:IsTouchDevice()
 	local touchEnabled = false 
-	pcall(function() touchEnabled = inputService.TouchEnabled end)	
+	pcall(function()
+		touchEnabled = inputService.TouchEnabled
+	end)
 	return touchEnabled 
 end
 
@@ -309,14 +317,14 @@ function Chat:UpdateQueue(field, diff)
 										wait(0.05)							
 										while label.ImageTransparency > 0 do 
 											label.ImageTransparency = label.ImageTransparency - 0.2
-											wait(0.03) 
+											wait(0.03)
 										end 	
 									end)
 
 								end
 							else 							
 								label.Position = UDim2.new(self.Configuration.XScale, xOffset, label.Position.Y.Scale - field['Message'].Size.Y.Scale, yOffset)							
-							end  
+							end
 							if label.Position.Y.Scale < -0.01 then 							
 								-- NOTE: Remove this fix when Textbounds is fixed
 								label.Visible = false 						
@@ -353,18 +361,20 @@ end
 
 -- This is to precompute all playerName space strings
 -- This is used to offset the message by exactly this + 2 spacestrings
+
+-- Note: pLabel must be parented to a descendant of CoreGui or PlayerGui, and it must be a descendant of ScreenGui, or otherwise it will infinite loop, as TextBounds does not updated when not rendered. 
 function Chat:ComputeSpaceString(pLabel)
 	local nString = " "
 	if not self.TempSpaceLabel then 
 		self.TempSpaceLabel  = Gui.Create'TextButton'
-								{
-									Size = UDim2.new(0, pLabel.AbsoluteSize.X, 0, pLabel.AbsoluteSize.Y); 
-									FontSize = self.Configuration.FontSize; 
-									Parent = self.RenderFrame; 
-									BackgroundTransparency = 1.0; 
-									Text = nString;
-									Name = 'SpaceButton'
-								};
+			{
+				Size                   = UDim2.new(0, pLabel.AbsoluteSize.X, 0, pLabel.AbsoluteSize.Y); 
+				FontSize               = self.Configuration.FontSize; 
+				Parent                 = self.RenderFrame; 
+				BackgroundTransparency = 1.0; 
+				Text                   = nString;
+				Name                   = 'SpaceButton'
+			};
 	else
 		self.TempSpaceLabel.Text = nString
 	end 
@@ -388,14 +398,16 @@ function Chat:UpdateChat(cPlayer, message)
 						}	
 	if coroutine.status(Chat.MessageThread) == 'dead' then 		
 		--Chat.Messages_List = {}		
-		table.insert(Chat.Messages_List, messageField)				
+		table.insert(Chat.Messages_List, messageField)		
+
 		Chat.MessageThread = coroutine.create(function()
-									for i = 1, #Chat.Messages_List do 	
-										local field = Chat.Messages_List[i]																														
-										Chat:CreateMessage(field['Player'], field['Message']) 						
-									end 
-									Chat.Messages_List = {}									
-								end)
+			for i = 1, #Chat.Messages_List do 	
+				local field = Chat.Messages_List[i]																														
+				Chat:CreateMessage(field['Player'], field['Message']) 						
+			end 
+			Chat.Messages_List = {}									
+		end)
+
 		coroutine.resume(Chat.MessageThread)
 	else 
 		table.insert(Chat.Messages_List, messageField)
@@ -484,45 +496,45 @@ function Chat:CreateMessage(cPlayer, message)
 
 
 		pLabel = Gui.Create'ImageLabel' 
-					{
-						Name = pName;
-						Parent = self.RenderFrame;
-						Size = UDim2.new(0, 14, 0, 14);
-						BackgroundTransparency = 1.0;
-						Position = UDim2.new(0, 0, 1, -10);
-						BorderSizePixel = 0.0; 
-						Image = "rbxasset://textures/ui/chat_teamButton.png";
-						ImageTransparency = 1.0;
-					};
+			{
+				Name                   = pName;
+				Parent                 = self.RenderFrame;
+				Size                   = UDim2.new(0, 14, 0, 14);
+				BackgroundTransparency = 1.0;
+				Position               = UDim2.new(0, 0, 1, -10);
+				BorderSizePixel        = 0.0; 
+				Image                  = "rbxasset://textures/ui/chat_teamButton.png";
+				ImageTransparency      = 1.0;
+			};
 
 		local pColor 
 		if cPlayer.Neutral then  
 			pLabel.ImageColor3 = Chat:ComputeChatColor(pName)
-		else 
+		else
 			pLabel.ImageColor3 = cPlayer.TeamColor.Color 
 		end 
 
 		mLabel = Gui.Create'TextLabel' 
-						{
-							Name = pName .. ' - message';
-							-- Max is 3 lines
-							Size = UDim2.new(1, 0, 0.5, 0);							
-							TextColor3 = Chat.Configuration.MessageColor;
-							Font = Enum.Font.SourceSans;
-							FontSize = Chat.Configuration.FontSize;
-							TextXAlignment = Enum.TextXAlignment.Left;	
-							TextYAlignment = Enum.TextYAlignment.Top;						
-							Text = ""; -- this is to stop when the engine reverts the swear words to default, which is button, ugh
-							Parent = self.RenderFrame;			
-							TextWrapped = true;			
-							BackgroundTransparency = 1.0;						
-							TextTransparency = 1.0;
-							Position = UDim2.new(0, 40, 1, 0);
-							BorderSizePixel = 0.0;
-							TextStrokeColor3 = Color3.new(0, 0, 0);
-							TextStrokeTransparency = 0.6;
-							--Active = false;
-						};
+			{
+				Name                   = pName .. ' - message';
+				-- Max is 3 lines
+				Size                   = UDim2.new(1, 0, 0.5, 0);							
+				TextColor3             = Chat.Configuration.MessageColor;
+				Font                   = Enum.Font.SourceSans;
+				FontSize               = Chat.Configuration.FontSize;
+				TextXAlignment         = Enum.TextXAlignment.Left;	
+				TextYAlignment         = Enum.TextYAlignment.Top;						
+				Text                   = ""; -- this is to stop when the engine reverts the swear words to default, which is button, ugh
+				Parent                 = self.RenderFrame;			
+				TextWrapped            = true;			
+				BackgroundTransparency = 1.0;						
+				TextTransparency       = 1.0;
+				Position               = UDim2.new(0, 40, 1, 0);
+				BorderSizePixel        = 0.0;
+				TextStrokeColor3       = Color3.new(0, 0, 0);
+				TextStrokeTransparency = 0.6;
+				--Active = false;
+			};
 		mLabel.Text = nString .. pName .. ": " .. message;
 
 		if not pName then 
@@ -548,8 +560,8 @@ function Chat:CreateMessage(cPlayer, message)
 	local yFieldSize = mLabel.TextBounds.Y
 
 	local queueField = {}	
-	queueField['Player'] = pLabel 
-	queueField['Message'] = mLabel 
+	queueField['Player']    = pLabel 
+	queueField['Message']   = mLabel 
 	queueField['SpawnTime'] = tick() -- Used for identifying when to make the message invisible 
 
 	table.insert(self.MessageQueue, 1, queueField)		
@@ -581,47 +593,48 @@ end
 -- For touch devices we create a button instead 
 function Chat:CreateTouchButton()	
 	self.ChatTouchFrame = Gui.Create'Frame'
-						{
-							Name = 'ChatTouchFrame';
-							Size = UDim2.new(0, 128, 0, 32);
-							Position = UDim2.new(0, 88, 0, 0);
-							BackgroundTransparency = 1.0;
-							Parent = self.Gui;
+		{
+			Name                   = 'ChatTouchFrame';
+			Size                   = UDim2.new(0, 128, 0, 32);
+			Position               = UDim2.new(0, 88, 0, 0);
+			BackgroundTransparency = 1.0;
+			Parent                 = self.Gui;
 
-							Gui.Create'ImageButton'
-							{
-								Name = 'ChatLabel';
-								Size = UDim2.new(0, 74, 0, 28);
-								Position = UDim2.new(0, 0, 0, 0);
-								BackgroundTransparency = 1.0;								
-								ZIndex = 2.0;								
-							};		
-							Gui.Create'ImageLabel'
-							{
-								Name = 'Background';
-								Size = UDim2.new(1, 0, 1, 0);
-								Position = UDim2.new(0, 0, 0, 0);
-								BackgroundTransparency = 1.0;
-								Image = 'http://www.roblox.com/asset/?id=97078724'
-							};
+			Gui.Create 'ImageButton'
+			{
+				Name                   = 'ChatLabel';
+				Size                   = UDim2.new(0, 74, 0, 28);
+				Position               = UDim2.new(0, 0, 0, 0);
+				BackgroundTransparency = 1.0;								
+				ZIndex                 = 2.0;								
+			};		
+			Gui.Create 'ImageLabel'
+			{
+				Name                   = 'Background';
+				Size                   = UDim2.new(1, 0, 1, 0);
+				Position               = UDim2.new(0, 0, 0, 0);
+				BackgroundTransparency = 1.0;
+				Image                  = 'http://www.roblox.com/asset/?id=97078724';
+			};
 
-						}
-	self.TapToChatLabel = self.ChatTouchFrame.ChatLabel	
+		}
+	self.TapToChatLabel       = self.ChatTouchFrame.ChatLabel	
 	self.TouchLabelBackground = self.ChatTouchFrame.Background
 
 	self.ChatBar = Gui.Create'TextBox'
-					{
-						Name = 'ChatBar';
-						Size = UDim2.new(1, 0, 0.2, 0);
-						Position = UDim2.new(0, 0, 0.8, 800);
-						Text = "";
-						ZIndex = 1.0;
-						BackgroundTransparency = 1.0;
-						Parent = self.Frame;		
-						TextXAlignment = Enum.TextXAlignment.Left;
-						TextColor3 = Color3.new(1, 1, 1);		
-						ClearTextOnFocus = false;											
-					};	
+		{
+			Name                   = 'ChatBar';
+			Size                   = UDim2.new(1, 0, 0.2, 0);
+			Position               = UDim2.new(0, 0, 0.8, 800);
+			Text                   = "";
+			ZIndex                 = 1.0;
+			BackgroundTransparency = 1.0;
+			Parent                 = self.Frame;		
+			TextXAlignment         = Enum.TextXAlignment.Left;
+			TextColor3             = Color3.new(1, 1, 1);		
+			ClearTextOnFocus       = false;
+			BorderSizePixel        = 0;
+		};
 
 	self.TapToChatLabel.MouseButton1Click:connect(function()
 		self.TapToChatLabel.Visible = false
@@ -641,42 +654,49 @@ function Chat:CreateChatBar()
 	local status, result = pcall(function() return GuiService.UseLuaChat end)	
 	if forceChatGUI or (status and result) then 	
 		self.ClickToChatButton = Gui.Create'TextButton'
-								{
-									Name = 'ClickToChat';
-									Size = UDim2.new(1, 0, 0, 20);
-									BackgroundTransparency = 1.0;
-									ZIndex = 2.0;
-									Parent = self.Gui;
-									Text = "To chat click here or press \"/\" key";
-									TextColor3 = Color3.new(1, 1, 0.9);
-									Position = UDim2.new(0, 0, 1, 0);
-									TextXAlignment = Enum.TextXAlignment.Left;
-									FontSize = Enum.FontSize.Size12;
-								}
+			{
+				Name = 'ClickToChat';
+				Size = UDim2.new(1, 0, 0, 20);
+				BackgroundTransparency = 1.0;
+				ZIndex = 2.0;
+				Parent = self.Gui;
+				Text = "To chat click here or press \"/\" key";
+				TextColor3 = Color3.new(1, 1, 0.9);
+				Position = UDim2.new(0, 0, 1, 0);
+				TextXAlignment = Enum.TextXAlignment.Left;
+				FontSize = Enum.FontSize.Size12;
+			}
 
 		self.ChatBar = Gui.Create'TextBox'
-							{
-								Name = 'ChatBar';
-								Size = UDim2.new(1, 0, 0, 20);
-								Position = UDim2.new(0, 0, 1, 0);
-								Text = "";
-								ZIndex = 1.0;
-								BackgroundColor3 = Color3.new(0, 0, 0);
-								BackgroundTransparency = 0.25;
-								Parent = self.Gui;		
-								TextXAlignment = Enum.TextXAlignment.Left;
-								TextColor3 = Color3.new(1, 1, 1);	
-								FontSize = Enum.FontSize.Size12;	
-								ClearTextOnFocus = false;
-								Text = '';							
-							};	
+			{
+				Name                   = 'ChatBar';
+				Size                   = UDim2.new(1, 0, 0, 20);
+				Position               = UDim2.new(0, 0, 1, 0);
+				Text                   = "";
+				ZIndex                 = 1.0;
+				BackgroundColor3       = Color3.new(0, 0, 0);
+				BackgroundTransparency = 0.25;
+				Parent                 = self.Gui;		
+				TextXAlignment         = Enum.TextXAlignment.Left;
+				TextColor3             = Color3.new(1, 1, 1);	
+				FontSize               = Enum.FontSize.Size12;	
+				ClearTextOnFocus       = false;
+				Text                   = '';
+				BorderSizePixel        = 0;					
+			};
 
 		-- Engine has code to offset the entire world, so if we do it by -20 pixels nothing gets in our chat's way
 		--GuiService:SetGlobalSizeOffsetPixel(0, -20)
-		local success, error = pcall(function() GuiService:SetGlobalGuiInset(0, 0, 0, 20) end) 
+		local success, error = pcall(function()
+			GuiService:SetGlobalGuiInset(0, 0, 0, 20)
+		end)
+
 		if not success then 
-			pcall(function() GuiService:SetGlobalSizeOffsetPixel(0, -20) end) -- Doesn't hurt to throw a non-existent function into a pcall
+			pcall(function()
+				GuiService:SetGlobalSizeOffsetPixel(0, -20)
+			end) -- Doesn't hurt to throw a non-existent function into a pcall. Oh wait. It does. 
 		end
+
 		-- ChatHotKey is '/'
 		GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
 		GuiService.SpecialKeyPressed:connect(function(key) 
@@ -696,51 +716,51 @@ end
 function Chat:CreateGui()
 	self.Gui = WaitForChild(CoreGuiService, 'RobloxGui')
 	self.Frame = Gui.Create'Frame'
-				{	
-					Name = 'ChatFrame';
-					--Size = self.Configuration.Size;
-					Size = UDim2.new(0, 500, 0, 120);
-					Position = UDim2.new(0, 0, 0, 5);
-					BackgroundTransparency = 1.0;
-					--ClipsDescendants = true;
-					ZIndex = 0.0;
-					Parent = self.Gui;
-					Active = false; 
+		{	
+			Name = 'ChatFrame';
+			--Size = self.Configuration.Size;
+			Size = UDim2.new(0, 500, 0, 120);
+			Position = UDim2.new(0, 0, 0, 5);
+			BackgroundTransparency = 1.0;
+			--ClipsDescendants = true;
+			ZIndex = 0.0;
+			Parent = self.Gui;
+			Active = false; 
 
-					Gui.Create'ImageLabel'
-					{
-						Name = 'Background';
-						Image = 'http://www.roblox.com/asset/?id=97120937'; --96551212';
-						Size = UDim2.new(1.3, 0, 1.64, 0);
-						Position = UDim2.new(0, 0, 0, 0);
-						BackgroundTransparency = 1.0;								
-						ZIndex = 0.0;
-						Visible = false 
-					};
+			Gui.Create'ImageLabel'
+			{
+				Name = 'Background';
+				Image = 'http://www.roblox.com/asset/?id=97120937'; --96551212';
+				Size = UDim2.new(1.3, 0, 1.64, 0);
+				Position = UDim2.new(0, 0, 0, 0);
+				BackgroundTransparency = 1.0;								
+				ZIndex = 0.0;
+				Visible = false 
+			};
 
-					Gui.Create'Frame'
-					{
-						Name = 'Border';
-						Size = UDim2.new(1, 0, 0, 1);
-						Position = UDim2.new(0, 0, 0.8, 0);
-						BackgroundTransparency = 0.0;
-						BackgroundColor3 = Color3.new(236/255, 236/255, 236/255);
-						BorderSizePixel = 0.0;
-						Visible = false;
-					};
+			Gui.Create'Frame'
+			{
+				Name = 'Border';
+				Size = UDim2.new(1, 0, 0, 1);
+				Position = UDim2.new(0, 0, 0.8, 0);
+				BackgroundTransparency = 0.0;
+				BackgroundColor3 = Color3.new(236/255, 236/255, 236/255);
+				BorderSizePixel = 0.0;
+				Visible = false;
+			};
 
-					Gui.Create'Frame'
-					{
-						Name = 'ChatRenderFrame';
-						Size = UDim2.new(1.02, 0, 1.01, 0);
-						Position = UDim2.new(0, 0, 0, 0);						
-						BackgroundTransparency = 1.0;
-						--ClipsDescendants = true;
-						ZIndex = 0.0;		
-						Active = false;	
+			Gui.Create'Frame'
+			{
+				Name = 'ChatRenderFrame';
+				Size = UDim2.new(1.02, 0, 1.01, 0);
+				Position = UDim2.new(0, 0, 0, 0);						
+				BackgroundTransparency = 1.0;
+				--ClipsDescendants = true;
+				ZIndex = 0.0;		
+				Active = false;	
 
-					};					
-				};		
+			};					
+		};		
 
 	Spawn(function()
 		wait(0.5)
@@ -926,8 +946,17 @@ end
 
 function Chat:CoreGuiChanged(coreGuiType,enabled)
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
-		if self.Frame then self.Frame.Visible = enabled end
-		if self.TapToChatLabel then self.TapToChatLabel.Visible = enabled end 
+		if self.Frame then
+			self.Frame.Visible = enabled
+		end
+
+		if self.TapToChatLabel then
+			self.TapToChatLabel.Visible = enabled
+		end 
+
+		if self.ChatTouchFrame then -- Let's actually hide this on chat devices. 
+			self.ChatTouchFrame.Visible = enabled
+		end
 
 		if not Chat:IsTouchDevice() and self.ChatBar then 
 			self.ChatBar.Visible = enabled 
@@ -943,7 +972,6 @@ end
 -- Constructor 
 -- This function initializes everything 
 function Chat:Initialize()			
-
 	Chat:CreateGui() 		
 
 	pcall(function()
