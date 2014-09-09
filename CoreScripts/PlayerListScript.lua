@@ -1535,12 +1535,13 @@ function StatRemoved(nchild,playerEntry)
 end
 --[[
 	clears all stats from a given playerEntry
+	resets the HeadScore's Text property to an empty string
 	used when leaderstats are removed, or when new leaderstats are added(for weird edge case)+
 --]]
 function RemoveAllStats(playerEntry)
 	for i,val in ipairs(ScoreNames) do
 		StatRemoved(val,playerEntry)
-	end
+	end HeaderScore.Text = ''
 	
 end
 
