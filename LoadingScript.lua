@@ -137,6 +137,15 @@ function MainGui:GenerateMain()
 		},
 
 		create 'Frame' {
+			Name = 'BottomFrame',
+			BackgroundColor3 = COLORS.BLACK,
+			BorderSizePixel = 0,
+			Position = UDim2.new(0,0,1,-120),
+			Size = UDim2.new(1,0,0,120),
+			ZIndex = 1
+		},
+
+		create 'Frame' {
 			Name = 'PlaceFrame',
 			BackgroundTransparency = 1,
 			Position = UDim2.new(0.35, 0, 1, -100),
@@ -338,6 +347,10 @@ function MainGui:GenerateMain()
 	currScreenGui = screenGui
 end
 
+function round(num, idp)
+  local mult = 10^(idp or 0)
+  return math.floor(num * mult + 0.5) / mult
+end
 
 ---------------------------------------------------------
 -- Main Script (show something now + setup connections)
@@ -388,7 +401,7 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 	if voxelCount <= 0 then
 		currScreenGui.BlackFrame.CountFrame.VoxelCount.Text = "0"
 	else
-		currScreenGui.BlackFrame.CountFrame.VoxelCount.Text = tostring(voxelCount) .." million"
+		currScreenGui.BlackFrame.CountFrame.VoxelCount.Text = tostring(round(voxelCount,4)) .." million"
 	end
 
 	if not lastRenderTime then
