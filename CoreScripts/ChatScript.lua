@@ -273,23 +273,25 @@ end
 
 -- Handles the rendering of the text objects in their appropriate places
 function Chat:UpdateQueue(field, diff)	
-	-- Have to do some sort of correction here 				
+	-- Have to do some sort of correction here 
+	self.Frame.CanvasSize = UDim2.new(0, 0, 0, #self.MessageQueue*18)
+	self.Frame.CanvasPosition = Vector2.new(0,#self.MessageQueue*18) -- This could be better, but I don't know how to calculate it properly.
 	for i = #self.MessageQueue, 1, -1 do 			
 		if self.MessageQueue[i] then 						
 			for _, label in pairs(self.MessageQueue[i]) do 						
 				if label and type(label) ~= 'table' and type(label) ~= 'number' then					
 					if label:IsA('TextLabel') or label:IsA('TextButton') or label:IsA('ImageLabel') then 	
 						if diff then 
-							label.Position = label.Position - UDim2.new(0, 0, diff, 0) 
+							label.Position = label.Position - UDim2.new(0, 0, diff, 0)
 						else	
-							local yOffset = 0		
+							local yOffset = 18
 							local xOffset = 20						
 							if label:IsA('ImageLabel') then
-								yOffset = 4
+								yOffset = yOffset-4
 								xOffset = 0
 							end
 							if field == self.MessageQueue[i] then
-								label.Position = UDim2.new(self.Configuration.XScale, xOffset, label.Position.Y.Scale - field['Message'].Size.Y.Scale , yOffset)
+								label.Position = UDim2.new(self.Configuration.XScale, xOffset, 1, yOffset+(label.Position.Y.Offset + field['Message'].Size.Y.Offset))
 								-- Just to show up popping effect for the latest message in chat 
 								if label:IsA('TextLabel') or label:IsA('TextButton') then
 									Spawn(function()					
@@ -314,14 +316,9 @@ function Chat:UpdateQueue(field, diff)
 									end)
 
 								end
-							else 							
-								label.Position = UDim2.new(self.Configuration.XScale, xOffset, label.Position.Y.Scale - field['Message'].Size.Y.Scale, yOffset)							
+							else
+								label.Position = UDim2.new(self.Configuration.XScale, xOffset, 1, (label.Position.Y.Offset + field['Message'].Size.Y.Offset))
 							end  
-							if label.Position.Y.Scale < -0.01 then 							
-								-- NOTE: Remove this fix when Textbounds is fixed
-								label.Visible = false 						
-								label:Destroy() 
-							end 
 						end 
 					end 
 				end 						
@@ -431,7 +428,7 @@ function Chat:ApplyFilter(str)
 end
 
 -- NOTE: Temporarily disabled ring buffer to allow for chat to always wrap around 
-function Chat:CreateMessage(cPlayer, message)		
+function Chat:CreateMessage(cPlayer, message)
 	local pName
 	if not cPlayer then 
 		pName = ''
@@ -482,7 +479,6 @@ function Chat:CreateMessage(cPlayer, message)
 
 	local nString = ""
 
-
 		pLabel = Gui.Create'ImageLabel' 
 					{
 						Name = pName;
@@ -499,7 +495,7 @@ function Chat:CreateMessage(cPlayer, message)
 		if cPlayer.Neutral then  
 			pLabel.ImageColor3 = Chat:ComputeChatColor(pName)
 		else 
-			pLabel.ImageColor3 = cPlayer.TeamColor.Color 
+			pLabel.ImageColor3 = cPlayer.TeamColor.Color
 		end 
 
 		mLabel = Gui.Create'TextLabel' 
@@ -542,7 +538,8 @@ function Chat:CreateMessage(cPlayer, message)
 	-- This will give beautiful multilines as well 
 	local heightField = mLabel.TextBounds.Y	
 
-	mLabel.Size = UDim2.new(1, 0, heightField/self.RenderFrame.AbsoluteSize.Y, 0)	
+	mLabel.Size = UDim2.new(1, 0, heightField/self.RenderFrame.AbsoluteSize.Y, 0)
+	mLabel.Size = UDim2.new(1, 0, 0, mLabel.AbsoluteSize.Y)
 
 	local yPixels = self.RenderFrame.AbsoluteSize.Y
 	local yFieldSize = mLabel.TextBounds.Y
@@ -556,11 +553,7 @@ function Chat:CreateMessage(cPlayer, message)
 	Chat:UpdateQueue(queueField)
 end
 
-function Chat:ScreenSizeChanged() 	
-	wait()
-	while self.Frame.AbsoluteSize.Y > 120 do 
-		self.Frame.Size = self.Frame.Size - UDim2.new(0, 0, 0.005, 0)
-	end 
+function Chat:ScreenSizeChanged() 
 	Chat:RecalculateSpacing()
 end 
 
@@ -695,13 +688,16 @@ end
 -- Done only once 
 function Chat:CreateGui()
 	self.Gui = WaitForChild(CoreGuiService, 'RobloxGui')
-	self.Frame = Gui.Create'Frame'
+	self.Frame = Gui.Create'ScrollingFrame'
 				{	
 					Name = 'ChatFrame';
 					--Size = self.Configuration.Size;
-					Size = UDim2.new(0, 500, 0, 120);
+					Size = UDim2.new(0, 500, 0, 124);
 					Position = UDim2.new(0, 0, 0, 5);
 					BackgroundTransparency = 1.0;
+					BorderSizePixel = 0;
+					ScrollBarThickness = 0;
+					CanvasSize = UDim2.new(0, 0, 0, 124);
 					--ClipsDescendants = true;
 					ZIndex = 0.0;
 					Parent = self.Gui;
@@ -732,8 +728,8 @@ function Chat:CreateGui()
 					Gui.Create'Frame'
 					{
 						Name = 'ChatRenderFrame';
-						Size = UDim2.new(1.02, 0, 1.01, 0);
-						Position = UDim2.new(0, 0, 0, 0);						
+						Size = UDim2.new(1, 0, -1, 0);
+						Position = UDim2.new(0, 0, 1, 0);						
 						BackgroundTransparency = 1.0;
 						--ClipsDescendants = true;
 						ZIndex = 0.0;		
@@ -792,9 +788,17 @@ function Chat:CreateGui()
 						local cText = self.ChatBar.Text
 						if string.sub(self.ChatBar.Text, 1, 1)  == '%' then 
 							cText = '(TEAM) ' .. string.sub(cText, 2, #cText)
-							pcall(function() PlayersService:TeamChat(cText) end)						
+							local succ, err = pcall(function() PlayersService:TeamChat(cText) end)
+							if forceChatGUI and not succ then
+								print("TeamChatting")
+								self:PlayerChatted(nil, Player, cText)
+							end
 						else 
-							pcall(function() PlayersService:Chat(cText) end)						
+							local succ, err = pcall(function() PlayersService:Chat(cText) end)
+							if forceChatGUI and not succ then
+								print("Chatting")
+								self:PlayerChatted(nil, Player, cText)
+							end
 						end 					
 					
 						if self.ClickToChatButton then 
@@ -869,7 +873,7 @@ function Input:Initialize()
 end
 
 -- Just a wrapper around our PlayerChatted event 
-function Chat:PlayerChatted(...)	
+function Chat:PlayerChatted(...)
 	local args = {...}
 	local argCount = select('#', ...)
 	local player
@@ -900,12 +904,16 @@ end
 -- Runs only every 5 seconds and has to loop through 50 values
 -- Shouldn't be too expensive 
 function Chat:CullThread()
-	while true do 
+	while true do
 		if #self.MessageQueue > 0 then 
-			for _, field in pairs(self.MessageQueue) do 				
+			self.Frame.CanvasSize = UDim2.new(0, 0, 0, #self.MessageQueue*18) -- Update ScrollingFrame CanvasSize when guis are destroyed 
+			for _, field in next, self.MessageQueue do 				
 				if field['SpawnTime'] and field['Player'] and field['Message'] and tick() - field['SpawnTime'] > self.Configuration.LifeTime then 
 					field['Player'].Visible = false 
+					field['Player']:Destroy()
 					field['Message'].Visible = false 
+					field['Message']:Destroy()
+					field = nil
 				end 
 			end 
 		end 
