@@ -6,7 +6,7 @@ local currentTools = {}
 
 local BaseUrl = game:GetService("ContentProvider").BaseUrl:lower()
 
-if BaseUrl:find("gametest1") then
+if BaseUrl:find("www.roblox.com") or BaseUrl:find("gametest1") then
     DeleteToolID = 73089190
     PartSelectionID = 73089166
     CloneToolID = 73089204
@@ -15,9 +15,7 @@ if BaseUrl:find("gametest1") then
     ConfigToolID = 73089239
     WiringToolID = 73089259
     classicToolID = 58921588
-end
-
-if BaseUrl:find("gametest2") then
+elseif BaseUrl:find("gametest2") then
     DeleteToolID = 70353317
     PartSelectionID = 70353315
     CloneToolID = 70353314
