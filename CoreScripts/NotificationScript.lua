@@ -308,21 +308,12 @@ Game:GetService("PointsService").PointsAwarded:connect( function(userId, pointsA
 	end
 end)
 
-local Market = game:GetService("MarketplaceService")
-local function getImage(id)
-	for i=1,3 do
-		local s,info = pcall(Market.GetProductInfo,Market,id-i)
-		if s and info.AssetTypeId == 1 then
-			return id-i break
-		end
-	end
-end
-
+-- Since we can't get the image right, let's just use a nice notification icon
 Game:GetService("BadgeService").BadgeAwarded:connect( function(message, userId, badgeId)
 	if userId == Game.Players.LocalPlayer.userId then
 		game:GetService("GuiService"):SendNotification("Badge Awarded!",
 			message,
-			"http://www.roblox.com/asset?id=" .. getImage(badgeId),
+			"http://www.roblox.com/asset?id=177200377",
 			5,
 			noOptFunc)
 	end
