@@ -313,7 +313,7 @@ Game:GetService("BadgeService").BadgeAwarded:connect( function(message, userId, 
 	if userId == Game.Players.LocalPlayer.userId then
 		game:GetService("GuiService"):SendNotification("Badge Awarded!",
 			message,
-			"http://www.roblox.com/asset?id=145360599",
+			"http://www.roblox.com/asset?id=177200377",
 			5,
 			noOptFunc)
 	end
