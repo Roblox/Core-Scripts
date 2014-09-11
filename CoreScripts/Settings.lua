@@ -712,8 +712,10 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	local studioCheckbox = nil
 	--]]
 
-
 	local itemTop = 0
+	if game:GetService("GuiService"):GetScreenResolution().y < 600 then
+		itemTop = 50
+	end
 	----------------------------------------------------------------------------------------------------
 	--  C A M E R A    C O N T R O L S
 	----------------------------------------------------------------------------------------------------
@@ -975,7 +977,13 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		volumeText.Name = "VolumeText"
 		volumeText.Text = "Volume"
 		volumeText.Size = UDim2.new(0,224,0,18)
-		volumeText.Position = UDim2.new(0,31,0,285)
+
+		local yLabelPosition = 280
+		if game:GetService("GuiService"):GetScreenResolution().y < 600 then
+			yLabelPosition = 200
+		end
+
+		volumeText.Position = UDim2.new(0,31,0,yLabelPosition)
 
 		volumeText.TextXAlignment = Enum.TextXAlignment.Left
 		volumeText.Font = Enum.Font.SourceSansBold
@@ -986,7 +994,12 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		volumeText.Parent = gameSettingsMenuFrame
 		volumeText.Visible = not inStudioMode
 
-		local volumeSlider, volumeLevel = RbxGui.CreateSliderNew(maxVolumeLevel,256,UDim2.new(0, 180, 0, 287))
+		local ySliderPosition = 287
+		if game:GetService("GuiService"):GetScreenResolution().y < 600 then
+			ySliderPosition = 207
+		end
+
+		local volumeSlider, volumeLevel = RbxGui.CreateSliderNew(maxVolumeLevel,256,UDim2.new(0, 180, 0, ySliderPosition))
 		volumeSlider.Parent = gameSettingsMenuFrame
 		volumeSlider.Bar.ZIndex = baseZIndex + 4
 		volumeSlider.Bar.Slider.ZIndex = baseZIndex + 6
