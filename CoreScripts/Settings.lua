@@ -993,7 +993,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		volumeText.ZIndex = baseZIndex + 4
 		volumeText.BackgroundTransparency = 1
 		volumeText.Parent = gameSettingsMenuFrame
-		volumeText.Visible = not inStudioMode
+		volumeText.Visible = true
 
 		local ySliderPosition = 287
 		if game:GetService("GuiService"):GetScreenResolution().y < 600 then
@@ -1008,7 +1008,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		volumeSlider.BarRight.ZIndex = baseZIndex + 4
 		volumeSlider.Bar.Fill.ZIndex = baseZIndex + 5
 		volumeSlider.FillLeft.ZIndex = baseZIndex + 5
-		volumeSlider.Visible = not inStudioMode
+		volumeSlider.Visible = true
 		volumeLevel.Value = math.min(math.max(UserSettings().GameSettings.MasterVolume * maxVolumeLevel, 1), maxVolumeLevel)
 
 		volumeLevel.Changed:connect(function(prop)
