@@ -36,7 +36,8 @@ local hasGraphicsSlider = true
 local GraphicsQualityLevels = 10 -- how many levels we allow on graphics slider
 local recordingVideo = false
 
-local hasVolumeSlider = true
+local volumeFlagExists, volumeFlagValue = pcall(function () return settings():GetFFlag("VolumeControlInGameEnabled") end)
+local hasVolumeSlider = volumeFlagExists and volumeFlagValue
 
 local currentMenuSelection = nil
 local lastMenuSelection = {}
