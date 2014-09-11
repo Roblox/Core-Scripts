@@ -3,7 +3,6 @@
 --
 
 -- Constants
-
 local PLACEID = Game.PlaceId
 
 local MPS = Game:GetService 'MarketplaceService'
@@ -137,52 +136,6 @@ function MainGui:GenerateMain()
 		},
 
 		create 'Frame' {
-			Name = 'BottomFrame',
-			BackgroundColor3 = COLORS.BLACK,
-			BorderSizePixel = 0,
-			Position = UDim2.new(0,0,1,-120),
-			Size = UDim2.new(1,0,0,120),
-			ZIndex = 1
-		},
-
-		create 'Frame' {
-			Name = 'PlaceFrame',
-			BackgroundTransparency = 1,
-			Position = UDim2.new(0.35, 0, 1, -100),
-			Size = UDim2.new(0.3, 0, 0, 80),
-			ZIndex = 2,
-
-			create 'TextLabel' {
-				Name = 'PlaceLabel',
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0.5, -2),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size14,
-				TextWrapped = true,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "",
-				ZIndex = 2
-			},
-
-			create 'TextLabel' {
-				Name = 'CreatorLabel',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0,0,0.5,2),
-				Size = UDim2.new(1, 0, 0.5, -2),
-				Font = Enum.Font.SourceSans,
-				FontSize = Enum.FontSize.Size12,
-				TextWrapped = true,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "",
-				ZIndex = 2
-			},
-		},
-
-		create 'Frame' {
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
 			BackgroundTransparency = 1,
@@ -212,15 +165,47 @@ function MainGui:GenerateMain()
 		create 'Frame' {
 			Name = 'CountFrame',
 			BackgroundTransparency = 1,
-			Position = UDim2.new(0, 0, 1, -90),
-			Size = UDim2.new(0.3, 0, 0, 90),
+			Position = UDim2.new(0, 0, 1, -120),
+			Size = UDim2.new(0.3, 0, 0, 120),
 			ZIndex = 2,
+
+			create 'TextLabel' {
+				Name = 'PlaceLabel',
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, -5, 0, 18),
+				Position = UDim2.new(0, 5, 0, 0),
+				Font = Enum.Font.SourceSansBold,
+				FontSize = Enum.FontSize.Size14,
+				TextWrapped = true,
+				TextScaled = true,
+				TextColor3 = COLORS.WHITE,
+				TextStrokeTransparency = 0,
+				Text = "",
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 2
+			},
+
+			create 'TextLabel' {
+				Name = 'CreatorLabel',
+				BackgroundTransparency = 1,
+				Position = UDim2.new(0,5,0,18),
+				Size = UDim2.new(1, -5, 0, 18),
+				Font = Enum.Font.SourceSans,
+				FontSize = Enum.FontSize.Size12,
+				TextWrapped = true,
+				TextScaled = true,
+				TextColor3 = COLORS.WHITE,
+				TextStrokeTransparency = 0,
+				Text = "",
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 2
+			},
 
 			create 'TextLabel' {
 				Name = 'BrickLabel',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 20),
-				Size = UDim2.new(0.5, -5, 0, 18),
+				Position = UDim2.new(0, 5, 0, 63),
+				Size = UDim2.new(0, 85, 0, 18),
 				Font = Enum.Font.SourceSansBold,
 				FontSize = Enum.FontSize.Size18,
 				TextScaled = true,
@@ -234,8 +219,8 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'ConnectorLabel',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 40),
-				Size = UDim2.new(0.5, -5, 0, 18),
+				Position = UDim2.new(0, 5, 0, 81),
+				Size = UDim2.new(0, 85, 0, 18),
 				Font = Enum.Font.SourceSansBold,
 				FontSize = Enum.FontSize.Size18,
 				TextScaled = true,
@@ -249,8 +234,8 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'InstanceLabel',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 0),
-				Size = UDim2.new(0.5, -5, 0, 18),
+				Position = UDim2.new(0, 5, 0, 45),
+				Size = UDim2.new(0, 85, 0, 18),
 				Font = Enum.Font.SourceSansBold,
 				FontSize = Enum.FontSize.Size18,
 				TextScaled = true,
@@ -264,8 +249,8 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'VoxelLabel',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 60),
-				Size = UDim2.new(0.5, -5, 0, 18),
+				Position = UDim2.new(0, 5, 0, 99),
+				Size = UDim2.new(0, 85, 0, 18),
 				Font = Enum.Font.SourceSansBold,
 				FontSize = Enum.FontSize.Size18,
 				TextScaled = true,
@@ -279,7 +264,7 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'BrickCount',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0.5, 5, 0, 20),
+				Position = UDim2.new(0, 95, 0, 63),
 				Size = UDim2.new(0.5, -5, 0, 18),
 				Font = Enum.Font.SourceSans,
 				FontSize = Enum.FontSize.Size18,
@@ -294,7 +279,7 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'ConnectorCount',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0.5, 5, 0, 40),
+				Position = UDim2.new(0, 95, 0, 81),
 				Size = UDim2.new(0.5, -5, 0, 18),
 				Font = Enum.Font.SourceSans,
 				FontSize = Enum.FontSize.Size18,
@@ -309,7 +294,7 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'InstanceCount',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0.5, 5, 0, 0),
+				Position = UDim2.new(0, 95, 0, 45),
 				Size = UDim2.new(0.5, -5, 0, 18),
 				Font = Enum.Font.SourceSans,
 				FontSize = Enum.FontSize.Size18,
@@ -324,7 +309,7 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'VoxelCount',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0.5, 5, 0, 60),
+				Position = UDim2.new(0, 95, 0, 99),
 				Size = UDim2.new(0.5, -5, 0, 18),
 				Font = Enum.Font.SourceSans,
 				FontSize = Enum.FontSize.Size18,
@@ -378,14 +363,14 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 		setVerb = false
 	end
 
-	if currScreenGui.BlackFrame.PlaceFrame.PlaceLabel.Text == "" then
-		currScreenGui.BlackFrame.PlaceFrame.PlaceLabel.Text = InfoProvider:GetGameName()
+	if currScreenGui.BlackFrame.CountFrame.PlaceLabel.Text == "" then
+		currScreenGui.BlackFrame.CountFrame.PlaceLabel.Text = InfoProvider:GetGameName()
 	end
 
-	if currScreenGui.BlackFrame.PlaceFrame.CreatorLabel.Text == "" then
+	if currScreenGui.BlackFrame.CountFrame.CreatorLabel.Text == "" then
 		local creatorName = InfoProvider:GetCreatorName()
 		if creatorName ~= "" then
-			currScreenGui.BlackFrame.PlaceFrame.CreatorLabel.Text = "By " .. creatorName
+			currScreenGui.BlackFrame.CountFrame.CreatorLabel.Text = "By " .. creatorName
 		end
 	end
 
@@ -470,6 +455,37 @@ function fadeBackground()
 	end
 end
 
+function fadeAndDestroyBlackFrame(blackFrame)
+	Spawn(function()
+		local countFrame = blackFrame:FindFirstChild("CountFrame")
+		local graphicsFrame = blackFrame:FindFirstChild("GraphicsFrame")
+
+		local textChildren = countFrame:GetChildren()
+		local transparency = 0
+		local rateChange = 1.8
+		local lastUpdateTime = nil
+
+		while transparency < 1 do
+			if not lastUpdateTime then
+				lastUpdateTime = tick()
+			else
+				local newTime = tick()
+				transparency = transparency + rateChange * (newTime - lastUpdateTime)
+				for i =1, #textChildren do
+					textChildren[i].TextTransparency = transparency
+					textChildren[i].TextStrokeTransparency = transparency
+				end
+				graphicsFrame.LoadingImage.ImageTransparency = transparency
+				graphicsFrame.LogoImage.ImageTransparency = transparency
+
+				lastUpdateTime = newTime
+			end
+			wait()
+		end
+		blackFrame:Destroy()
+	end)
+end
+
 function destroyLoadingElements()
 	if not currScreenGui then return end
 	
@@ -477,7 +493,11 @@ function destroyLoadingElements()
 	for i=1, #guiChildren do
 		-- need to keep this around in case we get a connection error later
 		if guiChildren[i].Name ~= "ErrorFrame" then
-			guiChildren[i]:Destroy()
+			if guiChildren[i].Name == "BlackFrame" then
+				fadeAndDestroyBlackFrame(guiChildren[i])
+			else
+				guiChildren[i]:Destroy()
+			end
 		end
 	end
 end
@@ -507,5 +527,5 @@ if Game:IsLoaded() then
 end
 
 -- quickly fade background to show 3D, any user loading scripts should of started by now
-wait(1.5)
+wait(2)
 fadeBackground()
