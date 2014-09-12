@@ -33,6 +33,7 @@ local CHAT_COLORS =
 --[[ END OF CONSTANTS ]]
 
 --[[ SERVICES ]]
+local RunService = Game:GetService('RunService')
 local CoreGuiService = Game:GetService('CoreGui')
 local PlayersService = Game:GetService('Players')
 local DebrisService = Game:GetService('Debris')
@@ -84,6 +85,50 @@ do
 			end
 			return obj
 		end
+	end
+
+	function Util.EaseInOutQuad(t, b, c, d)
+		if t >= d then return b + c end
+
+		t = t / (d/2);
+		if (t < 1) then return c/2*t*t + b end;
+		t = t - 1;
+		return -c/2 * (t*(t-2) - 1) + b;
+	end
+
+	function Util.PropertyTweener(instance, prop, start, final, duration, easingFunc, cbFunc)
+		local this = {}
+		this.StartTime = tick()
+		this.EndTime = this.StartTime + duration
+		this.Cancelled = false
+
+		Spawn(function()
+			local now = tick()
+			while now < this.EndTime and instance do
+				if this.Cancelled then
+					return
+				end
+				instance[prop] = easingFunc(now - this.StartTime, start, final - start, duration)
+				RunService.RenderStepped:wait()
+				now = tick()
+			end
+			if this.Cancelled == false and instance then
+				instance[prop] = final
+				if cbFunc then
+					cbFunc()
+				end
+			end
+		end)
+
+		function this:IsFinished()
+			return tick() > this.EndTime and this.Cancelled == false
+		end
+
+		function this:Cancel()
+			this.Cancelled = true
+		end
+
+		return this
 	end
 
 	function Util.Signal()
@@ -573,24 +618,73 @@ local function CreateChatWindowWidget(settings)
 		this.MessageContainer = messageContainer
 		this.ChatContainer.Parent = GuiRoot
 
-		-- TODO: Finish this move hover over code and background darkening code...
+
+		--- BACKGROUND FADING CODE ---
+		local lastMoveTime = tick()
+		local lastEnterTime = tick()
+		local lastLeaveTime = tick()
+
+		local function IsHovering()
+			return lastEnterTime > lastLeaveTime
+		end
+		local backgroundVisible = false
+
+		local function FadeIn()
+			-- fade in
+			if this.BackgroundTweener then
+				this.BackgroundTweener:Cancel()
+			end
+			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 0.65, 0.75, Util.EaseInOutQuad)
+			backgroundVisible = true
+		end
+		local function FadeOut()
+			-- fade out
+			if this.BackgroundTweener then
+				this.BackgroundTweener:Cancel()
+			end
+			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, 0.75, Util.EaseInOutQuad)
+			backgroundVisible = false
+		end
+
+
 		this.MouseEnterFrameConn = this.ChatContainer.MouseEnter:connect(function()
-			local lastMoveTime = tick()
-			this.MouseMoveFrameConn = Util.DisconnectEvent(this.MouseMoveFrameConn)
-			this.MouseMoveFrameConn = this.ChatContainer.MouseMoved:connect(function()
-				local thisMove = tick()
-				lastMoveTime = thisMove
-				wait(1.5)
-				if lastMoveTime == thisMove then
-					this.ChatContainer.BackgroundTransparency = 0.65
+			lastEnterTime = tick()
+			if this.BackgroundTweener and not this.BackgroundTweener:IsFinished() and not backgroundVisible then
+				FadeIn()
+			end
+		end)
+
+		this.MouseMoveConn = InputService.InputChanged:connect(function(inputObject)
+			if inputObject.UserInputType == Enum.UserInputType.MouseMovement then
+				lastMoveTime = tick()
+				if this.BackgroundTweener and not this.BackgroundTweener:IsFinished() and backgroundVisible then
+					FadeOut()
 				end
-			end)
+			end
 		end)
 
 		this.MouseLeaveFrameConn = this.ChatContainer.MouseLeave:connect(function()
-			this.MouseLeaveFrameConn = Util.DisconnectEvent(this.MouseLeaveFrameConn)
-			this.MouseMoveFrameConn = Util.DisconnectEvent(this.MouseMoveFrameConn)
+			lastLeaveTime = tick()
+			if this.BackgroundTweener and not this.BackgroundTweener:IsFinished() and backgroundVisible then
+				FadeOut()
+			end
 		end)
+
+		Spawn(function()
+			while true do
+				wait()
+				if tick() - lastMoveTime > 2 then
+					if IsHovering() and not backgroundVisible then
+						FadeIn()
+					end
+				elseif tick() - lastLeaveTime > 2 then
+					if not IsHovering() and backgroundVisible then
+						FadeOut()
+					end
+				end
+			end
+		end)
+		--- END OF BACKGROUND FADING CODE ---
 	end
 
 	CreateChatWindow()
