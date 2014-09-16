@@ -413,16 +413,16 @@ end)
 
 guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
-		currScreenGui.MainBackgroundContainer.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
-		currScreenGui.MainBackgroundContainer.ErrorFrame.Visible = true
+		currScreenGui.BlackFrame.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
+		currScreenGui.BlackFrame.ErrorFrame.Visible = true
 	else
-		currScreenGui.MainBackgroundContainer.ErrorFrame.Visible = false
+		currScreenGui.BlackFrame.ErrorFrame.Visible = false
 	end
 end)
 
 if guiService:GetErrorMessage() ~= '' then
-	currScreenGui.MainBackgroundContainer.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
-	currScreenGui.MainBackgroundContainer.ErrorFrame.Visible = true
+	currScreenGui.BlackFrame.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
+	currScreenGui.BlackFrame.ErrorFrame.Visible = true
 end
 
 
