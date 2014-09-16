@@ -21,6 +21,7 @@ local COLORS = {
 local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
 local currScreenGui = nil
 local renderSteppedConnection = nil
+local fadingBackground = false
 
 --
 -- Utility functions
@@ -435,6 +436,9 @@ end
 
 function fadeBackground()
 	if not currScreenGui then return end
+	if fadingBackground then return end
+
+	fadingBackground = true
 
 	local lastTime = nil
 	local backgroundRemovalTime = 3.2
@@ -502,30 +506,31 @@ function destroyLoadingElements()
 	end
 end
 
-function removeLoadingScreen()
-	if removedLoadingScreen then return end
-	removedLoadingScreen = true
+Game.ReplicatedFirst.FinishedReplicating:connect(fadeBackground)
+if Game.ReplicatedFirst:IsFinishedReplicating() then
+	fadeBackground()
+end
 
-	stopListeningToRenderingStep()
+Game.ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(function() 
+	fadeBackground()
 	destroyLoadingElements()
-end
-
-
-function gameIsLoaded()
-	removeLoadingScreen()
-end
-
-Game.ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(removeLoadingScreen)
+end)
 if Game.ReplicatedFirst:IsDefaultLoadingGuiRemoved() then
-	removeLoadingScreen()
+	fadeBackground()
+	destroyLoadingElements()
 	return
 end
 
-Game.Loaded:connect(gameIsLoaded)
+Game.Loaded:connect(function()
+	fadeBackground()
+	destroyLoadingElements()
+end)
 if Game:IsLoaded() then
-	gameIsLoaded()
+	fadeBackground()
+	destroyLoadingElements()
+	return
 end
 
--- quickly fade background to show 3D, any user loading scripts should of started by now
-wait(2)
+-- make the black screen always fades in some amount of time
+wait(5)
 fadeBackground()
