@@ -22,6 +22,8 @@ local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
 local currScreenGui = nil
 local renderSteppedConnection = nil
 local fadingBackground = false
+local destroyedLoadingGui = false
+local hasReplicatedFirstElements = false
 
 --
 -- Utility functions
@@ -95,7 +97,6 @@ function MainGui:GenerateMain()
 		Name = 'RobloxLoadingGui'
 	}
 
-
 	--
 	-- create descendant frames
 	local mainBackgroundContainer = create 'Frame' {
@@ -112,28 +113,6 @@ function MainGui:GenerateMain()
 			Size = UDim2.new(0, 22, 0, 22),
 			Active = true,
 			ZIndex = 10
-		},
-
-		create 'Frame' {
-			Name = 'ErrorFrame',
-			BackgroundColor3 = COLORS.ERROR,
-			BorderSizePixel = 0,
-			Position = UDim2.new(0.25,0,0,0),
-			Size = UDim2.new(0.5, 0, 0, 80),
-			ZIndex = 8,
-			Visible = false,
-
-			create 'TextLabel' {
-				Name = "ErrorText",
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 1, 0),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size14,
-				TextWrapped = true,
-				TextColor3 = COLORS.WHITE,
-				Text = "",
-				ZIndex = 8
-			}
 		},
 
 		create 'Frame' {
@@ -326,6 +305,30 @@ function MainGui:GenerateMain()
 		Parent = screenGui
 	}
 
+	create 'Frame' {
+			Name = 'ErrorFrame',
+			BackgroundColor3 = COLORS.ERROR,
+			BorderSizePixel = 0,
+			Position = UDim2.new(0.25,0,0,0),
+			Size = UDim2.new(0.5, 0, 0, 80),
+			ZIndex = 8,
+			Visible = false,
+
+			create 'TextLabel' {
+				Name = "ErrorText",
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 1, 0),
+				Font = Enum.Font.SourceSansBold,
+				FontSize = Enum.FontSize.Size14,
+				TextWrapped = true,
+				TextColor3 = COLORS.WHITE,
+				Text = "",
+				ZIndex = 8
+			},
+
+		Parent = screenGui
+	}
+
 	while not Game:GetService("CoreGui") do
 		wait()
 	end
@@ -414,16 +417,16 @@ end)
 
 guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
-		currScreenGui.BlackFrame.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
-		currScreenGui.BlackFrame.ErrorFrame.Visible = true
+		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
+		currScreenGui.ErrorFrame.Visible = true
 	else
-		currScreenGui.BlackFrame.ErrorFrame.Visible = false
+		currScreenGui.ErrorFrame.Visible = false
 	end
 end)
 
 if guiService:GetErrorMessage() ~= '' then
-	currScreenGui.BlackFrame.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
-	currScreenGui.BlackFrame.ErrorFrame.Visible = true
+	currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
+	currScreenGui.ErrorFrame.Visible = true
 end
 
 
@@ -492,6 +495,8 @@ end
 
 function destroyLoadingElements()
 	if not currScreenGui then return end
+	if destroyedLoadingGui then return end
+	destroyedLoadingGui = true
 	
 	local guiChildren = currScreenGui:GetChildren()
 	for i=1, #guiChildren do
@@ -506,31 +511,39 @@ function destroyLoadingElements()
 	end
 end
 
-Game.ReplicatedFirst.FinishedReplicating:connect(fadeBackground)
+function handleFinishedReplicating()
+	hasReplicatedFirstElements = (#Game.ReplicatedFirst:GetChildren() > 0)
+	if not hasReplicatedFirstElements then
+		fadeBackground()
+	else
+		wait(20) -- make sure after 20 seconds we remove the default gui, even if the user doesn't
+		handleRemoveDefaultLoadingGui()
+	end
+end
+
+function handleRemoveDefaultLoadingGui()
+	fadeBackground()
+	destroyLoadingElements()
+end
+
+function handleGameLoaded()
+	if not hasReplicatedFirstElements then
+		destroyLoadingElements()
+	end
+end
+
+Game.ReplicatedFirst.FinishedReplicating:connect(handleFinishedReplicating)
 if Game.ReplicatedFirst:IsFinishedReplicating() then
-	fadeBackground()
+	handleFinishedReplicating()
 end
 
-Game.ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(function() 
-	fadeBackground()
-	destroyLoadingElements()
-end)
+Game.ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
 if Game.ReplicatedFirst:IsDefaultLoadingGuiRemoved() then
-	fadeBackground()
-	destroyLoadingElements()
+	handleRemoveDefaultLoadingGui()
 	return
 end
 
-Game.Loaded:connect(function()
-	fadeBackground()
-	destroyLoadingElements()
-end)
+Game.Loaded:connect(handleGameLoaded)
 if Game:IsLoaded() then
-	fadeBackground()
-	destroyLoadingElements()
-	return
+	handleGameLoaded()
 end
-
--- make the black screen always fades in some amount of time
-wait(5)
-fadeBackground()
