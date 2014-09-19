@@ -30,6 +30,9 @@ local CHAT_COLORS =
 	BrickColor.new("Light reddish violet"),
 	BrickColor.new("Brick yellow"),
 }
+-- These emotes are copy-pastad from the humanoidLocalAnimateKeyframe script
+local EMOTE_NAMES = {wave = true, point = true, dance = true, dance2 = true, dance3 = true, laugh = true, cheer = true}
+local MESSAGES_FADE_OUT_TIME = 30
 --[[ END OF CONSTANTS ]]
 
 --[[ SERVICES ]]
@@ -86,6 +89,20 @@ do
 			return obj
 		end
 	end
+
+	function Util.Linear(t, b, c, d)
+		if t >= d then return b + c end
+
+		return c*t/d + b
+	end
+
+	function Util.EaseOutQuad(t, b, c, d)
+		if t >= d then return b + c end
+
+		t = t/d;
+		return -c * t*(t-2) + b
+	end
+
 
 	function Util.EaseInOutQuad(t, b, c, d)
 		if t >= d then return b + c end
@@ -177,8 +194,9 @@ do
 
 	function Util.GetPlayerByName(playerName)
 		-- O(n), may be faster if I store a reverse hash from the players list; can't trust FindFirstChild in PlayersService because anything can be parented to there.
+		local lowerName = string.lower(playerName)
 		for _, player in pairs(PlayersService:GetPlayers()) do
-			if player.Name == playerName then
+			if string.lower(player.Name) == lowerName then
 				return player
 			end
 		end
@@ -221,6 +239,9 @@ do
 	end
 end
 
+local SelectChatModeEvent = Util.Signal()
+local SelectPlayerEvent = Util.Signal()
+
 local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 	local this = {}
 
@@ -228,19 +249,24 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 	this.SendingPlayer = sendingPlayer
 	this.RawMessageContent = chattedMessage
 	this.ReceivingPlayer = receivingPlayer
+	this.ReceivedTime = tick()
 
 	function this:FormatMessage()
 		local result = ""
 		if this.RawMessageContent then
 			local message = this.RawMessageContent
+			--[[
 			if string.sub(message, 1, 1) == '%' then
 				result = '(TEAM) ' .. string.sub(message, 2, #message)
 			elseif string.sub(message, 1, 6) == '(TEAM)' then
 				result = '(TEAM) ' .. string.sub(message, 7, #message)
 			end
+			]]
 			if PlayersService.ClassicChat then
 				if string.sub(message, 1, 3) == '/e ' or string.sub(message, 1, 7) == '/emote ' then
-					-- don't do anything right now
+					if this.SendingPlayer then
+						result = this.SendingPlayer.Name .. " emotes."
+					end
 				elseif FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu then
 					result = message--Chat:UpdateChat(player, message)
 				elseif Player.ChatMode == Enum.ChatMode.Menu and string.sub(message, 1, 3) == '/sc' then
@@ -252,13 +278,69 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 		return result
 	end
 
-	function this:CreateMessageGuiElement()
-		local playerNameDisplayText = "[" .. (this.SendingPlayer and this.SendingPlayer.Name or "") .. "]"
+	function this:FormatChatType()
+		if this.PlayerChatType then
+			if Enum.PlayerChatType.All then
+				return "[All]"
+			elseif this.PlayerChatType == Enum.PlayerChatType.Team then
+				return "[Team]"
+			elseif this.PlayerChatType == Enum.PlayerChatType.Whisper then
+				-- nothing!
+			end
+		end
+	end
+
+	function this:FadeIn()
+		local gui = this:GetGui()
+		if gui then
+			--Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
+			gui.Visible = true
+		end
+	end
+
+	function this:FadeOut()
+		local gui = this:GetGui()
+		if gui then
+			--Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
+			gui.Visible = false
+		end
+	end
+
+	function this:FormatPlayerNameText()
+		return "[" .. (this.SendingPlayer and this.SendingPlayer.Name or "") .. "]"
+	end
+
+	function this:GetGui()
+		return this.Container
+	end
+
+	function this:IsVisible()
+		if this.PlayerChatType == Enum.PlayerChatType.All or
+				this.PlayerChatType == Enum.PlayerChatType.Team or
+				(this.PlayerChatType == Enum.PlayerChatType.Whisper and this.ReceivingPlayer == Player) then
+			return true
+		end
+		return false
+	end
+
+	function this:Destroy()
+		if this.Container ~= nil then
+			this.Container:Destroy()
+			this.Container = nil
+		end
+		this.ClickedOnModeConn = Util.DisconnectEvent(this.ClickedOnModeConn)
+		this.ClickedOnPlayerConn = Util.DisconnectEvent(this.ClickedOnPlayerConn)
+	end
+
+	function CreateMessageGuiElement()
+		local chatTypeDisplayText = this:FormatChatType()
+		local chatTypeSize = chatTypeDisplayText and Util.GetStringTextBounds(chatTypeDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12) or Vector2.new(0,0)
+		local playerNameDisplayText = this:FormatPlayerNameText()
 		local playerNameSize = Util.GetStringTextBounds(playerNameDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12)
 		local chatMessageDisplayText = this:FormatMessage()
 		local chatMessageSize = Util.GetStringTextBounds(chatMessageDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12, UDim2.new(0, 400 - 5 - playerNameSize.X, 0, 1000))
 
-		local messageContainer = Util.Create'Frame'
+		local container = Util.Create'Frame'
 		{
 			Name = 'MessageContainer';
 			Position = UDim2.new(0, 0, 0, 0);
@@ -267,6 +349,27 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 			BackgroundTransparency = 1;
 			RobloxLocked = true;
 		};
+		if chatTypeDisplayText then
+			local chatModeButton = Util.Create'TextButton'
+			{
+				Name = 'ChatMode';
+				BackgroundTransparency = 1;
+				ZIndex = 2;
+				Text = chatTypeDisplayText;
+				TextColor3 = Color3.new(1, 1, 0.9);
+				Position = UDim2.new(0, 0, 0, 0);
+				TextXAlignment = Enum.TextXAlignment.Left;
+				TextYAlignment = Enum.TextYAlignment.Top;
+				FontSize = Enum.FontSize.Size12;
+				Font = Enum.Font.SourceSans;
+				Size = UDim2.new(0, chatTypeSize.X, 0, chatTypeSize.Y);
+				RobloxLocked = true;
+				Parent = container
+			}
+			this.ClickedOnModeConn = chatModeButton.MouseButton1Click:connect(function()
+				SelectChatModeEvent:fire(this.PlayerChatType)
+			end)
+		end
 			local userNameButton = Util.Create'TextButton'
 			{
 				Name = 'PlayerName';
@@ -274,20 +377,22 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 				ZIndex = 2;
 				Text = playerNameDisplayText;
 				TextColor3 = Color3.new(1, 1, 0.9);
-				Position = UDim2.new(0, 0, 0, 0);
+				Position = UDim2.new(0, chatTypeSize.X + 1, 0, 0);
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
 				FontSize = Enum.FontSize.Size12;
 				Font = Enum.Font.SourceSans;
 				Size = UDim2.new(0, playerNameSize.X, 0, playerNameSize.Y);
 				RobloxLocked = true;
-				Parent = messageContainer
+				Parent = container
 			}
-
+			this.ClickedOnPlayerConn = userNameButton.MouseButton1Click:connect(function()
+				SelectPlayerEvent:fire(this.SendingPlayer)
+			end)
 			local chatMessage = Util.Create'TextLabel'
 			{
 				Name = 'ChatMessage';
-				Position = UDim2.new(0, playerNameSize.X + 5, 0, 0);
+				Position = UDim2.new(0, userNameButton.Position.X.Offset + playerNameSize.X + 5, 0, 0);
 				Size = UDim2.new(1, -playerNameSize.X - 5, 0, chatMessageSize.Y);
 				Text = chatMessageDisplayText;
 				ZIndex = 1;
@@ -300,22 +405,15 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 				FontSize = Enum.FontSize.Size12;
 				Font = Enum.Font.SourceSans;
 				RobloxLocked = true;
-				Parent = messageContainer;
+				Parent = container;
 			};
 			chatMessage.Size = chatMessage.Size + UDim2.new(0, 0, 0, chatMessage.TextBounds.Y);
 
-		messageContainer.Size = UDim2.new(1, 0, 0, math.max(chatMessage.Size.Y.Offset, userNameButton.Size.Y.Offset));
-		return messageContainer
+		container.Size = UDim2.new(1, 0, 0, math.max(chatMessage.Size.Y.Offset, userNameButton.Size.Y.Offset));
+		this.Container = container
 	end
 
-	function this:IsVisible()
-		if this.PlayerChatType == Enum.PlayerChatType.All or
-				this.PlayerChatType == Enum.PlayerChatType.Team or
-				(this.PlayerChatType == Enum.PlayerChatType.Whisper and this.ReceivingPlayer == Player) then
-			return true
-		end
-		return false
-	end
+	CreateMessageGuiElement()
 
 	return this
 end
@@ -328,26 +426,59 @@ local function CreateChatBarWidget(settings)
 	this.TargetWhisperPlayer = nil
 	this.Settings = settings
 
+	this.ChatBarGainedFocusEvent = Util.Signal()
+	this.ChatBarLostFocusEvent = Util.Signal()
+
+	this.ChatMatchingRegex =
+	{
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/w (%w+)") end] = "Whisper";
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/whisper (%w+)") end] = "Whisper";
+
+		[function(chatBarText) return string.find(chatBarText, "^%%") end] = "Team";
+		[function(chatBarText) return string.find(chatBarText, "^(TEAM)") end] = "Team";
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/t") end] = "Team";
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/team") end] = "Team";
+
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/a") end] = "All";
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/all") end] = "All";
+
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/e") end] = "Emote";
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/emote") end] = "Emote";
+	}
+
+	local ChatModesDict =
+	{
+		['Whisper'] = 'Whisper';
+		['Team'] = 'Team';
+		['All'] = 'All';
+		[Enum.PlayerChatType.Whisper] = 'Whisper';
+		[Enum.PlayerChatType.Team] = 'Team';
+		[Enum.PlayerChatType.All] = 'All';
+	}
+
+	function this:IsAChatMode(mode)
+		return ChatModesDict[mode] ~= nil
+	end
+
+	function this:IsAnEmoteMode(mode)
+		return mode == "Emote"
+	end
+
 	function this:OnChatBarTextChanged()
 		if this.ChatBar then
 			local chatBarText = this:GetChatBarText()
-			local start, finish, playerName = string.find(chatBarText, "^/w (%w+) ")
-			if not start then -- if the first match didn't work, try this alternative form
-				start, finish, playerName = string.find(chatBarText, "^/whisper (%w+) ")
-			end
-			if start and finish and playerName then
-				local targetPlayer = Util.GetPlayerByName(playerName)
-				if targetPlayer then --and targetPlayer ~= Player then
-					this.TargetWhisperPlayer = targetPlayer
-					this:SetMessageMode("Whisper")
-					this:SetChatBarText("")
+			for regexFunc, chatType in pairs(this.ChatMatchingRegex) do
+				local start, finish, capture = regexFunc(chatBarText)
+				if start and finish and finish ~= #chatBarText then
+					if this:IsAChatMode(chatType) then
+						if chatType == "Whisper" and capture then --and targetPlayer ~= Player then
+							this.TargetWhisperPlayer = Util.GetPlayerByName(capture)
+						end
+						-- start from two over to eat the space or tab character after the slash command
+						this:SetChatBarText(string.sub(chatBarText, finish + 2))
+						this:SetMessageMode(chatType)
+					end
 				end
-			elseif string.sub(chatBarText, 1, 2) == "% " or string.sub(chatBarText, 1, 7) == "(TEAM) " then
-				this:SetMessageMode("Team")
-				this:SetChatBarText("")
-			elseif string.sub(chatBarText, 1, 3) == "/a " or string.sub(chatBarText, 1, 5) == "/all " then
-				this:SetMessageMode("All")
-				this:SetChatBarText("")
 			end
 		end
 	end
@@ -367,6 +498,7 @@ local function CreateChatBarWidget(settings)
 	end
 
 	function this:SetMessageMode(newMessageMode)
+		newMessageMode = ChatModesDict[newMessageMode]
 		if this.MessageMode ~= newMessageMode then
 			this.MessageMode = newMessageMode
 			if this.ChatModeText then
@@ -398,7 +530,7 @@ local function CreateChatBarWidget(settings)
 		end
 	end
 
-	function this:FocusChatBar()
+	function this:OnFocusChatBar()
 		if this.ChatBar then
 			this.ChatBar:CaptureFocus()
 			if self.ClickToChatButton then
@@ -420,23 +552,39 @@ local function CreateChatBarWidget(settings)
 		if self.ChatBar then
 			local cText = this:GetChatBarText()
 			if enterPressed and cText ~= "" then
-				local currentMessageMode = this:GetMessageMode()
-				-- {All, Team, Whisper}
-				if currentMessageMode == 'Team' then
-					pcall(function() PlayersService:TeamChat(cText) end)
-				elseif currentMessageMode == 'Whisper' then
-					if this.TargetWhisperPlayer then
-						pcall(function() PlayersService:WhisperChat(cText, this.TargetWhisperPlayer) end)
-					else
-						print("Somehow we are trying to whisper to a player not in the game anymore:" , this.TargetWhisperPlayer)
+				for regexFunc, chatType in pairs(this.ChatMatchingRegex) do
+					cText = this:GetChatBarText()
+					local start, finish, capture = regexFunc(cText)
+					if start and finish then --and finish == #cText then
+						if this:IsAChatMode(chatType) then
+							if chatType == "Whisper" and capture then --and targetPlayer ~= Player then
+								this.TargetWhisperPlayer = Util.GetPlayerByName(capture)
+							end
+							this:SetChatBarText(string.sub(cText, finish + 2))
+							this:SetMessageMode(chatType)
+						end
 					end
-				elseif currentMessageMode == 'All' then
-					pcall(function() PlayersService:Chat(cText) end)
-				else
-					Spawn(function() error("ChatScript: Unknown Message Mode of " .. tostring(currentMessageMode)) end)
+				end
+				cText = this:GetChatBarText()
+				if cText ~= "" then
+					local currentMessageMode = this:GetMessageMode()
+					-- {All, Team, Whisper}
+					if currentMessageMode == 'Team' then
+						pcall(function() PlayersService:TeamChat(cText) end)
+					elseif currentMessageMode == 'Whisper' then
+						if this.TargetWhisperPlayer then
+							pcall(function() PlayersService:WhisperChat(cText, this.TargetWhisperPlayer) end)
+						else
+							print("Somehow we are trying to whisper to a player not in the game anymore:" , this.TargetWhisperPlayer)
+						end
+					elseif currentMessageMode == 'All' then
+						pcall(function() PlayersService:Chat(cText) end)
+					else
+						Spawn(function() error("ChatScript: Unknown Message Mode of " .. tostring(currentMessageMode)) end)
+					end
 				end
 			end
-			self.ChatBar.Text = ""
+			this:SetChatBarText("")
 		end
 		if self.ClickToChatButton then
 			self.ClickToChatButton.Visible = true
@@ -507,7 +655,7 @@ local function CreateChatBarWidget(settings)
 		GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
 		GuiService.SpecialKeyPressed:connect(function(key)
 			if key == Enum.SpecialKey.ChatHotkey then
-				this:FocusChatBar()
+				this.ChatBarGainedFocusEvent:fire()
 			end
 		end)
 
@@ -517,8 +665,22 @@ local function CreateChatBarWidget(settings)
 		this.ChatModeText = chatModeText
 		this.ChatBarContainer.Parent = GuiRoot
 
-		this.ClickToChatButton.MouseButton1Click:connect(function() this:FocusChatBar() end)
-		this.ChatBar.FocusLost:connect(function(...) this:OnChatBarFocusLost(...) end)
+		this.ClickToChatButton.MouseButton1Click:connect(function() this.ChatBarGainedFocusEvent:fire()  end)
+		this.ChatBar.FocusLost:connect(function(...) this.ChatBarLostFocusEvent:fire(...) end)
+
+		-- TODO: disconnect these events
+		this.ChatBarGainedFocusEvent:connect(function() this:OnFocusChatBar() end)
+		this.ChatBarLostFocusEvent:connect(function(...) this:OnChatBarFocusLost(...) end)
+
+		SelectChatModeEvent:connect(function(chatType)
+			this:SetMessageMode(chatType)
+			this.ChatBarGainedFocusEvent:fire()
+		end)
+		SelectPlayerEvent:connect(function(chatPlayer)
+			this.TargetWhisperPlayer = chatPlayer
+			this:SetMessageMode("Whisper")
+			this.ChatBarGainedFocusEvent:fire()
+		end)
 
 		Util.SetGUIInsetBounds(0, 20)
 	end
@@ -530,22 +692,126 @@ end
 local function CreateChatWindowWidget(settings)
 	local this = {}
 	this.Settings = settings
+	this.Chats = {}
+	this.BackgroundVisible = false
 
-	function this:AddChatMessage(chatMessage)
+	local lastMoveTime = tick()
+	local lastEnterTime = tick()
+	local lastLeaveTime = tick()
+
+
+	local lastFadeOutTime = 0
+	local lastFadeInTime = 0
+
+	local FadeLock = false
+
+	function this:IsHovering()
+		return lastEnterTime > lastLeaveTime
+	end
+
+	function this:SetFadeLock(lock)
+		FadeLock = lock
+	end
+
+	function this:GetFadeLock()
+		return FadeLock
+	end
+
+	function this:FadeIn(duration, lockFade)
+		if not FadeLock then
+			duration = duration or 0.75
+			-- fade in
+			if this.BackgroundTweener then
+				this.BackgroundTweener:Cancel()
+			end
+			lastFadeInTime = tick()
+			this.ScrollingFrame.ScrollingEnabled = true
+			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 0.65, duration, Util.Linear)
+			this.BackgroundVisible = true
+			this:FadeInChats()
+		end
+	end
+	function this:FadeOut(duration, unlockFade)
+		if not FadeLock then
+			duration = duration or 0.75
+			-- fade out
+			if this.BackgroundTweener then
+				this.BackgroundTweener:Cancel()
+			end
+			lastFadeOutTime = tick()
+			this.ScrollingFrame.ScrollingEnabled = false
+			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
+			this.BackgroundVisible = false
+
+			local now = lastFadeOutTime
+			delay(MESSAGES_FADE_OUT_TIME,function()
+				if lastFadeOutTime > lastFadeInTime and now == lastFadeOutTime then
+					this:FadeOutChats()
+				end
+			end)
+		end
+	end
+
+	function this:FadeInChats()
+		-- TODO: only bother with this loop if we know chats have been faded out, could be quicker than this
+		for index, message in pairs(this.Chats) do
+			message:FadeIn()
+		end
+	end
+
+	function this:FadeOutChats()
+		for index, message in pairs(this.Chats) do
+			message:FadeOut()
+		end
+	end
+
+	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		local chatMessage = CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		table.insert(this.Chats, chatMessage)
+
 		local isScrolledDown = this:IsScrolledDown()
 
 		local ySize = this.MessageContainer.Size.Y.Offset
-		local chatMessageElement = chatMessage:CreateMessageGuiElement()
+		local chatMessageElement = chatMessage:GetGui()
 		local chatMessageElementYSize = UDim2.new(0, 0, 0, chatMessageElement.Size.Y.Offset)
 
 		chatMessageElement.Position = chatMessageElement.Position + UDim2.new(0, 0, 0, ySize)
 		chatMessageElement.Parent = this.MessageContainer
 		this.MessageContainer.Size = this.MessageContainer.Size + chatMessageElementYSize
+		this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize + chatMessageElementYSize
 
+		if this.Settings.MaxWindowChatMessages < #this.Chats then
+			this:RemoveOldestMessage()
+		end
 		if isScrolledDown then
 			this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y))
 		else
 			-- Raise unread message alert!
+		end
+		this:FadeInChats()
+	end
+
+	function this:RemoveOldestMessage()
+		local oldestChat = this.Chats[1]
+		if oldestChat then
+			return this:RemoveChatMessage(oldestChat)
+		end
+	end
+
+	function this:RemoveChatMessage(chatMessage)
+		if chatMessage then
+			for index, message in pairs(this.Chats) do
+				if chatMessage == message then
+					local guiObj = chatMessage:GetGui()
+					if guiObj then
+						local ySize = guiObj.Size.Y.Offset
+						this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize - UDim2.new(0,0,0,ySize)
+						guiObj.Parent = nil
+					end
+					message:Destroy()
+					return table.remove(this.Chats, index)
+				end
+			end
 		end
 	end
 
@@ -588,7 +854,7 @@ local function CreateChatWindowWidget(settings)
 				{
 					Name = 'MessageContainer';
 					Size = UDim2.new(1, 0, 0, 0);
-					Position = UDim2.new(0, 0, 0, 0);
+					Position = UDim2.new(0, 0, 1, 0);
 					ZIndex = 1;
 					BackgroundColor3 = Color3.new(0, 0, 0);
 					BackgroundTransparency = 1;
@@ -599,19 +865,14 @@ local function CreateChatWindowWidget(settings)
 		-- This is some trickery we are doing to make the first chat messages appear at the bottom and go towards the top.
 		local function OnChatWindowResize(prop)
 			if prop == 'AbsoluteSize' then
-				scrollingFrame.CanvasSize = messageContainer.Size
-				if messageContainer.AbsoluteSize.Y < scrollingFrame.AbsoluteSize.Y then
-					messageContainer.Position = UDim2.new(0, 0, 1, -scrollingFrame.CanvasSize.Y.Offset)
-				else
-					messageContainer.Position = UDim2.new(0, 0, 0, 0)
-				end
+				messageContainer.Position = UDim2.new(0, 0, 1, -messageContainer.Size.Y.Offset)
+			elseif prop == 'ScrollBarThickness' then
+				messageContainer.Size = UDim2.new(messageContainer.Size.X.Scale, -scrollingFrame.ScrollBarThickness, messageContainer.Size.Y.Scale, messageContainer.Size.Y.Offset)
 			end
 		end
 
 		messageContainer.Changed:connect(OnChatWindowResize)
 		scrollingFrame.Changed:connect(OnChatWindowResize)
-
-
 
 		this.ChatContainer = container
 		this.ScrollingFrame = scrollingFrame
@@ -620,66 +881,42 @@ local function CreateChatWindowWidget(settings)
 
 
 		--- BACKGROUND FADING CODE ---
-		local lastMoveTime = tick()
-		local lastEnterTime = tick()
-		local lastLeaveTime = tick()
 
-		local function IsHovering()
-			return lastEnterTime > lastLeaveTime
-		end
-		local backgroundVisible = false
-
-		local function FadeIn()
-			-- fade in
-			if this.BackgroundTweener then
-				this.BackgroundTweener:Cancel()
-			end
-			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 0.65, 0.75, Util.EaseInOutQuad)
-			backgroundVisible = true
-		end
-		local function FadeOut()
-			-- fade out
-			if this.BackgroundTweener then
-				this.BackgroundTweener:Cancel()
-			end
-			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, 0.75, Util.EaseInOutQuad)
-			backgroundVisible = false
-		end
 
 
 		this.MouseEnterFrameConn = this.ChatContainer.MouseEnter:connect(function()
 			lastEnterTime = tick()
-			if this.BackgroundTweener and not this.BackgroundTweener:IsFinished() and not backgroundVisible then
-				FadeIn()
+			if this.BackgroundTweener and not this.BackgroundTweener:IsFinished() and not this.BackgroundVisible then
+				this:FadeIn()
 			end
 		end)
 
 		this.MouseMoveConn = InputService.InputChanged:connect(function(inputObject)
 			if inputObject.UserInputType == Enum.UserInputType.MouseMovement then
 				lastMoveTime = tick()
-				if this.BackgroundTweener and not this.BackgroundTweener:IsFinished() and backgroundVisible then
-					FadeOut()
+				if this.BackgroundTweener and not this.BackgroundTweener:IsFinished() and this.BackgroundVisible then
+					this:FadeOut()
 				end
 			end
 		end)
 
 		this.MouseLeaveFrameConn = this.ChatContainer.MouseLeave:connect(function()
 			lastLeaveTime = tick()
-			if this.BackgroundTweener and not this.BackgroundTweener:IsFinished() and backgroundVisible then
-				FadeOut()
+			if this.BackgroundTweener and not this.BackgroundTweener:IsFinished() and this.BackgroundVisible then
+				this:FadeOut()
 			end
 		end)
 
 		Spawn(function()
 			while true do
 				wait()
-				if tick() - lastMoveTime > 2 then
-					if IsHovering() and not backgroundVisible then
-						FadeIn()
+				if this:IsHovering() then
+					if tick() - lastMoveTime > 2 and not this.BackgroundVisible then
+						this:FadeIn()
 					end
-				elseif tick() - lastLeaveTime > 2 then
-					if not IsHovering() and backgroundVisible then
-						FadeOut()
+				else -- not this:IsHovering()
+					if tick() - lastLeaveTime > 0.01 and this.BackgroundVisible then
+						this:FadeOut(0.25)
 					end
 				end
 			end
@@ -696,11 +933,11 @@ end
 local function CreateChat()
 	local this = {}
 
-	this.MessageHistory = {}
 	this.Settings =
 	{
 		WhisperTextColor = Color3.new(77/255, 139/255, 255/255);
 		TeamTextColor = Color3.new(230/255, 207/255, 0);
+		MaxWindowChatMessages = 100;
 	}
 
 	function this:OnCoreGuiChanged(coreGuiType, enabled)
@@ -719,11 +956,8 @@ local function CreateChat()
 	-- This event has 4 callback arguments
 	-- Enum.PlayerChatType.{All|Team|Whisper}, chatPlayer, message, targetPlayer
 	function this:OnPlayerChatted(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-		local newChatMessage = CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-		table.insert(this.MessageHistory, newChatMessage)
-
 		if this.ChatWindowWidget then
-			this.ChatWindowWidget:AddChatMessage(newChatMessage)
+			this.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		end
 	end
 
@@ -765,6 +999,17 @@ local function CreateChat()
 			-- Settings is a table, which makes it a pointing and is kosher to pass by reference
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
 			this.ChatBarWidget = CreateChatBarWidget(this.Settings)
+
+			this.ChatBarWidget.ChatBarGainedFocusEvent:connect(function()
+				this.ChatWindowWidget:FadeIn(0.25)
+				this.ChatWindowWidget:SetFadeLock(true)
+			end)
+			this.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
+				this.ChatWindowWidget:SetFadeLock(false)
+				if not this.ChatWindowWidget:IsHovering() then
+					--this.ChatWindowWidget:FadeOut()
+				end
+			end)
 		end
 	end
 
