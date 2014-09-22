@@ -43,7 +43,6 @@ local currentMenuSelection = nil
 local lastMenuSelection = {}
 
 local defaultPosition = UDim2.new(0,0,0,0)
-local newGuiPlaces = {0,41324860}
 
 local centerDialogs = {}
 local mainShield = nil
@@ -714,7 +713,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	--]]
 
 	local itemTop = 0
-	if game:GetService("GuiService"):GetScreenResolution().y < 600 then
+	if game:GetService("GuiService"):GetScreenResolution().y <= 500 then
 		itemTop = 50
 	end
 	----------------------------------------------------------------------------------------------------
@@ -980,7 +979,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		volumeText.Size = UDim2.new(0,224,0,18)
 
 		local yLabelPosition = 280
-		if game:GetService("GuiService"):GetScreenResolution().y < 600 then
+		if game:GetService("GuiService"):GetScreenResolution().y <= 500 then
 			yLabelPosition = 200
 		end
 
@@ -996,7 +995,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		volumeText.Visible = true
 
 		local ySliderPosition = 287
-		if game:GetService("GuiService"):GetScreenResolution().y < 600 then
+		if game:GetService("GuiService"):GetScreenResolution().y <= 500 then
 			ySliderPosition = 207
 		end
 
