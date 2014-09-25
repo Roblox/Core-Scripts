@@ -407,16 +407,17 @@ function doAcceptPurchase(currencyPreferredByUser)
 	local response = "none"
 	local url = nil
 
+	local flagExists, flagValue = pcall(function() return settings():GetFFlag("AddRequestIdToDeveloperProductPurchases") end)
+	local reliableDevProductEnabled = flagExists and flagValue
 	-- consumables need to use a different url
 	if purchasingConsumable then
 		url =  getSecureApiBaseUrl() .. "marketplace/submitpurchase?productId=" .. tostring(currentProductId) ..
 				"&currencyTypeId=" .. tostring(currencyEnumToInt(currentCurrencyType)) .. 
 				"&expectedUnitPrice=" .. tostring(currentCurrencyAmount) ..
 				"&placeId=" .. tostring(Game.PlaceId)
-		local flagExists, flagValue = pcall(function() return settings():GetFFlag("AddRequestIdToDeveloperProductPurchases") end)
-		if flagExists and flagValue then
+		if reliableDevProductEnabled then
 			local h = game:GetService("HttpService")
-			url = url .. "&requestId=" .. h:UrlEncode(h:GenerateGUID())
+			url = url .. "&requestId=" .. h:UrlEncode(h:GenerateGUID(false))
 		end
 	else
 		url = getSecureApiBaseUrl() .. "marketplace/purchase?productId=" .. tostring(currentProductId) .. 
@@ -428,6 +429,22 @@ function doAcceptPurchase(currencyPreferredByUser)
 	local success, reason = ypcall(function() 
 		response = game:HttpPostAsync(url, "RobloxPurchaseRequest") 
 	end)
+
+	if reliableDevProductEnabled and purchasingConsumable then
+		local retriesLeft = 3
+		local gotGoodResponse = success and response ~= "none" and response ~= nil and response ~= ''
+		while retriesLeft > 0 and (not gotGoodResponse) do
+			wait(1)
+			retriesLeft = retriesLeft - 1
+			success, reason = ypcall(function() 
+				response = game:HttpPostAsync(url, "RobloxPurchaseRequest") 
+			end)
+			gotGoodResponse = success and response ~= "none" and response ~= nil and response ~= ''
+		end
+
+		game:ReportInGoogleAnalytics("Developer Product", "Purchase",
+			gotGoodResponse and ("success. Retries = " .. (3 - retriesLeft)) or ("failure: " .. tostring(reason)), 1)
+	end
 
 	-- debug output for us (found in the logs from local)
 	print("doAcceptPurchase success from ypcall is ",success,"reason is",reason)
