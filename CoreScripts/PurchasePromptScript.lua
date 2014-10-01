@@ -724,16 +724,19 @@ function canPurchaseItem()
 	local playerOwnsAsset = false	
 	local notRightBc = false 
 	local descText = nil
+	local getProductSuccess = false
+	local getProductErrorReason = ""
 
 	if purchasingConsumable then
-		currentProductInfo = game:GetService("MarketplaceService"):GetProductInfo(currentProductId, Enum.InfoType.Product) 
+		getProductSuccess, getProductErrorReason = pcall(function() currentProductInfo = game:GetService("MarketplaceService"):GetProductInfo(currentProductId, Enum.InfoType.Product) end)
 	else
-		currentProductInfo = game:GetService("MarketplaceService"):GetProductInfo(currentAssetId) 
+		getProductSuccess, getProductErrorReason = pcall(function() currentProductInfo = game:GetService("MarketplaceService"):GetProductInfo(currentAssetId) end)
 	end
 
-	if currentProductInfo == nil then
+	if getProductSuccess == false or currentProductInfo == nil then
+		print("could not get product info because",getProductErrorReason)
 		descText = "In-game sales are temporarily disabled. Please try again later."
-		return true, nil, nil, true, descText 
+		return false, nil, nil, true, descText 
 	end
 
 	if not purchasingConsumable then
