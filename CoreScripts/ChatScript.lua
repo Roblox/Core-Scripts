@@ -57,6 +57,7 @@ if USE_PLAYER_GUI_TESTING then
 	GuiRoot = Instance.new("ScreenGui")
 	GuiRoot.Name = "RobloxGui"
 	GuiRoot.Parent = Player:WaitForChild('PlayerGui')
+	GuiRoot.RobloxLocked = true
 end
 --[[ END OF SCRIPT VARIABLES ]]
 
@@ -280,7 +281,7 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 
 	function this:FormatChatType()
 		if this.PlayerChatType then
-			if Enum.PlayerChatType.All then
+			if this.PlayerChatType == Enum.PlayerChatType.All then
 				return "[All]"
 			elseif this.PlayerChatType == Enum.PlayerChatType.Team then
 				return "[Team]"
@@ -332,13 +333,16 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 		this.ClickedOnPlayerConn = Util.DisconnectEvent(this.ClickedOnPlayerConn)
 	end
 
-	function CreateMessageGuiElement()
+	local function CreateMessageGuiElement()
+		local toMesasgeDisplayText = "To: "
+		local toMessageSize = Util.GetStringTextBounds(toMesasgeDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12)
 		local chatTypeDisplayText = this:FormatChatType()
 		local chatTypeSize = chatTypeDisplayText and Util.GetStringTextBounds(chatTypeDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12) or Vector2.new(0,0)
 		local playerNameDisplayText = this:FormatPlayerNameText()
 		local playerNameSize = Util.GetStringTextBounds(playerNameDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12)
 		local chatMessageDisplayText = this:FormatMessage()
 		local chatMessageSize = Util.GetStringTextBounds(chatMessageDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12, UDim2.new(0, 400 - 5 - playerNameSize.X, 0, 1000))
+
 
 		local container = Util.Create'Frame'
 		{
@@ -349,7 +353,34 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 			BackgroundTransparency = 1;
 			RobloxLocked = true;
 		};
+			local xOffset = 0
+
+			local whisperToText = nil
+			if this.SendingPlayer and this.SendingPlayer == Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
+				whisperToText = Util.Create'TextLabel'
+				{
+					Name = 'WhisperTo';
+					Position = UDim2.new(0, 0, 0, 0);
+					Size = UDim2.new(0, toMessageSize.X, 0, toMessageSize.Y);
+					Text = toMesasgeDisplayText;
+					ZIndex = 1;
+					BackgroundColor3 = Color3.new(0, 0, 0);
+					BackgroundTransparency = 1;
+					TextXAlignment = Enum.TextXAlignment.Left;
+					TextYAlignment = Enum.TextYAlignment.Top;
+					TextWrapped = true;
+					TextColor3 = Color3.new(1, 1, 1);
+					FontSize = Enum.FontSize.Size12;
+					Font = Enum.Font.SourceSans;
+					RobloxLocked = true;
+					Parent = container;
+				};
+				xOffset = xOffset + toMessageSize.X
+			end
 		if chatTypeDisplayText then
+			if xOffset > 0 then
+				xOffset = xOffset + 5
+			end
 			local chatModeButton = Util.Create'TextButton'
 			{
 				Name = 'ChatMode';
@@ -357,7 +388,7 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 				ZIndex = 2;
 				Text = chatTypeDisplayText;
 				TextColor3 = Color3.new(1, 1, 0.9);
-				Position = UDim2.new(0, 0, 0, 0);
+				Position = UDim2.new(0, xOffset, 0, 0);
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
 				FontSize = Enum.FontSize.Size12;
@@ -369,7 +400,9 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 			this.ClickedOnModeConn = chatModeButton.MouseButton1Click:connect(function()
 				SelectChatModeEvent:fire(this.PlayerChatType)
 			end)
+			xOffset = xOffset + chatTypeSize.X
 		end
+			xOffset = xOffset + 1
 			local userNameButton = Util.Create'TextButton'
 			{
 				Name = 'PlayerName';
@@ -377,7 +410,7 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 				ZIndex = 2;
 				Text = playerNameDisplayText;
 				TextColor3 = Color3.new(1, 1, 0.9);
-				Position = UDim2.new(0, chatTypeSize.X + 1, 0, 0);
+				Position = UDim2.new(0, xOffset, 0, 0);
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
 				FontSize = Enum.FontSize.Size12;
@@ -389,11 +422,14 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 			this.ClickedOnPlayerConn = userNameButton.MouseButton1Click:connect(function()
 				SelectPlayerEvent:fire(this.SendingPlayer)
 			end)
+			xOffset = xOffset + playerNameSize.X
+
+			xOffset = xOffset + 5
 			local chatMessage = Util.Create'TextLabel'
 			{
 				Name = 'ChatMessage';
-				Position = UDim2.new(0, userNameButton.Position.X.Offset + playerNameSize.X + 5, 0, 0);
-				Size = UDim2.new(1, -playerNameSize.X - 5, 0, chatMessageSize.Y);
+				Position = UDim2.new(0, xOffset, 0, 0);
+				Size = UDim2.new(1, -xOffset, 0, chatMessageSize.Y);
 				Text = chatMessageDisplayText;
 				ZIndex = 1;
 				BackgroundColor3 = Color3.new(0, 0, 0);
@@ -441,6 +477,8 @@ local function CreateChatBarWidget(settings)
 
 		[function(chatBarText) return string.find(string.lower(chatBarText), "^/a") end] = "All";
 		[function(chatBarText) return string.find(string.lower(chatBarText), "^/all") end] = "All";
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/s") end] = "All";
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/say") end] = "All";
 
 		[function(chatBarText) return string.find(string.lower(chatBarText), "^/e") end] = "Emote";
 		[function(chatBarText) return string.find(string.lower(chatBarText), "^/emote") end] = "Emote";
@@ -464,24 +502,33 @@ local function CreateChatBarWidget(settings)
 		return mode == "Emote"
 	end
 
-	function this:OnChatBarTextChanged()
+	function this:ProcessChatBarModes(requireWhitespaceAfterChatMode)
 		if this.ChatBar then
 			local chatBarText = this:GetChatBarText()
 			for regexFunc, chatType in pairs(this.ChatMatchingRegex) do
 				local start, finish, capture = regexFunc(chatBarText)
-				if start and finish and finish ~= #chatBarText then
-					if this:IsAChatMode(chatType) then
-						if chatType == "Whisper" and capture then --and targetPlayer ~= Player then
-							this.TargetWhisperPlayer = Util.GetPlayerByName(capture)
+				if start and finish then
+					-- The following line is for whether or not to try setting the chatmode as-you-type
+					-- versus when you press enter.
+					if not (requireWhitespaceAfterChatMode and finish == #chatBarText) then
+						if this:IsAChatMode(chatType) then
+							if chatType == "Whisper" and capture then --and targetPlayer ~= Player then
+								this.TargetWhisperPlayer = Util.GetPlayerByName(capture)
+							end
+							-- start from two over to eat the space or tab character after the slash command
+							this:SetChatBarText(string.sub(chatBarText, finish + 2))
+							this:SetMessageMode(chatType)
 						end
-						-- start from two over to eat the space or tab character after the slash command
-						this:SetChatBarText(string.sub(chatBarText, finish + 2))
-						this:SetMessageMode(chatType)
 					end
 				end
 			end
 		end
 	end
+
+	function this:OnChatBarTextChanged()
+		this:ProcessChatBarModes(true)
+	end
+
 
 	function this:GetChatBarText()
 		return this.ChatBar and this.ChatBar.Text or ""
@@ -550,22 +597,9 @@ local function CreateChatBarWidget(settings)
 
 	function this:OnChatBarFocusLost(enterPressed)
 		if self.ChatBar then
-			local cText = this:GetChatBarText()
-			if enterPressed and cText ~= "" then
-				for regexFunc, chatType in pairs(this.ChatMatchingRegex) do
-					cText = this:GetChatBarText()
-					local start, finish, capture = regexFunc(cText)
-					if start and finish then --and finish == #cText then
-						if this:IsAChatMode(chatType) then
-							if chatType == "Whisper" and capture then --and targetPlayer ~= Player then
-								this.TargetWhisperPlayer = Util.GetPlayerByName(capture)
-							end
-							this:SetChatBarText(string.sub(cText, finish + 2))
-							this:SetMessageMode(chatType)
-						end
-					end
-				end
-				cText = this:GetChatBarText()
+			if enterPressed then
+				this:ProcessChatBarModes(false)
+				local cText = this:GetChatBarText()
 				if cText ~= "" then
 					local currentMessageMode = this:GetMessageMode()
 					-- {All, Team, Whisper}
@@ -767,6 +801,7 @@ local function CreateChatWindowWidget(settings)
 
 	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		local chatMessage = CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		print("New Message:" , playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		table.insert(this.Chats, chatMessage)
 
 		local isScrolledDown = this:IsScrolledDown()
