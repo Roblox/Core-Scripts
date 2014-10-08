@@ -300,11 +300,19 @@ end
 
 Game:GetService("PointsService").PointsAwarded:connect( function(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
 	if userId == Game.Players.LocalPlayer.userId then
-		game:GetService("GuiService"):SendNotification("Points Awarded!",
-			"You received " ..tostring(pointsAwarded) .. " points!",
-			"http://www.roblox.com/asset?id=155363793",
-			5,
-			noOptFunc)
+		if pointsAwarded > 0 then
+			game:GetService("GuiService"):SendNotification("Points Awarded!",
+				"You received " ..tostring(pointsAwarded) .. " points!",
+				"http://www.roblox.com/asset?id=155363793",
+				5,
+				noOptFunc)
+		elseif pointsAwarded < 0 then
+			game:GetService("GuiService"):SendNotification("Points Awarded!",
+				"You lost " ..tostring(-pointsAwarded) .. " points!",
+				"http://www.roblox.com/asset?id=155363793",
+				5,
+				noOptFunc)
+		end
 	end
 end)
 
