@@ -243,8 +243,93 @@ end
 local SelectChatModeEvent = Util.Signal()
 local SelectPlayerEvent = Util.Signal()
 
-local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+local function CreateChatMessage()
 	local this = {}
+
+	function this:FadeIn()
+		local gui = this:GetGui()
+		if gui then
+			--Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
+			gui.Visible = true
+		end
+	end
+
+	function this:FadeOut()
+		local gui = this:GetGui()
+		if gui then
+			--Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
+			gui.Visible = false
+		end
+	end
+
+	function this:GetGui()
+		return this.Container
+	end
+
+	function this:IsVisible()
+		return true
+	end
+
+	function this:Destroy()
+		if this.Container ~= nil then
+			this.Container:Destroy()
+			this.Container = nil
+		end
+	end
+
+	return this
+end
+
+local function CreateSystemChatMessage(chattedMessage)
+	local this = CreateChatMessage()
+
+	this.chatMessage = chattedMessage
+
+
+	local function CreateMessageGuiElement()
+		local systemMesasgeDisplayText = this.chatMessage or ""
+		local systemMessageSize = Util.GetStringTextBounds(systemMesasgeDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12, UDim2.new(0, 400, 0, 1000))
+
+		local container = Util.Create'Frame'
+		{
+			Name = 'MessageContainer';
+			Position = UDim2.new(0, 0, 0, 0);
+			ZIndex = 1;
+			BackgroundColor3 = Color3.new(0, 0, 0);
+			BackgroundTransparency = 1;
+			RobloxLocked = true;
+		};
+
+			local chatMessage = Util.Create'TextLabel'
+			{
+				Name = 'SystemChatMessage';
+				Position = UDim2.new(0, xOffset, 0, 0);
+				Size = UDim2.new(1, 0, 0, systemMessageSize.Y);
+				Text = systemMesasgeDisplayText;
+				ZIndex = 1;
+				BackgroundColor3 = Color3.new(0, 0, 0);
+				BackgroundTransparency = 1;
+				TextXAlignment = Enum.TextXAlignment.Left;
+				TextYAlignment = Enum.TextYAlignment.Top;
+				TextWrapped = true;
+				TextColor3 = Color3.new(1, 1, 1);
+				FontSize = Enum.FontSize.Size12;
+				Font = Enum.Font.SourceSans;
+				RobloxLocked = true;
+				Parent = container;
+			};
+
+		container.Size = UDim2.new(1, 0, 0, chatMessage.Size.Y.Offset);
+		this.Container = container
+	end
+
+	CreateMessageGuiElement()
+
+	return this
+end
+
+local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+	local this = CreateChatMessage()
 
 	this.PlayerChatType = playerChatType
 	this.SendingPlayer = sendingPlayer
@@ -291,28 +376,8 @@ local function CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, 
 		end
 	end
 
-	function this:FadeIn()
-		local gui = this:GetGui()
-		if gui then
-			--Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
-			gui.Visible = true
-		end
-	end
-
-	function this:FadeOut()
-		local gui = this:GetGui()
-		if gui then
-			--Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
-			gui.Visible = false
-		end
-	end
-
 	function this:FormatPlayerNameText()
 		return "[" .. (this.SendingPlayer and this.SendingPlayer.Name or "") .. "]"
-	end
-
-	function this:GetGui()
-		return this.Container
 	end
 
 	function this:IsVisible()
@@ -503,14 +568,18 @@ local function CreateChatBarWidget(settings)
 	end
 
 	function this:ProcessChatBarModes(requireWhitespaceAfterChatMode)
+		local matchedAChatCommand = false
 		if this.ChatBar then
-			local chatBarText = this:GetChatBarText()
+			local chatBarText = this:SanitizeInput(this:GetChatBarText())
 			for regexFunc, chatType in pairs(this.ChatMatchingRegex) do
 				local start, finish, capture = regexFunc(chatBarText)
 				if start and finish then
 					-- The following line is for whether or not to try setting the chatmode as-you-type
 					-- versus when you press enter.
-					if not (requireWhitespaceAfterChatMode and finish == #chatBarText) then
+					local whitespaceAfterSlashCommand = string.find(string.sub(chatBarText, finish+1, finish+1), "%s")
+					--print("Len:", #chatBarText, "finish" , finish, "whitespaceAfterSlashCommand", whitespaceAfterSlashCommand)
+					if (not requireWhitespaceAfterChatMode and finish == #chatBarText) or whitespaceAfterSlashCommand then
+						--print('findWhitespace' , findWhitespace)
 						if this:IsAChatMode(chatType) then
 							if chatType == "Whisper" and capture then --and targetPlayer ~= Player then
 								this.TargetWhisperPlayer = Util.GetPlayerByName(capture)
@@ -518,11 +587,14 @@ local function CreateChatBarWidget(settings)
 							-- start from two over to eat the space or tab character after the slash command
 							this:SetChatBarText(string.sub(chatBarText, finish + 2))
 							this:SetMessageMode(chatType)
+							-- should we break here since we already matched a slash command or keep going?
 						end
+						matchedAChatCommand = true
 					end
 				end
 			end
 		end
+		return matchedAChatCommand
 	end
 
 	function this:OnChatBarTextChanged()
@@ -595,26 +667,40 @@ local function CreateChatBarWidget(settings)
 		end
 	end
 
+	function this:SanitizeInput(input)
+		local sanitizedInput = input
+		-- Chomp the whitespace at the front and end of the string
+		-- TODO: maybe only chop off the front space if there are more than a few?
+		local _, _, capture = string.find(sanitizedInput, "^%s*(.*)%s*$")
+		sanitizedInput = capture or ""
+
+		return sanitizedInput
+	end
+
 	function this:OnChatBarFocusLost(enterPressed)
 		if self.ChatBar then
 			if enterPressed then
-				this:ProcessChatBarModes(false)
-				local cText = this:GetChatBarText()
+				local didMatchSlashCommand = this:ProcessChatBarModes(false)
+				local cText = this:SanitizeInput(this:GetChatBarText())
 				if cText ~= "" then
-					local currentMessageMode = this:GetMessageMode()
-					-- {All, Team, Whisper}
-					if currentMessageMode == 'Team' then
-						pcall(function() PlayersService:TeamChat(cText) end)
-					elseif currentMessageMode == 'Whisper' then
-						if this.TargetWhisperPlayer then
-							pcall(function() PlayersService:WhisperChat(cText, this.TargetWhisperPlayer) end)
-						else
-							print("Somehow we are trying to whisper to a player not in the game anymore:" , this.TargetWhisperPlayer)
-						end
-					elseif currentMessageMode == 'All' then
-						pcall(function() PlayersService:Chat(cText) end)
+					if not didMatchSlashCommand and string.sub(cText,1,1) == "/" then
+						print("TODO: print this is an unrecognized slash command")
 					else
-						Spawn(function() error("ChatScript: Unknown Message Mode of " .. tostring(currentMessageMode)) end)
+						local currentMessageMode = this:GetMessageMode()
+						-- {All, Team, Whisper}
+						if currentMessageMode == 'Team' then
+							pcall(function() PlayersService:TeamChat(cText) end)
+						elseif currentMessageMode == 'Whisper' then
+							if this.TargetWhisperPlayer then
+								pcall(function() PlayersService:WhisperChat(cText, this.TargetWhisperPlayer) end)
+							else
+								print("Somehow we are trying to whisper to a player not in the game anymore:" , this.TargetWhisperPlayer)
+							end
+						elseif currentMessageMode == 'All' then
+							pcall(function() PlayersService:Chat(cText) end)
+						else
+							Spawn(function() error("ChatScript: Unknown Message Mode of " .. tostring(currentMessageMode)) end)
+						end
 					end
 				end
 			end
@@ -778,7 +864,7 @@ local function CreateChatWindowWidget(settings)
 			this.BackgroundVisible = false
 
 			local now = lastFadeOutTime
-			delay(MESSAGES_FADE_OUT_TIME,function()
+			delay(MESSAGES_FADE_OUT_TIME, function()
 				if lastFadeOutTime > lastFadeInTime and now == lastFadeOutTime then
 					this:FadeOutChats()
 				end
@@ -799,9 +885,7 @@ local function CreateChatWindowWidget(settings)
 		end
 	end
 
-	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-		local chatMessage = CreateChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-		print("New Message:" , playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+	function this:PushMessageIntoQueue(chatMessage)
 		table.insert(this.Chats, chatMessage)
 
 		local isScrolledDown = this:IsScrolledDown()
@@ -824,6 +908,17 @@ local function CreateChatWindowWidget(settings)
 			-- Raise unread message alert!
 		end
 		this:FadeInChats()
+	end
+
+	function this:AddSystemChatMessage(chattedMessage)
+		local chatMessage = CreateSystemChatMessage(chattedMessage)
+		this:PushMessageIntoQueue(chatMessage)
+	end
+
+	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		local chatMessage = CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		print("New Message:" , playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		this:PushMessageIntoQueue(chatMessage)
 	end
 
 	function this:RemoveOldestMessage()
@@ -1016,12 +1111,11 @@ local function CreateChat()
 	end
 
 	function this:PrintHelp()
-		--TODO: make this show up in gui and not output
-		print("Help")
-		print("Chat Commands:")
-		print("Whisper Chat: /w [Player] or /whisper [Player]")
-		print("Team Chat: % ")
-		print("All Chat: /a or /all")
+		this.ChatWindowWidget:AddSystemChatMessage("Help")
+		this.ChatWindowWidget:AddSystemChatMessage("Chat Commands:")
+		this.ChatWindowWidget:AddSystemChatMessage("Whisper Chat: /w [Player] or /whisper [Player]")
+		this.ChatWindowWidget:AddSystemChatMessage("Team Chat: /t or /team")
+		this.ChatWindowWidget:AddSystemChatMessage("All Chat: /a or /all")
 	end
 
 	function this:CreateGUI()
@@ -1066,6 +1160,8 @@ local function CreateChat()
 		end)
 
 		this:CreateGUI()
+
+		this:PrintHelp()
 	end
 
 	return this
