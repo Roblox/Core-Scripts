@@ -307,7 +307,7 @@ Game:GetService("PointsService").PointsAwarded:connect( function(userId, pointsA
 				5,
 				noOptFunc)
 		elseif pointsAwarded < 0 then
-			game:GetService("GuiService"):SendNotification("Points Awarded!",
+			game:GetService("GuiService"):SendNotification("Points Lost!",
 				"You lost " ..tostring(-pointsAwarded) .. " points!",
 				"http://www.roblox.com/asset?id=155363793",
 				5,
