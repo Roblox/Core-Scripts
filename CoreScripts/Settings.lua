@@ -668,15 +668,10 @@ local function createGameMainMenu(baseZIndex, shield)
 	buttonTop = buttonTop + 51
 
 	-- LEAVE GAME	
-	local isAndroid = false
-	pcall(function() isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
-
-	if (not isAndroid) then
-		local leaveGameButton = createTextButton("Leave Game",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0.5,-170,0,buttonTop))
-		leaveGameButton.Name = "LeaveGameButton"
-		leaveGameButton.ZIndex = baseZIndex + 4
-		leaveGameButton.Parent = gameMainMenuFrame
-	end
+	local leaveGameButton = createTextButton("Leave Game",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0.5,-170,0,buttonTop))
+	leaveGameButton.Name = "LeaveGameButton"
+	leaveGameButton.ZIndex = baseZIndex + 4
+	leaveGameButton.Parent = gameMainMenuFrame
 
 	return gameMainMenuFrame
 end
