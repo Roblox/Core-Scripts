@@ -362,6 +362,8 @@ local fadeCycleTime = 1.7
 
 renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(function()
 	if not currScreenGui then return end
+	if not currScreenGui:FindFirstChild("BlackFrame") then return end
+
 	if setVerb then
 		currScreenGui.BlackFrame.CloseButton:SetVerb("Exit")
 		setVerb = false
