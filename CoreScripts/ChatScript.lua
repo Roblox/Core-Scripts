@@ -91,6 +91,10 @@ do
 		end
 	end
 
+	function Util.Clamp(low, high, input)
+		return math.max(low, math.min(high, input))
+	end
+
 	function Util.Linear(t, b, c, d)
 		if t >= d then return b + c end
 
@@ -529,6 +533,7 @@ local function CreateChatBarWidget(settings)
 
 	this.ChatBarGainedFocusEvent = Util.Signal()
 	this.ChatBarLostFocusEvent = Util.Signal()
+	this.ChatCommandEvent = Util.Signal() -- success, actionType, captures
 
 	this.ChatMatchingRegex =
 	{
@@ -547,6 +552,8 @@ local function CreateChatBarWidget(settings)
 
 		[function(chatBarText) return string.find(string.lower(chatBarText), "^/e") end] = "Emote";
 		[function(chatBarText) return string.find(string.lower(chatBarText), "^/emote") end] = "Emote";
+
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/%?") end] = "Help";
 	}
 
 	local ChatModesDict =
@@ -571,24 +578,39 @@ local function CreateChatBarWidget(settings)
 		local matchedAChatCommand = false
 		if this.ChatBar then
 			local chatBarText = this:SanitizeInput(this:GetChatBarText())
-			for regexFunc, chatType in pairs(this.ChatMatchingRegex) do
+			for regexFunc, actionType in pairs(this.ChatMatchingRegex) do
 				local start, finish, capture = regexFunc(chatBarText)
 				if start and finish then
 					-- The following line is for whether or not to try setting the chatmode as-you-type
 					-- versus when you press enter.
 					local whitespaceAfterSlashCommand = string.find(string.sub(chatBarText, finish+1, finish+1), "%s")
-					--print("Len:", #chatBarText, "finish" , finish, "whitespaceAfterSlashCommand", whitespaceAfterSlashCommand)
 					if (not requireWhitespaceAfterChatMode and finish == #chatBarText) or whitespaceAfterSlashCommand then
-						--print('findWhitespace' , findWhitespace)
-						if this:IsAChatMode(chatType) then
-							if chatType == "Whisper" and capture then --and targetPlayer ~= Player then
-								this.TargetWhisperPlayer = Util.GetPlayerByName(capture)
+						if this:IsAChatMode(actionType) then
+							if actionType == "Whisper" then
+								local targetPlayer = capture and Util.GetPlayerByName(capture)
+								if targetPlayer then --and targetPlayer ~= Player then
+									this.TargetWhisperPlayer = targetPlayer
+									-- start from two over to eat the space or tab character after the slash command
+									this:SetChatBarText(string.sub(chatBarText, finish + 2))
+									this:SetMessageMode(actionType)
+									this.ChatCommandEvent:fire(true, actionType, capture)
+								else
+									this:SetChatBarText("")
+									this.ChatCommandEvent:fire(false, actionType, capture)
+								end
+							else
+								-- start from two over to eat the space or tab character after the slash command
+								this:SetChatBarText(string.sub(chatBarText, finish + 2))
+								this:SetMessageMode(actionType)
+								this.ChatCommandEvent:fire(true, actionType, capture)
 							end
-							-- start from two over to eat the space or tab character after the slash command
-							this:SetChatBarText(string.sub(chatBarText, finish + 2))
-							this:SetMessageMode(chatType)
-							-- should we break here since we already matched a slash command or keep going?
+						elseif not requireWhitespaceAfterChatMode then -- Some non-chat related command
+							if actionType == "Help" then
+								this:SetChatBarText("") -- Clear the chat so we don't send /? to everyone
+							end
+							this.ChatCommandEvent:fire(true, actionType, capture)
 						end
+						-- should we break here since we already matched a slash command or keep going?
 						matchedAChatCommand = true
 					end
 				end
@@ -597,10 +619,25 @@ local function CreateChatBarWidget(settings)
 		return matchedAChatCommand
 	end
 
+	local previousText = ""
 	function this:OnChatBarTextChanged()
 		this:ProcessChatBarModes(true)
+		local newText = this:GetChatBarText()
+		if #newText > this.Settings.MaxCharactersInMessage then
+			local fixedText = ""
+			-- This is a hack to deal with the bug that holding down a key for repeated input doesn't trigger the textChanged event
+			if #newText == #previousText + 1 then
+				fixedText = string.sub(previousText, 1, this.Settings.MaxCharactersInMessage)
+			else
+				fixedText = string.sub(newText, 1, this.Settings.MaxCharactersInMessage)
+			end
+			this:SetChatBarText(fixedText)
+			previousText = fixedText
+			-- TODO: Flash Max Characters Feedback
+		else
+			previousText = newText
+		end
 	end
-
 
 	function this:GetChatBarText()
 		return this.ChatBar and this.ChatBar.Text or ""
@@ -684,7 +721,7 @@ local function CreateChatBarWidget(settings)
 				local cText = this:SanitizeInput(this:GetChatBarText())
 				if cText ~= "" then
 					if not didMatchSlashCommand and string.sub(cText,1,1) == "/" then
-						print("TODO: print this is an unrecognized slash command")
+						this.ChatCommandEvent:fire(false, "Unknown", cText)
 					else
 						local currentMessageMode = this:GetMessageMode()
 						-- {All, Team, Whisper}
@@ -815,6 +852,8 @@ local function CreateChatWindowWidget(settings)
 	this.Chats = {}
 	this.BackgroundVisible = false
 
+	this.ChatWindowPagingConn = nil
+
 	local lastMoveTime = tick()
 	local lastEnterTime = tick()
 	local lastLeaveTime = tick()
@@ -849,6 +888,23 @@ local function CreateChatWindowWidget(settings)
 			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 0.65, duration, Util.Linear)
 			this.BackgroundVisible = true
 			this:FadeInChats()
+
+			this.ChatWindowPagingConn = Util.DisconnectEvent(this.ChatWindowPagingConn)
+			this.ChatWindowPagingConn = InputService.InputBegan:connect(function(inputObject)
+				local key = inputObject.KeyCode
+				if key == Enum.KeyCode.PageUp then
+					this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasPosition.Y - this.ScrollingFrame.AbsoluteSize.Y))
+				elseif key == Enum.KeyCode.PageDown then
+					this.ScrollingFrame.CanvasPosition =
+						Vector2.new(0, Util.Clamp(0, --min
+						               this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y, --max
+						               this.ScrollingFrame.CanvasPosition.Y + this.ScrollingFrame.AbsoluteSize.Y))
+				elseif key == Enum.KeyCode.Home then
+					this.ScrollingFrame.CanvasPosition = Vector2.new(0, 0)
+				elseif key == Enum.KeyCode.End then
+					this.ScrollingFrame.CanvasPosition = Vector2.new(0, this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y)
+				end
+			end)
 		end
 	end
 	function this:FadeOut(duration, unlockFade)
@@ -862,6 +918,8 @@ local function CreateChatWindowWidget(settings)
 			this.ScrollingFrame.ScrollingEnabled = false
 			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
 			this.BackgroundVisible = false
+
+			this.ChatWindowPagingConn = Util.DisconnectEvent(this.ChatWindowPagingConn)
 
 			local now = lastFadeOutTime
 			delay(MESSAGES_FADE_OUT_TIME, function()
@@ -1039,6 +1097,7 @@ local function CreateChatWindowWidget(settings)
 
 		Spawn(function()
 			while true do
+				-- TODO: also don't fade out if we are currently scrolling.
 				wait()
 				if this:IsHovering() then
 					if tick() - lastMoveTime > 2 and not this.BackgroundVisible then
@@ -1068,6 +1127,7 @@ local function CreateChat()
 		WhisperTextColor = Color3.new(77/255, 139/255, 255/255);
 		TeamTextColor = Color3.new(230/255, 207/255, 0);
 		MaxWindowChatMessages = 100;
+		MaxCharactersInMessage = 140; -- Same as a tweet :D
 	}
 
 	function this:OnCoreGuiChanged(coreGuiType, enabled)
@@ -1110,12 +1170,17 @@ local function CreateChat()
 		};
 	end
 
+	function this:PrintWelcome()
+		this.ChatWindowWidget:AddSystemChatMessage("Welcome to Roblox")
+		this.ChatWindowWidget:AddSystemChatMessage("Please type /? for a list of commands")
+	end
+
 	function this:PrintHelp()
-		this.ChatWindowWidget:AddSystemChatMessage("Help")
+		this.ChatWindowWidget:AddSystemChatMessage("Help Menu")
 		this.ChatWindowWidget:AddSystemChatMessage("Chat Commands:")
-		this.ChatWindowWidget:AddSystemChatMessage("Whisper Chat: /w [Player] or /whisper [Player]")
-		this.ChatWindowWidget:AddSystemChatMessage("Team Chat: /t or /team")
-		this.ChatWindowWidget:AddSystemChatMessage("All Chat: /a or /all")
+		this.ChatWindowWidget:AddSystemChatMessage("/w [PlayerName] or /whisper [PlayerName] - Whisper Chat")
+		this.ChatWindowWidget:AddSystemChatMessage("/t or /team - Team Chat")
+		this.ChatWindowWidget:AddSystemChatMessage("/a or /all - All Chat")
 	end
 
 	function this:CreateGUI()
@@ -1137,6 +1202,22 @@ local function CreateChat()
 				this.ChatWindowWidget:SetFadeLock(false)
 				if not this.ChatWindowWidget:IsHovering() then
 					--this.ChatWindowWidget:FadeOut()
+				end
+			end)
+
+			this.ChatBarWidget.ChatCommandEvent:connect(function(success, actionType, capture)
+				if actionType == "Help" then
+					this:PrintHelp()
+				elseif actionType == "Whisper" then
+					if success == false then
+						local playerName = capture and tostring(capture) or "Unknown"
+						this.ChatWindowWidget:AddSystemChatMessage("Unable to Whisper Player: " .. playerName)
+					end
+				elseif actionType == "Unknown" then
+					if success == false then
+						local commandText = capture and tostring(capture) or "Unknown"
+						this.ChatWindowWidget:AddSystemChatMessage("Invalid Slash Command: " .. commandText)
+					end
 				end
 			end)
 		end
@@ -1161,7 +1242,8 @@ local function CreateChat()
 
 		this:CreateGUI()
 
-		this:PrintHelp()
+		this:PrintWelcome()
+
 	end
 
 	return this
