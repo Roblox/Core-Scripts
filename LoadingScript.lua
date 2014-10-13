@@ -105,16 +105,6 @@ function MainGui:GenerateMain()
 		Size = UDim2.new(1, 0, 1, 0),
 		Active = true,
 
-		create 'ImageButton' {
-			Name = 'CloseButton',
-			Image = 'rbxasset://textures/ui/CloseButton.png',
-			BackgroundTransparency = 1,
-			Position = UDim2.new(1, -27, 0, 5),
-			Size = UDim2.new(0, 22, 0, 22),
-			Active = true,
-			ZIndex = 10
-		},
-
 		create 'Frame' {
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
@@ -326,6 +316,16 @@ function MainGui:GenerateMain()
 				ZIndex = 8
 			},
 
+			create 'ImageButton' {
+				Name = 'CloseButton',
+				Image = 'rbxasset://textures/ui/CloseButton.png',
+				BackgroundTransparency = 1,
+				Position = UDim2.new(1, -27, 0, 5),
+				Size = UDim2.new(0, 22, 0, 22),
+				Active = true,
+				ZIndex = 10
+			},
+
 		Parent = screenGui
 	}
 
@@ -365,7 +365,7 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 	if not currScreenGui:FindFirstChild("BlackFrame") then return end
 
 	if setVerb then
-		currScreenGui.BlackFrame.CloseButton:SetVerb("Exit")
+		currScreenGui.ErrorFrame.CloseButton:SetVerb("Exit")
 		setVerb = false
 	end
 
