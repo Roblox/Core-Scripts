@@ -929,11 +929,13 @@ function Chat:CoreGuiChanged(coreGuiType,enabled)
 		if self.TapToChatLabel then self.TapToChatLabel.Visible = enabled end 
 
 		if not Chat:IsTouchDevice() and self.ChatBar then 
-			self.ChatBar.Visible = enabled 
+			self.ChatBar.Visible = enabled
 			if enabled then
 				GuiService:SetGlobalGuiInset(0, 0, 0, 20)
+				GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
 			else
 				GuiService:SetGlobalGuiInset(0, 0, 0, 0)
+				GuiService:RemoveSpecialKey(Enum.SpecialKey.ChatHotkey)
 			end
 		end
 	end
