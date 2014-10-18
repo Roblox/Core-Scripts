@@ -422,7 +422,7 @@ function doAcceptPurchase(currencyPreferredByUser)
 	else
 		url = getSecureApiBaseUrl() .. "marketplace/purchase?productId=" .. tostring(currentProductId) .. 
 			"&currencyTypeId=" .. tostring(currencyEnumToInt(currentCurrencyType)) .. 
-			"&purchasePrice=" .. tostring(currentCurrencyAmount) ..
+			"&purchasePrice=" .. tostring(currentCurrencyAmount or 0) ..
 			"&locationType=Game" .. "&locationId=" .. Game.PlaceId
 	end
 
