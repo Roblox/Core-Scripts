@@ -566,15 +566,17 @@ end
 
 
 function Chat:FocusOnChatBar()
-	if self.ClickToChatButton then 
-		self.ClickToChatButton.Visible = false 	
-	end 
+	if self.Frame.Visible then -- Only capture focus if the GUI is visible
+		if self.ClickToChatButton then 
+			self.ClickToChatButton.Visible = false 	
+		end 
 
-	self.GotFocus = true
-	if self.Frame['Background'] then 
-		self.Frame.Background.Visible = false 
+		self.GotFocus = true
+		if self.Frame['Background'] then 
+			self.Frame.Background.Visible = false 
+		end
+		self.ChatBar:CaptureFocus()
 	end
-	self.ChatBar:CaptureFocus()
 end
 
 -- For touch devices we create a button instead 
