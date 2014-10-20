@@ -1324,12 +1324,12 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		end
 		local volumeSlider, volumeLevel = RbxGui.CreateSliderNew( maxVolumeLevel,256,UDim2.new(0, 180, 0, itemTop + volumeSliderOffset) )
 		volumeSlider.Parent = gameSettingsMenuFrame
-		volumeSlider.Bar.ZIndex = baseZIndex + 4
-		volumeSlider.Bar.Slider.ZIndex = baseZIndex + 6
-		volumeSlider.BarLeft.ZIndex = baseZIndex + 4
-		volumeSlider.BarRight.ZIndex = baseZIndex + 4
-		volumeSlider.Bar.Fill.ZIndex = baseZIndex + 5
-		volumeSlider.FillLeft.ZIndex = baseZIndex + 5
+		volumeSlider.Bar.ZIndex = baseZIndex + 3
+		volumeSlider.Bar.Slider.ZIndex = baseZIndex + 4
+		volumeSlider.BarLeft.ZIndex = baseZIndex + 3
+		volumeSlider.BarRight.ZIndex = baseZIndex + 3
+		volumeSlider.Bar.Fill.ZIndex = baseZIndex + 3
+		volumeSlider.FillLeft.ZIndex = baseZIndex + 3
 		volumeSlider.Visible = true
 		volumeLevel.Value = math.min(math.max(UserSettings().GameSettings.MasterVolume * maxVolumeLevel, 1), maxVolumeLevel)
 
