@@ -124,6 +124,7 @@ do
 		this.EndTime = this.StartTime + duration
 		this.Cancelled = false
 
+		local finished = false
 		Spawn(function()
 			local now = tick()
 			while now < this.EndTime and instance do
@@ -136,6 +137,7 @@ do
 			end
 			if this.Cancelled == false and instance then
 				instance[prop] = final
+				finished = true
 				if cbFunc then
 					cbFunc()
 				end
@@ -143,7 +145,7 @@ do
 		end)
 
 		function this:IsFinished()
-			return tick() > this.EndTime and this.Cancelled == false
+			return finished
 		end
 
 		function this:Cancel()
@@ -208,6 +210,26 @@ do
 		return nil -- Found no player
 	end
 
+	local function GetNameValue(pName)
+		local value = 0
+		for index = 1, #pName do
+			local cValue = string.byte(string.sub(pName, index, index))
+			local reverseIndex = #pName - index + 1
+			if #pName%2 == 1 then
+				reverseIndex = reverseIndex - 1
+			end
+			if reverseIndex%4 >= 2 then
+				cValue = -cValue
+			end
+			value = value + cValue
+		end
+		return value%8
+	end
+
+	function Util.ComputeChatColor(pName)
+		return CHAT_COLORS[GetNameValue(pName) + 1].Color
+	end
+
 	-- This is a memo-izing function
 	local testLabel = Instance.new('TextLabel')
 	testLabel.TextWrapped = true;
@@ -250,6 +272,12 @@ local SelectPlayerEvent = Util.Signal()
 local function CreateChatMessage()
 	local this = {}
 
+	this.Settings =
+	{
+		Font = Enum.Font.SourceSansBold;
+		FontSize = Enum.FontSize.Size14;
+	}
+
 	function this:FadeIn()
 		local gui = this:GetGui()
 		if gui then
@@ -289,10 +317,9 @@ local function CreateSystemChatMessage(chattedMessage)
 
 	this.chatMessage = chattedMessage
 
-
 	local function CreateMessageGuiElement()
 		local systemMesasgeDisplayText = this.chatMessage or ""
-		local systemMessageSize = Util.GetStringTextBounds(systemMesasgeDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12, UDim2.new(0, 400, 0, 1000))
+		local systemMessageSize = Util.GetStringTextBounds(systemMesasgeDisplayText, this.Settings.Font, this.Settings.FontSize, UDim2.new(0, 400, 0, 1000))
 
 		local container = Util.Create'Frame'
 		{
@@ -317,8 +344,8 @@ local function CreateSystemChatMessage(chattedMessage)
 				TextYAlignment = Enum.TextYAlignment.Top;
 				TextWrapped = true;
 				TextColor3 = Color3.new(1, 1, 1);
-				FontSize = Enum.FontSize.Size12;
-				Font = Enum.Font.SourceSans;
+				FontSize = this.Settings.FontSize;
+				Font = this.Settings.Font;
 				RobloxLocked = true;
 				Parent = container;
 			};
@@ -340,6 +367,9 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 	this.RawMessageContent = chattedMessage
 	this.ReceivingPlayer = receivingPlayer
 	this.ReceivedTime = tick()
+
+	this.Neutral = this.SendingPlayer and this.SendingPlayer.Neutral or true
+	this.TeamColor = this.SendingPlayer and this.SendingPlayer.TeamColor or BrickColor.new("White")
 
 	function this:FormatMessage()
 		local result = ""
@@ -371,7 +401,7 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 	function this:FormatChatType()
 		if this.PlayerChatType then
 			if this.PlayerChatType == Enum.PlayerChatType.All then
-				return "[All]"
+				--return "[All]"
 			elseif this.PlayerChatType == Enum.PlayerChatType.Team then
 				return "[Team]"
 			elseif this.PlayerChatType == Enum.PlayerChatType.Whisper then
@@ -404,14 +434,27 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 
 	local function CreateMessageGuiElement()
 		local toMesasgeDisplayText = "To: "
-		local toMessageSize = Util.GetStringTextBounds(toMesasgeDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12)
+		local toMessageSize = Util.GetStringTextBounds(toMesasgeDisplayText, this.Settings.Font, this.Settings.FontSize)
 		local chatTypeDisplayText = this:FormatChatType()
-		local chatTypeSize = chatTypeDisplayText and Util.GetStringTextBounds(chatTypeDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12) or Vector2.new(0,0)
+		local chatTypeSize = chatTypeDisplayText and Util.GetStringTextBounds(chatTypeDisplayText, this.Settings.Font, this.Settings.FontSize) or Vector2.new(0,0)
 		local playerNameDisplayText = this:FormatPlayerNameText()
-		local playerNameSize = Util.GetStringTextBounds(playerNameDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12)
-		local chatMessageDisplayText = this:FormatMessage()
-		local chatMessageSize = Util.GetStringTextBounds(chatMessageDisplayText, Enum.Font.SourceSans, Enum.FontSize.Size12, UDim2.new(0, 400 - 5 - playerNameSize.X, 0, 1000))
+		local playerNameSize = Util.GetStringTextBounds(playerNameDisplayText, this.Settings.Font, this.Settings.FontSize)
 
+		local singleSpaceSize = Util.GetStringTextBounds(" ", this.Settings.Font, this.Settings.FontSize)
+		local numNeededSpaces = math.ceil(playerNameSize.X / singleSpaceSize.X) + 1
+		local chatMessageDisplayText = string.rep(" ", numNeededSpaces) .. this:FormatMessage()
+		local chatMessageSize = Util.GetStringTextBounds(chatMessageDisplayText, this.Settings.Font, this.Settings.FontSize, UDim2.new(0, 400 - 5 - playerNameSize.X, 0, 1000))
+
+
+
+		local playerColor = Color3.new(1,1,1)
+		if this.SendingPlayer then
+			if this.SendingPlayer.Neutral then
+				playerColor = Util.ComputeChatColor(this.SendingPlayer.Name)
+			else
+				playerColor = this.SendingPlayer.TeamColor.Color
+			end
+		end
 
 		local container = Util.Create'Frame'
 		{
@@ -439,29 +482,40 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 					TextYAlignment = Enum.TextYAlignment.Top;
 					TextWrapped = true;
 					TextColor3 = Color3.new(1, 1, 1);
-					FontSize = Enum.FontSize.Size12;
-					Font = Enum.Font.SourceSans;
+					FontSize = this.Settings.FontSize;
+					Font = this.Settings.Font;
 					RobloxLocked = true;
 					Parent = container;
 				};
 				xOffset = xOffset + toMessageSize.X
+			else
+				local userNameDot = Util.Create'ImageLabel'
+				{
+					Name = "UserNameDot";
+					Size = UDim2.new(0, 14, 0, 14);
+					BackgroundTransparency = 1;
+					Position = UDim2.new(0, 0, 0, 2);
+					BorderSizePixel = 0;
+					Image = "rbxasset://textures/ui/chat_teamButton.png";
+					ImageColor3 = playerColor;
+					RobloxLocked = true;
+					Parent = container;
+				}
+				xOffset = xOffset + 14 + 3
 			end
 		if chatTypeDisplayText then
-			if xOffset > 0 then
-				xOffset = xOffset + 5
-			end
 			local chatModeButton = Util.Create'TextButton'
 			{
 				Name = 'ChatMode';
 				BackgroundTransparency = 1;
 				ZIndex = 2;
 				Text = chatTypeDisplayText;
-				TextColor3 = Color3.new(1, 1, 0.9);
+				TextColor3 = Color3.new(255/255, 255/255, 243/255);
 				Position = UDim2.new(0, xOffset, 0, 0);
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
-				FontSize = Enum.FontSize.Size12;
-				Font = Enum.Font.SourceSans;
+				FontSize = this.Settings.FontSize;
+				Font = this.Settings.Font;
 				Size = UDim2.new(0, chatTypeSize.X, 0, chatTypeSize.Y);
 				RobloxLocked = true;
 				Parent = container
@@ -469,21 +523,23 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 			this.ClickedOnModeConn = chatModeButton.MouseButton1Click:connect(function()
 				SelectChatModeEvent:fire(this.PlayerChatType)
 			end)
-			xOffset = xOffset + chatTypeSize.X
+			if this.PlayerChatType == Enum.PlayerChatType.Team then
+				chatModeButton.TextColor3 = playerColor
+			end
+			xOffset = xOffset + chatTypeSize.X + 1
 		end
-			xOffset = xOffset + 1
 			local userNameButton = Util.Create'TextButton'
 			{
 				Name = 'PlayerName';
 				BackgroundTransparency = 1;
 				ZIndex = 2;
 				Text = playerNameDisplayText;
-				TextColor3 = Color3.new(1, 1, 0.9);
+				TextColor3 = playerColor;
 				Position = UDim2.new(0, xOffset, 0, 0);
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
-				FontSize = Enum.FontSize.Size12;
-				Font = Enum.Font.SourceSans;
+				FontSize = this.Settings.FontSize;
+				Font = this.Settings.Font;
 				Size = UDim2.new(0, playerNameSize.X, 0, playerNameSize.Y);
 				RobloxLocked = true;
 				Parent = container
@@ -491,9 +547,9 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 			this.ClickedOnPlayerConn = userNameButton.MouseButton1Click:connect(function()
 				SelectPlayerEvent:fire(this.SendingPlayer)
 			end)
-			xOffset = xOffset + playerNameSize.X
+			--xOffset = xOffset + playerNameSize.X
 
-			xOffset = xOffset + 5
+			--xOffset = xOffset + 5
 			local chatMessage = Util.Create'TextLabel'
 			{
 				Name = 'ChatMessage';
@@ -506,9 +562,9 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
 				TextWrapped = true;
-				TextColor3 = Color3.new(1, 1, 1);
-				FontSize = Enum.FontSize.Size12;
-				Font = Enum.Font.SourceSans;
+				TextColor3 = Color3.new(255/255, 255/255, 243/255);
+				FontSize = this.Settings.FontSize;
+				Font = this.Settings.Font;
 				RobloxLocked = true;
 				Parent = container;
 			};
@@ -678,7 +734,7 @@ local function CreateChatBarWidget(settings)
 					this.ChatModeText.Size = UDim2.new(0, 0, 1, 0)
 				end
 				if this.ChatBar then
-					local offset = this.ChatModeText.Size.X.Offset
+					local offset = this.ChatModeText.Size.X.Offset + this.ChatModeText.Position.X.Offset
 					this.ChatBar.Size = UDim2.new(1, -offset - 5, 1, 0)
 					this.ChatBar.Position = UDim2.new(0, offset + 5, 0, 0)
 				end
@@ -766,29 +822,33 @@ local function CreateChatBarWidget(settings)
 			local clickToChatButton = Util.Create'TextButton'
 			{
 				Name = 'ClickToChat';
-				Size = UDim2.new(1, 0, 1, 0);
+				Position = UDim2.new(0,9,0,0);
+				Size = UDim2.new(1, -9, 1, 0);
 				BackgroundTransparency = 1;
 				ZIndex = 2;
 				Text = 'To chat click here or press "/" key';
-				TextColor3 = Color3.new(1, 1, 0.9);
+				TextColor3 = this.Settings.GlobalTextColor;
 				TextXAlignment = Enum.TextXAlignment.Left;
-				Font = Enum.Font.SourceSans;
-				FontSize = Enum.FontSize.Size12;
+				TextYAlignment = Enum.TextYAlignment.Top;
+				Font = Enum.Font.SourceSansBold;
+				FontSize = Enum.FontSize.Size18;
 				RobloxLocked = true;
 				Parent = chatBarContainer;
 			}
 			local chatBar = Util.Create'TextBox'
 			{
 				Name = 'ChatBar';
-				Size = UDim2.new(1, 0, 1, 0);
+				Position = UDim2.new(0, 9, 0, 0);
+				Size = UDim2.new(1, -9, 1, 0);
 				Text = "";
 				ZIndex = 1;
 				BackgroundColor3 = Color3.new(0, 0, 0);
 				BackgroundTransparency = 1;
 				TextXAlignment = Enum.TextXAlignment.Left;
-				TextColor3 = Color3.new(1, 1, 1);
-				Font = Enum.Font.SourceSans;
-				FontSize = Enum.FontSize.Size12;
+				TextYAlignment = Enum.TextYAlignment.Top;
+				TextColor3 = this.Settings.GlobalTextColor;
+				Font = Enum.Font.SourceSansBold;
+				FontSize = Enum.FontSize.Size18;
 				ClearTextOnFocus = false;
 				RobloxLocked = true;
 				Parent = chatBarContainer;
@@ -796,18 +856,27 @@ local function CreateChatBarWidget(settings)
 			local chatModeText = Util.Create'TextButton'
 			{
 				Name = 'ChatModeText';
-				Size = UDim2.new(1, 0, 1, 0);
+				Position = UDim2.new(0, 9, 0, 0);
+				Size = UDim2.new(1, -9, 1, 0);
 				BackgroundTransparency = 1;
 				ZIndex = 2;
 				Text = '';
 				TextColor3 = this.Settings.WhisperTextColor;
 				TextXAlignment = Enum.TextXAlignment.Left;
-				Font = Enum.Font.SourceSans;
-				FontSize = Enum.FontSize.Size12;
+				TextYAlignment = Enum.TextYAlignment.Top;
+				Font = Enum.Font.SourceSansBold;
+				FontSize = Enum.FontSize.Size18;
 				RobloxLocked = true;
 				Parent = chatBarContainer;
 			}
+		this.ChatBarContainer = chatBarContainer
+		this.ClickToChatButton = clickToChatButton
+		this.ChatBar = chatBar
+		this.ChatModeText = chatModeText
+		this.ChatBarContainer.Parent = GuiRoot
 
+
+		--------- EVENTS ---------
 		-- ChatHotKey is '/'
 		GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
 		GuiService.SpecialKeyPressed:connect(function(key)
@@ -815,12 +884,6 @@ local function CreateChatBarWidget(settings)
 				this.ChatBarGainedFocusEvent:fire()
 			end
 		end)
-
-		this.ChatBarContainer = chatBarContainer
-		this.ClickToChatButton = clickToChatButton
-		this.ChatBar = chatBar
-		this.ChatModeText = chatModeText
-		this.ChatBarContainer.Parent = GuiRoot
 
 		this.ClickToChatButton.MouseButton1Click:connect(function() this.ChatBarGainedFocusEvent:fire()  end)
 		this.ChatBar.FocusLost:connect(function(...) this.ChatBarLostFocusEvent:fire(...) end)
@@ -838,6 +901,7 @@ local function CreateChatBarWidget(settings)
 			this:SetMessageMode("Whisper")
 			this.ChatBarGainedFocusEvent:fire()
 		end)
+		--------- END OF EVENTS ---------
 
 		Util.SetGUIInsetBounds(0, 20)
 	end
@@ -885,7 +949,7 @@ local function CreateChatWindowWidget(settings)
 			end
 			lastFadeInTime = tick()
 			this.ScrollingFrame.ScrollingEnabled = true
-			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 0.65, duration, Util.Linear)
+			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 0.7, duration, Util.Linear)
 			this.BackgroundVisible = true
 			this:FadeInChats()
 
@@ -975,7 +1039,7 @@ local function CreateChatWindowWidget(settings)
 
 	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		local chatMessage = CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-		print("New Message:" , playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		--print("New Message:" , playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		this:PushMessageIntoQueue(chatMessage)
 	end
 
@@ -1017,7 +1081,7 @@ local function CreateChatWindowWidget(settings)
 		{
 			Name = 'ChatWindowContainer';
 			 -- Height is a multiple of chat message height, maybe keep this value at 150 and move that padding into the messageContainer
-			Size = UDim2.new(0, 400, 0, 156);
+			Size = UDim2.new(0, 400, 0, 140);
 			Position = UDim2.new(0, 20, 0, 50);
 			ZIndex = 1;
 			BackgroundColor3 = Color3.new(0, 0, 0);
@@ -1027,12 +1091,16 @@ local function CreateChatWindowWidget(settings)
 			local scrollingFrame = Util.Create'ScrollingFrame'
 			{
 				Name = 'ChatWindow';
-				Size = UDim2.new(1, 0, 1, 0);
-				CanvasSize = UDim2.new(1, 0, 0, 0);
-				Position = UDim2.new(0, 0, 0, 0);
+				Size = UDim2.new(1, -4 - 10, 1, -20);
+				CanvasSize = UDim2.new(1, -4 - 10, 0, 0);
+				Position = UDim2.new(0, 10, 0, 10);
 				ZIndex = 1;
 				BackgroundColor3 = Color3.new(0, 0, 0);
 				BackgroundTransparency = 1;
+				BottomImage = "rbxasset://textures/ui/scroll-bottom.png";
+				MidImage = "rbxasset://textures/ui/scroll-middle.png";
+				TopImage = "rbxasset://textures/ui/scroll-top.png";
+				ScrollBarThickness = 7;
 				BorderSizePixel = 0;
 				ScrollingEnabled = false;
 				RobloxLocked = true;
@@ -1055,7 +1123,11 @@ local function CreateChatWindowWidget(settings)
 			if prop == 'AbsoluteSize' then
 				messageContainer.Position = UDim2.new(0, 0, 1, -messageContainer.Size.Y.Offset)
 			elseif prop == 'ScrollBarThickness' then
-				messageContainer.Size = UDim2.new(messageContainer.Size.X.Scale, -scrollingFrame.ScrollBarThickness, messageContainer.Size.Y.Scale, messageContainer.Size.Y.Offset)
+				messageContainer.Size = UDim2.new(
+					messageContainer.Size.X.Scale,
+					scrollingFrame.Size.X.Offset - scrollingFrame.ScrollBarThickness - scrollingFrame.Position.X.Offset,
+					messageContainer.Size.Y.Scale,
+					messageContainer.Size.Y.Offset)
 			end
 		end
 
@@ -1124,6 +1196,7 @@ local function CreateChat()
 
 	this.Settings =
 	{
+		GlobalTextColor = Color3.new(255/255, 255/255, 243/255);
 		WhisperTextColor = Color3.new(77/255, 139/255, 255/255);
 		TeamTextColor = Color3.new(230/255, 207/255, 0);
 		MaxWindowChatMessages = 100;
@@ -1147,7 +1220,11 @@ local function CreateChat()
 	-- Enum.PlayerChatType.{All|Team|Whisper}, chatPlayer, message, targetPlayer
 	function this:OnPlayerChatted(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		if this.ChatWindowWidget then
-			this.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+			if playerChatType == Enum.PlayerChatType.Team and sendingPlayer and sendingPlayer.Neutral == true then
+				this.ChatWindowWidget:AddSystemChatMessage("You are not in any team.")
+			else
+				this.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+			end
 		end
 	end
 
