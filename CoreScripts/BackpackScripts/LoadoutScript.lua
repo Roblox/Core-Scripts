@@ -235,14 +235,16 @@ function insertGear(gear, addToSlot)
 		end
 		for i = start, pos + 1, -1 do
 			gearSlots[i] = gearSlots[i - 1]
-			if i == 10 then
-				gearSlots[i].SlotNumber.Text = "0"
-				gearSlots[i].SlotNumberDownShadow.Text = "0"
-				gearSlots[i].SlotNumberUpShadow.Text = "0"
-			else
-				gearSlots[i].SlotNumber.Text = i
-				gearSlots[i].SlotNumberDownShadow.Text = i
-				gearSlots[i].SlotNumberUpShadow.Text = i
+			if gearSlots[i] then
+				if i == 10 then
+					gearSlots[i].SlotNumber.Text = "0"
+					gearSlots[i].SlotNumberDownShadow.Text = "0"
+					gearSlots[i].SlotNumberUpShadow.Text = "0"
+				else
+					gearSlots[i].SlotNumber.Text = i
+					gearSlots[i].SlotNumberDownShadow.Text = i
+					gearSlots[i].SlotNumberUpShadow.Text = i
+				end
 			end
 		end
 	end
