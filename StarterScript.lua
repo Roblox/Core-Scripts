@@ -7,7 +7,7 @@ local touchEnabled = game:GetService("UserInputService").TouchEnabled
 Game:GetService("CoreGui"):WaitForChild("RobloxGui")
 local screenGui = Game:GetService("CoreGui"):FindFirstChild("RobloxGui")
 
--- SettingsScript 
+-- SettingsScript
 scriptContext:AddCoreScriptLocal("CoreScripts/Settings", screenGui)
 
 if not touchEnabled then
@@ -28,16 +28,21 @@ scriptContext:AddCoreScriptLocal("CoreScripts/PopupScript", screenGui)
 -- Friend Notification Script (probably can use this script to expand out to other notifications)
 scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript", screenGui)
 -- Chat script
-scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript", screenGui)	
+local success, chatFlagValue = pcall(function() return settings():GetFFlag("NewLuaChatScript") end)
+if success and chatFlagValue == true then
+	scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript2", screenGui)
+else
+	scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript", screenGui)
+end
 -- Purchase Prompt Script
 scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript", screenGui)
 -- Health Script
 scriptContext:AddCoreScriptLocal("CoreScripts/HealthScript", screenGui)
 
-if not touchEnabled then 
+if not touchEnabled then
 	-- New Player List
 	scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
-elseif Game:GetService("GuiService"):GetScreenResolution().Y >= 500 then 	
+elseif Game:GetService("GuiService"):GetScreenResolution().Y >= 500 then
 	-- New Player List
 	scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
 end
@@ -48,10 +53,10 @@ scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackBuilder", 
 screenGui:WaitForChild("CurrentLoadout")
 screenGui:WaitForChild("Backpack")
 local Backpack = screenGui.Backpack
-	
+
 -- Manager handles all big backpack state changes, other scripts subscribe to this and do things accordingly
 scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackManager", Backpack)
-	
+
 -- Backpack Gear (handles all backpack gear tab stuff)
 scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackGear", Backpack)
 -- Loadout Script, used for gear hotkeys
@@ -64,4 +69,4 @@ if touchEnabled then -- touch devices don't use same control frame
 	screenGui:WaitForChild("ControlFrame")
 	screenGui.ControlFrame:WaitForChild("BottomLeftControl")
 	screenGui.ControlFrame.BottomLeftControl.Visible = false
-end 
+end
