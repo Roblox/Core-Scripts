@@ -294,6 +294,10 @@ local function CreateChatMessage()
 		FontSize = Enum.FontSize.Size14;
 	}
 
+	function this:OnResize()
+		-- Nothing!
+	end
+
 	function this:FadeIn()
 		local gui = this:GetGui()
 		if gui then
@@ -333,6 +337,14 @@ local function CreateSystemChatMessage(chattedMessage)
 
 	this.chatMessage = chattedMessage
 
+	function this:OnResize(containerSize)
+		if this.Container and this.ChatMessage then
+			local textHeight = this.ChatMessage.TextBounds.Y
+			this.Container.Size = UDim2.new(1,0,0,textHeight)
+			return textHeight
+		end
+	end
+
 	local function CreateMessageGuiElement()
 		local systemMesasgeDisplayText = this.chatMessage or ""
 		local systemMessageSize = Util.GetStringTextBounds(systemMesasgeDisplayText, this.Settings.Font, this.Settings.FontSize, UDim2.new(0, 400, 0, 1000))
@@ -351,7 +363,7 @@ local function CreateSystemChatMessage(chattedMessage)
 			{
 				Name = 'SystemChatMessage';
 				Position = UDim2.new(0, xOffset, 0, 0);
-				Size = UDim2.new(1, 0, 0, systemMessageSize.Y);
+				Size = UDim2.new(1, 0, 1, 0);
 				Text = systemMesasgeDisplayText;
 				ZIndex = 1;
 				BackgroundColor3 = Color3.new(0, 0, 0);
@@ -366,8 +378,9 @@ local function CreateSystemChatMessage(chattedMessage)
 				Parent = container;
 			};
 
-		container.Size = UDim2.new(1, 0, 0, chatMessage.Size.Y.Offset);
+		container.Size = UDim2.new(1, 0, 0, systemMessageSize.Y);
 		this.Container = container
+		this.ChatMessage = chatMessage
 	end
 
 	CreateMessageGuiElement()
@@ -386,6 +399,14 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 
 	this.Neutral = this.SendingPlayer and this.SendingPlayer.Neutral or true
 	this.TeamColor = this.SendingPlayer and this.SendingPlayer.TeamColor or BrickColor.new("White")
+
+	function this:OnResize(containerSize)
+		if this.Container and this.ChatMessage then
+			local textHeight = this.ChatMessage.TextBounds.Y
+			this.Container.Size = UDim2.new(1,0,0,textHeight)
+			return textHeight
+		end
+	end
 
 	function this:FormatMessage()
 		local result = ""
@@ -520,7 +541,7 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				xOffset = xOffset + 14 + 3
 			end
 		if chatTypeDisplayText then
-			local chatModeButton = Util.Create'TextButton'
+			local chatModeButton = Util.Create(Util.IsTouchDevice() and 'TextLabel' or 'TextButton')
 			{
 				Name = 'ChatMode';
 				BackgroundTransparency = 1;
@@ -536,15 +557,17 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				RobloxLocked = true;
 				Parent = container
 			}
-			this.ClickedOnModeConn = chatModeButton.MouseButton1Click:connect(function()
-				SelectChatModeEvent:fire(this.PlayerChatType)
-			end)
+			if chatModeButton:IsA('TextButton') then
+				this.ClickedOnModeConn = chatModeButton.MouseButton1Click:connect(function()
+					SelectChatModeEvent:fire(this.PlayerChatType)
+				end)
+			end
 			if this.PlayerChatType == Enum.PlayerChatType.Team then
 				chatModeButton.TextColor3 = playerColor
 			end
 			xOffset = xOffset + chatTypeSize.X + 1
 		end
-			local userNameButton = Util.Create'TextButton'
+			local userNameButton = Util.Create(Util.IsTouchDevice() and 'TextLabel' or 'TextButton')
 			{
 				Name = 'PlayerName';
 				BackgroundTransparency = 1;
@@ -560,9 +583,11 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				RobloxLocked = true;
 				Parent = container
 			}
-			this.ClickedOnPlayerConn = userNameButton.MouseButton1Click:connect(function()
-				SelectPlayerEvent:fire(this.SendingPlayer)
-			end)
+			if userNameButton:IsA('TextButton') then
+				this.ClickedOnPlayerConn = userNameButton.MouseButton1Click:connect(function()
+					SelectPlayerEvent:fire(this.SendingPlayer)
+				end)
+			end
 			--xOffset = xOffset + playerNameSize.X
 
 			--xOffset = xOffset + 5
@@ -570,7 +595,7 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 			{
 				Name = 'ChatMessage';
 				Position = UDim2.new(0, xOffset, 0, 0);
-				Size = UDim2.new(1, -xOffset, 0, chatMessageSize.Y);
+				Size = UDim2.new(1, -xOffset, 1, 0);
 				Text = chatMessageDisplayText;
 				ZIndex = 1;
 				BackgroundColor3 = Color3.new(0, 0, 0);
@@ -586,8 +611,9 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 			};
 			chatMessage.Size = chatMessage.Size + UDim2.new(0, 0, 0, chatMessage.TextBounds.Y);
 
-		container.Size = UDim2.new(1, 0, 0, math.max(chatMessage.Size.Y.Offset, userNameButton.Size.Y.Offset));
+		container.Size = UDim2.new(1, 0, 0, math.max(chatMessageSize.Y, userNameButton.Size.Y.Offset));
 		this.Container = container
+		this.ChatMessage = chatMessage
 	end
 
 	CreateMessageGuiElement()
@@ -638,8 +664,53 @@ local function CreateChatBarWidget(settings)
 		[Enum.PlayerChatType.All] = 'All';
 	}
 
+	local function TearDownEvents()
+		-- Note: This is a new api so we need to pcall it
+		pcall(function() GuiService:RemoveSpecialKey(Enum.SpecialKey.ChatHotkey) end)
+		this.SpecialKeyPressedConn = Util.DisconnectEvent(this.SpecialKeyPressedConn)
+		this.ClickToChatButtonConn = Util.DisconnectEvent(this.ClickToChatButtonConn)
+		this.ChatBarFocusLostConn = Util.DisconnectEvent(this.ChatBarFocusLostConn)
+		this.ChatBarLostFocusConn = Util.DisconnectEvent(this.ChatBarLostFocusConn)
+		this.SelectChatModeConn = Util.DisconnectEvent(this.SelectChatModeConn)
+		this.SelectPlayerConn = Util.DisconnectEvent(this.SelectPlayerConn)
+	end
+
+	local function HookUpEvents()
+		TearDownEvents() -- Cleanup old events
+
+		-- ChatHotKey is '/'
+		GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
+		this.SpecialKeyPressedConn = GuiService.SpecialKeyPressed:connect(function(key)
+			if key == Enum.SpecialKey.ChatHotkey then
+				this:FocusChatBar()
+			end
+		end)
+
+		if this.ClickToChatButton then this.ClickToChatButtonConn = this.ClickToChatButton.MouseButton1Click:connect(function() this:FocusChatBar() end) end
+
+		if this.ChatBar then this.ChatBarFocusLostConn = this.ChatBar.FocusLost:connect(function(...) this.ChatBarLostFocusEvent:fire(...) end) end
+
+		if this.ChatBarLostFocusEvent then this.ChatBarLostFocusConn = this.ChatBarLostFocusEvent:connect(function(...) this:OnChatBarFocusLost(...) end) end
+
+		this.SelectChatModeConn = SelectChatModeEvent:connect(function(chatType)
+			this:SetMessageMode(chatType)
+			this:FocusChatBar()
+		end)
+
+		this.SelectPlayerConn = SelectPlayerEvent:connect(function(chatPlayer)
+			this.TargetWhisperPlayer = chatPlayer
+			this:SetMessageMode("Whisper")
+			this:FocusChatBar()
+		end)
+	end
+
 	function this:CoreGuiChanged(coreGuiType, enabled)
 		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+			if enabled then
+				HookUpEvents()
+			else
+				TearDownEvents()
+			end
 			if this.ChatBarContainer then
 				this.ChatBarContainer.Visible = enabled
 			end
@@ -912,34 +983,6 @@ local function CreateChatBarWidget(settings)
 		this.ChatBar = chatBar
 		this.ChatModeText = chatModeText
 		this.ChatBarContainer.Parent = GuiRoot
-
-
-		--------- EVENTS ---------
-		-- ChatHotKey is '/'
-		GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
-		GuiService.SpecialKeyPressed:connect(function(key)
-			if key == Enum.SpecialKey.ChatHotkey then
-				this:FocusChatBar()
-			end
-		end)
-
-		this.ClickToChatButton.MouseButton1Click:connect(function() this:FocusChatBar() end)
-		this.ChatBar.FocusLost:connect(function(...) this.ChatBarLostFocusEvent:fire(...) end)
-
-		-- TODO: disconnect these events
-		this.ChatBarLostFocusEvent:connect(function(...) this:OnChatBarFocusLost(...) end)
-
-		SelectChatModeEvent:connect(function(chatType)
-			this:SetMessageMode(chatType)
-			this:FocusChatBar()
-		end)
-		SelectPlayerEvent:connect(function(chatPlayer)
-			this.TargetWhisperPlayer = chatPlayer
-			this:SetMessageMode("Whisper")
-			this:FocusChatBar()
-		end)
-		--------- END OF EVENTS ---------
-
 	end
 
 	CreateChatBar()
@@ -1053,6 +1096,43 @@ local function CreateChatWindowWidget(settings)
 		end
 	end
 
+	function this:OnResize()
+		local isScrolledDown = this:IsScrolledDown()
+
+		local ySize = 0
+
+		if this.ScrollingFrame then
+			for index, message in pairs(this.Chats) do
+				local newHeight = message:OnResize(this.ScrollingFrame.AbsoluteSize)
+				if newHeight then
+					local chatMessageElement = message:GetGui()
+					if chatMessageElement then
+						local chatMessageElementYSize = chatMessageElement.Size.Y.Offset
+						chatMessageElement.Position = UDim2.new(0, 0, 0, ySize)
+						ySize = ySize + chatMessageElementYSize
+					end
+				end
+			end
+		end
+		if this.MessageContainer and this.ScrollingFrame then
+			this.MessageContainer .Size = UDim2.new(
+					1,
+					this.ScrollingFrame.Size.X.Offset - this.ScrollingFrame.ScrollBarThickness - this.ScrollingFrame.Position.X.Offset,
+					0,
+					ySize)
+
+			this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
+			if isScrolledDown then
+				local function UpdateScrollDown()
+					this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - math.max(0, this.ScrollingFrame.AbsoluteSize.Y)))
+				end
+				UpdateScrollDown()
+				-- Have to do it after a delay as well because when you resize not all of the absolutesize have been updated yet
+				delay(0, UpdateScrollDown)
+			end
+		end
+	end
+
 	function this:PushMessageIntoQueue(chatMessage)
 		table.insert(this.Chats, chatMessage)
 
@@ -1135,7 +1215,7 @@ local function CreateChatWindowWidget(settings)
 		{
 			Name = 'ChatWindowContainer';
 			 -- Height is a multiple of chat message height, maybe keep this value at 150 and move that padding into the messageContainer
-			Size = UDim2.new(0, 400, 0, 140);
+			Size = UDim2.new(0.33, 0, 0.25, 0);
 			Position = UDim2.new(0, 20, 0, 50);
 			ZIndex = 1;
 			BackgroundColor3 = Color3.new(0, 0, 0);
@@ -1184,6 +1264,25 @@ local function CreateChatWindowWidget(settings)
 					messageContainer.Size.Y.Offset)
 			end
 		end
+		container.Changed:connect(function(prop) if prop == 'AbsoluteSize' then this:OnResize() end end)
+
+		local function RobloxClientScreenSizeChanged(newSize)
+			if container then
+				-- Phone
+				if newSize.X <= 640 then
+					container.Size = UDim2.new(0.5,0,0.5,0) - container.Position
+				-- Tablet
+				elseif newSize.X <= 1024 then
+					container.Size = UDim2.new(0.4,0,0.3,0) - container.Position
+				-- Desktop
+				else
+					container.Size = UDim2.new(0.33,0,0.25,0) - container.Position
+				end
+			end
+		end
+
+		GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
+		RobloxClientScreenSizeChanged(GuiService:GetScreenResolution())
 
 		messageContainer.Changed:connect(OnChatWindowResize)
 		scrollingFrame.Changed:connect(OnChatWindowResize)
@@ -1458,15 +1557,6 @@ local function CreateChat()
 	end
 
 	function this:Initialize()
-		pcall(function()
-			this:CoreGuiChanged(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
-			this.CoreGuiChangedConn = Util.DisconnectEvent(this.CoreGuiChangedConn)
-			this.CoreGuiChangedConn = StarterGui.CoreGuiChangedSignal:connect(
-				function(coreGuiType,enabled)
-					this:CoreGuiChanged(coreGuiType,enabled)
-				end)
-		end)
-
 		--spawn(function()
 		--	this:GetBlockedPlayersAsync()
 		--end)
@@ -1479,6 +1569,15 @@ local function CreateChat()
 		end)
 
 		this:CreateGUI()
+
+		pcall(function()
+			this:CoreGuiChanged(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
+			this.CoreGuiChangedConn = Util.DisconnectEvent(this.CoreGuiChangedConn)
+			this.CoreGuiChangedConn = StarterGui.CoreGuiChangedSignal:connect(
+				function(coreGuiType,enabled)
+					this:CoreGuiChanged(coreGuiType, enabled)
+				end)
+		end)
 
 		this:PrintWelcome()
 	end
