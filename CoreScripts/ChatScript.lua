@@ -1,24 +1,150 @@
 --[[
-	// FileName: ChatScript.LUA
+	// FileName: ChatScript.lua
 	// Written by: SolarCrane
 	// Description: Code for lua side chat on ROBLOX.
 ]]
 
 --[[ CONSTANTS ]]
-local FORCE_CHAT_GUI = true
-local USE_PLAYER_GUI_TESTING = true
-local ADMIN_LIST =
-{
-	'Rbadam', 'Adamintygum', 'androidtest', 'RobloxFrenchie', 'JacsksSmirkingRevenge', 'LindaPepita', 'vaiobot', 'Goddessnoob', 'effward', 'Blockhaak', 'Drewbda', '659223', 'Tone', 'fasterbuilder19', 'Zeuxcg', 'concol2',
-	'ReeseMcBlox', 'Jeditkacheff', 'whkm1980', 'ChiefJustus', 'Ellissar', 'Arbolito', 'Noob007', 'Limon', 'cmed', 'hawkington', 'Tabemono', 'autoconfig', 'BrightEyes', 'Monsterinc3D', 'MrDoomBringer', 'IsolatedEvent',
-	'CountOnConnor', 'Scubasomething', 'OnlyTwentyCharacters', 'LordRugdumph', 'bellavour', 'david.baszucki', 'ibanez2189', 'Sorcus', 'DeeAna00', 'TheLorekt', 'NiqueMonster', 'Thorasaur', 'MSE6', 'CorgiParade', 'Varia',
-	'4runningwolves', 'pulmoesflor', 'Olive71', 'groundcontroll2', 'GuruKrish', 'Countvelcro', 'IltaLumi', 'juanjuan23', 'OstrichSized', 'jackintheblox', 'SlingshotJunkie', 'gordonrox24', 'sharpnine', 'Motornerve', 'Motornerve',
-	'watchmedogood', 'jmargh', 'JayKorean', 'Foyle', 'MajorTom4321', 'Shedletsky', 'supernovacaine', 'FFJosh', 'Sickenedmonkey', 'Doughtless', 'KBUX', 'totallynothere', 'ErzaStar', 'Keith', 'Chro', 'SolarCrane', 'GloriousSalt',
-	'UristMcSparks', 'ITOlaurEN', 'Malcomso', 'Stickmasterluke', 'windlight13', 'yumyumcheerios', 'Stravant', 'ByteMe', 'imaginationsensation', 'Matt.Dusek', 'Mcrtest', 'Seranok', 'maxvee', 'Coatp0cketninja', 'Screenme',
-	'b1tsh1ft', 'Totbl', 'Aquabot8', 'grossinger', 'Merely', 'CDakkar', 'Siekiera', 'Robloxkidsaccount', 'flotsamthespork', 'Soggoth', 'Phil', 'OrcaSparkles', 'skullgoblin', 'RickROSStheB0SS', 'ArgonPirate', 'NobleDragon',
-	'Squidcod', 'Raeglyn', 'RobloxSai', 'Briarroze', 'hawkeyebandit', 'DapperBuffalo', 'Vukota', 'swiftstone', 'Gemlocker', 'Loopylens', 'Tarabyte', 'Timobius', 'Tobotrobot', 'Foster008', 'Twberg', 'DarthVaden', 'Khanovich',
-	'CodeWriter', 'VladTheFirst', 'Phaedre', 'gorroth', 'SphinxShen', 'jynj1984', 'RoboYZ', 'ZodiacZak', 'superman205', 'ConvexRumbler', 'mpliner476', 'geekndestroy', 'glewis17', 'BuckerooB',
+local FORCE_CHAT_GUI = false
+local USE_PLAYER_GUI_TESTING = false
+
+local ADMIN_LIST = {
+    ['68465808'] = true, -- IMightBeLying
+    ['32345429'] = true, -- Rbadam
+    ['48453004'] = true, -- Adamintygum
+    ['57705391'] = true, -- androidtest
+    ['58491921'] = true, -- RobloxFrenchie
+    ['29341155'] = true, -- JacksSmirkingRevenge
+    ['60629145'] = true, -- Mandaari
+    ['6729993'] = true, -- vaiobot
+    ['9804369'] = true, -- Goddessnoob
+    ['67906358'] = true, -- Thr33pakShak3r
+    ['41101356'] = true, -- effward
+    ['29667843'] = true, -- Blockhaak
+    ['26076267'] = true, -- Drewbda
+    ['65171466'] = true, -- triptych999
+    ['264635'] = true, -- Tone
+    ['59257875'] = true, -- fasterbuilder19
+    ['30068452'] = true, -- Zeuxcg
+    ['53627251'] = true, -- concol2
+    ['56449'] = true, -- ReeseMcBlox
+    ['7210880'] = true, -- Jeditkacheff
+    ['35187797'] = true, -- ChiefJustus
+    ['21964644'] = true, -- Ellissar
+    ['63971416'] = true, -- geekndestroy
+    ['111627'] = true, -- Noob007
+    ['482238'] = true, -- Limon
+    ['39861325'] = true, -- hawkington
+    ['32580099'] = true, -- Tabemono
+    ['504316'] = true, -- BrightEyes
+    ['35825637'] = true, -- Monsterinc3D
+    ['55311255'] = true, -- IsolatedEvent
+    ['48988254'] = true, -- CountOnConnor
+    ['357346'] = true, -- Scubasomething
+    ['28969907'] = true, -- OnlyTwentyCharacters
+    ['17707636'] = true, -- LordRugdumph
+    ['26714811'] = true, -- bellavour
+    ['24941'] = true, -- david.baszucki
+    ['13057592'] = true, -- ibanez2189
+    ['66766775'] = true, -- ConvexHero
+    ['13268404'] = true, -- Sorcus
+    ['26065068'] = true, -- DeeAna00
+    ['4108667'] = true, -- TheLorekt
+    ['605367'] = true, -- MSE6
+    ['28350010'] = true, -- CorgiParade
+    ['1636196'] = true, -- Varia
+    ['27861308'] = true, -- 4runningwolves
+    ['26699190'] = true, -- pulmoesflor
+    ['9733258'] = true, -- Olive71
+    ['2284059'] = true, -- groundcontroll2
+    ['28080592'] = true, -- GuruKrish
+    ['28137935'] = true, -- Countvelcro
+    ['25964666'] = true, -- IltaLumi
+    ['31221099'] = true, -- juanjuan23
+    ['13965343'] = true, -- OstrichSized
+    ['541489'] = true, -- jackintheblox
+    ['38324232'] = true, -- SlingshotJunkie
+    ['146569'] = true, -- gordonrox24
+    ['61666252'] = true, -- sharpnine
+    ['25540124'] = true, -- Motornerve
+    ['29044576'] = true, -- watchmedogood
+    ['49626068'] = true, -- jmargh
+    ['57352126'] = true, -- JayKorean
+    ['25682044'] = true, -- Foyle
+    ['1113299'] = true, -- MajorTom4321
+    ['30598693'] = true, -- supernovacaine
+    ['1311'] = true, -- FFJosh
+    ['23603273'] = true, -- Sickenedmonkey
+    ['28568151'] = true, -- Doughtless
+    ['8298697'] = true, -- KBUX
+    ['39871898'] = true, -- totallynothere
+    ['57708043'] = true, -- ErzaStar
+    ['22'] = true, -- Keith
+    ['2430782'] = true, -- Chro
+    ['29373363'] = true, -- SolarCrane
+    ['29116915'] = true, -- GloriousSalt
+    ['6783205'] = true, -- UristMcSparks
+    ['62155769'] = true, -- ITOlaurEN
+    ['24162607'] = true, -- Malcomso
+    ['66692187'] = true, -- HeySeptember
+    ['80254'] = true, -- Stickmasterluke
+    ['66093461'] = true, -- chefdeletat
+    ['62968051'] = true, -- windlight13
+    ['80119'] = true, -- Stravant
+    ['61890000'] = true, -- imaginationsensation
+    ['916'] = true, -- Matt Dusek
+    ['4550725'] = true, -- CrimmsonGhost
+    ['59737068'] = true, -- Mcrtest
+    ['5600283'] = true, -- Seranok
+    ['48656806'] = true, -- maxvee
+    ['48656806'] = true, -- Coatp0cketninja
+    ['35231885'] = true, -- Screenme
+    ['55958416'] = true, -- b1tsh1ft
+    ['51763936'] = true, -- ConvexRumbler
+    ['59638684'] = true, -- mpliner476
+    ['44231609'] = true, -- Totbl
+    ['16906083'] = true, -- Aquabot8
+    ['23984372'] = true, -- grossinger
+    ['13416513'] = true, -- Merely
+    ['27416429'] = true, -- CDakkar
+    ['46526337'] = true, -- logitek00
+    ['21969613'] = true, -- Siekiera
+    ['39488230'] = true, -- Robloxkidsaccount
+    ['60425210'] = true, -- flotsamthespork
+    ['16732061'] = true, -- Soggoth
+    ['33904052'] = true, -- Phil
+    ['39882028'] = true, -- OrcaSparkles
+    ['62060462'] = true, -- skullgoblin
+    ['29044708'] = true, -- RickROSStheB0SS
+    ['15782010'] = true, -- ArgonPirate
+    ['6949935'] = true, -- NobleDragon
+    ['41256555'] = true, -- Squidcod
+    ['16150324'] = true, -- Raeglyn
+    ['24419770'] = true, -- Xerolayne
+    ['20396599'] = true, -- Robloxsai
+    ['55579189'] = true, -- Briarroze
+    ['21641566'] = true, -- hawkeyebandit
+    ['39871292'] = true, -- DapperBuffalo
+    ['48725400'] = true, -- Vukota
+    ['60880618'] = true, -- swiftstone
+    ['8736269'] = true, -- Gemlocker
+    ['17199995'] = true, -- Tarabyte
+    ['6983145'] = true, -- Timobius
+    ['20048521'] = true, -- Tobotrobot
+    ['1644345'] = true, -- Foster008
+    ['33067469'] = true, -- Twberg
+    ['57741156'] = true, -- DarthVaden
+    ['51164101'] = true, -- Khanovich
+    ['61380399'] = true, -- oLEFTo
+    ['39876101'] = true, -- CodeWriter
+    ['23598967'] = true, -- VladTheFirst
+    ['39299049'] = true, -- Phaedre
+    ['39855185'] = true, -- gorroth
+    ['61004766'] = true, -- jynj1984
+    ['10261020'] = true, -- RoboYZ
+    ['44564747'] = true, -- ZodiacZak
 }
+
 local CHAT_COLORS =
 {
 	BrickColor.new("Bright red"),
@@ -339,6 +465,7 @@ local function CreateSystemChatMessage(chattedMessage)
 
 	function this:OnResize(containerSize)
 		if this.Container and this.ChatMessage then
+			this.Container.Size = UDim2.new(1,0,0,1000)
 			local textHeight = this.ChatMessage.TextBounds.Y
 			this.Container.Size = UDim2.new(1,0,0,textHeight)
 			return textHeight
@@ -402,6 +529,7 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 
 	function this:OnResize(containerSize)
 		if this.Container and this.ChatMessage then
+			this.Container.Size = UDim2.new(1,0,0,1000)
 			local textHeight = this.ChatMessage.TextBounds.Y
 			this.Container.Size = UDim2.new(1,0,0,textHeight)
 			return textHeight
@@ -472,6 +600,8 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 	local function CreateMessageGuiElement()
 		local toMesasgeDisplayText = "To: "
 		local toMessageSize = Util.GetStringTextBounds(toMesasgeDisplayText, this.Settings.Font, this.Settings.FontSize)
+		local fromMesasgeDisplayText = "From: "
+		local fromMessageSize = Util.GetStringTextBounds(fromMesasgeDisplayText, this.Settings.Font, this.Settings.FontSize)
 		local chatTypeDisplayText = this:FormatChatType()
 		local chatTypeSize = chatTypeDisplayText and Util.GetStringTextBounds(chatTypeDisplayText, this.Settings.Font, this.Settings.FontSize) or Vector2.new(0,0)
 		local playerNameDisplayText = this:FormatPlayerNameText()
@@ -504,9 +634,8 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 		};
 			local xOffset = 0
 
-			local whisperToText = nil
 			if this.SendingPlayer and this.SendingPlayer == Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
-				whisperToText = Util.Create'TextLabel'
+				local whisperToText = Util.Create'TextLabel'
 				{
 					Name = 'WhisperTo';
 					Position = UDim2.new(0, 0, 0, 0);
@@ -525,6 +654,26 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 					Parent = container;
 				};
 				xOffset = xOffset + toMessageSize.X
+			elseif this.SendingPlayer and this.SendingPlayer ~= Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
+				local whisperFromText = Util.Create'TextLabel'
+				{
+					Name = 'whisperFromText';
+					Position = UDim2.new(0, 0, 0, 0);
+					Size = UDim2.new(0, fromMessageSize.X, 0, fromMessageSize.Y);
+					Text = fromMesasgeDisplayText;
+					ZIndex = 1;
+					BackgroundColor3 = Color3.new(0, 0, 0);
+					BackgroundTransparency = 1;
+					TextXAlignment = Enum.TextXAlignment.Left;
+					TextYAlignment = Enum.TextYAlignment.Top;
+					TextWrapped = true;
+					TextColor3 = Color3.new(1, 1, 1);
+					FontSize = this.Settings.FontSize;
+					Font = this.Settings.Font;
+					RobloxLocked = true;
+					Parent = container;
+				};
+				xOffset = xOffset + fromMessageSize.X
 			else
 				local userNameDot = Util.Create'ImageLabel'
 				{
@@ -609,6 +758,9 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				RobloxLocked = true;
 				Parent = container;
 			};
+			if this.SendingPlayer and ADMIN_LIST[tostring(this.SendingPlayer.userId)] then
+				chatMessage.TextColor3 = Color3.new(1, 215/255, 0)
+			end
 			chatMessage.Size = chatMessage.Size + UDim2.new(0, 0, 0, chatMessage.TextBounds.Y);
 
 		container.Size = UDim2.new(1, 0, 0, math.max(chatMessageSize.Y, userNameButton.Size.Y.Offset));
@@ -632,6 +784,7 @@ local function CreateChatBarWidget(settings)
 	this.ChatBarGainedFocusEvent = Util.Signal()
 	this.ChatBarLostFocusEvent = Util.Signal()
 	this.ChatCommandEvent = Util.Signal() -- success, actionType, captures
+	this.ChatErrorEvent = Util.Signal() -- success, actionType, captures
 
 	this.ChatMatchingRegex =
 	{
@@ -890,12 +1043,20 @@ local function CreateChatBarWidget(settings)
 						local currentMessageMode = this:GetMessageMode()
 						-- {All, Team, Whisper}
 						if currentMessageMode == 'Team' then
-							pcall(function() PlayersService:TeamChat(cText) end)
+							if Player and Player.Neutral == true then
+								this.ChatErrorEvent:fire("You are not in any team.")
+							else
+								pcall(function() PlayersService:TeamChat(cText) end)
+							end
 						elseif currentMessageMode == 'Whisper' then
 							if this.TargetWhisperPlayer then
-								pcall(function() PlayersService:WhisperChat(cText, this.TargetWhisperPlayer) end)
+								if this.TargetWhisperPlayer == Player then
+									this.ChatErrorEvent:fire("You cannot send a whisper to yourself.")
+								else
+									pcall(function() PlayersService:WhisperChat(cText, this.TargetWhisperPlayer) end)
+								end
 							else
-								print("Somehow we are trying to whisper to a player not in the game anymore:" , this.TargetWhisperPlayer)
+								this.ChatErrorEvent:fire("Invalid whisper target.")
 							end
 						elseif currentMessageMode == 'All' then
 							pcall(function() PlayersService:Chat(cText) end)
@@ -1138,12 +1299,14 @@ local function CreateChatWindowWidget(settings)
 
 		local isScrolledDown = this:IsScrolledDown()
 
-		local ySize = this.MessageContainer.Size.Y.Offset
 		local chatMessageElement = chatMessage:GetGui()
+
+		chatMessageElement.Parent = this.MessageContainer
+		chatMessage:OnResize()
+		local ySize = this.MessageContainer.Size.Y.Offset
 		local chatMessageElementYSize = UDim2.new(0, 0, 0, chatMessageElement.Size.Y.Offset)
 
 		chatMessageElement.Position = chatMessageElement.Position + UDim2.new(0, 0, 0, ySize)
-		chatMessageElement.Parent = this.MessageContainer
 		this.MessageContainer.Size = this.MessageContainer.Size + chatMessageElementYSize
 		this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize + chatMessageElementYSize
 
@@ -1165,7 +1328,6 @@ local function CreateChatWindowWidget(settings)
 
 	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		local chatMessage = CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-		--print("New Message:" , playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		this:PushMessageIntoQueue(chatMessage)
 	end
 
@@ -1443,11 +1605,7 @@ local function CreateChat()
 	-- Enum.PlayerChatType.{All|Team|Whisper}, chatPlayer, message, targetPlayer
 	function this:OnPlayerChatted(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		if this.ChatWindowWidget then
-			if playerChatType == Enum.PlayerChatType.Team and sendingPlayer and sendingPlayer.Neutral == true then
-				this.ChatWindowWidget:AddSystemChatMessage("You are not in any team.")
-			else
-				this.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-			end
+			this.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		end
 	end
 
@@ -1499,7 +1657,7 @@ local function CreateChat()
 	function this:CreateGUI()
 		local success, useLuaChat = pcall(function() return GuiService.UseLuaChat end)
 		if (success and useLuaChat) or FORCE_CHAT_GUI then
-			-- TODO: eventually we will make multiple chat window frames
+			-- NOTE: eventually we will make multiple chat window frames
 			-- Settings is a table, which makes it a pointing and is kosher to pass by reference
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
 			this.ChatBarWidget = CreateChatBarWidget(this.Settings)
@@ -1522,13 +1680,19 @@ local function CreateChat()
 				end
 			end)
 
+			this.ChatBarWidget.ChatErrorEvent:connect(function(msg)
+				if msg then
+					this.ChatWindowWidget:AddSystemChatMessage(msg)
+				end
+			end)
+
 			this.ChatBarWidget.ChatCommandEvent:connect(function(success, actionType, capture)
 				if actionType == "Help" then
 					this:PrintHelp()
 				elseif actionType == "Whisper" then
 					if success == false then
 						local playerName = capture and tostring(capture) or "Unknown"
-						this.ChatWindowWidget:AddSystemChatMessage("Unable to Whisper Player: " .. playerName)
+						this.ChatWindowWidget:AddSystemChatMessage("Unable to Send a Whisper to Player: " .. playerName)
 					end
 				elseif actionType == "Unknown" then
 					if success == false then
