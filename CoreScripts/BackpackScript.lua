@@ -1,9 +1,6 @@
 print("Running NEW Backpack!")
 
--- Variables --
-
-local UserInputService = game:GetService('UserInputService') --TODO: Doesn't load in time
-local GuiService = game:GetService('GuiService')
+-- Configurables --
 
 local ICON_SIZE = 50
 local ICON_BUFFER = 5
@@ -12,12 +9,22 @@ local SLOT_TRANSPARENCY = 0.75
 local SLOT_COLOR_NORMAL = Color3.new(0, 0, 0)
 local SLOT_COLOR_EQUIP = Color3.new(0.35, 0.55, 0.91)
 
+local ARROW_IMAGE_OPEN = 'rbxasset://textures/ui/Backpack_Open.png'
+local ARROW_IMAGE_CLOSE = 'rbxasset://textures/ui/Backpack_Close.png'
+local ARROW_SIZE = UDim2.new(0, 14, 0, 9)
+local ARROW_HOTKEY = Enum.KeyCode.Backquote.Value
+
 local HOTBAR_SLOTS = 10 --TODO: Change this on different screen sizes
 local HOTBAR_OFFSET_FROMBOTTOM = 30
 
-local KEY_VALUE_ZERO = Enum.KeyCode.Zero.Value
+-- Variables --
 
 local PlayersService = game:GetService('Players')
+local UserInputService = game:GetService('UserInputService')
+local GuiService = game:GetService('GuiService')
+
+local KEY_VALUE_ZERO = Enum.KeyCode.Zero.Value
+
 local Player = PlayersService.LocalPlayer
 
 local CoreGui = script.Parent
@@ -29,7 +36,7 @@ local Backpack = nil
 local Slots = {} -- List of all Slots by index, static
 local LowestEmptySlot = 1
 local SlotsByTool = {} -- Map of Tools to their assigned Slots, dynamic
-local SlotsByKeyValue = {} -- Map of KeyCodes to their assigned Slots, static
+local HotkeyFns = {} -- Map of KeyCode values to their assigned behaviors, static
 
 -- Functions --
 
@@ -144,9 +151,9 @@ end
 
 local function OnInputBegan(input, isProcessed)
 	if input.UserInputType == Enum.UserInputType.Keyboard then
-		local slot = SlotsByKeyValue[input.KeyCode.Value]
-		if slot then
-			slot:Select()
+		local hotkeyBehavior = HotkeyFns[input.KeyCode.Value]
+		if hotkeyBehavior then
+			hotkeyBehavior()
 		end
 	end
 end
@@ -166,41 +173,24 @@ for i = 1, HOTBAR_SLOTS do
 	slot.Tool = nil
 	
 	local slotFrame = NewGui('Frame', i)
-	slotFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
-	slotFrame.Position = UDim2.new(0, ICON_BUFFER + ((i - 1) * (ICON_BUFFER + ICON_SIZE)), 0, ICON_BUFFER)
+	slotFrame.Visible = false
 	slotFrame.BackgroundTransparency = SLOT_TRANSPARENCY
 	slotFrame.BackgroundColor3 = SLOT_COLOR_NORMAL
-	slotFrame.Visible = false
+	slotFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
+	slotFrame.Position = UDim2.new(0, ICON_BUFFER + ((i - 1) * (ICON_BUFFER + ICON_SIZE)), 0, ICON_BUFFER)
 	
 	local toolIcon = NewGui('ImageLabel', 'Icon')
-	toolIcon.Position = UDim2.new(0.1, 0, 0.1, 0)
 	toolIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
+	toolIcon.Position = UDim2.new(0.1, 0, 0.1, 0)
 	toolIcon.Parent = slotFrame
 	
 	local toolName = NewGui('TextLabel', 'ToolName')
-	toolName.Position = UDim2.new(0, 0, 0.8, 0)
-	toolName.Size = UDim2.new(1, 0, 0.2, 0)
-	toolName.FontSize = Enum.FontSize.Size12
-	toolName.TextYAlignment = Enum.TextYAlignment.Bottom
+	toolName.FontSize = Enum.FontSize.Size14
 	toolName.Parent = slotFrame
-	
-	-- Save and show hotkeys on Desktop
-	if true then --UserInputService.KeyboardEnabled then --TODO TODO TODO
-		-- Show label and assign slot to keys 1-9 and 0 (zero is always last slot when > 10)
-		if i < 10 or i == HOTBAR_SLOTS then -- NOTE: Hardcoded on purpose!
-			local slotNum = (i < 10) and i or 0
-			local number = NewGui('TextLabel', 'Number')
-			number.Text = slotNum
-			number.FontSize = Enum.FontSize.Size14
-			number.Size = UDim2.new(0.15, 0, 0.15, 0)
-			number.Parent = slotFrame
-			SlotsByKeyValue[KEY_VALUE_ZERO + slotNum] = slot
-		end
-	end
 	
 	--TODO: Tool tip thingy
 	
-	function slot:Select()
+	local function selectSlot()
 		local tool = slot.Tool
 		if tool then
 			if tool.Parent == Character then
@@ -213,14 +203,26 @@ for i = 1, HOTBAR_SLOTS do
 		end
 	end
 	local clickArea = NewGui('TextButton', 'GimmieYerClicks')
-	clickArea.MouseButton1Click:connect(slot.Select) --NOTE: Only OK because no params
+	clickArea.MouseButton1Click:connect(selectSlot)
 	clickArea.Parent = slotFrame
+	
+	-- Show label and assign slot for keys 1-9 and 0 (zero is always last slot when > 10)
+	if i < 10 or i == HOTBAR_SLOTS then -- NOTE: Hardcoded on purpose!
+		local slotNum = (i < 10) and i or 0
+		local number = NewGui('TextLabel', 'Number')
+		number.Text = slotNum
+		number.FontSize = Enum.FontSize.Size14
+		number.Size = UDim2.new(0.15, 0, 0.15, 0)
+		number.Parent = slotFrame
+		HotkeyFns[KEY_VALUE_ZERO + slotNum] = selectSlot
+	end
 	
 	function slot:Show(tool)
 		print("   Setting gui data into slot", LowestEmptySlot, "for this tool:", tool)
 		slot.Tool = tool
-		toolIcon.Image = tool.TextureId
-		toolName.Text = tool.Name
+		local icon = tool.TextureId
+		toolIcon.Image = icon
+		toolName.Text = (icon == '') and tool.Name or ''
 		
 		SlotsByTool[tool] = slot
 		slotFrame.Visible = true
@@ -252,6 +254,42 @@ for i = 1, HOTBAR_SLOTS do
 	Slots[i] = slot
 end
 
+local inventoryFrame = NewGui('Frame', 'Inventory')
+inventoryFrame.Visible = false
+inventoryFrame.BackgroundTransparency = SLOT_TRANSPARENCY
+inventoryFrame.Size = UDim2.new(0, hotbarFrame.Size.X.Offset, 0, hotbarFrame.Size.Y.Offset * 5)
+inventoryFrame.Position = UDim2.new(0.5, -inventoryFrame.Size.X.Offset / 2, 1, hotbarFrame.Position.Y.Offset - inventoryFrame.Size.Y.Offset)
+inventoryFrame.Parent = mainFrame
+
+do -- Inventory expand/collapse arrow
+	local arrowFrame = NewGui('Frame', 'Arrow')
+	arrowFrame.BackgroundTransparency = SLOT_TRANSPARENCY
+	arrowFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE / 2)
+	arrowFrame.Position = UDim2.new(0.5, -arrowFrame.Size.X.Offset / 2, 1, hotbarFrame.Position.Y.Offset - arrowFrame.Size.Y.Offset)
+	
+	local arrowIcon = NewGui('ImageLabel', 'Icon')
+	arrowIcon.Image = ARROW_IMAGE_OPEN
+	arrowIcon.Size = ARROW_SIZE
+	arrowIcon.Position = UDim2.new(0.5, -arrowIcon.Size.X.Offset / 2, 0.5, -arrowIcon.Size.Y.Offset / 2)
+	arrowIcon.Parent = arrowFrame
+	
+	local closedPosition = arrowFrame.Position
+	local openedPosition = closedPosition + UDim2.new(0, 0, 0, -inventoryFrame.Size.Y.Offset)
+	
+	local function openClose()
+		inventoryFrame.Visible = not inventoryFrame.Visible
+		arrowFrame.Position = (inventoryFrame.Visible) and openedPosition or closedPosition
+		arrowIcon.Image = (inventoryFrame.Visible) and ARROW_IMAGE_CLOSE or ARROW_IMAGE_OPEN
+	end
+	local clickArea = NewGui('TextButton', 'GimmieYerClicks')
+	clickArea.MouseButton1Click:connect(openClose)
+	clickArea.Parent = arrowFrame
+	HotkeyFns[ARROW_HOTKEY] = openClose
+	
+	arrowFrame.Parent = mainFrame
+end
+
+
 -- Connect events
 
 while not Player do --TODO: Only necessary in RunSolo? -- Still a valid case though.
@@ -264,7 +302,9 @@ if Player.Character then
 	OnCharacterAdded(Player.Character)
 end
 
-UserInputService.InputBegan:connect(OnInputBegan)
+if UserInputService.KeyboardEnabled then
+	UserInputService.InputBegan:connect(OnInputBegan)
+end
 
 
 
