@@ -5,8 +5,8 @@
 ]]
 
 --[[ CONSTANTS ]]
-local FORCE_CHAT_GUI = false
-local USE_PLAYER_GUI_TESTING = false
+local FORCE_CHAT_GUI = true
+local USE_PLAYER_GUI_TESTING = true
 
 local ADMIN_LIST = {
     ['68465808'] = true, -- IMightBeLying
@@ -444,10 +444,6 @@ local function CreateChatMessage()
 		return this.Container
 	end
 
-	function this:IsVisible()
-		return true
-	end
-
 	function this:Destroy()
 		if this.Container ~= nil then
 			this.Container:Destroy()
@@ -501,6 +497,8 @@ local function CreateSystemChatMessage(chattedMessage)
 				TextColor3 = Color3.new(1, 1, 1);
 				FontSize = this.Settings.FontSize;
 				Font = this.Settings.Font;
+				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
+				TextStrokeTransparency = 0.3;
 				RobloxLocked = true;
 				Parent = container;
 			};
@@ -576,16 +574,14 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 	end
 
 	function this:FormatPlayerNameText()
-		return "[" .. (this.SendingPlayer and this.SendingPlayer.Name or "") .. "]"
-	end
-
-	function this:IsVisible()
-		if this.PlayerChatType == Enum.PlayerChatType.All or
-				this.PlayerChatType == Enum.PlayerChatType.Team or
-				(this.PlayerChatType == Enum.PlayerChatType.Whisper and this.ReceivingPlayer == Player) then
-			return true
+		local playerName = ""
+		-- If we are sending a whisper to someone, then we should show their name
+		if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer and this.SendingPlayer == Player then
+			playerName = (this.ReceivingPlayer and this.ReceivingPlayer.Name or "")
+		else
+			playerName = (this.SendingPlayer and this.SendingPlayer.Name or "")
 		end
-		return false
+		return "[" ..  playerName .. "]"
 	end
 
 	function this:Destroy()
@@ -613,13 +609,20 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 		local chatMessageSize = Util.GetStringTextBounds(chatMessageDisplayText, this.Settings.Font, this.Settings.FontSize, UDim2.new(0, 400 - 5 - playerNameSize.X, 0, 1000))
 
 
-
 		local playerColor = Color3.new(1,1,1)
 		if this.SendingPlayer then
-			if this.SendingPlayer.Neutral then
-				playerColor = Util.ComputeChatColor(this.SendingPlayer.Name)
+			if this.PlayerChatType == Enum.PlayerChatType.Whisper then
+				if this.SendingPlayer == Player and this.ReceivingPlayer then
+					playerColor = Util.ComputeChatColor(this.ReceivingPlayer.Name)
+				else
+					playerColor = Util.ComputeChatColor(this.SendingPlayer.Name)
+				end
 			else
-				playerColor = this.SendingPlayer.TeamColor.Color
+				if this.SendingPlayer.Neutral then
+					playerColor = Util.ComputeChatColor(this.SendingPlayer.Name)
+				else
+					playerColor = this.SendingPlayer.TeamColor.Color
+				end
 			end
 		end
 
@@ -650,6 +653,8 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 					TextColor3 = Color3.new(1, 1, 1);
 					FontSize = this.Settings.FontSize;
 					Font = this.Settings.Font;
+					TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
+					TextStrokeTransparency = 0.3;
 					RobloxLocked = true;
 					Parent = container;
 				};
@@ -670,6 +675,8 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 					TextColor3 = Color3.new(1, 1, 1);
 					FontSize = this.Settings.FontSize;
 					Font = this.Settings.Font;
+					TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
+					TextStrokeTransparency = 0.3;
 					RobloxLocked = true;
 					Parent = container;
 				};
@@ -703,6 +710,8 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				FontSize = this.Settings.FontSize;
 				Font = this.Settings.Font;
 				Size = UDim2.new(0, chatTypeSize.X, 0, chatTypeSize.Y);
+				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
+				TextStrokeTransparency = 0.3;
 				RobloxLocked = true;
 				Parent = container
 			}
@@ -729,6 +738,8 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				FontSize = this.Settings.FontSize;
 				Font = this.Settings.Font;
 				Size = UDim2.new(0, playerNameSize.X, 0, playerNameSize.Y);
+				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
+				TextStrokeTransparency = 0.3;
 				RobloxLocked = true;
 				Parent = container
 			}
@@ -737,9 +748,7 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 					SelectPlayerEvent:fire(this.SendingPlayer)
 				end)
 			end
-			--xOffset = xOffset + playerNameSize.X
 
-			--xOffset = xOffset + 5
 			local chatMessage = Util.Create'TextLabel'
 			{
 				Name = 'ChatMessage';
@@ -755,9 +764,15 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				TextColor3 = Color3.new(255/255, 255/255, 243/255);
 				FontSize = this.Settings.FontSize;
 				Font = this.Settings.Font;
+				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
+				TextStrokeTransparency = 0.3;
 				RobloxLocked = true;
 				Parent = container;
 			};
+			-- Check if they got moderated and put up a real message instead of Label
+			if chatMessage.Text == 'Label' and chatMessageDisplayText ~= 'Label' then
+				chatMessage.Text = string.rep(" ", numNeededSpaces) .. '[Content Deleted]'
+			end
 			if this.SendingPlayer and ADMIN_LIST[tostring(this.SendingPlayer.userId)] then
 				chatMessage.TextColor3 = Color3.new(1, 215/255, 0)
 			end
