@@ -1,6 +1,8 @@
 -- This script creates almost all gui elements found in the backpack (warning: there are a lot!)
 -- TODO: automate this process
 
+local ICON_SIZE = 46
+
 local gui = script.Parent
 
 -- A couple of necessary functions
@@ -34,7 +36,7 @@ local player = game.Players.LocalPlayer
 local CurrentLoadout = Instance.new("Frame")
 CurrentLoadout.Name = "CurrentLoadout"
 CurrentLoadout.Position = UDim2.new(0.5, -300, 1, -85)
-CurrentLoadout.Size = UDim2.new(0, 600, 0, 54)
+CurrentLoadout.Size = UDim2.new(0, 600, 0, ICON_SIZE)
 CurrentLoadout.BackgroundTransparency = 1
 CurrentLoadout.RobloxLocked = true
 CurrentLoadout.Parent = gui
@@ -69,7 +71,7 @@ local NumSlots = 9
 
 if IsPhone() then
 	NumSlots = 3
-	CurrentLoadout.Size = UDim2.new(0,180,0,54)
+	CurrentLoadout.Size = UDim2.new(0,180,0,ICON_SIZE)
 	CurrentLoadout.Position = UDim2.new(0.5,-90,1,-85)
 end
 
@@ -89,7 +91,7 @@ for i = 0, NumSlots do
 	end	
 
 
-	slotFrame.Size = UDim2.new(0, 54, 1, 0)
+	slotFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
 	slotFrame.Parent = CurrentLoadout	
 
 	if gui.AbsoluteSize.Y <= 320 then 
@@ -204,8 +206,8 @@ TempSlot.ZIndex = 3.0
 	GearText.BackgroundTransparency = 1
 	GearText.Font = Enum.Font.Arial
 	GearText.FontSize = Enum.FontSize.Size14
-	GearText.Position = UDim2.new(0,-8,0,-8)	
-	GearText.Size = UDim2.new(1,16,1,16)
+	GearText.Position = UDim2.new(0,0,0,0)
+	GearText.Size = UDim2.new(1,0,1,0)
 	GearText.Text = ""
 	GearText.TextColor3 = Color3.new(1,1,1)
 	GearText.TextWrap = true
@@ -397,7 +399,7 @@ Backpack.Active = true
 			GearButton.RobloxLocked = true
 			GearButton.Visible = false
 			GearButton.Name = "GearButton"
-			GearButton.Size = UDim2.new(0, 54, 0, 54)
+			GearButton.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
 			GearButton.Style = 'Custom'
 			GearButton.Parent = GearGrid
 			GearButton.BackgroundTransparency = 1.0

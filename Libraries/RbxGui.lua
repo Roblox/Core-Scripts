@@ -992,6 +992,15 @@ t.CreateSliderNew = function(steps,width,position)
 		setSliderPos(x,slider,sliderPosition,bar,steps)
 	end)
 
+	fill.MouseButton1Down:connect(function(x,y)
+		setSliderPos(x,slider,sliderPosition,bar,steps)
+	end)
+
+	fillLeft.MouseButton1Down:connect(function(x,y)
+		setSliderPos(x,slider,sliderPosition,bar,steps)
+	end)
+
+
 	return sliderGui, sliderPosition, sliderSteps
 
 end

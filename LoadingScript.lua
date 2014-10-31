@@ -3,7 +3,6 @@
 --
 
 -- Constants
-
 local PLACEID = Game.PlaceId
 
 local MPS = Game:GetService 'MarketplaceService'
@@ -22,6 +21,9 @@ local COLORS = {
 local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
 local currScreenGui = nil
 local renderSteppedConnection = nil
+local fadingBackground = false
+local destroyedLoadingGui = false
+local hasReplicatedFirstElements = false
 
 --
 -- Utility functions
@@ -95,7 +97,6 @@ function MainGui:GenerateMain()
 		Name = 'RobloxLoadingGui'
 	}
 
-
 	--
 	-- create descendant frames
 	local mainBackgroundContainer = create 'Frame' {
@@ -103,75 +104,6 @@ function MainGui:GenerateMain()
 		BackgroundColor3 = COLORS.BLACK,
 		Size = UDim2.new(1, 0, 1, 0),
 		Active = true,
-
-		create 'ImageButton' {
-			Name = 'CloseButton',
-			Image = 'rbxasset://textures/ui/CloseButton.png',
-			BackgroundTransparency = 1,
-			Position = UDim2.new(1, -27, 0, 5),
-			Size = UDim2.new(0, 22, 0, 22),
-			Active = true,
-			ZIndex = 10
-		},
-
-		create 'Frame' {
-			Name = 'ErrorFrame',
-			BackgroundColor3 = COLORS.ERROR,
-			BorderSizePixel = 0,
-			Position = UDim2.new(0.25,0,0,0),
-			Size = UDim2.new(0.5, 0, 0, 80),
-			ZIndex = 8,
-			Visible = false,
-
-			create 'TextLabel' {
-				Name = "ErrorText",
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 1, 0),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size14,
-				TextWrapped = true,
-				TextColor3 = COLORS.WHITE,
-				Text = "",
-				ZIndex = 8
-			}
-		},
-
-		create 'Frame' {
-			Name = 'PlaceFrame',
-			BackgroundTransparency = 1,
-			Position = UDim2.new(0.35, 0, 1, -100),
-			Size = UDim2.new(0.3, 0, 0, 80),
-			ZIndex = 2,
-
-			create 'TextLabel' {
-				Name = 'PlaceLabel',
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0.5, -2),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size14,
-				TextWrapped = true,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "",
-				ZIndex = 2
-			},
-
-			create 'TextLabel' {
-				Name = 'CreatorLabel',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0,0,0.5,2),
-				Size = UDim2.new(1, 0, 0.5, -2),
-				Font = Enum.Font.SourceSans,
-				FontSize = Enum.FontSize.Size12,
-				TextWrapped = true,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "",
-				ZIndex = 2
-			},
-		},
 
 		create 'Frame' {
 			Name = 'GraphicsFrame',
@@ -203,15 +135,47 @@ function MainGui:GenerateMain()
 		create 'Frame' {
 			Name = 'CountFrame',
 			BackgroundTransparency = 1,
-			Position = UDim2.new(0, 0, 1, -90),
-			Size = UDim2.new(0.3, 0, 0, 90),
+			Position = UDim2.new(0, 0, 1, -120),
+			Size = UDim2.new(0.3, 0, 0, 120),
 			ZIndex = 2,
+
+			create 'TextLabel' {
+				Name = 'PlaceLabel',
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, -5, 0, 18),
+				Position = UDim2.new(0, 5, 0, 0),
+				Font = Enum.Font.SourceSansBold,
+				FontSize = Enum.FontSize.Size14,
+				TextWrapped = true,
+				TextScaled = true,
+				TextColor3 = COLORS.WHITE,
+				TextStrokeTransparency = 0,
+				Text = "",
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 2
+			},
+
+			create 'TextLabel' {
+				Name = 'CreatorLabel',
+				BackgroundTransparency = 1,
+				Position = UDim2.new(0,5,0,18),
+				Size = UDim2.new(1, -5, 0, 18),
+				Font = Enum.Font.SourceSans,
+				FontSize = Enum.FontSize.Size12,
+				TextWrapped = true,
+				TextScaled = true,
+				TextColor3 = COLORS.WHITE,
+				TextStrokeTransparency = 0,
+				Text = "",
+				TextXAlignment = Enum.TextXAlignment.Left,
+				ZIndex = 2
+			},
 
 			create 'TextLabel' {
 				Name = 'BrickLabel',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 20),
-				Size = UDim2.new(0.5, -5, 0, 18),
+				Position = UDim2.new(0, 5, 0, 63),
+				Size = UDim2.new(0, 85, 0, 18),
 				Font = Enum.Font.SourceSansBold,
 				FontSize = Enum.FontSize.Size18,
 				TextScaled = true,
@@ -225,8 +189,8 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'ConnectorLabel',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 40),
-				Size = UDim2.new(0.5, -5, 0, 18),
+				Position = UDim2.new(0, 5, 0, 81),
+				Size = UDim2.new(0, 85, 0, 18),
 				Font = Enum.Font.SourceSansBold,
 				FontSize = Enum.FontSize.Size18,
 				TextScaled = true,
@@ -240,8 +204,8 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'InstanceLabel',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 0),
-				Size = UDim2.new(0.5, -5, 0, 18),
+				Position = UDim2.new(0, 5, 0, 45),
+				Size = UDim2.new(0, 85, 0, 18),
 				Font = Enum.Font.SourceSansBold,
 				FontSize = Enum.FontSize.Size18,
 				TextScaled = true,
@@ -255,8 +219,8 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'VoxelLabel',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 60),
-				Size = UDim2.new(0.5, -5, 0, 18),
+				Position = UDim2.new(0, 5, 0, 99),
+				Size = UDim2.new(0, 85, 0, 18),
 				Font = Enum.Font.SourceSansBold,
 				FontSize = Enum.FontSize.Size18,
 				TextScaled = true,
@@ -270,7 +234,7 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'BrickCount',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0.5, 5, 0, 20),
+				Position = UDim2.new(0, 95, 0, 63),
 				Size = UDim2.new(0.5, -5, 0, 18),
 				Font = Enum.Font.SourceSans,
 				FontSize = Enum.FontSize.Size18,
@@ -285,7 +249,7 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'ConnectorCount',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0.5, 5, 0, 40),
+				Position = UDim2.new(0, 95, 0, 81),
 				Size = UDim2.new(0.5, -5, 0, 18),
 				Font = Enum.Font.SourceSans,
 				FontSize = Enum.FontSize.Size18,
@@ -300,7 +264,7 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'InstanceCount',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0.5, 5, 0, 0),
+				Position = UDim2.new(0, 95, 0, 45),
 				Size = UDim2.new(0.5, -5, 0, 18),
 				Font = Enum.Font.SourceSans,
 				FontSize = Enum.FontSize.Size18,
@@ -315,7 +279,7 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'VoxelCount',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0.5, 5, 0, 60),
+				Position = UDim2.new(0, 95, 0, 99),
 				Size = UDim2.new(0.5, -5, 0, 18),
 				Font = Enum.Font.SourceSans,
 				FontSize = Enum.FontSize.Size18,
@@ -331,6 +295,40 @@ function MainGui:GenerateMain()
 		Parent = screenGui
 	}
 
+	create 'Frame' {
+			Name = 'ErrorFrame',
+			BackgroundColor3 = COLORS.ERROR,
+			BorderSizePixel = 0,
+			Position = UDim2.new(0.25,0,0,0),
+			Size = UDim2.new(0.5, 0, 0, 80),
+			ZIndex = 8,
+			Visible = false,
+
+			create 'TextLabel' {
+				Name = "ErrorText",
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 1, 0),
+				Font = Enum.Font.SourceSansBold,
+				FontSize = Enum.FontSize.Size14,
+				TextWrapped = true,
+				TextColor3 = COLORS.WHITE,
+				Text = "",
+				ZIndex = 8
+			},
+
+			create 'ImageButton' {
+				Name = 'CloseButton',
+				Image = 'rbxasset://textures/ui/CloseButton.png',
+				BackgroundTransparency = 1,
+				Position = UDim2.new(1, -27, 0, 5),
+				Size = UDim2.new(0, 22, 0, 22),
+				Active = true,
+				ZIndex = 10
+			},
+
+		Parent = screenGui
+	}
+
 	while not Game:GetService("CoreGui") do
 		wait()
 	end
@@ -338,6 +336,10 @@ function MainGui:GenerateMain()
 	currScreenGui = screenGui
 end
 
+function round(num, idp)
+  local mult = 10^(idp or 0)
+  return math.floor(num * mult + 0.5) / mult
+end
 
 ---------------------------------------------------------
 -- Main Script (show something now + setup connections)
@@ -360,19 +362,21 @@ local fadeCycleTime = 1.7
 
 renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(function()
 	if not currScreenGui then return end
+	if not currScreenGui:FindFirstChild("BlackFrame") then return end
+
 	if setVerb then
-		currScreenGui.BlackFrame.CloseButton:SetVerb("Exit")
+		currScreenGui.ErrorFrame.CloseButton:SetVerb("Exit")
 		setVerb = false
 	end
 
-	if currScreenGui.BlackFrame.PlaceFrame.PlaceLabel.Text == "" then
-		currScreenGui.BlackFrame.PlaceFrame.PlaceLabel.Text = InfoProvider:GetGameName()
+	if currScreenGui.BlackFrame.CountFrame.PlaceLabel.Text == "" then
+		currScreenGui.BlackFrame.CountFrame.PlaceLabel.Text = InfoProvider:GetGameName()
 	end
 
-	if currScreenGui.BlackFrame.PlaceFrame.CreatorLabel.Text == "" then
+	if currScreenGui.BlackFrame.CountFrame.CreatorLabel.Text == "" then
 		local creatorName = InfoProvider:GetCreatorName()
 		if creatorName ~= "" then
-			currScreenGui.BlackFrame.PlaceFrame.CreatorLabel.Text = "By " .. creatorName
+			currScreenGui.BlackFrame.CountFrame.CreatorLabel.Text = "By " .. creatorName
 		end
 	end
 
@@ -388,7 +392,7 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 	if voxelCount <= 0 then
 		currScreenGui.BlackFrame.CountFrame.VoxelCount.Text = "0"
 	else
-		currScreenGui.BlackFrame.CountFrame.VoxelCount.Text = tostring(voxelCount) .." million"
+		currScreenGui.BlackFrame.CountFrame.VoxelCount.Text = tostring(round(voxelCount,4)) .." million"
 	end
 
 	if not lastRenderTime then
@@ -415,16 +419,16 @@ end)
 
 guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
-		currScreenGui.MainBackgroundContainer.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
-		currScreenGui.MainBackgroundContainer.ErrorFrame.Visible = true
+		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
+		currScreenGui.ErrorFrame.Visible = true
 	else
-		currScreenGui.MainBackgroundContainer.ErrorFrame.Visible = false
+		currScreenGui.ErrorFrame.Visible = false
 	end
 end)
 
 if guiService:GetErrorMessage() ~= '' then
-	currScreenGui.MainBackgroundContainer.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
-	currScreenGui.MainBackgroundContainer.ErrorFrame.Visible = true
+	currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
+	currScreenGui.ErrorFrame.Visible = true
 end
 
 
@@ -437,6 +441,9 @@ end
 
 function fadeBackground()
 	if not currScreenGui then return end
+	if fadingBackground then return end
+
+	fadingBackground = true
 
 	local lastTime = nil
 	local backgroundRemovalTime = 3.2
@@ -457,42 +464,88 @@ function fadeBackground()
 	end
 end
 
+function fadeAndDestroyBlackFrame(blackFrame)
+	Spawn(function()
+		local countFrame = blackFrame:FindFirstChild("CountFrame")
+		local graphicsFrame = blackFrame:FindFirstChild("GraphicsFrame")
+
+		local textChildren = countFrame:GetChildren()
+		local transparency = 0
+		local rateChange = 1.8
+		local lastUpdateTime = nil
+
+		while transparency < 1 do
+			if not lastUpdateTime then
+				lastUpdateTime = tick()
+			else
+				local newTime = tick()
+				transparency = transparency + rateChange * (newTime - lastUpdateTime)
+				for i =1, #textChildren do
+					textChildren[i].TextTransparency = transparency
+					textChildren[i].TextStrokeTransparency = transparency
+				end
+				graphicsFrame.LoadingImage.ImageTransparency = transparency
+				graphicsFrame.LogoImage.ImageTransparency = transparency
+
+				lastUpdateTime = newTime
+			end
+			wait()
+		end
+		blackFrame:Destroy()
+	end)
+end
+
 function destroyLoadingElements()
 	if not currScreenGui then return end
+	if destroyedLoadingGui then return end
+	destroyedLoadingGui = true
 	
 	local guiChildren = currScreenGui:GetChildren()
 	for i=1, #guiChildren do
 		-- need to keep this around in case we get a connection error later
 		if guiChildren[i].Name ~= "ErrorFrame" then
-			guiChildren[i]:Destroy()
+			if guiChildren[i].Name == "BlackFrame" then
+				fadeAndDestroyBlackFrame(guiChildren[i])
+			else
+				guiChildren[i]:Destroy()
+			end
 		end
 	end
 end
 
-function removeLoadingScreen()
-	if removedLoadingScreen then return end
-	removedLoadingScreen = true
+function handleFinishedReplicating()
+	hasReplicatedFirstElements = (#Game.ReplicatedFirst:GetChildren() > 0)
+	if not hasReplicatedFirstElements then
+		fadeBackground()
+	else
+		wait(20) -- make sure after 20 seconds we remove the default gui, even if the user doesn't
+		handleRemoveDefaultLoadingGui()
+	end
+end
 
-	stopListeningToRenderingStep()
+function handleRemoveDefaultLoadingGui()
+	fadeBackground()
 	destroyLoadingElements()
 end
 
-
-function gameIsLoaded()
-	removeLoadingScreen()
+function handleGameLoaded()
+	if not hasReplicatedFirstElements then
+		destroyLoadingElements()
+	end
 end
 
-Game.ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(removeLoadingScreen)
+Game.ReplicatedFirst.FinishedReplicating:connect(handleFinishedReplicating)
+if Game.ReplicatedFirst:IsFinishedReplicating() then
+	handleFinishedReplicating()
+end
+
+Game.ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
 if Game.ReplicatedFirst:IsDefaultLoadingGuiRemoved() then
-	removeLoadingScreen()
+	handleRemoveDefaultLoadingGui()
 	return
 end
 
-Game.Loaded:connect(gameIsLoaded)
+Game.Loaded:connect(handleGameLoaded)
 if Game:IsLoaded() then
-	gameIsLoaded()
+	handleGameLoaded()
 end
-
--- quickly fade background to show 3D, any user loading scripts should of started by now
-wait(1.5)
-fadeBackground()

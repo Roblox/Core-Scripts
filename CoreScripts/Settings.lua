@@ -36,11 +36,13 @@ local hasGraphicsSlider = true
 local GraphicsQualityLevels = 10 -- how many levels we allow on graphics slider
 local recordingVideo = false
 
+local volumeFlagExists, volumeFlagValue = pcall(function () return settings():GetFFlag("VolumeControlInGameEnabled") end)
+local hasVolumeSlider = volumeFlagExists and volumeFlagValue
+
 local currentMenuSelection = nil
 local lastMenuSelection = {}
 
 local defaultPosition = UDim2.new(0,0,0,0)
-local newGuiPlaces = {0,41324860}
 
 local centerDialogs = {}
 local mainShield = nil
@@ -666,15 +668,10 @@ local function createGameMainMenu(baseZIndex, shield)
 	buttonTop = buttonTop + 51
 
 	-- LEAVE GAME	
-	local isAndroid = false
-	pcall(function() isAndroid = (Game:GetService("UserInputService"):GetPlatform() == Enum.Platform.Android) end)
-
-	if (not isAndroid) then
-		local leaveGameButton = createTextButton("Leave Game",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0.5,-170,0,buttonTop))
-		leaveGameButton.Name = "LeaveGameButton"
-		leaveGameButton.ZIndex = baseZIndex + 4
-		leaveGameButton.Parent = gameMainMenuFrame
-	end
+	local leaveGameButton = createTextButton("Leave Game",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size24,UDim2.new(0,340,0,50),UDim2.new(0.5,-170,0,buttonTop))
+	leaveGameButton.Name = "LeaveGameButton"
+	leaveGameButton.ZIndex = baseZIndex + 4
+	leaveGameButton.Parent = gameMainMenuFrame
 
 	return gameMainMenuFrame
 end
@@ -685,46 +682,11 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	gameSettingsMenuFrame.BackgroundTransparency = 1
 	gameSettingsMenuFrame.Size = UDim2.new(1,0,1,0)
 	gameSettingsMenuFrame.ZIndex = baseZIndex + 4
-	
-	local title = Instance.new("TextLabel")
-	title.Name = "Title"
-	title.Text = "Settings"
-	title.Size = UDim2.new(1,0,0,48)
-	title.Position = UDim2.new(0,9,0,-9)
-	title.Font = Enum.Font.SourceSansBold
-	title.FontSize = Enum.FontSize.Size36
-	title.TextColor3 = Color3.new(1,1,1)
-	title.ZIndex = baseZIndex + 4
-	title.BackgroundTransparency = 1
-	title.Parent = gameSettingsMenuFrame
-	
-	
-	--[[
-	local studioText = Instance.new("TextLabel")
-	studioText.Visible = false
-	studioText.Name = "StudioText"
-	studioText.Text = "Studio Mode"
-	studioText.Size = UDim2.new(0,95,0,18)
-	studioText.Position = UDim2.new(0,62,0,179)
-	studioText.Font = Enum.Font.SourceSansBold
-	studioText.FontSize = Enum.FontSize.Size18
-	studioText.TextColor3 = Color3.new(1,1,1)
-	studioText.ZIndex = baseZIndex + 4
-	studioText.BackgroundTransparency = 1
-	studioText.Parent = gameSettingsMenuFrame
-	
-	local studioShortcut = fullscreenShortcut:clone()
-	studioShortcut.Name = "StudioShortcutText"
-	studioShortcut.Visible = false -- TODO: turn back on when f2 hack is fixed
-	studioShortcut.Text = "F2"
-	studioShortcut.Position = UDim2.new(0,154,0,175)
-	studioShortcut.Parent = gameSettingsMenuFrame
-	
-	local studioCheckbox = nil
-	--]]
 
-
-	local itemTop = 35
+	local itemTop = 0
+	if game:GetService("GuiService"):GetScreenResolution().y <= 500 then
+		itemTop = 50
+	end
 	----------------------------------------------------------------------------------------------------
 	--  C A M E R A    C O N T R O L S
 	----------------------------------------------------------------------------------------------------
@@ -976,17 +938,18 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		end
 	end
 
-
-
 	----------------------------------------------------------------------------------------------------
 	-- G R A P H I C S    S L I D E R
 	----------------------------------------------------------------------------------------------------
+	local graphicsSlider, graphicsLevel = nil
 	if hasGraphicsSlider then
+		local graphicsQualityYOffset = -45
+
 		local qualityText = Instance.new("TextLabel")
 		qualityText.Name = "QualityText"
 		qualityText.Text = "Graphics Quality"
 		qualityText.Size = UDim2.new(0,224,0,18)
-		qualityText.Position = UDim2.new(0,31,0,239)
+		qualityText.Position = UDim2.new(0,31,0,239 + graphicsQualityYOffset)
 
 		qualityText.TextXAlignment = Enum.TextXAlignment.Left
 		qualityText.Font = Enum.Font.SourceSansBold
@@ -1000,7 +963,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		local autoText = qualityText:clone()
 		autoText.Name = "AutoText"
 		autoText.Text = "Auto"
-		autoText.Position = UDim2.new(0,270,0,214)
+		autoText.Position = UDim2.new(0,270,0,214 + graphicsQualityYOffset)
 		autoText.TextColor3 = Color3.new(128/255,128/255,128/255)
 		autoText.Size = UDim2.new(0,34,0,18)
 		autoText.Parent = gameSettingsMenuFrame
@@ -1009,7 +972,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		local fasterText = autoText:clone()
 		fasterText.Name = "FasterText"
 		fasterText.Text = "Faster"
-		fasterText.Position = UDim2.new(0,185,0,274)
+		fasterText.Position = UDim2.new(0,185,0,274 + graphicsQualityYOffset)
 		fasterText.TextColor3 = Color3.new(95,95,95)
 		fasterText.FontSize = Enum.FontSize.Size14
 		fasterText.Parent = gameSettingsMenuFrame
@@ -1020,19 +983,19 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		betterQualityText.Text = "Better Quality"
 		betterQualityText.TextWrap = true
 		betterQualityText.Size = UDim2.new(0,41,0,28)
-		betterQualityText.Position = UDim2.new(0,390,0,269)
+		betterQualityText.Position = UDim2.new(0,390,0,269 + graphicsQualityYOffset)
 		betterQualityText.TextColor3 = Color3.new(95,95,95)
 		betterQualityText.FontSize = Enum.FontSize.Size14
 		betterQualityText.Parent = gameSettingsMenuFrame
 		betterQualityText.Visible = not inStudioMode
 		
-		local autoGraphicsButton = createTextButton("X",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,32,0,32),UDim2.new(0,270,0,230))
+		local autoGraphicsButton = createTextButton("X",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,32,0,32),UDim2.new(0,270,0,230 + graphicsQualityYOffset))
 		autoGraphicsButton.Name = "AutoGraphicsButton"
 		autoGraphicsButton.ZIndex = baseZIndex + 4
 		autoGraphicsButton.Parent = gameSettingsMenuFrame
 		autoGraphicsButton.Visible = not inStudioMode
 		
-		local graphicsSlider, graphicsLevel = RbxGui.CreateSliderNew(GraphicsQualityLevels,150,UDim2.new(0, 230, 0, 280)) -- graphics - 1 because slider starts at 1 instead of 0
+		graphicsSlider, graphicsLevel = RbxGui.CreateSliderNew(GraphicsQualityLevels,150,UDim2.new(0, 230, 0, 280 + graphicsQualityYOffset)) -- graphics - 1 because slider starts at 1 instead of 0
 		graphicsSlider.Parent = gameSettingsMenuFrame
 		graphicsSlider.Bar.ZIndex = baseZIndex + 4
 		graphicsSlider.Bar.Slider.ZIndex = baseZIndex + 5
@@ -1044,7 +1007,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		graphicsSetter.BackgroundColor3 = Color3.new(0,0,0)
 		graphicsSetter.BorderColor3 = Color3.new(128/255,128/255,128/255)
 		graphicsSetter.Size = UDim2.new(0,50,0,25)
-		graphicsSetter.Position = UDim2.new(0,450,0,269)
+		graphicsSetter.Position = UDim2.new(0,450,0,269 + graphicsQualityYOffset)
 		graphicsSetter.TextColor3 = Color3.new(1,1,1)
 		graphicsSetter.Font = Enum.Font.SourceSansBold
 		graphicsSetter.FontSize = Enum.FontSize.Size18
@@ -1301,19 +1264,10 @@ local function createGameSettingsMenu(baseZIndex, shield)
 			end
 		end)
 
-		studioCheckbox = createTextButton("",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,25,0,25),UDim2.new(0,30,0,176))
-		studioCheckbox.Name = "StudioCheckbox"
-		studioCheckbox.ZIndex = baseZIndex + 4
-		--studioCheckbox.Parent = gameSettingsMenuFrame -- todo: enable when studio h4x aren't an issue anymore
-		studioCheckbox:SetVerb("TogglePlayMode")
-		studioCheckbox.Visible = false -- todo: enabled when studio h4x aren't an issue anymore
-		
 		local wasManualGraphics = (settings().Rendering.QualityLevel ~= Enum.QualityLevel.Automatic)
 		if inStudioMode and not game.Players.LocalPlayer then
-			studioCheckbox.Text = "X"
 			disableGraphicsWidget()
 		elseif inStudioMode then
-			studioCheckbox.Text = "X"
 			enableGraphicsWidget()
 		end
 		if hasGraphicsSlider then
@@ -1322,36 +1276,69 @@ local function createGameSettingsMenu(baseZIndex, shield)
 				if isStudioMode then
 					wasManualGraphics = (settings().Rendering.QualityLevel ~= Enum.QualityLevel.Automatic)
 					goToAutoGraphics()
-					studioCheckbox.Text = "X"
 					autoGraphicsButton.ZIndex = 1
 					autoText.ZIndex = 1
 				else
 					if wasManualGraphics then
 						goToManualGraphics()
 					end
-					studioCheckbox.Text = ""
 					autoGraphicsButton.ZIndex = baseZIndex + 4
 					autoText.ZIndex = baseZIndex + 4
 				end
 			end)
-		else
-			studioCheckbox.MouseButton1Click:connect(function()
-				if not studioCheckbox.Active then return end
-				
-				if studioCheckbox.Text == "" then
-					studioCheckbox.Text = "X"
-				else
-					studioCheckbox.Text = ""
-				end
-			end)
+		end
+
+		if graphicsSlider and graphicsSlider.Bar and graphicsSlider.Visible then
+			itemTop = graphicsSlider.Bar.Position.Y.Offset + 20
 		end
 	end
-	
+	----------------------------------------------------------------------------------------------------
+	-- V O L U M E    S L I D E R
+	----------------------------------------------------------------------------------------------------
+	if hasVolumeSlider then
+		local maxVolumeLevel = 256
 
-	if game:FindFirstChild("NetworkClient") then -- we are playing online
-		setDisabledState(studioText)
-		setDisabledState(studioShortcut)
-		setDisabledState(studioCheckbox)
+		local volumeText = Instance.new("TextLabel")
+		volumeText.Name = "VolumeText"
+		volumeText.Text = "Volume"
+		volumeText.Size = UDim2.new(0,224,0,18)
+
+		local volumeTextOffset = 25
+		if graphicsSlider and not graphicsSlider.Visible then
+			volumeTextOffset = volumeTextOffset + 30
+		end
+		volumeText.Position = UDim2.new(0,31,0, itemTop + volumeTextOffset)
+
+		volumeText.TextXAlignment = Enum.TextXAlignment.Left
+		volumeText.Font = Enum.Font.SourceSansBold
+		volumeText.FontSize = Enum.FontSize.Size18
+		volumeText.TextColor3 = Color3.new(1,1,1)
+		volumeText.ZIndex = baseZIndex + 4
+		volumeText.BackgroundTransparency = 1
+		volumeText.Parent = gameSettingsMenuFrame
+		volumeText.Visible = true
+
+		local volumeSliderOffset = 32
+		if graphicsSlider and not graphicsSlider.Visible then
+			volumeSliderOffset = volumeSliderOffset + 30
+		end
+		local volumeSlider, volumeLevel = RbxGui.CreateSliderNew( maxVolumeLevel,256,UDim2.new(0, 180, 0, itemTop + volumeSliderOffset) )
+		volumeSlider.Parent = gameSettingsMenuFrame
+		volumeSlider.Bar.ZIndex = baseZIndex + 3
+		volumeSlider.Bar.Slider.ZIndex = baseZIndex + 4
+		volumeSlider.BarLeft.ZIndex = baseZIndex + 3
+		volumeSlider.BarRight.ZIndex = baseZIndex + 3
+		volumeSlider.Bar.Fill.ZIndex = baseZIndex + 3
+		volumeSlider.FillLeft.ZIndex = baseZIndex + 3
+		volumeSlider.Visible = true
+		volumeLevel.Value = math.min(math.max(UserSettings().GameSettings.MasterVolume * maxVolumeLevel, 1), maxVolumeLevel)
+
+		volumeLevel.Changed:connect(function(prop)
+			local volume = volumeLevel.Value - 1 -- smallest value is 1, so need to subtract one for muting
+			UserSettings().GameSettings.MasterVolume = volume/maxVolumeLevel
+		end)
+
+		itemTop = itemTop + volumeSliderOffset
 	end
 	
 

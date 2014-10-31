@@ -294,13 +294,35 @@ game:GetService("MarketplaceService").ClientLuaDialogRequested:connect(function(
 					
 end)
 
+local noOptFunc = function ()
+	-- do nothing
+end
+
 Game:GetService("PointsService").PointsAwarded:connect( function(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
 	if userId == Game.Players.LocalPlayer.userId then
-		game:GetService("GuiService"):SendNotification("Points Awarded!",
-			"You received " ..tostring(pointsAwarded) .. " points!",
-			"http://www.roblox.com/asset?id=155363793",
+		if pointsAwarded > 0 then
+			game:GetService("GuiService"):SendNotification("Points Awarded!",
+				"You received " ..tostring(pointsAwarded) .. " points!",
+				"http://www.roblox.com/asset?id=155363793",
+				5,
+				noOptFunc)
+		elseif pointsAwarded < 0 then
+			game:GetService("GuiService"):SendNotification("Points Lost!",
+				"You lost " ..tostring(-pointsAwarded) .. " points!",
+				"http://www.roblox.com/asset?id=155363793",
+				5,
+				noOptFunc)
+		end
+	end
+end)
+
+-- Since we can't get the image right, let's just use a nice notification icon
+Game:GetService("BadgeService").BadgeAwarded:connect( function(message, userId, badgeId)
+	if userId == Game.Players.LocalPlayer.userId then
+		game:GetService("GuiService"):SendNotification("Badge Awarded!",
+			message,
+			"http://www.roblox.com/asset?id=177200377",
 			5,
-			function()
-			end)
+			noOptFunc)
 	end
 end)

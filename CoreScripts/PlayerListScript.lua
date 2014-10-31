@@ -9,32 +9,30 @@ local ADMINS =
 	androidtest = 1,
 	robloxfrenchie = 1,
 	jackssmirkingrevenge = 1,
-	lindapepita = 1,
+	mandaari = 1,
 	vaiobot = 1,
 	goddessnoob = 1,
+	thr33pakshak3r = 1,
 	effward = 1,
 	blockhaak = 1,
 	drewbda = 1,
-	['659223'] = 1,
+	triptych999 = 1,
 	tone = 1,
 	fasterbuilder19 = 1,
 	zeuxcg = 1,
 	concol2 = 1,
 	reesemcblox = 1,
 	jeditkacheff = 'http://www.roblox.com/asset/?id=134032333',
-	whkm1980 = 1,
 	chiefjustus = 1,
 	ellissar = 1,
-	arbolito = 1,
+	geekndestroy = 1,
 	noob007 = 1,
 	limon = 1,
-	cmed = 1,
 	hawkington = 1,
 	tabemono = 1,
 	autoconfig = 1,
 	brighteyes = 1,
 	monsterinc3d = 1,
-	mrdoombringer = 1,
 	isolatedevent = 1,
 	countonconnor = 1,
 	scubasomething = 1,
@@ -43,11 +41,10 @@ local ADMINS =
 	bellavour = 1,
 	['david.baszucki'] = 1,
 	ibanez2189 = 1,
+	convexhero = 1,
 	sorcus = 'http://www.roblox.com/asset/?id=113059239',
 	deeana00 = 1,
 	thelorekt = 1,
-	niquemonster = 1,
-	thorasaur = 1,
 	['mse6'] = 1,
 	corgiparade = 1,
 	varia = 1,
@@ -64,7 +61,6 @@ local ADMINS =
 	slingshotjunkie = 1,
 	gordonrox24 = 1,
 	sharpnine = 1,
-	motornerve = 1,
 	motornerve = 1,
 	watchmedogood = 1,
 	jmargh = 1,
@@ -83,21 +79,24 @@ local ADMINS =
 	chro = 1,
 	solarcrane = 1,
 	glorioussalt = 1,
+	imightbelying = 1,
 	uristmcsparks = 1,
 	itolauren = 1,
 	malcomso = 1,
+	heyseptember = 1,
 	stickmasterluke = 1,
 	windlight13 = 1,
-	yumyumcheerios = 1,
 	stravant = 1,
-	byteme = 1,
 	imaginationsensation = 1,
 	['matt.dusek'] = 1,
+	crimmsonghost = 1,
 	mcrtest = 1,
 	maxvee = 1,
 	coatp0cketninja = 1,
 	screenme = 1,
 	b1tsh1ft = 1,
+	convexrumbler = 1,
+	mpliner476 = 1,
 	totbl = 1,
 	aquabot8 = 1,
 	grossinger = 1,
@@ -115,6 +114,7 @@ local ADMINS =
 	nobledragon = 1,
 	squidcod = 1,
 	raeglyn = 1,
+	xerolayne = 1,
 	robloxsai = 'http://www.roblox.com/asset/?id=161078086',
 	briarroze = 1,
 	hawkeyebandit = 1,
@@ -122,7 +122,6 @@ local ADMINS =
 	vukota = 1,
 	swiftstone = 1,
 	gemlocker = 1,
-	loopylens = 1,
 	tarabyte = 1,
 	timobius = 1,
 	tobotrobot = 1,
@@ -131,21 +130,14 @@ local ADMINS =
 	darthvaden = 1,
 	khanovich = 1,
 	codewriter = 1,
+	olefto = 1,
 	vladthefirst = 1,
 	phaedre = 1,
 	gorroth = 1,
-	sphinxshen = 1,
 	jynj1984 = 1,
 	roboyz = 1,
 	zodiaczak = 1,
-	superman205 = 1,
-	convexrumbler = 1,
-	mpliner476 = 1,
-	geekndestroy = 1,
-	glewis17 = 1,
-	buckeroob = 1,
 }
-
 
 
 local Images = {
@@ -1535,12 +1527,13 @@ function StatRemoved(nchild,playerEntry)
 end
 --[[
 	clears all stats from a given playerEntry
+	resets the HeadScore's Text property to an empty string
 	used when leaderstats are removed, or when new leaderstats are added(for weird edge case)+
 --]]
 function RemoveAllStats(playerEntry)
 	for i,val in ipairs(ScoreNames) do
 		StatRemoved(val,playerEntry)
-	end
+	end HeaderScore.Text = ''
 	
 end
 
