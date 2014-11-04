@@ -1513,7 +1513,9 @@ local function expandPlayerList(endPosition, subFrameScale)
 		UDim2.new(0, MinContainerSize.X.Offset * ScaleX - containerOffset, 0.5, 0),
 		endPosition, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
 
-	resizeExpandedFrame(StatNameFrame, subFrameScale, 'Players')
+	if StatNameFrame then
+		resizeExpandedFrame(StatNameFrame, subFrameScale, 'Players')
+	end
 	for _,entry in ipairs(PlayerEntries) do
 		local player = entry.Player
 		local leaderstats = player:FindFirstChild('leaderstats')
