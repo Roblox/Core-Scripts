@@ -24,6 +24,7 @@ local UserInputService = game:GetService('UserInputService')
 local GuiService = game:GetService('GuiService')
 
 local KEY_VALUE_ZERO = Enum.KeyCode.Zero.Value
+local HOTBAR_SIZE = UDim2.new(0, ICON_BUFFER + (HOTBAR_SLOTS * (ICON_SIZE + ICON_BUFFER)), 0, ICON_BUFFER + ICON_SIZE + ICON_BUFFER)
 
 local Player = PlayersService.LocalPlayer
 
@@ -34,9 +35,11 @@ local Humanoid = nil
 local Backpack = nil
 
 local Slots = {} -- List of all Slots by index, static
-local LowestEmptySlot = 1
+local LowestEmptySlot = nil
 local SlotsByTool = {} -- Map of Tools to their assigned Slots, dynamic
 local HotkeyFns = {} -- Map of KeyCode values to their assigned behaviors, static
+
+local InventoryFrame = nil
 
 -- Functions --
 
@@ -65,15 +68,111 @@ local function NewGui(className, objectName)
 end
 
 local function FindLowestEmpty()
-	local lowest = HOTBAR_SLOTS + 1
-	for i, slot in ipairs(Slots) do
+	for i = 1, HOTBAR_SLOTS do
+		local slot = Slots[i]
 		if not slot.Tool then
-			if i < lowest then
-				lowest = i
-			end
+			return slot
 		end
 	end
-	return lowest <= HOTBAR_SLOTS and lowest or nil
+	return nil
+end
+
+local function AdjustHotbarFrames()
+	local fullSlots = {}
+	for i = 1, HOTBAR_SLOTS do
+		local slot = Slots[i]
+		if slot.Tool then
+			table.insert(fullSlots, slot)
+		end
+	end
+	local fullSlotCount = #fullSlots
+	--print("   Adjusting the hotbar frames because now there are", fullSlotCount)
+	for i, slot in ipairs(fullSlots) do
+		slot:Readjust(i, fullSlotCount)
+	end
+end
+
+local function MakeSlot(index)
+	index = index or (#Slots + 1)
+	
+	local slot = {}
+	slot.Tool = nil
+	slot.Index = index
+	
+	local slotFrame = NewGui('Frame', index)
+	slotFrame.BackgroundTransparency = SLOT_TRANSPARENCY
+	slotFrame.BackgroundColor3 = SLOT_COLOR_NORMAL
+	slotFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
+	local sizePlus = ICON_BUFFER + ICON_SIZE
+	local modSlots = ((index - 1) % HOTBAR_SLOTS) + 1
+	local row = (index > HOTBAR_SLOTS) and (math.floor((index - 1) / HOTBAR_SLOTS)) - 1 or 0
+	slotFrame.Position = UDim2.new(0, ICON_BUFFER + ((modSlots - 1) * sizePlus), 0, ICON_BUFFER + (sizePlus * row))
+	slotFrame.Visible = false
+	
+	local toolIcon = NewGui('ImageLabel', 'Icon')
+	toolIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
+	toolIcon.Position = UDim2.new(0.1, 0, 0.1, 0)
+	toolIcon.Parent = slotFrame
+	
+	local toolName = NewGui('TextLabel', 'ToolName')
+	toolName.FontSize = Enum.FontSize.Size14
+	toolName.Parent = slotFrame
+	
+	--TODO: Tool tip thingy
+	
+	function slot:Show(tool)
+		print("   Setting gui data for this tool:", tool)
+		slot.Tool = tool
+		local icon = tool.TextureId
+		toolIcon.Image = icon
+		toolName.Text = (icon == '') and tool.Name or ''
+		
+		SlotsByTool[tool] = slot
+		slotFrame.Visible = true
+		LowestEmptySlot = FindLowestEmpty()
+		AdjustHotbarFrames()
+	end
+	
+	function slot:Hide()
+		print("   Hiding gui data for this tool:", tool)
+		slotFrame.Visible = false
+		
+		SlotsByTool[self.Tool] = nil
+		self.Tool = nil
+		LowestEmptySlot = FindLowestEmpty()
+		AdjustHotbarFrames()
+	end
+	
+	function slot:ShowEquip()
+		print("   Show as equipped:", slot.Tool)
+		slotFrame.BackgroundColor3 = SLOT_COLOR_EQUIP
+		slotFrame.BackgroundTransparency = 0
+	end
+	
+	function slot:ShowUnequip()
+		print("   Show as unequipped:", slot.Tool)
+		slotFrame.BackgroundTransparency = SLOT_TRANSPARENCY
+		slotFrame.BackgroundColor3 = SLOT_COLOR_NORMAL
+	end
+	
+	function slot:Destroy()
+		print("   Destroying slot", index, "Tool:", slot.Tool)
+		self:Hide()
+		slotFrame:Destroy()
+		table.remove(Slots, index)
+	end
+	
+	function slot:Readjust(visualIndex, total)
+		local centered = HOTBAR_SIZE.X.Offset / 2
+		local unit = ICON_BUFFER + ICON_SIZE
+		local midpointish = (total / 2) + 0.5
+		local factor = visualIndex - midpointish
+		--print("      Slot", self.Index, "'s new visualIndex:", visualIndex, "MN:", midpointish, "factor:", factor)
+		slotFrame.Position = UDim2.new(0, centered - (ICON_SIZE / 2) + (unit * factor), 0, ICON_BUFFER)
+	end
+	
+	Slots[index] = slot
+	return slot, slotFrame
 end
 
 local function OnChildAdded(child) -- To Character or Backpack
@@ -92,22 +191,40 @@ local function OnChildAdded(child) -- To Character or Backpack
 	--else, get lowest slot (if any left), set the gui data and slotTable data
 	--if none left above, then done. Maybe return.
 	
+	-- local slot = SlotsByTool[tool]
+	-- if not slot and LowestEmptySlot then -- Not set yet and have room for it!
+		-- slot = Slots[LowestEmptySlot]
+		-- slot:Show(tool)
+	-- end
+	
+	
 	local slot = SlotsByTool[tool]
-	if not slot and LowestEmptySlot then -- Not set yet and have room for it!
-		slot = Slots[LowestEmptySlot]
-		slot:Show(tool)
+	if slot then
+		-- just equipping/unequipping btwn char&backpack
+		--TODO: what if equipping but in backpack? different from 10-swap case below? yes, by script.
+		-- should still do the swap in that case. that case: slot already exists, but now equipped
+		print("   DoNothing")
+	else -- Not yet showing this tool
+		if LowestEmptySlot then -- There's a free slot in the Hotbar!
+			slot = LowestEmptySlot
+			slot:Show(tool)
+		else
+			print("   Out of room, adding to inventory")
+			local slotFrame = nil
+			slot, slotFrame = MakeSlot()
+			slot:Show(tool)
+			slotFrame.Parent = InventoryFrame
+		end
 	end
 	
 	-- then check if want to show as equipped
 	
 	--TODO: what if new, but no slots left, but equipped? IsPossible? YES! Swap out w/ slot 10.
 	
-	if slot then
-		if tool.Parent == Character then -- Equipped --TODO: Check for right arm weld?
-			slot:ShowEquip()
-		else -- Added to Backpack
-			slot:ShowUnequip()
-		end
+	if tool.Parent == Character then -- Equipped --TODO: Check for right arm weld?
+		slot:ShowEquip()
+	else -- Added to Backpack
+		slot:ShowUnequip()
 	end
 end
 
@@ -125,7 +242,13 @@ local function OnChildRemoved(child) -- From Character or Backpack
 	
 	local slot = SlotsByTool[tool]
 	if slot then
-		slot:Hide()
+		local index = slot.Index
+		if index <= HOTBAR_SLOTS then
+			slot:Hide()
+		else -- Inventory slot
+			slot:Destroy()
+			--TODO: Reposition slot frames after index
+		end
 	end
 end
 
@@ -161,52 +284,36 @@ end
 -- Script Logic --
 
 local mainFrame = NewGui('Frame', 'Backpack')
+mainFrame.Visible = false
 mainFrame.Parent = CoreGui
 
 local hotbarFrame = NewGui('Frame', 'Hotbar')
-hotbarFrame.Size = UDim2.new(0, ICON_BUFFER + ((ICON_SIZE + ICON_BUFFER) * HOTBAR_SLOTS), 0, ICON_BUFFER + ICON_SIZE + ICON_BUFFER)
+hotbarFrame.Size = HOTBAR_SIZE
 hotbarFrame.Position = UDim2.new(0.5, -hotbarFrame.Size.X.Offset / 2, 1, -hotbarFrame.Size.Y.Offset - HOTBAR_OFFSET_FROMBOTTOM)
 hotbarFrame.Parent = mainFrame
 
 for i = 1, HOTBAR_SLOTS do
-	local slot = {}
-	slot.Tool = nil
-	
-	local slotFrame = NewGui('Frame', i)
-	slotFrame.Visible = false
-	slotFrame.BackgroundTransparency = SLOT_TRANSPARENCY
-	slotFrame.BackgroundColor3 = SLOT_COLOR_NORMAL
-	slotFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
-	slotFrame.Position = UDim2.new(0, ICON_BUFFER + ((i - 1) * (ICON_BUFFER + ICON_SIZE)), 0, ICON_BUFFER)
-	
-	local toolIcon = NewGui('ImageLabel', 'Icon')
-	toolIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
-	toolIcon.Position = UDim2.new(0.1, 0, 0.1, 0)
-	toolIcon.Parent = slotFrame
-	
-	local toolName = NewGui('TextLabel', 'ToolName')
-	toolName.FontSize = Enum.FontSize.Size14
-	toolName.Parent = slotFrame
-	
-	--TODO: Tool tip thingy
+	local slot, slotFrame = MakeSlot(i)
 	
 	local function selectSlot()
+		print("Click!")
 		local tool = slot.Tool
 		if tool then
 			if tool.Parent == Character then
-				print("Click! Unequip!")
+				print("   UNEQUIP!")
 				Humanoid:UnequipTools()
 			elseif tool.Parent == Backpack then
-				print("Click! Equip!")
+				print("   EQUIP!")
 				Humanoid:EquipTool(tool) --NOTE: This also unequips current Tool
 			end
 		end
 	end
+	
 	local clickArea = NewGui('TextButton', 'GimmieYerClicks')
 	clickArea.MouseButton1Click:connect(selectSlot)
 	clickArea.Parent = slotFrame
 	
-	-- Show label and assign slot for keys 1-9 and 0 (zero is always last slot when > 10)
+	-- Show label and assign hotkeys for 1-9 and 0 (zero is always last slot when > 10 total)
 	if i < 10 or i == HOTBAR_SLOTS then -- NOTE: Hardcoded on purpose!
 		local slotNum = (i < 10) and i or 0
 		local number = NewGui('TextLabel', 'Number')
@@ -217,49 +324,21 @@ for i = 1, HOTBAR_SLOTS do
 		HotkeyFns[KEY_VALUE_ZERO + slotNum] = selectSlot
 	end
 	
-	function slot:Show(tool)
-		print("   Setting gui data into slot", LowestEmptySlot, "for this tool:", tool)
-		slot.Tool = tool
-		local icon = tool.TextureId
-		toolIcon.Image = icon
-		toolName.Text = (icon == '') and tool.Name or ''
-		
-		SlotsByTool[tool] = slot
-		slotFrame.Visible = true
-		LowestEmptySlot = FindLowestEmpty()
-	end
-	
-	function slot:Hide()
-		print("   Hiding gui data for this tool:", tool)
-		slotFrame.Visible = false
-		
-		SlotsByTool[self.Tool] = nil
-		self.Tool = nil
-		LowestEmptySlot = FindLowestEmpty()
-	end
-	
-	function slot:ShowEquip()
-		print("   Show as EQUIPPED:", slot.Tool)
-		slotFrame.BackgroundColor3 = SLOT_COLOR_EQUIP
-		slotFrame.BackgroundTransparency = 0
-	end
-	
-	function slot:ShowUnequip()
-		print("   Show as unequipped:", slot.Tool)
-		slotFrame.BackgroundTransparency = SLOT_TRANSPARENCY
-		slotFrame.BackgroundColor3 = SLOT_COLOR_NORMAL
-	end
-	
 	slotFrame.Parent = hotbarFrame
-	Slots[i] = slot
+	
+	if not LowestEmptySlot then
+		LowestEmptySlot = slot
+	end
 end
 
 local inventoryFrame = NewGui('Frame', 'Inventory')
-inventoryFrame.Visible = false
 inventoryFrame.BackgroundTransparency = SLOT_TRANSPARENCY
+inventoryFrame.Active = true
 inventoryFrame.Size = UDim2.new(0, hotbarFrame.Size.X.Offset, 0, hotbarFrame.Size.Y.Offset * 5)
 inventoryFrame.Position = UDim2.new(0.5, -inventoryFrame.Size.X.Offset / 2, 1, hotbarFrame.Position.Y.Offset - inventoryFrame.Size.Y.Offset)
+inventoryFrame.Visible = false
 inventoryFrame.Parent = mainFrame
+InventoryFrame = inventoryFrame --TODO
 
 do -- Inventory expand/collapse arrow
 	local arrowFrame = NewGui('Frame', 'Arrow')
@@ -289,13 +368,14 @@ do -- Inventory expand/collapse arrow
 	arrowFrame.Parent = mainFrame
 end
 
-
 -- Connect events
 
 while not Player do --TODO: Only necessary in RunSolo? -- Still a valid case though.
 	wait()
 	Player = PlayersService.LocalPlayer
 end
+
+mainFrame.Visible = true
 
 Player.CharacterAdded:connect(OnCharacterAdded)
 if Player.Character then
