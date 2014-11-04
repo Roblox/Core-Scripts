@@ -39,12 +39,21 @@ scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript", screenGui)
 -- Health Script
 scriptContext:AddCoreScriptLocal("CoreScripts/HealthScript", screenGui)
 
+local playerListSuccess, playerListFlagValue = pcall(function() return settings():GetFFlag("NewPlayerListScript") end)
 if not touchEnabled then
 	-- New Player List
-	scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
+	if playerListSuccess and playerListFlagValue == true then
+		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript2", screenGui)
+	else
+		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
+	end
 elseif Game:GetService("GuiService"):GetScreenResolution().Y >= 500 then
 	-- New Player List
-	scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
+	if playerListSuccess and playerListFlagValue == true then
+		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript2", screenGui)
+	else
+		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
+	end
 end
 
 -- Backpack Builder, creates most of the backpack gui
