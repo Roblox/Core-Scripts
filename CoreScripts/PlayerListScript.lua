@@ -2944,13 +2944,14 @@ end
 --[[
 	code for attaching tab key to maximizing player list
 --]]
-game.GuiService:AddKey("\t")
 local LastTabTime = time()
-game.GuiService.KeyPressed:connect(
+-- Variable below also used in 'coreGuiChanged'
+local GuiService = game:GetService("GuiService")
+GuiService.KeyPressed:connect(
 function(key)
 	if key == "\t" then
 		debugprint('caught tab key')
-		local modalCheck, isModal = pcall(function() return game.GuiService.IsModalDialog end)
+		local modalCheck, isModal = pcall(function() return GuiService.IsModalDialog end)
 		if modalCheck == false or (modalCheck and isModal == false) then
 			if time() - LastTabTime > 0.4 then
 				LastTabTime = time()
@@ -2981,9 +2982,10 @@ function PlayersChildAdded(tplayer)
 	end
 end
 
+
 function coreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
-		MainFrame.Visible = enabled
+		MainFrame.Visible = enabled GuiService[enabled and "AddKey" or "RemoveKey"](GuiService,"\t")
 	end
 end
 
