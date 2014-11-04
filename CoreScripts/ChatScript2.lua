@@ -5,8 +5,8 @@
 ]]
 
 --[[ CONSTANTS ]]
-local FORCE_CHAT_GUI = true
-local USE_PLAYER_GUI_TESTING = true
+local FORCE_CHAT_GUI = false
+local USE_PLAYER_GUI_TESTING = false
 
 local ADMIN_LIST = {
     ['68465808'] = true, -- IMightBeLying
@@ -162,14 +162,13 @@ local MESSAGES_FADE_OUT_TIME = 30
 --[[ END OF CONSTANTS ]]
 
 --[[ SERVICES ]]
-local RunService = Game:GetService('RunService')
-local CoreGuiService = Game:GetService('CoreGui')
-local PlayersService = Game:GetService('Players')
-local DebrisService = Game:GetService('Debris')
-local GuiService = Game:GetService('GuiService')
-local InputService = Game:GetService('UserInputService')
-local StarterGui = Game:GetService('StarterGui')
-local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
+local RunService = game:GetService('RunService')
+local CoreGuiService = game:GetService('CoreGui')
+local PlayersService = game:GetService('Players')
+local DebrisService = game:GetService('Debris')
+local GuiService = game:GetService('GuiService')
+local InputService = game:GetService('UserInputService')
+local StarterGui = game:GetService('StarterGui')
 --[[ END OF SERVICES ]]
 
 --[[ SCRIPT VARIABLES ]]
@@ -178,12 +177,13 @@ local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
 local Player = PlayersService.LocalPlayer
 -- GuiRoot will act as the top-node for parenting GUIs
-local GuiRoot = RobloxGui
+local GuiRoot = nil
 if USE_PLAYER_GUI_TESTING then
 	GuiRoot = Instance.new("ScreenGui")
 	GuiRoot.Name = "RobloxGui"
 	GuiRoot.Parent = Player:WaitForChild('PlayerGui')
-	GuiRoot.RobloxLocked = true
+else
+	GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 end
 --[[ END OF SCRIPT VARIABLES ]]
 
@@ -194,13 +194,6 @@ do
 		local touchEnabled = false
 		pcall(function() touchEnabled = InputService.TouchEnabled end)
 		return touchEnabled
-	end
-
-	function Util.IsPhone()
-		if RobloxGui.AbsoluteSize.Y < 600 then
-			return true
-		end
-		return false
 	end
 
 	function Util.Create(instanceType)
@@ -234,7 +227,6 @@ do
 		return -c * t*(t-2) + b
 	end
 
-
 	function Util.EaseInOutQuad(t, b, c, d)
 		if t >= d then return b + c end
 
@@ -252,7 +244,7 @@ do
 
 		local finished = false
 		local percentComplete = 0
-		Spawn(function()
+		spawn(function()
 			local now = tick()
 			while now < this.EndTime and instance do
 				if this.Cancelled then
@@ -376,7 +368,6 @@ do
 	local testLabel = Instance.new('TextLabel')
 	testLabel.TextWrapped = true;
 	testLabel.Position = UDim2.new(1,0,1,0)
-	testLabel.RobloxLocked = true
 	testLabel.Parent = GuiRoot -- Note: We have to parent it to check TextBounds
 	-- The TextSizeCache table looks like this Text->Font->sizeBounds->FontSize
 	local TextSizeCache = {}
@@ -479,13 +470,12 @@ local function CreateSystemChatMessage(chattedMessage)
 			ZIndex = 1;
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
-			RobloxLocked = true;
 		};
 
 			local chatMessage = Util.Create'TextLabel'
 			{
 				Name = 'SystemChatMessage';
-				Position = UDim2.new(0, xOffset, 0, 0);
+				Position = UDim2.new(0, 0, 0, 0);
 				Size = UDim2.new(1, 0, 1, 0);
 				Text = systemMesasgeDisplayText;
 				ZIndex = 1;
@@ -499,7 +489,6 @@ local function CreateSystemChatMessage(chattedMessage)
 				Font = this.Settings.Font;
 				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
 				TextStrokeTransparency = 0.3;
-				RobloxLocked = true;
 				Parent = container;
 			};
 
@@ -538,24 +527,13 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 		local result = ""
 		if this.RawMessageContent then
 			local message = this.RawMessageContent
-			--[[
-			if string.sub(message, 1, 1) == '%' then
-				result = '(TEAM) ' .. string.sub(message, 2, #message)
-			elseif string.sub(message, 1, 6) == '(TEAM)' then
-				result = '(TEAM) ' .. string.sub(message, 7, #message)
-			end
-			]]
-			if PlayersService.ClassicChat then
-				if string.sub(message, 1, 3) == '/e ' or string.sub(message, 1, 7) == '/emote ' then
-					if this.SendingPlayer then
-						result = this.SendingPlayer.Name .. " emotes."
-					end
-				elseif FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu then
-					result = message--Chat:UpdateChat(player, message)
-				elseif Player.ChatMode == Enum.ChatMode.Menu and string.sub(message, 1, 3) == '/sc' then
-					result = "SafeChat Response"
-					--Chat:UpdateChat(player, message)
+
+			if string.sub(message, 1, 3) == '/e ' or string.sub(message, 1, 7) == '/emote ' then
+				if this.SendingPlayer then
+					result = this.SendingPlayer.Name .. " emotes."
 				end
+			else
+				result = message
 			end
 		end
 		return result
@@ -633,7 +611,6 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 			ZIndex = 1;
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
-			RobloxLocked = true;
 		};
 			local xOffset = 0
 
@@ -655,7 +632,6 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 					Font = this.Settings.Font;
 					TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
 					TextStrokeTransparency = 0.3;
-					RobloxLocked = true;
 					Parent = container;
 				};
 				xOffset = xOffset + toMessageSize.X
@@ -677,7 +653,6 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 					Font = this.Settings.Font;
 					TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
 					TextStrokeTransparency = 0.3;
-					RobloxLocked = true;
 					Parent = container;
 				};
 				xOffset = xOffset + fromMessageSize.X
@@ -691,7 +666,6 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 					BorderSizePixel = 0;
 					Image = "rbxasset://textures/ui/chat_teamButton.png";
 					ImageColor3 = playerColor;
-					RobloxLocked = true;
 					Parent = container;
 				}
 				xOffset = xOffset + 14 + 3
@@ -712,7 +686,6 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				Size = UDim2.new(0, chatTypeSize.X, 0, chatTypeSize.Y);
 				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
 				TextStrokeTransparency = 0.3;
-				RobloxLocked = true;
 				Parent = container
 			}
 			if chatModeButton:IsA('TextButton') then
@@ -740,7 +713,6 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				Size = UDim2.new(0, playerNameSize.X, 0, playerNameSize.Y);
 				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
 				TextStrokeTransparency = 0.3;
-				RobloxLocked = true;
 				Parent = container
 			}
 			if userNameButton:IsA('TextButton') then
@@ -766,7 +738,6 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				Font = this.Settings.Font;
 				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
 				TextStrokeTransparency = 0.3;
-				RobloxLocked = true;
 				Parent = container;
 			};
 			-- Check if they got moderated and put up a real message instead of Label
@@ -841,6 +812,7 @@ local function CreateChatBarWidget(settings)
 		this.ChatBarLostFocusConn = Util.DisconnectEvent(this.ChatBarLostFocusConn)
 		this.SelectChatModeConn = Util.DisconnectEvent(this.SelectChatModeConn)
 		this.SelectPlayerConn = Util.DisconnectEvent(this.SelectPlayerConn)
+		this.FocusChatBarInputBeganConn = Util.DisconnectEvent(this.FocusChatBarInputBeganConn)
 	end
 
 	local function HookUpEvents()
@@ -1028,6 +1000,21 @@ local function CreateChatBarWidget(settings)
 			if Util.IsTouchDevice() then
 				this.ChatBar.Visible = true
 				this:SetMessageMode('All') -- Don't remember message mode on mobile devices
+			else
+				-- Use a count to make sure you double backspace out of a chatmode; less likely to accidently do it.
+				local count = 0
+				this.FocusChatBarInputBeganConn = Util.DisconnectEvent(this.FocusChatBarInputBeganConn)
+				this.FocusChatBarInputBeganConn = InputService.InputBegan:connect(function(inputObj)
+					if inputObj.KeyCode == Enum.KeyCode.Backspace and this:GetChatBarText() == "" then
+						if count == 0 then
+							count = count + 1
+						else
+							this:SetMessageMode('All')
+						end
+					else
+						count = 0
+					end
+				end)
 			end
 			this.ChatBarGainedFocusEvent:fire()
 		end
@@ -1076,7 +1063,7 @@ local function CreateChatBarWidget(settings)
 						elseif currentMessageMode == 'All' then
 							pcall(function() PlayersService:Chat(cText) end)
 						else
-							Spawn(function() error("ChatScript: Unknown Message Mode of " .. tostring(currentMessageMode)) end)
+							spawn(function() error("ChatScript: Unknown Message Mode of " .. tostring(currentMessageMode)) end)
 						end
 					end
 				end
@@ -1090,6 +1077,7 @@ local function CreateChatBarWidget(settings)
 			this.ChatModeText.Visible = false
 		end
 		this.ChatBarChangedConn = Util.DisconnectEvent(this.ChatBarChangedConn)
+		this.FocusChatBarInputBeganConn = Util.DisconnectEvent(this.FocusChatBarInputBeganConn)
 	end
 
 	local function CreateChatBar()
@@ -1101,7 +1089,6 @@ local function CreateChatBarWidget(settings)
 			ZIndex = 1;
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 0.25;
-			RobloxLocked = true;
 		};
 			local clickToChatButton = Util.Create'TextButton'
 			{
@@ -1116,7 +1103,6 @@ local function CreateChatBarWidget(settings)
 				TextYAlignment = Enum.TextYAlignment.Top;
 				Font = Enum.Font.SourceSansBold;
 				FontSize = Enum.FontSize.Size18;
-				RobloxLocked = true;
 				Parent = chatBarContainer;
 			}
 			local chatBar = Util.Create'TextBox'
@@ -1135,7 +1121,6 @@ local function CreateChatBarWidget(settings)
 				FontSize = Enum.FontSize.Size18;
 				ClearTextOnFocus = false;
 				Visible = not Util.IsTouchDevice();
-				RobloxLocked = true;
 				Parent = chatBarContainer;
 			}
 			local chatModeText = Util.Create'TextButton'
@@ -1151,9 +1136,9 @@ local function CreateChatBarWidget(settings)
 				TextYAlignment = Enum.TextYAlignment.Top;
 				Font = Enum.Font.SourceSansBold;
 				FontSize = Enum.FontSize.Size18;
-				RobloxLocked = true;
 				Parent = chatBarContainer;
 			}
+
 		this.ChatBarContainer = chatBarContainer
 		this.ClickToChatButton = clickToChatButton
 		this.ChatBar = chatBar
@@ -1385,6 +1370,10 @@ local function CreateChatWindowWidget(settings)
 				this.ChatContainer.Visible = enabled
 			end
 		end
+		-- If we are using bubble-chat then do not show chat window
+		if this.ChatContainer and not PlayersService.ClassicChat then
+			this.ChatContainer.Visible = false
+		end
 	end
 
 	local function CreateChatWindow()
@@ -1397,7 +1386,6 @@ local function CreateChatWindowWidget(settings)
 			ZIndex = 1;
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
-			RobloxLocked = true;
 		};
 			local scrollingFrame = Util.Create'ScrollingFrame'
 			{
@@ -1414,7 +1402,6 @@ local function CreateChatWindowWidget(settings)
 				ScrollBarThickness = 7;
 				BorderSizePixel = 0;
 				ScrollingEnabled = false;
-				RobloxLocked = true;
 				Parent = container;
 			};
 				local messageContainer = Util.Create'Frame'
@@ -1425,7 +1412,6 @@ local function CreateChatWindowWidget(settings)
 					ZIndex = 1;
 					BackgroundColor3 = Color3.new(0, 0, 0);
 					BackgroundTransparency = 1;
-					RobloxLocked = true;
 					Parent = scrollingFrame
 				};
 
@@ -1459,7 +1445,7 @@ local function CreateChatWindowWidget(settings)
 		end
 
 		GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
-		RobloxClientScreenSizeChanged(GuiService:GetScreenResolution())
+		RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize)
 
 		messageContainer.Changed:connect(OnChatWindowResize)
 		scrollingFrame.Changed:connect(OnChatWindowResize)
@@ -1468,7 +1454,6 @@ local function CreateChatWindowWidget(settings)
 		this.ScrollingFrame = scrollingFrame
 		this.MessageContainer = messageContainer
 		this.ChatContainer.Parent = GuiRoot
-
 
 		--- BACKGROUND FADING CODE ---
 		-- This is so we don't accidentally fade out when we are scrolling and mess with the scrollbar.
@@ -1495,7 +1480,7 @@ local function CreateChatWindowWidget(settings)
 				end
 			end)
 
-			Spawn(function()
+			spawn(function()
 				while true do
 					wait()
 					if this.BackgroundVisible then
@@ -1556,7 +1541,7 @@ local function CreateChatWindowWidget(settings)
 				end
 			end)
 
-			Spawn(function()
+			spawn(function()
 				while true do
 					wait()
 					if this:IsHovering() then
@@ -1652,7 +1637,6 @@ local function CreateChat()
 			Position = UDim2.new(0, 88, 0, 0);
 			BackgroundTransparency = 1.0;
 			Image = 'http://www.roblox.com/asset/?id=97078724';
-			RobloxLocked = true;
 		};
 	end
 
@@ -1670,8 +1654,7 @@ local function CreateChat()
 	end
 
 	function this:CreateGUI()
-		local success, useLuaChat = pcall(function() return GuiService.UseLuaChat end)
-		if (success and useLuaChat) or FORCE_CHAT_GUI then
+		if Player.ChatMode == Enum.ChatMode.TextAndMenu or FORCE_CHAT_GUI then
 			-- NOTE: eventually we will make multiple chat window frames
 			-- Settings is a table, which makes it a pointing and is kosher to pass by reference
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
