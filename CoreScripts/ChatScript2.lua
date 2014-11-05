@@ -1585,7 +1585,7 @@ local function CreateChat()
 			if Util:IsTouchDevice() then
 				Util.SetGUIInsetBounds(0, 0)
 			else
-				if enabled then
+				if enabled and this.ChatBarWidget then
 					-- Reserve bottom 20 pixels for our chat bar
 					Util.SetGUIInsetBounds(0, 20)
 				else
