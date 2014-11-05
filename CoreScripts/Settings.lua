@@ -719,6 +719,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		cameraLabel.ZIndex = baseZIndex + 4
 		cameraLabel.Parent = gameSettingsMenuFrame
 
+		local mouseLockLabel = game.CoreGui.RobloxGui:FindFirstChild("MouseLockLabel",true)
 		if (newMovementScripts) then
 			local mouseLockCheckbox = createTextButton("",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,32,0,32),UDim2.new(0, 270, 0, itemTop- 4))
 			mouseLockCheckbox.Name = "mouseLockCheckbox"
@@ -735,9 +736,16 @@ local function createGameSettingsMenu(baseZIndex, shield)
 					mouseLockCheckbox.Text = ""
 					UserSettings().GameSettings.ControlMode =  "Classic"
 				end
+
+				pcall(function()
+					if mouseLockLabel and UserSettings().GameSettings.ControlMode == Enum.ControlMode["Mouse Lock Switch"] then
+						mouseLockLabel.Visible = true
+					elseif mouseLockLabel then
+						mouseLockLabel.Visible = false
+					end
+				end)
 			end)	
 		else
-			local mouseLockLabel = game.CoreGui.RobloxGui:FindFirstChild("MouseLockLabel",true)
 
 			local enumItems = Enum.ControlMode:GetEnumItems()
 			local enumNames = {}
