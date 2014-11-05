@@ -26,7 +26,7 @@ local helpButton = nil
 local updateCameraDropDownSelection = nil
 local updateVideoCaptureDropDownSelection = nil
 local updateSmartCameraDropDownSelection = nil
-local updateTouchMovementDropDownSelection = nil
+local updateMovementDropDownSelection = nil
 local tweenTime = 0.2
 
 local mouseLockLookScreenUrl = "http://www.roblox.com/asset?id=54071825"
@@ -62,12 +62,22 @@ macClient = success and isMac
 local customCameraDefaultType = "Default (Classic)"
 local touchClient = false
 pcall(function() touchClient = game:GetService("UserInputService").TouchEnabled end)
+
 -- REMOVE WHEN NOT TESTING
 -- touchClient = true
+
 if touchClient then
 	hasGraphicsSlider = false
 	customCameraDefaultType = "Default (Follow)"
 end
+
+
+local newMovementScripts = false
+local successFlagRead, luaFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
+if successFlagRead and luaFlagValue == true then
+	newMovementScripts = true
+end
+
 
 local function Color3I(r,g,b)
   return Color3.new(r/255,g/255,b/255)
@@ -694,7 +704,11 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	if not touchClient then
 		local cameraLabel = Instance.new("TextLabel")
 		cameraLabel.Name = "CameraLabel"
-		cameraLabel.Text = "Character & Camera Controls"
+		if (newMovementScripts) then
+			cameraLabel.Text = "Enable Mouse Lock Switch"
+		else
+			cameraLabel.Text = "Character & Camera Controls"
+		end
 		cameraLabel.Font = Enum.Font.SourceSansBold
 		cameraLabel.FontSize = Enum.FontSize.Size18
 		cameraLabel.Position = UDim2.new(0,31,0,itemTop + 6)
@@ -705,36 +719,55 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		cameraLabel.ZIndex = baseZIndex + 4
 		cameraLabel.Parent = gameSettingsMenuFrame
 
-		local mouseLockLabel = game.CoreGui.RobloxGui:FindFirstChild("MouseLockLabel",true)
+		if (newMovementScripts) then
+			local mouseLockCheckbox = createTextButton("",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,32,0,32),UDim2.new(0, 270, 0, itemTop- 4))
+			mouseLockCheckbox.Name = "mouseLockCheckbox"
+			mouseLockCheckbox.ZIndex = baseZIndex + 4
+			mouseLockCheckbox.Parent = gameSettingsMenuFrame
+			if UserSettings().GameSettings.ControlMode.Name == "MouseLockSwitch" then 
+				mouseLockCheckbox.Text = "X" 
+			end
+			mouseLockCheckbox.MouseButton1Click:connect(function()
+				if mouseLockCheckbox.Text == "" then
+					mouseLockCheckbox.Text = "X"
+					UserSettings().GameSettings.ControlMode =  "MouseLockSwitch"
+				else
+					mouseLockCheckbox.Text = ""
+					UserSettings().GameSettings.ControlMode =  "Classic"
+				end
+			end)	
+		else
+			local mouseLockLabel = game.CoreGui.RobloxGui:FindFirstChild("MouseLockLabel",true)
 
-		local enumItems = Enum.ControlMode:GetEnumItems()
-		local enumNames = {}
-		local enumNameToItem = {}
-		for i,obj in ipairs(enumItems) do
-			enumNames[i] = obj.Name
-			enumNameToItem[obj.Name] = obj
+			local enumItems = Enum.ControlMode:GetEnumItems()
+			local enumNames = {}
+			local enumNameToItem = {}
+			for i,obj in ipairs(enumItems) do
+				enumNames[i] = obj.Name
+				enumNameToItem[obj.Name] = obj
+			end
+
+			local cameraDropDown
+			cameraDropDown, updateCameraDropDownSelection = RbxGui.CreateDropDownMenu(enumNames, 
+				function(text) 
+					UserSettings().GameSettings.ControlMode = enumNameToItem[text] 
+					
+					pcall(function()
+						if mouseLockLabel and UserSettings().GameSettings.ControlMode == Enum.ControlMode["Mouse Lock Switch"] then
+							mouseLockLabel.Visible = true
+						elseif mouseLockLabel then
+							mouseLockLabel.Visible = false
+						end
+					end)
+				end, false, true, baseZIndex)
+			cameraDropDown.Name = "CameraField"
+			cameraDropDown.ZIndex = baseZIndex + 4
+			cameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+			cameraDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
+			cameraDropDown.Position = UDim2.new(0, 270, 0, itemTop)
+			cameraDropDown.Size = UDim2.new(0,200,0,32)
+			cameraDropDown.Parent = gameSettingsMenuFrame
 		end
-
-		local cameraDropDown
-		cameraDropDown, updateCameraDropDownSelection = RbxGui.CreateDropDownMenu(enumNames, 
-			function(text) 
-				UserSettings().GameSettings.ControlMode = enumNameToItem[text] 
-				
-				pcall(function()
-					if mouseLockLabel and UserSettings().GameSettings.ControlMode == Enum.ControlMode["Mouse Lock Switch"] then
-						mouseLockLabel.Visible = true
-					elseif mouseLockLabel then
-						mouseLockLabel.Visible = false
-					end
-				end)
-			end, false, true, baseZIndex)
-		cameraDropDown.Name = "CameraField"
-		cameraDropDown.ZIndex = baseZIndex + 4
-		cameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
-		cameraDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
-		cameraDropDown.Position = UDim2.new(0, 270, 0, itemTop)
-		cameraDropDown.Size = UDim2.new(0,200,0,32)
-		cameraDropDown.Parent = gameSettingsMenuFrame
 
 		itemTop = itemTop + 35
 	end
@@ -811,7 +844,13 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	smartCameraLabel.Parent = gameSettingsMenuFrame
 
 	local smartEnumItems = nil
-	smartEnumItems = Enum.CustomCameraMode:GetEnumItems()
+	if (not newMovementScripts) then
+		smartEnumItems = Enum.CustomCameraMode:GetEnumItems()
+	elseif (touchClient) then
+		smartEnumItems = Enum.TouchCameraMovementMode:GetEnumItems()
+	else
+		smartEnumItems = Enum.ComputerCameraMovementMode:GetEnumItems()
+	end
 
 	local smartEnumNames = {}
 	local smartEnumNameToItem = {}
@@ -828,7 +867,13 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	local smartCameraDropDown
 	smartCameraDropDown, updateSmartCameraDropDownSelection = RbxGui.CreateDropDownMenu(smartEnumNames, 
 		function(text) 
-			UserSettings().GameSettings.CameraMode = smartEnumNameToItem[text] 
+			if (not newMovementScripts) then
+				UserSettings().GameSettings.CameraMode = smartEnumNameToItem[text]
+			elseif (touchClient) then
+				UserSettings().GameSettings.TouchCameraMovementMode = smartEnumNameToItem[text] 
+			else
+				UserSettings().GameSettings.ComputerCameraMovementMode = smartEnumNameToItem[text] 
+			end
 		end, false, true, baseZIndex)
 	smartCameraDropDown.Name = "SmartCameraField"
 	smartCameraDropDown.ZIndex = baseZIndex + 4
@@ -844,44 +889,69 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	----------------------------------------------------------------------------------------------------
 	--  T O U C H    M O V E M E N T    C O N T R O L S
 	----------------------------------------------------------------------------------------------------
-	if (touchClient) then
-		local touchMovementLabel = Instance.new("TextLabel")
-		touchMovementLabel.Name = "TouchMovementLabel"
-		touchMovementLabel.Text = "Movement Mode"
-		touchMovementLabel.Font = Enum.Font.SourceSansBold
-		touchMovementLabel.FontSize = Enum.FontSize.Size18
-		touchMovementLabel.Position = UDim2.new(0,31,0,itemTop + 6)
-		touchMovementLabel.Size = UDim2.new(0,224,0,18)
-		touchMovementLabel.TextColor3 = Color3I(255,255,255)
-		touchMovementLabel.TextXAlignment = Enum.TextXAlignment.Left
-		touchMovementLabel.BackgroundTransparency = 1
-		touchMovementLabel.ZIndex = baseZIndex + 4
-		touchMovementLabel.Parent = gameSettingsMenuFrame
 
-		local touchEnumItems = Enum.TouchMovementMode:GetEnumItems()
-		local touchEnumNames = {}
-		local touchEnumNameToItem = {}
-		for i,obj in ipairs(touchEnumItems) do
-			local displayName = obj.Name
-			if (obj.Name == "Default") then
-				displayName = "Default (Thumbstick)"
+	if (touchClient or newMovementScripts) then
+		local movementModeLabel = Instance.new("TextLabel")
+		movementModeLabel.Name = "movementModeLabel"
+		movementModeLabel.Text = "Movement Mode"
+		movementModeLabel.Font = Enum.Font.SourceSansBold
+		movementModeLabel.FontSize = Enum.FontSize.Size18
+		movementModeLabel.Position = UDim2.new(0,31,0,itemTop + 6)
+		movementModeLabel.Size = UDim2.new(0,224,0,18)
+		movementModeLabel.TextColor3 = Color3I(255,255,255)
+		movementModeLabel.TextXAlignment = Enum.TextXAlignment.Left
+		movementModeLabel.BackgroundTransparency = 1
+		movementModeLabel.ZIndex = baseZIndex + 4
+		movementModeLabel.Parent = gameSettingsMenuFrame
+
+		local enumNames
+		local enumNameToItem 
+		if (touchClient) then
+			local touchEnumItems = Enum.TouchMovementMode:GetEnumItems()
+			local touchEnumNames = {}
+			local touchEnumNameToItem = {}
+			for i,obj in ipairs(touchEnumItems) do
+				local displayName = obj.Name
+				if (obj.Name == "Default") then
+					displayName = "Default (Thumbstick)"
+				end
+				touchEnumNames[i] = displayName
+				touchEnumNameToItem[displayName] = obj
 			end
-			touchEnumNames[i] = displayName
-			touchEnumNameToItem[displayName] = obj
+			enumNames = touchEnumNames
+			enumNameToItem = touchEnumNameToItem
+		else 
+			local computerEnumItems = Enum.ComputerMovementMode:GetEnumItems()
+			local computerEnumNames = {}
+			local computerEnumNameToItem = {}
+			for i,obj in ipairs(computerEnumItems) do
+				local displayName = obj.Name
+				if (obj.Name == "Default") then
+					displayName = "Default (Keyboard)"
+				end
+				computerEnumNames[i] = displayName
+				computerEnumNameToItem[displayName] = obj
+			end
+			enumNames = computerEnumNames
+			enumNameToItem = computerEnumNameToItem
 		end
 
-		local touchMovementDropDown
-		touchMovementDropDown, updateTouchMovementDropDownSelection = RbxGui.CreateDropDownMenu(touchEnumNames, 
+		local movementModeDropDown
+		movementModeDropDown,  updateMovementDropDownSelection = RbxGui.CreateDropDownMenu(enumNames, 
 			function(text) 
-				UserSettings().GameSettings.TouchMovementMode = touchEnumNameToItem[text] 
+				if (touchClient) then
+					UserSettings().GameSettings.TouchMovementMode = enumNameToItem[text]
+				else
+					UserSettings().GameSettings.ComputerMovementMode = enumNameToItem[text]
+				end
 			end, false, true, baseZIndex)
-		touchMovementDropDown.Name = "touchMovementField"
-		touchMovementDropDown.ZIndex = baseZIndex + 4
-		touchMovementDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
-		touchMovementDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
-		touchMovementDropDown.Position = UDim2.new(0, 270, 0, itemTop)
-		touchMovementDropDown.Size = UDim2.new(0,200,0,32)
-		touchMovementDropDown.Parent = gameSettingsMenuFrame
+		movementModeDropDown.Name = "movementModeField"
+		movementModeDropDown.ZIndex = baseZIndex + 4
+		movementModeDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+		movementModeDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
+		movementModeDropDown.Position = UDim2.new(0, 270, 0, itemTop)
+		movementModeDropDown.Size = UDim2.new(0,200,0,32)
+		movementModeDropDown.Parent = gameSettingsMenuFrame
 
 		itemTop = itemTop + 35
 	end
@@ -963,7 +1033,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		local autoText = qualityText:clone()
 		autoText.Name = "AutoText"
 		autoText.Text = "Auto"
-		autoText.Position = UDim2.new(0,270,0,214 + graphicsQualityYOffset)
+		autoText.Position = UDim2.new(0,235,0,239 + graphicsQualityYOffset)
 		autoText.TextColor3 = Color3.new(128/255,128/255,128/255)
 		autoText.Size = UDim2.new(0,34,0,18)
 		autoText.Parent = gameSettingsMenuFrame
@@ -989,7 +1059,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		betterQualityText.Parent = gameSettingsMenuFrame
 		betterQualityText.Visible = not inStudioMode
 		
-		local autoGraphicsButton = createTextButton("X",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,32,0,32),UDim2.new(0,270,0,230 + graphicsQualityYOffset))
+		local autoGraphicsButton = createTextButton("X",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,32,0,32),UDim2.new(0,270,0,232 + graphicsQualityYOffset))
 		autoGraphicsButton.Name = "AutoGraphicsButton"
 		autoGraphicsButton.ZIndex = baseZIndex + 4
 		autoGraphicsButton.Parent = gameSettingsMenuFrame
@@ -1517,18 +1587,35 @@ if UserSettings then
 						updateCameraDropDownSelection(UserSettings().GameSettings.ControlMode.Name)
 					end
 
-					local cameraMode = UserSettings().GameSettings.CameraMode.Name
+					local cameraMode = "None"
+					if (not newMovementScripts) then
+						cameraMode = UserSettings().GameSettings.CameraMode.Name
+					elseif (touchClient) then
+						cameraMode = UserSettings().GameSettings.TouchCameraMovementMode.Name
+					else
+						cameraMode = UserSettings().GameSettings.ComputerCameraMovementMode.Name
+					end
+
 					if (cameraMode == "Default") then
 						cameraMode = customCameraDefaultType
 					end
+
 					updateSmartCameraDropDownSelection(cameraMode)
 
-					if updateTouchMovementDropDownSelection ~= nil then
-						local moveMode = UserSettings().GameSettings.TouchMovementMode.Name
-						if (moveMode == "Default") then
-							moveMode = "Default (Thumbstick)"
+					if updateMovementDropDownSelection ~= nil then
+						local moveMode = "None"
+						if (touchClient) then
+							moveMode = UserSettings().GameSettings.TouchMovementMode.Name
+							if (moveMode == "Default") then
+								moveMode = "Default (Thumbstick)"
+							end
+						else 
+							moveMode = UserSettings().GameSettings.ComputerMovementMode.Name
+							if (moveMode == "Default") then
+								moveMode = "Default (Keyboard)"
+							end
 						end
-						updateTouchMovementDropDownSelection(moveMode)
+						updateMovementDropDownSelection(moveMode)
 					end
 
 					pcall(function() game:GetService("UserInputService").OverrideMouseIconEnabled = true end)
@@ -1623,18 +1710,33 @@ if UserSettings then
 							updateCameraDropDownSelection(UserSettings().GameSettings.ControlMode.Name)
 						end
 	
-						local cameraMode = UserSettings().GameSettings.CameraMode.Name
+						local cameraMode = "None"
+						if (not newMovementScripts) then
+							cameraMode = UserSettings().GameSettings.CameraMode.Name
+						elseif (touchClient) then
+							cameraMode = UserSettings().GameSettings.TouchCameraMovementMode.Name
+						else
+							cameraMode = UserSettings().GameSettings.ComputerCameraMovementMode.Name
+						end
 						if (cameraMode == "Default") then
 							cameraMode = customCameraDefaultType
 						end
 						updateSmartCameraDropDownSelection(cameraMode)
 	
-						if updateTouchMovementDropDownSelection ~= nil then
-							local moveMode = UserSettings().GameSettings.TouchMovementMode.Name
-							if (moveMode == "Default") then
-								moveMode = "Default (Thumbstick)"
+						if updateMovementDropDownSelection ~= nil then
+							local moveMode = "None"
+							if (touchClient) then
+								moveMode = UserSettings().GameSettings.TouchMovementMode.Name
+								if (moveMode == "Default") then
+									moveMode = "Default (Thumbstick)"
+								end
+							else 
+								moveMode = UserSettings().GameSettings.ComputerMovementMode.Name
+								if (moveMode == "Default") then
+									moveMode = "Default (Keyboard)"
+								end
 							end
-							updateTouchMovementDropDownSelection(moveMode)
+							updateMovementDropDownSelection(moveMode)
 						end
 						
 						if syncVideoCaptureSetting then
