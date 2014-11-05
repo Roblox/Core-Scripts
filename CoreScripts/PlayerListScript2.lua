@@ -58,7 +58,7 @@ local AbuseReason = nil
 
 --[[ Constants ]]--
 local ENTRY_PAD = 1
-local BG_TRANSPARENCY = 0.9
+local BG_TRANSPARENCY = 0.75
 local TWEEN_TIME = 0.15
 local MAX_LEADERSTATS = 4
 local MAX_STR_LEN = 10
