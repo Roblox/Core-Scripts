@@ -58,7 +58,10 @@ local AbuseReason = nil
 
 --[[ Constants ]]--
 local ENTRY_PAD = 1
-local BG_TRANSPARENCY = 0.75
+local BG_TRANSPARENCY = 0.7
+local TEXT_STROKE_TRANSPARENCY = 0.75
+local TEXT_COLOR = Color3.new(1, 1, 243/255)
+local TEXT_STROKE_COLOR = Color3.new(34/255, 34/255, 34/255)
 local TWEEN_TIME = 0.15
 local MAX_LEADERSTATS = 4
 local MAX_STR_LEN = 10
@@ -234,8 +237,9 @@ Header.Parent = Container
 	HeaderName.BackgroundTransparency = 1
 	HeaderName.Font = Enum.Font.SourceSansBold
 	HeaderName.FontSize = Enum.FontSize.Size18
-	HeaderName.TextColor3 = Color3.new(1, 1, 1)
-	HeaderName.TextStrokeTransparency = 1
+	HeaderName.TextColor3 = TEXT_COLOR
+	HeaderName.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
+	HeaderName.TextStrokeColor3 = TEXT_STROKE_COLOR
 	HeaderName.TextXAlignment = Enum.TextXAlignment.Right
 	HeaderName.Text = Player.Name
 	HeaderName.Parent = Header
@@ -247,8 +251,9 @@ Header.Parent = Container
 	HeaderScore.BackgroundTransparency = 1
 	HeaderScore.Font = Enum.Font.SourceSansBold
 	HeaderScore.FontSize = Enum.FontSize.Size18
-	HeaderScore.TextColor3 = Color3.new(1, 1, 1)
-	HeaderScore.TextStrokeTransparency = 1
+	HeaderScore.TextColor3 = TEXT_COLOR
+	HeaderScore.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
+	HeaderScore.TextStrokeColor3 = TEXT_STROKE_COLOR
 	HeaderScore.TextXAlignment = Enum.TextXAlignment.Right
 	HeaderScore.Text = ""
 	HeaderScore.Parent = Header
@@ -521,8 +526,9 @@ local function createEntryNameText(name, text, sizeXOffset, posXOffset)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Font = Enum.Font.SourceSans
 	nameLabel.FontSize = Enum.FontSize.Size14
-	nameLabel.TextColor3 = Color3.new(1, 1, 1)
-	nameLabel.TextStrokeTransparency = 1
+	nameLabel.TextColor3 = TEXT_COLOR
+	nameLabel.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
+	nameLabel.TextStrokeColor3 = TEXT_STROKE_COLOR
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 	nameLabel.Text = text
 
@@ -550,8 +556,9 @@ local function createStatText(parent, text)
 	statText.BackgroundTransparency = 1
 	statText.Font = Enum.Font.SourceSans
 	statText.FontSize = Enum.FontSize.Size14
-	statText.TextColor3 = Color3.new(1, 1, 1)
-	statText.TextStrokeTransparency = 1
+	statText.TextColor3 = TEXT_COLOR
+	statText.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
+	statText.TextStrokeColor3 = TEXT_STROKE_COLOR
 	statText.Text = text
 	statText.Active = true
 	statText.Parent = parent
@@ -709,8 +716,9 @@ local function createPopupFrame(buttons)
 		btn.Text = button.Text
 		btn.Font = Enum.Font.SourceSans
 		btn.FontSize = Enum.FontSize.Size14
-		btn.TextColor3 = Color3.new(1, 1, 1)
-		btn.TextStrokeTransparency = 1
+		btn.TextColor3 = TEXT_COLOR
+		btn.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
+		btn.TextStrokeColor3 = TEXT_STROKE_COLOR
 		btn.AutoButtonColor = true
 		btn.Parent = frame
 
@@ -1152,12 +1160,10 @@ local function addNewStats(leaderstats)
 				if priority then newStat.Priority = priority end
 				newStat.IsPrimary = false
 				local isPrimary = stat:FindFirstChild('IsPrimary')
-				print(isPrimary)
 				if isPrimary then
 					newStat.IsPrimary = true
 				else
 					stat.ChildAdded:connect(function(child)
-						print("child added to stat")
 						if child.Name == "IsPrimary" then
 							newStat.IsPrimary = true
 							table.sort(GameStats, sortLeaderStats)
