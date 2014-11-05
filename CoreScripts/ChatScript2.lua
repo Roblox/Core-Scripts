@@ -1641,16 +1641,20 @@ local function CreateChat()
 	end
 
 	function this:PrintWelcome()
-		this.ChatWindowWidget:AddSystemChatMessage("Welcome to Roblox")
-		this.ChatWindowWidget:AddSystemChatMessage("Please type /? for a list of commands")
+		if this.ChatWindowWidget then
+			this.ChatWindowWidget:AddSystemChatMessage("Welcome to Roblox")
+			this.ChatWindowWidget:AddSystemChatMessage("Please type /? for a list of commands")
+		end
 	end
 
 	function this:PrintHelp()
-		this.ChatWindowWidget:AddSystemChatMessage("Help Menu")
-		this.ChatWindowWidget:AddSystemChatMessage("Chat Commands:")
-		this.ChatWindowWidget:AddSystemChatMessage("/w [PlayerName] or /whisper [PlayerName] - Whisper Chat")
-		this.ChatWindowWidget:AddSystemChatMessage("/t or /team - Team Chat")
-		this.ChatWindowWidget:AddSystemChatMessage("/a or /all - All Chat")
+		if this.ChatWindowWidget then
+			this.ChatWindowWidget:AddSystemChatMessage("Help Menu")
+			this.ChatWindowWidget:AddSystemChatMessage("Chat Commands:")
+			this.ChatWindowWidget:AddSystemChatMessage("/w [PlayerName] or /whisper [PlayerName] - Whisper Chat")
+			this.ChatWindowWidget:AddSystemChatMessage("/t or /team - Team Chat")
+			this.ChatWindowWidget:AddSystemChatMessage("/a or /all - All Chat")
+		end
 	end
 
 	function this:CreateGUI()
