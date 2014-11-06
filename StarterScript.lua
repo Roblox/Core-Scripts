@@ -56,53 +56,20 @@ elseif Game:GetService("GuiService"):GetScreenResolution().Y >= 500 then
 	end
 end
 
-print("Using custom CoreGuis!")
+-- Backpack Builder, creates most of the backpack gui
+scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackBuilder", screenGui)
 
+screenGui:WaitForChild("CurrentLoadout")
+screenGui:WaitForChild("Backpack")
+local Backpack = screenGui.Backpack
 
+-- Manager handles all big backpack state changes, other scripts subscribe to this and do things accordingly
+scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackManager", Backpack)
 
-
-
-
-
-
-
-
-
-scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScript", screenGui)
-
-
-
-
-
-
-
-
-
-
--- -- Backpack Builder, creates most of the backpack gui
--- scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackBuilder", screenGui)
-
--- screenGui:WaitForChild("CurrentLoadout")
--- screenGui:WaitForChild("Backpack")
--- local Backpack = screenGui.Backpack
-	
--- -- Manager handles all big backpack state changes, other scripts subscribe to this and do things accordingly
--- scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackManager", Backpack)
-	
--- -- Backpack Gear (handles all backpack gear tab stuff)
--- scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackGear", Backpack)
--- -- Loadout Script, used for gear hotkeys
--- scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/LoadoutScript", screenGui.CurrentLoadout)
-
-
-
-
-
-
-
-
-
-
+-- Backpack Gear (handles all backpack gear tab stuff)
+scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackGear", Backpack)
+-- Loadout Script, used for gear hotkeys
+scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/LoadoutScript", screenGui.CurrentLoadout)
 
 if touchEnabled then -- touch devices don't use same control frame
 	-- only used for touch device button generation
