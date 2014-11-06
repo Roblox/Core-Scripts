@@ -7,7 +7,7 @@ local touchEnabled = game:GetService("UserInputService").TouchEnabled
 Game:GetService("CoreGui"):WaitForChild("RobloxGui")
 local screenGui = Game:GetService("CoreGui"):FindFirstChild("RobloxGui")
 
--- SettingsScript 
+-- SettingsScript
 scriptContext:AddCoreScriptLocal("CoreScripts/Settings", screenGui)
 
 if not touchEnabled then
@@ -28,18 +28,32 @@ scriptContext:AddCoreScriptLocal("CoreScripts/PopupScript", screenGui)
 -- Friend Notification Script (probably can use this script to expand out to other notifications)
 scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript", screenGui)
 -- Chat script
-scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript", screenGui)	
+local success, chatFlagValue = pcall(function() return settings():GetFFlag("NewLuaChatScript") end)
+if success and chatFlagValue == true then
+	scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript2", screenGui)
+else
+	scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript", screenGui)
+end
 -- Purchase Prompt Script
 scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript", screenGui)
 -- Health Script
 scriptContext:AddCoreScriptLocal("CoreScripts/HealthScript", screenGui)
 
-if not touchEnabled then 
+local playerListSuccess, playerListFlagValue = pcall(function() return settings():GetFFlag("NewPlayerListScript") end)
+if not touchEnabled then
 	-- New Player List
-	scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
-elseif Game:GetService("GuiService"):GetScreenResolution().Y >= 500 then 	
+	if playerListSuccess and playerListFlagValue == true then
+		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript2", screenGui)
+	else
+		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
+	end
+elseif Game:GetService("GuiService"):GetScreenResolution().Y >= 500 then
 	-- New Player List
-	scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
+	if playerListSuccess and playerListFlagValue == true then
+		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript2", screenGui)
+	else
+		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
+	end
 end
 
 print("Using custom CoreGuis!")
@@ -97,4 +111,4 @@ if touchEnabled then -- touch devices don't use same control frame
 	screenGui:WaitForChild("ControlFrame")
 	screenGui.ControlFrame:WaitForChild("BottomLeftControl")
 	screenGui.ControlFrame.BottomLeftControl.Visible = false
-end 
+end
