@@ -147,14 +147,14 @@ local ADMIN_LIST = {
 
 local CHAT_COLORS =
 {
-	BrickColor.new("Bright red"),
-	BrickColor.new("Bright blue"),
-	BrickColor.new("Earth green"),
-	BrickColor.new("Bright violet"),
-	BrickColor.new("Bright orange"),
-	BrickColor.new("Bright yellow"),
-	BrickColor.new("Light reddish violet"),
-	BrickColor.new("Brick yellow"),
+	Color3.new(253/255, 41/255, 67/255), -- BrickColor.new("Bright red").Color,
+	Color3.new(1/255, 162/255, 255/255), -- BrickColor.new("Bright blue").Color,
+	Color3.new(2/255, 184/255, 87/255), -- BrickColor.new("Earth green").Color,
+	BrickColor.new("Bright violet").Color,
+	BrickColor.new("Bright orange").Color,
+	BrickColor.new("Bright yellow").Color,
+	BrickColor.new("Light reddish violet").Color,
+	BrickColor.new("Brick yellow").Color,
 }
 -- These emotes are copy-pastad from the humanoidLocalAnimateKeyframe script
 local EMOTE_NAMES = {wave = true, point = true, dance = true, dance2 = true, dance3 = true, laugh = true, cheer = true}
@@ -361,7 +361,7 @@ do
 	end
 
 	function Util.ComputeChatColor(pName)
-		return CHAT_COLORS[GetNameValue(pName) + 1].Color
+		return CHAT_COLORS[GetNameValue(pName) + 1]
 	end
 
 	-- This is a memo-izing function
@@ -405,12 +405,6 @@ local SelectPlayerEvent = Util.Signal()
 local function CreateChatMessage()
 	local this = {}
 
-	this.Settings =
-	{
-		Font = Enum.Font.SourceSansBold;
-		FontSize = Enum.FontSize.Size14;
-	}
-
 	function this:OnResize()
 		-- Nothing!
 	end
@@ -445,9 +439,10 @@ local function CreateChatMessage()
 	return this
 end
 
-local function CreateSystemChatMessage(chattedMessage)
+local function CreateSystemChatMessage(settings, chattedMessage)
 	local this = CreateChatMessage()
 
+	this.Settings = settings
 	this.chatMessage = chattedMessage
 
 	function this:OnResize(containerSize)
@@ -484,11 +479,11 @@ local function CreateSystemChatMessage(chattedMessage)
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
 				TextWrapped = true;
-				TextColor3 = Color3.new(1, 1, 1);
+				TextColor3 = this.Settings.DefaultMessageTextColor;
 				FontSize = this.Settings.FontSize;
 				Font = this.Settings.Font;
-				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
-				TextStrokeTransparency = 0.3;
+				TextStrokeColor3 = this.Settings.TextStrokeColor;
+				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 				Parent = container;
 			};
 
@@ -502,9 +497,10 @@ local function CreateSystemChatMessage(chattedMessage)
 	return this
 end
 
-local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 	local this = CreateChatMessage()
 
+	this.Settings = settings
 	this.PlayerChatType = playerChatType
 	this.SendingPlayer = sendingPlayer
 	this.RawMessageContent = chattedMessage
@@ -587,7 +583,7 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 		local chatMessageSize = Util.GetStringTextBounds(chatMessageDisplayText, this.Settings.Font, this.Settings.FontSize, UDim2.new(0, 400 - 5 - playerNameSize.X, 0, 1000))
 
 
-		local playerColor = Color3.new(1,1,1)
+		local playerColor = this.Settings.DefaultMessageTextColor
 		if this.SendingPlayer then
 			if this.PlayerChatType == Enum.PlayerChatType.Whisper then
 				if this.SendingPlayer == Player and this.ReceivingPlayer then
@@ -627,11 +623,11 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 					TextXAlignment = Enum.TextXAlignment.Left;
 					TextYAlignment = Enum.TextYAlignment.Top;
 					TextWrapped = true;
-					TextColor3 = Color3.new(1, 1, 1);
+					TextColor3 = this.Settings.DefaultMessageTextColor;
 					FontSize = this.Settings.FontSize;
 					Font = this.Settings.Font;
-					TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
-					TextStrokeTransparency = 0.3;
+					TextStrokeColor3 = this.Settings.TextStrokeColor;
+					TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 					Parent = container;
 				};
 				xOffset = xOffset + toMessageSize.X
@@ -648,11 +644,11 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 					TextXAlignment = Enum.TextXAlignment.Left;
 					TextYAlignment = Enum.TextYAlignment.Top;
 					TextWrapped = true;
-					TextColor3 = Color3.new(1, 1, 1);
+					TextColor3 = this.Settings.DefaultMessageTextColor;
 					FontSize = this.Settings.FontSize;
 					Font = this.Settings.Font;
-					TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
-					TextStrokeTransparency = 0.3;
+					TextStrokeColor3 = this.Settings.TextStrokeColor;
+					TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 					Parent = container;
 				};
 				xOffset = xOffset + fromMessageSize.X
@@ -677,15 +673,15 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				BackgroundTransparency = 1;
 				ZIndex = 2;
 				Text = chatTypeDisplayText;
-				TextColor3 = Color3.new(255/255, 255/255, 243/255);
+				TextColor3 = this.Settings.DefaultMessageTextColor;
 				Position = UDim2.new(0, xOffset, 0, 0);
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
 				FontSize = this.Settings.FontSize;
 				Font = this.Settings.Font;
 				Size = UDim2.new(0, chatTypeSize.X, 0, chatTypeSize.Y);
-				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
-				TextStrokeTransparency = 0.3;
+				TextStrokeColor3 = this.Settings.TextStrokeColor;
+				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 				Parent = container
 			}
 			if chatModeButton:IsA('TextButton') then
@@ -711,8 +707,8 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				FontSize = this.Settings.FontSize;
 				Font = this.Settings.Font;
 				Size = UDim2.new(0, playerNameSize.X, 0, playerNameSize.Y);
-				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
-				TextStrokeTransparency = 0.3;
+				TextStrokeColor3 = this.Settings.TextStrokeColor;
+				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 				Parent = container
 			}
 			if userNameButton:IsA('TextButton') then
@@ -733,11 +729,11 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
 				TextWrapped = true;
-				TextColor3 = Color3.new(255/255, 255/255, 243/255);
+				TextColor3 = this.Settings.DefaultMessageTextColor;
 				FontSize = this.Settings.FontSize;
 				Font = this.Settings.Font;
-				TextStrokeColor3 = Color3.new(34/255, 34/255, 34/255);
-				TextStrokeTransparency = 0.3;
+				TextStrokeColor3 = this.Settings.TextStrokeColor;
+				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 				Parent = container;
 			};
 			-- Check if they got moderated and put up a real message instead of Label
@@ -745,7 +741,7 @@ local function CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMes
 				chatMessage.Text = string.rep(" ", numNeededSpaces) .. '[Content Deleted]'
 			end
 			if this.SendingPlayer and ADMIN_LIST[tostring(this.SendingPlayer.userId)] then
-				chatMessage.TextColor3 = Color3.new(1, 215/255, 0)
+				chatMessage.TextColor3 = this.Settings.AdminTextColor
 			end
 			chatMessage.Size = chatMessage.Size + UDim2.new(0, 0, 0, chatMessage.TextBounds.Y);
 
@@ -1322,12 +1318,12 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:AddSystemChatMessage(chattedMessage)
-		local chatMessage = CreateSystemChatMessage(chattedMessage)
+		local chatMessage = CreateSystemChatMessage(this.Settings, chattedMessage)
 		this:PushMessageIntoQueue(chatMessage)
 	end
 
 	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-		local chatMessage = CreatePlayerChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		local chatMessage = CreatePlayerChatMessage(this.Settings, playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		this:PushMessageIntoQueue(chatMessage)
 	end
 
@@ -1575,6 +1571,12 @@ local function CreateChat()
 		GlobalTextColor = Color3.new(255/255, 255/255, 243/255);
 		WhisperTextColor = Color3.new(77/255, 139/255, 255/255);
 		TeamTextColor = Color3.new(230/255, 207/255, 0);
+		DefaultMessageTextColor = Color3.new(255/255, 255/255, 243/255);
+		AdminTextColor = Color3.new(1, 215/255, 0);
+		TextStrokeTransparency = 0.75;
+		TextStrokeColor = Color3.new(34/255,34/255,34/255);
+		Font = Enum.Font.SourceSansBold;
+		FontSize = Enum.FontSize.Size14;
 		MaxWindowChatMessages = 100;
 		MaxCharactersInMessage = 140; -- Same as a tweet :D
 	}
