@@ -1,4 +1,5 @@
-print("Running NEW Backpack!")
+-- Backpack Version 4.1
+-- OnlyTwentyCharacters
 
 -- Configurables --
 
@@ -34,7 +35,7 @@ local DOUBLE_CLICK_TIME = 0.5
 
 -- Variables --
 
-print = function() end --TODO
+print = function() end --TODO: Remove all prints when full implementation is complete
 
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
@@ -683,6 +684,7 @@ HotbarFrame.Parent = MainFrame
 -- Make all the Hotbar Slots
 for i = 1, HOTBAR_SLOTS do
 	local slot = MakeSlot(HotbarFrame, i)
+	slot.Frame.Visible = false
 	
 	if not LowestEmptySlot then
 		LowestEmptySlot = slot
