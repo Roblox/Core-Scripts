@@ -56,20 +56,32 @@ elseif Game:GetService("GuiService"):GetScreenResolution().Y >= 500 then
 	end
 end
 
--- Backpack Builder, creates most of the backpack gui
-scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackBuilder", screenGui)
-
-screenGui:WaitForChild("CurrentLoadout")
-screenGui:WaitForChild("Backpack")
-local Backpack = screenGui.Backpack
-
--- Manager handles all big backpack state changes, other scripts subscribe to this and do things accordingly
-scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackManager", Backpack)
-
--- Backpack Gear (handles all backpack gear tab stuff)
-scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackGear", Backpack)
--- Loadout Script, used for gear hotkeys
-scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/LoadoutScript", screenGui.CurrentLoadout)
+do -- Backpack!
+	local useNewBackpack = false
+	
+	local success, errorMsg = pcall(function()
+		useNewBackpack = settings():GetFFlag("NewBackpackScript")
+	end)
+	
+	if useNewBackpack then
+		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScript", screenGui)
+	else
+		-- Backpack Builder, creates most of the backpack gui
+		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackBuilder", screenGui)
+		
+		screenGui:WaitForChild("CurrentLoadout")
+		screenGui:WaitForChild("Backpack")
+		local Backpack = screenGui.Backpack
+		
+		-- Manager handles all big backpack state changes, other scripts subscribe to this and do things accordingly
+		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackManager", Backpack)
+		
+		-- Backpack Gear (handles all backpack gear tab stuff)
+		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackGear", Backpack)
+		-- Loadout Script, used for gear hotkeys
+		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/LoadoutScript", screenGui.CurrentLoadout)
+	end
+end
 
 if touchEnabled then -- touch devices don't use same control frame
 	-- only used for touch device button generation
