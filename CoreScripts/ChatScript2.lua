@@ -1058,7 +1058,7 @@ local function CreateChatBarWidget(settings)
 				this:SetChatBarText("")
 			end
 		end
-		if self.ClickToChatButton then
+		if self.ClickToChatButton and this:GetChatBarText() ~= "" then
 			self.ClickToChatButton.Visible = true
 		end
 		if this.ChatModeText then
