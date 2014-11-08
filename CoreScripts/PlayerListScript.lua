@@ -2127,15 +2127,17 @@ ScreenGui.Changed:connect(UpdateHeaderNameSize)
 	removes old stats, adds any existing stats, and sets up listeners for new stats
 	@Args:
 	playerEntry		A reference to the ENTRY(table) of the player who had leaderstats added
+	@Note: Events connected first, then iterating trough the already existing values
+		(StatAdded could yield, after which the leaderstats are maybe removed)
 --]]
 function LeaderstatsAdded(playerEntry)
 	--RemoveAllStats(playerEntry)
+	nplayer.leaderstats.ChildAdded:connect(function(nchild) StatAdded(nchild,playerEntry) end)
+	nplayer.leaderstats.ChildRemoved:connect(function(nchild) StatRemoved(nchild,playerEntry) end)
 	local nplayer = playerEntry['Player']
 	for _,i in pairs(nplayer.leaderstats:GetChildren()) do
 		StatAdded(i,playerEntry)
 	end
-	nplayer.leaderstats.ChildAdded:connect(function(nchild) StatAdded(nchild,playerEntry) end)
-	nplayer.leaderstats.ChildRemoved:connect(function(nchild) StatRemoved(nchild,playerEntry) end)
 end
 --[[
 	called when leaderstats object is removed from play in player entry
