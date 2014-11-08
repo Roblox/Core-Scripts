@@ -449,7 +449,7 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 		if this.Container and this.ChatMessage then
 			this.Container.Size = UDim2.new(1,0,0,1000)
 			local textHeight = this.ChatMessage.TextBounds.Y
-			this.Container.Size = UDim2.new(1,0,0,textHeight)
+			this.Container.Size = UDim2.new(1,0,0,textHeight + 1)
 			return textHeight
 		end
 	end
@@ -487,7 +487,7 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 				Parent = container;
 			};
 
-		container.Size = UDim2.new(1, 0, 0, systemMessageSize.Y);
+		container.Size = UDim2.new(1, 0, 0, systemMessageSize.Y + 1);
 		this.Container = container
 		this.ChatMessage = chatMessage
 	end
@@ -514,7 +514,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		if this.Container and this.ChatMessage then
 			this.Container.Size = UDim2.new(1,0,0,1000)
 			local textHeight = this.ChatMessage.TextBounds.Y
-			this.Container.Size = UDim2.new(1,0,0,textHeight)
+			this.Container.Size = UDim2.new(1,0,0,textHeight + 1)
 			return textHeight
 		end
 	end
@@ -523,14 +523,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		local result = ""
 		if this.RawMessageContent then
 			local message = this.RawMessageContent
-
-			if string.sub(message, 1, 3) == '/e ' or string.sub(message, 1, 7) == '/emote ' then
-				if this.SendingPlayer then
-					result = this.SendingPlayer.Name .. " emotes."
-				end
-			else
-				result = message
-			end
+			result = message
 		end
 		return result
 	end
@@ -658,7 +651,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 					Name = "UserNameDot";
 					Size = UDim2.new(0, 14, 0, 14);
 					BackgroundTransparency = 1;
-					Position = UDim2.new(0, 0, 0, 2);
+					Position = UDim2.new(0, 0, 0, math.max(0, ((playerNameSize and playerNameSize.Y or 0) - 14)/2) + 2);
 					BorderSizePixel = 0;
 					Image = "rbxasset://textures/ui/chat_teamButton.png";
 					ImageColor3 = playerColor;
@@ -745,7 +738,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			end
 			chatMessage.Size = chatMessage.Size + UDim2.new(0, 0, 0, chatMessage.TextBounds.Y);
 
-		container.Size = UDim2.new(1, 0, 0, math.max(chatMessageSize.Y, userNameButton.Size.Y.Offset));
+		container.Size = UDim2.new(1, 0, 0, math.max(chatMessageSize.Y + 1, userNameButton.Size.Y.Offset + 1));
 		this.Container = container
 		this.ChatMessage = chatMessage
 	end
@@ -980,6 +973,7 @@ local function CreateChatBarWidget(settings)
 
 	function this:FocusChatBar()
 		if this.ChatBar then
+			this.ChatBar.Visible = true
 			this.ChatBar:CaptureFocus()
 			if self.ClickToChatButton then
 				self.ClickToChatButton.Visible = false
@@ -994,7 +988,6 @@ local function CreateChatBarWidget(settings)
 				end
 			end)
 			if Util.IsTouchDevice() then
-				this.ChatBar.Visible = true
 				this:SetMessageMode('All') -- Don't remember message mode on mobile devices
 			else
 				-- Use a count to make sure you double backspace out of a chatmode; less likely to accidently do it.
@@ -1028,16 +1021,15 @@ local function CreateChatBarWidget(settings)
 
 	function this:OnChatBarFocusLost(enterPressed)
 		if self.ChatBar then
-			if Util.IsTouchDevice() then
-				self.ChatBar.Visible = false
-			end
+			self.ChatBar.Visible = false
 			if enterPressed then
 				local didMatchSlashCommand = this:ProcessChatBarModes(false)
 				local cText = this:SanitizeInput(this:GetChatBarText())
 				if cText ~= "" then
-					if not didMatchSlashCommand and string.sub(cText,1,1) == "/" then
-						this.ChatCommandEvent:fire(false, "Unknown", cText)
-					else
+					-- For now we will let any slash command go through
+					--if not didMatchSlashCommand and string.sub(cText,1,1) == "/" then
+					--	this.ChatCommandEvent:fire(false, "Unknown", cText)
+					--else
 						local currentMessageMode = this:GetMessageMode()
 						-- {All, Team, Whisper}
 						if currentMessageMode == 'Team' then
@@ -1061,7 +1053,7 @@ local function CreateChatBarWidget(settings)
 						else
 							spawn(function() error("ChatScript: Unknown Message Mode of " .. tostring(currentMessageMode)) end)
 						end
-					end
+					--end
 				end
 				this:SetChatBarText("")
 			end
@@ -1109,6 +1101,7 @@ local function CreateChatBarWidget(settings)
 				Text = "";
 				ZIndex = 1;
 				BackgroundColor3 = Color3.new(0, 0, 0);
+				Active = false;
 				BackgroundTransparency = 1;
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
@@ -1290,6 +1283,13 @@ local function CreateChatWindowWidget(settings)
 		end
 	end
 
+	function this:FilterMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		if chattedMessage and string.sub(chattedMessage, 1, 1) ~= '/' then
+			return true
+		end
+		return false
+	end
+
 	function this:PushMessageIntoQueue(chatMessage)
 		table.insert(this.Chats, chatMessage)
 
@@ -1323,8 +1323,10 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-		local chatMessage = CreatePlayerChatMessage(this.Settings, playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-		this:PushMessageIntoQueue(chatMessage)
+		if this:FilterMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer) then
+			local chatMessage = CreatePlayerChatMessage(this.Settings, playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+			this:PushMessageIntoQueue(chatMessage)
+		end
 	end
 
 	function this:RemoveOldestMessage()
@@ -1378,7 +1380,7 @@ local function CreateChatWindowWidget(settings)
 			Name = 'ChatWindowContainer';
 			 -- Height is a multiple of chat message height, maybe keep this value at 150 and move that padding into the messageContainer
 			Size = UDim2.new(0.33, 0, 0.25, 0);
-			Position = UDim2.new(0, 20, 0, 50);
+			Position = UDim2.new(0, 8, 0, 37);
 			ZIndex = 1;
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
@@ -1435,7 +1437,7 @@ local function CreateChatWindowWidget(settings)
 					container.Size = UDim2.new(0.4,0,0.3,0) - container.Position
 				-- Desktop
 				else
-					container.Size = UDim2.new(0.33,0,0.25,0) - container.Position
+					container.Size = UDim2.new(0.3,0,0.25,0) - container.Position
 				end
 			end
 		end
@@ -1521,7 +1523,7 @@ local function CreateChatWindowWidget(settings)
 			this.InputEndedConn = InputService.InputEnded:connect(function(inputObject)
 				if inputObject.UserInputType == Enum.UserInputType.MouseButton1 and inputObject.UserInputState == Enum.UserInputState.End then
 					local nowCount = clickCount
-					wait(2)
+					wait(1.3)
 					if nowCount == clickCount then
 						dontFadeOutOnMouseLeave = false
 					end
@@ -1541,7 +1543,7 @@ local function CreateChatWindowWidget(settings)
 				while true do
 					wait()
 					if this:IsHovering() then
-						if tick() - lastMoveTime > 2 and not this.BackgroundVisible then
+						if tick() - lastMoveTime > 1.3 and not this.BackgroundVisible then
 							this:FadeIn()
 						end
 					else -- not this:IsHovering()
@@ -1576,8 +1578,9 @@ local function CreateChat()
 		TextStrokeTransparency = 0.75;
 		TextStrokeColor = Color3.new(34/255,34/255,34/255);
 		Font = Enum.Font.SourceSansBold;
-		FontSize = Enum.FontSize.Size14;
-		MaxWindowChatMessages = 100;
+		--Font = Enum.Font.ArialBold;
+		FontSize = Enum.FontSize.Size18;
+		MaxWindowChatMessages = 50;
 		MaxCharactersInMessage = 140; -- Same as a tweet :D
 	}
 
@@ -1644,7 +1647,7 @@ local function CreateChat()
 
 	function this:PrintWelcome()
 		if this.ChatWindowWidget then
-			this.ChatWindowWidget:AddSystemChatMessage("Welcome to Roblox")
+			--this.ChatWindowWidget:AddSystemChatMessage("Welcome to Roblox")
 			this.ChatWindowWidget:AddSystemChatMessage("Please type /? for a list of commands")
 		end
 	end
