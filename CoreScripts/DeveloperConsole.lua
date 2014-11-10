@@ -1348,12 +1348,8 @@ function initializeDeveloperConsole()
 	
 end
 
-while game:GetService("Players").LocalPlayer == nil do
-	wait()
-end
-
 local currentlyToggling = false
---function ToggleConsole.OnInvoke()
+function ToggleConsole.OnInvoke()
 	if currentlyToggling then
 		return
 	end
@@ -1368,4 +1364,4 @@ local currentlyToggling = false
 		clearCharts() 
 	end
 	
---end
+end

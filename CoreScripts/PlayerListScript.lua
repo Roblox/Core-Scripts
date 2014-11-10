@@ -1061,9 +1061,9 @@ local PrivilegeLevel =
 }
 
 
-local IsPersonalServer = not not game:GetService("Workspace"):FindFirstChild("PSVariable")
+local IsPersonalServer = (game:GetService("Workspace"):FindFirstChild("PSVariable") ~= nil)
 
-game:GetService:("Workspace").ChildAdded:connect(function(nchild)
+game:GetService("Workspace").ChildAdded:connect(function(nchild)
 	if nchild.Name=='PSVariable' and nchild:IsA('BoolValue') then
 		IsPersonalServer=true
 	end
