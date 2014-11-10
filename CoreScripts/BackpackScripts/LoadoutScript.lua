@@ -12,7 +12,7 @@ local function waitForProperty(instance, property)
 end
 
 local useCoreHealthBar = false
-pcall(function() useCoreHealthBar = Game.Players:GetUseCoreScriptHealthBar() end)
+pcall(function() useCoreHealthBar = Game:GetService("Players"):GetUseCoreScriptHealthBar() end)
 
 
 local currentLoadout = script.Parent
