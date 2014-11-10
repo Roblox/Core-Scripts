@@ -42,19 +42,19 @@ local function waitForChild(instance, name)
 	end
 end
 
-waitForProperty(game.Players,"LocalPlayer")
-waitForProperty(game.Players.LocalPlayer,"userId")
+waitForProperty(game:GetService("Players"),"LocalPlayer")
+waitForProperty(game:GetService("Players").LocalPlayer,"userId")
 
 -- we aren't in a true build mode session, don't give build tools and delete this script
-if game.Players.LocalPlayer.userId < 1 then
+if game:GetService("Players").LocalPlayer.userId < 1 then
 	script:Destroy()
 	return -- this is probably not necessesary, doing it just in case
 end
 
 -- Functions
 function getLatestPlayer()
-	waitForProperty(game.Players,"LocalPlayer")
-	player = game.Players.LocalPlayer
+	waitForProperty(game:GetService("Players"),"LocalPlayer")
+	player = game:GetService("Players").LocalPlayer
 	waitForChild(player,"Backpack")
 	backpack = player.Backpack
 end
@@ -107,15 +107,15 @@ end
 function clearLoadout()
 	currentTools = {}
 
-	local backpackChildren = game.Players.LocalPlayer.Backpack:GetChildren()
+	local backpackChildren = game:GetService("Players").LocalPlayer.Backpack:GetChildren()
 	for i = 1, #backpackChildren do
 		if backpackChildren[i]:IsA("Tool") or backpackChildren[i]:IsA("HopperBin") then
 			table.insert(currentTools,backpackChildren[i])
 		end
 	end
 	
-	if game.Players.LocalPlayer["Character"] then
-		local characterChildren = game.Players.LocalPlayer.Character:GetChildren()
+	if game:GetService("Players").LocalPlayer["Character"] then
+		local characterChildren = game:GetService("Players").LocalPlayer.Character:GetChildren()
 		for i = 1, #characterChildren do
 			if characterChildren[i]:IsA("Tool") or characterChildren[i]:IsA("HopperBin") then
 				table.insert(currentTools,characterChildren[i])
@@ -130,7 +130,7 @@ end
 
 function giveToolsBack()
 	for i = 1, #currentTools do
-		currentTools[i].Parent = game.Players.LocalPlayer.Backpack
+		currentTools[i].Parent = game:GetService("Players").LocalPlayer.Backpack
 	end
 end
 

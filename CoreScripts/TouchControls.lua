@@ -653,13 +653,13 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 	while not Game:FindFirstChild("Players") do
 		wait()
 	end
-	while not Game.Players.LocalPlayer do
+	while not Game:GetService("Players").LocalPlayer do
 		wait()
 	end
 	while not Game:FindFirstChild("CoreGui") do
 		wait()
 	end
-	while not Game.CoreGui:FindFirstChild("RobloxGui") do
+	while not Game:GetService("CoreGui"):FindFirstChild("RobloxGui") do
 		wait()
 	end
 
@@ -679,7 +679,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 
 	local GameSettings = UserSettings().GameSettings
 
-	local localPlayer = Game.Players.LocalPlayer
+	local localPlayer = Game:GetService("Players").LocalPlayer
 
 	local isInThumbstickMode = false
 
@@ -862,7 +862,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		outerThumbstick.BackgroundTransparency = 1
 		outerThumbstick.Size = UDim2.new(0,thumbstickSize,0,thumbstickSize)
 		outerThumbstick.Position = defaultThumbstickPos
-		outerThumbstick.Parent = Game.CoreGui.RobloxGui
+		outerThumbstick.Parent = Game:GetService("CoreGui").RobloxGui
 
 		local innerThumbstick = Instance.new("ImageLabel")
 		innerThumbstick.Name = "InnerThumbstick"
@@ -1585,7 +1585,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		touchControlFrame.Name = "TouchControlFrame"
 		touchControlFrame.Size = UDim2.new(1,0,1,0)
 		touchControlFrame.BackgroundTransparency = 1
-		touchControlFrame.Parent = Game.CoreGui.RobloxGui
+		touchControlFrame.Parent = Game:GetService("CoreGui").RobloxGui
 
 		userInputService.ProcessedEvent:connect(function(inputObject, processed)
 			if not processed then return end

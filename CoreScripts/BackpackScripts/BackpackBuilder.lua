@@ -29,8 +29,8 @@ local function IsPhone()
 end
 
 waitForChild(game,"Players")
-waitForProperty(game.Players,"LocalPlayer")
-local player = game.Players.LocalPlayer
+waitForProperty(game:GetService("Players"),"LocalPlayer")
+local player = game:GetService("Players").LocalPlayer
 
 -- First up is the current loadout
 local CurrentLoadout = Instance.new("Frame")

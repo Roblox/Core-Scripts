@@ -15,13 +15,13 @@ end
 
 -- don't do anything if we are in an empty game
 waitForChild(game,"Players")
-if #game.Players:GetChildren() < 1 then
-	game.Players.ChildAdded:wait()
+if #game:GetService("Players"):GetChildren() < 1 then
+	game:GetService("Players").ChildAdded:wait()
 end
 -- make sure everything is loaded in before we do anything
 -- get our local player
-waitForProperty(game.Players,"LocalPlayer")
-local player = game.Players.LocalPlayer
+waitForProperty(game:GetService("Players"),"LocalPlayer")
+local player = game:GetService("Players").LocalPlayer
 
 
 
@@ -49,7 +49,7 @@ local searchBox = waitForChild(backpack.SearchFrame.SearchBoxFrame,"SearchBox")
 local searchButton = waitForChild(backpack.SearchFrame,"SearchButton")
 local resetButton = waitForChild(backpack.SearchFrame,"ResetButton")
 
-local robloxGui = waitForChild(Game.CoreGui, 'RobloxGui')
+local robloxGui = waitForChild(Game:GetService("CoreGui"), 'RobloxGui')
 local currentLoadout = waitForChild(robloxGui, 'CurrentLoadout')
 
 local canToggle = true
@@ -135,9 +135,9 @@ function initHumanoidDiedConnections()
 	if humanoidDiedCon then 
 		humanoidDiedCon:disconnect()
 	end
-	waitForProperty(game.Players.LocalPlayer,"Character")
-	waitForChild(game.Players.LocalPlayer.Character,"Humanoid")
-	humanoidDiedCon = game.Players.LocalPlayer.Character.Humanoid.Died:connect(deactivateBackpack)
+	waitForProperty(game:GetService("Players").LocalPlayer,"Character")
+	waitForChild(game:GetService("Players").LocalPlayer.Character,"Humanoid")
+	humanoidDiedCon = game:GetService("Players").LocalPlayer.Character.Humanoid.Died:connect(deactivateBackpack)
 end
 
 local hideBackpack = function()
@@ -150,12 +150,12 @@ local hideBackpack = function()
 	searchFrame.Visible = false
 	backpack:TweenSizeAndPosition(UDim2.new(0, backpackSize.X.Offset,0, 0), UDim2.new(0.5, -backpackSize.X.Offset/2, 1, -85), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, guiTweenSpeed, true,
 		function()
-			game.GuiService:RemoveCenterDialog(backpack)
+			game:GetService("GuiService"):RemoveCenterDialog(backpack)
 			backpack.Visible = false
 			backpackButton.Selected = false
 		end)
 	delay(guiTweenSpeed,function()
-		game.GuiService:RemoveCenterDialog(backpack)
+		game:GetService("GuiService"):RemoveCenterDialog(backpack)
 		backpack.Visible = false
 		backpackButton.Selected = false
 		readyForNextEvent = true		
@@ -164,7 +164,7 @@ local hideBackpack = function()
 end
 
 function showBackpack()
-	game.GuiService:AddCenterDialog(backpack, Enum.CenterDialogType.PlayerInitiatedDialog, 
+	game:GetService("GuiService"):AddCenterDialog(backpack, Enum.CenterDialogType.PlayerInitiatedDialog, 
 		function()
 			backpack.Visible = true
 			backpackButton.Selected = true
@@ -188,8 +188,8 @@ function showBackpack()
 end
 
 function toggleBackpack()	
-	if not game.Players.LocalPlayer then return end
-	if not game.Players.LocalPlayer["Character"] then return end
+	if not game:GetService("Players").LocalPlayer then return end
+	if not game:GetService("Players").LocalPlayer["Character"] then return end
 	if not canToggle then return end
 	if not readyForNextEvent then return end
 	readyForNextEvent = false
@@ -364,8 +364,8 @@ createPublicFunction("BackpackReady", backpackReady)
 
 ------------------------ Connections/Script Main -------------------------------------------
 
-coreGuiChanged(Enum.CoreGuiType.Backpack, Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack))
-Game.StarterGui.CoreGuiChangedSignal:connect(coreGuiChanged)
+coreGuiChanged(Enum.CoreGuiType.Backpack, Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Backpack))
+Game:GetService("StarterGui").CoreGuiChangedSignal:connect(coreGuiChanged)
 
 inventoryButton.MouseButton1Click:connect(function() newTabClicked("gear") end)
 inventoryButton.MouseEnter:connect(function() mouseOverTab(inventoryButton) end)
@@ -393,11 +393,11 @@ backpackButton.MouseButton1Click:connect(function()
 	toggleBackpack()
 end)
 
-if game.Players.LocalPlayer["Character"] then
+if game:GetService("Players").LocalPlayer["Character"] then
 	activateBackpack()
 end
 
-game.Players.LocalPlayer.CharacterAdded:connect(activateBackpack)
+game:GetService("Players").LocalPlayer.CharacterAdded:connect(activateBackpack)
 
 -- search functions
 searchBox.FocusLost:connect(function(enterPressed)

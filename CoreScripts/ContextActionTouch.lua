@@ -31,11 +31,11 @@ local maxButtons = #buttonPositionTable
 Game:GetService("ContentProvider"):Preload(ContextDownImage)
 Game:GetService("ContentProvider"):Preload(ContextUpImage)
 
-while not Game.Players do
+while not Game:GetService("Players") do
 	wait()
 end
 
-while not Game.Players.LocalPlayer do
+while not Game:GetService("Players").LocalPlayer do
 	wait()
 end
 
@@ -60,7 +60,7 @@ function setButtonSizeAndPosition(object)
 	local yOffset = 95
 
 	-- todo: better way to determine mobile sized screens
-	local onSmallScreen = (game.CoreGui.RobloxGui.AbsoluteSize.X < 600)
+	local onSmallScreen = (game:GetService("CoreGui").RobloxGui.AbsoluteSize.X < 600)
 	if not onSmallScreen then
 		buttonSize = 85
 		xOffset = 40
@@ -189,7 +189,7 @@ function createButton( actionName, functionInfoTable )
 	button.Parent = buttonFrame
 
 	if buttonScreenGui and buttonScreenGui.Parent == nil then
-		buttonScreenGui.Parent = Game.Players.LocalPlayer.PlayerGui
+		buttonScreenGui.Parent = Game:GetService("Players").LocalPlayer.PlayerGui
 	end
 end
 

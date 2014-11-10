@@ -1681,8 +1681,8 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 	end
 end
 pcall(function()
-	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
-	game.StarterGui.CoreGuiChangedSignal:connect(onCoreGuiChanged)
+	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+	game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
 end)
 
 resizePlayerList()

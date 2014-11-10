@@ -54,7 +54,7 @@ local inStudioMode = UserSettings().GameSettings:InStudioMode()
 -- inStudioMode = false
 
 local macClient = false
-local success, isMac = pcall(function() return not game.GuiService.IsWindows end)
+local success, isMac = pcall(function() return not game:GetService("GuiService").IsWindows end)
 macClient = success and isMac
 -- REMOVE WHEN NOT TESTING
 --macClient = true
@@ -99,9 +99,9 @@ function resumeGameFunction(shield)
 		shield.Visible = false
 		for i = 1, #centerDialogs do
 			centerDialogs[i].Visible = false
-			game.GuiService:RemoveCenterDialog(centerDialogs[i])
+			game:GetService("GuiService"):RemoveCenterDialog(centerDialogs[i])
 		end
-		game.GuiService:RemoveCenterDialog(shield)
+		game:GetService("GuiService"):RemoveCenterDialog(shield)
 		settingsButton.Active = true
 		currentMenuSelection = nil
 		lastMenuSelection = {}
@@ -149,7 +149,7 @@ function goToMenu(container,menuName, moveDirection,size,position)
 end
 
 function resetLocalCharacter()
-	local player = game.Players.LocalPlayer
+	local player = game:GetService("Players").LocalPlayer
 	if player then
 		if player.Character and player.Character:FindFirstChild("Humanoid") then
 			player.Character.Humanoid.Health = 0
@@ -264,11 +264,11 @@ function backToGame(buttonClicked, shield, settingsButton)
 	buttonClicked.Parent.Parent.Parent.Parent.Visible = false
 	shield.Visible = false
 	for i = 1, #centerDialogs do
-		game.GuiService:RemoveCenterDialog(centerDialogs[i])
+		game:GetService("GuiService"):RemoveCenterDialog(centerDialogs[i])
 		centerDialogs[i].Visible = false
 	end
 	centerDialogs = {}
-	game.GuiService:RemoveCenterDialog(shield)
+	game:GetService("GuiService"):RemoveCenterDialog(shield)
 	settingsButton.Active = true
 end
 
@@ -421,8 +421,8 @@ local function createHelpDialog(baseZIndex)
 		Parent = devConsoleButton;
 	}
 	
-	waitForProperty(game.Players, "LocalPlayer")
-	game.Players.LocalPlayer:GetMouse().KeyDown:connect(function(key)
+	waitForProperty(game:GetService("Players"), "LocalPlayer")
+	game:GetService("Players").LocalPlayer:GetMouse().KeyDown:connect(function(key)
 		if string.byte(key) == 34 then --F9
 			toggleDeveloperConsole()
 		end
@@ -431,7 +431,7 @@ local function createHelpDialog(baseZIndex)
 	devConsoleButton.MouseButton1Click:connect(function()
 		toggleDeveloperConsole()
 		shield.Visible = false
-		game.GuiService:RemoveCenterDialog(shield)
+		game:GetService("GuiService"):RemoveCenterDialog(shield)
 	end)
 			
 	-- set up listeners for type of mouse mode, but keep constructing gui at same time
@@ -470,7 +470,7 @@ local function createHelpDialog(baseZIndex)
 	okBtn.MouseButton1Click:connect(
 		function()
 			shield.Visible = false
-			game.GuiService:RemoveCenterDialog(shield)
+			game:GetService("GuiService"):RemoveCenterDialog(shield)
 		end)
 	okBtn.Parent = helpDialog
 
@@ -622,7 +622,7 @@ local function createGameMainMenu(baseZIndex, shield)
 	helpButton.MouseButton1Click:connect(
 		function() 
 			table.insert(centerDialogs,helpDialog)
-			game.GuiService:AddCenterDialog(helpDialog, Enum.CenterDialogType.ModalDialog,
+			game:GetService("GuiService"):AddCenterDialog(helpDialog, Enum.CenterDialogType.ModalDialog,
 				--ShowFunction
 				function()
 					helpDialog.Visible = true
@@ -719,7 +719,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		cameraLabel.ZIndex = baseZIndex + 4
 		cameraLabel.Parent = gameSettingsMenuFrame
 
-		local mouseLockLabel = game.CoreGui.RobloxGui:FindFirstChild("MouseLockLabel",true)
+		local mouseLockLabel = game:GetService("CoreGui").RobloxGui:FindFirstChild("MouseLockLabel",true)
 		if (newMovementScripts) then
 			local mouseLockCheckbox = createTextButton("",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,32,0,32),UDim2.new(0, 270, 0, itemTop- 4))
 			mouseLockCheckbox.Name = "mouseLockCheckbox"
@@ -1291,7 +1291,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		end
 		
 		autoGraphicsButton.MouseButton1Click:connect(function()
-			if inStudioMode and not game.Players.LocalPlayer then return end
+			if inStudioMode and not game:GetService("Players").LocalPlayer then return end
 			
 			if not isAutoGraphics then
 				goToAutoGraphics()
@@ -1331,19 +1331,19 @@ local function createGameSettingsMenu(baseZIndex, shield)
 			end
 		end)
 		
-		game.Players.PlayerAdded:connect(function(player)
-			if player == game.Players.LocalPlayer and inStudioMode then
+		game:GetService("Players").PlayerAdded:connect(function(player)
+			if player == game:GetService("Players").LocalPlayer and inStudioMode then
 				enableGraphicsWidget()
 			end
 		end)
-		game.Players.PlayerRemoving:connect(function(player)
-			if player == game.Players.LocalPlayer and inStudioMode then
+		game:GetService("Players").PlayerRemoving:connect(function(player)
+			if player == game:GetService("Players").LocalPlayer and inStudioMode then
 				disableGraphicsWidget()
 			end
 		end)
 
 		local wasManualGraphics = (settings().Rendering.QualityLevel ~= Enum.QualityLevel.Automatic)
-		if inStudioMode and not game.Players.LocalPlayer then
+		if inStudioMode and not game:GetService("Players").LocalPlayer then
 			disableGraphicsWidget()
 		elseif inStudioMode then
 			enableGraphicsWidget()
@@ -1527,37 +1527,37 @@ if UserSettings then
 			end)
 		end
 		
-		game.CoreGui.RobloxGui.Changed:connect(function(prop) -- We have stopped recording when we resize
+		game:GetService("CoreGui").RobloxGui.Changed:connect(function(prop) -- We have stopped recording when we resize
 			if prop == "AbsoluteSize" and recordingVideo then
 				recordVideoClick(gameMainMenu.RecordVideoButton, gui.StopRecordButton)
 			end
 		end)
 		
 		function localPlayerChange()
-			gameMainMenu.ResetButton.Visible = game.Players.LocalPlayer
-			if game.Players.LocalPlayer then
+			gameMainMenu.ResetButton.Visible = game:GetService("Players").LocalPlayer
+			if game:GetService("Players").LocalPlayer then
 				settings().Rendering.EnableFRM = true
 			elseif inStudioMode then
 				settings().Rendering.EnableFRM = false
 			end
 		end
 		
-		gameMainMenu.ResetButton.Visible = game.Players.LocalPlayer
-		if game.Players.LocalPlayer ~= nil then
-			game.Players.LocalPlayer.Changed:connect(function()
+		gameMainMenu.ResetButton.Visible = game:GetService("Players").LocalPlayer
+		if game:GetService("Players").LocalPlayer ~= nil then
+			game:GetService("Players").LocalPlayer.Changed:connect(function()
 				localPlayerChange()
 			end)
 		else
 			delay(0,function()
-				waitForProperty(game.Players,"LocalPlayer")
-				gameMainMenu.ResetButton.Visible = game.Players.LocalPlayer
-				game.Players.LocalPlayer.Changed:connect(function()
+				waitForProperty(game:GetService("Players"),"LocalPlayer")
+				gameMainMenu.ResetButton.Visible = game:GetService("Players").LocalPlayer
+				game:GetService("Players").LocalPlayer.Changed:connect(function()
 					localPlayerChange()
 				end)
 			end)
 		end
 		
-		gameMainMenu.ReportAbuseButton.Visible = game:FindFirstChild("NetworkClient")
+		gameMainMenu.ReportAbuseButton.Visible = game:GetService("NetworkClient")
 		-- TODO: remove line below when not testing report abuse
 		if (testReport) then
 			gameMainMenu.ReportAbuseButton.Visible = true
@@ -1565,7 +1565,7 @@ if UserSettings then
 		if not gameMainMenu.ReportAbuseButton.Visible then
 			game.ChildAdded:connect(function(child)
 				if child:IsA("NetworkClient") then
-					gameMainMenu.ReportAbuseButton.Visible = game:FindFirstChild("NetworkClient")
+					gameMainMenu.ReportAbuseButton.Visible = game:GetService("NetworkClient")
 				end
 			end)
 		end
@@ -1587,7 +1587,7 @@ if UserSettings then
 				return
 			end
 
-			game.GuiService:AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog,
+			game:GetService("GuiService"):AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog,
 				--showFunction
 				function()
 					settingsButton.Active = false
@@ -1668,7 +1668,7 @@ if UserSettings then
 			elseif #lastMenuSelection > 0 then
 				if #centerDialogs > 0 then
 					for i = 1, #centerDialogs do
-						game.GuiService:RemoveCenterDialog(centerDialogs[i])
+						game:GetService("GuiService"):RemoveCenterDialog(centerDialogs[i])
 						centerDialogs[i].Visible = false
 					end
 					centerDialogs = {}
@@ -1710,7 +1710,7 @@ if UserSettings then
 		
 		settingsButton.MouseButton1Click:connect(
 			function()
-				game.GuiService:AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog,
+				game:GetService("GuiService"):AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog,
 					--showFunction
 					function()
 						settingsButton.Active = false
@@ -1989,7 +1989,7 @@ local createSaveDialogs = function()
 		errorDialogMessageBox.Visible = false
 		spinnerDialog.Visible = false
 		shield.Visible = false
-		game.GuiService:RemoveCenterDialog(shield)
+		game:GetService("GuiService"):RemoveCenterDialog(shield)
 	end
 
 	robloxLock(shield)
@@ -2005,8 +2005,8 @@ local createReportAbuseDialog = function()
 	end
 
 	waitForChild(game,"Players")
-	waitForProperty(game.Players, "LocalPlayer")
-	local localPlayer = game.Players.LocalPlayer
+	waitForProperty(game:GetService("Players"), "LocalPlayer")
+	local localPlayer = game:GetService("Players").LocalPlayer
 	
 	local reportAbuseButton
 	waitForChild(gui,"UserSettingsShield")
@@ -2267,9 +2267,9 @@ local createReportAbuseDialog = function()
 			if abuse and abusingPlayer then
 				frame.Visible = false
 				if gameOrPlayer == "Player" then
-					game.Players:ReportAbuse(abusingPlayer, abuse, shortDescriptionBox.Text)
+					game:GetService("Players"):ReportAbuse(abusingPlayer, abuse, shortDescriptionBox.Text)
 				else
-					game.Players:ReportAbuse(nil, abuse, shortDescriptionBox.Text)
+					game:GetService("Players"):ReportAbuse(nil, abuse, shortDescriptionBox.Text)
 				end
 				if abuse == "Cheating/Exploiting" then
 					recordedMessageBox.Visible = true
@@ -2314,7 +2314,7 @@ local createReportAbuseDialog = function()
 		normalMessageBox.Visible = false
 		shield.Visible = false		
 		reportAbuseButton.Active = true
-		game.GuiService:RemoveCenterDialog(shield)
+		game:GetService("GuiService"):RemoveCenterDialog(shield)
 	end
 
 	cancelButton.MouseButton1Click:connect(closeAndResetDialog)
@@ -2323,7 +2323,7 @@ local createReportAbuseDialog = function()
 		function() 
 			createPlayersDropDown().Parent = settingsFrame
 			table.insert(centerDialogs,shield)
-			game.GuiService:AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog, 
+			game:GetService("GuiService"):AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog, 
 				--ShowFunction
 				function()
 					reportAbuseButton.Active = false
@@ -2346,7 +2346,7 @@ local createChatBar = function()
 	waitForChild(game, "NetworkClient")
 
 	waitForChild(game, "Players")
-	waitForProperty(game.Players, "LocalPlayer")
+	waitForProperty(game:GetService("Players"), "LocalPlayer")
 	
 	local chatBar = Instance.new("Frame")
 	chatBar.Name = "ChatBar"
@@ -2413,9 +2413,9 @@ local createChatBar = function()
 				if chatBox.Text ~= "" then
 					local str = chatBox.Text
 					if string.sub(str, 1, 1) == '%' then
-						game.Players:TeamChat(string.sub(str, 2))
+						game:GetService("Players"):TeamChat(string.sub(str, 2))
 					else
-						game.Players:Chat(str)
+						game:GetService("Players"):Chat(str)
 					end
 				end
 			end
@@ -2437,7 +2437,7 @@ if isSaveDialogSupported then
 		
 			game.RequestShutdown = function()
 				table.insert(centerDialogs,saveDialogs)
-				game.GuiService:AddCenterDialog(saveDialogs, Enum.CenterDialogType.QuitDialog,
+				game:GetService("GuiService"):AddCenterDialog(saveDialogs, Enum.CenterDialogType.QuitDialog,
 					--ShowFunction
 					function()
 						saveDialogs.Visible = true 

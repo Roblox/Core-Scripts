@@ -37,11 +37,11 @@ local dialogConnections = {}
 
 local gui = nil
 waitForChild(game,"CoreGui")
-waitForChild(game.CoreGui,"RobloxGui")
-if game.CoreGui.RobloxGui:FindFirstChild("ControlFrame") then
-	gui = game.CoreGui.RobloxGui.ControlFrame
+waitForChild(game:GetService("CoreGui"),"RobloxGui")
+if game:GetService("CoreGui").RobloxGui:FindFirstChild("ControlFrame") then
+	gui = game:GetService("CoreGui").RobloxGui.ControlFrame
 else
-	gui = game.CoreGui.RobloxGui
+	gui = game:GetService("CoreGui").RobloxGui
 end
 
 function currentTone()
@@ -244,16 +244,16 @@ function selectChoice(choice)
 	--First hide the Gui
 	mainFrame.Visible = false
 	if choice == lastChoice then
-		game.Chat:Chat(game.Players.LocalPlayer.Character, "Goodbye!", getChatColor(currentTone()))
+		game:GetService("Chat"):Chat(game:GetService("Players").LocalPlayer.Character, "Goodbye!", getChatColor(currentTone()))
 		
 		normalEndDialog()
 	else 
 		local dialogChoice = choiceMap[choice]
 
-		game.Chat:Chat(game.Players.LocalPlayer.Character, sanitizeMessage(dialogChoice.UserDialog), getChatColor(currentTone()))
+		game:GetService("Chat"):Chat(game:GetService("Players").LocalPlayer.Character, sanitizeMessage(dialogChoice.UserDialog), getChatColor(currentTone()))
 		wait(1)
 		currentConversationDialog:SignalDialogChoiceSelected(player, dialogChoice)
-		game.Chat:Chat(currentConversationPartner, sanitizeMessage(dialogChoice.ResponseDialog), getChatColor(currentTone()))
+		game:GetService("Chat"):Chat(currentConversationPartner, sanitizeMessage(dialogChoice.ResponseDialog), getChatColor(currentTone()))
 	
 		variableDelay(dialogChoice.ResponseDialog)
 		presentDialogChoices(currentConversationPartner, dialogChoice:GetChildren())
@@ -402,7 +402,7 @@ function doDialog(dialog)
 	end
 
 	currentConversationDialog = dialog
-	game.Chat:Chat(dialog.Parent, dialog.InitialPrompt, getChatColor(dialog.Tone))
+	game:GetService("Chat"):Chat(dialog.Parent, dialog.InitialPrompt, getChatColor(dialog.Tone))
 	variableDelay(dialog.InitialPrompt)
 
 	presentDialogChoices(dialog.Parent, dialog:GetChildren())
@@ -467,7 +467,7 @@ function addDialog(dialog)
 			chatGui.Enabled = not dialog.InUse		
 			chatGui.Adornee = dialog.Parent
 			chatGui.RobloxLocked = true
-			chatGui.Parent = game.CoreGui
+			chatGui.Parent = game:GetService("CoreGui")
 			chatGui.Image.Button.MouseButton1Click:connect(function() startDialog(dialog) end)
 			setChatNotificationTone(chatGui, dialog.Purpose, dialog.Tone)
 			
@@ -516,8 +516,8 @@ function fetchScripts()
 end
 
 function onLoad()
-  waitForProperty(game.Players, "LocalPlayer")
-  player = game.Players.LocalPlayer
+  waitForProperty(game:GetService("Players"), "LocalPlayer")
+  player = game:GetService("Players").LocalPlayer
   waitForProperty(player, "Character")
 
   --print("Fetching Scripts")
@@ -545,9 +545,9 @@ function onLoad()
   initialize(frame)
 
   --print("Adding Dialogs")
-  game.CollectionService.ItemAdded:connect(function(obj) if obj:IsA("Dialog") then addDialog(obj) end end)
-  game.CollectionService.ItemRemoved:connect(function(obj) if obj:IsA("Dialog") then removeDialog(obj) end end)
-  for i, obj in pairs(game.CollectionService:GetCollection("Dialog")) do
+  game:GetService("CollectionService").ItemAdded:connect(function(obj) if obj:IsA("Dialog") then addDialog(obj) end end)
+  game:GetService("CollectionService").ItemRemoved:connect(function(obj) if obj:IsA("Dialog") then removeDialog(obj) end end)
+  for i, obj in pairs(game:GetService("CollectionService"):GetCollection("Dialog")) do
     if obj:IsA("Dialog") then
        addDialog(obj)
     end

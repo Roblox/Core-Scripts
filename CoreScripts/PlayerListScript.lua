@@ -1061,9 +1061,9 @@ local PrivilegeLevel =
 }
 
 
-local IsPersonalServer = not not game.Workspace:FindFirstChild("PSVariable")
+local IsPersonalServer = not not game:GetService("Workspace"):FindFirstChild("PSVariable")
 
-game.Workspace.ChildAdded:connect(function(nchild)
+game:GetService:("Workspace").ChildAdded:connect(function(nchild)
 	if nchild.Name=='PSVariable' and nchild:IsA('BoolValue') then
 		IsPersonalServer=true
 	end
@@ -1258,7 +1258,7 @@ function OnSubmitAbuse()
 	if SubmitReportButton.Active then
 		if AbuseName and SelectedPlayer then
 			AbuseSettingsFrame.Visible = false
-			game.Players:ReportAbuse(SelectedPlayer, AbuseName, AbuseDescriptionBox.Text)
+			game:GetService("Players"):ReportAbuse(SelectedPlayer, AbuseName, AbuseDescriptionBox.Text)
 			if AbuseName == "Rude or Mean Behavior" or AbuseName == "False Reporting Me" then
 				CalmingAbuseBox.Parent = ReportAbuseShield
 			else
@@ -1335,10 +1335,10 @@ end
 	@Return: enum of friend status
 --]]
 local function GetFriendStatus(player)
-	if player == game.Players.LocalPlayer then
+	if player == game:GetService("Players").LocalPlayer then
 		return Enum.FriendStatus.NotFriend
 	else
-		local success, result = pcall(function() return game.Players.LocalPlayer:GetFriendStatus(player) end)
+		local success, result = pcall(function() return game:GetService("Players").LocalPlayer:GetFriendStatus(player) end)
 		if success then
 			return result
 		else
@@ -2620,7 +2620,7 @@ function SetPlayerToTeam(entry)
 		end
 	end
 	-- if player was set to an invalid team, then set it back to neutral
-	if not setToTeam and #(game.Teams:GetTeams())>0 then
+	if not setToTeam and #(game:GetService("Teams"):GetTeams())>0 then
 		debugprint(entry['Player'].Name..'could not find team')
 		entry['MyTeam']=nil
 		if not NeutralTeam then 
@@ -2645,7 +2645,7 @@ function PlayerChanged(entry, property)
 	PlayerChangedLock=true
 	if property == 'Neutral' then
 		-- if player changing to neutral
-		if entry['Player'].Neutral and #(game.Teams:GetTeams())>0 then
+		if entry['Player'].Neutral and #(game:GetService("Teams"):GetTeams())>0 then
 			debugprint(entry['Player'].Name..'setting to neutral')
 			FindRemovePlayerFromTeam(entry)
 			entry['MyTeam']=nil
@@ -2656,7 +2656,7 @@ function PlayerChanged(entry, property)
 				debugprint(entry['Player'].Name..'adding to neutral team')
 				AddPlayerToTeam(NeutralTeam,entry)
 			end
-		elseif #(game.Teams:GetTeams())>0 then -- else player switching to a team, or a weird edgecase
+		elseif #(game:GetService("Teams"):GetTeams())>0 then -- else player switching to a team, or a weird edgecase
 			debugprint(entry['Player'].Name..'has been set non-neutral')
 			SetPlayerToTeam(entry)
 		end
@@ -2944,13 +2944,13 @@ end
 --[[
 	code for attaching tab key to maximizing player list
 --]]
-game.GuiService:AddKey("\t")
+game:GetService("GuiService"):AddKey("\t")
 local LastTabTime = time()
-game.GuiService.KeyPressed:connect(
+game:GetService("GuiService").KeyPressed:connect(
 function(key)
 	if key == "\t" then
 		debugprint('caught tab key')
-		local modalCheck, isModal = pcall(function() return game.GuiService.IsModalDialog end)
+		local modalCheck, isModal = pcall(function() return game:GetService("GuiService").IsModalDialog end)
 		if modalCheck == false or (modalCheck and isModal == false) then
 			if time() - LastTabTime > 0.4 then
 				LastTabTime = time()
@@ -3011,16 +3011,16 @@ function debugPlayerAdd(p)
 end
 
 pcall(function()
-	coreGuiChanged(Enum.CoreGuiType.PlayerList, Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
-	Game.StarterGui.CoreGuiChangedSignal:connect(coreGuiChanged)
+	coreGuiChanged(Enum.CoreGuiType.PlayerList, Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+	Game:GetService("StarterGui").CoreGuiChangedSignal:connect(coreGuiChanged)
 end)
  
 while not game:GetService('Teams') do wait(1/30) debugprint('Waiting For Teams') end
-for _,i in pairs(game.Teams:GetTeams()) do TeamAdded(i) end
+for _,i in pairs(game:GetService("Teams"):GetTeams()) do TeamAdded(i) end
 for _,i in pairs(Players:GetPlayers()) do Spawn(function() debugPlayerAdd(i) end) end
 
-game.Teams.ChildAdded:connect(TeamsChildAdded)
-game.Teams.ChildRemoved:connect(TeamsChildRemoved)
+game:GetService("Teams").ChildAdded:connect(TeamsChildAdded)
+game:GetService("Teams").ChildRemoved:connect(TeamsChildRemoved)
 Players.ChildAdded:connect(PlayersChildAdded)
 
 InitReportAbuse()
@@ -3031,7 +3031,7 @@ BaseUpdate()
 
 --UGGGLY,find a better way later
 wait(2)
-IsPersonalServer= not not game.Workspace:FindFirstChild("PSVariable")
+IsPersonalServer= not not game:GetService("Workspace"):FindFirstChild("PSVariable")
 
  ----------------------------  
  -- Running Logic
@@ -3043,7 +3043,7 @@ IsPersonalServer= not not game.Workspace:FindFirstChild("PSVariable")
 	Spawn(function()
 		while true do
 			local str_players=''
-			for _,i in pairs(game.Players:GetPlayers()) do
+			for _,i in pairs(game:GetService("Players"):GetPlayers()) do
 				str_players= str_players .." " .. i.Name
 			end
 			debugplayers.Text=str_players

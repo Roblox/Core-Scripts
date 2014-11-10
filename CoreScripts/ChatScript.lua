@@ -39,13 +39,13 @@ local function StringTrim(str,nstr)
 	return str:match("^%s*(.-)%s*$"):gsub("\n","\n"..nstr)
 end 
 
-while Game.Players.LocalPlayer == nil do wait(0.03) end
+while Game:GetService("Players").LocalPlayer == nil do wait(0.03) end
 
-local Player = Game.Players.LocalPlayer 
+local Player = Game:GetService("Players").LocalPlayer 
 while Player.Character == nil do wait(0.03) end 
 local RbxUtility = LoadLibrary('RbxUtility')
 local Gui = typedef(RbxUtility) 
-local Camera = Game.Workspace.CurrentCamera 
+local Camera = Game:GetService("Workspace").CurrentCamera 
 
 -- Services 
 local CoreGuiService = Game:GetService('CoreGui')
@@ -946,8 +946,8 @@ function Chat:Initialize()
 	Chat:CreateGui() 		
 
 	pcall(function()
-		Chat:CoreGuiChanged(Enum.CoreGuiType.Chat, Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
-		Game.StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType,enabled) Chat:CoreGuiChanged(coreGuiType,enabled) end)
+		Chat:CoreGuiChanged(Enum.CoreGuiType.Chat, Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
+		Game:GetService("StarterGui").CoreGuiChangedSignal:connect(function(coreGuiType,enabled) Chat:CoreGuiChanged(coreGuiType,enabled) end)
 	end)
 
 	self.EventListener = PlayersService.PlayerChatted:connect(function(...) 	

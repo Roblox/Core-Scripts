@@ -1,4 +1,4 @@
-if game.CoreGui.Version < 3 then return end -- peace out if we aren't using the right client
+if game:GetService("CoreGui").Version < 3 then return end -- peace out if we aren't using the right client
 
 -- A couple of necessary functions
 local function waitForChild(instance, name)
@@ -13,8 +13,8 @@ local function waitForProperty(instance, property)
 end
 
 waitForChild(game,"Players")
-waitForProperty(game.Players,"LocalPlayer")
-local player = game.Players.LocalPlayer
+waitForProperty(game:GetService("Players"),"LocalPlayer")
+local player = game:GetService("Players").LocalPlayer
 
 local RbxGui,msg = LoadLibrary("RbxGui")
 if not RbxGui then print("could not find RbxGui!") return end
@@ -23,8 +23,8 @@ if not RbxGui then print("could not find RbxGui!") return end
 waitForChild(game,"Players")
 
 -- don't do anything if we are in an empty game
-if #game.Players:GetChildren() < 1 then
-	game.Players.ChildAdded:wait()
+if #game:GetService("Players"):GetChildren() < 1 then
+	game:GetService("Players").ChildAdded:wait()
 end
 
 local tilde = "~"
@@ -32,7 +32,7 @@ local backquote = "`"
 game:GetService("GuiService"):AddKey(tilde) -- register our keys
 game:GetService("GuiService"):AddKey(backquote)
 
-local player = game.Players.LocalPlayer
+local player = game:GetService("Players").LocalPlayer
 
 local backpack = script.Parent
 local screen = script.Parent.Parent
@@ -461,7 +461,7 @@ function openCloseBackpack(close)
 	local visible = not backpack.Visible
 	if visible and not close then
 		updateGridActive()
-		local centerDialogSupported, msg = pcall(function() game.GuiService:AddCenterDialog(backpack, Enum.CenterDialogType.PlayerInitiatedDialog, 
+		local centerDialogSupported, msg = pcall(function() game:GetService("GuiService"):AddCenterDialog(backpack, Enum.CenterDialogType.PlayerInitiatedDialog, 
 			function()
 				backpack.Visible = true
 				loadoutChildren = currentLoadout:GetChildren()
@@ -512,7 +512,7 @@ function openCloseBackpack(close)
 				backpack.Visible = visible
 				resizeGrid()
 				resize()
-				pcall(function() game.GuiService:RemoveCenterDialog(backpack) end)
+				pcall(function() game:GetService("GuiService"):RemoveCenterDialog(backpack) end)
 				openCloseDebounce = false
 			end)
 	end
@@ -628,33 +628,33 @@ end
 function setupCharacterConnections()
 
 	if backpackAddCon then backpackAddCon:disconnect() end
-	backpackAddCon = game.Players.LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
+	backpackAddCon = game:GetService("Players").LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
 	
 	-- make sure we get all the children
-	local backpackChildren = game.Players.LocalPlayer.Backpack:GetChildren()
+	local backpackChildren = game:GetService("Players").LocalPlayer.Backpack:GetChildren()
 	for i = 1, #backpackChildren do
 		addToGrid(backpackChildren[i])
 	end
 
 	if characterChildAddedCon then characterChildAddedCon:disconnect() end
 	characterChildAddedCon = 
-		game.Players.LocalPlayer.Character.ChildAdded:connect(function(child)
+		game:GetService("Players").LocalPlayer.Character.ChildAdded:connect(function(child)
 			addToGrid(child)
 			updateGridActive()
 		end)
 		
 	if characterChildRemovedCon then characterChildRemovedCon:disconnect() end
 	characterChildRemovedCon = 
-		game.Players.LocalPlayer.Character.ChildRemoved:connect(function(child)
+		game:GetService("Players").LocalPlayer.Character.ChildRemoved:connect(function(child)
 			updateGridActive()
 		end)
 		
 			
 	if humanoidDiedCon then humanoidDiedCon:disconnect() end
-	local localPlayer = game.Players.LocalPlayer
+	local localPlayer = game:GetService("Players").LocalPlayer
 	waitForProperty(localPlayer,"Character")
 	waitForChild(localPlayer.Character,"Humanoid")
-	humanoidDiedCon = game.Players.LocalPlayer.Character.Humanoid.Died:connect(function() deactivateBackpack() end)
+	humanoidDiedCon = game:GetService("Players").LocalPlayer.Character.Humanoid.Died:connect(function() deactivateBackpack() end)
 	
 	activateBackpack()
 
@@ -905,7 +905,7 @@ player.ChildAdded:connect(function(child)
 	if child:IsA("Backpack") then
 		playerBackpack = child
 		if backpackAddCon then backpackAddCon:disconnect() end
-		backpackAddCon = game.Players.LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
+		backpackAddCon = game:GetService("Players").LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
 	end
 end)
 
@@ -951,11 +951,11 @@ end
 if not backpack.Visible then centerGear(currentLoadout:GetChildren()) end
 
 -- make sure that inventory is listening to gear reparenting
-if characterChildAddedCon == nil and game.Players.LocalPlayer["Character"] then
+if characterChildAddedCon == nil and game:GetService("Players").LocalPlayer["Character"] then
 	setupCharacterConnections()
 end
 if not backpackAddCon then
-	backpackAddCon = game.Players.LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
+	backpackAddCon = game:GetService("Players").LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
 end
 
 backpackButton.Visible = true

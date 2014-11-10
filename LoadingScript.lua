@@ -332,7 +332,7 @@ function MainGui:GenerateMain()
 	while not Game:GetService("CoreGui") do
 		wait()
 	end
-	screenGui.Parent = Game.CoreGui
+	screenGui.Parent = Game:GetService("CoreGui")
 	currScreenGui = screenGui
 end
 
@@ -514,7 +514,7 @@ function destroyLoadingElements()
 end
 
 function handleFinishedReplicating()
-	hasReplicatedFirstElements = (#Game.ReplicatedFirst:GetChildren() > 0)
+	hasReplicatedFirstElements = (#Game:GetService("ReplicatedFirst"):GetChildren() > 0)
 	if not hasReplicatedFirstElements then
 		fadeBackground()
 	else
@@ -534,13 +534,13 @@ function handleGameLoaded()
 	end
 end
 
-Game.ReplicatedFirst.FinishedReplicating:connect(handleFinishedReplicating)
-if Game.ReplicatedFirst:IsFinishedReplicating() then
+Game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
+if Game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
 	handleFinishedReplicating()
 end
 
-Game.ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
-if Game.ReplicatedFirst:IsDefaultLoadingGuiRemoved() then
+Game:GetService("ReplicatedFirst").RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
+if Game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
 	handleRemoveDefaultLoadingGui()
 	return
 end
