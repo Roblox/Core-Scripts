@@ -1557,7 +1557,7 @@ if UserSettings then
 			end)
 		end
 		
-		gameMainMenu.ReportAbuseButton.Visible = game:GetService("NetworkClient")
+		gameMainMenu.ReportAbuseButton.Visible = game:FindService("NetworkClient")
 		-- TODO: remove line below when not testing report abuse
 		if (testReport) then
 			gameMainMenu.ReportAbuseButton.Visible = true
@@ -1565,7 +1565,7 @@ if UserSettings then
 		if not gameMainMenu.ReportAbuseButton.Visible then
 			game.ChildAdded:connect(function(child)
 				if child:IsA("NetworkClient") then
-					gameMainMenu.ReportAbuseButton.Visible = game:GetService("NetworkClient")
+					gameMainMenu.ReportAbuseButton.Visible = game:FindService("NetworkClient")
 				end
 			end)
 		end
