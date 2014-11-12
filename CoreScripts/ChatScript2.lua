@@ -1541,8 +1541,8 @@ local function CreateChatWindowWidget(settings)
 					Name = 'MessageContainer';
 					Size = UDim2.new(1, -scrollingFrame.ScrollBarThickness - 1, 0, 0);
 					Position = UDim2.new(0, 0, 1, 0);
-					ZIndex = 0.5;
-					BackgroundColor3 = Color3.new(1, 0, 0);
+					ZIndex = 1;
+					BackgroundColor3 = Color3.new(0, 0, 0);
 					BackgroundTransparency = 1;
 					Parent = scrollingFrame
 				};
