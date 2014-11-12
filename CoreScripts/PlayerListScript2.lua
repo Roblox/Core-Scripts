@@ -1098,7 +1098,7 @@ local function updateLeaderstatFrames()
 			local statFrame = StatNameFrame:FindFirstChild(stat.Name)
 			if not statFrame then
 				statFrame = createStatFrame(offset, StatNameFrame, stat.Name)
-				createStatText(statFrame, stat.Name)
+				createStatText(statFrame, formatStatString( stat.Name))
 			end
 			statFrame.Position = UDim2.new(0, offset + 1, 0, 0)
 			offset = offset + statFrame.Size.X.Offset + 1
@@ -1555,6 +1555,15 @@ local function expandPlayerList(endPosition, subFrameScale)
 
 	if StatNameFrame then
 		resizeExpandedFrame(StatNameFrame, subFrameScale, 'Players')
+		for _,stat in pairs(GameStats) do
+			local subFrame = StatNameFrame:FindFirstChild(stat.Name)
+			if subFrame then
+				local statText = subFrame:FindFirstChild('StatText')
+				if statText then
+					statText.Text = formatStatString(stat.Name)
+				end
+			end
+		end
 	end
 	for _,entry in ipairs(PlayerEntries) do
 		local player = entry.Player
