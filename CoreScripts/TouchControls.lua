@@ -402,7 +402,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 		end
 		
 		local padOrigin = nil
-		local deadZone = 0.1	
+		local deadZone = 0.5	
 		local isRight, isLeft, isUp, isDown = false, false, false, false
 		local vForward = Vector3.new(0, 0, -1)
 		local vRight = Vector3.new(1, 0, 0)
@@ -416,7 +416,12 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 				inputAxis = Vector3.new(0, 0, 0)
 			else
 				inputAxis = inputAxis.unit * ((inputAxisMagnitude - deadZone) / (1 - deadZone))
-				inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y).unit
+				-- catch possible NAN vector
+				if inputAxis.magnitude == 0 then
+					inputAxis = Vector3.new(0, 0, 0)
+				else
+					inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y).unit
+				end
 			end
 			
 			if Player then
@@ -1475,7 +1480,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		end	
 		
 		local padOrigin = nil
-		local deadZone = 0.1
+		local deadZone = 0.5
 		
 		local isRight, isLeft, isUp, isDown = false, false, false, false
 		local function move(pos)
@@ -1488,7 +1493,12 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 				inputAxis = Vector3.new(0, 0, 0)
 			else
 				inputAxis = inputAxis.unit * ((inputAxisMagnitude - deadZone) / (1 - deadZone))
-				inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y).unit
+				-- catch possible NAN Vector
+				if inputAxis.magnitude == 0 then
+					inputAxis = Vector3.new(0, 0, 0)
+				else
+					inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y).unit
+				end
 			end
 			
 			localPlayer:Move(inputAxis, true)

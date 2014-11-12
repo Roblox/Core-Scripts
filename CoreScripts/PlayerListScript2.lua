@@ -513,6 +513,7 @@ local function createEntryFrame(name, sizeYOffset)
 	nameFrame.BackgroundTransparency = BG_TRANSPARENCY
 	nameFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 	nameFrame.BorderSizePixel = 0
+	nameFrame.ClipsDescendants = true
 	nameFrame.Parent = containerFrame
 
 	return containerFrame, nameFrame
@@ -1098,7 +1099,7 @@ local function updateLeaderstatFrames()
 			local statFrame = StatNameFrame:FindFirstChild(stat.Name)
 			if not statFrame then
 				statFrame = createStatFrame(offset, StatNameFrame, stat.Name)
-				createStatText(statFrame, formatStatString( stat.Name))
+				createStatText(statFrame, formatStatString(stat.Name))
 			end
 			statFrame.Position = UDim2.new(0, offset + 1, 0, 0)
 			offset = offset + statFrame.Size.X.Offset + 1
@@ -1368,7 +1369,6 @@ local function createPlayerEntry(player)
 
 	local containerFrame, entryFrame = createEntryFrame(name, PlayerEntrySizeY)
 	entryFrame.Active = true
-	entryFrame.ClipsDescendants = true
 	entryFrame.InputBegan:connect(function(inputObject)
 		local inputType = inputObject.UserInputType
 		if inputType == Enum.UserInputType.MouseButton1 or inputType == Enum.UserInputType.Touch then
