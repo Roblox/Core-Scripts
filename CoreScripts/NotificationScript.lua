@@ -9,12 +9,12 @@ function waitForChild(instance, name)
 	end
 end
 
-waitForProperty(game.Players,"LocalPlayer")
+waitForProperty(game:GetService("Players"),"LocalPlayer")
 waitForChild(script.Parent,"Popup")
 waitForChild(script.Parent.Popup,"AcceptButton")
 script.Parent.Popup.AcceptButton.Modal = true
 
-local localPlayer = game.Players.LocalPlayer
+local localPlayer = game:GetService("Players").LocalPlayer
 local teleportUI = nil
 
 local acceptedTeleport = Instance.new("IntValue")
@@ -65,7 +65,7 @@ function makeFriend(fromPlayer,toPlayer)
 end
 
 
-game.Players.FriendRequestEvent:connect(function(fromPlayer,toPlayer,event)
+game:GetService("Players").FriendRequestEvent:connect(function(fromPlayer,toPlayer,event)
 
 	-- if this doesn't involve me, then do nothing
 	if fromPlayer ~= localPlayer and toPlayer ~= localPlayer then return end
@@ -159,10 +159,10 @@ if teleportEnabled then
 		clickCon = popup.OKButton.MouseButton1Click:connect(function()
 			game:GetService("TeleportService"):TeleportCancel()
 			if clickCon then clickCon:disconnect() end
-			game.GuiService:RemoveCenterDialog(script.Parent:FindFirstChild("Popup"))
+			game:GetService("GuiService"):RemoveCenterDialog(script.Parent:FindFirstChild("Popup"))
 			popup:TweenSize(UDim2.new(0,0,0,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quart,1,true,makePopupInvisible())
 		end)
-		game.GuiService:AddCenterDialog(script.Parent:FindFirstChild("Popup"), Enum.CenterDialogType.QuitDialog,
+		game:GetService("GuiService"):AddCenterDialog(script.Parent:FindFirstChild("Popup"), Enum.CenterDialogType.QuitDialog,
 			--ShowFunction
 			function()
 				showOneButton()
@@ -185,7 +185,7 @@ if teleportEnabled then
 		local function killCons()
 			if yesCon then yesCon:disconnect() end
 			if noCon then noCon:disconnect() end
-			game.GuiService:RemoveCenterDialog(script.Parent:FindFirstChild("Popup"))
+			game:GetService("GuiService"):RemoveCenterDialog(script.Parent:FindFirstChild("Popup"))
 			popup:TweenSize(UDim2.new(0,0,0,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quart,1,true,makePopupInvisible())
 		end
 
@@ -198,10 +198,10 @@ if teleportEnabled then
 				local clickCon
 				clickCon = popup.OKButton.MouseButton1Click:connect(function()
 					if clickCon then clickCon:disconnect() end
-					game.GuiService:RemoveCenterDialog(script.Parent:FindFirstChild("Popup"))
+					game:GetService("GuiService"):RemoveCenterDialog(script.Parent:FindFirstChild("Popup"))
 					popup:TweenSize(UDim2.new(0,0,0,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quart,1,true,makePopupInvisible())
 				end)
-				game.GuiService:AddCenterDialog(script.Parent:FindFirstChild("Popup"), Enum.CenterDialogType.QuitDialog,
+				game:GetService("GuiService"):AddCenterDialog(script.Parent:FindFirstChild("Popup"), Enum.CenterDialogType.QuitDialog,
 						--ShowFunction
 						function()
 							showOneButton()
@@ -220,7 +220,7 @@ if teleportEnabled then
 			local success = pcall(function() game:GetService("TeleportService"):TeleportCancel() end)
 		end)
 
-		local centerDialogSuccess = pcall(function() game.GuiService:AddCenterDialog(script.Parent:FindFirstChild("Popup"), Enum.CenterDialogType.QuitDialog,
+		local centerDialogSuccess = pcall(function() game:GetService("GuiService"):AddCenterDialog(script.Parent:FindFirstChild("Popup"), Enum.CenterDialogType.QuitDialog,
 						--ShowFunction
 						function()
 							showTwoButtons()
@@ -256,7 +256,7 @@ game:GetService("MarketplaceService").ClientLuaDialogRequested:connect(function(
 	local function killCons()
 		if yesCon then yesCon:disconnect() end
 		if noCon then noCon:disconnect() end
-		game.GuiService:RemoveCenterDialog(script.Parent:FindFirstChild("Popup"))
+		game:GetService("GuiService"):RemoveCenterDialog(script.Parent:FindFirstChild("Popup"))
 		popup:TweenSize(UDim2.new(0,0,0,0),Enum.EasingDirection.Out,Enum.EasingStyle.Quart,1,true,makePopupInvisible())
 	end
 
@@ -270,7 +270,7 @@ game:GetService("MarketplaceService").ClientLuaDialogRequested:connect(function(
 		game:GetService("MarketplaceService"):SignalServerLuaDialogClosed(false);
 	end)
 
-	local centerDialogSuccess = pcall(function() game.GuiService:AddCenterDialog(script.Parent:FindFirstChild("Popup"), Enum.CenterDialogType.QuitDialog,
+	local centerDialogSuccess = pcall(function() game:GetService("GuiService"):AddCenterDialog(script.Parent:FindFirstChild("Popup"), Enum.CenterDialogType.QuitDialog,
 		function()
 			showTwoButtons()
 			popup.AcceptButton.Text = accept
@@ -299,7 +299,7 @@ local noOptFunc = function ()
 end
 
 Game:GetService("PointsService").PointsAwarded:connect( function(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
-	if userId == Game.Players.LocalPlayer.userId then
+	if userId == Game:GetService("Players").LocalPlayer.userId then
 		if pointsAwarded > 0 then
 			game:GetService("GuiService"):SendNotification("Points Awarded!",
 				"You received " ..tostring(pointsAwarded) .. " points!",
@@ -318,7 +318,7 @@ end)
 
 -- Since we can't get the image right, let's just use a nice notification icon
 Game:GetService("BadgeService").BadgeAwarded:connect( function(message, userId, badgeId)
-	if userId == Game.Players.LocalPlayer.userId then
+	if userId == Game:GetService("Players").LocalPlayer.userId then
 		game:GetService("GuiService"):SendNotification("Badge Awarded!",
 			message,
 			"http://www.roblox.com/asset?id=177200377",

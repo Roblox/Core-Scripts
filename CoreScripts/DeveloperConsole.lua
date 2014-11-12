@@ -307,7 +307,7 @@ function initializeDeveloperConsole()
 	
 	local flagExists, flagValue = pcall(function () return settings():GetFFlag("ConsoleCodeExecutionEnabled") end)
 	local codeExecutionEnabled = flagExists and flagValue
-	local isCreator = game.Players.LocalPlayer.userId == game.CreatorId
+	local isCreator = game:GetService("Players").LocalPlayer.userId == game.CreatorId
 	local function shouldShowCommandBar()
 		return codeExecutionEnabled and isCreator
 	end
@@ -631,14 +631,14 @@ function initializeDeveloperConsole()
 	
 	function initStatsListener()
 		if (statsListenerConnection == nil) then
-			game.NetworkClient:GetChildren()[1]:RequestServerStats(true)
-			statsListenerConnection = game.NetworkClient:GetChildren()[1].StatsReceived:connect(refreshCharts)
+			game:GetService("NetworkClient"):GetChildren()[1]:RequestServerStats(true)
+			statsListenerConnection = game:GetService("NetworkClient"):GetChildren()[1].StatsReceived:connect(refreshCharts)
 		end
 	end
 	
 	function removeStatsListener()
 		if (statsListenerConnection ~= nil) then
-			game.NetworkClient:GetChildren()[1]:RequestServerStats(false)
+			game:GetService("NetworkClient"):GetChildren()[1]:RequestServerStats(false)
 			statsListenerConnection:disconnect()
 			statsListenerConnection = nil
 		end
@@ -1193,8 +1193,8 @@ function initializeDeveloperConsole()
 			serverConsole.BackgroundTransparency = 0.8
 			serverStats.BackgroundTransparency = 0.8
 			
-			if game:FindFirstChild("Players") and game.Players["LocalPlayer"] then
-				local mouse = game.Players.LocalPlayer:GetMouse()
+			if game:GetService("Players") and game:GetService("Players")["LocalPlayer"] then
+				local mouse = game:GetService("Players").LocalPlayer:GetMouse()
 				local mousePos = Vector2.new(mouse.X, mouse.Y)
 				refreshConsolePosition(mouse.X, mouse.Y)
 				refreshConsoleSize(mouse.X, mouse.Y)
@@ -1238,8 +1238,8 @@ function initializeDeveloperConsole()
 			localConsole.BackgroundTransparency = 0.8
 			serverStats.BackgroundTransparency = 0.8
 			
-			if game:FindFirstChild("Players") and game.Players["LocalPlayer"] then
-				local mouse = game.Players.LocalPlayer:GetMouse()
+			if game:GetService("Players") and game:GetService("Players")["LocalPlayer"] then
+				local mouse = game:GetService("Players").LocalPlayer:GetMouse()
 				local mousePos = Vector2.new(mouse.X, mouse.Y)
 				refreshConsolePosition(mouse.X, mouse.Y)
 				refreshConsoleSize(mouse.X, mouse.Y)
@@ -1287,13 +1287,13 @@ function initializeDeveloperConsole()
 		clean()
 	end)
 	
-	if game:FindFirstChild("Players") and game.Players["LocalPlayer"] then
-		local LocalMouse = game.Players.LocalPlayer:GetMouse()
+	if game:GetService("Players") and game:GetService("Players")["LocalPlayer"] then
+		local LocalMouse = game:GetService("Players").LocalPlayer:GetMouse()
 		LocalMouse.Move:connect(function()
 			if not Dev_Container.Visible then
 				return
 			end
-			local mouse = game.Players.LocalPlayer:GetMouse()
+			local mouse = game:GetService("Players").LocalPlayer:GetMouse()
 			local mousePos = Vector2.new(mouse.X, mouse.Y)
 			refreshConsolePosition(mouse.X, mouse.Y)
 			refreshConsoleSize(mouse.X, mouse.Y)

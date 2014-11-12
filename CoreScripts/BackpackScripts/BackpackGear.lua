@@ -21,8 +21,8 @@ end
 
 
 waitForChild(game,"Players")
-waitForProperty(game.Players,"LocalPlayer")
-local player = game.Players.LocalPlayer
+waitForProperty(game:GetService("Players"),"LocalPlayer")
+local player = game:GetService("Players").LocalPlayer
 
 local RbxGui, msg = LoadLibrary("RbxGui")
 if not RbxGui then print("could not find RbxGui!") return end
@@ -538,24 +538,24 @@ end
 function setupCharacterConnections()
 
 	if backpackAddCon then backpackAddCon:disconnect() end
-	backpackAddCon = game.Players.LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
+	backpackAddCon = game:GetService("Players").LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
 	
 	-- make sure we get all the children
-	local backpackChildren = game.Players.LocalPlayer.Backpack:GetChildren()
+	local backpackChildren = game:GetService("Players").LocalPlayer.Backpack:GetChildren()
 	for i = 1, #backpackChildren do
 		addToGrid(backpackChildren[i])
 	end
 
 	if characterChildAddedCon then characterChildAddedCon:disconnect() end
 	characterChildAddedCon = 
-		game.Players.LocalPlayer.Character.ChildAdded:connect(function(child)
+		game:GetService("Players").LocalPlayer.Character.ChildAdded:connect(function(child)
 			addToGrid(child)
 			updateGridActive()
 		end)
 		
 	if characterChildRemovedCon then characterChildRemovedCon:disconnect() end
 	characterChildRemovedCon = 
-		game.Players.LocalPlayer.Character.ChildRemoved:connect(function(child)
+		game:GetService("Players").LocalPlayer.Character.ChildRemoved:connect(function(child)
 			updateGridActive()
 		end)
 
@@ -819,7 +819,7 @@ player.ChildAdded:connect(function(child)
 	if child:IsA("Backpack") then
 		playerBackpack = child
 		if backpackAddCon then backpackAddCon:disconnect() end
-		backpackAddCon = game.Players.LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
+		backpackAddCon = game:GetService("Players").LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
 	end
 end)
 
@@ -842,8 +842,8 @@ for i = 1, #loadoutChildren do
 end
 ------------------------- End Lifelong Connections -----------------------
 
-coreGuiChanged(Enum.CoreGuiType.Backpack, Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack))
-Game.StarterGui.CoreGuiChangedSignal:connect(coreGuiChanged)
+coreGuiChanged(Enum.CoreGuiType.Backpack, Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Backpack))
+Game:GetService("StarterGui").CoreGuiChangedSignal:connect(coreGuiChanged)
 
 resize()
 resizeGrid()
@@ -856,11 +856,11 @@ end
 if not backpack.Visible then centerGear(currentLoadout:GetChildren()) end
 
 -- make sure that inventory is listening to gear reparenting
-if characterChildAddedCon == nil and game.Players.LocalPlayer["Character"] then
+if characterChildAddedCon == nil and game:GetService("Players").LocalPlayer["Character"] then
 	setupCharacterConnections()
 end
 if not backpackAddCon then
-	backpackAddCon = game.Players.LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
+	backpackAddCon = game:GetService("Players").LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
 end
 
 backpackOpenEvent.Event:connect(backpackOpenHandler)

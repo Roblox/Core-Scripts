@@ -9,12 +9,12 @@
 while not Game do
 	wait(1/60)
 end
-while not Game.Players do
+while not Game:GetService("Players") do
 	wait(1/60)
 end
 
 local useCoreHealthBar = false
-local success = pcall(function() useCoreHealthBar = Game.Players:GetUseCoreScriptHealthBar() end)
+local success = pcall(function() useCoreHealthBar = Game:GetService("Players"):GetUseCoreScriptHealthBar() end)
 if not success or not useCoreHealthBar then
 	return
 end
@@ -42,7 +42,7 @@ local hurtOverlayImage = "http://www.roblox.com/asset/?id=34854607"
 Game:GetService("ContentProvider"):Preload(greenBarImage)
 Game:GetService("ContentProvider"):Preload(hurtOverlayImage)
 
-while not Game.Players.LocalPlayer do
+while not Game:GetService("Players").LocalPlayer do
 	wait(1/60)
 end
 
@@ -54,7 +54,7 @@ local capWidth = 7
 
 function CreateGui()
 	if HealthGui and #HealthGui:GetChildren() > 0 then 
-		HealthGui.Parent = Game.CoreGui.RobloxGui
+		HealthGui.Parent = Game:GetService("CoreGui").RobloxGui
 		return 
 	end
 
@@ -145,7 +145,7 @@ function CreateGui()
 	healthBarRight.Parent = healthBar
 	healthBarRight.ImageColor3 = greenColor
 
-	HealthGui.Parent = Game.CoreGui.RobloxGui
+	HealthGui.Parent = Game:GetService("CoreGui").RobloxGui
 end
 
 function UpdateGui(health)
@@ -262,9 +262,9 @@ function newPlayerCharacter()
 end
 
 function startGui()
-	characterAddedConnection = Game.Players.LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
+	characterAddedConnection = Game:GetService("Players").LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
 
-	local character = Game.Players.LocalPlayer.Character
+	local character = Game:GetService("Players").LocalPlayer.Character
 	if not character then
 		return
 	end
@@ -274,7 +274,7 @@ function startGui()
 		return
 	end
 
-	if not Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
+	if not Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
 		return
 	end
 
@@ -295,7 +295,7 @@ HealthGui.Name = "HealthGui"
 HealthGui.BackgroundTransparency = 1
 HealthGui.Size = UDim2.new(1,0,1,0)
 
-Game.StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
+Game:GetService("StarterGui").CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
 	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
 		if guiEnabled and not enabled then
 			if HealthGui then
@@ -310,7 +310,7 @@ Game.StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
 	end
 end)
 
-if Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
+if Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
 	guiEnabled = true
 	startGui()
 end

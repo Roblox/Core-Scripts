@@ -12,7 +12,7 @@ local function waitForProperty(instance, property)
 end
 
 local useCoreHealthBar = false
-pcall(function() useCoreHealthBar = Game.Players:GetUseCoreScriptHealthBar() end)
+pcall(function() useCoreHealthBar = Game:GetService("Players"):GetUseCoreScriptHealthBar() end)
 
 
 local currentLoadout = script.Parent
@@ -53,8 +53,8 @@ end
 
 --- Begin Locals
 waitForChild(game,"Players")
-waitForProperty(game.Players,"LocalPlayer")
-local player = game.Players.LocalPlayer
+waitForProperty(game:GetService("Players"),"LocalPlayer")
+local player = game:GetService("Players").LocalPlayer
 
 if not useCoreHealthBar then
 	waitForChild(player, 'PlayerGui')
@@ -68,9 +68,6 @@ local humanoid = waitForChild(player.Character, 'Humanoid')
 humanoid.Died:connect(function() 
 	backpackButton.Visible = false 
 end)
-
-waitForChild(game, "LocalBackpack")
-game.LocalBackpack:SetOldSchoolBackpack(false)
 
 waitForChild(currentLoadout.Parent,"Backpack")
 local guiBackpack = currentLoadout.Parent.Backpack
@@ -146,10 +143,10 @@ function unregisterNumberKeys()
 end
 
 function characterInWorkspace()
-	if game.Players["LocalPlayer"] then
-		if game.Players.LocalPlayer["Character"] then
-			if game.Players.LocalPlayer.Character ~= nil then
-				if game.Players.LocalPlayer.Character.Parent ~= nil then
+	if game:GetService("Players")["LocalPlayer"] then
+		if game:GetService("Players").LocalPlayer["Character"] then
+			if game:GetService("Players").LocalPlayer.Character ~= nil then
+				if game:GetService("Players").LocalPlayer.Character.Parent ~= nil then
 					return true
 				end
 			end
@@ -169,8 +166,8 @@ function removeGear(gear)
 	end
 	if emptySlot then
 		if gearSlots[emptySlot].GearReference.Value then
-			if gearSlots[emptySlot].GearReference.Value.Parent == game.Players.LocalPlayer.Character then -- if we currently have this equipped, unequip it
-				gearSlots[emptySlot].GearReference.Value.Parent = game.Players.LocalPlayer.Backpack
+			if gearSlots[emptySlot].GearReference.Value.Parent == game:GetService("Players").LocalPlayer.Character then -- if we currently have this equipped, unequip it
+				gearSlots[emptySlot].GearReference.Value.Parent = game:GetService("Players").LocalPlayer.Backpack
 			end
 
 			if gearSlots[emptySlot].GearReference.Value:IsA("HopperBin") and gearSlots[emptySlot].GearReference.Value.Active then -- this is an active hopperbin
@@ -546,7 +543,7 @@ function unequipAllItems(dontEquipThis)
 			if gearSlots[i].GearReference.Value:IsA("HopperBin") then
 				gearSlots[i].GearReference.Value:Disable()
 			elseif gearSlots[i].GearReference.Value:IsA("Tool") then
-				gearSlots[i].GearReference.Value.Parent = game.Players.LocalPlayer.Backpack
+				gearSlots[i].GearReference.Value.Parent = game:GetService("Players").LocalPlayer.Backpack
 			end
 			gearSlots[i].Selected = false
 		end
@@ -733,7 +730,7 @@ local addingPlayerChild = function(child, equipped, addToSlot, inventoryGearButt
 			if childCon then childCon:disconnect() end
 			if childChangeCon then childChangeCon:disconnect() end
 			removeFromInventory(child)
-		elseif parent == game.Players.LocalPlayer.Backpack then
+		elseif parent == game:GetService("Players").LocalPlayer.Backpack then
 			normalizeButton(gearClone)
 		end
 	end)
@@ -908,7 +905,7 @@ function coreGuiChanged(coreGuiType,enabled)
 	end
 
 	if not useCoreHealthBar and coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
-		setHealthBarVisible(game.Players.LocalPlayer.PlayerGui, enabled)
+		setHealthBarVisible(game:GetService("Players").LocalPlayer.PlayerGui, enabled)
 	end
 end
 -- End Functions
@@ -921,11 +918,11 @@ end
 -- Begin Script
 registerNumberKeys()
 
-coreGuiChanged(Enum.CoreGuiType.Backpack, Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack))
+coreGuiChanged(Enum.CoreGuiType.Backpack, Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Backpack))
 if not useCoreHealthBar then
-	coreGuiChanged(Enum.CoreGuiType.Health, Game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health))
+	coreGuiChanged(Enum.CoreGuiType.Health, Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health))
 end
-Game.StarterGui.CoreGuiChangedSignal:connect(coreGuiChanged)
+Game:GetService("StarterGui").CoreGuiChangedSignal:connect(coreGuiChanged)
 
 wait() -- let stuff initialize incase this is first heartbeat...
 
@@ -994,8 +991,8 @@ player.CharacterRemoving:connect(function()
 end)
 
 player.CharacterAdded:connect(function()	
-	waitForProperty(game.Players,"LocalPlayer")		
-	player = game.Players.LocalPlayer -- make sure we are still looking at the correct character
+	waitForProperty(game:GetService("Players"),"LocalPlayer")		
+	player = game:GetService("Players").LocalPlayer -- make sure we are still looking at the correct character
 	waitForChild(player,"Backpack")	
 
 

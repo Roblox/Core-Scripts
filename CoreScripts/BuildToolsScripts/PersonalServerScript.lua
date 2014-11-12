@@ -188,7 +188,7 @@ end
 
 RunService:Run()
 
-Game.Workspace.DescendantAdded:connect(OnEdit)
-Game.Workspace.DescendantRemoving:connect(OnEdit)
+Game:GetService("Workspace").DescendantAdded:connect(OnEdit)
+Game:GetService("Workspace").DescendantRemoving:connect(OnEdit)
 
 Spawn(CheckForSaveOnInterval)

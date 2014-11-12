@@ -529,7 +529,7 @@ t.MakeWedge = function(x, y, z, defaultmaterial)
 end
 
 t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, selectionParent)
-	local terrain = game.Workspace:FindFirstChild("Terrain")
+	local terrain = game:GetService("Workspace"):FindFirstChild("Terrain")
 	if not terrain then return end
 
 	assert(regionToSelect)
@@ -555,7 +555,7 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 	if selectionParent then
 		selectionContainer.Parent = selectionParent
 	else
-		selectionContainer.Parent = game.Workspace
+		selectionContainer.Parent = game:GetService("Workspace")
 	end
 
 	local updateSelection = nil -- function we return to allow user to update selection

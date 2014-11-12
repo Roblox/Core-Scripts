@@ -47,6 +47,8 @@ local defaultPosition = UDim2.new(0,0,0,0)
 local centerDialogs = {}
 local mainShield = nil
 
+local settingsChoices = {}
+
 local testReport = false
 
 local inStudioMode = UserSettings().GameSettings:InStudioMode()
@@ -54,7 +56,7 @@ local inStudioMode = UserSettings().GameSettings:InStudioMode()
 -- inStudioMode = false
 
 local macClient = false
-local success, isMac = pcall(function() return not game.GuiService.IsWindows end)
+local success, isMac = pcall(function() return not game:GetService("GuiService").IsWindows end)
 macClient = success and isMac
 -- REMOVE WHEN NOT TESTING
 --macClient = true
@@ -99,9 +101,9 @@ function resumeGameFunction(shield)
 		shield.Visible = false
 		for i = 1, #centerDialogs do
 			centerDialogs[i].Visible = false
-			game.GuiService:RemoveCenterDialog(centerDialogs[i])
+			game:GetService("GuiService"):RemoveCenterDialog(centerDialogs[i])
 		end
-		game.GuiService:RemoveCenterDialog(shield)
+		game:GetService("GuiService"):RemoveCenterDialog(shield)
 		settingsButton.Active = true
 		currentMenuSelection = nil
 		lastMenuSelection = {}
@@ -149,7 +151,7 @@ function goToMenu(container,menuName, moveDirection,size,position)
 end
 
 function resetLocalCharacter()
-	local player = game.Players.LocalPlayer
+	local player = game:GetService("Players").LocalPlayer
 	if player then
 		if player.Character and player.Character:FindFirstChild("Humanoid") then
 			player.Character.Humanoid.Health = 0
@@ -264,11 +266,11 @@ function backToGame(buttonClicked, shield, settingsButton)
 	buttonClicked.Parent.Parent.Parent.Parent.Visible = false
 	shield.Visible = false
 	for i = 1, #centerDialogs do
-		game.GuiService:RemoveCenterDialog(centerDialogs[i])
+		game:GetService("GuiService"):RemoveCenterDialog(centerDialogs[i])
 		centerDialogs[i].Visible = false
 	end
 	centerDialogs = {}
-	game.GuiService:RemoveCenterDialog(shield)
+	game:GetService("GuiService"):RemoveCenterDialog(shield)
 	settingsButton.Active = true
 end
 
@@ -421,8 +423,8 @@ local function createHelpDialog(baseZIndex)
 		Parent = devConsoleButton;
 	}
 	
-	waitForProperty(game.Players, "LocalPlayer")
-	game.Players.LocalPlayer:GetMouse().KeyDown:connect(function(key)
+	waitForProperty(game:GetService("Players"), "LocalPlayer")
+	game:GetService("Players").LocalPlayer:GetMouse().KeyDown:connect(function(key)
 		if string.byte(key) == 34 then --F9
 			toggleDeveloperConsole()
 		end
@@ -431,7 +433,7 @@ local function createHelpDialog(baseZIndex)
 	devConsoleButton.MouseButton1Click:connect(function()
 		toggleDeveloperConsole()
 		shield.Visible = false
-		game.GuiService:RemoveCenterDialog(shield)
+		game:GetService("GuiService"):RemoveCenterDialog(shield)
 	end)
 			
 	-- set up listeners for type of mouse mode, but keep constructing gui at same time
@@ -470,7 +472,7 @@ local function createHelpDialog(baseZIndex)
 	okBtn.MouseButton1Click:connect(
 		function()
 			shield.Visible = false
-			game.GuiService:RemoveCenterDialog(shield)
+			game:GetService("GuiService"):RemoveCenterDialog(shield)
 		end)
 	okBtn.Parent = helpDialog
 
@@ -622,7 +624,7 @@ local function createGameMainMenu(baseZIndex, shield)
 	helpButton.MouseButton1Click:connect(
 		function() 
 			table.insert(centerDialogs,helpDialog)
-			game.GuiService:AddCenterDialog(helpDialog, Enum.CenterDialogType.ModalDialog,
+			game:GetService("GuiService"):AddCenterDialog(helpDialog, Enum.CenterDialogType.ModalDialog,
 				--ShowFunction
 				function()
 					helpDialog.Visible = true
@@ -719,7 +721,24 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		cameraLabel.ZIndex = baseZIndex + 4
 		cameraLabel.Parent = gameSettingsMenuFrame
 
-		local mouseLockLabel = game.CoreGui.RobloxGui:FindFirstChild("MouseLockLabel",true)
+		if (newMovementScripts) then
+			local mouseLockDisabled = Instance.new("TextLabel")
+			mouseLockDisabled.Name = "mouseLockDisabled"
+			mouseLockDisabled.Text = "Set by Game"
+			mouseLockDisabled.Font = Enum.Font.SourceSansBold
+			mouseLockDisabled.FontSize = Enum.FontSize.Size18
+			mouseLockDisabled.Position = UDim2.new(0,275,0,itemTop + 6)
+			mouseLockDisabled.Size = UDim2.new(0,200,0,18)
+			mouseLockDisabled.TextColor3 = Color3I(180,180,180)
+			mouseLockDisabled.TextXAlignment = Enum.TextXAlignment.Left
+			mouseLockDisabled.BackgroundTransparency = 1
+			mouseLockDisabled.ZIndex = baseZIndex + 4
+			mouseLockDisabled.Parent = gameSettingsMenuFrame
+
+			settingsChoices["MouseLockDisabled"] = mouseLockDisabled
+		end
+
+		local mouseLockLabel = game:GetService("CoreGui").RobloxGui:FindFirstChild("MouseLockLabel",true)
 		if (newMovementScripts) then
 			local mouseLockCheckbox = createTextButton("",Enum.ButtonStyle.RobloxRoundButton,Enum.FontSize.Size18,UDim2.new(0,32,0,32),UDim2.new(0, 270, 0, itemTop- 4))
 			mouseLockCheckbox.Name = "mouseLockCheckbox"
@@ -745,6 +764,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 					end
 				end)
 			end)	
+			settingsChoices["MouseLockEnabled"] = mouseLockCheckbox
 		else
 
 			local enumItems = Enum.ControlMode:GetEnumItems()
@@ -776,6 +796,174 @@ local function createGameSettingsMenu(baseZIndex, shield)
 			cameraDropDown.Size = UDim2.new(0,200,0,32)
 			cameraDropDown.Parent = gameSettingsMenuFrame
 		end
+
+		itemTop = itemTop + 35
+	end
+
+	----------------------------------------------------------------------------------------------------
+	--  C U S T O M    C A M E R A    C O N T R O L S
+	----------------------------------------------------------------------------------------------------
+
+	local smartCameraLabel = Instance.new("TextLabel")
+	smartCameraLabel.Name = "SmartCameraLabel"
+	smartCameraLabel.Text = "Camera Mode"
+	smartCameraLabel.Font = Enum.Font.SourceSansBold
+	smartCameraLabel.FontSize = Enum.FontSize.Size18
+	smartCameraLabel.Position = UDim2.new(0,31,0,itemTop + 6)
+	smartCameraLabel.Size = UDim2.new(0,224,0,18)
+	smartCameraLabel.TextColor3 = Color3I(255,255,255)
+	smartCameraLabel.TextXAlignment = Enum.TextXAlignment.Left
+	smartCameraLabel.BackgroundTransparency = 1
+	smartCameraLabel.ZIndex = baseZIndex + 4
+	smartCameraLabel.Parent = gameSettingsMenuFrame
+
+	if (newMovementScripts) then
+		local smartCameraDisabled = Instance.new("TextLabel")
+		smartCameraDisabled.Name = "smartCameraDisabled"
+		smartCameraDisabled.Text = "Set by Game"
+		smartCameraDisabled.Font = Enum.Font.SourceSansBold
+		smartCameraDisabled.FontSize = Enum.FontSize.Size18
+		smartCameraDisabled.Position = UDim2.new(0,275,0,itemTop + 6)
+		smartCameraDisabled.Size = UDim2.new(0,200,0,18)
+		smartCameraDisabled.TextColor3 = Color3I(180,180,180)
+		smartCameraDisabled.TextXAlignment = Enum.TextXAlignment.Left
+		smartCameraDisabled.BackgroundTransparency = 1
+		smartCameraDisabled.ZIndex = baseZIndex + 4
+		smartCameraDisabled.Parent = gameSettingsMenuFrame
+
+		settingsChoices["CameraModeDevChoice"] = smartCameraDisabled
+	end
+
+	local smartEnumItems = nil
+	if (not newMovementScripts) then
+		smartEnumItems = Enum.CustomCameraMode:GetEnumItems()
+	elseif (touchClient) then
+		smartEnumItems = Enum.TouchCameraMovementMode:GetEnumItems()
+	else
+		smartEnumItems = Enum.ComputerCameraMovementMode:GetEnumItems()
+	end
+
+	local smartEnumNames = {}
+	local smartEnumNameToItem = {}
+
+	for i,obj in pairs(smartEnumItems) do
+		local displayName = obj.Name
+		if (obj.Name == "Default") then
+			displayName = customCameraDefaultType
+		end
+		smartEnumNames[i] = displayName
+		smartEnumNameToItem[displayName] = obj.Value
+	end
+
+	local smartCameraDropDown
+	smartCameraDropDown, updateSmartCameraDropDownSelection = RbxGui.CreateDropDownMenu(smartEnumNames, 
+		function(text) 
+			if (not newMovementScripts) then
+				UserSettings().GameSettings.CameraMode = smartEnumNameToItem[text]
+			elseif (touchClient) then
+				UserSettings().GameSettings.TouchCameraMovementMode = smartEnumNameToItem[text] 
+			else
+				UserSettings().GameSettings.ComputerCameraMovementMode = smartEnumNameToItem[text] 
+			end
+		end, false, true, baseZIndex)
+	smartCameraDropDown.Name = "SmartCameraField"
+	smartCameraDropDown.ZIndex = baseZIndex + 4
+	smartCameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+	smartCameraDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
+	smartCameraDropDown.Position = UDim2.new(0, 270, 0, itemTop)
+	smartCameraDropDown.Size = UDim2.new(0,200,0,32)
+	smartCameraDropDown.Parent = gameSettingsMenuFrame
+
+	settingsChoices["CameraModeUserChoice"] = smartCameraDropDown
+
+	itemTop = itemTop + 35
+
+
+	----------------------------------------------------------------------------------------------------
+	--  T O U C H    M O V E M E N T    C O N T R O L S
+	----------------------------------------------------------------------------------------------------
+
+	if (touchClient or newMovementScripts) then
+		local movementModeLabel = Instance.new("TextLabel")
+		movementModeLabel.Name = "movementModeLabel"
+		movementModeLabel.Text = "Movement Mode"
+		movementModeLabel.Font = Enum.Font.SourceSansBold
+		movementModeLabel.FontSize = Enum.FontSize.Size18
+		movementModeLabel.Position = UDim2.new(0,31,0,itemTop + 6)
+		movementModeLabel.Size = UDim2.new(0,224,0,18)
+		movementModeLabel.TextColor3 = Color3I(255,255,255)
+		movementModeLabel.TextXAlignment = Enum.TextXAlignment.Left
+		movementModeLabel.BackgroundTransparency = 1
+		movementModeLabel.ZIndex = baseZIndex + 4
+		movementModeLabel.Parent = gameSettingsMenuFrame
+
+		if (newMovementScripts) then
+			local movementModeDisabled = Instance.new("TextLabel")
+			movementModeDisabled.Name = "movementModeDisabled"
+			movementModeDisabled.Text = "Set by Game"
+			movementModeDisabled.Font = Enum.Font.SourceSansBold
+			movementModeDisabled.FontSize = Enum.FontSize.Size18
+			movementModeDisabled.Position = UDim2.new(0,275,0,itemTop + 6)
+			movementModeDisabled.Size = UDim2.new(0,200,0,18)
+			movementModeDisabled.TextColor3 = Color3I(180,180,180)
+			movementModeDisabled.TextXAlignment = Enum.TextXAlignment.Left
+			movementModeDisabled.BackgroundTransparency = 1
+			movementModeDisabled.ZIndex = baseZIndex + 4
+			movementModeDisabled.Parent = gameSettingsMenuFrame
+
+			settingsChoices["MovementModeDevChoice"] = movementModeDisabled
+		end
+
+		local enumNames
+		local enumNameToItem 
+		if (touchClient) then
+			local touchEnumItems = Enum.TouchMovementMode:GetEnumItems()
+			local touchEnumNames = {}
+			local touchEnumNameToItem = {}
+			for i,obj in ipairs(touchEnumItems) do
+				local displayName = obj.Name
+				if (obj.Name == "Default") then
+					displayName = "Default (Thumbstick)"
+				end
+				touchEnumNames[i] = displayName
+				touchEnumNameToItem[displayName] = obj
+			end
+			enumNames = touchEnumNames
+			enumNameToItem = touchEnumNameToItem
+		else 
+			local computerEnumItems = Enum.ComputerMovementMode:GetEnumItems()
+			local computerEnumNames = {}
+			local computerEnumNameToItem = {}
+			for i,obj in ipairs(computerEnumItems) do
+				local displayName = obj.Name
+				if (obj.Name == "Default") then
+					displayName = "Default (Keyboard)"
+				end
+				computerEnumNames[i] = displayName
+				computerEnumNameToItem[displayName] = obj
+			end
+			enumNames = computerEnumNames
+			enumNameToItem = computerEnumNameToItem
+		end
+
+		local movementModeDropDown
+		movementModeDropDown,  updateMovementDropDownSelection = RbxGui.CreateDropDownMenu(enumNames, 
+			function(text) 
+				if (touchClient) then
+					UserSettings().GameSettings.TouchMovementMode = enumNameToItem[text]
+				else
+					UserSettings().GameSettings.ComputerMovementMode = enumNameToItem[text]
+				end
+			end, false, true, baseZIndex)
+		movementModeDropDown.Name = "movementModeField"
+		movementModeDropDown.ZIndex = baseZIndex + 4
+		movementModeDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+		movementModeDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
+		movementModeDropDown.Position = UDim2.new(0, 270, 0, itemTop)
+		movementModeDropDown.Size = UDim2.new(0,200,0,32)
+		movementModeDropDown.Parent = gameSettingsMenuFrame
+
+		settingsChoices["MovementModeUserChoice"] = movementModeDropDown
 
 		itemTop = itemTop + 35
 	end
@@ -833,137 +1021,6 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		itemTop = itemTop + 35
 	end
 	
-
-	----------------------------------------------------------------------------------------------------
-	--  C U S T O M    C A M E R A    C O N T R O L S
-	----------------------------------------------------------------------------------------------------
-
-	local smartCameraLabel = Instance.new("TextLabel")
-	smartCameraLabel.Name = "SmartCameraLabel"
-	smartCameraLabel.Text = "Camera Mode"
-	smartCameraLabel.Font = Enum.Font.SourceSansBold
-	smartCameraLabel.FontSize = Enum.FontSize.Size18
-	smartCameraLabel.Position = UDim2.new(0,31,0,itemTop + 6)
-	smartCameraLabel.Size = UDim2.new(0,224,0,18)
-	smartCameraLabel.TextColor3 = Color3I(255,255,255)
-	smartCameraLabel.TextXAlignment = Enum.TextXAlignment.Left
-	smartCameraLabel.BackgroundTransparency = 1
-	smartCameraLabel.ZIndex = baseZIndex + 4
-	smartCameraLabel.Parent = gameSettingsMenuFrame
-
-	local smartEnumItems = nil
-	if (not newMovementScripts) then
-		smartEnumItems = Enum.CustomCameraMode:GetEnumItems()
-	elseif (touchClient) then
-		smartEnumItems = Enum.TouchCameraMovementMode:GetEnumItems()
-	else
-		smartEnumItems = Enum.ComputerCameraMovementMode:GetEnumItems()
-	end
-
-	local smartEnumNames = {}
-	local smartEnumNameToItem = {}
-
-	for i,obj in pairs(smartEnumItems) do
-		local displayName = obj.Name
-		if (obj.Name == "Default") then
-			displayName = customCameraDefaultType
-		end
-		smartEnumNames[i] = displayName
-		smartEnumNameToItem[displayName] = obj.Value
-	end
-
-	local smartCameraDropDown
-	smartCameraDropDown, updateSmartCameraDropDownSelection = RbxGui.CreateDropDownMenu(smartEnumNames, 
-		function(text) 
-			if (not newMovementScripts) then
-				UserSettings().GameSettings.CameraMode = smartEnumNameToItem[text]
-			elseif (touchClient) then
-				UserSettings().GameSettings.TouchCameraMovementMode = smartEnumNameToItem[text] 
-			else
-				UserSettings().GameSettings.ComputerCameraMovementMode = smartEnumNameToItem[text] 
-			end
-		end, false, true, baseZIndex)
-	smartCameraDropDown.Name = "SmartCameraField"
-	smartCameraDropDown.ZIndex = baseZIndex + 4
-	smartCameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
-	smartCameraDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
-	smartCameraDropDown.Position = UDim2.new(0, 270, 0, itemTop)
-	smartCameraDropDown.Size = UDim2.new(0,200,0,32)
-	smartCameraDropDown.Parent = gameSettingsMenuFrame
-
-	itemTop = itemTop + 35
-
-
-	----------------------------------------------------------------------------------------------------
-	--  T O U C H    M O V E M E N T    C O N T R O L S
-	----------------------------------------------------------------------------------------------------
-
-	if (touchClient or newMovementScripts) then
-		local movementModeLabel = Instance.new("TextLabel")
-		movementModeLabel.Name = "movementModeLabel"
-		movementModeLabel.Text = "Movement Mode"
-		movementModeLabel.Font = Enum.Font.SourceSansBold
-		movementModeLabel.FontSize = Enum.FontSize.Size18
-		movementModeLabel.Position = UDim2.new(0,31,0,itemTop + 6)
-		movementModeLabel.Size = UDim2.new(0,224,0,18)
-		movementModeLabel.TextColor3 = Color3I(255,255,255)
-		movementModeLabel.TextXAlignment = Enum.TextXAlignment.Left
-		movementModeLabel.BackgroundTransparency = 1
-		movementModeLabel.ZIndex = baseZIndex + 4
-		movementModeLabel.Parent = gameSettingsMenuFrame
-
-		local enumNames
-		local enumNameToItem 
-		if (touchClient) then
-			local touchEnumItems = Enum.TouchMovementMode:GetEnumItems()
-			local touchEnumNames = {}
-			local touchEnumNameToItem = {}
-			for i,obj in ipairs(touchEnumItems) do
-				local displayName = obj.Name
-				if (obj.Name == "Default") then
-					displayName = "Default (Thumbstick)"
-				end
-				touchEnumNames[i] = displayName
-				touchEnumNameToItem[displayName] = obj
-			end
-			enumNames = touchEnumNames
-			enumNameToItem = touchEnumNameToItem
-		else 
-			local computerEnumItems = Enum.ComputerMovementMode:GetEnumItems()
-			local computerEnumNames = {}
-			local computerEnumNameToItem = {}
-			for i,obj in ipairs(computerEnumItems) do
-				local displayName = obj.Name
-				if (obj.Name == "Default") then
-					displayName = "Default (Keyboard)"
-				end
-				computerEnumNames[i] = displayName
-				computerEnumNameToItem[displayName] = obj
-			end
-			enumNames = computerEnumNames
-			enumNameToItem = computerEnumNameToItem
-		end
-
-		local movementModeDropDown
-		movementModeDropDown,  updateMovementDropDownSelection = RbxGui.CreateDropDownMenu(enumNames, 
-			function(text) 
-				if (touchClient) then
-					UserSettings().GameSettings.TouchMovementMode = enumNameToItem[text]
-				else
-					UserSettings().GameSettings.ComputerMovementMode = enumNameToItem[text]
-				end
-			end, false, true, baseZIndex)
-		movementModeDropDown.Name = "movementModeField"
-		movementModeDropDown.ZIndex = baseZIndex + 4
-		movementModeDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
-		movementModeDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
-		movementModeDropDown.Position = UDim2.new(0, 270, 0, itemTop)
-		movementModeDropDown.Size = UDim2.new(0,200,0,32)
-		movementModeDropDown.Parent = gameSettingsMenuFrame
-
-		itemTop = itemTop + 35
-	end
-
 	----------------------------------------------------------------------------------------------------
 	-- F U L L  S C R E E N    M O D E
 	----------------------------------------------------------------------------------------------------
@@ -1291,7 +1348,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		end
 		
 		autoGraphicsButton.MouseButton1Click:connect(function()
-			if inStudioMode and not game.Players.LocalPlayer then return end
+			if inStudioMode and not game:GetService("Players").LocalPlayer then return end
 			
 			if not isAutoGraphics then
 				goToAutoGraphics()
@@ -1331,19 +1388,19 @@ local function createGameSettingsMenu(baseZIndex, shield)
 			end
 		end)
 		
-		game.Players.PlayerAdded:connect(function(player)
-			if player == game.Players.LocalPlayer and inStudioMode then
+		game:GetService("Players").PlayerAdded:connect(function(player)
+			if player == game:GetService("Players").LocalPlayer and inStudioMode then
 				enableGraphicsWidget()
 			end
 		end)
-		game.Players.PlayerRemoving:connect(function(player)
-			if player == game.Players.LocalPlayer and inStudioMode then
+		game:GetService("Players").PlayerRemoving:connect(function(player)
+			if player == game:GetService("Players").LocalPlayer and inStudioMode then
 				disableGraphicsWidget()
 			end
 		end)
 
 		local wasManualGraphics = (settings().Rendering.QualityLevel ~= Enum.QualityLevel.Automatic)
-		if inStudioMode and not game.Players.LocalPlayer then
+		if inStudioMode and not game:GetService("Players").LocalPlayer then
 			disableGraphicsWidget()
 		elseif inStudioMode then
 			enableGraphicsWidget()
@@ -1438,7 +1495,56 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	backButton.ZIndex = baseZIndex + 4
 	backButton.Parent = gameSettingsMenuFrame
 	
+	if (newMovementScripts) then
+		updateUserSettings()
+		game.Players.LocalPlayer.Changed:connect(function(prop) 
+			if prop == "DevTouchMovementMode" or prop == "DevComputerMovementMode" or prop == "DevTouchCameraMode" or prop == "DevComputerCameraMode" or
+				prop == "DevEnableMouseLock" then
+				updateUserSettings()
+			end
+		end)
+	end
+
 	return gameSettingsMenuFrame
+end
+
+function updateUserSettings()	
+	if not newMovementScripts then return end
+
+	local player = game.Players.LocalPlayer
+	if (touchClient) then
+		if (player.DevTouchMovementMode.Name == "UserChoice") then
+			settingsChoices["MovementModeDevChoice"].Visible = false
+			settingsChoices["MovementModeUserChoice"].Visible = true
+		else
+			settingsChoices["MovementModeDevChoice"].Visible = true
+			settingsChoices["MovementModeUserChoice"].Visible = false
+		end
+		if (player.DevTouchCameraMode.Name == "UserChoice") then
+			settingsChoices["CameraModeDevChoice"].Visible = false
+			settingsChoices["CameraModeUserChoice"].Visible = true
+		else
+			settingsChoices["CameraModeDevChoice"].Visible = true
+			settingsChoices["CameraModeUserChoice"].Visible = false
+		end
+	else
+		if (player.DevComputerMovementMode.Name == "UserChoice") then
+			settingsChoices["MovementModeDevChoice"].Visible = false
+			settingsChoices["MovementModeUserChoice"].Visible = true
+		else
+			settingsChoices["MovementModeDevChoice"].Visible = true
+			settingsChoices["MovementModeUserChoice"].Visible = false
+		end	
+		if (player.DevComputerCameraMode.Name == "UserChoice") then
+			settingsChoices["CameraModeDevChoice"].Visible = false
+			settingsChoices["CameraModeUserChoice"].Visible = true
+		else
+			settingsChoices["CameraModeDevChoice"].Visible = true
+			settingsChoices["CameraModeUserChoice"].Visible = false
+		end
+		settingsChoices["MouseLockEnabled"].Visible = player.DevEnableMouseLock
+		settingsChoices["MouseLockDisabled"].Visible = not player.DevEnableMouseLock
+	end
 end
 
 local showMainMenu = nil 
@@ -1527,37 +1633,37 @@ if UserSettings then
 			end)
 		end
 		
-		game.CoreGui.RobloxGui.Changed:connect(function(prop) -- We have stopped recording when we resize
+		game:GetService("CoreGui").RobloxGui.Changed:connect(function(prop) -- We have stopped recording when we resize
 			if prop == "AbsoluteSize" and recordingVideo then
 				recordVideoClick(gameMainMenu.RecordVideoButton, gui.StopRecordButton)
 			end
 		end)
 		
 		function localPlayerChange()
-			gameMainMenu.ResetButton.Visible = game.Players.LocalPlayer
-			if game.Players.LocalPlayer then
+			gameMainMenu.ResetButton.Visible = game:GetService("Players").LocalPlayer
+			if game:GetService("Players").LocalPlayer then
 				settings().Rendering.EnableFRM = true
 			elseif inStudioMode then
 				settings().Rendering.EnableFRM = false
 			end
 		end
 		
-		gameMainMenu.ResetButton.Visible = game.Players.LocalPlayer
-		if game.Players.LocalPlayer ~= nil then
-			game.Players.LocalPlayer.Changed:connect(function()
+		gameMainMenu.ResetButton.Visible = game:GetService("Players").LocalPlayer
+		if game:GetService("Players").LocalPlayer ~= nil then
+			game:GetService("Players").LocalPlayer.Changed:connect(function()
 				localPlayerChange()
 			end)
 		else
 			delay(0,function()
-				waitForProperty(game.Players,"LocalPlayer")
-				gameMainMenu.ResetButton.Visible = game.Players.LocalPlayer
-				game.Players.LocalPlayer.Changed:connect(function()
+				waitForProperty(game:GetService("Players"),"LocalPlayer")
+				gameMainMenu.ResetButton.Visible = game:GetService("Players").LocalPlayer
+				game:GetService("Players").LocalPlayer.Changed:connect(function()
 					localPlayerChange()
 				end)
 			end)
 		end
 		
-		gameMainMenu.ReportAbuseButton.Visible = game:FindFirstChild("NetworkClient")
+		gameMainMenu.ReportAbuseButton.Visible = game:FindService("NetworkClient")
 		-- TODO: remove line below when not testing report abuse
 		if (testReport) then
 			gameMainMenu.ReportAbuseButton.Visible = true
@@ -1565,7 +1671,7 @@ if UserSettings then
 		if not gameMainMenu.ReportAbuseButton.Visible then
 			game.ChildAdded:connect(function(child)
 				if child:IsA("NetworkClient") then
-					gameMainMenu.ReportAbuseButton.Visible = game:FindFirstChild("NetworkClient")
+					gameMainMenu.ReportAbuseButton.Visible = game:FindService("NetworkClient")
 				end
 			end)
 		end
@@ -1587,7 +1693,7 @@ if UserSettings then
 				return
 			end
 
-			game.GuiService:AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog,
+			game:GetService("GuiService"):AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog,
 				--showFunction
 				function()
 					settingsButton.Active = false
@@ -1668,7 +1774,7 @@ if UserSettings then
 			elseif #lastMenuSelection > 0 then
 				if #centerDialogs > 0 then
 					for i = 1, #centerDialogs do
-						game.GuiService:RemoveCenterDialog(centerDialogs[i])
+						game:GetService("GuiService"):RemoveCenterDialog(centerDialogs[i])
 						centerDialogs[i].Visible = false
 					end
 					centerDialogs = {}
@@ -1710,7 +1816,7 @@ if UserSettings then
 		
 		settingsButton.MouseButton1Click:connect(
 			function()
-				game.GuiService:AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog,
+				game:GetService("GuiService"):AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog,
 					--showFunction
 					function()
 						settingsButton.Active = false
@@ -1989,7 +2095,7 @@ local createSaveDialogs = function()
 		errorDialogMessageBox.Visible = false
 		spinnerDialog.Visible = false
 		shield.Visible = false
-		game.GuiService:RemoveCenterDialog(shield)
+		game:GetService("GuiService"):RemoveCenterDialog(shield)
 	end
 
 	robloxLock(shield)
@@ -2005,8 +2111,8 @@ local createReportAbuseDialog = function()
 	end
 
 	waitForChild(game,"Players")
-	waitForProperty(game.Players, "LocalPlayer")
-	local localPlayer = game.Players.LocalPlayer
+	waitForProperty(game:GetService("Players"), "LocalPlayer")
+	local localPlayer = game:GetService("Players").LocalPlayer
 	
 	local reportAbuseButton
 	waitForChild(gui,"UserSettingsShield")
@@ -2267,9 +2373,9 @@ local createReportAbuseDialog = function()
 			if abuse and abusingPlayer then
 				frame.Visible = false
 				if gameOrPlayer == "Player" then
-					game.Players:ReportAbuse(abusingPlayer, abuse, shortDescriptionBox.Text)
+					game:GetService("Players"):ReportAbuse(abusingPlayer, abuse, shortDescriptionBox.Text)
 				else
-					game.Players:ReportAbuse(nil, abuse, shortDescriptionBox.Text)
+					game:GetService("Players"):ReportAbuse(nil, abuse, shortDescriptionBox.Text)
 				end
 				if abuse == "Cheating/Exploiting" then
 					recordedMessageBox.Visible = true
@@ -2314,7 +2420,7 @@ local createReportAbuseDialog = function()
 		normalMessageBox.Visible = false
 		shield.Visible = false		
 		reportAbuseButton.Active = true
-		game.GuiService:RemoveCenterDialog(shield)
+		game:GetService("GuiService"):RemoveCenterDialog(shield)
 	end
 
 	cancelButton.MouseButton1Click:connect(closeAndResetDialog)
@@ -2323,7 +2429,7 @@ local createReportAbuseDialog = function()
 		function() 
 			createPlayersDropDown().Parent = settingsFrame
 			table.insert(centerDialogs,shield)
-			game.GuiService:AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog, 
+			game:GetService("GuiService"):AddCenterDialog(shield, Enum.CenterDialogType.ModalDialog, 
 				--ShowFunction
 				function()
 					reportAbuseButton.Active = false
@@ -2346,7 +2452,7 @@ local createChatBar = function()
 	waitForChild(game, "NetworkClient")
 
 	waitForChild(game, "Players")
-	waitForProperty(game.Players, "LocalPlayer")
+	waitForProperty(game:GetService("Players"), "LocalPlayer")
 	
 	local chatBar = Instance.new("Frame")
 	chatBar.Name = "ChatBar"
@@ -2413,9 +2519,9 @@ local createChatBar = function()
 				if chatBox.Text ~= "" then
 					local str = chatBox.Text
 					if string.sub(str, 1, 1) == '%' then
-						game.Players:TeamChat(string.sub(str, 2))
+						game:GetService("Players"):TeamChat(string.sub(str, 2))
 					else
-						game.Players:Chat(str)
+						game:GetService("Players"):Chat(str)
 					end
 				end
 			end
@@ -2437,7 +2543,7 @@ if isSaveDialogSupported then
 		
 			game.RequestShutdown = function()
 				table.insert(centerDialogs,saveDialogs)
-				game.GuiService:AddCenterDialog(saveDialogs, Enum.CenterDialogType.QuitDialog,
+				game:GetService("GuiService"):AddCenterDialog(saveDialogs, Enum.CenterDialogType.QuitDialog,
 					--ShowFunction
 					function()
 						saveDialogs.Visible = true 

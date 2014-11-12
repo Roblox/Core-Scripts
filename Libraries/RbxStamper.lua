@@ -15,7 +15,7 @@ end
 -- hit - Whether there was a plane intersection.  Value is true if there was, false if not.
 function PlaneIntersection(vectorPos)
 	local hit = false
-	local currCamera = game.Workspace.CurrentCamera
+	local currCamera = game:GetService("Workspace").CurrentCamera
 	local startPos = Vector3.new(currCamera.CoordinateFrame.p.X, currCamera.CoordinateFrame.p.Y, currCamera.CoordinateFrame.p.Z)
 	local endPos = Vector3.new(vectorPos.X, vectorPos.Y, vectorPos.Z)
 	local normal = Vector3.new(0, 1, 0)
@@ -26,7 +26,7 @@ function PlaneIntersection(vectorPos)
 		local t = normal:Dot(p3 - startPos) / startEndDot
 		if(t >=0 and t <=1) then
 			local intersection = ((endPos - startPos) * t) + startPos
-			cellPos = game.Workspace.Terrain:WorldToCell(intersection)
+			cellPos = game:GetService("Workspace").Terrain:WorldToCell(intersection)
 			hit = true
 		end
 	end
@@ -46,10 +46,10 @@ end
 function GetTerrainForMouse(mouse)
 	-- There was no target, so all it could be is a plane intersection.
 	-- Check for a plane intersection.  If there isn't one then nothing will get hit.
-	local cell = game.Workspace.Terrain:WorldToCellPreferSolid(Vector3.new(mouse.hit.x, mouse.hit.y, mouse.hit.z))
+	local cell = game:GetService("Workspace").Terrain:WorldToCellPreferSolid(Vector3.new(mouse.hit.x, mouse.hit.y, mouse.hit.z))
 	local planeLoc = nil
 	-- If nothing was hit, do the plane intersection.
-	if 0 == game.Workspace.Terrain:GetCell(cell.X, cell.Y, cell.Z).Value then
+	if 0 == game:GetService("Workspace").Terrain:GetCell(cell.X, cell.Y, cell.Z).Value then
 		cell = nil
 		planeLoc, hit = PlaneIntersection(Vector3.new(mouse.hit.x, mouse.hit.y, mouse.hit.z))
 		if hit then
@@ -97,7 +97,7 @@ local function collectParts(object, baseParts, scripts, decals)
 end
 
 local function clusterPartsInRegion(startVector, endVector)
-	local cluster = game.Workspace:FindFirstChild("Terrain")
+	local cluster = game:GetService("Workspace"):FindFirstChild("Terrain")
 
 	local startCell = cluster:WorldToCell(startVector)
 	local endCell = cluster:WorldToCell(endVector)
@@ -348,14 +348,14 @@ local function isBlocker(part) -- returns whether or not we want to cancel the s
 	if part:FindFirstChild("Humanoid") then return false end
 	if part:FindFirstChild("RobloxStamper") or part:FindFirstChild("RobloxModel") then return true end
 	if part:IsA("Part") and not part.CanCollide then return false end
-	if part == game.Lighting then return false end
+	if part == game:GetService("Lighting") then return false end
 	return isBlocker(part.Parent)
 end
 
 -- helper function to determine if a character can be pushed upwards by a certain amount
 -- character is 5 studs tall, we'll check a 1.5 x 1.5 x 4.5 box around char, with center .5 studs below torsocenter
 local function spaceAboveCharacter(charTorso, newTorsoY, stampData)
-	local partsAboveChar = game.Workspace:FindPartsInRegion3(
+	local partsAboveChar = game:GetService("Workspace"):FindPartsInRegion3(
 		Region3.new(Vector3.new(charTorso.Position.X, newTorsoY, charTorso.Position.Z) - Vector3.new(.75, 2.75, .75),
 		Vector3.new(charTorso.Position.X, newTorsoY, charTorso.Position.Z) + Vector3.new(.75, 1.75, .75)), 
 		charTorso.Parent, 
@@ -429,11 +429,11 @@ local function findConfigAtMouseTarget(Mouse, stampData)
 			hitPlane = false
 			return admissibleConfig, targetConfig
 		else
-			targetPart = game.Workspace.Terrain
+			targetPart = game:GetService("Workspace").Terrain
 			hitPlane = true
 			-- Take into account error that will occur.
 			cellPos = Vector3.new(cellPos.X - 1, cellPos.Y, cellPos.Z)
-			mouseHitInWorld = game.Workspace.Terrain:CellCenterToWorld(cellPos.x, cellPos.y, cellPos.z)
+			mouseHitInWorld = game:GetService("Workspace").Terrain:CellCenterToWorld(cellPos.x, cellPos.y, cellPos.z)
 		end
 	end
 
@@ -443,13 +443,13 @@ local function findConfigAtMouseTarget(Mouse, stampData)
 	local targetCFrame = getMouseTargetCFrame(targetPart)
 
 	if targetPart:IsA("Terrain") then
-		if not cluster then cluster = game.Workspace:FindFirstChild("Terrain") end
+		if not cluster then cluster = game:GetService("Workspace"):FindFirstChild("Terrain") end
 		local cellID = cluster:WorldToCellPreferSolid(mouseHitInWorld)
 		if hitPlane then
 			cellID = cellPos
 		end
 		
-		targetCFrame = CFrame.new(game.Workspace.Terrain:CellCenterToWorld(cellID.x, cellID.y, cellID.z))
+		targetCFrame = CFrame.new(game:GetService("Workspace").Terrain:CellCenterToWorld(cellID.x, cellID.y, cellID.z))
 	end
 	
 	local mouseHitInTarget = targetCFrame:pointToObjectSpace(mouseHitInWorld)
@@ -985,8 +985,8 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		-- make player able to see this ish
 
 		local gui = nil
-		if game.Players["LocalPlayer"] then 
-			gui = game.Players.LocalPlayer:FindFirstChild("PlayerGui")
+		if game:GetService("Players")["LocalPlayer"] then 
+			gui = game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui")
 			if gui and gui:IsA("PlayerGui") then
 				if HighScalabilityLine.Dimensions == 1 and line.magnitude > 3 then -- don't show if mouse hasn't moved enough
 					HighScalabilityLine.Adorn.Parent = gui
@@ -1087,8 +1087,8 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 
 		-- if we are stamping a terrain part, make sure it goes on the grid! Otherwise preview block could be placed off grid, but stamped on grid
 		if isMegaClusterPart() then
-			local cellToStamp = game.Workspace.Terrain:WorldToCell(targetCFrame.p)
-			local newCFramePosition = game.Workspace.Terrain:CellCenterToWorld(cellToStamp.X, cellToStamp.Y, cellToStamp.Z)
+			local cellToStamp = game:GetService("Workspace").Terrain:WorldToCell(targetCFrame.p)
+			local newCFramePosition = game:GetService("Workspace").Terrain:CellCenterToWorld(cellToStamp.X, cellToStamp.Y, cellToStamp.Z)
 			local x, y, z, R00, R01, R02, R10, R11, R12, R20, R21, R22 = targetCFrame:components()
 			targetCFrame = CFrame.new(newCFramePosition.X,newCFramePosition.Y,newCFramePosition.Z,R00, R01, R02, R10, R11, R12, R20, R21, R22)
 		end
@@ -1118,26 +1118,26 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 				if myModelInfo then myBreakingFaces = myModelInfo.Value end
 				local hitFace = 0
 
-				if modelInfo then hitFace = modelTargetSurface(modelInfo.Parent, game.Workspace.CurrentCamera.CoordinateFrame.p, Mouse.Hit.p) end
+				if modelInfo then hitFace = modelTargetSurface(modelInfo.Parent, game:GetService("Workspace").CurrentCamera.CoordinateFrame.p, Mouse.Hit.p) end
 
 				-- are we stamping TO an unstampable surface?
 				for bf in string.gmatch(breakingFaces, "[^,]+") do
 					if hitFace == tonumber(bf) then
 						-- return before we hit the JointsService code below!
 						unstampableSurface = true
-						game.JointsService:ClearJoinAfterMoveJoints() -- clear the JointsService cache
+						game:GetService("JointsService"):ClearJoinAfterMoveJoints() -- clear the JointsService cache
 						return
 					end
 				end
 
 				-- now we have to cast the ray back in the other direction to find the surface we're stamping FROM
-				hitFace = modelTargetSurface(stampData.CurrentParts, Mouse.Hit.p, game.Workspace.CurrentCamera.CoordinateFrame.p)
+				hitFace = modelTargetSurface(stampData.CurrentParts, Mouse.Hit.p, game:GetService("Workspace").CurrentCamera.CoordinateFrame.p)
 
 				-- are we stamping WITH an unstampable surface?
 				for bf in string.gmatch(myBreakingFaces, "[^,]+") do
 					if hitFace == tonumber(bf) then
 						unstampableSurface = true
-						game.JointsService:ClearJoinAfterMoveJoints() -- clear the JointsService cache
+						game:GetService("JointsService"):ClearJoinAfterMoveJoints() -- clear the JointsService cache
 						return
 					end
 				end
@@ -1149,7 +1149,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 
 		-- to show joints during the mouse move
 		unstampableSurface = false
-		game.JointsService:SetJoinAfterMoveInstance(stampData.CurrentParts)
+		game:GetService("JointsService"):SetJoinAfterMoveInstance(stampData.CurrentParts)
 
 		-- most common mouse inactive error occurs here, so check mouse active one more time in a pcall
 		if not pcall(function() 
@@ -1161,17 +1161,17 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 			end) 
 		then
 			error("Error: RbxStamper.DoStamperMouseMove Mouse is nil on second check")
-			game.JointsService:ClearJoinAfterMoveJoints()
+			game:GetService("JointsService"):ClearJoinAfterMoveJoints()
 			Mouse = nil
 			return
 		end
 
 		if Mouse and Mouse.Target and Mouse.Target.Parent:FindFirstChild("RobloxModel") == nil then
-			game.JointsService:SetJoinAfterMoveTarget(Mouse.Target)
+			game:GetService("JointsService"):SetJoinAfterMoveTarget(Mouse.Target)
 		else
-			game.JointsService:SetJoinAfterMoveTarget(nil)
+			game:GetService("JointsService"):SetJoinAfterMoveTarget(nil)
 		end
-		game.JointsService:ShowPermissibleJoints()
+		game:GetService("JointsService"):ShowPermissibleJoints()
 
 		-- here we allow for a line of high-scalability parts
 		if isMegaClusterPart() and HighScalabilityLine and HighScalabilityLine.Start then
@@ -1233,11 +1233,11 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 	end
 
 	local function flashRedBox()
-		local gui = game.CoreGui
-		if game:FindFirstChild("Players") then
-			if game.Players["LocalPlayer"] then
-				if game.Players.LocalPlayer:FindFirstChild("PlayerGui") then
-					gui = game.Players.LocalPlayer.PlayerGui
+		local gui = game:GetService("CoreGui")
+		if game:GetService("Players") then
+			if game:GetService("Players")["LocalPlayer"] then
+				if game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui") then
+					gui = game:GetService("Players").LocalPlayer.PlayerGui
 				end
 			end
 		end
@@ -1280,7 +1280,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		if isMegaClusterPart() then
 			if Mouse and HighScalabilityLine then
 				local megaCube = stampData.CurrentParts:FindFirstChild("MegaClusterCube", true)
-				local terrain = game.Workspace.Terrain
+				local terrain = game:GetService("Workspace").Terrain
 				if megaCube then
 					HighScalabilityLine.Dimensions = 1
 					local tempCell = terrain:WorldToCell(megaCube.CFrame.p)
@@ -1430,15 +1430,15 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		end
 		
 		-- to show joints during the mouse move
-		game.JointsService:SetJoinAfterMoveInstance(stampData.CurrentParts)
+		game:GetService("JointsService"):SetJoinAfterMoveInstance(stampData.CurrentParts)
 		
 		return clone, parts
 	end
 	
 	local function checkTerrainBlockCollisions(cellPos, checkHighScalabilityStamp)
-		local cellCenterToWorld = game.Workspace.Terrain.CellCenterToWorld
-		local cellCenter = cellCenterToWorld(game.Workspace.Terrain, cellPos.X, cellPos.Y, cellPos.Z)
-		local cellBlockingParts = game.Workspace:FindPartsInRegion3(Region3.new(cellCenter - Vector3.new(2, 2, 2) + insertBoundingBoxOverlapVector, cellCenter + Vector3.new(2, 2, 2) - insertBoundingBoxOverlapVector), stampData.CurrentParts,	100)
+		local cellCenterToWorld = game:GetService("Workspace").Terrain.CellCenterToWorld
+		local cellCenter = cellCenterToWorld(game:GetService("Workspace").Terrain, cellPos.X, cellPos.Y, cellPos.Z)
+		local cellBlockingParts = game:GetService("Workspace"):FindPartsInRegion3(Region3.new(cellCenter - Vector3.new(2, 2, 2) + insertBoundingBoxOverlapVector, cellCenter + Vector3.new(2, 2, 2) - insertBoundingBoxOverlapVector), stampData.CurrentParts,	100)
 
 		local skipThisCell = false
 		
@@ -1480,7 +1480,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 			
 			if checkHighScalabilityStamp then -- check to see if cell is in region, if not we'll skip set
 				if allowedStampRegion then
-					local cellPos = cellCenterToWorld(game.Workspace.Terrain, cellPos.X, cellPos.Y, cellPos.Z)
+					local cellPos = cellCenterToWorld(game:GetService("Workspace").Terrain, cellPos.X, cellPos.Y, cellPos.Z)
 					if cellPos.X + 2 > allowedStampRegion.CFrame.p.X + allowedStampRegion.Size.X/2 then
 						canSetCell = false
 					elseif cellPos.X - 2 < allowedStampRegion.CFrame.p.X - allowedStampRegion.Size.X/2 then
@@ -1506,11 +1506,11 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 	local function ResolveMegaClusterStamp(checkHighScalabilityStamp)
 		local cellSet = false
 
-		local cluser = game.Workspace.Terrain
+		local cluser = game:GetService("Workspace").Terrain
 		
 		local line = HighScalabilityLine.InternalLine
-		local cMax = game.Workspace.Terrain.MaxExtents.Max
-		local cMin = game.Workspace.Terrain.MaxExtents.Min
+		local cMax = game:GetService("Workspace").Terrain.MaxExtents.Max
+		local cMin = game:GetService("Workspace").Terrain.MaxExtents.Min
 
 		local clusterMaterial = 1 -- default is grass
 		local clusterType = 0 -- default is brick
@@ -1531,12 +1531,12 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		end
 			
 		if HighScalabilityLine.Adorn.Parent and HighScalabilityLine.Start and ((HighScalabilityLine.Dimensions > 1) or (line and line.magnitude > 0)) then
-			local startCell = game.Workspace.Terrain:WorldToCell(HighScalabilityLine.Start)
+			local startCell = game:GetService("Workspace").Terrain:WorldToCell(HighScalabilityLine.Start)
 			local xInc = {0,0,0}
 			local yInc = {0,0,0}
 			local zInc = {0,0,0}
 			
-			local cluster = game.Workspace.Terrain
+			local cluster = game:GetService("Workspace").Terrain
 				
 			local incrementVect = {nil, nil, nil}
 			local stepVect = {Vector3.new(0, 0, 0), Vector3.new(0, 0, 0), Vector3.new(0, 0, 0)}
@@ -1591,7 +1591,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 						
 										-- auto-wedge it?
 										if (autoWedgeClusterParts) then
-											game.Workspace.Terrain:AutowedgeCells(Region3int16.new(Vector3int16.new(cellPos.x - 1, cellPos.y - 1, cellPos.z - 1),
+											game:GetService("Workspace").Terrain:AutowedgeCells(Region3int16.new(Vector3int16.new(cellPos.x - 1, cellPos.y - 1, cellPos.z - 1),
 												Vector3int16.new(cellPos.x + 1, cellPos.y + 1, cellPos.z + 1)))
 										end
 									end
@@ -1715,7 +1715,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 				return false
 			end
 
-			local blockingParts = game.Workspace:FindPartsInRegion3(Region3.new(minBB + insertBoundingBoxOverlapVector,
+			local blockingParts = game:GetService("Workspace"):FindPartsInRegion3(Region3.new(minBB + insertBoundingBoxOverlapVector,
 																	maxBB - insertBoundingBoxOverlapVector), 
 																	stampData.CurrentParts,
 																	100)
@@ -1761,9 +1761,9 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 
 		-- something will be stamped!  so set the "StampedSomething" toggle to true
 		if game:FindFirstChild("Players") then
-			if game.Players["LocalPlayer"] then
-				if game.Players.LocalPlayer["Character"] then
-					local localChar = game.Players.LocalPlayer.Character
+			if game:GetService("Players")["LocalPlayer"] then
+				if game:GetService("Players").LocalPlayer["Character"] then
+					local localChar = game:GetService("Players").LocalPlayer.Character
 					local stampTracker = localChar:FindFirstChild("StampTracker")
 					if stampTracker and not stampTracker.Value then 
 						stampTracker.Value = true
@@ -1785,7 +1785,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		HighScalabilityLine.Start = nil
 		HighScalabilityLine.Adorn.Parent = nil
 		
-		local cluster = game.Workspace.Terrain
+		local cluster = game:GetService("Workspace").Terrain
 
 		-- if target point is in cluster, just use cluster:SetCell
 		if isMegaClusterPart() then
@@ -1796,8 +1796,8 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 			if stampData.CurrentParts:IsA("Model") then cellPos = cluster:WorldToCell(stampData.CurrentParts:GetModelCFrame().p)
 			else cellPos = cluster:WorldToCell(stampData.CurrentParts.CFrame.p) end
 
-			local cMax = game.Workspace.Terrain.MaxExtents.Max
-			local cMin = game.Workspace.Terrain.MaxExtents.Min
+			local cMax = game:GetService("Workspace").Terrain.MaxExtents.Max
+			local cMin = game:GetService("Workspace").Terrain.MaxExtents.Min
 				
 			if checkTerrainBlockCollisions(cellPos, false) then 
 
@@ -1822,7 +1822,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 	
 					-- auto-wedge it
 					if (autoWedgeClusterParts) then
-						game.Workspace.Terrain:AutowedgeCells(
+						game:GetService("Workspace").Terrain:AutowedgeCells(
 							Region3int16.new(
 								Vector3int16.new(cellPos.x - 1, cellPos.y - 1, cellPos.z - 1),
 								Vector3int16.new(cellPos.x + 1, cellPos.y + 1, cellPos.z + 1)
@@ -1846,8 +1846,8 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		
 		local function getPlayer()
 			if game:FindFirstChild("Players") then
-				if game.Players["LocalPlayer"] then
-					return game.Players.LocalPlayer
+				if game:GetService("Players")["LocalPlayer"] then
+					return game:GetService("Players").LocalPlayer
 				end
 			end
 			return nil
@@ -1874,8 +1874,8 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 				if tempPlayerValue ~= nil then playerIdTag.Value = tempPlayerValue.userId end
 			end
 			if playerNameTag ~= nil then
-				if game:FindFirstChild("Players") and game.Players["LocalPlayer"] then
-					tempPlayerValue = game.Players.LocalPlayer
+				if game:FindFirstChild("Players") and game:GetService("Players")["LocalPlayer"] then
+					tempPlayerValue = game:GetService("Players").LocalPlayer
 					if tempPlayerValue ~= nil then playerNameTag.Value = tempPlayerValue.Name end
 				end
 			end
@@ -1900,7 +1900,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		end
 				
 		-- make sure all the joints are activated before restoring anchor states
-		if not createJoints then game.JointsService:CreateJoinAfterMoveJoints() end
+		if not createJoints then game:GetService("JointsService"):CreateJoinAfterMoveJoints() end
 
 		-- Restore the original properties for all parts being stamped
 		for part, transparency in pairs(stampData.TransparencyTable) do
@@ -1985,7 +1985,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		
 		resetHighScalabilityLine()
 		
-		game.JointsService:ClearJoinAfterMoveJoints()
+		game:GetService("JointsService"):ClearJoinAfterMoveJoints()
 	end
 	
 
@@ -2041,7 +2041,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		if stampInModel then
 			clone.Parent = stampInModel
 		else
-			clone.Parent = game.Workspace
+			clone.Parent = game:GetService("Workspace")
 		end
 		
 		if clone:FindFirstChild("ClusterMaterial", true) then -- extract all info from vector
@@ -2058,11 +2058,11 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		pcall(function() mouseTarget = Mouse.Target end)
 
 		if mouseTarget and mouseTarget.Parent:FindFirstChild("RobloxModel") == nil then
-			game.JointsService:SetJoinAfterMoveTarget(mouseTarget)
+			game:GetService("JointsService"):SetJoinAfterMoveTarget(mouseTarget)
 		else
-			game.JointsService:SetJoinAfterMoveTarget(nil)
+			game:GetService("JointsService"):SetJoinAfterMoveTarget(nil)
 		end
-		game.JointsService:ShowPermissibleJoints()
+		game:GetService("JointsService"):ShowPermissibleJoints()
 		
 		for index, object in pairs(stampData.DisabledScripts) do
 			if object.Name == "GhostRemovalScript" then
@@ -2171,7 +2171,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 			keyCon:disconnect()
 		end
 		
-		game.JointsService:ClearJoinAfterMoveJoints()
+		game:GetService("JointsService"):ClearJoinAfterMoveJoints()
 		
 		if adorn then adorn:Destroy() end
 		if adornPart then adornPart:Destroy() end

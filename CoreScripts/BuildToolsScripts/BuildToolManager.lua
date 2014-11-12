@@ -13,8 +13,8 @@ local function waitForProperty(instance, name)
 	end
 end
 
-waitForProperty(Game.Players,"LocalPlayer")
-waitForProperty(Game.Players.LocalPlayer,"userId")
+waitForProperty(Game:GetService("Players"),"LocalPlayer")
+waitForProperty(Game:GetService("Players").LocalPlayer,"userId")
 
 local player = Game:GetService("Players").LocalPlayer
 if not player then 

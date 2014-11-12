@@ -295,7 +295,7 @@ local PopupFrame = nil
 local PopupClipFrame = Instance.new('Frame')
 PopupClipFrame.Name = "PopupClipFrame"
 PopupClipFrame.Size = UDim2.new(0, 150, 1, 0)
-PopupClipFrame.Position = UDim2.new(0, -151, 0, 41)
+PopupClipFrame.Position = UDim2.new(0, -151, 0, 2)
 PopupClipFrame.BackgroundTransparency = 1
 PopupClipFrame.ClipsDescendants = true
 PopupClipFrame.Parent = Container
@@ -521,7 +521,7 @@ end
 local function createEntryNameText(name, text, sizeXOffset, posXOffset)
 	local nameLabel = Instance.new('TextLabel')
 	nameLabel.Name = name
-	nameLabel.Size = UDim2.new(-0.05, sizeXOffset, 0.5, 0)
+	nameLabel.Size = UDim2.new(-0.01, sizeXOffset, 0.5, 0)
 	nameLabel.Position = UDim2.new(0.01, posXOffset, 0.245, 0)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Font = Enum.Font.SourceSans
@@ -557,8 +557,8 @@ local function createStatText(parent, text)
 	statText.Font = Enum.Font.SourceSans
 	statText.FontSize = Enum.FontSize.Size14
 	statText.TextColor3 = TEXT_COLOR
-	statText.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
 	statText.TextStrokeColor3 = TEXT_STROKE_COLOR
+	statText.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
 	statText.Text = text
 	statText.Active = true
 	statText.Parent = parent
@@ -697,6 +697,7 @@ local function setEntryPositions()
 end
 
 --[[ Friend/Report Functions ]]--
+local selectedEntryMovedCn = nil
 local function createPopupFrame(buttons)
 	local frame = Instance.new('Frame')
 	frame.Name = "PopupFrame"
@@ -735,6 +736,10 @@ local function hideFriendReportPopup()
 			Enum.EasingStyle.Quad, TWEEN_TIME, true, function()
 				PopupFrame:Destroy()
 				PopupFrame = nil
+				if selectedEntryMovedCn then
+					selectedEntryMovedCn:disconnect()
+					selectedEntryMovedCn = nil
+				end
 			end)
 	end
 	if LastSelectedFrame then
@@ -892,11 +897,21 @@ local function showFriendReportPopup(selectedFrame, selectedPlayer)
 		})
 
 	createPersonalServerDialog(buttons, selectedPlayer)
-	if not PopupFrame then
-		PopupFrame = createPopupFrame(buttons)
+	if PopupFrame then
+		PopupFrame:Destroy()
+		if selectedEntryMovedCn then
+			selectedEntryMovedCn:disconnect()
+			selectedEntryMovedCn = nil
+		end
 	end
-	PopupFrame.Position = UDim2.new(1, 1, 0, selectedFrame.Position.Y.Offset)
-	PopupFrame:TweenPosition(UDim2.new(0, 0, 0, selectedFrame.Position.Y.Offset), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
+	PopupFrame = createPopupFrame(buttons)
+	PopupFrame.Position = UDim2.new(1, 1, 0, selectedFrame.Position.Y.Offset - ScrollList.CanvasPosition.y + 39)
+	PopupFrame:TweenPosition(UDim2.new(0, 0, 0, selectedFrame.Position.Y.Offset - ScrollList.CanvasPosition.y + 39), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
+	selectedEntryMovedCn = selectedFrame.Changed:connect(function(property)
+		if property == "Position" then
+			PopupFrame.Position = UDim2.new(0, 0, 0, selectedFrame.Position.Y.Offset - ScrollList.CanvasPosition.y + 39)
+		end
+	end)
 end
 
 local function onEntryFrameSelected(selectedFrame, selectedPlayer)
@@ -917,14 +932,59 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
 				end
 			end
 			-- NOTE: Core script only
+			ScrollList.ScrollingEnabled = false
 			showFriendReportPopup(selectedFrame, selectedPlayer)
 		else
 			hideFriendReportPopup()
+			ScrollList.ScrollingEnabled = true
 			LastSelectedFrame = nil
 			LastSelectedPlayer = nil
 		end
 	end
 end
+
+local function onFriendshipChanged(otherPlayer, newFriendStatus)
+	local entryToUpdate = nil
+	for _,entry in ipairs(PlayerEntries) do
+		if entry.Player == otherPlayer then
+			entryToUpdate = entry
+			break
+		end
+	end
+	local newIcon = getFriendStatusIcon(newFriendStatus)
+	local frame = entryToUpdate.Frame
+	local bgFrame = frame:FindFirstChild('BGFrame')
+	local friendIcon = nil
+	local nameFrame = nil
+	if bgFrame then
+		friendIcon = bgFrame:FindFirstChild('FriendshipIcon')
+		nameFrame = bgFrame:FindFirstChild('PlayerName')
+	end
+	local offset = 19
+	if friendIcon then
+		if newIcon then
+			friendIcon.Image = newIcon
+		else
+			if nameFrame then
+				newSize = nameFrame.Size.X.Offset + friendIcon.Size.X.Offset + 2
+				nameFrame.Size = UDim2.new(-0.01, newSize, 0.5, 0)
+				nameFrame.Position = UDim2.new(0.01, offset, 0.245, 0)
+			end
+			friendIcon:Destroy()
+		end
+	elseif newIcon and bgFrame then
+		friendIcon = createImageIcon(newIcon, "FriendshipIcon", offset, bgFrame)
+		offset = offset + friendIcon.Size.X.Offset + 2
+		if nameFrame then
+			local newSize = bgFrame.Size.X.Offset - offset
+			nameFrame.Size = UDim2.new(-0.01, newSize, 0.5, 0)
+			nameFrame.Position = UDim2.new(0.01, offset, 0.245, 0)
+		end
+	end
+end
+
+-- NOTE: Core script only
+Player.FriendStatusChanged:connect(onFriendshipChanged)
 
 local function updateAllTeamScores()
 	local teamScores = {}
@@ -1337,37 +1397,11 @@ local function createPlayerEntry(player)
 		currentXOffset = currentXOffset + friendshipIcon.Size.X.Offset + 2
 	end
 	
-	local playerNameXSize = entryFrame.AbsoluteSize.x
-	if membershipIcon then
-		playerNameXSize = playerNameXSize - membershipIcon.Size.X.Offset
-	end
-	if friendshipIcon then
-		playerNameXSize = playerNameXSize - friendshipIcon.Size.X.Offset
-	end
-
+	local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
 	local playerName = createEntryNameText("PlayerName", name, playerNameXSize, currentXOffset)
 	playerName.Parent = entryFrame
 	playerEntry.Player = player
 	playerEntry.Frame = containerFrame
-
-	-- NOTE: Core script only
-	if player == Player then
-		Player.FriendStatusChanged:connect(function(otherPlayer, newFriendStatus)
-			local icon = getFriendStatusIcon(newFriendStatus)
-			if icon then
-				if friendshipIcon then
-					friendshipIcon.Image = icon
-				else
-					friendshipIcon = createImageIcon(friendshipIconImage, "FriendshipIcon", currentXOffset, entryFrame)
-					currentXOffset = currentXOffset + friendshipIcon.Size.X.Offset + 2
-
-					playerNameXSize = playerNameXSize - friendshipIcon.Size.X.Offset
-					playerName.Size = UDim2.new(-0.05, playerNameXSize, 0.5, 0)
-					playerName.Position = UDim2.new(0.01, currentXOffset, 0.245, 0)
-				end
-			end
-		end)
-	end
 	
 	return playerEntry
 end
@@ -1563,6 +1597,7 @@ local ExpandInputObject = nil
 local LastExpandInputPosition = nil
 local ExpandOffset = nil
 ExpandFrame.InputBegan:connect(function(inputObject)
+	if LastSelectedFrame then return end
 	local inputType = inputObject.UserInputType
 	local inputState = inputObject.UserInputState
 	if (inputType == Enum.UserInputType.Touch and inputState == Enum.UserInputState.Begin) or inputType == Enum.UserInputType.MouseButton1 then
@@ -1597,6 +1632,17 @@ UserInputService.InputEnded:connect(function(inputObject)
 	end
 end)
 
+UserInputService.InputBegan:connect(function(inputObject, isProcessed)
+	if isProcessed then return end
+	local inputType = inputObject.UserInputType
+	if (inputType == Enum.UserInputType.Touch and  inputObject.UserInputState == Enum.UserInputState.Begin) or
+		inputType == Enum.UserInputType.MouseButton1 then
+		if LastSelectedFrame then
+			hideFriendReportPopup()
+		end
+	end
+end)
+
 local function doListExpand()
 	if not IsPlayerListExpanded then
 		ScaleX = 2
@@ -1609,6 +1655,7 @@ local function doListExpand()
 end
 
 Header.InputBegan:connect(function(inputObject)
+	if LastSelectedFrame then return end
 	local inputType = inputObject.UserInputType
 	local inputState = inputObject.UserInputState
 	if inputObject == ExpandInputObject then return end
@@ -1638,6 +1685,9 @@ end
 
 Players.ChildRemoved:connect(function(child)
 	if child:IsA('Player') then
+		if LastSelectedPlayer and child == LastSelectedPlayer then
+			hideFriendReportPopup()
+		end
 		removePlayerEntry(child)
 	end
 end)
@@ -1681,8 +1731,8 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 	end
 end
 pcall(function()
-	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game.StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
-	game.StarterGui.CoreGuiChangedSignal:connect(onCoreGuiChanged)
+	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+	game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
 end)
 
 resizePlayerList()

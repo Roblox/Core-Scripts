@@ -10,7 +10,7 @@ end
 while not game:FindFirstChild("CoreGui") do
 	wait(0.1)
 end
-while not game.CoreGui:FindFirstChild("RobloxGui") do
+while not game:GetService("CoreGui"):FindFirstChild("RobloxGui") do
 	wait(0.1)
 end
 
@@ -141,9 +141,9 @@ end
 function signalPromptEnded(isSuccess)
 	closePurchasePrompt()
 	if purchasingConsumable then
-		game:GetService("MarketplaceService"):SignalPromptProductPurchaseFinished(game.Players.LocalPlayer.userId, currentProductId, isSuccess)
+		game:GetService("MarketplaceService"):SignalPromptProductPurchaseFinished(game:GetService("Players").LocalPlayer.userId, currentProductId, isSuccess)
 	else
-		game:GetService("MarketplaceService"):SignalPromptPurchaseFinished(game.Players.LocalPlayer, currentAssetId, isSuccess)
+		game:GetService("MarketplaceService"):SignalPromptPurchaseFinished(game:GetService("Players").LocalPlayer, currentAssetId, isSuccess)
 	end
 	removeCurrentPurchaseInfo()
 end
@@ -168,7 +168,7 @@ end
 
 --todo: get productIds from server instead of embedding values
 function getMinimumProductNeededForPurchase(amountNeededToBuy)
-	local isBcMember = (Game.Players.LocalPlayer.MembershipType ~= Enum.MembershipType.None)
+	local isBcMember = (Game:GetService("Players").LocalPlayer.MembershipType ~= Enum.MembershipType.None)
 	local productAmount = nil
 
 	if isBcMember then
@@ -291,7 +291,7 @@ end
 
 function closePurchasePrompt()
 	purchaseDialog:TweenPosition(hidePosition, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, tweenTime, true, function()
-		game.GuiService:RemoveCenterDialog(purchaseDialog)
+		game:GetService("GuiService"):RemoveCenterDialog(purchaseDialog)
 		hidePurchasing()
 
 		purchaseDialog.Visible = false
@@ -312,7 +312,7 @@ function showPurchasePrompt()
 			purchaseDialog.BodyFrame.ItemDescription.Text = descText
 			purchaseDialog.BodyFrame.AfterBalanceText.Visible = false
 		end 
-		game.GuiService:AddCenterDialog(purchaseDialog, Enum.CenterDialogType.ModalDialog,
+		game:GetService("GuiService"):AddCenterDialog(purchaseDialog, Enum.CenterDialogType.ModalDialog,
 					--ShowFunction
 					function()
 						-- set the state for our buttons
@@ -485,7 +485,7 @@ function doAcceptPurchase(currencyPreferredByUser)
 	if currentEquipOnPurchase and success and currentAssetId and tonumber(currentProductInfo["AssetTypeId"]) == 19 then
 		local tool = getToolAssetID(tonumber(currentAssetId))
 		if tool then
-			tool.Parent = game.Players.LocalPlayer.Backpack
+			tool.Parent = game:GetService("Players").LocalPlayer.Backpack
 		end
 	end
 
@@ -495,7 +495,7 @@ function doAcceptPurchase(currencyPreferredByUser)
 			purchaseFailed()
 			return
 		end
-		Game:GetService("MarketplaceService"):SignalClientPurchaseSuccess( tostring(response["receipt"]), game.Players.LocalPlayer.userId, currentProductId )
+		Game:GetService("MarketplaceService"):SignalClientPurchaseSuccess( tostring(response["receipt"]), game:GetService("Players").LocalPlayer.userId, currentProductId )
 	else
 		userPurchaseActionsEnded(success)
 	end
@@ -620,7 +620,7 @@ end
 
 function buyEnoughCurrencyForProduct()
 	showPurchasing()
-	Game.MarketplaceService:PromptNativePurchase(Game.Players.LocalPlayer, thirdPartyProductName)
+	Game:GetService("MarketplaceService"):PromptNativePurchase(Game:GetService("Players").LocalPlayer, thirdPartyProductName)
 end
 
 function openBCUpSellWindow()
@@ -749,7 +749,7 @@ function canPurchaseItem()
 
 		local success, errorCode = ypcall(function() playerOwnsAsset = game:HttpGetAsync(getSecureApiBaseUrl() 
 			.. "ownership/hasAsset?userId=" 
-			.. tostring(game.Players.LocalPlayer.userId) 
+			.. tostring(game:GetService("Players").LocalPlayer.userId) 
 			.. "&assetId=" .. tostring(currentAssetId))
 		end)
 
@@ -799,7 +799,7 @@ function canPurchaseItem()
 		return true, nil, nil, true, descText
 	end
 
-	if tonumber(currentProductInfo["MinimumMembershipLevel"]) > membershipTypeToNumber(game.Players.LocalPlayer.MembershipType) then				
+	if tonumber(currentProductInfo["MinimumMembershipLevel"]) > membershipTypeToNumber(game:GetService("Players").LocalPlayer.MembershipType) then				
 		notRightBc = true 		
 	end
 
@@ -811,7 +811,7 @@ function canPurchaseItem()
 	end 
 
 	if currentProductInfo["ContentRatingTypeId"] == 1 then
-		if game.Players.LocalPlayer:GetUnder13() then
+		if game:GetService("Players").LocalPlayer:GetUnder13() then
 			descText = "Your account is under 13 so purchase of this item is not allowed." 			
 			return true, nil, nil, true, descText 
 		end
@@ -901,7 +901,7 @@ function createPurchasePromptGui()
 	purchaseDialog.BackgroundColor3 = Color3.new(225/255,225/255,225/255)
 	purchaseDialog.BorderSizePixel = 0
 	purchaseDialog.ZIndex = 8
-	purchaseDialog.Parent = game.CoreGui.RobloxGui
+	purchaseDialog.Parent = game:GetService("CoreGui").RobloxGui
 
 	local bodyFrame = Instance.new("Frame")
 	bodyFrame.Name = "BodyFrame"
@@ -1185,7 +1185,7 @@ function doPurchasePrompt(player, assetId, equipIfPurchased, currencyType, produ
 		createPurchasePromptGui()
 	end
 
-	if player == game.Players.LocalPlayer then
+	if player == game:GetService("Players").LocalPlayer then
 		if currentlyPrompting then return end
 
 		currentlyPrompting = true
@@ -1243,7 +1243,7 @@ function doProcessServerPurchaseResponse(serverResponseTable)
 		return
 	end
 
-	if serverResponseTable["playerId"] and tonumber(serverResponseTable["playerId"]) == game.Players.LocalPlayer.userId then
+	if serverResponseTable["playerId"] and tonumber(serverResponseTable["playerId"]) == game:GetService("Players").LocalPlayer.userId then
 		currentServerResponseTable = serverResponseTable
 		userPurchaseProductActionsEnded(false)
 	end
@@ -1271,7 +1271,7 @@ Game:GetService("GuiService").BrowserWindowClosed:connect(checkIfCanPurchase)
 
 if not canUseNewRobuxToProductFlow() then return end
 
-Game.MarketplaceService.NativePurchaseFinished:connect(function(player, productId, wasPurchased)
+Game:GetService("MarketplaceService").NativePurchaseFinished:connect(function(player, productId, wasPurchased)
 	if wasPurchased then
 
 		-- try for 20 seconds to see if we get the funds if we purchased something
