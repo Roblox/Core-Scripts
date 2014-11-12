@@ -404,6 +404,7 @@ local SelectPlayerEvent = Util.Signal()
 
 local function CreateChatMessage()
 	local this = {}
+	this.FadeRoutines = {}
 
 	function this:OnResize()
 		-- Nothing!
@@ -412,7 +413,6 @@ local function CreateChatMessage()
 	function this:FadeIn()
 		local gui = this:GetGui()
 		if gui then
-			--Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
 			gui.Visible = true
 		end
 	end
@@ -420,7 +420,6 @@ local function CreateChatMessage()
 	function this:FadeOut()
 		local gui = this:GetGui()
 		if gui then
-			--Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
 			gui.Visible = false
 		end
 	end
@@ -433,6 +432,12 @@ local function CreateChatMessage()
 		if this.Container ~= nil then
 			this.Container:Destroy()
 			this.Container = nil
+		end
+		if this.FadeRoutines then
+			for _, routine in pairs(this.FadeRoutines) do
+				routine:Cancel()
+			end
+			this.FadeRoutines = {}
 		end
 	end
 
@@ -451,6 +456,41 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 			local textHeight = this.ChatMessage.TextBounds.Y
 			this.Container.Size = UDim2.new(1,0,0,textHeight + 1)
 			return textHeight
+		end
+	end
+
+	function this:FadeIn()
+		local gui = this:GetGui()
+		if gui then
+			gui.Visible = true
+			for _, routine in pairs(this.FadeRoutines) do
+				routine:Cancel()
+			end
+			this.FadeRoutines = {}
+			local tweenableObjects = {
+				this.ChatMessage;
+			}
+			for _, object in pairs(tweenableObjects) do
+				object.TextTransparency = 0;
+				object.TextStrokeTransparency = this.Settings.TextStrokeTransparency;
+			end
+		end
+	end
+
+	function this:FadeOut(instant)
+		local gui = this:GetGui()
+		if gui then
+			if instant then
+				gui.Visible = false
+			else
+				local tweenableObjects = {
+					this.ChatMessage;
+				}
+				for _, object in pairs(tweenableObjects) do
+					table.insert(this.FadeRoutines, Util.PropertyTweener(object, 'TextTransparency', object.TextTransparency, 1, 1, Util.Linear))
+					table.insert(this.FadeRoutines, Util.PropertyTweener(object, 'TextStrokeTransparency', object.TextStrokeTransparency, 1, 0.85, Util.Linear))
+				end
+			end
 		end
 	end
 
@@ -551,6 +591,57 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		return "[" ..  playerName .. "]"
 	end
 
+	function this:FadeIn()
+		local gui = this:GetGui()
+		if gui then
+			gui.Visible = true
+			for _, routine in pairs(this.FadeRoutines) do
+				routine:Cancel()
+			end
+			this.FadeRoutines = {}
+			local tweenableObjects = {
+					this.WhisperToText;
+					this.WhisperFromText;
+					this.ChatModeButton;
+					this.UserNameButton;
+					this.ChatMessage;
+				}
+			for _, object in pairs(tweenableObjects) do
+				object.TextTransparency = 0;
+				object.TextStrokeTransparency = this.Settings.TextStrokeTransparency;
+				object.Active = true
+			end
+			if this.UserNameDot then
+				this.UserNameDot.ImageTransparency = 0
+			end
+		end
+	end
+
+	function this:FadeOut(instant)
+		local gui = this:GetGui()
+		if gui then
+			if instant then
+				gui.Visible = false
+			else
+				local tweenableObjects = {
+					this.WhisperToText;
+					this.WhisperFromText;
+					this.ChatModeButton;
+					this.UserNameButton;
+					this.ChatMessage;
+				}
+				for _, object in pairs(tweenableObjects) do
+					table.insert(this.FadeRoutines, Util.PropertyTweener(object, 'TextTransparency', object.TextTransparency, 1, 1, Util.Linear))
+					table.insert(this.FadeRoutines, Util.PropertyTweener(object, 'TextStrokeTransparency', object.TextStrokeTransparency, 1, 0.85, Util.Linear))
+					object.Active = false
+				end
+				if this.UserNameDot then
+					table.insert(this.FadeRoutines, Util.PropertyTweener(this.UserNameDot, 'ImageTransparency', this.UserNameDot.ImageTransparency, 1, 1, Util.Linear))
+				end
+			end
+		end
+	end
+
 	function this:Destroy()
 		if this.Container ~= nil then
 			this.Container:Destroy()
@@ -624,6 +715,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 					Parent = container;
 				};
 				xOffset = xOffset + toMessageSize.X
+				this.WhisperToText = whisperToText
 			elseif this.SendingPlayer and this.SendingPlayer ~= Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
 				local whisperFromText = Util.Create'TextLabel'
 				{
@@ -645,6 +737,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 					Parent = container;
 				};
 				xOffset = xOffset + fromMessageSize.X
+				this.WhisperFromTest = whisperFromText
 			else
 				local userNameDot = Util.Create'ImageLabel'
 				{
@@ -658,6 +751,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 					Parent = container;
 				}
 				xOffset = xOffset + 14 + 3
+				this.UserNameDot = userNameDot
 			end
 		if chatTypeDisplayText then
 			local chatModeButton = Util.Create(Util.IsTouchDevice() and 'TextLabel' or 'TextButton')
@@ -686,6 +780,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				chatModeButton.TextColor3 = playerColor
 			end
 			xOffset = xOffset + chatTypeSize.X + 1
+			this.ChatModeButton = chatModeButton
 		end
 			local userNameButton = Util.Create(Util.IsTouchDevice() and 'TextLabel' or 'TextButton')
 			{
@@ -741,6 +836,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		container.Size = UDim2.new(1, 0, 0, math.max(chatMessageSize.Y + 1, userNameButton.Size.Y.Offset + 1));
 		this.Container = container
 		this.ChatMessage = chatMessage
+		this.UserNameButton = userNameButton
 	end
 
 	CreateMessageGuiElement()
@@ -1234,7 +1330,6 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:FadeInChats()
-		-- TODO: only bother with this loop if we know chats have been faded out, could be quicker than this
 		for index, message in pairs(this.Chats) do
 			message:FadeIn()
 		end
@@ -1242,43 +1337,66 @@ local function CreateChatWindowWidget(settings)
 
 	function this:FadeOutChats()
 		for index, message in pairs(this.Chats) do
-			message:FadeOut()
+			local messageGui = message:GetGui()
+			local instant = false
+			if messageGui and this.ScrollingFrame then
+				-- If the chat is not in the visible frame then don't waste cpu cycles fading it out
+				if messageGui.AbsolutePosition.Y > (this.ScrollingFrame.AbsolutePosition + this.ScrollingFrame.AbsoluteWindowSize).Y or
+						messageGui.AbsolutePosition.Y + messageGui.AbsoluteSize.Y < this.ScrollingFrame.AbsolutePosition.Y then
+					instant = true
+				end
+			end
+			message:FadeOut(instant)
 		end
 	end
 
+	local ResizeCount = 0
 	function this:OnResize()
-		local isScrolledDown = this:IsScrolledDown()
-
-		local ySize = 0
-
+		ResizeCount = ResizeCount + 1
+		local currentResizeCount = ResizeCount
+		-- Unfortunately there is a race condition so we need this wait here.
+		wait()
 		if this.ScrollingFrame then
-			for index, message in pairs(this.Chats) do
-				local newHeight = message:OnResize(this.ScrollingFrame.AbsoluteSize)
-				if newHeight then
-					local chatMessageElement = message:GetGui()
-					if chatMessageElement then
-						local chatMessageElementYSize = chatMessageElement.Size.Y.Offset
-						chatMessageElement.Position = UDim2.new(0, 0, 0, ySize)
-						ySize = ySize + chatMessageElementYSize
+			if currentResizeCount ~= ResizeCount then return end
+			local scrollingFrameAbsoluteSize = this.ScrollingFrame.AbsoluteSize
+			local isScrolledDown = this:IsScrolledDown()
+			if scrollingFrameAbsoluteSize ~= nil and scrollingFrameAbsoluteSize.X > 0 and scrollingFrameAbsoluteSize.Y > 0 then
+				local ySize = 0
+
+				if this.ScrollingFrame then
+					for index, message in pairs(this.Chats) do
+						local newHeight = message:OnResize(scrollingFrameAbsoluteSize)
+						if newHeight then
+							local chatMessageElement = message:GetGui()
+							if chatMessageElement then
+								local chatMessageElementYSize = chatMessageElement.Size.Y.Offset
+								chatMessageElement.Position = UDim2.new(0, 0, 0, ySize)
+								ySize = ySize + chatMessageElementYSize
+							end
+						end
 					end
 				end
-			end
-		end
-		if this.MessageContainer and this.ScrollingFrame then
-			this.MessageContainer .Size = UDim2.new(
-					1,
-					this.ScrollingFrame.Size.X.Offset - this.ScrollingFrame.ScrollBarThickness - this.ScrollingFrame.Position.X.Offset,
-					0,
-					ySize)
+				if this.MessageContainer and this.ScrollingFrame then
+					this.MessageContainer.Size = UDim2.new(
+							this.MessageContainer.Size.X.Scale,
+							this.MessageContainer.Size.X.Offset,
+							0,
+							ySize)
 
-			this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
+					this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
+					-- Clamp the canvasposition
+					this.ScrollingFrame.CanvasPosition =
+						Vector2.new(this.ScrollingFrame.CanvasPosition.X,
+									Util.Clamp(0, --min
+						            this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y, --max
+						            this.ScrollingFrame.CanvasPosition.Y))
+				end
+			end
 			if isScrolledDown then
 				local function UpdateScrollDown()
 					this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - math.max(0, this.ScrollingFrame.AbsoluteSize.Y)))
 				end
 				UpdateScrollDown()
-				-- Have to do it after a delay as well because when you resize not all of the absolutesize have been updated yet
-				delay(0, UpdateScrollDown)
 			end
 		end
 	end
@@ -1290,7 +1408,7 @@ local function CreateChatWindowWidget(settings)
 		return false
 	end
 
-	function this:PushMessageIntoQueue(chatMessage)
+	function this:PushMessageIntoQueue(chatMessage, silently)
 		table.insert(this.Chats, chatMessage)
 
 		local isScrolledDown = this:IsScrolledDown()
@@ -1305,27 +1423,37 @@ local function CreateChatWindowWidget(settings)
 		chatMessageElement.Position = chatMessageElement.Position + UDim2.new(0, 0, 0, ySize)
 		this.MessageContainer.Size = this.MessageContainer.Size + chatMessageElementYSize
 		this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize + chatMessageElementYSize
-
+		-- Clamp the canvasposition
+		this.ScrollingFrame.CanvasPosition =
+			Vector2.new(this.ScrollingFrame.CanvasPosition.X,
+						Util.Clamp(0, --min
+			            this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y, --max
+			            this.ScrollingFrame.CanvasPosition.Y))
 		if this.Settings.MaxWindowChatMessages < #this.Chats then
 			this:RemoveOldestMessage()
 		end
 		if isScrolledDown then
 			this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y))
-		else
+		elseif not silently then
 			-- Raise unread message alert!
 		end
-		this:FadeInChats()
+
+		if silently then
+			chatMessage:FadeOut(true)
+		else
+			this:FadeInChats()
+		end
 	end
 
-	function this:AddSystemChatMessage(chattedMessage)
+	function this:AddSystemChatMessage(chattedMessage, silently)
 		local chatMessage = CreateSystemChatMessage(this.Settings, chattedMessage)
-		this:PushMessageIntoQueue(chatMessage)
+		this:PushMessageIntoQueue(chatMessage, silently)
 	end
 
-	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer, silently)
 		if this:FilterMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer) then
 			local chatMessage = CreatePlayerChatMessage(this.Settings, playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-			this:PushMessageIntoQueue(chatMessage)
+			this:PushMessageIntoQueue(chatMessage, silently)
 		end
 	end
 
@@ -1344,6 +1472,12 @@ local function CreateChatWindowWidget(settings)
 					if guiObj then
 						local ySize = guiObj.Size.Y.Offset
 						this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize - UDim2.new(0,0,0,ySize)
+						-- Clamp the canvasposition
+						this.ScrollingFrame.CanvasPosition =
+							Vector2.new(this.ScrollingFrame.CanvasPosition.X,
+										Util.Clamp(0, --min
+							            this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y, --max
+							            this.ScrollingFrame.CanvasPosition.Y))
 						guiObj.Parent = nil
 					end
 					message:Destroy()
@@ -1379,7 +1513,7 @@ local function CreateChatWindowWidget(settings)
 		{
 			Name = 'ChatWindowContainer';
 			 -- Height is a multiple of chat message height, maybe keep this value at 150 and move that padding into the messageContainer
-			Size = UDim2.new(0.33, 0, 0.25, 0);
+			Size = UDim2.new(0.3, 0, 0.25, 0);
 			Position = UDim2.new(0, 8, 0, 37);
 			ZIndex = 1;
 			BackgroundColor3 = Color3.new(0, 0, 0);
@@ -1405,7 +1539,7 @@ local function CreateChatWindowWidget(settings)
 				local messageContainer = Util.Create'Frame'
 				{
 					Name = 'MessageContainer';
-					Size = UDim2.new(1, 0, 0, 0);
+					Size = UDim2.new(1, -scrollingFrame.ScrollBarThickness - 1, 0, 0);
 					Position = UDim2.new(0, 0, 1, 0);
 					ZIndex = 1;
 					BackgroundColor3 = Color3.new(0, 0, 0);
@@ -1417,12 +1551,6 @@ local function CreateChatWindowWidget(settings)
 		local function OnChatWindowResize(prop)
 			if prop == 'AbsoluteSize' then
 				messageContainer.Position = UDim2.new(0, 0, 1, -messageContainer.Size.Y.Offset)
-			elseif prop == 'ScrollBarThickness' then
-				messageContainer.Size = UDim2.new(
-					messageContainer.Size.X.Scale,
-					scrollingFrame.Size.X.Offset - scrollingFrame.ScrollBarThickness - scrollingFrame.Position.X.Offset,
-					messageContainer.Size.Y.Scale,
-					messageContainer.Size.Y.Offset)
 			end
 		end
 		container.Changed:connect(function(prop) if prop == 'AbsoluteSize' then this:OnResize() end end)
@@ -1648,7 +1776,7 @@ local function CreateChat()
 	function this:PrintWelcome()
 		if this.ChatWindowWidget then
 			--this.ChatWindowWidget:AddSystemChatMessage("Welcome to Roblox")
-			this.ChatWindowWidget:AddSystemChatMessage("Please type /? for a list of commands")
+			this.ChatWindowWidget:AddSystemChatMessage("Please type /? for a list of commands", true)
 		end
 	end
 
@@ -1668,7 +1796,7 @@ local function CreateChat()
 			-- Settings is a table, which makes it a pointing and is kosher to pass by reference
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
 			this.ChatBarWidget = CreateChatBarWidget(this.Settings)
-
+			this.ChatWindowWidget:FadeOut(0)
 			local focusCount = 0
 			this.ChatBarWidget.ChatBarGainedFocusEvent:connect(function()
 				focusCount = focusCount + 1
@@ -1755,7 +1883,6 @@ local function CreateChat()
 
 	return this
 end
-
 
 -- Run the script
 do
