@@ -1,4 +1,4 @@
--- Backpack Version 4.1
+-- Backpack Version 4.2
 -- OnlyTwentyCharacters
 
 -- Configurables --
@@ -18,10 +18,11 @@ local ARROW_HOTKEY_STRING = '`'
 
 local HOTBAR_SLOTS_FULL = 10
 local HOTBAR_SLOTS_MINI = 3
+local HOTBAR_SLOTS_WIDTH_CUTOFF = 1024 -- Anything smaller is MINI
 local HOTBAR_OFFSET_FROMBOTTOM = 30
 
 local INVENTORY_ROWS = 5
-local INVENTORY_HEADER_SIZE = 40 -- Pushes down rows
+local INVENTORY_HEADER_SIZE = 40
 
 local TITLE_OFFSET = 20 -- From left side
 local TITLE_TEXT = "Backpack"
@@ -42,7 +43,7 @@ local UserInputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 local GuiService = game:GetService('GuiService')
 
-local HOTBAR_SLOTS = (UserInputService.TouchEnabled) and HOTBAR_SLOTS_MINI or HOTBAR_SLOTS_FULL --TODO: iPad same as dekstop?
+local HOTBAR_SLOTS = (UserInputService.TouchEnabled and GuiService:GetScreenResolution().X < HOTBAR_SLOTS_WIDTH_CUTOFF) and HOTBAR_SLOTS_MINI or HOTBAR_SLOTS_FULL
 local HOTBAR_SIZE = UDim2.new(0, ICON_BUFFER + (HOTBAR_SLOTS * (ICON_SIZE + ICON_BUFFER)), 0, ICON_BUFFER + ICON_SIZE + ICON_BUFFER)
 local ZERO_KEY_VALUE = Enum.KeyCode.Zero.Value
 local DROP_HOTKEY_VALUE = Enum.KeyCode.Backspace.Value
@@ -70,7 +71,7 @@ local UpdateArrowFrame = nil -- Function defined in Init logic at the bottom
 local ActiveHopper = nil --NOTE: HopperBin
 local StarterToolFound = false
 local WholeThingEnabled = false
-local FocusedOnSearch = false
+local TextBoxFocused = false
 local ResultsIndices = nil -- Results of a search
 
 -- Functions --
@@ -306,7 +307,7 @@ local function MakeSlot(parent, index)
 			local lowestPoint = lastSlot.Frame.Position.Y.Offset + lastSlot.Frame.Size.Y.Offset
 			ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, lowestPoint + ICON_BUFFER)
 			local offset = Vector2.new(0, math.max(0, ScrollingFrame.CanvasPosition.Y - (lastSlot.Frame.Size.Y.Offset + ICON_BUFFER)))
-			ScrollingFrame.CanvasPosition = offset --TODO: Feels like a bug
+			ScrollingFrame.CanvasPosition = offset
 		end
 	end
 	
@@ -632,7 +633,7 @@ local function OnCharacterAdded(character)
 end
 
 local function OnInputBegan(input, isProcessed)
-	if not FocusedOnSearch and (WholeThingEnabled or input.KeyCode.Value == DROP_HOTKEY_VALUE) and input.UserInputType == Enum.UserInputType.Keyboard then
+	if not TextBoxFocused and (WholeThingEnabled or input.KeyCode.Value == DROP_HOTKEY_VALUE) and input.UserInputType == Enum.UserInputType.Keyboard then
 		local hotkeyBehavior = HotkeyFns[input.KeyCode.Value]
 		if hotkeyBehavior then
 			hotkeyBehavior()
@@ -664,10 +665,6 @@ end
 
 -- Script Logic --
 
---TODO
--- print("START")
--- print("STATES!", "KeyboardEnabled:", UserInputService.KeyboardEnabled, "TouchEnabled", UserInputService.TouchEnabled)
-
 -- Make the main frame, which covers the screen
 MainFrame = NewGui('Frame', 'Backpack')
 MainFrame.Visible = false
@@ -675,7 +672,6 @@ MainFrame.Parent = CoreGui
 
 -- Make the HotbarFrame, which holds only the Hotbar Slots
 HotbarFrame = NewGui('Frame', 'Hotbar')
---HotbarFrame.BackgroundTransparency = 0.9 --TODO?
 HotbarFrame.Active = true
 HotbarFrame.Size = HOTBAR_SIZE
 HotbarFrame.Position = UDim2.new(0.5, -HotbarFrame.Size.X.Offset / 2, 1, -HotbarFrame.Size.Y.Offset - HOTBAR_OFFSET_FROMBOTTOM)
@@ -747,7 +743,6 @@ do -- Search stuff
 		if searchBox.Text == SEARCH_TEXT then
 			searchBox.Text = ''
 		end
-		FocusedOnSearch = true
 	end)
 	clickArea.ZIndex = 2
 	clickArea.Parent = searchFrame
@@ -804,7 +799,6 @@ do -- Search stuff
 		else
 			resetSearch()
 		end
-		FocusedOnSearch = false
 	end)
 end
 
@@ -881,6 +875,9 @@ UserInputService.InputBegan:connect(OnInputBegan)
 UserInputService.Changed:connect(OnUISChanged)
 OnUISChanged('KeyboardEnabled')
 
+UserInputService.TextBoxFocused:connect(function() TextBoxFocused = true end)
+UserInputService.TextBoxFocusReleased:connect(function() TextBoxFocused = false end)
+
 HotkeyFns[DROP_HOTKEY_VALUE] = function() --NOTE: HopperBin
 	if ActiveHopper then
 		UnequipTools()
@@ -890,9 +887,3 @@ end
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
 local backpackType = Enum.CoreGuiType.Backpack
 OnCoreGuiChanged(backpackType, StarterGui:GetCoreGuiEnabled(backpackType))
-
---TODO
--- print("END")
--- print("STATES!", "KeyboardEnabled:", UserInputService.KeyboardEnabled, "TouchEnabled", UserInputService.TouchEnabled)
-
-
