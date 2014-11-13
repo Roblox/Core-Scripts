@@ -952,6 +952,9 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 			break
 		end
 	end
+	if not entryToUpdate then
+		return
+	end
 	local newIcon = getFriendStatusIcon(newFriendStatus)
 	local frame = entryToUpdate.Frame
 	local bgFrame = frame:FindFirstChild('BGFrame')
