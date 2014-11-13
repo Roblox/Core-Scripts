@@ -958,6 +958,12 @@ if not backpackAddCon then
 	backpackAddCon = game:GetService("Players").LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
 end
 
+-- reposition the gearbuttons after the backpack is visible again
+game:GetService("StarterGui").CoreGuiChangedSignal:connect(function(typ,enabled)
+	if typ ~= Enum.CoreGuiType.Backpack and typ ~= Enum.CoreGuiType.All then return end
+	if enabled then centerGear(currentLoadout:GetChildren()) end	
+end)
+
 backpackButton.Visible = true
 
 recalculateScrollLoadout()
