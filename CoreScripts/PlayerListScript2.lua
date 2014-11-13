@@ -790,7 +790,7 @@ local function resetReportDialog()
 	ReportSubmitButton.TextColor3 = Color3.new(163/255, 162/255, 165/255)
 end
 
-local function onAbuseDialogCanceled(unParent)
+local function onAbuseDialogCanceled()
 	ReportAbuseShield.Parent = nil
 	resetReportDialog()
 end
@@ -1638,6 +1638,10 @@ UserInputService.InputEnded:connect(function(inputObject)
 		LastExpandInputPosition = nil
 		LastExpandPosition = ScrollList.Size.Y.Offset
 		IsExpanding = false
+	elseif ReportAbuseShield.Parent == RobloxGui then
+		if inputObject.KeyCode == Enum.KeyCode.Escape then
+			onAbuseDialogCanceled()
+		end
 	end
 end)
 
