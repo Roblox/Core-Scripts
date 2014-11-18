@@ -10,7 +10,7 @@ local screenGui = Game:GetService("CoreGui"):FindFirstChild("RobloxGui")
 -- SettingsScript
 scriptContext:AddCoreScriptLocal("CoreScripts/Settings", screenGui)
 
-local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaPCInput") end)
+local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UsePlayerScripts") end)
 if not touchEnabled then
 	-- ToolTipper  (creates tool tips for gui)
 	scriptContext:AddCoreScriptLocal("CoreScripts/ToolTip", screenGui)

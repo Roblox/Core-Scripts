@@ -95,6 +95,7 @@ local function robloxLock(instance)
   end
 end
 
+local prevMouseBehavior = nil
 function resumeGameFunction(shield)
 	shield.Settings:TweenPosition(UDim2.new(0.5, -262,-0.5, -200),Enum.EasingDirection.InOut,Enum.EasingStyle.Sine,tweenTime,true)
 	delay(tweenTime,function()
@@ -108,6 +109,12 @@ function resumeGameFunction(shield)
 		currentMenuSelection = nil
 		lastMenuSelection = {}
 		pcall(function() game:GetService("UserInputService").OverrideMouseIconEnabled = false end)
+		-- NOTE: This is a hacky way to raise an event when the menu closes. This is being used by the new
+		-- lua controls to correctly set the state of the mouse and shift lock mode when leaving the settings menu.
+		if UserSettings().GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch then
+			UserSettings().GameSettings.ControlMode = Enum.ControlMode.Classic
+			UserSettings().GameSettings.ControlMode = Enum.ControlMode.MouseLockSwitch
+		end
 	end)
 end
 
@@ -1733,8 +1740,6 @@ if UserSettings then
 					end
 
 					pcall(function() game:GetService("UserInputService").OverrideMouseIconEnabled = true end)
-
-
 					if syncVideoCaptureSetting then
 							syncVideoCaptureSetting()
 					end
