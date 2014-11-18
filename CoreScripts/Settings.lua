@@ -95,7 +95,6 @@ local function robloxLock(instance)
   end
 end
 
-local prevMouseBehavior = nil
 function resumeGameFunction(shield)
 	shield.Settings:TweenPosition(UDim2.new(0.5, -262,-0.5, -200),Enum.EasingDirection.InOut,Enum.EasingStyle.Sine,tweenTime,true)
 	delay(tweenTime,function()
