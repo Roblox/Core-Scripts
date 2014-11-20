@@ -1,0 +1,232 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="LocalScript" referent="RBXAB345F0AC3A8445AAFB1B9C35BA0B36B">
+		<Properties>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<string name="Name">ControlScript</string>
+			<ProtectedString name="Source">--[[
+&#9;// FileName: ControlScript.lua
+&#9;// Written by: jmargh
+&#9;// Description: Manages in game controls for both touch and keyboard/mouse devices.
+&#9;
+&#9;// This script will be inserted into PlayerScripts under each player by default. If you want to
+&#9;// create your own custom controls or modify these controls, you must place a script with this
+&#9;// name, ControlScript, under StarterPlayer -&gt; PlayerScripts.
+&#9;
+&#9;// Required Modules:
+&#9;&#9;ComputerMovementModule
+&#9;&#9;DPad
+&#9;&#9;Thumbpad
+&#9;&#9;Thumbstick
+&#9;&#9;TouchJump
+--]]
+
+--[[ Services ]]--
+local ContextActionService = game:GetService(&apos;ContextActionService&apos;)
+local Players = game:GetService(&apos;Players&apos;)
+local StarterPlayer = game:GetService(&apos;StarterPlayer&apos;)
+local UserInputService = game:GetService(&apos;UserInputService&apos;)
+-- Settings and GameSettings are read only
+local Settings = UserSettings()&#9;-- ignore warning
+local GameSettings = Settings.GameSettings
+
+-- Issue with play solo? (F6)
+while not UserInputService.KeyboardEnabled and not UserInputService.TouchEnabled do
+&#9;wait()
+end
+
+--[[ Script Variables ]]--
+while not Players.LocalPlayer do
+&#9;wait()
+end
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer.PlayerGui
+local IsTouchDevice = UserInputService.TouchEnabled
+local UserMovementMode = IsTouchDevice and GameSettings.TouchMovementMode or GameSettings.ComputerMovementMode
+local DevMovementMode = IsTouchDevice and StarterPlayer.DevTouchMovementMode or StarterPlayer.DevComputerMovementMode
+local IsUserChoice = (IsTouchDevice and DevMovementMode == Enum.DevTouchMovementMode.UserChoice) or
+&#9;DevMovementMode == Enum.DevComputerMovementMode.UserChoice
+local TouchGui = nil
+local TouchControlFrame = nil
+local TouchJumpModule = nil
+
+--[[ Modules ]]--
+local CurrentControlModule = nil
+local ControlModules = {}
+if IsTouchDevice then
+&#9;ControlModules.Thumbstick = require(script:WaitForChild(&apos;Thumbstick&apos;))
+&#9;ControlModules.Thumbpad = require(script:WaitForChild(&apos;Thumbpad&apos;))
+&#9;ControlModules.DPad = require(script:WaitForChild(&apos;DPad&apos;))
+&#9;TouchJumpModule = require(script:WaitForChild(&apos;TouchJump&apos;))
+else
+&#9;ControlModules.Keyboard = require(script:WaitForChild(&apos;KeyboardMovement&apos;))
+end
+
+--[[ Initialization/Setup ]]--
+local function createTouchGuiContainer()
+&#9;if TouchGui then TouchGui:Destroy() end
+&#9;
+&#9;-- Container for all touch device guis
+&#9;TouchGui = Instance.new(&apos;ScreenGui&apos;)
+&#9;TouchGui.Name = &quot;TouchGui&quot;
+&#9;TouchGui.Parent = PlayerGui
+&#9;
+&#9;TouchControlFrame = Instance.new(&apos;Frame&apos;)
+&#9;TouchControlFrame.Name = &quot;TouchControlFrame&quot;
+&#9;TouchControlFrame.Size = UDim2.new(1, 0, 1, 0)
+&#9;TouchControlFrame.BackgroundTransparency = 1
+&#9;TouchControlFrame.Parent = TouchGui
+&#9;
+&#9;ControlModules.Thumbstick:Create(TouchControlFrame)
+&#9;ControlModules.DPad:Create(TouchControlFrame)
+&#9;ControlModules.Thumbpad:Create(TouchControlFrame)
+&#9;TouchJumpModule:Create(TouchControlFrame)
+end
+
+local onControlsChanged = nil
+if IsTouchDevice then
+&#9;createTouchGuiContainer()
+&#9;onControlsChanged = function()
+&#9;&#9;local newModuleToEnable = nil
+&#9;&#9;if not IsUserChoice then
+&#9;&#9;&#9;if DevMovementMode == Enum.DevTouchMovementMode.Thumbstick then
+&#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.Thumbstick
+&#9;&#9;&#9;&#9;TouchJumpModule:Enable()
+&#9;&#9;&#9;elseif DevMovementMode == Enum.DevTouchMovementMode.Thumbpad then
+&#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.Thumbpad
+&#9;&#9;&#9;&#9;TouchJumpModule:Enable()
+&#9;&#9;&#9;elseif DevMovementMode == Enum.DevTouchMovementMode.DPad then
+&#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.DPad
+&#9;&#9;&#9;&#9;TouchJumpModule:Disable()
+&#9;&#9;&#9;elseif DevMovementMode == Enum.DevTouchMovementMode.ClickToMove then
+&#9;&#9;&#9;&#9;newModuleToEnable = nil
+&#9;&#9;&#9;&#9;TouchJumpModule:Disable()
+&#9;&#9;&#9;&#9;-- Click to move is managed by CameraScript.
+&#9;&#9;&#9;elseif DevMovementMode == Enum.DevTouchMovementMode.Scriptable then
+&#9;&#9;&#9;&#9;newModuleToEnable = nil
+&#9;&#9;&#9;&#9;TouchJumpModule:Disable()
+&#9;&#9;&#9;end
+&#9;&#9;else
+&#9;&#9;&#9;if UserMovementMode == Enum.TouchMovementMode.Default or UserMovementMode == Enum.TouchMovementMode.Thumbstick then
+&#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.Thumbstick
+&#9;&#9;&#9;&#9;TouchJumpModule:Enable()
+&#9;&#9;&#9;elseif UserMovementMode == Enum.TouchMovementMode.Thumbpad then
+&#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.Thumbpad
+&#9;&#9;&#9;&#9;TouchJumpModule:Enable()
+&#9;&#9;&#9;elseif UserMovementMode == Enum.TouchMovementMode.DPad then
+&#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.DPad
+&#9;&#9;&#9;&#9;TouchJumpModule:Disable()
+&#9;&#9;&#9;elseif UserMovementMode == Enum.TouchMovementMode.ClickToMove then
+&#9;&#9;&#9;&#9;newModuleToEnable = nil
+&#9;&#9;&#9;&#9;TouchJumpModule:Disable()
+&#9;&#9;&#9;&#9;-- Click to move is managed by CameraScript.
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;if newModuleToEnable ~= CurrentControlModule then
+&#9;&#9;&#9;if CurrentControlModule then
+&#9;&#9;&#9;&#9;CurrentControlModule:Disable()
+&#9;&#9;&#9;end
+&#9;&#9;&#9;CurrentControlModule = newModuleToEnable
+&#9;&#9;&#9;if CurrentControlModule then
+&#9;&#9;&#9;&#9;CurrentControlModule:Enable()
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+elseif UserInputService.KeyboardEnabled then
+&#9;onControlsChanged = function()
+&#9;&#9;local newModuleToEnable = nil
+&#9;&#9;if not IsUserChoice then
+&#9;&#9;&#9;if DevMovementMode == Enum.DevComputerMovementMode.KeyboardMouse then
+&#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.Keyboard
+&#9;&#9;&#9;elseif DevMovementMode == Enum.DevComputerMovementMode.ClickToMove then
+&#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.Keyboard
+&#9;&#9;&#9;end 
+&#9;&#9;else
+&#9;&#9;&#9;if UserMovementMode == Enum.ComputerMovementMode.KeyboardMouse or UserMovementMode == Enum.ComputerMovementMode.Default then
+&#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.Keyboard
+&#9;&#9;&#9;elseif UserMovementMode == Enum.ComputerMovementMode.ClickToMove then
+&#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.Keyboard
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;if newModuleToEnable ~= CurrentControlModule then
+&#9;&#9;&#9;if CurrentControlModule then
+&#9;&#9;&#9;&#9;CurrentControlModule:Disable()
+&#9;&#9;&#9;end
+&#9;&#9;&#9;CurrentControlModule = newModuleToEnable
+&#9;&#9;&#9;if CurrentControlModule then
+&#9;&#9;&#9;&#9;CurrentControlModule:Enable()
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+&#9;-- enable jumping from seat on backspace
+&#9;local jumpFromSeat = function(actionName, inputState, inputObject)
+&#9;&#9;if inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;if LocalPlayer and LocalPlayer.Character then
+&#9;&#9;&#9;&#9;local humanoid = LocalPlayer.Character:FindFirstChild(&apos;Humanoid&apos;)
+&#9;&#9;&#9;&#9;if humanoid and humanoid.Sit then
+&#9;&#9;&#9;&#9;&#9;humanoid.Jump = true
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+&#9;ContextActionService:BindActionToInputTypes(&quot;jumpFromSeat&quot;, jumpFromSeat, false, Enum.KeyCode.Backspace)
+end
+onControlsChanged()
+
+--[[ Settings Changed Connections ]]--
+LocalPlayer.Changed:connect(function(property)
+&#9;if IsTouchDevice and property == &apos;DevTouchMovementMode&apos; then
+&#9;&#9;DevMovementMode = LocalPlayer.DevTouchMovementMode
+&#9;&#9;IsUserChoice = DevMovementMode == Enum.DevTouchMovementMode.UserChoice
+&#9;&#9;if IsUserChoice then
+&#9;&#9;&#9;UserMovementMode = GameSettings.TouchMovementMode
+&#9;&#9;end
+&#9;&#9;onControlsChanged()
+&#9;elseif not IsTouchDevice and property == &apos;DevComputerMovementMode&apos; then
+&#9;&#9;DevMovementMode = LocalPlayer.DevComputerMovementMode
+&#9;&#9;IsUserChoice = DevMovementMode == Enum.DevComputerMovementMode.UserChoice
+&#9;&#9;if IsUserChoice then
+&#9;&#9;&#9;UserMovementMode = GameSettings.ComputerMovementMode
+&#9;&#9;end
+&#9;&#9;onControlsChanged()
+&#9;end
+end)
+
+GameSettings.Changed:connect(function(property)
+&#9;if not IsUserChoice then return end
+&#9;if property == &apos;TouchMovementMode&apos; or property == &apos;ComputerMovementMode&apos; then
+&#9;&#9;UserMovementMode = GameSettings[property]
+&#9;&#9;onControlsChanged()
+&#9;end
+end)
+
+if IsTouchDevice then
+&#9;-- On touch devices we need to recreate the guis on character load.
+&#9;LocalPlayer.CharacterAdded:connect(function(character)
+&#9;&#9;createTouchGuiContainer()
+&#9;&#9;if CurrentControlModule then
+&#9;&#9;&#9;CurrentControlModule:Disable()
+&#9;&#9;&#9;CurrentControlModule = nil
+&#9;&#9;end
+&#9;&#9;onControlsChanged()
+&#9;end)
+&#9;
+&#9;UserInputService.Changed:connect(function(property)
+&#9;&#9;if property == &apos;ModalEnabled&apos; then
+&#9;&#9;&#9;if CurrentControlModule then
+&#9;&#9;&#9;&#9;-- TODO: Catch case for emergency click to move controls.
+&#9;&#9;&#9;&#9;if UserInputService.ModalEnabled then
+&#9;&#9;&#9;&#9;&#9;CurrentControlModule:Disable()
+&#9;&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;&#9;CurrentControlModule:Enable()
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end)
+end
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

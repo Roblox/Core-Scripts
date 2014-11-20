@@ -1,0 +1,141 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBXC8E8E110F1EF4A7AB0EF6E5751E7CECD">
+		<Properties>
+			<string name="Name">KeyboardMovement</string>
+			<ProtectedString name="Source">--[[
+&#9;// FileName: ComputerMovementKeyboardMovement
+&#9;// Written by: jeditkacheff
+&#9;// Description: Implements movement controls for keyboard devices
+--]]
+local Players = game:GetService(&apos;Players&apos;)
+local RunService = game:GetService(&apos;RunService&apos;)
+local UserInputService = game:GetService(&apos;UserInputService&apos;)
+local ContextActionService = game:GetService(&apos;ContextActionService&apos;)
+local StarterPlayer = game:GetService(&apos;StarterPlayer&apos;)
+local Settings = UserSettings()
+local GameSettings = Settings.GameSettings
+
+local KeyboardMovement = {}
+
+while not Players.LocalPlayer do
+&#9;wait()
+end
+local LocalPlayer = Players.LocalPlayer
+local RenderSteppedCon = nil
+
+--[[ Public API ]]--
+function KeyboardMovement:Enable()
+&#9;if not UserInputService.KeyboardEnabled then
+&#9;&#9;return
+&#9;end
+&#9;
+&#9;local forwardValue  = 0
+&#9;local backwardValue = 0
+&#9;local leftValue = 0
+&#9;local rightValue = 0
+&#9;
+&#9;local isJumping = false
+&#9;local moveFunc = LocalPlayer.Move
+&#9;
+&#9;local function isFirstPersonOrShiftLocked()
+&#9;&#9;-- Mouse behavior is being set by the camera script. So be warned that if you
+&#9;&#9;-- modify that script or implement a new camera, this may not work.
+&#9;&#9;if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+&#9;&#9;&#9;return true
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local moveForwardFunc = function(actionName, inputState, inputObject)
+&#9;&#9;if inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;forwardValue = -1
+&#9;&#9;elseif inputState == Enum.UserInputState.End then
+&#9;&#9;&#9;forwardValue = 0
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local moveBackwardFunc = function(actionName, inputState, inputObject)&#9;
+&#9;&#9;if inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;backwardValue = 1
+&#9;&#9;elseif inputState == Enum.UserInputState.End then
+&#9;&#9;&#9;backwardValue = 0
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local moveLeftFunc = function(actionName, inputState, inputObject)&#9;
+&#9;&#9;if inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;leftValue = -1
+&#9;&#9;elseif inputState == Enum.UserInputState.End then
+&#9;&#9;&#9;leftValue = 0
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local moveRightFunc = function(actionName, inputState, inputObject)&#9;
+&#9;&#9;if inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;rightValue = 1
+&#9;&#9;elseif inputState == Enum.UserInputState.End then
+&#9;&#9;&#9;rightValue = 0
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local jumpFunc = function(actionName, inputState, inputObject)
+&#9;&#9;isJumping = (inputState == Enum.UserInputState.Begin)
+&#9;end
+&#9;
+&#9;-- todo: remove up and down arrows, these seem unnecessary
+&#9;ContextActionService:BindActionToInputTypes(&quot;forwardMovement&quot;, moveForwardFunc, false, Enum.PlayerActions.CharacterForward, Enum.KeyCode.Up)
+&#9;ContextActionService:BindActionToInputTypes(&quot;backwardMovement&quot;, moveBackwardFunc, false, Enum.PlayerActions.CharacterBackward, Enum.KeyCode.Down)
+&#9;ContextActionService:BindActionToInputTypes(&quot;leftMovement&quot;, moveLeftFunc, false, Enum.PlayerActions.CharacterLeft)
+&#9;ContextActionService:BindActionToInputTypes(&quot;rightMovement&quot;, moveRightFunc, false, Enum.PlayerActions.CharacterRight)
+&#9;ContextActionService:BindActionToInputTypes(&quot;jumpAction&quot;, jumpFunc, false, Enum.PlayerActions.CharacterJump)
+&#9;--todo: make sure we check key state before binding to check if key is already down
+&#9;
+&#9;RenderSteppedCon = RunService.RenderStepped:connect(function()
+&#9;&#9;if LocalPlayer and LocalPlayer.Character then
+&#9;&#9;&#9;local humanoid = LocalPlayer.Character:FindFirstChild(&apos;Humanoid&apos;)
+&#9;&#9;&#9;if isFirstPersonOrShiftLocked() then
+&#9;&#9;&#9;&#9;local rootPart = LocalPlayer.Character:FindFirstChild(&apos;HumanoidRootPart&apos;)
+&#9;&#9;&#9;&#9;if humanoid and not humanoid.Sit and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
+&#9;&#9;&#9;&#9;&#9;humanoid.AutoRotate = false
+&#9;&#9;&#9;&#9;&#9;local desiredLook = game.Workspace.CurrentCamera.CoordinateFrame.lookVector
+&#9;&#9;&#9;&#9;&#9;desiredLook = Vector3.new(desiredLook.x, 0, desiredLook.z)
+&#9;&#9;&#9;&#9;&#9;rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + desiredLook)
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;if humanoid then
+&#9;&#9;&#9;&#9;&#9;humanoid.AutoRotate = true
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;&#9;
+&#9;&#9;&#9;if humanoid and not humanoid.PlatformStand and isJumping then
+&#9;&#9;&#9;&#9;humanoid.Jump = isJumping
+&#9;&#9;&#9;end
+&#9;&#9;&#9;
+&#9;&#9;&#9;moveFunc(LocalPlayer, Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue), true)
+&#9;&#9;end
+&#9;end)
+end
+
+function KeyboardMovement:Disable()
+&#9;ContextActionService:UnbindAction(&quot;forwardMovement&quot;)
+&#9;ContextActionService:UnbindAction(&quot;backwardMovement&quot;)
+&#9;ContextActionService:UnbindAction(&quot;leftMovement&quot;)
+&#9;ContextActionService:UnbindAction(&quot;rightMovement&quot;)
+&#9;ContextActionService:UnbindAction(&quot;jumpAction&quot;)
+&#9;
+&#9;if RenderSteppedCon then
+&#9;&#9;RenderSteppedCon:disconnect()
+&#9;&#9;RenderSteppedCon = nil
+&#9;end
+&#9;
+&#9;if LocalPlayer then
+&#9;&#9;LocalPlayer:Move(Vector3.new(0,0,0), true)
+&#9;end
+end
+
+return KeyboardMovement
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

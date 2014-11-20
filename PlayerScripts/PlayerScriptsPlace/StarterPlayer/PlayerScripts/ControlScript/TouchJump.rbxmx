@@ -1,0 +1,100 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBXB9EB012905D544B28981B79948BB0782">
+		<Properties>
+			<string name="Name">TouchJump</string>
+			<ProtectedString name="Source">--[[
+&#9;// FileName: TouchJump
+&#9;// Written by: jmargh
+&#9;// Description: Implements jump controls for touch devices. Use with Thumbstick and Thumbpad
+--]]
+
+local Players = game:GetService(&apos;Players&apos;)
+
+local TouchJump = {}
+
+--[[ Script Variables ]]--
+while not Players.LocalPlayer do
+&#9;wait()
+end
+local LocalPlayer = Players.LocalPlayer
+local JumpButton = nil
+local OnInputEnded = nil&#9;&#9;-- defined in Create()
+
+--[[ Constants ]]--
+local TOUCH_CONTROL_SHEET = &quot;rbxasset://textures/ui/TouchControlsSheet.png&quot;
+
+--[[ Public API ]]--
+function TouchJump:Enable()
+&#9;JumpButton.Visible = true
+end
+
+function TouchJump:Disable()
+&#9;JumpButton.Visible = false
+&#9;OnInputEnded()
+end
+
+function TouchJump:Create(parentFrame)
+&#9;if JumpButton then
+&#9;&#9;JumpButton:Destroy()
+&#9;&#9;JumpButton = nil
+&#9;end
+&#9;
+&#9;local isSmallScreen = parentFrame.AbsoluteSize.y &lt;= 500
+&#9;local jumpButtonSize = isSmallScreen and 70 or 90
+&#9;
+&#9;JumpButton = Instance.new(&apos;ImageButton&apos;)
+&#9;JumpButton.Name = &quot;JumpButton&quot;
+&#9;JumpButton.Visible = false
+&#9;JumpButton.BackgroundTransparency = 1
+&#9;JumpButton.Image = TOUCH_CONTROL_SHEET
+&#9;JumpButton.ImageRectOffset = Vector2.new(176, 222)
+&#9;JumpButton.ImageRectSize = Vector2.new(174, 174)
+&#9;JumpButton.Size = UDim2.new(0, jumpButtonSize, 0, jumpButtonSize)
+&#9;JumpButton.Position = isSmallScreen and UDim2.new(1, jumpButtonSize * -2.25, 1, -jumpButtonSize - 20) or
+&#9;&#9;UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
+&#9;
+&#9;local touchObject = nil
+&#9;local function doJumpLoop()
+&#9;&#9;local character = LocalPlayer.Character
+&#9;&#9;if character then
+&#9;&#9;&#9;local humanoid = character:FindFirstChild(&apos;Humanoid&apos;)
+&#9;&#9;&#9;if humanoid then
+&#9;&#9;&#9;&#9;while touchObject do
+&#9;&#9;&#9;&#9;&#9;humanoid.Jump = true
+&#9;&#9;&#9;&#9;&#9;wait(1/60)
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;JumpButton.InputBegan:connect(function(inputObject)
+&#9;&#9;if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
+&#9;&#9;&#9;return
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;touchObject = inputObject
+&#9;&#9;JumpButton.ImageRectOffset = Vector2.new(0, 222)
+&#9;&#9;doJumpLoop()
+&#9;end)
+&#9;
+&#9;OnInputEnded = function()
+&#9;&#9;touchObject = nil
+&#9;&#9;JumpButton.ImageRectOffset = Vector2.new(176, 222)
+&#9;end
+&#9;
+&#9;JumpButton.InputEnded:connect(function(inputObject)
+&#9;&#9;if inputObject == touchObject then
+&#9;&#9;&#9;OnInputEnded()
+&#9;&#9;end
+&#9;end)
+&#9;
+&#9;JumpButton.Parent = parentFrame
+end
+
+return TouchJump
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

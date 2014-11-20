@@ -1,0 +1,181 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="LocalScript" referent="RBX05ACAFC8C6874578B513B9BBACC208F3">
+		<Properties>
+			<bool name="Disabled">false</bool>
+			<Content name="LinkedSource"><null></null></Content>
+			<string name="Name">CameraScript</string>
+			<ProtectedString name="Source">local RunService = game:GetService(&apos;RunService&apos;)
+local UserInputService = game:GetService(&apos;UserInputService&apos;)
+local PlayersService = game:GetService(&apos;Players&apos;)
+
+-- Issue with play solo? (F6)
+while not UserInputService.KeyboardEnabled and not UserInputService.TouchEnabled do
+&#9;wait()
+end
+
+local RootCamera = script:WaitForChild(&apos;RootCamera&apos;)
+local ClassicCamera = require(RootCamera:WaitForChild(&apos;ClassicCamera&apos;))()
+local FollowCamera = require(RootCamera:WaitForChild(&apos;FollowCamera&apos;))()
+local PopperCam = require(script:WaitForChild(&apos;PopperCam&apos;))
+local Invisicam = require(script:WaitForChild(&apos;Invisicam&apos;))
+local ClickToMove = require(script:WaitForChild(&apos;ClickToMove&apos;))()
+local StarterPlayer = game:GetService(&apos;StarterPlayer&apos;)
+
+local GameSettings = UserSettings().GameSettings
+
+local function IsTouch()
+&#9;return UserInputService.TouchEnabled
+end
+
+local function shouldUseCustomCamera()
+&#9;local player = PlayersService.LocalPlayer
+&#9;local currentCamera = workspace.CurrentCamera
+&#9;if player then
+&#9;&#9;if currentCamera == nil or (currentCamera and currentCamera.CameraType == Enum.CameraType.Custom) then
+&#9;&#9;&#9;return true, player, currentCamera
+&#9;&#9;end
+&#9;end
+&#9;return false, player, currentCamera
+end
+
+local function isClickToMoveOn()
+&#9;local customModeOn, player, currentCamera = shouldUseCustomCamera()
+&#9;if customModeOn then
+&#9;&#9;if IsTouch() then -- Touch
+&#9;&#9;&#9;if player.DevTouchMovementMode == Enum.DevTouchMovementMode.ClickToMove or
+&#9;&#9;&#9;&#9;&#9;(player.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice and GameSettings.TouchMovementMode == Enum.TouchMovementMode.ClickToMove) then
+&#9;&#9;&#9;&#9;return true
+&#9;&#9;&#9;end
+&#9;&#9;else -- Computer
+&#9;&#9;&#9;if player.DevComputerMovementMode == Enum.DevComputerMovementMode.ClickToMove or
+&#9;&#9;&#9;&#9;&#9;(player.DevComputerMovementMode == Enum.DevComputerMovementMode.UserChoice and GameSettings.ComputerMovementMode == Enum.ComputerMovementMode.ClickToMove) then
+&#9;&#9;&#9;&#9;return true
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+&#9;return false&#9;
+end
+
+local function getCurrentCameraMode()
+&#9;local customModeOn, player, currentCamera = shouldUseCustomCamera()
+&#9;if customModeOn then
+&#9;&#9;if IsTouch() then -- Touch (iPad, etc...)
+&#9;&#9;&#9;if isClickToMoveOn() then
+&#9;&#9;&#9;&#9;return Enum.DevTouchMovementMode.ClickToMove.Name
+&#9;&#9;&#9;elseif player.DevTouchCameraMode == Enum.DevTouchCameraMovementMode.UserChoice then
+&#9;&#9;&#9;&#9;local touchMovementMode = GameSettings.TouchCameraMovementMode
+&#9;&#9;&#9;&#9;if touchMovementMode == Enum.TouchCameraMovementMode.Default then
+&#9;&#9;&#9;&#9;&#9;return Enum.TouchCameraMovementMode.Classic.Name
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;return touchMovementMode.Name
+&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;return player.DevTouchCameraMode.Name
+&#9;&#9;&#9;end
+&#9;&#9;else -- Computer
+&#9;&#9;&#9;if isClickToMoveOn() then
+&#9;&#9;&#9;&#9;return Enum.DevComputerMovementMode.ClickToMove.Name
+&#9;&#9;&#9;elseif player.DevComputerCameraMode == Enum.DevComputerCameraMovementMode.UserChoice then
+&#9;&#9;&#9;&#9;local computerMovementMode = GameSettings.ComputerCameraMovementMode
+&#9;&#9;&#9;&#9;if computerMovementMode == Enum.ComputerCameraMovementMode.Default then
+&#9;&#9;&#9;&#9;&#9;return Enum.ComputerCameraMovementMode.Classic.Name
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;return computerMovementMode.Name
+&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;return player.DevComputerCameraMode.Name
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+end
+
+local function getCameraOcclusionMode()
+&#9;local customModeOn, player, currentCamera = shouldUseCustomCamera()
+&#9;if customModeOn then
+&#9;&#9;return player.DevCameraOcclusionMode
+&#9;end
+end
+
+local EnabledCamera = nil
+local EnabledOcclusion = nil
+local function OnCameraMovementModeChange(newCameraMode)
+&#9;if newCameraMode == Enum.DevComputerMovementMode.ClickToMove.Name then
+&#9;&#9;ClickToMove:Start()
+&#9;&#9;EnabledCamera = nil
+&#9;else
+&#9;&#9;if newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
+&#9;&#9;&#9;EnabledCamera = ClassicCamera
+&#9;&#9;elseif newCameraMode == Enum.ComputerCameraMovementMode.Follow.Name then
+&#9;&#9;&#9;EnabledCamera = FollowCamera
+&#9;&#9;else -- They are disabling our special movement code
+&#9;&#9;&#9;EnabledCamera = nil
+&#9;&#9;end
+&#9;&#9;ClickToMove:Stop()
+&#9;end
+&#9;
+&#9;local newOcclusionMode = getCameraOcclusionMode()
+&#9;if newOcclusionMode == Enum.DevCameraOcclusionMode.Zoom then
+&#9;&#9;EnabledOcclusion = PopperCam
+&#9;elseif newOcclusionMode == Enum.DevCameraOcclusionMode.Invisicam then
+&#9;&#9;EnabledOcclusion = Invisicam
+&#9;else
+&#9;&#9;EnabledOcclusion = false
+&#9;end
+end
+
+local function OnPlayerAdded(player)
+&#9;local currentCameraConn = nil
+&#9;local renderSteppedConn = nil
+&#9;
+&#9;local function OnNewCamera()
+&#9;&#9;OnCameraMovementModeChange(getCurrentCameraMode())
+&#9;&#9;&#9;
+&#9;&#9;local currentCamera = workspace.CurrentCamera
+&#9;&#9;if currentCamera then
+&#9;&#9;&#9;if currentCameraConn then
+&#9;&#9;&#9;&#9;currentCameraConn:disconnect()
+&#9;&#9;&#9;&#9;currentCameraConn = nil
+&#9;&#9;&#9;end
+&#9;&#9;&#9;currentCameraConn = currentCamera.Changed:connect(function(prop)
+&#9;&#9;&#9;&#9;if prop == &apos;CameraType&apos; then
+&#9;&#9;&#9;&#9;&#9;OnCameraMovementModeChange(getCurrentCameraMode())
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end)
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;workspace.Changed:connect(function(prop)
+&#9;&#9;if prop == &apos;CurrentCamera&apos; then
+&#9;&#9;&#9;OnNewCamera()
+&#9;&#9;end
+&#9;end)
+&#9;
+&#9;player.Changed:connect(function(prop)
+&#9;&#9;OnCameraMovementModeChange(getCurrentCameraMode())
+&#9;end)
+&#9;
+&#9;GameSettings.Changed:connect(function(prop)
+&#9;&#9;OnCameraMovementModeChange(getCurrentCameraMode())
+&#9;end)
+&#9;
+&#9;renderSteppedConn = RunService.RenderStepped:connect(function()
+&#9;&#9;if EnabledCamera then
+&#9;&#9;&#9;EnabledCamera:Update()&#9;
+&#9;&#9;end
+&#9;&#9;if EnabledOcclusion then
+&#9;&#9;&#9;EnabledOcclusion:Update()
+&#9;&#9;end
+&#9;end)
+&#9;
+&#9;OnNewCamera()
+&#9;OnCameraMovementModeChange(getCurrentCameraMode())&#9;
+end
+
+do
+&#9;while PlayersService.LocalPlayer == nil do wait() end
+&#9;OnPlayerAdded(PlayersService.LocalPlayer)
+end
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

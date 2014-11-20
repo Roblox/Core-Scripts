@@ -12,6 +12,10 @@ test/tmp
 test/version_tmp
 tmp
 
+# Project Specific Ignores #
+###########################
+*_output.rbxlx
+
 # OS generated files #
 ######################
 .DS_Store

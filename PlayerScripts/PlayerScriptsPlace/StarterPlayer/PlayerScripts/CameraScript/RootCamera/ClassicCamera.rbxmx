@@ -1,0 +1,55 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBX5744EB97A6D34E5AA94E31CE07E5D09D">
+		<Properties>
+			<string name="Name">ClassicCamera</string>
+			<ProtectedString name="Source">local PlayersService = game:GetService(&apos;Players&apos;)
+local UserInputService = game:GetService(&apos;UserInputService&apos;)
+local RootCameraCreator = require(script.Parent)
+
+local ZERO_VECTOR = Vector3.new(0, 0, 0)
+local UP_VECTOR = Vector3.new(0, 1, 0)
+
+local function CreateClassicCamera()
+&#9;local module = RootCameraCreator()
+&#9;
+&#9;local lastUpdate = nil
+&#9;function module:Update()
+&#9;&#9;local now = tick()
+&#9;&#9;if lastUpdate then
+&#9;&#9;&#9;-- Cap out the delta to 0.5 so we don&apos;t get some crazy things when we re-resume from
+&#9;&#9;&#9;local delta = math.min(0.5, now - lastUpdate)
+&#9;&#9;&#9;local angle = self.TurningLeft and -120 or 0
+&#9;&#9;&#9;angle = angle + (self.TurningRight and 120 or 0)
+&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector2.new(math.rad(angle * delta), 0))
+&#9;&#9;end
+&#9;&#9;lastUpdate = now
+
+&#9;&#9;local camera = &#9;workspace.CurrentCamera
+&#9;&#9;local player = PlayersService.LocalPlayer
+&#9;&#9;local subjectPosition = self:GetSubjectPosition()
+&#9;&#9;
+&#9;&#9;if subjectPosition and player and camera then
+&#9;&#9;&#9;local zoom = self:GetCameraZoom()
+&#9;&#9;&#9;if zoom &lt;= 0 then
+&#9;&#9;&#9;&#9;zoom = 0.1
+&#9;&#9;&#9;end
+&#9;&#9;&#9;
+&#9;&#9;&#9;if self:GetShiftLock() and not self:IsInFirstPerson() then
+&#9;&#9;&#9;&#9;subjectPosition = subjectPosition + (self:GetCameraLook().unit:Cross(Vector3.new(0, 1, 0)) * 1.75)
+&#9;&#9;&#9;&#9;zoom = math.max(zoom, 5)
+&#9;&#9;&#9;end
+&#9;&#9;&#9;camera.Focus = CFrame.new(subjectPosition)
+&#9;&#9;&#9;camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * self:GetCameraLook()), camera.Focus.p)
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;return module
+end
+
+return CreateClassicCamera
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

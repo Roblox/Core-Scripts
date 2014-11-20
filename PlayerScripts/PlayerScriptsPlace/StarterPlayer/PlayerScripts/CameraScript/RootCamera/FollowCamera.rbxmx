@@ -1,0 +1,109 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBX2E794D4A101246E2A297C1E0B836654A">
+		<Properties>
+			<string name="Name">FollowCamera</string>
+			<ProtectedString name="Source">local PlayersService = game:GetService(&apos;Players&apos;)
+local UserInputService = game:GetService(&apos;UserInputService&apos;)
+local RootCameraCreator = require(script.Parent)
+
+local ZERO_VECTOR = Vector3.new(0, 0, 0)
+local UP_VECTOR = Vector3.new(0, 1, 0)
+
+local function clamp(low, high, num)
+&#9;if low &lt;= high then
+&#9;&#9;return math.min(high, math.max(low, num))
+&#9;end
+&#9;print(&quot;Trying to clamp when low:&quot;, low , &quot;is larger than high:&quot; , high , &quot;returning input value.&quot;)
+&#9;return num
+end
+
+local function findEulerAnglesBetweenVectors(vec1, vec2)
+&#9;-- This is a way of finding the angle between the two vectors:
+&#9;-- 1. The new camera look-vector for this frame
+&#9;-- 2. The vector from the last camera location to the new camera focus.
+&#9;return CFrame.new(Vector3.new(), vec1):toObjectSpace(CFrame.new(Vector3.new(), vec2)):toEulerAnglesXYZ()
+end
+
+local function findPlayerHumanoid(player)
+&#9;if player and player.Character then
+&#9;&#9;local humanoid = player.Character:FindFirstChild(&apos;Humanoid&apos;)
+&#9;&#9;if humanoid:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;return humanoid
+&#9;&#9;end
+&#9;end
+end
+
+local function CreateClassicCamera()
+&#9;local module = RootCameraCreator()
+&#9;
+&#9;local lastUpdate = nil
+&#9;function module:Update()
+&#9;&#9;local userPanningTheCamera = (self.UserPanningTheCamera == true)
+&#9;&#9;local now = tick()
+&#9;&#9;
+&#9;&#9;if lastUpdate then
+&#9;&#9;&#9;-- Cap out the delta to 0.5 so we don&apos;t get some crazy things when we re-resume from
+&#9;&#9;&#9;local delta = math.min(0.5, now - lastUpdate)
+&#9;&#9;&#9;local angle = self.TurningLeft and -120 or 0
+&#9;&#9;&#9;angle = angle + (self.TurningRight and 120 or 0)
+&#9;&#9;&#9;if angle ~= 0 then userPanningTheCamera = true end
+&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector2.new(math.rad(angle * delta), 0))
+&#9;&#9;end
+
+&#9;&#9;local camera = &#9;workspace.CurrentCamera
+&#9;&#9;local player = PlayersService.LocalPlayer
+&#9;&#9;local subjectPosition = self:GetSubjectPosition()
+&#9;&#9;
+&#9;&#9;if subjectPosition and player and camera then
+&#9;&#9;&#9;local zoom = self:GetCameraZoom()
+&#9;&#9;&#9;if zoom &lt;= 0 then
+&#9;&#9;&#9;&#9;zoom = 0.1
+&#9;&#9;&#9;end
+&#9;&#9;&#9;
+&#9;&#9;&#9;if self:GetShiftLock() and not self:IsInFirstPerson() then
+&#9;&#9;&#9;&#9;subjectPosition = subjectPosition + (self:GetCameraLook().unit:Cross(Vector3.new(0, 1, 0)) * 1.75)
+&#9;&#9;&#9;&#9;zoom = math.max(zoom, 5)
+&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;if self.LastCameraTransform and not userPanningTheCamera then
+&#9;&#9;&#9;&#9;&#9;local humanoid = findPlayerHumanoid(player)
+&#9;&#9;&#9;&#9;&#9;local isClimbing = false
+&#9;&#9;&#9;&#9;&#9;if humanoid and humanoid:GetState() == Enum.HumanoidStateType.Climbing then
+&#9;&#9;&#9;&#9;&#9;&#9;isClimbing = true
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;if isClimbing and lastUpdate and humanoid.Torso then
+&#9;&#9;&#9;&#9;&#9;&#9;local speed = math.rad(260)
+&#9;&#9;&#9;&#9;&#9;&#9;local percent = clamp(0, 1, speed * (now - lastUpdate))
+&#9;&#9;&#9;&#9;&#9;&#9;local x, y, z = findEulerAnglesBetweenVectors(humanoid.Torso.CFrame.lookVector, self:GetCameraLook())
+&#9;&#9;&#9;&#9;&#9;&#9;-- Check for NaNs
+&#9;&#9;&#9;&#9;&#9;&#9;if x == x and y == y and z == z then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector3.new(y * percent, 0))
+&#9;&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;elseif not self:IsInFirstPerson() then
+&#9;&#9;&#9;&#9;&#9;&#9;local lastVec = -(self.LastCameraTransform.p - subjectPosition).unit
+&#9;&#9;&#9;&#9;&#9;&#9;local x, y, z = findEulerAnglesBetweenVectors(lastVec, self:GetCameraLook())
+&#9;&#9;&#9;&#9;&#9;&#9;-- Check for NaNs
+&#9;&#9;&#9;&#9;&#9;&#9;if x == x and y == y and z == z then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector3.new(y, 0))
+&#9;&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;&#9;
+&#9;&#9;&#9;camera.Focus = CFrame.new(subjectPosition)
+&#9;&#9;&#9;camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * self:GetCameraLook()), camera.Focus.p)
+&#9;&#9;&#9;self.LastCameraTransform = camera.CoordinateFrame
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;lastUpdate = now
+&#9;end
+&#9;
+&#9;return module
+end
+
+return CreateClassicCamera
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>
