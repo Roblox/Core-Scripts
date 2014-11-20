@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX5a0324791b5b4827b30ae9519a249562">
+	<Item class="ModuleScript" referent="RBX2de7771429b146ada0ca64d167c71808">
 		<Properties>
 			<string name="Name">ClickToMove</string>
 			<ProtectedString name="Source">local UIS = game:GetService(&quot;UserInputService&quot;)
@@ -1647,11 +1647,13 @@ local function CreateClickToMoveModule()
 &#9;&#9;disconnectEvent(OnCharacterAddedConn)
 &#9;end
 &#9;
+&#9;
+&#9;-- Setup the camera
+&#9;CameraModule = CreateCamera()
+
 &#9;local function OnCharacterAdded(character)
 &#9;&#9;DisconnectEvents()
 &#9;&#9;
-&#9;&#9;-- Setup the camera
-&#9;&#9;CameraModule = CreateCamera()
 &#9;&#9;
 &#9;&#9;if UIS.TouchEnabled then -- Mobile
 &#9;&#9;&#9;-- Turn off the mobile-control sticks
@@ -1765,6 +1767,9 @@ local function CreateClickToMoveModule()
 &#9;&#9;&#9;&#9;AutoJumperInstance:Stop()
 &#9;&#9;&#9;&#9;AutoJumperInstance = nil
 &#9;&#9;&#9;end
+&#9;&#9;&#9;if CameraModule then
+&#9;&#9;&#9;&#9;CameraModule.On = false
+&#9;&#9;&#9;end
 &#9;&#9;&#9;Running = false
 &#9;&#9;end
 &#9;end
@@ -1775,6 +1780,9 @@ local function CreateClickToMoveModule()
 &#9;&#9;&#9;&#9;OnCharacterAdded(Player.Character)
 &#9;&#9;&#9;end
 &#9;&#9;&#9;OnCharacterAddedConn = Player.CharacterAdded:connect(OnCharacterAdded)
+&#9;&#9;&#9;if CameraModule then
+&#9;&#9;&#9;&#9;CameraModule.On = true
+&#9;&#9;&#9;end
 &#9;&#9;&#9;Running = true
 &#9;&#9;end
 &#9;end

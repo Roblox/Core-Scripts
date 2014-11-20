@@ -42,16 +42,27 @@ local function CreateCamera()
 &#9;&#9;return ShiftLockController:IsShiftLocked()
 &#9;end
 &#9;
+&#9;function this:GetHumanoid()
+&#9;&#9;local player = PlayersService.LocalPlayer
+&#9;&#9;return player and player.Character and player.Character:FindFirstChild(&apos;Humanoid&apos;)
+&#9;end
+&#9;
 &#9;function this:GetHumanoidRootPart()
 &#9;&#9;local player = PlayersService.LocalPlayer
 &#9;&#9;return player and player.Character and player.Character:FindFirstChild(&apos;HumanoidRootPart&apos;)
 &#9;end
 &#9;
 &#9;function this:GetSubjectPosition()
+&#9;&#9;local result = nil
 &#9;&#9;local humanoidRootPart = self:GetHumanoidRootPart()
+&#9;&#9;local humanoid = self:GetHumanoid()
 &#9;&#9;if humanoidRootPart then
-&#9;&#9;&#9;return humanoidRootPart.Position + Vector3.new(0, 2, 0)
+&#9;&#9;&#9;result = humanoidRootPart.Position + Vector3.new(0, 1.5, 0)
+&#9;&#9;&#9;if humanoid and humanoid:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;result = result + humanoid.CameraOffset
+&#9;&#9;&#9;end
 &#9;&#9;end
+&#9;&#9;return result
 &#9;end
 
 &#9;function this:GetCameraLook()
