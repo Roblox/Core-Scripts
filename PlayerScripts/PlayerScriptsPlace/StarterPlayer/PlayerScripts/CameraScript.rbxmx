@@ -114,6 +114,9 @@ local function OnCameraMovementModeChange(newCameraMode)
 &#9;end
 &#9;
 &#9;local newOcclusionMode = getCameraOcclusionMode()
+&#9;if EnabledOcclusion == Invisicam and newOcclusionMode ~= Enum.DevCameraOcclusionMode.Invisicam then
+&#9;&#9;Invisicam:Cleanup()
+&#9;end
 &#9;if newOcclusionMode == Enum.DevCameraOcclusionMode.Zoom then
 &#9;&#9;EnabledOcclusion = PopperCam
 &#9;elseif newOcclusionMode == Enum.DevCameraOcclusionMode.Invisicam then
