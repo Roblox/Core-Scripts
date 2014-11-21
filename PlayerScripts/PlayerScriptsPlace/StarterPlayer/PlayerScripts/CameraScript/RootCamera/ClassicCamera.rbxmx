@@ -10,6 +10,7 @@ local RootCameraCreator = require(script.Parent)
 
 local ZERO_VECTOR = Vector3.new(0, 0, 0)
 local UP_VECTOR = Vector3.new(0, 1, 0)
+local XZ_VECTOR = Vector3.new(1,0,1)
 
 local function clamp(low, high, num)
 &#9;if low &lt;= high then
@@ -63,7 +64,11 @@ local function CreateClassicCamera()
 &#9;&#9;&#9;end
 &#9;&#9;&#9;
 &#9;&#9;&#9;if self:GetShiftLock() and not self:IsInFirstPerson() then
-&#9;&#9;&#9;&#9;subjectPosition = subjectPosition + (self:GetCameraLook().unit:Cross(Vector3.new(0, 1, 0)) * 1.75)
+&#9;&#9;&#9;&#9;local offset = ((self:GetCameraLook() * XZ_VECTOR):Cross(UP_VECTOR).unit * 1.75)
+&#9;&#9;&#9;&#9;-- Check for NaNs
+&#9;&#9;&#9;&#9;if offset.x == offset.x and offset.y == offset.y and offset.z == offset.z then
+&#9;&#9;&#9;&#9;&#9;subjectPosition = subjectPosition + offset
+&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;zoom = math.max(zoom, 5)
 &#9;&#9;&#9;else
 &#9;&#9;&#9;&#9;if self.LastCameraTransform and not userPanningTheCamera then
