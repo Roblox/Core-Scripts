@@ -68,11 +68,9 @@ local function CreateClassicCamera()
 &#9;&#9;&#9;else
 &#9;&#9;&#9;&#9;if self.LastCameraTransform and not userPanningTheCamera then
 &#9;&#9;&#9;&#9;&#9;local humanoid = findPlayerHumanoid(player)
-&#9;&#9;&#9;&#9;&#9;local isClimbing = false
-&#9;&#9;&#9;&#9;&#9;if humanoid and humanoid:GetState() == Enum.HumanoidStateType.Climbing then
-&#9;&#9;&#9;&#9;&#9;&#9;isClimbing = true
-&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;&#9;if isClimbing and lastUpdate and humanoid.Torso then
+&#9;&#9;&#9;&#9;&#9;local isClimbing = humanoid and humanoid:GetState() == Enum.HumanoidStateType.Climbing
+&#9;&#9;&#9;&#9;&#9;local isInVehicle = camera and camera.CameraSubject and camera.CameraSubject:IsA(&apos;VehicleSeat&apos;)
+&#9;&#9;&#9;&#9;&#9;if (isClimbing or isInVehicle) and lastUpdate and humanoid and humanoid.Torso then
 &#9;&#9;&#9;&#9;&#9;&#9;local speed = math.rad(260)
 &#9;&#9;&#9;&#9;&#9;&#9;local percent = clamp(0, 1, speed * (now - lastUpdate))
 &#9;&#9;&#9;&#9;&#9;&#9;local x, y, z = findEulerAnglesBetweenVectors(humanoid.Torso.CFrame.lookVector, self:GetCameraLook())

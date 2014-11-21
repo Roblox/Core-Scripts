@@ -544,7 +544,7 @@ local function CreateCamera()
 &#9;
 &#9;this.ZoomSetStart = currentZoom
 &#9;this.ZoomSetTime = nil
-&#9;this.On = true
+&#9;this.On = false
 &#9;
 &#9;local function UpdateTorso()
 &#9;&#9;if not this.On then return end
