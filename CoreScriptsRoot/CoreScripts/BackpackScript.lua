@@ -1,4 +1,4 @@
--- Backpack Version 4.2
+-- Backpack Version 4.3
 -- OnlyTwentyCharacters
 
 -- Configurables --
@@ -346,7 +346,9 @@ local function MakeSlot(parent, index)
 		local tool = self.Tool
 		for term in pairs(terms) do
 			checkEm(tool.Name, term)
-			checkEm(tool.ToolTip, term)
+			if tool:IsA('Tool') then --NOTE: HopperBin
+				checkEm(tool.ToolTip, term)
+			end
 		end
 		return hits
 	end
