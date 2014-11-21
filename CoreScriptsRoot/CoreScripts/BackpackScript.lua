@@ -1,4 +1,4 @@
--- Backpack Version 4.3
+-- Backpack Version 4.4
 -- OnlyTwentyCharacters
 
 -- Configurables --
@@ -69,7 +69,7 @@ local Dragging = {} -- Only used to check if anything is being dragged, to disab
 local FullHotbarSlots = 0
 local UpdateArrowFrame = nil -- Function defined in Init logic at the bottom
 local ActiveHopper = nil --NOTE: HopperBin
-local StarterToolFound = false
+local StarterToolFound = false -- Special handling is required for the gear currently equipped on the site
 local WholeThingEnabled = false
 local TextBoxFocused = false
 local ResultsIndices = nil -- Results of a search
@@ -539,11 +539,10 @@ local function OnChildAdded(child) -- To Character or Backpack
 	end
 	
 	--TODO: Optimize / refactor / do something else
-	if not StarterToolFound and tool.Parent == Character then
+	if not StarterToolFound and tool.Parent == Character and not SlotsByTool[tool] then
 		local starterGear = Player:FindFirstChild('StarterGear')
 		if starterGear then
-			local startTool = starterGear:GetChildren()[1]
-			if startTool and tool.Name == startTool.Name then
+			if starterGear:FindFirstChild(tool.Name) then
 				StarterToolFound = true
 				local firstEmptyIndex = LowestEmptySlot and LowestEmptySlot.Index or #Slots + 1
 				if LowestEmptySlot then
