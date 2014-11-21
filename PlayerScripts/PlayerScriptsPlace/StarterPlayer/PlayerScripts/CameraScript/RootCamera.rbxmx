@@ -80,6 +80,13 @@ local function CreateCamera()
 &#9;&#9;return this.currentZoom
 &#9;end
 &#9;
+&#9;function this:GetCameraActualZoom()
+&#9;&#9;local camera = workspace.CurrentCamera
+&#9;&#9;if camera then
+&#9;&#9;&#9;return (camera.CoordinateFrame.p - camera.Focus.p).magnitude
+&#9;&#9;end
+&#9;end
+&#9;
 &#9;function this:ViewSizeX()
 &#9;&#9;local result = 1024
 &#9;&#9;local player = PlayersService.LocalPlayer
@@ -145,10 +152,13 @@ local function CreateCamera()
 &#9;end
 &#9;
 &#9;function this:ZoomCameraBy(zoomScale)
-&#9;&#9;local zoom = self:GetCameraZoom()
-&#9;&#9;local accel = (zoom / 15) * 3.0 + 0.5
-&#9;&#9;accel = clamp(1, 25, accel)
-&#9;&#9;return self:ZoomCamera(zoom + zoomScale * accel)
+&#9;&#9;local zoom = this:GetCameraActualZoom()
+&#9;&#9;if zoom then
+&#9;&#9;&#9;local accel = (zoom / 15) * 3.0 + 0.5
+&#9;&#9;&#9;accel = clamp(1, 25, accel)
+&#9;&#9;&#9;self:ZoomCamera(zoom + zoomScale * accel)
+&#9;&#9;end
+&#9;&#9;return self:GetCameraZoom()
 &#9;end
 &#9;
 &#9;function this:ZoomCameraFixedBy(zoomIncrement)
