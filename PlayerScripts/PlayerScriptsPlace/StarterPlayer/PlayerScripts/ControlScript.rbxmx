@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBXFE0123EEDAD647C8A75A636EC4D061CA">
+	<Item class="LocalScript" referent="RBXB409A61A71BA418585139CB8C7287A14">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -194,18 +194,6 @@ elseif UserInputService.KeyboardEnabled then
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;end
-&#9;-- enable jumping from seat on backspace
-&#9;local jumpFromSeat = function(actionName, inputState, inputObject)
-&#9;&#9;if inputState == Enum.UserInputState.Begin then
-&#9;&#9;&#9;if LocalPlayer and LocalPlayer.Character then
-&#9;&#9;&#9;&#9;local humanoid = LocalPlayer.Character:FindFirstChild(&apos;Humanoid&apos;)
-&#9;&#9;&#9;&#9;if humanoid and humanoid.Sit then
-&#9;&#9;&#9;&#9;&#9;humanoid.Jump = true
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end
-&#9;ContextActionService:BindActionToInputTypes(&quot;jumpFromSeat&quot;, jumpFromSeat, false, Enum.KeyCode.Backspace)
 end
 
 --[[ Settings Changed Connections ]]--
