@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX2de7771429b146ada0ca64d167c71808">
+	<Item class="ModuleScript" referent="RBX28335AC9D27C48AF9C552EF0F55B1117">
 		<Properties>
 			<string name="Name">ClickToMove</string>
 			<ProtectedString name="Source">local UIS = game:GetService(&quot;UserInputService&quot;)
@@ -20,6 +20,18 @@ local SHOW_PATH = false
 
 local RayCastIgnoreList = workspace.FindPartOnRayWithIgnoreList
 local GetPartsTouchingExtents = workspace.FindPartsInRegion3
+
+-- Bindable for when we want touch emergency controls
+-- TODO: Click to move should probably have it&apos;s own gui touch controls
+-- to manage this.
+local BindableEvent_OnFailStateChanged = nil
+if UIS.TouchEnabled then
+&#9;BindableEvent_OnFailStateChanged = Instance.new(&apos;BindableEvent&apos;)
+&#9;BindableEvent_OnFailStateChanged.Name = &quot;OnClickToMoveFailStateChange&quot;
+&#9;local CameraScript = script.Parent
+&#9;local PlayerScripts = CameraScript.Parent
+&#9;BindableEvent_OnFailStateChanged.Parent = PlayerScripts
+end
 
 
 --------------------------UTIL LIBRARY-------------------------------
@@ -1406,11 +1418,16 @@ local function OnTap(tapPositions)&#9;
 &#9;&#9;&#9;&#9;local thisPather = Pather(character, hitPt)
 &#9;&#9;&#9;&#9;if thisPather:IsValidPath() then
 &#9;&#9;&#9;&#9;&#9;FailCount = 0
+&#9;&#9;&#9;&#9;&#9;-- TODO: Remove when bug in engine is fixed
+&#9;&#9;&#9;&#9;&#9;Player:Move(Vector3.new(1, 0, 0))
+&#9;&#9;&#9;&#9;&#9;Player:Move(Vector3.new(0, 0, 0))
 &#9;&#9;&#9;&#9;&#9;thisPather:Start()
-&#9;&#9;&#9;&#9;&#9;UIS.ModalEnabled = true
-&#9;&#9;&#9;&#9;&#9;if CameraModule then
-&#9;&#9;&#9;&#9;&#9;&#9;CameraModule:Start()
+&#9;&#9;&#9;&#9;&#9;if BindableEvent_OnFailStateChanged then
+&#9;&#9;&#9;&#9;&#9;&#9;BindableEvent_OnFailStateChanged:Fire(false)
 &#9;&#9;&#9;&#9;&#9;end
+--&#9;&#9;&#9;&#9;&#9;if CameraModule then
+--&#9;&#9;&#9;&#9;&#9;&#9;CameraModule:Start()
+--&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;CleanupPath()
 &#9;&#9;&#9;&#9;
 &#9;&#9;&#9;&#9;&#9;local destinationGlobe = CreateDestinationIndicator(hitPt)
@@ -1479,10 +1496,12 @@ local function OnTap(tapPositions)&#9;
 &#9;&#9;&#9;&#9;&#9;&#9;if ExistingIndicator == nil then
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;FailCount = FailCount + 1
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;if FailCount &gt;= 3 then
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;UIS.ModalEnabled = false
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;if CameraModule then
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;CameraModule:Stop()
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;if BindableEvent_OnFailStateChanged then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;BindableEvent_OnFailStateChanged:Fire(true)
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;end
+--&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;if CameraModule then
+--&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;CameraModule:Stop()
+--&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;CleanupPath()
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;end
@@ -1580,6 +1599,7 @@ local function SetUpGestureRecognizers()
 &#9;&#9;&#9;&#9;&#9;local otherInputInLeft = IsInBottomLeft(otherInput.Position)
 &#9;&#9;&#9;&#9;&#9;local otherInputInRight = IsInBottomRight(otherInput.Position)
 &#9;&#9;&#9;&#9;&#9;if otherInput.UserInputState ~= Enum.UserInputState.End and ((wasInBottomLeft and otherInputInRight) or (wasInBottomRight and otherInputInLeft)) then
+&#9;&#9;&#9;&#9;&#9;&#9;-- TODO: Is this still a valid code path?
 &#9;&#9;&#9;&#9;&#9;&#9;UIS.ModalEnabled = false
 &#9;&#9;&#9;&#9;&#9;&#9;if CameraModule then
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;CameraModule:Stop()
@@ -1655,18 +1675,7 @@ local function CreateClickToMoveModule()
 &#9;&#9;DisconnectEvents()
 &#9;&#9;
 &#9;&#9;
-&#9;&#9;if UIS.TouchEnabled then -- Mobile
-&#9;&#9;&#9;-- Turn off the mobile-control sticks
-&#9;&#9;&#9;-- TODO: Stop doing this if we get disabled
-&#9;&#9;&#9;spawn(function()
-&#9;&#9;&#9;&#9;local start = tick()
-&#9;&#9;&#9;&#9;while tick() - start &lt; 3 do
-&#9;&#9;&#9;&#9;&#9;UIS.ModalEnabled = false
-&#9;&#9;&#9;&#9;&#9;UIS.ModalEnabled = true
-&#9;&#9;&#9;&#9;&#9;wait(0.1)
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end)
-&#9;
+&#9;&#9;if UIS.TouchEnabled then -- Mobile&#9;
 &#9;&#9;&#9;SetUpGestureRecognizers()
 &#9;&#9;&#9;
 &#9;&#9;&#9;TapConn = UIS.TouchTap:connect(function(touchPositions, sunk)&#9;&#9;&#9;&#9;
