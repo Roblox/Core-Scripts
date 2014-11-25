@@ -27,11 +27,21 @@ local function findEulerAnglesBetweenVectors(vec1, vec2)
 &#9;return CFrame.new(Vector3.new(), vec1):toObjectSpace(CFrame.new(Vector3.new(), vec2)):toEulerAnglesXYZ()
 end
 
+local humanoidCache = {}
 local function findPlayerHumanoid(player)
-&#9;if player and player.Character then
-&#9;&#9;local humanoid = player.Character:FindFirstChild(&apos;Humanoid&apos;)
-&#9;&#9;if humanoid:IsA(&apos;Humanoid&apos;) then
-&#9;&#9;&#9;return humanoid
+&#9;local character = player and player.Character
+&#9;if character then
+&#9;&#9;local resultHumanoid = humanoidCache[player]
+&#9;&#9;if resultHumanoid and resultHumanoid.Parent == character then
+&#9;&#9;&#9;return resultHumanoid
+&#9;&#9;else
+&#9;&#9;&#9;humanoidCache[player] = nil -- Bust Old Cache
+&#9;&#9;&#9;for _, child in pairs(character:GetChildren()) do
+&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;&#9;humanoidCache[player] = child
+&#9;&#9;&#9;&#9;&#9;return child
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
 &#9;&#9;end
 &#9;end
 end
@@ -43,6 +53,11 @@ local function CreateClassicCamera()
 &#9;function module:Update()
 &#9;&#9;local now = tick()
 &#9;&#9;local userPanningTheCamera = (self.UserPanningTheCamera == true)
+&#9;&#9;
+&#9;&#9;if lastUpdate == nil or now - lastUpdate &gt; 1 then
+&#9;&#9;&#9;module:ResetCameraLook()
+&#9;&#9;&#9;self.LastCameraTransform = nil
+&#9;&#9;end&#9;
 &#9;&#9;
 &#9;&#9;if lastUpdate then
 &#9;&#9;&#9;-- Cap out the delta to 0.5 so we don&apos;t get some crazy things when we re-resume from
@@ -73,11 +88,17 @@ local function CreateClassicCamera()
 &#9;&#9;&#9;else
 &#9;&#9;&#9;&#9;if self.LastCameraTransform and not userPanningTheCamera then
 &#9;&#9;&#9;&#9;&#9;local humanoid = findPlayerHumanoid(player)
-&#9;&#9;&#9;&#9;&#9;local isInVehicle = camera and camera.CameraSubject and camera.CameraSubject:IsA(&apos;VehicleSeat&apos;)
-&#9;&#9;&#9;&#9;&#9;if isInVehicle and lastUpdate and humanoid and humanoid.Torso then
+&#9;&#9;&#9;&#9;&#9;local cameraSubject = camera and camera.CameraSubject
+&#9;&#9;&#9;&#9;&#9;local isInVehicle = cameraSubject and cameraSubject:IsA(&apos;VehicleSeat&apos;)
+&#9;&#9;&#9;&#9;&#9;local isOnASkateboard = cameraSubject and cameraSubject:IsA(&apos;SkateboardPlatform&apos;)
+&#9;&#9;&#9;&#9;&#9;if (isInVehicle or isOnASkateboard) and lastUpdate and humanoid and humanoid.Torso then
+&#9;&#9;&#9;&#9;&#9;&#9;local forwardVector = humanoid.Torso.CFrame.lookVector
+&#9;&#9;&#9;&#9;&#9;&#9;if isOnASkateboard then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;forwardVector = cameraSubject.CFrame.lookVector
+&#9;&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;&#9;local speed = math.rad(260)
 &#9;&#9;&#9;&#9;&#9;&#9;local percent = clamp(0, 1, speed * (now - lastUpdate))
-&#9;&#9;&#9;&#9;&#9;&#9;local x, y, z = findEulerAnglesBetweenVectors(humanoid.Torso.CFrame.lookVector, self:GetCameraLook())
+&#9;&#9;&#9;&#9;&#9;&#9;local x, y, z = findEulerAnglesBetweenVectors(forwardVector, self:GetCameraLook())
 &#9;&#9;&#9;&#9;&#9;&#9;-- Check for NaNs
 &#9;&#9;&#9;&#9;&#9;&#9;if x == x and y == y and z == z then
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector3.new(y * percent, 0))

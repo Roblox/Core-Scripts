@@ -26,10 +26,27 @@ local function findFirstChildByType(parent, type)
 &#9;end
 end
 
+local humanoidCache = {}
+local function findPlayerHumanoid(player)
+&#9;local character = player and player.Character
+&#9;if character then
+&#9;&#9;local resultHumanoid = humanoidCache[player]
+&#9;&#9;if resultHumanoid and resultHumanoid.Parent == character then
+&#9;&#9;&#9;return resultHumanoid
+&#9;&#9;else
+&#9;&#9;&#9;humanoidCache[player] = nil -- Bust Old Cache
+&#9;&#9;&#9;for _, child in pairs(character:GetChildren()) do
+&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;&#9;humanoidCache[player] = child
+&#9;&#9;&#9;&#9;&#9;return child
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+end
 
-
-local MIN_Y = math.rad(-70)
-local MAX_Y = math.rad(70)
+local MIN_Y = math.rad(-80)
+local MAX_Y = math.rad(80)
 
 local function CreateCamera()
 &#9;local this = {}
@@ -44,12 +61,12 @@ local function CreateCamera()
 &#9;
 &#9;function this:GetHumanoid()
 &#9;&#9;local player = PlayersService.LocalPlayer
-&#9;&#9;return player and player.Character and player.Character:FindFirstChild(&apos;Humanoid&apos;)
+&#9;&#9;return findPlayerHumanoid(player)
 &#9;end
 &#9;
 &#9;function this:GetHumanoidRootPart()
-&#9;&#9;local player = PlayersService.LocalPlayer
-&#9;&#9;return player and player.Character and player.Character:FindFirstChild(&apos;HumanoidRootPart&apos;)
+&#9;&#9;local humanoid = this:GetHumanoid()
+&#9;&#9;return humanoid and humanoid.Torso
 &#9;end
 &#9;
 &#9;function this:GetSubjectPosition()
@@ -63,6 +80,13 @@ local function CreateCamera()
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;&#9;return result
+&#9;end
+
+&#9;function this:ResetCameraLook()
+&#9;&#9;local camera = workspace.CurrentCamera
+&#9;&#9;if camera then
+&#9;&#9;&#9;self.cameraLook = camera and camera.CoordinateFrame.lookVector
+&#9;&#9;end
 &#9;end
 
 &#9;function this:GetCameraLook()
@@ -304,13 +328,9 @@ local function CreateCamera()
 &#9;&#9;&#9;&#9;&#9;--local currPos = input.Position
 &#9;&#9;&#9;&#9;&#9;local currPos = lastPos + input.Delta
 &#9;&#9;&#9;&#9;&#9;local totalTrans = currPos - startPos
-&#9;&#9;&#9;&#9;&#9;
 &#9;&#9;&#9;&#9;&#9;lastPos = currPos
-&#9;&#9;&#9;&#9;&#9;-- We really should be tracking if it ever passed this threshold to go into the rotate mode.
-&#9;&#9;&#9;&#9;&#9;-- That way when we come back to the point we started at we don&apos;t lose control of the camera.
-&#9;&#9;&#9;&#9;&#9;if totalTrans.magnitude &gt; 5 then
-&#9;&#9;&#9;&#9;&#9;&#9;this:RotateCamera(panBeginLook, this:ScreenTranslationToAngle(totalTrans))
-&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;-- NOTE: we probably should not add the delta if we are already maxed out on the rotation angle.
+&#9;&#9;&#9;&#9;&#9;this:RotateCamera(panBeginLook, this:ScreenTranslationToAngle(totalTrans))
 &#9;&#9;&#9;&#9;elseif this:IsInFirstPerson() or this:GetShiftLock() then
 &#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), this:ScreenTranslationToAngle(input.Delta))
 &#9;&#9;&#9;&#9;end
