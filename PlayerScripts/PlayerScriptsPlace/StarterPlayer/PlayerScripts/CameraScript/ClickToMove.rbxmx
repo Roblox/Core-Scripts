@@ -1107,13 +1107,22 @@ local function Pather(character, point)
 &#9;end
 &#9;
 &#9;function this:ComputePath()
+&#9;&#9;local smoothed = false
 &#9;&#9;local humanoid = character:FindFirstChild(&quot;Humanoid&quot;)
 &#9;&#9;local torso = humanoid and humanoid.Torso
 &#9;&#9;if torso then
 &#9;&#9;&#9;if this.PathComputed then return end
 &#9;&#9;&#9;this.PathComputed = true
 &#9;&#9;&#9;-- Will yield the script since it is an Async script (start, finish, maxDistance)
-&#9;&#9;&#9;this.pathResult = PathfindingService:ComputeRawPathAsync(torso.CFrame.p, point, 400)
+&#9;&#9;&#9;-- Try to use the smooth function, but it may not exist yet :(
+&#9;&#9;&#9;local success = pcall(function()
+&#9;&#9;&#9;&#9;this.pathResult = PathfindingService:ComputeSmoothPathAsync(torso.CFrame.p, point, 400)
+&#9;&#9;&#9;&#9;smoothed = true
+&#9;&#9;&#9;end)
+&#9;&#9;&#9;if not success then
+&#9;&#9;&#9;&#9;this.pathResult = PathfindingService:ComputeRawPathAsync(torso.CFrame.p, point, 400)
+&#9;&#9;&#9;&#9;smoothed = false
+&#9;&#9;&#9;end
 &#9;&#9;&#9;this.pointList = this.pathResult and this.pathResult:GetPointCoordinates()
 &#9;&#9;&#9;local pathFound = false
 &#9;&#9;&#9;if this.pathResult.Status == Enum.PathStatus.FailFinishNotEmpty then
@@ -1121,7 +1130,14 @@ local function Pather(character, point)
 &#9;&#9;&#9;&#9;local diffVector = point - workspace.CurrentCamera.CoordinateFrame.p
 &#9;&#9;&#9;&#9;if diffVector.magnitude &gt; 2 then
 &#9;&#9;&#9;&#9;&#9;local setBackPoint = point - (diffVector).unit * 2.1
-&#9;&#9;&#9;&#9;&#9;this.pathResult = PathfindingService:ComputeRawPathAsync(torso.CFrame.p, setBackPoint, 400)
+&#9;&#9;&#9;&#9;&#9;local success = pcall(function()
+&#9;&#9;&#9;&#9;&#9;&#9;this.pathResult = PathfindingService:ComputeSmoothPathAsync(torso.CFrame.p, setBackPoint, 400)
+&#9;&#9;&#9;&#9;&#9;&#9;smoothed = true
+&#9;&#9;&#9;&#9;&#9;end)
+&#9;&#9;&#9;&#9;&#9;if not success then
+&#9;&#9;&#9;&#9;&#9;&#9;this.pathResult = PathfindingService:ComputeRawPathAsync(torso.CFrame.p, setBackPoint, 400)
+&#9;&#9;&#9;&#9;&#9;&#9;smoothed = false
+&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;this.pointList = this.pathResult and this.pathResult:GetPointCoordinates()
 &#9;&#9;&#9;&#9;&#9;pathFound = true
 &#9;&#9;&#9;&#9;end
@@ -1141,7 +1157,15 @@ local function Pather(character, point)
 &#9;&#9;&#9;if (this.pathResult.Status == Enum.PathStatus.FailStartNotEmpty or this.pathResult.Status == Enum.PathStatus.ClosestNoPath) and pathFound == false then
 &#9;&#9;&#9;&#9;local pathablePoints = this:CheckNeighboringCells(character)
 &#9;&#9;&#9;&#9;for _, otherStart in pairs(pathablePoints) do
-&#9;&#9;&#9;&#9;&#9;local pathResult = PathfindingService:ComputeRawPathAsync(otherStart, point, 400)
+&#9;&#9;&#9;&#9;&#9;local pathResult;
+&#9;&#9;&#9;&#9;&#9;local success = pcall(function()
+&#9;&#9;&#9;&#9;&#9;&#9;pathResult = PathfindingService:ComputeSmoothPathAsync(otherStart, point, 400)
+&#9;&#9;&#9;&#9;&#9;&#9;smoothed = true
+&#9;&#9;&#9;&#9;&#9;end)
+&#9;&#9;&#9;&#9;&#9;if not success then
+&#9;&#9;&#9;&#9;&#9;&#9;pathResult = PathfindingService:ComputeRawPathAsync(otherStart, point, 400)
+&#9;&#9;&#9;&#9;&#9;&#9;smoothed = false
+&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;if pathResult and pathResult.Status == Enum.PathStatus.Success then
 &#9;&#9;&#9;&#9;&#9;&#9;this.pathResult = pathResult
 &#9;&#9;&#9;&#9;&#9;&#9;if this.pathResult then
@@ -1162,6 +1186,7 @@ local function Pather(character, point)
 &#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end
 &#9;&#9;end
+&#9;&#9;return smoothed
 &#9;end
 &#9;
 &#9;function this:IsValidPath()
@@ -1184,11 +1209,11 @@ local function Pather(character, point)
 &#9;&#9;&#9;&#9;if this.Started then return end
 &#9;&#9;&#9;&#9;this.Started = true
 &#9;&#9;&#9;&#9;-- Will yield the script since it is an Async function script (start, finish, maxDistance)
-&#9;&#9;&#9;&#9;this:ComputePath()
+&#9;&#9;&#9;&#9;local smoothed = this:ComputePath()
 &#9;&#9;&#9;&#9;if this:IsValidPath() then
 &#9;&#9;&#9;&#9;&#9;this.PathStarted:fire()
 &#9;&#9;&#9;&#9;&#9;-- smooth out zig-zaggy paths
-&#9;&#9;&#9;&#9;&#9;local smoothPath = this:SmoothPoints(this.pointList)
+&#9;&#9;&#9;&#9;&#9;local smoothPath = smoothed and this.pointList or this:SmoothPoints(this.pointList)
 &#9;&#9;&#9;&#9;&#9;for i, point in pairs(smoothPath) do
 &#9;&#9;&#9;&#9;&#9;&#9;if humanoid then
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;if this.Cancelled then
@@ -1750,7 +1775,7 @@ local function CreateClickToMoveModule()
 &#9;&#9;&#9;MouseUpConn = MyMouse.Button2Up:connect(function()
 &#9;&#9;&#9;&#9;mouse2Up = tick()&#9;&#9;&#9;
 &#9;&#9;&#9;&#9;local currPos = Vector2.new(MyMouse.X, MyMouse.Y)
-&#9;&#9;&#9;&#9;if mouse2Up - mouse2Down &lt; 0.5 and (currPos - mouse2DownPos).magnitude &lt; 10 then
+&#9;&#9;&#9;&#9;if mouse2Up - mouse2Down &lt; 0.25 and (currPos - mouse2DownPos).magnitude &lt; 5 then
 &#9;&#9;&#9;&#9;&#9;local positions = {currPos}
 &#9;&#9;&#9;&#9;&#9;OnTap(positions)
 &#9;&#9;&#9;&#9;end
