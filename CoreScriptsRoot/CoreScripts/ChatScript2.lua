@@ -898,6 +898,7 @@ local function CreateChatBarWidget(settings)
 		this.SelectChatModeConn = Util.DisconnectEvent(this.SelectChatModeConn)
 		this.SelectPlayerConn = Util.DisconnectEvent(this.SelectPlayerConn)
 		this.FocusChatBarInputBeganConn = Util.DisconnectEvent(this.FocusChatBarInputBeganConn)
+		this.InputBeganConn = Util.DisconnectEvent(this.InputBeganConn)
 	end
 
 	local function HookUpEvents()
@@ -926,6 +927,13 @@ local function CreateChatBarWidget(settings)
 			this.TargetWhisperPlayer = chatPlayer
 			this:SetMessageMode("Whisper")
 			this:FocusChatBar()
+		end)
+
+		this.InputBeganConn = InputService.InputBegan:connect(function(inputObject)
+			if inputObject.KeyCode == Enum.KeyCode.Escape then
+				-- Clear text when they press escape
+				this:SetChatBarText("")
+			end
 		end)
 	end
 
@@ -1725,6 +1733,15 @@ local function CreateChat()
 					Util.SetGUIInsetBounds(0, 0)
 				end
 			end
+			if this.MobileChatButton then
+				if enabled == true then
+					this.MobileChatButton.Parent = GuiRoot
+					-- we need to set it to be visible in-case we missed a lost focus event while chat was turned off.
+					this.MobileChatButton.Visible = true
+				else
+					this.MobileChatButton.Parent = nil
+				end
+			end
 		end
 		if this.ChatWindowWidget then
 			this.ChatWindowWidget:CoreGuiChanged(coreGuiType, enabled)
@@ -1839,7 +1856,9 @@ local function CreateChat()
 
 			if Util.IsTouchDevice() then
 				local mobileChatButton = this:CreateTouchDeviceChatButton()
-				mobileChatButton.Parent = GuiRoot
+				if StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat) then
+					mobileChatButton.Parent = GuiRoot
+				end
 
 				mobileChatButton.TouchTap:connect(function()
 					mobileChatButton.Visible = false
@@ -1851,6 +1870,8 @@ local function CreateChat()
 				this.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
 					mobileChatButton.Visible = true
 				end)
+
+				this.MobileChatButton = mobileChatButton
 			end
 		end
 	end
