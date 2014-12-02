@@ -124,7 +124,7 @@ function KeyboardMovement:Enable()
 &#9;&#9;&#9;local humanoid = getHumanoid()
 &#9;&#9;&#9;if isFirstPersonOrShiftLocked() then
 &#9;&#9;&#9;&#9;local rootPart = humanoid.Torso
-&#9;&#9;&#9;&#9;if humanoid and not humanoid.Sit and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
+&#9;&#9;&#9;&#9;if humanoid and not humanoid.Sit and not humanoid.PlatformStand and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
 &#9;&#9;&#9;&#9;&#9;humanoid.AutoRotate = false
 &#9;&#9;&#9;&#9;&#9;local desiredLook = game.Workspace.CurrentCamera.CoordinateFrame.lookVector
 &#9;&#9;&#9;&#9;&#9;desiredLook = Vector3.new(desiredLook.x, 0, desiredLook.z)
