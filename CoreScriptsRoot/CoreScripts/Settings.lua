@@ -793,7 +793,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 							mouseLockLabel.Visible = false
 						end
 					end)
-				end, false, true, baseZIndex)
+				end, false, true, baseZIndex + 4)
 			cameraDropDown.Name = "CameraField"
 			cameraDropDown.ZIndex = baseZIndex + 4
 			cameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
@@ -871,7 +871,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 			else
 				UserSettings().GameSettings.ComputerCameraMovementMode = smartEnumNameToItem[text] 
 			end
-		end, false, true, baseZIndex)
+		end, false, true, baseZIndex + 4)
 	smartCameraDropDown.Name = "SmartCameraField"
 	smartCameraDropDown.ZIndex = baseZIndex + 4
 	smartCameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
@@ -960,7 +960,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 				else
 					UserSettings().GameSettings.ComputerMovementMode = enumNameToItem[text]
 				end
-			end, false, true, baseZIndex)
+			end, false, true, baseZIndex + 4)
 		movementModeDropDown.Name = "movementModeField"
 		movementModeDropDown.ZIndex = baseZIndex + 4
 		movementModeDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
@@ -1005,7 +1005,7 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		videoCaptureDropDown, updateVideoCaptureDropDownSelection = RbxGui.CreateDropDownMenu(videoNames, 
 			function(text) 
 				UserSettings().GameSettings.VideoUploadPromptBehavior = videoNameToItem[text]
-			end, false, true, baseZIndex)
+			end, false, true, baseZIndex + 4)
 		videoCaptureDropDown.Name = "VideoCaptureField"
 		videoCaptureDropDown.ZIndex = baseZIndex + 4
 		videoCaptureDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
@@ -2269,7 +2269,7 @@ local createReportAbuseDialog = function()
 				if abuse and abusingPlayer then
 					submitReportButton.Active = true
 				end
-			end, false, true, baseZIndex)
+			end, false, true, baseZIndex + 2)
 		playerDropDown.Name = "PlayersComboBox"
 		playerDropDown.ZIndex = baseZIndex + 2
 		playerDropDown.Position = UDim2.new(.425, 0, 0, 94)
@@ -2297,7 +2297,7 @@ local createReportAbuseDialog = function()
 					playerDropDown.Visible = true
 				end
 			end
-		end, true, true, baseZIndex)
+		end, true, true, baseZIndex + 2)
 	gameOrPlayerDropDown.Name = "TypeComboBox"
 	gameOrPlayerDropDown.ZIndex = baseZIndex + 2
 	gameOrPlayerDropDown.Position = UDim2.new(0.425, 0, 0, 55)
@@ -2311,7 +2311,7 @@ local createReportAbuseDialog = function()
 			if abuse and abusingPlayer then
 				submitReportButton.Active = true
 			end
-		end, true, true, baseZIndex)
+		end, true, true, baseZIndex + 2)
 	abuseDropDown.Name = "AbuseComboBox"
 	abuseDropDown.ZIndex = baseZIndex + 2
 	abuseDropDown.Position = UDim2.new(0.425, 0, 0, 133)
