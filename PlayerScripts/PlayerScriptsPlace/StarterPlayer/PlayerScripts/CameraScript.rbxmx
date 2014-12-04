@@ -126,6 +126,31 @@ local function OnCameraMovementModeChange(newCameraMode)
 &#9;end
 end
 
+local function FuzzyEquals(num1, num2)
+&#9;return num1 &gt; num2 - 0.01 and num1 &lt; num2 + 0.01
+end
+
+local CachedParts = {}
+local TransparencyDirty = true
+local LastTransparency = 0
+local function ModifyCharacterTransparency()
+&#9;local currentCamera = workspace.CurrentCamera
+&#9;local player = PlayersService.LocalPlayer
+&#9;local character = player and player.Character
+&#9;if player and character and currentCamera then
+&#9;&#9;local distance = player:DistanceFromCharacter(currentCamera.CoordinateFrame.p)
+&#9;&#9;local transparency = math.max(0, math.min(1, (5 - distance) / 4))
+&#9;&#9;if TransparencyDirty or not FuzzyEquals(LastTransparency, transparency) then
+&#9;&#9;&#9;for child, _ in pairs(CachedParts) do
+&#9;&#9;&#9;&#9;child.LocalTransparencyModifier = transparency
+&#9;&#9;&#9;end
+&#9;&#9;&#9;TransparencyDirty = false
+&#9;&#9;&#9;LastTransparency = transparency
+&#9;&#9;end
+&#9;end
+end
+
+
 local function OnPlayerAdded(player)
 &#9;local currentCameraConn = nil
 &#9;local renderSteppedConn = nil
@@ -161,12 +186,64 @@ local function OnPlayerAdded(player)
 &#9;&#9;OnCameraMovementModeChange(getCurrentCameraMode())
 &#9;end)
 &#9;
+&#9;local function OnCharacterAdded(character)
+&#9;&#9;CachedParts = {}
+&#9;&#9;local function IsValidPartToModify(part)
+&#9;&#9;&#9;local function HasToolAncestor(object)
+&#9;&#9;&#9;&#9;if object.Parent == nil then return false end
+&#9;&#9;&#9;&#9;return object.Parent:IsA(&apos;Tool&apos;) or HasToolAncestor(object.Parent) 
+&#9;&#9;&#9;end
+&#9;&#9;&#9;
+&#9;&#9;&#9;if part:IsA(&apos;BasePart&apos;) then
+&#9;&#9;&#9;&#9;return not HasToolAncestor(part)
+&#9;&#9;&#9;end
+&#9;&#9;&#9;return false
+&#9;&#9;end
+&#9;&#9;local function CachePartsRecursive(object)
+&#9;&#9;&#9;if object then
+&#9;&#9;&#9;&#9;if IsValidPartToModify(object) then
+&#9;&#9;&#9;&#9;&#9;CachedParts[object] = true
+&#9;&#9;&#9;&#9;&#9;TransparencyDirty = true
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;for _, child in pairs(object:GetChildren()) do
+&#9;&#9;&#9;&#9;&#9;CachePartsRecursive(child)
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;-- TODO: this does not catch reparenting within the character:
+&#9;&#9;-- for example if a part that is already a member of the character is reparented to be the child of the tool
+&#9;&#9;-- it will still fade in and out with the character despite being part of a tool
+&#9;&#9;character.DescendantAdded:connect(function(object)
+&#9;&#9;&#9;if IsValidPartToModify(object) then
+&#9;&#9;&#9;&#9;CachedParts[object] = true
+&#9;&#9;&#9;&#9;TransparencyDirty = true
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;character.DescendantRemoving:connect(function(object)
+&#9;&#9;&#9;if CachedParts[object] then
+&#9;&#9;&#9;&#9;-- Reset the transparency when it is removed
+&#9;&#9;&#9;&#9;object.LocalTransparencyModifier = 0
+&#9;&#9;&#9;&#9;CachedParts[object] = nil
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;CachePartsRecursive(character)
+&#9;end
+&#9;
+&#9;player.CharacterRemoving:connect(function() CachedParts = {} end)
+&#9;player.CharacterAdded:connect(OnCharacterAdded)
+&#9;if player.Character then
+&#9;&#9;OnCharacterAdded(player.Character)
+&#9;end
+&#9;
 &#9;renderSteppedConn = RunService.RenderStepped:connect(function()
 &#9;&#9;if EnabledCamera then
 &#9;&#9;&#9;EnabledCamera:Update()&#9;
 &#9;&#9;end
 &#9;&#9;if EnabledOcclusion then
 &#9;&#9;&#9;EnabledOcclusion:Update()
+&#9;&#9;end
+&#9;&#9;if shouldUseCustomCamera() then
+&#9;&#9;&#9;ModifyCharacterTransparency()
 &#9;&#9;end
 &#9;end)
 &#9;

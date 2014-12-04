@@ -51,7 +51,11 @@
 					<R22>1</R22>
 				</CoordinateFrame>
 				<bool name="CanCollide">true</bool>
-				<BinaryString name="ClusterGridV3"></BinaryString>
+				<BinaryString name="ClusterGridV3">AAAAAP7/KP8EACn/AgAo/wIAKf8CACj/AgAp/wIAKP8CACn/AgAo/y4AEf9AAAAAAAD9/yj/
+BAAp/xAAKP8sABH/QAAAAAAA/P8o/wYAKf8CACj/AgAp/wIAKP8CACn/AgAo/wIAKf8CACj/
+LAAR/0AA//8AAP7/KP8EACn/AgAo/wIAKf8CACj/AgAp/wIAKP8CACn/AgAo/y4AEf9AAP//
+AAD9/yj/BAAp/xAAKP8sABH/QAD//wAA/P8o/wYAKf8CACj/AgAp/wIAKP8CACn/AgAo/wIA
+Kf8CACj/LAAR/0AA</BinaryString>
 				<float name="Elasticity">0.300000012</float>
 				<float name="Friction">0.5</float>
 				<float name="FrontParamA">-0.5</float>
@@ -97,24 +101,24 @@
 				<Ref name="CameraSubject">null</Ref>
 				<token name="CameraType">0</token>
 				<CoordinateFrame name="CoordinateFrame">
-					<X>-43.4203873</X>
-					<Y>29.0373878</Y>
-					<Z>-55.3331642</Z>
-					<R00>-0.576465964</R00>
-					<R01>0.304931074</R01>
-					<R02>-0.758092403</R02>
-					<R10>-0</R10>
-					<R11>0.927760124</R11>
-					<R12>0.37317729</R12>
-					<R20>0.817121208</R20>
-					<R21>0.215124011</R21>
-					<R22>-0.534822106</R22>
+					<X>-83.6402817</X>
+					<Y>450.753601</Y>
+					<Z>-447.472443</Z>
+					<R00>-0.994211853</R00>
+					<R01>0.0907321423</R01>
+					<R02>-0.0575369298</R02>
+					<R10>3.7252903e-009</R10>
+					<R11>0.535538554</R11>
+					<R12>0.844510794</R12>
+					<R20>0.107437514</R20>
+					<R21>0.839622617</R21>
+					<R22>-0.532438815</R22>
 				</CoordinateFrame>
 				<float name="FieldOfView">70</float>
 				<CoordinateFrame name="Focus">
-					<X>-41.9042015</X>
-					<Y>28.2910328</Y>
-					<Z>-54.2635193</Z>
+					<X>-83.5252075</X>
+					<Y>449.064575</Y>
+					<Z>-446.407562</Z>
 					<R00>1</R00>
 					<R01>0</R01>
 					<R02>0</R02>
@@ -143,7 +147,7 @@
 				<CoordinateFrame name="CFrame">
 					<X>0</X>
 					<Y>-10</Y>
-					<Z>0</Z>
+					<Z>81.1999969</Z>
 					<R00>1</R00>
 					<R01>0</R01>
 					<R02>0</R02>
@@ -193,7 +197,7 @@
 				<Vector3 name="size">
 					<X>512</X>
 					<Y>20</Y>
-					<Z>512</Z>
+					<Z>349.600006</Z>
 				</Vector3>
 			</Properties>
 			<Item class="Decal" referent="RBX7c0915197a3f475bacf8412e910346f2">
@@ -308,18 +312,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>48.8990402</X>
-						<Y>6.69996166</Y>
-						<Z>-33.2997169</Z>
-						<R00>-6.78849392e-005</R00>
-						<R01>-7.71737632e-006</R01>
+						<X>48.8989754</X>
+						<Y>6.69995975</Y>
+						<Z>-33.2996368</Z>
+						<R00>-7.5879645e-005</R00>
+						<R01>-8.22180027e-006</R01>
 						<R02>1.00000489</R02>
-						<R10>-3.49451102e-006</R10>
+						<R10>-3.90154855e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>7.6714623e-006</R12>
+						<R12>8.17584441e-006</R12>
 						<R20>-1.00000715</R20>
-						<R21>-3.44893192e-006</R21>
-						<R22>-6.68998546e-005</R22>
+						<R21>-3.85585781e-006</R21>
+						<R22>-7.48938764e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -451,18 +455,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>53.3995056</X>
-						<Y>7.19997406</Y>
-						<Z>-29.7994671</Z>
-						<R00>-9.42681218e-005</R00>
-						<R01>-8.50133256e-006</R01>
+						<X>53.3994713</X>
+						<Y>7.19997597</Y>
+						<Z>-29.799427</Z>
+						<R00>-0.000102262835</R00>
+						<R01>-9.0057647e-006</R01>
 						<R02>1.00000489</R02>
-						<R10>-4.56910357e-006</R10>
+						<R10>-4.97615429e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>8.45523209e-006</R12>
+						<R12>8.95960329e-006</R12>
 						<R20>-1.00000715</R20>
-						<R21>-4.52324912e-006</R21>
-						<R22>-9.32827679e-005</R22>
+						<R21>-4.93016842e-006</R21>
+						<R22>-0.00010127679</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -631,18 +635,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>55.899025</X>
-						<Y>9.19981384</Y>
-						<Z>-32.8005676</Z>
-						<R00>-7.36545117e-005</R00>
+						<X>55.8989639</X>
+						<Y>9.1998148</Y>
+						<Z>-32.8005447</Z>
+						<R00>-8.16492538e-005</R00>
 						<R01>-1.00000882</R01>
-						<R02>-7.58015904e-006</R02>
-						<R10>-3.57100157e-006</R10>
-						<R11>-8.26234646e-006</R11>
+						<R02>-8.08458572e-006</R02>
+						<R10>-3.97804297e-006</R10>
+						<R11>-8.76672766e-006</R11>
 						<R12>1.00000119</R12>
 						<R20>-1.00001049</R20>
-						<R21>7.1815819e-005</R21>
-						<R22>-3.67429061e-006</R22>
+						<R21>7.98098627e-005</R21>
+						<R22>-4.08121741e-006</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -885,17 +889,17 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>50.8989601</X>
-						<Y>9.6997776</Y>
-						<Z>-33.3000908</Z>
+						<X>50.8988953</X>
+						<Y>9.69977665</Y>
+						<Z>-33.3000298</Z>
 						<R00>-1.00000489</R00>
-						<R01>-8.27301392e-006</R01>
-						<R02>-9.13183903e-005</R02>
-						<R10>-8.22693983e-006</R10>
+						<R01>-8.77744606e-006</R01>
+						<R02>-9.93131034e-005</R02>
+						<R10>-8.73131285e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>-4.43381668e-006</R12>
-						<R20>9.03330219e-005</R20>
-						<R21>-4.3880068e-006</R21>
+						<R12>-4.84086559e-006</R12>
+						<R20>9.83270438e-005</R20>
+						<R21>-4.79492792e-006</R21>
 						<R22>-1.00000715</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
@@ -1139,18 +1143,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">199</int>
 					<CoordinateFrame name="CFrame">
-						<X>56.3995514</X>
-						<Y>6.69999266</Y>
-						<Z>-29.8001747</Z>
-						<R00>-7.56210065e-005</R00>
+						<X>56.3995209</X>
+						<Y>6.69999552</Y>
+						<Z>-29.8001556</Z>
+						<R00>-8.36157415e-005</R00>
 						<R01>-1.00000882</R01>
-						<R02>-7.48876664e-006</R02>
-						<R10>-3.66113682e-006</R10>
-						<R11>-8.17093951e-006</R11>
+						<R02>-7.99319332e-006</R02>
+						<R10>-4.06817935e-006</R10>
+						<R11>-8.67532071e-006</R11>
 						<R12>1.00000119</R12>
 						<R20>-1.00001049</R20>
-						<R21>7.37823138e-005</R21>
-						<R22>-3.76441676e-006</R22>
+						<R21>8.17763648e-005</R21>
+						<R22>-4.1713447e-006</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -1356,18 +1360,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>55.8993225</X>
-						<Y>7.69982338</Y>
-						<Z>-29.8005619</Z>
-						<R00>-7.75874942e-005</R00>
+						<X>55.8992882</X>
+						<Y>7.69982576</Y>
+						<Z>-29.800539</Z>
+						<R00>-8.55822291e-005</R00>
 						<R01>-1.00000882</R01>
-						<R02>-7.39737334e-006</R02>
-						<R10>-3.75127502e-006</R10>
-						<R11>-8.07953256e-006</R11>
+						<R02>-7.90180093e-006</R02>
+						<R10>-4.15831846e-006</R10>
+						<R11>-8.58391286e-006</R11>
 						<R12>1.00000119</R12>
 						<R20>-1.00001049</R20>
-						<R21>7.57488015e-005</R21>
-						<R22>-3.85454678e-006</R22>
+						<R21>8.37428524e-005</R21>
+						<R22>-4.26147517e-006</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -1684,17 +1688,17 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>53.3992424</X>
-						<Y>9.19980717</Y>
-						<Z>-29.8001919</Z>
-						<R00>7.71726172e-006</R00>
+						<X>53.3992043</X>
+						<Y>9.19980907</Y>
+						<Z>-29.8001518</Z>
+						<R00>8.22168658e-006</R00>
 						<R01>-1.00000489</R01>
-						<R02>-6.9851325e-005</R02>
+						<R02>-7.7846038e-005</R02>
 						<R10>-1.0000006</R10>
-						<R11>-7.67134497e-006</R11>
-						<R12>-3.58471971e-006</R12>
-						<R20>3.53911946e-006</R20>
-						<R21>6.88659056e-005</R21>
+						<R11>-8.17572618e-006</R11>
+						<R12>-3.99175815e-006</R12>
+						<R20>3.94604513e-006</R20>
+						<R21>7.68599275e-005</R21>
 						<R22>-1.00000715</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
@@ -1837,18 +1841,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>55.8992043</X>
-						<Y>9.19982147</Y>
-						<Z>-29.8004398</Z>
-						<R00>-7.36545117e-005</R00>
+						<X>55.8991661</X>
+						<Y>9.19982433</Y>
+						<Z>-29.8004189</Z>
+						<R00>-8.16492538e-005</R00>
 						<R01>-1.00000882</R01>
-						<R02>-7.58015904e-006</R02>
-						<R10>-3.57100157e-006</R10>
-						<R11>-8.26234646e-006</R11>
+						<R02>-8.08458572e-006</R02>
+						<R10>-3.97804297e-006</R10>
+						<R11>-8.76672766e-006</R11>
 						<R12>1.00000119</R12>
 						<R20>-1.00001049</R20>
-						<R21>7.1815819e-005</R21>
-						<R22>-3.67429061e-006</R22>
+						<R21>7.98098627e-005</R21>
+						<R22>-4.08121741e-006</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -2239,17 +2243,17 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>50.899231</X>
-						<Y>8.39978027</Y>
-						<Z>-29.8001022</Z>
+						<X>50.8991928</X>
+						<Y>8.39978123</Y>
+						<Z>-29.8000412</Z>
 						<R00>-1.00000489</R00>
-						<R01>-7.90663125e-006</R01>
-						<R02>-8.38798078e-005</R02>
-						<R10>-7.86061628e-006</R10>
+						<R01>-8.41105975e-006</R01>
+						<R02>-9.18745136e-005</R02>
+						<R10>-8.36499203e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>-4.07256312e-006</R12>
-						<R20>8.28946286e-005</R20>
-						<R21>-4.02684691e-006</R21>
+						<R12>-4.47960883e-006</R12>
+						<R20>9.08886504e-005</R20>
+						<R21>-4.43377121e-006</R21>
 						<R22>-1.00000715</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
@@ -2456,18 +2460,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>48.8992538</X>
-						<Y>6.69991875</Y>
-						<Z>-29.7995224</Z>
-						<R00>-9.33693373e-005</R00>
-						<R01>-7.99425197e-006</R01>
+						<X>48.8992157</X>
+						<Y>6.69991827</Y>
+						<Z>-29.7994442</Z>
+						<R00>-0.000101364043</R00>
+						<R01>-8.49868411e-006</R01>
 						<R02>1.00000489</R02>
-						<R10>-4.49093659e-006</R10>
+						<R10>-4.89798686e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>7.94815514e-006</R12>
+						<R12>8.45252725e-006</R12>
 						<R20>-1.00000715</R20>
-						<R21>-4.44514308e-006</R21>
-						<R22>-9.23843181e-005</R22>
+						<R21>-4.85206692e-006</R21>
+						<R22>-0.00010037834</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -2636,18 +2640,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>47.8991013</X>
-						<Y>7.69990444</Y>
-						<Z>-31.2994442</Z>
-						<R00>9.33693373e-005</R00>
-						<R01>-7.99425197e-006</R01>
+						<X>47.8990517</X>
+						<Y>7.69990301</Y>
+						<Z>-31.2993603</Z>
+						<R00>0.000101364043</R00>
+						<R01>-8.49868411e-006</R01>
 						<R02>-1.00000489</R02>
-						<R10>4.49093659e-006</R10>
+						<R10>4.89798686e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>-7.94815514e-006</R12>
+						<R12>-8.45252725e-006</R12>
 						<R20>1.00000715</R20>
-						<R21>-4.44514308e-006</R21>
-						<R22>9.23843181e-005</R22>
+						<R21>-4.85206692e-006</R21>
+						<R22>0.00010037834</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<bool name="Disabled">false</bool>
@@ -2821,18 +2825,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>55.8995819</X>
-						<Y>9.19997025</Y>
-						<Z>-26.8000946</Z>
-						<R00>-7.28010491e-005</R00>
+						<X>55.8995667</X>
+						<Y>9.19997406</Y>
+						<Z>-26.8000736</Z>
+						<R00>-8.07957622e-005</R00>
 						<R01>-1.00000489</R01>
-						<R02>-7.5801704e-006</R02>
-						<R10>-3.71992633e-006</R10>
-						<R11>-7.5342341e-006</R11>
+						<R02>-8.08459663e-006</R02>
+						<R10>-4.12696636e-006</R10>
+						<R11>-8.03861349e-006</R11>
 						<R12>1.0000006</R12>
 						<R20>-1.00000715</R20>
-						<R21>7.18156371e-005</R21>
-						<R22>-3.67431426e-006</R22>
+						<R21>7.98096589e-005</R21>
+						<R22>-4.08124106e-006</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -3038,18 +3042,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">199</int>
 					<CoordinateFrame name="CFrame">
-						<X>57.8995667</X>
-						<Y>7.20000601</Y>
-						<Z>-29.8002834</Z>
-						<R00>7.46377627e-005</R00>
-						<R01>-7.71726809e-006</R01>
+						<X>57.8995361</X>
+						<Y>7.20000982</Y>
+						<Z>-29.8002758</Z>
+						<R00>8.26324977e-005</R00>
+						<R01>-8.22169386e-006</R01>
 						<R02>-1.00000882</R02>
-						<R10>3.61606817e-006</R10>
+						<R10>4.0231098e-006</R10>
 						<R11>1.00000119</R11>
-						<R12>-8.39944641e-006</R12>
+						<R12>-8.90382762e-006</R12>
 						<R20>1.00001049</R20>
-						<R21>-3.71933902e-006</R21>
-						<R22>7.279907e-005</R22>
+						<R21>-4.12626514e-006</R21>
+						<R22>8.0793121e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -3228,18 +3232,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>46.8990402</X>
-						<Y>9.19989681</Y>
-						<Z>-31.2996178</Z>
-						<R00>9.74939685e-005</R00>
+						<X>46.8989906</X>
+						<Y>9.19989491</Y>
+						<Z>-31.2995262</Z>
+						<R00>0.000105488674</R00>
 						<R01>-1.00000489</R01>
-						<R02>8.02211343e-006</R02>
-						<R10>4.72697866e-006</R10>
-						<R11>-7.97597568e-006</R11>
+						<R02>8.52654739e-006</R02>
+						<R10>5.1340312e-006</R10>
+						<R11>-8.48034597e-006</R11>
 						<R12>-1.0000006</R12>
 						<R20>1.00000715</R20>
-						<R21>9.65089566e-005</R21>
-						<R22>4.68115149e-006</R22>
+						<R21>0.000104502979</R21>
+						<R22>5.08807534e-006</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -3323,18 +3327,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">192</int>
 					<CoordinateFrame name="CFrame">
-						<X>41.8989372</X>
-						<Y>7.69992161</Y>
-						<Z>-33.2991982</Z>
-						<R00>-7.50516192e-005</R00>
-						<R01>-8.15874773e-006</R01>
+						<X>41.8988647</X>
+						<Y>7.69991732</Y>
+						<Z>-33.2990685</Z>
+						<R00>-8.3046325e-005</R00>
+						<R01>-8.66317168e-006</R01>
 						<R02>1.00000489</R02>
-						<R10>-3.59651858e-006</R10>
+						<R10>-4.00355975e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>8.11279915e-006</R12>
+						<R12>8.61717854e-006</R12>
 						<R20>-1.00000715</R20>
-						<R21>-3.55085353e-006</R21>
-						<R22>-7.40665419e-005</R22>
+						<R21>-3.95777579e-006</R21>
+						<R22>-8.20605637e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -3614,18 +3618,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>47.8995552</X>
+						<X>47.8995285</X>
 						<Y>7.69991827</Y>
-						<Z>-28.299099</Z>
-						<R00>-3.76438838e-005</R00>
-						<R01>-8.02419072e-006</R01>
+						<Z>-28.299015</Z>
+						<R00>-2.9649178e-005</R00>
+						<R01>-8.52862104e-006</R01>
 						<R02>-1.00000489</R02>
-						<R10>4.30861519e-006</R10>
+						<R10>4.71559952e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>-7.97867415e-006</R12>
+						<R12>-8.48309992e-006</R12>
 						<R20>1.00000715</R20>
-						<R21>-4.2638635e-006</R21>
-						<R22>-3.8629194e-005</R22>
+						<R21>-4.67078689e-006</R21>
+						<R22>-3.06351722e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<bool name="Disabled">false</bool>
@@ -3795,18 +3799,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>48.8995934</X>
-						<Y>6.69993353</Y>
-						<Z>-26.2994537</Z>
-						<R00>-9.16792196e-005</R00>
-						<R01>-8.30095814e-006</R01>
+						<X>48.8995857</X>
+						<Y>6.69993448</Y>
+						<Z>-26.2993774</Z>
+						<R00>-9.96739836e-005</R00>
+						<R01>-8.80539119e-006</R01>
 						<R02>1.00000978</R02>
-						<R10>-4.46126705e-006</R10>
+						<R10>-4.86831959e-006</R10>
 						<R11>1.00000119</R11>
-						<R12>8.20928108e-006</R12>
+						<R12>8.71365592e-006</R12>
 						<R20>-1.00001431</R20>
-						<R21>-4.3703435e-006</R21>
-						<R22>-8.97107384e-005</R22>
+						<R21>-4.77726462e-006</R21>
+						<R22>-9.77047966e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -3975,17 +3979,17 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>45.8989372</X>
-						<Y>10.1999483</Y>
-						<Z>-32.2989616</Z>
+						<X>45.8988762</X>
+						<Y>10.1999454</Y>
+						<Z>-32.2988586</Z>
 						<R00>-1.00000489</R00>
-						<R01>-6.71682665e-006</R01>
-						<R02>-6.12479562e-005</R02>
-						<R10>-6.67097083e-006</R10>
+						<R01>-7.22124605e-006</R01>
+						<R02>-6.9242662e-005</R02>
+						<R10>-7.17535613e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>-2.96879989e-006</R12>
-						<R20>6.02628425e-005</R20>
-						<R21>-2.9233297e-006</R21>
+						<R12>-3.37583447e-006</R12>
+						<R20>6.82568643e-005</R20>
+						<R21>-3.33026333e-006</R21>
 						<R22>-1.00000715</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
@@ -4192,17 +4196,17 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>43.89888</X>
-						<Y>9.19992828</Y>
-						<Z>-33.2989311</Z>
-						<R00>8.32293699e-006</R00>
+						<X>43.8988113</X>
+						<Y>9.19992352</Y>
+						<Z>-33.2988167</Z>
+						<R00>8.82736276e-006</R00>
 						<R01>-1.00000489</R01>
-						<R02>-7.83911237e-005</R02>
+						<R02>-8.63858295e-005</R02>
 						<R10>-1.0000006</R10>
-						<R11>-8.27695476e-006</R11>
-						<R12>-3.84496343e-006</R12>
-						<R20>3.79925996e-006</R20>
-						<R21>7.74060609e-005</R21>
+						<R11>-8.78133324e-006</R11>
+						<R12>-4.25200642e-006</R12>
+						<R20>4.20618107e-006</R20>
+						<R21>8.54000828e-005</R21>
 						<R22>-1.00000715</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
@@ -4520,18 +4524,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>44.3992729</X>
-						<Y>7.19993734</Y>
-						<Z>-29.7991505</Z>
-						<R00>-9.30067326e-005</R00>
-						<R01>-8.34087405e-006</R01>
+						<X>44.3992348</X>
+						<Y>7.19993496</Y>
+						<Z>-29.7990379</Z>
+						<R00>-0.000101001438</R00>
+						<R01>-8.84530527e-006</R01>
 						<R02>1.00000489</R02>
-						<R10>-4.50119387e-006</R10>
+						<R10>-4.90824414e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>8.2947754e-006</R12>
+						<R12>8.79914751e-006</R12>
 						<R20>-1.00000715</R20>
-						<R21>-4.45537216e-006</R21>
-						<R22>-9.20217135e-005</R22>
+						<R21>-4.86229283e-006</R21>
+						<R22>-0.000100015735</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -4922,18 +4926,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>43.8989067</X>
-						<Y>8.69992828</Y>
-						<Z>-31.2992592</Z>
-						<R00>8.55574399e-006</R00>
-						<R01>-8.00576709e-006</R01>
+						<X>43.8988533</X>
+						<Y>8.69992447</Y>
+						<Z>-31.2991428</Z>
+						<R00>5.61038064e-007</R00>
+						<R01>-8.51019468e-006</R01>
 						<R02>1.00000489</R02>
-						<R10>-4.02073147e-006</R10>
+						<R10>-4.4277308e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>7.96012228e-006</R12>
+						<R12>8.46453622e-006</R12>
 						<R20>-1.00000715</R20>
-						<R21>-3.97574604e-006</R21>
-						<R22>9.54099869e-006</R22>
+						<R21>-4.38266943e-006</R21>
+						<R22>1.54697807e-006</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<bool name="Disabled">false</bool>
@@ -5066,17 +5070,17 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>50.899456</X>
-						<Y>9.69981098</Y>
-						<Z>-26.2998447</Z>
+						<X>50.8994484</X>
+						<Y>9.69981289</Y>
+						<Z>-26.2997856</Z>
 						<R00>-1.00000489</R00>
-						<R01>-8.04476895e-006</R01>
-						<R02>-8.64020694e-005</R02>
-						<R10>-7.9987376e-006</R10>
+						<R01>-8.54919836e-006</R01>
+						<R02>-9.43967752e-005</R02>
+						<R10>-8.50311153e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>-4.20835295e-006</R12>
-						<R20>8.54166865e-005</R20>
-						<R21>-4.16260173e-006</R21>
+						<R12>-4.61539958e-006</R12>
+						<R20>9.34107084e-005</R20>
+						<R21>-4.56952512e-006</R21>
 						<R22>-1.00000715</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
@@ -5320,18 +5324,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">199</int>
 					<CoordinateFrame name="CFrame">
-						<X>41.8992958</X>
-						<Y>6.69990826</Y>
-						<Z>-29.7985649</Z>
-						<R00>7.21021424e-005</R00>
-						<R01>-8.02110208e-006</R01>
+						<X>41.89925</X>
+						<Y>6.6999054</Y>
+						<Z>-29.7984314</Z>
+						<R00>8.00968483e-005</R00>
+						<R01>-8.52552512e-006</R01>
 						<R02>-1.00000489</R02>
-						<R10>3.46157935e-006</R10>
+						<R10>3.86861939e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>-7.9751735e-006</R12>
+						<R12>-8.47955471e-006</R12>
 						<R20>1.00000715</R20>
-						<R21>-3.41594728e-006</R21>
-						<R22>7.11170578e-005</R22>
+						<R21>-3.82287044e-006</R21>
+						<R22>7.91110797e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -5547,17 +5551,17 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">199</int>
 					<CoordinateFrame name="CFrame">
-						<X>41.8992271</X>
-						<Y>5.69982529</Y>
-						<Z>-28.4985809</Z>
-						<R00>-8.31714533e-006</R00>
+						<X>41.8991928</X>
+						<Y>5.6998229</Y>
+						<Z>-28.4984474</Z>
+						<R00>-8.82156201e-006</R00>
 						<R01>-1.00000489</R01>
-						<R02>5.60925182e-005</R02>
+						<R02>6.4087224e-005</R02>
 						<R10>1.0000006</R10>
-						<R11>-8.27131316e-006</R11>
-						<R12>2.71747194e-006</R12>
-						<R20>-2.67194628e-006</R20>
-						<R21>5.51073936e-005</R21>
+						<R11>-8.77570073e-006</R11>
+						<R12>3.12450356e-006</R12>
+						<R20>-3.07886717e-006</R20>
+						<R21>6.31014118e-005</R21>
 						<R22>1.00000715</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
@@ -5747,18 +5751,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>50.8992043</X>
-						<Y>12.6998053</Y>
-						<Z>-29.8000088</Z>
-						<R00>-8.31870238e-006</R00>
-						<R01>-9.23015323e-005</R01>
+						<X>50.8991661</X>
+						<Y>12.6998062</Y>
+						<Z>-29.7999516</Z>
+						<R00>-8.82313088e-006</R00>
+						<R01>-0.000100296238</R01>
 						<R02>-1.00000489</R02>
 						<R10>1.0000006</R10>
-						<R11>-4.16328839e-006</R11>
-						<R12>-8.27264921e-006</R12>
-						<R20>-4.11746487e-006</R20>
+						<R11>-4.57033775e-006</R11>
+						<R12>-8.77702041e-006</R12>
+						<R20>-4.52438599e-006</R20>
 						<R21>-1.00000715</R21>
-						<R22>9.13161639e-005</R22>
+						<R22>9.93101858e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -5890,18 +5894,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>46.8993645</X>
-						<Y>9.19991302</Y>
-						<Z>-28.2992516</Z>
-						<R00>-9.09729861e-005</R00>
+						<X>46.8993378</X>
+						<Y>9.19991207</Y>
+						<Z>-28.29916</Z>
+						<R00>-9.89676919e-005</R00>
 						<R01>-1.00000489</R01>
-						<R02>-7.97004759e-006</R02>
-						<R10>-4.43905446e-006</R10>
-						<R11>-7.9239644e-006</R11>
+						<R02>-8.47447882e-006</R02>
+						<R10>-4.84610337e-006</R10>
+						<R11>-8.42833833e-006</R11>
 						<R12>1.0000006</R12>
 						<R20>-1.00000715</R20>
-						<R21>8.99879669e-005</R21>
-						<R22>-4.39328187e-006</R22>
+						<R21>9.79819888e-005</R21>
+						<R22>-4.80020572e-006</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -6139,17 +6143,17 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>41.8992653</X>
-						<Y>8.69992352</Y>
-						<Z>-29.7988472</Z>
+						<X>41.8992233</X>
+						<Y>8.69992065</Y>
+						<Z>-29.7987156</Z>
 						<R00>-1.00000489</R00>
-						<R01>-7.02689613e-006</R01>
-						<R02>-6.40619692e-005</R02>
-						<R10>-6.98102212e-006</R10>
+						<R01>-7.53131735e-006</R01>
+						<R02>-7.2056675e-005</R02>
+						<R10>-7.48540606e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>-3.12444809e-006</R12>
-						<R20>6.307687e-005</R20>
-						<R21>-3.07894061e-006</R21>
+						<R12>-3.53148403e-006</R12>
+						<R20>7.10708919e-005</R20>
+						<R21>-3.48587196e-006</R21>
 						<R22>-1.00000715</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
@@ -6403,18 +6407,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">141</int>
 					<CoordinateFrame name="CFrame">
-						<X>43.8992577</X>
-						<Y>8.69993782</Y>
-						<Z>-28.2991753</Z>
-						<R00>7.74480577e-006</R00>
-						<R01>-1.05739919e-005</R01>
+						<X>43.8992271</X>
+						<Y>8.69993591</Y>
+						<Z>-28.2990589</Z>
+						<R00>-2.4990004e-007</R00>
+						<R01>-1.10784185e-005</R01>
 						<R02>1.00000489</R02>
-						<R10>-3.85724616e-006</R10>
+						<R10>-4.26424594e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>1.05283325e-005</R12>
+						<R12>1.10327455e-005</R12>
 						<R20>-1.00000715</R20>
-						<R21>-3.81227574e-006</R21>
-						<R22>8.73005047e-006</R22>
+						<R21>-4.21917866e-006</R21>
+						<R22>7.36028596e-007</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<bool name="Disabled">false</bool>
@@ -6510,18 +6514,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>45.8992233</X>
-						<Y>11.6999063</Y>
-						<Z>-29.7988605</Z>
-						<R00>-7.85016073e-006</R00>
-						<R01>-7.31459295e-005</R01>
+						<X>45.8991814</X>
+						<Y>11.6999044</Y>
+						<Z>-29.7987614</Z>
+						<R00>-8.35458104e-006</R00>
+						<R01>-8.11406353e-005</R01>
 						<R02>-1.00000489</R02>
 						<R10>1.0000006</R10>
-						<R11>-3.0811018e-006</R11>
-						<R12>-7.80425762e-006</R12>
-						<R20>-3.03547131e-006</R20>
+						<R11>-3.48814251e-006</R11>
+						<R12>-8.30863701e-006</R12>
+						<R20>-3.44239606e-006</R20>
 						<R21>-1.00000715</R21>
-						<R22>7.21608449e-005</R22>
+						<R22>8.01548667e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -6690,17 +6694,17 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>45.8994484</X>
-						<Y>10.1999083</Y>
-						<Z>-27.2987785</Z>
+						<X>45.8994255</X>
+						<Y>10.1999073</Y>
+						<Z>-27.2986774</Z>
 						<R00>-1.00000489</R00>
-						<R01>-7.39309189e-006</R01>
-						<R02>-6.33133823e-005</R02>
-						<R10>-7.34722107e-006</R10>
+						<R01>-7.89751175e-006</R01>
+						<R02>-7.13080881e-005</R02>
+						<R10>-7.85160501e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>-3.08089329e-006</R12>
-						<R20>6.23282758e-005</R20>
-						<R21>-3.03536785e-006</R21>
+						<R12>-3.48792901e-006</R12>
+						<R20>7.03222977e-005</R20>
+						<R21>-3.44229625e-006</R21>
 						<R22>-1.00000715</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
@@ -6907,18 +6911,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">192</int>
 					<CoordinateFrame name="CFrame">
-						<X>41.8994713</X>
-						<Y>7.69992971</Y>
-						<Z>-26.2987461</Z>
-						<R00>-7.70329207e-005</R00>
-						<R01>-8.25807547e-006</R01>
+						<X>41.899456</X>
+						<Y>7.69992828</Y>
+						<Z>-26.2986145</Z>
+						<R00>-8.50276265e-005</R00>
+						<R01>-8.76250124e-006</R01>
 						<R02>1.00000489</R02>
-						<R10>-3.69654958e-006</R10>
+						<R10>-4.10359144e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>8.21211142e-006</R12>
+						<R12>8.71649081e-006</R12>
 						<R20>-1.00000715</R20>
-						<R21>-3.6508618e-006</R21>
-						<R22>-7.60478433e-005</R22>
+						<R21>-4.05778292e-006</R21>
+						<R22>-8.40418652e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -7198,18 +7202,18 @@
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>43.8995743</X>
-						<Y>9.19998932</Y>
-						<Z>-26.2986279</Z>
-						<R00>-7.51115076e-005</R00>
-						<R01>-7.94162497e-006</R01>
+						<X>43.899559</X>
+						<Y>9.19998837</Y>
+						<Z>-26.2985115</Z>
+						<R00>-8.31062134e-005</R00>
+						<R01>-8.44604983e-006</R01>
 						<R02>1.00000489</R02>
-						<R10>-3.62179094e-006</R10>
+						<R10>-4.02883234e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>7.89567548e-006</R12>
+						<R12>8.40005487e-006</R12>
 						<R20>-1.00000715</R20>
-						<R21>-3.57614158e-006</R21>
-						<R22>-7.41264375e-005</R22>
+						<R21>-3.98306565e-006</R21>
+						<R22>-8.21204521e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -8160,18 +8164,18 @@ vehicle.ChildRemoved:connect(checkIfVehicleIsDamaged)
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>40.6291351</X>
-						<Y>8.58295059</Y>
-						<Z>-30.2330894</Z>
-						<R00>7.33381312e-005</R00>
-						<R01>-1.14184195e-005</R01>
+						<X>40.6290855</X>
+						<Y>8.58294678</Y>
+						<Z>-30.2329483</Z>
+						<R00>8.1332837e-005</R00>
+						<R01>-1.1922858e-005</R01>
 						<R02>-1.00000489</R02>
-						<R10>5.37400047e-006</R10>
+						<R10>5.78104073e-006</R10>
 						<R11>1.0000006</R11>
-						<R12>-1.13723327e-005</R12>
+						<R12>-1.1876713e-005</R12>
 						<R20>1.00000715</R20>
-						<R21>-5.3281251e-006</R21>
-						<R22>7.23530829e-005</R22>
+						<R21>-5.7350212e-006</R21>
+						<R22>8.03471048e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -8229,18 +8233,18 @@ vehicle.ChildRemoved:connect(checkIfVehicleIsDamaged)
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1021</int>
 					<CoordinateFrame name="CFrame">
-						<X>58.3181267</X>
-						<Y>9.66666508</Y>
-						<Z>-29.9191055</Z>
-						<R00>3.7734404e-005</R00>
-						<R01>-2.74071954e-006</R01>
+						<X>58.3180885</X>
+						<Y>9.66666889</Y>
+						<Z>-29.9191036</Z>
+						<R00>4.57291462e-005</R00>
+						<R01>-3.24513167e-006</R01>
 						<R02>-1.00000882</R02>
-						<R10>1.83921634e-006</R10>
+						<R10>2.24623977e-006</R10>
 						<R11>1.00000119</R11>
-						<R12>-3.42313615e-006</R12>
+						<R12>-3.92753236e-006</R12>
 						<R20>1.00001049</R20>
-						<R21>-1.94295967e-006</R21>
-						<R22>3.58956277e-005</R22>
+						<R21>-2.34992513e-006</R21>
+						<R22>4.3889675e-005</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -8298,17 +8302,17 @@ vehicle.ChildRemoved:connect(checkIfVehicleIsDamaged)
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">199</int>
 					<CoordinateFrame name="CFrame">
-						<X>50.299427</X>
+						<X>50.2993774</X>
 						<Y>9.59984016</Y>
-						<Z>-31.2000389</Z>
-						<R00>-5.20851381e-006</R00>
+						<Z>-31.1999741</Z>
+						<R00>-5.72035242e-006</R00>
 						<R01>0.999997914</R01>
-						<R02>-0.000177890266</R02>
+						<R02>-0.000185884448</R02>
 						<R10>0.99999398</R10>
-						<R11>4.99730731e-006</R11>
-						<R12>-0.000931317394</R12>
-						<R20>-0.000931284507</R20>
-						<R21>-0.000176913047</R21>
+						<R11>5.50164123e-006</R11>
+						<R12>-0.000931724499</R12>
+						<R20>-0.000931691437</R20>
+						<R21>-0.00018490701</R21>
 						<R22>-1.00000155</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
@@ -9435,7 +9439,7 @@ end
 		<Item class="UnionOperation" referent="RBXBD4691B0FFA34619B10701F82B93A2FB">
 			<Properties>
 				<bool name="Anchored">true</bool>
-				<Content name="AssetId"><null></null></Content>
+				<Content name="AssetId"><url>http://www.gametest2.robloxlabs.com//asset/?id=70388558</url></Content>
 				<float name="BackParamA">-0.5</float>
 				<float name="BackParamB">0.5</float>
 				<token name="BackSurface">0</token>
@@ -9460,7 +9464,7 @@ end
 					<R22>1</R22>
 				</CoordinateFrame>
 				<bool name="CanCollide">true</bool>
-				<BinaryString name="ChildData">Q1NHSzkxMjM4OTllZWVjMDI2MmNlMjY0NDA4YWYyN2QzZjdi</BinaryString>
+				<BinaryString name="ChildData"></BinaryString>
 				<float name="Elasticity">0.5</float>
 				<token name="FormFactor">0</token>
 				<float name="Friction">0.300000012</float>
@@ -9479,7 +9483,7 @@ end
 				<token name="LeftSurfaceInput">0</token>
 				<bool name="Locked">false</bool>
 				<token name="Material">256</token>
-				<BinaryString name="MeshData">Q1NHS2E1YWNlZjU2YzkyMzA0ODcyYzFkNWE5Njg1YjQzYTg2</BinaryString>
+				<BinaryString name="MeshData"></BinaryString>
 				<string name="Name">Teleporter</string>
 				<BinaryString name="PhysicsData">Q1NHS2QyMmY4N2UzNzgxMjQ3YmQyYzE3ODRiYTFjZDU3Mzdm</BinaryString>
 				<float name="Reflectance">0</float>
@@ -94900,18 +94904,18 @@ end
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">26</int>
 					<CoordinateFrame name="CFrame">
-						<X>44.3102798</X>
-						<Y>56.7692299</Y>
-						<Z>-68.3209915</Z>
-						<R00>-0.999983668</R00>
-						<R01>1.70841258e-011</R01>
-						<R02>-2.58467699e-013</R02>
-						<R10>-1.70788748e-011</R10>
-						<R11>-0.999988437</R11>
-						<R12>-4.4519952e-012</R12>
-						<R20>-2.58479598e-013</R20>
-						<R21>-4.45197395e-012</R21>
-						<R22>0.999984264</R22>
+						<X>44.3100395</X>
+						<Y>56.7690811</Y>
+						<Z>-68.3216553</Z>
+						<R00>-0.999991775</R00>
+						<R01>1.58337302e-011</R01>
+						<R02>-2.61993525e-013</R02>
+						<R10>-1.5828441e-011</R10>
+						<R11>-0.999994159</R11>
+						<R12>-4.51062755e-012</R12>
+						<R20>-2.62005315e-013</R20>
+						<R21>-4.51061541e-012</R21>
+						<R22>0.999992132</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -94943,9 +94947,9 @@ end
 					<token name="TopSurfaceInput">0</token>
 					<float name="Transparency">0</float>
 					<Vector3 name="Velocity">
-						<X>-0.0145216808</X>
-						<Y>0.0117497966</Y>
-						<Z>-0.00574342674</Z>
+						<X>-0.0145216603</X>
+						<Y>0.0117498171</Y>
+						<Z>-0.00574343791</Z>
 					</Vector3>
 					<token name="formFactorRaw">3</token>
 					<token name="shape">1</token>
@@ -95838,18 +95842,18 @@ end
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1019</int>
 					<CoordinateFrame name="CFrame">
-						<X>47.9246254</X>
-						<Y>58.7592621</Y>
-						<Z>-70.4220276</Z>
-						<R00>3.07409209e-010</R00>
-						<R01>-1.52175161e-009</R01>
-						<R02>-0.999991477</R02>
-						<R10>-2.3476332e-011</R10>
-						<R11>-0.999987423</R11>
-						<R12>1.49004054e-009</R12>
-						<R20>-0.999992013</R20>
-						<R21>2.2694735e-011</R21>
-						<R22>-2.07364792e-010</R22>
+						<X>47.9232635</X>
+						<Y>58.7589569</Y>
+						<Z>-70.4212265</Z>
+						<R00>1.96450856e-010</R00>
+						<R01>-8.24623869e-010</R01>
+						<R02>-0.999991834</R02>
+						<R10>-1.57314162e-011</R10>
+						<R11>-0.999994159</R11>
+						<R12>8.23835555e-010</R12>
+						<R20>-0.999992132</R20>
+						<R21>1.57314162e-011</R21>
+						<R22>-1.96450856e-010</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -95881,9 +95885,9 @@ end
 					<token name="TopSurfaceInput">0</token>
 					<float name="Transparency">0.5</float>
 					<Vector3 name="Velocity">
-						<X>-0.014514002</X>
-						<Y>0.0119080022</Y>
-						<Z>-0.00558037218</Z>
+						<X>-0.0145140141</X>
+						<Y>0.0119079426</Y>
+						<Z>-0.00558041735</Z>
 					</Vector3>
 					<token name="formFactorRaw">3</token>
 					<token name="shape">1</token>
@@ -96124,18 +96128,18 @@ end
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1019</int>
 					<CoordinateFrame name="CFrame">
-						<X>47.8120193</X>
-						<Y>60.3653297</Y>
-						<Z>-68.3178635</Z>
-						<R00>-7.4649106e-006</R00>
-						<R01>-0.999991477</R01>
-						<R02>-1.66478676e-005</R02>
-						<R10>0.999987423</R10>
-						<R11>-7.46491014e-006</R11>
-						<R12>-1.19266232e-007</R12>
-						<R20>1.1914328e-007</R20>
-						<R21>-1.66477766e-005</R21>
-						<R22>0.999992013</R22>
+						<X>47.8106575</X>
+						<Y>60.365036</Y>
+						<Z>-68.3170624</Z>
+						<R00>-7.46561045e-006</R00>
+						<R01>-0.999991834</R01>
+						<R02>-1.66477621e-005</R02>
+						<R10>0.999994159</R10>
+						<R11>-7.46562637e-006</R11>
+						<R12>-1.19274787e-007</R12>
+						<R20>1.19150258e-007</R20>
+						<R21>-1.66477676e-005</R21>
+						<R22>0.999992132</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -96167,9 +96171,9 @@ end
 					<token name="TopSurfaceInput">0</token>
 					<float name="Transparency">0.5</float>
 					<Vector3 name="Velocity">
-						<X>-0.0146025773</X>
-						<Y>0.0118283816</Y>
-						<Z>-0.00552433962</Z>
+						<X>-0.0146025904</X>
+						<Y>0.011828322</Y>
+						<Z>-0.00552438432</Z>
 					</Vector3>
 					<token name="formFactorRaw">3</token>
 					<token name="shape">1</token>
@@ -96578,18 +96582,18 @@ end
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1019</int>
 					<CoordinateFrame name="CFrame">
-						<X>47.7140617</X>
-						<Y>58.7668114</Y>
-						<Z>-66.2223663</Z>
-						<R00>1.14596332e-010</R00>
-						<R01>-7.67325592e-010</R01>
-						<R02>-0.999991477</R02>
-						<R10>-1.48361323e-011</R10>
-						<R11>-0.999987423</R11>
-						<R12>7.3561468e-010</R12>
-						<R20>-0.999992013</R20>
-						<R21>1.40545353e-011</R21>
-						<R22>-1.45519152e-011</R22>
+						<X>47.7126999</X>
+						<Y>58.7665062</Y>
+						<Z>-66.2215652</Z>
+						<R00>3.63797881e-012</R00>
+						<R01>-7.01978892e-011</R01>
+						<R02>-0.999991834</R02>
+						<R10>-7.0912165e-012</R10>
+						<R11>-0.999994159</R11>
+						<R12>6.94096586e-011</R12>
+						<R20>-0.999992132</R20>
+						<R21>7.0912165e-012</R21>
+						<R22>-3.63797881e-012</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -96621,9 +96625,9 @@ end
 					<token name="TopSurfaceInput">0</token>
 					<float name="Transparency">0.5</float>
 					<Vector3 name="Velocity">
-						<X>-0.0146189164</X>
-						<Y>0.0117494082</Y>
-						<Z>-0.0055853473</Z>
+						<X>-0.0146189295</X>
+						<Y>0.0117493486</Y>
+						<Z>-0.00558539247</Z>
 					</Vector3>
 					<token name="formFactorRaw">3</token>
 					<token name="shape">1</token>
@@ -97081,18 +97085,18 @@ end
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1019</int>
 					<CoordinateFrame name="CFrame">
-						<X>49.9094505</X>
-						<Y>58.7677727</Y>
-						<Z>-68.2324524</Z>
-						<R00>-0.999991477</R00>
-						<R01>-2.15475993e-009</R01>
-						<R02>-4.96584107e-010</R02>
-						<R10>2.1225941e-009</R10>
-						<R11>-0.999987423</R11>
-						<R12>2.40305553e-011</R12>
-						<R20>-3.9653969e-010</R20>
-						<R21>2.32631692e-011</R21>
-						<R22>0.999992013</R22>
+						<X>49.9072914</X>
+						<Y>58.7671318</Y>
+						<Z>-68.2301483</Z>
+						<R00>-0.999991834</R00>
+						<R01>-6.77056522e-010</R01>
+						<R02>-1.8671148e-010</R02>
+						<R10>6.77063516e-010</R10>
+						<R11>-0.999994159</R11>
+						<R12>6.03064647e-012</R12>
+						<R20>-1.86711535e-010</R20>
+						<R21>6.03063779e-012</R21>
+						<R22>0.999992132</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -97124,9 +97128,9 @@ end
 					<token name="TopSurfaceInput">0</token>
 					<float name="Transparency">0.5</float>
 					<Vector3 name="Velocity">
-						<X>-0.0145688038</X>
-						<Y>0.0118723903</Y>
-						<Z>-0.0055305562</Z>
+						<X>-0.0145688467</X>
+						<Y>0.0118722571</Y>
+						<Z>-0.0055306335</Z>
 					</Vector3>
 					<token name="formFactorRaw">3</token>
 					<token name="shape">1</token>
@@ -97986,18 +97990,18 @@ end
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">26</int>
 					<CoordinateFrame name="CFrame">
-						<X>51.3074074</X>
-						<Y>56.7680473</Y>
-						<Z>-68.3227463</Z>
-						<R00>-0.999982178</R00>
-						<R01>1.57189817e-011</R01>
-						<R02>-2.37149195e-013</R02>
-						<R10>-1.57083235e-011</R10>
-						<R11>-0.999987483</R11>
-						<R12>-4.10693701e-012</R12>
-						<R20>-2.32720283e-013</R20>
-						<R21>-4.17799129e-012</R21>
-						<R22>0.999982834</R22>
+						<X>51.3044281</X>
+						<Y>56.7679024</Y>
+						<Z>-68.3234024</Z>
+						<R00>-0.999991715</R00>
+						<R01>1.44683571e-011</R01>
+						<R02>-2.40675156e-013</R02>
+						<R10>-1.44630644e-011</R10>
+						<R11>-0.999994159</R11>
+						<R12>-4.16703521e-012</R12>
+						<R20>-2.40686946e-013</R20>
+						<R21>-4.16702393e-012</R21>
+						<R22>0.999992132</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">true</bool>
 					<float name="Elasticity">0.5</float>
@@ -98029,9 +98033,9 @@ end
 					<token name="TopSurfaceInput">0</token>
 					<float name="Transparency">0</float>
 					<Vector3 name="Velocity">
-						<X>-0.01452161</X>
-						<Y>0.0119071156</Y>
-						<Z>-0.0055689523</Z>
+						<X>-0.0145215904</X>
+						<Y>0.0119070727</Y>
+						<Z>-0.00556903193</Z>
 					</Vector3>
 					<token name="formFactorRaw">3</token>
 					<token name="shape">1</token>
@@ -99270,18 +99274,18 @@ end
 					<token name="BottomSurfaceInput">0</token>
 					<int name="BrickColor">1019</int>
 					<CoordinateFrame name="CFrame">
-						<X>45.712574</X>
-						<Y>58.7712517</Y>
-						<Z>-68.4116211</Z>
-						<R00>-0.999991477</R00>
-						<R01>-2.01033257e-009</R01>
-						<R02>1.40419698e-009</R02>
-						<R10>-1.4357987e-009</R10>
-						<R11>1.40901995e-011</R11>
-						<R12>-0.999987423</R12>
-						<R20>2.10945639e-009</R20>
-						<R21>-0.999992013</R21>
-						<R22>-1.48630951e-011</R22>
+						<X>45.711216</X>
+						<Y>58.770977</Y>
+						<Z>-68.4108276</Z>
+						<R00>-0.999991834</R00>
+						<R01>-2.41016096e-009</R01>
+						<R02>2.24946883e-009</R02>
+						<R10>-2.25025687e-009</R10>
+						<R11>2.42863507e-011</R11>
+						<R12>-0.999994159</R12>
+						<R20>2.41016096e-009</R20>
+						<R21>-0.999992132</R21>
+						<R22>-2.42721399e-011</R22>
 					</CoordinateFrame>
 					<bool name="CanCollide">false</bool>
 					<float name="Elasticity">0.5</float>
@@ -99313,9 +99317,9 @@ end
 					<token name="TopSurfaceInput">0</token>
 					<float name="Transparency">0.5</float>
 					<Vector3 name="Velocity">
-						<X>-0.0145644136</X>
-						<Y>0.0117846336</Y>
-						<Z>-0.00563510414</Z>
+						<X>-0.0145644266</X>
+						<Y>0.011784574</Y>
+						<Z>-0.00563514838</Z>
 					</Vector3>
 					<token name="formFactorRaw">3</token>
 					<token name="shape">1</token>
@@ -107499,419 +107503,400 @@ vehicle.ChildRemoved:connect(checkIfVehicleIsDamaged)
 				</Item>
 			</Item>
 		</Item>
+		<Item class="Part" referent="RBX550FC7D5F70C4C898AD522695211811D">
+			<Properties>
+				<bool name="Anchored">true</bool>
+				<float name="BackParamA">-0.5</float>
+				<float name="BackParamB">0.5</float>
+				<token name="BackSurface">0</token>
+				<token name="BackSurfaceInput">0</token>
+				<float name="BottomParamA">-0.5</float>
+				<float name="BottomParamB">0.5</float>
+				<token name="BottomSurface">0</token>
+				<token name="BottomSurfaceInput">0</token>
+				<int name="BrickColor">141</int>
+				<CoordinateFrame name="CFrame">
+					<X>191.699997</X>
+					<Y>0.5</Y>
+					<Z>-271.600098</Z>
+					<R00>1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>1</R22>
+				</CoordinateFrame>
+				<bool name="CanCollide">true</bool>
+				<float name="Elasticity">0.5</float>
+				<float name="Friction">0.300000012</float>
+				<float name="FrontParamA">-0.5</float>
+				<float name="FrontParamB">0.5</float>
+				<token name="FrontSurface">0</token>
+				<token name="FrontSurfaceInput">0</token>
+				<float name="LeftParamA">-0.5</float>
+				<float name="LeftParamB">0.5</float>
+				<token name="LeftSurface">0</token>
+				<token name="LeftSurfaceInput">0</token>
+				<bool name="Locked">true</bool>
+				<token name="Material">256</token>
+				<string name="Name">WaterGrass</string>
+				<float name="Reflectance">0</float>
+				<float name="RightParamA">-0.5</float>
+				<float name="RightParamB">0.5</float>
+				<token name="RightSurface">0</token>
+				<token name="RightSurfaceInput">0</token>
+				<Vector3 name="RotVelocity">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<float name="TopParamA">-0.5</float>
+				<float name="TopParamB">0.5</float>
+				<token name="TopSurface">0</token>
+				<token name="TopSurfaceInput">0</token>
+				<float name="Transparency">0</float>
+				<Vector3 name="Velocity">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<token name="formFactorRaw">0</token>
+				<token name="shape">1</token>
+				<Vector3 name="size">
+					<X>128.600006</X>
+					<Y>41</Y>
+					<Z>355.600006</Z>
+				</Vector3>
+			</Properties>
+			<Item class="Decal" referent="RBXE1A4BAAB6681405EBC4B5962A61F6C21">
+				<Properties>
+					<token name="Face">1</token>
+					<string name="Name">Decal</string>
+					<float name="Shiny">20</float>
+					<float name="Specular">0</float>
+					<Content name="Texture"><url>http://www.roblox.com/asset/?id=118203087 </url></Content>
+					<float name="Transparency">1</float>
+				</Properties>
+			</Item>
+		</Item>
+		<Item class="Part" referent="RBXAD5E3044B8EC4A5DBCAFB8AD53E91139">
+			<Properties>
+				<bool name="Anchored">true</bool>
+				<float name="BackParamA">-0.5</float>
+				<float name="BackParamB">0.5</float>
+				<token name="BackSurface">0</token>
+				<token name="BackSurfaceInput">0</token>
+				<float name="BottomParamA">-0.5</float>
+				<float name="BottomParamB">0.5</float>
+				<token name="BottomSurface">0</token>
+				<token name="BottomSurfaceInput">0</token>
+				<int name="BrickColor">141</int>
+				<CoordinateFrame name="CFrame">
+					<X>-192.000015</X>
+					<Y>0.5</Y>
+					<Z>-271.600098</Z>
+					<R00>1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>1</R22>
+				</CoordinateFrame>
+				<bool name="CanCollide">true</bool>
+				<float name="Elasticity">0.5</float>
+				<float name="Friction">0.300000012</float>
+				<float name="FrontParamA">-0.5</float>
+				<float name="FrontParamB">0.5</float>
+				<token name="FrontSurface">0</token>
+				<token name="FrontSurfaceInput">0</token>
+				<float name="LeftParamA">-0.5</float>
+				<float name="LeftParamB">0.5</float>
+				<token name="LeftSurface">0</token>
+				<token name="LeftSurfaceInput">0</token>
+				<bool name="Locked">true</bool>
+				<token name="Material">256</token>
+				<string name="Name">WaterGrass</string>
+				<float name="Reflectance">0</float>
+				<float name="RightParamA">-0.5</float>
+				<float name="RightParamB">0.5</float>
+				<token name="RightSurface">0</token>
+				<token name="RightSurfaceInput">0</token>
+				<Vector3 name="RotVelocity">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<float name="TopParamA">-0.5</float>
+				<float name="TopParamB">0.5</float>
+				<token name="TopSurface">0</token>
+				<token name="TopSurfaceInput">0</token>
+				<float name="Transparency">0</float>
+				<Vector3 name="Velocity">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<token name="formFactorRaw">0</token>
+				<token name="shape">1</token>
+				<Vector3 name="size">
+					<X>127.600006</X>
+					<Y>41</Y>
+					<Z>355.600006</Z>
+				</Vector3>
+			</Properties>
+			<Item class="Decal" referent="RBXB905DE48FA114365B2A697821C27063D">
+				<Properties>
+					<token name="Face">1</token>
+					<string name="Name">Decal</string>
+					<float name="Shiny">20</float>
+					<float name="Specular">0</float>
+					<Content name="Texture"><url>http://www.roblox.com/asset/?id=118203087 </url></Content>
+					<float name="Transparency">1</float>
+				</Properties>
+			</Item>
+		</Item>
+		<Item class="WedgePart" referent="RBXE8289830C9204D93A8E63D51C244BD11">
+			<Properties>
+				<bool name="Anchored">true</bool>
+				<float name="BackParamA">-0.5</float>
+				<float name="BackParamB">0.5</float>
+				<token name="BackSurface">0</token>
+				<token name="BackSurfaceInput">0</token>
+				<float name="BottomParamA">-0.5</float>
+				<float name="BottomParamB">0.5</float>
+				<token name="BottomSurface">4</token>
+				<token name="BottomSurfaceInput">0</token>
+				<int name="BrickColor">141</int>
+				<CoordinateFrame name="CFrame">
+					<X>-0.5</X>
+					<Y>10.5</Y>
+					<Z>-141</Z>
+					<R00>-1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>-1</R22>
+				</CoordinateFrame>
+				<bool name="CanCollide">true</bool>
+				<float name="Elasticity">0.5</float>
+				<float name="Friction">0.300000012</float>
+				<float name="FrontParamA">-0.5</float>
+				<float name="FrontParamB">0.5</float>
+				<token name="FrontSurface">0</token>
+				<token name="FrontSurfaceInput">0</token>
+				<float name="LeftParamA">-0.5</float>
+				<float name="LeftParamB">0.5</float>
+				<token name="LeftSurface">0</token>
+				<token name="LeftSurfaceInput">0</token>
+				<bool name="Locked">true</bool>
+				<token name="Material">256</token>
+				<string name="Name">WaterGrass</string>
+				<float name="Reflectance">0</float>
+				<float name="RightParamA">-0.5</float>
+				<float name="RightParamB">0.5</float>
+				<token name="RightSurface">0</token>
+				<token name="RightSurfaceInput">0</token>
+				<Vector3 name="RotVelocity">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<float name="TopParamA">-0.5</float>
+				<float name="TopParamB">0.5</float>
+				<token name="TopSurface">0</token>
+				<token name="TopSurfaceInput">0</token>
+				<float name="Transparency">0</float>
+				<Vector3 name="Velocity">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<token name="formFactorRaw">0</token>
+				<Vector3 name="size">
+					<X>255</X>
+					<Y>21</Y>
+					<Z>104</Z>
+				</Vector3>
+			</Properties>
+		</Item>
+		<Item class="Part" referent="RBXBF0C6C360E0440CCB2BACD7880876BB1">
+			<Properties>
+				<bool name="Anchored">true</bool>
+				<float name="BackParamA">-0.5</float>
+				<float name="BackParamB">0.5</float>
+				<token name="BackSurface">0</token>
+				<token name="BackSurfaceInput">0</token>
+				<float name="BottomParamA">-0.5</float>
+				<float name="BottomParamB">0.5</float>
+				<token name="BottomSurface">0</token>
+				<token name="BottomSurfaceInput">0</token>
+				<int name="BrickColor">141</int>
+				<CoordinateFrame name="CFrame">
+					<X>0.200012207</X>
+					<Y>0.5</Y>
+					<Z>-500.249969</Z>
+					<R00>1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>1</R22>
+				</CoordinateFrame>
+				<bool name="CanCollide">true</bool>
+				<float name="Elasticity">0.5</float>
+				<float name="Friction">0.300000012</float>
+				<float name="FrontParamA">-0.5</float>
+				<float name="FrontParamB">0.5</float>
+				<token name="FrontSurface">0</token>
+				<token name="FrontSurfaceInput">0</token>
+				<float name="LeftParamA">-0.5</float>
+				<float name="LeftParamB">0.5</float>
+				<token name="LeftSurface">0</token>
+				<token name="LeftSurfaceInput">0</token>
+				<bool name="Locked">true</bool>
+				<token name="Material">256</token>
+				<string name="Name">WaterGrass</string>
+				<float name="Reflectance">0</float>
+				<float name="RightParamA">-0.5</float>
+				<float name="RightParamB">0.5</float>
+				<token name="RightSurface">0</token>
+				<token name="RightSurfaceInput">0</token>
+				<Vector3 name="RotVelocity">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<float name="TopParamA">-0.5</float>
+				<float name="TopParamB">0.5</float>
+				<token name="TopSurface">0</token>
+				<token name="TopSurfaceInput">0</token>
+				<float name="Transparency">0</float>
+				<Vector3 name="Velocity">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<token name="formFactorRaw">0</token>
+				<token name="shape">1</token>
+				<Vector3 name="size">
+					<X>511.599976</X>
+					<Y>41</Y>
+					<Z>104.300011</Z>
+				</Vector3>
+			</Properties>
+			<Item class="Decal" referent="RBX19C93FB1DA204C62881AE7E1A575F1C9">
+				<Properties>
+					<token name="Face">1</token>
+					<string name="Name">Decal</string>
+					<float name="Shiny">20</float>
+					<float name="Specular">0</float>
+					<Content name="Texture"><url>http://www.roblox.com/asset/?id=118203087 </url></Content>
+					<float name="Transparency">1</float>
+				</Properties>
+			</Item>
+		</Item>
+		<Item class="Part" referent="RBX3000A2E16D8540C08F7A3A703F9916CC">
+			<Properties>
+				<bool name="Anchored">true</bool>
+				<float name="BackParamA">-0.5</float>
+				<float name="BackParamB">0.5</float>
+				<token name="BackSurface">0</token>
+				<token name="BackSurfaceInput">0</token>
+				<float name="BottomParamA">-0.5</float>
+				<float name="BottomParamB">0.5</float>
+				<token name="BottomSurface">0</token>
+				<token name="BottomSurfaceInput">0</token>
+				<int name="BrickColor">141</int>
+				<CoordinateFrame name="CFrame">
+					<X>0.200012207</X>
+					<Y>-8</Y>
+					<Z>-307.249969</Z>
+					<R00>1</R00>
+					<R01>0</R01>
+					<R02>0</R02>
+					<R10>0</R10>
+					<R11>1</R11>
+					<R12>0</R12>
+					<R20>0</R20>
+					<R21>0</R21>
+					<R22>1</R22>
+				</CoordinateFrame>
+				<bool name="CanCollide">true</bool>
+				<float name="Elasticity">0.5</float>
+				<float name="Friction">0.300000012</float>
+				<float name="FrontParamA">-0.5</float>
+				<float name="FrontParamB">0.5</float>
+				<token name="FrontSurface">0</token>
+				<token name="FrontSurfaceInput">0</token>
+				<float name="LeftParamA">-0.5</float>
+				<float name="LeftParamB">0.5</float>
+				<token name="LeftSurface">0</token>
+				<token name="LeftSurfaceInput">0</token>
+				<bool name="Locked">true</bool>
+				<token name="Material">256</token>
+				<string name="Name">WaterGrass</string>
+				<float name="Reflectance">0</float>
+				<float name="RightParamA">-0.5</float>
+				<float name="RightParamB">0.5</float>
+				<token name="RightSurface">0</token>
+				<token name="RightSurfaceInput">0</token>
+				<Vector3 name="RotVelocity">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<float name="TopParamA">-0.5</float>
+				<float name="TopParamB">0.5</float>
+				<token name="TopSurface">0</token>
+				<token name="TopSurfaceInput">0</token>
+				<float name="Transparency">0</float>
+				<Vector3 name="Velocity">
+					<X>0</X>
+					<Y>0</Y>
+					<Z>0</Z>
+				</Vector3>
+				<token name="formFactorRaw">0</token>
+				<token name="shape">1</token>
+				<Vector3 name="size">
+					<X>511.599976</X>
+					<Y>24</Y>
+					<Z>284.300018</Z>
+				</Vector3>
+			</Properties>
+			<Item class="Decal" referent="RBX8896CFF5125E4354B83939EFC13612B8">
+				<Properties>
+					<token name="Face">1</token>
+					<string name="Name">Decal</string>
+					<float name="Shiny">20</float>
+					<float name="Specular">0</float>
+					<Content name="Texture"><url>http://www.roblox.com/asset/?id=118203087 </url></Content>
+					<float name="Transparency">1</float>
+				</Properties>
+			</Item>
+		</Item>
 	</Item>
 	<Item class="NonReplicatedCSGDictionaryService" referent="RBXa7031cbf6e42489396629aa117edd631">
 		<Properties>
 			<string name="Name">NonReplicatedCSGDictionaryService</string>
 		</Properties>
-		<Item class="BinaryStringValue" referent="RBX15961C6F863540DAA623069D840C6985">
-			<Properties>
-				<string name="Name">Value</string>
-				<BinaryString name="Value">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
-eD4=</BinaryString>
-			</Properties>
-		</Item>
 	</Item>
 	<Item class="CSGDictionaryService" referent="RBX656b60b8cfa44bdd892d61cf65028b4c">
 		<Properties>
 			<string name="Name">CSGDictionaryService</string>
 		</Properties>
-		<Item class="BinaryStringValue" referent="RBX7CACABE8248A47869D5CDB74D2EC3AA9">
-			<Properties>
-				<string name="Name">Value</string>
-				<BinaryString name="Value">FX0pFXVsMgQ0aT1EO2A/Ni9TBlp/Zxs+fxLqw4g4/VoQ93xvLSwCgy7SuAwBXlQaYDex9VJr
-K/gt5GVZAMRWLu5nMSAwBEyDDMT+8q3/G2A3aR1YLzljk1BYUwR6Vi5uWDEgMAQ0aQx3DHm0
-AKlgN2kdUiuH8CRZZVMEelYublgxIDAENGnUnwxB5cxWXjdiGewrB88bfZFarw28Lt2qwtPP
-BTRpDHcHBWC71iyJaR1SKwdPJFllUwR6Vi5uWEbKMLc0aQx3DAHevxpgN2kdUisHTyRZZVME
-elb3hlhxy/xICnkCjUwBXoAlFEIityvBB/zWqpasBXpWLn5Wy+DbyHjXDHcMAV4AGmA3aR1S
-KwdPJCCPU7d6Vi5uWDGgjwQ0aQx3DAFeABpgN2kdUivMN29+vJ9IRNYHZ5iTRJcwy5ZzSNu9
-RjPok8SWH1IrB4RcEsLTLXMWLm5YMSAwBDRpDHcMAV4AGmA36aLGgZZ7JFllUwR6Vi5uWDEg
-MAQ0aQx3DAFe5C7f2aVRbCvm+Jtx0Iy2elauUYbCH4P2x5rzdQwBXgD+VAhp/OUUB08kWWVT
-BHpWLm5YMSAwBDRpjMg6ULWxGmA3aR1SKwdPJFllUwR6Vi5uWDH42AR0q8A7MhFQ+lqScLQu
-UiuHcLfiJeD2iaXRbFgxIOjsNKkcefbBXgAaYDdpHVIrB08kWWVTBHpWrtEulFoEBDRpDHcM
-AV4AGmA3aR1SKwdPJFm9uwQ6/OIiZjErNLrt3JpDDAHeP8NLAFrvodj4TSRZZYvsepYuZVwP
-IDAENGkMdwwBXgAaYDdpHVIrh/ArWEBnBHpWLm5YMSAwBDRpDHcMAV4AGmDugR0ShcsDmklr
-qUR6Vq5RFqxDGnzeab+F//KhARpgN3kTqOupg2hnZVMEelYublgxIDAENGkMd3vrXrMaYDdp
-HVKruE8kWWVTBHpWLm5YMSAwBDSx5HdM35JMpGA8baNSK4dwM9Z1eHKQVp2cq8LfMQQ0aQx8
-CD+AzFZeN2kdUisHTyRZZVMEelYubi7bIIMENGkMdwyB4QAaYDdpHVIrB08kWWVTBHqOxm4Y
-8/8iujRiCMkMAd4/De8nQmu4K7S916qaUgR6Vi5lXA/i7xYKaQx3DAFeABpgN2kdUisHT1Kz
-ZeAEelYublixnzAENGkMdwwBXgAaYDdpHVLy709ktakfOmpY1C5YMaAPcEEipg7mAe3y6ZPI
-aB1SKxdB3pmJn0jEVi5uWDEgMAQ0aQx3DAFeAGOKN9odUisHTyTZ2lMEelYublgxIDAENGkM
-dwxRcP6lhvslI1INJvHYHjDn+4UpEWmYo5PC98eWDncMAQ4u5F83TzxsKwdPJFllUwR6Vi5u
-WDEgMAQ06bP9vNjqABpgN2kdUisHTyRZZVMEelYublhhDs67yqVASRwPpECxk/faHVKrOOie
-Ztah94mpLG5YMXAe+gt5Ao3MAV4AGmA3aR1SKwdPJFllUwR61pGfa/OTMAQ0aQx3DAFeABpg
-N2kdUisHTySBjVNE1Jpi0Fc/2nAENGkMdwwBXgAa4Aib7qHUBE8kWb27BDr44iJmMSAwBDRp
-DHcMAV4AGmA3aR1Sqzj9uuNWUwR6Vi5uWDEgMAQ0aQx3DAFeABq432lduOdLcStXnxMEelYu
-blgxIDAEtFb+hP/+XQAaYO+BHRLBywOaWWVTBHpWLm5YMSAwBDRpDHcMgWEAGmA3aR1SKwdP
-JFllUwR6Vi5uWDEgMARkR/LI580SPhVuzSkdUisHTyRZZVME+mncnavOIzAENDkiibPqkkyk
-YDdpHVIrB08kWWVTBHpWLm5YsR8wBDRpDHcMAV4AGmA3aR1SKwdPJFllUwQk1RRR9/1sjmQl
-3LOBEh9qABrgiO7TbZj1vNemYFMEegitVGdRMYU7NGkMdwwBXgAaYDdpHVIrB08k2VpZkWNl
-Lm5YMSAwBDRpDHcMAV4AGmA3aR2KwwcPgJUp7QRxUpC7seQTMAS01uiZMLKs8+mfMmkdUvPv
-T2RZblc6elYublgxIDAENGkMdwwBXgAa4AgyeA0ZB08kWWVTBHpWLm5YMSAwBDRpDHfW6V5A
-pqx71w1c0UesQmJRUwT66Q36GoLSw/fLbAx3DNu2AFpwOZPdUisHTyRZZVMEelYublgxIDAE
-tFa+6bYyXgAaYDdpHVIrB08kWWVTBHpWLm4UH96P7/glsmcC+x4SEV0DluItlDRQG+qXoPeF
-Uy5uWH0OzrskZ/a3DAFeABpgN2kdUisHTyRZZVME+mlV4qQCIDAENGkMdwwBXgAaYDdpHVIr
-B09rd5vsqrYakG5+EJ4ubgldDHeMvuW6IdPFmu6tLgdPJBZLrbt6cA9QWDEgMAQ0aQx3DAFe
-ABpgN2kd0hQcbB9tZVMEelYublgxIDAENGkMdwwBXgDkn8hajZ5nuc8NUKWCX0diLm7Yjigw
-3Aab/4TzBF4AGp7Ili7SAg4PJFllUwR6Vi5uWDEgMAQ0aQx3jD6ZTiRUN2kdUisHTyRZZVME
-elYublgxIDBmt1Mz/cBN4GAL1YifA0wfB0+k5uKdO8mk3Z2nNCAwBFbqNkhsEOs/GmA3aR1S
-KwdPJFllUwR6Vi5u2A4qpR0HaQx3DAFeABpgN2kdUisHTyRZZVNLVKiRq5R9niAKzikefDE1
-of9l3wR2IuHZ9LzbXGVTBDV40NFIP9rwBDRpDHcMAV4AGmA3aR1SKwdPpGYe3/hJVi5uWDEg
-MAQ0aQx3DAFeABpgN2lSfNW46wBUWFMgW+gubtiOdMGFnl2jN7/zrfPlZDdpHVIPJvGAfWju
-BHpWLm5YMSAwBDRpDHcMAXGvWtM3aR1SKwfPG1llUwR6Vi5uWDEgMAQ0aQw4Iv/hrtYsiWk7
-c5UHT6TmnSfJUXmBLuvD08P7MGkMdwwnf760rHtXHVIrB08kWWVTBHpWLm5YMQ+fRIdpDHcM
-AV6AJWA3aR1SKwdPJFllUwR6Vi48ds+fnsh41xx59kFeAJrfSrAKeRyoD5erlqD7flYubkg/
-2nCq+CUydwwBXgAaYDdpHVIrB08kWVP8RMlWLm5YMSCwOzRpDHcMAV4AGmA3aR1SKwcdCqfa
-v8g2aD5gonEgMISL/FZdpzXxQKmSxJriVisHTzRXnxPothqQblgxIDAENGkMdwwBXgAaYBjG
-XeErB08kWWXTO3pWLm5YMSAwBDRpDHcMAV5PNJ6IhdEeFQdpBedlU4TFvMA48xmPcLfGmv+I
-CAFeABpGFtfxnme5TyRZZVMEelYublgxIDAENEKjN78BXgAaYDfpIlIrB08kWWVTBHpWLm5Y
-MSB/KsrWuqccP14nO943aZ3twekZj3HKE7eIpd2RXDEgMAQTSLLB3BHgABpgN2kdUisHTyRZ
-ZVMEen2BLusxIDAENGmMSAwBXgAaYDdpHVIrB08kWWUcKoTphkpVDCAUJYppDPezVa+BsFSY
-Ka6g2PSwIFllUwRed5DGfDydMAQ0aQx3DAFeABpgN2kdUgSoD5dZZVMEelauUVgxIDAENGkM
-dwwBXgAaYDc5M6yUqYNo52pd/jpWLm5YMSAwBDRpjEj+8q3/GWA3aU181bjh6BVbUwR6Vi5u
-WDEgMAQ0aQx3DAFegCUbu5UuUisHTyRZZVMEelYublgxIDAENGnUnwxBi8xWXgdgmJJxXWIQ
-WWXTO6PHflqqwtPPBjRpDK/kAZ4wE+V3aR1SKwdPJFllUwR6Vi5uWDEgsLuD6y9DDAFeABpg
-N2kdUisHTyRZZVMEelYublgx7/xICuklfsyjOqcun8gWIoWXH3zWqpasBnpWLm5YMaCwLT0p
-DHcMAV4AGmA3aR1SKwdPJFll07vu/L9aWDEgMAQ0aQx3DAFeABpgN2kdUivfpyQZrp9IRCZU
-OZiDLN+2NGmMSFnqDzTok8SWH1IrB5fMWaUjfi0WLm5YMSAwBDRpDHcMAV4AGmA36aJhScP+
-JFllUwR6Vi5uWDEgMAQ0aQx3DAEOLuTf26VRbHsny+Tc52+whalRURNVmoP2x5rzdQwBXlA0
-ngg5PdZrB08kWWVTBHpWLm5YMSAwBDRpjMgK2UC0GmA3aR1SKwdPJFllUwR6Vi5uWDEg4aGL
-QME7MgFMXNpY5X8uUiuHcC03aGf2iaXRbFgxIDDVkVYMZVBBXgAaYDdpHVIrB08kWWVTBHpW
-rtGTtgiEBDRpDHcMAV4AGmA3aR1SKwdPJFk1ffrFseIiZhEFicR5IC/DDAHeP/QbBNrvodj4
-TSRZZQMqhGkOS+FxIDAENGkMdwwBXgAaYDdpHVIrh/B0p6XnBHpWLm5YMSAwBDRpDHcMAV4A
-GmBnR+Ptx8sDGglF18R6Vq7RWDEgMAQ0aQyF//KhBBpgNzk91uvrg2jnZVMEelYublgxIDAE
-NGkMdwwBXgAaYDdpHVKrOE8kWWVTBHpWLm5YMSAwBDQ5Iomz5pJMJEAS0N1SK4fwJFllUwR6
-Vi6cq8LfNAQ0aSxStcG5zFbeN2kdUisHTyRZZVMEelYublgxIDAENGkMdwyBYQAaYDdpHVIr
-B08kWWVTBHoGAJDn2+x8OtQOmrcMAd6/GmA3aR1SKwe916qaVwR6Vs4JzvHK/EiKaQx3DAFe
-ABpgN2kdUisHTyRZZVMEelYublixHzAENGkMdwwBXgAaYDdpHVJ1hHUb/6kfuiRHm9GuLz4E
-BDTps/DCPu3y6ZPIbB1SK1nMHmY7QrFFVi5uWDEgMAQ0aQx3DAFeABpgt1YXxzI0TyRZZVME
-elYublgxIDAENGkMdwx1pqolzfslo+2OWY8VRexg+4UpkRIEMBTC98eWCXcMASr4sF+IzEMS
-KwdPJFllUwR6Vi5uWDEgMAQ06TMMMRHtABpgN2kdUisHTyRZZVMEelYubljpyDBE9KVAyfJM
-g7+8YkFaHVKruNMPYtah94mpK25YMfjYBHSXQaozAV4AGmA3aR1SKwdPJFllUwR61hFoAL6T
-MAQ0aQx3DAFeABpgN2kdUisHTySBjVNEw5pi0Gg4pfD2orw/dwyB4RemuoWb7qHUAk8kWb27
-BDpmJ+sYMSAwBDRpDHcMAV4AGmA3aR1SqzgCB8LXUwR6Vi5uWDEgMAQ0aQx3DAFeABq332ld
-ludL8dRTYe3Rk4Mdblixn9TqCNr+hP/+WwAaYOCBHRLbDUsaWWVTBHpWLm5YMSAwBDRpDHcM
-gWFbfz8FaR1SKwdPJFllUwR6Vi5uWDEgMARX6kfRos0SvppJPqnMCRYzTyTZ2lsEomTcnavO
-JTAENAqPPKqBdwlaYDdpHVIrB08kWWVTBHpWLm5YsR/3SgpdDHcMAV4AGmA3aR1SKwdPJFll
-UwQOroRRwv1sjsSRN8xGEIht/+UfiBVBUx/1vNemYFMEeiLWxGfxhW5ENGkMdwwBXgAaYDdp
-HVIrB08k2VooOWrlLm5YMSAwBDRpDHcMAV4AGmA3aR0yqD1wjJUp7WRr45GYRi8UMAS01ou5
-M7Ks8+mfMmkdUkuEdRs5dOY7elYublgxIDAENGkMdwwBXgAa4AhjiEsYB08kWWVTBHpWLm5Y
-MSAwBDRpDHfz4mq/9qx7Vx2znLhnkYbXUwT6afCdZ4LSw/fLawx3DP69NCVg1t4iUisHTyRZ
-ZVMEelYublgxIDAEtNY6JuewXgAaYDdpHVIrB08kWWVTBHpWLm5YMaAD0/glMvclCJ6ifscD
-luItFNDzPGqXoPeFVC5uWDEgsLe0QAU3DAFeABpgN2kdUisHTyRZZVME+um6xMkFIDAENGkM
-dwwBXgAaYDdpHVIrB0/aulHsB7caEG65hp8YsevbDHeMPoDzJdPFmu6tKQdPJKeGZzt6t5lR
-WDEgMAQ0aQx3DAFeABpgN2kd0pQxHs/oZVMEelYublgxIDAENGkMdwwBXgDlsJLW7J5nOU82
-BaVr1mxlLm7YDileCQCb/4TzA14AGp/nzCJSOVsPJFllUwR6Vi5uWDEgMAQ0aQx3jL6VhzLU
-N2kdUisHTyRZZVMEelYublgxIDBLGpezkcBNYKAiiIinQxOfB0+kZigQccmk3Z2nMyAwBHtH
-8kisObY/GmA3aR1SKwdPJFllUwR6Vi5u2I5wHauAaQx3DAFeABpgN2kdUisHTyRZZVNLVKiR
-hZR9Hs8hFdfwMFm1of9lXzCpj+HZ9LzbW2VTBDV40FGnFAEOBDRpDHcMAV4AGmA3aR1SKwdP
-pObv493OVi5uWDEgMAQ0aQx3DAFeABpgN2lSfNW4kOgVWwMk/par7GSF3897CyJozb/zrfPl
-YjdpHR0F+XB0eeETBHpWLm5YMSAwBDRpDHcMAV4Amt8xsQPmKwdPJFllUwR6Vi5uWDEgMAQ0
-aQwnIv/hy9YsiWk7c5UZJRltZVOExe2UVevD08P7MWkMd1wvoL8aRhZXHVIrB08kWWVTBHpW
-Lm5YMSAwhAtyL0w4AV4AGmA3aR1SKwdPJFllUwR6Vi4Gds+f8sh417xiVMGDPidUN2md7dEX
-4JarlqD7f1YubjAf3o+0ITFMdwwBXgAaYDdpHVIrB08kWWVThEUcPlBsMSAwBDRpDHcMAV4A
-GmA3aR1SKwcfCqfa7Mg26H5O3PHrtlwAaQz3sw+BUC6SxJriVysHT3R3m+xUWtJublgxIDAE
-NGkMdwwBXgAaYDdpnW1Y38wQWWVTBHpWLm5YMSAwBDRpDHcMAV7Y8mB3ndEeFSdqnZnSR4FJ
-Vi7uZ1z3ibbGmv+IDgFeAMKIN6k9d5JHTyRZZVMEelYublgxIDAENGkM97Mz5XssYDdpHVIr
-B08kWWVTBHpWLm5YMSAO9QtP1btAP94pE6CVDbpm1PgwG47ZSzeIpd2RWjEgMDrFVqr3JQge
-ABpgN2kdUisHTyRZZVMEelYu7ueliqEwNGkMdwwBXgAaYDdpHVIrB08kWWWE7HoWkKIUjxA5
-gfSbmqI/AV6ApXeLs6+g2PSwIVllU9OSVm5eUbRgMAQ0aQx3DAFeABpgN2kdUisHzxsURsi2
-elYublgxIDAENGkMdwwBXgAaYDcb5fgUtYNo56X2WrpnMudrzt9Pu0g1DUP+8q3/H2A3aW+q
-gTiPgQclUwR6Vi5uWDEgMAQ0aQx3DAFegCUbCnmuUisHTyRZZVMEelYublgxIDAENGnbnwxB
-58xW3hdMpJK28IEXWWXTu7tyrFqqwtPPATRpDKDkAR4gP9l3aR1SKwdPJFllUwR6Vi5uWDEg
-sDvRRiVPDAFeABpgN2kdUisHTyRZZVMEelaulnKCjfxIihYlfszQBT0uYDfpolor333Wqpas
-AXpWLu6gG5NPLT0pDHcMAV4AGmA3aR1SKwdPJFll0zu9GBBaWDEgMAQ0aQx3DAFeABpgN2kd
-UitnOw1msJ9IxHYL15jCoIgwNGmMyOp0MzTok8SWGFIrBy9QcFpzIcMWLm5YMSAwBDRpDHcM
-AV4AGmA36SIGIMN7JFllUwR6Vi5uWDEgMAQ0aQx3DAERLuTfwqVR7Asi9uTr2qowelau0Z7Q
-lAT2x5rzcgwBXk80nohJOOtrB08kWWVTBHpWLm5YMSAwBDRpjEj6Olw1GmA3aR1SKwdPJFll
-UwR6Vi5uWDH42AR0r8A7siF7udr9wKcuUiuH8OV952f2iaXRa1gxIOjsNCksUrVBXgAaYDdp
-HVIrB08kWWVTBHpWrlG9HgkIBDRpDHcMAV4AGmA3aR1SKwdPJFmDVzE6VpHtYnE3r8TEbTlI
-whP1rO9kAtbvodj4SSRZZbUAT5Yu0duLIDAENGkMdwwBXgAaYDdpHaovMvAkWWVT6X5jkW5Y
-MSAwBDRpDHcMAV4AGmDVbSgS4MsDGhtyzMSfUhtRqKzCAQYxXLOF//KhBhpgN4sZZ+vMg2jn
-ZVMEelYublgxIDAENGkMdwgEa78aYDdp/1YeuE8kWWVTBHpWLm5YMSAwBDTnnMNM4pJMJOMl
-Y928LzJwiB7a//1+Y5Gcq8LfNgQ0aYLnuMG9zFbeN2kdUisHTyRZZVMEelYubqY1FY8ENGkM
-kAg04QAaYDdpHVIrB08kWWVTBHroKlsY++x8OgR+k7ezV7szGmC3Vp9JjzS916qaUQR6VpBq
-bfEQJ5t0aQx3DAFeABpgN2kdUisHTyRZ5exf3scYblgxIDAENGkMdwwBXgAaYDdpHVJQl/tk
-76kfOhpEJK5gleCDBDTpM8OaUGry6ZPIax1SK3zfkJkFQQ46Vi5uWDEgMAQ0aQx3DAFeABpg
-t9aFkuu0TyRZZVMEelYublgxIDAENGkMdwx7zrRa1/slow05DY/dXVBsgneAmoBcBJ/C98eW
-DXcMAQESECCApVFsKwdPJFllUwR6Vi5uWDEgMOowXLN3DAFe+R5ViGkdUisHTyRZZVMEelYu
-bljUJAVEm6VAyTAWwcD0ZAJWDal/srcgbNqh94mpL25YMRwnm3TGwDsyAV4AGmA3aR1SKwdP
-JFllU/Z+Y5FuWDEgxAAB1gx3DAFeABpgN2kdUisHTySHYWZEMJNl0Bgmv/DqMFwzZ/dV6/ge
-VYib7qHUBk8kWSVEmzoc6yVmMSAwBDRpDHcMAV4AGmA3ae9WHrhPJFllpwBP6S5uWDEgMAQ0
-aQx3DAFeABqCM1xd0pSEdRpO+pP0fmMRoEqajMUAAdb+hP/+XwAaYAl+ghKruMyeWWVTBHpW
-Lm5YMSAwBDRpDI8INOEAGmA3hBlnlAdPJFllUwR6Vi5uWDEgMARO+bg3780SPkVyPanzVh44
-42PmyaoAT+ncnavOITAENDYefUzikkykYDdpHVIrB08kWWVTBHpWLpBcBJ8wBDRp63M5vl4A
-GmA3aR1SKwdPJFllUwR8Shouwf1sDgT+QjP6pbztABrgCBjhAh/1vNemZ1MEelAyWpgx6hu7
-NGkMdwwBXgAaYDdpHVIrB08k2dqTxM3lLm5YMSAwBDRpDHcMAV4AGmA3aR0uu7MPk5Up7WVo
-XO6FXAQfMAQ0afdzOT6s8+mfNGkdUleX+2TuqR86elYublgxIDAENGkMdwwBXvseVQhpHVIr
-7UsR5mVTBHpWLm5YMSAwBDRpDHdwkepA+ax7V3xAIcelIGxaUwR6VtVqbQ7Sw/fLagx3DH3O
-tFqD+yWjUisHTyRZZVMEelYublgxIMsAAVYMdwwBtAQv3zdpHVIrB08kWWVTBHpWLm5fLRRw
-u/glMozFKmHrHlUIaR1SK/xLEWaXoPeFVS5uWDY8BESLpUDJDAFeABpgN2kdUisHTyRZZagA
-T2kublgxyjQxi2kMdwwBXgAaYDdpHVIrB0/8sWUTwrYakG4W7J+WBkJaDHeMvsIrIdPFmu6t
-LgdPJIGNU0R6GPNRWDEgMAQ0aQx3DAFeABpgN2kd0hQBF6vqZVMEelYublgxIDAENGkMdwwB
-XgBh8IMph55nuS82U6XihEZiLm7YjlFqOoeb/4TzBF4AGhun3V0yOQ0PJFllUwR6Vi5uWDEg
-MAQ0aQx3jD7olCZUN2kdUisHTyRZZVMEelYublgxIDACKF1Ms8BN4ADQSwghd24fB0+k5nSw
-Qcmk3Z2nNCAwBDJ1ODcMy3W/GmA3aR1SKwdPJFllUwR6Vi5u2A6gKDkAaQx3DAFeABpgN2kd
-UisHTyRZZVPIfmNu3ZR9ngATq6nsSoWwXgCa3/WCV2bZ9LzbXGVTBLZSGy5oJr9wBDRpDHcM
-AV4AGmA3aR1SKwdPpGY/e6NCVi5uWDEgMAQ0aQx3DAFeABpgN2nFuitHkegV26wOfuj7h40C
-IDCEi43iS7/zrfPlZTdpHYrDBw/bU2FtBHpWLm5YMSAwBDRpDHcMAV4Aml9sDEJgKwdPJFll
-UwR6Vi5uWDEgMAQ0aQyj5AEewsVyiWgWVpX3SxHmM13HzKAqW2fD08P7MGkMdw0KWr7YvyVX
-HVIrB08kWWVTBHpWLm5YMdQ0MQtpDHcM8Fo1JWA3aR1SKwdPJFllUwR6Vi62sDFg7sh41w18
-CL+uBC/fYWfe5N0DehurlqD7flYublk6JI7a+CUydwwBXgAaYDdpHVIrB08kWZFXMUVWLm5Y
-wCQFOzRpDHcMAV4AGmA3aR1SKwdJOG0licg26NGncw7JNDGL77mYuPxaNSWSxJriVisHT9uQ
-TmzethoQblgxIDAENGkMdwwBXgAaYM1tKG0rB08ktGFmO3pWLm5YMSAwBDRpDHcMAV4KBlR3
-qdEeFeiGD2aMVzHFnD3/bc8kBTvGmv+IDwFeABB8Ayndnme5TyRZZVMEelYublgxIDAENJQI
-QjMBXgAahzNcIlIrB08kWWVTBHpWLm5YMSDo7DQpsLtAP1wLHt7fbSjtRZ36EadhZjuIpd2R
-WzEgMNzcaUzLwE3gABpgN2kdUisHTyRZZVMEeqsqW2cxIDAE0205SAwBXgAaYDdpHVIrB08k
-WWWM7HoWBtlRjFc6AIqBCEKzxHaFL58zXCKg2PSwJ1llU9uSVm5G7zgdMAQ0aQx3DAFeABpg
-N2kdUtUDehtZZVMEk1IbUVgxIDAENGkMdwwBXgAaYDe89VJrxZA253dYAMSmKlvnZy7zssJt
-OUj+8q3/GWA3aci6K0eN+0tbUwR6Vi5uWDEgMAQ0aQx3DPVaNSVgN2kdoy8ycCRZZVMEelYu
-blgxIDAENGkFazhBhMxW3sOgNm3CA3qb39C8sIdSG1GqwtPPBzRpDH4QNR7a1iwJaR1SKwdP
-JFllUwR6Vi5uWMskBTs0aQx34QVrPxpgN2kdUisHTyRZZVMEelYpcmxx+fxIipLFXDPqWjUl
-YDdpHakvMnDWqpasB3pWLmlEBWDpyHhXDHcMAV4AGmA3aR1SKwdPJKJhZjt6Vi5uszUVjwQ0
-aQx3DAFeABpgN2kdUitv3xAZyp9IxCZ/8ZjRHbm1NGmMyM7qFDTok8SWGFIrBye0bSUjVeUW
-Lm5YMSAwBDRpDHcMAV4AGmA36SIIA6B3JFllUwR6Vi5uWDEgMAQ0aQx3DAGC5nLc8aVRbDUJ
-teS0YWa7K88E36I1FY/2x5rzcQwBXtz8CAuv0R6VB08kWWVTBHpWLm5YMSAwBGttOcgMAV4A
-nGUCVh1SKwdPJFllUwR6Vi5uWDH51myIu8A7sh9Q+tqPM1yiBTKu/tJdUOz2iaXRaFgxIOni
-XFXeu0A/XgAaYDdpHVIrB08kWWVTBOVVG9FYMSAwTDJcM3cMAV4AGmA3aR1SKwdPJFm9vjG6
-oOIi5p6rr8TZbTnIxL3qteBkAtbvodj4SSRZZYvpTxbYohQPIDAENGkMdwwBXgAaYDdpHaov
-MvAkWWVT6n5jEW5YMSAwBDRpDHcMAV4AGmDvhCiSj8sDGunuzMSVUhvRj/JABfMwXLOF//Kh
-BhpgN7HwZ2ujg2jnZVMEelYublgxIDAENGkMd/4Fa78aYDdp6VYeOE8kWWVTBHpWLm5YMSAw
-BDTy6x+wx5JMJEA5k92/LzLwdcBP4v5+Y5Gcq8LfNgQ0aZeQZD2YzFbeN2kdUisHTyRZZVME
-elYubgc1FY8ENGkM8Qk0YQAaYDdpHVIrB08kWWVTBHotvlqYl+x8OkQ4k7eSW6uz5Z9IVoou
-TrO916qaUQR6VlX+bHFQYZt0aQx3DAFeABpgN2kdUisHTyRZ5exYlM0dblgxIDAENGkMdwwB
-XgAaYDdpHVKUKmaTgqkfOtrP167dnS6EBDTpM/tp/Ory6ZPIax1SK7hiDW7Fyv06Vi5uWDEg
-MAQ0aQx3DAFeABpgt9b+NsAyTyRZZVMEelYublgxIDAENGkMdwxKuGimuvslI3Il/Y+h9Wvn
-BHrWEeI9zJTC98eWDncMARXmclwXZ+cSKwdPJFllUwR6Vi5uWDEgMAQ06bOUaOprABpgN2kd
-UisHTyRZZVMEelYubljmzQXEkKVASbyKwcCEOsLa4q1UONhYPNGh94mpLG5YMffdMXTZh+hM
-AV4AGmA3aR1SKwdPJFllUwR61pEytqoTMAQ0aQx3DAFeABpgN2kdUisHTySpYWbE0ppiUBkm
-v/Cabpy/iPN+YZdmBYOb7qHUBU8kWZVXMToXOfEYMSAwBDRpDHcMAV4AGmA3aR1Sq7gTysJW
-UwR6Vi5uWDEgMAQ0aQx3DAFeABocp13d9OdLcVUI+pOaIKOdkadOH6d4Ud3+hP/+XAAaYEv5
-KRJaVtBkWWVTBHpWLm5YMSAwBDRpDHcMgeFc9PsEaR1SKwdPJFllUwR6Vi5uWDEgMATshDm3
-qs0SPqvrqKmDCN60sNsmWsR4H+LcnavOIjAENLHhQkyw1Z9aYDdpHVIrB08kWWVTBHpWLm5Y
-sZ9s6q9aDHcMAV4AGmA3aR1SKwdPJFllUwSFqRHYlf1sjqutkMzla+5qABrgiFMEph/1vNem
-YFMEeqnRUe6euclENGkMdwwBXgAaYDdpHVIrB08k2VpAyXniLm5YMSAwBDRpDHcMAV4AGmA3
-aR1S2+/09ZUp7Wslr+78P94UMAS01jZu+DWs8+mfMmkdUiv3p582OqpEelYublgxIDAENGkM
-dwwBXgAa4Ah60FGfB08kWWVTBHpWLm5YMSAwBDRpDHcM6Ta8y6x71wJc0cfdQ7ZRUwT66RR3
-rAXSw/fLbAx3DAG2aKZ/OZNdUisHTyRZZVMEelYublgxIDAEtFYfug+1XgAaYDdpHVIrB08k
-WWVTBHpWLm5ZwciL1vglsgdT+J6SfY8DaR3SlD1W0G2XoPeFUy5uWDDQ2L9ENvU3DAFeABpg
-N2kdUisHTyRZZVME+mk9o1uFIDAENGkMdwwBXgAaYDdpHVIrB0/UXVCTLLcakC5PruC29pZd
-84hzvq6/nVTFmu6tLgdPJKlhZsQ6QbEuWDEgMAQ0aQx3DAFeABpgN2kd0hSLDAdsZVMEelYu
-blgxIDAENGkMdwwBXgDCjQKpNJ9nuf+vxqXV9thi0ZEnjtCPgwCb/4TzBF4AGrjaXN3ioJgP
-JFllUwR6Vi5uWDEgMAQ0aQx3jD7SQzlVN2kdUisHTyRZZVMEelYublgxIDAE3AGwpMBN4CAU
-mvf7er0fB0+k5l9K8E6k3Z2nNCAwBDSBZMssD6RAGmA3aR1SKwdPJFllUwR6Vi5u2A4z/QeA
-aQx3DAFeABpgN2kdUisHTyRZZVP0fmPuSp16Hg8Tq6lodDm+Zs3tzrVvKG3Z9LzbWmVTBIpS
-G6589GuOBDRpDHcMAV4AGmA3aR1SK09IEWZlUwR6yCxbZzEgMAQ0aQx3DAFeABpgN2nLvx7H
-6egVW+OP5ZZKbW2OGP3zmusKQjPzrfPlYzdpHYTGMo+ClSntBHpWLm5YMSAwBDRpDHcMARYH
-L183aR1StQV6G1llUwR6Vi5uWDEgMAQ0aQyDCDSegKLjjSgKzethTBHmZVMEetcoW2fD08P7
-N2kMd/gFa8Ca2LRTHVIrB08kWWVTBHpWLm5YMaE2MQtpDHcMZF01JWA3aR1SKwdPJFllUwR6
-Vi64tQTgxch417z8k8E7Ay/fvTXkfKsBehurlqD7eVYubo7cFfDx+CUydwwBXgAaYDdpHVIr
-B08kWeRVMUVWLm5YVCMFOzRpDHcMAV4AGmA3aR1SKwe/IGylp8g26BF5x/FFMzGL41COIoFY
-NSWSxJriUSsHT9RdUJPwthoQblgxIDAENGkMdwwBXgAaYLZvKG0rB08kPGZmO3pWLm5YMSAw
-BDRpDHcMAV7wHlX3S9gZFThYu5kBUDHFbuOZ9rMmBTvGmv+IDwFeAOpkAqk/l2C5TyRZZVME
-elYublgxIDAENCELQjMBXgAa/jVcIlIrB08kWWVTBHpWLm5YMSDAAAGpqrtAP2EXhaBTaijt
-E8q4ittjZjuIpd2RWzEgMPQwXMzRwE3gABpgN2kdUisHTyRZZVMEeh4pW2cxIDAEqms5SAwB
-XgAaYDdpHVIrB08kWWWL6U+WiqIUD4+7m/QND0KzOZP3tOIxXCKg2PSwJ1llU9yXY+7KlH2e
-MAQ0aQx3DAFeABpgN2kdUmMAehtZZVME5FQbUVgxIDAENGkMdwwBXgAaYDeSTE6cUYpv5/vK
-/bqpKltnjLihttJtOcj+8q3/G2A3aYPL0kcZ4RJbUwR6Vi5uWDEgMAQ0aQx3DLehNKVgN2kd
-YiEy8CRZZVMEelYublgxIDAENGkBjmS9jsxW3iBn55LUA3ob5P3CtpxSG9GqwtPPBTRpDGAC
-+x7Q1iwJaR1SKwdPJFllUwR6Vi5uWIffBLs0aQx3PAtrvxpgN2kdUisHTyRZZVMEelZ1AnSG
-EPVPCsmVjswWWzUlD2rkL4IvMvDWqpasBXpWLs7ByGAAwX/XDHcMAV4AGmA3aR1SKwdPJBOf
-Z7t6Vi5uxD4VjwQ0aQx3DAFeABpgN2kdUisftkzlrZ9IREEglJgmJQU7WzSBRdwFa7/ok8SW
-HFIrB1gqoyWbyDboLm5YMSAwBDRpDHcMAV4AGirNXaJSKwdPuFZQ7AR6Vi5uWDEgMAQ0aQx3
-DAEtbDbX+6VRbIuetuROYGY7FQujXIg1FY/2x5rzdgwBXqCDmXel0R6VB08kWWVTBHpWLm5Y
-MSAwBH6TOMgMAV4Ahm8C1h1SKwdPJFllUwR6Vi5uWDGggK+BMck8sq7H+dqfM1wi77OW/cJd
-UOz2iaXRb1gxIJ+dzSlUskc/XgAaYDdpHVIrB08kWWVTBMypGtFYMSAwND5cs3cMAV4AGmA3
-aR1SKwdPJFn2hlHMmeIi5p65ycTLbTlIsZnPsvxkAtbvodj4TiRZZfydgxbhohQPIDAENGkM
-dwwBXgAaYDdpHeTUM/AkWWVTNHBjkW5YMSAwBDRpDHcMAV4AGmBpgHXu+MsDmkZrqcSFUhtR
-5amxguIwXLOF//KhARpgN3YTqGvUg2hnZVMEelYublgxIDAENGkMd7r+ar8aYDdpLVgeuE8k
-WWVTBHpWLm5YMSAwBDRppJ83zZJMJABokN3Xhwn7JFnlbIgfq5qcq8LfMgQ0aQzf5Lo+X+Mg
-N2kdUisHTyRZZVMEelYublgxoI/nUII5dwwBXgAaYDdpHVIrB08kWWVTBHpWLl7v/ex8OpTw
-9beJrVC0GmC3VpE31rO916qaUQR6Vi5uaAaAqf10aQx3DAFeABpgN2kdUisHTyRZ5eznHr0b
-blgxIDAENGkMdwwBXgAaYDdpHVJXl3vknakfOgoHsa7Ga9WD+8sWM+BwZOry6ZPIax1SK3vf
-EBkVAps6Vi5uWDEgMAQ0aQx3DAFeABpgt9ZBvLA0TyRZZVMEelYublgxIDAENGkMdwxRcP6l
-u/slI7JMkY8nRMLgBHrWEQQjBpXC98eWDncMAQ4u5F/XDosSKwdPJFllUwR6Vi5uWDEgMAQ0
-6bO3iwJtABpgN2kdUisHTyRZZVMEelYublhNsATEkqVASWNQwcCEOsLa4q1UONhYPNGh94mp
-LG5YMVygMHQGXehMAV4AGmA3aR1SKwdPJFllUwR61pEytqoTMAQ0aQx3DAFeABpgN2kdUisH
-TySpYWbE3ZpiUGcmv/Cabpy/iPN+YZdmBYOb7qHUBU8kWZVXMTppOfEYMSAwBDRpDHcMAV4A
-GmA3aR1Sq7gTysJWUwR6Vi5uWDEgMAQ0aQx3DAFeABowGZeitudLcWt54ZOB+GqakadOH3tg
-jtr+hP/+XAAaYGdH421kJ8tkWWVTBHpWLm5YMSAwBDRpDHcMgeEGwn6DaR1SKwdPJFllUwR6
-Vi5uWDEgMARkR/LIoM0SPsUHoakeT4y0TyTZWjl/TePcnavOIjAENDkiiTPeOZZaYDdpHVIr
-B08kWWVTBHpWLm5YsZ/wgzdaDHcMAV4AGmA3aR1SKwdPJFllUwR6Xm7Yiv1sjrStkMzla+5q
-ABrgiFMEph/1vNemYFMEelYmLu6BuclENGkMdwwBXgAaYDdpHVIrB08k2VpAyXniLm5YMSAw
-BDRpDHcMAV4AGmA3aR2jLzKP0JUp7URtye7oqpMUz/tL1vzIizWs8+mfMmkdUtoDeuQZcsxE
-elYublgxIDAENGkMdwwBXgAa4AjlXnEeB08kWWVTBHpWLm5YMSAwBDRpDHddL6C//ax71z13
-ksf9m6BRUwT66eiP7AXSw/fLbAx3DFBw/qVAEtBdUisHTyRZZVMEelYublgxIDAEtFb6TA40
-XgAaYDdpHVIrB08kWWVTBHpWLm4JH96Ps/glsicshZ7LnDgDaR3SlAmQdG2XoPeFUy5uWGAO
-zrtkSYg3DAFeABpgN2kdUisHTyRZZVME+mldttsFIDAENGkMdwwBXgAaYDdpHVIrB08kq43o
-zrYakB4HyOCiY9tdDHeMvmQZ7lTFmu6tLgdPJFmXu78KCdcuWDEgMAQ0aQx3DAFeABpgN2kd
-0hQUgiftZVMEelYublgxIDAENGkMdwwBXgBGFB5Wbp5nuW8B4KWghMJiLm7YjsZFaQCb/4Tz
-BF4AGjxDQCJyDr4PJFllUwR6Vi5uWDEgMAQ0aQx3jD4KC95UN2kdUisHTyRZZVMEelYublgx
-IDBFGpezwtwRYAE9QYmKGWcUPwZuamZWMUWk3Z2nMiAwBHVH8si50U6+GmA3aR1SKwdPJFll
-UwR6Vi5rbQ4gMAQ0jghCswFeABpgN2kdUisHTyRZZVNdVKiRhZR9HnEiFdfvczk+ZklQUzRs
-KG3Z9LzbWmVTBCN40NGz/WyOBDRpDHcMAV4AGmA3aR1SKwdKEWZlUwR6sSpb5zEgMAQ0aQx3
-DAFeABpgN2k9Th/HhOgVW2LOUWn0am0ORWukBmcJQjPzrfPlYzdpHXI3M4/vlSntBHpWLm5Y
-MSAwBDRpDHcMAVYFL183aR1S9QN6m1llUwR6Vi5uWDEgMAQ0aQwmIv/h6tYsCWk7c5X7CHHt
-mqx7RVHu/OvD08P7NmkMd10voD8aRhZXHVIrB08kWWVTBHpWLm5YMSAwhIvjvK64AV4AGmA3
-aR1SKwdPJFllUwR6Vi4/ds+f+8h4V6xP5L6QXlvUN2mdbWZEOperlqD7eFYubgkf3g+kDIEz
-dwwBXgAaYDdpHVIrB08kWWVThMUGA8HsMSAwBDRpDHcMAV4AGmA3aR1SKwdTOG2lnsg2aG6k
-cw7Zxz2AaQz3MzGooKmSxJriUCsHTzhFURNEsH2RblgxIDAENGkMdwwBXgAaYDdpne0jtKOQ
-WWVTBHpWLm5YMSAwBDRpDHcMAV4iBlT3pNEelS+FD2ayVzFFVi5uWD4lBTvGmv+IDwFeADh8
-A6nQnmc5TyRZZVMEelYublgxIDAENGYJQjMBXgAatjNcolIrB08kWWVTBHpWLm5YMSB/KsrW
-obtAv6ElO97gbShtKwdPJElgZjuIpd2RWzEgMEsal7PawE1gABpgN2kdUisHTyRZZVMEelkr
-W2cxIDAE4m05yAwBXgAaYDdpHVIrB08kWWU8KoTphkpVDN8UJYq/CEIzyfJ0KG8yXCKg2PSw
-J1llU2tUqJHGfDydMAQ0aQx3DAFeABpgN2kdUjsCehtZZVMErVIb0VgxIDAENGkMdwwBXgAa
-YDdeM6yUsp80Z6V1JcS1KltnCWl6NzdsOUj+8q3/GWA3aSp81bj69EnbUwR6Vi5uWDEgMAQ0
-aQx3DAFbNSVgN2kdtS8y8CRZZVMEelYublgxIDAENGkuazjBk8xWXh+jNm3xA3obPD7zNnRT
-G1GqwtPPBzRpDFUQNZ7N1iyJaR1SKwdPJFllUwR6Vi5uWDklBTs0aQx30gVrvxpgN2kdUisH
-TyRZZVMEelam/uzxlvxICggefcxPGq6pYDfpIiU4R/zWqpasBnpWLubIhWBRFj4pDHcMAV4A
-GmA3aR1SKwdPJFll07syUIDdWDEgMAQ0aQx3DAFeABpgN2kdUisbUxCZq59IRGnkRWfI1wmw
-NGmMSDz3/rPok8SWH1IrB1M4bSVszlHpLm5YMSAwBDRpDHcMAV4AGmA36aJamOv7JFllUwR6
-Vi5uWDEgMAQ0aQx3DAGxBC+giqVRbGsQ0OTHP6a3halRUc9NRYT2x5rzdQwBXu8eVXcpCs1r
-B08kWWVTBHpWLm5YMSAwBDRpjMhQ78UzGmA3aR1SKwdPJFllUwR6Vi5uWDE8LDD0p8A7skCU
-KyWRM1yiUyune9JdUGz2iaXRbVgxICwYAKnCu0A/XgAaYDdpHVIrB08kWWVTBIxSG1FYMSAw
-9DBcM3cMAV4AGmA3aR1SKwdPJFl5TzC6muIiZnDqGzvFbTnIDAFeAO9kAlbvodj4TCRZZU8Y
-TpbiohSPIDAENGkMdwwBXgAaYDdpHacvMnAkWWVT9X5jEW5YMSAwBDRpDHcMAV4AGmC/+amS
-4csDGjl3WcSLUhvRWTGABPIwXDOF//KhAxpgN+GN5uvNg2jnZVMEelYublgxIDAENGkMd/oF
-az8aYDdp7VYeOE8kWWVTBHpWLm5YMSAwBDQOIomzzpJMpNAiMd2PFTp7JFnl7P5q+Zycq8Lf
-NQQ0aWtZ8r7uFUIgN2kdUisHTyRZZVMEelYublgxoA9OJFc4dwwBXgAaYDdpHVIrB08kWWVT
-BHoHAJDn6Ox8ujRPLckSa2M0GmC31qboELS916qaVgR6Vn9Apo4gFiUKaQx3DAFeABpgN2kd
-UisHTyRZ5WwfWW0ablgxIDAENGkMdwwBXgAaYDdpHVI2G3vkvKkfujqcBVGEbBwEBDTps+2k
-QO3y6ZPIbB1SKxpTEJklmS/FVi5uWDEgMAQ0aQx3DAFeABpgt1aPgBIzTyRZZVMEelYublgx
-IDAENGkMdwyJzrTanvslozI5DY9tcVhnBHrWkVasHRPC98eWCXcMAdaQrqBXexcSKwdPJFll
-UwR6Vi5uWDEgMAQ06TO30D1qABpgN2kdUisHTyRZZVMEelYubli4sITE+6VAyWwTVMDqZALW
-HFILMrkgbFqh94mpLW5YMamgsPSmwDsyAV4AGmA3aR1SKwdPJFllU/J+YxFuWDEgwAABVgx3
-DAFeABpgN2kdUisHTySuYWbE+u6t1Gcmv/DyMFyzWiqfavEeVYib7qHUA08kWVpEm7rWlu1i
-MSAwBDRpDHcMAV4AGmA3ae1WHrhPJFllpgBPaS5uWDEgMAQ0aQx3DAFeABqPM1zdpudL8RtO
-+pPpfmORpuSFlcoAAdb+hP/+WgAaYAh+gpLfywMaWWVTBHpWLm5YMSAwBDRpDI8INOEAGmA3
-hxlnFAdPJFllUwR6Vi5uWDEgMASz+bi3ws0SvkdyPanrVh642X6r0aEAT+ncnavOJDAENDQe
-fczPkkwkYDdpHVIrB08kWWVTBHpWLp9cBJ8wBDRp+XM5Pl4AGmA3aR1SKwdPJFllUwT9xpqu
-k/1sDlgmY8yBCDTh4vpQAZkZZ5T1vNemYVMEego8ZJj67Hy6NGkMdwwBXgAaYDdpHVIrB78g
-bNpTBHpW2GptDiAwBDRpDHcMAV4AGmA3aR2jLzKPg5UpbURtye6BXASf58dUXPtzOb6s8+mf
-M2kdUmsQ0OT+qR+6elYublgxIDAENGkMdwwBXvIeVYhpHVIr80sRZmVTBHpWLm5YMSAwBDRp
-DHf9BWvAOaV8V11FtMegIGzahMcaY9lqbY7Sw/fLbQx3DEFJn9pD8iKjUisHTyRZZVMEelYu
-blgxIMIAAdYMdwwBqgQvXzdpHVIrB08kWWVTBHpWLm7RoZTwy/glsigeC572HlWI/0egn/VL
-EeaXoPeFUi5uWG4yOsT7pUBJDAFeABpgN2kdUisHTyRZZaIAT+kublgx1TQxC2kMdwwBXgAa
-YDdpHVIrB0/stFATz7YaEN7TruDVAAFW/OruMFwFL9/Fmu6tLQdPJJGIZsSxmmLQWDEgMAQ0
-aQx3DAFeABpgN20YZ5QHTyRZh1cxxVYublgxIDAENGkMdwwBXgDSjQIp0p5nuf+vxqW9AE9p
-PpUMhNg0MYub/4TzB14AGqjaXN2d50txJFllUwR6Vi5uWDEgMAQ0af5zOb5eABpgw20o7SsH
-TyRZZVMEelYublgxIDCL5gEwp8BN4CAUmveWGWcUute164NXMcWk3Z2nNyAwBLu7ZMvczRI+
-GmA3aR1SKwdPJFllUwR6VpiRbI4gMAQ0WQZCswFeABpgN2kdUisHTyRZZVNCqT4SpZR9HhAK
-zqkbcjk+MV2XUudtKO3Z9LzbX2VTBDyFRtKT/WyOBDRpDHcMAV4AGmA3aR1SK021EOZlUwR6
-yiFb5zEgMAQ0aQx3DAFeABpgN2nUvx5HhOgVW+KP5ZbLam0O0K3mBWsJQrPzrfPlZjdpHZvG
-Mo/vlSntBHpWLm5YMSAwBDRpDHcMAVoFL983aR1SyQN6m1llUwR6Vi5uWDEgMAQ0aQwn32li
-z9YsiUkTqOv4SxFm2MuVyLAqW+fD08P7MmkMd1zSNrzVrHtXHVIrB08kWWVTBHpWLm5YMZbP
-MItpDHcMMVQ1pWA3aR1SKwdPJFllUwR6Vi6D9C+XH8F/V5Hu9cGzBC/fZvA349EDepurlqD7
-flYubsWo2fAr8SKydwwBXgAaYDdpHVIrB08kWTpXMcVWLm5YtyUFOzRpDHcMAV4AGmA3aR1S
-Kwca8jFZmMg2aDBgovHNNDGLOJVdvftaNaWSxJriVisHTzpXn5PPthqQblgxIDAENGkMdwwB
-XgAaYGhtKO0rB08k32BmO3pWLm5YMSAwBDRpDHcMAV6/WwqCPtgZlajW3ZmKVzHFATfH6cck
-BbvGmv+ICAFeALX5zqlKl2A5TyRZZVMEelYublgxIDAENPYPQrMBXgAaKDFcIlIrB08kWWVT
-BHpWLm5YMSBn0lxVwrtAv0AO4KDYbSjtfB7mla9hZruIpd2RXDEgMBo6k8y5wE1gABpgN2kd
-UisHTyRZZVMEesktW+cxIDAEfG85SAwBXgAaYDdpHVIrB08kWWUkGo/j4KIUj42p/fSGCEKz
-Vkepq5YzXKKg2PSwIFllU6njr+6glH0eMAQ0aQx3DAFeABpgN2kdUrQEeptZZVMEMlAbUVgx
-IDAENGkMdwwBXgAaYDct136cN4pvZ8XK/bq7KlvnYLkatc5tOcj+8q3/HGA3aVmYBzB/4RLb
-UwR6Vi5uWDEgMAQ0aQx3DF5aNaVgN2kd1C4ycCRZZVMEelYublgxIDAENGlGvSC2ksxWXpfw
-5JLGA3qbCPx5tYBSG9GqwtPPAjRpDD3GLWnM1iyJaR1SKwdPJFllUwR6Vi5uWG4kBbs0aQx3
-igRrPxpgN2kdUisHTyRZZVMEelbjujAN7PxICkkCjczsWjWlMa5DrKgvMvDWqpasAnpWLqOM
-WZz8yHjXDHcMAV4AGmA3aR1SKwdPJAZhZrt6Vi5u3jQVDwQ0aQx3DAFeABpgN2kdUivZSxEZ
-LpZPxBY58ZiTIgU7l5UfQEkGaz/ok8SWHlIrB5EgbCUYwTFoLm5YMSAwBDRpDHcMAV4AGjYy
-XCJSKwdPtF1Q7AR6Vi5uWDEgMAQ0aQx3DAGY7S8g+KVR7JqM0OT7Z2Y72ao9WR02FQ/2x5rz
-dAwBXsb3VXem0R4VB08kWWVTBHpWLm5YMSAwBGJsOUgMAV4AimQC1h1SKwdPJFllUwR6Vi5u
-WDHCNDF0abP0NkNJn9r+NVwiQek9/2xeUGz2iaXRbVgxINIAASkMyI+7XgAaYDdpHVIrB08k
-WWVTBDJRG1FYMSAwmjZcs3cMAV4AGmA3aR1SKwdPJFmjvjE6neIiZoCrr8SrazlI7FeMsFNn
-Albvodj4TCRZZZXpTxblohSPIDAENGkMdwwBXgAaYDdpHRosMnAkWWVTmnhjkW5YMSAwBDRp
-DHcMAV4AGmCJbSgS4MsDGmlyzMTlVBtRuGfygE0zXDOF//KhAxpgN9cZZ2vMg2jnZVMEelYu
-blgxIDAENGkMd0QGaz8aYDdpg1AeuE8kWWVTBHpWLm5YMSAwBDSh4UJMe5JMJNC89t3tfeJ8
-JFnlbIZh8h2cq8LfMgQ0acSaOcHui4UgN2kdUisHTyRZZVMEelYublgxoI9fkPg6dwwBXgAa
-YDdpHVIrB08kWWVTBHpW+gZkiux8OhVn9reJrVC0GmC3VpE31rO916qaUQR6Vi66MI0BPv50
-aQx3DAFeABpgN2kdUisHTyRZ5eznHr0bblgxIDAENGkMdwwBXgAaYDdpHVIqr6cfkqkfOhsJ
-167dnS6EBDTpM/tp/Ory6ZPIax1SKwbnzOIEDP06Vi5uWDEgMAQ0aQx3DAFeABpgt9b+NsAy
-TyRZZVMEelYublgxIDAENGkMdwzeWjVaLPIioxM8mI+GW1Bsp4ZFGStfBB/C98eWDXcMAR8X
-hSB7rFZsKwdPJFllUwR6Vi5uWDEgMFIxXDN3DAFekB5ViGkdUisHTyRZZVMEelYublj8JAVE
-haVAyT0WwcC4YgJWvq44MAojbFqh94mpL25YMREnm3TYwDsyAV4AGmA3aR1SKwdPJFllU1J/
-YxFuWDEgoAAB1gx3DAFeABpgN2kdUisHTySQiGZEtZpi0Om6v/CmNlwz1PASaUUdVQib7qHU
-Bk8kWdTYmzqZ4iJmMSAwBDRpDHcMAV4AGmA3aUtXHjhPJFllwwBP6S5uWDEgMAQ0aQx3DAFe
-ABpg4wEhmedLcQRXn5OB1liablixH7xhyd3+hP/+XAAaYDe9de4LCbVkWWVTBHpWLm5YMSAw
-BDRpDHcMgeHjfosCaR1SKwdPJFllUwR6Vi5uWDEgMAT8hDk3w80SvqrrqKn9b6K2TyTZ2pHv
-MGLcnavOJTAENKHhQkyx1Z9aYDdpHVIrB08kWWVTBHpWLm5YsR9qLJNRDHcMAV4AGmA3aR1S
-KwdPJFllUwTNrgXY+f1sjrStkMzla+5qABrgiFMEph/1vNemYFMEeuHWRe6BuclENGkMdwwB
-XgAaYDdpHVIrB08k2VpAyXniLm5YMSAwBDRpDHcMAV4AGmA3aR0T/m9zlZUp7SR0rO78P94U
-MAS01jZu+DWs8+mfMmkdUmrSJxh5a6lEelYublgxIDAENGkMdwwBXgAa4Ah60FGfB08kWWVT
-BHpWLm5YMSAwBDRpDHfV6V5Atax71wJ3ksfS05dWUwT66e9K2gXSw/fLbAx3DNi2AFp/EtBd
-UisHTyRZZVMEelYublgxIDAEtFbpWCU5XgAaYDdpHVIrB08kWWVTBHpWLm6R3BVwwfglsseH
-np7gJ+mGaR3SlMWkbm2XoPeFUy5uWPjNBUSE4pM3DAFeABpgN2kdUisHTyRZZVME+ml0Rv8J
-IDAENGkMdwwBXgAaYDdpHVIrB09NyVETsbYakB4JruDQOb3YDHeMvpzrUFTFmu6tLgdPJDD1
-Z0QKB7EuWDEgMAQ0aQx3DAFeABpgN2kd0hRdZ4NhZVMEelYublgxIDAENGkMdwwBXgBuYTdp
-HVIrB04kWWVRBHpWLW5YMSQwBDRsDHcMAl4AGmU3aR1UKwdPI1llUwx6Vi5nWDEgMAQ0aQZ3
-DAFZABpgN2kdUiwHTyRQZVMEflYublMxIDAINGkMcwwBXgwaYDdsHVIrCk8kWWtTBHpZLm5Y
-ISAwBCVpDHceAV4ACmA3aQ9SKwdcJFllRwR6VjtuWDE2MAQ0fQx3DBdeABp3N2kdSisHTz1Z
-ZVMeelYudVgxICwENGkRdwwBQAAaYC1pHVIwB08kR2VTBGFWLm5FMSAwCTRpDHgMAV4fGmA3
-SR1SKyZPJFlHUwR6dy5uWDcgMAQWaQx3LwFeAD5gN2k4UisHaSRZZXQEelYGblgxCTAENEMM
-dwwqXgAaTDdpHXkrB08OWWVTL3pWLkNYMSAZBDRpIncMAXEAGmAHaR1SGgdPJGtlUwReVi5u
-azEgMDA0aQxCDAFeNRpgN18dUis0TyRZUFMEemIublgGIDAEGmkMdzQBXgAjYDdpM1IrB3Yk
-WWVpBHpWDm5YMRswBDRNDHcMIV4AGkQ3aR1uKwdPAFllUz96Vi5LWDEgDQQ0aTJ3DAFhABpg
-DWkdUgEHTyQZZVMEO1YubmIxIDBGNGkMNgwBXkMaYDdDHVIrRk8kWU9TBHpsLm5YdSAwBHFp
-DHdKAV4AXWA3aT1SKwdtJFllFAR6VgxuWDFoMAQ0IAx3DEteABorN2kdHisHT2lZZVNNelYu
-IlgxIHkENGlHdwwBfAAaYDFpHVJlB08ke2VTBDRWLm4QMSAwSzRpDCcMAV5RGmA3Ox1SKytP
-JFk2UwR6BC5uWGIgMARgaQx3XwFeADZgN2lIUisHGSRZZQEEelZ6blgxdzAENDEMdwxYXgAa
-OjdpHQkrB094WWVTWHpWLjNYMSBuBDRpUHcMAQAAGmBtaR1SZAdPJAhlUwQlVi5ueDEgMEM0
-aQxMDAFeVRpgN0UdUitETyRZMFMEehUublhRIDAEVWkMd24BXgB5YDdpeVIrByokWWUwBHpW
-SG5YMUcwBDQBDHcMZ14AGgg3aR07KwdPTlllU296Vi4CWDEgXQQ0aWJ3DAExABpgR2kdUloH
-TyQrZVMEClYubioxIDB3NGkMAwwBXnUaYDcfHVIrcU8kWRJTBHouLm5YRiAwBEJpDHd5AV4A
-Y2A3aWdSKwc0JFllLwR6VlNuWDFeMAQ0Fwx3DH5eABrgN2kdLSsHT1pZZVN5elYu71gxILIE
-NGmPdwwB2gAaYLJpHVIOB08kYmVTBP5WLm59MSAwITRpDPEMAV6HGmA37x1SKyJPJFngUwR6
-3i5uWLggMAS+aQx3hAFeAJBgN2mWUisHPyRZZd8EelZtblgxUDAENCoMdwxAXgAa7TdpHdwr
-B0+rWWVTinpWLuNYMSCgBDRpnXcMAdAAGmCnaR1SuQdPJMplUwTuVi5uzTEgMJI0aQzgDAFe
-mBpgN/AdUiudTyRZ/1MEes0ublitIDAErmkMd5ABXgCCYDdpKFIrB3gkWWXOBHpWG25YMb0w
-BDT3DHcMnF4AGlc3aR3NKwdPhFllU6V6Vi7MWDEgkwQ0aah3DAH7ABpglGkdUo4HTyT/ZVME
-QFYubmExIDCiNGkMTQwBXqYaYDcYHVIrp08kWcdTBHrxLm5YmSAwBJ1pDHemAV4AsWA3abFS
-KwfiJFll+wR6VoBuWDGLMAQ0wQx3DKpeABrNN2kd/SsHT5RZZVO1elYu3FgxIIMENGm4dwwB
-6wAaYIFpHVKcB08k7mVTBMJWLm7hMSAwvDRpDMAMAV62GmA30x1SK7xPJFnZUwR66y5uWI8g
-MASLaQx3swFeANpgN2ncUisHjyRZZewEelaQblgxZzAENKsMdww6XgAaWzdpHZErB0/gWWVT
-x3pWLlVYMSDyBDRpyXcMAZgAGmDwaR1SrgdPJN1lUwSyVi5uDTEgMGQ0aQy+DAFeyhpgN6Id
-UivLTyRZqVMEepsublj/IDAE+WkMd8ABXgDRYDdp</BinaryString>
-			</Properties>
-		</Item>
 		<Item class="BinaryStringValue" referent="RBXEFC742AEECA84EC9B8DAC2200CB7D7C2">
 			<Properties>
 				<string name="Name">Value</string>
@@ -108028,6 +108013,53 @@ BAAAAAIAAAAHAAAAAgAAAAUAAAAHAAAABQAAAAQAAAAIAAAAAwAAAAQAAAAIAAAABAAAAAUA
 AAAIAAAABQAAAAMAAAAJAAAAAAAAAAIAAAAJAAAAAgAAAAQAAAAJAAAABAAAAAAAAAA=</BinaryString>
 			</Properties>
 		</Item>
+		<Item class="BinaryStringValue" referent="RBX15961C6F863540DAA623069D840C6985">
+			<Properties>
+				<string name="Name">Value</string>
+				<BinaryString name="Value">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
+eD4=</BinaryString>
+			</Properties>
+		</Item>
 	</Item>
 	<Item class="LogService" referent="RBXce8f6de1e3fe496aaa06e94f8e8f82b5">
 		<Properties>
@@ -108081,13 +108113,6 @@ AAAIAAAABQAAAAMAAAAJAAAAAAAAAAIAAAAJAAAAAgAAAAQAAAAJAAAABAAAAAAAAAA=</BinaryStri
 			</Properties>
 		</Item>
 	</Item>
-	<Item class="UserInputService" referent="RBXe60d0c3530f94c98972ef20470823334">
-		<Properties>
-			<token name="MouseBehavior">0</token>
-			<bool name="MouseIconEnabled">true</bool>
-			<string name="Name">Instance</string>
-		</Properties>
-	</Item>
 	<Item class="StarterPack" referent="RBXe08ca0261a1748528774e0ea737a8bca">
 		<Properties>
 			<string name="Name">StarterPack</string>
@@ -108107,6 +108132,146 @@ AAAIAAAABQAAAAMAAAAJAAAAAAAAAAIAAAAJAAAAAgAAAAQAAAAJAAAABAAAAAAAAAA=</BinaryStri
 			<string name="Name">Soundscape</string>
 			<float name="RolloffScale">1</float>
 		</Properties>
+		<Item class="Sound" referent="RBX8FA48F466F7D410ABEC236B90AFC5F4C">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Boing</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/bass.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX5B19979D2381454FB3B6516B93683FE6">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Bomb</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/collide.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX7ACA30CE181244E1BC262C9EB0FA7B36">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Break</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/glassbreak.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX2E015B9D044748D0837C26CA55597BC6">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Click</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/switch.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX079FF41368414036BE154F95698EA9C1">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Clock</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/clickfast.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBXCA3BE4BB298D4442B9ED933DE3D6F935">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Slingshot</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/Rubber band sling shot.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX987FB944407843A38579CE14DCCDFDC2">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Page</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/pageturn.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX6B03667D28DB437FB1D661EFBC686D9B">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Ping</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/electronicpingshort.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBXD47FF1407AA54C8B9F1ADF6B5401397C">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Snap</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/snap.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX2343F00EC2B04EE39C4C0FD7B23280E6">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Splat</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/splat.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBXB1A23FD801DC400C96FDBCD869A99548">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Step</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/SWITCH3.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX4A50CAFAFE104073AA76E12FAC37C71D">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">StepOn</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/flashbulb.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX9BDCD25138AE45D0BC897542E6BFE81D">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Swoosh</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/swoosh.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
+		<Item class="Sound" referent="RBX91EE86B89A8B41B1927B31E989B80B16">
+			<Properties>
+				<bool name="Looped">false</bool>
+				<string name="Name">Victory</string>
+				<float name="Pitch">1</float>
+				<bool name="PlayOnRemove">false</bool>
+				<Content name="SoundId"><url>rbxasset://Sounds/victory.wav</url></Content>
+				<float name="Volume">0.5</float>
+			</Properties>
+		</Item>
 		<Item class="Sound" referent="RBXD2CDE7FE207C4022BB7E734D78101411">
 			<Properties>
 				<bool name="Looped">false</bool>
@@ -108874,6 +109039,13 @@ AAAIAAAABQAAAAMAAAAJAAAAAAAAAAIAAAAJAAAAAgAAAAQAAAAJAAAABAAAAAAAAAA=</BinaryStri
 			<string name="Name">Instance</string>
 		</Properties>
 	</Item>
+	<Item class="UserInputService" referent="RBXe60d0c3530f94c98972ef20470823334">
+		<Properties>
+			<token name="MouseBehavior">0</token>
+			<bool name="MouseIconEnabled">true</bool>
+			<string name="Name">Instance</string>
+		</Properties>
+	</Item>
 	<Item class="ContextActionService" referent="RBXce8dd5ef8ac6405998970a568b712197">
 		<Properties>
 			<string name="Name">ContextActionService</string>
@@ -108942,6 +109114,11 @@ AAAIAAAABQAAAAMAAAAJAAAAAAAAAAIAAAAJAAAAAgAAAAQAAAAJAAAABAAAAAAAAAA=</BinaryStri
 		<Properties>
 			<bool name="HttpEnabled">true</bool>
 			<string name="Name">HttpService</string>
+		</Properties>
+	</Item>
+	<Item class="TweenService" referent="RBXB5738CD64F834DA5B14A43AD77906CE8">
+		<Properties>
+			<string name="Name">TweenService</string>
 		</Properties>
 	</Item>
 </roblox>
