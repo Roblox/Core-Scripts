@@ -20,11 +20,23 @@ local function clamp(low, high, num)
 &#9;return num
 end
 
-local function findEulerAnglesBetweenVectors(vec1, vec2)
+local function IsFinite(num)
+&#9;return num == num and num ~= 1/0 and num ~= -1/0
+end
+
+local function IsFiniteVector3(vec3)
+&#9;return IsFinite(vec3.x) and IsFinite(vec3.y) and IsFinite(vec3.z)
+end
+
+-- May return NaN or inf or -inf
+local function findAngleBetweenXZVectors(vec2, vec1)
 &#9;-- This is a way of finding the angle between the two vectors:
-&#9;-- 1. The new camera look-vector for this frame
-&#9;-- 2. The vector from the last camera location to the new camera focus.
-&#9;return CFrame.new(Vector3.new(), vec1):toObjectSpace(CFrame.new(Vector3.new(), vec2)):toEulerAnglesXYZ()
+&#9;return math.atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
+end
+
+-- May return NaN or inf or -inf
+local function absoluteAngleBetween3dVectors(vec1, vec2)
+&#9;return math.acos(vec1:Dot(vec2) / (vec1.magnitude * vec2.magnitude))
 end
 
 local humanoidCache = {}
@@ -48,8 +60,12 @@ end
 
 local function CreateClassicCamera()
 &#9;local module = RootCameraCreator()
+
+&#9;local tweenAcceleration = math.rad(250)
+&#9;local tweenSpeed = math.rad(0)
+&#9;local tweenMaxSpeed = math.rad(250)
 &#9;
-&#9;local lastUpdate = nil
+&#9;local lastUpdate = tick()
 &#9;function module:Update()
 &#9;&#9;local now = tick()
 &#9;&#9;local userPanningTheCamera = (self.UserPanningTheCamera == true)
@@ -68,6 +84,11 @@ local function CreateClassicCamera()
 &#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector2.new(math.rad(angle * delta), 0))
 &#9;&#9;end
 
+&#9;&#9;-- Reset tween speed if user is panning
+&#9;&#9;if userPanningTheCamera then
+&#9;&#9;&#9;tweenSpeed = 0
+&#9;&#9;end
+
 &#9;&#9;local camera = &#9;workspace.CurrentCamera
 &#9;&#9;local player = PlayersService.LocalPlayer
 &#9;&#9;local subjectPosition = self:GetSubjectPosition()
@@ -81,7 +102,7 @@ local function CreateClassicCamera()
 &#9;&#9;&#9;if self:GetShiftLock() and not self:IsInFirstPerson() then
 &#9;&#9;&#9;&#9;local offset = ((self:GetCameraLook() * XZ_VECTOR):Cross(UP_VECTOR).unit * 1.75)
 &#9;&#9;&#9;&#9;-- Check for NaNs
-&#9;&#9;&#9;&#9;if offset.x == offset.x and offset.y == offset.y and offset.z == offset.z then
+&#9;&#9;&#9;&#9;if IsFiniteVector3(offset) then
 &#9;&#9;&#9;&#9;&#9;subjectPosition = subjectPosition + offset
 &#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;zoom = math.max(zoom, 5)
@@ -96,12 +117,15 @@ local function CreateClassicCamera()
 &#9;&#9;&#9;&#9;&#9;&#9;if isOnASkateboard then
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;forwardVector = cameraSubject.CFrame.lookVector
 &#9;&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;&#9;&#9;local speed = math.rad(260)
-&#9;&#9;&#9;&#9;&#9;&#9;local percent = clamp(0, 1, speed * (now - lastUpdate))
-&#9;&#9;&#9;&#9;&#9;&#9;local x, y, z = findEulerAnglesBetweenVectors(forwardVector, self:GetCameraLook())
+&#9;&#9;&#9;&#9;&#9;&#9;local timeDelta = (now - lastUpdate)
+&#9;&#9;&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;&#9;tweenSpeed = clamp(0, tweenMaxSpeed, tweenSpeed + tweenAcceleration * timeDelta)
+
+&#9;&#9;&#9;&#9;&#9;&#9;local percent = clamp(0, 1, tweenSpeed * timeDelta)
+&#9;&#9;&#9;&#9;&#9;&#9;local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
 &#9;&#9;&#9;&#9;&#9;&#9;-- Check for NaNs
-&#9;&#9;&#9;&#9;&#9;&#9;if x == x and y == y and z == z then
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector3.new(y * percent, 0))
+&#9;&#9;&#9;&#9;&#9;&#9;if IsFinite(y) then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector3.new(y * percent, 0, 0))
 &#9;&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;end

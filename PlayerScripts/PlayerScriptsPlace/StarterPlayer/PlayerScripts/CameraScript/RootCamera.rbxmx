@@ -175,12 +175,29 @@ local function CreateCamera()
 &#9;&#9;return self:GetCameraZoom()
 &#9;end
 &#9;
+&#9;-- TODO: FINISH
+&#9;--http://www.myphysicslab.com/runge_kutta.html
+&#9;local function rk4(yn, h, integrateFunctor)
+&#9;&#9;local tn = 0
+&#9;&#9;local a = integrateFunctor(tn, yn)
+&#9;&#9;local b = integrateFunctor(tn + h/2, yn + (h/2) * a)
+&#9;&#9;local c = integrateFunctor(tn + h/2, yn + (h/2) * b)
+&#9;&#9;local d = integrateFunctor(tn + h, yn + h * c)
+&#9;&#9;return yn + (h/6) * (a + 2*b + 2*c + d)
+&#9;end
+&#9;
 &#9;function this:ZoomCameraBy(zoomScale)
 &#9;&#9;local zoom = this:GetCameraActualZoom()
 &#9;&#9;if zoom then
 &#9;&#9;&#9;local accel = (zoom / 15) * 3.0 + 0.5
 &#9;&#9;&#9;accel = clamp(1, 25, accel)
+&#9;&#9;&#9;zoom = zoom + (zoomScale * accel) / 2
+&#9;&#9;&#9;
+&#9;&#9;&#9;accel = (zoom / 15) * 3.0 + 0.5
+&#9;&#9;&#9;accel = clamp(1, 25, accel)
+&#9;&#9;&#9;zoom = this:GetCameraActualZoom()
 &#9;&#9;&#9;self:ZoomCamera(zoom + zoomScale * accel)
+&#9;&#9;&#9;--print(&quot;Accel:&quot; , accel , &quot;zoom:&quot; , zoom , &quot;zoomScale:&quot; , zoomScale)
 &#9;&#9;end
 &#9;&#9;return self:GetCameraZoom()
 &#9;end
@@ -366,6 +383,19 @@ local function CreateCamera()
 &#9;&#9;&#9;&#9; this:ZoomCameraBy(0)
 &#9;&#9;&#9;end
 &#9;&#9;end)
+&#9;&#9;
+&#9;&#9;local function OnCharacterAdded(newCharacter)
+&#9;&#9;&#9;this:ZoomCamera(10)
+&#9;&#9;&#9;local humanoid = findPlayerHumanoid(player)
+&#9;&#9;&#9;if humanoid and humanoid.Torso then
+&#9;&#9;&#9;&#9;this.cameraLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.7,0)).unit
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;player.CharacterAdded:connect(OnCharacterAdded)
+&#9;&#9;if player.Character then
+&#9;&#9;&#9;OnCharacterAdded(player.Character)
+&#9;&#9;end
 &#9;end
 &#9;if PlayersService.LocalPlayer then
 &#9;&#9;OnPlayerAdded(PlayersService.LocalPlayer)
