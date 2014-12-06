@@ -175,29 +175,37 @@ local function CreateCamera()
 &#9;&#9;return self:GetCameraZoom()
 &#9;end
 &#9;
-&#9;-- TODO: FINISH
-&#9;--http://www.myphysicslab.com/runge_kutta.html
-&#9;local function rk4(yn, h, integrateFunctor)
-&#9;&#9;local tn = 0
-&#9;&#9;local a = integrateFunctor(tn, yn)
-&#9;&#9;local b = integrateFunctor(tn + h/2, yn + (h/2) * a)
-&#9;&#9;local c = integrateFunctor(tn + h/2, yn + (h/2) * b)
-&#9;&#9;local d = integrateFunctor(tn + h, yn + h * c)
-&#9;&#9;return yn + (h/6) * (a + 2*b + 2*c + d)
+&#9;local function rk4Integrator(position, velocity, t)
+&#9;&#9;local direction = velocity &lt; 0 and -1 or 1
+&#9;&#9;local function acceleration(p, v)
+&#9;&#9;&#9;local accel = direction * math.max(1, (p / 3.3) + 0.5)
+&#9;&#9;&#9;return accel
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;local p1 = position
+&#9;&#9;local v1 = velocity
+&#9;&#9;local a1 = acceleration(p1, v1)
+&#9;&#9;local p2 = p1 + v1 * (t / 2)
+&#9;&#9;local v2 = v1 + a1 * (t / 2)
+&#9;&#9;local a2 = acceleration(p2, v2)
+&#9;&#9;local p3 = p1 + v2 * (t / 2)
+&#9;&#9;local v3 = v1 + a2 * (t / 2)
+&#9;&#9;local a3 = acceleration(p3, v3)
+&#9;&#9;local p4 = p1 + v3 * t
+&#9;&#9;local v4 = v1 + a3 * t
+&#9;&#9;local a4 = acceleration(p4, v4)
+&#9;&#9;
+&#9;&#9;local positionResult = position + (v1 + 2 * v2 + 2 * v3 + v4) * (t / 6)
+&#9;&#9;local velocityResult = velocity + (a1 + 2 * a2 + 2 * a3 + a4) * (t / 6)
+&#9;&#9;return positionResult, velocityResult
 &#9;end
 &#9;
 &#9;function this:ZoomCameraBy(zoomScale)
 &#9;&#9;local zoom = this:GetCameraActualZoom()
 &#9;&#9;if zoom then
-&#9;&#9;&#9;local accel = (zoom / 15) * 3.0 + 0.5
-&#9;&#9;&#9;accel = clamp(1, 25, accel)
-&#9;&#9;&#9;zoom = zoom + (zoomScale * accel) / 2
-&#9;&#9;&#9;
-&#9;&#9;&#9;accel = (zoom / 15) * 3.0 + 0.5
-&#9;&#9;&#9;accel = clamp(1, 25, accel)
-&#9;&#9;&#9;zoom = this:GetCameraActualZoom()
-&#9;&#9;&#9;self:ZoomCamera(zoom + zoomScale * accel)
-&#9;&#9;&#9;--print(&quot;Accel:&quot; , accel , &quot;zoom:&quot; , zoom , &quot;zoomScale:&quot; , zoomScale)
+&#9;&#9;&#9;-- Can break into more steps to get more accurate integration
+&#9;&#9;&#9;zoom = rk4Integrator(zoom, zoomScale, 1)
+&#9;&#9;&#9;self:ZoomCamera(zoom)
 &#9;&#9;end
 &#9;&#9;return self:GetCameraZoom()
 &#9;end
@@ -316,9 +324,9 @@ local function CreateCamera()
 &#9;&#9;&#9;&#9;lastPos = startPos
 &#9;&#9;&#9;&#9;this.UserPanningTheCamera = true
 &#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.I then
-&#9;&#9;&#9;&#9;this:ZoomCameraBy(-3)
+&#9;&#9;&#9;&#9;this:ZoomCameraBy(-5)
 &#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.O then
-&#9;&#9;&#9;&#9;this:ZoomCameraBy(3)
+&#9;&#9;&#9;&#9;this:ZoomCameraBy(5)
 &#9;&#9;&#9;end
 &#9;&#9;&#9;if panBeginLook == nil then
 &#9;&#9;&#9;&#9;if input.KeyCode == Enum.KeyCode.Left then
@@ -387,14 +395,21 @@ local function CreateCamera()
 &#9;&#9;local function OnCharacterAdded(newCharacter)
 &#9;&#9;&#9;this:ZoomCamera(10)
 &#9;&#9;&#9;local humanoid = findPlayerHumanoid(player)
-&#9;&#9;&#9;if humanoid and humanoid.Torso then
+&#9;&#9;&#9;local start = tick()
+&#9;&#9;&#9;while tick() - start &lt; 0.3 and (humanoid == nil or humanoid.Torso == nil) do
+&#9;&#9;&#9;&#9;wait()
+&#9;&#9;&#9;&#9;humanoid = findPlayerHumanoid(player)
+&#9;&#9;&#9;end
+&#9;&#9;&#9;if humanoid and humanoid.Torso and player.Character == newCharacter then
 &#9;&#9;&#9;&#9;this.cameraLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.7,0)).unit
+&#9;&#9;&#9;&#9;-- reset old camera info so follow cam doesn&apos;t rotate us
+&#9;&#9;&#9;&#9;this.LastCameraTransform = nil
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;&#9;
 &#9;&#9;player.CharacterAdded:connect(OnCharacterAdded)
 &#9;&#9;if player.Character then
-&#9;&#9;&#9;OnCharacterAdded(player.Character)
+&#9;&#9;&#9;spawn(function() OnCharacterAdded(player.Character) end)
 &#9;&#9;end
 &#9;end
 &#9;if PlayersService.LocalPlayer then

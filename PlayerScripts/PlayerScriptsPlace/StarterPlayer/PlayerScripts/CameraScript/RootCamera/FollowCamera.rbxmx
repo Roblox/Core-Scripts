@@ -124,6 +124,9 @@ local function CreateFollowCamera()
 &#9;&#9;&#9;&#9;&#9;&#9;tweenSpeed = clamp(0, tweenMaxSpeed, tweenSpeed + tweenAcceleration * timeDelta)
 &#9;&#9;&#9;&#9;&#9;&#9;
 &#9;&#9;&#9;&#9;&#9;&#9;local percent = clamp(0, 1, tweenSpeed * timeDelta)
+&#9;&#9;&#9;&#9;&#9;&#9;if not isClimbing and self:IsInFirstPerson() then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;percent = 1
+&#9;&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;&#9;local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
 &#9;&#9;&#9;&#9;&#9;&#9;-- Check for NaN
 &#9;&#9;&#9;&#9;&#9;&#9;if IsFinite(y) then
