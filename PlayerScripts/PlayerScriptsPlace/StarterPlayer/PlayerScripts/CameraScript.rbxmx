@@ -139,7 +139,7 @@ local function ModifyCharacterTransparency()
 &#9;local character = player and player.Character
 &#9;if player and character and currentCamera then
 &#9;&#9;local distance = player:DistanceFromCharacter(currentCamera.CoordinateFrame.p)
-&#9;&#9;local transparency = math.max(0, math.min(1, (5 - distance) / 4))
+&#9;&#9;local transparency = math.max(0, math.min(1, (7 - distance) / 5))
 &#9;&#9;if TransparencyDirty or not FuzzyEquals(LastTransparency, transparency) then
 &#9;&#9;&#9;for child, _ in pairs(CachedParts) do
 &#9;&#9;&#9;&#9;child.LocalTransparencyModifier = transparency
@@ -194,7 +194,7 @@ local function OnPlayerAdded(player)
 &#9;&#9;&#9;&#9;return object.Parent:IsA(&apos;Tool&apos;) or HasToolAncestor(object.Parent) 
 &#9;&#9;&#9;end
 &#9;&#9;&#9;
-&#9;&#9;&#9;if part:IsA(&apos;BasePart&apos;) then
+&#9;&#9;&#9;if part:IsA(&apos;BasePart&apos;) or part:IsA(&apos;Decal&apos;) then
 &#9;&#9;&#9;&#9;return not HasToolAncestor(part)
 &#9;&#9;&#9;end
 &#9;&#9;&#9;return false
@@ -210,20 +210,36 @@ local function OnPlayerAdded(player)
 &#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end
 &#9;&#9;end
-&#9;&#9;-- TODO: this does not catch reparenting within the character:
-&#9;&#9;-- for example if a part that is already a member of the character is reparented to be the child of the tool
-&#9;&#9;-- it will still fade in and out with the character despite being part of a tool
 &#9;&#9;character.DescendantAdded:connect(function(object)
+&#9;&#9;&#9;-- This is a part we want to invisify
 &#9;&#9;&#9;if IsValidPartToModify(object) then
 &#9;&#9;&#9;&#9;CachedParts[object] = true
 &#9;&#9;&#9;&#9;TransparencyDirty = true
+&#9;&#9;&#9;-- There is now a tool under the character
+&#9;&#9;&#9;elseif object:IsA(&apos;Tool&apos;) then
+&#9;&#9;&#9;&#9;object.DescendantAdded:connect(function(toolChild)
+&#9;&#9;&#9;&#9;&#9;CachedParts[toolChild] = nil
+&#9;&#9;&#9;&#9;&#9;if toolChild:IsA(&apos;BasePart&apos;) or toolChild:IsA(&apos;Decal&apos;) then
+&#9;&#9;&#9;&#9;&#9;&#9;-- Reset the transparency
+&#9;&#9;&#9;&#9;&#9;&#9;toolChild.LocalTransparencyModifier = 0
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end)
+&#9;&#9;&#9;&#9;object.DescendantRemoving:connect(function(formerToolChild)
+&#9;&#9;&#9;&#9;&#9;wait() -- wait for new parent
+&#9;&#9;&#9;&#9;&#9;if character and formerToolChild and formerToolChild:IsDescendantOf(character) then
+&#9;&#9;&#9;&#9;&#9;&#9;if IsValidPartToModify(formerToolChild) then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;CachedParts[formerToolChild] = true
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;TransparencyDirty = true
+&#9;&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end)
 &#9;&#9;&#9;end
 &#9;&#9;end)
 &#9;&#9;character.DescendantRemoving:connect(function(object)
 &#9;&#9;&#9;if CachedParts[object] then
-&#9;&#9;&#9;&#9;-- Reset the transparency when it is removed
-&#9;&#9;&#9;&#9;object.LocalTransparencyModifier = 0
 &#9;&#9;&#9;&#9;CachedParts[object] = nil
+&#9;&#9;&#9;&#9;-- Reset the transparency
+&#9;&#9;&#9;&#9;object.LocalTransparencyModifier = 0
 &#9;&#9;&#9;end
 &#9;&#9;end)
 &#9;&#9;CachePartsRecursive(character)
