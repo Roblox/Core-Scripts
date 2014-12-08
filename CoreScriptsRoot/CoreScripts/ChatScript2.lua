@@ -737,7 +737,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 					Parent = container;
 				};
 				xOffset = xOffset + fromMessageSize.X
-				this.WhisperFromTest = whisperFromText
+				this.WhisperFromText = whisperFromText
 			else
 				local userNameDot = Util.Create'ImageLabel'
 				{
@@ -876,6 +876,7 @@ local function CreateChatBarWidget(settings)
 		[function(chatBarText) return string.find(string.lower(chatBarText), "^/emote") end] = "Emote";
 
 		[function(chatBarText) return string.find(string.lower(chatBarText), "^/%?") end] = "Help";
+		[function(chatBarText) return string.find(string.lower(chatBarText), "^/help?") end] = "Help";
 	}
 
 	local ChatModesDict =
@@ -979,8 +980,11 @@ local function CreateChatBarWidget(settings)
 									this:SetMessageMode(actionType)
 									this.ChatCommandEvent:fire(true, actionType, capture)
 								else
-									this:SetChatBarText("")
-									this.ChatCommandEvent:fire(false, actionType, capture)
+									-- This is an indirect way of detecting if they used enter to close submit this chat
+									if not requireWhitespaceAfterChatMode then
+										this:SetChatBarText("")
+										this.ChatCommandEvent:fire(false, actionType, capture)
+									end
 								end
 							else
 								-- start from two over to eat the space or tab character after the slash command
