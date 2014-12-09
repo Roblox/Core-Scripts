@@ -4,7 +4,7 @@
 	<Item class="ModuleScript" referent="RBXE641B80103E7430C9C0F793537702C63">
 		<Properties>
 			<string name="Name">Invisicam</string>
-			<ProtectedString name="Source">-- Invisicam Version 2.4 (Occlusion Series)
+			<ProtectedString name="Source">-- Invisicam Version 2.3 (Occlusion Series)
 -- For the latest standalone version see id=183837794
 -- OnlyTwentyCharacters
 
@@ -169,14 +169,12 @@ function Invisicam:Update()
 &#9;
 &#9;-- Cast to get a list of objects between the camera and the cast points
 &#9;local currentHits = {}
-&#9;local currentCount = 0
 &#9;local ignoreList = {Character}
 &#9;local function add(hit)
 &#9;&#9;currentHits[hit] = true
 &#9;&#9;if not SavedHits[hit] then
 &#9;&#9;&#9;SavedHits[hit] = hit.LocalTransparencyModifier
 &#9;&#9;end
-&#9;&#9;currentCount = currentCount + 1
 &#9;end
 &#9;for _, worldPoint in pairs(castPoints) do
 &#9;&#9;repeat
@@ -194,14 +192,11 @@ function Invisicam:Update()
 &#9;end
 &#9;
 &#9;-- Fade out objects that are in the way, restore those that aren&apos;t anymore
-&#9;local currentFadeTarget = 1 - ((1 - FADE_TARGET) / currentCount)
 &#9;for hit, originalFade in pairs(SavedHits) do
 &#9;&#9;local currentFade = hit.LocalTransparencyModifier
 &#9;&#9;if currentHits[hit] then -- Fade
-&#9;&#9;&#9;if currentFade &lt; currentFadeTarget then
-&#9;&#9;&#9;&#9;hit.LocalTransparencyModifier = math.min(currentFade + FADE_RATE, currentFadeTarget)
-&#9;&#9;&#9;elseif currentFade &gt; currentFadeTarget then
-&#9;&#9;&#9;&#9;hit.LocalTransparencyModifier = math.max(currentFadeTarget, currentFade - FADE_RATE)
+&#9;&#9;&#9;if currentFade &lt; FADE_TARGET then
+&#9;&#9;&#9;&#9;hit.LocalTransparencyModifier = math.min(currentFade + FADE_RATE, FADE_TARGET)
 &#9;&#9;&#9;end
 &#9;&#9;else -- Restore
 &#9;&#9;&#9;if currentFade &gt; originalFade then
