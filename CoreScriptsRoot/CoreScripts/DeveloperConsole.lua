@@ -306,8 +306,23 @@ function initializeDeveloperConsole()
 	}
 	
 	local flagExists, flagValue = pcall(function () return settings():GetFFlag("ConsoleCodeExecutionEnabled") end)
-	local codeExecutionEnabled = flagExists and flagValue
+	local shouldEnableExecution,codeExecutionEnabled = flagExists and flagValue
+	
 	local isCreator = game:GetService("Players").LocalPlayer.userId == game.CreatorId
+	
+	-- Check if this is place is not created by CreatePlace(InPlayerInventory)Async
+	local places = game:GetService("AssetService"):GetGamePlacesAsync()
+	while shouldEnableExecution do
+		for _,place in pairs(places:GetCurrentPage()) do
+			if place.PlaceId == game.PlaceId then
+				codeExecutionEnabled = true	
+			end
+		end
+		if places.IsFinished or codeExecutionEnabled then
+			break
+		end places:AdvanceToNextPageAsync()
+	end
+	
 	local function shouldShowCommandBar()
 		return codeExecutionEnabled and isCreator
 	end
