@@ -4,7 +4,7 @@
 	<Item class="ModuleScript" referent="RBXE641B80103E7430C9C0F793537702C63">
 		<Properties>
 			<string name="Name">Invisicam</string>
-			<ProtectedString name="Source">-- Invisicam Version 2.3 (Occlusion Series)
+			<ProtectedString name="Source">-- Invisicam Version 2.5 (Occlusion Series)
 -- For the latest standalone version see id=183837794
 -- OnlyTwentyCharacters
 
@@ -91,7 +91,9 @@ end
 
 local function LimbBehavior(castPoints)
 &#9;for _, limb in pairs(TrackedLimbs) do
-&#9;&#9;table.insert(castPoints, limb.Position)
+&#9;&#9;if limb.Parent then
+&#9;&#9;&#9;table.insert(castPoints, limb.Position)
+&#9;&#9;end
 &#9;end
 end
 
