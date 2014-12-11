@@ -1426,6 +1426,21 @@ local function CreateClickToMoveModule()
 &#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end)
 &#9;&#9;end
+&#9;&#9;RenderSteppedConn = RunService.RenderStepped:connect(function()
+&#9;&#9;&#9;if CameraModule then
+&#9;&#9;&#9;&#9;if CameraModule.UserPanningTheCamera then
+&#9;&#9;&#9;&#9;&#9;CameraModule.UpdateTweenFunction = nil
+&#9;&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;&#9;if CameraModule.UpdateTweenFunction then
+&#9;&#9;&#9;&#9;&#9;&#9;local done = CameraModule.UpdateTweenFunction()
+&#9;&#9;&#9;&#9;&#9;&#9;if done then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;CameraModule.UpdateTweenFunction = nil
+&#9;&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;CameraModule:Update()
+&#9;&#9;&#9;end
+&#9;&#9;end)
 &#9;end
 &#9;
 &#9;local Running = false
@@ -1451,21 +1466,6 @@ local function CreateClickToMoveModule()
 &#9;&#9;&#9;&#9;OnCharacterAdded(Player.Character)
 &#9;&#9;&#9;end
 &#9;&#9;&#9;OnCharacterAddedConn = Player.CharacterAdded:connect(OnCharacterAdded)
-&#9;&#9;&#9;RenderSteppedConn = RunService.RenderStepped:connect(function()
-&#9;&#9;&#9;&#9;if CameraModule then
-&#9;&#9;&#9;&#9;&#9;if CameraModule.UserPanningTheCamera then
-&#9;&#9;&#9;&#9;&#9;&#9;CameraModule.UpdateTweenFunction = nil
-&#9;&#9;&#9;&#9;&#9;else
-&#9;&#9;&#9;&#9;&#9;&#9;if CameraModule.UpdateTweenFunction then
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;local done = CameraModule.UpdateTweenFunction()
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;if done then
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;&#9;CameraModule.UpdateTweenFunction = nil
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;&#9;CameraModule:Update()
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end)
 &#9;&#9;&#9;Running = true
 &#9;&#9;end
 &#9;end
