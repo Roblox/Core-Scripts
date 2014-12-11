@@ -130,6 +130,12 @@ local function FuzzyEquals(num1, num2)
 &#9;return num1 &gt; num2 - 0.01 and num1 &lt; num2 + 0.01
 end
 
+local function Round(num, places)
+&#9;places = places or 0
+&#9;local decimalPivot = 10^places
+&#9;return math.floor(num * decimalPivot + 0.5) / decimalPivot
+end
+
 local CachedParts = {}
 local TransparencyDirty = true
 local LastTransparency = 0
@@ -139,8 +145,8 @@ local function ModifyCharacterTransparency()
 &#9;local character = player and player.Character
 &#9;if player and character and currentCamera then
 &#9;&#9;local distance = player:DistanceFromCharacter(currentCamera.CoordinateFrame.p)
-&#9;&#9;local transparency = math.max(0, math.min(1, (7 - distance) / 5))
-&#9;&#9;if TransparencyDirty or not FuzzyEquals(LastTransparency, transparency) then
+&#9;&#9;local transparency = Round(math.max(0, math.min(1, (7 - distance) / 5)), 2)
+&#9;&#9;if TransparencyDirty or LastTransparency ~= transparency then
 &#9;&#9;&#9;for child, _ in pairs(CachedParts) do
 &#9;&#9;&#9;&#9;child.LocalTransparencyModifier = transparency
 &#9;&#9;&#9;end
@@ -149,7 +155,6 @@ local function ModifyCharacterTransparency()
 &#9;&#9;end
 &#9;end
 end
-
 
 local function OnPlayerAdded(player)
 &#9;local currentCameraConn = nil
@@ -253,7 +258,7 @@ local function OnPlayerAdded(player)
 &#9;
 &#9;renderSteppedConn = RunService.RenderStepped:connect(function()
 &#9;&#9;if EnabledCamera then
-&#9;&#9;&#9;EnabledCamera:Update()&#9;
+&#9;&#9;&#9;EnabledCamera:Update()
 &#9;&#9;end
 &#9;&#9;if EnabledOcclusion then
 &#9;&#9;&#9;EnabledOcclusion:Update()
