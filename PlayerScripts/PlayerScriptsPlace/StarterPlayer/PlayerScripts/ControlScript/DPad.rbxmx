@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX45679B71213841EB9E2553988B46FDF8">
+	<Item class="ModuleScript" referent="RBX54AF403FDF86481C8A957949FBE7F81D">
 		<Properties>
 			<string name="Name">DPad</string>
 			<ProtectedString name="Source">--[[
@@ -19,6 +19,7 @@ while not Players.LocalPlayer do
 &#9;wait()
 end
 local LocalPlayer = Players.LocalPlayer
+local CachedHumanoid = nil
 local DPadFrame = nil
 local TouchObject = nil
 local OnInputEnded = nil&#9;&#9;-- defined in Create()
@@ -58,6 +59,23 @@ end
 
 local function getCenterPosition()
 &#9;return Vector2.new(DPadFrame.AbsolutePosition.x + DPadFrame.AbsoluteSize.x/2, DPadFrame.AbsolutePosition.y + DPadFrame.AbsoluteSize.y/2)
+end
+
+local function getHumanoid()
+&#9;local character = LocalPlayer and LocalPlayer.Character
+&#9;if character then
+&#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
+&#9;&#9;&#9;return CachedHumanoid
+&#9;&#9;else
+&#9;&#9;&#9;CachedHumanoid = nil
+&#9;&#9;&#9;for _,child in pairs(character:GetChildren()) do
+&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;&#9;CachedHumanoid = child
+&#9;&#9;&#9;&#9;&#9;return CachedHumanoid
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
 end
 
 --[[ Public API ]]--
@@ -104,7 +122,7 @@ function DPad:Create(parentFrame)
 &#9;jumpBtn.InputBegan:connect(function(inputObject)
 &#9;&#9;local character = LocalPlayer.Character
 &#9;&#9;if character then
-&#9;&#9;&#9;local humanoid = character:FindFirstChild(&apos;Humanoid&apos;)
+&#9;&#9;&#9;local humanoid = getHumanoid()
 &#9;&#9;&#9;if humanoid then
 &#9;&#9;&#9;&#9;humanoid.Jump = true
 &#9;&#9;&#9;end

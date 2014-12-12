@@ -1,10 +1,10 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX828ABCAE21AE419CB9EEF7DBB5BF12F6">
+	<Item class="ModuleScript" referent="RBXE641B80103E7430C9C0F793537702C63">
 		<Properties>
 			<string name="Name">Invisicam</string>
-			<ProtectedString name="Source">-- Invisicam Version 2.2 (Occlusion Series)
+			<ProtectedString name="Source">-- Invisicam Version 2.5 (Occlusion Series)
 -- For the latest standalone version see id=183837794
 -- OnlyTwentyCharacters
 
@@ -60,7 +60,7 @@ local Torso = nil
 
 local Mode = nil
 local Behaviors = {} -- Map of modes to behavior fns
-local SavedHitParts = {} -- Parts currently being faded in/out
+local SavedHits = {} -- Objects currently being faded in/out
 local TrackedLimbs = {} -- Used in limb-tracking casting modes
 
 ---------------
@@ -91,7 +91,9 @@ end
 
 local function LimbBehavior(castPoints)
 &#9;for _, limb in pairs(TrackedLimbs) do
-&#9;&#9;table.insert(castPoints, limb.Position)
+&#9;&#9;if limb.Parent then
+&#9;&#9;&#9;table.insert(castPoints, limb.Position)
+&#9;&#9;end
 &#9;end
 end
 
@@ -167,34 +169,42 @@ function Invisicam:Update()
 &#9;local castPoints = {}
 &#9;Behaviors[Mode](castPoints)
 &#9;
-&#9;-- Cast to get a list of parts between the camera and the cast points
-&#9;local currentHitParts = {}
+&#9;-- Cast to get a list of objects between the camera and the cast points
+&#9;local currentHits = {}
 &#9;local ignoreList = {Character}
+&#9;local function add(hit)
+&#9;&#9;currentHits[hit] = true
+&#9;&#9;if not SavedHits[hit] then
+&#9;&#9;&#9;SavedHits[hit] = hit.LocalTransparencyModifier
+&#9;&#9;end
+&#9;end
 &#9;for _, worldPoint in pairs(castPoints) do
 &#9;&#9;repeat
 &#9;&#9;&#9;local hitPart = CameraCast(worldPoint, ignoreList)
 &#9;&#9;&#9;if hitPart then
-&#9;&#9;&#9;&#9;currentHitParts[hitPart] = true
-&#9;&#9;&#9;&#9;if not SavedHitParts[hitPart] then
-&#9;&#9;&#9;&#9;&#9;SavedHitParts[hitPart] = hitPart.LocalTransparencyModifier
+&#9;&#9;&#9;&#9;add(hitPart)
+&#9;&#9;&#9;&#9;for _, child in pairs(hitPart:GetChildren()) do
+&#9;&#9;&#9;&#9;&#9;if child:IsA(&apos;Decal&apos;) or child:IsA(&apos;Texture&apos;) then
+&#9;&#9;&#9;&#9;&#9;&#9;add(child)
+&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;table.insert(ignoreList, hitPart) -- Next ray will go through it
+&#9;&#9;&#9;&#9;table.insert(ignoreList, hitPart) -- Next ray will go through this part
 &#9;&#9;&#9;end
 &#9;&#9;until not hitPart
 &#9;end
 &#9;
-&#9;-- Fade out those parts that are in the way, restore those that aren&apos;t anymore
-&#9;for hitPart, originalFade in pairs(SavedHitParts) do
-&#9;&#9;local currentFade = hitPart.LocalTransparencyModifier
-&#9;&#9;if currentHitParts[hitPart] then -- Fade
+&#9;-- Fade out objects that are in the way, restore those that aren&apos;t anymore
+&#9;for hit, originalFade in pairs(SavedHits) do
+&#9;&#9;local currentFade = hit.LocalTransparencyModifier
+&#9;&#9;if currentHits[hit] then -- Fade
 &#9;&#9;&#9;if currentFade &lt; FADE_TARGET then
-&#9;&#9;&#9;&#9;hitPart.LocalTransparencyModifier = math.min(currentFade + FADE_RATE, FADE_TARGET)
+&#9;&#9;&#9;&#9;hit.LocalTransparencyModifier = math.min(currentFade + FADE_RATE, FADE_TARGET)
 &#9;&#9;&#9;end
 &#9;&#9;else -- Restore
 &#9;&#9;&#9;if currentFade &gt; originalFade then
-&#9;&#9;&#9;&#9;hitPart.LocalTransparencyModifier = math.max(originalFade, currentFade - FADE_RATE)
+&#9;&#9;&#9;&#9;hit.LocalTransparencyModifier = math.max(originalFade, currentFade - FADE_RATE)
 &#9;&#9;&#9;else
-&#9;&#9;&#9;&#9;SavedHitParts[hitPart] = nil
+&#9;&#9;&#9;&#9;SavedHits[hit] = nil
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;end
@@ -218,8 +228,8 @@ end
 
 -- Want to turn off Invisicam? Be sure to call this after.
 function Invisicam:Cleanup()
-&#9;for hitPart, originalFade in pairs(SavedHitParts) do
-&#9;&#9;hitPart.LocalTransparencyModifier = originalFade
+&#9;for hit, originalFade in pairs(SavedHits) do
+&#9;&#9;hit.LocalTransparencyModifier = originalFade
 &#9;end
 end
 
