@@ -27,6 +27,7 @@ local updateCameraDropDownSelection = nil
 local updateVideoCaptureDropDownSelection = nil
 local updateSmartCameraDropDownSelection = nil
 local updateMovementDropDownSelection = nil
+local syncVideoCaptureSetting = nil
 local tweenTime = 0.2
 
 local mouseLockLookScreenUrl = "http://www.roblox.com/asset?id=54071825"
@@ -968,9 +969,6 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	----------------------------------------------------------------------------------------------------
 	--  V I D E O   C A P T U R E   S E T T I N G S
 	----------------------------------------------------------------------------------------------------
-
-	local syncVideoCaptureSetting = nil
-
 	if not macClient and not touchClient then
 		local videoCaptureLabel = Instance.new("TextLabel")
 		videoCaptureLabel.Name = "VideoCaptureLabel"
