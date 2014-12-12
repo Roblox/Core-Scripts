@@ -737,7 +737,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 					Parent = container;
 				};
 				xOffset = xOffset + fromMessageSize.X
-				this.WhisperFromText = whisperFromText
+				this.WhisperFromTest = whisperFromText
 			else
 				local userNameDot = Util.Create'ImageLabel'
 				{
@@ -876,7 +876,6 @@ local function CreateChatBarWidget(settings)
 		[function(chatBarText) return string.find(string.lower(chatBarText), "^/emote") end] = "Emote";
 
 		[function(chatBarText) return string.find(string.lower(chatBarText), "^/%?") end] = "Help";
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/help?") end] = "Help";
 	}
 
 	local ChatModesDict =
@@ -899,7 +898,6 @@ local function CreateChatBarWidget(settings)
 		this.SelectChatModeConn = Util.DisconnectEvent(this.SelectChatModeConn)
 		this.SelectPlayerConn = Util.DisconnectEvent(this.SelectPlayerConn)
 		this.FocusChatBarInputBeganConn = Util.DisconnectEvent(this.FocusChatBarInputBeganConn)
-		this.InputBeganConn = Util.DisconnectEvent(this.InputBeganConn)
 	end
 
 	local function HookUpEvents()
@@ -928,13 +926,6 @@ local function CreateChatBarWidget(settings)
 			this.TargetWhisperPlayer = chatPlayer
 			this:SetMessageMode("Whisper")
 			this:FocusChatBar()
-		end)
-
-		this.InputBeganConn = InputService.InputBegan:connect(function(inputObject)
-			if inputObject.KeyCode == Enum.KeyCode.Escape then
-				-- Clear text when they press escape
-				this:SetChatBarText("")
-			end
 		end)
 	end
 
@@ -980,11 +971,8 @@ local function CreateChatBarWidget(settings)
 									this:SetMessageMode(actionType)
 									this.ChatCommandEvent:fire(true, actionType, capture)
 								else
-									-- This is an indirect way of detecting if they used enter to close submit this chat
-									if not requireWhitespaceAfterChatMode then
-										this:SetChatBarText("")
-										this.ChatCommandEvent:fire(false, actionType, capture)
-									end
+									this:SetChatBarText("")
+									this.ChatCommandEvent:fire(false, actionType, capture)
 								end
 							else
 								-- start from two over to eat the space or tab character after the slash command
@@ -1252,7 +1240,6 @@ local function CreateChatWindowWidget(settings)
 	this.Settings = settings
 	this.Chats = {}
 	this.BackgroundVisible = false
-	this.ChatsVisible = false
 
 	this.ChatWindowPagingConn = nil
 
@@ -1262,7 +1249,6 @@ local function CreateChatWindowWidget(settings)
 
 	local lastFadeOutTime = 0
 	local lastFadeInTime = 0
-	local lastChatActivity = 0
 
 	local FadeLock = false
 
@@ -1274,6 +1260,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:IsHovering()
+		--return lastEnterTime > lastLeaveTime
 		if this.ChatContainer and this.LastMousePosition then
 			return PointInChatWindow(this.LastMousePosition)
 		end
@@ -1296,7 +1283,6 @@ local function CreateChatWindowWidget(settings)
 				this.BackgroundTweener:Cancel()
 			end
 			lastFadeInTime = tick()
-			lastChatActivity = tick()
 			this.ScrollingFrame.ScrollingEnabled = true
 			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 0.7, duration, Util.Linear)
 			this.BackgroundVisible = true
@@ -1328,26 +1314,28 @@ local function CreateChatWindowWidget(settings)
 				this.BackgroundTweener:Cancel()
 			end
 			lastFadeOutTime = tick()
-			lastChatActivity = tick()
 			this.ScrollingFrame.ScrollingEnabled = false
 			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
 			this.BackgroundVisible = false
 
 			this.ChatWindowPagingConn = Util.DisconnectEvent(this.ChatWindowPagingConn)
+
+			local now = lastFadeOutTime
+			delay(MESSAGES_FADE_OUT_TIME, function()
+				if lastFadeOutTime > lastFadeInTime and now == lastFadeOutTime then
+					this:FadeOutChats()
+				end
+			end)
 		end
 	end
 
 	function this:FadeInChats()
-		if this.ChatsVisible == true then return end
-		this.ChatsVisible = true
 		for index, message in pairs(this.Chats) do
 			message:FadeIn()
 		end
 	end
 
 	function this:FadeOutChats()
-		if this.ChatsVisible == false then return end
-		this.ChatsVisible = false
 		for index, message in pairs(this.Chats) do
 			local messageGui = message:GetGui()
 			local instant = false
@@ -1362,25 +1350,16 @@ local function CreateChatWindowWidget(settings)
 		end
 	end
 
-	function this:ScrollToBottom()
-		if this.ScrollingFrame then
-			this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - math.max(0, this.ScrollingFrame.AbsoluteWindowSize.Y)))
-		end
-	end
-
 	local ResizeCount = 0
 	function this:OnResize()
 		ResizeCount = ResizeCount + 1
 		local currentResizeCount = ResizeCount
-		local isScrolledDown = this:IsScrolledDown()
 		-- Unfortunately there is a race condition so we need this wait here.
 		wait()
-		if isScrolledDown then
-			this:ScrollToBottom()
-		end
 		if this.ScrollingFrame then
 			if currentResizeCount ~= ResizeCount then return end
 			local scrollingFrameAbsoluteSize = this.ScrollingFrame.AbsoluteSize
+			local isScrolledDown = this:IsScrolledDown()
 			if scrollingFrameAbsoluteSize ~= nil and scrollingFrameAbsoluteSize.X > 0 and scrollingFrameAbsoluteSize.Y > 0 then
 				local ySize = 0
 
@@ -1405,10 +1384,19 @@ local function CreateChatWindowWidget(settings)
 							ySize)
 
 					this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
+					-- Clamp the canvasposition
+					this.ScrollingFrame.CanvasPosition =
+						Vector2.new(this.ScrollingFrame.CanvasPosition.X,
+									Util.Clamp(0, --min
+						            this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y, --max
+						            this.ScrollingFrame.CanvasPosition.Y))
 				end
 			end
 			if isScrolledDown then
-				this:ScrollToBottom()
+				local function UpdateScrollDown()
+					this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - math.max(0, this.ScrollingFrame.AbsoluteSize.Y)))
+				end
+				UpdateScrollDown()
 			end
 		end
 	end
@@ -1435,12 +1423,17 @@ local function CreateChatWindowWidget(settings)
 		chatMessageElement.Position = chatMessageElement.Position + UDim2.new(0, 0, 0, ySize)
 		this.MessageContainer.Size = this.MessageContainer.Size + chatMessageElementYSize
 		this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize + chatMessageElementYSize
-
+		-- Clamp the canvasposition
+		this.ScrollingFrame.CanvasPosition =
+			Vector2.new(this.ScrollingFrame.CanvasPosition.X,
+						Util.Clamp(0, --min
+			            this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y, --max
+			            this.ScrollingFrame.CanvasPosition.Y))
 		if this.Settings.MaxWindowChatMessages < #this.Chats then
 			this:RemoveOldestMessage()
 		end
 		if isScrolledDown then
-			this:ScrollToBottom()
+			this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y))
 		elseif not silently then
 			-- Raise unread message alert!
 		end
@@ -1449,7 +1442,6 @@ local function CreateChatWindowWidget(settings)
 			chatMessage:FadeOut(true)
 		else
 			this:FadeInChats()
-			lastChatActivity = tick()
 		end
 	end
 
@@ -1496,15 +1488,12 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:IsScrolledDown()
-		if this.ScrollingFrame then
-			local yCanvasSize = this.ScrollingFrame.CanvasSize.Y.Offset
-			local yContainerSize = this.ScrollingFrame.AbsoluteWindowSize.Y
-			local yScrolledPosition = this.ScrollingFrame.CanvasPosition.Y
-			-- Check if the messages are at the bottom
-			return yCanvasSize < yContainerSize or
-			       yCanvasSize - yScrolledPosition <= yContainerSize + 5 -- Give a little wiggle room for the is scrolldown check
-		end
-		return false
+		local yCanvasSize = this.ScrollingFrame.CanvasSize.Y.Offset
+		local yContainerSize = this.ScrollingFrame.AbsoluteSize.Y
+		local yScrolledPosition = this.ScrollingFrame.CanvasPosition.Y
+		-- Check if the messages are at the bottom
+		return yCanvasSize < yContainerSize or
+		       yCanvasSize - yScrolledPosition >= yContainerSize - 2 -- Fuzzy equals here
 	end
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
@@ -1624,9 +1613,6 @@ local function CreateChatWindowWidget(settings)
 						if not dontFadeOutOnMouseLeave then
 							this:FadeOut(0.25)
 						end
-					-- If background is not visible/in-focus
-					elseif this.ChatsVisible and now > lastChatActivity + MESSAGES_FADE_OUT_TIME then
-						this:FadeOutChats()
 					end
 				end
 			end)
@@ -1684,9 +1670,8 @@ local function CreateChatWindowWidget(settings)
 			spawn(function()
 				while true do
 					wait()
-					local now = tick()
 					if this:IsHovering() then
-						if now - lastMoveTime > 1.3 and not this.BackgroundVisible then
+						if tick() - lastMoveTime > 1.3 and not this.BackgroundVisible then
 							this:FadeIn()
 						end
 					else -- not this:IsHovering()
@@ -1694,9 +1679,6 @@ local function CreateChatWindowWidget(settings)
 							if not dontFadeOutOnMouseLeave then
 								this:FadeOut(0.25)
 							end
-						-- If background is not visible/in-focus
-						elseif this.ChatsVisible and now > lastChatActivity + MESSAGES_FADE_OUT_TIME then
-							this:FadeOutChats()
 						end
 					end
 				end
@@ -1741,15 +1723,6 @@ local function CreateChat()
 					Util.SetGUIInsetBounds(0, 20)
 				else
 					Util.SetGUIInsetBounds(0, 0)
-				end
-			end
-			if this.MobileChatButton then
-				if enabled == true then
-					this.MobileChatButton.Parent = GuiRoot
-					-- we need to set it to be visible in-case we missed a lost focus event while chat was turned off.
-					this.MobileChatButton.Visible = true
-				else
-					this.MobileChatButton.Parent = nil
 				end
 			end
 		end
@@ -1866,9 +1839,7 @@ local function CreateChat()
 
 			if Util.IsTouchDevice() then
 				local mobileChatButton = this:CreateTouchDeviceChatButton()
-				if StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat) then
-					mobileChatButton.Parent = GuiRoot
-				end
+				mobileChatButton.Parent = GuiRoot
 
 				mobileChatButton.TouchTap:connect(function()
 					mobileChatButton.Visible = false
@@ -1880,8 +1851,6 @@ local function CreateChat()
 				this.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
 					mobileChatButton.Visible = true
 				end)
-
-				this.MobileChatButton = mobileChatButton
 			end
 		end
 	end

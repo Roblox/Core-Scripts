@@ -1125,7 +1125,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 					if hitFace == tonumber(bf) then
 						-- return before we hit the JointsService code below!
 						unstampableSurface = true
-						game.JointsService:ClearJoinAfterMoveJoints() -- clear the JointsService cache
+						game:GetService("JointsService"):ClearJoinAfterMoveJoints() -- clear the JointsService cache
 						return
 					end
 				end
@@ -1137,7 +1137,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 				for bf in string.gmatch(myBreakingFaces, "[^,]+") do
 					if hitFace == tonumber(bf) then
 						unstampableSurface = true
-						game.JointsService:ClearJoinAfterMoveJoints() -- clear the JointsService cache
+						game:GetService("JointsService"):ClearJoinAfterMoveJoints() -- clear the JointsService cache
 						return
 					end
 				end
@@ -1149,7 +1149,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 
 		-- to show joints during the mouse move
 		unstampableSurface = false
-		game.JointsService:SetJoinAfterMoveInstance(stampData.CurrentParts)
+		game:GetService("JointsService"):SetJoinAfterMoveInstance(stampData.CurrentParts)
 
 		-- most common mouse inactive error occurs here, so check mouse active one more time in a pcall
 		if not pcall(function() 
@@ -1161,17 +1161,17 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 			end) 
 		then
 			error("Error: RbxStamper.DoStamperMouseMove Mouse is nil on second check")
-			game.JointsService:ClearJoinAfterMoveJoints()
+			game:GetService("JointsService"):ClearJoinAfterMoveJoints()
 			Mouse = nil
 			return
 		end
 
 		if Mouse and Mouse.Target and Mouse.Target.Parent:FindFirstChild("RobloxModel") == nil then
-			game.JointsService:SetJoinAfterMoveTarget(Mouse.Target)
+			game:GetService("JointsService"):SetJoinAfterMoveTarget(Mouse.Target)
 		else
-			game.JointsService:SetJoinAfterMoveTarget(nil)
+			game:GetService("JointsService"):SetJoinAfterMoveTarget(nil)
 		end
-		game.JointsService:ShowPermissibleJoints()
+		game:GetService("JointsService"):ShowPermissibleJoints()
 
 		-- here we allow for a line of high-scalability parts
 		if isMegaClusterPart() and HighScalabilityLine and HighScalabilityLine.Start then
@@ -1430,7 +1430,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		end
 		
 		-- to show joints during the mouse move
-		game.JointsService:SetJoinAfterMoveInstance(stampData.CurrentParts)
+		game:GetService("JointsService"):SetJoinAfterMoveInstance(stampData.CurrentParts)
 		
 		return clone, parts
 	end
@@ -1900,7 +1900,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		end
 				
 		-- make sure all the joints are activated before restoring anchor states
-		if not createJoints then game.JointsService:CreateJoinAfterMoveJoints() end
+		if not createJoints then game:GetService("JointsService"):CreateJoinAfterMoveJoints() end
 
 		-- Restore the original properties for all parts being stamped
 		for part, transparency in pairs(stampData.TransparencyTable) do
@@ -1984,8 +1984,8 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		end
 		
 		resetHighScalabilityLine()
-
-		game.JointsService:ClearJoinAfterMoveJoints()
+		
+		game:GetService("JointsService"):ClearJoinAfterMoveJoints()
 	end
 	
 
@@ -2058,11 +2058,11 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 		pcall(function() mouseTarget = Mouse.Target end)
 
 		if mouseTarget and mouseTarget.Parent:FindFirstChild("RobloxModel") == nil then
-			game.JointsService:SetJoinAfterMoveTarget(mouseTarget)
+			game:GetService("JointsService"):SetJoinAfterMoveTarget(mouseTarget)
 		else
-			game.JointsService:SetJoinAfterMoveTarget(nil)
+			game:GetService("JointsService"):SetJoinAfterMoveTarget(nil)
 		end
-		game.JointsService:ShowPermissibleJoints()
+		game:GetService("JointsService"):ShowPermissibleJoints()
 		
 		for index, object in pairs(stampData.DisabledScripts) do
 			if object.Name == "GhostRemovalScript" then
@@ -2171,7 +2171,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 			keyCon:disconnect()
 		end
 		
-		game.JointsService:ClearJoinAfterMoveJoints()
+		game:GetService("JointsService"):ClearJoinAfterMoveJoints()
 		
 		if adorn then adorn:Destroy() end
 		if adornPart then adornPart:Destroy() end

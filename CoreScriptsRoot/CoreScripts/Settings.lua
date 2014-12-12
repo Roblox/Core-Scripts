@@ -793,8 +793,11 @@ local function createGameSettingsMenu(baseZIndex, shield)
 							mouseLockLabel.Visible = false
 						end
 					end)
-				end, false, true, baseZIndex + 1)
+				end, false, true, baseZIndex)
 			cameraDropDown.Name = "CameraField"
+			cameraDropDown.ZIndex = baseZIndex + 4
+			cameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+			cameraDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
 			cameraDropDown.Position = UDim2.new(0, 270, 0, itemTop)
 			cameraDropDown.Size = UDim2.new(0,200,0,32)
 			cameraDropDown.Parent = gameSettingsMenuFrame
@@ -868,8 +871,11 @@ local function createGameSettingsMenu(baseZIndex, shield)
 			else
 				UserSettings().GameSettings.ComputerCameraMovementMode = smartEnumNameToItem[text] 
 			end
-		end, false, true, baseZIndex + 1)
+		end, false, true, baseZIndex)
 	smartCameraDropDown.Name = "SmartCameraField"
+	smartCameraDropDown.ZIndex = baseZIndex + 4
+	smartCameraDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+	smartCameraDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
 	smartCameraDropDown.Position = UDim2.new(0, 270, 0, itemTop)
 	smartCameraDropDown.Size = UDim2.new(0,200,0,32)
 	smartCameraDropDown.Parent = gameSettingsMenuFrame
@@ -954,8 +960,11 @@ local function createGameSettingsMenu(baseZIndex, shield)
 				else
 					UserSettings().GameSettings.ComputerMovementMode = enumNameToItem[text]
 				end
-			end, false, true, baseZIndex + 1)
+			end, false, true, baseZIndex)
 		movementModeDropDown.Name = "movementModeField"
+		movementModeDropDown.ZIndex = baseZIndex + 4
+		movementModeDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+		movementModeDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
 		movementModeDropDown.Position = UDim2.new(0, 270, 0, itemTop)
 		movementModeDropDown.Size = UDim2.new(0,200,0,32)
 		movementModeDropDown.Parent = gameSettingsMenuFrame
@@ -996,8 +1005,11 @@ local function createGameSettingsMenu(baseZIndex, shield)
 		videoCaptureDropDown, updateVideoCaptureDropDownSelection = RbxGui.CreateDropDownMenu(videoNames, 
 			function(text) 
 				UserSettings().GameSettings.VideoUploadPromptBehavior = videoNameToItem[text]
-			end, false, true, baseZIndex + 1)
+			end, false, true, baseZIndex)
 		videoCaptureDropDown.Name = "VideoCaptureField"
+		videoCaptureDropDown.ZIndex = baseZIndex + 4
+		videoCaptureDropDown.DropDownMenuButton.ZIndex = baseZIndex + 4
+		videoCaptureDropDown.DropDownMenuButton.Icon.ZIndex = baseZIndex + 4
 		videoCaptureDropDown.Position = UDim2.new(0, 270, 0, itemTop)
 		videoCaptureDropDown.Size = UDim2.new(0,200,0,32)
 		videoCaptureDropDown.Parent = gameSettingsMenuFrame

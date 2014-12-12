@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXD76DF8ABD3DC4228B34596375A6D3BCC">
+	<Item class="ModuleScript" referent="RBXB9EB012905D544B28981B79948BB0782">
 		<Properties>
 			<string name="Name">TouchJump</string>
 			<ProtectedString name="Source">--[[
@@ -19,30 +19,11 @@ while not Players.LocalPlayer do
 &#9;wait()
 end
 local LocalPlayer = Players.LocalPlayer
-local CachedHumanoid = nil
 local JumpButton = nil
 local OnInputEnded = nil&#9;&#9;-- defined in Create()
 
 --[[ Constants ]]--
 local TOUCH_CONTROL_SHEET = &quot;rbxasset://textures/ui/TouchControlsSheet.png&quot;
-
---[[ Local Functions ]]--
-local function getHumanoid()
-&#9;local character = LocalPlayer and LocalPlayer.Character
-&#9;if character then
-&#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
-&#9;&#9;&#9;return CachedHumanoid
-&#9;&#9;else
-&#9;&#9;&#9;CachedHumanoid = nil
-&#9;&#9;&#9;for _,child in pairs(character:GetChildren()) do
-&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
-&#9;&#9;&#9;&#9;&#9;CachedHumanoid = child
-&#9;&#9;&#9;&#9;&#9;return CachedHumanoid
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end
-end
 
 --[[ Public API ]]--
 function TouchJump:Enable()
@@ -78,7 +59,7 @@ function TouchJump:Create(parentFrame)
 &#9;local function doJumpLoop()
 &#9;&#9;local character = LocalPlayer.Character
 &#9;&#9;if character then
-&#9;&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;&#9;local humanoid = character:FindFirstChild(&apos;Humanoid&apos;)
 &#9;&#9;&#9;if humanoid then
 &#9;&#9;&#9;&#9;while touchObject do
 &#9;&#9;&#9;&#9;&#9;humanoid.Jump = true

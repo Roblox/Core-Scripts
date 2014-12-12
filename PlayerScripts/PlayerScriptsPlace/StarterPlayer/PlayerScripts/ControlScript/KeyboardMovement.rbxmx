@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX9278F073EC5D4621A8A3894BD1752BB5">
+	<Item class="ModuleScript" referent="RBXC8E8E110F1EF4A7AB0EF6E5751E7CECD">
 		<Properties>
 			<string name="Name">KeyboardMovement</string>
 			<ProtectedString name="Source">--[[
@@ -23,26 +23,7 @@ while not Players.LocalPlayer do
 &#9;wait()
 end
 local LocalPlayer = Players.LocalPlayer
-local CachedHumanoid = nil
 local RenderSteppedCon = nil
-
---[[ Local Functions ]]--
-local function getHumanoid()
-&#9;local character = LocalPlayer and LocalPlayer.Character
-&#9;if character then
-&#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
-&#9;&#9;&#9;return CachedHumanoid
-&#9;&#9;else
-&#9;&#9;&#9;CachedHumanoid = nil
-&#9;&#9;&#9;for _,child in pairs(character:GetChildren()) do
-&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
-&#9;&#9;&#9;&#9;&#9;CachedHumanoid = child
-&#9;&#9;&#9;&#9;&#9;return CachedHumanoid
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end
-end
 
 --[[ Public API ]]--
 function KeyboardMovement:Enable()
@@ -99,32 +80,23 @@ function KeyboardMovement:Enable()
 &#9;end
 &#9;
 &#9;local jumpFunc = function(actionName, inputState, inputObject)
-&#9;&#9;isJumping = inputState == Enum.UserInputState.Begin
+&#9;&#9;isJumping = (inputState == Enum.UserInputState.Begin)
 &#9;end
 &#9;
-&#9;-- enable jumping from seat on backspace
-&#9;local jumpFromSeat = function(actionName, inputState, inputObject)
-&#9;&#9;local humanoid = getHumanoid()
-&#9;&#9;if humanoid and humanoid.Sit then
-&#9;&#9;&#9;humanoid.Jump = inputState == Enum.UserInputState.Begin
-&#9;&#9;end
-&#9;end
-&#9;
-&#9;-- TODO: remove up and down arrows, these seem unnecessary
+&#9;-- todo: remove up and down arrows, these seem unnecessary
 &#9;ContextActionService:BindActionToInputTypes(&quot;forwardMovement&quot;, moveForwardFunc, false, Enum.PlayerActions.CharacterForward, Enum.KeyCode.Up)
 &#9;ContextActionService:BindActionToInputTypes(&quot;backwardMovement&quot;, moveBackwardFunc, false, Enum.PlayerActions.CharacterBackward, Enum.KeyCode.Down)
 &#9;ContextActionService:BindActionToInputTypes(&quot;leftMovement&quot;, moveLeftFunc, false, Enum.PlayerActions.CharacterLeft)
 &#9;ContextActionService:BindActionToInputTypes(&quot;rightMovement&quot;, moveRightFunc, false, Enum.PlayerActions.CharacterRight)
 &#9;ContextActionService:BindActionToInputTypes(&quot;jumpAction&quot;, jumpFunc, false, Enum.PlayerActions.CharacterJump)
-&#9;ContextActionService:BindActionToInputTypes(&quot;jumpFromSeat&quot;, jumpFromSeat, false, Enum.KeyCode.Backspace)
-&#9;-- TODO: make sure we check key state before binding to check if key is already down
+&#9;--todo: make sure we check key state before binding to check if key is already down
 &#9;
 &#9;RenderSteppedCon = RunService.RenderStepped:connect(function()
 &#9;&#9;if LocalPlayer and LocalPlayer.Character then
-&#9;&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;&#9;local humanoid = LocalPlayer.Character:FindFirstChild(&apos;Humanoid&apos;)
 &#9;&#9;&#9;if isFirstPersonOrShiftLocked() then
-&#9;&#9;&#9;&#9;local rootPart = humanoid.Torso
-&#9;&#9;&#9;&#9;if humanoid and not humanoid.Sit and not humanoid.PlatformStand and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
+&#9;&#9;&#9;&#9;local rootPart = LocalPlayer.Character:FindFirstChild(&apos;HumanoidRootPart&apos;)
+&#9;&#9;&#9;&#9;if humanoid and not humanoid.Sit and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
 &#9;&#9;&#9;&#9;&#9;humanoid.AutoRotate = false
 &#9;&#9;&#9;&#9;&#9;local desiredLook = game.Workspace.CurrentCamera.CoordinateFrame.lookVector
 &#9;&#9;&#9;&#9;&#9;desiredLook = Vector3.new(desiredLook.x, 0, desiredLook.z)
@@ -151,7 +123,6 @@ function KeyboardMovement:Disable()
 &#9;ContextActionService:UnbindAction(&quot;leftMovement&quot;)
 &#9;ContextActionService:UnbindAction(&quot;rightMovement&quot;)
 &#9;ContextActionService:UnbindAction(&quot;jumpAction&quot;)
-&#9;ContextActionService:UnbindAction(&quot;jumpFromSeat&quot;)
 &#9;
 &#9;if RenderSteppedCon then
 &#9;&#9;RenderSteppedCon:disconnect()

@@ -38,7 +38,6 @@ local function createArrowLabel(name, parent, position, size, rectOffset, rectSi
 &#9;image.ImageRectOffset = rectOffset
 &#9;image.ImageRectSize = rectSize
 &#9;image.BackgroundTransparency = 1
-&#9;image.ImageColor3 = Color3.new(190/255, 190/255, 190/255)
 &#9;image.Size = size
 &#9;image.Position = position
 &#9;image.Parent = parent
@@ -95,14 +94,14 @@ function Thumbpad:Create(parentFrame)
 &#9;
 &#9;local smArrowSize = isSmallScreen and UDim2.new(0, 32, 0, 32) or UDim2.new(0, 64, 0, 64)
 &#9;local lgArrowSize = UDim2.new(0, smArrowSize.X.Offset * 2, 0, smArrowSize.Y.Offset * 2)
-&#9;local imgRectSize = Vector2.new(110, 110)
+&#9;local imgRectSize = Vector2.new(116, 116)
 &#9;local smImgOffset = isSmallScreen and -4 or -9
 &#9;local lgImgOffset = isSmallScreen and -28 or -55
 &#9;
-&#9;local dArrow = createArrowLabel(&quot;DownArrow&quot;, outerImage, UDim2.new(0.5, -smArrowSize.X.Offset/2, 1, lgImgOffset), smArrowSize, Vector2.new(8, 8), imgRectSize)
-&#9;local uArrow = createArrowLabel(&quot;UpArrow&quot;, outerImage, UDim2.new(0.5, -smArrowSize.X.Offset/2, 0, smImgOffset), smArrowSize, Vector2.new(8, 266), imgRectSize)
-&#9;local lArrow = createArrowLabel(&quot;LeftArrow&quot;, outerImage, UDim2.new(0, smImgOffset, 0.5, -smArrowSize.Y.Offset/2), smArrowSize, Vector2.new(137, 137), imgRectSize)
-&#9;local rArrow = createArrowLabel(&quot;RightArrow&quot;, outerImage, UDim2.new(1, lgImgOffset, 0.5, -smArrowSize.Y.Offset/2), smArrowSize, Vector2.new(8, 137), imgRectSize)
+&#9;local dArrow = createArrowLabel(&quot;DownArrow&quot;, outerImage, UDim2.new(0.5, -smArrowSize.X.Offset/2, 1, lgImgOffset), smArrowSize, Vector2.new(6, 6), imgRectSize)
+&#9;local uArrow = createArrowLabel(&quot;UpArrow&quot;, outerImage, UDim2.new(0.5, -smArrowSize.X.Offset/2, 0, smImgOffset), smArrowSize, Vector2.new(6, 264), imgRectSize)
+&#9;local lArrow = createArrowLabel(&quot;LeftArrow&quot;, outerImage, UDim2.new(0, smImgOffset, 0.5, -smArrowSize.Y.Offset/2), smArrowSize, Vector2.new(135, 135), imgRectSize)
+&#9;local rArrow = createArrowLabel(&quot;RightArrow&quot;, outerImage, UDim2.new(1, lgImgOffset, 0.5, -smArrowSize.Y.Offset/2), smArrowSize, Vector2.new(6, 135), imgRectSize)
 &#9;
 &#9;local function doTween(guiObject, endSize, endPosition)
 &#9;&#9;guiObject:TweenSizeAndPosition(endSize, endPosition, Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, 0.15, true)

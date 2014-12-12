@@ -4,7 +4,7 @@
 	<Item class="ModuleScript" referent="RBX905CF110249A46068288C08544C9FAEE">
 		<Properties>
 			<string name="Name">PopperCam</string>
-			<ProtectedString name="Source">-- PopperCam Version 12
+			<ProtectedString name="Source">-- PopperCam Version 11
 -- OnlyTwentyCharacters
 
 local PopperCam = {} -- Guarantees your players won&apos;t see outside the bounds of your map!
@@ -87,14 +87,12 @@ local function OnCharacterAdded(player, character)
 &#9;PlayerCharacters[player] = character
 end
 
-local function OnPlayersChildAdded(child)
-&#9;if child:IsA(&apos;Player&apos;) then
-&#9;&#9;child.CharacterAdded:connect(function(character)
-&#9;&#9;&#9;OnCharacterAdded(child, character)
-&#9;&#9;end)
-&#9;&#9;if child.Character then
-&#9;&#9;&#9;OnCharacterAdded(child, child.Character)
-&#9;&#9;end
+local function OnPlayerAdded(player)
+&#9;player.CharacterAdded:connect(function(character)
+&#9;&#9;OnCharacterAdded(player, character)
+&#9;end)
+&#9;if player.Character then
+&#9;&#9;OnCharacterAdded(player, player.Character)
 &#9;end
 end
 
@@ -176,9 +174,9 @@ OnWorkspaceChanged(&apos;CurrentCamera&apos;)
 
 -- Connect to all Players so we can ignore their Characters
 PlayersService.ChildRemoved:connect(OnPlayersChildRemoved)
-PlayersService.ChildAdded:connect(OnPlayersChildAdded)
+PlayersService.PlayerAdded:connect(OnPlayerAdded)
 for _, player in pairs(PlayersService:GetPlayers()) do
-&#9;OnPlayersChildAdded(player)
+&#9;OnPlayerAdded(player)
 end
 
 return PopperCam
