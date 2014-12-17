@@ -258,6 +258,16 @@ if IsTouchDevice then
 &#9;&#9;&#9;else
 &#9;&#9;&#9;&#9;ClickToMoveTouchControls:Disable()
 &#9;&#9;&#9;end
+&#9;&#9;&#9;print(ClickToMoveTouchControls)
+&#9;&#9;&#9;if ClickToMoveTouchControls == ControlModules.Thumbpad or ClickToMoveTouchControls == ControlModules.Thumbstick or
+&#9;&#9;&#9;&#9;ClickToMoveTouchControls == ControlModules.Default then
+&#9;&#9;&#9;&#9;--
+&#9;&#9;&#9;&#9;if isOn then
+&#9;&#9;&#9;&#9;&#9;TouchJumpModule:Enable()
+&#9;&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;&#9;TouchJumpModule:Disable()
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
 &#9;&#9;end
 &#9;end)
 end

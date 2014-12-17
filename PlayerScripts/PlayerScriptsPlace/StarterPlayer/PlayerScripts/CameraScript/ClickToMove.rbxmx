@@ -1213,9 +1213,9 @@ local function SetUpGestureRecognizers()
 &#9;&#9;&#9;&#9;&#9;if otherInput.UserInputState ~= Enum.UserInputState.End and ((wasInBottomLeft and otherInputInRight) or (wasInBottomRight and otherInputInLeft)) then
 &#9;&#9;&#9;&#9;&#9;&#9;-- TODO: Is this still a valid code path?
 &#9;&#9;&#9;&#9;&#9;&#9;UIS.ModalEnabled = false
-&#9;&#9;&#9;&#9;&#9;&#9;if CameraModule then
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;CameraModule:Stop()
-&#9;&#9;&#9;&#9;&#9;&#9;end
+--&#9;&#9;&#9;&#9;&#9;&#9;if CameraModule then
+--&#9;&#9;&#9;&#9;&#9;&#9;&#9;CameraModule:Stop()
+--&#9;&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;&#9;workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 &#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;end
