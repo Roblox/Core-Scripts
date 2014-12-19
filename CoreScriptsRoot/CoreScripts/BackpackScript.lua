@@ -1,4 +1,4 @@
--- Backpack Version 4.5
+-- Backpack Version 4.6
 -- OnlyTwentyCharacters
 
 -- Configurables --
@@ -825,11 +825,13 @@ do -- Make the Inventory expand/collapse arrow
 	local closed = collapsed + UDim2.new(0, 0, 0, -HotbarFrame.Size.Y.Offset)
 	local opened = closed + UDim2.new(0, 0, 0, -InventoryFrame.Size.Y.Offset)
 	
+	local clickArea = NewGui('TextButton', 'GimmieYerClicks')
 	local function openClose()
 		if not next(Dragging) then -- Only continue if nothing is being dragged
 			InventoryFrame.Visible = not InventoryFrame.Visible
 			local nowOpen = InventoryFrame.Visible
 			arrowIcon.Image = (nowOpen) and ARROW_IMAGE_CLOSE or ARROW_IMAGE_OPEN
+			clickArea.Modal = nowOpen -- Allows free mouse movement even in first person
 			AdjustHotbarFrames()
 			UpdateArrowFrame()
 			for i = 1, HOTBAR_SLOTS do
@@ -837,7 +839,6 @@ do -- Make the Inventory expand/collapse arrow
 			end
 		end
 	end
-	local clickArea = NewGui('TextButton', 'GimmieYerClicks')
 	clickArea.MouseButton1Click:connect(openClose)
 	clickArea.Parent = arrowFrame
 	HotkeyFns[ARROW_HOTKEY] = openClose
