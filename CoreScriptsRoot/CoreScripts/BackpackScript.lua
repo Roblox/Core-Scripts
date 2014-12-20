@@ -1,4 +1,4 @@
--- Backpack Version 4.6
+-- Backpack Version 4.7
 -- OnlyTwentyCharacters
 
 -- Configurables --
@@ -74,8 +74,9 @@ local UpdateArrowFrame = nil -- Function defined in arrow init logic at bottom
 local ActiveHopper = nil --NOTE: HopperBin
 local StarterToolFound = false -- Special handling is required for the gear currently equipped on the site
 local WholeThingEnabled = false
-local TextBoxFocused = false
+local TextBoxFocused = false -- ALL TextBoxes, not just the search box
 local ResultsIndices = nil -- Results of a search
+local ResetSearch = nil -- Function defined in search logic at bottom
 
 -- Functions --
 
@@ -741,16 +742,41 @@ do -- Search stuff
 	xButton.Parent = searchFrame
 	
 	local clickArea = NewGui('TextButton', 'GimmieYerClicks')
-	clickArea.MouseButton1Click:connect(function()
-		searchBox:CaptureFocus()
-		if searchBox.Text == SEARCH_TEXT then
-			searchBox.Text = ''
-		end
-	end)
 	clickArea.ZIndex = 2
 	clickArea.Parent = searchFrame
 	
-	local function resetSearch()
+	local function search()
+		local terms = {}
+		for word in searchBox.Text:gmatch('%S+') do
+			terms[word:lower()] = true
+		end
+		
+		local hitTable = {}
+		for i = HOTBAR_SLOTS + 1, #Slots do -- Only search inventory slots
+			local slot = Slots[i]
+			local hits = slot:CheckTerms(terms)
+			table.insert(hitTable, {slot, hits})
+			slot.Frame.Visible = false
+		end
+		
+		table.sort(hitTable, function(left, right)
+			return left[2] > right[2]
+		end)
+		ResultsIndices = {}
+		
+		for i, data in ipairs(hitTable) do
+			local slot, hits = data[1], data[2]
+			if hits > 0 then
+				ResultsIndices[slot] = HOTBAR_SLOTS + i
+				slot:Reposition()
+				slot.Frame.Visible = true
+			end
+		end
+		
+		xButton.Visible = true
+	end
+	
+	local function clearResults()
 		if xButton.Visible then
 			ResultsIndices = nil
 			for i = HOTBAR_SLOTS + 1, #Slots do
@@ -758,47 +784,49 @@ do -- Search stuff
 				slot:Reposition()
 				slot.Frame.Visible = true
 			end
+			xButton.Visible = false
 		end
-		xButton.Visible = false
+	end
+	
+	local function reset()
+		clearResults()
 		searchBox.Text = SEARCH_TEXT
 	end
-	xButton.MouseButton1Click:connect(resetSearch)
 	
-	searchBox.FocusLost:connect(function(enterPressed)
-		if enterPressed then
+	local function onChanged(property)
+		if property == 'Text' then
 			local text = searchBox.Text
-			local terms = {}
-			for word in text:gmatch('%S+') do
-				terms[word:lower()] = true
+			if text == '' then
+				clearResults()
+			elseif text ~= SEARCH_TEXT then
+				search()
 			end
-			
-			local hitTable = {}
-			for i = HOTBAR_SLOTS + 1, #Slots do -- Only search inventory slots
-				local slot = Slots[i]
-				local hits = slot:CheckTerms(terms)
-				table.insert(hitTable, {slot, hits})
-				slot.Frame.Visible = false
-			end
-			
-			table.sort(hitTable, function(left, right)
-				return left[2] > right[2]
-			end)
-			ResultsIndices = {}
-			
-			for i, data in ipairs(hitTable) do
-				local slot, hits = data[1], data[2]
-				if hits > 0 then
-					ResultsIndices[slot] = HOTBAR_SLOTS + i
-					slot:Reposition()
-					slot.Frame.Visible = true
-				end
-			end
-			
-			xButton.Visible = true
-		else
-			resetSearch()
 		end
-	end)
+	end
+	
+	local function gainFocus()
+		searchBox:CaptureFocus()
+		if searchBox.Text == SEARCH_TEXT then
+			searchBox.Text = ''
+		end
+	end
+	
+	local function loseFocus(enterPressed)
+		if enterPressed then
+			--TODO: Could optimize
+			search()
+		elseif searchBox.Text == '' then
+			searchBox.Text = SEARCH_TEXT
+		end
+	end
+	
+	clickArea.MouseButton1Click:connect(gainFocus)
+	xButton.MouseButton1Click:connect(reset)
+	searchBox.Changed:connect(onChanged)
+	searchBox.FocusLost:connect(loseFocus)
+	HotkeyFns[Enum.KeyCode.Escape.Value] = reset
+	
+	ResetSearch = reset -- Define global function
 end
 
 -- Make the ScrollingFrame, which holds the rest of the Slots (however many) 
@@ -836,6 +864,9 @@ do -- Make the Inventory expand/collapse arrow
 			UpdateArrowFrame()
 			for i = 1, HOTBAR_SLOTS do
 				Slots[i]:SetClickability(not nowOpen)
+			end
+			if not nowOpen then
+				ResetSearch()
 			end
 		end
 	end
