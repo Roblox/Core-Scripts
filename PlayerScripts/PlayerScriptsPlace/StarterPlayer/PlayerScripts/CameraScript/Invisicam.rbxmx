@@ -1,0 +1,263 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBXE641B80103E7430C9C0F793537702C63">
+		<Properties>
+			<string name="Name">Invisicam</string>
+			<ProtectedString name="Source">-- Invisicam Version 2.5 (Occlusion Series)
+-- For the latest standalone version see id=183837794
+-- OnlyTwentyCharacters
+
+local Invisicam = {}
+
+---------------
+-- Constants --
+---------------
+
+local FADE_TARGET = 0.75
+local FADE_RATE = 0.1
+
+local MODE = {
+&#9;CUSTOM = 1, -- Whatever you want!
+&#9;LIMBS = 2, -- Track limbs
+&#9;MOVEMENT = 3, -- Track movement
+&#9;CORNERS = 4, -- Char model corners
+&#9;CIRCLE1 = 5, -- Circle of casts around character
+&#9;CIRCLE2 = 6, -- Circle of casts around character, camera relative
+&#9;LIMBMOVE = 7, -- LIMBS mode + MOVEMENT mode
+}
+Invisicam.MODE = MODE
+
+local STARTING_MODE = MODE.LIMBS
+
+local LIMB_TRACKING_SET = {
+&#9;[&apos;Head&apos;] = true,
+&#9;[&apos;Left Arm&apos;] = true,
+&#9;[&apos;Right Arm&apos;] = true,
+&#9;[&apos;Left Leg&apos;] = true,
+&#9;[&apos;Right Leg&apos;] = true,
+}
+local CORNER_FACTORS = {
+&#9;Vector3.new(1, 1, -1),
+&#9;Vector3.new(1, -1, -1),
+&#9;Vector3.new(-1, -1, -1),
+&#9;Vector3.new(-1, 1, -1)
+}
+local CIRCLE_CASTS = 10
+local MOVE_CASTS = 3
+
+---------------
+-- Variables --
+---------------
+
+local RunService = game:GetService(&apos;RunService&apos;)
+local PlayersService = game:GetService(&apos;Players&apos;)
+local Player = PlayersService.LocalPlayer
+
+local Camera = nil
+local Character = nil
+local Torso = nil
+
+local Mode = nil
+local Behaviors = {} -- Map of modes to behavior fns
+local SavedHits = {} -- Objects currently being faded in/out
+local TrackedLimbs = {} -- Used in limb-tracking casting modes
+
+---------------
+--| Utility |--
+---------------
+
+local function AssertTypes(param, ...)
+&#9;local allowedTypes = {}
+&#9;local typeString = &apos;&apos;
+&#9;for _, typeName in pairs({...}) do
+&#9;&#9;allowedTypes[typeName] = true
+&#9;&#9;typeString = typeString .. (typeString == &apos;&apos; and &apos;&apos; or &apos; or &apos;) .. typeName
+&#9;end
+&#9;local theType = type(param)
+&#9;assert(allowedTypes[theType], typeString .. &quot; type expected, got: &quot; .. theType)
+end
+
+local function CameraCast(worldPoint, ignoreList)
+&#9;local cameraPoint = Camera.CoordinateFrame.p
+&#9;local vector = worldPoint - cameraPoint
+&#9;local ray = Ray.new(cameraPoint, vector.Unit * math.min(vector.Magnitude, 999))
+&#9;return workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
+end
+
+-----------------------
+--| Local Functions |--
+-----------------------
+
+local function LimbBehavior(castPoints)
+&#9;for _, limb in pairs(TrackedLimbs) do
+&#9;&#9;if limb.Parent then
+&#9;&#9;&#9;table.insert(castPoints, limb.Position)
+&#9;&#9;end
+&#9;end
+end
+
+local function MoveBehavior(castPoints)
+&#9;for i = 1, MOVE_CASTS do
+&#9;&#9;local position, velocity = Torso.Position, Torso.Velocity
+&#9;&#9;local horizontalSpeed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude / 2
+&#9;&#9;local offsetVector = (i - 1) * Torso.CFrame.lookVector * horizontalSpeed
+&#9;&#9;table.insert(castPoints, position + offsetVector)
+&#9;end
+end
+
+local function CornerBehavior(castPoints)
+&#9;local cframe = Torso.CFrame
+&#9;local centerPoint = cframe.p
+&#9;local rotation = cframe - centerPoint
+&#9;local halfSize = Character:GetExtentsSize() / 2 --NOTE: Doesn&apos;t update w/ limb animations
+&#9;table.insert(castPoints, centerPoint)
+&#9;for _, factor in pairs(CORNER_FACTORS) do
+&#9;&#9;table.insert(castPoints, centerPoint + (rotation * (halfSize * factor)))
+&#9;end
+end
+
+local function CircleBehavior(castPoints)
+&#9;local cframe = nil
+&#9;if Mode == MODE.CIRCLE1 then
+&#9;&#9;cframe = Torso.CFrame
+&#9;else
+&#9;&#9;local camCFrame = Camera.CoordinateFrame
+&#9;&#9;cframe = camCFrame - camCFrame.p + Torso.Position
+&#9;end
+&#9;table.insert(castPoints, cframe.p)
+&#9;for i = 0, CIRCLE_CASTS - 1 do
+&#9;&#9;local angle = (2 * math.pi / CIRCLE_CASTS) * i
+&#9;&#9;local offset = 3 * Vector3.new(math.cos(angle), math.sin(angle), 0)
+&#9;&#9;table.insert(castPoints, cframe * offset)
+&#9;end
+end
+
+local function LimbMoveBehavior(castPoints)
+&#9;LimbBehavior(castPoints)
+&#9;MoveBehavior(castPoints)
+end
+
+local function OnCharacterAdded(character)
+&#9;Character = character
+&#9;Torso = Character:WaitForChild(&apos;Torso&apos;)
+&#9;
+&#9;TrackedLimbs = {}
+&#9;for _, child in pairs(Character:GetChildren()) do
+&#9;&#9;if child:IsA(&apos;BasePart&apos;) and LIMB_TRACKING_SET[child.Name] then
+&#9;&#9;&#9;table.insert(TrackedLimbs, child)
+&#9;&#9;end
+&#9;end
+end
+
+local function OnWorkspaceChanged(property)
+&#9;if property == &apos;CurrentCamera&apos; then
+&#9;&#9;local newCamera = workspace.CurrentCamera
+&#9;&#9;if newCamera then
+&#9;&#9;&#9;Camera = newCamera
+&#9;&#9;end
+&#9;end
+end
+
+-----------------------
+-- Exposed Functions --
+-----------------------
+
+-- Update. Called every frame after the camera movement step
+function Invisicam:Update()
+&#9;-- Make a list of world points to raycast to
+&#9;local castPoints = {}
+&#9;Behaviors[Mode](castPoints)
+&#9;
+&#9;-- Cast to get a list of objects between the camera and the cast points
+&#9;local currentHits = {}
+&#9;local ignoreList = {Character}
+&#9;local function add(hit)
+&#9;&#9;currentHits[hit] = true
+&#9;&#9;if not SavedHits[hit] then
+&#9;&#9;&#9;SavedHits[hit] = hit.LocalTransparencyModifier
+&#9;&#9;end
+&#9;end
+&#9;for _, worldPoint in pairs(castPoints) do
+&#9;&#9;repeat
+&#9;&#9;&#9;local hitPart = CameraCast(worldPoint, ignoreList)
+&#9;&#9;&#9;if hitPart then
+&#9;&#9;&#9;&#9;add(hitPart)
+&#9;&#9;&#9;&#9;for _, child in pairs(hitPart:GetChildren()) do
+&#9;&#9;&#9;&#9;&#9;if child:IsA(&apos;Decal&apos;) or child:IsA(&apos;Texture&apos;) then
+&#9;&#9;&#9;&#9;&#9;&#9;add(child)
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;table.insert(ignoreList, hitPart) -- Next ray will go through this part
+&#9;&#9;&#9;end
+&#9;&#9;until not hitPart
+&#9;end
+&#9;
+&#9;-- Fade out objects that are in the way, restore those that aren&apos;t anymore
+&#9;for hit, originalFade in pairs(SavedHits) do
+&#9;&#9;local currentFade = hit.LocalTransparencyModifier
+&#9;&#9;if currentHits[hit] then -- Fade
+&#9;&#9;&#9;if currentFade &lt; FADE_TARGET then
+&#9;&#9;&#9;&#9;hit.LocalTransparencyModifier = math.min(currentFade + FADE_RATE, FADE_TARGET)
+&#9;&#9;&#9;end
+&#9;&#9;else -- Restore
+&#9;&#9;&#9;if currentFade &gt; originalFade then
+&#9;&#9;&#9;&#9;hit.LocalTransparencyModifier = math.max(originalFade, currentFade - FADE_RATE)
+&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;SavedHits[hit] = nil
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+end
+
+function Invisicam:SetMode(newMode)
+&#9;AssertTypes(newMode, &apos;number&apos;)
+&#9;for modeName, modeNum in pairs(MODE) do
+&#9;&#9;if modeNum == newMode then
+&#9;&#9;&#9;Mode = newMode
+&#9;&#9;&#9;return
+&#9;&#9;end
+&#9;end
+&#9;error(&quot;Invalid mode number&quot;)
+end
+
+function Invisicam:SetCustomBehavior(func)
+&#9;AssertTypes(func, &apos;function&apos;)
+&#9;Behaviors[MODE.CUSTOM] = func
+end
+
+-- Want to turn off Invisicam? Be sure to call this after.
+function Invisicam:Cleanup()
+&#9;for hit, originalFade in pairs(SavedHits) do
+&#9;&#9;hit.LocalTransparencyModifier = originalFade
+&#9;end
+end
+
+---------------------
+--| Running Logic |--
+---------------------
+
+-- Connect to the current and all future cameras
+workspace.Changed:connect(OnWorkspaceChanged)
+OnWorkspaceChanged(&apos;CurrentCamera&apos;)
+
+Player.CharacterAdded:connect(OnCharacterAdded)
+if Player.Character then
+&#9;OnCharacterAdded(Player.Character)
+end
+
+Invisicam:SetMode(STARTING_MODE)
+
+Behaviors[MODE.CUSTOM] = function() end -- (Does nothing until SetCustomBehavior)
+Behaviors[MODE.LIMBS] = LimbBehavior
+Behaviors[MODE.MOVEMENT] = MoveBehavior
+Behaviors[MODE.CORNERS] = CornerBehavior
+Behaviors[MODE.CIRCLE1] = CircleBehavior
+Behaviors[MODE.CIRCLE2] = CircleBehavior
+Behaviors[MODE.LIMBMOVE] = LimbMoveBehavior
+
+return Invisicam
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

@@ -1,0 +1,222 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBX1E3E090B922241488CF1527B6A17D7C7">
+		<Properties>
+			<string name="Name">Thumbpad</string>
+			<ProtectedString name="Source">--[[
+&#9;// FileName: Thumbpad
+&#9;// Written by: jmargh
+&#9;// Description: Implements thumbpad controls for touch devices
+--]]
+
+local Players = game:GetService(&apos;Players&apos;)
+local UserInputService = game:GetService(&apos;UserInputService&apos;)
+
+local Thumbpad = {}
+
+--[[ Script Variables ]]--
+while not Players.LocalPlayer do
+&#9;wait()
+end
+local LocalPlayer = Players.LocalPlayer
+local ThumbpadFrame = nil
+local TouchObject = nil
+local OnInputEnded = nil&#9;-- is defined in Create()
+local OnTouchChangedCn = nil
+local OnTouchEndedCn = nil
+
+--[[ Constants ]]--
+local DPAD_SHEET = &quot;rbxasset://textures/ui/DPadSheet.png&quot;
+local TOUCH_CONTROL_SHEET = &quot;rbxasset://textures/ui/TouchControlsSheet.png&quot;
+
+--[[ Local Functions ]]--
+local function createArrowLabel(name, parent, position, size, rectOffset, rectSize)
+&#9;local image = Instance.new(&apos;ImageLabel&apos;)
+&#9;image.Name = name
+&#9;image.Image = DPAD_SHEET
+&#9;image.ImageRectOffset = rectOffset
+&#9;image.ImageRectSize = rectSize
+&#9;image.BackgroundTransparency = 1
+&#9;image.ImageColor3 = Color3.new(190/255, 190/255, 190/255)
+&#9;image.Size = size
+&#9;image.Position = position
+&#9;image.Parent = parent
+&#9;
+&#9;return image
+end
+
+--[[ Public API ]]--
+function Thumbpad:Enable()
+&#9;ThumbpadFrame.Visible = true
+end
+
+function Thumbpad:Disable()
+&#9;ThumbpadFrame.Visible = false
+&#9;OnInputEnded()
+end
+
+function Thumbpad:Create(parentFrame)
+&#9;if ThumbpadFrame then
+&#9;&#9;ThumbpadFrame:Destroy()
+&#9;&#9;ThumbpadFrame = nil
+&#9;&#9;if OnTouchChangedCn then
+&#9;&#9;&#9;OnTouchChangedCn:disconnect()
+&#9;&#9;&#9;OnTouchChangedCn = nil
+&#9;&#9;end
+&#9;&#9;if OnTouchEndedCn then
+&#9;&#9;&#9;OnTouchEndedCn:disconnect()
+&#9;&#9;&#9;OnTouchEndedCn = nil
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local isSmallScreen = parentFrame.AbsoluteSize.y &lt;= 500
+&#9;local thumbpadSize = isSmallScreen and 70 or 120
+&#9;local position = isSmallScreen and UDim2.new(0, thumbpadSize * 1.25, 1, -thumbpadSize - 20) or
+&#9;&#9;UDim2.new(0, thumbpadSize/2 - 10, 1, -thumbpadSize * 1.75 - 10)
+&#9;
+&#9;ThumbpadFrame = Instance.new(&apos;Frame&apos;)
+&#9;ThumbpadFrame.Name = &quot;ThumbpadFrame&quot;
+&#9;ThumbpadFrame.Visible = false
+&#9;ThumbpadFrame.Active = true
+&#9;ThumbpadFrame.Size = UDim2.new(0, thumbpadSize + 20, 0, thumbpadSize + 20)
+&#9;ThumbpadFrame.Position = position
+&#9;ThumbpadFrame.BackgroundTransparency = 1
+&#9;
+&#9;local outerImage = Instance.new(&apos;ImageLabel&apos;)
+&#9;outerImage.Name = &quot;OuterImage&quot;
+&#9;outerImage.Image = TOUCH_CONTROL_SHEET
+&#9;outerImage.ImageRectOffset = Vector2.new(0, 0)
+&#9;outerImage.ImageRectSize = Vector2.new(220, 220)
+&#9;outerImage.BackgroundTransparency = 1
+&#9;outerImage.Size = UDim2.new(0, thumbpadSize, 0, thumbpadSize)
+&#9;outerImage.Position = UDim2.new(0, 10, 0, 10)
+&#9;outerImage.Parent = ThumbpadFrame
+&#9;
+&#9;local smArrowSize = isSmallScreen and UDim2.new(0, 32, 0, 32) or UDim2.new(0, 64, 0, 64)
+&#9;local lgArrowSize = UDim2.new(0, smArrowSize.X.Offset * 2, 0, smArrowSize.Y.Offset * 2)
+&#9;local imgRectSize = Vector2.new(110, 110)
+&#9;local smImgOffset = isSmallScreen and -4 or -9
+&#9;local lgImgOffset = isSmallScreen and -28 or -55
+&#9;
+&#9;local dArrow = createArrowLabel(&quot;DownArrow&quot;, outerImage, UDim2.new(0.5, -smArrowSize.X.Offset/2, 1, lgImgOffset), smArrowSize, Vector2.new(8, 8), imgRectSize)
+&#9;local uArrow = createArrowLabel(&quot;UpArrow&quot;, outerImage, UDim2.new(0.5, -smArrowSize.X.Offset/2, 0, smImgOffset), smArrowSize, Vector2.new(8, 266), imgRectSize)
+&#9;local lArrow = createArrowLabel(&quot;LeftArrow&quot;, outerImage, UDim2.new(0, smImgOffset, 0.5, -smArrowSize.Y.Offset/2), smArrowSize, Vector2.new(137, 137), imgRectSize)
+&#9;local rArrow = createArrowLabel(&quot;RightArrow&quot;, outerImage, UDim2.new(1, lgImgOffset, 0.5, -smArrowSize.Y.Offset/2), smArrowSize, Vector2.new(8, 137), imgRectSize)
+&#9;
+&#9;local function doTween(guiObject, endSize, endPosition)
+&#9;&#9;guiObject:TweenSizeAndPosition(endSize, endPosition, Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, 0.15, true)
+&#9;end
+&#9;
+&#9;local padOrigin = nil
+&#9;local deadZone = 0.1
+&#9;local isRight, isLeft, isUp, isDown = false, false, false, false
+&#9;local vForward = Vector3.new(0, 0, -1)
+&#9;local vRight = Vector3.new(1, 0, 0)
+&#9;local function doMove(pos)
+&#9;&#9;local delta = Vector2.new(pos.x, pos.y) - padOrigin
+&#9;&#9;local inputAxis = delta / (thumbpadSize/2)
+&#9;&#9;
+&#9;&#9;-- Scaled Radial Dead Zone
+&#9;&#9;local inputAxisMagnitude = inputAxis.magnitude
+&#9;&#9;if inputAxisMagnitude &lt; deadZone then
+&#9;&#9;&#9;inputAxis = Vector3.new(0, 0, 0)
+&#9;&#9;else
+&#9;&#9;&#9;inputAxis = inputAxis.unit * ((inputAxisMagnitude - deadZone) / (1 - deadZone))
+&#9;&#9;&#9;-- catch possible NAN Vector
+&#9;&#9;&#9;if inputAxis.magnitude == 0 then
+&#9;&#9;&#9;&#9;inputAxis = Vector3.new(0, 0, 0)
+&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y).unit
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;if LocalPlayer then
+&#9;&#9;&#9;LocalPlayer:Move(inputAxis, true)
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;local forwardDot = inputAxis:Dot(vForward)
+&#9;&#9;local rightDot = inputAxis:Dot(vRight)
+&#9;&#9;if forwardDot &gt; 0.5 then&#9;&#9;-- UP
+&#9;&#9;&#9;if not isUp then
+&#9;&#9;&#9;&#9;isUp, isDown = true, false
+&#9;&#9;&#9;&#9;doTween(uArrow, lgArrowSize, UDim2.new(0.5, -smArrowSize.X.Offset, 0, smImgOffset - smArrowSize.Y.Offset * 1.5))
+&#9;&#9;&#9;&#9;doTween(dArrow, smArrowSize, UDim2.new(0.5, -smArrowSize.X.Offset/2, 1, lgImgOffset))
+&#9;&#9;&#9;end
+&#9;&#9;elseif forwardDot &lt; -0.5 then&#9;-- DOWN
+&#9;&#9;&#9;if not isDown then
+&#9;&#9;&#9;&#9;isDown, isUp = true, false
+&#9;&#9;&#9;&#9;doTween(dArrow, lgArrowSize, UDim2.new(0.5, -smArrowSize.X.Offset, 1, lgImgOffset + smArrowSize.Y.Offset/2))
+&#9;&#9;&#9;&#9;doTween(uArrow, smArrowSize, UDim2.new(0.5, -smArrowSize.X.Offset/2, 0, smImgOffset))
+&#9;&#9;&#9;end
+&#9;&#9;else
+&#9;&#9;&#9;isUp, isDown = false, false
+&#9;&#9;&#9;doTween(dArrow, smArrowSize, UDim2.new(0.5, -smArrowSize.X.Offset/2, 1, lgImgOffset))
+&#9;&#9;&#9;doTween(uArrow, smArrowSize, UDim2.new(0.5, -smArrowSize.X.Offset/2, 0, smImgOffset))
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;if rightDot &gt; 0.5 then
+&#9;&#9;&#9;if not isRight then
+&#9;&#9;&#9;&#9;isRight, isLeft = true, false
+&#9;&#9;&#9;&#9;doTween(rArrow, lgArrowSize, UDim2.new(1, lgImgOffset + smArrowSize.X.Offset/2, 0.5, -smArrowSize.Y.Offset))
+&#9;&#9;&#9;&#9;doTween(lArrow, smArrowSize, UDim2.new(0, smImgOffset, 0.5, -smArrowSize.Y.Offset/2))
+&#9;&#9;&#9;end
+&#9;&#9;elseif rightDot &lt; -0.5 then
+&#9;&#9;&#9;if not isLeft then
+&#9;&#9;&#9;&#9;isLeft, isRight = true, false
+&#9;&#9;&#9;&#9;doTween(lArrow, lgArrowSize, UDim2.new(0, smImgOffset - smArrowSize.X.Offset * 1.5, 0.5, -smArrowSize.Y.Offset))
+&#9;&#9;&#9;&#9;doTween(rArrow, smArrowSize, UDim2.new(1, lgImgOffset, 0.5, -smArrowSize.Y.Offset/2))
+&#9;&#9;&#9;end
+&#9;&#9;else
+&#9;&#9;&#9;isRight, isLeft = false, false
+&#9;&#9;&#9;doTween(lArrow, smArrowSize, UDim2.new(0, smImgOffset, 0.5, -smArrowSize.Y.Offset/2))
+&#9;&#9;&#9;doTween(rArrow, smArrowSize, UDim2.new(1, lgImgOffset, 0.5, -smArrowSize.Y.Offset/2))
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;--input connections
+&#9;ThumbpadFrame.InputBegan:connect(function(inputObject)
+&#9;&#9;if TouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
+&#9;&#9;&#9;return
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;ThumbpadFrame.Position = UDim2.new(0, inputObject.Position.x - ThumbpadFrame.AbsoluteSize.x/2, 0, inputObject.Position.y - ThumbpadFrame.Size.Y.Offset/2)
+&#9;&#9;padOrigin = Vector2.new(ThumbpadFrame.AbsolutePosition.x + ThumbpadFrame.AbsoluteSize.x/2,
+&#9;&#9;&#9;ThumbpadFrame.AbsolutePosition.y + ThumbpadFrame.AbsoluteSize.y/2)
+&#9;&#9;doMove(inputObject.Position)
+&#9;&#9;TouchObject = inputObject
+&#9;end)
+&#9;
+&#9;OnTouchChangedCn = UserInputService.TouchMoved:connect(function(inputObject, isProcessed)
+&#9;&#9;if inputObject == TouchObject then
+&#9;&#9;&#9;doMove(TouchObject.Position)
+&#9;&#9;end
+&#9;end)
+&#9;
+&#9;OnInputEnded = function()
+&#9;&#9;if LocalPlayer then
+&#9;&#9;&#9;LocalPlayer:Move(Vector3.new(0, 0, 0), true)
+&#9;&#9;end
+&#9;&#9;ThumbpadFrame.Position = position
+&#9;&#9;TouchObject = nil
+&#9;&#9;isUp, isDown, isLeft, isRight = false, false, false, false
+&#9;&#9;doTween(dArrow, smArrowSize, UDim2.new(0.5, -smArrowSize.X.Offset/2, 1, lgImgOffset))
+&#9;&#9;doTween(uArrow, smArrowSize, UDim2.new(0.5, -smArrowSize.X.Offset/2, 0, smImgOffset))
+&#9;&#9;doTween(lArrow, smArrowSize, UDim2.new(0, smImgOffset, 0.5, -smArrowSize.Y.Offset/2))
+&#9;&#9;doTween(rArrow, smArrowSize, UDim2.new(1, lgImgOffset, 0.5, -smArrowSize.Y.Offset/2))
+&#9;end
+&#9;
+&#9;OnTouchEndedCn = UserInputService.TouchEnded:connect(function(inputObject)
+&#9;&#9;if inputObject == TouchObject then
+&#9;&#9;&#9;OnInputEnded()
+&#9;&#9;end
+&#9;end)
+&#9;
+&#9;ThumbpadFrame.Parent = parentFrame
+end
+
+return Thumbpad
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

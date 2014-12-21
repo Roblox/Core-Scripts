@@ -1,0 +1,431 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBX68CB45FC61B74F50950AD8751B564495">
+		<Properties>
+			<string name="Name">RootCamera</string>
+			<ProtectedString name="Source">local UserInputService = game:GetService(&apos;UserInputService&apos;)
+local PlayersService = game:GetService(&apos;Players&apos;)
+
+local CameraScript = script.Parent
+local ShiftLockController = require(CameraScript:WaitForChild(&apos;ShiftLockController&apos;))
+
+local function clamp(low, high, num)
+&#9;if low &lt;= high then
+&#9;&#9;return math.min(high, math.max(low, num))
+&#9;end
+&#9;print(&quot;Trying to clamp when low:&quot;, low , &quot;is larger than high:&quot; , high , &quot;returning input value.&quot;)
+&#9;return num
+end
+
+local function findFirstChildByType(parent, type)
+&#9;for _, child in pairs(parent:GetChildren()) do
+&#9;&#9;if child.ClassName == type then -- :IsA
+&#9;&#9;&#9;return child
+&#9;&#9;end
+&#9;end
+end
+
+local humanoidCache = {}
+local function findPlayerHumanoid(player)
+&#9;local character = player and player.Character
+&#9;if character then
+&#9;&#9;local resultHumanoid = humanoidCache[player]
+&#9;&#9;if resultHumanoid and resultHumanoid.Parent == character then
+&#9;&#9;&#9;return resultHumanoid
+&#9;&#9;else
+&#9;&#9;&#9;humanoidCache[player] = nil -- Bust Old Cache
+&#9;&#9;&#9;for _, child in pairs(character:GetChildren()) do
+&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;&#9;humanoidCache[player] = child
+&#9;&#9;&#9;&#9;&#9;return child
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+end
+
+local MIN_Y = math.rad(-80)
+local MAX_Y = math.rad(80)
+
+local function CreateCamera()
+&#9;local this = {}
+&#9;
+&#9;this.ShiftLock = false
+&#9;local pinchZoomSpeed = 20
+&#9;local isFirstPerson = false
+
+&#9;function this:GetShiftLock()
+&#9;&#9;return ShiftLockController:IsShiftLocked()
+&#9;end
+&#9;
+&#9;function this:GetHumanoid()
+&#9;&#9;local player = PlayersService.LocalPlayer
+&#9;&#9;return findPlayerHumanoid(player)
+&#9;end
+&#9;
+&#9;function this:GetHumanoidRootPart()
+&#9;&#9;local humanoid = this:GetHumanoid()
+&#9;&#9;return humanoid and humanoid.Torso
+&#9;end
+&#9;
+&#9;function this:GetSubjectPosition()
+&#9;&#9;local result = nil
+&#9;&#9;local humanoidRootPart = self:GetHumanoidRootPart()
+&#9;&#9;local humanoid = self:GetHumanoid()
+&#9;&#9;if humanoidRootPart then
+&#9;&#9;&#9;result = humanoidRootPart.Position + Vector3.new(0, 1.5, 0)
+&#9;&#9;&#9;if humanoid and humanoid:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;result = result + humanoid.CameraOffset
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;return result
+&#9;end
+
+&#9;function this:ResetCameraLook()
+&#9;&#9;local camera = workspace.CurrentCamera
+&#9;&#9;if camera then
+&#9;&#9;&#9;self.cameraLook = camera and camera.CoordinateFrame.lookVector
+&#9;&#9;end
+&#9;end
+
+&#9;function this:GetCameraLook()
+&#9;&#9;if self.cameraLook == nil then
+&#9;&#9;&#9;self.cameraLook = workspace.CurrentCamera and workspace.CurrentCamera.CoordinateFrame.lookVector or Vector3.new(0,0,1)
+&#9;&#9;end
+&#9;&#9;return self.cameraLook
+&#9;end
+
+&#9;function this:GetCameraZoom()
+&#9;&#9;if this.currentZoom == nil then
+&#9;&#9;&#9;local player = PlayersService.LocalPlayer
+&#9;&#9;&#9;this.currentZoom = player and clamp(player.CameraMinZoomDistance, player.CameraMaxZoomDistance, 10) or 10
+&#9;&#9;end
+&#9;&#9;return this.currentZoom
+&#9;end
+&#9;
+&#9;function this:GetCameraActualZoom()
+&#9;&#9;local camera = workspace.CurrentCamera
+&#9;&#9;if camera then
+&#9;&#9;&#9;return (camera.CoordinateFrame.p - camera.Focus.p).magnitude
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;function this:ViewSizeX()
+&#9;&#9;local result = 1024
+&#9;&#9;local player = PlayersService.LocalPlayer
+&#9;&#9;local mouse = player and player:GetMouse()
+&#9;&#9;if mouse then
+&#9;&#9;&#9;result = mouse.ViewSizeX
+&#9;&#9;end
+&#9;&#9;return result
+&#9;end
+&#9;
+&#9;function this:ViewSizeY()
+&#9;&#9;local result = 768
+&#9;&#9;local player = PlayersService.LocalPlayer
+&#9;&#9;local mouse = player and player:GetMouse()
+&#9;&#9;if mouse then
+&#9;&#9;&#9;result = mouse.ViewSizeY
+&#9;&#9;end
+&#9;&#9;return result
+&#9;end
+&#9;
+&#9;function this:ScreenTranslationToAngle(translationVector)
+&#9;&#9;local screenX = this:ViewSizeX()
+&#9;&#9;local screenY = this:ViewSizeY()
+&#9;&#9;-- moving your finger across the screen should be a full rotation
+&#9;&#9;local xTheta = (translationVector.x / screenX) * math.pi*2
+&#9;&#9;local yTheta = (translationVector.y / screenY) * math.pi
+&#9;&#9;return Vector2.new(xTheta, yTheta)
+&#9;end
+&#9;
+&#9;function this:RotateCamera(startLook, xyRotateVector)&#9;&#9;
+&#9;&#9;-- Could cache these values so we don&apos;t have to recalc them all the time
+&#9;&#9;local startCFrame = CFrame.new(Vector3.new(), startLook)
+&#9;&#9;local startVertical = math.asin(startLook.y)
+&#9;&#9;local yTheta = clamp(-MAX_Y + startVertical, -MIN_Y + startVertical, xyRotateVector.y)
+&#9;&#9;self.cameraLook = (CFrame.Angles(0, -xyRotateVector.x, 0) * startCFrame * CFrame.Angles(-yTheta,0,0)).lookVector
+&#9;&#9;return this:GetCameraLook()
+&#9;end
+&#9;
+&#9;function this:IsInFirstPerson()
+&#9;&#9;return isFirstPerson
+&#9;end
+&#9;
+&#9;function this:ZoomCamera(desiredZoom)
+&#9;&#9;local player = PlayersService.LocalPlayer
+&#9;&#9;if player then
+&#9;&#9;&#9;if player.CameraMode == Enum.CameraMode.LockFirstPerson then
+&#9;&#9;&#9;&#9;this.currentZoom = 0
+&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;this.currentZoom = clamp(player.CameraMinZoomDistance, player.CameraMaxZoomDistance, desiredZoom)
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;-- set mouse behavior
+&#9;&#9;if self:GetCameraZoom() &lt; 2 then
+&#9;&#9;&#9;isFirstPerson = true
+&#9;&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+&#9;&#9;else
+&#9;&#9;&#9;isFirstPerson = false
+&#9;&#9;&#9;if not self:GetShiftLock() then
+&#9;&#9;&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;return self:GetCameraZoom()
+&#9;end
+&#9;
+&#9;local function rk4Integrator(position, velocity, t)
+&#9;&#9;local direction = velocity &lt; 0 and -1 or 1
+&#9;&#9;local function acceleration(p, v)
+&#9;&#9;&#9;local accel = direction * math.max(1, (p / 3.3) + 0.5)
+&#9;&#9;&#9;return accel
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;local p1 = position
+&#9;&#9;local v1 = velocity
+&#9;&#9;local a1 = acceleration(p1, v1)
+&#9;&#9;local p2 = p1 + v1 * (t / 2)
+&#9;&#9;local v2 = v1 + a1 * (t / 2)
+&#9;&#9;local a2 = acceleration(p2, v2)
+&#9;&#9;local p3 = p1 + v2 * (t / 2)
+&#9;&#9;local v3 = v1 + a2 * (t / 2)
+&#9;&#9;local a3 = acceleration(p3, v3)
+&#9;&#9;local p4 = p1 + v3 * t
+&#9;&#9;local v4 = v1 + a3 * t
+&#9;&#9;local a4 = acceleration(p4, v4)
+&#9;&#9;
+&#9;&#9;local positionResult = position + (v1 + 2 * v2 + 2 * v3 + v4) * (t / 6)
+&#9;&#9;local velocityResult = velocity + (a1 + 2 * a2 + 2 * a3 + a4) * (t / 6)
+&#9;&#9;return positionResult, velocityResult
+&#9;end
+&#9;
+&#9;function this:ZoomCameraBy(zoomScale)
+&#9;&#9;local zoom = this:GetCameraActualZoom()
+&#9;&#9;if zoom then
+&#9;&#9;&#9;-- Can break into more steps to get more accurate integration
+&#9;&#9;&#9;zoom = rk4Integrator(zoom, zoomScale, 1)
+&#9;&#9;&#9;self:ZoomCamera(zoom)
+&#9;&#9;end
+&#9;&#9;return self:GetCameraZoom()
+&#9;end
+&#9;
+&#9;function this:ZoomCameraFixedBy(zoomIncrement)
+&#9;&#9;return self:ZoomCamera(self:GetCameraZoom() + zoomIncrement)
+&#9;end&#9;
+&#9;
+&#9;function this:Update()
+&#9;end
+
+
+&#9;local startPos = nil
+&#9;local lastPos = nil
+&#9;local panBeginLook = nil
+&#9;
+&#9;if UserInputService.TouchEnabled then
+
+&#9;&#9;local fingerTouches = {}
+&#9;&#9;local NumUnsunkTouches = 0
+&#9;&#9;
+&#9;&#9;UserInputService.InputBegan:connect(function(input, processed)
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Touch then
+&#9;&#9;&#9;&#9;fingerTouches[input] = processed
+&#9;&#9;&#9;&#9;if not processed then&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;NumUnsunkTouches = NumUnsunkTouches + 1
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;
+&#9;&#9;local StartingDiff = nil
+&#9;&#9;local pinchBeginZoom = nil
+&#9;&#9;UserInputService.InputChanged:connect(function(input, processed)
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Touch then
+&#9;&#9;&#9;&#9;if fingerTouches[input] == nil then
+&#9;&#9;&#9;&#9;&#9;fingerTouches[input] = processed
+&#9;&#9;&#9;&#9;&#9;if not processed then&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;&#9;NumUnsunkTouches = NumUnsunkTouches + 1
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;if NumUnsunkTouches == 1 then
+&#9;&#9;&#9;&#9;&#9;if fingerTouches[input] == false then
+&#9;&#9;&#9;&#9;&#9;&#9;panBeginLook = panBeginLook or this:GetCameraLook()
+&#9;&#9;&#9;&#9;&#9;&#9;startPos = startPos or input.Position
+&#9;&#9;&#9;&#9;&#9;&#9;lastPos = lastPos or startPos&#9;&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;&#9;this.UserPanningTheCamera = true
+&#9;&#9;&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;&#9;local totalTrans = input.Position - startPos
+&#9;&#9;&#9;&#9;&#9;&#9;lastPos = input.Position
+&#9;&#9;&#9;&#9;&#9;&#9;this:RotateCamera(panBeginLook, this:ScreenTranslationToAngle(totalTrans))
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;&#9;panBeginLook = nil
+&#9;&#9;&#9;&#9;&#9;startPos = nil
+&#9;&#9;&#9;&#9;&#9;lastPos = nil&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;this.UserPanningTheCamera = false
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;if NumUnsunkTouches == 2 then
+&#9;&#9;&#9;&#9;&#9;local unsunkTouches = {}
+&#9;&#9;&#9;&#9;&#9;for touch, wasSunk in pairs(fingerTouches) do
+&#9;&#9;&#9;&#9;&#9;&#9;if not wasSunk then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;table.insert(unsunkTouches, touch)
+&#9;&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;if #unsunkTouches == 2 then
+&#9;&#9;&#9;&#9;&#9;&#9;local difference = (unsunkTouches[1].Position - unsunkTouches[2].Position).magnitude
+&#9;&#9;&#9;&#9;&#9;&#9;if StartingDiff and pinchBeginZoom then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;local scale = difference / math.max(0.01, StartingDiff)
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;local clampedScale = clamp(0.1, 10, scale)
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;this:ZoomCamera(pinchBeginZoom / clampedScale)
+&#9;&#9;&#9;&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;StartingDiff = difference
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;pinchBeginZoom = this:GetCameraZoom()
+&#9;&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;&#9;StartingDiff = nil
+&#9;&#9;&#9;&#9;&#9;pinchBeginZoom = nil
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;
+&#9;&#9;UserInputService.InputEnded:connect(function(input, processed)
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Touch then
+&#9;&#9;&#9;&#9;if fingerTouches[input] == false then
+&#9;&#9;&#9;&#9;&#9;if NumUnsunkTouches == 1 then
+&#9;&#9;&#9;&#9;&#9;&#9;panBeginLook = nil
+&#9;&#9;&#9;&#9;&#9;&#9;startPos = nil
+&#9;&#9;&#9;&#9;&#9;&#9;lastPos = nil
+&#9;&#9;&#9;&#9;&#9;&#9;this.UserPanningTheCamera = false
+&#9;&#9;&#9;&#9;&#9;elseif NumUnsunkTouches == 2 then
+&#9;&#9;&#9;&#9;&#9;&#9;StartingDiff = nil
+&#9;&#9;&#9;&#9;&#9;&#9;pinchBeginZoom = nil
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;if fingerTouches[input] ~= nil and fingerTouches[input] == false then
+&#9;&#9;&#9;&#9;&#9;NumUnsunkTouches = NumUnsunkTouches - 1
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;fingerTouches[input] = nil
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;
+&#9;elseif UserInputService.KeyboardEnabled and UserInputService.MouseEnabled then -- Keyboard
+
+&#9;&#9;UserInputService.InputBegan:connect(function(input, processed)
+&#9;&#9;&#9;if processed then return end
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.MouseButton2 then
+&#9;&#9;&#9;&#9;-- Check if they are in first-person
+&#9;&#9;&#9;&#9;if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
+&#9;&#9;&#9;&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;panBeginLook = this:GetCameraLook()
+&#9;&#9;&#9;&#9;startPos = input.Position
+&#9;&#9;&#9;&#9;lastPos = startPos
+&#9;&#9;&#9;&#9;this.UserPanningTheCamera = true
+&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.I then
+&#9;&#9;&#9;&#9;this:ZoomCameraBy(-5)
+&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.O then
+&#9;&#9;&#9;&#9;this:ZoomCameraBy(5)
+&#9;&#9;&#9;end
+&#9;&#9;&#9;if panBeginLook == nil then
+&#9;&#9;&#9;&#9;if input.KeyCode == Enum.KeyCode.Left then
+&#9;&#9;&#9;&#9;&#9;this.TurningLeft = true
+&#9;&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Right then
+&#9;&#9;&#9;&#9;&#9;this.TurningRight = true
+&#9;&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Comma then
+&#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(math.rad(30),0))
+&#9;&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Period then
+&#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(math.rad(-30),0))
+&#9;&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.PageUp then
+&#9;&#9;&#9;&#9;--elseif input.KeyCode == Enum.KeyCode.Home then
+&#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(0,math.rad(15)))
+&#9;&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.PageDown then
+&#9;&#9;&#9;&#9;--elseif input.KeyCode == Enum.KeyCode.End then
+&#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(0,math.rad(-15)))
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;
+&#9;&#9;UserInputService.InputChanged:connect(function(input, processed)
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.MouseMovement then
+&#9;&#9;&#9;&#9;if startPos and lastPos and panBeginLook then
+&#9;&#9;&#9;&#9;&#9;--local currPos = input.Position
+&#9;&#9;&#9;&#9;&#9;local currPos = lastPos + input.Delta
+&#9;&#9;&#9;&#9;&#9;local totalTrans = currPos - startPos
+&#9;&#9;&#9;&#9;&#9;lastPos = currPos
+&#9;&#9;&#9;&#9;&#9;-- NOTE: we probably should not add the delta if we are already maxed out on the rotation angle.
+&#9;&#9;&#9;&#9;&#9;this:RotateCamera(panBeginLook, this:ScreenTranslationToAngle(totalTrans))
+&#9;&#9;&#9;&#9;elseif this:IsInFirstPerson() or this:GetShiftLock() then
+&#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), this:ScreenTranslationToAngle(input.Delta))
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.MouseWheel then
+&#9;&#9;&#9;&#9;if not processed then
+&#9;&#9;&#9;&#9;&#9;this:ZoomCameraBy(clamp(-1, 1, -input.Position.Z) * 1.4)
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;
+&#9;&#9;UserInputService.InputEnded:connect(function(input, processed)
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.MouseButton2 then
+&#9;&#9;&#9;&#9;-- Check if they are in first-person
+&#9;&#9;&#9;&#9;if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
+&#9;&#9;&#9;&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;panBeginLook = nil
+&#9;&#9;&#9;&#9;startPos = nil
+&#9;&#9;&#9;&#9;lastPos = nil
+&#9;&#9;&#9;&#9;this.UserPanningTheCamera = false
+&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Left then
+&#9;&#9;&#9;&#9;this.TurningLeft = false
+&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Right then
+&#9;&#9;&#9;&#9;this.TurningRight = false
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;end
+&#9;
+&#9;local function OnPlayerAdded(player)
+&#9;&#9;player.Changed:connect(function(prop)
+&#9;&#9;&#9;if prop == &quot;CameraMode&quot; then
+&#9;&#9;&#9;&#9; this:ZoomCameraBy(0)
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;
+&#9;&#9;local function OnCharacterAdded(newCharacter)
+&#9;&#9;&#9;this:ZoomCamera(10)
+&#9;&#9;&#9;local humanoid = findPlayerHumanoid(player)
+&#9;&#9;&#9;local start = tick()
+&#9;&#9;&#9;while tick() - start &lt; 0.3 and (humanoid == nil or humanoid.Torso == nil) do
+&#9;&#9;&#9;&#9;wait()
+&#9;&#9;&#9;&#9;humanoid = findPlayerHumanoid(player)
+&#9;&#9;&#9;end
+&#9;&#9;&#9;if humanoid and humanoid.Torso and player.Character == newCharacter then
+&#9;&#9;&#9;&#9;this.cameraLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.7,0)).unit
+&#9;&#9;&#9;&#9;-- reset old camera info so follow cam doesn&apos;t rotate us
+&#9;&#9;&#9;&#9;this.LastCameraTransform = nil
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;player.CharacterAdded:connect(OnCharacterAdded)
+&#9;&#9;if player.Character then
+&#9;&#9;&#9;spawn(function() OnCharacterAdded(player.Character) end)
+&#9;&#9;end
+&#9;end
+&#9;if PlayersService.LocalPlayer then
+&#9;&#9;OnPlayerAdded(PlayersService.LocalPlayer)
+&#9;end
+&#9;PlayersService.ChildAdded:connect(function(child)
+&#9;&#9;if child and PlayersService.LocalPlayer == child then
+&#9;&#9;&#9;OnPlayerAdded(PlayersService.LocalPlayer)
+&#9;&#9;end 
+&#9;end)
+&#9;&#9;
+&#9;return this
+end
+
+return CreateCamera
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

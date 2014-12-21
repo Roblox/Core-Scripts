@@ -1,0 +1,174 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBX4085E7D84B9F4D049BA1EB9C1D13F5D2">
+		<Properties>
+			<string name="Name">Thumbstick</string>
+			<ProtectedString name="Source">--[[
+&#9;// FileName: Thumbstick
+&#9;// Written by: jmargh
+&#9;// Description: Implements thumbstick controls for touch devices
+--]]
+local Players = game:GetService(&apos;Players&apos;)
+local UserInputService = game:GetService(&apos;UserInputService&apos;)
+
+local Thumbstick = {}
+
+--[[ Script Variables ]]--
+while not Players.LocalPlayer do
+&#9;wait()
+end
+local LocalPlayer = Players.LocalPlayer
+local IsFollowStick = true
+local ThumbstickFrame = nil
+local MoveTouchObject = nil
+local OnTouchEnded = nil&#9;&#9;-- defined in Create()
+local OnTouchMovedCn = nil
+local OnTouchEndedCn = nil
+
+--[[ Constants ]]--
+local TOUCH_CONTROL_SHEET = &quot;rbxasset://textures/ui/TouchControlsSheet.png&quot;
+
+
+--[[ Public API ]]--
+function Thumbstick:Enable()
+&#9;ThumbstickFrame.Visible = true
+end
+
+function Thumbstick:Disable()
+&#9;ThumbstickFrame.Visible = false
+&#9;OnTouchEnded()
+end
+
+function Thumbstick:Create(parentFrame)
+&#9;if ThumbstickFrame then
+&#9;&#9;ThumbstickFrame:Destroy()
+&#9;&#9;ThumbstickFrame = nil
+&#9;&#9;if OnTouchMovedCn then
+&#9;&#9;&#9;OnTouchMovedCn:disconnect()
+&#9;&#9;&#9;OnTouchMovedCn = nil
+&#9;&#9;end
+&#9;&#9;if OnTouchEndedCn then
+&#9;&#9;&#9;OnTouchEndedCn:disconnect()
+&#9;&#9;&#9;OnTouchEndedCn = nil
+&#9;&#9;end
+&#9;end
+&#9;&#9;
+&#9;local isSmallScreen = parentFrame.AbsoluteSize.y &lt;= 500
+&#9;local thumbstickSize = isSmallScreen and 70 or 120
+&#9;local position = isSmallScreen and UDim2.new(0, (thumbstickSize/2) - 10, 1, -thumbstickSize - 20) or
+&#9;&#9;UDim2.new(0, thumbstickSize/2, 1, -thumbstickSize * 1.75)
+&#9;&#9;
+&#9;ThumbstickFrame = Instance.new(&apos;Frame&apos;)
+&#9;ThumbstickFrame.Name = &quot;ThumbstickFrame&quot;
+&#9;ThumbstickFrame.Active = true
+&#9;ThumbstickFrame.Visible = false
+&#9;ThumbstickFrame.Size = UDim2.new(0, thumbstickSize, 0, thumbstickSize)
+&#9;ThumbstickFrame.Position = position
+&#9;ThumbstickFrame.BackgroundTransparency = 1
+&#9;
+&#9;local outerImage = Instance.new(&apos;ImageLabel&apos;)
+&#9;outerImage.Name = &quot;OuterImage&quot;
+&#9;outerImage.Image = TOUCH_CONTROL_SHEET
+&#9;outerImage.ImageRectOffset = Vector2.new()
+&#9;outerImage.ImageRectSize = Vector2.new(220, 220)
+&#9;outerImage.BackgroundTransparency = 1
+&#9;outerImage.Size = UDim2.new(0, thumbstickSize, 0, thumbstickSize)
+&#9;outerImage.Position = UDim2.new(0, 0, 0, 0)
+&#9;outerImage.Parent = ThumbstickFrame
+&#9;
+&#9;StickImage = Instance.new(&apos;ImageLabel&apos;)
+&#9;StickImage.Name = &quot;StickImage&quot;
+&#9;StickImage.Image = TOUCH_CONTROL_SHEET
+&#9;StickImage.ImageRectOffset = Vector2.new(220, 0)
+&#9;StickImage.ImageRectSize = Vector2.new(111, 111)
+&#9;StickImage.BackgroundTransparency = 1
+&#9;StickImage.Size = UDim2.new(0, thumbstickSize/2, 0, thumbstickSize/2)
+&#9;StickImage.Position = UDim2.new(0, thumbstickSize/2 - thumbstickSize/4, 0, thumbstickSize/2 - thumbstickSize/4)
+&#9;StickImage.ZIndex = 2
+&#9;StickImage.Parent = ThumbstickFrame
+&#9;
+&#9;local centerPosition = nil
+&#9;local deadZone = 0.05
+&#9;local function doMove(direction)
+&#9;&#9;local inputAxis = direction / (thumbstickSize/2)
+&#9;&#9;
+&#9;&#9;-- Scaled Radial Dead Zone
+&#9;&#9;local inputAxisMagnitude = inputAxis.magnitude
+&#9;&#9;if inputAxisMagnitude &lt; deadZone then
+&#9;&#9;&#9;inputAxis = Vector3.new()
+&#9;&#9;else
+&#9;&#9;&#9;inputAxis = inputAxis.unit * ((inputAxisMagnitude - deadZone) / (1 - deadZone))
+&#9;&#9;&#9;-- NOTE: Making inputAxis a unit vector will cause the player to instantly go max speed
+&#9;&#9;&#9;-- must check for zero length vector is using unit
+&#9;&#9;&#9;inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y)
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;if LocalPlayer then
+&#9;&#9;&#9;LocalPlayer:Move(inputAxis, true)
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local function moveStick(pos)
+&#9;&#9;local relativePosition = Vector2.new(pos.x - centerPosition.x, pos.y - centerPosition.y)
+&#9;&#9;local length = relativePosition.magnitude
+&#9;&#9;local maxLength = ThumbstickFrame.AbsoluteSize.x/2
+&#9;&#9;if IsFollowStick and length &gt; maxLength then
+&#9;&#9;&#9;local offset = relativePosition.unit * maxLength
+&#9;&#9;&#9;ThumbstickFrame.Position = UDim2.new(
+&#9;&#9;&#9;&#9;0, pos.x - ThumbstickFrame.AbsoluteSize.x/2 - offset.x,
+&#9;&#9;&#9;&#9;0, pos.y - ThumbstickFrame.AbsoluteSize.y/2 - offset.y)
+&#9;&#9;else
+&#9;&#9;&#9;length = math.min(length, maxLength)
+&#9;&#9;&#9;relativePosition = relativePosition.unit * length
+&#9;&#9;end
+&#9;&#9;StickImage.Position = UDim2.new(0, relativePosition.x + StickImage.AbsoluteSize.x/2, 0, relativePosition.y + StickImage.AbsoluteSize.y/2)
+&#9;end
+&#9;
+&#9;-- input connections
+&#9;ThumbstickFrame.InputBegan:connect(function(inputObject)
+&#9;&#9;if MoveTouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
+&#9;&#9;&#9;return
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;MoveTouchObject = inputObject
+&#9;&#9;ThumbstickFrame.Position = UDim2.new(0, inputObject.Position.x - ThumbstickFrame.Size.X.Offset/2, 0, inputObject.Position.y - ThumbstickFrame.Size.Y.Offset/2)
+&#9;&#9;centerPosition = Vector2.new(ThumbstickFrame.AbsolutePosition.x + ThumbstickFrame.AbsoluteSize.x/2,
+&#9;&#9;&#9;ThumbstickFrame.AbsolutePosition.y + ThumbstickFrame.AbsoluteSize.y/2)
+&#9;&#9;local direction = Vector2.new(inputObject.Position.x - centerPosition.x, inputObject.Position.y - centerPosition.y)
+&#9;&#9;moveStick(inputObject.Position)
+&#9;end)
+&#9;
+&#9;OnTouchMovedCn = UserInputService.TouchMoved:connect(function(inputObject, isProcessed)
+&#9;&#9;if inputObject == MoveTouchObject then
+&#9;&#9;&#9;centerPosition = Vector2.new(ThumbstickFrame.AbsolutePosition.x + ThumbstickFrame.AbsoluteSize.x/2,
+&#9;&#9;&#9;&#9;ThumbstickFrame.AbsolutePosition.y + ThumbstickFrame.AbsoluteSize.y/2)
+&#9;&#9;&#9;local direction = Vector2.new(inputObject.Position.x - centerPosition.x, inputObject.Position.y - centerPosition.y)
+&#9;&#9;&#9;doMove(direction)
+&#9;&#9;&#9;moveStick(inputObject.Position)
+&#9;&#9;end
+&#9;end)
+&#9;
+&#9;OnTouchEnded = function()
+&#9;&#9;ThumbstickFrame.Position = position
+&#9;&#9;StickImage.Position = UDim2.new(0, ThumbstickFrame.Size.X.Offset/2 - thumbstickSize/4, 0, ThumbstickFrame.Size.Y.Offset/2 - thumbstickSize/4)
+&#9;&#9;MoveTouchObject = nil
+&#9;&#9;if LocalPlayer then
+&#9;&#9;&#9;LocalPlayer:Move(Vector3.new(0, 0, 0), true)
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;OnTouchEndedCn = UserInputService.TouchEnded:connect(function(inputObject, isProcessed)
+&#9;&#9;if inputObject == MoveTouchObject then
+&#9;&#9;&#9;OnTouchEnded()
+&#9;&#9;end
+&#9;end)
+&#9;
+&#9;ThumbstickFrame.Parent = parentFrame
+end
+
+return Thumbstick
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

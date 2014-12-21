@@ -1,0 +1,188 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBX905CF110249A46068288C08544C9FAEE">
+		<Properties>
+			<string name="Name">PopperCam</string>
+			<ProtectedString name="Source">-- PopperCam Version 12
+-- OnlyTwentyCharacters
+
+local PopperCam = {} -- Guarantees your players won&apos;t see outside the bounds of your map!
+
+---------------
+-- Constants --
+---------------
+
+local POP_RESTORE_RATE = 0.3
+local CAST_SCREEN_SCALES = { -- (Relative)
+&#9;Vector2.new(1, 1) / 2, -- Center
+&#9;Vector2.new(0, 0), -- Top left
+&#9;Vector2.new(1, 0), -- Top right
+&#9;Vector2.new(1, 1), -- Bottom right
+&#9;Vector2.new(0, 1), -- Bottom left
+}
+local NEAR_CLIP_PLANE_OFFSET = 0.5 --NOTE: Not configurable
+
+---------------
+-- Variables --
+---------------
+
+local PlayersService = game:GetService(&apos;Players&apos;)
+local Player = PlayersService.LocalPlayer
+local PlayerMouse = Player:GetMouse()
+
+local Camera = nil
+local CameraChangeConn = nil
+
+local PlayerCharacters = {} -- For ignoring in raycasts
+local VehicleParts = {} -- Also just for ignoring
+
+local LastPopAmount = 0
+local LastZoomLevel = 0
+
+---------------------
+-- Local Functions --
+---------------------
+
+local function CastRay(fromPoint, toPoint, ignoreList)
+&#9;local vector = toPoint - fromPoint
+&#9;local ray = Ray.new(fromPoint, vector.Unit * math.min(vector.Magnitude, 999))
+&#9;return workspace:FindPartOnRayWithIgnoreList(ray, ignoreList or {})
+end
+
+-- Casts and recasts until it hits either: nothing, or something not transparent or collidable
+local function PiercingCast(fromPoint, toPoint, ignoreList) --NOTE: Modifies ignoreList!
+&#9;repeat
+&#9;&#9;local hitPart, hitPoint = CastRay(fromPoint, toPoint, ignoreList)
+&#9;&#9;if hitPart and (hitPart.Transparency &gt; 0.95 or hitPart.CanCollide == false) then
+&#9;&#9;&#9;table.insert(ignoreList, hitPart)
+&#9;&#9;else
+&#9;&#9;&#9;return hitPart, hitPoint
+&#9;&#9;end
+&#9;until false
+end
+
+local function ScreenToWorld(screenPoint, screenSize, pushDepth)
+&#9;local cameraFOV, cameraCFrame = Camera.FieldOfView, Camera.CoordinateFrame
+&#9;local imagePlaneDepth = screenSize.y / (2 * math.tan(math.rad(cameraFOV) / 2))
+&#9;local direction = Vector3.new(screenPoint.x - (screenSize.x / 2), (screenSize.y / 2) - screenPoint.y, -imagePlaneDepth)
+&#9;local worldDirection = (cameraCFrame:vectorToWorldSpace(direction)).Unit
+&#9;local theta = math.acos(math.min(1, worldDirection:Dot(cameraCFrame.lookVector)))
+&#9;local fixedPushDepth = pushDepth / math.sin((math.pi / 2) - theta)
+&#9;return cameraCFrame.p + worldDirection * fixedPushDepth
+end
+
+local function OnCameraChanged(property)
+&#9;if property == &apos;CameraSubject&apos; then
+&#9;&#9;local newSubject = Camera.CameraSubject
+&#9;&#9;if newSubject and newSubject:IsA(&apos;VehicleSeat&apos;) then
+&#9;&#9;&#9;VehicleParts = newSubject:GetConnectedParts(true)
+&#9;&#9;else
+&#9;&#9;&#9;VehicleParts = {}
+&#9;&#9;end
+&#9;end
+end
+
+local function OnCharacterAdded(player, character)
+&#9;PlayerCharacters[player] = character
+end
+
+local function OnPlayersChildAdded(child)
+&#9;if child:IsA(&apos;Player&apos;) then
+&#9;&#9;child.CharacterAdded:connect(function(character)
+&#9;&#9;&#9;OnCharacterAdded(child, character)
+&#9;&#9;end)
+&#9;&#9;if child.Character then
+&#9;&#9;&#9;OnCharacterAdded(child, child.Character)
+&#9;&#9;end
+&#9;end
+end
+
+local function OnPlayersChildRemoved(child)
+&#9;if child:IsA(&apos;Player&apos;) then
+&#9;&#9;PlayerCharacters[child] = nil
+&#9;end
+end
+
+local function OnWorkspaceChanged(property)
+&#9;if property == &apos;CurrentCamera&apos; then
+&#9;&#9;local newCamera = workspace.CurrentCamera
+&#9;&#9;if newCamera then
+&#9;&#9;&#9;Camera = newCamera
+&#9;&#9;&#9;
+&#9;&#9;&#9;if CameraChangeConn then
+&#9;&#9;&#9;&#9;CameraChangeConn:disconnect()
+&#9;&#9;&#9;end
+&#9;&#9;&#9;CameraChangeConn = Camera.Changed:connect(OnCameraChanged)
+&#9;&#9;end
+&#9;end
+end
+
+-----------------------
+-- Exposed Functions --
+-----------------------
+
+function PopperCam:Update()
+&#9;-- First, prep some intermediate vars
+&#9;local focusPoint = Camera.Focus.p
+&#9;local cameraCFrame = Camera.CoordinateFrame
+&#9;local cameraFrontPoint = cameraCFrame.p + (cameraCFrame.lookVector * NEAR_CLIP_PLANE_OFFSET)
+&#9;local screenSize = Vector2.new(PlayerMouse.ViewSizeX, PlayerMouse.ViewSizeY)
+&#9;local ignoreList = {}
+&#9;for _, character in pairs(PlayerCharacters) do
+&#9;&#9;table.insert(ignoreList, character)
+&#9;end
+&#9;for _, basePart in pairs(VehicleParts) do
+&#9;&#9;table.insert(ignoreList, basePart)
+&#9;end
+&#9;
+&#9;-- Cast rays at the near clip plane, from corresponding points near the focus point,
+&#9;-- and find the direct line that is the most cut off
+&#9;local largest = 0
+&#9;for _, screenScale in pairs(CAST_SCREEN_SCALES) do
+&#9;&#9;local clipWorldPoint = ScreenToWorld(screenSize * screenScale, screenSize, NEAR_CLIP_PLANE_OFFSET)
+&#9;&#9;local rayStartPoint = focusPoint + (clipWorldPoint - cameraFrontPoint)
+&#9;&#9;local _, hitPoint = PiercingCast(rayStartPoint, clipWorldPoint, ignoreList)
+&#9;&#9;local cutoffAmount = (hitPoint - clipWorldPoint).Magnitude
+&#9;&#9;if cutoffAmount &gt; largest then
+&#9;&#9;&#9;largest = cutoffAmount
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;-- Then check if the user zoomed since the last frame,
+&#9;-- and if so, reset our pop history so we stop tweening
+&#9;local zoomLevel = (cameraCFrame.p - focusPoint).Magnitude
+&#9;if math.abs(zoomLevel - LastZoomLevel) &gt; 0.001 then
+&#9;&#9;LastPopAmount = 0
+&#9;end
+&#9;
+&#9;-- Finally, pop (zoom) the camera in by that most-cut-off amount, or the last pop amount if that&apos;s more
+&#9;local popAmount = math.max(largest, LastPopAmount)
+&#9;if popAmount &gt; 0 then
+&#9;&#9;Camera.CoordinateFrame = cameraCFrame + (cameraCFrame.lookVector * popAmount)
+&#9;&#9;LastPopAmount = math.max(popAmount - POP_RESTORE_RATE, 0) -- Shrink it for the next frame
+&#9;end
+&#9;
+&#9;LastZoomLevel = zoomLevel
+end
+
+------------------
+-- Script Logic --
+------------------
+
+-- Connect to the current and all future cameras
+workspace.Changed:connect(OnWorkspaceChanged)
+OnWorkspaceChanged(&apos;CurrentCamera&apos;)
+
+-- Connect to all Players so we can ignore their Characters
+PlayersService.ChildRemoved:connect(OnPlayersChildRemoved)
+PlayersService.ChildAdded:connect(OnPlayersChildAdded)
+for _, player in pairs(PlayersService:GetPlayers()) do
+&#9;OnPlayersChildAdded(player)
+end
+
+return PopperCam
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>
