@@ -1,7 +1,9 @@
--- Backpack Version 4.7
+-- Backpack Version 4.8
 -- OnlyTwentyCharacters
 
--- Configurables --
+---------------------
+--| Configurables |--
+---------------------
 
 local ICON_SIZE = 60
 local ICON_BUFFER = 5
@@ -27,8 +29,8 @@ local HOTBAR_OFFSET_FROMBOTTOM = 30 -- Offset to make room for the Health GUI
 local INVENTORY_ROWS = 5
 local INVENTORY_HEADER_SIZE = 40
 
-local TITLE_OFFSET = 20 -- From left side
-local TITLE_TEXT = "Backpack"
+--local TITLE_OFFSET = 20 -- From left side
+--local TITLE_TEXT = "Backpack"
 
 local SEARCH_BUFFER = 5
 local SEARCH_WIDTH = 200
@@ -39,7 +41,9 @@ local SEARCH_BACKGROUND_FADE = 0.15
 
 local DOUBLE_CLICK_TIME = 0.5
 
--- Variables --
+-----------------
+--| Variables |--
+-----------------
 
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
@@ -74,11 +78,14 @@ local UpdateArrowFrame = nil -- Function defined in arrow init logic at bottom
 local ActiveHopper = nil --NOTE: HopperBin
 local StarterToolFound = false -- Special handling is required for the gear currently equipped on the site
 local WholeThingEnabled = false
-local TextBoxFocused = false -- ALL TextBoxes, not just the search box
+local TextBoxFocused = false -- ANY TextBox, not just the search box
 local ResultsIndices = nil -- Results of a search
 local ResetSearch = nil -- Function defined in search logic at bottom
+local HotkeyStrings = {} -- Used for eating/releasing hotkeys
 
--- Functions --
+-----------------
+--| Functions |--
+-----------------
 
 local function NewGui(className, objectName)
 	local newGui = Instance.new(className)
@@ -193,7 +200,7 @@ local function MakeSlot(parent, index)
 		SlotFrame.BackgroundTransparency = (equipped or SlotFrame.Draggable) and 0 or SLOT_FADE_LOCKED
 	end
 	
-	function slot:Reposition() --NOTE: Only used for Inventory slots
+	function slot:Reposition()
 		-- Slots are positioned into rows
 		local index = (ResultsIndices and ResultsIndices[self]) or self.Index
 		local sizePlus = ICON_BUFFER + ICON_SIZE
@@ -639,7 +646,7 @@ local function OnCharacterAdded(character)
 end
 
 local function OnInputBegan(input, isProcessed)
-	if not TextBoxFocused and (WholeThingEnabled or input.KeyCode.Value == DROP_HOTKEY_VALUE) and input.UserInputType == Enum.UserInputType.Keyboard then
+	if input.UserInputType == Enum.UserInputType.Keyboard and not TextBoxFocused and (WholeThingEnabled or input.KeyCode.Value == DROP_HOTKEY_VALUE) then
 		local hotkeyBehavior = HotkeyFns[input.KeyCode.Value]
 		if hotkeyBehavior then
 			hotkeyBehavior()
@@ -660,15 +667,26 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
 		WholeThingEnabled = enabled
 		MainFrame.Visible = enabled
+		
+		-- Eat/Release hotkeys (Doesn't affect UserInputService)
+		for _, keyString in pairs(HotkeyStrings) do
+			if enabled then
+				GuiService:AddKey(keyString)
+			else
+				GuiService:RemoveKey(keyString)
+			end
+		end
 	end
 	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
 		MainFrame.Position = UDim2.new(0, 0, 0, enabled and 0 or HOTBAR_OFFSET_FROMBOTTOM)
 	end
 end
 
--- Script Logic --
+--------------------
+--| Script Logic |--
+--------------------
 
--- Make the main frame, which covers the screen
+-- Make the main frame, which (mostly) covers the screen
 MainFrame = NewGui('Frame', 'Backpack')
 MainFrame.Visible = false
 MainFrame.Parent = CoreGui
@@ -882,8 +900,7 @@ do -- Make the Inventory expand/collapse arrow
 	arrowFrame.Parent = MainFrame
 end
 
-
--- Finally, connect the major events
+-- Finally, connect all the major events
 
 while not Player do
 	wait()
@@ -895,11 +912,11 @@ if Player.Character then
 	OnCharacterAdded(Player.Character)
 end
 
--- Eat keys
+-- Init HotkeyStrings, used for eating hotkeys
 for i = 0, 9 do
-	GuiService:AddKey(tostring(i))
+	table.insert(HotkeyStrings, tostring(i))
 end
-GuiService:AddKey(ARROW_HOTKEY_STRING)
+table.insert(HotkeyStrings, ARROW_HOTKEY_STRING)
 
 UserInputService.InputBegan:connect(OnInputBegan)
 
