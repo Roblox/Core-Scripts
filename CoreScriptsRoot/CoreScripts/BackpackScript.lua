@@ -1,4 +1,4 @@
--- Backpack Version 4.8
+-- Backpack Version 4.9
 -- OnlyTwentyCharacters
 
 ---------------------
@@ -187,6 +187,7 @@ local function MakeSlot(parent, index)
 	local SlotFrame = nil
 	local ToolIcon = nil
 	local ToolName = nil
+	local ToolChangeConn = nil
 	
 	--NOTE: The following are only defined for Hotbar Slots
 	local ToolTip = nil
@@ -219,16 +220,26 @@ local function MakeSlot(parent, index)
 	
 	function slot:Fill(tool)
 		self.Tool = tool
-		local icon = tool.TextureId
-		ToolIcon.Image = icon
-		ToolName.Text = (icon == '') and tool.Name or '' -- (Only show name if no icon)
-		if ToolTip and tool:IsA('Tool') then --NOTE: HopperBin
-			--TODO: No magic numbers
-			ToolTip.Text = tool.ToolTip
-			local width = ToolTip.TextBounds.X + 6
-			ToolTip.Size = UDim2.new(0, width, 0, 16)
-			ToolTip.Position = UDim2.new(0.5, -width / 2, 0, -25)
+		
+		local function assignToolData()
+			local icon = tool.TextureId
+			ToolIcon.Image = icon
+			ToolName.Text = (icon == '') and tool.Name or '' -- (Only show name if no icon)
+			if ToolTip and tool:IsA('Tool') then --NOTE: HopperBin
+				--TODO: No magic numbers
+				ToolTip.Text = tool.ToolTip
+				local width = ToolTip.TextBounds.X + 6
+				ToolTip.Size = UDim2.new(0, width, 0, 16)
+				ToolTip.Position = UDim2.new(0.5, -width / 2, 0, -25)
+			end
 		end
+		assignToolData()
+		
+		ToolChangeConn = tool.Changed:connect(function(property)
+			if property == 'TextureId' or property == 'Name' or property == 'ToolTip' then
+				assignToolData()
+			end
+		end)
 		
 		local hotbarSlot = (self.Index <= HOTBAR_SLOTS)
 		local inventoryOpen = InventoryFrame.Visible
@@ -249,6 +260,9 @@ local function MakeSlot(parent, index)
 	end
 	
 	function slot:Clear()
+		ToolChangeConn:disconnect()
+		ToolChangeConn = nil
+		
 		ToolIcon.Image = ''
 		ToolName.Text = ''
 		if ToolTip then
