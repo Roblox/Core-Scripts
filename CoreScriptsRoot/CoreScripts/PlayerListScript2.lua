@@ -750,6 +750,7 @@ local function hideFriendReportPopup()
 			end
 		end
 	end
+	ScrollList.ScrollingEnabled = true
 	LastSelectedFrame = nil
 	LastSelectedPlayer = nil
 end
@@ -937,7 +938,6 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
 			showFriendReportPopup(selectedFrame, selectedPlayer)
 		else
 			hideFriendReportPopup()
-			ScrollList.ScrollingEnabled = true
 			LastSelectedFrame = nil
 			LastSelectedPlayer = nil
 		end
