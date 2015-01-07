@@ -1344,12 +1344,12 @@ local function setLeaderStats(entry)
 		if child.Name == 'leaderstats' then
 			addNewStats(child)
 			updateLeaderstatFrames()
+
+			child.ChildAdded:connect(onStatAdded)
+			child.ChildRemoved:connect(function(removedStat)
+				onStatRemoved(removedStat, entry)
+			end)
 		end
-		
-		child.ChildAdded:connect(onStatAdded)
-		child.ChildRemoved:connect(function(removedStat)
-			onStatRemoved(removedStat, entry)
-		end)
 	end)
 	
 	player.ChildRemoved:connect(function(child)
