@@ -1,4 +1,4 @@
--- Backpack Version 4.9
+-- Backpack Version 4.10
 -- OnlyTwentyCharacters
 
 ---------------------
@@ -82,6 +82,7 @@ local TextBoxFocused = false -- ANY TextBox, not just the search box
 local ResultsIndices = nil -- Results of a search
 local ResetSearch = nil -- Function defined in search logic at bottom
 local HotkeyStrings = {} -- Used for eating/releasing hotkeys
+local CharConns = {} -- Holds character connections to be cleared later
 
 -----------------
 --| Functions |--
@@ -293,7 +294,7 @@ local function MakeSlot(parent, index)
 	end
 	
 	function slot:Delete()
-		SlotFrame:Destroy()
+		SlotFrame:Destroy() --NOTE: Also clears connections
 		table.remove(Slots, self.Index)
 		local newSize = #Slots
 		
@@ -323,6 +324,7 @@ local function MakeSlot(parent, index)
 	
 	function slot:SlideBack() -- For inventory slot shifting
 		self.Index = self.Index - 1
+		SlotFrame.Name = self.Index
 		self:Reposition()
 	end
 	
@@ -643,17 +645,25 @@ local function OnCharacterAdded(character)
 		end
 	end
 	
+	-- And any old connections
+	for _, conn in pairs(CharConns) do
+		conn:disconnect()
+	end
+	CharConns = {}
+	
+	-- Hook up the new character
 	Character = character
-	character.ChildRemoved:connect(OnChildRemoved)
-	character.ChildAdded:connect(OnChildAdded)
+	table.insert(CharConns, character.ChildRemoved:connect(OnChildRemoved))
+	table.insert(CharConns, character.ChildAdded:connect(OnChildAdded))
 	for _, child in pairs(character:GetChildren()) do
 		OnChildAdded(child)
 	end
 	--NOTE: Humanoid is set inside OnChildAdded
 	
+	-- And the new backpack, when it gets here
 	Backpack = Player:WaitForChild('Backpack')
-	Backpack.ChildRemoved:connect(OnChildRemoved)
-	Backpack.ChildAdded:connect(OnChildAdded)
+	table.insert(CharConns, Backpack.ChildRemoved:connect(OnChildRemoved))
+	table.insert(CharConns, Backpack.ChildAdded:connect(OnChildAdded))
 	for _, child in pairs(Backpack:GetChildren()) do
 		OnChildAdded(child)
 	end
@@ -678,6 +688,7 @@ local function OnUISChanged(property)
 end
 
 local function OnCoreGuiChanged(coreGuiType, enabled)
+	-- Check for enabling/disabling the whole thing
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
 		WholeThingEnabled = enabled
 		MainFrame.Visible = enabled
@@ -691,6 +702,8 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 			end
 		end
 	end
+	
+	-- Also check if the Health GUI is showing, and shift everything down (or back up) accordingly
 	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
 		MainFrame.Position = UDim2.new(0, 0, 0, enabled and 0 or HOTBAR_OFFSET_FROMBOTTOM)
 	end
@@ -914,38 +927,47 @@ do -- Make the Inventory expand/collapse arrow
 	arrowFrame.Parent = MainFrame
 end
 
--- Finally, connect all the major events
+-- Now that we're done building the GUI, we connect to all the major events
 
+-- Wait for the player if LocalPlayer wasn't ready earlier
 while not Player do
 	wait()
 	Player = PlayersService.LocalPlayer
 end
 
+-- Listen to current and all future characters of our player
 Player.CharacterAdded:connect(OnCharacterAdded)
 if Player.Character then
 	OnCharacterAdded(Player.Character)
 end
 
--- Init HotkeyStrings, used for eating hotkeys
-for i = 0, 9 do
-	table.insert(HotkeyStrings, tostring(i))
-end
-table.insert(HotkeyStrings, ARROW_HOTKEY_STRING)
-
-UserInputService.InputBegan:connect(OnInputBegan)
-
-UserInputService.Changed:connect(OnUISChanged)
-OnUISChanged('KeyboardEnabled')
-
-UserInputService.TextBoxFocused:connect(function() TextBoxFocused = true end)
-UserInputService.TextBoxFocusReleased:connect(function() TextBoxFocused = false end)
-
-HotkeyFns[DROP_HOTKEY_VALUE] = function() --NOTE: HopperBin
-	if ActiveHopper then
-		UnequipTools()
+do -- Hotkey stuff
+	-- Init HotkeyStrings, used for eating hotkeys
+	for i = 0, 9 do
+		table.insert(HotkeyStrings, tostring(i))
 	end
+	table.insert(HotkeyStrings, ARROW_HOTKEY_STRING)
+	
+	-- Listen to key down
+	UserInputService.InputBegan:connect(OnInputBegan)
+	
+	-- Listen to ANY TextBox gaining or losing focus, for disabling all hotkeys
+	UserInputService.TextBoxFocused:connect(function() TextBoxFocused = true end)
+	UserInputService.TextBoxFocusReleased:connect(function() TextBoxFocused = false end)
+	
+	-- Manual unequip for HopperBins on drop button pressed
+	HotkeyFns[DROP_HOTKEY_VALUE] = function() --NOTE: HopperBin
+		if ActiveHopper then
+			UnequipTools()
+		end
+	end
+	
+	-- Listen to keyboard status, for showing/hiding hotkey labels
+	UserInputService.Changed:connect(OnUISChanged)
+	OnUISChanged('KeyboardEnabled')
 end
 
+-- Listen to enable/disable signals from the StarterGui
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
 local backpackType = Enum.CoreGuiType.Backpack
 OnCoreGuiChanged(backpackType, StarterGui:GetCoreGuiEnabled(backpackType))
