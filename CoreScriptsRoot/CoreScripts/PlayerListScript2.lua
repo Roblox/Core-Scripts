@@ -6,6 +6,8 @@
 local GuiService = game:GetService('GuiService')	-- NOTE: Can only use in core scripts
 local UserInputService = game:GetService('UserInputService')
 local HttpService = game:GetService('HttpService')
+HttpService.HttpEnabled = true
+local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local Players = game:GetService('Players')
 local TeamsService = game:FindService('Teams')
 
@@ -760,18 +762,13 @@ local function getFriendCount(userId)
 		if userId then
 			str = str..'?userId='..tostring(userId)
 		end
-		friendCount = game:HttpGetAsync(getSecureApiBaseUrl()..str)
+		friendCount = HttpRbxApiService:GetAsync(str, true)
 	end)
 	if not wasSuccess then
 		print("getFriendCount() failed because", errorCode)
 		return nil
 	end
-	if RbxUtility then
-		friendCount = HttpService:JSONDecode(friendCount)
-	else
-		print("getFriendCount() failed because RbxUtility does not exist")
-		return nil
-	end
+	friendCount = HttpService:JSONDecode(friendCount)
 	--
 	for k,v in pairs(friendCount) do
 		if k == 'count' then
