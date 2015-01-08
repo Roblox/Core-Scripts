@@ -779,13 +779,6 @@ local function getFriendCount(userId)
 	return friendCount
 end
 
-local ws, er = pcall(function()
-	local str = tostring(Player.userId)
-	local str1 = tostring(31318592)
-	local yaman = HttpRbxApiService:GetAsync('user/following-exists?userId='..str1..'&followerUserId='..str)
-	print(yaman)
-end)
-
 -- checks for both local player and other player
 local function checkForMaxFriends(otherPlayer)
 	local myFriendCount = getFriendCount()
