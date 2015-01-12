@@ -1364,7 +1364,7 @@ local function CreateChatWindowWidget(settings)
 
 	function this:ScrollToBottom()
 		if this.ScrollingFrame then
-			this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - math.max(0, this.ScrollingFrame.AbsoluteWindowSize.Y)))
+			this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteWindowSize.Y))
 		end
 	end
 
@@ -1375,12 +1375,9 @@ local function CreateChatWindowWidget(settings)
 		local isScrolledDown = this:IsScrolledDown()
 		-- Unfortunately there is a race condition so we need this wait here.
 		wait()
-		if isScrolledDown then
-			this:ScrollToBottom()
-		end
 		if this.ScrollingFrame then
 			if currentResizeCount ~= ResizeCount then return end
-			local scrollingFrameAbsoluteSize = this.ScrollingFrame.AbsoluteSize
+			local scrollingFrameAbsoluteSize = this.ScrollingFrame.AbsoluteWindowSize
 			if scrollingFrameAbsoluteSize ~= nil and scrollingFrameAbsoluteSize.X > 0 and scrollingFrameAbsoluteSize.Y > 0 then
 				local ySize = 0
 
@@ -1403,13 +1400,11 @@ local function CreateChatWindowWidget(settings)
 							this.MessageContainer.Size.X.Offset,
 							0,
 							ySize)
-
+					this.MessageContainer.Position = UDim2.new(0, 0, 1, -this.MessageContainer.Size.Y.Offset)
 					this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
 				end
 			end
-			if isScrolledDown then
-				this:ScrollToBottom()
-			end
+			this:ScrollToBottom()
 		end
 	end
 
