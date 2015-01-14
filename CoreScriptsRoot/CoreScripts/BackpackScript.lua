@@ -1,4 +1,4 @@
--- Backpack Version 4.11
+-- Backpack Version 4.12
 -- OnlyTwentyCharacters
 
 ---------------------
@@ -672,6 +672,8 @@ local function OnCharacterAdded(character)
 	for _, child in pairs(Backpack:GetChildren()) do
 		OnChildAdded(child)
 	end
+	
+	AdjustHotbarFrames()
 end
 
 local function OnInputBegan(input, isProcessed)
