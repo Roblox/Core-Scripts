@@ -43,6 +43,7 @@ if game:GetService("CoreGui").RobloxGui:FindFirstChild("ControlFrame") then
 else
 	gui = game:GetService("CoreGui").RobloxGui
 end
+local touchEnabled = game:GetService("UserInputService").TouchEnabled
 
 function currentTone()
 	if currentConversationDialog then
@@ -383,7 +384,7 @@ function presentDialogChoices(talkingPart, dialogChoices)
 	lastChoice.Number.Text = pos .. ")"
 
 	mainFrame.Size = UDim2.new(0, 350, 0, yPosition+24+32)
-	mainFrame.Position = UDim2.new(0,20,0.0, -mainFrame.Size.Y.Offset-20)
+	mainFrame.Position = UDim2.new(0,20,1.0, -mainFrame.Size.Y.Offset-20)
 	styleMainFrame(currentTone())
 	mainFrame.Visible = true
 end
@@ -541,7 +542,14 @@ function onLoad()
   frame.Size = UDim2.new(0,0,0,0)
   frame.BackgroundTransparency = 1
   frame.RobloxLocked = true
-  frame.Parent = gui.BottomLeftControl
+  
+  if (touchEnabled) then
+	frame.Position = UDim2.new(0,20,0.5,0)
+	frame.Size = UDim2.new(0.25,0,0.1,0)
+	frame.Parent = gui
+  else
+	frame.Parent = gui.BottomLeftControl
+  end
   initialize(frame)
 
   --print("Adding Dialogs")
