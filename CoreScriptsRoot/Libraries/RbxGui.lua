@@ -210,6 +210,213 @@ t.CreateMessageDialog = function(title, message, buttons)
 	return frame
 end
 
+-- written by jmargh
+-- to be used for the new settings menu
+t.CreateScrollingDropDownMenu = function(onSelectedCallback, size, position, baseZ)
+	local maxVisibleList = 6
+	local baseZIndex = 0
+	if type(baseZ) == 'number' then
+		baseZIndex = baseZ
+	end
+
+	local dropDownMenu = {}
+	local currentList = nil
+
+	local updateFunc = nil
+	local frame = Instance.new('Frame')
+	frame.Name = "DropDownMenuFrame"
+	frame.Size = size
+	frame.Position = position
+	frame.BackgroundTransparency = 1
+	dropDownMenu.Frame = frame
+
+	local currentSelectionName = Instance.new('TextButton')
+	currentSelectionName.Name = "CurrentSelectionName"
+	currentSelectionName.Size = UDim2.new(1, 0, 1, 0)
+	currentSelectionName.BackgroundTransparency = 1
+	currentSelectionName.Font = Enum.Font.SourceSansBold
+	currentSelectionName.FontSize = Enum.FontSize.Size18
+	currentSelectionName.TextXAlignment = Enum.TextXAlignment.Left
+	currentSelectionName.TextYAlignment = Enum.TextYAlignment.Center
+	currentSelectionName.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+	currentSelectionName.TextWrap = true
+	currentSelectionName.ZIndex = baseZIndex
+	currentSelectionName.Style = Enum.ButtonStyle.RobloxRoundDropdownButton
+	currentSelectionName.Text = "Choose One"
+	currentSelectionName.Parent = frame
+	dropDownMenu.CurrentSelectionButton = currentSelectionName
+
+	local icon = Instance.new('ImageLabel')
+	icon.Name = "DropDownIcon"
+	icon.Size = UDim2.new(0, 16, 0, 12)
+	icon.Position = UDim2.new(1, -17, 0.5, -6)
+	icon.Image = 'rbxasset://textures/ui/dropdown_arrow.png'
+	icon.BackgroundTransparency = 1
+	icon.ZIndex = baseZIndex
+	icon.Parent = currentSelectionName
+
+	local listMenu = nil
+	local scrollingBackground = nil
+	local visibleCount = 0
+	local isOpen = false
+
+	local function onEntrySelected()
+		icon.Rotation = 0
+		scrollingBackground:TweenSize(UDim2.new(1, 0, 0, currentSelectionName.AbsoluteSize.y), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, 0.15, true)
+		--
+		listMenu.ScrollBarThickness = 0
+		listMenu:TweenSize(UDim2.new(1, -16, 0, 24), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, 0.15, true, function()
+			listMenu.Visible = false
+			scrollingBackground.Visible = false
+		end)
+		isOpen = false
+	end
+
+	currentSelectionName.MouseButton1Click:connect(function()
+		if not currentSelectionName.Active or #currentList == 0 then return end
+		if isOpen then
+			onEntrySelected()
+			return
+		end
+		--
+		isOpen = true
+		icon.Rotation = 180
+		if listMenu then listMenu.Visible = true end
+		if scrollingBackground then scrollingBackground.Visible = true end
+		--
+		if scrollingBackground then
+			scrollingBackground:TweenSize(UDim2.new(1, 0, 0, visibleCount * 24 + 8), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, 0.15, true)
+		end
+		if listMenu then
+			listMenu:TweenSize(UDim2.new(1, -16, 0, visibleCount * 24), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, 0.15, true, function()
+				listMenu.ScrollBarThickness = 6
+			end)
+		end
+	end)
+
+	--[[ Public API ]]--
+	dropDownMenu.IsOpen = function()
+		return isOpen
+	end
+
+	dropDownMenu.Close = function()
+		icon.Rotation = 0
+		scrollingBackground.Size = UDim2.new(1, 0, 0, currentSelectionName.AbsoluteSize.y)
+		listMenu.ScrollBarThickness = 0
+		listMenu.Size = UDim2.new(1, -16, 0, 24)
+		listMenu.Visible = false
+		scrollingBackground.Visible = false
+	end
+
+	dropDownMenu.UpdateZIndex = function(newZIndexBase)
+		currentSelectionName.ZIndex = newZIndexBase
+		icon.ZIndex = newZIndexBase
+		if scrollingBackground then scrollingBackground.ZIndex = newZIndexBase + 1 end
+		if listMenu then
+			listMenu.ZIndex = newZIndexBase + 2
+			for _,child in pairs(listMenu:GetChildren()) do
+				child.ZIndex = newZIndexBase + 4
+			end
+		end
+	end
+
+	dropDownMenu.SetActive = function(isActive)
+		currentSelectionName.Active = isActive
+	end
+
+	dropDownMenu.SetSelectionText = function(text)
+		currentSelectionName.Text = text
+	end
+
+	dropDownMenu.CreateList = function(list)
+		currentSelectionName.Text = "Choose One"
+		if listMenu then listMenu:Destroy() end
+		if scrollingBackground then scrollingBackground:Destroy() end
+		--
+		currentList = list
+		local length = #list
+		visibleCount = math.min(maxVisibleList, length)
+		local listMenuOffset = visibleCount * 24
+
+		listMenu = Instance.new('ScrollingFrame')
+		listMenu.Name = "ListMenu"
+		listMenu.Size = UDim2.new(1, -16, 0, 24)
+		listMenu.Position = UDim2.new(0, 12, 0, 32)
+		listMenu.CanvasSize = UDim2.new(0, 0, 0, length * 24)
+		listMenu.BackgroundTransparency = 1
+		listMenu.BorderSizePixel = 0
+		listMenu.ZIndex = baseZIndex + 2
+		listMenu.Visible = false
+		listMenu.Active = true
+		listMenu.BottomImage = 'rbxasset://textures/ui/scroll-bottom.png'
+		listMenu.MidImage = 'rbxasset://textures/ui/scroll-middle.png'
+		listMenu.TopImage = 'rbxasset://textures/ui/scroll-top.png'
+		listMenu.ScrollBarThickness = 0
+		listMenu.Parent = frame
+
+		scrollingBackground = Instance.new('TextButton')
+		scrollingBackground.Name = "ScrollingBackground"
+		scrollingBackground.Size = UDim2.new(1, 0, 0, currentSelectionName.AbsoluteSize.y)
+		scrollingBackground.Position = UDim2.new(0, 0, 0, 28)
+		scrollingBackground.BackgroundColor3 = Color3.new(1, 1, 1)
+		scrollingBackground.Style = Enum.ButtonStyle.RobloxRoundDropdownButton
+		scrollingBackground.ZIndex = baseZIndex + 1
+		scrollingBackground.Text = ""
+		scrollingBackground.Visible = false
+		scrollingBackground.AutoButtonColor = false
+		scrollingBackground.Parent = frame
+
+		for i = 1, length do
+			local entry = list[i]
+			local btn = Instance.new('TextButton')
+			btn.Name = entry
+			btn.Size = UDim2.new(1, 0, 0, 24)
+			btn.Position = UDim2.new(0, 0, 0, (i - 1) * 24)
+			btn.BackgroundTransparency = 0
+			btn.BackgroundColor3 = Color3.new(1, 1, 1)
+			btn.BorderSizePixel = 0
+			btn.Font = Enum.Font.SourceSans
+			btn.FontSize = Enum.FontSize.Size18
+			btn.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+			btn.TextXAlignment = Enum.TextXAlignment.Left
+			btn.TextYAlignment = Enum.TextYAlignment.Center
+			btn.Text = entry
+			btn.ZIndex = baseZIndex + 4
+			btn.AutoButtonColor = false
+			btn.Parent = listMenu
+
+			if IsTouchClient then
+				btn.TouchTap:connect(function()
+					currentSelectionName.Text = btn.Text
+					onEntrySelected()
+					btn.Font = Enum.Font.SourceSans
+					onSelectedCallback(btn.Text)
+				end)
+			else
+				btn.MouseButton1Click:connect(function()
+					currentSelectionName.Text = btn.Text
+					onEntrySelected()
+					btn.Font = Enum.Font.SourceSans
+					btn.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+					btn.BackgroundColor3 = Color3.new(1, 1, 1)
+					onSelectedCallback(btn.Text)
+				end)
+
+				btn.MouseEnter:connect(function()
+					btn.TextColor3 = Color3.new(1, 1, 1)
+					btn.BackgroundColor3 = Color3.new(0.75, 0.75, 0.75)
+				end)
+				btn.MouseLeave:connect(function()
+					btn.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+					btn.BackgroundColor3 = Color3.new(1, 1, 1)
+				end)
+			end
+		end
+	end
+
+	return dropDownMenu
+end
+
 t.CreateDropDownMenu = function(items, onSelect, forRoblox, whiteSkin, baseZ)
 	local baseZIndex = 0
 	if (type(baseZ) == "number") then
