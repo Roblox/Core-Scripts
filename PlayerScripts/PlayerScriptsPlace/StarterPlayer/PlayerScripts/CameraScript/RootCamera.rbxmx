@@ -76,7 +76,7 @@ local function CreateCamera()
 &#9;&#9;if humanoidRootPart then
 &#9;&#9;&#9;result = humanoidRootPart.Position + Vector3.new(0, 1.5, 0)
 &#9;&#9;&#9;if humanoid and humanoid:IsA(&apos;Humanoid&apos;) then
-&#9;&#9;&#9;&#9;result = result + humanoid.CameraOffset
+&#9;&#9;&#9;&#9;result = result + humanoidRootPart.CFrame:vectorToWorldSpace(humanoid.CameraOffset)
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;&#9;return result
