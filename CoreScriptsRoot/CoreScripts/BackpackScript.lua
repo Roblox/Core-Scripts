@@ -1,4 +1,4 @@
--- Backpack Version 4.10
+-- Backpack Version 4.11
 -- OnlyTwentyCharacters
 
 ---------------------
@@ -167,7 +167,8 @@ local function EquipTool(tool) --NOTE: HopperBin
 		SlotsByTool[tool]:UpdateEquipView()
 		ActiveHopper = tool
 	else
-		Humanoid:EquipTool(tool) --NOTE: This would also unequip current Tool
+		-- Humanoid:EquipTool(tool) --NOTE: This would also unequip current Tool
+		tool.Parent = Character --TODO: Switch back to above line after EquipTool is fixed!
 	end
 end
 
@@ -630,6 +631,10 @@ local function OnChildRemoved(child) -- From Character or Backpack
 		elseif not InventoryFrame.Visible then
 			AdjustHotbarFrames()
 		end
+	end
+	
+	if tool == ActiveHopper then --NOTE: HopperBin
+		ActiveHopper = nil
 	end
 end
 
