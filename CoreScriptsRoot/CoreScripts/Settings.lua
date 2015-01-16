@@ -37,9 +37,6 @@ local hasGraphicsSlider = true
 local GraphicsQualityLevels = 10 -- how many levels we allow on graphics slider
 local recordingVideo = false
 
-local volumeFlagExists, volumeFlagValue = pcall(function () return settings():GetFFlag("VolumeControlInGameEnabled") end)
-local hasVolumeSlider = volumeFlagExists and volumeFlagValue
-
 local currentMenuSelection = nil
 local lastMenuSelection = {}
 
@@ -1422,51 +1419,49 @@ local function createGameSettingsMenu(baseZIndex, shield)
 	----------------------------------------------------------------------------------------------------
 	-- V O L U M E    S L I D E R
 	----------------------------------------------------------------------------------------------------
-	if hasVolumeSlider then
-		local maxVolumeLevel = 256
+	local maxVolumeLevel = 256
 
-		local volumeText = Instance.new("TextLabel")
-		volumeText.Name = "VolumeText"
-		volumeText.Text = "Volume"
-		volumeText.Size = UDim2.new(0,224,0,18)
+	local volumeText = Instance.new("TextLabel")
+	volumeText.Name = "VolumeText"
+	volumeText.Text = "Volume"
+	volumeText.Size = UDim2.new(0,224,0,18)
 
-		local volumeTextOffset = 25
-		if graphicsSlider and not graphicsSlider.Visible then
-			volumeTextOffset = volumeTextOffset + 30
-		end
-		volumeText.Position = UDim2.new(0,31,0, itemTop + volumeTextOffset)
-
-		volumeText.TextXAlignment = Enum.TextXAlignment.Left
-		volumeText.Font = Enum.Font.SourceSansBold
-		volumeText.FontSize = Enum.FontSize.Size18
-		volumeText.TextColor3 = Color3.new(1,1,1)
-		volumeText.ZIndex = baseZIndex + 4
-		volumeText.BackgroundTransparency = 1
-		volumeText.Parent = gameSettingsMenuFrame
-		volumeText.Visible = true
-
-		local volumeSliderOffset = 32
-		if graphicsSlider and not graphicsSlider.Visible then
-			volumeSliderOffset = volumeSliderOffset + 30
-		end
-		local volumeSlider, volumeLevel = RbxGui.CreateSliderNew( maxVolumeLevel,256,UDim2.new(0, 180, 0, itemTop + volumeSliderOffset) )
-		volumeSlider.Parent = gameSettingsMenuFrame
-		volumeSlider.Bar.ZIndex = baseZIndex + 3
-		volumeSlider.Bar.Slider.ZIndex = baseZIndex + 4
-		volumeSlider.BarLeft.ZIndex = baseZIndex + 3
-		volumeSlider.BarRight.ZIndex = baseZIndex + 3
-		volumeSlider.Bar.Fill.ZIndex = baseZIndex + 3
-		volumeSlider.FillLeft.ZIndex = baseZIndex + 3
-		volumeSlider.Visible = true
-		volumeLevel.Value = math.min(math.max(UserSettings().GameSettings.MasterVolume * maxVolumeLevel, 1), maxVolumeLevel)
-
-		volumeLevel.Changed:connect(function(prop)
-			local volume = volumeLevel.Value - 1 -- smallest value is 1, so need to subtract one for muting
-			UserSettings().GameSettings.MasterVolume = volume/maxVolumeLevel
-		end)
-
-		itemTop = itemTop + volumeSliderOffset
+	local volumeTextOffset = 25
+	if graphicsSlider and not graphicsSlider.Visible then
+		volumeTextOffset = volumeTextOffset + 30
 	end
+	volumeText.Position = UDim2.new(0,31,0, itemTop + volumeTextOffset)
+
+	volumeText.TextXAlignment = Enum.TextXAlignment.Left
+	volumeText.Font = Enum.Font.SourceSansBold
+	volumeText.FontSize = Enum.FontSize.Size18
+	volumeText.TextColor3 = Color3.new(1,1,1)
+	volumeText.ZIndex = baseZIndex + 4
+	volumeText.BackgroundTransparency = 1
+	volumeText.Parent = gameSettingsMenuFrame
+	volumeText.Visible = true
+
+	local volumeSliderOffset = 32
+	if graphicsSlider and not graphicsSlider.Visible then
+		volumeSliderOffset = volumeSliderOffset + 30
+	end
+	local volumeSlider, volumeLevel = RbxGui.CreateSliderNew( maxVolumeLevel,256,UDim2.new(0, 180, 0, itemTop + volumeSliderOffset) )
+	volumeSlider.Parent = gameSettingsMenuFrame
+	volumeSlider.Bar.ZIndex = baseZIndex + 3
+	volumeSlider.Bar.Slider.ZIndex = baseZIndex + 4
+	volumeSlider.BarLeft.ZIndex = baseZIndex + 3
+	volumeSlider.BarRight.ZIndex = baseZIndex + 3
+	volumeSlider.Bar.Fill.ZIndex = baseZIndex + 3
+	volumeSlider.FillLeft.ZIndex = baseZIndex + 3
+	volumeSlider.Visible = true
+	volumeLevel.Value = math.min(math.max(UserSettings().GameSettings.MasterVolume * maxVolumeLevel, 1), maxVolumeLevel)
+
+	volumeLevel.Changed:connect(function(prop)
+		local volume = volumeLevel.Value - 1 -- smallest value is 1, so need to subtract one for muting
+		UserSettings().GameSettings.MasterVolume = volume/maxVolumeLevel
+	end)
+
+	itemTop = itemTop + volumeSliderOffset
 	
 
 	----------------------------------------------------------------------------------------------------

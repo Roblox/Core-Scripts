@@ -39,13 +39,6 @@ IsTouchClient = isTouchSuccess and isTouch
 
 local IsStudioMode = GameSettings:InStudioMode()
 
---[[ Fast Flags ]]--
-local IsVolumeSlider = false
-local isVolumeSliderSuccess, isVolumeSliderEnabled = pcall(function()
-	return settings():GetFFlag("VolumeControlInGameEnabled")
-end)
-IsVolumeSlider = isVolumeSliderSuccess and isVolumeSliderEnabled
-
 --[[ Parent Frames ]]--
 -- TODO: Remove all references to engine created gui
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
@@ -733,37 +726,35 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 		end
 
 		--[[ Volume Slider ]]--
-		if IsVolumeSlider then
-			local maxVolumeLevel = 256
+		local maxVolumeLevel = 256
 
-			local volumeText = createTextLabel(UDim2.new(0.5, 0, 0, CurrentYOffset), "Volume", "VolumeText")
-			volumeText.TextXAlignment = Enum.TextXAlignment.Center
-			volumeText.Parent = GameSettingsMenuFrame
+		local volumeText = createTextLabel(UDim2.new(0.5, 0, 0, CurrentYOffset), "Volume", "VolumeText")
+		volumeText.TextXAlignment = Enum.TextXAlignment.Center
+		volumeText.Parent = GameSettingsMenuFrame
 
-			local volumeSlider, volumeLevel = RbxGuiLibaray.CreateSliderNew(maxVolumeLevel, 300, UDim2.new(0.5, -150, 0, CurrentYOffset + 20))
-			volumeSlider.Bar.ZIndex = BASE_Z_INDEX + 2
-			volumeSlider.Bar.Slider.ZIndex = BASE_Z_INDEX + 4
-			volumeSlider.BarLeft.ZIndex = BASE_Z_INDEX + 2
-			volumeSlider.BarRight.ZIndex = BASE_Z_INDEX + 2
-			volumeSlider.Bar.Fill.ZIndex = BASE_Z_INDEX + 3
-			volumeSlider.FillLeft.ZIndex = BASE_Z_INDEX + 3
-			volumeSlider.Parent = GameSettingsMenuFrame
-			volumeLevel.Value = math.min(math.max(GameSettings.MasterVolume * maxVolumeLevel, 1), maxVolumeLevel)
+		local volumeSlider, volumeLevel = RbxGuiLibaray.CreateSliderNew(maxVolumeLevel, 300, UDim2.new(0.5, -150, 0, CurrentYOffset + 20))
+		volumeSlider.Bar.ZIndex = BASE_Z_INDEX + 2
+		volumeSlider.Bar.Slider.ZIndex = BASE_Z_INDEX + 4
+		volumeSlider.BarLeft.ZIndex = BASE_Z_INDEX + 2
+		volumeSlider.BarRight.ZIndex = BASE_Z_INDEX + 2
+		volumeSlider.Bar.Fill.ZIndex = BASE_Z_INDEX + 3
+		volumeSlider.FillLeft.ZIndex = BASE_Z_INDEX + 3
+		volumeSlider.Parent = GameSettingsMenuFrame
+		volumeLevel.Value = math.min(math.max(GameSettings.MasterVolume * maxVolumeLevel, 1), maxVolumeLevel)
 
-			local volumeMinText = createTextLabel(UDim2.new(0.5, -164, 0, CurrentYOffset + 21), "Min", "VolumeMinText")
-			volumeMinText.Parent = GameSettingsMenuFrame
+		local volumeMinText = createTextLabel(UDim2.new(0.5, -164, 0, CurrentYOffset + 21), "Min", "VolumeMinText")
+		volumeMinText.Parent = GameSettingsMenuFrame
 
-			local volumeMaxText = createTextLabel(UDim2.new(0.5, 158, 0, CurrentYOffset + 21), "Max", "VolumeMaxText")
-			volumeMaxText.TextXAlignment = Enum.TextXAlignment.Left
-			volumeMaxText.Parent = GameSettingsMenuFrame
+		local volumeMaxText = createTextLabel(UDim2.new(0.5, 158, 0, CurrentYOffset + 21), "Max", "VolumeMaxText")
+		volumeMaxText.TextXAlignment = Enum.TextXAlignment.Left
+		volumeMaxText.Parent = GameSettingsMenuFrame
 
-			volumeLevel.Changed:connect(function(newValue)
-				local volume = volumeLevel.Value - 1
-				GameSettings.MasterVolume = volume/maxVolumeLevel
-			end)
+		volumeLevel.Changed:connect(function(newValue)
+			local volume = volumeLevel.Value - 1
+			GameSettings.MasterVolume = volume/maxVolumeLevel
+		end)
 
-			CurrentYOffset = CurrentYOffset + 42
-		end
+		CurrentYOffset = CurrentYOffset + 42
 
 		--[[ OK/Return button ]]--
 		if IsTouchClient then CurrentYOffset = CurrentYOffset + 48 end
