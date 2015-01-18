@@ -95,7 +95,6 @@ local ADMIN_LIST = {
     ['916'] = true, -- Matt Dusek
     ['4550725'] = true, -- CrimmsonGhost
     ['59737068'] = true, -- Mcrtest
-    ['5600283'] = true, -- Seranok
     ['48656806'] = true, -- maxvee
     ['48656806'] = true, -- Coatp0cketninja
     ['35231885'] = true, -- Screenme
