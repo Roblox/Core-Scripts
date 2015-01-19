@@ -1659,8 +1659,10 @@ local function CreateChatWindowWidget(settings)
 			end)
 
 			spawn(function()
+				local now = tick()
 				while true do
 					wait()
+					now = tick()
 					if this.BackgroundVisible then
 						if not dontFadeOutOnMouseLeave then
 							this:FadeOut(0.25)
