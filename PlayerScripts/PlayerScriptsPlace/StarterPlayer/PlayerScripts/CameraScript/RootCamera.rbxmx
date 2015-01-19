@@ -76,7 +76,7 @@ local function CreateCamera()
 &#9;&#9;if humanoidRootPart then
 &#9;&#9;&#9;result = humanoidRootPart.Position + Vector3.new(0, 1.5, 0)
 &#9;&#9;&#9;if humanoid and humanoid:IsA(&apos;Humanoid&apos;) then
-&#9;&#9;&#9;&#9;result = result + humanoid.CameraOffset
+&#9;&#9;&#9;&#9;result = result + humanoidRootPart.CFrame:vectorToWorldSpace(humanoid.CameraOffset)
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;&#9;return result
@@ -387,7 +387,7 @@ local function CreateCamera()
 &#9;
 &#9;local function OnPlayerAdded(player)
 &#9;&#9;player.Changed:connect(function(prop)
-&#9;&#9;&#9;if prop == &quot;CameraMode&quot; then
+&#9;&#9;&#9;if prop == &quot;CameraMode&quot; or prop == &quot;CameraMaxZoomDistance&quot; or prop == &quot;CameraMinZoomDistance&quot; then
 &#9;&#9;&#9;&#9; this:ZoomCameraBy(0)
 &#9;&#9;&#9;end
 &#9;&#9;end)
@@ -400,11 +400,22 @@ local function CreateCamera()
 &#9;&#9;&#9;&#9;wait()
 &#9;&#9;&#9;&#9;humanoid = findPlayerHumanoid(player)
 &#9;&#9;&#9;end
-&#9;&#9;&#9;if humanoid and humanoid.Torso and player.Character == newCharacter then
-&#9;&#9;&#9;&#9;this.cameraLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.7,0)).unit
-&#9;&#9;&#9;&#9;-- reset old camera info so follow cam doesn&apos;t rotate us
-&#9;&#9;&#9;&#9;this.LastCameraTransform = nil
+&#9;&#9;&#9;local function setLookBehindChatacter()
+&#9;&#9;&#9;&#9;if humanoid and humanoid.Torso and player.Character == newCharacter then
+&#9;&#9;&#9;&#9;&#9;this.cameraLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.7,0)).unit
+&#9;&#9;&#9;&#9;&#9;-- reset old camera info so follow cam doesn&apos;t rotate us
+&#9;&#9;&#9;&#9;&#9;this.LastCameraTransform = nil
+&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end
+&#9;&#9;&#9;setLookBehindChatacter()
+&#9;&#9;&#9;-- The following code is to set the camera again after they have been rotated by the spawn point.
+&#9;&#9;&#9;local setLookVector = this:GetCameraLook()
+&#9;&#9;&#9;spawn(function()
+&#9;&#9;&#9;&#9;wait()
+&#9;&#9;&#9;&#9;if this:GetCameraLook() == setLookVector then
+&#9;&#9;&#9;&#9;&#9;setLookBehindChatacter()
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end)
 &#9;&#9;end
 &#9;&#9;
 &#9;&#9;player.CharacterAdded:connect(OnCharacterAdded)

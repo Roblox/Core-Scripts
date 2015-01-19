@@ -159,6 +159,7 @@ local CHAT_COLORS =
 -- These emotes are copy-pastad from the humanoidLocalAnimateKeyframe script
 local EMOTE_NAMES = {wave = true, point = true, dance = true, dance2 = true, dance3 = true, laugh = true, cheer = true}
 local MESSAGES_FADE_OUT_TIME = 30
+local MAX_BLOCKLIST_SIZE = 50
 --[[ END OF CONSTANTS ]]
 
 --[[ SERVICES ]]
@@ -186,6 +187,11 @@ else
 	GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 end
 --[[ END OF SCRIPT VARIABLES ]]
+
+local function GetBlockedUsersFlag()
+	local blockUserFlagSuccess, blockUserFlagFlagValue = pcall(function() return settings():GetFFlag("BlockUsersInLuaChat") end)
+	return blockUserFlagSuccess and blockUserFlagFlagValue == true
+end
 
 local Util = {}
 do
@@ -857,26 +863,41 @@ local function CreateChatBarWidget(settings)
 	this.ChatCommandEvent = Util.Signal() -- success, actionType, captures
 	this.ChatErrorEvent = Util.Signal() -- success, actionType, captures
 
+	-- This function while lets string.find work case-insensitively without clobbering the case of the captures
+	local function nocase(s)
+      s = string.gsub(s, "%a", function (c)
+            return string.format("[%s%s]", string.lower(c),
+                                           string.upper(c))
+          end)
+      return s
+    end
+
 	this.ChatMatchingRegex =
 	{
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/w (%w+)") end] = "Whisper";
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/whisper (%w+)") end] = "Whisper";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/w ") .. "(%w+)") end] = "Whisper";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/whisper ") .. "(%w+)") end] = "Whisper";
 
 		[function(chatBarText) return string.find(chatBarText, "^%%") end] = "Team";
-		[function(chatBarText) return string.find(chatBarText, "^(TEAM)") end] = "Team";
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/t") end] = "Team";
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/team") end] = "Team";
+		[function(chatBarText) return string.find(chatBarText, "^%(TEAM%)") end] = "Team";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/t")) end] = "Team";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/team")) end] = "Team";
 
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/a") end] = "All";
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/all") end] = "All";
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/s") end] = "All";
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/say") end] = "All";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/a")) end] = "All";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/all")) end] = "All";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/s")) end] = "All";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/say")) end] = "All";
 
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/e") end] = "Emote";
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/emote") end] = "Emote";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/e")) end] = "Emote";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/emote")) end] = "Emote";
 
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/%?") end] = "Help";
-		[function(chatBarText) return string.find(string.lower(chatBarText), "^/help?") end] = "Help";
+		[function(chatBarText) return string.find(chatBarText, "^/%?") end] = "Help";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/help")) end] = "Help";
+
+		[function(chatBarText) return string.find(chatBarText, nocase("^/ignore ") .. "(%w+)") end] = "Block";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/block ") .. "(%w+)") end] = "Block";
+
+		[function(chatBarText) return string.find(chatBarText, nocase("^/unignore ") .. "(%w+)") end] = "Unblock";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/unblock ") .. "(%w+)") end] = "Unblock";
 	}
 
 	local ChatModesDict =
@@ -1364,7 +1385,7 @@ local function CreateChatWindowWidget(settings)
 
 	function this:ScrollToBottom()
 		if this.ScrollingFrame then
-			this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - math.max(0, this.ScrollingFrame.AbsoluteWindowSize.Y)))
+			this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteWindowSize.Y))
 		end
 	end
 
@@ -1375,12 +1396,9 @@ local function CreateChatWindowWidget(settings)
 		local isScrolledDown = this:IsScrolledDown()
 		-- Unfortunately there is a race condition so we need this wait here.
 		wait()
-		if isScrolledDown then
-			this:ScrollToBottom()
-		end
 		if this.ScrollingFrame then
 			if currentResizeCount ~= ResizeCount then return end
-			local scrollingFrameAbsoluteSize = this.ScrollingFrame.AbsoluteSize
+			local scrollingFrameAbsoluteSize = this.ScrollingFrame.AbsoluteWindowSize
 			if scrollingFrameAbsoluteSize ~= nil and scrollingFrameAbsoluteSize.X > 0 and scrollingFrameAbsoluteSize.Y > 0 then
 				local ySize = 0
 
@@ -1403,13 +1421,11 @@ local function CreateChatWindowWidget(settings)
 							this.MessageContainer.Size.X.Offset,
 							0,
 							ySize)
-
+					this.MessageContainer.Position = UDim2.new(0, 0, 1, -this.MessageContainer.Size.Y.Offset)
 					this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
 				end
 			end
-			if isScrolledDown then
-				this:ScrollToBottom()
-			end
+			this:ScrollToBottom()
 		end
 	end
 
@@ -1732,6 +1748,7 @@ local function CreateChat()
 		MaxCharactersInMessage = 140; -- Same as a tweet :D
 	}
 
+	this.BlockList = {}
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
 		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
@@ -1767,7 +1784,10 @@ local function CreateChat()
 	-- Enum.PlayerChatType.{All|Team|Whisper}, chatPlayer, message, targetPlayer
 	function this:OnPlayerChatted(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		if this.ChatWindowWidget then
-			this.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+			-- Don't add messages from blocked players
+			if not this:IsPlayerBlocked(sendingPlayer) then
+				this.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+			end
 		end
 	end
 
@@ -1778,16 +1798,87 @@ local function CreateChat()
 		end)
 	end
 
+	function this:IsPlayerBlockedByUserId(userId)
+		for _, currentBlockedUserId in pairs(this.BlockList) do
+			if currentBlockedUserId == userId then
+				return true
+			end
+		end
+		return false
+	end
+
+	function this:IsPlayerBlocked(player)
+		return player and this:IsPlayerBlockedByUserId(player.userId)
+	end
+
 	function this:GetBlockedPlayersAsync()
+		local userId = Player.userId
 		local secureBaseUrl = Util.GetSecureApiBaseUrl()
-		local url = secureBaseUrl .. "userblock/getblockedusers" .. "?" .. "userId=" .. tostring(Player.userId) .. "&" .. "page=" .. "1"
-		local blockList = nil
-		local success, msg = ypcall(function()
-			local request = game:HttpGetAsync(url)
-			blockList = request and game:GetService('HttpService'):DecodeJSON(request)
-		end)
-		if blockList and blockList['success'] == true then
-			return blockList['userList']
+		local url = secureBaseUrl .. "userblock/getblockedusers" .. "?" .. "userId=" .. tostring(userId) .. "&" .. "page=" .. "1"
+		if userId > 0 then
+			local blockList = nil
+			local success, msg = ypcall(function()
+				local request = game:HttpGetAsync(url)
+				blockList = request and game:GetService('HttpService'):JSONDecode(request)
+			end)
+			if blockList and blockList['success'] == true and blockList['userList'] then
+				return blockList['userList']
+			end
+		end
+		return {}
+	end
+
+	function this:BlockPlayerAsync(playerToBlock)
+		if playerToBlock and Player ~= playerToBlock then
+			local blockUserId = playerToBlock.userId
+			local playerToBlockName = playerToBlock.Name
+			if blockUserId > 0 then
+				if not this:IsPlayerBlockedByUserId(blockUserId) then
+					-- We may want to use a more dynamic way of changing the blockList size.
+					if #this.BlockList < MAX_BLOCKLIST_SIZE then
+						table.insert(this.BlockList, blockUserId)
+						this.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is now blocked.")
+						-- Make Block call
+						pcall(function()
+							local success = PlayersService:BlockUser(Player.userId, blockUserId)
+						end)
+					else
+						this.ChatWindowWidget:AddSystemChatMessage("You cannot block " .. playerToBlockName .. " because your list is full.")
+					end
+				else
+					this.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is already blocked.")
+				end
+			else
+				this.ChatWindowWidget:AddSystemChatMessage("You cannot block guests.")
+			end
+		else
+			this.ChatWindowWidget:AddSystemChatMessage("You cannot block yourself.")
+		end
+	end
+
+	function this:UnblockPlayerAsync(playerToUnblock)
+		if playerToUnblock then
+			local unblockUserId = playerToUnblock.userId
+			local playerToUnblockName = playerToUnblock.Name
+
+			if this:IsPlayerBlockedByUserId(unblockUserId) then
+				local blockedUserIndex = nil
+				for index, blockedUserId in pairs(this.BlockList) do
+					if blockedUserId == unblockUserId then
+						blockedUserIndex = blockedUserId
+					end
+				end
+				if blockedUserIndex then
+					table.remove(this.BlockList, blockedUserId)
+				end
+				this.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is no longer blocked.")
+				-- Make Unblock call
+				pcall(function()
+					local success = PlayersService:UnblockUser(Player.userId, unblockUserId)
+				end)
+			else
+				this.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is not blocked.")
+			end
 		end
 	end
 
@@ -1816,6 +1907,10 @@ local function CreateChat()
 			this.ChatWindowWidget:AddSystemChatMessage("/w [PlayerName] or /whisper [PlayerName] - Whisper Chat")
 			this.ChatWindowWidget:AddSystemChatMessage("/t or /team - Team Chat")
 			this.ChatWindowWidget:AddSystemChatMessage("/a or /all - All Chat")
+			if GetBlockedUsersFlag() then
+				this.ChatWindowWidget:AddSystemChatMessage("/block [PlayerName] or /ignore [PlayerName] - Block communications from Target Player")
+				this.ChatWindowWidget:AddSystemChatMessage("/unblock [PlayerName] or /unignore [PlayerName] - Restore communications with Target Player")
+			end
 		end
 	end
 
@@ -1853,6 +1948,26 @@ local function CreateChat()
 			this.ChatBarWidget.ChatCommandEvent:connect(function(success, actionType, capture)
 				if actionType == "Help" then
 					this:PrintHelp()
+				elseif actionType == "Block" then
+					if GetBlockedUsersFlag() then
+						local blockPlayerName = capture and tostring(capture) or ""
+						local playerToBlock = Util.GetPlayerByName(blockPlayerName)
+						if playerToBlock then
+							spawn(function() this:BlockPlayerAsync(playerToBlock) end)
+						else
+							this.ChatWindowWidget:AddSystemChatMessage("Cannot block " .. blockPlayerName .. " because they are not in the game.")
+						end
+					end
+				elseif actionType == "Unblock" then
+					if GetBlockedUsersFlag() then
+						local unblockPlayerName = capture and tostring(capture) or ""
+						local playerToBlock = Util.GetPlayerByName(unblockPlayerName)
+						if playerToBlock then
+							spawn(function() this:UnblockPlayerAsync(playerToBlock) end)
+						else
+							this.ChatWindowWidget:AddSystemChatMessage("Cannot unblock " .. unblockPlayerName .. " because they are not in the game.")
+						end
+					end
 				elseif actionType == "Whisper" then
 					if success == false then
 						local playerName = capture and tostring(capture) or "Unknown"
@@ -1889,9 +2004,11 @@ local function CreateChat()
 	end
 
 	function this:Initialize()
-		--spawn(function()
-		--	this:GetBlockedPlayersAsync()
-		--end)
+		if GetBlockedUsersFlag() then
+			spawn(function()
+				this.BlockList = this:GetBlockedPlayersAsync()
+			end)
+		end
 
 		this:OnPlayerAdded()
 		-- Upsettingly, it seems everytime a player is added, you have to redo the connection

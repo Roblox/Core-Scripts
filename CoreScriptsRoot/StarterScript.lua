@@ -8,9 +8,15 @@ Game:GetService("CoreGui"):WaitForChild("RobloxGui")
 local screenGui = Game:GetService("CoreGui"):FindFirstChild("RobloxGui")
 
 -- SettingsScript
-scriptContext:AddCoreScriptLocal("CoreScripts/Settings", screenGui)
-
 local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UsePlayerScripts") end)
+local newSettingsSuccess, newSettingsFlagValue = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
+local useNewSettings = (luaControlsSuccess and luaControlsFlagValue) and (newSettingsSuccess and newSettingsFlagValue)
+if useNewSettings then
+	scriptContext:AddCoreScriptLocal("CoreScripts/Settings2", screenGui)
+else
+	scriptContext:AddCoreScriptLocal("CoreScripts/Settings", screenGui)
+end
+
 if not touchEnabled then
 	-- ToolTipper  (creates tool tips for gui)
 	scriptContext:AddCoreScriptLocal("CoreScripts/ToolTip", screenGui)

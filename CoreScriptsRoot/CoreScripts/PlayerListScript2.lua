@@ -5,11 +5,14 @@
 ]]
 local GuiService = game:GetService('GuiService')	-- NOTE: Can only use in core scripts
 local UserInputService = game:GetService('UserInputService')
+local HttpService = game:GetService('HttpService')
+local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local Players = game:GetService('Players')
 local TeamsService = game:FindService('Teams')
 
 if LoadLibrary then
 	RbxGui = LoadLibrary("RbxGui")
+	RbxUtility = LoadLibrary("RbxUtility")
 end
 
 while not Players.LocalPlayer do
@@ -17,6 +20,13 @@ while not Players.LocalPlayer do
 end
 local Player = Players.LocalPlayer
 local RobloxGui = script.Parent
+
+--[[ Friends and Followers fast flags ]]--
+local maxFriendSuccess, isMaxFriendsCountEnabled = pcall(function() return settings():GetFFlag("MaxFriendsCount") end)
+local followersSuccess, isFollowersEnabled = pcall(function() settings():GetFFlag("LuaFollowers") end)
+--
+local IsMaxFriendsCount = maxFriendSuccess and isMaxFriendsCountEnabled
+local IsFollowersEnabled = followersSuccess and isFollowersEnabled
 
 --[[ Script Variables ]]--
 local MyPlayerEntry = nil
@@ -65,6 +75,7 @@ local TEXT_STROKE_COLOR = Color3.new(34/255, 34/255, 34/255)
 local TWEEN_TIME = 0.15
 local MAX_LEADERSTATS = 4
 local MAX_STR_LEN = 10
+local MAX_FRIEND_COUNT = 200
 
 local ADMINS = {	-- Admins with special icons
     ['7210880'] = 'http://www.roblox.com/asset/?id=134032333', -- Jeditkacheff
@@ -731,6 +742,70 @@ local function createPopupFrame(buttons)
 	return frame
 end
 
+--[[ Http helper functions for new friends and followers feature ]]--
+-- TODO: Update when client API is finished and remove http post.
+local baseUrl = game:GetService('ContentProvider').BaseUrl:lower()
+baseUrl = string.gsub(baseUrl,"/m.","/www.") --mobile site does not work for this stuff!
+local function getSecureApiBaseUrl()
+	local secureApiUrl = baseUrl
+	secureApiUrl = string.gsub(secureApiUrl,"http","https")
+	secureApiUrl = string.gsub(secureApiUrl,"www","api")
+	return secureApiUrl
+end
+
+-- if userId = nil, then it will get count for local player
+local function getFriendCount(userId)
+	local friendCount = nil
+	local wasSuccess, errorCode = pcall(function()
+		local str = 'user/get-friendship-count'
+		if userId then
+			str = str..'?userId='..tostring(userId)
+		end
+		friendCount = HttpRbxApiService:GetAsync(str, true)
+	end)
+	if not wasSuccess then
+		print("getFriendCount() failed because", errorCode)
+		return nil
+	end
+	friendCount = HttpService:JSONDecode(friendCount)
+	--
+	for k,v in pairs(friendCount) do
+		if k == 'count' then
+			friendCount = v
+			break
+		end
+	end
+	--
+	return friendCount
+end
+
+-- checks for both local player and other player
+local function checkForMaxFriends(otherPlayer)
+	local myFriendCount = getFriendCount()
+	local theirFriendCount = getFriendCount(otherPlayer.userId)
+	--
+	if not myFriendCount or not theirFriendCount then
+		return false
+	end
+	if myFriendCount < MAX_FRIEND_COUNT and theirFriendCount < MAX_FRIEND_COUNT then
+		return true
+	elseif myFriendCount >= MAX_FRIEND_COUNT then
+		GuiService:SendNotification("Cannot send friend request",
+			"You are at the max friends limit.",
+			"",
+			5,
+			function()
+			end)
+	elseif theirFriendCount >= MAX_FRIEND_COUNT then
+		GuiService:SendNotification("Cannot send friend request",
+			otherPlayer.Name.." is at the max friends limit.",
+			"",
+			5,
+			function()
+			end)
+	end
+end
+
 local function hideFriendReportPopup()
 	if PopupFrame then
 		PopupFrame:TweenPosition(UDim2.new(1, 1, 0, PopupFrame.Position.Y.Offset), Enum.EasingDirection.InOut,
@@ -750,6 +825,7 @@ local function hideFriendReportPopup()
 			end
 		end
 	end
+	ScrollList.ScrollingEnabled = true
 	LastSelectedFrame = nil
 	LastSelectedPlayer = nil
 end
@@ -872,6 +948,19 @@ local function showFriendReportPopup(selectedFrame, selectedPlayer)
 		friendText = "Unfriend Player"
 	elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend then
 		friendText = "Send Friend Request"
+		-- if we are sending a friend request we need to check if either player is at the max friend count
+		if IsMaxFriendsCount then 	-- FFlag
+			if not checkForMaxFriends(selectedPlayer) then
+				for _,childFrame in pairs(LastSelectedFrame:GetChildren()) do
+					if childFrame:IsA('Frame') then
+						childFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+					end
+				end
+				LastSelectedFrame = nil
+				LastSelectedPlayer = nil
+				return
+			end
+		end
 	elseif status == Enum.FriendStatus.FriendRequestSent then
 		friendText = "Revoke Friend Request"
 	elseif status == Enum.FriendStatus.FriendRequestReceived then
@@ -937,7 +1026,6 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
 			showFriendReportPopup(selectedFrame, selectedPlayer)
 		else
 			hideFriendReportPopup()
-			ScrollList.ScrollingEnabled = true
 			LastSelectedFrame = nil
 			LastSelectedPlayer = nil
 		end
@@ -1344,12 +1432,12 @@ local function setLeaderStats(entry)
 		if child.Name == 'leaderstats' then
 			addNewStats(child)
 			updateLeaderstatFrames()
+
+			child.ChildAdded:connect(onStatAdded)
+			child.ChildRemoved:connect(function(removedStat)
+				onStatRemoved(removedStat, entry)
+			end)
 		end
-		
-		child.ChildAdded:connect(onStatAdded)
-		child.ChildRemoved:connect(function(removedStat)
-			onStatRemoved(removedStat, entry)
-		end)
 	end)
 	
 	player.ChildRemoved:connect(function(child)

@@ -442,6 +442,8 @@ end
 function fadeBackground()
 	if not currScreenGui then return end
 	if fadingBackground then return end
+	
+	if not currScreenGui:findFirstChild("BlackFrame") then return end
 
 	fadingBackground = true
 

@@ -172,6 +172,9 @@ local function OnPlayerAdded(player)
 &#9;&#9;&#9;currentCameraConn = currentCamera.Changed:connect(function(prop)
 &#9;&#9;&#9;&#9;if prop == &apos;CameraType&apos; then
 &#9;&#9;&#9;&#9;&#9;OnCameraMovementModeChange(getCurrentCameraMode())
+&#9;&#9;&#9;&#9;&#9;TransparencyDirty = true
+&#9;&#9;&#9;&#9;elseif prop == &apos;CameraSubject&apos; then
+&#9;&#9;&#9;&#9;&#9;TransparencyDirty = true
 &#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end)
 &#9;&#9;end

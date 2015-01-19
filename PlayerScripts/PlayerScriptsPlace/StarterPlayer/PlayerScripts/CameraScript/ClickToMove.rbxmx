@@ -142,36 +142,22 @@ do
 &#9;end
 &#9;Utility.FindChacterAncestor = FindChacterAncestor
 &#9;
+&#9;
+&#9;local NEAR_CLIP_PLANE_OFFSET = 0.5
+&#9;local function ScreenToWorld(screenPoint, screenSize, pushDepth, camera)
+&#9;&#9;local cameraFOV, cameraCFrame = camera.FieldOfView, camera.CoordinateFrame
+&#9;&#9;local imagePlaneDepth = screenSize.y / (2 * math.tan(math.rad(cameraFOV) / 2))
+&#9;&#9;local direction = Vector3.new(screenPoint.x - (screenSize.x / 2), (screenSize.y / 2) - screenPoint.y, -imagePlaneDepth)
+&#9;&#9;local worldDirection = (cameraCFrame:vectorToWorldSpace(direction)).Unit
+&#9;&#9;local theta = math.acos(math.min(1, worldDirection:Dot(cameraCFrame.lookVector)))
+&#9;&#9;local fixedPushDepth = pushDepth / math.sin((math.pi / 2) - theta)
+&#9;&#9;return cameraCFrame.p + worldDirection * fixedPushDepth, worldDirection
+&#9;end
 &#9;local function GetUnitRay(x, y, viewWidth, viewHeight, camera)
-&#9;&#9;if not (x or y or viewWidth or viewHeight or camera) then
-&#9;&#9;&#9;print(&quot;GetUnitRay: Missing arguement; returning nil&quot;)
-&#9;&#9;&#9;return
-&#9;&#9;end
 &#9;&#9;
-&#9;&#9;local function getImagePlaneDepth()
-&#9;&#9;&#9;local imagePlaneDepth = 1.0 / (2.0 * math.tan(math.rad(camera.FieldOfView) / 2.0));
-&#9;&#9;&#9;return imagePlaneDepth * viewHeight;
-&#9;&#9;end
+&#9;&#9;local rayOrigin, rayDirection = ScreenToWorld(Vector2.new(x,y), Vector2.new(viewWidth, viewHeight), NEAR_CLIP_PLANE_OFFSET, camera)
 &#9;&#9;
-&#9;&#9;local screenWidth  = viewWidth;
-&#9;&#9;local screenHeight = viewHeight;
-&#9;
-&#9;&#9;x = clamp(0, screenWidth, x)
-&#9;&#9;y = clamp(0, screenHeight, y)
-&#9;
-&#9;&#9;local origin = camera.CoordinateFrame.p
-&#9;
-&#9;&#9;local cx = screenWidth  / 2.0;
-&#9;&#9;local cy = screenHeight / 2.0;
-&#9;  
-&#9;&#9;local direction = Vector3.new((x - cx), -(y - cy), -(getImagePlaneDepth()));
-&#9;
-&#9;&#9;direction = camera.CoordinateFrame:vectorToWorldSpace(direction);
-&#9;
-&#9;&#9;-- Normalize the direction (we didn&apos;t do it before)
-&#9;&#9;direction = direction.unit;
-&#9;
-&#9;&#9;return Ray.new(origin, direction);
+&#9;&#9;return Ray.new(rayOrigin, rayDirection.unit);
 &#9;end
 &#9;Utility.GetUnitRay = GetUnitRay
 &#9;
@@ -1213,9 +1199,9 @@ local function SetUpGestureRecognizers()
 &#9;&#9;&#9;&#9;&#9;if otherInput.UserInputState ~= Enum.UserInputState.End and ((wasInBottomLeft and otherInputInRight) or (wasInBottomRight and otherInputInLeft)) then
 &#9;&#9;&#9;&#9;&#9;&#9;-- TODO: Is this still a valid code path?
 &#9;&#9;&#9;&#9;&#9;&#9;UIS.ModalEnabled = false
-&#9;&#9;&#9;&#9;&#9;&#9;if CameraModule then
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;CameraModule:Stop()
-&#9;&#9;&#9;&#9;&#9;&#9;end
+--&#9;&#9;&#9;&#9;&#9;&#9;if CameraModule then
+--&#9;&#9;&#9;&#9;&#9;&#9;&#9;CameraModule:Stop()
+--&#9;&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;&#9;workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 &#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;end

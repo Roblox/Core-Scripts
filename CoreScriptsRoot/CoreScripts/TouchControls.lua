@@ -379,7 +379,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 		if ThumbpadFrame then return end
 		
 		local isSmallScreen = isSmallScreenDevice()
-		local position = isSmallScreen and UDim2.new(0, THUMBSTICK_SIZE * 1.25, 1, -THUMBSTICK_SIZE - 20) or
+		local position = isSmallScreen and UDim2.new(0, THUMBSTICK_SIZE * 0.5 - 20, 1, -THUMBSTICK_SIZE - 30) or
 			UDim2.new(0, THUMBSTICK_SIZE/2 - 10, 1, -THUMBSTICK_SIZE * 1.75 - 10)
 		
 		ThumbpadFrame = createControlFrame("ThumbpadFrame", position, THUMBSTICK_SIZE + 20)
@@ -1429,7 +1429,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 	local thumbpadFrame = nil
 	function setupThumbpad(parentFrame)
 		local isSmallScreen = isSmallScreenDevice()
-		local position = isSmallScreen and UDim2.new(0, thumbstickSize * 1.25, 1, -thumbstickSize - 20) or
+		local position = isSmallScreen and UDim2.new(0, thumbstickSize * 0.5 - 20, 1, -thumbstickSize - 30) or
 			UDim2.new(0, thumbstickSize/2 - 10, 1, -thumbstickSize * 1.75 - 10)
 		
 		thumbpadFrame = Instance.new('Frame')	-- container

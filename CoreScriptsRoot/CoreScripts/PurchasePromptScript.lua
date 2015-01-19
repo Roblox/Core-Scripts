@@ -407,22 +407,18 @@ function doAcceptPurchase(currencyPreferredByUser)
 	local response = "none"
 	local url = nil
 
-	local flagExists, flagValue = pcall(function() return settings():GetFFlag("AddRequestIdToDeveloperProductPurchases") end)
-	local reliableDevProductEnabled = flagExists and flagValue
 	-- consumables need to use a different url
 	if purchasingConsumable then
 		url =  getSecureApiBaseUrl() .. "marketplace/submitpurchase?productId=" .. tostring(currentProductId) ..
 				"&currencyTypeId=" .. tostring(currencyEnumToInt(currentCurrencyType)) .. 
 				"&expectedUnitPrice=" .. tostring(currentCurrencyAmount) ..
 				"&placeId=" .. tostring(Game.PlaceId)
-		if reliableDevProductEnabled then
-			local h = game:GetService("HttpService")
-			url = url .. "&requestId=" .. h:UrlEncode(h:GenerateGUID(false))
-		end
+		local h = game:GetService("HttpService")
+		url = url .. "&requestId=" .. h:UrlEncode(h:GenerateGUID(false))
 	else
 		url = getSecureApiBaseUrl() .. "marketplace/purchase?productId=" .. tostring(currentProductId) .. 
 			"&currencyTypeId=" .. tostring(currencyEnumToInt(currentCurrencyType)) .. 
-			"&purchasePrice=" .. tostring(currentCurrencyAmount) ..
+			"&purchasePrice=" .. tostring(currentCurrencyAmount or 0) ..
 			"&locationType=Game" .. "&locationId=" .. Game.PlaceId
 	end
 
@@ -430,7 +426,7 @@ function doAcceptPurchase(currencyPreferredByUser)
 		response = game:HttpPostAsync(url, "RobloxPurchaseRequest") 
 	end)
 
-	if reliableDevProductEnabled and purchasingConsumable then
+	if purchasingConsumable then
 		local retriesLeft = 3
 		local gotGoodResponse = success and response ~= "none" and response ~= nil and response ~= ''
 		while retriesLeft > 0 and (not gotGoodResponse) do
