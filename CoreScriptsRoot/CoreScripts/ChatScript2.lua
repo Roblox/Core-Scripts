@@ -193,6 +193,11 @@ local function GetBlockedUsersFlag()
 	return blockUserFlagSuccess and blockUserFlagFlagValue == true
 end
 
+local function GetUsePlayerInGroupFlag()
+	local flagSuccess, flagValue = pcall(function() return settings():GetFFlag("UsePlayerInGroupLuaChat") end)
+	return flagSuccess and flagValue == true
+end
+
 local Util = {}
 do
 	-- Check if we are running on a touch device
@@ -348,6 +353,26 @@ do
 			end
 		end
 		return nil -- Found no player
+	end
+
+	local adminCache = {}
+	function Util.IsPlayerAdminAsync(player)
+		local userId = player and player.userId
+		if userId then
+			if GetUsePlayerInGroupFlag() then
+				if adminCache[userId] == nil then
+					local isAdmin = false
+					-- Many things can error is the IsInGroup check
+					pcall(function()
+						isAdmin = player:IsInGroup(1200769)
+					end)
+					adminCache[userId] = isAdmin
+				end
+				return adminCache[userId]
+			end
+			return ADMIN_LIST[tostring(userId)]
+		end
+		return false
 	end
 
 	local function GetNameValue(pName)
@@ -834,7 +859,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			if chatMessage.Text == 'Label' and chatMessageDisplayText ~= 'Label' then
 				chatMessage.Text = string.rep(" ", numNeededSpaces) .. '[Content Deleted]'
 			end
-			if this.SendingPlayer and ADMIN_LIST[tostring(this.SendingPlayer.userId)] then
+			if this.SendingPlayer and Util.IsPlayerAdminAsync(this.SendingPlayer) then
 				chatMessage.TextColor3 = this.Settings.AdminTextColor
 			end
 			chatMessage.Size = chatMessage.Size + UDim2.new(0, 0, 0, chatMessage.TextBounds.Y);
@@ -1634,8 +1659,10 @@ local function CreateChatWindowWidget(settings)
 			end)
 
 			spawn(function()
+				local now = tick()
 				while true do
 					wait()
+					now = tick()
 					if this.BackgroundVisible then
 						if not dontFadeOutOnMouseLeave then
 							this:FadeOut(0.25)
@@ -1789,7 +1816,10 @@ local function CreateChat()
 		end
 	end
 
-	function this:OnPlayerAdded()
+	function this:OnPlayerAdded(newPlayer)
+		if newPlayer then
+			spawn(function() Util.IsPlayerAdminAsync(newPlayer) end)
+		end
 		this.PlayerChattedConn = Util.DisconnectEvent(this.PlayerChattedConn)
 		this.PlayerChattedConn = PlayersService.PlayerChatted:connect(function(...)
 			this:OnPlayerChatted(...)
@@ -2008,11 +2038,13 @@ local function CreateChat()
 			end)
 		end
 
-		this:OnPlayerAdded()
+		this:OnPlayerAdded(Player)
 		-- Upsettingly, it seems everytime a player is added, you have to redo the connection
 		-- NOTE: PlayerAdded only fires on the server, hence ChildAdded is used here
-		PlayersService.ChildAdded:connect(function()
-			this:OnPlayerAdded()
+		PlayersService.ChildAdded:connect(function(child)
+			if child:IsA('Player') then
+				this:OnPlayerAdded(child)
+			end
 		end)
 
 		this:CreateGUI()

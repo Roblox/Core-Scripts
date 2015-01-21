@@ -1,4 +1,4 @@
--- Backpack Version 4.12
+-- Backpack Version 4.13
 -- OnlyTwentyCharacters
 
 ---------------------
@@ -649,6 +649,7 @@ local function OnCharacterAdded(character)
 			slot:Delete()
 		end
 	end
+	ActiveHopper = nil
 	
 	-- And any old connections
 	for _, conn in pairs(CharConns) do
