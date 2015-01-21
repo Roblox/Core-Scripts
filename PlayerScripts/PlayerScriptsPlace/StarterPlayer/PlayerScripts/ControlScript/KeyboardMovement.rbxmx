@@ -29,7 +29,7 @@ local RenderSteppedCon = nil
 --[[ Local Functions ]]--
 local function getHumanoid()
 &#9;local character = LocalPlayer and LocalPlayer.Character
-&#9;if character then
+&#9;if character and character.Parent then
 &#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
 &#9;&#9;&#9;return CachedHumanoid
 &#9;&#9;else
@@ -122,6 +122,7 @@ function KeyboardMovement:Enable()
 &#9;RenderSteppedCon = RunService.RenderStepped:connect(function()
 &#9;&#9;if LocalPlayer and LocalPlayer.Character then
 &#9;&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;&#9;if not humanoid then return end
 &#9;&#9;&#9;if isFirstPersonOrShiftLocked() then
 &#9;&#9;&#9;&#9;local rootPart = humanoid.Torso
 &#9;&#9;&#9;&#9;if humanoid and not humanoid.Sit and not humanoid.PlatformStand and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
@@ -139,7 +140,7 @@ function KeyboardMovement:Enable()
 &#9;&#9;&#9;if humanoid and not humanoid.PlatformStand and isJumping then
 &#9;&#9;&#9;&#9;humanoid.Jump = isJumping
 &#9;&#9;&#9;end
-&#9;&#9;&#9;
+
 &#9;&#9;&#9;moveFunc(LocalPlayer, Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue), true)
 &#9;&#9;end
 &#9;end)
