@@ -20,6 +20,7 @@ while not Players.LocalPlayer do
 &#9;wait()
 end
 local LocalPlayer = Players.LocalPlayer
+local CachedHumanoid = nil
 local ThumbpadFrame = nil
 local TouchObject = nil
 local OnInputEnded = nil&#9;-- is defined in Create()
@@ -44,6 +45,23 @@ local function createArrowLabel(name, parent, position, size, rectOffset, rectSi
 &#9;image.Parent = parent
 &#9;
 &#9;return image
+end
+
+local function getHumanoid()
+&#9;local character = LocalPlayer and LocalPlayer.Character
+&#9;if character and character.Parent then
+&#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
+&#9;&#9;&#9;return CachedHumanoid
+&#9;&#9;else
+&#9;&#9;&#9;CachedHumanoid = nil
+&#9;&#9;&#9;for _,child in pairs(character:GetChildren()) do
+&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;&#9;CachedHumanoid = child
+&#9;&#9;&#9;&#9;&#9;return CachedHumanoid
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
 end
 
 --[[ Public API ]]--
@@ -131,8 +149,9 @@ function Thumbpad:Create(parentFrame)
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;&#9;
-&#9;&#9;if LocalPlayer then
-&#9;&#9;&#9;LocalPlayer:Move(inputAxis, true)
+&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;if humanoid then
+&#9;&#9;&#9;humanoid:Move(inputAxis, true)
 &#9;&#9;end
 &#9;&#9;
 &#9;&#9;local forwardDot = inputAxis:Dot(vForward)
@@ -194,8 +213,9 @@ function Thumbpad:Create(parentFrame)
 &#9;end)
 &#9;
 &#9;OnInputEnded = function()
-&#9;&#9;if LocalPlayer then
-&#9;&#9;&#9;LocalPlayer:Move(Vector3.new(0, 0, 0), true)
+&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;if humanoid then
+&#9;&#9;&#9;humanoid:Move(Vector3.new(0, 0, 0), true)
 &#9;&#9;end
 &#9;&#9;ThumbpadFrame.Position = position
 &#9;&#9;TouchObject = nil

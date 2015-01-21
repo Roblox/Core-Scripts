@@ -154,16 +154,18 @@ function DPad:Create(parentFrame)
 &#9;&#9;
 &#9;&#9;TouchObject = inputObject
 &#9;&#9;normalizeDirection(TouchObject.Position)
-&#9;&#9;if LocalPlayer then
-&#9;&#9;&#9;LocalPlayer:Move(movementVector, true)
+&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;if humanoid then
+&#9;&#9;&#9;humanoid:Move(movementVector, true)
 &#9;&#9;end
 &#9;end)
 &#9;
 &#9;DPadFrame.InputChanged:connect(function(inputObject)
 &#9;&#9;if inputObject == TouchObject then
 &#9;&#9;&#9;normalizeDirection(TouchObject.Position)
-&#9;&#9;&#9;if LocalPlayer then
-&#9;&#9;&#9;&#9;LocalPlayer:Move(movementVector, true)
+&#9;&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;&#9;if humanoid then
+&#9;&#9;&#9;&#9;humanoid:Move(movementVector, true)
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;end)
@@ -172,9 +174,10 @@ function DPad:Create(parentFrame)
 &#9;&#9;TouchObject = nil
 &#9;&#9;flBtn.Visible = false
 &#9;&#9;frBtn.Visible = false
-&#9;&#9;if LocalPlayer then
+&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;if humanoid then
 &#9;&#9;&#9;movementVector = Vector3.new(0, 0, 0)
-&#9;&#9;&#9;LocalPlayer:Move(movementVector, true)
+&#9;&#9;&#9;humanoid:Move(movementVector, true)
 &#9;&#9;end
 &#9;end
 &#9;

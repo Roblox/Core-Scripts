@@ -19,6 +19,7 @@ while not Players.LocalPlayer do
 &#9;wait()
 end
 local LocalPlayer = Players.LocalPlayer
+local CachedHumanoid = nil
 local IsFollowStick = true
 local ThumbstickFrame = nil
 local MoveTouchObject = nil
@@ -29,6 +30,23 @@ local OnTouchEndedCn = nil
 --[[ Constants ]]--
 local TOUCH_CONTROL_SHEET = &quot;rbxasset://textures/ui/TouchControlsSheet.png&quot;
 
+--[[ Local Functions ]]--
+local function getHumanoid()
+&#9;local character = LocalPlayer and LocalPlayer.Character
+&#9;if character and character.Parent then
+&#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
+&#9;&#9;&#9;return CachedHumanoid
+&#9;&#9;else
+&#9;&#9;&#9;CachedHumanoid = nil
+&#9;&#9;&#9;for _,child in pairs(character:GetChildren()) do
+&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;&#9;CachedHumanoid = child
+&#9;&#9;&#9;&#9;&#9;return CachedHumanoid
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+end
 
 --[[ Public API ]]--
 function Thumbstick:Enable()
@@ -104,8 +122,9 @@ function Thumbstick:Create(parentFrame)
 &#9;&#9;&#9;inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y)
 &#9;&#9;end
 &#9;&#9;
-&#9;&#9;if LocalPlayer then
-&#9;&#9;&#9;LocalPlayer:Move(inputAxis, true)
+&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;if humanoid then
+&#9;&#9;&#9;humanoid:Move(inputAxis, true)
 &#9;&#9;end
 &#9;end
 &#9;
@@ -153,8 +172,9 @@ function Thumbstick:Create(parentFrame)
 &#9;&#9;ThumbstickFrame.Position = position
 &#9;&#9;StickImage.Position = UDim2.new(0, ThumbstickFrame.Size.X.Offset/2 - thumbstickSize/4, 0, ThumbstickFrame.Size.Y.Offset/2 - thumbstickSize/4)
 &#9;&#9;MoveTouchObject = nil
-&#9;&#9;if LocalPlayer then
-&#9;&#9;&#9;LocalPlayer:Move(Vector3.new(0, 0, 0), true)
+&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;if humanoid then
+&#9;&#9;&#9;humanoid:Move(Vector3.new(0, 0, 0), true)
 &#9;&#9;end
 &#9;end
 &#9;
