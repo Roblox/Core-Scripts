@@ -39,6 +39,10 @@ IsTouchClient = isTouchSuccess and isTouch
 
 local IsStudioMode = GameSettings:InStudioMode()
 
+--[[ Fast Flags ]]--
+local isNewNotificationSuccess, isNewNotificationEnabled = pcall(function() return settings():GetFFlag("NewNotificationsScript") end)
+local isNewNotifications = isNewNotificationSuccess and isNewNotificationEnabled
+
 --[[ Parent Frames ]]--
 -- TODO: Remove all references to engine created gui
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
@@ -664,19 +668,23 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 					graphicsLevel.Value = graphicsLevel.Value + 1
 					setGraphicsQualityLevel(graphicsLevel.Value)
 					--
-					GuiService:SendNotification("Graphics Quality", 
-						"Increased to ("..tostring(graphicsLevel.Value)..")",
-						"", 2, function()
-					end)
+					if not isNewNotifications then
+						GuiService:SendNotification("Graphics Quality", 
+							"Increased to ("..tostring(graphicsLevel.Value)..")",
+							"", 2, function()
+						end)
+					end
 				else
 					if graphicsLevel.Value - 1 <= 0 then return end
 					graphicsLevel.Value = graphicsLevel.Value - 1
 					setGraphicsQualityLevel(graphicsLevel.Value)
 					--
-					GuiService:SendNotification("Graphics Quality",
-						"Decreased to ("..tostring(graphicsLevel.Value)..")",
-						"", 2, function()
-					end)
+					if not isNewNotifications then
+						GuiService:SendNotification("Graphics Quality",
+							"Decreased to ("..tostring(graphicsLevel.Value)..")",
+							"", 2, function()
+						end)
+					end
 				end
 			end)
 

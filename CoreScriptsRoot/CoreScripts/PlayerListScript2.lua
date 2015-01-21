@@ -21,12 +21,14 @@ end
 local Player = Players.LocalPlayer
 local RobloxGui = script.Parent
 
---[[ Friends and Followers fast flags ]]--
+--[[ Fast Flags ]]--
 local maxFriendSuccess, isMaxFriendsCountEnabled = pcall(function() return settings():GetFFlag("MaxFriendsCount") end)
 local followersSuccess, isFollowersEnabled = pcall(function() settings():GetFFlag("LuaFollowers") end)
+local newNotificationsSuccess, newNotificationsEnabled = pcall(function() return settings():GetFFlag("NewNotificationsScript") end)
 --
 local IsMaxFriendsCount = maxFriendSuccess and isMaxFriendsCountEnabled
 local IsFollowersEnabled = followersSuccess and isFollowersEnabled
+local IsNewNotifications = newNotificationsSuccess and newNotificationsEnabled
 
 --[[ Script Variables ]]--
 local MyPlayerEntry = nil
@@ -48,6 +50,9 @@ local PlayerEntrySizeY = 20
 local TeamEntrySizeY = 20
 local NameEntrySizeX = 165
 local StatEntrySizeX = 60
+
+--[[ Bindables ]]--
+local BinbableFunction_SendNotification = RobloxGui:FindFirstChild('SendNotification')
 
 local IsPersonalServer = false
 local PersonalServerService = nil
@@ -790,19 +795,39 @@ local function checkForMaxFriends(otherPlayer)
 	if myFriendCount < MAX_FRIEND_COUNT and theirFriendCount < MAX_FRIEND_COUNT then
 		return true
 	elseif myFriendCount >= MAX_FRIEND_COUNT then
-		GuiService:SendNotification("Cannot send friend request",
-			"You are at the max friends limit.",
-			"",
-			5,
-			function()
-			end)
+		if IsNewNotifications and BinbableFunction_SendNotification then
+			BinbableFunction_SendNotification:Invoke(
+				"Cannot send friend request",
+				"You are at the max friends limit.",
+				"",
+				5,
+				function()
+				end)
+		else
+			GuiService:SendNotification("Cannot send friend request",
+				"You are at the max friends limit.",
+				"",
+				5,
+				function()
+				end)
+		end
 	elseif theirFriendCount >= MAX_FRIEND_COUNT then
-		GuiService:SendNotification("Cannot send friend request",
-			otherPlayer.Name.." is at the max friends limit.",
-			"",
-			5,
-			function()
-			end)
+		if IsNewNotifications and BinbableFunction_SendNotification then
+			BinbableFunction_SendNotification:Invoke(
+				"Cannot send friend request",
+				otherPlayer.Name.." is at the max friends limit.",
+				"",
+				5,
+				function()
+				end)
+		else
+			GuiService:SendNotification("Cannot send friend request",
+				otherPlayer.Name.." is at the max friends limit.",
+				"",
+				5,
+				function()
+				end)
+		end
 	end
 end
 
