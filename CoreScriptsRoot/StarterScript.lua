@@ -32,10 +32,16 @@ scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript", screenGui)
 -- Developer Console Script
 scriptContext:AddCoreScriptLocal("CoreScripts/DeveloperConsole", screenGui)
 
--- Popup Script
-scriptContext:AddCoreScriptLocal("CoreScripts/PopupScript", screenGui)
--- Friend Notification Script (probably can use this script to expand out to other notifications)
-scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript", screenGui)
+local newNotificationsSuccess, newNotificationsEnabled = pcall(function() return settings():GetFFlag("NewNotificationsScript") end)
+local isNewNotifications = newNotificationsSuccess and newNotificationsEnabled
+if isNewNotifications then
+	scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", screenGui)
+else
+	-- Popup Script
+	scriptContext:AddCoreScriptLocal("CoreScripts/PopupScript", screenGui)
+	-- Friend Notification Script (probably can use this script to expand out to other notifications)
+	scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript", screenGui)
+end
 -- Chat script
 local success, chatFlagValue = pcall(function() return settings():GetFFlag("NewLuaChatScript") end)
 if success and chatFlagValue == true then
