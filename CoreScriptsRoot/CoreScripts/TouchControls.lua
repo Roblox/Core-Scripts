@@ -514,6 +514,9 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 			ThumbstickFrame.Visible = false
 			ThumbpadFrame.Visible = false
 			DPadFrame.Visible = false
+			if JumpTouchObject then
+				JumpTouchObject = nil
+			end
 		else
 			local isThumbstickMode = false
 			local isThumbpadMode = false
@@ -1634,6 +1637,9 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 			jumpButton.Visible = false
 			characterDPad.Visible = false
 			thumbpadFrame.Visible = false
+			if currentJumpTouch then
+				currentJumpTouch = nil
+			end
 		else
 			local modeName = GameSettings.TouchMovementMode.Name
 			local isThumbpadMode = false
