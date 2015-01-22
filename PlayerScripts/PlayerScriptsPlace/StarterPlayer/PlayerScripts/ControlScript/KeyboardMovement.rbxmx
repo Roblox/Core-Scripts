@@ -6,7 +6,7 @@
 			<string name="Name">KeyboardMovement</string>
 			<ProtectedString name="Source">--[[
 &#9;// FileName: ComputerMovementKeyboardMovement
-&#9;// Written by: jeditkacheff
+&#9;// Written by: jeditkacheff/jmargh
 &#9;// Description: Implements movement controls for keyboard devices
 --]]
 local Players = game:GetService(&apos;Players&apos;)
@@ -29,7 +29,7 @@ local RenderSteppedCon = nil
 --[[ Local Functions ]]--
 local function getHumanoid()
 &#9;local character = LocalPlayer and LocalPlayer.Character
-&#9;if character and character.Parent then
+&#9;if character then
 &#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
 &#9;&#9;&#9;return CachedHumanoid
 &#9;&#9;else
