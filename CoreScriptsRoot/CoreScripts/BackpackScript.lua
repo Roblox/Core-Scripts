@@ -1,4 +1,4 @@
--- Backpack Version 4.13
+-- Backpack Version 4.14
 -- OnlyTwentyCharacters
 
 ---------------------
@@ -167,7 +167,7 @@ local function EquipTool(tool) --NOTE: HopperBin
 		SlotsByTool[tool]:UpdateEquipView()
 		ActiveHopper = tool
 	else
-		-- Humanoid:EquipTool(tool) --NOTE: This would also unequip current Tool
+		--Humanoid:EquipTool(tool) --NOTE: This would also unequip current Tool
 		tool.Parent = Character --TODO: Switch back to above line after EquipTool is fixed!
 	end
 end
@@ -576,14 +576,8 @@ local function OnChildAdded(child) -- To Character or Backpack
 		if starterGear then
 			if starterGear:FindFirstChild(tool.Name) then
 				StarterToolFound = true
-				local firstEmptyIndex = LowestEmptySlot and LowestEmptySlot.Index or #Slots + 1
-				if LowestEmptySlot then
-					firstEmptyIndex = LowestEmptySlot.Index
-				else -- No slots free in hotbar, make a new inventory slot
-					local newSlot = MakeSlot(ScrollingFrame)
-					firstEmptyIndex = newSlot.Index
-				end
-				for i = firstEmptyIndex, 1, -1 do
+				local slot = LowestEmptySlot or MakeSlot(ScrollingFrame)
+				for i = slot.Index, 1, -1 do
 					local curr = Slots[i] -- An empty slot, because above
 					local pIndex = i - 1
 					if pIndex > 0 then
@@ -593,6 +587,13 @@ local function OnChildAdded(child) -- To Character or Backpack
 						curr:Fill(tool)
 					end
 				end
+				-- Have to manually unequip a possibly equipped tool
+				for _, child in pairs(Character:GetChildren()) do
+					if child:IsA('Tool') and child ~= tool then
+						child.Parent = Backpack
+					end
+				end
+				AdjustHotbarFrames()
 				return -- We're done here
 			end
 		end
@@ -649,7 +650,7 @@ local function OnCharacterAdded(character)
 			slot:Delete()
 		end
 	end
-	ActiveHopper = nil
+	ActiveHopper = nil --NOTE: HopperBin
 	
 	-- And any old connections
 	for _, conn in pairs(CharConns) do
