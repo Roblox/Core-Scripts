@@ -5,8 +5,29 @@
 ]]
 
 --[[ CONSTANTS ]]
+
+-- NOTE: IF YOU WANT TO USE THIS CHAT SCRIPT IN YOUR OWN GAME:
+-- 1) COPY THE CONTENTS OF THIS FILE INTO A LOCALSCRIPT THAT YOU MADE IN STARTERGUI
+-- 2) SET THE FOLLOWING TWO VARIABLES TO TRUE
+-- 3) CONFIGURE YOUR PLACE ON THE WEBSITE TO USE BUBBLE-CHAT
 local FORCE_CHAT_GUI = false
-local USE_PLAYER_GUI_TESTING = false
+local NON_CORESCRIPT_MODE = false
+---------------------------------
+
+local MESSAGES_FADE_OUT_TIME = 30
+local MAX_BLOCKLIST_SIZE = 50
+
+local CHAT_COLORS =
+{
+	Color3.new(253/255, 41/255, 67/255), -- BrickColor.new("Bright red").Color,
+	Color3.new(1/255, 162/255, 255/255), -- BrickColor.new("Bright blue").Color,
+	Color3.new(2/255, 184/255, 87/255), -- BrickColor.new("Earth green").Color,
+	BrickColor.new("Bright violet").Color,
+	BrickColor.new("Bright orange").Color,
+	BrickColor.new("Bright yellow").Color,
+	BrickColor.new("Light reddish violet").Color,
+	BrickColor.new("Brick yellow").Color,
+}
 
 local ADMIN_LIST = {
     ['68465808'] = true, -- IMightBeLying
@@ -144,22 +165,6 @@ local ADMIN_LIST = {
     ['10261020'] = true, -- RoboYZ
     ['44564747'] = true, -- ZodiacZak
 }
-
-local CHAT_COLORS =
-{
-	Color3.new(253/255, 41/255, 67/255), -- BrickColor.new("Bright red").Color,
-	Color3.new(1/255, 162/255, 255/255), -- BrickColor.new("Bright blue").Color,
-	Color3.new(2/255, 184/255, 87/255), -- BrickColor.new("Earth green").Color,
-	BrickColor.new("Bright violet").Color,
-	BrickColor.new("Bright orange").Color,
-	BrickColor.new("Bright yellow").Color,
-	BrickColor.new("Light reddish violet").Color,
-	BrickColor.new("Brick yellow").Color,
-}
--- These emotes are copy-pastad from the humanoidLocalAnimateKeyframe script
-local EMOTE_NAMES = {wave = true, point = true, dance = true, dance2 = true, dance3 = true, laugh = true, cheer = true}
-local MESSAGES_FADE_OUT_TIME = 30
-local MAX_BLOCKLIST_SIZE = 50
 --[[ END OF CONSTANTS ]]
 
 --[[ SERVICES ]]
@@ -179,7 +184,7 @@ while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
 local Player = PlayersService.LocalPlayer
 -- GuiRoot will act as the top-node for parenting GUIs
 local GuiRoot = nil
-if USE_PLAYER_GUI_TESTING then
+if NON_CORESCRIPT_MODE then
 	GuiRoot = Instance.new("ScreenGui")
 	GuiRoot.Name = "RobloxGui"
 	GuiRoot.Parent = Player:WaitForChild('PlayerGui')
@@ -388,11 +393,11 @@ do
 			end
 			value = value + cValue
 		end
-		return value%8
+		return value
 	end
 
 	function Util.ComputeChatColor(pName)
-		return CHAT_COLORS[GetNameValue(pName) + 1]
+		return CHAT_COLORS[(GetNameValue(pName) % #CHAT_COLORS) + 1]
 	end
 
 	-- This is a memo-izing function
@@ -619,7 +624,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		else
 			playerName = (this.SendingPlayer and this.SendingPlayer.Name or "")
 		end
-		return "[" ..  playerName .. "]"
+		return "[" ..  playerName .. "]:"
 	end
 
 	function this:FadeIn()
@@ -683,9 +688,9 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 	end
 
 	local function CreateMessageGuiElement()
-		local toMesasgeDisplayText = "To: "
+		local toMesasgeDisplayText = "To "
 		local toMessageSize = Util.GetStringTextBounds(toMesasgeDisplayText, this.Settings.Font, this.Settings.FontSize)
-		local fromMesasgeDisplayText = "From: "
+		local fromMesasgeDisplayText = "From "
 		local fromMessageSize = Util.GetStringTextBounds(fromMesasgeDisplayText, this.Settings.Font, this.Settings.FontSize)
 		local chatTypeDisplayText = this:FormatChatType()
 		local chatTypeSize = chatTypeDisplayText and Util.GetStringTextBounds(chatTypeDisplayText, this.Settings.Font, this.Settings.FontSize) or Vector2.new(0,0)
@@ -750,7 +755,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			elseif this.SendingPlayer and this.SendingPlayer ~= Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
 				local whisperFromText = Util.Create'TextLabel'
 				{
-					Name = 'whisperFromText';
+					Name = 'WhisperFromText';
 					Position = UDim2.new(0, 0, 0, 0);
 					Size = UDim2.new(0, fromMessageSize.X, 0, fromMessageSize.Y);
 					Text = fromMesasgeDisplayText;
@@ -879,14 +884,14 @@ local function CreateChatBarWidget(settings)
 	local this = {}
 
 	-- MessageModes: {All, Team, Whisper}
-	this.MessageMode = "All"
+	this.MessageMode = 'All'
 	this.TargetWhisperPlayer = nil
 	this.Settings = settings
 
 	this.ChatBarGainedFocusEvent = Util.Signal()
 	this.ChatBarLostFocusEvent = Util.Signal()
-	this.ChatCommandEvent = Util.Signal() -- success, actionType, captures
-	this.ChatErrorEvent = Util.Signal() -- success, actionType, captures
+	this.ChatCommandEvent = Util.Signal() -- Signal Signatue: success, actionType, [captures]
+	this.ChatErrorEvent = Util.Signal() -- Signal Signatue: success, actionType, [captures]
 
 	-- This function while lets string.find work case-insensitively without clobbering the case of the captures
 	local function nocase(s)
@@ -1001,10 +1006,6 @@ local function CreateChatBarWidget(settings)
 		return ChatModesDict[mode] ~= nil
 	end
 
-	function this:IsAnEmoteMode(mode)
-		return mode == "Emote"
-	end
-
 	function this:ProcessChatBarModes(requireWhitespaceAfterChatMode)
 		local matchedAChatCommand = false
 		if this.ChatBar then
@@ -1071,7 +1072,6 @@ local function CreateChatBarWidget(settings)
 				end
 				this:SetChatBarText(fixedText)
 				previousText = fixedText
-				-- TODO: Flash Max Characters Feedback
 			else
 				previousText = newText
 			end
@@ -1094,12 +1094,12 @@ local function CreateChatBarWidget(settings)
 
 	function this:SetMessageMode(newMessageMode)
 		newMessageMode = ChatModesDict[newMessageMode]
-		if this.MessageMode ~= newMessageMode then
-			this.MessageMode = newMessageMode
+
+		local chatRecipientText = "[" .. (this.TargetWhisperPlayer and this.TargetWhisperPlayer.Name or "") .. "]"
+		if this.MessageMode ~= newMessageMode or (newMessageMode == 'Whisper' and this.ChatModeText and chatRecipientText ~= this.ChatModeText.Text) then
 			if this.ChatModeText then
+				this.MessageMode = newMessageMode
 				if newMessageMode == 'Whisper' then
-					-- TODO: also update this when they change players to whisper to
-					local chatRecipientText = "[" .. (this.TargetWhisperPlayer and this.TargetWhisperPlayer.Name or "") .. "]"
 					local chatRecipientTextBounds = Util.GetStringTextBounds(chatRecipientText, this.ChatModeText.Font, this.ChatModeText.FontSize)
 
 					this.ChatModeText.TextColor3 = this.Settings.WhisperTextColor
@@ -1144,7 +1144,7 @@ local function CreateChatBarWidget(settings)
 			if Util.IsTouchDevice() then
 				this:SetMessageMode('All') -- Don't remember message mode on mobile devices
 			else
-				-- Use a count to make sure you double backspace out of a chatmode; less likely to accidently do it.
+				-- Use a count to check for double backspace out of a chatmode
 				local count = 0
 				this.FocusChatBarInputBeganConn = Util.DisconnectEvent(this.FocusChatBarInputBeganConn)
 				this.FocusChatBarInputBeganConn = InputService.InputBegan:connect(function(inputObj)
@@ -1180,7 +1180,7 @@ local function CreateChatBarWidget(settings)
 				local didMatchSlashCommand = this:ProcessChatBarModes(false)
 				local cText = this:SanitizeInput(this:GetChatBarText())
 				if cText ~= "" then
-					-- For now we will let any slash command go through
+					-- For now we will let any slash command go through, NOTE: these will show up in bubble-chat
 					--if not didMatchSlashCommand and string.sub(cText,1,1) == "/" then
 					--	this.ChatCommandEvent:fire(false, "Unknown", cText)
 					--else
@@ -1334,6 +1334,21 @@ local function CreateChatWindowWidget(settings)
 		return FadeLock
 	end
 
+	function this:SetCanvasPosition(newCanvasPosition)
+		if this.ScrollingFrame then
+			local maxSize = Vector2.new(math.max(0, this.ScrollingFrame.CanvasSize.X.Offset - this.ScrollingFrame.AbsoluteWindowSize.X),
+			                            math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteWindowSize.Y))
+			this.ScrollingFrame.CanvasPosition = Vector2.new(Util.Clamp(0, maxSize.X, newCanvasPosition.X),
+			                                                 Util.Clamp(0, maxSize.Y, newCanvasPosition.Y))
+		end
+	end
+
+	function this:ScrollToBottom()
+		if this.ScrollingFrame then
+			this:SetCanvasPosition(Vector2.new(this.ScrollingFrame.CanvasPosition.X, this.ScrollingFrame.CanvasSize.Y.Offset))
+		end
+	end
+
 	function this:FadeIn(duration, lockFade)
 		if not FadeLock then
 			duration = duration or 0.75
@@ -1352,16 +1367,13 @@ local function CreateChatWindowWidget(settings)
 			this.ChatWindowPagingConn = InputService.InputBegan:connect(function(inputObject)
 				local key = inputObject.KeyCode
 				if key == Enum.KeyCode.PageUp then
-					this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasPosition.Y - this.ScrollingFrame.AbsoluteSize.Y))
+					this:SetCanvasPosition(this.ScrollingFrame.CanvasPosition - Vector2.new(0, this.ScrollingFrame.AbsoluteWindowSize.Y))
 				elseif key == Enum.KeyCode.PageDown then
-					this.ScrollingFrame.CanvasPosition =
-						Vector2.new(0, Util.Clamp(0, --min
-						               this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y, --max
-						               this.ScrollingFrame.CanvasPosition.Y + this.ScrollingFrame.AbsoluteSize.Y))
+					this:SetCanvasPosition(this.ScrollingFrame.CanvasPosition + Vector2.new(0, this.ScrollingFrame.AbsoluteWindowSize.Y))
 				elseif key == Enum.KeyCode.Home then
-					this.ScrollingFrame.CanvasPosition = Vector2.new(0, 0)
+					this:SetCanvasPosition(Vector2.new(0, 0))
 				elseif key == Enum.KeyCode.End then
-					this.ScrollingFrame.CanvasPosition = Vector2.new(0, this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y)
+					this:ScrollToBottom()
 				end
 			end)
 		end
@@ -1405,12 +1417,6 @@ local function CreateChatWindowWidget(settings)
 				end
 			end
 			message:FadeOut(instant)
-		end
-	end
-
-	function this:ScrollToBottom()
-		if this.ScrollingFrame then
-			this.ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteWindowSize.Y))
 		end
 	end
 
@@ -1522,11 +1528,7 @@ local function CreateChatWindowWidget(settings)
 						local ySize = guiObj.Size.Y.Offset
 						this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize - UDim2.new(0,0,0,ySize)
 						-- Clamp the canvasposition
-						this.ScrollingFrame.CanvasPosition =
-							Vector2.new(this.ScrollingFrame.CanvasPosition.X,
-										Util.Clamp(0, --min
-							            this.ScrollingFrame.CanvasSize.Y.Offset - this.ScrollingFrame.AbsoluteSize.Y, --max
-							            this.ScrollingFrame.CanvasPosition.Y))
+						this:SetCanvasPosition(this.ScrollingFrame.CanvasPosition)
 						guiObj.Parent = nil
 					end
 					message:Destroy()
@@ -1543,7 +1545,7 @@ local function CreateChatWindowWidget(settings)
 			local yScrolledPosition = this.ScrollingFrame.CanvasPosition.Y
 			-- Check if the messages are at the bottom
 			return yCanvasSize < yContainerSize or
-			       yCanvasSize - yScrolledPosition <= yContainerSize + 5 -- Give a little wiggle room for the is scrolldown check
+			       yCanvasSize - yScrolledPosition <= yContainerSize + 5 -- a little wiggle room
 		end
 		return false
 	end
@@ -1564,7 +1566,6 @@ local function CreateChatWindowWidget(settings)
 		local container = Util.Create'Frame'
 		{
 			Name = 'ChatWindowContainer';
-			 -- Height is a multiple of chat message height, maybe keep this value at 150 and move that padding into the messageContainer
 			Size = UDim2.new(0.3, 0, 0.25, 0);
 			Position = UDim2.new(0, 8, 0, 37);
 			ZIndex = 1;
@@ -1770,7 +1771,7 @@ local function CreateChat()
 		--Font = Enum.Font.ArialBold;
 		FontSize = Enum.FontSize.Size18;
 		MaxWindowChatMessages = 50;
-		MaxCharactersInMessage = 140; -- Same as a tweet :D
+		MaxCharactersInMessage = 140;
 	}
 
 	this.BlockList = {}
@@ -1820,10 +1821,17 @@ local function CreateChat()
 		if newPlayer then
 			spawn(function() Util.IsPlayerAdminAsync(newPlayer) end)
 		end
-		this.PlayerChattedConn = Util.DisconnectEvent(this.PlayerChattedConn)
-		this.PlayerChattedConn = PlayersService.PlayerChatted:connect(function(...)
-			this:OnPlayerChatted(...)
-		end)
+		if NON_CORESCRIPT_MODE then
+			newPlayer.Chatted:connect(function(msg, recipient)
+				this:OnPlayerChatted(Enum.PlayerChatType.All, newPlayer, msg, recipient)
+				print(Enum.PlayerChatType.All, newPlayer, msg, recipient)
+			end)
+		else
+			this.PlayerChattedConn = Util.DisconnectEvent(this.PlayerChattedConn)
+			this.PlayerChattedConn = PlayersService.PlayerChatted:connect(function(...)
+				this:OnPlayerChatted(...)
+			end)
+		end
 	end
 
 	function this:IsPlayerBlockedByUserId(userId)
@@ -1862,17 +1870,17 @@ local function CreateChat()
 			local playerToBlockName = playerToBlock.Name
 			if blockUserId > 0 then
 				if not this:IsPlayerBlockedByUserId(blockUserId) then
-					-- We may want to use a more dynamic way of changing the blockList size.
-					if #this.BlockList < MAX_BLOCKLIST_SIZE then
+					-- TODO: We may want to use a more dynamic way of changing the blockList size.
+					--if #this.BlockList < MAX_BLOCKLIST_SIZE then
 						table.insert(this.BlockList, blockUserId)
 						this.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is now blocked.")
 						-- Make Block call
 						pcall(function()
 							local success = PlayersService:BlockUser(Player.userId, blockUserId)
 						end)
-					else
-						this.ChatWindowWidget:AddSystemChatMessage("You cannot block " .. playerToBlockName .. " because your list is full.")
-					end
+					--else
+					--	this.ChatWindowWidget:AddSystemChatMessage("You cannot block " .. playerToBlockName .. " because your list is full.")
+					--end
 				else
 					this.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is already blocked.")
 				end
@@ -1893,11 +1901,11 @@ local function CreateChat()
 				local blockedUserIndex = nil
 				for index, blockedUserId in pairs(this.BlockList) do
 					if blockedUserId == unblockUserId then
-						blockedUserIndex = blockedUserId
+						blockedUserIndex = index
 					end
 				end
 				if blockedUserIndex then
-					table.remove(this.BlockList, blockedUserId)
+					table.remove(this.BlockList, blockedUserIndex)
 				end
 				this.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is no longer blocked.")
 				-- Make Unblock call
@@ -1923,7 +1931,6 @@ local function CreateChat()
 
 	function this:PrintWelcome()
 		if this.ChatWindowWidget then
-			--this.ChatWindowWidget:AddSystemChatMessage("Welcome to Roblox")
 			this.ChatWindowWidget:AddSystemChatMessage("Please type /? for a list of commands", true)
 		end
 	end
@@ -1943,9 +1950,8 @@ local function CreateChat()
 	end
 
 	function this:CreateGUI()
-		if Player.ChatMode == Enum.ChatMode.TextAndMenu or FORCE_CHAT_GUI then
+		if FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu then
 			-- NOTE: eventually we will make multiple chat window frames
-			-- Settings is a table, which makes it a pointing and is kosher to pass by reference
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
 			this.ChatBarWidget = CreateChatBarWidget(this.Settings)
 			this.ChatWindowWidget:FadeOut(0)
@@ -2064,7 +2070,7 @@ local function CreateChat()
 	return this
 end
 
--- Run the script
+-- Main Entry Point
 do
 	local ChatInstance = CreateChat()
 	ChatInstance:Initialize()
