@@ -10,9 +10,9 @@ local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local Players = game:GetService('Players')
 local TeamsService = game:FindService('Teams')
 
+local RbxGuiLibrary = nil
 if LoadLibrary then
-	RbxGui = LoadLibrary("RbxGui")
-	RbxUtility = LoadLibrary("RbxUtility")
+	RbxGuiLibrary = LoadLibrary("RbxGui")
 end
 
 while not Players.LocalPlayer do
@@ -23,12 +23,14 @@ local RobloxGui = script.Parent
 
 --[[ Fast Flags ]]--
 local maxFriendSuccess, isMaxFriendsCountEnabled = pcall(function() return settings():GetFFlag("MaxFriendsCount") end)
-local followersSuccess, isFollowersEnabled = pcall(function() settings():GetFFlag("LuaFollowers") end)
+local followersSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("LuaFollowers") end)
 local newNotificationsSuccess, newNotificationsEnabled = pcall(function() return settings():GetFFlag("NewNotificationsScript") end)
+local newSettingsSuccess, newSettingsEnabled = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 --
 local IsMaxFriendsCount = maxFriendSuccess and isMaxFriendsCountEnabled
 local IsFollowersEnabled = followersSuccess and isFollowersEnabled
 local IsNewNotifications = newNotificationsSuccess and newNotificationsEnabled
+local IsNewSettings = newSettingsSuccess and newSettingsEnabled
 
 --[[ Script Variables ]]--
 local MyPlayerEntry = nil
@@ -223,6 +225,14 @@ local function sortTeams(a, b)
 	if not a.TeamScore then return false end
 	if not b.TeamScore then return true end
 	return a.TeamScore < b.TeamScore
+end
+
+local function sendNotification(title, text, image, duration, callback)
+	if IsNewNotifications and BinbableFunction_SendNotification then
+		BinbableFunction_SendNotification:Invoke(title, text, image, duration, callback)
+	else
+		GuiService:SendNotification(title, text, image, duration, callback)
+	end
 end
 
 -- Start of Gui Creation
@@ -423,18 +433,32 @@ ReportAbuseShield.AutoButtonColor = false
 		ReportCanelButton.Style = Enum.ButtonStyle.RobloxRoundDefaultButton
 		ReportCanelButton.Parent = ReportAbuseFrame
 
-		local AbuseDropDown, updateAbuseSelection = RbxGui.CreateDropDownMenu(ABUSES,
-			function(abuseText)
-				AbuseReason = abuseText
-				if AbuseReason and AbusingPlayer then
-					ReportSubmitButton.Active = true
-					ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
-				end
-			end, true, true, 1)
-		AbuseDropDown.Name = "AbuseDropDown"
-		AbuseDropDown.Size = UDim2.new(0.55, 0, 0, 32)
-		AbuseDropDown.Position = UDim2.new(0.425, 0, 0, 121)
-		AbuseDropDown.Parent = ReportAbuseFrame
+		local AbuseDropDown, updateAbuseSelection = nil, nil
+		if IsNewSettings then
+			AbuseDropDown = RbxGuiLibrary.CreateScrollingDropDownMenu(
+				function(text)
+					AbuseReason = text
+					if AbuseReason and AbusingPlayer then
+						ReportSubmitButton.Active = true
+						ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
+					end
+				end, UDim2.new(0.55, 0, 0, 32), UDim2.new(0.425, 0, 0, 121), 1)
+			AbuseDropDown.CreateList(ABUSES)
+			AbuseDropDown.Frame.Parent = ReportAbuseFrame
+		else
+			AbuseDropDown, updateAbuseSelection = RbxGuiLibrary.CreateDropDownMenu(ABUSES,
+				function(abuseText)
+					AbuseReason = abuseText
+					if AbuseReason and AbusingPlayer then
+						ReportSubmitButton.Active = true
+						ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
+					end
+				end, true, true, 1)
+			AbuseDropDown.Name = "AbuseDropDown"
+			AbuseDropDown.Size = UDim2.new(0.55, 0, 0, 32)
+			AbuseDropDown.Position = UDim2.new(0.425, 0, 0, 121)
+			AbuseDropDown.Parent = ReportAbuseFrame
+		end
 
 		local ReportDescriptionTextFrame = Instance.new('Frame')
 		ReportDescriptionTextFrame.Name = "ReportDescriptionTextFrame"
@@ -748,16 +772,6 @@ local function createPopupFrame(buttons)
 end
 
 --[[ Http helper functions for new friends and followers feature ]]--
--- TODO: Update when client API is finished and remove http post.
-local baseUrl = game:GetService('ContentProvider').BaseUrl:lower()
-baseUrl = string.gsub(baseUrl,"/m.","/www.") --mobile site does not work for this stuff!
-local function getSecureApiBaseUrl()
-	local secureApiUrl = baseUrl
-	secureApiUrl = string.gsub(secureApiUrl,"http","https")
-	secureApiUrl = string.gsub(secureApiUrl,"www","api")
-	return secureApiUrl
-end
-
 -- if userId = nil, then it will get count for local player
 local function getFriendCount(userId)
 	local friendCount = nil
@@ -784,50 +798,26 @@ local function getFriendCount(userId)
 	return friendCount
 end
 
--- checks for both local player and other player
-local function checkForMaxFriends(otherPlayer)
+-- checks if we can send a friend request. Right now the only way we
+-- can't is if one of the players is at the max friend limit
+local function canSendFriendRequest(otherPlayer)
+	if not IsMaxFriendsCount then return true end
+	--
 	local myFriendCount = getFriendCount()
 	local theirFriendCount = getFriendCount(otherPlayer.userId)
-	--
+	
+	-- assume max friends if web call fails
 	if not myFriendCount or not theirFriendCount then
 		return false
 	end
 	if myFriendCount < MAX_FRIEND_COUNT and theirFriendCount < MAX_FRIEND_COUNT then
 		return true
 	elseif myFriendCount >= MAX_FRIEND_COUNT then
-		if IsNewNotifications and BinbableFunction_SendNotification then
-			BinbableFunction_SendNotification:Invoke(
-				"Cannot send friend request",
-				"You are at the max friends limit.",
-				"",
-				5,
-				function()
-				end)
-		else
-			GuiService:SendNotification("Cannot send friend request",
-				"You are at the max friends limit.",
-				"",
-				5,
-				function()
-				end)
-		end
+		sendNotification("Cannot send friend request", "You are at the max friends limit.", "", 5, function() end)
+		return false
 	elseif theirFriendCount >= MAX_FRIEND_COUNT then
-		if IsNewNotifications and BinbableFunction_SendNotification then
-			BinbableFunction_SendNotification:Invoke(
-				"Cannot send friend request",
-				otherPlayer.Name.." is at the max friends limit.",
-				"",
-				5,
-				function()
-				end)
-		else
-			GuiService:SendNotification("Cannot send friend request",
-				otherPlayer.Name.." is at the max friends limit.",
-				"",
-				5,
-				function()
-				end)
-		end
+		sendNotification("Cannot send friend request", otherPlayer.Name.." is at the max friends limit.", "", 5, function() end)
+		return false
 	end
 end
 
@@ -861,7 +851,10 @@ local function onFriendButtonPressed()
 		if status == Enum.FriendStatus.Friend then
 			Player:RevokeFriendship(LastSelectedPlayer)
 		elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend then
-			Player:RequestFriendship(LastSelectedPlayer)
+			-- check for max friends before letting them send the request
+			if canSendFriendRequest(LastSelectedPlayer) then
+				Player:RequestFriendship(LastSelectedPlayer)
+			end
 		elseif status == Enum.FriendStatus.FriendRequestSent then
 			Player:RevokeFriendship(LastSelectedPlayer)
 		elseif status == Enum.FriendStatus.FriendRequestReceived then
@@ -884,7 +877,11 @@ end
 local function resetReportDialog()
 	AbuseReason = nil
 	AbusingPlayer = nil
-	updateAbuseSelection(nil)
+	if IsNewSettings then 	-- FFlag
+		AbuseDropDown.SetSelectionText("Choose One")
+	else
+		updateAbuseSelection(nil)
+	end
 	ReportPlayerName.Text = ""
 	ReportDescriptionBox.Text = ""
 	ReportSubmitButton.Active = false
@@ -973,19 +970,6 @@ local function showFriendReportPopup(selectedFrame, selectedPlayer)
 		friendText = "Unfriend Player"
 	elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend then
 		friendText = "Send Friend Request"
-		-- if we are sending a friend request we need to check if either player is at the max friend count
-		if IsMaxFriendsCount then 	-- FFlag
-			if not checkForMaxFriends(selectedPlayer) then
-				for _,childFrame in pairs(LastSelectedFrame:GetChildren()) do
-					if childFrame:IsA('Frame') then
-						childFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-					end
-				end
-				LastSelectedFrame = nil
-				LastSelectedPlayer = nil
-				return
-			end
-		end
 	elseif status == Enum.FriendStatus.FriendRequestSent then
 		friendText = "Revoke Friend Request"
 	elseif status == Enum.FriendStatus.FriendRequestReceived then
