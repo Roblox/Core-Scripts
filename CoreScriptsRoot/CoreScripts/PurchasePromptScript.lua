@@ -96,6 +96,24 @@ function preloadAssets()
 		game:GetService("ContentProvider"):Preload(assetUrls[i])
 	end
 end
+
+function shouldCheckMarketplaceAvailable()
+	local success, checkFlagValue = pcall(function() return settings():GetFFlag("CheckMarketplaceAvailable") end)
+	if success and checkFlagValue == true then
+		return true
+	else
+		return false
+	end
+end
+
+function isMarketplaceDown()
+	local success, downFlagValue = pcall(function() return settings():GetFFlag("Order66") end)
+	if success and downFlagValue == true then
+		return true
+	else
+		return false
+	end
+end
 ----------------------------- End Util Functions ---------------------------------------------
 
 
@@ -302,8 +320,40 @@ function closePurchasePrompt()
 	end)
 end
 
+function cancelPurchase()
+	game:GetService("GuiService"):AddCenterDialog(purchaseDialog, Enum.CenterDialogType.ModalDialog,
+			--ShowFunction
+					function()
+						-- set the state for our buttons
+						purchaseDialog.Visible = true
+
+						if not currentlyPurchasing then
+							setButtonsVisible(purchaseDialog.BodyFrame.OkButton)
+						end
+
+						Game:GetService("UserInputService").ModalEnabled = true
+						purchaseDialog:TweenPosition(showPosition, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, tweenTime, true)
+					end,
+			--HideFunction
+					function()
+						Game:GetService("UserInputService").ModalEnabled = false
+						purchaseDialog.Visible = false
+					end)
+
+	purchaseFailed("inGamePurchasesDisabled")
+end
+
 function showPurchasePrompt()
-	local canPurchase, insufficientFunds, notRightBC, override, descText = canPurchaseItem()		
+	local canPurchase, insufficientFunds, notRightBC, override, descText = canPurchaseItem()	
+
+	if isMarketplaceDown() then
+		cancelPurchase()
+		return
+	end
+
+	if shouldCheckMarketplaceAvailable() then
+		--todo: check if marketplace is up, if not cancelPurchase()
+	end
 
 	if canPurchase then
 		updatePurchasePromptData(insufficientFunds)
