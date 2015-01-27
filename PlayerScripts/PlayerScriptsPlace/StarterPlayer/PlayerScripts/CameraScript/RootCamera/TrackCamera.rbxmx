@@ -1,0 +1,49 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBX25bf7c9181a94bd69637699dc03b5870">
+		<Properties>
+			<string name="Name">TrackCamera</string>
+			<ProtectedString name="Source">local PlayersService = game:GetService(&apos;Players&apos;)
+local RootCameraCreator = require(script.Parent)
+
+local function CreateTrackCamera()
+&#9;local module = RootCameraCreator()
+&#9;module:ConnectInputEvents()
+&#9;module.PanEnabled = false
+
+&#9;local lastUpdate = tick()
+&#9;function module:Update()
+&#9;&#9;local now = tick()
+&#9;&#9;
+&#9;&#9;local userPanningTheCamera = (self.UserPanningTheCamera == true)
+&#9;&#9;local camera = &#9;workspace.CurrentCamera
+&#9;&#9;local player = PlayersService.LocalPlayer
+&#9;&#9;
+&#9;&#9;if lastUpdate == nil or now - lastUpdate &gt; 1 then
+&#9;&#9;&#9;module:ResetCameraLook()
+&#9;&#9;&#9;self.LastCameraTransform = nil
+&#9;&#9;end&#9;
+&#9;&#9;
+&#9;&#9;local subjectPosition = self:GetSubjectPosition()
+&#9;&#9;if subjectPosition and player and camera then
+&#9;&#9;&#9;local zoom = self:GetCameraZoom()
+&#9;&#9;&#9;if zoom &lt;= 0 then
+&#9;&#9;&#9;&#9;zoom = 0.1
+&#9;&#9;&#9;end
+&#9;&#9;&#9;
+&#9;&#9;&#9;camera.Focus = CFrame.new(subjectPosition)
+&#9;&#9;&#9;camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * self:GetCameraLook()), camera.Focus.p)
+&#9;&#9;&#9;self.LastCameraTransform = camera.CoordinateFrame
+&#9;&#9;end
+&#9;&#9;lastUpdate = now
+&#9;end
+&#9;
+&#9;return module
+end
+
+return CreateTrackCamera
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

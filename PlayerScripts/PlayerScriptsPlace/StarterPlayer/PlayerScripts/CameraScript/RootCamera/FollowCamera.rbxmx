@@ -5,10 +5,8 @@
 		<Properties>
 			<string name="Name">FollowCamera</string>
 			<ProtectedString name="Source">local PlayersService = game:GetService(&apos;Players&apos;)
-local UserInputService = game:GetService(&apos;UserInputService&apos;)
 local RootCameraCreator = require(script.Parent)
 
-local ZERO_VECTOR = Vector3.new(0, 0, 0)
 local UP_VECTOR = Vector3.new(0, 1, 0)
 local XZ_VECTOR = Vector3.new(1,0,1)
 
@@ -34,32 +32,9 @@ local function findAngleBetweenXZVectors(vec2, vec1)
 &#9;return math.atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
 end
 
--- May return NaN or inf or -inf
-local function absoluteAngleBetween3dVectors(vec1, vec2)
-&#9;return math.acos(vec1:Dot(vec2) / (vec1.magnitude * vec2.magnitude))
-end
-
-local humanoidCache = {}
-local function findPlayerHumanoid(player)
-&#9;local character = player and player.Character
-&#9;if character then
-&#9;&#9;local resultHumanoid = humanoidCache[player]
-&#9;&#9;if resultHumanoid and resultHumanoid.Parent == character then
-&#9;&#9;&#9;return resultHumanoid
-&#9;&#9;else
-&#9;&#9;&#9;humanoidCache[player] = nil -- Bust Old Cache
-&#9;&#9;&#9;for _, child in pairs(character:GetChildren()) do
-&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
-&#9;&#9;&#9;&#9;&#9;humanoidCache[player] = child
-&#9;&#9;&#9;&#9;&#9;return child
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end
-end
-
 local function CreateFollowCamera()
-&#9;local module = RootCameraCreator()
+&#9;local module = RootCameraCreator()&#9;
+&#9;module:ConnectInputEvents()
 &#9;
 &#9;local tweenAcceleration = math.rad(250)
 &#9;local tweenSpeed = math.rad(0)
@@ -68,7 +43,10 @@ local function CreateFollowCamera()
 &#9;local lastUpdate = tick()
 &#9;function module:Update()
 &#9;&#9;local now = tick()
+&#9;&#9;
 &#9;&#9;local userPanningTheCamera = (self.UserPanningTheCamera == true)
+&#9;&#9;local camera = &#9;workspace.CurrentCamera
+&#9;&#9;local player = PlayersService.LocalPlayer
 
 &#9;&#9;if lastUpdate == nil or now - lastUpdate &gt; 1 then
 &#9;&#9;&#9;module:ResetCameraLook()
@@ -80,8 +58,10 @@ local function CreateFollowCamera()
 &#9;&#9;&#9;local delta = math.min(0.5, now - lastUpdate)
 &#9;&#9;&#9;local angle = self.TurningLeft and -120 or 0
 &#9;&#9;&#9;angle = angle + (self.TurningRight and 120 or 0)
-&#9;&#9;&#9;if angle ~= 0 then userPanningTheCamera = true end
-&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector2.new(math.rad(angle * delta), 0))
+&#9;&#9;&#9;if angle ~= 0 then
+&#9;&#9;&#9;&#9;userPanningTheCamera = true
+&#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector2.new(math.rad(angle * delta), 0))
+&#9;&#9;&#9;end
 &#9;&#9;end
 &#9;&#9;
 &#9;&#9;-- Reset tween speed if user is panning
@@ -89,11 +69,7 @@ local function CreateFollowCamera()
 &#9;&#9;&#9;tweenSpeed = 0
 &#9;&#9;end
 &#9;&#9;
-
-&#9;&#9;local camera = &#9;workspace.CurrentCamera
-&#9;&#9;local player = PlayersService.LocalPlayer
-&#9;&#9;local subjectPosition = self:GetSubjectPosition()
-&#9;&#9;
+&#9;&#9;local subjectPosition = self:GetSubjectPosition()&#9;&#9;
 &#9;&#9;if subjectPosition and player and camera then
 &#9;&#9;&#9;local zoom = self:GetCameraZoom()
 &#9;&#9;&#9;if zoom &lt;= 0 then
@@ -109,7 +85,7 @@ local function CreateFollowCamera()
 &#9;&#9;&#9;&#9;zoom = math.max(zoom, 5)
 &#9;&#9;&#9;else
 &#9;&#9;&#9;&#9;if self.LastCameraTransform and not userPanningTheCamera then
-&#9;&#9;&#9;&#9;&#9;local humanoid = findPlayerHumanoid(player)
+&#9;&#9;&#9;&#9;&#9;local humanoid = self:GetHumanoid()
 &#9;&#9;&#9;&#9;&#9;local cameraSubject = camera and camera.CameraSubject
 &#9;&#9;&#9;&#9;&#9;local isClimbing = humanoid and humanoid:GetState() == Enum.HumanoidStateType.Climbing
 &#9;&#9;&#9;&#9;&#9;local isInVehicle = cameraSubject and cameraSubject:IsA(&apos;VehicleSeat&apos;)
@@ -129,14 +105,14 @@ local function CreateFollowCamera()
 &#9;&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;&#9;local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
 &#9;&#9;&#9;&#9;&#9;&#9;-- Check for NaN
-&#9;&#9;&#9;&#9;&#9;&#9;if IsFinite(y) then
+&#9;&#9;&#9;&#9;&#9;&#9;if IsFinite(y) and math.abs(y) &gt; 0.0001 then
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector3.new(y * percent, 0, 0))
 &#9;&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;elseif not self:IsInFirstPerson() then
 &#9;&#9;&#9;&#9;&#9;&#9;local lastVec = -(self.LastCameraTransform.p - subjectPosition)
 &#9;&#9;&#9;&#9;&#9;&#9;local y = findAngleBetweenXZVectors(lastVec, self:GetCameraLook())
 &#9;&#9;&#9;&#9;&#9;&#9;-- Check for NaNs
-&#9;&#9;&#9;&#9;&#9;&#9;if IsFinite(y)then
+&#9;&#9;&#9;&#9;&#9;&#9;if IsFinite(y) and math.abs(y) &gt; 0.0001 then
 &#9;&#9;&#9;&#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector3.new(y, 0, 0))
 &#9;&#9;&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;&#9;end
