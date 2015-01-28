@@ -1,5 +1,6 @@
 --[[
 		// FileName: PlayerListScript.lua
+		// Version 3.1
 		// Written by: jmargh
 		// Description: Implementation of in game player list and leaderboard
 ]]
@@ -200,12 +201,12 @@ local function isValidStat(obj)
 end
 
 local function sortPlayerEntries(a, b)
-	if a.IsPrimary == b.IsPrimary then
+	if a.PrimaryStat == b.PrimaryStat then
 		return a.Player.Name:upper() < b.Player.Name:upper()
 	end
-	if not a.IsPrimary then return false end
-	if not b.IsPrimary then return true end
-	return a.IsPrimary < b.IsPrimary
+	if not a.PrimaryStat then return false end
+	if not b.PrimaryStat then return true end
+	return a.PrimaryStat > b.PrimaryStat
 end
 
 local function sortLeaderStats(a, b)
@@ -374,7 +375,7 @@ ReportAbuseShield.AutoButtonColor = false
 
 		local ReportPlayerName = Instance.new('TextLabel')
 		ReportPlayerName.Name = "ReportPlayerName"
-		ReportPlayerName.Text = "jmargh"
+		ReportPlayerName.Text = ""
 		ReportPlayerName.Size = UDim2.new(0.95, 0, 0, 36)
 		ReportPlayerName.Position = UDim2.new(0.025, 0, 0, 80)
 		ReportPlayerName.BackgroundTransparency = 1
@@ -730,6 +731,7 @@ local function setTeamEntryPositions()
 end
 
 local function setEntryPositions()
+	table.sort(PlayerEntries, sortPlayerEntries)
 	if #TeamEntries > 0 then
 		setTeamEntryPositions()
 	else
@@ -1163,14 +1165,20 @@ local function updateAllTeamScores()
 	end
 end
 
-local function updateHeaderScore(statObject)
+local function updateHeaderScore(statName)
 	if #GameStats > 0 then
-		if statObject.Name == GameStats[1].Name then
-			if HeaderScore.Text == "" then
-				HeaderName.Position = UDim2.new(-0.02, 0, 0.005, 0)
+		if statName == GameStats[1].Name then
+			local leaderstats = Player:FindFirstChild('leaderstats')
+			if leaderstats then
+				local statObject = leaderstats:FindFirstChild(statName)
+				if statObject then
+					if HeaderScore.Text == "" then
+						HeaderName.Position = UDim2.new(-0.02, 0, 0.005, 0)
+					end
+					local score = getScoreValue(statObject)
+					HeaderScore.Text = tostring(score)
+				end
 			end
-			local score = getScoreValue(statObject)
-			HeaderScore.Text = tostring(score)
 		end
 	end
 end
@@ -1192,7 +1200,55 @@ local function updateTeamEntry(entry)
 	end
 end
 
-local function updateLeaderstatFrames()
+local function updatePrimaryStats(statName)
+	for _,entry in ipairs(PlayerEntries) do
+		local player = entry.Player
+		local leaderstats = player:FindFirstChild('leaderstats')
+		if leaderstats then
+			local statObject = leaderstats:FindFirstChild(statName)
+			if statObject then
+				local scoreValue = getScoreValue(statObject)
+				entry.PrimaryStat = scoreValue
+			end
+		end
+	end
+end
+
+local updateLeaderstatFrames = nil
+local function initializeStatText(stat, statObject, entry, statFrame)
+	local player = entry.Player
+	local statValue = getScoreValue(statObject)
+	if statObject.Name == GameStats[1].Name then
+		entry.PrimaryStat = statValue
+	end
+	local statText = createStatText(statFrame, formatStatString(tostring(statValue)))
+	statObject.Changed:connect(function(newValue)
+		local scoreValue = getScoreValue(statObject)
+		statText.Text = formatStatString(tostring(scoreValue))
+		if statObject.Name == GameStats[1].Name then
+			entry.PrimaryStat = scoreValue
+		end
+		updateAllTeamScores()
+		setEntryPositions()
+		if player == Player then
+			updateHeaderScore(statObject.Name)
+		end
+	end)
+	statObject.ChildAdded:connect(function(child)
+		if child.Name == "IsPrimary" then
+			stat.IsPrimary = true
+			updatePrimaryStats(stat.Name)
+			if updateLeaderstatFrames then updateLeaderstatFrames() end
+			updateHeaderScore(statObject.Name)
+		end
+	end)
+	if player == Player then
+		updateHeaderScore(statObject.Name)
+	end
+end
+
+updateLeaderstatFrames = function()
+	table.sort(GameStats, sortLeaderStats)
 	if StatNameFrame then
 		local offset = NameEntrySizeX * ScaleX
 		for _,stat in ipairs(GameStats) do
@@ -1228,34 +1284,12 @@ local function updateLeaderstatFrames()
 				if not statFrame then
 					statFrame = createStatFrame(offset, mainFrame, stat.Name)
 					if statObject then
-						local statValue = getScoreValue(statObject)
-						local statText = createStatText(statFrame, formatStatString(tostring(statValue)))
-						statObject.Changed:connect(function(newValue)
-							statText.Text = formatStatString(tostring(getScoreValue(statObject)))
-							updateAllTeamScores()
-						end)
-						if player == Player then
-							updateHeaderScore(statObject)
-							statObject.Changed:connect(function(newValue)
-								updateHeaderScore(statObject)
-							end)
-						end
+						initializeStatText(stat, statObject, entry, statFrame)
 					end
 				elseif statObject then
 					local statText = statFrame:FindFirstChild('StatText')
 					if not statText then
-						local statValue = getScoreValue(statObject)
-						statText = createStatText(statFrame, formatStatString(tostring(statValue)))
-						statObject.Changed:connect(function(newValue)
-							statText.Text = formatStatString(tostring(getScoreValue(statObject)))
-							updateAllTeamScores()
-						end)
-						if player == Player then
-							updateHeaderScore(statObject)
-							statObject.Changed:connect(function(newValue)
-								updateHeaderScore(statObject)
-							end)
-						end
+						initializeStatText(stat, statObject, entry, statFrame)
 					end
 				end
 				statFrame.Position = UDim2.new(0, offset + 1, 0, 0)
@@ -1278,6 +1312,7 @@ local function updateLeaderstatFrames()
 		MinContainerSize = UDim2.new(0, newMinContainerOffset, 0.5, 0)
 	end
 	updateAllTeamScores()
+	setEntryPositions()
 end
 
 local function createStatNameFrame()
@@ -1316,22 +1351,12 @@ local function addNewStats(leaderstats)
 				local newStat = {}
 				newStat.Name = stat.Name
 				newStat.Priority = 0
-				newStat.MaxLength = 0
 				local priority = stat:FindFirstChild('Priority')
 				if priority then newStat.Priority = priority end
 				newStat.IsPrimary = false
 				local isPrimary = stat:FindFirstChild('IsPrimary')
 				if isPrimary then
 					newStat.IsPrimary = true
-				else
-					stat.ChildAdded:connect(function(child)
-						if child.Name == "IsPrimary" then
-							newStat.IsPrimary = true
-							table.sort(GameStats, sortLeaderStats)
-							updateHeaderScore(stat)
-							updateLeaderstatFrames()
-						end
-					end)
 				end
 				newStat.AddId = StatAddId
 				StatAddId = StatAddId + 1
@@ -1370,13 +1395,6 @@ local function doesStatExists(stat)
 	return doesExists
 end
 
-local function onStatAdded(newStat)
-	if isValidStat(newStat) then
-		addNewStats(newStat.Parent)
-		updateLeaderstatFrames()
-	end
-end
-
 local function onStatRemoved(oldStat, entry)
 	if isValidStat(oldStat) then
 		removeStatFrameFromEntry(oldStat, entry.Frame)
@@ -1413,7 +1431,7 @@ local function onStatRemoved(oldStat, entry)
 			if leaderstats then
 				local newPrimaryStat = leaderstats:FindFirstChild(GameStats[1].Name)
 				if newPrimaryStat then
-					updateHeaderScore(newPrimaryStat)
+					updateHeaderScore(newPrimaryStat.Name)
 				else
 					HeaderScore.Text = ""
 					HeaderName.Position = UDim2.new(-0.02, 0, 0.245, 0)
@@ -1424,28 +1442,30 @@ local function onStatRemoved(oldStat, entry)
 	end
 end
 
+local function onStatAdded(leaderstats, entry)
+	addNewStats(leaderstats)
+	leaderstats.ChildAdded:connect(function(newStat)
+		if isValidStat(newStat) then
+			addNewStats(newStat.Parent)
+			updateLeaderstatFrames()
+		end
+	end)
+	leaderstats.ChildRemoved:connect(function(child)
+		onStatRemoved(child, entry)
+	end)
+end
+
 local function setLeaderStats(entry)
 	local player = entry.Player
 	local leaderstats = player:FindFirstChild('leaderstats')
 	
 	if leaderstats then
-		addNewStats(leaderstats)
-		leaderstats.ChildAdded:connect(onStatAdded)
-		leaderstats.ChildRemoved:connect(function(child)
-			onStatRemoved(child, entry)
-		end)
+		onStatAdded(leaderstats, entry)
 	end
-	updateLeaderstatFrames()
 	
 	player.ChildAdded:connect(function(child)
 		if child.Name == 'leaderstats' then
-			addNewStats(child)
-			updateLeaderstatFrames()
-
-			child.ChildAdded:connect(onStatAdded)
-			child.ChildRemoved:connect(function(removedStat)
-				onStatRemoved(removedStat, entry)
-			end)
+			onStatAdded(child, entry)
 		end
 	end)
 	
@@ -1550,16 +1570,16 @@ local function insertPlayerEntry(player)
 	if player == Player then
 		MyPlayerEntry = entry.Frame
 	end
-	table.insert(PlayerEntries, entry)
-	table.sort(PlayerEntries, sortPlayerEntries)
-	setEntryPositions()
 	setLeaderStats(entry)
+	table.insert(PlayerEntries, entry)
 	setScrollListSize()
+	updateLeaderstatFrames()
 
 	player.Changed:connect(function(property)
 		if #TeamEntries > 0 and (property == 'Neutral' or property == 'TeamColor') then
 			setTeamEntryPositions()
 			updateAllTeamScores()
+			setEntryPositions()
 			setScrollListSize()
 		end
 	end)
@@ -1598,6 +1618,15 @@ local function onTeamRemoved(removedTeam)
 		if team.Name == removedTeam.Name then
 			TeamEntries[i].Frame:Destroy()
 			table.remove(TeamEntries, i)
+			break
+		end
+	end
+	if #TeamEntries == 0 then
+		if NeutralTeam then
+			NeutralTeam.Frame:Destroy()
+			NeutralTeam.Team:Destroy()
+			NeutralTeam = nil
+			IsShowingNeutralFrame = false
 		end
 	end
 	setEntryPositions()
