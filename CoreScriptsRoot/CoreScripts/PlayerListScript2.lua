@@ -1878,4 +1878,3 @@ pcall(function()
 end)
 
 resizePlayerList()
-Container.Visible = true
