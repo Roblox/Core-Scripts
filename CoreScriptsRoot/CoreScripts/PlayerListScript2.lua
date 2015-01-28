@@ -180,7 +180,9 @@ local function getMembershipIcon(player)
 		end
 	elseif ADMINS[userIdStr] then
 		return ADMINS[userIdStr]
-	elseif player.userId == game.CreatorId then
+	elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
+		return PLACE_OWNER_ICON
+	elseif game.CreatorType == Enum.CreatorType.Group and player:GetRankInGroup(game.CreatorId) == 255 then
 		return PLACE_OWNER_ICON
 	elseif membershipType == Enum.MembershipType.None then
 		return nil
