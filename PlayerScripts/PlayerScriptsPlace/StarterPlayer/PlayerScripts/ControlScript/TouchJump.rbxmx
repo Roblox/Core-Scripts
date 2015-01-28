@@ -6,6 +6,7 @@
 			<string name="Name">TouchJump</string>
 			<ProtectedString name="Source">--[[
 &#9;// FileName: TouchJump
+&#9;// Version 1.0
 &#9;// Written by: jmargh
 &#9;// Description: Implements jump controls for touch devices. Use with Thumbstick and Thumbpad
 --]]

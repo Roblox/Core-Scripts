@@ -6,6 +6,7 @@
 			<string name="Name">DPad</string>
 			<ProtectedString name="Source">--[[
 &#9;// FileName: DPad
+&#9;// Version 1.0
 &#9;// Written by: jmargh
 &#9;// Description: Implements DPad controls for touch devices
 --]]

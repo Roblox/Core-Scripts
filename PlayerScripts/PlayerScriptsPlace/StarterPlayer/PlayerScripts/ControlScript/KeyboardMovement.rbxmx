@@ -6,6 +6,7 @@
 			<string name="Name">KeyboardMovement</string>
 			<ProtectedString name="Source">--[[
 &#9;// FileName: ComputerMovementKeyboardMovement
+&#9;// Version 1.0
 &#9;// Written by: jeditkacheff/jmargh
 &#9;// Description: Implements movement controls for keyboard devices
 --]]
@@ -25,6 +26,7 @@ end
 local LocalPlayer = Players.LocalPlayer
 local CachedHumanoid = nil
 local RenderSteppedCon = nil
+local TextFocusReleasedCn = nil
 
 --[[ Local Functions ]]--
 local function getHumanoid()
@@ -144,6 +146,13 @@ function KeyboardMovement:Enable()
 &#9;&#9;&#9;moveFunc(LocalPlayer, Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue), true)
 &#9;&#9;end
 &#9;end)
+&#9;
+&#9;TextFocusReleasedCn = UserInputService.TextBoxFocusReleased:connect(function(textBox)
+&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;if humanoid then
+&#9;&#9;&#9;leftValue, rightValue, forwardValue, backwardValue = 0, 0, 0, 0
+&#9;&#9;end
+&#9;end)
 end
 
 function KeyboardMovement:Disable()
@@ -157,6 +166,11 @@ function KeyboardMovement:Disable()
 &#9;if RenderSteppedCon then
 &#9;&#9;RenderSteppedCon:disconnect()
 &#9;&#9;RenderSteppedCon = nil
+&#9;end
+&#9;
+&#9;if TextFocusReleasedCn then
+&#9;&#9;TextFocusReleasedCn:disconnect()
+&#9;&#9;TextFocusReleasedCn = nil
 &#9;end
 &#9;
 &#9;if LocalPlayer then

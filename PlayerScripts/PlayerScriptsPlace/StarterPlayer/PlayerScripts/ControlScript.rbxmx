@@ -8,6 +8,7 @@
 			<string name="Name">ControlScript</string>
 			<ProtectedString name="Source">--[[
 &#9;// FileName: ControlScript.lua
+&#9;// Version 1.0
 &#9;// Written by: jmargh
 &#9;// Description: Manages in game controls for both touch and keyboard/mouse devices.
 &#9;

@@ -6,6 +6,7 @@
 			<string name="Name">Thumbpad</string>
 			<ProtectedString name="Source">--[[
 &#9;// FileName: Thumbpad
+&#9;// Version 1.0
 &#9;// Written by: jmargh
 &#9;// Description: Implements thumbpad controls for touch devices
 --]]

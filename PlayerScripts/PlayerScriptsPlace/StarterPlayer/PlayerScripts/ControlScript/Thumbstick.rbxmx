@@ -6,6 +6,7 @@
 			<string name="Name">Thumbstick</string>
 			<ProtectedString name="Source">--[[
 &#9;// FileName: Thumbstick
+&#9;// Version 1.0
 &#9;// Written by: jmargh
 &#9;// Description: Implements thumbstick controls for touch devices
 --]]
