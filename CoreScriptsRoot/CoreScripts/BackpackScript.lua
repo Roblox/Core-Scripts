@@ -729,7 +729,7 @@ MainFrame.Parent = CoreGui
 
 -- Make the HotbarFrame, which holds only the Hotbar Slots
 HotbarFrame = NewGui('Frame', 'Hotbar')
-HotbarFrame.Active = true
+HotbarFrame.Active = false
 HotbarFrame.Size = HOTBAR_SIZE
 HotbarFrame.Position = UDim2.new(0.5, -HotbarFrame.Size.X.Offset / 2, 1, -HotbarFrame.Size.Y.Offset - HOTBAR_OFFSET_FROMBOTTOM)
 HotbarFrame.Parent = MainFrame
