@@ -1484,7 +1484,6 @@ local function setLeaderStats(entry)
 		end
 	end)
 end
-
 local function createPlayerEntry(player)
 	local playerEntry = {}
 	local name = player.Name
@@ -1493,7 +1492,8 @@ local function createPlayerEntry(player)
 	entryFrame.Active = true
 	entryFrame.InputBegan:connect(function(inputObject)
 		local inputType = inputObject.UserInputType
-		if inputType == Enum.UserInputType.MouseButton1 or inputType == Enum.UserInputType.Touch then
+		local inputState = inputObject.UserInputState
+		if inputType == Enum.UserInputType.MouseButton1 or (inputType == Enum.UserInputType.Touch and inputState == Enum.UserInputState.Begin) then
 			onEntryFrameSelected(containerFrame, player)
 		end
 	end)
