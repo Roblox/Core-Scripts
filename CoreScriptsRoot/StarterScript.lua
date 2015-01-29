@@ -8,7 +8,7 @@ Game:GetService("CoreGui"):WaitForChild("RobloxGui")
 local screenGui = Game:GetService("CoreGui"):FindFirstChild("RobloxGui")
 
 -- SettingsScript
-local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UsePlayerScripts") end)
+local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
 local newSettingsSuccess, newSettingsFlagValue = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local useNewSettings = (luaControlsSuccess and luaControlsFlagValue) and (newSettingsSuccess and newSettingsFlagValue)
 if useNewSettings then
