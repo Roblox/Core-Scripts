@@ -1646,19 +1646,6 @@ local function clampCanvasPosition()
 	end
 end
 
-local function resizeScrollList()
-	local desiredSize = Container.AbsoluteSize.y - Header.AbsoluteSize.y
-	if ScrollList.Size.Y.Offset > desiredSize then
-		ScrollList.Size = UDim2.new(1, 0, 0, desiredSize)
-	else
-		local newSize = math.min(desiredSize, LastExpandPosition)
-		ScrollList.Size = UDim2.new(1, 0, 0, newSize)
-	end
-	ScrollList.Position = UDim2.new(0, 0, 0, Header.AbsoluteSize.y + 1)
-	clampCanvasPosition()
-	setExpandFramePosition()
-end
-
 local function resizeExpandedFrame(containerFrame, scale, name, func)
 	local offset = 0
 	local nameFrame = containerFrame:FindFirstChild(name)
@@ -1723,7 +1710,9 @@ local function expandPlayerList(endPosition, subFrameScale)
 end
 
 local function resizePlayerList()
-	resizeScrollList()
+	setScrollListSize()
+	ScrollList.Position = UDim2.new(0, 0, 0, Header.AbsoluteSize.y + 1)
+	clampCanvasPosition()
 end
 
 RobloxGui.Changed:connect(function(property)
