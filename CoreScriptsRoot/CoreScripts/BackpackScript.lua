@@ -1,4 +1,4 @@
--- Backpack Version 4.14
+-- Backpack Version 4.15
 -- OnlyTwentyCharacters
 
 ---------------------
@@ -153,15 +153,15 @@ local function DisableActiveHopper() --NOTE: HopperBin
 	ActiveHopper = nil
 end
 
-local function UnequipTools() --NOTE: HopperBin
+local function UnequipAllTools() --NOTE: HopperBin
 	Humanoid:UnequipTools()
 	if ActiveHopper then
 		DisableActiveHopper()
 	end
 end
 
-local function EquipTool(tool) --NOTE: HopperBin
-	UnequipTools()
+local function EquipNewTool(tool) --NOTE: HopperBin
+	UnequipAllTools()
 	if tool:IsA('HopperBin') then
 		tool:ToggleSelect()
 		SlotsByTool[tool]:UpdateEquipView()
@@ -173,7 +173,7 @@ local function EquipTool(tool) --NOTE: HopperBin
 end
 
 local function IsEquipped(tool)
-	return (tool.Parent == Character or (tool:IsA('HopperBin') and tool.Active)) --NOTE: HopperBin
+	return ((tool:IsA('HopperBin') and tool.Active) or tool.Parent == Character) --NOTE: HopperBin
 end
 
 local function MakeSlot(parent, index)
@@ -402,10 +402,10 @@ local function MakeSlot(parent, index)
 		local function selectSlot()
 			local tool = slot.Tool
 			if tool then
-				if tool.Parent == Character or (tool:IsA('HopperBin') and tool.Active) then --NOTE: HopperBin
-					UnequipTools()
+				if IsEquipped(tool) then --NOTE: HopperBin
+					UnequipAllTools()
 				elseif tool.Parent == Backpack then
-					EquipTool(tool)
+					EquipNewTool(tool)
 				end
 			end
 		end
@@ -488,8 +488,8 @@ local function MakeSlot(parent, index)
 					slot:Clear() --NOTE: Order matters here
 					local newSlot = MakeSlot(ScrollingFrame)
 					newSlot:Fill(tool)
-					if tool.Parent == Character or (tool:IsA('HopperBin') and tool.Active) then -- Also unequip it --NOTE: HopperBin
-						UnequipTools()
+					if IsEquipped(tool) then -- Also unequip it --NOTE: HopperBin
+						UnequipAllTools()
 					end
 					-- Also hide the inventory slot if we're showing results right now
 					if ResultsIndices then
@@ -528,8 +528,8 @@ local function MakeSlot(parent, index)
 						if not tool then -- Clean up after ourselves if we're an inventory slot that's now empty
 							slot:Delete()
 						else -- Moved inventory slot to hotbar slot, and gained a tool that needs to be unequipped
-							if tool.Parent == Character or (tool:IsA('HopperBin') and tool.Active) then --NOTE: HopperBin
-								UnequipTools()
+							if IsEquipped(tool) then --NOTE: HopperBin
+								UnequipAllTools()
 							end
 							-- Also hide the inventory slot if we're showing results right now
 							if ResultsIndices then
@@ -566,7 +566,7 @@ local function OnChildAdded(child) -- To Character or Backpack
 	end
 	local tool = child
 	
-	if ActiveHopper then --NOTE: HopperBin
+	if ActiveHopper and tool.Parent == Character then --NOTE: HopperBin
 		DisableActiveHopper()
 	end
 	
@@ -608,6 +608,12 @@ local function OnChildAdded(child) -- To Character or Backpack
 		slot:Fill(tool)
 		if slot.Index <= HOTBAR_SLOTS and not InventoryFrame.Visible then
 			AdjustHotbarFrames()
+		end
+		if tool:IsA('HopperBin') then --NOTE: HopperBin
+			if tool.Active then
+				UnequipAllTools()
+				ActiveHopper = tool
+			end
 		end
 	end
 end
@@ -729,7 +735,6 @@ MainFrame.Parent = CoreGui
 
 -- Make the HotbarFrame, which holds only the Hotbar Slots
 HotbarFrame = NewGui('Frame', 'Hotbar')
-HotbarFrame.Active = true
 HotbarFrame.Size = HOTBAR_SIZE
 HotbarFrame.Position = UDim2.new(0.5, -HotbarFrame.Size.X.Offset / 2, 1, -HotbarFrame.Size.Y.Offset - HOTBAR_OFFSET_FROMBOTTOM)
 HotbarFrame.Parent = MainFrame
@@ -916,6 +921,7 @@ do -- Make the Inventory expand/collapse arrow
 			clickArea.Modal = nowOpen -- Allows free mouse movement even in first person
 			AdjustHotbarFrames()
 			UpdateArrowFrame()
+			HotbarFrame.Active = not HotbarFrame.Active
 			for i = 1, HOTBAR_SLOTS do
 				Slots[i]:SetClickability(not nowOpen)
 			end
@@ -967,7 +973,7 @@ do -- Hotkey stuff
 	-- Manual unequip for HopperBins on drop button pressed
 	HotkeyFns[DROP_HOTKEY_VALUE] = function() --NOTE: HopperBin
 		if ActiveHopper then
-			UnequipTools()
+			UnequipAllTools()
 		end
 	end
 	
