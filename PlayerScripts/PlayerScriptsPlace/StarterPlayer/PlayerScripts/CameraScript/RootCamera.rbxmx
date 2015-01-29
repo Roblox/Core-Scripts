@@ -18,14 +18,6 @@ local function clamp(low, high, num)
 &#9;return num
 end
 
-local function findFirstChildByType(parent, type)
-&#9;for _, child in pairs(parent:GetChildren()) do
-&#9;&#9;if child.ClassName == type then -- :IsA
-&#9;&#9;&#9;return child
-&#9;&#9;end
-&#9;end
-end
-
 local humanoidCache = {}
 local function findPlayerHumanoid(player)
 &#9;local character = player and player.Character
@@ -216,171 +208,227 @@ local function CreateCamera()
 &#9;
 &#9;function this:Update()
 &#9;end
-
-
+&#9;
+&#9;---- Input Events ----
 &#9;local startPos = nil
 &#9;local lastPos = nil
 &#9;local panBeginLook = nil
 &#9;
-&#9;if UserInputService.TouchEnabled then
-
-&#9;&#9;local fingerTouches = {}
-&#9;&#9;local NumUnsunkTouches = 0
-&#9;&#9;
-&#9;&#9;UserInputService.InputBegan:connect(function(input, processed)
-&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Touch then
-&#9;&#9;&#9;&#9;fingerTouches[input] = processed
-&#9;&#9;&#9;&#9;if not processed then&#9;&#9;&#9;
-&#9;&#9;&#9;&#9;&#9;NumUnsunkTouches = NumUnsunkTouches + 1
-&#9;&#9;&#9;&#9;end
+&#9;local fingerTouches = {}
+&#9;local NumUnsunkTouches = 0
+&#9;
+&#9;local StartingDiff = nil
+&#9;local pinchBeginZoom = nil
+&#9;
+&#9;this.ZoomEnabled = true
+&#9;this.PanEnabled = true
+&#9;this.KeyPanEnabled = true
+&#9;
+&#9;local function OnTouchBegan(input, processed)
+&#9;&#9;fingerTouches[input] = processed
+&#9;&#9;if not processed then&#9;&#9;&#9;
+&#9;&#9;&#9;NumUnsunkTouches = NumUnsunkTouches + 1
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local function OnTouchChanged(input, processed)
+&#9;&#9;if fingerTouches[input] == nil then
+&#9;&#9;&#9;fingerTouches[input] = processed
+&#9;&#9;&#9;if not processed then&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;NumUnsunkTouches = NumUnsunkTouches + 1
 &#9;&#9;&#9;end
-&#9;&#9;end)
+&#9;&#9;end
 &#9;&#9;
-&#9;&#9;local StartingDiff = nil
-&#9;&#9;local pinchBeginZoom = nil
-&#9;&#9;UserInputService.InputChanged:connect(function(input, processed)
-&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Touch then
-&#9;&#9;&#9;&#9;if fingerTouches[input] == nil then
-&#9;&#9;&#9;&#9;&#9;fingerTouches[input] = processed
-&#9;&#9;&#9;&#9;&#9;if not processed then&#9;&#9;&#9;
-&#9;&#9;&#9;&#9;&#9;&#9;NumUnsunkTouches = NumUnsunkTouches + 1
-&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;
-&#9;&#9;&#9;&#9;if NumUnsunkTouches == 1 then
-&#9;&#9;&#9;&#9;&#9;if fingerTouches[input] == false then
-&#9;&#9;&#9;&#9;&#9;&#9;panBeginLook = panBeginLook or this:GetCameraLook()
-&#9;&#9;&#9;&#9;&#9;&#9;startPos = startPos or input.Position
-&#9;&#9;&#9;&#9;&#9;&#9;lastPos = lastPos or startPos&#9;&#9;&#9;&#9;&#9;
-&#9;&#9;&#9;&#9;&#9;&#9;this.UserPanningTheCamera = true
-&#9;&#9;&#9;&#9;&#9;&#9;
-&#9;&#9;&#9;&#9;&#9;&#9;local totalTrans = input.Position - startPos
-&#9;&#9;&#9;&#9;&#9;&#9;lastPos = input.Position
-&#9;&#9;&#9;&#9;&#9;&#9;this:RotateCamera(panBeginLook, this:ScreenTranslationToAngle(totalTrans))
-&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;else
-&#9;&#9;&#9;&#9;&#9;panBeginLook = nil
-&#9;&#9;&#9;&#9;&#9;startPos = nil
-&#9;&#9;&#9;&#9;&#9;lastPos = nil&#9;&#9;&#9;&#9;
-&#9;&#9;&#9;&#9;&#9;this.UserPanningTheCamera = false
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;if NumUnsunkTouches == 2 then
-&#9;&#9;&#9;&#9;&#9;local unsunkTouches = {}
-&#9;&#9;&#9;&#9;&#9;for touch, wasSunk in pairs(fingerTouches) do
-&#9;&#9;&#9;&#9;&#9;&#9;if not wasSunk then
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;table.insert(unsunkTouches, touch)
-&#9;&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;&#9;if #unsunkTouches == 2 then
-&#9;&#9;&#9;&#9;&#9;&#9;local difference = (unsunkTouches[1].Position - unsunkTouches[2].Position).magnitude
-&#9;&#9;&#9;&#9;&#9;&#9;if StartingDiff and pinchBeginZoom then
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;local scale = difference / math.max(0.01, StartingDiff)
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;local clampedScale = clamp(0.1, 10, scale)
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;this:ZoomCamera(pinchBeginZoom / clampedScale)
-&#9;&#9;&#9;&#9;&#9;&#9;else
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;StartingDiff = difference
-&#9;&#9;&#9;&#9;&#9;&#9;&#9;pinchBeginZoom = this:GetCameraZoom()
-&#9;&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;else
-&#9;&#9;&#9;&#9;&#9;StartingDiff = nil
-&#9;&#9;&#9;&#9;&#9;pinchBeginZoom = nil
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;end)
-&#9;&#9;
-&#9;&#9;UserInputService.InputEnded:connect(function(input, processed)
-&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Touch then
-&#9;&#9;&#9;&#9;if fingerTouches[input] == false then
-&#9;&#9;&#9;&#9;&#9;if NumUnsunkTouches == 1 then
-&#9;&#9;&#9;&#9;&#9;&#9;panBeginLook = nil
-&#9;&#9;&#9;&#9;&#9;&#9;startPos = nil
-&#9;&#9;&#9;&#9;&#9;&#9;lastPos = nil
-&#9;&#9;&#9;&#9;&#9;&#9;this.UserPanningTheCamera = false
-&#9;&#9;&#9;&#9;&#9;elseif NumUnsunkTouches == 2 then
-&#9;&#9;&#9;&#9;&#9;&#9;StartingDiff = nil
-&#9;&#9;&#9;&#9;&#9;&#9;pinchBeginZoom = nil
-&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;
-&#9;&#9;&#9;&#9;if fingerTouches[input] ~= nil and fingerTouches[input] == false then
-&#9;&#9;&#9;&#9;&#9;NumUnsunkTouches = NumUnsunkTouches - 1
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;fingerTouches[input] = nil
-&#9;&#9;&#9;end
-&#9;&#9;end)
-&#9;&#9;
-&#9;elseif UserInputService.KeyboardEnabled and UserInputService.MouseEnabled then -- Keyboard
-
-&#9;&#9;UserInputService.InputBegan:connect(function(input, processed)
-&#9;&#9;&#9;if processed then return end
-&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.MouseButton2 then
-&#9;&#9;&#9;&#9;-- Check if they are in first-person
-&#9;&#9;&#9;&#9;if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
-&#9;&#9;&#9;&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;panBeginLook = this:GetCameraLook()
-&#9;&#9;&#9;&#9;startPos = input.Position
-&#9;&#9;&#9;&#9;lastPos = startPos
+&#9;&#9;if NumUnsunkTouches == 1 then
+&#9;&#9;&#9;if fingerTouches[input] == false then
+&#9;&#9;&#9;&#9;panBeginLook = panBeginLook or this:GetCameraLook()
+&#9;&#9;&#9;&#9;startPos = startPos or input.Position
+&#9;&#9;&#9;&#9;lastPos = lastPos or startPos&#9;&#9;&#9;&#9;&#9;
 &#9;&#9;&#9;&#9;this.UserPanningTheCamera = true
-&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.I then
-&#9;&#9;&#9;&#9;this:ZoomCameraBy(-5)
-&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.O then
-&#9;&#9;&#9;&#9;this:ZoomCameraBy(5)
-&#9;&#9;&#9;end
-&#9;&#9;&#9;if panBeginLook == nil then
-&#9;&#9;&#9;&#9;if input.KeyCode == Enum.KeyCode.Left then
-&#9;&#9;&#9;&#9;&#9;this.TurningLeft = true
-&#9;&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Right then
-&#9;&#9;&#9;&#9;&#9;this.TurningRight = true
-&#9;&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Comma then
-&#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(math.rad(30),0))
-&#9;&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Period then
-&#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(math.rad(-30),0))
-&#9;&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.PageUp then
-&#9;&#9;&#9;&#9;--elseif input.KeyCode == Enum.KeyCode.Home then
-&#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(0,math.rad(15)))
-&#9;&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.PageDown then
-&#9;&#9;&#9;&#9;--elseif input.KeyCode == Enum.KeyCode.End then
-&#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(0,math.rad(-15)))
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;end)
-&#9;&#9;
-&#9;&#9;UserInputService.InputChanged:connect(function(input, processed)
-&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.MouseMovement then
-&#9;&#9;&#9;&#9;if startPos and lastPos and panBeginLook then
-&#9;&#9;&#9;&#9;&#9;--local currPos = input.Position
-&#9;&#9;&#9;&#9;&#9;local currPos = lastPos + input.Delta
-&#9;&#9;&#9;&#9;&#9;local totalTrans = currPos - startPos
-&#9;&#9;&#9;&#9;&#9;lastPos = currPos
-&#9;&#9;&#9;&#9;&#9;-- NOTE: we probably should not add the delta if we are already maxed out on the rotation angle.
-&#9;&#9;&#9;&#9;&#9;this:RotateCamera(panBeginLook, this:ScreenTranslationToAngle(totalTrans))
-&#9;&#9;&#9;&#9;elseif this:IsInFirstPerson() or this:GetShiftLock() then
-&#9;&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), this:ScreenTranslationToAngle(input.Delta))
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.MouseWheel then
-&#9;&#9;&#9;&#9;if not processed then
-&#9;&#9;&#9;&#9;&#9;this:ZoomCameraBy(clamp(-1, 1, -input.Position.Z) * 1.4)
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;end)
-&#9;&#9;
-&#9;&#9;UserInputService.InputEnded:connect(function(input, processed)
-&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.MouseButton2 then
-&#9;&#9;&#9;&#9;-- Check if they are in first-person
-&#9;&#9;&#9;&#9;if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
-&#9;&#9;&#9;&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;local totalTrans = input.Position - startPos
+&#9;&#9;&#9;&#9;lastPos = input.Position
+&#9;&#9;&#9;&#9;if this.PanEnabled then
+&#9;&#9;&#9;&#9;&#9;this:RotateCamera(panBeginLook, this:ScreenTranslationToAngle(totalTrans))
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;else
+&#9;&#9;&#9;panBeginLook = nil
+&#9;&#9;&#9;startPos = nil
+&#9;&#9;&#9;lastPos = nil&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;this.UserPanningTheCamera = false
+&#9;&#9;end
+&#9;&#9;if NumUnsunkTouches == 2 then
+&#9;&#9;&#9;local unsunkTouches = {}
+&#9;&#9;&#9;for touch, wasSunk in pairs(fingerTouches) do
+&#9;&#9;&#9;&#9;if not wasSunk then
+&#9;&#9;&#9;&#9;&#9;table.insert(unsunkTouches, touch)
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;&#9;if #unsunkTouches == 2 then
+&#9;&#9;&#9;&#9;local difference = (unsunkTouches[1].Position - unsunkTouches[2].Position).magnitude
+&#9;&#9;&#9;&#9;if StartingDiff and pinchBeginZoom then
+&#9;&#9;&#9;&#9;&#9;local scale = difference / math.max(0.01, StartingDiff)
+&#9;&#9;&#9;&#9;&#9;local clampedScale = clamp(0.1, 10, scale)
+&#9;&#9;&#9;&#9;&#9;if this.ZoomEnabled then
+&#9;&#9;&#9;&#9;&#9;&#9;this:ZoomCamera(pinchBeginZoom / clampedScale)
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;&#9;StartingDiff = difference
+&#9;&#9;&#9;&#9;&#9;pinchBeginZoom = this:GetCameraZoom()
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;else
+&#9;&#9;&#9;StartingDiff = nil
+&#9;&#9;&#9;pinchBeginZoom = nil
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local function OnTouchEnded(input, processed)
+&#9;&#9;if fingerTouches[input] == false then
+&#9;&#9;&#9;if NumUnsunkTouches == 1 then
 &#9;&#9;&#9;&#9;panBeginLook = nil
 &#9;&#9;&#9;&#9;startPos = nil
 &#9;&#9;&#9;&#9;lastPos = nil
 &#9;&#9;&#9;&#9;this.UserPanningTheCamera = false
-&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Left then
-&#9;&#9;&#9;&#9;this.TurningLeft = false
+&#9;&#9;&#9;elseif NumUnsunkTouches == 2 then
+&#9;&#9;&#9;&#9;StartingDiff = nil
+&#9;&#9;&#9;&#9;pinchBeginZoom = nil
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;if fingerTouches[input] ~= nil and fingerTouches[input] == false then
+&#9;&#9;&#9;NumUnsunkTouches = NumUnsunkTouches - 1
+&#9;&#9;end
+&#9;&#9;fingerTouches[input] = nil
+&#9;end
+&#9;
+&#9;local function OnMouse2Down(input, processed)
+&#9;&#9;if processed then return end
+&#9;&#9;-- Check if they are in first-person
+&#9;&#9;if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
+&#9;&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+&#9;&#9;end
+&#9;&#9;panBeginLook = this:GetCameraLook()
+&#9;&#9;startPos = input.Position
+&#9;&#9;lastPos = startPos
+&#9;&#9;this.UserPanningTheCamera = true
+&#9;end
+&#9;
+&#9;local function OnMouse2Up(input, processed)
+&#9;&#9;-- Check if they are in first-person
+&#9;&#9;if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
+&#9;&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;panBeginLook = nil
+&#9;&#9;startPos = nil
+&#9;&#9;lastPos = nil
+&#9;&#9;this.UserPanningTheCamera = false
+&#9;end
+&#9;
+&#9;local function OnMouseMoved(input, processed)
+&#9;&#9;if startPos and lastPos and panBeginLook then
+&#9;&#9;&#9;local currPos = lastPos + input.Delta
+&#9;&#9;&#9;local totalTrans = currPos - startPos
+&#9;&#9;&#9;lastPos = currPos
+&#9;&#9;&#9;if this.PanEnabled then
+&#9;&#9;&#9;&#9;-- NOTE: we probably should not add the delta if we are already maxed out on the rotation angle.
+&#9;&#9;&#9;&#9;this:RotateCamera(panBeginLook, this:ScreenTranslationToAngle(totalTrans))
+&#9;&#9;&#9;end
+&#9;&#9;elseif this:IsInFirstPerson() or this:GetShiftLock() then
+&#9;&#9;&#9;if this.PanEnabled then
+&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), this:ScreenTranslationToAngle(input.Delta))
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local function OnMouseWheel(input, processed)
+&#9;&#9;if not processed then
+&#9;&#9;&#9;if this.ZoomEnabled then
+&#9;&#9;&#9;&#9;this:ZoomCameraBy(clamp(-1, 1, -input.Position.Z) * 1.4)
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local function OnKeyDown(input, processed)
+&#9;&#9;if processed then return end
+&#9;&#9;if this.ZoomEnabled then
+&#9;&#9;&#9;if input.KeyCode == Enum.KeyCode.I then
+&#9;&#9;&#9;&#9;this:ZoomCameraBy(-5)
+&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.O then
+&#9;&#9;&#9;&#9;this:ZoomCameraBy(5)
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;&#9;if panBeginLook == nil and this.KeyPanEnabled then
+&#9;&#9;&#9;if input.KeyCode == Enum.KeyCode.Left then
+&#9;&#9;&#9;&#9;this.TurningLeft = true
 &#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Right then
-&#9;&#9;&#9;&#9;this.TurningRight = false
+&#9;&#9;&#9;&#9;this.TurningRight = true
+&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Comma then
+&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(math.rad(-35),0))
+&#9;&#9;&#9;&#9;this.LastCameraTransform = nil
+&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Period then
+&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(math.rad(35),0))
+&#9;&#9;&#9;&#9;this.LastCameraTransform = nil
+&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.PageUp then
+&#9;&#9;&#9;--elseif input.KeyCode == Enum.KeyCode.Home then
+&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(0,math.rad(15)))
+&#9;&#9;&#9;&#9;this.LastCameraTransform = nil
+&#9;&#9;&#9;elseif input.KeyCode == Enum.KeyCode.PageDown then
+&#9;&#9;&#9;--elseif input.KeyCode == Enum.KeyCode.End then
+&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), Vector2.new(0,math.rad(-15)))
+&#9;&#9;&#9;&#9;this.LastCameraTransform = nil
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local function OnKeyUp(input, processed)
+&#9;&#9;if input.KeyCode == Enum.KeyCode.Left then
+&#9;&#9;&#9;this.TurningLeft = false
+&#9;&#9;elseif input.KeyCode == Enum.KeyCode.Right then
+&#9;&#9;&#9;this.TurningRight = false
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;function this:ConnectInputEvents()
+&#9;&#9;-- Mouse and Touch
+&#9;&#9;UserInputService.InputBegan:connect(function(input, processed)
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Touch then
+&#9;&#9;&#9;&#9;OnTouchBegan(input, processed)
+&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+&#9;&#9;&#9;&#9;OnMouse2Down(input, processed)
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;
+&#9;&#9;UserInputService.InputChanged:connect(function(input, processed)
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Touch then
+&#9;&#9;&#9;&#9;OnTouchChanged(input, processed)
+&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.MouseMovement then
+&#9;&#9;&#9;&#9;OnMouseMoved(input, processed)
+&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.MouseWheel then
+&#9;&#9;&#9;&#9;OnMouseWheel(input, processed)
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;
+&#9;&#9;UserInputService.InputEnded:connect(function(input, processed)
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Touch then
+&#9;&#9;&#9;&#9;OnTouchEnded(input, processed)
+&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+&#9;&#9;&#9;&#9;OnMouse2Up(input, processed)
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;
+&#9;&#9;-- Keyboard
+&#9;&#9;UserInputService.InputBegan:connect(function(input, processed)
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Keyboard then
+&#9;&#9;&#9;&#9;OnKeyDown(input, processed)
+&#9;&#9;&#9;end
+&#9;&#9;end)
+&#9;&#9;
+&#9;&#9;UserInputService.InputEnded:connect(function(input, processed)
+&#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Keyboard then
+&#9;&#9;&#9;&#9;OnKeyUp(input, processed)
 &#9;&#9;&#9;end
 &#9;&#9;end)
 &#9;end
