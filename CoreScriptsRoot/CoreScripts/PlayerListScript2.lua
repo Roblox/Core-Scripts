@@ -538,7 +538,6 @@ ReportConfirmFrame.Style = Enum.FrameStyle.DropShadow
 		ReportAbuseFrame.Parent = ReportAbuseShield
 	end
 	ReportConfirmButton.MouseButton1Click:connect(onReportConfirmPressed)
-	ReportConfirmButton.TouchTap:connect(onReportConfirmPressed)
 
 --[[ Creation Helper Functions ]]--
 local function createEntryFrame(name, sizeYOffset)
@@ -549,7 +548,7 @@ local function createEntryFrame(name, sizeYOffset)
 	containerFrame.BackgroundTransparency = 1
 	containerFrame.Parent = ScrollList
 
-	local nameFrame = Instance.new('Frame')
+	local nameFrame = Instance.new('TextButton')
 	nameFrame.Name = "BGFrame"
 	nameFrame.Position = UDim2.new(0, 0, 0, 0)
 	nameFrame.Size = UDim2.new(0, NameEntrySizeX * ScaleX, 0, sizeYOffset)
@@ -557,6 +556,8 @@ local function createEntryFrame(name, sizeYOffset)
 	nameFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 	nameFrame.BorderSizePixel = 0
 	nameFrame.ClipsDescendants = true
+	nameFrame.AutoButtonColor = false
+	nameFrame.Text = ""
 	nameFrame.Parent = containerFrame
 
 	return containerFrame, nameFrame
@@ -769,7 +770,6 @@ local function createPopupFrame(buttons)
 		btn.Parent = frame
 
 		btn.MouseButton1Click:connect(button.OnPress)
-		btn.TouchTap:connect(button.OnPress)
 	end
 
 	return frame
@@ -839,7 +839,7 @@ local function hideFriendReportPopup()
 	end
 	if LastSelectedFrame then
 		for _,childFrame in pairs(LastSelectedFrame:GetChildren()) do
-			if childFrame:IsA('Frame') then
+			if childFrame:IsA('TextButton') or childFrame:IsA('Frame') then
 				childFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 			end
 		end
@@ -897,7 +897,6 @@ local function onAbuseDialogCanceled()
 	resetReportDialog()
 end
 ReportCanelButton.MouseButton1Click:connect(onAbuseDialogCanceled)
-ReportCanelButton.TouchTap:connect(onAbuseDialogCanceled)
 
 local function onAbuseDialogSubmit()
 	if ReportSubmitButton.Active then
@@ -910,7 +909,6 @@ local function onAbuseDialogSubmit()
 	end
 end
 ReportSubmitButton.MouseButton1Click:connect(onAbuseDialogSubmit)
-ReportSubmitButton.TouchTap:connect(onAbuseDialogSubmit)
 
 local function onDeclineFriendButonPressed()
 	if LastSelectedPlayer then
@@ -1022,7 +1020,7 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
 		if LastSelectedFrame ~= selectedFrame then
 			if LastSelectedFrame then
 				for _,childFrame in pairs(LastSelectedFrame:GetChildren()) do
-					if childFrame:IsA('Frame') then
+					if childFrame:IsA('TextButton') or childFrame:IsA('Frame') then
 						childFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 					end
 				end
@@ -1030,7 +1028,7 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
 			LastSelectedFrame = selectedFrame
 			LastSelectedPlayer = selectedPlayer
 			for _,childFrame in pairs(selectedFrame:GetChildren()) do
-				if childFrame:IsA('Frame') then
+				if childFrame:IsA('TextButton') or childFrame:IsA('Frame') then
 					childFrame.BackgroundColor3 = Color3.new(0, 1, 1)
 				end
 			end
@@ -1490,13 +1488,10 @@ local function createPlayerEntry(player)
 
 	local containerFrame, entryFrame = createEntryFrame(name, PlayerEntrySizeY)
 	entryFrame.Active = true
-	entryFrame.InputBegan:connect(function(inputObject)
-		local inputType = inputObject.UserInputType
-		local inputState = inputObject.UserInputState
-		if inputType == Enum.UserInputType.MouseButton1 or (inputType == Enum.UserInputType.Touch and inputState == Enum.UserInputState.Begin) then
-			onEntryFrameSelected(containerFrame, player)
-		end
-	end)
+	local function localEntrySelected()
+		onEntryFrameSelected(containerFrame, player)
+	end
+	entryFrame.MouseButton1Click:connect(localEntrySelected)
 	
 	local currentXOffset = 1
 	
@@ -1601,6 +1596,13 @@ end
 
 --[[ Team Functions ]]--
 local function onTeamAdded(team)
+	for i = 1, #TeamEntries do
+		if team.TeamColor == team.TeamColor then
+			TeamEntries[i].Frame:Destroy()
+			table.remove(TeamEntries, i)
+			break
+		end
+	end
 	local entry = createTeamEntry(team)
 	entry.Id = TeamAddId
 	TeamAddId = TeamAddId + 1
