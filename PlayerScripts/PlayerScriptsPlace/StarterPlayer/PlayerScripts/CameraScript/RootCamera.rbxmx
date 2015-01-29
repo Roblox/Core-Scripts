@@ -63,12 +63,17 @@ local function CreateCamera()
 &#9;
 &#9;function this:GetSubjectPosition()
 &#9;&#9;local result = nil
-&#9;&#9;local humanoidRootPart = self:GetHumanoidRootPart()
-&#9;&#9;local humanoid = self:GetHumanoid()
-&#9;&#9;if humanoidRootPart then
-&#9;&#9;&#9;result = humanoidRootPart.Position + Vector3.new(0, 1.5, 0)
-&#9;&#9;&#9;if humanoid and humanoid:IsA(&apos;Humanoid&apos;) then
-&#9;&#9;&#9;&#9;result = result + humanoidRootPart.CFrame:vectorToWorldSpace(humanoid.CameraOffset)
+&#9;&#9;local camera = workspace.CurrentCamera
+&#9;&#9;if camera then
+&#9;&#9;&#9;local cameraSubject = camera.CameraSubject
+&#9;&#9;&#9;if cameraSubject:IsA(&apos;BasePart&apos;) then
+&#9;&#9;&#9;&#9;result = cameraSubject.CFrame.p
+&#9;&#9;&#9;elseif cameraSubject:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;local humanoidRootPart = cameraSubject.Torso
+&#9;&#9;&#9;&#9;if humanoidRootPart and humanoidRootPart:IsA(&apos;BasePart&apos;) then
+&#9;&#9;&#9;&#9;&#9;result = humanoidRootPart.CFrame.p + Vector3.new(0, 1.5, 0) +
+&#9;&#9;&#9;&#9;&#9;&#9;humanoidRootPart.CFrame:vectorToWorldSpace(cameraSubject.CameraOffset)
+&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;&#9;return result
