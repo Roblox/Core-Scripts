@@ -76,7 +76,7 @@ local function createTextButton(name, text, position)
 	return button
 end
 
-local NotificationFrame = createFrame("NotificationFrame", UDim2.new(0, 200, 0.42, 0), UDim2.new(1, -204, 0.58, -10), 1)
+local NotificationFrame = createFrame("NotificationFrame", UDim2.new(0, 200, 0.42, 0), UDim2.new(1, -204, 0.50, 0), 1)
 NotificationFrame.Parent = RbxGui
 
 local DefaultNotifcation = createFrame("Notifcation", UDim2.new(1, 0, 0, NOTIFICATION_Y_OFFSET), UDim2.new(0, 0, 0, 0), BG_TRANSPARENCY)
@@ -162,7 +162,7 @@ local removeNotification = nil
 --
 local function createNotification(title, text, image)
 	local notificationFrame = DefaultNotifcation:Clone()
-	notificationFrame.Position = UDim2.new(0, 0, 1, 0)
+	notificationFrame.Position = UDim2.new(1, 4, 1, -NOTIFICATION_Y_OFFSET - 4)
 	--
 	local notificationTitle = NotificationTitle:Clone()
 	notificationTitle.Text = title
@@ -302,16 +302,25 @@ local function sendFriendNotification(fromPlayer)
 end
 
 --[[ Friend Notifications ]]--
-local function onFriendStatusChanged(otherPlayer, status)
-	if status == Enum.FriendStatus.FriendRequestReceived then
-		if FriendRequestBlacklist[otherPlayer] then return end
-		sendFriendNotification(otherPlayer)
-	elseif status == Enum.FriendStatus.Friend then
-		sendNotifcation("New Friend", "You are now friends with "..otherPlayer.Name.."!", 
-			FRIEND_IMAGE..tostring(otherPlayer.userId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil)
+local function onFriendRequestEvent(fromPlayer, toPlayer, event)
+	if fromPlayer ~= LocalPlayer and toPlayer ~= LocalPlayer then return end
+	--
+	if fromPlayer == LocalPlayer then
+		if event == Enum.FriendRequestEvent.Accept then
+			sendNotifcation("New Friend", "You are now friends with "..toPlayer.Name.."!",
+				FRIEND_IMAGE..tostring(toPlayer.userId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil)
+		end
+	elseif toPlayer == LocalPlayer then
+		if event == Enum.FriendRequestEvent.Issue then
+			if FriendRequestBlacklist[fromPlayer] then return end
+			sendFriendNotification(fromPlayer)
+		elseif event == Enum.FriendRequestEvent.Accept then
+			sendNotifcation("New Friend", "You are now friends with "..fromPlayer.Name.."!", 
+				FRIEND_IMAGE..tostring(fromPlayer.userId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil)
+		end
 	end
 end
-LocalPlayer.FriendStatusChanged:connect(onFriendStatusChanged)
+Players.FriendRequestEvent:connect(onFriendRequestEvent)
 
 --[[ Player Points Notifications ]]--
 local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
