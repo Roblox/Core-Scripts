@@ -805,7 +805,7 @@ function canPurchaseItem()
 
 		if playerOwnsAsset == true or playerOwnsAsset == "true" then		
 			descText = "You already own this item." 
-			return true, nil, nil, true, descText 
+			return false, nil, nil, true, descText 
 		end
 	end
 	
