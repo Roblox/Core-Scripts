@@ -127,15 +127,10 @@ function KeyboardMovement:Enable()
 &#9;&#9;&#9;if not humanoid then return end
 &#9;&#9;&#9;if isFirstPersonOrShiftLocked() then
 &#9;&#9;&#9;&#9;local rootPart = humanoid.Torso
-&#9;&#9;&#9;&#9;if humanoid and not humanoid.Sit and not humanoid.PlatformStand and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
-&#9;&#9;&#9;&#9;&#9;humanoid.AutoRotate = false
+&#9;&#9;&#9;&#9;if humanoid and humanoid.AutoRotate and not humanoid.Sit and not humanoid.PlatformStand and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
 &#9;&#9;&#9;&#9;&#9;local desiredLook = game.Workspace.CurrentCamera.CoordinateFrame.lookVector
 &#9;&#9;&#9;&#9;&#9;desiredLook = Vector3.new(desiredLook.x, 0, desiredLook.z)
 &#9;&#9;&#9;&#9;&#9;rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + desiredLook)
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;else
-&#9;&#9;&#9;&#9;if humanoid then
-&#9;&#9;&#9;&#9;&#9;humanoid.AutoRotate = true
 &#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end
 &#9;&#9;&#9;
@@ -143,7 +138,9 @@ function KeyboardMovement:Enable()
 &#9;&#9;&#9;&#9;humanoid.Jump = isJumping
 &#9;&#9;&#9;end
 
-&#9;&#9;&#9;moveFunc(LocalPlayer, Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue), true)
+&#9;&#9;&#9;-- support games that have a scripted camera
+&#9;&#9;&#9;local isCameraRelative = game.Workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable
+&#9;&#9;&#9;moveFunc(LocalPlayer, Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue), isCameraRelative)
 &#9;&#9;end
 &#9;end)
 &#9;
