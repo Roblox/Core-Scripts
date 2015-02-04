@@ -12,6 +12,8 @@
 -- 3) CONFIGURE YOUR PLACE ON THE WEBSITE TO USE BUBBLE-CHAT
 local FORCE_CHAT_GUI = false
 local NON_CORESCRIPT_MODE = false
+-- 4) (OPTIONAL) PUT THE FOLLOWING LINE IN A SERVER SCRIPT TO MAKE CHAT PERSIST THROUGH RESPAWNING
+--  game:GetService('StarterGui').ResetPlayerGuiOnSpawn = false
 ---------------------------------
 
 local MESSAGES_FADE_OUT_TIME = 30
@@ -956,12 +958,14 @@ local function CreateChatBarWidget(settings)
 	local function HookUpEvents()
 		TearDownEvents() -- Cleanup old events
 
-		-- ChatHotKey is '/'
-		GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
-		this.SpecialKeyPressedConn = GuiService.SpecialKeyPressed:connect(function(key)
-			if key == Enum.SpecialKey.ChatHotkey then
-				this:FocusChatBar()
-			end
+		pcall(function()
+			-- ChatHotKey is '/'
+			GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
+			this.SpecialKeyPressedConn = GuiService.SpecialKeyPressed:connect(function(key)
+				if key == Enum.SpecialKey.ChatHotkey then
+					this:FocusChatBar()
+				end
+			end)
 		end)
 
 		if this.ClickToChatButton then this.ClickToChatButtonConn = this.ClickToChatButton.MouseButton1Click:connect(function() this:FocusChatBar() end) end
@@ -999,6 +1003,9 @@ local function CreateChatBarWidget(settings)
 			if this.ChatBarContainer then
 				this.ChatBarContainer.Visible = enabled
 			end
+		end
+		if NON_CORESCRIPT_MODE then
+			this.ChatBarContainer.Visible = false
 		end
 	end
 
@@ -1560,6 +1567,9 @@ local function CreateChatWindowWidget(settings)
 		if this.ChatContainer and not PlayersService.ClassicChat then
 			this.ChatContainer.Visible = false
 		end
+		if NON_CORESCRIPT_MODE then
+			this.ChatContainer.Visible = true
+		end
 	end
 
 	local function CreateChatWindow()
@@ -1824,7 +1834,6 @@ local function CreateChat()
 		if NON_CORESCRIPT_MODE then
 			newPlayer.Chatted:connect(function(msg, recipient)
 				this:OnPlayerChatted(Enum.PlayerChatType.All, newPlayer, msg, recipient)
-				print(Enum.PlayerChatType.All, newPlayer, msg, recipient)
 			end)
 		else
 			this.PlayerChattedConn = Util.DisconnectEvent(this.PlayerChattedConn)
@@ -2055,16 +2064,19 @@ local function CreateChat()
 
 		this:CreateGUI()
 
+
+		this:CoreGuiChanged(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
+		this.CoreGuiChangedConn = Util.DisconnectEvent(this.CoreGuiChangedConn)
 		pcall(function()
-			this:CoreGuiChanged(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
-			this.CoreGuiChangedConn = Util.DisconnectEvent(this.CoreGuiChangedConn)
 			this.CoreGuiChangedConn = StarterGui.CoreGuiChangedSignal:connect(
 				function(coreGuiType,enabled)
 					this:CoreGuiChanged(coreGuiType, enabled)
 				end)
 		end)
-
-		this:PrintWelcome()
+		
+		if not NON_CORESCRIPT_MODE then
+			this:PrintWelcome()
+		end
 	end
 
 	return this
