@@ -1,4 +1,4 @@
--- Backpack Version 4.15
+-- Backpack Version 4.16
 -- OnlyTwentyCharacters
 
 ---------------------
@@ -15,6 +15,10 @@ local SLOT_COLOR_EQUIP = Color3.new(90/255, 142/255, 233/255)
 local SLOT_FADE_LOCKED = 0.50 -- Locked means empty/undraggable
 local SLOT_BORDER_COLOR = Color3.new(1, 1, 1)
 
+local TOOLTIP_BUFFER = 6
+local TOOLTIP_HEIGHT = 16
+local TOOLTIP_OFFSET = -25 -- From top
+
 local ARROW_IMAGE_OPEN = 'rbxasset://textures/ui/Backpack_Open.png'
 local ARROW_IMAGE_CLOSE = 'rbxasset://textures/ui/Backpack_Close.png'
 local ARROW_SIZE = UDim2.new(0, 14, 0, 9)
@@ -26,7 +30,8 @@ local HOTBAR_SLOTS_MINI = 3
 local HOTBAR_SLOTS_WIDTH_CUTOFF = 1024 -- Anything smaller is MINI
 local HOTBAR_OFFSET_FROMBOTTOM = 30 -- Offset to make room for the Health GUI
 
-local INVENTORY_ROWS = 5
+local INVENTORY_ROWS_FULL = 4
+local INVENTORY_ROWS_MINI = 2
 local INVENTORY_HEADER_SIZE = 40
 
 --local TITLE_OFFSET = 20 -- From left side
@@ -50,10 +55,13 @@ local UserInputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 local GuiService = game:GetService('GuiService')
 
-local HOTBAR_SLOTS = (UserInputService.TouchEnabled and GuiService:GetScreenResolution().X < HOTBAR_SLOTS_WIDTH_CUTOFF) and HOTBAR_SLOTS_MINI or HOTBAR_SLOTS_FULL
+local IS_PHONE = UserInputService.TouchEnabled and GuiService:GetScreenResolution().X < HOTBAR_SLOTS_WIDTH_CUTOFF
+
+local HOTBAR_SLOTS = (IS_PHONE) and HOTBAR_SLOTS_MINI or HOTBAR_SLOTS_FULL
 local HOTBAR_SIZE = UDim2.new(0, ICON_BUFFER + (HOTBAR_SLOTS * (ICON_SIZE + ICON_BUFFER)), 0, ICON_BUFFER + ICON_SIZE + ICON_BUFFER)
 local ZERO_KEY_VALUE = Enum.KeyCode.Zero.Value
 local DROP_HOTKEY_VALUE = Enum.KeyCode.Backspace.Value
+local INVENTORY_ROWS = (IS_PHONE) and INVENTORY_ROWS_MINI or INVENTORY_ROWS_FULL
 
 local Player = PlayersService.LocalPlayer
 
@@ -228,11 +236,10 @@ local function MakeSlot(parent, index)
 			ToolIcon.Image = icon
 			ToolName.Text = (icon == '') and tool.Name or '' -- (Only show name if no icon)
 			if ToolTip and tool:IsA('Tool') then --NOTE: HopperBin
-				--TODO: No magic numbers
 				ToolTip.Text = tool.ToolTip
-				local width = ToolTip.TextBounds.X + 6
-				ToolTip.Size = UDim2.new(0, width, 0, 16)
-				ToolTip.Position = UDim2.new(0.5, -width / 2, 0, -25)
+				local width = ToolTip.TextBounds.X + TOOLTIP_BUFFER
+				ToolTip.Size = UDim2.new(0, width, 0, TOOLTIP_HEIGHT)
+				ToolTip.Position = UDim2.new(0.5, -width / 2, 0, TOOLTIP_OFFSET)
 			end
 		end
 		assignToolData()
@@ -753,28 +760,28 @@ end
 InventoryFrame = NewGui('Frame', 'Inventory')
 InventoryFrame.BackgroundTransparency = BACKGROUND_FADE
 InventoryFrame.Active = true
-InventoryFrame.Size = UDim2.new(0, HotbarFrame.Size.X.Offset, 0, HotbarFrame.Size.Y.Offset * 5) --TODO: No MNs
+InventoryFrame.Size = UDim2.new(0, HotbarFrame.Size.X.Offset, 0, (HotbarFrame.Size.Y.Offset * INVENTORY_ROWS) + INVENTORY_HEADER_SIZE)
 InventoryFrame.Position = UDim2.new(0.5, -InventoryFrame.Size.X.Offset / 2, 1, HotbarFrame.Position.Y.Offset - InventoryFrame.Size.Y.Offset)
 InventoryFrame.Visible = false
 InventoryFrame.Parent = MainFrame
 
 -- Make the header title, in the Inventory
--- local headerText = NewGui('TextLabel', 'Header')
--- headerText.Text = TITLE_TEXT
--- headerText.TextXAlignment = Enum.TextXAlignment.Left
--- headerText.Font = Enum.Font.SourceSansBold
--- headerText.FontSize = Enum.FontSize.Size48
--- headerText.TextStrokeColor3 = SLOT_COLOR_EQUIP
--- headerText.TextStrokeTransparency = 0.75 --TODO: No MNs
--- headerText.Size = UDim2.new(0, (InventoryFrame.Size.X.Offset / 2) - TITLE_OFFSET, 0, INVENTORY_HEADER_SIZE)
--- headerText.Position = UDim2.new(0, TITLE_OFFSET, 0, 0)
--- headerText.Parent = InventoryFrame
+--local headerText = NewGui('TextLabel', 'Header')
+--headerText.Text = TITLE_TEXT
+--headerText.TextXAlignment = Enum.TextXAlignment.Left
+--headerText.Font = Enum.Font.SourceSansBold
+--headerText.FontSize = Enum.FontSize.Size48
+--headerText.TextStrokeColor3 = SLOT_COLOR_EQUIP
+--headerText.TextStrokeTransparency = BACKGROUND_FADE
+--headerText.Size = UDim2.new(0, (InventoryFrame.Size.X.Offset / 2) - TITLE_OFFSET, 0, INVENTORY_HEADER_SIZE)
+--headerText.Position = UDim2.new(0, TITLE_OFFSET, 0, 0)
+--headerText.Parent = InventoryFrame
 
 do -- Search stuff
 	local searchFrame = NewGui('Frame', 'Search')
 	searchFrame.BackgroundColor3 = SEARCH_BACKGROUND_COLOR
 	searchFrame.BackgroundTransparency = SEARCH_BACKGROUND_FADE
-	searchFrame.Size = UDim2.new(0, SEARCH_WIDTH, 0, INVENTORY_HEADER_SIZE - (SEARCH_BUFFER * 2))
+	searchFrame.Size = UDim2.new(0, SEARCH_WIDTH - (SEARCH_BUFFER * 2), 0, INVENTORY_HEADER_SIZE - (SEARCH_BUFFER * 2))
 	searchFrame.Position = UDim2.new(1, -searchFrame.Size.X.Offset - SEARCH_BUFFER, 0, SEARCH_BUFFER)
 	searchFrame.Parent = InventoryFrame
 	
