@@ -13,6 +13,7 @@ local GuiService = game:GetService('GuiService')
 local Players = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 local ContextActionService = game:GetService('ContextActionService')
+local CoreGuiService = game:GetService('CoreGui')
 --
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
@@ -26,7 +27,7 @@ while not Players.LocalPlayer do
 	wait()
 end
 local LocalPlayer = Players.LocalPlayer
-local RobloxGui = script.Parent
+local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
 
 --[[ Client Settings ]]--
 local IsMacClient = false
@@ -43,10 +44,13 @@ local IsStudioMode = GameSettings:InStudioMode()
 local isNewNotificationSuccess, isNewNotificationEnabled = pcall(function() return settings():GetFFlag("NewNotificationsScript") end)
 local isNewNotifications = isNewNotificationSuccess and isNewNotificationEnabled
 
+local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
+local isTopBar = topbarSuccess and topbarFlagValue == true
+
 --[[ Parent Frames ]]--
 -- TODO: Remove all references to engine created gui
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
-local TopLeftControl = ControlFrame:WaitForChild('TopLeftControl')		
+local TopLeftControl = ControlFrame:WaitForChild('TopLeftControl')
 local BottomLeftControl = ControlFrame:WaitForChild('BottomLeftControl')
 
 --[[ Control Variables ]]--
@@ -68,7 +72,7 @@ local isTestingReportAbuse = false
 --[[ Constants ]]--
 local GRAPHICS_QUALITY_LEVELS = 10
 local BASE_Z_INDEX = 4
-local BG_TRANSPARENCY = 0.4
+local BG_TRANSPARENCY = 0.5
 local TWEEN_TIME = 0.2
 local SHOW_MENU_POS = IsSmallScreen and UDim2.new(0, 0, 0, 0) or UDim2.new(0.5, -262, 0.5, -215)
 local CLOSE_MENU_POS = IsSmallScreen and UDim2.new(0, 0, -1, 0) or UDim2.new(0.5, -262, -0.5, -215)
@@ -126,7 +130,39 @@ local ABUSE_TYPES_GAME = {
 	"Offsite Link",
 }
 
+
 --[[ Gui Creation Helper Functions ]]--
+
+local function Signal()
+	local sig = {}
+
+	local mSignaler = Instance.new('BindableEvent')
+
+	local mArgData = nil
+	local mArgDataCount = nil
+
+	function sig:fire(...)
+		mArgData = {...}
+		mArgDataCount = select('#', ...)
+		mSignaler:Fire()
+	end
+
+	function sig:connect(f)
+		if not f then error("connect(nil)", 2) end
+		return mSignaler.Event:connect(function()
+			f(unpack(mArgData, 1, mArgDataCount))
+		end)
+	end
+
+	function sig:wait()
+		mSignaler.Event:wait()
+		assert(mArgData, "Missing arg data, likely due to :TweenSize/Position corrupting threadrefs.")
+		return unpack(mArgData, 1, mArgDataCount)
+	end
+
+	return sig
+end
+
 local function createTextButton(size, position, text, fontSize, style)
 	local textButton = Instance.new('TextButton')
 	textButton.Size = size
@@ -192,6 +228,9 @@ end
 
 --[[ Gui Creation ]]--
 -- Main Container for everything in the settings menu
+
+local SettingsShowSignal = Signal()
+
 local SettingsMenuFrame = Instance.new('Frame')
 SettingsMenuFrame.Name = "SettingsMenu"
 SettingsMenuFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -203,14 +242,18 @@ SettingsButton.Size = UDim2.new(0, 36, 0, 28)
 SettingsButton.Position = IsTouchClient and UDim2.new(0, 2, 0, 5) or UDim2.new(0, 15, 1, -42)
 SettingsButton.BackgroundTransparency = 1
 SettingsButton.Image = 'rbxasset://textures/ui/homeButton.png'
-SettingsButton.Parent = SettingsMenuFrame
+if not isTopBar then
+	SettingsButton.Parent = SettingsMenuFrame
+end
 
 local SettingsShield = Instance.new('Frame')
 SettingsShield.Name = "SettingsShield"
-SettingsShield.Size = UDim2.new(1, 0, 1, 0)
+SettingsShield.Size = UDim2.new(1, 0, 1, 36)
+SettingsShield.Position = UDim2.new(0,0,0,-36)
 SettingsShield.BackgroundTransparency = BG_TRANSPARENCY
-SettingsShield.BackgroundColor3 = Color3.new(51/255, 51/255, 51/255)
+SettingsShield.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255)
 SettingsShield.BorderColor3 = Color3.new(27/255, 42/255, 53/255)
+SettingsShield.BorderSizePixel = 0
 SettingsShield.Active = false
 SettingsShield.Visible = false
 SettingsShield.ZIndex = BASE_Z_INDEX + 2
@@ -221,7 +264,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 	SettingClipFrame.Position = CLOSE_MENU_POS
 	SettingClipFrame.Active = true
 	SettingClipFrame.BackgroundTransparency = BG_TRANSPARENCY
-	SettingClipFrame.BackgroundColor3 = Color3.new(51/255, 51/255, 51/255)
+	SettingClipFrame.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255)
 	SettingClipFrame.BorderSizePixel = 0
 	SettingClipFrame.ZIndex = BASE_Z_INDEX + 3
 	SettingClipFrame.ClipsDescendants = true
@@ -634,7 +677,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 				graphicsLevel.Value = level
 				setGraphicsQualityLevel(level)
 			end
-			
+
 			local function onGraphicsCheckBoxPressed()
 				if IsStudioMode then return end
 				--
@@ -669,7 +712,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 					setGraphicsQualityLevel(graphicsLevel.Value)
 					--
 					if not isNewNotifications then
-						GuiService:SendNotification("Graphics Quality", 
+						GuiService:SendNotification("Graphics Quality",
 							"Increased to ("..tostring(graphicsLevel.Value)..")",
 							"", 2, function()
 						end)
@@ -1190,6 +1233,7 @@ local function showSettingsRootMenu()
 	SettingsShield.Active = true
 	--
 	SettingClipFrame:TweenPosition(SHOW_MENU_POS, Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true)
+	SettingsShowSignal:fire(true)
 end
 
 local function closeSettingsMenu()
@@ -1204,6 +1248,7 @@ local function closeSettingsMenu()
 		IsMenuClosing = false
 		pcall(function() game:GetService("UserInputService").OverrideMouseIconEnabled = false end)
 	end)
+	SettingsShowSignal:fire(false)
 end
 
 local function showHelpMenu()
@@ -1475,3 +1520,18 @@ do
 
 	SettingsMenuFrame.Parent = RobloxGui
 end
+
+local moduleApiTable = {}
+
+function moduleApiTable:ToggleVisibility(visible)
+	if visible then
+		showSettingsRootMenu();
+	else
+		closeSettingsMenu();
+	end
+end
+
+ moduleApiTable.SettingsShowSignal = SettingsShowSignal
+
+return moduleApiTable
+
