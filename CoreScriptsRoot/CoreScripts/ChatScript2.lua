@@ -839,7 +839,11 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			}
 			if userNameButton:IsA('TextButton') then
 				this.ClickedOnPlayerConn = userNameButton.MouseButton1Click:connect(function()
-					SelectPlayerEvent:fire(this.SendingPlayer)
+					if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer == Player and this.ReceivingPlayer then
+						SelectPlayerEvent:fire(this.ReceivingPlayer)
+					else
+						SelectPlayerEvent:fire(this.SendingPlayer)
+					end
 				end)
 			end
 
@@ -2073,7 +2077,7 @@ local function CreateChat()
 					this:CoreGuiChanged(coreGuiType, enabled)
 				end)
 		end)
-		
+
 		if not NON_CORESCRIPT_MODE then
 			this:PrintWelcome()
 		end
