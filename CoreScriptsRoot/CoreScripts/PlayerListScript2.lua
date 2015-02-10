@@ -1,6 +1,6 @@
 --[[
 		// FileName: PlayerListScript.lua
-		// Version 3.1
+		// Version 3.2
 		// Written by: jmargh
 		// Description: Implementation of in game player list and leaderboard
 ]]
@@ -242,16 +242,27 @@ local function getFollowerStatusIcon(followerStatus)
 	end
 end
 
+local function getAdminIcon(player)
+	local userIdStr = tostring(player.userId)
+	if ADMINS[userIdStr] then return nil end
+	--
+	local success, result = pcall(function()
+		return player:IsInGroup(1200769)	-- yields
+	end)
+	if not success then
+		print("PlayerListScript2: getAdminIcon() failed because", result)
+	end
+	--
+	if result then
+		return ADMIN_ICON
+	end
+end
+
 local function getMembershipIcon(player)
 	local userIdStr = tostring(player.userId)
 	local membershipType = player.MembershipType
-	local isAdmin = player:IsInGroup(1200769)	-- yields
-	if isAdmin then
-		if ADMINS[userIdStr] then
-			return ADMINS[userIdStr]
-		else
-			return ADMIN_ICON
-		end
+	if ADMINS[userIdStr] then
+		return ADMINS[userIdStr]
 	elseif ADMINS[userIdStr] then
 		return ADMINS[userIdStr]
 	elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
@@ -620,7 +631,6 @@ local function createEntryFrame(name, sizeYOffset)
 	containerFrame.Position = UDim2.new(0, 0, 0, 0)
 	containerFrame.Size = UDim2.new(1, 0, 0, sizeYOffset)
 	containerFrame.BackgroundTransparency = 1
-	containerFrame.Parent = ScrollList
 
 	local nameFrame = Instance.new('TextButton')
 	nameFrame.Name = "BGFrame"
@@ -1674,6 +1684,19 @@ local function createPlayerEntry(player)
 		currentXOffset = currentXOffset + 18
 	end
 
+	-- need to spawn off for admin badge as IsInGroup function causes a wait while possibly iterating through
+	-- Players. It's possible a player iterator could be invalid during this iteration.
+	spawn(function()
+		local adminIconImage = getAdminIcon(player)
+		if adminIconImage then
+			if not membershipIcon then
+				membershipIcon = createImageIcon(adminIconImage, "MembershipIcon", 1, entryFrame)
+			else
+				membershipIcon.Image = adminIconImage
+			end
+		end
+	end)
+
 	-- check friendship
 	local friendStatus = getFriendStatus(player)
 	local friendshipIconImage = getFriendStatusIcon(friendStatus)
@@ -1751,6 +1774,7 @@ local function insertPlayerEntry(player)
 	table.insert(PlayerEntries, entry)
 	setScrollListSize()
 	updateLeaderstatFrames()
+	entry.Frame.Parent = ScrollList
 
 	player.Changed:connect(function(property)
 		if #TeamEntries > 0 and (property == 'Neutral' or property == 'TeamColor') then
