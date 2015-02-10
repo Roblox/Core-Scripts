@@ -10,6 +10,7 @@ local HttpService = game:GetService('HttpService')
 local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local Players = game:GetService('Players')
 local TeamsService = game:FindService('Teams')
+local RobloxReplicatedStorage = nil	-- NOTE: Can only use in core scripts
 
 local RbxGuiLibrary = nil
 if LoadLibrary then
@@ -27,11 +28,13 @@ local maxFriendSuccess, isMaxFriendsCountEnabled = pcall(function() return setti
 local followersSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("LuaFollowers") end)
 local newNotificationsSuccess, newNotificationsEnabled = pcall(function() return settings():GetFFlag("NewNotificationsScript") end)
 local newSettingsSuccess, newSettingsEnabled = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
+local serverCoreScriptsSuccess, serverCoreScriptsEnabled = pcall(function() return settings():GetFFlag("UseServerCoreScripts") end)
 --
 local IsMaxFriendsCount = maxFriendSuccess and isMaxFriendsCountEnabled
 local IsFollowersEnabled = followersSuccess and isFollowersEnabled
 local IsNewNotifications = newNotificationsSuccess and newNotificationsEnabled
 local IsNewSettings = newSettingsSuccess and newSettingsEnabled
+local IsServerCoreScripts = serverCoreScriptsSuccess and serverCoreScriptsEnabled
 
 --[[ Script Variables ]]--
 local MyPlayerEntry = nil
@@ -56,6 +59,13 @@ local StatEntrySizeX = 60
 
 --[[ Bindables ]]--
 local BinbableFunction_SendNotification = RobloxGui:FindFirstChild('SendNotification')
+
+--[[ Remotes ]]--
+local RemoteEvent_OnNewFollower = nil
+if IsServerCoreScripts then
+	RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
+	RemoteEvent_OnNewFollower = RobloxReplicatedStorage:WaitForChild('OnNewFollower')
+end
 
 local IsPersonalServer = false
 local PersonalServerService = nil
@@ -103,6 +113,12 @@ local ABUSES = {
 	"Bad Username",
 }
 
+local FOLLOWER_STATUS = {
+	FOLLOWER = 0,
+	FOLLOWING = 1,
+	MUTUAL = 2,
+}
+
 local PRIVILEGE_LEVEL = {
 	OWNER = 255,
 	ADMIN = 240,
@@ -126,6 +142,8 @@ local FRIEND_RECEIVED_ICON = 'rbxasset://textures/ui/icon_friendrequestrecieved-
 local FOLLOWER_ICON = 'rbxasset://textures/ui/icon_follower-16.png'
 local FOLLOWING_ICON = 'rbxasset://textures/ui/icon_following-16.png'
 local MUTUAL_FOLLOWING_ICON = 'rbxasset://textures/ui/icon_mutualfollowing-16.png'
+
+local FRIEND_IMAGE = 'http://www.roblox.com/thumbs/avatar.ashx?userId='
 
 --[[ Helper Functions ]]--
 local function clamp(value, min, max)
@@ -154,6 +172,50 @@ local function getFriendStatus(selectedPlayer)
 	end
 end
 
+-- Returns whether followerUserId is following userId
+local function isFollowing(userId, followerUserId)
+	local apiPath = "user/following-exists?userId="
+	local params = userId.."&followerUserId="..followerUserId
+	local success, result = pcall(function()
+		return HttpRbxApiService:GetAsync(apiPath..params, true)
+	end)
+	if not success then
+		print("isFollowing() failed because", result)
+		return false
+	end
+
+	-- can now parse web response
+	result = HttpService:JSONDecode(result)
+	return result["success"] and result["isFollowing"]
+end
+
+local function getFollowerStatus(selectedPlayer)
+	if selectedPlayer == Player then
+		return nil
+	end
+
+	-- ignore guest
+	if selectedPlayer.userId <= 0 then
+		return
+	end
+
+	local myUserId = tostring(Player.userId)
+	local theirUserId = tostring(selectedPlayer.userId)
+
+	local isFollowingMe = isFollowing(myUserId, theirUserId)
+	local isFollowingThem = isFollowing(theirUserId, myUserId)
+
+	if isFollowingMe and isFollowingThem then 	-- mutual
+		return FOLLOWER_STATUS.MUTUAL
+	elseif isFollowingMe then
+		return FOLLOWER_STATUS.FOLLOWER
+	elseif isFollowingThem then
+		return FOLLOWER_STATUS.FOLLOWING
+	else
+		return nil
+	end
+end
+
 local function getFriendStatusIcon(friendStatus)
 	if friendStatus == Enum.FriendStatus.Unknown or friendStatus == Enum.FriendStatus.NotFriend then
 		return nil
@@ -165,6 +227,18 @@ local function getFriendStatusIcon(friendStatus)
 		return FRIEND_RECEIVED_ICON
 	else
 		error("PlayerList: Unknown value for friendStatus: "..tostring(friendStatus))
+	end
+end
+
+local function getFollowerStatusIcon(followerStatus)
+	if followerStatus == FOLLOWER_STATUS.MUTUAL then
+		return MUTUAL_FOLLOWING_ICON
+	elseif followerStatus == FOLLOWER_STATUS.FOLLOWING then
+		return FOLLOWING_ICON
+	elseif followerStatus == FOLLOWER_STATUS.FOLLOWER then
+		return FOLLOWER_ICON
+	else
+		return nil
 	end
 end
 
@@ -775,30 +849,26 @@ local function createPopupFrame(buttons)
 	return frame
 end
 
---[[ Http helper functions for new friends and followers feature ]]--
 -- if userId = nil, then it will get count for local player
 local function getFriendCount(userId)
 	local friendCount = nil
-	local wasSuccess, errorCode = pcall(function()
+	local wasSuccess, result = pcall(function()
 		local str = 'user/get-friendship-count'
 		if userId then
 			str = str..'?userId='..tostring(userId)
 		end
-		friendCount = HttpRbxApiService:GetAsync(str, true)
+		return HttpRbxApiService:GetAsync(str, true)
 	end)
 	if not wasSuccess then
-		print("getFriendCount() failed because", errorCode)
+		print("getFriendCount() failed because", result)
 		return nil
 	end
-	friendCount = HttpService:JSONDecode(friendCount)
-	--
-	for k,v in pairs(friendCount) do
-		if k == 'count' then
-			friendCount = v
-			break
-		end
+	result = HttpService:JSONDecode(result)
+	
+	if result["success"] and result["count"] then
+		friendCount = result["count"]
 	end
-	--
+
 	return friendCount
 end
 
@@ -847,6 +917,113 @@ local function hideFriendReportPopup()
 	ScrollList.ScrollingEnabled = true
 	LastSelectedFrame = nil
 	LastSelectedPlayer = nil
+end
+
+local function updateSocialIcon(newIcon, bgFrame)
+	local socialIcon = bgFrame:FindFirstChild('SocialIcon')
+	local nameFrame = bgFrame:FindFirstChild('PlayerName')
+	local offset = 19
+	if socialIcon then
+		if newIcon then
+			socialIcon.Image = newIcon
+		else
+			if nameFrame then
+				newSize = nameFrame.Size.X.Offset + socialIcon.Size.X.Offset + 2
+				nameFrame.Size = UDim2.new(-0.01, newSize, 0.5, 0)
+				nameFrame.Position = UDim2.new(0.01, offset, 0.245, 0)
+			end
+			socialIcon:Destroy()
+		end
+	elseif newIcon and bgFrame then
+		socialIcon = createImageIcon(newIcon, "SocialIcon", offset, bgFrame)
+		offset = offset + socialIcon.Size.X.Offset + 2
+		if nameFrame then
+			local newSize = bgFrame.Size.X.Offset - offset
+			nameFrame.Size = UDim2.new(-0.01, newSize, 0.5, 0)
+			nameFrame.Position = UDim2.new(0.01, offset, 0.245, 0)
+		end
+	end
+end
+
+local function onFollowerStatusChanged()
+	if not LastSelectedFrame or not LastSelectedPlayer then
+		return
+	end
+	
+	-- don't update icon if already friends
+	local friendStatus = getFriendStatus(LastSelectedPlayer)
+	if friendStatus == Enum.FriendStatus.Friend then
+		return
+	end
+
+	local bgFrame = LastSelectedFrame:FindFirstChild('BGFrame')
+	local followerStatus = getFollowerStatus(LastSelectedPlayer)
+	local newIcon = getFollowerStatusIcon(followerStatus)
+	if bgFrame then
+		updateSocialIcon(newIcon, bgFrame)
+	end
+end
+
+-- Client follows followedUserId
+local function onFollowButtonPressed()
+	if not LastSelectedPlayer then return end
+	--
+	local followedUserId = tostring(LastSelectedPlayer.userId)
+	local apiPath = "user/follow"
+	local params = "followedUserId="..followedUserId
+	local success, result = pcall(function()
+		return HttpRbxApiService:PostAsync(apiPath, params, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+	end)
+	if not success then
+		print("followPlayer() failed because", result)
+		hideFriendReportPopup()
+		return
+	end
+
+	result = HttpService:JSONDecode(result)
+	if result["success"] then
+		sendNotification("You are", "now following "..LastSelectedPlayer.Name, FRIEND_IMAGE..followedUserId.."&x=48&y=48", 5, function() end)
+		if IsServerCoreScripts and RemoteEvent_OnNewFollower then
+			RemoteEvent_OnNewFollower:FireServer(Player, LastSelectedPlayer)
+		end
+		-- now update the social icon
+		onFollowerStatusChanged()
+	end
+	
+	hideFriendReportPopup()
+end
+
+-- TODO: Move this to the notifications script. For now I want to keep it here until the
+-- new notifications system goes live
+if IsServerCoreScripts and RemoteEvent_OnNewFollower then
+	RemoteEvent_OnNewFollower.OnClientEvent:connect(function(followerRbxPlayer)
+		sendNotification("New Follower", followerRbxPlayer.Name.."is now following you!",
+			FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
+	end)
+end
+
+-- Client unfollows followedUserId
+local function onUnfollowButtonPressed()
+	if not LastSelectedPlayer then return end
+	--
+	local apiPath = "user/unfollow"
+	local params = "followedUserId="..tostring(LastSelectedPlayer.userId)
+	local success, result = pcall(function()
+		return HttpRbxApiService:PostAsync(apiPath, params, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+	end)
+	if not success then
+		print("unfollowPlayer() failed because", result)
+		hideFriendReportPopup()
+		return
+	end
+
+	result = HttpService:JSONDecode(result)
+	if result["success"] then
+		onFollowerStatusChanged()
+	end
+
+	hideFriendReportPopup()
+	-- no need to send notification when someone unfollows
 end
 
 local function onFriendButtonPressed()
@@ -991,6 +1168,16 @@ local function showFriendReportPopup(selectedFrame, selectedPlayer)
 			OnPress = onDeclineFriendButonPressed,
 			})
 	end
+	-- following status
+	if IsFollowersEnabled then 		-- FFlag
+		local following = isFollowing(selectedPlayer.userId, Player.userId)
+		local followerText = following and "Unfollow Player" or "Follow Player"
+		table.insert(buttons, {
+			Name = "FollowerButton",
+			Text = followerText,
+			OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
+			})
+	end
 	table.insert(buttons, {
 		Name = "ReportButton",
 		Text = "Report Abuse",
@@ -1057,32 +1244,14 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 	local newIcon = getFriendStatusIcon(newFriendStatus)
 	local frame = entryToUpdate.Frame
 	local bgFrame = frame:FindFirstChild('BGFrame')
-	local friendIcon = nil
-	local nameFrame = nil
 	if bgFrame then
-		friendIcon = bgFrame:FindFirstChild('FriendshipIcon')
-		nameFrame = bgFrame:FindFirstChild('PlayerName')
-	end
-	local offset = 19
-	if friendIcon then
-		if newIcon then
-			friendIcon.Image = newIcon
-		else
-			if nameFrame then
-				newSize = nameFrame.Size.X.Offset + friendIcon.Size.X.Offset + 2
-				nameFrame.Size = UDim2.new(-0.01, newSize, 0.5, 0)
-				nameFrame.Position = UDim2.new(0.01, offset, 0.245, 0)
-			end
-			friendIcon:Destroy()
+		-- no longer friends, but might still be following
+		if IsFollowersEnabled and not newIcon then
+			local followerStatus = getFollowerStatus(otherPlayer)
+			newIcon = getFollowerStatusIcon(followerStatus)
 		end
-	elseif newIcon and bgFrame then
-		friendIcon = createImageIcon(newIcon, "FriendshipIcon", offset, bgFrame)
-		offset = offset + friendIcon.Size.X.Offset + 2
-		if nameFrame then
-			local newSize = bgFrame.Size.X.Offset - offset
-			nameFrame.Size = UDim2.new(-0.01, newSize, 0.5, 0)
-			nameFrame.Position = UDim2.new(0.01, offset, 0.245, 0)
-		end
+
+		updateSocialIcon(newIcon, bgFrame)
 	end
 end
 
@@ -1510,8 +1679,19 @@ local function createPlayerEntry(player)
 	local friendshipIconImage = getFriendStatusIcon(friendStatus)
 	local friendshipIcon = nil
 	if friendshipIconImage then
-		friendshipIcon = createImageIcon(friendshipIconImage, "FriendshipIcon", currentXOffset, entryFrame)
+		friendshipIcon = createImageIcon(friendshipIconImage, "SocialIcon", currentXOffset, entryFrame)
 		currentXOffset = currentXOffset + friendshipIcon.Size.X.Offset + 2
+	end
+
+	-- check follower status, only show if not friends
+	local followerStatus, followerIconImage, followerIcon = nil, nil, nil
+	if IsFollowersEnabled and not friendshipIcon then 		-- FFlag
+		followerStatus = getFollowerStatus(player)
+		followerIconImage = getFollowerStatusIcon(followerStatus)
+		if followerIconImage then
+			followerIcon = createImageIcon(followerIconImage, "SocialIcon", currentXOffset, entryFrame)
+			currentXOffset = currentXOffset + followerIcon.Size.X.Offset + 2
+		end
 	end
 	
 	local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
