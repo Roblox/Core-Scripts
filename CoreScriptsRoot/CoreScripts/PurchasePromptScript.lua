@@ -347,12 +347,28 @@ function showPurchasePrompt()
 	local canPurchase, insufficientFunds, notRightBC, override, descText = canPurchaseItem()	
 
 	if isMarketplaceDown() then
+		print("tried to show purchase, but local purchasing is disabled")
 		cancelPurchase()
 		return
 	end
 
 	if shouldCheckMarketplaceAvailable() then
-		--todo: check if marketplace is up, if not cancelPurchase()
+		local response = nil
+		local success, errorReason = pcall(function() response = game:GetService("HttpRbxApiService"):GetAsync("my/economy-status", false, Enum.ThrottlingPriority.Extreme) end)
+
+		if success then
+			local responseTable = game:GetService("HttpService"):JSONDecode(response)
+			if responseTable["isMarketplaceEnabled"] ~= nil then
+				if responseTable["isMarketplaceEnabled"] == false then
+					print("tried to show purchase, but my/economy-status isMarketplaceEnabled is false")
+					cancelPurchase()
+				end
+			end
+		else
+			print("tried to show purchase, but my/economy-status failed because",errorReason)
+			cancelPurchase()
+			return
+		end
 	end
 
 	if canPurchase then
