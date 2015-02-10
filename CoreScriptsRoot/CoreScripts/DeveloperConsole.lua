@@ -307,7 +307,9 @@ function initializeDeveloperConsole()
 	
 	local flagExists, flagValue = pcall(function () return settings():GetFFlag("ConsoleCodeExecutionEnabled") end)
 	local codeExecutionEnabled = flagExists and flagValue
-	local isCreator = game:GetService("Players").LocalPlayer.userId == game.CreatorId
+	local creatorFlagExists, creatorFlagValue = pcall(function () return settings():GetFFlag("UseCanManageApiToDetermineConsoleAccess") end)
+	local creatorFlagEnabled = creatorFlagExists and creatorFlagValue
+	local isCreator = creatorFlagEnabled or game:GetService("Players").LocalPlayer.userId == game.CreatorId
 	local function shouldShowCommandBar()
 		return codeExecutionEnabled and isCreator
 	end
