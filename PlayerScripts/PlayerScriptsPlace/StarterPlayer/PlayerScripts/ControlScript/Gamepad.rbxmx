@@ -1,0 +1,209 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBX81D785E30EB04226ABAA98BC9A79D8E6">
+		<Properties>
+			<string name="Name">Gamepad</string>
+			<ProtectedString name="Source">--[[
+&#9;// FileName: Gamepad
+&#9;// Written by: jeditkacheff
+&#9;// Description: Implements movement controls for gamepad devices (XBox, PS4, MFi, etc.)
+--]]
+local Players = game:GetService(&apos;Players&apos;)
+local RunService = game:GetService(&apos;RunService&apos;)
+local UserInputService = game:GetService(&apos;UserInputService&apos;)
+local ContextActionService = game:GetService(&apos;ContextActionService&apos;)
+local StarterPlayer = game:GetService(&apos;StarterPlayer&apos;)
+local Settings = UserSettings()
+local GameSettings = Settings.GameSettings
+
+local Gamepad = {}
+
+while not Players.LocalPlayer do
+&#9;wait()
+end
+local LocalPlayer = Players.LocalPlayer
+local CachedHumanoid = nil
+local RenderSteppedCon = nil
+
+--[[ Constants ]]--
+local thumbstickDeadzone = 0.14
+
+--[[ Local Functions ]]--
+local function getHumanoid()
+&#9;local character = LocalPlayer and LocalPlayer.Character
+&#9;if character then
+&#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
+&#9;&#9;&#9;return CachedHumanoid
+&#9;&#9;else
+&#9;&#9;&#9;CachedHumanoid = nil
+&#9;&#9;&#9;for _,child in pairs(character:GetChildren()) do
+&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;&#9;CachedHumanoid = child
+&#9;&#9;&#9;&#9;&#9;return CachedHumanoid
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+end
+
+--[[ Public API ]]--
+function Gamepad:Enable()
+&#9;local forwardValue  = 0
+&#9;local backwardValue = 0
+&#9;local leftValue = 0
+&#9;local rightValue = 0
+&#9;
+&#9;local moveFunc = LocalPlayer.Move
+&#9;local gamepadSupports = UserInputService.GamepadSupports
+&#9;
+&#9;local currMoveVector = Vector3.new(0,0,0)
+&#9;
+&#9;local controlCharacterGamepad1 = function(actionName, inputState, inputObject)
+&#9;&#9;if inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
+&#9;&#9;if inputObject.KeyCode ~= Enum.KeyCode.Thumbstick1 then return end
+&#9;&#9;
+&#9;&#9;if inputObject.Position.magnitude &gt; thumbstickDeadzone then
+&#9;&#9;&#9;currMoveVector = Vector3.new(inputObject.Position.X,0,-inputObject.Position.Y)
+&#9;&#9;&#9;moveFunc(LocalPlayer, currMoveVector, true)
+&#9;&#9;else
+&#9;&#9;&#9;currMoveVector = Vector3.new(0,0,0)
+&#9;&#9;&#9;moveFunc(LocalPlayer, currMoveVector, true)
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local jumpCharacterGamepad1 = function(actionName, inputState, inputObject)&#9;&#9;
+&#9;&#9;if inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
+&#9;&#9;if inputObject.KeyCode ~= Enum.KeyCode.ButtonA then return end
+&#9;&#9;
+&#9;&#9;if inputObject.UserInputState == Enum.UserInputState.End then
+&#9;&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;&#9;if humanoid then
+&#9;&#9;&#9;&#9;humanoid.Jump = true
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local doDpadMoveUpdate = function()
+&#9;&#9;if not gamepadSupports(UserInputService, Enum.UserInputType.Gamepad1, Enum.KeyCode.Thumbstick1) then
+&#9;&#9;&#9;if LocalPlayer and LocalPlayer.Character then
+&#9;&#9;&#9;&#9;currMoveVector = Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue)
+&#9;&#9;&#9;&#9;moveFunc(LocalPlayer, currMoveVector, true)
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+&#9;
+&#9;local moveForwardFunc = function(actionName, inputState, inputObject)
+&#9;&#9;if inputState == Enum.UserInputState.End then
+&#9;&#9;&#9;forwardValue = -1
+&#9;&#9;elseif inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;forwardValue = 0
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;doDpadMoveUpdate()
+&#9;end
+&#9;
+&#9;local moveBackwardFunc = function(actionName, inputState, inputObject)&#9;
+&#9;&#9;if inputState == Enum.UserInputState.End then
+&#9;&#9;&#9;backwardValue = 1
+&#9;&#9;elseif inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;backwardValue = 0
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;doDpadMoveUpdate()
+&#9;end
+&#9;
+&#9;local moveLeftFunc = function(actionName, inputState, inputObject)&#9;
+&#9;&#9;if inputState == Enum.UserInputState.End then
+&#9;&#9;&#9;leftValue = -1
+&#9;&#9;elseif inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;leftValue = 0
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;doDpadMoveUpdate()
+&#9;end
+&#9;
+&#9;local moveRightFunc = function(actionName, inputState, inputObject)&#9;
+&#9;&#9;if inputState == Enum.UserInputState.End then
+&#9;&#9;&#9;rightValue = 1
+&#9;&#9;elseif inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;rightValue = 0
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;doDpadMoveUpdate()
+&#9;end
+&#9;
+&#9;local activateToolFunc = function(actionName, inputState, inputObject)
+&#9;&#9;if inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
+&#9;&#9;
+&#9;&#9;if inputState == Enum.UserInputState.End then
+&#9;&#9;&#9;local character = LocalPlayer and LocalPlayer.Character
+&#9;&#9;&#9;if character then
+&#9;&#9;&#9;&#9;local children = character:GetChildren()
+&#9;&#9;&#9;&#9;for i = 1, #children do
+&#9;&#9;&#9;&#9;&#9;if children[i]:IsA(&quot;Tool&quot;) then
+&#9;&#9;&#9;&#9;&#9;&#9;children[i]:Activate()
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+
+&#9;ContextActionService:BindActionToInputTypes(&quot;JumpButton&quot;,jumpCharacterGamepad1, false, Enum.KeyCode.ButtonA)
+&#9;ContextActionService:BindActionToInputTypes(&quot;MoveThumbstick&quot;,controlCharacterGamepad1, false, Enum.KeyCode.Thumbstick1)
+&#9;
+&#9;ContextActionService:BindActionToInputTypes(&quot;forwardDpad&quot;, moveForwardFunc, false, Enum.KeyCode.DPadUp)
+&#9;ContextActionService:BindActionToInputTypes(&quot;backwardDpad&quot;, moveBackwardFunc, false, Enum.KeyCode.DPadDown)
+&#9;ContextActionService:BindActionToInputTypes(&quot;leftDpad&quot;, moveLeftFunc, false, Enum.KeyCode.DPadLeft)
+&#9;ContextActionService:BindActionToInputTypes(&quot;rightDpad&quot;, moveRightFunc, false, Enum.KeyCode.DPadRight)
+&#9;
+&#9;ContextActionService:BindActionToInputTypes(&quot;ActivateTool&quot;, activateToolFunc, false, Enum.KeyCode.ButtonR1)
+&#9;
+&#9;local shouldUpdate = UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1)
+&#9;
+&#9;UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
+&#9;&#9;if gamepadEnum ~= Enum.UserInputType.Gamepad1 then return end
+&#9;&#9;
+&#9;&#9;shouldUpdate = true
+&#9;end)
+
+&#9;UserInputService.GamepadConnected:connect(function(gamepadEnum)
+&#9;&#9;if gamepadEnum ~= Enum.UserInputType.Gamepad1 then return end
+&#9;&#9;
+&#9;&#9;shouldUpdate = false
+&#9;&#9;moveFunc(LocalPlayer, Vector3.new(0,0,0), true)
+&#9;end)&#9;
+&#9;
+&#9;RenderSteppedCon = RunService.RenderStepped:connect(function()
+&#9;&#9;if shouldUpdate then
+&#9;&#9;&#9;moveFunc(LocalPlayer, currMoveVector, true)
+&#9;&#9;end
+&#9;end)
+end
+
+function Gamepad:Disable()
+&#9;
+&#9;ContextActionService:UnbindAction(&quot;forwardDpad&quot;)
+&#9;ContextActionService:UnbindAction(&quot;backwardDpad&quot;)
+&#9;ContextActionService:UnbindAction(&quot;leftDpad&quot;)
+&#9;ContextActionService:UnbindAction(&quot;rightDpad&quot;)
+&#9;
+&#9;ContextActionService:UnbindAction(&quot;MoveThumbstick&quot;)
+&#9;ContextActionService:UnbindAction(&quot;JumpButton&quot;)
+&#9;ContextActionService:UnbindAction(&quot;ActivateTool&quot;)
+&#9;
+&#9;if RenderSteppedCon then
+&#9;&#9;RenderSteppedCon:disconnect()
+&#9;&#9;RenderSteppedCon = nil
+&#9;end
+&#9;
+&#9;if LocalPlayer then
+&#9;&#9;LocalPlayer:Move(Vector3.new(0,0,0), true)
+&#9;end
+end
+
+return Gamepad
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

@@ -413,6 +413,8 @@ local function CreateCamera()
 &#9;&#9;&#9;&#9;OnMouseMoved(input, processed)
 &#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.MouseWheel then
 &#9;&#9;&#9;&#9;OnMouseWheel(input, processed)
+&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
+&#9;&#9;&#9;&#9;this.GamepadPanningCamera = (Vector2.new(input.Position.X, -input.Position.Y))
 &#9;&#9;&#9;end
 &#9;&#9;end)
 &#9;&#9;
@@ -421,6 +423,14 @@ local function CreateCamera()
 &#9;&#9;&#9;&#9;OnTouchEnded(input, processed)
 &#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
 &#9;&#9;&#9;&#9;OnMouse2Up(input, processed)
+&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.Gamepad1 then
+&#9;&#9;&#9;&#9;if input.KeyCode == Enum.KeyCode.ButtonR3 then
+&#9;&#9;&#9;&#9;&#9;if this.currentZoom &gt; 0.5 then
+&#9;&#9;&#9;&#9;&#9;&#9;this:ZoomCamera(0)
+&#9;&#9;&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;&#9;&#9;this:ZoomCamera(10)
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end
 &#9;&#9;end)
 &#9;&#9;
@@ -428,6 +438,10 @@ local function CreateCamera()
 &#9;&#9;UserInputService.InputBegan:connect(function(input, processed)
 &#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Keyboard then
 &#9;&#9;&#9;&#9;OnKeyDown(input, processed)
+&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.Gamepad1 then
+&#9;&#9;&#9;&#9;if input.KeyCode == Enum.KeyCode.Thumbstick2 then
+&#9;&#9;&#9;&#9;&#9;this.GamepadPanningCamera = Vector2.new(0,0)
+&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end
 &#9;&#9;end)
 &#9;&#9;

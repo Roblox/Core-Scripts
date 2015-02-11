@@ -70,6 +70,8 @@ else
 &#9;ControlModules.Keyboard = require(script:WaitForChild(&apos;KeyboardMovement&apos;))
 end
 
+ControlModules.Gamepad = require(script:WaitForChild(&apos;Gamepad&apos;))
+
 --[[ Initialization/Setup ]]--
 local function createTouchGuiContainer()
 &#9;if TouchGui then TouchGui:Destroy() end
@@ -277,6 +279,40 @@ while game.ContentProvider.RequestQueueSize &gt; 0 do
 &#9;wait()
 end
 onControlsChanged()
+
+-- why do I need a wait here?!?!?!? Sometimes touch controls don&apos;t disappear without this
+wait()
+if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
+&#9;if CurrentControlModule then
+&#9;&#9;CurrentControlModule:Disable()
+&#9;end
+&#9;if isJumpEnabled then TouchJumpModule:Disable() end
+
+&#9;ControlModules.Gamepad:Enable()
+end
+
+UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
+&#9;if gamepadEnum ~= Enum.UserInputType.Gamepad1 then return end
+&#9;
+&#9;if CurrentControlModule then
+&#9;&#9;&#9;CurrentControlModule:Enable()
+&#9;end
+&#9;if isJumpEnabled then TouchJumpModule:Enable() end
+&#9;
+&#9;ControlModules.Gamepad:Disable()
+end)
+
+UserInputService.GamepadConnected:connect(function(gamepadEnum)
+&#9;if gamepadEnum ~= Enum.UserInputType.Gamepad1 then return end
+&#9;
+&#9;if CurrentControlModule then
+&#9;&#9;CurrentControlModule:Disable()
+&#9;end
+&#9;if isJumpEnabled then TouchJumpModule:Disable() end
+&#9;
+&#9;ControlModules.Gamepad:Enable()
+end)
+
 </ProtectedString>
 		</Properties>
 	</Item>

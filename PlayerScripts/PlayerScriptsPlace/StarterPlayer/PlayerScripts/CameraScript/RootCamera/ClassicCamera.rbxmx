@@ -40,6 +40,15 @@ local function CreateClassicCamera()
 &#9;local tweenSpeed = math.rad(0)
 &#9;local tweenMaxSpeed = math.rad(250)
 &#9;
+&#9;local lastThumbstickRotate = nil
+&#9;local numOfSeconds = 0.7
+&#9;local currentSpeed = 0
+&#9;local maxSpeed = 0.1
+&#9;local thumbstickSensitivity = 1
+&#9;local lastThumbstickPos = Vector2.new(0,0)
+&#9;local ySensitivity = 0.8
+&#9;local lastVelocity = nil
+&#9;
 &#9;local lastUpdate = tick()
 &#9;function module:Update()
 &#9;&#9;local now = tick()
@@ -57,11 +66,53 @@ local function CreateClassicCamera()
 &#9;&#9;&#9;-- Cap out the delta to 0.5 so we don&apos;t get some crazy things when we re-resume from
 &#9;&#9;&#9;local delta = math.min(0.5, now - lastUpdate)
 &#9;&#9;&#9;local angle = self.TurningLeft and -120 or 0
-&#9;&#9;&#9;angle = angle + (self.TurningRight and 120 or 0)&#9;&#9;&#9;
+&#9;&#9;&#9;angle = angle + (self.TurningRight and 120 or 0)&#9;
+
+&#9;&#9;&#9;local gamepadPan = self.GamepadPanningCamera&#9;
+&#9;&#9;&#9;if gamepadPan then
+&#9;&#9;&#9;&#9;local currentTime = tick()
+
+&#9;&#9;&#9;&#9;if gamepadPan.X ~= 0 or gamepadPan.Y ~= 0 then
+&#9;&#9;&#9;&#9;&#9;userPanningTheCamera = true
+&#9;&#9;&#9;&#9;elseif gamepadPan == Vector2.new(0,0) then
+&#9;&#9;&#9;&#9;&#9;lastThumbstickRotate = nil
+&#9;&#9;&#9;&#9;&#9;if lastThumbstickPos == Vector2.new(0,0) then
+&#9;&#9;&#9;&#9;&#9;&#9;currentSpeed = 0
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;if lastThumbstickRotate then
+&#9;&#9;&#9;&#9;&#9;local elapsedTime = (currentTime - lastThumbstickRotate) * 10
+&#9;&#9;&#9;&#9;&#9;currentSpeed = currentSpeed + (maxSpeed * ((elapsedTime*elapsedTime)/numOfSeconds))
+&#9;&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;if currentSpeed &gt; maxSpeed then currentSpeed = maxSpeed end
+&#9;&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;if lastVelocity then
+&#9;&#9;&#9;&#9;&#9;&#9;local velocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
+&#9;&#9;&#9;&#9;&#9;&#9;local velocityDelta = (velocity - lastVelocity)
+&#9;&#9;&#9;&#9;&#9;&#9;local velocityDeltaMag = velocityDelta.magnitude
+&#9;&#9;&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;&#9;if velocityDeltaMag &gt; 12 then
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;currentSpeed = currentSpeed * (20/velocityDeltaMag)
+&#9;&#9;&#9;&#9;&#9;&#9;&#9;if currentSpeed &gt; maxSpeed then currentSpeed = maxSpeed end
+&#9;&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;local finalConstant = thumbstickSensitivity * currentSpeed
+&#9;&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector2.new( gamepadPan.X * finalConstant, gamepadPan.Y * finalConstant * ySensitivity))
+&#9;&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;lastVelocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;lastThumbstickPos = gamepadPan
+&#9;&#9;&#9;&#9;lastThumbstickRotate = currentTime
+&#9;&#9;&#9;end&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;
 &#9;&#9;&#9;if angle ~= 0 then
 &#9;&#9;&#9;&#9;userPanningTheCamera = true
 &#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector2.new(math.rad(angle * delta), 0))
-&#9;&#9;&#9; end
+&#9;&#9;&#9;end
 &#9;&#9;end
 
 &#9;&#9;-- Reset tween speed if user is panning
