@@ -1801,7 +1801,7 @@ end
 --[[ Team Functions ]]--
 local function onTeamAdded(team)
 	for i = 1, #TeamEntries do
-		if team.TeamColor == team.TeamColor then
+		if TeamEntries[i].Team.TeamColor == team.TeamColor then
 			TeamEntries[i].Frame:Destroy()
 			table.remove(TeamEntries, i)
 			break
@@ -1818,6 +1818,7 @@ local function onTeamAdded(team)
 	setTeamEntryPositions()
 	updateLeaderstatFrames()
 	setScrollListSize()
+	entry.Frame.Parent = ScrollList
 end
 
 local function onTeamRemoved(removedTeam)
