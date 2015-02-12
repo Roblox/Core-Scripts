@@ -1761,6 +1761,7 @@ local function createNeutralTeam()
 		team.Name = 'Neutral'
 		team.TeamColor = BrickColor.new('White')
 		NeutralTeam = createTeamEntry(team)
+		NeutralTeam.Frame.Parent = ScrollList
 	end
 end
 
