@@ -44,7 +44,7 @@ local function CreateCamera()
 &#9;local this = {}
 &#9;
 &#9;this.ShiftLock = false
-&#9;local pinchZoomSpeed = 20
+&#9;this.Sensitivity = 1
 &#9;local isFirstPerson = false
 
 &#9;function this:GetShiftLock()
@@ -335,6 +335,9 @@ local function CreateCamera()
 &#9;local function OnMouseMoved(input, processed)
 &#9;&#9;if startPos and lastPos and panBeginLook then
 &#9;&#9;&#9;local currPos = lastPos + input.Delta
+&#9;&#9;&#9;if this:IsInFirstPerson() then
+&#9;&#9;&#9;&#9;currPos = lastPos + input.Delta * this.Sensitivity
+&#9;&#9;&#9;end
 &#9;&#9;&#9;local totalTrans = currPos - startPos
 &#9;&#9;&#9;lastPos = currPos
 &#9;&#9;&#9;if this.PanEnabled then
@@ -343,7 +346,7 @@ local function CreateCamera()
 &#9;&#9;&#9;end
 &#9;&#9;elseif this:IsInFirstPerson() or this:GetShiftLock() then
 &#9;&#9;&#9;if this.PanEnabled then
-&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), this:ScreenTranslationToAngle(input.Delta))
+&#9;&#9;&#9;&#9;this:RotateCamera(this:GetCameraLook(), this:ScreenTranslationToAngle(input.Delta * this.Sensitivity))
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;end
