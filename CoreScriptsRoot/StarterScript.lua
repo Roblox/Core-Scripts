@@ -26,8 +26,14 @@ else
 	end
 end
 
--- MainBotChatScript
-scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript", screenGui)
+-- MainBotChatScript (the Lua part of Dialogs)
+local useNewDialogLook = false
+pcall(function() useNewDialogLook = settings():GetFFlag("UseNewBubbleSkin") end)
+if useNewDialogLook then
+	scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", screenGui)
+else
+	scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript", screenGui)
+end
 
 -- Developer Console Script
 scriptContext:AddCoreScriptLocal("CoreScripts/DeveloperConsole", screenGui)
@@ -74,9 +80,7 @@ end
 do -- Backpack!
 	local useNewBackpack = false
 	
-	local success, errorMsg = pcall(function()
-		useNewBackpack = settings():GetFFlag("NewBackpackScript")
-	end)
+	pcall(function() useNewBackpack = settings():GetFFlag("NewBackpackScript") end)
 	
 	if useNewBackpack then
 		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScript", screenGui)
