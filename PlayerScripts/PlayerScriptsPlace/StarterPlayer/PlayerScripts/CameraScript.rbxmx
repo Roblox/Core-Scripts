@@ -6,8 +6,7 @@
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">CameraScript</string>
-			<ProtectedString name="Source">local RunService = game:GetService(&apos;RunService&apos;)
-local UserInputService = game:GetService(&apos;UserInputService&apos;)
+			<ProtectedString name="Source">local UserInputService = game:GetService(&apos;UserInputService&apos;)
 local PlayersService = game:GetService(&apos;Players&apos;)
 
 -- Issue with play solo? (F6)
@@ -30,7 +29,7 @@ local EnabledCamera = nil
 local EnabledOcclusion = nil
 
 local currentCameraConn = nil
-local renderSteppedConn = nil
+local updateConn = nil
 
 local CachedParts = {}
 local TransparencyDirty = true
@@ -176,10 +175,10 @@ local function OnCameraMovementModeChange(newCameraMode)
 &#9;&#9;EnabledOcclusion = false
 &#9;end
 &#9;
-&#9;if renderSteppedConn then
-&#9;&#9;renderSteppedConn:disconnect()
+&#9;if updateConn then
+&#9;&#9;updateConn:disconnect()
 &#9;end
-&#9;renderSteppedConn = RunService.RenderStepped:connect(Update)
+&#9;updateConn = player:GetMouse().Move:connect(Update)
 end
 
 local function OnNewCamera()
@@ -282,10 +281,10 @@ local function OnPlayerAdded(player)
 &#9;&#9;OnCameraMovementModeChange(getCurrentCameraMode())
 &#9;end)
 &#9;
-&#9;if renderSteppedConn then
-&#9;&#9;renderSteppedConn:disconnect()
+&#9;if updateConn then
+&#9;&#9;updateConn:disconnect()
 &#9;end
-&#9;renderSteppedConn = RunService.RenderStepped:connect(Update)
+&#9;updateConn = player:GetMouse().Move:connect(Update)
 &#9;
 &#9;OnNewCamera()
 &#9;OnCameraMovementModeChange(getCurrentCameraMode())&#9;
