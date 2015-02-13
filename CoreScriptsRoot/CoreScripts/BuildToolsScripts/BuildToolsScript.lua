@@ -10,7 +10,6 @@ if BaseUrl:find("www.roblox.com") or BaseUrl:find("gametest1") then
     DeleteToolID = 73089190
     PartSelectionID = 73089166
     CloneToolID = 73089204
-    RecentPartToolID = 73089229
     RotateToolID = 73089214
     ConfigToolID = 73089239
     WiringToolID = 73089259
@@ -19,7 +18,6 @@ elseif BaseUrl:find("gametest2") then
     DeleteToolID = 70353317
     PartSelectionID = 70353315
     CloneToolID = 70353314
-    RecentPartToolID = 70353316
     RotateToolID = 70353318
     ConfigToolID = 70353319
     WiringToolID = 70353320
@@ -177,7 +175,6 @@ function loadBuildTools()
 	giveAssetId(DeleteToolID)
 	giveAssetId(CloneToolID)
 	giveAssetId(RotateToolID)
-	giveAssetId(RecentPartToolID)
 	giveAssetId(WiringToolID)
 	giveAssetId(ConfigToolID)
 	
