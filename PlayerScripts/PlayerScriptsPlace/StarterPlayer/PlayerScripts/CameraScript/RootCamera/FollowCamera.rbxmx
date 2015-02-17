@@ -47,6 +47,11 @@ local function CreateFollowCamera()
 &#9;&#9;local userPanningTheCamera = (self.UserPanningTheCamera == true)
 &#9;&#9;local camera = &#9;workspace.CurrentCamera
 &#9;&#9;local player = PlayersService.LocalPlayer
+&#9;&#9;local humanoid = self:GetHumanoid()
+&#9;&#9;local cameraSubject = camera and camera.CameraSubject
+&#9;&#9;local isClimbing = humanoid and humanoid:GetState() == Enum.HumanoidStateType.Climbing
+&#9;&#9;local isInVehicle = cameraSubject and cameraSubject:IsA(&apos;VehicleSeat&apos;)
+&#9;&#9;local isOnASkateboard = cameraSubject and cameraSubject:IsA(&apos;SkateboardPlatform&apos;)
 
 &#9;&#9;if lastUpdate == nil or now - lastUpdate &gt; 1 then
 &#9;&#9;&#9;module:ResetCameraLook()
@@ -56,8 +61,11 @@ local function CreateFollowCamera()
 &#9;&#9;if lastUpdate then
 &#9;&#9;&#9;-- Cap out the delta to 0.5 so we don&apos;t get some crazy things when we re-resume from
 &#9;&#9;&#9;local delta = math.min(0.5, now - lastUpdate)
-&#9;&#9;&#9;local angle = self.TurningLeft and -120 or 0
-&#9;&#9;&#9;angle = angle + (self.TurningRight and 120 or 0)
+&#9;&#9;&#9;local angle = 0
+&#9;&#9;&#9;if not (isInVehicle or isOnASkateboard) then
+&#9;&#9;&#9;&#9;angle = angle + (self.TurningLeft and -120 or 0)
+&#9;&#9;&#9;&#9;angle = angle + (self.TurningRight and 120 or 0)
+&#9;&#9;&#9;end
 &#9;&#9;&#9;if angle ~= 0 then
 &#9;&#9;&#9;&#9;userPanningTheCamera = true
 &#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector2.new(math.rad(angle * delta), 0))
@@ -85,11 +93,6 @@ local function CreateFollowCamera()
 &#9;&#9;&#9;&#9;zoom = math.max(zoom, 5)
 &#9;&#9;&#9;else
 &#9;&#9;&#9;&#9;if self.LastCameraTransform and not userPanningTheCamera then
-&#9;&#9;&#9;&#9;&#9;local humanoid = self:GetHumanoid()
-&#9;&#9;&#9;&#9;&#9;local cameraSubject = camera and camera.CameraSubject
-&#9;&#9;&#9;&#9;&#9;local isClimbing = humanoid and humanoid:GetState() == Enum.HumanoidStateType.Climbing
-&#9;&#9;&#9;&#9;&#9;local isInVehicle = cameraSubject and cameraSubject:IsA(&apos;VehicleSeat&apos;)
-&#9;&#9;&#9;&#9;&#9;local isOnASkateboard = cameraSubject and cameraSubject:IsA(&apos;SkateboardPlatform&apos;)
 &#9;&#9;&#9;&#9;&#9;if (isClimbing or isInVehicle or isOnASkateboard) and lastUpdate and humanoid and humanoid.Torso then
 &#9;&#9;&#9;&#9;&#9;&#9;local forwardVector = humanoid.Torso.CFrame.lookVector
 &#9;&#9;&#9;&#9;&#9;&#9;if isOnASkateboard then
