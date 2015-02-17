@@ -26,6 +26,7 @@ local doNativePurchasing = true
 local currentProductInfo, currentAssetId, currentCurrencyType, currentCurrencyAmount, currentEquipOnPurchase, currentProductId, currentServerResponseTable, thirdPartyProductName
 local checkingPlayerFunds = false 
 local purchasingConsumable = false
+local isFailedNativePurchase = false
 
 -- gui variables
 local currentlyPrompting = false
@@ -126,6 +127,7 @@ function removeCurrentPurchaseInfo()
 	currentProductId = nil
 	currentProductInfo = nil
 	currentServerResponseTable = nil
+	isFailedNativePurchase = false
 
 	checkingPlayerFunds = false
 end
@@ -226,6 +228,9 @@ end
 function getClosestRobuxProductToBuyItem(productAmount, playerBalanceInRobux)
 	local amountNeededToBuy = productAmount - playerBalanceInRobux
 	local amountToBuy, productName = getMinimumProductNeededForPurchase(amountNeededToBuy)
+	if not amountToBuy then
+		return
+	end
 	local remainderAfterPurchase = amountToBuy - productAmount
 
 	return amountToBuy, remainderAfterPurchase, productName
@@ -258,13 +263,18 @@ function updatePurchasePromptData(insufficientFunds)
 			local amountToBuy, remainderAfterPurchase, productName = getClosestRobuxProductToBuyItem(currentCurrencyAmount, playerBalance["robux"])
 			thirdPartyProductName = productName
 
-			newItemDescription = string.gsub( purchaseText,"itemName", tostring(currentProductInfo["Name"]))
-			newItemDescription = string.gsub( newItemDescription,"assetType", tostring(assetTypeToString(currentProductInfo["AssetTypeId"])) )
-		    newItemDescription = string.gsub( newItemDescription,"robuxToBuyAmount", tostring(amountToBuy))
+			if not amountToBuy then
+				newItemDescription = "This item cost more ROBUX than you can purchase. To purchase more ROBUX, please visit www.roblox.com"
+				isFailedNativePurchase = true
+			else
+				newItemDescription = string.gsub( purchaseText,"itemName", tostring(currentProductInfo["Name"]))
+				newItemDescription = string.gsub( newItemDescription,"assetType", tostring(assetTypeToString(currentProductInfo["AssetTypeId"])) )
+			    newItemDescription = string.gsub( newItemDescription,"robuxToBuyAmount", tostring(amountToBuy))
 
-		    if remainderAfterPurchase > 0 then
-				newItemDescription = newItemDescription .. " " .. string.gsub( productPurchaseWithMoreRobuxRemainderText,"purchaseRemainder", tostring(remainderAfterPurchase))
-		    end
+			    if remainderAfterPurchase and remainderAfterPurchase > 0 then
+					newItemDescription = newItemDescription .. " " .. string.gsub( productPurchaseWithMoreRobuxRemainderText,"purchaseRemainder", tostring(remainderAfterPurchase))
+			    end
+			end
 		end
 		setHeaderText(buyHeaderText)
 	else
@@ -385,7 +395,9 @@ function showPurchasePrompt()
 						purchaseDialog.Visible = true
 
 						if not currentlyPurchasing then
-							if isFreeItem() then
+							if canUseNewRobuxToProductFlow() and isFailedNativePurchase then
+								setButtonsVisible(purchaseDialog.BodyFrame.OkButton)
+							elseif isFreeItem() then
 								setButtonsVisible(purchaseDialog.BodyFrame.FreeButton, purchaseDialog.BodyFrame.CancelButton)
 							elseif notRightBC then
 								setButtonsVisible(purchaseDialog.BodyFrame.BuyBCButton, purchaseDialog.BodyFrame.CancelButton)
