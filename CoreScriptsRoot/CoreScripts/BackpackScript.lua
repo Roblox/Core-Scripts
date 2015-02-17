@@ -1,5 +1,13 @@
--- Backpack Version 4.16
+-- Backpack Version 4.17
 -- OnlyTwentyCharacters
+
+-------------------
+--| Exposed API |--
+-------------------
+
+local BackpackScript = {}
+BackpackScript.OpenClose = nil -- Function to toggle open/close
+BackpackScript.StateChanged = Instance.new('BindableEvent') -- Fires after any open/close, passes IsNowOpen
 
 ---------------------
 --| Configurables |--
@@ -902,30 +910,21 @@ ScrollingFrame.Position = UDim2.new(0, 0, 0, INVENTORY_HEADER_SIZE)
 ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 ScrollingFrame.Parent = InventoryFrame
 
-do -- Make the Inventory expand/collapse arrow
-	local arrowFrame = NewGui('Frame', 'Arrow')
-	arrowFrame.BackgroundTransparency = BACKGROUND_FADE
-	arrowFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE / 2)
-	local hotbarBottom = HotbarFrame.Position.Y.Offset + HotbarFrame.Size.Y.Offset
-	arrowFrame.Position = UDim2.new(0.5, -arrowFrame.Size.X.Offset / 2, 1, hotbarBottom - arrowFrame.Size.Y.Offset)
+do -- Make the Inventory expand/collapse arrow (unless TopBar)
+	local arrowFrame, arrowIcon, clickArea = nil, nil, nil
+	local collapsed, closed, opened = nil, nil, nil
+	local topBarEnabled = false
 	
-	local arrowIcon = NewGui('ImageLabel', 'Icon')
-	arrowIcon.Image = ARROW_IMAGE_OPEN
-	arrowIcon.Size = ARROW_SIZE
-	arrowIcon.Position = UDim2.new(0.5, -arrowIcon.Size.X.Offset / 2, 0.5, -arrowIcon.Size.Y.Offset / 2)
-	arrowIcon.Parent = arrowFrame
+	pcall(function() topBarEnabled = settings():GetFFlag("UseInGameTopBar") end)
 	
-	local collapsed = arrowFrame.Position
-	local closed = collapsed + UDim2.new(0, 0, 0, -HotbarFrame.Size.Y.Offset)
-	local opened = closed + UDim2.new(0, 0, 0, -InventoryFrame.Size.Y.Offset)
-	
-	local clickArea = NewGui('TextButton', 'GimmieYerClicks')
 	local function openClose()
 		if not next(Dragging) then -- Only continue if nothing is being dragged
 			InventoryFrame.Visible = not InventoryFrame.Visible
 			local nowOpen = InventoryFrame.Visible
-			arrowIcon.Image = (nowOpen) and ARROW_IMAGE_CLOSE or ARROW_IMAGE_OPEN
-			clickArea.Modal = nowOpen -- Allows free mouse movement even in first person
+			if arrowIcon and clickArea then
+				arrowIcon.Image = (nowOpen) and ARROW_IMAGE_CLOSE or ARROW_IMAGE_OPEN
+				clickArea.Modal = nowOpen -- Allows free mouse movement even in first person
+			end
 			AdjustHotbarFrames()
 			UpdateArrowFrame()
 			HotbarFrame.Active = not HotbarFrame.Active
@@ -936,17 +935,41 @@ do -- Make the Inventory expand/collapse arrow
 				ResetSearch()
 			end
 		end
+		BackpackScript.StateChanged:Fire(InventoryFrame.Visible)
 	end
-	clickArea.MouseButton1Click:connect(openClose)
-	clickArea.Parent = arrowFrame
 	HotkeyFns[ARROW_HOTKEY] = openClose
+	BackpackScript.OpenClose = openClose -- Exposed
+	
+	if not topBarEnabled then
+		arrowFrame = NewGui('Frame', 'Arrow')
+		arrowFrame.BackgroundTransparency = BACKGROUND_FADE
+		arrowFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE / 2)
+		local hotbarBottom = HotbarFrame.Position.Y.Offset + HotbarFrame.Size.Y.Offset
+		arrowFrame.Position = UDim2.new(0.5, -arrowFrame.Size.X.Offset / 2, 1, hotbarBottom - arrowFrame.Size.Y.Offset)
+		
+		arrowIcon = NewGui('ImageLabel', 'Icon')
+		arrowIcon.Image = ARROW_IMAGE_OPEN
+		arrowIcon.Size = ARROW_SIZE
+		arrowIcon.Position = UDim2.new(0.5, -arrowIcon.Size.X.Offset / 2, 0.5, -arrowIcon.Size.Y.Offset / 2)
+		arrowIcon.Parent = arrowFrame
+		
+		clickArea = NewGui('TextButton', 'GimmieYerClicks')
+		clickArea.MouseButton1Click:connect(openClose)
+		clickArea.Parent = arrowFrame
+		
+		collapsed = arrowFrame.Position
+		closed = collapsed + UDim2.new(0, 0, 0, -HotbarFrame.Size.Y.Offset)
+		opened = closed + UDim2.new(0, 0, 0, -InventoryFrame.Size.Y.Offset)
+		
+		arrowFrame.Parent = MainFrame
+	end
 	
 	-- Define global function
 	UpdateArrowFrame = function()
-		arrowFrame.Position = (InventoryFrame.Visible) and opened or ((FullHotbarSlots == 0) and collapsed or closed)
+		if arrowFrame then
+			arrowFrame.Position = (InventoryFrame.Visible) and opened or ((FullHotbarSlots == 0) and collapsed or closed)
+		end
 	end
-	
-	arrowFrame.Parent = MainFrame
 end
 
 -- Now that we're done building the GUI, we connect to all the major events
@@ -993,3 +1016,5 @@ end
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
 local backpackType = Enum.CoreGuiType.Backpack
 OnCoreGuiChanged(backpackType, StarterGui:GetCoreGuiEnabled(backpackType))
+
+return BackpackScript
