@@ -56,7 +56,14 @@ else
 	scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript", screenGui)
 end
 -- Purchase Prompt Script
-scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript", screenGui)
+local newPurchaseSuccess, newPurchaseEnabled = pcall(function() return settings():GetFFlag("NewPurchaseScript") end)
+local isNewPurchaseScript = newPurchaseSuccess and newPurchaseEnabled
+isNewPurchaseScript = true
+if isNewPurchaseScript then
+	scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", screenGui)
+else
+	scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript", screenGui)
+end
 -- Health Script
 scriptContext:AddCoreScriptLocal("CoreScripts/HealthScript", screenGui)
 
