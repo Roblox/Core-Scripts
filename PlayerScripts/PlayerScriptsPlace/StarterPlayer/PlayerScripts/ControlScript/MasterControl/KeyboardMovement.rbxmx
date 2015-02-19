@@ -4,24 +4,24 @@
 	<Item class="ModuleScript" referent="RBX9278F073EC5D4621A8A3894BD1752BB5">
 		<Properties>
 			<string name="Name">KeyboardMovement</string>
-			<ProtectedString name="Source">--[[
-&#9;// FileName: ComputerMovementKeyboardMovement
-&#9;// Version 1.0
-&#9;// Written by: jeditkacheff/jmargh
-&#9;// Description: Implements movement controls for keyboard devices
+			<ProtectedString name="Source"><![CDATA[--[[
+	// FileName: ComputerMovementKeyboardMovement
+	// Version 1.0
+	// Written by: jeditkacheff/jmargh
+	// Description: Implements movement controls for keyboard devices
 --]]
-local Players = game:GetService(&apos;Players&apos;)
-local RunService = game:GetService(&apos;RunService&apos;)
-local UserInputService = game:GetService(&apos;UserInputService&apos;)
-local ContextActionService = game:GetService(&apos;ContextActionService&apos;)
-local StarterPlayer = game:GetService(&apos;StarterPlayer&apos;)
+local Players = game:GetService('Players')
+local RunService = game:GetService('RunService')
+local UserInputService = game:GetService('UserInputService')
+local ContextActionService = game:GetService('ContextActionService')
+local StarterPlayer = game:GetService('StarterPlayer')
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
 local KeyboardMovement = {}
 
 while not Players.LocalPlayer do
-&#9;wait()
+	wait()
 end
 local LocalPlayer = Players.LocalPlayer
 local CachedHumanoid = nil
@@ -33,156 +33,156 @@ local currentMoveVector = Vector3.new(0,0,0)
 
 --[[ Local Functions ]]--
 local function getHumanoid()
-&#9;local character = LocalPlayer and LocalPlayer.Character
-&#9;if character then
-&#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
-&#9;&#9;&#9;return CachedHumanoid
-&#9;&#9;else
-&#9;&#9;&#9;CachedHumanoid = nil
-&#9;&#9;&#9;for _,child in pairs(character:GetChildren()) do
-&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
-&#9;&#9;&#9;&#9;&#9;CachedHumanoid = child
-&#9;&#9;&#9;&#9;&#9;return CachedHumanoid
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end
+	local character = LocalPlayer and LocalPlayer.Character
+	if character then
+		if CachedHumanoid and CachedHumanoid.Parent == character then
+			return CachedHumanoid
+		else
+			CachedHumanoid = nil
+			for _,child in pairs(character:GetChildren()) do
+				if child:IsA('Humanoid') then
+					CachedHumanoid = child
+					return CachedHumanoid
+				end
+			end
+		end
+	end
 end
 
 --[[ Public API ]]--
 function KeyboardMovement:Enable()
-&#9;if not UserInputService.KeyboardEnabled then
-&#9;&#9;return
-&#9;end
-&#9;
-&#9;local forwardValue  = 0
-&#9;local backwardValue = 0
-&#9;local leftValue = 0
-&#9;local rightValue = 0
-&#9;
-&#9;local updateMovement = function()
-&#9;&#9;MasterControl:AddToPlayerMovement(-currentMoveVector)
-&#9;&#9;currentMoveVector = Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue)
-&#9;&#9;MasterControl:AddToPlayerMovement(currentMoveVector)
-&#9;end
-&#9;
-&#9;local function isFirstPersonOrShiftLocked()
-&#9;&#9;-- Mouse behavior is being set by the camera script. So be warned that if you
-&#9;&#9;-- modify that script or implement a new camera, this may not work.
-&#9;&#9;if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
-&#9;&#9;&#9;return true
-&#9;&#9;end
-&#9;end
-&#9;
-&#9;local moveForwardFunc = function(actionName, inputState, inputObject)
-&#9;&#9;if inputState == Enum.UserInputState.Begin then
-&#9;&#9;&#9;forwardValue = -1
-&#9;&#9;elseif inputState == Enum.UserInputState.End then
-&#9;&#9;&#9;forwardValue = 0
-&#9;&#9;end
-&#9;&#9;updateMovement()
-&#9;end
-&#9;
-&#9;local moveBackwardFunc = function(actionName, inputState, inputObject)&#9;
-&#9;&#9;if inputState == Enum.UserInputState.Begin then
-&#9;&#9;&#9;backwardValue = 1
-&#9;&#9;elseif inputState == Enum.UserInputState.End then
-&#9;&#9;&#9;backwardValue = 0
-&#9;&#9;end
-&#9;&#9;updateMovement()
-&#9;end
-&#9;
-&#9;local moveLeftFunc = function(actionName, inputState, inputObject)&#9;
-&#9;&#9;if inputState == Enum.UserInputState.Begin then
-&#9;&#9;&#9;leftValue = -1
-&#9;&#9;elseif inputState == Enum.UserInputState.End then
-&#9;&#9;&#9;leftValue = 0
-&#9;&#9;end
-&#9;&#9;updateMovement()
-&#9;end
-&#9;
-&#9;local moveRightFunc = function(actionName, inputState, inputObject)&#9;
-&#9;&#9;if inputState == Enum.UserInputState.Begin then
-&#9;&#9;&#9;rightValue = 1
-&#9;&#9;elseif inputState == Enum.UserInputState.End then
-&#9;&#9;&#9;rightValue = 0
-&#9;&#9;end
-&#9;&#9;updateMovement()
-&#9;end
-&#9;
-&#9;local jumpFunc = function(actionName, inputState, inputObject)
-&#9;&#9;if inputState == Enum.UserInputState.Begin then
-&#9;&#9;&#9;MasterControl:RequestJump()
-&#9;&#9;end
-&#9;end
-&#9;
-&#9;-- enable jumping from seat on backspace
-&#9;local jumpFromSeat = function(actionName, inputState, inputObject)
-&#9;&#9;local humanoid = getHumanoid()
-&#9;&#9;if humanoid and humanoid.Sit then
-&#9;&#9;&#9;if inputState == Enum.UserInputState.Begin then
-&#9;&#9;&#9;&#9;MasterControl:RequestJump()
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end
-&#9;
-&#9;-- TODO: remove up and down arrows, these seem unnecessary
-&#9;ContextActionService:BindActionToInputTypes(&quot;forwardMovement&quot;, moveForwardFunc, false, Enum.PlayerActions.CharacterForward, Enum.KeyCode.Up)
-&#9;ContextActionService:BindActionToInputTypes(&quot;backwardMovement&quot;, moveBackwardFunc, false, Enum.PlayerActions.CharacterBackward, Enum.KeyCode.Down)
-&#9;ContextActionService:BindActionToInputTypes(&quot;leftMovement&quot;, moveLeftFunc, false, Enum.PlayerActions.CharacterLeft)
-&#9;ContextActionService:BindActionToInputTypes(&quot;rightMovement&quot;, moveRightFunc, false, Enum.PlayerActions.CharacterRight)
-&#9;ContextActionService:BindActionToInputTypes(&quot;jumpAction&quot;, jumpFunc, false, Enum.PlayerActions.CharacterJump)
-&#9;ContextActionService:BindActionToInputTypes(&quot;jumpFromSeat&quot;, jumpFromSeat, false, Enum.KeyCode.Backspace)
-&#9;-- TODO: make sure we check key state before binding to check if key is already down
-&#9;
-&#9;RenderSteppedCon = RunService.RenderStepped:connect(function()
-&#9;&#9;if LocalPlayer and LocalPlayer.Character then
-&#9;&#9;&#9;local humanoid = getHumanoid()
-&#9;&#9;&#9;if not humanoid then return end
-&#9;&#9;&#9;if isFirstPersonOrShiftLocked() then
-&#9;&#9;&#9;&#9;local rootPart = humanoid.Torso
-&#9;&#9;&#9;&#9;if humanoid and humanoid.AutoRotate and not humanoid.Sit and not humanoid.PlatformStand and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
-&#9;&#9;&#9;&#9;&#9;local desiredLook = game.Workspace.CurrentCamera.CoordinateFrame.lookVector
-&#9;&#9;&#9;&#9;&#9;desiredLook = Vector3.new(desiredLook.x, 0, desiredLook.z)
-&#9;&#9;&#9;&#9;&#9;rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + desiredLook)
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end)
-&#9;
-&#9;TextFocusReleasedCn = UserInputService.TextBoxFocusReleased:connect(function(textBox)
-&#9;&#9;local humanoid = getHumanoid()
-&#9;&#9;if humanoid then
-&#9;&#9;&#9;MasterControl:AddToPlayerMovement(-currentMoveVector)
-&#9;&#9;&#9;currentMoveVector = Vector3.new(0,0,0)
-&#9;&#9;end
-&#9;end)
+	if not UserInputService.KeyboardEnabled then
+		return
+	end
+	
+	local forwardValue  = 0
+	local backwardValue = 0
+	local leftValue = 0
+	local rightValue = 0
+	
+	local updateMovement = function()
+		MasterControl:AddToPlayerMovement(-currentMoveVector)
+		currentMoveVector = Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue)
+		MasterControl:AddToPlayerMovement(currentMoveVector)
+	end
+	
+	local function isFirstPersonOrShiftLocked()
+		-- Mouse behavior is being set by the camera script. So be warned that if you
+		-- modify that script or implement a new camera, this may not work.
+		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+			return true
+		end
+	end
+	
+	local moveForwardFunc = function(actionName, inputState, inputObject)
+		if inputState == Enum.UserInputState.Begin then
+			forwardValue = -1
+		elseif inputState == Enum.UserInputState.End then
+			forwardValue = 0
+		end
+		updateMovement()
+	end
+	
+	local moveBackwardFunc = function(actionName, inputState, inputObject)	
+		if inputState == Enum.UserInputState.Begin then
+			backwardValue = 1
+		elseif inputState == Enum.UserInputState.End then
+			backwardValue = 0
+		end
+		updateMovement()
+	end
+	
+	local moveLeftFunc = function(actionName, inputState, inputObject)	
+		if inputState == Enum.UserInputState.Begin then
+			leftValue = -1
+		elseif inputState == Enum.UserInputState.End then
+			leftValue = 0
+		end
+		updateMovement()
+	end
+	
+	local moveRightFunc = function(actionName, inputState, inputObject)	
+		if inputState == Enum.UserInputState.Begin then
+			rightValue = 1
+		elseif inputState == Enum.UserInputState.End then
+			rightValue = 0
+		end
+		updateMovement()
+	end
+	
+	local jumpFunc = function(actionName, inputState, inputObject)
+		if inputState == Enum.UserInputState.Begin then
+			MasterControl:RequestJump()
+		end
+	end
+	
+	-- enable jumping from seat on backspace
+	local jumpFromSeat = function(actionName, inputState, inputObject)
+		local humanoid = getHumanoid()
+		if humanoid and (humanoid.Sit or humanoid.PlatformStand) then
+			if inputState == Enum.UserInputState.Begin then
+				MasterControl:RequestJump()
+			end
+		end
+	end
+	
+	-- TODO: remove up and down arrows, these seem unnecessary
+	ContextActionService:BindActionToInputTypes("forwardMovement", moveForwardFunc, false, Enum.PlayerActions.CharacterForward)
+	ContextActionService:BindActionToInputTypes("backwardMovement", moveBackwardFunc, false, Enum.PlayerActions.CharacterBackward)
+	ContextActionService:BindActionToInputTypes("leftMovement", moveLeftFunc, false, Enum.PlayerActions.CharacterLeft)
+	ContextActionService:BindActionToInputTypes("rightMovement", moveRightFunc, false, Enum.PlayerActions.CharacterRight)
+	ContextActionService:BindActionToInputTypes("jumpAction", jumpFunc, false, Enum.PlayerActions.CharacterJump)
+	ContextActionService:BindActionToInputTypes("jumpFromSeat", jumpFromSeat, false, Enum.KeyCode.Backspace)
+	-- TODO: make sure we check key state before binding to check if key is already down
+	
+	RenderSteppedCon = RunService.RenderStepped:connect(function()
+		if LocalPlayer and LocalPlayer.Character then
+			local humanoid = getHumanoid()
+			if not humanoid then return end
+			if isFirstPersonOrShiftLocked() then
+				local rootPart = humanoid.Torso
+				if humanoid and humanoid.AutoRotate and not humanoid.Sit and not humanoid.PlatformStand and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
+					local desiredLook = game.Workspace.CurrentCamera.CoordinateFrame.lookVector
+					desiredLook = Vector3.new(desiredLook.x, 0, desiredLook.z)
+					rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + desiredLook)
+				end
+			end
+		end
+	end)
+	
+	TextFocusReleasedCn = UserInputService.TextBoxFocusReleased:connect(function(textBox)
+		local humanoid = getHumanoid()
+		if humanoid then
+			MasterControl:AddToPlayerMovement(-currentMoveVector)
+			currentMoveVector = Vector3.new(0,0,0)
+		end
+	end)
 end
 
 function KeyboardMovement:Disable()
-&#9;ContextActionService:UnbindAction(&quot;forwardMovement&quot;)
-&#9;ContextActionService:UnbindAction(&quot;backwardMovement&quot;)
-&#9;ContextActionService:UnbindAction(&quot;leftMovement&quot;)
-&#9;ContextActionService:UnbindAction(&quot;rightMovement&quot;)
-&#9;ContextActionService:UnbindAction(&quot;jumpAction&quot;)
-&#9;ContextActionService:UnbindAction(&quot;jumpFromSeat&quot;)
-&#9;
-&#9;if RenderSteppedCon then
-&#9;&#9;RenderSteppedCon:disconnect()
-&#9;&#9;RenderSteppedCon = nil
-&#9;end
-&#9;
-&#9;if TextFocusReleasedCn then
-&#9;&#9;TextFocusReleasedCn:disconnect()
-&#9;&#9;TextFocusReleasedCn = nil
-&#9;end
-&#9;
-&#9;MasterControl:AddToPlayerMovement(-currentMoveVector)
-&#9;currentMoveVector = Vector3.new(0,0,0)
+	ContextActionService:UnbindAction("forwardMovement")
+	ContextActionService:UnbindAction("backwardMovement")
+	ContextActionService:UnbindAction("leftMovement")
+	ContextActionService:UnbindAction("rightMovement")
+	ContextActionService:UnbindAction("jumpAction")
+	ContextActionService:UnbindAction("jumpFromSeat")
+	
+	if RenderSteppedCon then
+		RenderSteppedCon:disconnect()
+		RenderSteppedCon = nil
+	end
+	
+	if TextFocusReleasedCn then
+		TextFocusReleasedCn:disconnect()
+		TextFocusReleasedCn = nil
+	end
+	
+	MasterControl:AddToPlayerMovement(-currentMoveVector)
+	currentMoveVector = Vector3.new(0,0,0)
 end
 
 return KeyboardMovement
-</ProtectedString>
+]]></ProtectedString>
 		</Properties>
 	</Item>
 </roblox>
