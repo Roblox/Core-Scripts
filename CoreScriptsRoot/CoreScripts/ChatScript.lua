@@ -421,12 +421,17 @@ function Chat:RecalculateSpacing()
 	end ]]
 end 
 
+-- build a nice string pattern
+-- this should be about everything that's allowed
+local pat = "%§$£&@#\"'°~=_-+*/|\\?.;:,^!([{<>}])"
+pat = "[^"..pat:gsub("(.)","%%%1").."%w]"
 function Chat:ApplyFilter(str)
 	--[[for _, word in pair(self.Filter_List) do 
 		if string.find(str, word) then 
 			str:gsub(word, '@#$^')
 		end 
-	end ]]	
+	end ]]
+	return str:gsub(pat,"")
 end
 
 -- NOTE: Temporarily disabled ring buffer to allow for chat to always wrap around 
@@ -788,7 +793,9 @@ function Chat:CreateGui()
 				
 					if tick() - Chat.PreviousMessage > Chat.Configuration.HaltTime then -- Make sure that the user isn't deliberately spamming the chat
 						Chat.PreviousMessage = tick()
-						local cText = self.ChatBar.Text
+						-- strip it of unwanted characters
+						-- the internal filter can act properly then
+						local cText = Chat:ApplyFilter(self.ChatBar.Text)
 						if string.sub(self.ChatBar.Text, 1, 1)  == '%' then 
 							cText = '(TEAM) ' .. string.sub(cText, 2, #cText)
 							pcall(function() PlayersService:TeamChat(cText) end)						

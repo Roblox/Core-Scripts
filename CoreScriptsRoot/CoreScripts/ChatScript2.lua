@@ -1174,12 +1174,17 @@ local function CreateChatBarWidget(settings)
 		end
 	end
 
+	-- build our pattern to filter with
+	local pat = "%§$£&@#\"'°~=_-+*/|\\?.;:,^!([{<>}])"
+	pat = "[^"..pat:gsub("(.)","%%%1").."%w]"
+	-- because we hate invisible characters etc
 	function this:SanitizeInput(input)
 		local sanitizedInput = input
 		-- Chomp the whitespace at the front and end of the string
+		-- Also apply our pattern from above to cut away unwanted characters
 		-- TODO: maybe only chop off the front space if there are more than a few?
 		local _, _, capture = string.find(sanitizedInput, "^%s*(.*)%s*$")
-		sanitizedInput = capture or ""
+		sanitizedInput = capture and capture:gsub(pat,"") or ""
 
 		return sanitizedInput
 	end
