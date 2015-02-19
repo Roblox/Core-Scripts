@@ -196,31 +196,31 @@ end
 
 local function MakeSlot(parent, index)
 	index = index or (#Slots + 1)
-	
+
 	-- Slot Definition --
-	
+
 	local slot = {}
 	slot.Tool = nil
 	slot.Index = index
 	slot.Frame = nil
-	
+
 	local SlotFrame = nil
 	local ToolIcon = nil
 	local ToolName = nil
 	local ToolChangeConn = nil
 	local HighlightFrame = nil
-	
+
 	--NOTE: The following are only defined for Hotbar Slots
 	local ToolTip = nil
 	local SlotNumber = nil
 	local ClickArea = nil
-	
+
 	-- Slot Functions --
-	
+
 	local function UpdateSlotFading()
 		SlotFrame.BackgroundTransparency = (SlotFrame.Draggable) and 0 or SLOT_FADE_LOCKED
 	end
-	
+
 	function slot:Reposition()
 		-- Slots are positioned into rows
 		local index = (ResultsIndices and ResultsIndices[self]) or self.Index
@@ -229,7 +229,7 @@ local function MakeSlot(parent, index)
 		local row = (index > HOTBAR_SLOTS) and (math.floor((index - 1) / HOTBAR_SLOTS)) - 1 or 0
 		SlotFrame.Position = UDim2.new(0, ICON_BUFFER + ((modSlots - 1) * sizePlus), 0, ICON_BUFFER + (sizePlus * row))
 	end
-	
+
 	function slot:Readjust(visualIndex, visualTotal) --NOTE: Only used for Hotbar slots
 		local centered = HOTBAR_SIZE.X.Offset / 2
 		local sizePlus = ICON_BUFFER + ICON_SIZE
@@ -237,10 +237,10 @@ local function MakeSlot(parent, index)
 		local factor = visualIndex - midpointish
 		SlotFrame.Position = UDim2.new(0, centered - (ICON_SIZE / 2) + (sizePlus * factor), 0, ICON_BUFFER)
 	end
-	
+
 	function slot:Fill(tool)
 		self.Tool = tool
-		
+
 		local function assignToolData()
 			local icon = tool.TextureId
 			ToolIcon.Image = icon
@@ -253,35 +253,35 @@ local function MakeSlot(parent, index)
 			end
 		end
 		assignToolData()
-		
+
 		ToolChangeConn = tool.Changed:connect(function(property)
 			if property == 'TextureId' or property == 'Name' or property == 'ToolTip' then
 				assignToolData()
 			end
 		end)
-		
+
 		local hotbarSlot = (self.Index <= HOTBAR_SLOTS)
 		local inventoryOpen = InventoryFrame.Visible
-		
+
 		if not hotbarSlot or inventoryOpen then
 			SlotFrame.Draggable = true
 		end
-		
+
 		self:UpdateEquipView()
-		
+
 		if hotbarSlot then
 			FullHotbarSlots = FullHotbarSlots + 1
 		end
-		
+
 		SlotsByTool[tool] = self
 		LowestEmptySlot = FindLowestEmpty()
 		UpdateArrowFrame()
 	end
-	
+
 	function slot:Clear()
 		ToolChangeConn:disconnect()
 		ToolChangeConn = nil
-		
+
 		ToolIcon.Image = ''
 		ToolName.Text = ''
 		if ToolTip then
@@ -289,19 +289,19 @@ local function MakeSlot(parent, index)
 			ToolTip.Visible = false
 		end
 		SlotFrame.Draggable = false
-		
+
 		self:UpdateEquipView(true) -- Show as unequipped
-		
+
 		if self.Index <= HOTBAR_SLOTS then
 			FullHotbarSlots = FullHotbarSlots - 1
 		end
-		
+
 		SlotsByTool[self.Tool] = nil
 		self.Tool = nil
 		LowestEmptySlot = FindLowestEmpty()
 		UpdateArrowFrame()
 	end
-	
+
 	function slot:UpdateEquipView(unequippedOverride)
 		if not unequippedOverride and IsEquipped(self.Tool) then -- Equipped
 			if not HighlightFrame then
@@ -332,17 +332,17 @@ local function MakeSlot(parent, index)
 		end
 		UpdateSlotFading()
 	end
-	
+
 	function slot:Delete()
 		SlotFrame:Destroy() --NOTE: Also clears connections
 		table.remove(Slots, self.Index)
 		local newSize = #Slots
-		
+
 		-- Now adjust the rest (both visually and representationally)
 		for i = self.Index, newSize do
 			Slots[i]:SlideBack()
 		end
-		
+
 		if newSize % HOTBAR_SLOTS == 0 then -- We lost a row at the end! Adjust the CanvasSize
 			local lastSlot = Slots[newSize]
 			local lowestPoint = lastSlot.Frame.Position.Y.Offset + lastSlot.Frame.Size.Y.Offset
@@ -351,7 +351,7 @@ local function MakeSlot(parent, index)
 			ScrollingFrame.CanvasPosition = offset
 		end
 	end
-	
+
 	function slot:Swap(targetSlot) --NOTE: This slot (self) must not be empty!
 		local myTool, otherTool = self.Tool, targetSlot.Tool
 		self:Clear()
@@ -361,19 +361,19 @@ local function MakeSlot(parent, index)
 		end
 		targetSlot:Fill(myTool)
 	end
-	
+
 	function slot:SlideBack() -- For inventory slot shifting
 		self.Index = self.Index - 1
 		SlotFrame.Name = self.Index
 		self:Reposition()
 	end
-	
+
 	function slot:TurnNumber(on)
 		if SlotNumber then
 			SlotNumber.Visible = on
 		end
 	end
-	
+
 	function slot:SetClickability(on) -- (Happens on open/close arrow)
 		ClickArea.Visible = on
 		if self.Tool then
@@ -381,7 +381,7 @@ local function MakeSlot(parent, index)
 			UpdateSlotFading()
 		end
 	end
-	
+
 	function slot:CheckTerms(terms)
 		local hits = 0
 		local function checkEm(str, term)
@@ -397,9 +397,9 @@ local function MakeSlot(parent, index)
 		end
 		return hits
 	end
-	
+
 	-- Slot Init Logic --
-	
+
 	SlotFrame = NewGui('Frame', index)
 	SlotFrame.BackgroundColor3 = SLOT_COLOR_NORMAL
 	SlotFrame.BorderColor3 = SLOT_BORDER_COLOR
@@ -408,19 +408,19 @@ local function MakeSlot(parent, index)
 	SlotFrame.Draggable = false
 	SlotFrame.BackgroundTransparency = SLOT_FADE_LOCKED
 	slot.Frame = SlotFrame
-	
+
 	ToolIcon = NewGui('ImageLabel', 'Icon')
 	ToolIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
 	ToolIcon.Position = UDim2.new(0.1, 0, 0.1, 0)
 	ToolIcon.Parent = SlotFrame
-	
+
 	ToolName = NewGui('TextLabel', 'ToolName')
 	ToolName.Size = UDim2.new(1, -2, 1, -2)
 	ToolName.Position = UDim2.new(0, 1, 0, 1)
 	ToolName.Parent = SlotFrame
-	
+
 	slot:Reposition()
-	
+
 	if index <= HOTBAR_SLOTS then -- Hotbar-Specific Slot Stuff
 		-- ToolTip stuff
 		ToolTip = NewGui('TextLabel', 'ToolTip')
@@ -436,7 +436,7 @@ local function MakeSlot(parent, index)
 			end
 		end)
 		SlotFrame.MouseLeave:connect(function() ToolTip.Visible = false end)
-		
+
 		-- Slot select logic, activated by clicking or pressing hotkey
 		local function selectSlot()
 			local tool = slot.Tool
@@ -448,11 +448,11 @@ local function MakeSlot(parent, index)
 				end
 			end
 		end
-		
+
 		ClickArea = NewGui('TextButton', 'GimmieYerClicks')
 		ClickArea.MouseButton1Click:connect(selectSlot)
 		ClickArea.Parent = SlotFrame
-		
+
 		-- Show label and assign hotkeys for 1-9 and 0 (zero is always last slot when > 10 total)
 		if index < 10 or index == HOTBAR_SLOTS then -- NOTE: Hardcoded on purpose!
 			local slotNum = (index < 10) and index or 0
@@ -469,18 +469,18 @@ local function MakeSlot(parent, index)
 			ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, lowestPoint + ICON_BUFFER)
 		end
 	end
-	
+
 	do -- Dragging Logic
 		local startPoint = SlotFrame.Position
 		local lastUpTime = 0
 		local startParent = nil
-		
+
 		SlotFrame.DragBegin:connect(function(dragPoint)
 			Dragging[SlotFrame] = true
 			startPoint = dragPoint
-			
+
 			SlotFrame.BorderSizePixel = 2
-			
+
 			-- Raise above other slots
 			SlotFrame.ZIndex = 2
 			ToolIcon.ZIndex = 2
@@ -494,7 +494,7 @@ local function MakeSlot(parent, index)
 					child.ZIndex = 2
 				end
 			end
-			
+
 			-- Circumvent the ScrollingFrame's ClipsDescendants property
 			startParent = SlotFrame.Parent
 			if startParent == ScrollingFrame then
@@ -504,14 +504,14 @@ local function MakeSlot(parent, index)
 				SlotFrame.Position = SlotFrame.Position - UDim2.new(0, offset.X, 0, offset.Y)
 			end
 		end)
-		
+
 		SlotFrame.DragStopped:connect(function(x, y)
 			local now = tick()
 			SlotFrame.Position = startPoint
 			SlotFrame.Parent = startParent
-			
+
 			SlotFrame.BorderSizePixel = 0
-			
+
 			-- Restore height
 			SlotFrame.ZIndex = 1
 			ToolIcon.ZIndex = 1
@@ -525,14 +525,14 @@ local function MakeSlot(parent, index)
 					child.ZIndex = 1
 				end
 			end
-			
+
 			Dragging[SlotFrame] = nil
-			
+
 			-- Make sure the tool wasn't dropped
 			if not slot.Tool then
 				return
 			end
-			
+
 			local function moveToInventory()
 				if slot.Index <= HOTBAR_SLOTS then -- From a Hotbar slot
 					local tool = slot.Tool
@@ -548,7 +548,7 @@ local function MakeSlot(parent, index)
 					end
 				end
 			end
-			
+
 			-- Check where we were dropped
 			if CheckBounds(InventoryFrame, x, y) then
 				moveToInventory()
@@ -597,11 +597,11 @@ local function MakeSlot(parent, index)
 				-- end
 				moveToInventory() --NOTE: Temporary
 			end
-			
+
 			lastUpTime = now
 		end)
 	end
-	
+
 	-- All ready!
 	SlotFrame.Parent = parent
 	Slots[index] = slot
@@ -616,11 +616,11 @@ local function OnChildAdded(child) -- To Character or Backpack
 		return
 	end
 	local tool = child
-	
+
 	if ActiveHopper and tool.Parent == Character then --NOTE: HopperBin
 		DisableActiveHopper()
 	end
-	
+
 	--TODO: Optimize / refactor / do something else
 	if not StarterToolFound and tool.Parent == Character and not SlotsByTool[tool] then
 		local starterGear = Player:FindFirstChild('StarterGear')
@@ -649,7 +649,7 @@ local function OnChildAdded(child) -- To Character or Backpack
 			end
 		end
 	end
-	
+
 	-- The tool is either moving or new
 	local slot = SlotsByTool[tool]
 	if slot then
@@ -674,13 +674,13 @@ local function OnChildRemoved(child) -- From Character or Backpack
 		return
 	end
 	local tool = child
-	
+
 	-- Ignore this event if we're just moving between the two
 	local newParent = tool.Parent
 	if newParent == Character or newParent == Backpack then
 		return
 	end
-	
+
 	local slot = SlotsByTool[tool]
 	if slot then
 		slot:Clear()
@@ -690,7 +690,7 @@ local function OnChildRemoved(child) -- From Character or Backpack
 			AdjustHotbarFrames()
 		end
 	end
-	
+
 	if tool == ActiveHopper then --NOTE: HopperBin
 		ActiveHopper = nil
 	end
@@ -708,13 +708,13 @@ local function OnCharacterAdded(character)
 		end
 	end
 	ActiveHopper = nil --NOTE: HopperBin
-	
+
 	-- And any old connections
 	for _, conn in pairs(CharConns) do
 		conn:disconnect()
 	end
 	CharConns = {}
-	
+
 	-- Hook up the new character
 	Character = character
 	table.insert(CharConns, character.ChildRemoved:connect(OnChildRemoved))
@@ -723,7 +723,7 @@ local function OnCharacterAdded(character)
 		OnChildAdded(child)
 	end
 	--NOTE: Humanoid is set inside OnChildAdded
-	
+
 	-- And the new backpack, when it gets here
 	Backpack = Player:WaitForChild('Backpack')
 	table.insert(CharConns, Backpack.ChildRemoved:connect(OnChildRemoved))
@@ -731,7 +731,7 @@ local function OnCharacterAdded(character)
 	for _, child in pairs(Backpack:GetChildren()) do
 		OnChildAdded(child)
 	end
-	
+
 	AdjustHotbarFrames()
 end
 
@@ -758,7 +758,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
 		WholeThingEnabled = enabled
 		MainFrame.Visible = enabled
-		
+
 		-- Eat/Release hotkeys (Doesn't affect UserInputService)
 		for _, keyString in pairs(HotkeyStrings) do
 			if enabled then
@@ -768,7 +768,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 			end
 		end
 	end
-	
+
 	-- Also check if the Health GUI is showing, and shift everything down (or back up) accordingly
 	if not TopBarEnabled and (coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All) then
 		MainFrame.Position = UDim2.new(0, 0, 0, enabled and HOTBAR_OFFSET_FROMBOTTOM or 0)
@@ -797,7 +797,7 @@ HotbarFrame.Parent = MainFrame
 for i = 1, HOTBAR_SLOTS do
 	local slot = MakeSlot(HotbarFrame, i)
 	slot.Frame.Visible = false
-	
+
 	if not LowestEmptySlot then
 		LowestEmptySlot = slot
 	end
@@ -812,7 +812,7 @@ InventoryFrame.Position = UDim2.new(0.5, -InventoryFrame.Size.X.Offset / 2, 1, H
 InventoryFrame.Visible = false
 InventoryFrame.Parent = MainFrame
 
--- Make the ScrollingFrame, which holds the rest of the Slots (however many) 
+-- Make the ScrollingFrame, which holds the rest of the Slots (however many)
 ScrollingFrame = NewGui('ScrollingFrame', 'ScrollingFrame')
 ScrollingFrame.Size = UDim2.new(1, ScrollingFrame.ScrollBarThickness + 1, 1, -INVENTORY_HEADER_SIZE)
 ScrollingFrame.Position = UDim2.new(0, 0, 0, INVENTORY_HEADER_SIZE)
@@ -838,7 +838,7 @@ do -- Search stuff
 	searchFrame.Size = UDim2.new(0, SEARCH_WIDTH - (SEARCH_BUFFER * 2), 0, INVENTORY_HEADER_SIZE - (SEARCH_BUFFER * 2))
 	searchFrame.Position = UDim2.new(1, -searchFrame.Size.X.Offset - SEARCH_BUFFER, 0, SEARCH_BUFFER)
 	searchFrame.Parent = InventoryFrame
-	
+
 	local searchBox = NewGui('TextBox', 'TextBox')
 	searchBox.Text = SEARCH_TEXT
 	searchBox.ClearTextOnFocus = false
@@ -847,7 +847,7 @@ do -- Search stuff
 	searchBox.Size = searchFrame.Size - UDim2.new(0, SEARCH_TEXT_OFFSET_FROMLEFT, 0, 0)
 	searchBox.Position = UDim2.new(0, SEARCH_TEXT_OFFSET_FROMLEFT, 0, 0)
 	searchBox.Parent = searchFrame
-	
+
 	local xButton = NewGui('TextButton', 'X')
 	xButton.Text = 'x'
 	xButton.TextColor3 = SLOT_COLOR_EQUIP
@@ -860,17 +860,17 @@ do -- Search stuff
 	xButton.ZIndex = 3
 	xButton.Visible = false
 	xButton.Parent = searchFrame
-	
+
 	local clickArea = NewGui('TextButton', 'GimmieYerClicks')
 	clickArea.ZIndex = 2
 	clickArea.Parent = searchFrame
-	
+
 	local function search()
 		local terms = {}
 		for word in searchBox.Text:gmatch('%S+') do
 			terms[word:lower()] = true
 		end
-		
+
 		local hitTable = {}
 		for i = HOTBAR_SLOTS + 1, #Slots do -- Only search inventory slots
 			local slot = Slots[i]
@@ -878,12 +878,12 @@ do -- Search stuff
 			table.insert(hitTable, {slot, hits})
 			slot.Frame.Visible = false
 		end
-		
+
 		table.sort(hitTable, function(left, right)
 			return left[2] > right[2]
 		end)
 		ResultsIndices = {}
-		
+
 		for i, data in ipairs(hitTable) do
 			local slot, hits = data[1], data[2]
 			if hits > 0 then
@@ -892,10 +892,10 @@ do -- Search stuff
 				slot.Frame.Visible = true
 			end
 		end
-		
+
 		xButton.Visible = true
 	end
-	
+
 	local function clearResults()
 		if xButton.Visible then
 			ResultsIndices = nil
@@ -907,12 +907,12 @@ do -- Search stuff
 			xButton.Visible = false
 		end
 	end
-	
+
 	local function reset()
 		clearResults()
 		searchBox.Text = SEARCH_TEXT
 	end
-	
+
 	local function onChanged(property)
 		if property == 'Text' then
 			local text = searchBox.Text
@@ -923,14 +923,14 @@ do -- Search stuff
 			end
 		end
 	end
-	
+
 	local function gainFocus()
 		searchBox:CaptureFocus()
 		if searchBox.Text == SEARCH_TEXT then
 			searchBox.Text = ''
 		end
 	end
-	
+
 	local function loseFocus(enterPressed)
 		if enterPressed then
 			--TODO: Could optimize
@@ -939,20 +939,20 @@ do -- Search stuff
 			searchBox.Text = SEARCH_TEXT
 		end
 	end
-	
+
 	clickArea.MouseButton1Click:connect(gainFocus)
 	xButton.MouseButton1Click:connect(reset)
 	searchBox.Changed:connect(onChanged)
 	searchBox.FocusLost:connect(loseFocus)
 	HotkeyFns[Enum.KeyCode.Escape.Value] = reset
-	
+
 	ResetSearch = reset -- Define global function
 end
 
 do -- Make the Inventory expand/collapse arrow (unless TopBar)
 	local arrowFrame, arrowIcon, clickArea = nil, nil, nil
 	local collapsed, closed, opened = nil, nil, nil
-	
+
 	local function openClose()
 		if not next(Dragging) then -- Only continue if nothing is being dragged
 			InventoryFrame.Visible = not InventoryFrame.Visible
@@ -975,31 +975,31 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 	end
 	HotkeyFns[ARROW_HOTKEY] = openClose
 	BackpackScript.OpenClose = openClose -- Exposed
-	
+
 	if not TopBarEnabled then
 		arrowFrame = NewGui('Frame', 'Arrow')
 		arrowFrame.BackgroundTransparency = BACKGROUND_FADE
 		arrowFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE / 2)
 		local hotbarBottom = HotbarFrame.Position.Y.Offset + HotbarFrame.Size.Y.Offset
 		arrowFrame.Position = UDim2.new(0.5, -arrowFrame.Size.X.Offset / 2, 1, hotbarBottom - arrowFrame.Size.Y.Offset)
-		
+
 		arrowIcon = NewGui('ImageLabel', 'Icon')
 		arrowIcon.Image = ARROW_IMAGE_OPEN
 		arrowIcon.Size = ARROW_SIZE
 		arrowIcon.Position = UDim2.new(0.5, -arrowIcon.Size.X.Offset / 2, 0.5, -arrowIcon.Size.Y.Offset / 2)
 		arrowIcon.Parent = arrowFrame
-		
+
 		clickArea = NewGui('TextButton', 'GimmieYerClicks')
 		clickArea.MouseButton1Click:connect(openClose)
 		clickArea.Parent = arrowFrame
-		
+
 		collapsed = arrowFrame.Position
 		closed = collapsed + UDim2.new(0, 0, 0, -HotbarFrame.Size.Y.Offset)
 		opened = closed + UDim2.new(0, 0, 0, -InventoryFrame.Size.Y.Offset)
-		
+
 		arrowFrame.Parent = MainFrame
 	end
-	
+
 	-- Define global function
 	UpdateArrowFrame = function()
 		if arrowFrame then
@@ -1028,21 +1028,21 @@ do -- Hotkey stuff
 		table.insert(HotkeyStrings, tostring(i))
 	end
 	table.insert(HotkeyStrings, ARROW_HOTKEY_STRING)
-	
+
 	-- Listen to key down
 	UserInputService.InputBegan:connect(OnInputBegan)
-	
+
 	-- Listen to ANY TextBox gaining or losing focus, for disabling all hotkeys
 	UserInputService.TextBoxFocused:connect(function() TextBoxFocused = true end)
 	UserInputService.TextBoxFocusReleased:connect(function() TextBoxFocused = false end)
-	
+
 	-- Manual unequip for HopperBins on drop button pressed
 	HotkeyFns[DROP_HOTKEY_VALUE] = function() --NOTE: HopperBin
 		if ActiveHopper then
 			UnequipAllTools()
 		end
 	end
-	
+
 	-- Listen to keyboard status, for showing/hiding hotkey labels
 	UserInputService.Changed:connect(OnUISChanged)
 	OnUISChanged('KeyboardEnabled')
