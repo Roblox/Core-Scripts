@@ -1,4 +1,4 @@
--- Backpack Version 4.17
+-- Backpack Version 4.18
 -- OnlyTwentyCharacters
 
 -------------------
@@ -20,6 +20,7 @@ local BACKGROUND_FADE = 0.70
 
 local SLOT_COLOR_NORMAL = Color3.new(49/255, 49/255, 49/255)
 local SLOT_COLOR_EQUIP = Color3.new(90/255, 142/255, 233/255)
+local SLOT_EQUIP_THICKNESS = 0.1 -- Relative
 local SLOT_FADE_LOCKED = 0.50 -- Locked means empty/undraggable
 local SLOT_BORDER_COLOR = Color3.new(1, 1, 1)
 
@@ -36,7 +37,7 @@ local ARROW_HOTKEY_STRING = '`'
 local HOTBAR_SLOTS_FULL = 10
 local HOTBAR_SLOTS_MINI = 3
 local HOTBAR_SLOTS_WIDTH_CUTOFF = 1024 -- Anything smaller is MINI
-local HOTBAR_OFFSET_FROMBOTTOM = 30 -- Offset to make room for the Health GUI
+local HOTBAR_OFFSET_FROMBOTTOM = -30 -- Offset to make room for the Health GUI
 
 local INVENTORY_ROWS_FULL = 4
 local INVENTORY_ROWS_MINI = 2
@@ -62,6 +63,8 @@ local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 local GuiService = game:GetService('GuiService')
+local CoreGui = game:GetService('CoreGui')
+local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 
 local IS_PHONE = UserInputService.TouchEnabled and GuiService:GetScreenResolution().X < HOTBAR_SLOTS_WIDTH_CUTOFF
 
@@ -72,8 +75,6 @@ local DROP_HOTKEY_VALUE = Enum.KeyCode.Backspace.Value
 local INVENTORY_ROWS = (IS_PHONE) and INVENTORY_ROWS_MINI or INVENTORY_ROWS_FULL
 
 local Player = PlayersService.LocalPlayer
-
-local CoreGui = script.Parent
 
 local MainFrame = nil
 local HotbarFrame = nil
@@ -99,6 +100,7 @@ local ResultsIndices = nil -- Results of a search
 local ResetSearch = nil -- Function defined in search logic at bottom
 local HotkeyStrings = {} -- Used for eating/releasing hotkeys
 local CharConns = {} -- Holds character connections to be cleared later
+local TopBarEnabled = false
 
 -----------------
 --| Functions |--
@@ -206,6 +208,7 @@ local function MakeSlot(parent, index)
 	local ToolIcon = nil
 	local ToolName = nil
 	local ToolChangeConn = nil
+	local HighlightFrame = nil
 	
 	--NOTE: The following are only defined for Hotbar Slots
 	local ToolTip = nil
@@ -214,9 +217,8 @@ local function MakeSlot(parent, index)
 	
 	-- Slot Functions --
 	
-	local function UpdateSlotFading(unequippedOverride)
-		local equipped = not unequippedOverride and slot.Tool and IsEquipped(slot.Tool)
-		SlotFrame.BackgroundTransparency = (equipped or SlotFrame.Draggable) and 0 or SLOT_FADE_LOCKED
+	local function UpdateSlotFading()
+		SlotFrame.BackgroundTransparency = (SlotFrame.Draggable) and 0 or SLOT_FADE_LOCKED
 	end
 	
 	function slot:Reposition()
@@ -302,11 +304,33 @@ local function MakeSlot(parent, index)
 	
 	function slot:UpdateEquipView(unequippedOverride)
 		if not unequippedOverride and IsEquipped(self.Tool) then -- Equipped
-			SlotFrame.BackgroundColor3 = SLOT_COLOR_EQUIP
+			if not HighlightFrame then
+				HighlightFrame = NewGui('Frame', 'Equipped')
+				HighlightFrame.ZIndex = SlotFrame.ZIndex
+				local t = SLOT_EQUIP_THICKNESS
+				local dataTable = { -- Relative sizes and positions
+					{t, 1, 0, 0},
+					{1, t, 0, 0},
+					{t, 1, 1 - t, 0},
+					{1, t, 0, 1 - t},
+				}
+				for _, data in pairs(dataTable) do
+					local edgeFrame = NewGui('Frame', 'Edge')
+					edgeFrame.BackgroundTransparency = 0
+					edgeFrame.BackgroundColor3 = SLOT_COLOR_EQUIP
+					edgeFrame.Size = UDim2.new(data[1], 0, data[2], 0)
+					edgeFrame.Position = UDim2.new(data[3], 0, data[4], 0)
+					edgeFrame.ZIndex = HighlightFrame.ZIndex
+					edgeFrame.Parent = HighlightFrame
+				end
+			end
+			HighlightFrame.Parent = SlotFrame
 		else -- In the Backpack
-			SlotFrame.BackgroundColor3 = SLOT_COLOR_NORMAL
+			if HighlightFrame then
+				HighlightFrame.Parent = nil
+			end
 		end
-		UpdateSlotFading(unequippedOverride)
+		UpdateSlotFading()
 	end
 	
 	function slot:Delete()
@@ -464,6 +488,12 @@ local function MakeSlot(parent, index)
 			if SlotNumber then
 				SlotNumber.ZIndex = 2
 			end
+			if HighlightFrame then
+				HighlightFrame.ZIndex = 2
+				for _, child in pairs(HighlightFrame:GetChildren()) do
+					child.ZIndex = 2
+				end
+			end
 			
 			-- Circumvent the ScrollingFrame's ClipsDescendants property
 			startParent = SlotFrame.Parent
@@ -488,6 +518,12 @@ local function MakeSlot(parent, index)
 			ToolName.ZIndex = 1
 			if SlotNumber then
 				SlotNumber.ZIndex = 1
+			end
+			if HighlightFrame then
+				HighlightFrame.ZIndex = 1
+				for _, child in pairs(HighlightFrame:GetChildren()) do
+					child.ZIndex = 1
+				end
 			end
 			
 			Dragging[SlotFrame] = nil
@@ -734,8 +770,8 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 	end
 	
 	-- Also check if the Health GUI is showing, and shift everything down (or back up) accordingly
-	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
-		MainFrame.Position = UDim2.new(0, 0, 0, enabled and 0 or HOTBAR_OFFSET_FROMBOTTOM)
+	if not TopBarEnabled and (coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All) then
+		MainFrame.Position = UDim2.new(0, 0, 0, enabled and HOTBAR_OFFSET_FROMBOTTOM or 0)
 	end
 end
 
@@ -743,15 +779,18 @@ end
 --| Script Logic |--
 --------------------
 
+-- First check if the TopBar is enabled. This affects the ArrowFrame existence and MainFrame position
+pcall(function() TopBarEnabled = settings():GetFFlag('UseInGameTopBar') end)
+
 -- Make the main frame, which (mostly) covers the screen
 MainFrame = NewGui('Frame', 'Backpack')
 MainFrame.Visible = false
-MainFrame.Parent = CoreGui
+MainFrame.Parent = RobloxGui
 
 -- Make the HotbarFrame, which holds only the Hotbar Slots
 HotbarFrame = NewGui('Frame', 'Hotbar')
 HotbarFrame.Size = HOTBAR_SIZE
-HotbarFrame.Position = UDim2.new(0.5, -HotbarFrame.Size.X.Offset / 2, 1, -HotbarFrame.Size.Y.Offset - HOTBAR_OFFSET_FROMBOTTOM)
+HotbarFrame.Position = UDim2.new(0.5, -HotbarFrame.Size.X.Offset / 2, 1, -HotbarFrame.Size.Y.Offset)
 HotbarFrame.Parent = MainFrame
 
 -- Make all the Hotbar Slots
@@ -772,6 +811,13 @@ InventoryFrame.Size = UDim2.new(0, HotbarFrame.Size.X.Offset, 0, (HotbarFrame.Si
 InventoryFrame.Position = UDim2.new(0.5, -InventoryFrame.Size.X.Offset / 2, 1, HotbarFrame.Position.Y.Offset - InventoryFrame.Size.Y.Offset)
 InventoryFrame.Visible = false
 InventoryFrame.Parent = MainFrame
+
+-- Make the ScrollingFrame, which holds the rest of the Slots (however many) 
+ScrollingFrame = NewGui('ScrollingFrame', 'ScrollingFrame')
+ScrollingFrame.Size = UDim2.new(1, ScrollingFrame.ScrollBarThickness + 1, 1, -INVENTORY_HEADER_SIZE)
+ScrollingFrame.Position = UDim2.new(0, 0, 0, INVENTORY_HEADER_SIZE)
+ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+ScrollingFrame.Parent = InventoryFrame
 
 -- Make the header title, in the Inventory
 --local headerText = NewGui('TextLabel', 'Header')
@@ -903,19 +949,9 @@ do -- Search stuff
 	ResetSearch = reset -- Define global function
 end
 
--- Make the ScrollingFrame, which holds the rest of the Slots (however many) 
-ScrollingFrame = NewGui('ScrollingFrame', 'ScrollingFrame')
-ScrollingFrame.Size = UDim2.new(1, ScrollingFrame.ScrollBarThickness + 1, 1, -INVENTORY_HEADER_SIZE)
-ScrollingFrame.Position = UDim2.new(0, 0, 0, INVENTORY_HEADER_SIZE)
-ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-ScrollingFrame.Parent = InventoryFrame
-
 do -- Make the Inventory expand/collapse arrow (unless TopBar)
 	local arrowFrame, arrowIcon, clickArea = nil, nil, nil
 	local collapsed, closed, opened = nil, nil, nil
-	local topBarEnabled = false
-	
-	pcall(function() topBarEnabled = settings():GetFFlag("UseInGameTopBar") end)
 	
 	local function openClose()
 		if not next(Dragging) then -- Only continue if nothing is being dragged
@@ -940,7 +976,7 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 	HotkeyFns[ARROW_HOTKEY] = openClose
 	BackpackScript.OpenClose = openClose -- Exposed
 	
-	if not topBarEnabled then
+	if not TopBarEnabled then
 		arrowFrame = NewGui('Frame', 'Arrow')
 		arrowFrame.BackgroundTransparency = BACKGROUND_FADE
 		arrowFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE / 2)
@@ -1014,7 +1050,8 @@ end
 
 -- Listen to enable/disable signals from the StarterGui
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
-local backpackType = Enum.CoreGuiType.Backpack
+local backpackType, healthType = Enum.CoreGuiType.Backpack, Enum.CoreGuiType.Health
 OnCoreGuiChanged(backpackType, StarterGui:GetCoreGuiEnabled(backpackType))
+OnCoreGuiChanged(healthType, StarterGui:GetCoreGuiEnabled(healthType))
 
 return BackpackScript
