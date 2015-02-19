@@ -55,7 +55,7 @@ local ERROR_ICON = 'rbxasset://textures/ui/ErrorIcon.png'
 local ERROR_MSG = {
 	PURCHASE_DISABLED = "In-game purchases are temporarily disabled",
 	INVALID_FUNDS = "your account does not have enought Robux",
-	UNKNOWN = "Roblox is performing maintence",
+	UNKNOWN = "Roblox is performing maintenance",
 	UNKNWON_FAILURE = "something went wrong"
 }
 local PURCHASE_MSG = {
