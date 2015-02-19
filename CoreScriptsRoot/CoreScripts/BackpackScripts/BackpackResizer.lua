@@ -197,24 +197,24 @@ function resize()
 
 	gearPreview.GearImage.Size = UDim2.new(0,size,0,size)
 	gearPreview.GearImage.Position = UDim2.new(0,gearPreview.AbsoluteSize.X/2 - size/2,0.75,-size)
-	
+
 	resizeGrid()
 end
 
 function addToGrid(child)
 	if not child:IsA("Tool") then
-		if not child:IsA("HopperBin") then 
+		if not child:IsA("HopperBin") then
 			return
 		end
 	end
 	if child:FindFirstChild("RobloxBuildTool") then return end
-	
+
 	for i,v in pairs(backpackItems) do  -- check to see if we already have this gear registered
 		if v == child then return end
 	end
 
 	table.insert(backpackItems,child)
-	
+
 	local changeCon = child.Changed:connect(function(prop)
 		if prop == "Name" then
 			if buttons[child] then
@@ -233,13 +233,13 @@ function addToGrid(child)
 				break
 			end
 		end
-		
+
 		waitForProperty(player,"Character")
 		waitForChild(player,"Backpack")
 		if (child.Parent ~= player.Backpack and child.Parent ~= player.Character) then
 			if ancestryCon then ancestryCon:disconnect() end
 			if changeCon then changeCon:disconnect() end
-			
+
 			for k,v in pairs(backpackItems) do
 				if v == thisObject then
 					if mouseEnterCons[buttons[v]] then mouseEnterCons[buttons[v]]:disconnect() end
@@ -251,7 +251,7 @@ function addToGrid(child)
 			end
 
 			removeFromMap(backpackItems,thisObject)
-			
+
 			resizeGrid()
 		else
 			resizeGrid()
@@ -320,14 +320,14 @@ function resizeGrid()
 				end
 
 				buttonClone.GearReference.Value = v
-				buttonClone.Draggable = true 
+				buttonClone.Draggable = true
 				buttons[v] = buttonClone
-				
+
 				local unequipMenu = getGearContextMenu()
-				
+
 				unequipMenu.Visible = false
 				unequipMenu.Parent = buttonClone
-				
+
 				local beginPos = nil
 				buttonClone.DragBegin:connect(function(value)
 					buttonClone.ZIndex = 9
@@ -345,7 +345,7 @@ function resizeGrid()
 						else
 							buttonClone.Position = beginPos
 						end
-					end	
+					end
 				end)
 				local clickTime = tick()
 				mouseEnterCons[buttonClone] = buttonClone.MouseEnter:connect(function() previewGear(buttonClone) end)
@@ -383,7 +383,7 @@ end
 
 function showEntireGrid()
 	resetFrame.Visible = false
-	
+
 	for k,v in pairs(buttons) do
 		v.Parent = grid.ScrollingFrame
 	end
@@ -403,16 +403,16 @@ function inLoadout(gear)
 		end
 	end
 	return false
-end	
+end
 
 function updateGridActive()
 	for k,v in pairs(backpackItems) do
 		if buttons[v] then
 			local gear = nil
 			local gearRef = buttons[v]:FindFirstChild("GearReference")
-			
+
 			if gearRef then gear = gearRef.Value end
-			
+
 			if not gear then
 				buttons[v].Active = false
 			elseif inLoadout(gear) then
@@ -429,7 +429,7 @@ function centerGear(loadoutChildren)
 	local lastSlotAdd = nil
 	for i = 1, #loadoutChildren do
 		if loadoutChildren[i]:IsA("Frame") and #loadoutChildren[i]:GetChildren() > 0 then
-			if loadoutChildren[i].Name == "Slot0" then 
+			if loadoutChildren[i].Name == "Slot0" then
 				lastSlotAdd = loadoutChildren[i]
 			else
 				table.insert(gearButtons, loadoutChildren[i])
@@ -437,9 +437,9 @@ function centerGear(loadoutChildren)
 		end
 	end
 	if lastSlotAdd then table.insert(gearButtons,lastSlotAdd) end
-	
+
 	local startPos = ( 1 - (#gearButtons * 0.1) ) / 2
-	for i = 1, #gearButtons do	
+	for i = 1, #gearButtons do
 		gearButtons[i]:TweenPosition(UDim2.new(startPos + ((i - 1) * 0.1),0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.25, true)
 	end
 end
@@ -461,7 +461,7 @@ function openCloseBackpack(close)
 	local visible = not backpack.Visible
 	if visible and not close then
 		updateGridActive()
-		local centerDialogSupported, msg = pcall(function() game:GetService("GuiService"):AddCenterDialog(backpack, Enum.CenterDialogType.PlayerInitiatedDialog, 
+		local centerDialogSupported, msg = pcall(function() game:GetService("GuiService"):AddCenterDialog(backpack, Enum.CenterDialogType.PlayerInitiatedDialog,
 			function()
 				backpack.Visible = true
 				loadoutChildren = currentLoadout:GetChildren()
@@ -469,7 +469,7 @@ function openCloseBackpack(close)
 					if loadoutChildren[i]:IsA("Frame") then
 						loadoutChildren[i].BackgroundTransparency = 0.5
 					end
-				end 
+				end
 				spreadOutGear(loadoutChildren)
 			end,
 			function()
@@ -505,7 +505,7 @@ function openCloseBackpack(close)
 			end
 		end
 		centerGear(loadoutChildren)
-	
+
 		backpack:TweenSizeAndPosition(UDim2.new(0,0,0,0),UDim2.new(0.5,0,0.5,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, guiTweenSpeed/2, true)
 		delay(guiTweenSpeed/2 + 0.01,
 			function()
@@ -601,7 +601,7 @@ end
 -- these next two functions are used to stop any use of backpack while the player is dead (can cause issues)
 function activateBackpack()
 	backpack.Visible = backpackOldStateVisible
-	
+
 	loadoutChildren = currentLoadout:GetChildren()
 	for i = 1, #loadoutChildren do
 		if loadoutChildren[i]:IsA("Frame") then
@@ -629,7 +629,7 @@ function setupCharacterConnections()
 
 	if backpackAddCon then backpackAddCon:disconnect() end
 	backpackAddCon = game:GetService("Players").LocalPlayer.Backpack.ChildAdded:connect(function(child) addToGrid(child) end)
-	
+
 	-- make sure we get all the children
 	local backpackChildren = game:GetService("Players").LocalPlayer.Backpack:GetChildren()
 	for i = 1, #backpackChildren do
@@ -637,25 +637,25 @@ function setupCharacterConnections()
 	end
 
 	if characterChildAddedCon then characterChildAddedCon:disconnect() end
-	characterChildAddedCon = 
+	characterChildAddedCon =
 		game:GetService("Players").LocalPlayer.Character.ChildAdded:connect(function(child)
 			addToGrid(child)
 			updateGridActive()
 		end)
-		
+
 	if characterChildRemovedCon then characterChildRemovedCon:disconnect() end
-	characterChildRemovedCon = 
+	characterChildRemovedCon =
 		game:GetService("Players").LocalPlayer.Character.ChildRemoved:connect(function(child)
 			updateGridActive()
 		end)
-		
-			
+
+
 	if humanoidDiedCon then humanoidDiedCon:disconnect() end
 	local localPlayer = game:GetService("Players").LocalPlayer
 	waitForProperty(localPlayer,"Character")
 	waitForChild(localPlayer.Character,"Humanoid")
 	humanoidDiedCon = game:GetService("Players").LocalPlayer.Character.Humanoid.Died:connect(function() deactivateBackpack() end)
-	
+
 	activateBackpack()
 
 	wait()
@@ -674,7 +674,7 @@ end
 
 function splitByWhiteSpace(text)
 	if type(text) ~= "string" then return nil end
-	
+
 	local terms = {}
 	for token in string.gmatch(text, "[^%s]+") do
 	   if string.len(token) > 2 then
@@ -689,7 +689,7 @@ function filterGear(searchTerm)
 	searchTerm = trim(searchTerm)
 	if string.len(searchTerm) < 2 then return nil end
 	local terms = splitByWhiteSpace(searchTerm)
-	
+
 	local filteredGear = {}
 	for k,v in pairs(backpackItems) do
 		if buttons[v] then
@@ -703,7 +703,7 @@ function filterGear(searchTerm)
 			end
 		end
 	end
-	
+
 	return filteredGear
 end
 
@@ -751,10 +751,10 @@ function getGearContextMenu()
 	gearContextMenuButton.Size = UDim2.new(1, 0, 1, -20)
 	gearContextMenuButton.Visible = true
 	gearContextMenuButton.Parent = gearContextMenu
-	
+
 	local elementHeight = 12
-	
-	local contextMenuElements = {}		
+
+	local contextMenuElements = {}
 	local contextMenuElementsName = {"Remove Hotkey"}
 
 	for i = 1, #contextMenuElementsName do
@@ -792,7 +792,7 @@ function getGearContextMenu()
 					clearPreview()
 				end
 			end)
-			
+
 			button.MouseEnter:connect(function()
 				if button.Active and gearContextMenu.Parent.Active then
 					highlight(button)
@@ -803,7 +803,7 @@ function getGearContextMenu()
 					clearHighlight(button)
 				end
 			end)
-			
+
 			contextElement.Button = button
 			contextElement.Element = button
 		elseif element.Type == "Label" then
@@ -812,7 +812,7 @@ function getGearContextMenu()
 			frame.BackgroundTransparency = 1
 			frame.Size = UDim2.new(1, 8, 0, elementHeight)
 
-			local label = Instance.new("TextLabel")	
+			local label = Instance.new("TextLabel")
 			label.Name = "Text1"
 			label.BackgroundTransparency = 1
 			label.BackgroundColor3 = Color3.new(1,1,1)
@@ -826,9 +826,9 @@ function getGearContextMenu()
 			label.ZIndex = 9
 			label.Parent = frame
 			element.Label1 = label
-		
+
 			if element.GetText2 then
-				label = Instance.new("TextLabel")	
+				label = Instance.new("TextLabel")
 				label.Name = "Text2"
 				label.BackgroundTransparency = 1
 				label.BackgroundColor3 = Color3.new(1,1,1)
@@ -856,7 +856,7 @@ function getGearContextMenu()
 		clearPreview()
 	end)
 	robloxLock(gearContextMenu)
-	
+
 	return gearContextMenu
 end
 
@@ -891,7 +891,7 @@ currentLoadout.DescendantRemoving:connect(function(descendant)
 		centerGear(currentLoadout:GetChildren())
 	end
 end)
-	
+
 grid.MouseEnter:connect(function() clearPreview() end)
 grid.MouseLeave:connect(function() clearPreview() end)
 

@@ -86,22 +86,22 @@ end
 
 do -- Backpack!
 	local useNewBackpack = false
-	
+
 	pcall(function() useNewBackpack = settings():GetFFlag("NewBackpackScript") end)
-	
+
 	if useNewBackpack then
 		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScript", screenGui)
 	else
 		-- Backpack Builder, creates most of the backpack gui
 		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackBuilder", screenGui)
-		
+
 		screenGui:WaitForChild("CurrentLoadout")
 		screenGui:WaitForChild("Backpack")
 		local Backpack = screenGui.Backpack
-		
+
 		-- Manager handles all big backpack state changes, other scripts subscribe to this and do things accordingly
 		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackManager", Backpack)
-		
+
 		-- Backpack Gear (handles all backpack gear tab stuff)
 		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackGear", Backpack)
 		-- Loadout Script, used for gear hotkeys

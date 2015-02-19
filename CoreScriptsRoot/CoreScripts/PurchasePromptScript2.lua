@@ -635,7 +635,7 @@ local function isMarketplaceDown() 		-- FFlag
 		print("PurchasePromptScript: isMarketplaceDown failed because", result)
 		return false
 	end
-	
+
 	return result
 end
 
