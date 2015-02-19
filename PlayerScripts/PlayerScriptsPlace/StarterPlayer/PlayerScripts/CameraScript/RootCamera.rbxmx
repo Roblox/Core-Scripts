@@ -209,7 +209,7 @@ local function CreateCamera()
 &#9;
 &#9;function this:ZoomCameraFixedBy(zoomIncrement)
 &#9;&#9;return self:ZoomCamera(self:GetCameraZoom() + zoomIncrement)
-&#9;end&#9;
+&#9;end
 &#9;
 &#9;function this:Update()
 &#9;end
@@ -396,6 +396,60 @@ local function CreateCamera()
 &#9;&#9;end
 &#9;end
 &#9;
+&#9;local lastThumbstickRotate = nil
+&#9;local numOfSeconds = 0.7
+&#9;local currentSpeed = 0
+&#9;local maxSpeed = 0.1
+&#9;local thumbstickSensitivity = 1.0
+&#9;local lastThumbstickPos = Vector2.new(0,0)
+&#9;local ySensitivity = 0.8
+&#9;local lastVelocity = nil
+&#9;
+&#9;function this:UpdateGamepad()
+&#9;&#9;local gamepadPan = this.GamepadPanningCamera&#9;
+&#9;&#9;if gamepadPan then
+&#9;&#9;&#9;local currentTime = tick()
+
+&#9;&#9;&#9;if gamepadPan.X ~= 0 or gamepadPan.Y ~= 0 then
+&#9;&#9;&#9;&#9;this.userPanningTheCamera = true
+&#9;&#9;&#9;elseif gamepadPan == Vector2.new(0,0) then
+&#9;&#9;&#9;&#9;lastThumbstickRotate = nil
+&#9;&#9;&#9;&#9;if lastThumbstickPos == Vector2.new(0,0) then
+&#9;&#9;&#9;&#9;&#9;currentSpeed = 0
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;&#9;
+&#9;&#9;&#9;local finalConstant = 0
+&#9;&#9;&#9;
+&#9;&#9;&#9;if lastThumbstickRotate then
+&#9;&#9;&#9;&#9;local elapsedTime = (currentTime - lastThumbstickRotate) * 10
+&#9;&#9;&#9;&#9;currentSpeed = currentSpeed + (maxSpeed * ((elapsedTime*elapsedTime)/numOfSeconds))
+&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;if currentSpeed &gt; maxSpeed then currentSpeed = maxSpeed end
+&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;if lastVelocity then
+&#9;&#9;&#9;&#9;&#9;local velocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
+&#9;&#9;&#9;&#9;&#9;local velocityDeltaMag = (velocity - lastVelocity).magnitude
+&#9;&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;&#9;if velocityDeltaMag &gt; 12 then
+&#9;&#9;&#9;&#9;&#9;&#9;currentSpeed = currentSpeed * (20/velocityDeltaMag)
+&#9;&#9;&#9;&#9;&#9;&#9;if currentSpeed &gt; maxSpeed then currentSpeed = maxSpeed end
+&#9;&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;&#9;
+&#9;&#9;&#9;&#9;finalConstant = thumbstickSensitivity * currentSpeed
+&#9;&#9;&#9;&#9;lastVelocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
+&#9;&#9;&#9;end
+&#9;&#9;&#9;
+&#9;&#9;&#9;lastThumbstickPos = gamepadPan
+&#9;&#9;&#9;lastThumbstickRotate = currentTime
+&#9;&#9;&#9;
+&#9;&#9;&#9;return Vector2.new( gamepadPan.X * finalConstant, gamepadPan.Y * finalConstant * ySensitivity)
+&#9;&#9;end
+&#9;&#9;
+&#9;&#9;return Vector2.new(0,0)
+&#9;end
+&#9;
 &#9;function this:ConnectInputEvents()
 &#9;&#9;-- Mouse and Touch
 &#9;&#9;UserInputService.InputBegan:connect(function(input, processed)
@@ -403,6 +457,12 @@ local function CreateCamera()
 &#9;&#9;&#9;&#9;OnTouchBegan(input, processed)
 &#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
 &#9;&#9;&#9;&#9;OnMouse2Down(input, processed)
+&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.ButtonR3 then
+&#9;&#9;&#9;&#9;if this.currentZoom &gt; 0.5 then
+&#9;&#9;&#9;&#9;&#9;this:ZoomCamera(0)
+&#9;&#9;&#9;&#9;else
+&#9;&#9;&#9;&#9;&#9;this:ZoomCamera(10)
+&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end
 &#9;&#9;end)
 &#9;&#9;
@@ -423,14 +483,8 @@ local function CreateCamera()
 &#9;&#9;&#9;&#9;OnTouchEnded(input, processed)
 &#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
 &#9;&#9;&#9;&#9;OnMouse2Up(input, processed)
-&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.Gamepad1 then
-&#9;&#9;&#9;&#9;if input.KeyCode == Enum.KeyCode.ButtonR3 then
-&#9;&#9;&#9;&#9;&#9;if this.currentZoom &gt; 0.5 then
-&#9;&#9;&#9;&#9;&#9;&#9;this:ZoomCamera(0)
-&#9;&#9;&#9;&#9;&#9;else
-&#9;&#9;&#9;&#9;&#9;&#9;this:ZoomCamera(10)
-&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
+&#9;&#9;&#9;&#9;this.GamepadPanningCamera = Vector2.new(0,0)
 &#9;&#9;&#9;end
 &#9;&#9;end)
 &#9;&#9;
@@ -438,10 +492,6 @@ local function CreateCamera()
 &#9;&#9;UserInputService.InputBegan:connect(function(input, processed)
 &#9;&#9;&#9;if input.UserInputType == Enum.UserInputType.Keyboard then
 &#9;&#9;&#9;&#9;OnKeyDown(input, processed)
-&#9;&#9;&#9;elseif input.UserInputType == Enum.UserInputType.Gamepad1 then
-&#9;&#9;&#9;&#9;if input.KeyCode == Enum.KeyCode.Thumbstick2 then
-&#9;&#9;&#9;&#9;&#9;this.GamepadPanningCamera = Vector2.new(0,0)
-&#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end
 &#9;&#9;end)
 &#9;&#9;

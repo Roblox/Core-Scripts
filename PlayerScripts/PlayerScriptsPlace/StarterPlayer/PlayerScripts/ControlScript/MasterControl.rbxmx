@@ -1,0 +1,95 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBXD00AEC210DE5446C9D16A928B401A41D">
+		<Properties>
+			<string name="Name">MasterControl</string>
+			<ProtectedString name="Source">--[[
+&#9;// FileName: MasterControl
+&#9;// Version 1.0
+&#9;// Written by: jeditkacheff
+&#9;// Description: All character control scripts go thru this script, this script makes sure all actions are performed
+--]]
+
+--[[ Local Variables ]]--
+local MasterControl = {}
+
+local Players = game:GetService(&apos;Players&apos;)
+local RunService = game:GetService(&apos;RunService&apos;)
+
+while not Players.LocalPlayer do
+&#9;wait()
+end
+local LocalPlayer = Players.LocalPlayer
+local CachedHumanoid = nil
+local RenderSteppedCon = nil
+local moveFunc = LocalPlayer.Move
+
+local isJumping = false
+local moveValue = Vector3.new(0,0,0)
+
+
+--[[ Local Functions ]]--
+local function getHumanoid()
+&#9;local character = LocalPlayer and LocalPlayer.Character
+&#9;if character then
+&#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
+&#9;&#9;&#9;return CachedHumanoid
+&#9;&#9;else
+&#9;&#9;&#9;CachedHumanoid = nil
+&#9;&#9;&#9;for _,child in pairs(character:GetChildren()) do
+&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
+&#9;&#9;&#9;&#9;&#9;CachedHumanoid = child
+&#9;&#9;&#9;&#9;&#9;return CachedHumanoid
+&#9;&#9;&#9;&#9;end
+&#9;&#9;&#9;end
+&#9;&#9;end
+&#9;end
+end
+
+
+
+--[[ Public API ]]--
+function MasterControl:Init()
+&#9;if RenderSteppedCon then return end
+&#9;
+&#9;RenderSteppedCon = RunService.RenderStepped:connect(function()
+&#9;&#9;if LocalPlayer and LocalPlayer.Character then
+&#9;&#9;&#9;local humanoid = getHumanoid()
+&#9;&#9;&#9;if not humanoid then return end
+&#9;&#9;&#9;
+&#9;&#9;&#9;if humanoid and not humanoid.PlatformStand and isJumping then
+&#9;&#9;&#9;&#9;humanoid.Jump = isJumping
+&#9;&#9;&#9;&#9;isJumping = false
+&#9;&#9;&#9;end
+
+&#9;&#9;&#9;-- support games that have a scripted camera
+&#9;&#9;&#9;local isCameraRelative = game.Workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable
+&#9;&#9;&#9;moveFunc(LocalPlayer, moveValue, isCameraRelative)
+&#9;&#9;end
+&#9;end)
+end
+
+function MasterControl:Disable()
+&#9;if RenderSteppedCon then
+&#9;&#9;RenderSteppedCon:disconnect()
+&#9;&#9;RenderSteppedCon = nil
+&#9;&#9;
+&#9;&#9;moveValue = Vector3.new(0,0,0)
+&#9;&#9;isJumping = false
+&#9;end
+end
+
+function MasterControl:AddToPlayerMovement(playerMoveVector)
+&#9;moveValue = Vector3.new(moveValue.X + playerMoveVector.X, moveValue.Y + playerMoveVector.Y, moveValue.Z + playerMoveVector.Z)
+end
+
+function MasterControl:RequestJump()
+&#9;isJumping = true
+end
+
+return MasterControl
+</ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

@@ -23,6 +23,7 @@
 &#9;&#9;Thumbpad
 &#9;&#9;Thumbstick
 &#9;&#9;TouchJump
+&#9;&#9;MasterControl
 --]]
 
 --[[ Services ]]--
@@ -54,23 +55,28 @@ local TouchControlFrame = nil
 local TouchJumpModule = nil
 local IsModalEnabled = UserInputService.ModalEnabled
 local BindableEvent_OnFailStateChanged = nil
+local isJumpEnabled = false
+
 
 --[[ Modules ]]--
 local CurrentControlModule = nil
 local ClickToMoveTouchControls = nil
 local ControlModules = {}
+
+local MasterControl = require(script:WaitForChild(&apos;MasterControl&apos;))
+
 if IsTouchDevice then
-&#9;ControlModules.Thumbstick = require(script:WaitForChild(&apos;Thumbstick&apos;))
-&#9;ControlModules.Thumbpad = require(script:WaitForChild(&apos;Thumbpad&apos;))
-&#9;ControlModules.DPad = require(script:WaitForChild(&apos;DPad&apos;))
+&#9;ControlModules.Thumbstick = require(script.MasterControl:WaitForChild(&apos;Thumbstick&apos;))
+&#9;ControlModules.Thumbpad = require(script.MasterControl:WaitForChild(&apos;Thumbpad&apos;))
+&#9;ControlModules.DPad = require(script.MasterControl:WaitForChild(&apos;DPad&apos;))
 &#9;ControlModules.Default = ControlModules.Thumbstick
-&#9;TouchJumpModule = require(script:WaitForChild(&apos;TouchJump&apos;))
+&#9;TouchJumpModule = require(script.MasterControl:WaitForChild(&apos;TouchJump&apos;))
 &#9;BindableEvent_OnFailStateChanged = script.Parent:WaitForChild(&apos;OnClickToMoveFailStateChange&apos;)
 else
-&#9;ControlModules.Keyboard = require(script:WaitForChild(&apos;KeyboardMovement&apos;))
+&#9;ControlModules.Keyboard = require(script.MasterControl:WaitForChild(&apos;KeyboardMovement&apos;))
 end
+ControlModules.Gamepad = require(script.MasterControl:WaitForChild(&apos;Gamepad&apos;))
 
-ControlModules.Gamepad = require(script:WaitForChild(&apos;Gamepad&apos;))
 
 --[[ Initialization/Setup ]]--
 local function createTouchGuiContainer()
@@ -125,7 +131,6 @@ if IsTouchDevice then
 &#9;createTouchGuiContainer()
 &#9;onControlsChanged = function()
 &#9;&#9;local newModuleToEnable = nil
-&#9;&#9;local isJumpEnabled = false
 &#9;&#9;if not IsUserChoice then
 &#9;&#9;&#9;if DevMovementMode == Enum.DevTouchMovementMode.Thumbstick then
 &#9;&#9;&#9;&#9;newModuleToEnable = ControlModules.Thumbstick
@@ -278,15 +283,17 @@ end
 while game.ContentProvider.RequestQueueSize &gt; 0 do
 &#9;wait()
 end
+
+MasterControl:Init()
 onControlsChanged()
 
 -- why do I need a wait here?!?!?!? Sometimes touch controls don&apos;t disappear without this
 wait()
 if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
-&#9;if CurrentControlModule then
+&#9;if CurrentControlModule and IsTouchDevice then
 &#9;&#9;CurrentControlModule:Disable()
 &#9;end
-&#9;if isJumpEnabled then TouchJumpModule:Disable() end
+&#9;if isJumpEnabled and IsTouchDevice then TouchJumpModule:Disable() end
 
 &#9;ControlModules.Gamepad:Enable()
 end
@@ -294,10 +301,10 @@ end
 UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
 &#9;if gamepadEnum ~= Enum.UserInputType.Gamepad1 then return end
 &#9;
-&#9;if CurrentControlModule then
+&#9;if CurrentControlModule and IsTouchDevice then
 &#9;&#9;&#9;CurrentControlModule:Enable()
 &#9;end
-&#9;if isJumpEnabled then TouchJumpModule:Enable() end
+&#9;if isJumpEnabled and IsTouchDevice then TouchJumpModule:Enable() end
 &#9;
 &#9;ControlModules.Gamepad:Disable()
 end)
@@ -305,10 +312,10 @@ end)
 UserInputService.GamepadConnected:connect(function(gamepadEnum)
 &#9;if gamepadEnum ~= Enum.UserInputType.Gamepad1 then return end
 &#9;
-&#9;if CurrentControlModule then
+&#9;if CurrentControlModule and IsTouchDevice then
 &#9;&#9;CurrentControlModule:Disable()
 &#9;end
-&#9;if isJumpEnabled then TouchJumpModule:Disable() end
+&#9;if isJumpEnabled and IsTouchDevice then TouchJumpModule:Disable() end
 &#9;
 &#9;ControlModules.Gamepad:Enable()
 end)

@@ -16,17 +16,19 @@ local UserInputService = game:GetService(&apos;UserInputService&apos;)
 
 local Thumbpad = {}
 
+local MasterControl = require(script.Parent)
+
 --[[ Script Variables ]]--
 while not Players.LocalPlayer do
 &#9;wait()
 end
 local LocalPlayer = Players.LocalPlayer
-local CachedHumanoid = nil
 local ThumbpadFrame = nil
 local TouchObject = nil
 local OnInputEnded = nil&#9;-- is defined in Create()
 local OnTouchChangedCn = nil
 local OnTouchEndedCn = nil
+local currentMoveVector = Vector3.new(0,0,0)
 
 --[[ Constants ]]--
 local DPAD_SHEET = &quot;rbxasset://textures/ui/DPadSheet.png&quot;
@@ -46,23 +48,6 @@ local function createArrowLabel(name, parent, position, size, rectOffset, rectSi
 &#9;image.Parent = parent
 &#9;
 &#9;return image
-end
-
-local function getHumanoid()
-&#9;local character = LocalPlayer and LocalPlayer.Character
-&#9;if character and character.Parent then
-&#9;&#9;if CachedHumanoid and CachedHumanoid.Parent == character then
-&#9;&#9;&#9;return CachedHumanoid
-&#9;&#9;else
-&#9;&#9;&#9;CachedHumanoid = nil
-&#9;&#9;&#9;for _,child in pairs(character:GetChildren()) do
-&#9;&#9;&#9;&#9;if child:IsA(&apos;Humanoid&apos;) then
-&#9;&#9;&#9;&#9;&#9;CachedHumanoid = child
-&#9;&#9;&#9;&#9;&#9;return CachedHumanoid
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end
 end
 
 --[[ Public API ]]--
@@ -133,30 +118,29 @@ function Thumbpad:Create(parentFrame)
 &#9;local vForward = Vector3.new(0, 0, -1)
 &#9;local vRight = Vector3.new(1, 0, 0)
 &#9;local function doMove(pos)
+&#9;&#9;MasterControl:AddToPlayerMovement(-currentMoveVector)
+&#9;&#9;
 &#9;&#9;local delta = Vector2.new(pos.x, pos.y) - padOrigin
-&#9;&#9;local inputAxis = delta / (thumbpadSize/2)
+&#9;&#9;currentMoveVector = delta / (thumbpadSize/2)
 &#9;&#9;
 &#9;&#9;-- Scaled Radial Dead Zone
-&#9;&#9;local inputAxisMagnitude = inputAxis.magnitude
+&#9;&#9;local inputAxisMagnitude = currentMoveVector.magnitude
 &#9;&#9;if inputAxisMagnitude &lt; deadZone then
-&#9;&#9;&#9;inputAxis = Vector3.new(0, 0, 0)
+&#9;&#9;&#9;currentMoveVector = Vector3.new(0, 0, 0)
 &#9;&#9;else
-&#9;&#9;&#9;inputAxis = inputAxis.unit * ((inputAxisMagnitude - deadZone) / (1 - deadZone))
+&#9;&#9;&#9;currentMoveVector = currentMoveVector.unit * ((inputAxisMagnitude - deadZone) / (1 - deadZone))
 &#9;&#9;&#9;-- catch possible NAN Vector
-&#9;&#9;&#9;if inputAxis.magnitude == 0 then
-&#9;&#9;&#9;&#9;inputAxis = Vector3.new(0, 0, 0)
+&#9;&#9;&#9;if currentMoveVector.magnitude == 0 then
+&#9;&#9;&#9;&#9;currentMoveVector = Vector3.new(0, 0, 0)
 &#9;&#9;&#9;else
-&#9;&#9;&#9;&#9;inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y).unit
+&#9;&#9;&#9;&#9;currentMoveVector = Vector3.new(currentMoveVector.x, 0, currentMoveVector.y).unit
 &#9;&#9;&#9;end
 &#9;&#9;end
 &#9;&#9;
-&#9;&#9;local humanoid = getHumanoid()
-&#9;&#9;if humanoid then
-&#9;&#9;&#9;humanoid:Move(inputAxis, true)
-&#9;&#9;end
+&#9;&#9;MasterControl:AddToPlayerMovement(currentMoveVector)
 &#9;&#9;
-&#9;&#9;local forwardDot = inputAxis:Dot(vForward)
-&#9;&#9;local rightDot = inputAxis:Dot(vRight)
+&#9;&#9;local forwardDot = currentMoveVector:Dot(vForward)
+&#9;&#9;local rightDot = currentMoveVector:Dot(vRight)
 &#9;&#9;if forwardDot &gt; 0.5 then&#9;&#9;-- UP
 &#9;&#9;&#9;if not isUp then
 &#9;&#9;&#9;&#9;isUp, isDown = true, false
@@ -214,10 +198,9 @@ function Thumbpad:Create(parentFrame)
 &#9;end)
 &#9;
 &#9;OnInputEnded = function()
-&#9;&#9;local humanoid = getHumanoid()
-&#9;&#9;if humanoid then
-&#9;&#9;&#9;humanoid:Move(Vector3.new(0, 0, 0), true)
-&#9;&#9;end
+&#9;&#9;MasterControl:AddToPlayerMovement(-currentMoveVector)
+&#9;&#9;currentMoveVector = Vector3.new(0,0,0)
+
 &#9;&#9;ThumbpadFrame.Position = position
 &#9;&#9;TouchObject = nil
 &#9;&#9;isUp, isDown, isLeft, isRight = false, false, false, false

@@ -66,6 +66,13 @@ local function CreateFollowCamera()
 &#9;&#9;&#9;&#9;angle = angle + (self.TurningLeft and -120 or 0)
 &#9;&#9;&#9;&#9;angle = angle + (self.TurningRight and 120 or 0)
 &#9;&#9;&#9;end
+
+&#9;&#9;&#9;local gamepadRotation = self:UpdateGamepad()
+&#9;&#9;&#9;if gamepadRotation ~= Vector2.new(0,0) then
+&#9;&#9;&#9;&#9;userPanningTheCamera = true
+&#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), gamepadRotation)
+&#9;&#9;&#9;end
+&#9;&#9;&#9;
 &#9;&#9;&#9;if angle ~= 0 then
 &#9;&#9;&#9;&#9;userPanningTheCamera = true
 &#9;&#9;&#9;&#9;self:RotateCamera(self:GetCameraLook(), Vector2.new(math.rad(angle * delta), 0))

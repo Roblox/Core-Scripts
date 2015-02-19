@@ -28,6 +28,9 @@ local CachedHumanoid = nil
 local RenderSteppedCon = nil
 local TextFocusReleasedCn = nil
 
+local MasterControl = require(script.Parent)
+local currentMoveVector = Vector3.new(0,0,0)
+
 --[[ Local Functions ]]--
 local function getHumanoid()
 &#9;local character = LocalPlayer and LocalPlayer.Character
@@ -57,8 +60,11 @@ function KeyboardMovement:Enable()
 &#9;local leftValue = 0
 &#9;local rightValue = 0
 &#9;
-&#9;local isJumping = false
-&#9;local moveFunc = LocalPlayer.Move
+&#9;local updateMovement = function()
+&#9;&#9;MasterControl:AddToPlayerMovement(-currentMoveVector)
+&#9;&#9;currentMoveVector = Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue)
+&#9;&#9;MasterControl:AddToPlayerMovement(currentMoveVector)
+&#9;end
 &#9;
 &#9;local function isFirstPersonOrShiftLocked()
 &#9;&#9;-- Mouse behavior is being set by the camera script. So be warned that if you
@@ -74,6 +80,7 @@ function KeyboardMovement:Enable()
 &#9;&#9;elseif inputState == Enum.UserInputState.End then
 &#9;&#9;&#9;forwardValue = 0
 &#9;&#9;end
+&#9;&#9;updateMovement()
 &#9;end
 &#9;
 &#9;local moveBackwardFunc = function(actionName, inputState, inputObject)&#9;
@@ -82,6 +89,7 @@ function KeyboardMovement:Enable()
 &#9;&#9;elseif inputState == Enum.UserInputState.End then
 &#9;&#9;&#9;backwardValue = 0
 &#9;&#9;end
+&#9;&#9;updateMovement()
 &#9;end
 &#9;
 &#9;local moveLeftFunc = function(actionName, inputState, inputObject)&#9;
@@ -90,6 +98,7 @@ function KeyboardMovement:Enable()
 &#9;&#9;elseif inputState == Enum.UserInputState.End then
 &#9;&#9;&#9;leftValue = 0
 &#9;&#9;end
+&#9;&#9;updateMovement()
 &#9;end
 &#9;
 &#9;local moveRightFunc = function(actionName, inputState, inputObject)&#9;
@@ -98,17 +107,22 @@ function KeyboardMovement:Enable()
 &#9;&#9;elseif inputState == Enum.UserInputState.End then
 &#9;&#9;&#9;rightValue = 0
 &#9;&#9;end
+&#9;&#9;updateMovement()
 &#9;end
 &#9;
 &#9;local jumpFunc = function(actionName, inputState, inputObject)
-&#9;&#9;isJumping = inputState == Enum.UserInputState.Begin
+&#9;&#9;if inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;MasterControl:RequestJump()
+&#9;&#9;end
 &#9;end
 &#9;
 &#9;-- enable jumping from seat on backspace
 &#9;local jumpFromSeat = function(actionName, inputState, inputObject)
 &#9;&#9;local humanoid = getHumanoid()
 &#9;&#9;if humanoid and humanoid.Sit then
-&#9;&#9;&#9;humanoid.Jump = inputState == Enum.UserInputState.Begin
+&#9;&#9;&#9;if inputState == Enum.UserInputState.Begin then
+&#9;&#9;&#9;&#9;MasterControl:RequestJump()
+&#9;&#9;&#9;end
 &#9;&#9;end
 &#9;end
 &#9;
@@ -133,21 +147,14 @@ function KeyboardMovement:Enable()
 &#9;&#9;&#9;&#9;&#9;rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + desiredLook)
 &#9;&#9;&#9;&#9;end
 &#9;&#9;&#9;end
-&#9;&#9;&#9;
-&#9;&#9;&#9;if humanoid and not humanoid.PlatformStand and isJumping then
-&#9;&#9;&#9;&#9;humanoid.Jump = isJumping
-&#9;&#9;&#9;end
-
-&#9;&#9;&#9;-- support games that have a scripted camera
-&#9;&#9;&#9;local isCameraRelative = game.Workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable
-&#9;&#9;&#9;moveFunc(LocalPlayer, Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue), isCameraRelative)
 &#9;&#9;end
 &#9;end)
 &#9;
 &#9;TextFocusReleasedCn = UserInputService.TextBoxFocusReleased:connect(function(textBox)
 &#9;&#9;local humanoid = getHumanoid()
 &#9;&#9;if humanoid then
-&#9;&#9;&#9;leftValue, rightValue, forwardValue, backwardValue = 0, 0, 0, 0
+&#9;&#9;&#9;MasterControl:AddToPlayerMovement(-currentMoveVector)
+&#9;&#9;&#9;currentMoveVector = Vector3.new(0,0,0)
 &#9;&#9;end
 &#9;end)
 end
@@ -170,9 +177,8 @@ function KeyboardMovement:Disable()
 &#9;&#9;TextFocusReleasedCn = nil
 &#9;end
 &#9;
-&#9;if LocalPlayer then
-&#9;&#9;LocalPlayer:Move(Vector3.new(0,0,0), true)
-&#9;end
+&#9;MasterControl:AddToPlayerMovement(-currentMoveVector)
+&#9;currentMoveVector = Vector3.new(0,0,0)
 end
 
 return KeyboardMovement
