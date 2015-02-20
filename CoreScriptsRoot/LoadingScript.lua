@@ -102,14 +102,14 @@ function MainGui:GenerateMain()
 	local mainBackgroundContainer = create 'Frame' {
 		Name = 'BlackFrame',
 		BackgroundColor3 = COLORS.BLACK,
-		Size = UDim2.new(1, 0, 1, 0),
+		Size = UDim2.new(1, 0, 1, 20),
 		Active = true,
 
 		create 'Frame' {
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
 			BackgroundTransparency = 1,
-			Position = UDim2.new(1, -125, 1, -125),
+			Position = UDim2.new(1, -125, 1, -145),
 			Size = UDim2.new(0, 120, 0, 120),
 			ZIndex = 2,
 
@@ -135,7 +135,7 @@ function MainGui:GenerateMain()
 		create 'Frame' {
 			Name = 'CountFrame',
 			BackgroundTransparency = 1,
-			Position = UDim2.new(0, 0, 1, -120),
+			Position = UDim2.new(0, 0, 1, -140),
 			Size = UDim2.new(0.3, 0, 0, 120),
 			ZIndex = 2,
 
