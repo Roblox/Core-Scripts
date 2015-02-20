@@ -181,6 +181,11 @@ local StarterGui = game:GetService('StarterGui')
 
 --[[ SCRIPT VARIABLES ]]
 
+local RenderStepped = RunService.RenderStepped
+if not game:findService("NetworkClient") then
+	RenderStepped = RunSerivce.Heartbeat
+end
+
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
 local Player = PlayersService.LocalPlayer
@@ -270,7 +275,7 @@ do
 				end
 				instance[prop] = easingFunc(now - this.StartTime, start, final - start, duration)
 				percentComplete = Util.Clamp(0, 1, (now - this.StartTime) / duration)
-				RunService.RenderStepped:wait()
+				RenderStepped:wait()
 				now = tick()
 			end
 			if this.Cancelled == false and instance then
