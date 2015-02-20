@@ -183,7 +183,7 @@ local StarterGui = game:GetService('StarterGui')
 
 local RenderStepped = RunService.RenderStepped
 if not game:findService("NetworkClient") then
-	RenderStepped = RunSerivce.Heartbeat
+	RenderStepped = RunService.Heartbeat
 end
 
 -- I am not fond of waiting at the top of the script here...
