@@ -998,7 +998,7 @@ local function CreateChatBarWidget(settings)
 	end
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
-		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.ChatBar then
 			if enabled then
 				HookUpEvents()
 			else
@@ -1562,7 +1562,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
-		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.ChatWindow then
 			if this.ChatContainer then
 				this.ChatContainer.Visible = enabled
 			end
