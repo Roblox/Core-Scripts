@@ -1901,16 +1901,26 @@ Playerlist.Open = function()
 	if isOpen then return end
 	--
 	isOpen = true
-	ScrollList.Visible = true
-	ScrollList:TweenSize(UDim2.new(1, 0, 0, LastMaxScrollSize), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true)
+	Container.Visible = true
 end
 
 Playerlist.Close = function()
 	if not isOpen then return end
 	--
 	isOpen = false
-	ScrollList:TweenSize(UDim2.new(1, 0, 0, 0), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.2, true, function()
-		ScrollList.Visible = false
+	Container.Visible = false
+end
+
+-- NOTE: Core script only
+if GuiService then
+	GuiService.KeyPressed:connect(function(key)
+		if key == "\t" then
+			if isOpen then
+				Playerlist.Close()
+			else
+				Playerlist.Open()
+			end
+		end
 	end)
 end
 
