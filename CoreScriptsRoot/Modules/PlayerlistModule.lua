@@ -106,7 +106,7 @@ local TEXT_COLOR = Color3.new(1, 1, 243/255)
 local TEXT_STROKE_COLOR = Color3.new(34/255, 34/255, 34/255)
 local TWEEN_TIME = 0.15
 local MAX_LEADERSTATS = 4
-local MAX_STR_LEN = 10
+local MAX_STR_LEN = 12
 local MAX_FRIEND_COUNT = 200
 
 local ADMINS = {	-- Admins with special icons
@@ -339,7 +339,7 @@ end
 -- Start of Gui Creation
 local Container = Instance.new('Frame')
 Container.Name = "PlayerListContainer"
-Container.Position = UDim2.new(1, -202, 0, 2)
+Container.Position = UDim2.new(1, -200, 0, 2)
 Container.Size = MinContainerSize
 Container.BackgroundTransparency = 1
 Container.Visible = false
@@ -1435,7 +1435,7 @@ updateLeaderstatFrames = function()
 			end
 		end
 		
-		Container.Position = UDim2.new(1, -offset - 2, 0, 2)
+		Container.Position = UDim2.new(1, -offset, 0, 2)
 		Container.Size = UDim2.new(0, offset, 0.5, 0)
 		local newMinContainerOffset = offset
 		MinContainerSize = UDim2.new(0, newMinContainerOffset, 0.5, 0)
@@ -1880,6 +1880,11 @@ end)
 -- NOTE: Core script only
 local function onCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
+		-- not visible on small screen devices
+		if UserInputService.TouchEnabled and GuiService:GetScreenResolution().Y <= 500 then
+			Container.Visible = false
+			return
+		end
 		Container.Visible = enabled
 		GuiService[enabled and "AddKey" or "RemoveKey"](GuiService, "\t")
 	end
