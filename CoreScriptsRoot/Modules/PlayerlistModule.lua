@@ -1897,29 +1897,20 @@ Playerlist.GetStats = function()
 end
 
 local isOpen = true
-Playerlist.Open = function()
-	if isOpen then return end
-	--
-	isOpen = true
-	Container.Visible = true
+Playerlist.ToggleVisibility = function()
+	isOpen = not isOpen
+	Container.Visible = isOpen
 end
 
-Playerlist.Close = function()
-	if not isOpen then return end
-	--
-	isOpen = false
-	Container.Visible = false
+Playerlist.IsOpen = function()
+	return isOpen
 end
 
 -- NOTE: Core script only
 if GuiService then
 	GuiService.KeyPressed:connect(function(key)
 		if key == "\t" then
-			if isOpen then
-				Playerlist.Close()
-			else
-				Playerlist.Open()
-			end
+			Playerlist.ToggleVisibility()
 		end
 	end)
 end
