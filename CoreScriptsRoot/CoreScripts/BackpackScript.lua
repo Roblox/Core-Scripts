@@ -1,4 +1,4 @@
--- Backpack Version 4.18
+-- Backpack Version 4.19
 -- OnlyTwentyCharacters
 
 -------------------
@@ -97,7 +97,6 @@ local StarterToolFound = false -- Special handling is required for the gear curr
 local WholeThingEnabled = false
 local TextBoxFocused = false -- ANY TextBox, not just the search box
 local ResultsIndices = nil -- Results of a search
-local ResetSearch = nil -- Function defined in search logic at bottom
 local HotkeyStrings = {} -- Used for eating/releasing hotkeys
 local CharConns = {} -- Holds character connections to be cleared later
 local TopBarEnabled = false
@@ -736,10 +735,11 @@ local function OnCharacterAdded(character)
 end
 
 local function OnInputBegan(input, isProcessed)
+	-- Pass through keyboard hotkeys when not typing into a TextBox and not disabled (except for the Drop key)
 	if input.UserInputType == Enum.UserInputType.Keyboard and not TextBoxFocused and (WholeThingEnabled or input.KeyCode.Value == DROP_HOTKEY_VALUE) then
 		local hotkeyBehavior = HotkeyFns[input.KeyCode.Value]
 		if hotkeyBehavior then
-			hotkeyBehavior()
+			hotkeyBehavior(isProcessed)
 		end
 	end
 end
@@ -931,7 +931,7 @@ do -- Search stuff
 		end
 	end
 
-	local function loseFocus(enterPressed)
+	local function focusLost(enterPressed)
 		if enterPressed then
 			--TODO: Could optimize
 			search()
@@ -943,10 +943,21 @@ do -- Search stuff
 	clickArea.MouseButton1Click:connect(gainFocus)
 	xButton.MouseButton1Click:connect(reset)
 	searchBox.Changed:connect(onChanged)
-	searchBox.FocusLost:connect(loseFocus)
-	HotkeyFns[Enum.KeyCode.Escape.Value] = reset
+	searchBox.FocusLost:connect(focusLost)
 
-	ResetSearch = reset -- Define global function
+	BackpackScript.StateChanged.Event:connect(function(isNowOpen)
+		if not isNowOpen then
+			reset()
+		end
+	end)
+
+	HotkeyFns[Enum.KeyCode.Escape.Value] = function(isProcessed)
+		if isProcessed then -- Pressed from within a TextBox
+			reset()
+		elseif InventoryFrame.Visible then
+			BackpackScript.OpenClose()
+		end
+	end
 end
 
 do -- Make the Inventory expand/collapse arrow (unless TopBar)
@@ -966,9 +977,6 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 			HotbarFrame.Active = not HotbarFrame.Active
 			for i = 1, HOTBAR_SLOTS do
 				Slots[i]:SetClickability(not nowOpen)
-			end
-			if not nowOpen then
-				ResetSearch()
 			end
 		end
 		BackpackScript.StateChanged:Fire(InventoryFrame.Visible)
