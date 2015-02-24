@@ -349,7 +349,6 @@ Container.Parent = RobloxGui
 local ScrollList = Instance.new('ScrollingFrame')
 ScrollList.Name = "ScrollList"
 ScrollList.Size = UDim2.new(1, -1, 0, 0)
-ScrollList.Position = UDim2.new(0, 0, 0.1, 1)
 ScrollList.BackgroundTransparency = 1
 ScrollList.BackgroundColor3 = Color3.new()
 ScrollList.BorderSizePixel = 0
@@ -1793,7 +1792,6 @@ end
 
 local function resizePlayerList()
 	setScrollListSize()
-	ScrollList.Position = UDim2.new(0, 0, 0, 2)
 	clampCanvasPosition()
 end
 
