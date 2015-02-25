@@ -6,22 +6,22 @@
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">CameraScript</string>
-			<ProtectedString name="Source">local RunService = game:GetService(&apos;RunService&apos;)
-local UserInputService = game:GetService(&apos;UserInputService&apos;)
-local PlayersService = game:GetService(&apos;Players&apos;)
+			<ProtectedString name="Source"><![CDATA[local RunService = game:GetService('RunService')
+local UserInputService = game:GetService('UserInputService')
+local PlayersService = game:GetService('Players')
 
 -- Issue with play solo? (F6)
 while not UserInputService.KeyboardEnabled and not UserInputService.TouchEnabled do
-&#9;wait()
+	wait()
 end
 
-local RootCamera = script:WaitForChild(&apos;RootCamera&apos;)
-local ClassicCamera = require(RootCamera:WaitForChild(&apos;ClassicCamera&apos;))()
-local FollowCamera = require(RootCamera:WaitForChild(&apos;FollowCamera&apos;))()
-local PopperCam = require(script:WaitForChild(&apos;PopperCam&apos;))
-local Invisicam = require(script:WaitForChild(&apos;Invisicam&apos;))
-local ClickToMove = require(script:WaitForChild(&apos;ClickToMove&apos;))()
-local StarterPlayer = game:GetService(&apos;StarterPlayer&apos;)
+local RootCamera = script:WaitForChild('RootCamera')
+local ClassicCamera = require(RootCamera:WaitForChild('ClassicCamera'))()
+local FollowCamera = require(RootCamera:WaitForChild('FollowCamera'))()
+local PopperCam = require(script:WaitForChild('PopperCam'))
+local Invisicam = require(script:WaitForChild('Invisicam'))
+local ClickToMove = require(script:WaitForChild('ClickToMove'))()
+local StarterPlayer = game:GetService('StarterPlayer')
 
 local GameSettings = UserSettings().GameSettings
 
@@ -38,264 +38,264 @@ local LastTransparency = 0
 
 
 local function IsTouch()
-&#9;return UserInputService.TouchEnabled
+	return UserInputService.TouchEnabled
 end
 
 local function FuzzyEquals(num1, num2)
-&#9;return num1 &gt; num2 - 0.01 and num1 &lt; num2 + 0.01
+	return num1 > num2 - 0.01 and num1 < num2 + 0.01
 end
 
 local function Round(num, places)
-&#9;places = places or 0
-&#9;local decimalPivot = 10^places
-&#9;return math.floor(num * decimalPivot + 0.5) / decimalPivot
+	places = places or 0
+	local decimalPivot = 10^places
+	return math.floor(num * decimalPivot + 0.5) / decimalPivot
 end
 
 
 
 local function shouldUseCustomCamera()
-&#9;local player = PlayersService.LocalPlayer
-&#9;local currentCamera = workspace.CurrentCamera
-&#9;if player then
-&#9;&#9;if currentCamera == nil or (currentCamera and currentCamera.CameraType == Enum.CameraType.Custom) then
-&#9;&#9;&#9;return true, player, currentCamera
-&#9;&#9;end
-&#9;end
-&#9;return false, player, currentCamera
+	local player = PlayersService.LocalPlayer
+	local currentCamera = workspace.CurrentCamera
+	if player then
+		if currentCamera == nil or (currentCamera and currentCamera.CameraType == Enum.CameraType.Custom) then
+			return true, player, currentCamera
+		end
+	end
+	return false, player, currentCamera
 end
 
 local function isClickToMoveOn()
-&#9;local customModeOn, player, currentCamera = shouldUseCustomCamera()
-&#9;if customModeOn then
-&#9;&#9;if IsTouch() then -- Touch
-&#9;&#9;&#9;if player.DevTouchMovementMode == Enum.DevTouchMovementMode.ClickToMove or
-&#9;&#9;&#9;&#9;&#9;(player.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice and GameSettings.TouchMovementMode == Enum.TouchMovementMode.ClickToMove) then
-&#9;&#9;&#9;&#9;return true
-&#9;&#9;&#9;end
-&#9;&#9;else -- Computer
-&#9;&#9;&#9;if player.DevComputerMovementMode == Enum.DevComputerMovementMode.ClickToMove or
-&#9;&#9;&#9;&#9;&#9;(player.DevComputerMovementMode == Enum.DevComputerMovementMode.UserChoice and GameSettings.ComputerMovementMode == Enum.ComputerMovementMode.ClickToMove) then
-&#9;&#9;&#9;&#9;return true
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end
-&#9;return false&#9;
+	local customModeOn, player, currentCamera = shouldUseCustomCamera()
+	if customModeOn then
+		if IsTouch() then -- Touch
+			if player.DevTouchMovementMode == Enum.DevTouchMovementMode.ClickToMove or
+					(player.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice and GameSettings.TouchMovementMode == Enum.TouchMovementMode.ClickToMove) then
+				return true
+			end
+		else -- Computer
+			if player.DevComputerMovementMode == Enum.DevComputerMovementMode.ClickToMove or
+					(player.DevComputerMovementMode == Enum.DevComputerMovementMode.UserChoice and GameSettings.ComputerMovementMode == Enum.ComputerMovementMode.ClickToMove) then
+				return true
+			end
+		end
+	end
+	return false	
 end
 
 local function getCurrentCameraMode()
-&#9;local customModeOn, player, currentCamera = shouldUseCustomCamera()
-&#9;if customModeOn then
-&#9;&#9;if IsTouch() then -- Touch (iPad, etc...)
-&#9;&#9;&#9;if isClickToMoveOn() then
-&#9;&#9;&#9;&#9;return Enum.DevTouchMovementMode.ClickToMove.Name
-&#9;&#9;&#9;elseif player.DevTouchCameraMode == Enum.DevTouchCameraMovementMode.UserChoice then
-&#9;&#9;&#9;&#9;local touchMovementMode = GameSettings.TouchCameraMovementMode
-&#9;&#9;&#9;&#9;if touchMovementMode == Enum.TouchCameraMovementMode.Default then
-&#9;&#9;&#9;&#9;&#9;return Enum.TouchCameraMovementMode.Follow.Name
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;return touchMovementMode.Name
-&#9;&#9;&#9;else
-&#9;&#9;&#9;&#9;return player.DevTouchCameraMode.Name
-&#9;&#9;&#9;end
-&#9;&#9;else -- Computer
-&#9;&#9;&#9;if isClickToMoveOn() then
-&#9;&#9;&#9;&#9;return Enum.DevComputerMovementMode.ClickToMove.Name
-&#9;&#9;&#9;elseif player.DevComputerCameraMode == Enum.DevComputerCameraMovementMode.UserChoice then
-&#9;&#9;&#9;&#9;local computerMovementMode = GameSettings.ComputerCameraMovementMode
-&#9;&#9;&#9;&#9;if computerMovementMode == Enum.ComputerCameraMovementMode.Default then
-&#9;&#9;&#9;&#9;&#9;return Enum.ComputerCameraMovementMode.Classic.Name
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;return computerMovementMode.Name
-&#9;&#9;&#9;else
-&#9;&#9;&#9;&#9;return player.DevComputerCameraMode.Name
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end
+	local customModeOn, player, currentCamera = shouldUseCustomCamera()
+	if customModeOn then
+		if IsTouch() then -- Touch (iPad, etc...)
+			if isClickToMoveOn() then
+				return Enum.DevTouchMovementMode.ClickToMove.Name
+			elseif player.DevTouchCameraMode == Enum.DevTouchCameraMovementMode.UserChoice then
+				local touchMovementMode = GameSettings.TouchCameraMovementMode
+				if touchMovementMode == Enum.TouchCameraMovementMode.Default then
+					return Enum.TouchCameraMovementMode.Follow.Name
+				end
+				return touchMovementMode.Name
+			else
+				return player.DevTouchCameraMode.Name
+			end
+		else -- Computer
+			if isClickToMoveOn() then
+				return Enum.DevComputerMovementMode.ClickToMove.Name
+			elseif player.DevComputerCameraMode == Enum.DevComputerCameraMovementMode.UserChoice then
+				local computerMovementMode = GameSettings.ComputerCameraMovementMode
+				if computerMovementMode == Enum.ComputerCameraMovementMode.Default then
+					return Enum.ComputerCameraMovementMode.Classic.Name
+				end
+				return computerMovementMode.Name
+			else
+				return player.DevComputerCameraMode.Name
+			end
+		end
+	end
 end
 
 local function getCameraOcclusionMode()
-&#9;local customModeOn, player, currentCamera = shouldUseCustomCamera()
-&#9;if customModeOn then
-&#9;&#9;return player.DevCameraOcclusionMode
-&#9;end
+	local customModeOn, player, currentCamera = shouldUseCustomCamera()
+	if customModeOn then
+		return player.DevCameraOcclusionMode
+	end
 end
 
 local function ModifyCharacterTransparency()
-&#9;local currentCamera = workspace.CurrentCamera
-&#9;local player = PlayersService.LocalPlayer
-&#9;local character = player and player.Character
-&#9;if player and character and currentCamera then
-&#9;&#9;local distance = player:DistanceFromCharacter(currentCamera.CoordinateFrame.p)
-&#9;&#9;local transparency = Round(math.max(0, math.min(1, (7 - distance) / 5)), 2)
-&#9;&#9;if TransparencyDirty or LastTransparency ~= transparency then
-&#9;&#9;&#9;for child, _ in pairs(CachedParts) do
-&#9;&#9;&#9;&#9;child.LocalTransparencyModifier = transparency
-&#9;&#9;&#9;end
-&#9;&#9;&#9;TransparencyDirty = false
-&#9;&#9;&#9;LastTransparency = transparency
-&#9;&#9;end
-&#9;end
+	local currentCamera = workspace.CurrentCamera
+	local player = PlayersService.LocalPlayer
+	local character = player and player.Character
+	if player and character and currentCamera then
+		local distance = player:DistanceFromCharacter(currentCamera.CoordinateFrame.p)
+		local transparency = Round(math.max(0, math.min(1, (7 - distance) / 5)), 2)
+		if TransparencyDirty or LastTransparency ~= transparency then
+			for child, _ in pairs(CachedParts) do
+				child.LocalTransparencyModifier = transparency
+			end
+			TransparencyDirty = false
+			LastTransparency = transparency
+		end
+	end
 end
 
 local function Update()
-&#9;if EnabledCamera then
-&#9;&#9;EnabledCamera:Update()
-&#9;end
-&#9;if EnabledOcclusion then
-&#9;&#9;EnabledOcclusion:Update()
-&#9;end
-&#9;if shouldUseCustomCamera() then
-&#9;&#9;ModifyCharacterTransparency()
-&#9;end
+	if EnabledCamera then
+		EnabledCamera:Update()
+	end
+	if EnabledOcclusion then
+		EnabledOcclusion:Update()
+	end
+	if shouldUseCustomCamera() then
+		ModifyCharacterTransparency()
+	end
 end
 
 local function OnCameraMovementModeChange(newCameraMode)
-&#9;if newCameraMode == Enum.DevComputerMovementMode.ClickToMove.Name then
-&#9;&#9;ClickToMove:Start()
-&#9;&#9;EnabledCamera = nil
-&#9;else
-&#9;&#9;if newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
-&#9;&#9;&#9;EnabledCamera = ClassicCamera
-&#9;&#9;elseif newCameraMode == Enum.ComputerCameraMovementMode.Follow.Name then
-&#9;&#9;&#9;EnabledCamera = FollowCamera
-&#9;&#9;else -- They are disabling our special movement code
-&#9;&#9;&#9;EnabledCamera = nil
-&#9;&#9;end
-&#9;&#9;ClickToMove:Stop()
-&#9;end
-&#9;
-&#9;local newOcclusionMode = getCameraOcclusionMode()
-&#9;if EnabledOcclusion == Invisicam and newOcclusionMode ~= Enum.DevCameraOcclusionMode.Invisicam then
-&#9;&#9;Invisicam:Cleanup()
-&#9;end
-&#9;if newOcclusionMode == Enum.DevCameraOcclusionMode.Zoom then
-&#9;&#9;EnabledOcclusion = PopperCam
-&#9;elseif newOcclusionMode == Enum.DevCameraOcclusionMode.Invisicam then
-&#9;&#9;EnabledOcclusion = Invisicam
-&#9;else
-&#9;&#9;EnabledOcclusion = false
-&#9;end
-&#9;
-&#9;if renderSteppedConn then
-&#9;&#9;renderSteppedConn:disconnect()
-&#9;end
-&#9;renderSteppedConn = RunService.RenderStepped:connect(Update)
+	if newCameraMode == Enum.DevComputerMovementMode.ClickToMove.Name then
+		ClickToMove:Start()
+		EnabledCamera = nil
+	else
+		if newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
+			EnabledCamera = ClassicCamera
+		elseif newCameraMode == Enum.ComputerCameraMovementMode.Follow.Name then
+			EnabledCamera = FollowCamera
+		else -- They are disabling our special movement code
+			EnabledCamera = nil
+		end
+		ClickToMove:Stop()
+	end
+	
+	local newOcclusionMode = getCameraOcclusionMode()
+	if EnabledOcclusion == Invisicam and newOcclusionMode ~= Enum.DevCameraOcclusionMode.Invisicam then
+		Invisicam:Cleanup()
+	end
+	if newOcclusionMode == Enum.DevCameraOcclusionMode.Zoom then
+		EnabledOcclusion = PopperCam
+	elseif newOcclusionMode == Enum.DevCameraOcclusionMode.Invisicam then
+		EnabledOcclusion = Invisicam
+	else
+		EnabledOcclusion = false
+	end
+	
+	if renderSteppedConn then
+		renderSteppedConn:disconnect()
+	end
+	renderSteppedConn = RunService.RenderStepped:connect(Update)
 end
 
 local function OnNewCamera()
-&#9;OnCameraMovementModeChange(getCurrentCameraMode())
-&#9;&#9;
-&#9;local currentCamera = workspace.CurrentCamera
-&#9;if currentCamera then
-&#9;&#9;if currentCameraConn then
-&#9;&#9;&#9;currentCameraConn:disconnect()
-&#9;&#9;&#9;currentCameraConn = nil
-&#9;&#9;end
-&#9;&#9;currentCameraConn = currentCamera.Changed:connect(function(prop)
-&#9;&#9;&#9;if prop == &apos;CameraType&apos; then
-&#9;&#9;&#9;&#9;OnCameraMovementModeChange(getCurrentCameraMode())
-&#9;&#9;&#9;&#9;TransparencyDirty = true
-&#9;&#9;&#9;elseif prop == &apos;CameraSubject&apos; then
-&#9;&#9;&#9;&#9;TransparencyDirty = true
-&#9;&#9;&#9;end
-&#9;&#9;end)
-&#9;end
+	OnCameraMovementModeChange(getCurrentCameraMode())
+		
+	local currentCamera = workspace.CurrentCamera
+	if currentCamera then
+		if currentCameraConn then
+			currentCameraConn:disconnect()
+			currentCameraConn = nil
+		end
+		currentCameraConn = currentCamera.Changed:connect(function(prop)
+			if prop == 'CameraType' then
+				OnCameraMovementModeChange(getCurrentCameraMode())
+				TransparencyDirty = true
+			elseif prop == 'CameraSubject' then
+				TransparencyDirty = true
+			end
+		end)
+	end
 end
 
 local function OnCharacterAdded(character)
-&#9;CachedParts = {}
-&#9;local function IsValidPartToModify(part)
-&#9;&#9;local function HasToolAncestor(object)
-&#9;&#9;&#9;if object.Parent == nil then return false end
-&#9;&#9;&#9;return object.Parent:IsA(&apos;Tool&apos;) or HasToolAncestor(object.Parent) 
-&#9;&#9;end
-&#9;&#9;
-&#9;&#9;if part:IsA(&apos;BasePart&apos;) or part:IsA(&apos;Decal&apos;) then
-&#9;&#9;&#9;return not HasToolAncestor(part)
-&#9;&#9;end
-&#9;&#9;return false
-&#9;end
-&#9;local function CachePartsRecursive(object)
-&#9;&#9;if object then
-&#9;&#9;&#9;if IsValidPartToModify(object) then
-&#9;&#9;&#9;&#9;CachedParts[object] = true
-&#9;&#9;&#9;&#9;TransparencyDirty = true
-&#9;&#9;&#9;end
-&#9;&#9;&#9;for _, child in pairs(object:GetChildren()) do
-&#9;&#9;&#9;&#9;CachePartsRecursive(child)
-&#9;&#9;&#9;end
-&#9;&#9;end
-&#9;end
-&#9;character.DescendantAdded:connect(function(object)
-&#9;&#9;-- This is a part we want to invisify
-&#9;&#9;if IsValidPartToModify(object) then
-&#9;&#9;&#9;CachedParts[object] = true
-&#9;&#9;&#9;TransparencyDirty = true
-&#9;&#9;-- There is now a tool under the character
-&#9;&#9;elseif object:IsA(&apos;Tool&apos;) then
-&#9;&#9;&#9;object.DescendantAdded:connect(function(toolChild)
-&#9;&#9;&#9;&#9;CachedParts[toolChild] = nil
-&#9;&#9;&#9;&#9;if toolChild:IsA(&apos;BasePart&apos;) or toolChild:IsA(&apos;Decal&apos;) then
-&#9;&#9;&#9;&#9;&#9;-- Reset the transparency
-&#9;&#9;&#9;&#9;&#9;toolChild.LocalTransparencyModifier = 0
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end)
-&#9;&#9;&#9;object.DescendantRemoving:connect(function(formerToolChild)
-&#9;&#9;&#9;&#9;wait() -- wait for new parent
-&#9;&#9;&#9;&#9;if character and formerToolChild and formerToolChild:IsDescendantOf(character) then
-&#9;&#9;&#9;&#9;&#9;if IsValidPartToModify(formerToolChild) then
-&#9;&#9;&#9;&#9;&#9;&#9;CachedParts[formerToolChild] = true
-&#9;&#9;&#9;&#9;&#9;&#9;TransparencyDirty = true
-&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end)
-&#9;&#9;end
-&#9;end)
-&#9;character.DescendantRemoving:connect(function(object)
-&#9;&#9;if CachedParts[object] then
-&#9;&#9;&#9;CachedParts[object] = nil
-&#9;&#9;&#9;-- Reset the transparency
-&#9;&#9;&#9;object.LocalTransparencyModifier = 0
-&#9;&#9;end
-&#9;end)
-&#9;CachePartsRecursive(character)
+	CachedParts = {}
+	local function IsValidPartToModify(part)
+		local function HasToolAncestor(object)
+			if object.Parent == nil then return false end
+			return object.Parent:IsA('Tool') or HasToolAncestor(object.Parent) 
+		end
+		
+		if part:IsA('BasePart') or part:IsA('Decal') then
+			return not HasToolAncestor(part)
+		end
+		return false
+	end
+	local function CachePartsRecursive(object)
+		if object then
+			if IsValidPartToModify(object) then
+				CachedParts[object] = true
+				TransparencyDirty = true
+			end
+			for _, child in pairs(object:GetChildren()) do
+				CachePartsRecursive(child)
+			end
+		end
+	end
+	character.DescendantAdded:connect(function(object)
+		-- This is a part we want to invisify
+		if IsValidPartToModify(object) then
+			CachedParts[object] = true
+			TransparencyDirty = true
+		-- There is now a tool under the character
+		elseif object:IsA('Tool') then
+			object.DescendantAdded:connect(function(toolChild)
+				CachedParts[toolChild] = nil
+				if toolChild:IsA('BasePart') or toolChild:IsA('Decal') then
+					-- Reset the transparency
+					toolChild.LocalTransparencyModifier = 0
+				end
+			end)
+			object.DescendantRemoving:connect(function(formerToolChild)
+				wait() -- wait for new parent
+				if character and formerToolChild and formerToolChild:IsDescendantOf(character) then
+					if IsValidPartToModify(formerToolChild) then
+						CachedParts[formerToolChild] = true
+						TransparencyDirty = true
+					end
+				end
+			end)
+		end
+	end)
+	character.DescendantRemoving:connect(function(object)
+		if CachedParts[object] then
+			CachedParts[object] = nil
+			-- Reset the transparency
+			object.LocalTransparencyModifier = 0
+		end
+	end)
+	CachePartsRecursive(character)
 end
 
 local function OnPlayerAdded(player)
-&#9;player.CharacterRemoving:connect(function() CachedParts = {} end)
-&#9;player.CharacterAdded:connect(OnCharacterAdded)
-&#9;if player.Character then
-&#9;&#9;OnCharacterAdded(player.Character)
-&#9;end
-&#9;
-&#9;workspace.Changed:connect(function(prop)
-&#9;&#9;if prop == &apos;CurrentCamera&apos; then
-&#9;&#9;&#9;OnNewCamera()
-&#9;&#9;end
-&#9;end)
-&#9;
-&#9;player.Changed:connect(function(prop)
-&#9;&#9;OnCameraMovementModeChange(getCurrentCameraMode())
-&#9;end)
-&#9;
-&#9;GameSettings.Changed:connect(function(prop)
-&#9;&#9;OnCameraMovementModeChange(getCurrentCameraMode())
-&#9;end)
-&#9;
-&#9;if renderSteppedConn then
-&#9;&#9;renderSteppedConn:disconnect()
-&#9;end
-&#9;renderSteppedConn = RunService.RenderStepped:connect(Update)
-&#9;
-&#9;OnNewCamera()
-&#9;OnCameraMovementModeChange(getCurrentCameraMode())&#9;
+	player.CharacterRemoving:connect(function() CachedParts = {} end)
+	player.CharacterAdded:connect(OnCharacterAdded)
+	if player.Character then
+		OnCharacterAdded(player.Character)
+	end
+	
+	workspace.Changed:connect(function(prop)
+		if prop == 'CurrentCamera' then
+			OnNewCamera()
+		end
+	end)
+	
+	player.Changed:connect(function(prop)
+		OnCameraMovementModeChange(getCurrentCameraMode())
+	end)
+	
+	GameSettings.Changed:connect(function(prop)
+		OnCameraMovementModeChange(getCurrentCameraMode())
+	end)
+	
+	if renderSteppedConn then
+		renderSteppedConn:disconnect()
+	end
+	renderSteppedConn = RunService.RenderStepped:connect(Update)
+	
+	OnNewCamera()
+	OnCameraMovementModeChange(getCurrentCameraMode())	
 end
 
 do
-&#9;while PlayersService.LocalPlayer == nil do wait() end
-&#9;OnPlayerAdded(PlayersService.LocalPlayer)
+	while PlayersService.LocalPlayer == nil do wait() end
+	OnPlayerAdded(PlayersService.LocalPlayer)
 end
-</ProtectedString>
+]]></ProtectedString>
 		</Properties>
 	</Item>
 </roblox>

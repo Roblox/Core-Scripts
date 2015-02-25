@@ -4,14 +4,14 @@
 	<Item class="ModuleScript" referent="RBXD76DF8ABD3DC4228B34596375A6D3BCC">
 		<Properties>
 			<string name="Name">TouchJump</string>
-			<ProtectedString name="Source">--[[
-&#9;// FileName: TouchJump
-&#9;// Version 1.0
-&#9;// Written by: jmargh
-&#9;// Description: Implements jump controls for touch devices. Use with Thumbstick and Thumbpad
+			<ProtectedString name="Source"><![CDATA[--[[
+	// FileName: TouchJump
+	// Version 1.0
+	// Written by: jmargh
+	// Description: Implements jump controls for touch devices. Use with Thumbstick and Thumbpad
 --]]
 
-local Players = game:GetService(&apos;Players&apos;)
+local Players = game:GetService('Players')
 
 local TouchJump = {}
 
@@ -19,79 +19,79 @@ local MasterControl = require(script.Parent)
 
 --[[ Script Variables ]]--
 while not Players.LocalPlayer do
-&#9;wait()
+	wait()
 end
 local LocalPlayer = Players.LocalPlayer
 local JumpButton = nil
-local OnInputEnded = nil&#9;&#9;-- defined in Create()
+local OnInputEnded = nil		-- defined in Create()
 
 --[[ Constants ]]--
-local TOUCH_CONTROL_SHEET = &quot;rbxasset://textures/ui/TouchControlsSheet.png&quot;
+local TOUCH_CONTROL_SHEET = "rbxasset://textures/ui/TouchControlsSheet.png"
 
 --[[ Public API ]]--
 function TouchJump:Enable()
-&#9;JumpButton.Visible = true
+	JumpButton.Visible = true
 end
 
 function TouchJump:Disable()
-&#9;JumpButton.Visible = false
-&#9;OnInputEnded()
+	JumpButton.Visible = false
+	OnInputEnded()
 end
 
 function TouchJump:Create(parentFrame)
-&#9;if JumpButton then
-&#9;&#9;JumpButton:Destroy()
-&#9;&#9;JumpButton = nil
-&#9;end
-&#9;
-&#9;local isSmallScreen = parentFrame.AbsoluteSize.y &lt;= 500
-&#9;local jumpButtonSize = isSmallScreen and 70 or 90
-&#9;
-&#9;JumpButton = Instance.new(&apos;ImageButton&apos;)
-&#9;JumpButton.Name = &quot;JumpButton&quot;
-&#9;JumpButton.Visible = false
-&#9;JumpButton.BackgroundTransparency = 1
-&#9;JumpButton.Image = TOUCH_CONTROL_SHEET
-&#9;JumpButton.ImageRectOffset = Vector2.new(176, 222)
-&#9;JumpButton.ImageRectSize = Vector2.new(174, 174)
-&#9;JumpButton.Size = UDim2.new(0, jumpButtonSize, 0, jumpButtonSize)
-&#9;JumpButton.Position = isSmallScreen and UDim2.new(1, jumpButtonSize * -2.25, 1, -jumpButtonSize - 20) or
-&#9;&#9;UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
-&#9;
-&#9;local touchObject = nil
-&#9;local function doJumpLoop()
-&#9;&#9;while touchObject do
-&#9;&#9;&#9;MasterControl:RequestJump()
-&#9;&#9;&#9;wait(1/60)
-&#9;&#9;end
-&#9;end
-&#9;
-&#9;JumpButton.InputBegan:connect(function(inputObject)
-&#9;&#9;if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
-&#9;&#9;&#9;return
-&#9;&#9;end
-&#9;&#9;
-&#9;&#9;touchObject = inputObject
-&#9;&#9;JumpButton.ImageRectOffset = Vector2.new(0, 222)
-&#9;&#9;doJumpLoop()
-&#9;end)
-&#9;
-&#9;OnInputEnded = function()
-&#9;&#9;touchObject = nil
-&#9;&#9;JumpButton.ImageRectOffset = Vector2.new(176, 222)
-&#9;end
-&#9;
-&#9;JumpButton.InputEnded:connect(function(inputObject)
-&#9;&#9;if inputObject == touchObject then
-&#9;&#9;&#9;OnInputEnded()
-&#9;&#9;end
-&#9;end)
-&#9;
-&#9;JumpButton.Parent = parentFrame
+	if JumpButton then
+		JumpButton:Destroy()
+		JumpButton = nil
+	end
+	
+	local isSmallScreen = parentFrame.AbsoluteSize.y <= 500
+	local jumpButtonSize = isSmallScreen and 70 or 90
+	
+	JumpButton = Instance.new('ImageButton')
+	JumpButton.Name = "JumpButton"
+	JumpButton.Visible = false
+	JumpButton.BackgroundTransparency = 1
+	JumpButton.Image = TOUCH_CONTROL_SHEET
+	JumpButton.ImageRectOffset = Vector2.new(176, 222)
+	JumpButton.ImageRectSize = Vector2.new(174, 174)
+	JumpButton.Size = UDim2.new(0, jumpButtonSize, 0, jumpButtonSize)
+	JumpButton.Position = isSmallScreen and UDim2.new(1, jumpButtonSize * -2.25, 1, -jumpButtonSize - 20) or
+		UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
+	
+	local touchObject = nil
+	local function doJumpLoop()
+		while touchObject do
+			MasterControl:RequestJump()
+			wait(1/60)
+		end
+	end
+	
+	JumpButton.InputBegan:connect(function(inputObject)
+		if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
+			return
+		end
+		
+		touchObject = inputObject
+		JumpButton.ImageRectOffset = Vector2.new(0, 222)
+		doJumpLoop()
+	end)
+	
+	OnInputEnded = function()
+		touchObject = nil
+		JumpButton.ImageRectOffset = Vector2.new(176, 222)
+	end
+	
+	JumpButton.InputEnded:connect(function(inputObject)
+		if inputObject == touchObject then
+			OnInputEnded()
+		end
+	end)
+	
+	JumpButton.Parent = parentFrame
 end
 
 return TouchJump
-</ProtectedString>
+]]></ProtectedString>
 		</Properties>
 	</Item>
 </roblox>

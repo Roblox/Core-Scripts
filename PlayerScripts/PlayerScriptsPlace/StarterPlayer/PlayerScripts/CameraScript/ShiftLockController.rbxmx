@@ -4,35 +4,35 @@
 	<Item class="ModuleScript" referent="RBX0D3AD21C0C6B451AA4768A0C10A0789F">
 		<Properties>
 			<string name="Name">ShiftLockController</string>
-			<ProtectedString name="Source">--[[
-&#9;// FileName: ShiftLockController
-&#9;// Written by: jmargh
-&#9;// Version 1.1
-&#9;// Description: Manages the state of shift lock mode
+			<ProtectedString name="Source"><![CDATA[--[[
+	// FileName: ShiftLockController
+	// Written by: jmargh
+	// Version 1.1
+	// Description: Manages the state of shift lock mode
 
-&#9;// Required by:
-&#9;&#9;RootCamera
+	// Required by:
+		RootCamera
 
-&#9;// Note: ContextActionService sinks keys, so until we allow binding to ContextActionService without sinking
-&#9;// keys, this module will use UserInputService.
+	// Note: ContextActionService sinks keys, so until we allow binding to ContextActionService without sinking
+	// keys, this module will use UserInputService.
 --]]
-local ContextActionService = game:GetService(&apos;ContextActionService&apos;)
-local Players = game:GetService(&apos;Players&apos;)
-local StarterPlayer = game:GetService(&apos;StarterPlayer&apos;)
-local UserInputService = game:GetService(&apos;UserInputService&apos;)
+local ContextActionService = game:GetService('ContextActionService')
+local Players = game:GetService('Players')
+local StarterPlayer = game:GetService('StarterPlayer')
+local UserInputService = game:GetService('UserInputService')
 -- Settings and GameSettings are read only
-local Settings = UserSettings()&#9;-- ignore warning
+local Settings = UserSettings()	-- ignore warning
 local GameSettings = Settings.GameSettings
 
 local ShiftLockController = {}
 
 --[[ Script Variables ]]--
 while not Players.LocalPlayer do
-&#9;wait()
+	wait()
 end
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
-local PlayerGui = LocalPlayer:WaitForChild(&apos;PlayerGui&apos;)
+local PlayerGui = LocalPlayer:WaitForChild('PlayerGui')
 local ScreenGui = nil
 local ShiftLockIcon = nil
 local InputCn = nil
@@ -42,176 +42,176 @@ local IsActionBound = false
 
 -- wrapping long conditional in function
 local function isShiftLockMode()
-&#9;return LocalPlayer.DevEnableMouseLock and GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch and
-&#9;&#9;&#9;LocalPlayer.DevComputerMovementMode ~= Enum.DevComputerMovementMode.ClickToMove and
-&#9;&#9;&#9;GameSettings.ComputerMovementMode ~= Enum.ComputerMovementMode.ClickToMove and
-&#9;&#9;&#9;LocalPlayer.DevComputerMovementMode ~= Enum.DevComputerMovementMode.Scriptable
+	return LocalPlayer.DevEnableMouseLock and GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch and
+			LocalPlayer.DevComputerMovementMode ~= Enum.DevComputerMovementMode.ClickToMove and
+			GameSettings.ComputerMovementMode ~= Enum.ComputerMovementMode.ClickToMove and
+			LocalPlayer.DevComputerMovementMode ~= Enum.DevComputerMovementMode.Scriptable
 end
 
-if not UserInputService.TouchEnabled then&#9;-- TODO: Remove when safe on mobile
-&#9;IsShiftLockMode = isShiftLockMode()
+if not UserInputService.TouchEnabled then	-- TODO: Remove when safe on mobile
+	IsShiftLockMode = isShiftLockMode()
 end
 
 --[[ Constants ]]--
-local SHIFT_LOCK_OFF = &apos;rbxasset://textures/ui/mouseLock_off.png&apos;
-local SHIFT_LOCK_ON = &apos;rbxasset://textures/ui/mouseLock_on.png&apos;
-local SHIFT_LOCK_CURSOR = &apos;rbxasset://textures/MouseLockedCursor.png&apos;
+local SHIFT_LOCK_OFF = 'rbxasset://textures/ui/mouseLock_off.png'
+local SHIFT_LOCK_ON = 'rbxasset://textures/ui/mouseLock_on.png'
+local SHIFT_LOCK_CURSOR = 'rbxasset://textures/MouseLockedCursor.png'
 
 --[[ Local Functions ]]--
 local function onShiftLockToggled()
-&#9;IsShiftLocked = not IsShiftLocked
-&#9;if IsShiftLocked then
-&#9;&#9;ShiftLockIcon.Image = SHIFT_LOCK_ON
-&#9;&#9;Mouse.Icon = SHIFT_LOCK_CURSOR
-&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-&#9;else
-&#9;&#9;ShiftLockIcon.Image = SHIFT_LOCK_OFF
-&#9;&#9;Mouse.Icon = &quot;&quot;
-&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-&#9;end
+	IsShiftLocked = not IsShiftLocked
+	if IsShiftLocked then
+		ShiftLockIcon.Image = SHIFT_LOCK_ON
+		Mouse.Icon = SHIFT_LOCK_CURSOR
+		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+	else
+		ShiftLockIcon.Image = SHIFT_LOCK_OFF
+		Mouse.Icon = ""
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+	end
 end
 
 local function initialize()
-&#9;if ScreenGui then
-&#9;&#9;ScreenGui:Destroy()
-&#9;&#9;ScreenGui = nil
-&#9;end
-&#9;ScreenGui = Instance.new(&apos;ScreenGui&apos;)
-&#9;ScreenGui.Name = &quot;ControlGui&quot;
-&#9;
-&#9;local frame = Instance.new(&apos;Frame&apos;)
-&#9;frame.Name = &quot;BottomLeftControl&quot;
-&#9;frame.Size = UDim2.new(0, 130, 0, 46)
-&#9;frame.Position = UDim2.new(0, 0, 1, -46)
-&#9;frame.BackgroundTransparency = 1
-&#9;frame.Parent = ScreenGui
-&#9;
-&#9;ShiftLockIcon = Instance.new(&apos;ImageButton&apos;)
-&#9;ShiftLockIcon.Name = &quot;MouseLockLabel&quot;
-&#9;ShiftLockIcon.Size = UDim2.new(0, 62, 0, 62)
-&#9;ShiftLockIcon.Position = UDim2.new(0, 2, 0, -65)
-&#9;ShiftLockIcon.BackgroundTransparency = 1
-&#9;ShiftLockIcon.Image = IsShiftLocked and SHIFT_LOCK_ON or SHIFT_LOCK_OFF
-&#9;ShiftLockIcon.Visible = IsShiftLockMode
-&#9;ShiftLockIcon.Parent = frame
-&#9;
-&#9;ShiftLockIcon.MouseButton1Click:connect(onShiftLockToggled)
-&#9;
-&#9;ScreenGui.Parent = PlayerGui
+	if ScreenGui then
+		ScreenGui:Destroy()
+		ScreenGui = nil
+	end
+	ScreenGui = Instance.new('ScreenGui')
+	ScreenGui.Name = "ControlGui"
+	
+	local frame = Instance.new('Frame')
+	frame.Name = "BottomLeftControl"
+	frame.Size = UDim2.new(0, 130, 0, 46)
+	frame.Position = UDim2.new(0, 0, 1, -46)
+	frame.BackgroundTransparency = 1
+	frame.Parent = ScreenGui
+	
+	ShiftLockIcon = Instance.new('ImageButton')
+	ShiftLockIcon.Name = "MouseLockLabel"
+	ShiftLockIcon.Size = UDim2.new(0, 62, 0, 62)
+	ShiftLockIcon.Position = UDim2.new(0, 2, 0, -65)
+	ShiftLockIcon.BackgroundTransparency = 1
+	ShiftLockIcon.Image = IsShiftLocked and SHIFT_LOCK_ON or SHIFT_LOCK_OFF
+	ShiftLockIcon.Visible = IsShiftLockMode
+	ShiftLockIcon.Parent = frame
+	
+	ShiftLockIcon.MouseButton1Click:connect(onShiftLockToggled)
+	
+	ScreenGui.Parent = PlayerGui
 end
 
 --[[ Public API ]]--
 function ShiftLockController:IsShiftLocked()
-&#9;return IsShiftLockMode and IsShiftLocked
+	return IsShiftLockMode and IsShiftLocked
 end
 
 --[[ Input/Settings Changed Events ]]--
 local mouseLockSwitchFunc = function(actionName, inputState, inputObject)
---&#9;if IsShiftLockMode and inputState == Enum.UserInputState.Begin then
---&#9;&#9;onShiftLockToggled()
---&#9;end
-&#9;if IsShiftLockMode then
-&#9;&#9;onShiftLockToggled()
-&#9;end
+--	if IsShiftLockMode and inputState == Enum.UserInputState.Begin then
+--		onShiftLockToggled()
+--	end
+	if IsShiftLockMode then
+		onShiftLockToggled()
+	end
 end
 
 local function disableShiftLock()
-&#9;if ShiftLockIcon then ShiftLockIcon.Visible = false end
-&#9;IsShiftLockMode = false
-&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-&#9;Mouse.Icon = &quot;&quot;
-&#9;--ContextActionService:UnbindAction(&quot;ToggleShiftLock&quot;)
-&#9;if InputCn then
-&#9;&#9;InputCn:disconnect()
-&#9;&#9;InputCn = nil
-&#9;end
-&#9;IsActionBound = false
+	if ShiftLockIcon then ShiftLockIcon.Visible = false end
+	IsShiftLockMode = false
+	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+	Mouse.Icon = ""
+	--ContextActionService:UnbindAction("ToggleShiftLock")
+	if InputCn then
+		InputCn:disconnect()
+		InputCn = nil
+	end
+	IsActionBound = false
 end
 
 -- TODO: Remove when we figure out ContextActionService without sinking keys
 local function onShiftInputBegan(inputObject, isProcessed)
-&#9;if inputObject.UserInputType == Enum.UserInputType.Keyboard and
-&#9;&#9;(inputObject.KeyCode == Enum.KeyCode.LeftShift or inputObject.KeyCode == Enum.KeyCode.RightShift) then
-&#9;&#9;--
-&#9;&#9;mouseLockSwitchFunc()
-&#9;end
+	if inputObject.UserInputType == Enum.UserInputType.Keyboard and
+		(inputObject.KeyCode == Enum.KeyCode.LeftShift or inputObject.KeyCode == Enum.KeyCode.RightShift) then
+		--
+		mouseLockSwitchFunc()
+	end
 end
 
 local function enableShiftLock()
-&#9;IsShiftLockMode = isShiftLockMode()
-&#9;if IsShiftLockMode then
-&#9;&#9;if ShiftLockIcon then
-&#9;&#9;&#9;ShiftLockIcon.Visible = true
-&#9;&#9;end
-&#9;&#9;if IsShiftLocked then
-&#9;&#9;&#9;Mouse.Icon = SHIFT_LOCK_CURSOR
-&#9;&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-&#9;&#9;end
-&#9;&#9;if not IsActionBound then
-&#9;&#9;&#9;--ContextActionService:BindActionToInputTypes(&quot;ToggleShiftLock&quot;, mouseLockSwitchFunc, false, Enum.KeyCode.LeftShift, Enum.KeyCode.RightShift)
-&#9;&#9;&#9;InputCn = UserInputService.InputBegan:connect(onShiftInputBegan)
-&#9;&#9;&#9;IsActionBound = true
-&#9;&#9;end
-&#9;end
+	IsShiftLockMode = isShiftLockMode()
+	if IsShiftLockMode then
+		if ShiftLockIcon then
+			ShiftLockIcon.Visible = true
+		end
+		if IsShiftLocked then
+			Mouse.Icon = SHIFT_LOCK_CURSOR
+			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+		end
+		if not IsActionBound then
+			--ContextActionService:BindActionToInputTypes("ToggleShiftLock", mouseLockSwitchFunc, false, Enum.KeyCode.LeftShift, Enum.KeyCode.RightShift)
+			InputCn = UserInputService.InputBegan:connect(onShiftInputBegan)
+			IsActionBound = true
+		end
+	end
 end
 
 -- NOTE: This will fire for ControlMode when the settings menu is closed. If ControlMode is
 -- MouseLockSwitch on settings close, it will change the mode to Classic, then to ShiftLockSwitch.
 -- This is a silly hack, but needed to raise an event when the settings menu closes.
 GameSettings.Changed:connect(function(property)
-&#9;if property == &apos;ControlMode&apos; then
-&#9;&#9;if GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch then
-&#9;&#9;&#9;enableShiftLock()
-&#9;&#9;else
-&#9;&#9;&#9;disableShiftLock()
-&#9;&#9;end
-&#9;elseif property == &apos;ComputerMovementMode&apos; then
-&#9;&#9;if GameSettings.ComputerMovementMode == Enum.ComputerMovementMode.ClickToMove then
-&#9;&#9;&#9;disableShiftLock()
-&#9;&#9;else
-&#9;&#9;&#9;enableShiftLock()
-&#9;&#9;end
-&#9;end
+	if property == 'ControlMode' then
+		if GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch then
+			enableShiftLock()
+		else
+			disableShiftLock()
+		end
+	elseif property == 'ComputerMovementMode' then
+		if GameSettings.ComputerMovementMode == Enum.ComputerMovementMode.ClickToMove then
+			disableShiftLock()
+		else
+			enableShiftLock()
+		end
+	end
 end)
 
 LocalPlayer.Changed:connect(function(property)
-&#9;if property == &apos;DevEnableMouseLock&apos; then
-&#9;&#9;if LocalPlayer.DevEnableMouseLock then
-&#9;&#9;&#9;enableShiftLock()
-&#9;&#9;else
-&#9;&#9;&#9;disableShiftLock()
-&#9;&#9;end
-&#9;elseif property == &apos;DevComputerMovementMode&apos; then
-&#9;&#9;if LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.ClickToMove or
-&#9;&#9;&#9;LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.Scriptable then
-&#9;&#9;&#9;--
-&#9;&#9;&#9;disableShiftLock()
-&#9;&#9;else
-&#9;&#9;&#9;enableShiftLock()
-&#9;&#9;end
-&#9;end
+	if property == 'DevEnableMouseLock' then
+		if LocalPlayer.DevEnableMouseLock then
+			enableShiftLock()
+		else
+			disableShiftLock()
+		end
+	elseif property == 'DevComputerMovementMode' then
+		if LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.ClickToMove or
+			LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.Scriptable then
+			--
+			disableShiftLock()
+		else
+			enableShiftLock()
+		end
+	end
 end)
 
 LocalPlayer.CharacterAdded:connect(function(character)
-&#9;-- we need to recreate guis on character load
-&#9;if not UserInputService.TouchEnabled then
-&#9;&#9;initialize()
-&#9;end
+	-- we need to recreate guis on character load
+	if not UserInputService.TouchEnabled then
+		initialize()
+	end
 end)
 
 --[[ Initialization ]]--
  -- TODO: Remove when safe! ContextActionService crashes touch clients with tupele is 2 or more
 if not UserInputService.TouchEnabled then
-&#9;initialize()
-&#9;if isShiftLockMode() then
-&#9;&#9;--ContextActionService:BindActionToInputTypes(&quot;ToggleShiftLock&quot;, mouseLockSwitchFunc, false, Enum.KeyCode.LeftShift, Enum.KeyCode.RightShift)
-&#9;&#9;InputCn = UserInputService.InputBegan:connect(onShiftInputBegan)
-&#9;&#9;IsActionBound = true
-&#9;end
+	initialize()
+	if isShiftLockMode() then
+		--ContextActionService:BindActionToInputTypes("ToggleShiftLock", mouseLockSwitchFunc, false, Enum.KeyCode.LeftShift, Enum.KeyCode.RightShift)
+		InputCn = UserInputService.InputBegan:connect(onShiftInputBegan)
+		IsActionBound = true
+	end
 end
 
 return ShiftLockController
-</ProtectedString>
+]]></ProtectedString>
 		</Properties>
 	</Item>
 </roblox>

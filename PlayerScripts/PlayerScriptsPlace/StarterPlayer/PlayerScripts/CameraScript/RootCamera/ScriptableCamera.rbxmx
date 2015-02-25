@@ -4,20 +4,20 @@
 	<Item class="ModuleScript" referent="RBX52a0aa1e09ea496e9200c5751fa67aeb">
 		<Properties>
 			<string name="Name">ScriptableCamera</string>
-			<ProtectedString name="Source">local RootCameraCreator = require(script.Parent)
+			<ProtectedString name="Source"><![CDATA[local RootCameraCreator = require(script.Parent)
 
 local function CreateScriptableCamera()
-&#9;local module = RootCameraCreator()
-&#9;
-&#9;local lastUpdate = tick()
-&#9;function module:Update()
-&#9;end
-&#9;
-&#9;return module
+	local module = RootCameraCreator()
+	
+	local lastUpdate = tick()
+	function module:Update()
+	end
+	
+	return module
 end
 
 return CreateScriptableCamera
-</ProtectedString>
+]]></ProtectedString>
 		</Properties>
 	</Item>
 </roblox>

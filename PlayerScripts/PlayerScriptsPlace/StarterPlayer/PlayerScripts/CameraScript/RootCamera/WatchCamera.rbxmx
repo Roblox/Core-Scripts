@@ -4,64 +4,64 @@
 	<Item class="ModuleScript" referent="RBXf73a132019194e108fef12ef751a9389">
 		<Properties>
 			<string name="Name">WatchCamera</string>
-			<ProtectedString name="Source">local PlayersService = game:GetService(&apos;Players&apos;)
+			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
 local RootCameraCreator = require(script.Parent)
 
 
 local function CreateWatchCamera()
-&#9;local module = RootCameraCreator()
-&#9;module:ConnectInputEvents()
-&#9;module.PanEnabled = false
-&#9;
-&#9;local lastUpdate = tick()
-&#9;function module:Update()
-&#9;&#9;local now = tick()
-&#9;&#9;
-&#9;&#9;local camera = &#9;workspace.CurrentCamera
-&#9;&#9;local player = PlayersService.LocalPlayer
-&#9;&#9;
-&#9;&#9;if lastUpdate == nil or now - lastUpdate &gt; 1 then
-&#9;&#9;&#9;module:ResetCameraLook()
-&#9;&#9;&#9;self.LastCameraTransform = nil
-&#9;&#9;&#9;self.LastZoom = nil
-&#9;&#9;end&#9;
-&#9;&#9;
-&#9;&#9;local subjectPosition = self:GetSubjectPosition()
-&#9;&#9;if subjectPosition and player and camera then&#9;&#9;
-&#9;&#9;&#9;if self.LastCameraTransform then
-&#9;&#9;&#9;&#9;local humanoid = self:GetHumanoid()
-&#9;&#9;&#9;&#9;if humanoid and humanoid.Torso then
-&#9;&#9;&#9;&#9;&#9;-- TODO: let the paging buttons move the camera but not the mouse/touch
-&#9;&#9;&#9;&#9;&#9;-- currently neither do
-&#9;&#9;&#9;&#9;&#9;local diffVector = subjectPosition - self.LastCameraTransform.p
-&#9;&#9;&#9;&#9;&#9;self.cameraLook = diffVector.unit
-&#9;&#9;&#9;&#9;&#9;
-&#9;&#9;&#9;&#9;&#9;if self.LastZoom and self.LastZoom == self:GetCameraZoom() then
-&#9;&#9;&#9;&#9;&#9;&#9;-- Don&apos;t clobber the zoom if they zoomed the camera
-&#9;&#9;&#9;&#9;&#9;&#9;local zoom = diffVector.magnitude
-&#9;&#9;&#9;&#9;&#9;&#9;self:ZoomCamera(zoom)
-&#9;&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;&#9;end
-&#9;&#9;&#9;end
-&#9;&#9;&#9;
-&#9;&#9;&#9;local zoom = self:GetCameraZoom()
-&#9;&#9;&#9;if zoom &lt;= 0 then
-&#9;&#9;&#9;&#9;zoom = 0.1
-&#9;&#9;&#9;end
-&#9;&#9;&#9;
-&#9;&#9;&#9;camera.Focus = CFrame.new(subjectPosition)
-&#9;&#9;&#9;camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * self:GetCameraLook()), camera.Focus.p)
-&#9;&#9;&#9;self.LastCameraTransform = camera.CoordinateFrame
-&#9;&#9;&#9;self.LastZoom = zoom
-&#9;&#9;end
-&#9;&#9;lastUpdate = now
-&#9;end
-&#9;
-&#9;return module
+	local module = RootCameraCreator()
+	module:ConnectInputEvents()
+	module.PanEnabled = false
+	
+	local lastUpdate = tick()
+	function module:Update()
+		local now = tick()
+		
+		local camera = 	workspace.CurrentCamera
+		local player = PlayersService.LocalPlayer
+		
+		if lastUpdate == nil or now - lastUpdate > 1 then
+			module:ResetCameraLook()
+			self.LastCameraTransform = nil
+			self.LastZoom = nil
+		end	
+		
+		local subjectPosition = self:GetSubjectPosition()
+		if subjectPosition and player and camera then		
+			if self.LastCameraTransform then
+				local humanoid = self:GetHumanoid()
+				if humanoid and humanoid.Torso then
+					-- TODO: let the paging buttons move the camera but not the mouse/touch
+					-- currently neither do
+					local diffVector = subjectPosition - self.LastCameraTransform.p
+					self.cameraLook = diffVector.unit
+					
+					if self.LastZoom and self.LastZoom == self:GetCameraZoom() then
+						-- Don't clobber the zoom if they zoomed the camera
+						local zoom = diffVector.magnitude
+						self:ZoomCamera(zoom)
+					end
+				end
+			end
+			
+			local zoom = self:GetCameraZoom()
+			if zoom <= 0 then
+				zoom = 0.1
+			end
+			
+			camera.Focus = CFrame.new(subjectPosition)
+			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * self:GetCameraLook()), camera.Focus.p)
+			self.LastCameraTransform = camera.CoordinateFrame
+			self.LastZoom = zoom
+		end
+		lastUpdate = now
+	end
+	
+	return module
 end
 
 return CreateWatchCamera
-</ProtectedString>
+]]></ProtectedString>
 		</Properties>
 	</Item>
 </roblox>

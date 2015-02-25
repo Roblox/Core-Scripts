@@ -4,14 +4,14 @@
 	<Item class="ModuleScript" referent="RBX54AF403FDF86481C8A957949FBE7F81D">
 		<Properties>
 			<string name="Name">DPad</string>
-			<ProtectedString name="Source">--[[
-&#9;// FileName: DPad
-&#9;// Version 1.0
-&#9;// Written by: jmargh
-&#9;// Description: Implements DPad controls for touch devices
+			<ProtectedString name="Source"><![CDATA[--[[
+	// FileName: DPad
+	// Version 1.0
+	// Written by: jmargh
+	// Description: Implements DPad controls for touch devices
 --]]
 
-local Players = game:GetService(&apos;Players&apos;)
+local Players = game:GetService('Players')
 
 local DPad = {}
 
@@ -19,24 +19,24 @@ local MasterControl = require(script.Parent)
 
 --[[ Script Variables ]]--
 while not Players.LocalPlayer do
-&#9;wait()
+	wait()
 end
 local LocalPlayer = Players.LocalPlayer
 local DPadFrame = nil
 local TouchObject = nil
-local OnInputEnded = nil&#9;&#9;-- defined in Create()
+local OnInputEnded = nil		-- defined in Create()
 
 --[[ Constants ]]--
-local DPAD_SHEET = &quot;rbxasset://textures/ui/DPadSheet.png&quot;
+local DPAD_SHEET = "rbxasset://textures/ui/DPadSheet.png"
 local COMPASS_DIR = {
-&#9;Vector3.new(1, 0, 0),&#9;&#9;&#9;-- E
-&#9;Vector3.new(1, 0, 1).unit,&#9;&#9;-- SE
-&#9;Vector3.new(0, 0, 1),&#9;&#9;&#9;-- S
-&#9;Vector3.new(-1, 0, 1).unit,&#9;&#9;-- SW
-&#9;Vector3.new(-1, 0, 0),&#9;&#9;&#9;-- W
-&#9;Vector3.new(-1, 0, -1).unit,&#9;-- NW
-&#9;Vector3.new(0, 0, -1),&#9;&#9;&#9;-- N
-&#9;Vector3.new(1, 0, -1).unit,&#9;&#9;-- NE
+	Vector3.new(1, 0, 0),			-- E
+	Vector3.new(1, 0, 1).unit,		-- SE
+	Vector3.new(0, 0, 1),			-- S
+	Vector3.new(-1, 0, 1).unit,		-- SW
+	Vector3.new(-1, 0, 0),			-- W
+	Vector3.new(-1, 0, -1).unit,	-- NW
+	Vector3.new(0, 0, -1),			-- N
+	Vector3.new(1, 0, -1).unit,		-- NE
 }
 
 --[[ lua Function Cache ]]--
@@ -46,127 +46,127 @@ local PI = math.pi
 
 --[[ Local Functions ]]--
 local function createArrowLabel(name, position, size, rectOffset, rectSize)
-&#9;local image = Instance.new(&apos;ImageLabel&apos;)
-&#9;image.Name = name
-&#9;image.Image = DPAD_SHEET
-&#9;image.ImageRectOffset = rectOffset
-&#9;image.ImageRectSize = rectSize
-&#9;image.BackgroundTransparency = 1
-&#9;image.Size = size
-&#9;image.Position = position
-&#9;image.Parent = DPadFrame
-&#9;
-&#9;return image
+	local image = Instance.new('ImageLabel')
+	image.Name = name
+	image.Image = DPAD_SHEET
+	image.ImageRectOffset = rectOffset
+	image.ImageRectSize = rectSize
+	image.BackgroundTransparency = 1
+	image.Size = size
+	image.Position = position
+	image.Parent = DPadFrame
+	
+	return image
 end
 
 local function getCenterPosition()
-&#9;return Vector2.new(DPadFrame.AbsolutePosition.x + DPadFrame.AbsoluteSize.x/2, DPadFrame.AbsolutePosition.y + DPadFrame.AbsoluteSize.y/2)
+	return Vector2.new(DPadFrame.AbsolutePosition.x + DPadFrame.AbsoluteSize.x/2, DPadFrame.AbsolutePosition.y + DPadFrame.AbsoluteSize.y/2)
 end
 
 --[[ Public API ]]--
 function DPad:Enable()
-&#9;DPadFrame.Visible = true
+	DPadFrame.Visible = true
 end
 
 function DPad:Disable()
-&#9;DPadFrame.Visible = false
-&#9;OnInputEnded()
+	DPadFrame.Visible = false
+	OnInputEnded()
 end
 
 function DPad:Create(parentFrame)
-&#9;if DPadFrame then
-&#9;&#9;DPadFrame:Destroy()
-&#9;&#9;DPadFrame = nil
-&#9;end
-&#9;
-&#9;local position = UDim2.new(0, 10, 1, -230)
-&#9;DPadFrame = Instance.new(&apos;Frame&apos;)
-&#9;DPadFrame.Name = &quot;DPadFrame&quot;
-&#9;DPadFrame.Active = true
-&#9;DPadFrame.Visible = false
-&#9;DPadFrame.Size = UDim2.new(0, 192, 0, 192)
-&#9;DPadFrame.Position = position
-&#9;DPadFrame.BackgroundTransparency = 1
-&#9;
-&#9;local smArrowSize = UDim2.new(0, 23, 0, 23)
-&#9;local lgArrowSize = UDim2.new(0, 64, 0, 64)
-&#9;local smImgOffset = Vector2.new(46, 46)
-&#9;local lgImgOffset = Vector2.new(128, 128)
-&#9;
-&#9;local bBtn = createArrowLabel(&quot;BackButton&quot;, UDim2.new(0.5, -32, 1, -64), lgArrowSize, Vector2.new(0, 0), lgImgOffset)
-&#9;local fBtn = createArrowLabel(&quot;ForwardButton&quot;, UDim2.new(0.5, -32, 0, 0), lgArrowSize, Vector2.new(0, 258), lgImgOffset)
-&#9;local lBtn = createArrowLabel(&quot;LeftButton&quot;, UDim2.new(0, 0, 0.5, -32), lgArrowSize, Vector2.new(129, 129), lgImgOffset)
-&#9;local rBtn = createArrowLabel(&quot;RightButton&quot;, UDim2.new(1, -64, 0.5, -32), lgArrowSize, Vector2.new(0, 129), lgImgOffset)
-&#9;local jumpBtn = createArrowLabel(&quot;JumpButton&quot;, UDim2.new(0.5, -32, 0.5, -32), lgArrowSize, Vector2.new(129, 0), lgImgOffset)
-&#9;local flBtn = createArrowLabel(&quot;ForwardLeftButton&quot;, UDim2.new(0, 35, 0, 35), smArrowSize, Vector2.new(129, 258), smImgOffset)
-&#9;local frBtn = createArrowLabel(&quot;ForwardRightButton&quot;, UDim2.new(1, -55, 0, 35), smArrowSize, Vector2.new(176, 258), smImgOffset)
-&#9;flBtn.Visible = false
-&#9;frBtn.Visible = false
-&#9;
-&#9;-- input connections
-&#9;jumpBtn.InputBegan:connect(function(inputObject)
-&#9;&#9;MasterControl:RequestJump()
-&#9;end)
-&#9;
-&#9;local movementVector = Vector3.new(0,0,0)
-&#9;local function normalizeDirection(inputPosition)
-&#9;&#9;local jumpRadius = jumpBtn.AbsoluteSize.x/2
-&#9;&#9;local centerPosition = getCenterPosition()
-&#9;&#9;local direction = Vector2.new(inputPosition.x - centerPosition.x, inputPosition.y - centerPosition.y)
-&#9;&#9;
-&#9;&#9;if direction.magnitude &gt; jumpRadius then
-&#9;&#9;&#9;local angle = ATAN2(direction.y, direction.x)
-&#9;&#9;&#9;local octant = (FLOOR(8 * angle / (2 * PI) + 8.5)%8) + 1
-&#9;&#9;&#9;movementVector = COMPASS_DIR[octant]
-&#9;&#9;end
-&#9;&#9;
-&#9;&#9;if not flBtn.Visible and movementVector == COMPASS_DIR[7] then
-&#9;&#9;&#9;flBtn.Visible = true
-&#9;&#9;&#9;frBtn.Visible = true
-&#9;&#9;end
-&#9;end
-&#9;
-&#9;DPadFrame.InputBegan:connect(function(inputObject)
-&#9;&#9;if TouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
-&#9;&#9;&#9;return
-&#9;&#9;end
-&#9;&#9;
-&#9;&#9;MasterControl:AddToPlayerMovement(-movementVector)
-&#9;&#9;
-&#9;&#9;TouchObject = inputObject
-&#9;&#9;normalizeDirection(TouchObject.Position)
-&#9;&#9;
-&#9;&#9;MasterControl:AddToPlayerMovement(movementVector)
-&#9;end)
-&#9;
-&#9;DPadFrame.InputChanged:connect(function(inputObject)
-&#9;&#9;if inputObject == TouchObject then
-&#9;&#9;&#9;MasterControl:AddToPlayerMovement(-movementVector)
-&#9;&#9;&#9;normalizeDirection(TouchObject.Position)
-&#9;&#9;&#9;MasterControl:AddToPlayerMovement(movementVector)
-&#9;&#9;end
-&#9;end)
-&#9;
-&#9;OnInputEnded = function()
-&#9;&#9;TouchObject = nil
-&#9;&#9;flBtn.Visible = false
-&#9;&#9;frBtn.Visible = false
-&#9;&#9;
-&#9;&#9;MasterControl:AddToPlayerMovement(-movementVector)
-&#9;&#9;movementVector = Vector3.new(0, 0, 0)
-&#9;end
-&#9;
-&#9;DPadFrame.InputEnded:connect(function(inputObject)
-&#9;&#9;if inputObject == TouchObject then
-&#9;&#9;&#9;OnInputEnded()
-&#9;&#9;end
-&#9;end)
-&#9;
-&#9;DPadFrame.Parent = parentFrame
+	if DPadFrame then
+		DPadFrame:Destroy()
+		DPadFrame = nil
+	end
+	
+	local position = UDim2.new(0, 10, 1, -230)
+	DPadFrame = Instance.new('Frame')
+	DPadFrame.Name = "DPadFrame"
+	DPadFrame.Active = true
+	DPadFrame.Visible = false
+	DPadFrame.Size = UDim2.new(0, 192, 0, 192)
+	DPadFrame.Position = position
+	DPadFrame.BackgroundTransparency = 1
+	
+	local smArrowSize = UDim2.new(0, 23, 0, 23)
+	local lgArrowSize = UDim2.new(0, 64, 0, 64)
+	local smImgOffset = Vector2.new(46, 46)
+	local lgImgOffset = Vector2.new(128, 128)
+	
+	local bBtn = createArrowLabel("BackButton", UDim2.new(0.5, -32, 1, -64), lgArrowSize, Vector2.new(0, 0), lgImgOffset)
+	local fBtn = createArrowLabel("ForwardButton", UDim2.new(0.5, -32, 0, 0), lgArrowSize, Vector2.new(0, 258), lgImgOffset)
+	local lBtn = createArrowLabel("LeftButton", UDim2.new(0, 0, 0.5, -32), lgArrowSize, Vector2.new(129, 129), lgImgOffset)
+	local rBtn = createArrowLabel("RightButton", UDim2.new(1, -64, 0.5, -32), lgArrowSize, Vector2.new(0, 129), lgImgOffset)
+	local jumpBtn = createArrowLabel("JumpButton", UDim2.new(0.5, -32, 0.5, -32), lgArrowSize, Vector2.new(129, 0), lgImgOffset)
+	local flBtn = createArrowLabel("ForwardLeftButton", UDim2.new(0, 35, 0, 35), smArrowSize, Vector2.new(129, 258), smImgOffset)
+	local frBtn = createArrowLabel("ForwardRightButton", UDim2.new(1, -55, 0, 35), smArrowSize, Vector2.new(176, 258), smImgOffset)
+	flBtn.Visible = false
+	frBtn.Visible = false
+	
+	-- input connections
+	jumpBtn.InputBegan:connect(function(inputObject)
+		MasterControl:RequestJump()
+	end)
+	
+	local movementVector = Vector3.new(0,0,0)
+	local function normalizeDirection(inputPosition)
+		local jumpRadius = jumpBtn.AbsoluteSize.x/2
+		local centerPosition = getCenterPosition()
+		local direction = Vector2.new(inputPosition.x - centerPosition.x, inputPosition.y - centerPosition.y)
+		
+		if direction.magnitude > jumpRadius then
+			local angle = ATAN2(direction.y, direction.x)
+			local octant = (FLOOR(8 * angle / (2 * PI) + 8.5)%8) + 1
+			movementVector = COMPASS_DIR[octant]
+		end
+		
+		if not flBtn.Visible and movementVector == COMPASS_DIR[7] then
+			flBtn.Visible = true
+			frBtn.Visible = true
+		end
+	end
+	
+	DPadFrame.InputBegan:connect(function(inputObject)
+		if TouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
+			return
+		end
+		
+		MasterControl:AddToPlayerMovement(-movementVector)
+		
+		TouchObject = inputObject
+		normalizeDirection(TouchObject.Position)
+		
+		MasterControl:AddToPlayerMovement(movementVector)
+	end)
+	
+	DPadFrame.InputChanged:connect(function(inputObject)
+		if inputObject == TouchObject then
+			MasterControl:AddToPlayerMovement(-movementVector)
+			normalizeDirection(TouchObject.Position)
+			MasterControl:AddToPlayerMovement(movementVector)
+		end
+	end)
+	
+	OnInputEnded = function()
+		TouchObject = nil
+		flBtn.Visible = false
+		frBtn.Visible = false
+		
+		MasterControl:AddToPlayerMovement(-movementVector)
+		movementVector = Vector3.new(0, 0, 0)
+	end
+	
+	DPadFrame.InputEnded:connect(function(inputObject)
+		if inputObject == TouchObject then
+			OnInputEnded()
+		end
+	end)
+	
+	DPadFrame.Parent = parentFrame
 end
 
 return DPad
-</ProtectedString>
+]]></ProtectedString>
 		</Properties>
 	</Item>
 </roblox>
