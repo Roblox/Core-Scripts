@@ -8,7 +8,7 @@ local PLACEID = Game.PlaceId
 local MPS = Game:GetService 'MarketplaceService'
 local CP = Game:GetService 'ContentProvider'
 
-
+local startTime = tick()
 
 local COLORS = {
 	BLACK = Color3.new(0, 0, 0),
@@ -105,6 +105,18 @@ function MainGui:GenerateMain()
 		Size = UDim2.new(1, 0, 1, 0),
 		Active = true,
 
+		create 'ImageButton' {
+				Name = 'CloseButton',
+				Image = 'rbxasset://textures/ui/CloseButton_dn.png',
+				ImageColor3=Color3.new(0.9,0.9,0.9),
+				ImageTransparency = 1,
+				BackgroundTransparency = 1,
+				Position = UDim2.new(1, -37, 0, 5),
+				Size = UDim2.new(0, 32, 0, 32),
+				Active = false,
+				ZIndex = 10
+		},
+		
 		create 'Frame' {
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
@@ -130,6 +142,26 @@ function MainGui:GenerateMain()
 				Size = UDim2.new(0.75, 0, 0.75, 0),
 				ZIndex = 2
 			}
+		},
+		
+		create 'Frame' {
+			Name = 'UiMessageFrame',
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0.25, 0, 1, -120),
+			Size = UDim2.new(0.5, 0, 0, 80),
+			ZIndex = 2,
+
+			create 'TextLabel' {
+				Name = 'UiMessage',
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 1, 0),
+				Font = Enum.Font.SourceSansBold,
+				FontSize = Enum.FontSize.Size18,
+				TextWrapped = true,
+				TextColor3 = COLORS.WHITE,
+				Text = "",
+				ZIndex = 2
+			},
 		},
 		
 		create 'Frame' {
@@ -316,16 +348,6 @@ function MainGui:GenerateMain()
 				ZIndex = 8
 			},
 
-			create 'ImageButton' {
-				Name = 'CloseButton',
-				Image = 'rbxasset://textures/ui/CloseButton.png',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(1, -27, 0, 5),
-				Size = UDim2.new(0, 22, 0, 22),
-				Active = true,
-				ZIndex = 10
-			},
-
 		Parent = screenGui
 	}
 
@@ -365,7 +387,7 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 	if not currScreenGui:FindFirstChild("BlackFrame") then return end
 
 	if setVerb then
-		currScreenGui.ErrorFrame.CloseButton:SetVerb("Exit")
+		currScreenGui.BlackFrame.CloseButton:SetVerb("Exit")
 		setVerb = false
 	end
 
@@ -415,14 +437,36 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 			fadeDown = true
 		end
 	end
+	
+	-- fade in close button after 5 seconds
+	if currentTime - startTime > 5 and currScreenGui.BlackFrame.CloseButton.ImageTransparency > 0 then
+		currScreenGui.BlackFrame.CloseButton.ImageTransparency = currScreenGui.BlackFrame.CloseButton.ImageTransparency - fadeAmount
+
+		if currScreenGui.BlackFrame.CloseButton.ImageTransparency <= 0 then
+			currScreenGui.BlackFrame.CloseButton.Active = true
+		end
+	end
 end)
 
 guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
 		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
 		currScreenGui.ErrorFrame.Visible = true
+		currScreenGui.BlackFrame.CloseButton.ImageTransparency = 0
+		currScreenGui.BlackFrame.CloseButton.Active = true
 	else
 		currScreenGui.ErrorFrame.Visible = false
+	end
+end)
+
+guiService.UiMessageChanged:connect(function(type, newMessage)
+	if type == Enum.UiMessageType.UiMessageInfo then
+		currScreenGui.BlackFrame.UiMessageFrame.UiMessage.Text = newMessage
+		if newMessage ~= '' then
+			currScreenGui.BlackFrame.UiMessageFrame.Visible = true
+		else
+			currScreenGui.BlackFrame.UiMessageFrame.Visible = false
+		end
 	end
 end)
 
