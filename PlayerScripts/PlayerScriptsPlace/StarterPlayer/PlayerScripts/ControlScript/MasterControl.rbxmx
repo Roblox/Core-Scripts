@@ -63,9 +63,7 @@ function MasterControl:Init()
 				isJumping = false
 			end
 
-			-- support games that have a scripted camera
-			local isCameraRelative = game.Workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable
-			moveFunc(LocalPlayer, moveValue, isCameraRelative)
+			moveFunc(LocalPlayer, moveValue, true)
 		end
 	end)
 end

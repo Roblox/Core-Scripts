@@ -279,11 +279,6 @@ if IsTouchDevice then
 	end)
 end
 
--- don't give control until loading is done
-while game.ContentProvider.RequestQueueSize > 0 do
-	wait()
-end
-
 MasterControl:Init()
 onControlsChanged()
 
