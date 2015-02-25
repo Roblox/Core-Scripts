@@ -69,6 +69,7 @@ local PlayerEntrySizeY = 24
 local TeamEntrySizeY = 18
 local NameEntrySizeX = 170
 local StatEntrySizeX = 75
+local IsSmallScreenDevice = UserInputService.TouchEnabled and GuiService:GetScreenResolution().Y <= 500
 
 --[[ Bindables ]]--
 local BinbableFunction_SendNotification = RobloxGui:FindFirstChild('SendNotification')
@@ -1879,7 +1880,7 @@ end)
 local function onCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
 		-- not visible on small screen devices
-		if UserInputService.TouchEnabled and GuiService:GetScreenResolution().Y <= 500 then
+		if IsSmallScreenDevice then
 			Container.Visible = false
 			return
 		end
@@ -1901,6 +1902,7 @@ end
 
 local isOpen = true
 Playerlist.ToggleVisibility = function()
+	if IsSmallScreenDevice then return end
 	isOpen = not isOpen
 	Container.Visible = isOpen
 end

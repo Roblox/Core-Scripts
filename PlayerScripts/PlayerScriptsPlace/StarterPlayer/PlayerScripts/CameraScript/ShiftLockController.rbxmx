@@ -7,10 +7,14 @@
 			<ProtectedString name="Source">--[[
 &#9;// FileName: ShiftLockController
 &#9;// Written by: jmargh
+&#9;// Version 1.1
 &#9;// Description: Manages the state of shift lock mode
-&#9;
+
 &#9;// Required by:
 &#9;&#9;RootCamera
+
+&#9;// Note: ContextActionService sinks keys, so until we allow binding to ContextActionService without sinking
+&#9;// keys, this module will use UserInputService.
 --]]
 local ContextActionService = game:GetService(&apos;ContextActionService&apos;)
 local Players = game:GetService(&apos;Players&apos;)
@@ -31,6 +35,7 @@ local Mouse = LocalPlayer:GetMouse()
 local PlayerGui = LocalPlayer:WaitForChild(&apos;PlayerGui&apos;)
 local ScreenGui = nil
 local ShiftLockIcon = nil
+local InputCn = nil
 local IsShiftLockMode = false
 local IsShiftLocked = false
 local IsActionBound = false
@@ -102,7 +107,10 @@ end
 
 --[[ Input/Settings Changed Events ]]--
 local mouseLockSwitchFunc = function(actionName, inputState, inputObject)
-&#9;if IsShiftLockMode and inputState == Enum.UserInputState.Begin then
+--&#9;if IsShiftLockMode and inputState == Enum.UserInputState.Begin then
+--&#9;&#9;onShiftLockToggled()
+--&#9;end
+&#9;if IsShiftLockMode then
 &#9;&#9;onShiftLockToggled()
 &#9;end
 end
@@ -112,8 +120,21 @@ local function disableShiftLock()
 &#9;IsShiftLockMode = false
 &#9;UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 &#9;Mouse.Icon = &quot;&quot;
-&#9;ContextActionService:UnbindAction(&quot;ToggleShiftLock&quot;)
+&#9;--ContextActionService:UnbindAction(&quot;ToggleShiftLock&quot;)
+&#9;if InputCn then
+&#9;&#9;InputCn:disconnect()
+&#9;&#9;InputCn = nil
+&#9;end
 &#9;IsActionBound = false
+end
+
+-- TODO: Remove when we figure out ContextActionService without sinking keys
+local function onShiftInputBegan(inputObject, isProcessed)
+&#9;if inputObject.UserInputType == Enum.UserInputType.Keyboard and
+&#9;&#9;(inputObject.KeyCode == Enum.KeyCode.LeftShift or inputObject.KeyCode == Enum.KeyCode.RightShift) then
+&#9;&#9;--
+&#9;&#9;mouseLockSwitchFunc()
+&#9;end
 end
 
 local function enableShiftLock()
@@ -127,7 +148,8 @@ local function enableShiftLock()
 &#9;&#9;&#9;UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 &#9;&#9;end
 &#9;&#9;if not IsActionBound then
-&#9;&#9;&#9;ContextActionService:BindActionToInputTypes(&quot;ToggleShiftLock&quot;, mouseLockSwitchFunc, false, Enum.KeyCode.LeftShift, Enum.KeyCode.RightShift)
+&#9;&#9;&#9;--ContextActionService:BindActionToInputTypes(&quot;ToggleShiftLock&quot;, mouseLockSwitchFunc, false, Enum.KeyCode.LeftShift, Enum.KeyCode.RightShift)
+&#9;&#9;&#9;InputCn = UserInputService.InputBegan:connect(onShiftInputBegan)
 &#9;&#9;&#9;IsActionBound = true
 &#9;&#9;end
 &#9;end
@@ -178,10 +200,12 @@ LocalPlayer.CharacterAdded:connect(function(character)
 end)
 
 --[[ Initialization ]]--
-if not UserInputService.TouchEnabled then -- TODO: Remove when safe!
+ -- TODO: Remove when safe! ContextActionService crashes touch clients with tupele is 2 or more
+if not UserInputService.TouchEnabled then
 &#9;initialize()
 &#9;if isShiftLockMode() then
-&#9;&#9;ContextActionService:BindActionToInputTypes(&quot;ToggleShiftLock&quot;, mouseLockSwitchFunc, false, Enum.KeyCode.LeftShift, Enum.KeyCode.RightShift)
+&#9;&#9;--ContextActionService:BindActionToInputTypes(&quot;ToggleShiftLock&quot;, mouseLockSwitchFunc, false, Enum.KeyCode.LeftShift, Enum.KeyCode.RightShift)
+&#9;&#9;InputCn = UserInputService.InputBegan:connect(onShiftInputBegan)
 &#9;&#9;IsActionBound = true
 &#9;end
 end
