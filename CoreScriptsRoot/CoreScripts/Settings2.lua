@@ -1392,16 +1392,23 @@ do
 		--[[ Video Recording ]]--
 		if RecordVideoButton and StopRecordingVideoButton then
 			RecordVideoButton.MouseButton1Click:connect(function()
-				onRecordVideoToggle()
 				closeSettingsMenu()
 			end)
-			StopRecordingVideoButton.MouseButton1Click:connect(onRecordVideoToggle)
 			-- Stop recording on screen resize
 			RobloxGui.Changed:connect(function(property)
 				if IsRecordingVideo and property == 'AbsoluteSize' then
 					onRecordVideoToggle()
 				end
 			end)
+
+			local gameOptions = settings():FindFirstChild("Game Options")
+			if gameOptions then
+				local success, result = pcall(function()
+					gameOptions.VideoRecordingChangeRequest:connect(function(recording)
+						onRecordVideoToggle()
+					end)
+				end)
+			end
 		end
 
 		-- Reset Character Menu Connections
