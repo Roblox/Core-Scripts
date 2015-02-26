@@ -1,4 +1,4 @@
--- Backpack Version 4.19
+-- Backpack Version 4.20
 -- OnlyTwentyCharacters
 
 -------------------
@@ -16,13 +16,14 @@ BackpackScript.StateChanged = Instance.new('BindableEvent') -- Fires after any o
 local ICON_SIZE = 60
 local ICON_BUFFER = 5
 
-local BACKGROUND_FADE = 0.70
+local BACKGROUND_FADE = 0.50
+local BACKGROUND_COLOR = Color3.new(31/255, 31/255, 31/255)
 
-local SLOT_COLOR_NORMAL = Color3.new(49/255, 49/255, 49/255)
-local SLOT_COLOR_EQUIP = Color3.new(90/255, 142/255, 233/255)
+local SLOT_DRAGGABLE_COLOR = Color3.new(49/255, 49/255, 49/255)
+local SLOT_EQUIP_COLOR = Color3.new(90/255, 142/255, 233/255)
 local SLOT_EQUIP_THICKNESS = 0.1 -- Relative
-local SLOT_FADE_LOCKED = 0.50 -- Locked means empty/undraggable
-local SLOT_BORDER_COLOR = Color3.new(1, 1, 1)
+local SLOT_FADE_LOCKED = 0.50 -- Locked means undraggable
+local SLOT_BORDER_COLOR = Color3.new(1, 1, 1) -- Appears when dragging
 
 local TOOLTIP_BUFFER = 6
 local TOOLTIP_HEIGHT = 16
@@ -218,6 +219,7 @@ local function MakeSlot(parent, index)
 
 	local function UpdateSlotFading()
 		SlotFrame.BackgroundTransparency = (SlotFrame.Draggable) and 0 or SLOT_FADE_LOCKED
+		SlotFrame.BackgroundColor3 = (SlotFrame.Draggable) and SLOT_DRAGGABLE_COLOR or BACKGROUND_COLOR
 	end
 
 	function slot:Reposition()
@@ -316,7 +318,7 @@ local function MakeSlot(parent, index)
 				for _, data in pairs(dataTable) do
 					local edgeFrame = NewGui('Frame', 'Edge')
 					edgeFrame.BackgroundTransparency = 0
-					edgeFrame.BackgroundColor3 = SLOT_COLOR_EQUIP
+					edgeFrame.BackgroundColor3 = SLOT_EQUIP_COLOR
 					edgeFrame.Size = UDim2.new(data[1], 0, data[2], 0)
 					edgeFrame.Position = UDim2.new(data[3], 0, data[4], 0)
 					edgeFrame.ZIndex = HighlightFrame.ZIndex
@@ -400,7 +402,7 @@ local function MakeSlot(parent, index)
 	-- Slot Init Logic --
 
 	SlotFrame = NewGui('Frame', index)
-	SlotFrame.BackgroundColor3 = SLOT_COLOR_NORMAL
+	SlotFrame.BackgroundColor3 = BACKGROUND_COLOR
 	SlotFrame.BorderColor3 = SLOT_BORDER_COLOR
 	SlotFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
 	SlotFrame.Active = true
@@ -806,6 +808,7 @@ end
 -- Make the Inventory, which holds the ScrollingFrame, the header, and the search box
 InventoryFrame = NewGui('Frame', 'Inventory')
 InventoryFrame.BackgroundTransparency = BACKGROUND_FADE
+InventoryFrame.BackgroundColor3 = BACKGROUND_COLOR
 InventoryFrame.Active = true
 InventoryFrame.Size = UDim2.new(0, HotbarFrame.Size.X.Offset, 0, (HotbarFrame.Size.Y.Offset * INVENTORY_ROWS) + INVENTORY_HEADER_SIZE)
 InventoryFrame.Position = UDim2.new(0.5, -InventoryFrame.Size.X.Offset / 2, 1, HotbarFrame.Position.Y.Offset - InventoryFrame.Size.Y.Offset)
@@ -825,7 +828,7 @@ ScrollingFrame.Parent = InventoryFrame
 --headerText.TextXAlignment = Enum.TextXAlignment.Left
 --headerText.Font = Enum.Font.SourceSansBold
 --headerText.FontSize = Enum.FontSize.Size48
---headerText.TextStrokeColor3 = SLOT_COLOR_EQUIP
+--headerText.TextStrokeColor3 = SLOT_EQUIP_COLOR
 --headerText.TextStrokeTransparency = BACKGROUND_FADE
 --headerText.Size = UDim2.new(0, (InventoryFrame.Size.X.Offset / 2) - TITLE_OFFSET, 0, INVENTORY_HEADER_SIZE)
 --headerText.Position = UDim2.new(0, TITLE_OFFSET, 0, 0)
@@ -850,7 +853,7 @@ do -- Search stuff
 
 	local xButton = NewGui('TextButton', 'X')
 	xButton.Text = 'x'
-	xButton.TextColor3 = SLOT_COLOR_EQUIP
+	xButton.TextColor3 = SLOT_EQUIP_COLOR
 	xButton.FontSize = Enum.FontSize.Size24
 	xButton.TextYAlignment = Enum.TextYAlignment.Bottom
 	xButton.BackgroundColor3 = SEARCH_BACKGROUND_COLOR
@@ -946,6 +949,7 @@ do -- Search stuff
 	searchBox.FocusLost:connect(focusLost)
 
 	BackpackScript.StateChanged.Event:connect(function(isNowOpen)
+		clickArea.Modal = isNowOpen -- Allows free mouse movement even in first person
 		if not isNowOpen then
 			reset()
 		end
@@ -970,7 +974,6 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 			local nowOpen = InventoryFrame.Visible
 			if arrowIcon and clickArea then
 				arrowIcon.Image = (nowOpen) and ARROW_IMAGE_CLOSE or ARROW_IMAGE_OPEN
-				clickArea.Modal = nowOpen -- Allows free mouse movement even in first person
 			end
 			AdjustHotbarFrames()
 			UpdateArrowFrame()
@@ -987,6 +990,7 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 	if not TopBarEnabled then
 		arrowFrame = NewGui('Frame', 'Arrow')
 		arrowFrame.BackgroundTransparency = BACKGROUND_FADE
+		arrowFrame.BackgroundColor3 = BACKGROUND_COLOR
 		arrowFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE / 2)
 		local hotbarBottom = HotbarFrame.Position.Y.Offset + HotbarFrame.Size.Y.Offset
 		arrowFrame.Position = UDim2.new(0.5, -arrowFrame.Size.X.Offset / 2, 1, hotbarBottom - arrowFrame.Size.Y.Offset)
