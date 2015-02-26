@@ -4,15 +4,22 @@
 local scriptContext = game:GetService("ScriptContext")
 local touchEnabled = game:GetService("UserInputService").TouchEnabled
 
-Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
 local screenGui = Game:GetService("CoreGui"):FindFirstChild("RobloxGui")
+
+-- TopBar
+local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
+local useTopBar = (topbarSuccess and topbarFlagValue == true)
+if useTopBar then
+	scriptContext:AddCoreScriptLocal("CoreScripts/Topbar", screenGui)
+end
 
 -- SettingsScript
 local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
 local newSettingsSuccess, newSettingsFlagValue = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local useNewSettings = (luaControlsSuccess and luaControlsFlagValue) and (newSettingsSuccess and newSettingsFlagValue)
 if useNewSettings then
-	scriptContext:AddCoreScriptLocal("CoreScripts/Settings2", screenGui)
+	spawn(function() require(RobloxGui.Modules.Settings2) end)
 else
 	scriptContext:AddCoreScriptLocal("CoreScripts/Settings", screenGui)
 end
@@ -51,7 +58,11 @@ end
 -- Chat script
 local success, chatFlagValue = pcall(function() return settings():GetFFlag("NewLuaChatScript") end)
 if success and chatFlagValue == true then
-	scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript2", screenGui)
+	if useTopBar then
+		spawn(function() require(RobloxGui.Modules.ChatScript2) end)
+	else
+		scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript2", screenGui)
+	end
 else
 	scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript", screenGui)
 end
@@ -65,43 +76,41 @@ else
 	scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript", screenGui)
 end
 -- Health Script
-scriptContext:AddCoreScriptLocal("CoreScripts/HealthScript", screenGui)
+if not useTopBar then
+	scriptContext:AddCoreScriptLocal("CoreScripts/HealthScript", screenGui)
+end
 
 local playerListSuccess, playerListFlagValue = pcall(function() return settings():GetFFlag("NewPlayerListScript") end)
-if not touchEnabled then
-	-- New Player List
-	if playerListSuccess and playerListFlagValue == true then
+local isNotSmallTouchDevice = not touchEnabled or Game:GetService("GuiService"):GetScreenResolution().Y >= 500
+-- New Player List
+if playerListSuccess and playerListFlagValue == true then
+	if useTopBar then
+		spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
+	elseif isNotSmallTouchDevice then
 		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript2", screenGui)
-	else
-		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
 	end
-elseif Game:GetService("GuiService"):GetScreenResolution().Y >= 500 then
-	-- New Player List
-	if playerListSuccess and playerListFlagValue == true then
-		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript2", screenGui)
-	else
-		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
-	end
+elseif isNotSmallTouchDevice then
+	scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
 end
 
 do -- Backpack!
 	local useNewBackpack = false
-	
+
 	pcall(function() useNewBackpack = settings():GetFFlag("NewBackpackScript") end)
-	
+
 	if useNewBackpack then
-		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScript", screenGui)
+		spawn(function() require(RobloxGui.Modules.BackpackScript) end)
 	else
 		-- Backpack Builder, creates most of the backpack gui
 		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackBuilder", screenGui)
-		
+
 		screenGui:WaitForChild("CurrentLoadout")
 		screenGui:WaitForChild("Backpack")
 		local Backpack = screenGui.Backpack
-		
+
 		-- Manager handles all big backpack state changes, other scripts subscribe to this and do things accordingly
 		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackManager", Backpack)
-		
+
 		-- Backpack Gear (handles all backpack gear tab stuff)
 		scriptContext:AddCoreScriptLocal("CoreScripts/BackpackScripts/BackpackGear", Backpack)
 		-- Loadout Script, used for gear hotkeys
