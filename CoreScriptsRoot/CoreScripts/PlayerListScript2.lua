@@ -251,6 +251,7 @@ local function getAdminIcon(player)
 	end)
 	if not success then
 		print("PlayerListScript2: getAdminIcon() failed because", result)
+		return nil
 	end
 	--
 	if result then
