@@ -66,8 +66,14 @@ local function CreateCamera()
 		local camera = workspace.CurrentCamera
 		if camera then
 			local cameraSubject = camera.CameraSubject
-			if cameraSubject:IsA('BasePart') then
+			if cameraSubject:IsA('VehicleSeat') then
+				result = cameraSubject.CFrame.p + cameraSubject.CFrame:vectorToWorldSpace(Vector3.new(0,5,0))
+			elseif cameraSubject:IsA('SkateboardPlatform') then
+				result = cameraSubject.CFrame.p + Vector3.new(0,5,0)
+			elseif cameraSubject:IsA('BasePart') then
 				result = cameraSubject.CFrame.p
+			elseif cameraSubject:IsA('Model') then
+				result = cameraSubject:GetModelCFrame().p
 			elseif cameraSubject:IsA('Humanoid') then
 				local humanoidRootPart = cameraSubject.Torso
 				if humanoidRootPart and humanoidRootPart:IsA('BasePart') then
