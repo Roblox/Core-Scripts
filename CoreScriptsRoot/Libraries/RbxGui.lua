@@ -306,6 +306,7 @@ t.CreateScrollingDropDownMenu = function(onSelectedCallback, size, position, bas
 		listMenu.Size = UDim2.new(1, -16, 0, 24)
 		listMenu.Visible = false
 		scrollingBackground.Visible = false
+		isOpen = false
 	end
 
 	dropDownMenu.UpdateZIndex = function(newZIndexBase)

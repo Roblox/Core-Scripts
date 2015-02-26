@@ -1203,12 +1203,6 @@ local function closeSettingsMenu()
 		emptyMenuStack()
 		IsMenuClosing = false
 		pcall(function() game:GetService("UserInputService").OverrideMouseIconEnabled = false end)
-		-- NOTE: This is a hacky way to raise an event when the menu closes. This is being used by the new
-		-- lua controls to correctly set the state of the mouse and shift lock mode when leaving the settings menu.
-		if UserSettings().GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch then
-			UserSettings().GameSettings.ControlMode = Enum.ControlMode.Classic
-			UserSettings().GameSettings.ControlMode = Enum.ControlMode.MouseLockSwitch
-		end
 	end)
 end
 

@@ -58,7 +58,6 @@ end
 -- Purchase Prompt Script
 local newPurchaseSuccess, newPurchaseEnabled = pcall(function() return settings():GetFFlag("NewPurchaseScript") end)
 local isNewPurchaseScript = newPurchaseSuccess and newPurchaseEnabled
-isNewPurchaseScript = true
 if isNewPurchaseScript then
 	scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", screenGui)
 else
