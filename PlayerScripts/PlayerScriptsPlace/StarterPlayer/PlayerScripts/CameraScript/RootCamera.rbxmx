@@ -10,6 +10,8 @@ local PlayersService = game:GetService('Players')
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
 
+local IsTouch = UserInputService.TouchEnabled
+
 local function clamp(low, high, num)
 	if low <= high then
 		return math.min(high, math.max(low, num))
@@ -39,6 +41,9 @@ end
 
 local MIN_Y = math.rad(-80)
 local MAX_Y = math.rad(80)
+
+local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
+local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*2)
 
 local function CreateCamera()
 	local this = {}
@@ -137,9 +142,8 @@ local function CreateCamera()
 	function this:ScreenTranslationToAngle(translationVector)
 		local screenX = this:ViewSizeX()
 		local screenY = this:ViewSizeY()
-		-- moving your finger across the screen should be a full rotation
-		local xTheta = (translationVector.x / screenX) * math.pi*2
-		local yTheta = (translationVector.y / screenY) * math.pi
+		local xTheta = (translationVector.x / screenX)
+		local yTheta = (translationVector.y / screenY)
 		return Vector2.new(xTheta, yTheta)
 	end
 	
@@ -149,7 +153,7 @@ local function CreateCamera()
 		local startVertical = math.asin(startLook.y)
 		local yTheta = clamp(-MAX_Y + startVertical, -MIN_Y + startVertical, xyRotateVector.y)
 		self.cameraLook = (CFrame.Angles(0, -xyRotateVector.x, 0) * startCFrame * CFrame.Angles(-yTheta,0,0)).lookVector
-		return this:GetCameraLook()
+		return this:GetCameraLook(), Vector2.new(xyRotateVector.x, yTheta)
 	end
 	
 	function this:IsInFirstPerson()
@@ -254,14 +258,21 @@ local function CreateCamera()
 			if fingerTouches[input] == false then
 				panBeginLook = panBeginLook or this:GetCameraLook()
 				startPos = startPos or input.Position
-				lastPos = lastPos or startPos					
+				lastPos = lastPos or startPos
 				this.UserPanningTheCamera = true
 				
 				local totalTrans = input.Position - startPos
-				lastPos = input.Position
 				if this.PanEnabled then
-					this:RotateCamera(panBeginLook, this:ScreenTranslationToAngle(totalTrans))
+					local desiredXYVector = this:ScreenTranslationToAngle(totalTrans) * TOUCH_SENSITIVTY
+					local newLookVector, actualXYVector = this:RotateCamera(panBeginLook, desiredXYVector)
+					if desiredXYVector.y ~= actualXYVector.y then
+						panBeginLook = newLookVector
+						startPos = input.Position
+						lastPos = startPos
+					end
 				end
+
+				lastPos = input.Position
 			end
 		else
 			panBeginLook = nil
@@ -342,14 +353,21 @@ local function CreateCamera()
 		if startPos and lastPos and panBeginLook then
 			local currPos = lastPos + input.Delta
 			local totalTrans = currPos - startPos
-			lastPos = currPos
 			if this.PanEnabled then
-				-- NOTE: we probably should not add the delta if we are already maxed out on the rotation angle.
-				this:RotateCamera(panBeginLook, this:ScreenTranslationToAngle(totalTrans))
+				local desiredXYVector = this:ScreenTranslationToAngle(totalTrans) * MOUSE_SENSITIVITY
+				local newLookVector, actualXYVector = this:RotateCamera(panBeginLook, desiredXYVector)
+				-- If we hit the angle cap, we need to reassign the start position so that our
+				-- input code isn't storing rotations past the cap
+				if desiredXYVector.y ~= actualXYVector.y then
+					panBeginLook = newLookVector
+					startPos = currPos
+					lastPos = currPos
+				end
 			end
+			lastPos = currPos
 		elseif this:IsInFirstPerson() or this:GetShiftLock() then
 			if this.PanEnabled then
-				this:RotateCamera(this:GetCameraLook(), this:ScreenTranslationToAngle(input.Delta))
+				this:RotateCamera(this:GetCameraLook(), this:ScreenTranslationToAngle(input.Delta) * MOUSE_SENSITIVITY)
 			end
 		end
 	end
@@ -459,9 +477,9 @@ local function CreateCamera()
 	function this:ConnectInputEvents()
 		-- Mouse and Touch
 		UserInputService.InputBegan:connect(function(input, processed)
-			if input.UserInputType == Enum.UserInputType.Touch then
+			if input.UserInputType == Enum.UserInputType.Touch and IsTouch then
 				OnTouchBegan(input, processed)
-			elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+			elseif input.UserInputType == Enum.UserInputType.MouseButton2 and not IsTouch then
 				OnMouse2Down(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.ButtonR3 then
 				if this.currentZoom > 0.5 then
@@ -473,11 +491,11 @@ local function CreateCamera()
 		end)
 		
 		UserInputService.InputChanged:connect(function(input, processed)
-			if input.UserInputType == Enum.UserInputType.Touch then
+			if input.UserInputType == Enum.UserInputType.Touch and IsTouch then
 				OnTouchChanged(input, processed)
-			elseif input.UserInputType == Enum.UserInputType.MouseMovement then
+			elseif input.UserInputType == Enum.UserInputType.MouseMovement and not IsTouch then
 				OnMouseMoved(input, processed)
-			elseif input.UserInputType == Enum.UserInputType.MouseWheel then
+			elseif input.UserInputType == Enum.UserInputType.MouseWheel and not IsTouch then
 				OnMouseWheel(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
 				this.GamepadPanningCamera = (Vector2.new(input.Position.X, -input.Position.Y))
@@ -485,9 +503,9 @@ local function CreateCamera()
 		end)
 		
 		UserInputService.InputEnded:connect(function(input, processed)
-			if input.UserInputType == Enum.UserInputType.Touch then
+			if input.UserInputType == Enum.UserInputType.Touch and IsTouch then
 				OnTouchEnded(input, processed)
-			elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+			elseif input.UserInputType == Enum.UserInputType.MouseButton2 and not IsTouch then
 				OnMouse2Up(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
 				this.GamepadPanningCamera = Vector2.new(0,0)
