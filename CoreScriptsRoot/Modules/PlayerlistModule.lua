@@ -101,7 +101,7 @@ local AbuseReason = nil
 --[[ Constants ]]--
 local ENTRY_PAD = 2
 local BG_TRANSPARENCY = 0.5
-local BG_COLOR = Color3.new(28/255, 28/255, 28/255)
+local BG_COLOR = Color3.new(31/255, 31/255, 31/255)
 local TEXT_STROKE_TRANSPARENCY = 0.75
 local TEXT_COLOR = Color3.new(1, 1, 243/255)
 local TEXT_STROKE_COLOR = Color3.new(34/255, 34/255, 34/255)
@@ -166,7 +166,7 @@ local function clamp(value, min, max)
 	elseif value > max then
 		value = max
 	end
-	
+
 	return value
 end
 
@@ -313,10 +313,10 @@ end
 local function sortLeaderStats(a, b)
 	if a.IsPrimary ~= b.IsPrimary then
 		return a.IsPrimary
-	end	
+	end
 	if a.Priority == b.Priority then
 		return a.AddId < b.AddId
-	end	
+	end
 	return a.Priority < b.Priority
 end
 
@@ -345,7 +345,7 @@ Container.Size = MinContainerSize
 Container.BackgroundTransparency = 1
 Container.Visible = false
 Container.Parent = RobloxGui
-	
+
 -- Scrolling Frame
 local ScrollList = Instance.new('ScrollingFrame')
 ScrollList.Name = "ScrollList"
@@ -629,7 +629,7 @@ local function createStatFrame(offset, parent, name)
 	statFrame.BackgroundColor3 = BG_COLOR
 	statFrame.BorderSizePixel = 0
 	statFrame.Parent = parent
-	
+
 	return statFrame
 end
 
@@ -647,7 +647,7 @@ local function createStatText(parent, text)
 	statText.Text = text
 	statText.Active = true
 	statText.Parent = parent
-	
+
 	return statText
 end
 
@@ -830,7 +830,7 @@ local function getFriendCount(userId)
 		return nil
 	end
 	result = HttpService:JSONDecode(result)
-	
+
 	if result["success"] and result["count"] then
 		friendCount = result["count"]
 	end
@@ -845,7 +845,7 @@ local function canSendFriendRequest(otherPlayer)
 	--
 	local myFriendCount = getFriendCount()
 	local theirFriendCount = getFriendCount(otherPlayer.userId)
-	
+
 	-- assume max friends if web call fails
 	if not myFriendCount or not theirFriendCount then
 		return false
@@ -915,7 +915,7 @@ local function onFollowerStatusChanged()
 	if not LastSelectedFrame or not LastSelectedPlayer then
 		return
 	end
-	
+
 	-- don't update icon if already friends
 	local friendStatus = getFriendStatus(LastSelectedPlayer)
 	if friendStatus == Enum.FriendStatus.Friend then
@@ -955,7 +955,7 @@ local function onFollowButtonPressed()
 		-- now update the social icon
 		onFollowerStatusChanged()
 	end
-	
+
 	hideFriendReportPopup()
 end
 
@@ -1239,7 +1239,7 @@ local function updateAllTeamScores()
 					break
 				end
 			end
-		end 
+		end
 		if isInValidColor then
 			team = 'Neutral'
 		end
@@ -1405,12 +1405,12 @@ updateLeaderstatFrames = function()
 		local mainFrame = entry.Frame
 		local offset = NameEntrySizeX
 		local leaderstats = player:FindFirstChild('leaderstats')
-		
+
 		if leaderstats then
 			for _,stat in ipairs(GameStats) do
 				local statObject = leaderstats:FindFirstChild(stat.Name)
 				local statFrame = mainFrame:FindFirstChild(stat.Name)
-				
+
 				if not statFrame then
 					statFrame = createStatFrame(offset, mainFrame, stat.Name)
 					if statObject then
@@ -1434,7 +1434,7 @@ updateLeaderstatFrames = function()
 				offset = offset + statFrame.Size.X.Offset + 2
 			end
 		end
-		
+
 		Container.Position = UDim2.new(1, -offset, 0, 2)
 		Container.Size = UDim2.new(0, offset, 0.5, 0)
 		local newMinContainerOffset = offset
@@ -1454,7 +1454,7 @@ local function addNewStats(leaderstats)
 					break
 				end
 			end
-			
+
 			if not gameHasStat then
 				local newStat = {}
 				newStat.Name = stat.Name
@@ -1580,17 +1580,17 @@ end
 local function setLeaderStats(entry)
 	local player = entry.Player
 	local leaderstats = player:FindFirstChild('leaderstats')
-	
+
 	if leaderstats then
 		onStatAdded(leaderstats, entry)
 	end
-	
+
 	player.ChildAdded:connect(function(child)
 		if child.Name == 'leaderstats' then
 			onStatAdded(child, entry)
 		end
 	end)
-	
+
 	player.ChildRemoved:connect(function(child)
 		if child.Name == 'leaderstats' then
 			for i,stat in ipairs(child:GetChildren()) do
@@ -1610,9 +1610,9 @@ local function createPlayerEntry(player)
 		onEntryFrameSelected(containerFrame, player)
 	end
 	entryFrame.MouseButton1Click:connect(localEntrySelected)
-	
+
 	local currentXOffset = 1
-	
+
 	-- check membership
 	local membershipIconImage = getMembershipIcon(player)
 	local membershipIcon = nil
@@ -1655,13 +1655,13 @@ local function createPlayerEntry(player)
 			currentXOffset = currentXOffset + followerIcon.Size.X.Offset + 2
 		end
 	end
-	
+
 	local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
 	local playerName = createEntryNameText("PlayerName", name, playerNameXSize, currentXOffset)
 	playerName.Parent = entryFrame
 	playerEntry.Player = player
 	playerEntry.Frame = containerFrame
-	
+
 	return playerEntry
 end
 
