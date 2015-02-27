@@ -3,6 +3,7 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBX0D3AD21C0C6B451AA4768A0C10A0789F">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ShiftLockController</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: ShiftLockController
@@ -39,6 +40,7 @@ local InputCn = nil
 local IsShiftLockMode = false
 local IsShiftLocked = false
 local IsActionBound = false
+local IsInFirstPerson = false
 
 -- wrapping long conditional in function
 local function isShiftLockMode()
@@ -67,7 +69,9 @@ local function onShiftLockToggled()
 	else
 		ShiftLockIcon.Image = SHIFT_LOCK_OFF
 		Mouse.Icon = ""
-		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		if not IsInFirstPerson then
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		end
 	end
 end
 
@@ -105,6 +109,10 @@ function ShiftLockController:IsShiftLocked()
 	return IsShiftLockMode and IsShiftLocked
 end
 
+function ShiftLockController:SetIsInFirstPerson(isInFirstPerson)
+	IsInFirstPerson = isInFirstPerson
+end
+
 --[[ Input/Settings Changed Events ]]--
 local mouseLockSwitchFunc = function(actionName, inputState, inputObject)
 --	if IsShiftLockMode and inputState == Enum.UserInputState.Begin then
@@ -118,7 +126,9 @@ end
 local function disableShiftLock()
 	if ShiftLockIcon then ShiftLockIcon.Visible = false end
 	IsShiftLockMode = false
-	UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+	if not IsInFirstPerson then
+		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+	end
 	Mouse.Icon = ""
 	--ContextActionService:UnbindAction("ToggleShiftLock")
 	if InputCn then
