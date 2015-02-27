@@ -46,6 +46,19 @@ local MAX_Y = math.rad(80)
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
 local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*2)
 
+local SEAT_OFFSET = Vector3.new(0,5,0)
+local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
+
+local UseRenderCFrame = false
+pcall(function()
+	local rc = Instance.new('Part'):GetRenderCFrame()
+	UseRenderCFrame = (rc ~= nil)
+end)
+
+local function GetRenderCFrame(part)
+	return UseRenderCFrame and part:GetRenderCFrame() or part.CFrame
+end
+
 local function CreateCamera()
 	local this = {}
 	
@@ -67,24 +80,32 @@ local function CreateCamera()
 		return humanoid and humanoid.Torso
 	end
 	
+	function this:GetRenderCFrame(part)
+		GetRenderCFrame(part)
+	end
+	
 	function this:GetSubjectPosition()
 		local result = nil
 		local camera = workspace.CurrentCamera
 		if camera then
 			local cameraSubject = camera.CameraSubject
 			if cameraSubject:IsA('VehicleSeat') then
-				result = cameraSubject.CFrame.p + cameraSubject.CFrame:vectorToWorldSpace(Vector3.new(0,5,0))
+				local subjectCFrame = GetRenderCFrame(cameraSubject)
+				result = subjectCFrame.p + subjectCFrame:vectorToWorldSpace(SEAT_OFFSET)
 			elseif cameraSubject:IsA('SkateboardPlatform') then
-				result = cameraSubject.CFrame.p + Vector3.new(0,5,0)
+				local subjectCFrame = GetRenderCFrame(cameraSubject)
+				result = subjectCFrame.p + SEAT_OFFSET
 			elseif cameraSubject:IsA('BasePart') then
-				result = cameraSubject.CFrame.p
+				local subjectCFrame = GetRenderCFrame(cameraSubject)
+				result = subjectCFrame.p
 			elseif cameraSubject:IsA('Model') then
 				result = cameraSubject:GetModelCFrame().p
 			elseif cameraSubject:IsA('Humanoid') then
 				local humanoidRootPart = cameraSubject.Torso
 				if humanoidRootPart and humanoidRootPart:IsA('BasePart') then
-					result = humanoidRootPart.CFrame.p + Vector3.new(0, 1.5, 0) +
-						humanoidRootPart.CFrame:vectorToWorldSpace(cameraSubject.CameraOffset)
+					local subjectCFrame = GetRenderCFrame(humanoidRootPart)
+					result = subjectCFrame.p + HEAD_OFFSET +
+						subjectCFrame:vectorToWorldSpace(cameraSubject.CameraOffset)
 				end
 			end
 		end
