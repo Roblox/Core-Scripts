@@ -1,8 +1,9 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX9278F073EC5D4621A8A3894BD1752BB5">
+	<Item class="ModuleScript" referent="RBXB4C4411EA2734CFF9A6656AB6AFB7FDC">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">KeyboardMovement</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: ComputerMovementKeyboardMovement
@@ -25,7 +26,6 @@ while not Players.LocalPlayer do
 end
 local LocalPlayer = Players.LocalPlayer
 local CachedHumanoid = nil
-local RenderSteppedCon = nil
 local TextFocusReleasedCn = nil
 
 local MasterControl = require(script.Parent)
@@ -135,7 +135,7 @@ function KeyboardMovement:Enable()
 	ContextActionService:BindActionToInputTypes("jumpFromSeat", jumpFromSeat, false, Enum.KeyCode.Backspace)
 	-- TODO: make sure we check key state before binding to check if key is already down
 	
-	RenderSteppedCon = RunService.RenderStepped:connect(function()
+	local renderSteppedFunction = function()
 		if LocalPlayer and LocalPlayer.Character then
 			local humanoid = getHumanoid()
 			if not humanoid then return end
@@ -148,7 +148,9 @@ function KeyboardMovement:Enable()
 				end
 			end
 		end
-	end)
+	end
+	
+	RunService:BindToRenderStep("keyboardUpdate",Enum.RenderPriority.Character.Value,renderSteppedFunction)
 	
 	TextFocusReleasedCn = UserInputService.TextBoxFocusReleased:connect(function(textBox)
 		local humanoid = getHumanoid()
@@ -167,10 +169,7 @@ function KeyboardMovement:Disable()
 	ContextActionService:UnbindAction("jumpAction")
 	ContextActionService:UnbindAction("jumpFromSeat")
 	
-	if RenderSteppedCon then
-		RenderSteppedCon:disconnect()
-		RenderSteppedCon = nil
-	end
+	RunService:UnbindFromRenderStep("keyboardUpdate")
 	
 	if TextFocusReleasedCn then
 		TextFocusReleasedCn:disconnect()

@@ -1,8 +1,9 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXD00AEC210DE5446C9D16A928B401A41D">
+	<Item class="ModuleScript" referent="RBX927EFD443165410D965FA29B81ED2146">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">MasterControl</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: MasterControl
@@ -51,9 +52,8 @@ end
 
 --[[ Public API ]]--
 function MasterControl:Init()
-	if RenderSteppedCon then return end
 	
-	RenderSteppedCon = RunService.RenderStepped:connect(function()
+	local renderStepFunc = function()
 		if LocalPlayer and LocalPlayer.Character then
 			local humanoid = getHumanoid()
 			if not humanoid then return end
@@ -65,17 +65,27 @@ function MasterControl:Init()
 
 			moveFunc(LocalPlayer, moveValue, true)
 		end
-	end)
+	end
+	
+	local success = pcall(function() RunService:BindToRenderStep("MasterControlStep", Enum.RenderPriority.Input.Value, renderStepFunc) end)
+	
+	if not success then
+		if RenderSteppedCon then return end
+		RenderSteppedCon = RunService.RenderStepped:connect(renderStepFunc)
+	end
 end
 
 function MasterControl:Disable()
-	if RenderSteppedCon then
-		RenderSteppedCon:disconnect()
-		RenderSteppedCon = nil
-		
-		moveValue = Vector3.new(0,0,0)
-		isJumping = false
+	local success = pcall(function() RunService:UnbindFromRenderStep("MasterControlStep") end)
+	if not success then
+		if RenderSteppedCon then
+			RenderSteppedCon:disconnect()
+			RenderSteppedCon = nil
+		end
 	end
+	
+	moveValue = Vector3.new(0,0,0)
+	isJumping = false
 end
 
 function MasterControl:AddToPlayerMovement(playerMoveVector)

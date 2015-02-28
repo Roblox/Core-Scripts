@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBX05ACAFC8C6874578B513B9BBACC208F3">
+	<Item class="LocalScript" referent="RBX2A2F2FD3FD7E446588BCE9F23CD130BD">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -176,10 +176,13 @@ local function OnCameraMovementModeChange(newCameraMode)
 		EnabledOcclusion = false
 	end
 	
-	if renderSteppedConn then
-		renderSteppedConn:disconnect()
+	local success = pcall(function() local isAThing = RunService.BindToRenderStep end)
+	if not success then
+		if renderSteppedConn then
+			renderSteppedConn:disconnect()
+		end
+		renderSteppedConn = RunService.RenderStepped:connect(Update)
 	end
-	renderSteppedConn = RunService.RenderStepped:connect(Update)
 end
 
 local function OnNewCamera()
@@ -282,11 +285,14 @@ local function OnPlayerAdded(player)
 		OnCameraMovementModeChange(getCurrentCameraMode())
 	end)
 	
-	if renderSteppedConn then
-		renderSteppedConn:disconnect()
+	local success = pcall(function() RunService:BindToRenderStep("cameraRenderUpdate",Enum.RenderPriority.Camera.Value,Update) end)
+	if not success then
+		if renderSteppedConn then
+			renderSteppedConn:disconnect()
+		end
+		renderSteppedConn = RunService.RenderStepped:connect(Update)
 	end
-	renderSteppedConn = RunService.RenderStepped:connect(Update)
-	
+
 	OnNewCamera()
 	OnCameraMovementModeChange(getCurrentCameraMode())	
 end
