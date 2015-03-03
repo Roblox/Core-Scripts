@@ -58,9 +58,7 @@ function Gamepad:Enable()
 		if inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
 		if inputObject.KeyCode ~= Enum.KeyCode.ButtonA then return end
 		
-		if inputObject.UserInputState == Enum.UserInputState.Begin then
-			MasterControl:RequestJump()
-		end
+		MasterControl:SetIsJumping(inputObject.UserInputState == Enum.UserInputState.Begin)
 	end
 	
 	local doDpadMoveUpdate = function()

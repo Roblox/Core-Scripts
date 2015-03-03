@@ -58,14 +58,7 @@ function TouchJump:Create(parentFrame)
 	JumpButton.Position = isSmallScreen and UDim2.new(1, jumpButtonSize * -2.25, 1, -jumpButtonSize - 20) or
 		UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
 	
-	local touchObject = nil
-	local function doJumpLoop()
-		while touchObject do
-			MasterControl:RequestJump()
-			wait(1/60)
-		end
-	end
-	
+	local touchObject = nil	
 	JumpButton.InputBegan:connect(function(inputObject)
 		if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
 			return
@@ -73,11 +66,12 @@ function TouchJump:Create(parentFrame)
 		
 		touchObject = inputObject
 		JumpButton.ImageRectOffset = Vector2.new(0, 222)
-		doJumpLoop()
+		MasterControl:SetIsJumping(true)
 	end)
 	
 	OnInputEnded = function()
 		touchObject = nil
+		MasterControl:SetIsJumping(false)
 		JumpButton.ImageRectOffset = Vector2.new(176, 222)
 	end
 	

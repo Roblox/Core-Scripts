@@ -3,7 +3,6 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBXB4C4411EA2734CFF9A6656AB6AFB7FDC">
 		<Properties>
-			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">KeyboardMovement</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: ComputerMovementKeyboardMovement
@@ -111,18 +110,14 @@ function KeyboardMovement:Enable()
 	end
 	
 	local jumpFunc = function(actionName, inputState, inputObject)
-		if inputState == Enum.UserInputState.Begin then
-			MasterControl:RequestJump()
-		end
+		MasterControl:SetIsJumping(inputState == Enum.UserInputState.Begin)
 	end
 	
 	-- enable jumping from seat on backspace
 	local jumpFromSeat = function(actionName, inputState, inputObject)
 		local humanoid = getHumanoid()
-		if humanoid and (humanoid.Sit or humanoid.PlatformStand) then
-			if inputState == Enum.UserInputState.Begin then
-				MasterControl:RequestJump()
-			end
+		if humanoid and (humanoid.Sit or humanoid.PlatformStand) and inputState == Enum.UserInputState.Begin then
+			MasterControl:DoJump()
 		end
 	end
 	

@@ -3,7 +3,6 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBX927EFD443165410D965FA29B81ED2146">
 		<Properties>
-			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">MasterControl</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: MasterControl
@@ -48,8 +47,6 @@ local function getHumanoid()
 	end
 end
 
-
-
 --[[ Public API ]]--
 function MasterControl:Init()
 	
@@ -60,7 +57,6 @@ function MasterControl:Init()
 			
 			if humanoid and not humanoid.PlatformStand and isJumping then
 				humanoid.Jump = isJumping
-				isJumping = false
 			end
 
 			moveFunc(LocalPlayer, moveValue, true)
@@ -92,8 +88,15 @@ function MasterControl:AddToPlayerMovement(playerMoveVector)
 	moveValue = Vector3.new(moveValue.X + playerMoveVector.X, moveValue.Y + playerMoveVector.Y, moveValue.Z + playerMoveVector.Z)
 end
 
-function MasterControl:RequestJump()
-	isJumping = true
+function MasterControl:SetIsJumping(jumping)
+	isJumping = jumping
+end
+
+function MasterControl:DoJump()
+	local humanoid = getHumanoid()
+	if humanoid then
+		humanoid.Jump = true
+	end
 end
 
 return MasterControl

@@ -105,7 +105,7 @@ function DPad:Create(parentFrame)
 	
 	-- input connections
 	jumpBtn.InputBegan:connect(function(inputObject)
-		MasterControl:RequestJump()
+		MasterControl:DoJump()
 	end)
 	
 	local movementVector = Vector3.new(0,0,0)
