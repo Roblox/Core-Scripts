@@ -1433,12 +1433,6 @@ do
 			RecordVideoButton.MouseButton1Click:connect(function()
 				closeSettingsMenu()
 			end)
-			-- Stop recording on screen resize
-			RobloxGui.Changed:connect(function(property)
-				if IsRecordingVideo and property == 'AbsoluteSize' then
-					onRecordVideoToggle()
-				end
-			end)
 
 			local gameOptions = settings():FindFirstChild("Game Options")
 			if gameOptions then
