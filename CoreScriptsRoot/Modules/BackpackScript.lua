@@ -1,4 +1,4 @@
--- Backpack Version 4.20
+-- Backpack Version 4.21
 -- OnlyTwentyCharacters
 
 -------------------
@@ -97,7 +97,7 @@ local ActiveHopper = nil --NOTE: HopperBin
 local StarterToolFound = false -- Special handling is required for the gear currently equipped on the site
 local WholeThingEnabled = false
 local TextBoxFocused = false -- ANY TextBox, not just the search box
-local ResultsIndices = nil -- Results of a search
+local ResultsIndices = nil -- Results of a search, or nil
 local HotkeyStrings = {} -- Used for eating/releasing hotkeys
 local CharConns = {} -- Holds character connections to be cleared later
 local TopBarEnabled = false
@@ -344,12 +344,10 @@ local function MakeSlot(parent, index)
 			Slots[i]:SlideBack()
 		end
 
-		if newSize % HOTBAR_SLOTS == 0 then -- We lost a row at the end! Adjust the CanvasSize
+		if newSize % HOTBAR_SLOTS == 0 then -- We lost a row at the bottom! Adjust the CanvasSize
 			local lastSlot = Slots[newSize]
 			local lowestPoint = lastSlot.Frame.Position.Y.Offset + lastSlot.Frame.Size.Y.Offset
 			ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, lowestPoint + ICON_BUFFER)
-			local offset = Vector2.new(0, math.max(0, ScrollingFrame.CanvasPosition.Y - (lastSlot.Frame.Size.Y.Offset + ICON_BUFFER)))
-			ScrollingFrame.CanvasPosition = offset
 		end
 	end
 
@@ -468,6 +466,12 @@ local function MakeSlot(parent, index)
 		if index % HOTBAR_SLOTS == 1 then -- We are the first slot of a new row! Adjust the CanvasSize
 			local lowestPoint = SlotFrame.Position.Y.Offset + SlotFrame.Size.Y.Offset
 			ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, lowestPoint + ICON_BUFFER)
+		end
+		
+		-- Scroll to new inventory slot, if we're open and not viewing search results
+		if InventoryFrame.Visible and not ResultsIndices then
+			local offset = ScrollingFrame.CanvasSize.Y.Offset - ScrollingFrame.AbsoluteSize.Y
+			ScrollingFrame.CanvasPosition = Vector2.new(0, math.max(0, offset))
 		end
 	end
 
@@ -895,6 +899,8 @@ do -- Search stuff
 				slot.Frame.Visible = true
 			end
 		end
+		
+		ScrollingFrame.CanvasPosition = Vector2.new(0, 0)
 
 		xButton.Visible = true
 	end
