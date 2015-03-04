@@ -1,10 +1,13 @@
 --[[
 		Filename: SettingNewControlsOnly.lua
 		Written by: jmargh
+		Version 1.1
 		Description: Implements the in game settings menu with the new control schemes
 
 		TODO:
 			Remove SendNotification calls when notificaion script is updated.
+		NEW:
+			New stop recording button in the top bar.
 --]]
 
 --[[ Services ]]--
@@ -230,6 +233,7 @@ end
 -- Main Container for everything in the settings menu
 
 local SettingsShowSignal = Signal()
+local RecordChangedSignal = Signal()
 
 local SettingsMenuFrame = Instance.new('Frame')
 SettingsMenuFrame.Name = "SettingsMenu"
@@ -1296,6 +1300,7 @@ local function resetLocalCharacter()
 end
 
 local function onRecordVideoToggle()
+	if not StopRecordingVideoButton then return end
 	IsRecordingVideo = not IsRecordingVideo
 	if IsRecordingVideo then
 		StopRecordingVideoButton.Visible = true
@@ -1429,18 +1434,26 @@ do
 		LeaveGameButton.MouseButton1Click:connect(function() pushMenu(LeaveGameMenuFrame) end)
 
 		--[[ Video Recording ]]--
-		if RecordVideoButton and StopRecordingVideoButton then
+		if RecordVideoButton then
 			RecordVideoButton.MouseButton1Click:connect(function()
 				closeSettingsMenu()
 			end)
-
-			local gameOptions = settings():FindFirstChild("Game Options")
-			if gameOptions then
-				local success, result = pcall(function()
-					gameOptions.VideoRecordingChangeRequest:connect(function(recording)
+		end
+		local gameOptions = settings():FindFirstChild("Game Options")
+		if gameOptions then
+			local success, result = pcall(function()
+				gameOptions.VideoRecordingChangeRequest:connect(function(recording)
+					if isTopBar then
+						RecordChangedSignal:fire()
+						IsRecordingVideo = not IsRecordingVideo
+						RecordVideoButton.Text = IsRecordingVideo and "Stop Recording" or "Record Video"
+					else
 						onRecordVideoToggle()
-					end)
+					end
 				end)
+			end)
+			if not success then
+				print("Settings2.lua: VideoRecordingChangeRequest connection failed because", result)
 			end
 		end
 
@@ -1526,6 +1539,7 @@ function moduleApiTable:ToggleVisibility(visible)
 end
 
  moduleApiTable.SettingsShowSignal = SettingsShowSignal
+ moduleApiTable.RecordChangedSignal = RecordChangedSignal
 
 return moduleApiTable
 

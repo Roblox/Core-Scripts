@@ -807,6 +807,43 @@ local function CreateBackpackIcon()
 end
 --------------
 
+----- Stop Recording --
+local function CreateStopRecordIcon()
+	local MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings2)
+
+	local stopRecordIconButton = Util.Create'ImageButton'
+	{
+		Name = "StopRecording";
+		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
+		Image = "";
+		Visible = false;
+		BackgroundTransparency = 1;
+	};
+	stopRecordIconButton:SetVerb("RecordToggle")
+
+	local stopRecordIconLabel = Util.Create'ImageLabel'
+	{
+		Name = "StopRecordingIcon";
+		Size = UDim2.new(0, 31, 0, 31);
+		Position = UDim2.new(0.5, -15, 0.5, -15);
+		BackgroundTransparency = 1;
+		Image = "rbxasset://textures/ui/RecordDown.png";
+		Parent = stopRecordIconButton;
+	};
+
+	local isRecording = false
+	local function toggleStopRecordButton()
+		isRecording = not isRecording
+		stopRecordIconButton.Visible = isRecording
+	end
+
+	local isRecording = false
+	MenuModule.RecordChangedSignal:connect(toggleStopRecordButton)
+
+	return CreateMenuItem(stopRecordIconButton)
+end
+-----------------------
+
 ----- Shift Lock ------
 local function CreateShiftLockIcon()
 	local shiftlockIconButton = Util.Create'ImageButton'
@@ -850,6 +887,7 @@ local backpackIcon = useNewBackpack and CreateBackpackIcon()
 --local shiftlockIcon = CreateShiftLockIcon()
 local nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
 local leaderstatsMenuItem = useNewPlayerlist and CreateLeaderstatsMenuItem()
+local stopRecordingIcon = CreateStopRecordIcon()
 
 local LeftMenubar = CreateMenuBar('Left')
 local RightMenubar = CreateMenuBar('Right')
@@ -868,6 +906,7 @@ end
 if shiftlockIcon then
 	LEFT_ITEM_ORDER[shiftlockIcon] = 4
 end
+LEFT_ITEM_ORDER[stopRecordingIcon] = 5
 
 local RIGHT_ITEM_ORDER = {}
 if leaderstatsMenuItem then
@@ -936,6 +975,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 			end
 		end
 	end
+	AddItemInOrder(LeftMenubar, stopRecordingIcon, LEFT_ITEM_ORDER)
 end
 
 local function IsShiftLockModeEnabled()
