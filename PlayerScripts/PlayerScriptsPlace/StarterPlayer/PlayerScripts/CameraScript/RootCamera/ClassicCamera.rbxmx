@@ -106,7 +106,9 @@ local function CreateClassicCamera()
 				if IsFiniteVector3(offset) then
 					subjectPosition = subjectPosition + offset
 				end
-				zoom = math.max(zoom, 5)
+				-- For now we want players to be able to zoom to first person from shift lock mode. We can
+				-- revisit this at a later time.
+				--zoom = math.max(zoom, 5)
 			else
 				if self.LastCameraTransform and not userPanningTheCamera then
 					if (isInVehicle or isOnASkateboard) and lastUpdate and humanoid and humanoid.Torso then
