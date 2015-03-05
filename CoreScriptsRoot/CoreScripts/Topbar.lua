@@ -122,6 +122,8 @@ end
 local function CreateTopBar()
 	local this = {}
 
+	local playerGuiChangedConn = nil
+
 	local topbarContainer = Util.Create'Frame'{
 		Name = "TopBarContainer";
 		Size = UDim2.new(1, 0, 0, TOPBAR_THICKNESS);
@@ -144,6 +146,16 @@ local function CreateTopBar()
 		Parent = topbarContainer;
 	};
 
+	local function UpdateBackgroundTransparency()
+		local playerGui = Player:FindFirstChild('PlayerGui')
+		if playerGui then
+			pcall(function()
+				topbarContainer.BackgroundTransparency = playerGui.TopbarTransparency
+			end)
+			topbarShadow.Visible = (topbarContainer.BackgroundTransparency == 0)
+		end
+	end
+
 	function this:GetInstance()
 		return topbarContainer
 	end
@@ -151,7 +163,18 @@ local function CreateTopBar()
 	function this:SetTopbarDisplayMode(opaque)
 		topbarContainer.BackgroundTransparency = opaque and TOPBAR_OPAQUE_TRANSPARENCY or TOPBAR_TRANSLUCENT_TRANSPARENCY
 		topbarShadow.Visible = not opaque
+		UpdateBackgroundTransparency()
 	end
+
+	spawn(function()
+		local playerGui = Player:WaitForChild('PlayerGui')
+		Util.DisconnectEvent(playerGuiChangedConn)
+		playerGuiChangedConn = playerGui.Changed:connect(function(property)
+			if property == "TopbarTransparency" then
+				UpdateBackgroundTransparency()
+			end
+		end)
+	end)
 
 	return this
 end
@@ -689,7 +712,6 @@ local function CreateChatIcon()
 		Parent = chatCounter;
 	};
 
-	-- TODO: Make this Icon only show up if you are able to chat
 	local DEBOUNCE_TIME = 0.25
 	local chatActive = false
 	local debounce = 0
@@ -809,14 +831,12 @@ end
 
 ----- Stop Recording --
 local function CreateStopRecordIcon()
-	local MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings2)
-
 	local stopRecordIconButton = Util.Create'ImageButton'
 	{
 		Name = "StopRecording";
 		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
 		Image = "";
-		Visible = false;
+		Visible = true;
 		BackgroundTransparency = 1;
 	};
 	stopRecordIconButton:SetVerb("RecordToggle")
@@ -824,21 +844,12 @@ local function CreateStopRecordIcon()
 	local stopRecordIconLabel = Util.Create'ImageLabel'
 	{
 		Name = "StopRecordingIcon";
-		Size = UDim2.new(0, 31, 0, 31);
-		Position = UDim2.new(0.5, -15, 0.5, -15);
+		Size = UDim2.new(0, 28, 0, 28);
+		Position = UDim2.new(0.5, -14, 0.5, -14);
 		BackgroundTransparency = 1;
 		Image = "rbxasset://textures/ui/RecordDown.png";
 		Parent = stopRecordIconButton;
 	};
-
-	local isRecording = false
-	local function toggleStopRecordButton()
-		isRecording = not isRecording
-		stopRecordIconButton.Visible = isRecording
-	end
-
-	local isRecording = false
-	MenuModule.RecordChangedSignal:connect(toggleStopRecordButton)
 
 	return CreateMenuItem(stopRecordIconButton)
 end
@@ -874,7 +885,6 @@ local function CreateShiftLockIcon()
 			shiftlockActive = false
 			shiftlockIconLabel.Image = "rbxasset://textures/ui/ShiftLock/ShiftLock.png";
 		end
-		--TODO: have this communicate wih the shiftlock script
 	end)
 
 	return CreateMenuItem(shiftlockIconButton)
@@ -968,14 +978,13 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 	end
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
 		if chatIcon then
-			if enabled then
+			if enabled and Player.ChatMode == Enum.ChatMode.TextAndMenu then
 				AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
 			else
 				LeftMenubar:RemoveItem(chatIcon)
 			end
 		end
 	end
-	AddItemInOrder(LeftMenubar, stopRecordingIcon, LEFT_ITEM_ORDER)
 end
 
 local function IsShiftLockModeEnabled()
@@ -1010,7 +1019,7 @@ local function OnPlayerChanged(property)
 end
 
 
-TopBar:SetTopbarDisplayMode(false) -- TODO: Create a lua API and hook up change event
+TopBar:SetTopbarDisplayMode(false)
 
 LeftMenubar:SetDock(TopBar:GetInstance())
 RightMenubar:SetDock(TopBar:GetInstance())
@@ -1021,6 +1030,19 @@ if settingsIcon then
 end
 if nameAndHealthMenuItem then
 	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
+end
+
+local gameOptions = settings():FindFirstChild("Game Options")
+if gameOptions then
+	local success, result = pcall(function()
+		gameOptions.VideoRecordingChangeRequest:connect(function(recording)
+			if recording then
+				AddItemInOrder(LeftMenubar, stopRecordingIcon, LEFT_ITEM_ORDER)
+			else
+				LeftMenubar:RemoveItem(stopRecordingIcon)
+			end
+		end)
+	end)
 end
 
 -- Hook-up coregui changing
