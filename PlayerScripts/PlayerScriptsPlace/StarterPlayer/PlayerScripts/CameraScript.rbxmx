@@ -51,7 +51,12 @@ local function Round(num, places)
 	return math.floor(num * decimalPivot + 0.5) / decimalPivot
 end
 
-
+local function clamp(low, high, num)
+	if low <= high then
+		return math.min(high, math.max(low, num))
+	end
+	return num
+end
 
 local function shouldUseCustomCamera()
 	local player = PlayersService.LocalPlayer
@@ -79,7 +84,7 @@ local function isClickToMoveOn()
 			end
 		end
 	end
-	return false	
+	return false
 end
 
 local function getCurrentCameraMode()
@@ -120,13 +125,33 @@ local function getCameraOcclusionMode()
 	end
 end
 
+local LastUpdate = tick()
+local MAX_TWEEN_RATE = 2.8 -- per second
 local function ModifyCharacterTransparency()
 	local currentCamera = workspace.CurrentCamera
 	local player = PlayersService.LocalPlayer
 	local character = player and player.Character
+	local now = tick()
+	local maxDelta = MAX_TWEEN_RATE * (now - LastUpdate)
+	local instant = false
+
 	if player and character and currentCamera then
-		local distance = player:DistanceFromCharacter(currentCamera.CoordinateFrame.p)
-		local transparency = Round(math.max(0, math.min(1, (7 - distance) / 5)), 2)
+		local distance = (currentCamera.Focus.p - currentCamera.CoordinateFrame.p).magnitude
+		local transparency = (7 - distance) / 5
+		if transparency < 0.5 then
+			transparency = 0
+		end
+		if not EnabledCamera or (EnabledCamera:GetHumanoid() and EnabledCamera:GetHumanoid() ~= currentCamera.CameraSubject) then
+			transparency = 0
+			instant = true
+		end
+
+		local deltaTransparency = transparency - LastTransparency
+
+		if not instant and transparency < 1 then
+			deltaTransparency = clamp(-maxDelta, maxDelta, deltaTransparency)
+		end
+		transparency = clamp(0, 1, Round(LastTransparency + deltaTransparency, 2))
 		if TransparencyDirty or LastTransparency ~= transparency then
 			for child, _ in pairs(CachedParts) do
 				child.LocalTransparencyModifier = transparency
@@ -134,6 +159,7 @@ local function ModifyCharacterTransparency()
 			TransparencyDirty = false
 			LastTransparency = transparency
 		end
+		LastUpdate = now
 	end
 end
 
@@ -153,6 +179,7 @@ local function OnCameraMovementModeChange(newCameraMode)
 	if newCameraMode == Enum.DevComputerMovementMode.ClickToMove.Name then
 		ClickToMove:Start()
 		EnabledCamera = nil
+		ModifyCharacterTransparency()
 	else
 		if newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
 			EnabledCamera = ClassicCamera
@@ -160,10 +187,11 @@ local function OnCameraMovementModeChange(newCameraMode)
 			EnabledCamera = FollowCamera
 		else -- They are disabling our special movement code
 			EnabledCamera = nil
+			ModifyCharacterTransparency()
 		end
 		ClickToMove:Stop()
 	end
-	
+
 	local newOcclusionMode = getCameraOcclusionMode()
 	if EnabledOcclusion == Invisicam and newOcclusionMode ~= Enum.DevCameraOcclusionMode.Invisicam then
 		Invisicam:Cleanup()
@@ -175,7 +203,7 @@ local function OnCameraMovementModeChange(newCameraMode)
 	else
 		EnabledOcclusion = false
 	end
-	
+
 	local success = pcall(function() local isAThing = RunService.BindToRenderStep end)
 	if not success then
 		if renderSteppedConn then
@@ -187,7 +215,7 @@ end
 
 local function OnNewCamera()
 	OnCameraMovementModeChange(getCurrentCameraMode())
-		
+
 	local currentCamera = workspace.CurrentCamera
 	if currentCamera then
 		if currentCameraConn then
@@ -210,9 +238,9 @@ local function OnCharacterAdded(character)
 	local function IsValidPartToModify(part)
 		local function HasToolAncestor(object)
 			if object.Parent == nil then return false end
-			return object.Parent:IsA('Tool') or HasToolAncestor(object.Parent) 
+			return object.Parent:IsA('Tool') or HasToolAncestor(object.Parent)
 		end
-		
+
 		if part:IsA('BasePart') or part:IsA('Decal') then
 			return not HasToolAncestor(part)
 		end
@@ -270,21 +298,21 @@ local function OnPlayerAdded(player)
 	if player.Character then
 		OnCharacterAdded(player.Character)
 	end
-	
+
 	workspace.Changed:connect(function(prop)
 		if prop == 'CurrentCamera' then
 			OnNewCamera()
 		end
 	end)
-	
+
 	player.Changed:connect(function(prop)
 		OnCameraMovementModeChange(getCurrentCameraMode())
 	end)
-	
+
 	GameSettings.Changed:connect(function(prop)
 		OnCameraMovementModeChange(getCurrentCameraMode())
 	end)
-	
+
 	local success = pcall(function() RunService:BindToRenderStep("cameraRenderUpdate",Enum.RenderPriority.Camera.Value,Update) end)
 	if not success then
 		if renderSteppedConn then
@@ -294,7 +322,7 @@ local function OnPlayerAdded(player)
 	end
 
 	OnNewCamera()
-	OnCameraMovementModeChange(getCurrentCameraMode())	
+	OnCameraMovementModeChange(getCurrentCameraMode())
 end
 
 do
