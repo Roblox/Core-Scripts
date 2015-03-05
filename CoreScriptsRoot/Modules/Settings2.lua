@@ -233,7 +233,6 @@ end
 -- Main Container for everything in the settings menu
 
 local SettingsShowSignal = Signal()
-local RecordChangedSignal = Signal()
 
 local SettingsMenuFrame = Instance.new('Frame')
 SettingsMenuFrame.Name = "SettingsMenu"
@@ -1444,7 +1443,6 @@ do
 			local success, result = pcall(function()
 				gameOptions.VideoRecordingChangeRequest:connect(function(recording)
 					if isTopBar then
-						RecordChangedSignal:fire()
 						IsRecordingVideo = not IsRecordingVideo
 						RecordVideoButton.Text = IsRecordingVideo and "Stop Recording" or "Record Video"
 					else
@@ -1539,7 +1537,5 @@ function moduleApiTable:ToggleVisibility(visible)
 end
 
  moduleApiTable.SettingsShowSignal = SettingsShowSignal
- moduleApiTable.RecordChangedSignal = RecordChangedSignal
 
 return moduleApiTable
-
