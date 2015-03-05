@@ -1,6 +1,6 @@
 --[[
 		// FileName: PlayerListScript.lua
-		// Version 3.2
+		// Version 3.3
 		// Written by: jmargh
 		// Description: Implementation of in game player list and leaderboard
 ]]
@@ -264,11 +264,7 @@ local function getMembershipIcon(player)
 	local membershipType = player.MembershipType
 	if ADMINS[userIdStr] then
 		return ADMINS[userIdStr]
-	elseif ADMINS[userIdStr] then
-		return ADMINS[userIdStr]
 	elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
-		return PLACE_OWNER_ICON
-	elseif game.CreatorType == Enum.CreatorType.Group and player:GetRankInGroup(game.CreatorId) == 255 then
 		return PLACE_OWNER_ICON
 	elseif membershipType == Enum.MembershipType.None then
 		return nil
@@ -1266,7 +1262,7 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 	end
 end
 
--- NOTE: Core script only
+-- NOTE: Core script only. This fires when a player joins the game.
 Player.FriendStatusChanged:connect(onFriendshipChanged)
 
 local function updateAllTeamScores()
@@ -1685,9 +1681,16 @@ local function createPlayerEntry(player)
 		currentXOffset = currentXOffset + 18
 	end
 
-	-- need to spawn off for admin badge as IsInGroup function causes a wait while possibly iterating through
-	-- Players. It's possible a player iterator could be invalid during this iteration.
+	-- Some functions yield, so we need to spawn off in order to not cause a race condition with other events like Players.ChildRemoved
 	spawn(function()
+		if game.CreatorType == Enum.CreatorType.Group and player:GetRankInGroup(game.CreatorId) == 255 then
+			membershipIconImage = PLACE_OWNER_ICON
+			if not membershipIcon then
+				membershipIcon = createImageIcon(membershipIconImage, "MembershipIcon", 1, entryFrame)
+			else
+				membershipIcon.Image = membershipIconImage
+			end
+		end
 		local adminIconImage = getAdminIcon(player)
 		if adminIconImage then
 			if not membershipIcon then
@@ -1696,27 +1699,10 @@ local function createPlayerEntry(player)
 				membershipIcon.Image = adminIconImage
 			end
 		end
+		-- Friendship and Follower status is checked by onFriendshipChanged, which is called by the FriendStatusChanged
+		-- event. This event is fired when any player joins the game. onFriendshipChanged will check Follower status in
+		-- the case that we are not friends with the new player who is joining.
 	end)
-
-	-- check friendship
-	local friendStatus = getFriendStatus(player)
-	local friendshipIconImage = getFriendStatusIcon(friendStatus)
-	local friendshipIcon = nil
-	if friendshipIconImage then
-		friendshipIcon = createImageIcon(friendshipIconImage, "SocialIcon", currentXOffset, entryFrame)
-		currentXOffset = currentXOffset + friendshipIcon.Size.X.Offset + 2
-	end
-
-	-- check follower status, only show if not friends
-	local followerStatus, followerIconImage, followerIcon = nil, nil, nil
-	if IsFollowersEnabled and not friendshipIcon then 		-- FFlag
-		followerStatus = getFollowerStatus(player)
-		followerIconImage = getFollowerStatusIcon(followerStatus)
-		if followerIconImage then
-			followerIcon = createImageIcon(followerIconImage, "SocialIcon", currentXOffset, entryFrame)
-			currentXOffset = currentXOffset + followerIcon.Size.X.Offset + 2
-		end
-	end
 	
 	local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
 	local playerName = createEntryNameText("PlayerName", name, playerNameXSize, currentXOffset)
