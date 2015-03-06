@@ -1683,13 +1683,20 @@ local function createPlayerEntry(player)
 
 	-- Some functions yield, so we need to spawn off in order to not cause a race condition with other events like Players.ChildRemoved
 	spawn(function()
-		if game.CreatorType == Enum.CreatorType.Group and player:GetRankInGroup(game.CreatorId) == 255 then
-			membershipIconImage = PLACE_OWNER_ICON
-			if not membershipIcon then
-				membershipIcon = createImageIcon(membershipIconImage, "MembershipIcon", 1, entryFrame)
-			else
-				membershipIcon.Image = membershipIconImage
+		local success, result = pcall(function()
+			return player:GetRankInGroup(game.CreatorId) == 255
+		end)
+		if success then
+			if game.CreatorType == Enum.CreatorType.Group and result then
+				membershipIconImage = PLACE_OWNER_ICON
+				if not membershipIcon then
+					membershipIcon = createImageIcon(membershipIconImage, "MembershipIcon", 1, entryFrame)
+				else
+					membershipIcon.Image = membershipIconImage
+				end
 			end
+		else
+			print("PlayerList: GetRankInGroup failed because", result)
 		end
 		local adminIconImage = getAdminIcon(player)
 		if adminIconImage then
