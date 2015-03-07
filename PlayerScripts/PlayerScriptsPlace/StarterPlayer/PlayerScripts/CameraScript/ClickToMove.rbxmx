@@ -3,6 +3,7 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBX28335AC9D27C48AF9C552EF0F55B1117">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ClickToMove</string>
 			<ProtectedString name="Source"><![CDATA[-- Written By Kip Turner, Copyright Roblox 2014
 
@@ -47,35 +48,35 @@ do
 
 	function Signal.Create()
 		local sig = {}
-		
+
 		local mSignaler = Instance.new('BindableEvent')
-		
+
 		local mArgData = nil
 		local mArgDataCount = nil
-		
+
 		function sig:fire(...)
 			mArgData = {...}
 			mArgDataCount = select('#', ...)
 			mSignaler:Fire()
 		end
-		
+
 		function sig:connect(f)
 			if not f then error("connect(nil)", 2) end
 			return mSignaler.Event:connect(function()
 				f(unpack(mArgData, 1, mArgDataCount))
 			end)
 		end
-		
+
 		function sig:wait()
 			mSignaler.Event:wait()
 			assert(mArgData, "Missing arg data, likely due to :TweenSize/Position corrupting threadrefs.")
 			return unpack(mArgData, 1, mArgDataCount)
 		end
-		
+
 		return sig
 	end
 	Utility.Signal = Signal
-	
+
 	function Utility.Create(instanceType)
 		return function(data)
 			local obj = Instance.new(instanceType)
@@ -89,12 +90,12 @@ do
 			return obj
 		end
 	end
-	
+
 	local function clamp(low, high, num)
 		return math.max(math.min(high, num), low)
 	end
 	Utility.Clamp = clamp
-	
+
 	local function ViewSizeX()
 		local x = MyMouse and MyMouse.ViewSizeX or 0
 		local y = MyMouse and MyMouse.ViewSizeY or 0
@@ -109,7 +110,7 @@ do
 		end
 	end
 	Utility.ViewSizeX = ViewSizeX
-	
+
 	local function ViewSizeY()
 		local x = MyMouse and MyMouse.ViewSizeX or 0
 		local y = MyMouse and MyMouse.ViewSizeY or 0
@@ -124,12 +125,12 @@ do
 		end
 	end
 	Utility.ViewSizeY = ViewSizeY
-	
+
 	local function AspectRatio()
 		return ViewSizeX() / ViewSizeY()
 	end
 	Utility.AspectRatio = AspectRatio
-	
+
 	local function FindChacterAncestor(part)
 		if part then
 			local humanoid = part:FindFirstChild("Humanoid")
@@ -141,8 +142,8 @@ do
 		end
 	end
 	Utility.FindChacterAncestor = FindChacterAncestor
-	
-	
+
+
 	local NEAR_CLIP_PLANE_OFFSET = 0.5
 	local function ScreenToWorld(screenPoint, screenSize, pushDepth, camera)
 		local cameraFOV, cameraCFrame = camera.FieldOfView, camera.CoordinateFrame
@@ -154,13 +155,13 @@ do
 		return cameraCFrame.p + worldDirection * fixedPushDepth, worldDirection
 	end
 	local function GetUnitRay(x, y, viewWidth, viewHeight, camera)
-		
+
 		local rayOrigin, rayDirection = ScreenToWorld(Vector2.new(x,y), Vector2.new(viewWidth, viewHeight), NEAR_CLIP_PLANE_OFFSET, camera)
-		
+
 		return Ray.new(rayOrigin, rayDirection.unit);
 	end
 	Utility.GetUnitRay = GetUnitRay
-	
+
 	local RayCastIgnoreList = workspace.FindPartOnRayWithIgnoreList
 	local function Raycast(ray, ignoreNonCollidable, ignoreList)
 		local ignoreList = ignoreList or {}
@@ -175,13 +176,13 @@ do
 		return nil, nil
 	end
 	Utility.Raycast = Raycast
-	
-	
+
+
 	Utility.Round = function(num, roundToNearest)
 		roundToNearest = roundToNearest or 1
 		return math.floor((num + roundToNearest/2) / roundToNearest) * roundToNearest
 	end
-	
+
 	local function AveragePoints(positions)
 		local avgPos = Vector2.new(0,0)
 		if #positions > 0 then
@@ -193,12 +194,12 @@ do
 		return avgPos
 	end
 	Utility.AveragePoints = AveragePoints
-	
+
 	local function FuzzyEquals(numa, numb)
 		return numa + 0.1 > numb and numa - 0.1 < numb
 	end
 	Utility.FuzzyEquals = FuzzyEquals
-	
+
 	local LastInput = 0
 	UIS.InputBegan:connect(function(inputObject, wasSunk)
 		if not wasSunk then
@@ -242,23 +243,23 @@ local function CFrameInterpolator(c0, c1) -- (CFrame from, CFrame to) -> (float 
 	local sqrt = math.sqrt
 	local invroot2 = 1 / math.sqrt(2)
 	-- The expanded matrix
-	local _, _, _, xx, yx, zx, 
-	               xy, yy, zy, 
+	local _, _, _, xx, yx, zx,
+	               xy, yy, zy,
 	               xz, yz, zz = components(inverse(c0)*c1)
-	-- The cos-theta of the axisAngles from 
+	-- The cos-theta of the axisAngles from
 	local cosTheta = (xx + yy + zz - 1)/2
 	-- Rotation axis
 	local rotationAxis = v3(yz-zy, zx-xz, xy-yx)
 	-- The position to tween through
 	local positionDelta = (c1.p - c0.p)
 	-- Theta
-	local theta;			
+	local theta;
 	-- Catch degenerate cases
 	if cosTheta >= 0.999 then
 		-- Case same rotation, just return an interpolator over the positions
 		return 0, function(t)
 			return c0 + positionDelta*t
-		end	
+		end
 	elseif cosTheta <= -0.999 then
 		-- Case exactly opposite rotations, disambiguate
 		theta = math.pi
@@ -282,7 +283,7 @@ local function CFrameInterpolator(c0, c1) -- (CFrame from, CFrame to) -> (float 
 				xy = (xy + yx) / 4
 				yz = (yz + zy) / 4
 				rotationAxis = v3(xy/y, y, yz/y)
-			end	
+			end
 		else
 			if zz < 0.001 then
 				rotationAxis = v3(invroot2, invroot2, 0)
@@ -312,7 +313,7 @@ local function CreateController()
 	local this = {}
 
 	this.TorsoLookPoint = nil
-	
+
 	function this:SetTorsoLookPoint(point)
 		local humanoid = findPlayerHumanoid(Player)
 		if humanoid then
@@ -331,14 +332,14 @@ local function CreateController()
 			end
 		end)
 	end
-	
+
 	function this:UpdateTorso(point)
 		if this.TorsoLookPoint then
 			point = this.TorsoLookPoint
 		else
 			return
 		end
-		
+
 		local humanoid = findPlayerHumanoid(Player)
 		local torso = humanoid and humanoid.Torso
 		if torso then
@@ -347,7 +348,7 @@ local function CreateController()
 			torso.CFrame = CFrame.new(torso.CFrame.p, torso.CFrame.p + squashedLookVec)
 		end
 	end
-	
+
 	return this
 end
 
@@ -374,28 +375,28 @@ local function doAutoJump()
 	if (character == nil) then
 		return;
 	end
-	
+
 	local humanoid = findPlayerHumanoid(Player)
 	if (humanoid == nil) then
 		return;
 	end
 
-	local rayLength = 1.5; 
-	-- This is how high a ROBLOXian jumps from the mid point of his torso 
-	local jumpHeight = 7.0; 
+	local rayLength = 1.5;
+	-- This is how high a ROBLOXian jumps from the mid point of his torso
+	local jumpHeight = 7.0;
 
 	local torso = GetTorso()
 	if (torso == nil) then
-		return; 
+		return;
 	end
 
 	local torsoCFrame = torso.CFrame;
-	local torsoLookVector = torsoCFrame.lookVector; 
-	local torsoPos = torsoCFrame.p; 
+	local torsoLookVector = torsoCFrame.lookVector;
+	local torsoPos = torsoCFrame.p;
 
-	local torsoRay = Ray.new(torsoPos + Vector3.new(0, -torso.Size.Y/2, 0), torsoLookVector * rayLength); 
-	local jumpRay = Ray.new(torsoPos + Vector3.new(0, jumpHeight - torso.Size.Y, 0), torsoLookVector * rayLength); 
-		
+	local torsoRay = Ray.new(torsoPos + Vector3.new(0, -torso.Size.Y/2, 0), torsoLookVector * rayLength);
+	local jumpRay = Ray.new(torsoPos + Vector3.new(0, jumpHeight - torso.Size.Y, 0), torsoLookVector * rayLength);
+
 	local hitPart, _ = RayCastIgnoreList(workspace, torsoRay, {character}, false)
 	local jumpHitPart, _ = RayCastIgnoreList(workspace, jumpRay, {character}, false)
 
@@ -407,7 +408,7 @@ local function doAutoJump()
 	end
 end
 
-local NO_JUMP_STATES = 
+local NO_JUMP_STATES =
 {
 	[Enum.HumanoidStateType.FallingDown] = false;
 	[Enum.HumanoidStateType.Flying] = false;
@@ -417,7 +418,7 @@ local NO_JUMP_STATES =
 	[Enum.HumanoidStateType.Running] = false;
 	[Enum.HumanoidStateType.Seated] = false;
 	[Enum.HumanoidStateType.Swimming] = false;
-	
+
 	-- Special case to detect if we are on a ladder
 	[Enum.HumanoidStateType.Climbing] = false;
 }
@@ -449,7 +450,7 @@ local function preStepSimulatorSide(dt)
 	if getAutoJump() and enableAutoJump() then
 		local desiredWalkVelocity = calcDesiredWalkVelocity();
 		if (not vec3IsZero(desiredWalkVelocity)) then
-			doAutoJump(); 
+			doAutoJump();
 		end
 	end
 end
@@ -458,7 +459,7 @@ local function AutoJumper()
 	local this = {}
 	local running = false
 	local runRoutine = nil
-	
+
 	function this:Run()
 		running = true
 		local thisRoutine = nil
@@ -471,15 +472,15 @@ local function AutoJumper()
 		runRoutine = thisRoutine
 		coroutine.resume(thisRoutine)
 	end
-	
+
 	function this:Stop()
 		running = false
 	end
-	
+
 	function this:Step()
 		preStepSimulatorSide()
 	end
-	
+
 	return this
 end
 
@@ -506,19 +507,19 @@ end
 
 local function Pather(character, point)
 	local this = {}
-	
+
 	this.Cancelled = false
 	this.Started = false
-	
+
 	this.Finished = Signal.Create()
 	this.PathFailed = Signal.Create()
 	this.PathStarted = Signal.Create()
 
 	this.PathComputed = false
-	
+
 	function this:YieldUntilPointReached(character, point, timeout)
 		timeout = timeout or 10000000
-		
+
 		local humanoid = findPlayerHumanoid(Player)
 		local torso = humanoid and humanoid.Torso
 		local start = tick()
@@ -526,7 +527,7 @@ local function Pather(character, point)
 		while torso and tick() - start < timeout and this.Cancelled == false do
 			local diffVector = (point - torso.CFrame.p)
 			local xzMagnitude = (diffVector * Vector3.new(1,0,1)).magnitude
-			if xzMagnitude < 6 then 
+			if xzMagnitude < 6 then
 				-- Jump if the path is telling is to go upwards
 				if diffVector.Y >= 2 then
 					humanoid.Jump = true
@@ -546,7 +547,7 @@ local function Pather(character, point)
 		end
 		return false
 	end
-	
+
 	function this:Cancel()
 		this.Cancelled = true
 		local humanoid = findPlayerHumanoid(Player)
@@ -555,28 +556,27 @@ local function Pather(character, point)
 			humanoid:MoveTo(torso.CFrame.p)
 		end
 	end
-	
+
 	function this:CheckOcclusion(point1, point2, character, torsoRadius)
-		--print("Point1" , point1 , "point2" , point2)
 		local humanoid = findPlayerHumanoid(Player)
 		local torso = humanoid and humanoid.Torso
 		if torsoRadius == nil then
 			torsoRadius = torso and Vector3.new(torso.Size.X/2,0,torso.Size.Z/2) or Vector3.new(1,0,1)
 		end
-		
+
 		local diffVector = point2 - point1
 		local directionVector = diffVector.unit
-		
+
 		local rightVector = Vector3.new(0,1,0):Cross(directionVector) * torsoRadius
-		
+
 		local rightPart, _ = Utility.Raycast(Ray.new(point1 + rightVector, diffVector + rightVector), true, {character})
 		local hitPart, _ = Utility.Raycast(Ray.new(point1, diffVector), true, {character})
 		local leftPart, _ = Utility.Raycast(Ray.new(point1 - rightVector, diffVector - rightVector), true, {character})
-		
+
 		if rightPart or hitPart or leftPart then
 			return false
 		end
-		
+
 		-- Make sure we have somewhere to stand on
 		local midPt = (point2 + point1) / 2
 		local studsBetweenSamples = 2
@@ -586,31 +586,31 @@ local function Pather(character, point)
 				return false
 			end
 		end
-		
+
 		return true
 	end
-	
+
 	function this:SmoothPoints(pathToSmooth)
 		local result = {}
-		
+
 		local humanoid = findPlayerHumanoid(Player)
 		local torso = humanoid and humanoid.Torso
 		for i = 1, #pathToSmooth do
 			table.insert(result, pathToSmooth[i])
 		end
-		
+
 		-- Backwards for safe-deletion
 		for i = #result - 1, 1, -1 do
 			if i + 1 <= #result then
-				
-				local nextPoint = result[i+1]				
+
+				local nextPoint = result[i+1]
 				local thisPoint = result[i]
-				
+
 				local lastPoint = result[i-1]
 				if lastPoint == nil then
 					lastPoint = torso and Vector3.new(torso.CFrame.p.X, thisPoint.Y, torso.CFrame.p.Z)
 				end
-				
+
 				if lastPoint and Utility.FuzzyEquals(thisPoint.Y, lastPoint.Y) and Utility.FuzzyEquals(thisPoint.Y, nextPoint.Y) then
 					if this:CheckOcclusion(lastPoint, nextPoint, character) then
 						table.remove(result, i)
@@ -620,10 +620,10 @@ local function Pather(character, point)
 				end
 			end
 		end
-		
+
 		return result
 	end
-	
+
 	function this:CheckNeighboringCells(character)
 		local pathablePoints = {}
 		local humanoid = findPlayerHumanoid(Player)
@@ -648,7 +648,7 @@ local function Pather(character, point)
 		end
 		return pathablePoints
 	end
-	
+
 	function this:ComputeDirectPath()
 		local humanoid = findPlayerHumanoid(Player)
 		local torso = humanoid and humanoid.Torso
@@ -669,13 +669,13 @@ local function Pather(character, point)
 			end
 		end
 	end
-	
+
 	local function AllAxisInThreshhold(targetPt, otherPt, threshold)
-		return math.abs(targetPt.X - otherPt.X) <= threshold and 
+		return math.abs(targetPt.X - otherPt.X) <= threshold and
 			math.abs(targetPt.Y - otherPt.Y) <= threshold and
 			math.abs(targetPt.Z - otherPt.Z) <= threshold
 	end
-	
+
 	function this:ComputePath()
 		local smoothed = false
 		local humanoid = findPlayerHumanoid(Player)
@@ -758,24 +758,24 @@ local function Pather(character, point)
 		end
 		return smoothed
 	end
-	
+
 	function this:IsValidPath()
 		this:ComputePath()
 		local pathStatus = this.pathResult.Status
 		return pathStatus == Enum.PathStatus.Success
 	end
-	
+
 	function this:GetPathStatus()
 		this:ComputePath()
 		return this.pathResult.Status
 	end
-		
+
 	function this:Start()
 		spawn(function()
 			local humanoid = findPlayerHumanoid(Player)
 			--humanoid.AutoRotate = false
 			local torso = humanoid and humanoid.Torso
-			if torso then		
+			if torso then
 				if this.Started then return end
 				this.Started = true
 				-- Will yield the script since it is an Async function script (start, finish, maxDistance)
@@ -789,24 +789,24 @@ local function Pather(character, point)
 							if this.Cancelled then
 								return
 							end
-							
+
 							local wayPoint = nil
 							if SHOW_PATH then
 								wayPoint = CreateDestinationIndicator(point)
 								wayPoint.BrickColor = BrickColor.new("New Yeller")
 								wayPoint.Parent = workspace
 							end
-							
+
 							humanoid:MoveTo(point)
-														
+
 							local distance = ((torso.CFrame.p - point) * Vector3.new(1,0,1)).magnitude
 							local approxTime = 10
 							if math.abs(humanoid.WalkSpeed) > 0 then
 								approxTime = distance / math.abs(humanoid.WalkSpeed)
 							end
-							
+
 							local yielding = true
-							
+
 							if i == 1 then
 								--local rotatedCFrame = CameraModule:LookAtPreserveHeight(point)
 								if CameraModule then
@@ -823,9 +823,9 @@ local function Pather(character, point)
 											local look = CameraModule:GetCameraLook()
 											local squashedLook = (look * Vector3.new(1,0,1)).unit
 											local direction = ((point - workspace.CurrentCamera.CoordinateFrame.p) * Vector3.new(1,0,1)).unit
-											
+
 											local theta = math.deg(math.acos(squashedLook:Dot(direction)))
-											
+
 											if tick() - Utility.GetLastInput() > 2 and theta > (workspace.CurrentCamera.FieldOfView / 2) then
 												local rotatedCFrame = CameraModule:LookAtPreserveHeight(point)
 												local finishedSignal, duration = CameraModule:TweenCameraLook(rotatedCFrame)
@@ -838,20 +838,20 @@ local function Pather(character, point)
 							end
 							--]]
 							local didReach = this:YieldUntilPointReached(character, point, approxTime * 3 + 1)
-							
+
 							yielding = false
-							
+
 							if SHOW_PATH then
 								wayPoint:Destroy()
 							end
-							
+
 							if not didReach then
 								this.PathFailed:fire()
 								return
 							end
 						end
 					end
-					
+
 					this.Finished:fire()
 					return
 				end
@@ -859,7 +859,7 @@ local function Pather(character, point)
 			this.PathFailed:fire()
 		end)
 	end
-	
+
 	return this
 end
 
@@ -904,7 +904,7 @@ local function GetEquippedTool(character)
 				return child
 			end
 		end
-	end	
+	end
 end
 
 local function ExploreWithRayCast(currentPoint, originDirection)
@@ -916,7 +916,7 @@ local function ExploreWithRayCast(currentPoint, originDirection)
 			table.insert(TestVectors, CFrame.Angles(0, math.pi / 8 * i, 0) * forwardVector)
 		end
 	end
-	
+
 	local testResults = {}
 	-- Heuristic should be something along the lines of distance and closeness to the traveling direction
 	local function ExploreHeuristic()
@@ -927,7 +927,7 @@ local function ExploreWithRayCast(currentPoint, originDirection)
 			testData["Value"] = directionCoeff * distanceCoeff
 		end
 	end
-	
+
 	for i, vec in pairs(TestVectors) do
 		local hitPart, hitPos = Utility.Raycast(Ray.new(currentPoint, vec * TestDistance), true, {Player.Character})
 		if hitPos then
@@ -936,12 +936,12 @@ local function ExploreWithRayCast(currentPoint, originDirection)
 			table.insert(testResults, {Vector = vec; Distance = TestDistance})
 		end
 	end
-	
+
 	ExploreHeuristic()
-	
+
 	table.sort(testResults, function(a,b) return a["Value"] > b["Value"] end)
-	
-	return testResults	
+
+	return testResults
 end
 
 local TapId = 1
@@ -965,25 +965,25 @@ local function CleanupPath()
 	if ExistingIndicator then
 		DebrisService:AddItem(ExistingIndicator, 0)
 		ExistingIndicator = nil
-	end	
+	end
 end
 
 
 local AutoJumperInstance = nil
 local ShootCount = 0
 local FailCount = 0
-local function OnTap(tapPositions)	
+local function OnTap(tapPositions)
 	-- Good to remember if this is the latest tap event
 	TapId = TapId + 1
 	local thisTapId = TapId
-	
-	
+
+
 	local camera = workspace.CurrentCamera
 	local character = Player.Character
 
-	
+
 	if not CheckAlive(character) then return end
-	
+
 	-- This is a path tap position
 	if #tapPositions == 1 then
 		-- Filter out inputs that are by the sticks.
@@ -992,18 +992,18 @@ local function OnTap(tapPositions)
 			local unitRay = Utility.GetUnitRay(tapPositions[1].x, tapPositions[1].y, MyMouse.ViewSizeX, MyMouse.ViewSizeY, camera)
 			local ray = Ray.new(unitRay.Origin, unitRay.Direction*400)
 			local hitPart, hitPt = Utility.Raycast(ray, true, {character})
-			
+
 			local hitChar, hitHumanoid = Utility.FindChacterAncestor(hitPart)
 			local torso = character and character:FindFirstChild("Humanoid") and character:FindFirstChild("Humanoid").Torso
 			local startPos = torso.CFrame.p
 			if hitChar and hitHumanoid and hitHumanoid.Torso and (hitHumanoid.Torso.CFrame.p - torso.CFrame.p).magnitude < 7 then
 				CleanupPath()
-				
+
 				local myHumanoid = findPlayerHumanoid(Player)
 				if myHumanoid then
 					myHumanoid:MoveTo(hitPt)
 				end
-				
+
 				ShootCount = ShootCount + 1
 				local thisShoot = ShootCount
 				-- Do shooot
@@ -1023,21 +1023,18 @@ local function OnTap(tapPositions)
 					if BindableEvent_OnFailStateChanged then
 						BindableEvent_OnFailStateChanged:Fire(false)
 					end
---					if CameraModule then
---						CameraModule:Start()
---					end
 					CleanupPath()
-				
+
 					local destinationGlobe = CreateDestinationIndicator(hitPt)
 					destinationGlobe.Parent = camera
-					
+
 					ExistingPather = thisPather
 					ExistingIndicator = destinationGlobe
-									
+
 					if AutoJumperInstance then
 						AutoJumperInstance:Run()
 					end
-					
+
 					PathCompleteListener = thisPather.Finished:connect(function()
 						if AutoJumperInstance then
 							AutoJumperInstance:Stop()
@@ -1097,10 +1094,6 @@ local function OnTap(tapPositions)
 								if BindableEvent_OnFailStateChanged then
 									BindableEvent_OnFailStateChanged:Fire(true)
 								end
---								if CameraModule then
---									CameraModule:Stop()
---								end
-								workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
 								CleanupPath()
 							end
 						end
@@ -1126,169 +1119,78 @@ local function OnTap(tapPositions)
 	end
 end
 
-local function SetUpGestureRecognizers()
-	local MAX_FINGERS = 11
-	local InputHistory = {}
-	
-	local function FindInputObject(inputObject)
-		for i = 1, #InputHistory do
-			if InputHistory[i] == inputObject then
-				return InputHistory[i], i
-			end
-		end
-	end
-	
-	local function PopInput(inputObject)
-		local _, i = FindInputObject(inputObject)
-		if i then
-			table.remove(InputHistory, i)
-			return true
-		end
-		return false
-	end
-	
-	local function PushInput(inputObject)
-		-- Make sure it isn't in the list already
-		if FindInputObject(inputObject) then return false end
-		
-		if #InputHistory >= MAX_FINGERS then
-			-- Pop old dead inputs when we maxxed out
-			for i = 1, #InputHistory do
-				if InputHistory[i].UserInputState == Enum.UserInputState.End then
-					table.remove(InputHistory, i)
-					break
-				end
-			end
-		end
-		if #InputHistory >= MAX_FINGERS then
-			print("No more room for input; failing to add input")
-			for i = 1, #InputHistory do
-				print(tostring(i) .. ":" .. tostring(inputObject.UserInputState))
-			end
-			
-			return false
-		end
-		
-		
-		local startPos = Instance.new("Vector3Value")
-		startPos.Value = inputObject.Position -- Vector3.new(inputObject.Position.X, inputObject.Position.Y, 0)
-		startPos.Name = "StartPos" -- Have to use Vector3value because there is no vector2 value
-		startPos.Parent = inputObject
-		
-		local startTime = Instance.new("NumberValue")
-		startTime.Value = tick()
-		startTime.Name = "StartTime"
-		startTime.Parent = inputObject
-		
-		
-		table.insert(InputHistory, inputObject)
-		return true
-	end
-	
-	
-	UIS.InputBegan:connect(function(inputObject)
-		if inputObject.UserInputType == Enum.UserInputType.Touch then
-			PushInput(inputObject)
-			
-			local wasInBottomLeft = IsInBottomLeft(inputObject.Position)
-			local wasInBottomRight = IsInBottomRight(inputObject.Position)
-			if wasInBottomRight or wasInBottomLeft then
-				for i, otherInput in pairs(InputHistory) do
-					local otherInputInLeft = IsInBottomLeft(otherInput.Position)
-					local otherInputInRight = IsInBottomRight(otherInput.Position)
-					if otherInput.UserInputState ~= Enum.UserInputState.End and ((wasInBottomLeft and otherInputInRight) or (wasInBottomRight and otherInputInLeft)) then
-						-- TODO: Is this still a valid code path?
-						UIS.ModalEnabled = false
---						if CameraModule then
---							CameraModule:Stop()
---						end
-						workspace.CurrentCamera.CameraType = Enum.CameraType.Custom
-					end
-				end
-			end
-		end
-	end)
-	
-	UIS.InputEnded:connect(function(inputObject)
-		if inputObject.UserInputType ~= Enum.UserInputType.Touch then
-			return
-		end
-		
-		do
-			local lookedUpObject = FindInputObject(inputObject)
-			
-			local endTime = Instance.new("NumberValue")
-			endTime.Value = tick()
-			endTime.Name = "EndTime"
-			endTime.Parent = lookedUpObject
-		end
-	end)
-end
-
 
 local function CreateClickToMoveModule()
 	local this = {}
-	
+
 	local LastStateChange = 0
 	local LastState = Enum.HumanoidStateType.Running
-	local LastMouseUpTime = 0
-	
+	local FingerTouches = {}
+	local NumUnsunkTouches = 0
+	-- PC simulation
+	local mouse1Down = tick()
+	local mouse1DownPos = Vector2.new()
+	local mouse2Down = tick()
+	local mouse2DownPos = Vector2.new()
+	local mouse2Up = tick()
+
+	local movementKeys = {
+		[Enum.KeyCode.W] = true;
+		[Enum.KeyCode.A] = true;
+		[Enum.KeyCode.S] = true;
+		[Enum.KeyCode.D] = true;
+		[Enum.KeyCode.Up] = true;
+		[Enum.KeyCode.Down] = true;
+	}
+
 	local TapConn = nil
-	local MouseUpConn = nil
-	local MouseDownConn = nil
-	local MouseButton2DownConn = nil
-	local RotateConn = nil
-	local MouseWheelBackwardConn = nil
-	local MouseWheelForwardConn = nil
+	local InputBeganConn = nil
+	local InputChangedConn = nil
+	local InputEndedConn = nil
 	local HumanoidDiedConn = nil
 	local CharacterChildAddedConn = nil
-	local KeyboardInputBeganConn = nil
 	local OnCharacterAddedConn = nil
 	local RenderSteppedConn = nil
-	
+
 	local function disconnectEvent(event)
 		if event then
 			event:disconnect()
 		end
 	end
-	
+
 	local function DisconnectEvents()
 		disconnectEvent(TapConn)
-		disconnectEvent(MouseUpConn)
-		disconnectEvent(MouseDownConn)
-		disconnectEvent(MouseButton2DownConn)
-		disconnectEvent(MouseWheelForwardConn)
-		disconnectEvent(MouseWheelBackwardConn)
-		disconnectEvent(RotateConn)
+		disconnectEvent(InputBeganConn)
+		disconnectEvent(InputChangedConn)
+		disconnectEvent(InputEndedConn)
 		disconnectEvent(HumanoidDiedConn)
 		disconnectEvent(CharacterChildAddedConn)
-		disconnectEvent(KeyboardInputBeganConn)
 		disconnectEvent(OnCharacterAddedConn)
 		disconnectEvent(RenderSteppedConn)
 	end
-	
-	
+
+
 	-- Setup the camera
 	CameraModule = ClassicCameraModule()
-	
+
 	do
 		-- Extend The Camera Module Class
 		function CameraModule:LookAtPreserveHeight(newLookAtPt)
 			local camera = 	workspace.CurrentCamera
-			
+
 			local focus = camera.Focus.p
-						
+
 			local cameraCFrame = camera.CoordinateFrame
 			local mag = Vector3.new(cameraCFrame.lookVector.x, 0, cameraCFrame.lookVector.z).magnitude
 			local newLook = (Vector3.new(newLookAtPt.x, focus.y, newLookAtPt.z) - focus).unit * mag
 			local flippedLook = newLook + Vector3.new(0, cameraCFrame.lookVector.y, 0)
-			
+
 			local distance = (focus - camera.CoordinateFrame.p).magnitude
-			
+
 			local newCamPos = focus - flippedLook.unit * distance
 			return CFrame.new(newCamPos, newCamPos + flippedLook)
 		end
-		
+
 		function CameraModule:TweenCameraLook(desiredCFrame, speed)
 			local e = 2.718281828459
 			local function SCurve(t)
@@ -1298,7 +1200,7 @@ local function CreateClickToMoveModule()
 				if t >= d then return b + c end
 				return c * math.sin(t/d * (math.pi/2)) + b;
 			end
-			
+
 			local theta, interper = CFrameInterpolator(CFrame.new(Vector3.new(), self:GetCameraLook()), desiredCFrame - desiredCFrame.p)
 			theta = Utility.Clamp(0, math.pi, theta)
 			local duration = 0.65 * SCurve(theta - math.pi/4) + 0.15
@@ -1307,7 +1209,7 @@ local function CreateClickToMoveModule()
 			end
 			local start = tick()
 			local finish = start + duration
-		
+
 			self.UpdateTweenFunction = function()
 				local currTime = tick() - start
 				local alpha = Utility.Clamp(0, 1, easeOutSine(currTime, 0, 1, duration))
@@ -1319,99 +1221,103 @@ local function CreateClickToMoveModule()
 	end
 	--- Done Extending
 
+
+	local function OnTouchBegan(input, processed)
+		if FingerTouches[input] == nil and not processed then
+			NumUnsunkTouches = NumUnsunkTouches + 1
+		end
+		FingerTouches[input] = processed
+	end
+
+	local function OnTouchChanged(input, processed)
+		if FingerTouches[input] == nil then
+			FingerTouches[input] = processed
+			if not processed then
+				NumUnsunkTouches = NumUnsunkTouches + 1
+			end
+		end
+	end
+
+	local function OnTouchEnded(input, processed)
+		if FingerTouches[input] ~= nil and FingerTouches[input] == false then
+			NumUnsunkTouches = NumUnsunkTouches - 1
+		end
+		FingerTouches[input] = nil
+	end
+
+
 	local function OnCharacterAdded(character)
 		DisconnectEvents()
-		
-		
-		if UIS.TouchEnabled then -- Mobile	
-			SetUpGestureRecognizers()
-			
-			TapConn = UIS.TouchTap:connect(function(touchPositions, sunk)				
-				if not sunk then
-					OnTap(touchPositions)
-				end
-			end)
-			
-			MouseUpConn = MyMouse.Button1Up:connect(function()
-				LastMouseUpTime = tick()
-			end)
-			
-			local function OnCharacterChildAdded(child)
-				if child:IsA('Tool') then
-					child.ManualActivationOnly = true
-				elseif child:IsA('Humanoid') then
-					disconnectEvent(HumanoidDiedConn)
-					HumanoidDiedConn = child.Died:connect(function()
-						DebrisService:AddItem(ExistingIndicator, 1)		
-						if AutoJumperInstance then
-							AutoJumperInstance:Stop()
-							AutoJumperInstance = nil
+
+		InputBeganConn = UIS.InputBegan:connect(function(input, processed)
+			if input.UserInputType == Enum.UserInputType.Touch then
+				OnTouchBegan(input, processed)
+
+
+				-- Give back controls when they tap both sticks
+				local wasInBottomLeft = IsInBottomLeft(input.Position)
+				local wasInBottomRight = IsInBottomRight(input.Position)
+				if wasInBottomRight or wasInBottomLeft then
+					for otherInput, _ in pairs(FingerTouches) do
+						local otherInputInLeft = IsInBottomLeft(otherInput.Position)
+						local otherInputInRight = IsInBottomRight(otherInput.Position)
+						if otherInput.UserInputState ~= Enum.UserInputState.End and ((wasInBottomLeft and otherInputInRight) or (wasInBottomRight and otherInputInLeft)) then
+							UIS.ModalEnabled = false
+							return
 						end
-					end)
+					end
 				end
 			end
-			
-			CharacterChildAddedConn = character.ChildAdded:connect(function(child)
-				OnCharacterChildAdded(child)
-			end)
-			for _, child in pairs(character:GetChildren()) do
-				OnCharacterChildAdded(child)
+
+			 -- Cancel path when you use the keyboard controls.
+			if processed == false and input.UserInputType == Enum.UserInputType.Keyboard and movementKeys[input.KeyCode] then
+				CleanupPath()
 			end
-		else -- PC
+			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				mouse1Down = tick()
+				mouse1DownPos = input.Position
+			end
+			if input.UserInputType == Enum.UserInputType.MouseButton2 then
+				mouse2Down = tick()
+				mouse2DownPos = input.Position
+			end
+		end)
+
+		InputChangedConn = UIS.InputChanged:connect(function(input, processed)
+			if input.UserInputType == Enum.UserInputType.Touch then
+				OnTouchChanged(input, processed)
+			end
+		end)
+
+		InputEndedConn = UIS.InputEnded:connect(function(input, processed)
+			if input.UserInputType == Enum.UserInputType.Touch then
+				OnTouchEnded(input, processed)
+			end
+
+			if input.UserInputType == Enum.UserInputType.MouseButton2 then
+				mouse2Up = tick()
+				local currPos = input.Position
+				if mouse2Up - mouse2Down < 0.25 and (currPos - mouse2DownPos).magnitude < 5 then
+					local positions = {currPos}
+					OnTap(positions)
+				end
+			end
+		end)
+
+		TapConn = UIS.TouchTap:connect(function(touchPositions, processed)
+			if not processed then
+				OnTap(touchPositions)
+			end
+		end)
+
+		if not UIS.TouchEnabled then -- PC
 			if AutoJumperInstance then
 				AutoJumperInstance:Stop()
 				AutoJumperInstance = nil
 			end
 			AutoJumperInstance = AutoJumper()
-			-- PC simulation
-			local mouse1Down = tick()
-			local mouse1DownPos = Vector2.new()
-			local mouse1Up = tick()
-			local mouse2Down = tick()
-			local mouse2DownPos = Vector2.new()
-			local mouse2Up = tick()
-			
-			local movementKeys = {
-				[Enum.KeyCode.W] = true;
-				[Enum.KeyCode.A] = true;
-				[Enum.KeyCode.S] = true;
-				[Enum.KeyCode.D] = true;
-				[Enum.KeyCode.Up] = true;
-				[Enum.KeyCode.Down] = true;
-			}
-			
-			KeyboardInputBeganConn = UIS.InputBegan:connect(function(inputObject, processed)
-				if processed then return end
-				if inputObject.UserInputType == Enum.UserInputType.Keyboard and movementKeys[inputObject.KeyCode] then
-					 CleanupPath() -- Cancel path when you use the keyboard controls.
-				end
-			end)
-			
-			MouseDownConn = MyMouse.Button1Down:connect(function()
-				mouse1Down = tick()
-				mouse1DownPos = Vector2.new(MyMouse.X, MyMouse.Y)
-			end)
-			MouseButton2DownConn = MyMouse.Button2Down:connect(function()
-				mouse2Down = tick()
-				mouse2DownPos = Vector2.new(MyMouse.X, MyMouse.Y)
-			end)
-			MouseUpConn = MyMouse.Button2Up:connect(function()
-				mouse2Up = tick()			
-				local currPos = Vector2.new(MyMouse.X, MyMouse.Y)
-				if mouse2Up - mouse2Down < 0.25 and (currPos - mouse2DownPos).magnitude < 5 then
-					local positions = {currPos}
-					OnTap(positions)
-				end
-			end)
-			MouseWheelBackwardConn = MyMouse.WheelBackward:connect(function()
-				Player.CameraMode = Enum.CameraMode.Classic
-			end)
-			MouseWheelForwardConn = MyMouse.WheelForward:connect(function()
-				if (workspace.CurrentCamera.CoordinateFrame.p - workspace.CurrentCamera.Focus.p).magnitude < 0.8 then
-					Player.CameraMode = Enum.CameraMode.LockFirstPerson
-				end
-			end)
 		end
+
 		RenderSteppedConn = RunService.RenderStepped:connect(function()
 			if CameraModule then
 				if CameraModule.UserPanningTheCamera then
@@ -1427,10 +1333,35 @@ local function CreateClickToMoveModule()
 				CameraModule:Update()
 			end
 		end)
+
+		local function OnCharacterChildAdded(child)
+			if UIS.TouchEnabled then
+				if child:IsA('Tool') then
+					child.ManualActivationOnly = true
+				end
+			end
+			if child:IsA('Humanoid') then
+				disconnectEvent(HumanoidDiedConn)
+				HumanoidDiedConn = child.Died:connect(function()
+					DebrisService:AddItem(ExistingIndicator, 1)
+					if AutoJumperInstance then
+						AutoJumperInstance:Stop()
+						AutoJumperInstance = nil
+					end
+				end)
+			end
+		end
+
+		CharacterChildAddedConn = character.ChildAdded:connect(function(child)
+			OnCharacterChildAdded(child)
+		end)
+		for _, child in pairs(character:GetChildren()) do
+			OnCharacterChildAdded(child)
+		end
 	end
-	
+
 	local Running = false
-	
+
 	function this:Stop()
 		if Running then
 			DisconnectEvents()
@@ -1445,7 +1376,7 @@ local function CreateClickToMoveModule()
 			Running = false
 		end
 	end
-	
+
 	function this:Start()
 		if not Running then
 			if Player.Character then -- retro-listen
@@ -1455,7 +1386,7 @@ local function CreateClickToMoveModule()
 			Running = true
 		end
 	end
-	
+
 	return this
 end
 
