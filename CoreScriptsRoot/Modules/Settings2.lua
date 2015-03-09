@@ -1431,6 +1431,7 @@ do
 			pushMenu(ReportAbuseFrame)
 		end)
 		LeaveGameButton.MouseButton1Click:connect(function() pushMenu(LeaveGameMenuFrame) end)
+		ScreenshotButton.MouseButton1Click:connect(closeSettingsMenu)
 
 		--[[ Video Recording ]]--
 		if RecordVideoButton then
