@@ -116,6 +116,7 @@ local ASSET_TO_STRING = {
 	[32] = "Package";
 	[33] = "YouTube Video";
 	[34] = "Game Pass";
+	[38] = "Plugin";
 	[0]  = "Product";
 }
 local BC_ROBUX_PRODUCTS = { 90, 180, 270, 360, 450, 1000, 2750 }
@@ -456,7 +457,7 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 		return false
 	end
 	local itemDescription = string.gsub(descriptionText, "itemName", string.sub(productInfo["Name"], 1, 20))
-	itemDescription = string.gsub(itemDescription, "assetType", ASSET_TO_STRING[productInfo["AssetTypeId"]])
+	itemDescription = string.gsub(itemDescription, "assetType", ASSET_TO_STRING[productInfo["AssetTypeId"]] or "Unknown")
 	ItemDescriptionText.Text = itemDescription
 
 	if not isFree then
