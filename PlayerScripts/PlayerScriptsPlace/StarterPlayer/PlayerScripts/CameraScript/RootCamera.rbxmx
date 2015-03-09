@@ -87,8 +87,8 @@ local function CreateCamera()
 	function this:GetSubjectPosition()
 		local result = nil
 		local camera = workspace.CurrentCamera
-		if camera then
-			local cameraSubject = camera.CameraSubject
+		local cameraSubject = camera and camera.CameraSubject
+		if cameraSubject then
 			if cameraSubject:IsA('VehicleSeat') then
 				local subjectCFrame = GetRenderCFrame(cameraSubject)
 				result = subjectCFrame.p + subjectCFrame:vectorToWorldSpace(SEAT_OFFSET)
