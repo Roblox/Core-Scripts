@@ -140,6 +140,7 @@ end
 
 -- TODO: Remove when we figure out ContextActionService without sinking keys
 local function onShiftInputBegan(inputObject, isProcessed)
+	if isProcessed then return end
 	if inputObject.UserInputType == Enum.UserInputType.Keyboard and
 		(inputObject.KeyCode == Enum.KeyCode.LeftShift or inputObject.KeyCode == Enum.KeyCode.RightShift) then
 		--

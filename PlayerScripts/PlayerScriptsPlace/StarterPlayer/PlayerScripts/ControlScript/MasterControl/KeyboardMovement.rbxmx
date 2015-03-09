@@ -3,6 +3,7 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBXB4C4411EA2734CFF9A6656AB6AFB7FDC">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">KeyboardMovement</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: ComputerMovementKeyboardMovement
@@ -152,6 +153,7 @@ function KeyboardMovement:Enable()
 		if humanoid then
 			MasterControl:AddToPlayerMovement(-currentMoveVector)
 			currentMoveVector = Vector3.new(0,0,0)
+			forwardValue, backwardValue, leftValue, rightValue = 0, 0, 0, 0
 		end
 	end)
 end
