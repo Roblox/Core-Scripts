@@ -50,7 +50,7 @@ local IsExpanding = false
 local LastSelectedFrame = nil
 local LastSelectedPlayer = nil
 local IsPlayerListExpanded = false
-local MinContainerSize = UDim2.new(0, 200, 0.5, 0)
+local MinContainerSize = UDim2.new(0, 165, 0.5, 0)
 local StatNameFrame = nil
 local PlayerEntrySizeY = 20
 local TeamEntrySizeY = 20
@@ -323,7 +323,7 @@ end
 -- Start of Gui Creation
 local Container = Instance.new('Frame')
 Container.Name = "PlayerListContainer"
-Container.Position = UDim2.new(1, -202, 0, 2)
+Container.Position = UDim2.new(1, -167, 0, 2)
 Container.Size = MinContainerSize
 Container.BackgroundTransparency = 1
 Container.Visible = false
@@ -1584,8 +1584,7 @@ local function onStatRemoved(oldStat, entry)
 			for _,teamEntry in ipairs(TeamEntries) do
 				removeStatFrameFromEntry(oldStat, teamEntry.Frame)
 			end
-			-- remove from statName frame
-			removeStatFrameFromEntry(oldStat, StatNameFrame)
+
 			local toRemove = nil
 			for i,stat in ipairs(GameStats) do
 				if stat.Name == oldStat.Name then
@@ -1594,23 +1593,23 @@ local function onStatRemoved(oldStat, entry)
 				end
 			end
 			if toRemove then
+				removeStatFrameFromEntry(oldStat, StatNameFrame)
 				table.remove(GameStats, toRemove)
 				table.sort(GameStats, sortLeaderStats)
 			end
 		end
 		if #GameStats == 0 then
-			StatNameFrame:Destroy()
+			if StatNameFrame then StatNameFrame:Destroy() end
 			setEntryPositions()
 			setScrollListSize()
+			HeaderScore.Text = ""
+			HeaderName.Position = UDim2.new(-0.02, 0, 0.245, 0)
 		else
 			local leaderstats = Player:FindFirstChild('leaderstats')
 			if leaderstats then
 				local newPrimaryStat = leaderstats:FindFirstChild(GameStats[1].Name)
 				if newPrimaryStat then
 					updateHeaderScore(newPrimaryStat.Name)
-				else
-					HeaderScore.Text = ""
-					HeaderName.Position = UDim2.new(-0.02, 0, 0.245, 0)
 				end
 			end
 		end
@@ -1619,7 +1618,6 @@ local function onStatRemoved(oldStat, entry)
 end
 
 local function onStatAdded(leaderstats, entry)
-	addNewStats(leaderstats)
 	leaderstats.ChildAdded:connect(function(newStat)
 		if isValidStat(newStat) then
 			addNewStats(newStat.Parent)
@@ -1629,6 +1627,8 @@ local function onStatAdded(leaderstats, entry)
 	leaderstats.ChildRemoved:connect(function(child)
 		onStatRemoved(child, entry)
 	end)
+	addNewStats(leaderstats)
+	updateLeaderstatFrames()
 end
 
 local function setLeaderStats(entry)
@@ -1638,12 +1638,22 @@ local function setLeaderStats(entry)
 	if leaderstats then
 		onStatAdded(leaderstats, entry)
 	end
+
+	local function onPlayerChildChanged(property, child)
+		if property == 'Name' and child.Name == 'leaderstats' then
+			onStatAdded(child, entry)
+		end
+	end
 	
 	player.ChildAdded:connect(function(child)
 		if child.Name == 'leaderstats' then
 			onStatAdded(child, entry)
 		end
+		child.Changed:connect(function(property) onPlayerChildChanged(property, child) end)
 	end)
+	for _,child in pairs(player:GetChildren()) do
+		child.Changed:connect(function(property) onPlayerChildChanged(property, child) end)
+	end
 	
 	player.ChildRemoved:connect(function(child)
 		if child.Name == 'leaderstats' then
@@ -1765,10 +1775,9 @@ local function insertPlayerEntry(player)
 	if player == Player then
 		MyPlayerEntry = entry.Frame
 	end
-	setLeaderStats(entry)
 	table.insert(PlayerEntries, entry)
 	setScrollListSize()
-	updateLeaderstatFrames()
+	setLeaderStats(entry)
 	entry.Frame.Parent = ScrollList
 
 	player.Changed:connect(function(property)
