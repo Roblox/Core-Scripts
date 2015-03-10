@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBX2A2F2FD3FD7E446588BCE9F23CD130BD">
+	<Item class="LocalScript" referent="RBXe4106b37841f45adb77646ed7fe6579e">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -10,10 +10,6 @@
 local UserInputService = game:GetService('UserInputService')
 local PlayersService = game:GetService('Players')
 
--- Issue with play solo? (F6)
-while not UserInputService.KeyboardEnabled and not UserInputService.TouchEnabled do
-	wait()
-end
 
 local RootCamera = script:WaitForChild('RootCamera')
 local ClassicCamera = require(RootCamera:WaitForChild('ClassicCamera'))()
@@ -21,6 +17,7 @@ local FollowCamera = require(RootCamera:WaitForChild('FollowCamera'))()
 local PopperCam = require(script:WaitForChild('PopperCam'))
 local Invisicam = require(script:WaitForChild('Invisicam'))
 local ClickToMove = require(script:WaitForChild('ClickToMove'))()
+local TransparencyController = require(script:WaitForChild('TransparencyController'))()
 local StarterPlayer = game:GetService('StarterPlayer')
 
 local GameSettings = UserSettings().GameSettings
@@ -32,30 +29,9 @@ local EnabledOcclusion = nil
 local currentCameraConn = nil
 local renderSteppedConn = nil
 
-local CachedParts = {}
-local TransparencyDirty = true
-local LastTransparency = 0
-
 
 local function IsTouch()
 	return UserInputService.TouchEnabled
-end
-
-local function FuzzyEquals(num1, num2)
-	return num1 > num2 - 0.01 and num1 < num2 + 0.01
-end
-
-local function Round(num, places)
-	places = places or 0
-	local decimalPivot = 10^places
-	return math.floor(num * decimalPivot + 0.5) / decimalPivot
-end
-
-local function clamp(low, high, num)
-	if low <= high then
-		return math.min(high, math.max(low, num))
-	end
-	return num
 end
 
 local function shouldUseCustomCamera()
@@ -125,44 +101,6 @@ local function getCameraOcclusionMode()
 	end
 end
 
-local LastUpdate = tick()
-local MAX_TWEEN_RATE = 2.8 -- per second
-local function ModifyCharacterTransparency()
-	local currentCamera = workspace.CurrentCamera
-	local player = PlayersService.LocalPlayer
-	local character = player and player.Character
-	local now = tick()
-	local maxDelta = MAX_TWEEN_RATE * (now - LastUpdate)
-	local instant = false
-
-	if player and character and currentCamera then
-		local distance = (currentCamera.Focus.p - currentCamera.CoordinateFrame.p).magnitude
-		local transparency = (7 - distance) / 5
-		if transparency < 0.5 then
-			transparency = 0
-		end
-		if not EnabledCamera or (EnabledCamera:GetHumanoid() and EnabledCamera:GetHumanoid() ~= currentCamera.CameraSubject) then
-			transparency = 0
-			instant = true
-		end
-
-		local deltaTransparency = transparency - LastTransparency
-
-		if not instant and transparency < 1 then
-			deltaTransparency = clamp(-maxDelta, maxDelta, deltaTransparency)
-		end
-		transparency = clamp(0, 1, Round(LastTransparency + deltaTransparency, 2))
-		if TransparencyDirty or LastTransparency ~= transparency then
-			for child, _ in pairs(CachedParts) do
-				child.LocalTransparencyModifier = transparency
-			end
-			TransparencyDirty = false
-			LastTransparency = transparency
-		end
-		LastUpdate = now
-	end
-end
-
 local function Update()
 	if EnabledCamera then
 		EnabledCamera:Update()
@@ -171,7 +109,7 @@ local function Update()
 		EnabledOcclusion:Update()
 	end
 	if shouldUseCustomCamera() then
-		ModifyCharacterTransparency()
+		TransparencyController:Update()
 	end
 end
 
@@ -179,15 +117,17 @@ local function OnCameraMovementModeChange(newCameraMode)
 	if newCameraMode == Enum.DevComputerMovementMode.ClickToMove.Name then
 		ClickToMove:Start()
 		EnabledCamera = nil
-		ModifyCharacterTransparency()
+		TransparencyController:SetEnabled(false)
 	else
 		if newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
 			EnabledCamera = ClassicCamera
+			TransparencyController:SetEnabled(true)
 		elseif newCameraMode == Enum.ComputerCameraMovementMode.Follow.Name then
 			EnabledCamera = FollowCamera
-		else -- They are disabling our special movement code
+			TransparencyController:SetEnabled(true)
+		else -- Our camera movement code was disabled by the developer
 			EnabledCamera = nil
-			ModifyCharacterTransparency()
+			TransparencyController:SetEnabled(false)
 		end
 		ClickToMove:Stop()
 	end
@@ -213,6 +153,11 @@ local function OnCameraMovementModeChange(newCameraMode)
 	end
 end
 
+
+local function OnCameraSubjectChanged(newSubject)
+	TransparencyController:SetSubject(newSubject)
+end
+
 local function OnNewCamera()
 	OnCameraMovementModeChange(getCurrentCameraMode())
 
@@ -220,85 +165,21 @@ local function OnNewCamera()
 	if currentCamera then
 		if currentCameraConn then
 			currentCameraConn:disconnect()
-			currentCameraConn = nil
 		end
 		currentCameraConn = currentCamera.Changed:connect(function(prop)
 			if prop == 'CameraType' then
 				OnCameraMovementModeChange(getCurrentCameraMode())
-				TransparencyDirty = true
 			elseif prop == 'CameraSubject' then
-				TransparencyDirty = true
+				OnCameraSubjectChanged(currentCamera.CameraSubject)
 			end
 		end)
+
+		OnCameraSubjectChanged(currentCamera.CameraSubject)
 	end
 end
 
-local function OnCharacterAdded(character)
-	CachedParts = {}
-	local function IsValidPartToModify(part)
-		local function HasToolAncestor(object)
-			if object.Parent == nil then return false end
-			return object.Parent:IsA('Tool') or HasToolAncestor(object.Parent)
-		end
-
-		if part:IsA('BasePart') or part:IsA('Decal') then
-			return not HasToolAncestor(part)
-		end
-		return false
-	end
-	local function CachePartsRecursive(object)
-		if object then
-			if IsValidPartToModify(object) then
-				CachedParts[object] = true
-				TransparencyDirty = true
-			end
-			for _, child in pairs(object:GetChildren()) do
-				CachePartsRecursive(child)
-			end
-		end
-	end
-	character.DescendantAdded:connect(function(object)
-		-- This is a part we want to invisify
-		if IsValidPartToModify(object) then
-			CachedParts[object] = true
-			TransparencyDirty = true
-		-- There is now a tool under the character
-		elseif object:IsA('Tool') then
-			object.DescendantAdded:connect(function(toolChild)
-				CachedParts[toolChild] = nil
-				if toolChild:IsA('BasePart') or toolChild:IsA('Decal') then
-					-- Reset the transparency
-					toolChild.LocalTransparencyModifier = 0
-				end
-			end)
-			object.DescendantRemoving:connect(function(formerToolChild)
-				wait() -- wait for new parent
-				if character and formerToolChild and formerToolChild:IsDescendantOf(character) then
-					if IsValidPartToModify(formerToolChild) then
-						CachedParts[formerToolChild] = true
-						TransparencyDirty = true
-					end
-				end
-			end)
-		end
-	end)
-	character.DescendantRemoving:connect(function(object)
-		if CachedParts[object] then
-			CachedParts[object] = nil
-			-- Reset the transparency
-			object.LocalTransparencyModifier = 0
-		end
-	end)
-	CachePartsRecursive(character)
-end
 
 local function OnPlayerAdded(player)
-	player.CharacterRemoving:connect(function() CachedParts = {} end)
-	player.CharacterAdded:connect(OnCharacterAdded)
-	if player.Character then
-		OnCharacterAdded(player.Character)
-	end
-
 	workspace.Changed:connect(function(prop)
 		if prop == 'CurrentCamera' then
 			OnNewCamera()
