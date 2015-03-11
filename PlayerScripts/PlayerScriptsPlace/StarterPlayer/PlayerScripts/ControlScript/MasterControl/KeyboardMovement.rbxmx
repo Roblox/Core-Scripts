@@ -27,6 +27,7 @@ end
 local LocalPlayer = Players.LocalPlayer
 local CachedHumanoid = nil
 local TextFocusReleasedCn = nil
+local WindowFocusReleasedCn = nil
 
 local MasterControl = require(script.Parent)
 local currentMoveVector = Vector3.new(0,0,0)
@@ -148,13 +149,19 @@ function KeyboardMovement:Enable()
 	
 	RunService:BindToRenderStep("keyboardUpdate",Enum.RenderPriority.Character.Value,renderSteppedFunction)
 	
-	TextFocusReleasedCn = UserInputService.TextBoxFocusReleased:connect(function(textBox)
+	local function onFocusReleased()
 		local humanoid = getHumanoid()
 		if humanoid then
 			MasterControl:AddToPlayerMovement(-currentMoveVector)
-			currentMoveVector = Vector3.new(0,0,0)
+			currentMoveVector = Vector3.new(0, 0, 0)
 			forwardValue, backwardValue, leftValue, rightValue = 0, 0, 0, 0
 		end
+	end
+	
+	TextFocusReleasedCn = UserInputService.TextBoxFocusReleased:connect(onFocusReleased)
+	-- TODO: remove pcall when API is live
+	pcall(function()
+		WindowFocusReleasedCn = UserInputService.WindowFocused:connect(onFocusReleased)
 	end)
 end
 
@@ -171,6 +178,10 @@ function KeyboardMovement:Disable()
 	if TextFocusReleasedCn then
 		TextFocusReleasedCn:disconnect()
 		TextFocusReleasedCn = nil
+	end
+	if WindowFocusReleasedCn then
+		WindowFocusReleasedCn:disconnect()
+		WindowFocusReleasedCn = nil
 	end
 	
 	MasterControl:AddToPlayerMovement(-currentMoveVector)
