@@ -223,7 +223,7 @@ local function createMenuTitleLabel(name, text, yOffset)
 end
 
 local function closeCurrentDropDownMenu()
-	if CurrentOpenedDropDownMenu then
+	if CurrentOpenedDropDownMenu and CurrentOpenedDropDownMenu.IsOpen() then
 		CurrentOpenedDropDownMenu.Close()
 	end
 	CurrentOpenedDropDownMenu = nil
@@ -249,7 +249,7 @@ if not isTopBar then
 	SettingsButton.Parent = SettingsMenuFrame
 end
 
-local SettingsShield = Instance.new('Frame')
+local SettingsShield = Instance.new('TextButton')
 SettingsShield.Name = "SettingsShield"
 SettingsShield.Size = UDim2.new(1, 0, 1, 36)
 SettingsShield.Position = UDim2.new(0,0,0,-36)
@@ -257,8 +257,9 @@ SettingsShield.BackgroundTransparency = BG_TRANSPARENCY
 SettingsShield.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255)
 SettingsShield.BorderColor3 = Color3.new(27/255, 42/255, 53/255)
 SettingsShield.BorderSizePixel = 0
-SettingsShield.Active = false
 SettingsShield.Visible = false
+SettingsShield.AutoButtonColor = false
+SettingsShield.Text = ""
 SettingsShield.ZIndex = BASE_Z_INDEX + 2
 
 	local SettingClipFrame = Instance.new('Frame')
@@ -1371,6 +1372,13 @@ end
 
 --[[ Input Actions ]]--
 do
+	SettingsShield.InputBegan:connect(function(inputObject)
+		local inputType = inputObject.UserInputType
+		if inputType == Enum.UserInputType.MouseButton1 or inputType == Enum.UserInputType.Touch then
+			closeCurrentDropDownMenu()
+		end
+	end)
+	--
 	local escapePressedCn = nil
 	SettingsShield.Parent = SettingsMenuFrame
 	--
