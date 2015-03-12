@@ -57,7 +57,6 @@ function MasterControl:Init()
 			if not humanoid then return end
 			
 			if humanoid and not humanoid.PlatformStand and isJumping then
-				if humanoid.Sit then humanoid.Sit = false end
 				humanoid.Jump = isJumping
 			end
 
@@ -97,7 +96,6 @@ end
 function MasterControl:DoJump()
 	local humanoid = getHumanoid()
 	if humanoid then
-		if humanoid.Sit then humanoid.Sit = false end
 		humanoid.Jump = true
 	end
 end
