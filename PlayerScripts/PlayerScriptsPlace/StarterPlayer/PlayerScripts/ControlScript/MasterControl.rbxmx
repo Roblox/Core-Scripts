@@ -3,6 +3,7 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBX927EFD443165410D965FA29B81ED2146">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">MasterControl</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: MasterControl
@@ -56,6 +57,7 @@ function MasterControl:Init()
 			if not humanoid then return end
 			
 			if humanoid and not humanoid.PlatformStand and isJumping then
+				if humanoid.Sit then humanoid.Sit = false end
 				humanoid.Jump = isJumping
 			end
 
@@ -95,6 +97,7 @@ end
 function MasterControl:DoJump()
 	local humanoid = getHumanoid()
 	if humanoid then
+		if humanoid.Sit then humanoid.Sit = false end
 		humanoid.Jump = true
 	end
 end
