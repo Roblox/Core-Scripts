@@ -3,6 +3,7 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBX52a0aa1e09ea496e9200c5751fa67aeb">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ScriptableCamera</string>
 			<ProtectedString name="Source"><![CDATA[local RootCameraCreator = require(script.Parent)
 

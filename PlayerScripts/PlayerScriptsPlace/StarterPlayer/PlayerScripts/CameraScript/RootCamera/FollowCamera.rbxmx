@@ -3,6 +3,7 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBX2E794D4A101246E2A297C1E0B836654A">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">FollowCamera</string>
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
 local RootCameraCreator = require(script.Parent)
@@ -34,13 +35,14 @@ end
 
 local function CreateFollowCamera()
 	local module = RootCameraCreator()	
-	module:ConnectInputEvents()
 	
-	local tweenAcceleration = math.rad(250)
+	local tweenAcceleration = math.rad(220)
 	local tweenSpeed = math.rad(0)
 	local tweenMaxSpeed = math.rad(250)
+	local timeBeforeAutoRotate = 2
 	
 	local lastUpdate = tick()
+	module.LastUserPanCamera = tick()
 	function module:Update()
 		local now = tick()
 		
@@ -82,6 +84,7 @@ local function CreateFollowCamera()
 		-- Reset tween speed if user is panning
 		if userPanningTheCamera then
 			tweenSpeed = 0
+			module.LastUserPanCamera = tick()
 		end
 		
 		local subjectPosition = self:GetSubjectPosition()		
@@ -101,7 +104,7 @@ local function CreateFollowCamera()
 				-- revisit this at a later time.
 				--zoom = math.max(zoom, 5)
 			else
-				if self.LastCameraTransform and not userPanningTheCamera then
+				if self.LastCameraTransform and not userPanningTheCamera and now - module.LastUserPanCamera > timeBeforeAutoRotate then
 					if (isClimbing or isInVehicle or isOnASkateboard) and lastUpdate and humanoid and humanoid.Torso then
 						local forwardVector = humanoid.Torso.CFrame.lookVector
 						if isOnASkateboard then

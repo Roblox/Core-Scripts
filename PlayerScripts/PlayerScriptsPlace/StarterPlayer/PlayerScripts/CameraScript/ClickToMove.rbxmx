@@ -1372,6 +1372,7 @@ local function CreateClickToMoveModule()
 			end
 			if CameraModule then
 				CameraModule.UpdateTweenFunction = nil
+				CameraModule:SetEnabled(false)
 			end
 			Running = false
 		end
@@ -1383,6 +1384,9 @@ local function CreateClickToMoveModule()
 				OnCharacterAdded(Player.Character)
 			end
 			OnCharacterAddedConn = Player.CharacterAdded:connect(OnCharacterAdded)
+			if CameraModule then
+				CameraModule:SetEnabled(true)
+			end
 			Running = true
 		end
 	end

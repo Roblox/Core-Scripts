@@ -3,6 +3,7 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBXd1e245b180ea4a91a169f7da243e1a29">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">AttachCamera</string>
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
 local RootCameraCreator = require(script.Parent)
@@ -22,7 +23,6 @@ end
 
 local function CreateAttachCamera()
 	local module = RootCameraCreator()
-	module:ConnectInputEvents()
 	module.PanEnabled = false
 	module.KeyPanEnabled = false
 	

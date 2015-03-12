@@ -63,6 +63,7 @@ local function CreateCamera()
 	local this = {}
 	
 	this.ShiftLock = false
+	this.Enabled = false
 	local pinchZoomSpeed = 20
 	local isFirstPerson = false
 
@@ -419,9 +420,11 @@ local function CreateCamera()
 				this.TurningRight = true
 			elseif input.KeyCode == Enum.KeyCode.Comma then
 				this:RotateCamera(this:GetCameraLook(), Vector2.new(math.rad(-35),0))
+				this.LastUserPanCamera = tick()
 				this.LastCameraTransform = nil
 			elseif input.KeyCode == Enum.KeyCode.Period then
 				this:RotateCamera(this:GetCameraLook(), Vector2.new(math.rad(35),0))
+				this.LastUserPanCamera = tick()
 				this.LastCameraTransform = nil
 			elseif input.KeyCode == Enum.KeyCode.PageUp then
 			--elseif input.KeyCode == Enum.KeyCode.Home then
@@ -497,9 +500,44 @@ local function CreateCamera()
 		return Vector2.new(0,0)
 	end
 	
+	local InputBeganConn, InputChangedConn, InputEndedConn = nil, nil, nil
+	
+	function this:DisconnectInputEvents()
+		if InputBeganConn then
+			InputBeganConn:disconnect()
+			InputBeganConn = nil
+		end
+		if InputChangedConn then
+			InputChangedConn:disconnect()
+			InputChangedConn = nil
+		end
+		if InputEndedConn then
+			InputEndedConn:disconnect()
+			InputEndedConn = nil
+		end
+		this.TurningLeft = false
+		this.TurningRight = false
+		this.LastCameraTransform = nil
+		this.UserPanningTheCamera = false
+		
+		-- Reset input states
+		startPos = nil
+		lastPos = nil
+		panBeginLook = nil
+		
+		fingerTouches = {}
+		NumUnsunkTouches = 0
+		
+		StartingDiff = nil
+		pinchBeginZoom = nil
+		
+		if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		end
+	end
+	
 	function this:ConnectInputEvents()
-		-- Mouse and Touch
-		UserInputService.InputBegan:connect(function(input, processed)
+		InputBeganConn = UserInputService.InputBegan:connect(function(input, processed)
 			if input.UserInputType == Enum.UserInputType.Touch and IsTouch then
 				OnTouchBegan(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.MouseButton2 and not IsTouch then
@@ -511,9 +549,13 @@ local function CreateCamera()
 					this:ZoomCamera(10)
 				end
 			end
+			-- Keyboard
+			if input.UserInputType == Enum.UserInputType.Keyboard then
+				OnKeyDown(input, processed)
+			end
 		end)
 		
-		UserInputService.InputChanged:connect(function(input, processed)
+		InputChangedConn = UserInputService.InputChanged:connect(function(input, processed)
 			if input.UserInputType == Enum.UserInputType.Touch and IsTouch then
 				OnTouchChanged(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.MouseMovement and not IsTouch then
@@ -525,7 +567,7 @@ local function CreateCamera()
 			end
 		end)
 		
-		UserInputService.InputEnded:connect(function(input, processed)
+		InputEndedConn = UserInputService.InputEnded:connect(function(input, processed)
 			if input.UserInputType == Enum.UserInputType.Touch and IsTouch then
 				OnTouchEnded(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.MouseButton2 and not IsTouch then
@@ -533,53 +575,59 @@ local function CreateCamera()
 			elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
 				this.GamepadPanningCamera = Vector2.new(0,0)
 			end
-		end)
-		
-		-- Keyboard
-		UserInputService.InputBegan:connect(function(input, processed)
-			if input.UserInputType == Enum.UserInputType.Keyboard then
-				OnKeyDown(input, processed)
-			end
-		end)
-		
-		UserInputService.InputEnded:connect(function(input, processed)
+			-- Keyboard
 			if input.UserInputType == Enum.UserInputType.Keyboard then
 				OnKeyUp(input, processed)
 			end
-		end)
+		end)		
+	end
+	
+	function this:SetEnabled(newState)
+		if newState ~= self.Enabled then
+			self.Enabled = newState
+			if self.Enabled then
+				self:ConnectInputEvents()
+			else
+				self:DisconnectInputEvents()
+			end
+		end
 	end
 	
 	local function OnPlayerAdded(player)
 		player.Changed:connect(function(prop)
-			if prop == "CameraMode" or prop == "CameraMaxZoomDistance" or prop == "CameraMinZoomDistance" then
-				 this:ZoomCameraBy(0)
+			if this.Enabled then
+				if prop == "CameraMode" or prop == "CameraMaxZoomDistance" or prop == "CameraMinZoomDistance" then
+					 this:ZoomCameraBy(0)
+				end
 			end
 		end)
 		
 		local function OnCharacterAdded(newCharacter)
-			this:ZoomCamera(10)
-			local humanoid = findPlayerHumanoid(player)
-			local start = tick()
-			while tick() - start < 0.3 and (humanoid == nil or humanoid.Torso == nil) do
-				wait()
-				humanoid = findPlayerHumanoid(player)
-			end
-			local function setLookBehindChatacter()
-				if humanoid and humanoid.Torso and player.Character == newCharacter then
-					this.cameraLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.7,0)).unit
-					-- reset old camera info so follow cam doesn't rotate us
-					this.LastCameraTransform = nil
+			if this.Enabled then
+				this:ZoomCamera(10)
+				local humanoid = findPlayerHumanoid(player)
+				local start = tick()
+				while tick() - start < 0.3 and (humanoid == nil or humanoid.Torso == nil) do
+					wait()
+					humanoid = findPlayerHumanoid(player)
 				end
-			end
-			setLookBehindChatacter()
-			-- The following code is to set the camera again after they have been rotated by the spawn point.
-			local setLookVector = this:GetCameraLook()
-			spawn(function()
-				wait()
-				if this:GetCameraLook() == setLookVector then
-					setLookBehindChatacter()
+				local function setLookBehindChatacter()
+					if humanoid and humanoid.Torso and player.Character == newCharacter then
+						this.cameraLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.7,0)).unit
+						-- reset old camera info so follow cam doesn't rotate us
+						this.LastCameraTransform = nil
+					end
 				end
-			end)
+				setLookBehindChatacter()
+				-- The following code is to set the camera again after they have been rotated by the spawn point.
+				local setLookVector = this:GetCameraLook()
+				spawn(function()
+					wait()
+					if this:GetCameraLook() == setLookVector then
+						setLookBehindChatacter()
+					end
+				end)
+			end
 		end
 		
 		player.CharacterAdded:connect(OnCharacterAdded)

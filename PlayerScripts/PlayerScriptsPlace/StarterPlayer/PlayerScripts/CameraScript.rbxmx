@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBXe4106b37841f45adb77646ed7fe6579e">
+	<Item class="LocalScript" referent="RBX6342d2bba4244554b4de5749e0b3c94c">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -116,17 +116,35 @@ end
 local function OnCameraMovementModeChange(newCameraMode)
 	if newCameraMode == Enum.DevComputerMovementMode.ClickToMove.Name then
 		ClickToMove:Start()
-		EnabledCamera = nil
+		if EnabledCamera then
+			EnabledCamera:SetEnabled(false)
+			EnabledCamera = nil
+		end
 		TransparencyController:SetEnabled(false)
 	else
 		if newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
-			EnabledCamera = ClassicCamera
+			if EnabledCamera ~= ClassicCamera then
+				if EnabledCamera then
+					EnabledCamera:SetEnabled(false)
+				end
+				EnabledCamera = ClassicCamera
+				EnabledCamera:SetEnabled(true)
+			end
 			TransparencyController:SetEnabled(true)
 		elseif newCameraMode == Enum.ComputerCameraMovementMode.Follow.Name then
-			EnabledCamera = FollowCamera
+			if EnabledCamera ~= FollowCamera then
+				if EnabledCamera then 
+					EnabledCamera:SetEnabled(false)
+				end
+				EnabledCamera = FollowCamera
+				EnabledCamera:SetEnabled(true)
+			end
 			TransparencyController:SetEnabled(true)
 		else -- Our camera movement code was disabled by the developer
-			EnabledCamera = nil
+			if EnabledCamera then
+				EnabledCamera:SetEnabled(false)
+				EnabledCamera = nil
+			end
 			TransparencyController:SetEnabled(false)
 		end
 		ClickToMove:Stop()

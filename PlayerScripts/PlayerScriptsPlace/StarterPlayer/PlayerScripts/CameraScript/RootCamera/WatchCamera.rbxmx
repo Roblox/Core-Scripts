@@ -3,6 +3,7 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBXf73a132019194e108fef12ef751a9389">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">WatchCamera</string>
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
 local RootCameraCreator = require(script.Parent)
@@ -10,7 +11,6 @@ local RootCameraCreator = require(script.Parent)
 
 local function CreateWatchCamera()
 	local module = RootCameraCreator()
-	module:ConnectInputEvents()
 	module.PanEnabled = false
 	
 	local lastUpdate = tick()
