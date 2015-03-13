@@ -24,10 +24,8 @@ else
 	scriptContext:AddCoreScriptLocal("CoreScripts/Settings", screenGui)
 end
 
-if not touchEnabled then
-	-- ToolTipper  (creates tool tips for gui)
-	scriptContext:AddCoreScriptLocal("CoreScripts/ToolTip", screenGui)
-else
+-- Set up touch controls. TODO: Remove when new lua controls are stable.
+if touchEnabled then
 	if not luaControlsSuccess or luaControlsFlagValue == false then
 		scriptContext:AddCoreScriptLocal("CoreScripts/TouchControls", screenGui)
 	end
