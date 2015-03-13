@@ -98884,7 +98884,7 @@ function keyDown(key)
 &#9;&#9;forward = true
 &#9;elseif key == &quot;s&quot; then
 &#9;&#9;backward = true
-&#9;elseif key == &quot;a&quot; then 
+&#9;elseif key == &quot;a&quot; then
 &#9;&#9;left = true
 &#9;elseif key == &quot;d&quot; then
 &#9;&#9;right = true
@@ -98909,7 +98909,7 @@ function keyUp(key)
 &#9;&#9;forward = false
 &#9;elseif key == &quot;s&quot; then
 &#9;&#9;backward = false
-&#9;elseif key == &quot;a&quot; then 
+&#9;elseif key == &quot;a&quot; then
 &#9;&#9;left = false
 &#9;elseif key == &quot;d&quot; then
 &#9;&#9;right = false
@@ -99044,8 +99044,8 @@ function onEquipped(mouse)
 &#9;ufo = script.Parent.UFOPointer.Value
 &#9;camera = game.Workspace.CurrentCamera
 
-&#9;if mouse and ufo and camera then 
-&#9;&#9;Mouse = mouse 
+&#9;if mouse and ufo and camera then
+&#9;&#9;Mouse = mouse
 &#9;&#9;Mouse.KeyDown:connect(keyDown)
 &#9;&#9;Mouse.KeyUp:connect(keyUp)
 
@@ -99072,7 +99072,7 @@ function onUnequipped()
 
 
 &#9;local newMotionDamper = script.MotionDamper:Clone()
-&#9;if ufo then 
+&#9;if ufo then
 &#9;&#9;ufoPos.maxForce = Vector3.new(0, 0, 0)
 &#9;&#9;ufoGyr.maxTorque = Vector3.new(0, 0, 0)
 
@@ -108704,6 +108704,11 @@ AAAIAAAABQAAAAMAAAAJAAAAAAAAAAIAAAAJAAAAAgAAAAQAAAAJAAAABAAAAAAAAAA=</BinaryStri
 		<Item class="PlayerScripts" referent="RBX10d252e2162a480a916131f619490522">
 			<Properties>
 				<string name="Name">PlayerScripts</string>
+			</Properties>
+		</Item>
+		<Item class="StarterPlayerScripts" referent="RBX75ed0957a48a46c6b7886f24db284507">
+			<Properties>
+				<string name="Name">StarterPlayerScripts</string>
 			</Properties>
 		</Item>
 	</Item>

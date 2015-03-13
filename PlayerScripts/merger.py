@@ -1,7 +1,7 @@
 #! /usr/bin/python
 ## Kip Turner 2014
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 
 import os, getopt
 import fnmatch
@@ -147,15 +147,14 @@ def findXmlElementForPath(tree, path):
 
 def findRbxmsRecursive(searchDir):
 	foundPaths = []
-	def visitfunc(arg, dirname, names):
-		rbxms = findRbxmsInDir(dirname)
-		for rbxm in rbxms:
-			root, ext = os.path.splitext(rbxm)
-			fullRelPath = os.path.join(dirname, rbxm)
-			# print(rbxm + "=" + root + "+" + ext)
+
+	for root, dirs, files in os.walk(searchDir, followlinks=True):
+		for rbxmxFilename in files:
+			nameNoExt, ext = os.path.splitext(rbxmxFilename)
+			fullRelPath = os.path.join(root, rbxmxFilename)
 			if ext == '.rbxmx' and os.path.isfile(fullRelPath):
 				foundPaths.append(fullRelPath)
-	os.path.walk(searchDir, visitfunc, "")
+
 	return foundPaths
 
 def addRbxmsFromFolder(baseFileDir, tree):
