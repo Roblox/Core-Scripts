@@ -80,12 +80,12 @@ local function CreateClassicCamera()
 			local gamepadRotation = self:UpdateGamepad()
 			if gamepadRotation ~= Vector2.new(0,0) then
 				userPanningTheCamera = true
-				self:RotateCamera(self:GetCameraLook(), gamepadRotation)
+				self.RotateInput = self.RotateInput + gamepadRotation
 			end
 					
 			if angle ~= 0 then
 				userPanningTheCamera = true
-				self:RotateCamera(self:GetCameraLook(), Vector2.new(math.rad(angle * delta), 0))
+				self.RotateInput = self.RotateInput + Vector2.new(math.rad(angle * delta), 0)
 			end
 		end
 
@@ -104,7 +104,9 @@ local function CreateClassicCamera()
 			end
 			
 			if self:GetShiftLock() and not self:IsInFirstPerson() then
-				local offset = ((self:GetCameraLook() * XZ_VECTOR):Cross(UP_VECTOR).unit * 1.75)
+				-- We need to use the right vector of the camera after rotation, not before
+				local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
+				local offset = ((newLookVector * XZ_VECTOR):Cross(UP_VECTOR).unit * 1.75)
 
 				if IsFiniteVector3(offset) then
 					subjectPosition = subjectPosition + offset
@@ -130,14 +132,17 @@ local function CreateClassicCamera()
 						
 						local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
 						if IsFinite(y) and math.abs(y) > 0.0001 then
-							self:RotateCamera(self:GetCameraLook(), Vector3.new(y * percent, 0, 0))
+							self.RotateInput = self.RotateInput + Vector2.new(y * percent, 0)
 						end
 					end
 				end
 			end
 			
+			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
+			self.RotateInput = Vector2.new()
+			
 			camera.Focus = CFrame.new(subjectPosition)
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * self:GetCameraLook()), camera.Focus.p)
+			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
 			self.LastCameraTransform = camera.CoordinateFrame
 		end
 		

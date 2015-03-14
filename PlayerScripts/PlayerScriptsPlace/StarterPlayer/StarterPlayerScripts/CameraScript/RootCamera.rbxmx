@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX68CB45FC61B74F50950AD8751B564495">
+	<Item class="ModuleScript" referent="RBXd7bd3683934543a3ad56e7f332167461">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">RootCamera</string>
@@ -17,8 +17,15 @@ local function clamp(low, high, num)
 	if low <= high then
 		return math.min(high, math.max(low, num))
 	end
-	print("Trying to clamp when low:", low , "is larger than high:" , high , "returning input value.")
 	return num
+end
+
+local function findAngleBetweenXZVectors(vec2, vec1)
+	return math.atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
+end
+
+local function IsFinite(num)
+	return num == num and num ~= 1/0 and num ~= -1/0
 end
 
 local humanoidCache = {}
@@ -61,30 +68,31 @@ end
 
 local function CreateCamera()
 	local this = {}
-	
+
 	this.ShiftLock = false
 	this.Enabled = false
 	local pinchZoomSpeed = 20
 	local isFirstPerson = false
+	this.RotateInput = Vector2.new()
 
 	function this:GetShiftLock()
 		return ShiftLockController:IsShiftLocked()
 	end
-	
+
 	function this:GetHumanoid()
 		local player = PlayersService.LocalPlayer
 		return findPlayerHumanoid(player)
 	end
-	
+
 	function this:GetHumanoidRootPart()
 		local humanoid = this:GetHumanoid()
 		return humanoid and humanoid.Torso
 	end
-	
+
 	function this:GetRenderCFrame(part)
 		GetRenderCFrame(part)
 	end
-	
+
 	function this:GetSubjectPosition()
 		local result = nil
 		local camera = workspace.CurrentCamera
@@ -114,17 +122,10 @@ local function CreateCamera()
 	end
 
 	function this:ResetCameraLook()
-		local camera = workspace.CurrentCamera
-		if camera then
-			self.cameraLook = camera and camera.CoordinateFrame.lookVector
-		end
 	end
 
 	function this:GetCameraLook()
-		if self.cameraLook == nil then
-			self.cameraLook = workspace.CurrentCamera and workspace.CurrentCamera.CoordinateFrame.lookVector or Vector3.new(0,0,1)
-		end
-		return self.cameraLook
+		return workspace.CurrentCamera and workspace.CurrentCamera.CoordinateFrame.lookVector or Vector3.new(0,0,1)
 	end
 
 	function this:GetCameraZoom()
@@ -134,14 +135,14 @@ local function CreateCamera()
 		end
 		return this.currentZoom
 	end
-	
+
 	function this:GetCameraActualZoom()
 		local camera = workspace.CurrentCamera
 		if camera then
 			return (camera.CoordinateFrame.p - camera.Focus.p).magnitude
 		end
 	end
-	
+
 	function this:ViewSizeX()
 		local result = 1024
 		local player = PlayersService.LocalPlayer
@@ -151,7 +152,7 @@ local function CreateCamera()
 		end
 		return result
 	end
-	
+
 	function this:ViewSizeY()
 		local result = 768
 		local player = PlayersService.LocalPlayer
@@ -161,7 +162,7 @@ local function CreateCamera()
 		end
 		return result
 	end
-	
+
 	function this:ScreenTranslationToAngle(translationVector)
 		local screenX = this:ViewSizeX()
 		local screenY = this:ViewSizeY()
@@ -169,20 +170,20 @@ local function CreateCamera()
 		local yTheta = (translationVector.y / screenY)
 		return Vector2.new(xTheta, yTheta)
 	end
-	
-	function this:RotateCamera(startLook, xyRotateVector)		
+
+	function this:RotateCamera(startLook, xyRotateVector)
 		-- Could cache these values so we don't have to recalc them all the time
 		local startCFrame = CFrame.new(Vector3.new(), startLook)
 		local startVertical = math.asin(startLook.y)
 		local yTheta = clamp(-MAX_Y + startVertical, -MIN_Y + startVertical, xyRotateVector.y)
-		self.cameraLook = (CFrame.Angles(0, -xyRotateVector.x, 0) * startCFrame * CFrame.Angles(-yTheta,0,0)).lookVector
-		return this:GetCameraLook(), Vector2.new(xyRotateVector.x, yTheta)
+		local resultLookVector = (CFrame.Angles(0, -xyRotateVector.x, 0) * startCFrame * CFrame.Angles(-yTheta,0,0)).lookVector
+		return resultLookVector, Vector2.new(xyRotateVector.x, yTheta)
 	end
-	
+
 	function this:IsInFirstPerson()
 		return isFirstPerson
 	end
-	
+
 	function this:ZoomCamera(desiredZoom)
 		local player = PlayersService.LocalPlayer
 		if player then
@@ -205,14 +206,14 @@ local function CreateCamera()
 		ShiftLockController:SetIsInFirstPerson(isFirstPerson)
 		return self:GetCameraZoom()
 	end
-	
+
 	local function rk4Integrator(position, velocity, t)
 		local direction = velocity < 0 and -1 or 1
 		local function acceleration(p, v)
 			local accel = direction * math.max(1, (p / 3.3) + 0.5)
 			return accel
 		end
-		
+
 		local p1 = position
 		local v1 = velocity
 		local a1 = acceleration(p1, v1)
@@ -225,12 +226,12 @@ local function CreateCamera()
 		local p4 = p1 + v3 * t
 		local v4 = v1 + a3 * t
 		local a4 = acceleration(p4, v4)
-		
+
 		local positionResult = position + (v1 + 2 * v2 + 2 * v3 + v4) * (t / 6)
 		local velocityResult = velocity + (a1 + 2 * a2 + 2 * a3 + a4) * (t / 6)
 		return positionResult, velocityResult
 	end
-	
+
 	function this:ZoomCameraBy(zoomScale)
 		local zoom = this:GetCameraActualZoom()
 		if zoom then
@@ -240,60 +241,55 @@ local function CreateCamera()
 		end
 		return self:GetCameraZoom()
 	end
-	
+
 	function this:ZoomCameraFixedBy(zoomIncrement)
 		return self:ZoomCamera(self:GetCameraZoom() + zoomIncrement)
 	end
-	
+
 	function this:Update()
 	end
-	
+
 	---- Input Events ----
 	local startPos = nil
 	local lastPos = nil
 	local panBeginLook = nil
-	
+
 	local fingerTouches = {}
 	local NumUnsunkTouches = 0
-	
+
 	local StartingDiff = nil
 	local pinchBeginZoom = nil
-	
+
 	this.ZoomEnabled = true
 	this.PanEnabled = true
 	this.KeyPanEnabled = true
-	
+
 	local function OnTouchBegan(input, processed)
 		fingerTouches[input] = processed
-		if not processed then			
+		if not processed then
 			NumUnsunkTouches = NumUnsunkTouches + 1
 		end
 	end
-	
+
 	local function OnTouchChanged(input, processed)
 		if fingerTouches[input] == nil then
 			fingerTouches[input] = processed
-			if not processed then			
+			if not processed then
 				NumUnsunkTouches = NumUnsunkTouches + 1
 			end
 		end
-		
+
 		if NumUnsunkTouches == 1 then
 			if fingerTouches[input] == false then
 				panBeginLook = panBeginLook or this:GetCameraLook()
 				startPos = startPos or input.Position
 				lastPos = lastPos or startPos
 				this.UserPanningTheCamera = true
-				
-				local totalTrans = input.Position - startPos
+
+				local delta = input.Position - lastPos
 				if this.PanEnabled then
-					local desiredXYVector = this:ScreenTranslationToAngle(totalTrans) * TOUCH_SENSITIVTY
-					local newLookVector, actualXYVector = this:RotateCamera(panBeginLook, desiredXYVector)
-					if desiredXYVector.y ~= actualXYVector.y then
-						panBeginLook = newLookVector
-						startPos = input.Position
-						lastPos = startPos
-					end
+					local desiredXYVector = this:ScreenTranslationToAngle(delta) * TOUCH_SENSITIVTY
+					this.RotateInput = this.RotateInput + desiredXYVector
 				end
 
 				lastPos = input.Position
@@ -301,7 +297,7 @@ local function CreateCamera()
 		else
 			panBeginLook = nil
 			startPos = nil
-			lastPos = nil				
+			lastPos = nil
 			this.UserPanningTheCamera = false
 		end
 		if NumUnsunkTouches == 2 then
@@ -321,7 +317,7 @@ local function CreateCamera()
 					end
 				else
 					StartingDiff = difference
-					pinchBeginZoom = this:GetCameraZoom()
+					pinchBeginZoom = this:GetCameraActualZoom()
 				end
 			end
 		else
@@ -329,7 +325,7 @@ local function CreateCamera()
 			pinchBeginZoom = nil
 		end
 	end
-	
+
 	local function OnTouchEnded(input, processed)
 		if fingerTouches[input] == false then
 			if NumUnsunkTouches == 1 then
@@ -342,13 +338,13 @@ local function CreateCamera()
 				pinchBeginZoom = nil
 			end
 		end
-		
+
 		if fingerTouches[input] ~= nil and fingerTouches[input] == false then
 			NumUnsunkTouches = NumUnsunkTouches - 1
 		end
 		fingerTouches[input] = nil
 	end
-	
+
 	local function OnMouse2Down(input, processed)
 		if processed then return end
 		-- Check if they are in first-person
@@ -360,42 +356,36 @@ local function CreateCamera()
 		lastPos = startPos
 		this.UserPanningTheCamera = true
 	end
-	
+
 	local function OnMouse2Up(input, processed)
 		-- Check if they are in first-person
 		if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 		end
-		
+
 		panBeginLook = nil
 		startPos = nil
 		lastPos = nil
 		this.UserPanningTheCamera = false
 	end
-	
+
 	local function OnMouseMoved(input, processed)
 		if startPos and lastPos and panBeginLook then
 			local currPos = lastPos + input.Delta
 			local totalTrans = currPos - startPos
 			if this.PanEnabled then
-				local desiredXYVector = this:ScreenTranslationToAngle(totalTrans) * MOUSE_SENSITIVITY
-				local newLookVector, actualXYVector = this:RotateCamera(panBeginLook, desiredXYVector)
-				-- If we hit the angle cap, we need to reassign the start position so that our
-				-- input code isn't storing rotations past the cap
-				if desiredXYVector.y ~= actualXYVector.y then
-					panBeginLook = newLookVector
-					startPos = currPos
-					lastPos = currPos
-				end
+				local desiredXYVector = this:ScreenTranslationToAngle(input.Delta) * MOUSE_SENSITIVITY
+				this.RotateInput = this.RotateInput + desiredXYVector
 			end
 			lastPos = currPos
 		elseif this:IsInFirstPerson() or this:GetShiftLock() then
 			if this.PanEnabled then
-				this:RotateCamera(this:GetCameraLook(), this:ScreenTranslationToAngle(input.Delta) * MOUSE_SENSITIVITY)
+				local desiredXYVector = this:ScreenTranslationToAngle(input.Delta) * MOUSE_SENSITIVITY
+				this.RotateInput = this.RotateInput + desiredXYVector
 			end
 		end
 	end
-	
+
 	local function OnMouseWheel(input, processed)
 		if not processed then
 			if this.ZoomEnabled then
@@ -403,7 +393,7 @@ local function CreateCamera()
 			end
 		end
 	end
-	
+
 	local function OnKeyDown(input, processed)
 		if processed then return end
 		if this.ZoomEnabled then
@@ -419,25 +409,25 @@ local function CreateCamera()
 			elseif input.KeyCode == Enum.KeyCode.Right then
 				this.TurningRight = true
 			elseif input.KeyCode == Enum.KeyCode.Comma then
-				this:RotateCamera(this:GetCameraLook(), Vector2.new(math.rad(-35),0))
+				this.RotateInput = this.RotateInput + Vector2.new(math.rad(-35),0)
 				this.LastUserPanCamera = tick()
 				this.LastCameraTransform = nil
 			elseif input.KeyCode == Enum.KeyCode.Period then
-				this:RotateCamera(this:GetCameraLook(), Vector2.new(math.rad(35),0))
+				this.RotateInput = this.RotateInput + Vector2.new(math.rad(35),0)
 				this.LastUserPanCamera = tick()
 				this.LastCameraTransform = nil
 			elseif input.KeyCode == Enum.KeyCode.PageUp then
 			--elseif input.KeyCode == Enum.KeyCode.Home then
-				this:RotateCamera(this:GetCameraLook(), Vector2.new(0,math.rad(15)))
+				this.RotateInput = this.RotateInput + Vector2.new(0,math.rad(15))
 				this.LastCameraTransform = nil
 			elseif input.KeyCode == Enum.KeyCode.PageDown then
 			--elseif input.KeyCode == Enum.KeyCode.End then
-				this:RotateCamera(this:GetCameraLook(), Vector2.new(0,math.rad(-15)))
+				this.RotateInput = this.RotateInput + Vector2.new(0,math.rad(-15))
 				this.LastCameraTransform = nil
 			end
 		end
 	end
-	
+
 	local function OnKeyUp(input, processed)
 		if input.KeyCode == Enum.KeyCode.Left then
 			this.TurningLeft = false
@@ -445,21 +435,55 @@ local function CreateCamera()
 			this.TurningRight = false
 		end
 	end
-	
+
 	local lastThumbstickRotate = nil
 	local numOfSeconds = 0.7
 	local currentSpeed = 0
 	local maxSpeed = 0.1
 	local thumbstickSensitivity = 1.0
 	local lastThumbstickPos = Vector2.new(0,0)
-	local ySensitivity = 0.8
+	local ySensitivity = 0.65
 	local lastVelocity = nil
 	
-	function this:UpdateGamepad()
-		local gamepadPan = this.GamepadPanningCamera	
-		if gamepadPan then
-			local currentTime = tick()
+	-- K is a tunable parameter that changes the shape of the S-curve
+	-- the larger K is the more straight/linear the curve gets
+	local k = 0.77
+	local function SCurveTranform(t)
+		t = clamp(-1,1,t)
+		if t >= 0 then
+			return (k*t) / (k - t + 1)
+		end
+		return -((k*-t) / (k + t + 1))
+	end
+	
+	-- DEADZONE
+	local DEADZONE = 0.1
+	local function toSCurveSpace(t)
+		return (1 + DEADZONE) * (2*math.abs(t) - 1) - DEADZONE
+	end
+	
+	local function fromSCurveSpace(t)
+		return t/2 + 0.5
+	end
+	
+	local function gamepadLinearToCurve(thumbstickPosition)
+		local function onAxis(axisValue)
+			local sign = 1
+			if axisValue < 0 then
+				sign = -1
+			end
+			local point = fromSCurveSpace(SCurveTranform(toSCurveSpace(math.abs(axisValue))))
+			point = point * sign
+			return clamp(-1,1,point)
+		end
+		return Vector2.new(onAxis(thumbstickPosition.x), onAxis(thumbstickPosition.y))
+	end
 
+	function this:UpdateGamepad()
+		local gamepadPan = this.GamepadPanningCamera
+		if gamepadPan then
+			gamepadPan = gamepadLinearToCurve(gamepadPan)
+			local currentTime = tick()
 			if gamepadPan.X ~= 0 or gamepadPan.Y ~= 0 then
 				this.userPanningTheCamera = true
 			elseif gamepadPan == Vector2.new(0,0) then
@@ -468,40 +492,40 @@ local function CreateCamera()
 					currentSpeed = 0
 				end
 			end
-			
+
 			local finalConstant = 0
-			
+
 			if lastThumbstickRotate then
 				local elapsedTime = (currentTime - lastThumbstickRotate) * 10
 				currentSpeed = currentSpeed + (maxSpeed * ((elapsedTime*elapsedTime)/numOfSeconds))
-				
+
 				if currentSpeed > maxSpeed then currentSpeed = maxSpeed end
-				
+
 				if lastVelocity then
 					local velocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
 					local velocityDeltaMag = (velocity - lastVelocity).magnitude
-					
+
 					if velocityDeltaMag > 12 then
 						currentSpeed = currentSpeed * (20/velocityDeltaMag)
 						if currentSpeed > maxSpeed then currentSpeed = maxSpeed end
 					end
 				end
-				
+
 				finalConstant = thumbstickSensitivity * currentSpeed
 				lastVelocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
 			end
-			
+
 			lastThumbstickPos = gamepadPan
 			lastThumbstickRotate = currentTime
-			
+
 			return Vector2.new( gamepadPan.X * finalConstant, gamepadPan.Y * finalConstant * ySensitivity)
 		end
-		
+
 		return Vector2.new(0,0)
 	end
-	
+
 	local InputBeganConn, InputChangedConn, InputEndedConn = nil, nil, nil
-	
+
 	function this:DisconnectInputEvents()
 		if InputBeganConn then
 			InputBeganConn:disconnect()
@@ -519,23 +543,25 @@ local function CreateCamera()
 		this.TurningRight = false
 		this.LastCameraTransform = nil
 		this.UserPanningTheCamera = false
-		
+		this.RotateInput = Vector2.new()
+		this.GamepadPanningCamera = Vector2.new(0,0)
+
 		-- Reset input states
 		startPos = nil
 		lastPos = nil
 		panBeginLook = nil
-		
+
 		fingerTouches = {}
 		NumUnsunkTouches = 0
-		
+
 		StartingDiff = nil
 		pinchBeginZoom = nil
-		
+
 		if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 		end
 	end
-	
+
 	function this:ConnectInputEvents()
 		InputBeganConn = UserInputService.InputBegan:connect(function(input, processed)
 			if input.UserInputType == Enum.UserInputType.Touch and IsTouch then
@@ -554,7 +580,7 @@ local function CreateCamera()
 				OnKeyDown(input, processed)
 			end
 		end)
-		
+
 		InputChangedConn = UserInputService.InputChanged:connect(function(input, processed)
 			if input.UserInputType == Enum.UserInputType.Touch and IsTouch then
 				OnTouchChanged(input, processed)
@@ -563,10 +589,10 @@ local function CreateCamera()
 			elseif input.UserInputType == Enum.UserInputType.MouseWheel and not IsTouch then
 				OnMouseWheel(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
-				this.GamepadPanningCamera = (Vector2.new(input.Position.X, -input.Position.Y))
+				this.GamepadPanningCamera = Vector2.new(input.Position.X, -input.Position.Y)
 			end
 		end)
-		
+
 		InputEndedConn = UserInputService.InputEnded:connect(function(input, processed)
 			if input.UserInputType == Enum.UserInputType.Touch and IsTouch then
 				OnTouchEnded(input, processed)
@@ -579,9 +605,9 @@ local function CreateCamera()
 			if input.UserInputType == Enum.UserInputType.Keyboard then
 				OnKeyUp(input, processed)
 			end
-		end)		
+		end)
 	end
-	
+
 	function this:SetEnabled(newState)
 		if newState ~= self.Enabled then
 			self.Enabled = newState
@@ -592,7 +618,7 @@ local function CreateCamera()
 			end
 		end
 	end
-	
+
 	local function OnPlayerAdded(player)
 		player.Changed:connect(function(prop)
 			if this.Enabled then
@@ -601,36 +627,40 @@ local function CreateCamera()
 				end
 			end
 		end)
-		
+
 		local function OnCharacterAdded(newCharacter)
-			if this.Enabled then
-				this:ZoomCamera(10)
-				local humanoid = findPlayerHumanoid(player)
-				local start = tick()
-				while tick() - start < 0.3 and (humanoid == nil or humanoid.Torso == nil) do
-					wait()
-					humanoid = findPlayerHumanoid(player)
-				end
-				local function setLookBehindChatacter()
-					if humanoid and humanoid.Torso and player.Character == newCharacter then
-						this.cameraLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.7,0)).unit
-						-- reset old camera info so follow cam doesn't rotate us
-						this.LastCameraTransform = nil
-					end
-				end
-				setLookBehindChatacter()
-				-- The following code is to set the camera again after they have been rotated by the spawn point.
-				local setLookVector = this:GetCameraLook()
-				spawn(function()
-					wait()
-					if this:GetCameraLook() == setLookVector then
-						setLookBehindChatacter()
-					end
-				end)
+			this:ZoomCamera(10)
+			local humanoid = findPlayerHumanoid(player)
+			local start = tick()
+			while tick() - start < 0.3 and (humanoid == nil or humanoid.Torso == nil) do
+				wait()
+				humanoid = findPlayerHumanoid(player)
 			end
+			local function setLookBehindChatacter()
+				if humanoid and humanoid.Torso and player.Character == newCharacter then
+					local newDesiredLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.7,0)).unit
+					local horizontalShift = findAngleBetweenXZVectors(newDesiredLook, this:GetCameraLook())
+					local vertShift = math.asin(this:GetCameraLook().y) - math.asin(newDesiredLook.y)
+					if not IsFinite(horizontalShift) then
+						horizontalShift = 0
+					end
+					if not IsFinite(vertShift) then
+						vertShift = 0
+					end
+					this.RotateInput = Vector2.new(horizontalShift, vertShift)
+					-- reset old camera info so follow cam doesn't rotate us
+					this.LastCameraTransform = nil
+				end
+			end
+			wait()
+			setLookBehindChatacter()
 		end
-		
-		player.CharacterAdded:connect(OnCharacterAdded)
+
+		player.CharacterAdded:connect(function(character)
+			if this.Enabled then
+				OnCharacterAdded(character)
+			end
+		end)
 		if player.Character then
 			spawn(function() OnCharacterAdded(player.Character) end)
 		end
@@ -641,9 +671,9 @@ local function CreateCamera()
 	PlayersService.ChildAdded:connect(function(child)
 		if child and PlayersService.LocalPlayer == child then
 			OnPlayerAdded(PlayersService.LocalPlayer)
-		end 
+		end
 	end)
-		
+
 	return this
 end
 

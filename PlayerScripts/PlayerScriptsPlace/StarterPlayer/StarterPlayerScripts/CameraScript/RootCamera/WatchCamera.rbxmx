@@ -49,8 +49,11 @@ local function CreateWatchCamera()
 				zoom = 0.1
 			end
 			
+			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
+			self.RotateInput = Vector2.new()
+			
 			camera.Focus = CFrame.new(subjectPosition)
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * self:GetCameraLook()), camera.Focus.p)
+			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
 			self.LastCameraTransform = camera.CoordinateFrame
 			self.LastZoom = zoom
 		end
