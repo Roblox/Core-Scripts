@@ -78,9 +78,6 @@ if successFlagRead and luaFlagValue == true then
 	newMovementScripts = true
 end
 
-local isNewNotificationSuccess, isNewNotificationEnabled = pcall(function() return settings():GetFFlag("NewNotificationsScript") end)
-local isNewNotifications = isNewNotificationSuccess and isNewNotificationEnabled
-
 local function Color3I(r,g,b)
   return Color3.new(r/255,g/255,b/255)
 end
@@ -1351,28 +1348,11 @@ local function createGameSettingsMenu(baseZIndex, shield)
 				graphicsLevel.Value = graphicsLevel.Value + 1
 				graphicsSetter.Text = tostring(graphicsLevel.Value)
 				setGraphicsQualityLevel(graphicsLevel.Value)
-				if not isNewNotifications then
-					game:GetService("GuiService"):SendNotification("Graphics Quality",
-						"Increased to (" .. graphicsSetter.Text .. ")",
-						"",
-						2,
-						function()
-					end)
-				end
 			else
 				if (graphicsLevel.Value - 1) <= 0 then return end
 				graphicsLevel.Value = graphicsLevel.Value - 1
 				graphicsSetter.Text = tostring(graphicsLevel.Value)
 				setGraphicsQualityLevel(graphicsLevel.Value)
-				
-				if not isNewNotifications then
-					game:GetService("GuiService"):SendNotification("Graphics Quality",
-						"Decreased to (" .. graphicsSetter.Text .. ")",
-						"",
-						2,
-						function()
-					end)
-				end
 			end
 		end)
 		

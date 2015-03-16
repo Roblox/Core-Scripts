@@ -1,6 +1,6 @@
 --[[
 		// FileName: PlayerListScript.lua
-		// Version 3.3
+		// Version 3.4
 		// Written by: jmargh
 		// Description: Implementation of in game player list and leaderboard
 ]]
@@ -26,13 +26,11 @@ local RobloxGui = script.Parent
 --[[ Fast Flags ]]--
 local maxFriendSuccess, isMaxFriendsCountEnabled = pcall(function() return settings():GetFFlag("MaxFriendsCount") end)
 local followersSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("LuaFollowers") end)
-local newNotificationsSuccess, newNotificationsEnabled = pcall(function() return settings():GetFFlag("NewNotificationsScript") end)
 local newSettingsSuccess, newSettingsEnabled = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local serverCoreScriptsSuccess, serverCoreScriptsEnabled = pcall(function() return settings():GetFFlag("UseServerCoreScripts") end)
 --
 local IsMaxFriendsCount = maxFriendSuccess and isMaxFriendsCountEnabled
 local IsFollowersEnabled = followersSuccess and isFollowersEnabled
-local IsNewNotifications = newNotificationsSuccess and newNotificationsEnabled
 local IsNewSettings = newSettingsSuccess and newSettingsEnabled
 local IsServerCoreScripts = serverCoreScriptsSuccess and serverCoreScriptsEnabled
 
@@ -313,10 +311,8 @@ local function sortTeams(a, b)
 end
 
 local function sendNotification(title, text, image, duration, callback)
-	if IsNewNotifications and BinbableFunction_SendNotification then
+	if BinbableFunction_SendNotification then
 		BinbableFunction_SendNotification:Invoke(title, text, image, duration, callback)
-	else
-		GuiService:SendNotification(title, text, image, duration, callback)
 	end
 end
 
