@@ -1,13 +1,8 @@
 --[[
 		Filename: SettingNewControlsOnly.lua
 		Written by: jmargh
-		Version 1.1
+		Version 1.2
 		Description: Implements the in game settings menu with the new control schemes
-
-		TODO:
-			Remove SendNotification calls when notificaion script is updated.
-		NEW:
-			New stop recording button in the top bar.
 --]]
 
 --[[ Services ]]--
@@ -44,9 +39,6 @@ IsTouchClient = isTouchSuccess and isTouch
 local IsStudioMode = GameSettings:InStudioMode()
 
 --[[ Fast Flags ]]--
-local isNewNotificationSuccess, isNewNotificationEnabled = pcall(function() return settings():GetFFlag("NewNotificationsScript") end)
-local isNewNotifications = isNewNotificationSuccess and isNewNotificationEnabled
-
 local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
 local isTopBar = topbarSuccess and topbarFlagValue == true
 
@@ -714,24 +706,10 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 					if graphicsLevel.Value + 1 > GRAPHICS_QUALITY_LEVELS then return end
 					graphicsLevel.Value = graphicsLevel.Value + 1
 					setGraphicsQualityLevel(graphicsLevel.Value)
-					--
-					if not isNewNotifications then
-						GuiService:SendNotification("Graphics Quality",
-							"Increased to ("..tostring(graphicsLevel.Value)..")",
-							"", 2, function()
-						end)
-					end
 				else
 					if graphicsLevel.Value - 1 <= 0 then return end
 					graphicsLevel.Value = graphicsLevel.Value - 1
 					setGraphicsQualityLevel(graphicsLevel.Value)
-					--
-					if not isNewNotifications then
-						GuiService:SendNotification("Graphics Quality",
-							"Decreased to ("..tostring(graphicsLevel.Value)..")",
-							"", 2, function()
-						end)
-					end
 				end
 			end)
 
