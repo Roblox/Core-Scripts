@@ -1771,9 +1771,10 @@ local function insertPlayerEntry(player)
 	if player == Player then
 		MyPlayerEntry = entry.Frame
 	end
+	setLeaderStats(entry)
 	table.insert(PlayerEntries, entry)
 	setScrollListSize()
-	setLeaderStats(entry)
+	updateLeaderstatFrames()
 	entry.Frame.Parent = ScrollList
 
 	player.Changed:connect(function(property)
