@@ -23,8 +23,6 @@ end
 
 local function CreateAttachCamera()
 	local module = RootCameraCreator()
-	module.PanEnabled = false
-	module.KeyPanEnabled = false
 	
 	local lastUpdate = tick()
 	function module:Update()
@@ -52,13 +50,15 @@ local function CreateAttachCamera()
 
 					local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
 					if IsFinite(y) and math.abs(y) > 0.0001 then
-						self:RotateCamera(self:GetCameraLook(), Vector3.new(y, 0, 0))
+						self.RotateInput = self.RotateInput + Vector2.new(y, 0)
 					end
 				end
 			end
+			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
+			self.RotateInput = Vector2.new()
 			
 			camera.Focus = CFrame.new(subjectPosition)
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * self:GetCameraLook()), camera.Focus.p)
+			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
 			self.LastCameraTransform = camera.CoordinateFrame
 		end
 		lastUpdate = now

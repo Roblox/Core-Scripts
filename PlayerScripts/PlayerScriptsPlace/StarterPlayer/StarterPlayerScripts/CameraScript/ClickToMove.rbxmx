@@ -1170,6 +1170,15 @@ local function CreateClickToMoveModule()
 	end
 
 
+
+	local function IsFinite(num)
+		return num == num and num ~= 1/0 and num ~= -1/0
+	end
+	
+	local function findAngleBetweenXZVectors(vec2, vec1)
+		return math.atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
+	end
+	
 	-- Setup the camera
 	CameraModule = ClassicCameraModule()
 
@@ -1214,7 +1223,10 @@ local function CreateClickToMoveModule()
 				local currTime = tick() - start
 				local alpha = Utility.Clamp(0, 1, easeOutSine(currTime, 0, 1, duration))
 				local newCFrame = interper(alpha)
-				self.cameraLook = newCFrame.lookVector
+				local y = findAngleBetweenXZVectors(newCFrame.lookVector, self:GetCameraLook())
+				if IsFinite(y) and math.abs(y) > 0.0001 then
+					self.RotateInput = self.RotateInput + Vector2.new(y, 0)
+				end
 				return (currTime >= finish or alpha >= 1)
 			end
 		end
