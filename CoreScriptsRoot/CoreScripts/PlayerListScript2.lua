@@ -1,6 +1,6 @@
 --[[
 		// FileName: PlayerListScript.lua
-		// Version 3.4
+		// Version 3.2
 		// Written by: jmargh
 		// Description: Implementation of in game player list and leaderboard
 ]]
@@ -26,11 +26,13 @@ local RobloxGui = script.Parent
 --[[ Fast Flags ]]--
 local maxFriendSuccess, isMaxFriendsCountEnabled = pcall(function() return settings():GetFFlag("MaxFriendsCount") end)
 local followersSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("LuaFollowers") end)
+local newNotificationsSuccess, newNotificationsEnabled = pcall(function() return settings():GetFFlag("NewNotificationsScript") end)
 local newSettingsSuccess, newSettingsEnabled = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local serverCoreScriptsSuccess, serverCoreScriptsEnabled = pcall(function() return settings():GetFFlag("UseServerCoreScripts") end)
 --
 local IsMaxFriendsCount = maxFriendSuccess and isMaxFriendsCountEnabled
 local IsFollowersEnabled = followersSuccess and isFollowersEnabled
+local IsNewNotifications = newNotificationsSuccess and newNotificationsEnabled
 local IsNewSettings = newSettingsSuccess and newSettingsEnabled
 local IsServerCoreScripts = serverCoreScriptsSuccess and serverCoreScriptsEnabled
 
@@ -48,7 +50,7 @@ local IsExpanding = false
 local LastSelectedFrame = nil
 local LastSelectedPlayer = nil
 local IsPlayerListExpanded = false
-local MinContainerSize = UDim2.new(0, 165, 0.5, 0)
+local MinContainerSize = UDim2.new(0, 200, 0.5, 0)
 local StatNameFrame = nil
 local PlayerEntrySizeY = 20
 local TeamEntrySizeY = 20
@@ -262,7 +264,11 @@ local function getMembershipIcon(player)
 	local membershipType = player.MembershipType
 	if ADMINS[userIdStr] then
 		return ADMINS[userIdStr]
+	elseif ADMINS[userIdStr] then
+		return ADMINS[userIdStr]
 	elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
+		return PLACE_OWNER_ICON
+	elseif game.CreatorType == Enum.CreatorType.Group and player:GetRankInGroup(game.CreatorId) == 255 then
 		return PLACE_OWNER_ICON
 	elseif membershipType == Enum.MembershipType.None then
 		return nil
@@ -311,15 +317,17 @@ local function sortTeams(a, b)
 end
 
 local function sendNotification(title, text, image, duration, callback)
-	if BinbableFunction_SendNotification then
+	if IsNewNotifications and BinbableFunction_SendNotification then
 		BinbableFunction_SendNotification:Invoke(title, text, image, duration, callback)
+	else
+		GuiService:SendNotification(title, text, image, duration, callback)
 	end
 end
 
 -- Start of Gui Creation
 local Container = Instance.new('Frame')
 Container.Name = "PlayerListContainer"
-Container.Position = UDim2.new(1, -167, 0, 2)
+Container.Position = UDim2.new(1, -202, 0, 2)
 Container.Size = MinContainerSize
 Container.BackgroundTransparency = 1
 Container.Visible = false
@@ -401,7 +409,7 @@ ExpandFrame.Parent = Container
 local PopupFrame = nil
 local PopupClipFrame = Instance.new('Frame')
 PopupClipFrame.Name = "PopupClipFrame"
-PopupClipFrame.Size = UDim2.new(0, 150, 1.5, 0)
+PopupClipFrame.Size = UDim2.new(0, 150, 1, 0)
 PopupClipFrame.Position = UDim2.new(0, -151, 0, 2)
 PopupClipFrame.BackgroundTransparency = 1
 PopupClipFrame.ClipsDescendants = true
@@ -1258,7 +1266,7 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 	end
 end
 
--- NOTE: Core script only. This fires when a player joins the game.
+-- NOTE: Core script only
 Player.FriendStatusChanged:connect(onFriendshipChanged)
 
 local function updateAllTeamScores()
@@ -1580,7 +1588,8 @@ local function onStatRemoved(oldStat, entry)
 			for _,teamEntry in ipairs(TeamEntries) do
 				removeStatFrameFromEntry(oldStat, teamEntry.Frame)
 			end
-
+			-- remove from statName frame
+			removeStatFrameFromEntry(oldStat, StatNameFrame)
 			local toRemove = nil
 			for i,stat in ipairs(GameStats) do
 				if stat.Name == oldStat.Name then
@@ -1589,23 +1598,23 @@ local function onStatRemoved(oldStat, entry)
 				end
 			end
 			if toRemove then
-				removeStatFrameFromEntry(oldStat, StatNameFrame)
 				table.remove(GameStats, toRemove)
 				table.sort(GameStats, sortLeaderStats)
 			end
 		end
 		if #GameStats == 0 then
-			if StatNameFrame then StatNameFrame:Destroy() end
+			StatNameFrame:Destroy()
 			setEntryPositions()
 			setScrollListSize()
-			HeaderScore.Text = ""
-			HeaderName.Position = UDim2.new(-0.02, 0, 0.245, 0)
 		else
 			local leaderstats = Player:FindFirstChild('leaderstats')
 			if leaderstats then
 				local newPrimaryStat = leaderstats:FindFirstChild(GameStats[1].Name)
 				if newPrimaryStat then
 					updateHeaderScore(newPrimaryStat.Name)
+				else
+					HeaderScore.Text = ""
+					HeaderName.Position = UDim2.new(-0.02, 0, 0.245, 0)
 				end
 			end
 		end
@@ -1614,6 +1623,7 @@ local function onStatRemoved(oldStat, entry)
 end
 
 local function onStatAdded(leaderstats, entry)
+	addNewStats(leaderstats)
 	leaderstats.ChildAdded:connect(function(newStat)
 		if isValidStat(newStat) then
 			addNewStats(newStat.Parent)
@@ -1623,8 +1633,6 @@ local function onStatAdded(leaderstats, entry)
 	leaderstats.ChildRemoved:connect(function(child)
 		onStatRemoved(child, entry)
 	end)
-	addNewStats(leaderstats)
-	updateLeaderstatFrames()
 end
 
 local function setLeaderStats(entry)
@@ -1634,22 +1642,12 @@ local function setLeaderStats(entry)
 	if leaderstats then
 		onStatAdded(leaderstats, entry)
 	end
-
-	local function onPlayerChildChanged(property, child)
-		if property == 'Name' and child.Name == 'leaderstats' then
-			onStatAdded(child, entry)
-		end
-	end
 	
 	player.ChildAdded:connect(function(child)
 		if child.Name == 'leaderstats' then
 			onStatAdded(child, entry)
 		end
-		child.Changed:connect(function(property) onPlayerChildChanged(property, child) end)
 	end)
-	for _,child in pairs(player:GetChildren()) do
-		child.Changed:connect(function(property) onPlayerChildChanged(property, child) end)
-	end
 	
 	player.ChildRemoved:connect(function(child)
 		if child.Name == 'leaderstats' then
@@ -1687,23 +1685,9 @@ local function createPlayerEntry(player)
 		currentXOffset = currentXOffset + 18
 	end
 
-	-- Some functions yield, so we need to spawn off in order to not cause a race condition with other events like Players.ChildRemoved
+	-- need to spawn off for admin badge as IsInGroup function causes a wait while possibly iterating through
+	-- Players. It's possible a player iterator could be invalid during this iteration.
 	spawn(function()
-		local success, result = pcall(function()
-			return player:GetRankInGroup(game.CreatorId) == 255
-		end)
-		if success then
-			if game.CreatorType == Enum.CreatorType.Group and result then
-				membershipIconImage = PLACE_OWNER_ICON
-				if not membershipIcon then
-					membershipIcon = createImageIcon(membershipIconImage, "MembershipIcon", 1, entryFrame)
-				else
-					membershipIcon.Image = membershipIconImage
-				end
-			end
-		else
-			print("PlayerList: GetRankInGroup failed because", result)
-		end
 		local adminIconImage = getAdminIcon(player)
 		if adminIconImage then
 			if not membershipIcon then
@@ -1712,10 +1696,27 @@ local function createPlayerEntry(player)
 				membershipIcon.Image = adminIconImage
 			end
 		end
-		-- Friendship and Follower status is checked by onFriendshipChanged, which is called by the FriendStatusChanged
-		-- event. This event is fired when any player joins the game. onFriendshipChanged will check Follower status in
-		-- the case that we are not friends with the new player who is joining.
 	end)
+
+	-- check friendship
+	local friendStatus = getFriendStatus(player)
+	local friendshipIconImage = getFriendStatusIcon(friendStatus)
+	local friendshipIcon = nil
+	if friendshipIconImage then
+		friendshipIcon = createImageIcon(friendshipIconImage, "SocialIcon", currentXOffset, entryFrame)
+		currentXOffset = currentXOffset + friendshipIcon.Size.X.Offset + 2
+	end
+
+	-- check follower status, only show if not friends
+	local followerStatus, followerIconImage, followerIcon = nil, nil, nil
+	if IsFollowersEnabled and not friendshipIcon then 		-- FFlag
+		followerStatus = getFollowerStatus(player)
+		followerIconImage = getFollowerStatusIcon(followerStatus)
+		if followerIconImage then
+			followerIcon = createImageIcon(followerIconImage, "SocialIcon", currentXOffset, entryFrame)
+			currentXOffset = currentXOffset + followerIcon.Size.X.Offset + 2
+		end
+	end
 	
 	local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
 	local playerName = createEntryNameText("PlayerName", name, playerNameXSize, currentXOffset)
