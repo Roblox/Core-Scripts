@@ -447,13 +447,14 @@ local function CreateCamera()
 	
 	-- K is a tunable parameter that changes the shape of the S-curve
 	-- the larger K is the more straight/linear the curve gets
-	local k = 0.77
+	local k = 0.35
+	local lowerK = 0.8
 	local function SCurveTranform(t)
 		t = clamp(-1,1,t)
 		if t >= 0 then
 			return (k*t) / (k - t + 1)
 		end
-		return -((k*-t) / (k + t + 1))
+		return -((lowerK*-t) / (lowerK + t + 1))
 	end
 	
 	-- DEADZONE
