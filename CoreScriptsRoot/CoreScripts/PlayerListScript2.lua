@@ -853,7 +853,7 @@ local function createPopupFrame(buttons)
 end
 
 -- if userId = nil, then it will get count for local player
-local function getFriendCount(userId)
+local function getFriendCountAsync(userId)
 	local friendCount = nil
 	local wasSuccess, result = pcall(function()
 		local str = 'user/get-friendship-count'
@@ -863,7 +863,7 @@ local function getFriendCount(userId)
 		return HttpRbxApiService:GetAsync(str, true)
 	end)
 	if not wasSuccess then
-		print("getFriendCount() failed because", result)
+		print("getFriendCountAsync() failed because", result)
 		return nil
 	end
 	result = HttpService:JSONDecode(result)
@@ -877,11 +877,11 @@ end
 
 -- checks if we can send a friend request. Right now the only way we
 -- can't is if one of the players is at the max friend limit
-local function canSendFriendRequest(otherPlayer)
+local function canSendFriendRequestAsync(otherPlayer)
 	if not IsMaxFriendsCount then return true end
 	--
-	local myFriendCount = getFriendCount()
-	local theirFriendCount = getFriendCount(otherPlayer.userId)
+	local myFriendCount = getFriendCountAsync()
+	local theirFriendCount = getFriendCountAsync(otherPlayer.userId)
 	
 	-- assume max friends if web call fails
 	if not myFriendCount or not theirFriendCount then
@@ -1035,10 +1035,16 @@ local function onFriendButtonPressed()
 		if status == Enum.FriendStatus.Friend then
 			Player:RevokeFriendship(LastSelectedPlayer)
 		elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend then
-			-- check for max friends before letting them send the request
-			if canSendFriendRequest(LastSelectedPlayer) then
-				Player:RequestFriendship(LastSelectedPlayer)
-			end
+			-- cache and spawn
+			local cachedLastSelectedPlayer = LastSelectedPlayer
+			spawn(function()
+				-- check for max friends before letting them send the request
+				if canSendFriendRequestAsync(cachedLastSelectedPlayer) then 	-- Yields
+					if cachedLastSelectedPlayer and cachedLastSelectedPlayer.Parent == Players then
+						Player:RequestFriendship(cachedLastSelectedPlayer)
+					end
+				end
+			end)
 		elseif status == Enum.FriendStatus.FriendRequestSent then
 			Player:RevokeFriendship(LastSelectedPlayer)
 		elseif status == Enum.FriendStatus.FriendRequestReceived then
