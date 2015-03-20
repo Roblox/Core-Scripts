@@ -304,21 +304,6 @@ local function getCurrencyString(currencyType)
 	return currencyType == Enum.CurrencyType.Tix and "Tix" or "R$"
 end
 
-local function isTixOnly()
-	local priceInRobux = PurchaseData.ProductInfo["PriceInRobux"]
-	local priceInTickets = PurchaseData.ProductInfo["PriceInTickets"]
-
-	if not priceInRobux then return true end
-	priceInRobux = tonumber(priceInRobux)
-	if not priceInRobux then return true end
-
-	if not priceInTickets then return false end
-	priceInTickets = tonumber(priceInTickets)
-	if not priceInTickets then return false end
-
-	return priceInRobux <= 0 and priceInTickets > 0
-end
-
 local function setInitialPurchaseData(assetId, productId, currencyType, equipOnPurchase)
 	PurchaseData.AssetId = assetId
 	PurchaseData.ProductId = productId
@@ -446,7 +431,7 @@ local function stopPurchaseAnimation()
 end
 
 local function setPurchaseDataInGui(isFree, invalidBC)
-	local descriptionText = isTixOnly() and PURCHASE_MSG.PURCHASE_TIX or PURCHASE_MSG.PURCHASE
+	local  descriptionText = PurchaseData.CurrencyType == Enum.CurrencyType.Tix and PURCHASE_MSG.PURCHASE_TIX or PURCHASE_MSG.PURCHASE
 	if isFree then
 		descriptionText = PURCHASE_MSG.FREE
 		PostBalanceText.Text = PURCHASE_MSG.FREE_BALANCE
@@ -461,7 +446,7 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 	ItemDescriptionText.Text = itemDescription
 
 	if not isFree then
-		if isTixOnly() then
+		if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
 			TixIcon.Visible = true
 			TixIcon.Position = UDim2.new(0, 110, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + 6)
 			CostText.TextColor3 = Color3.new(204/255, 158/255, 113/255)
@@ -767,7 +752,7 @@ local function playerHasFundsForPurchase(playerBalance)
 		return true, false
 	end
 
-	if isTixOnly() then
+	if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
 		PostBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..formatNumber(afterBalanceAmount).." "..currencyStr.."."
 	else
 		PostBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..currencyStr..formatNumber(afterBalanceAmount).."."
@@ -867,7 +852,7 @@ local function canPurchase()
 		success, hasFunds = playerHasFundsForPurchase(playerBalance)
 		if success then
 			if not hasFunds then
-				if isTixOnly() then
+				if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
 					onPurchaseFailed(PURCHASE_FAILED.NOT_ENOUGH_TIX)
 					return false
 				else
