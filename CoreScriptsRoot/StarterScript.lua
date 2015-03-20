@@ -104,6 +104,11 @@ do -- Backpack!
 	end
 end
 
+local luaVehicleHudSuccess, luaVehicleHudEnabled = pcall(function() return settings():GetFFlag('NewVehicleHud') end)
+if useTopBar and (luaVehicleHudSuccess and luaVehicleHudEnabled == true) then
+	scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", screenGui)
+end
+
 if touchEnabled then -- touch devices don't use same control frame
 	-- only used for touch device button generation
 	scriptContext:AddCoreScriptLocal("CoreScripts/ContextActionTouch", screenGui)
