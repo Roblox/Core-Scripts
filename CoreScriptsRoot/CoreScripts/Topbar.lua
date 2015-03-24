@@ -150,7 +150,7 @@ local function CreateTopBar()
 		local playerGui = Player:FindFirstChild('PlayerGui')
 		if playerGui then
 			pcall(function()
-				topbarContainer.BackgroundTransparency = playerGui.TopbarTransparency
+				topbarContainer.BackgroundTransparency = playerGui:GetTopbarTransparency()
 			end)
 			topbarShadow.Visible = (topbarContainer.BackgroundTransparency == 0)
 		end
@@ -168,11 +168,9 @@ local function CreateTopBar()
 
 	spawn(function()
 		local playerGui = Player:WaitForChild('PlayerGui')
-		Util.DisconnectEvent(playerGuiChangedConn)
-		playerGuiChangedConn = playerGui.Changed:connect(function(property)
-			if property == "TopbarTransparency" then
-				UpdateBackgroundTransparency()
-			end
+		playerGuiChangedConn = Util.DisconnectEvent(playerGuiChangedConn)
+		pcall(function()
+			playerGuiChangedConn = playerGui.TopbarTransparencyChangedSignal:connect(UpdateBackgroundTransparency)
 		end)
 	end)
 
