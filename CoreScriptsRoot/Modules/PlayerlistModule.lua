@@ -1,6 +1,6 @@
 --[[
 		// FileName: PlayerlistModule.lua
-		// Version 1.2
+		// Version 1.3
 		// Written by: jmargh
 		// Description: Implementation of in game player list and leaderboard
 ]]
@@ -62,7 +62,7 @@ local NeutralTeam = nil
 local IsShowingNeutralFrame = false
 local LastSelectedFrame = nil
 local LastSelectedPlayer = nil
-local MinContainerSize = UDim2.new(0, 200, 0.5, 0)
+local MinContainerSize = UDim2.new(0, 165, 0.5, 0)
 local PlayerEntrySizeY = 24
 local TeamEntrySizeY = 18
 local NameEntrySizeX = 170
@@ -333,7 +333,7 @@ end
 -- Start of Gui Creation
 local Container = Instance.new('Frame')
 Container.Name = "PlayerListContainer"
-Container.Position = UDim2.new(1, -200, 0, 2)
+Container.Position = UDim2.new(1, -167, 0, 2)
 Container.Size = MinContainerSize
 Container.BackgroundTransparency = 1
 Container.Visible = false
@@ -1564,7 +1564,6 @@ local function onStatRemoved(oldStat, entry)
 end
 
 local function onStatAdded(leaderstats, entry)
-	addNewStats(leaderstats)
 	leaderstats.ChildAdded:connect(function(newStat)
 		if isValidStat(newStat) then
 			addNewStats(newStat.Parent)
@@ -1574,6 +1573,8 @@ local function onStatAdded(leaderstats, entry)
 	leaderstats.ChildRemoved:connect(function(child)
 		onStatRemoved(child, entry)
 	end)
+	addNewStats(leaderstats)
+	updateLeaderstatFrames()
 end
 
 local function setLeaderStats(entry)
@@ -1584,11 +1585,21 @@ local function setLeaderStats(entry)
 		onStatAdded(leaderstats, entry)
 	end
 
+	local function onPlayerChildChanged(property, child)
+		if property == 'Name' and child.Name == 'leaderstats' then
+			onStatAdded(child, entry)
+		end
+	end
+
 	player.ChildAdded:connect(function(child)
 		if child.Name == 'leaderstats' then
 			onStatAdded(child, entry)
 		end
+		child.Changed:connect(function(property) onPlayerChildChanged(property, child) end)
 	end)
+	for _,child in pairs(player:GetChildren()) do
+		child.Changed:connect(function(property) onPlayerChildChanged(property, child) end)
+	end
 
 	player.ChildRemoved:connect(function(child)
 		if child.Name == 'leaderstats' then
