@@ -327,9 +327,11 @@ Players.FriendRequestEvent:connect(onFriendRequestEvent)
 local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
 	if userId == LocalPlayer.userId then
 		if pointsAwarded == 1 then
-			sendNotifcation("Point Awarded", "You received "..tostring(pointsAwarded).." point!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
+			sendNotifcation("Point Awarded", "You received 1 point!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
 		elseif pointsAwarded > 0 then
 			sendNotifcation("Points Awarded", "You received "..tostring(pointsAwarded).." points!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
+		elseif pointsAwarded ==  -1 then
+			sendNotifcation("Points Lost", "You lost 1 point!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
 		elseif pointsAwarded < 0 then
 			sendNotifcation("Points Lost", "You lost "..tostring(-pointsAwarded).." points!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
 		end
