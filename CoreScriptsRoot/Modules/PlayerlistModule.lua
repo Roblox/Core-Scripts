@@ -39,22 +39,26 @@ local IsServerCoreScripts = serverCoreScriptsSuccess and serverCoreScriptsEnable
 local Playerlist = {}
 
 --[[ Public Event API ]]--
--- Parameters: Sorted Array - see ClientStats below
+-- Parameters: Sorted Array - see GameStats below
 Playerlist.OnLeaderstatsChanged = Instance.new('BindableEvent')
 -- Parameters: nameOfStat(string), formatedStringOfStat(string)
 Playerlist.OnStatChanged = Instance.new('BindableEvent')
 
 --[[ Client Stat Table ]]--
 -- Sorted Array of tables
-local ClientStats = {}
+local GameStats = {}
 -- Fields
 	-- Name: String the developer has given the stat
 	-- Text: Formated string of the stat value
+	-- AddId: Child add order id
+	-- IsPrimary: Is this the primary stat
+	-- Priority: Sorting priority
+-- NOTE: IsPrimary and Priority are unofficially supported. They are left over legacy from the old player list.
+-- They can be un-supported at anytime. You should prefer using child add order to order your stats in the leader board.
 
 --[[ Script Variables ]]--
 local MyPlayerEntry = nil
 local PlayerEntries = {}
-local GameStats = {}
 local StatAddId = 0
 local TeamEntries = {}
 local TeamAddId = 0
@@ -617,7 +621,7 @@ local function createStatFrame(offset, parent, name)
 	local statFrame = Instance.new('Frame')
 	statFrame.Name = name
 	statFrame.Size = UDim2.new(0, StatEntrySizeX, 1, 0)
-	statFrame.Position = UDim2.new(0, offset + 1, 0, 0)
+	statFrame.Position = UDim2.new(0, offset + 2, 0, 0)
 	statFrame.BackgroundTransparency = BG_TRANSPARENCY
 	statFrame.BackgroundColor3 = BG_COLOR
 	statFrame.BorderSizePixel = 0
@@ -1320,6 +1324,7 @@ local function updatePrimaryStats(statName)
 	for _,entry in ipairs(PlayerEntries) do
 		local player = entry.Player
 		local leaderstats = player:FindFirstChild('leaderstats')
+		entry.PrimaryStat = nil
 		if leaderstats then
 			local statObject = leaderstats:FindFirstChild(statName)
 			if statObject then
@@ -1340,13 +1345,8 @@ local function initializeStatText(stat, statObject, entry, statFrame, index)
 	end
 	local statText = createStatText(statFrame, formatStatString(tostring(statValue)))
 	-- Top Bar insertion
-	local newClientStat = nil
 	if player == Player then
-		newClientStat = {}
-		newClientStat.Name = statObject.Name
-		newClientStat.Text = statText.Text
-		table.insert(ClientStats, index, newClientStat)
-		Playerlist.OnLeaderstatsChanged:Fire(ClientStats)
+		stat.Text = statText.Text
 	end
 
 	statObject.Changed:connect(function(newValue)
@@ -1357,8 +1357,8 @@ local function initializeStatText(stat, statObject, entry, statFrame, index)
 		end
 		-- Top bar changed event
 		if player == Player then
-			newClientStat.Text = statText.Text
-			Playerlist.OnStatChanged:Fire(newClientStat.Name, newClientStat.Text)
+			stat.Text = statText.Text
+			Playerlist.OnStatChanged:Fire(stat.Name, stat.Text)
 		end
 		updateAllTeamScores()
 		setEntryPositions()
@@ -1369,21 +1369,7 @@ local function initializeStatText(stat, statObject, entry, statFrame, index)
 			stat.IsPrimary = true
 			updatePrimaryStats(stat.Name)
 			if updateLeaderstatFrames then updateLeaderstatFrames() end
-			-- Top bar re-sort
-			local newFrontIndex = nil
-			for i = 1, #ClientStats do
-				if ClientStats[i].Name == statObject.Name then
-					newFrontIndex = i
-					break
-				end
-			end
-			if newFrontIndex then
-				local prevFront = ClientStats[1]
-				local newFront = ClientStats[newFrontIndex]
-				ClientStats[1] = newFront
-				ClientStats[newFrontIndex] = prevFront
-				Playerlist.OnLeaderstatsChanged:Fire(ClientStats)
-			end
+			Playerlist.OnLeaderstatsChanged:Fire(GameStats)
 		end
 	end)
 end
@@ -1433,7 +1419,6 @@ updateLeaderstatFrames = function()
 				offset = offset + statFrame.Size.X.Offset + 2
 			end
 		end
-
 		Container.Position = UDim2.new(1, -offset, 0, 2)
 		Container.Size = UDim2.new(0, offset, 0.5, 0)
 		local newMinContainerOffset = offset
@@ -1441,6 +1426,7 @@ updateLeaderstatFrames = function()
 	end
 	updateAllTeamScores()
 	setEntryPositions()
+	Playerlist.OnLeaderstatsChanged:Fire(GameStats)
 end
 
 local function addNewStats(leaderstats)
@@ -1457,6 +1443,7 @@ local function addNewStats(leaderstats)
 			if not gameHasStat then
 				local newStat = {}
 				newStat.Name = stat.Name
+				newStat.Text = "-"
 				newStat.Priority = 0
 				local priority = stat:FindFirstChild('Priority')
 				if priority then newStat.Priority = priority end
@@ -1505,59 +1492,35 @@ local function onStatRemoved(oldStat, entry)
 	if isValidStat(oldStat) then
 		removeStatFrameFromEntry(oldStat, entry.Frame)
 		local statExists = doesStatExists(oldStat)
-		-- Top bar removal
-		local statIndex = nil
-		for i = 1, #ClientStats do
-			if ClientStats[i].Name == oldStat.Name then
-				statIndex = i
+		--
+		local toRemove = nil
+		for i, stat in ipairs(GameStats) do
+			if stat.Name == oldStat.Name then
+				toRemove = i
 				break
 			end
 		end
+		-- removed from player but not from game; another player still has this stat
 		if statExists then
-			if statIndex and entry.Player == Player then
-				ClientStats[statIndex].Text = "-"
-				Playerlist.OnStatChanged:Fire(ClientStats[statIndex].Name, ClientStats[statIndex].Text)
+			if toRemove and entry.Player == Player then
+				GameStats[toRemove].Text = "-"
+				Playerlist.OnStatChanged:Fire(GameStats[toRemove].Name, GameStats[toRemove].Text)
 			end
+		-- removed from game
 		else
-			if statIndex then
-				table.remove(ClientStats, statIndex)
-				Playerlist.OnLeaderstatsChanged:Fire(ClientStats)
-			end
-		end
-
-		if not statExists then
-			-- remove from player entries
 			for _,playerEntry in ipairs(PlayerEntries) do
 				removeStatFrameFromEntry(oldStat, playerEntry.Frame)
 			end
-			-- remove from teams
 			for _,teamEntry in ipairs(TeamEntries) do
 				removeStatFrameFromEntry(oldStat, teamEntry.Frame)
-			end
-			-- remove from statName frame
-			local toRemove = nil
-			for i,stat in ipairs(GameStats) do
-				if stat.Name == oldStat.Name then
-					toRemove = i
-					break
-				end
 			end
 			if toRemove then
 				table.remove(GameStats, toRemove)
 				table.sort(GameStats, sortLeaderStats)
 			end
 		end
-		if #GameStats == 0 then
-			setEntryPositions()
-			setScrollListSize()
-		else
-			local leaderstats = Player:FindFirstChild('leaderstats')
-			if leaderstats then
-				local newPrimaryStat = leaderstats:FindFirstChild(GameStats[1].Name)
-				if newPrimaryStat then
-					-- TODO: event for primary changing?
-				end
-			end
+		if GameStats[1] then
+			updatePrimaryStats(GameStats[1].Name)
 		end
 		updateLeaderstatFrames()
 	end
@@ -1884,6 +1847,7 @@ end)
 
 --[[ Core Gui Changed events ]]--
 -- NOTE: Core script only
+local isOpen = true
 local function onCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
 		-- not visible on small screen devices
@@ -1891,7 +1855,7 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 			Container.Visible = false
 			return
 		end
-		Container.Visible = enabled
+		Container.Visible = enabled and isOpen
 		GuiService[enabled and "AddKey" or "RemoveKey"](GuiService, "\t")
 	end
 end
@@ -1904,12 +1868,12 @@ resizePlayerList()
 
 --[[ Public API ]]--
 Playerlist.GetStats = function()
-	return ClientStats
+	return GameStats
 end
 
-local isOpen = true
 Playerlist.ToggleVisibility = function()
 	if IsSmallScreenDevice then return end
+	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
 	isOpen = not isOpen
 	Container.Visible = isOpen
 end
