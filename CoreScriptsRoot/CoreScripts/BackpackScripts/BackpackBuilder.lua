@@ -17,15 +17,15 @@ local function waitForProperty(instance, property)
 	end
 end
 
-local function IsTouchDevice()	
+local function IsTouchDevice()
 	return Game:GetService('UserInputService').TouchEnabled
-end 
+end
 
-local function IsPhone()	 	
-	if Game:GetService("GuiService"):GetScreenResolution().Y <= 500 and IsTouchDevice() then 	 	
-		return true	 	
-	end 	 	
-	return false 	 	
+local function IsPhone()
+	if Game:GetService("GuiService"):GetScreenResolution().Y <= 500 and IsTouchDevice() then
+		return true
+	end
+	return false
 end
 
 waitForChild(game,"Players")
@@ -41,15 +41,15 @@ CurrentLoadout.BackgroundTransparency = 1
 CurrentLoadout.RobloxLocked = true
 CurrentLoadout.Parent = gui
 
-local CLBackground = Instance.new('ImageLabel')						
+local CLBackground = Instance.new('ImageLabel')
 CLBackground.Name = 'Background';
 CLBackground.Size = UDim2.new(1.2, 0, 1.2, 0);
 CLBackground.Image = "http://www.roblox.com/asset/?id=96536002"
 CLBackground.BackgroundTransparency = 1.0;
 CLBackground.Position = UDim2.new(-0.1, 0, -0.1, 0);
-CLBackground.ZIndex = 0.0;	
+CLBackground.ZIndex = 0.0;
 CLBackground.Parent = CurrentLoadout
-CLBackground.Visible = false 
+CLBackground.Visible = false
 
 local Debounce = Instance.new("BoolValue")
 Debounce.Name = "Debounce"
@@ -75,7 +75,7 @@ if IsPhone() then
 	CurrentLoadout.Position = UDim2.new(0.5,-90,1,-85)
 end
 
-for i = 0, NumSlots do	
+for i = 0, NumSlots do
 	local slotFrame = Instance.new("Frame")
 	slotFrame.RobloxLocked = true
 	slotFrame.BackgroundColor3 = Color3.new(0,0,0)
@@ -88,18 +88,18 @@ for i = 0, NumSlots do
 		slotFrame.Position = UDim2.new(0.9, 48, 0, 0)
 	else
 		slotFrame.Position = UDim2.new((i - 1) * 0.1, (i-1)* 6,0,0)
-	end	
+	end
 
 
 	slotFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
-	slotFrame.Parent = CurrentLoadout	
+	slotFrame.Parent = CurrentLoadout
 
-	if gui.AbsoluteSize.Y <= 320 then 
+	if gui.AbsoluteSize.Y <= 320 then
 		slotFrame.Position = UDim2.new(0, (i-1)* 60, 0, -50)
-	end 
-	if gui.AbsoluteSize.Y <= 320 and i == 0 then 
-		slotFrame:Destroy() 
-	end 
+	end
+	if gui.AbsoluteSize.Y <= 320 and i == 0 then
+		slotFrame:Destroy()
+	end
 end
 
 local TempSlot = Instance.new("ImageButton")
@@ -117,24 +117,24 @@ TempSlot.ZIndex = 3.0
 	slotBackground.Name = 'Background'
 	slotBackground.BackgroundTransparency = 1.0
 	slotBackground.Style = "DropShadow"
-	slotBackground.Position = UDim2.new(0, -10, 0, -10)	
-	slotBackground.Size = UDim2.new(1, 20, 1, 20)	
+	slotBackground.Position = UDim2.new(0, -10, 0, -10)
+	slotBackground.Size = UDim2.new(1, 20, 1, 20)
 	slotBackground.Parent = TempSlot
 
 	local HighLight = Instance.new('ImageLabel')
 	HighLight.Name = 'Highlight'
 	HighLight.BackgroundTransparency = 1.0
 	HighLight.Image = 'http://www.roblox.com/asset/?id=97643886'
-	HighLight.Size = UDim2.new(1, 0, 1, 0)	
+	HighLight.Size = UDim2.new(1, 0, 1, 0)
 	--HighLight.Parent = TempSlot
-	HighLight.Visible = false 
+	HighLight.Visible = false
 
 	-- TempSlot Children
 	local GearReference = Instance.new("ObjectValue")
 	GearReference.Name = "GearReference"
 	GearReference.RobloxLocked = true
 	GearReference.Parent = TempSlot
-	
+
 
 	local ToolTipLabel = Instance.new("TextLabel")
 	ToolTipLabel.Name = "ToolTipLabel"
@@ -152,7 +152,7 @@ TempSlot.ZIndex = 3.0
 	ToolTipLabel.Size = UDim2.new(1,60,0,20)
 	ToolTipLabel.Position = UDim2.new(0,-30,0,-30)
 	ToolTipLabel.Parent = TempSlot
-	
+
 
 	local Kill = Instance.new("BoolValue")
 	Kill.Name = "Kill"
@@ -179,22 +179,22 @@ TempSlot.ZIndex = 3.0
 	SlotNumber.TextColor3 = Color3.new(1,1,1)
 	SlotNumber.TextTransparency = 0
 	SlotNumber.TextXAlignment = Enum.TextXAlignment.Left
-	SlotNumber.TextYAlignment = Enum.TextYAlignment.Bottom	
+	SlotNumber.TextYAlignment = Enum.TextYAlignment.Bottom
 	SlotNumber.RobloxLocked = true
 	SlotNumber.Parent = TempSlot
 	SlotNumber.ZIndex = 5
 
-	if IsTouchDevice() then 
-		SlotNumber.Visible = false 
+	if IsTouchDevice() then
+		SlotNumber.Visible = false
 	end
-	
+
 	local SlotNumberDownShadow = SlotNumber:Clone()
 	SlotNumberDownShadow.Name = "SlotNumberDownShadow"
-	SlotNumberDownShadow.TextColor3 = Color3.new(0,0,0)	
+	SlotNumberDownShadow.TextColor3 = Color3.new(0,0,0)
 	SlotNumberDownShadow.Position = UDim2.new(0, 1, 0, -1)
 	SlotNumberDownShadow.Parent = TempSlot
 	SlotNumberDownShadow.ZIndex = 2
-	
+
 	local SlotNumberUpShadow = SlotNumberDownShadow:Clone()
 	SlotNumberUpShadow.Name = "SlotNumberUpShadow"
 	SlotNumberUpShadow.Position = UDim2.new(0, -1, 0, -1)
@@ -232,18 +232,18 @@ Backpack.Active = true
 	SwapSlot.RobloxLocked = true
 	SwapSlot.Name = "SwapSlot"
 	SwapSlot.Parent = Backpack
-		
+
 		-- SwapSlot Children
 		local Slot = Instance.new("IntValue")
 		Slot.RobloxLocked = true
 		Slot.Name = "Slot"
 		Slot.Parent = SwapSlot
-		
+
 		local GearButton = Instance.new("ObjectValue")
 		GearButton.RobloxLocked = true
 		GearButton.Name = "GearButton"
 		GearButton.Parent = SwapSlot
-	
+
 	local Tabs = Instance.new("Frame")
 	Tabs.Name = "Tabs"
 	Tabs.Visible = false
@@ -255,9 +255,9 @@ Backpack.Active = true
 	Tabs.Position = UDim2.new(0,0,-0.1,-4)
 	Tabs.Size = UDim2.new(1,0,0.1,4)
 	Tabs.Parent = Backpack
-	
+
 		-- Tabs Children
-		
+
 		local tabLine = Instance.new("Frame")
 		tabLine.RobloxLocked = true
 		tabLine.Name = "TabLine"
@@ -267,7 +267,7 @@ Backpack.Active = true
 		tabLine.Size = UDim2.new(1,-10,0,4)
 		tabLine.ZIndex = 2
 		tabLine.Parent = Tabs
-		
+
 		local InventoryButton = Instance.new("TextButton")
 		InventoryButton.RobloxLocked = true
 		InventoryButton.Name = "InventoryButton"
@@ -284,7 +284,7 @@ Backpack.Active = true
 		InventoryButton.Active = true
 		InventoryButton.ZIndex = 3
 		InventoryButton.Parent = Tabs
-			
+
 		local closeButton = Instance.new("TextButton")
 		closeButton.RobloxLocked = true
 		closeButton.Name = "CloseButton"
@@ -297,7 +297,7 @@ Backpack.Active = true
 		closeButton.TextColor3 = Color3.new(1,1,1)
 		closeButton.Parent = Tabs
 		closeButton.Modal = true
-		
+
 			--closeButton child
 			local XImage = Instance.new("ImageLabel")
 			XImage.RobloxLocked = true
@@ -309,8 +309,8 @@ Backpack.Active = true
 			XImage.Size = UDim2.new(1.5,2,1.5,2)
 			XImage.ZIndex = 2
 			XImage.Parent = closeButton
-			
-		-- Generic Search gui used across backpack	
+
+		-- Generic Search gui used across backpack
 		local SearchFrame = Instance.new("Frame")
 		SearchFrame.RobloxLocked = true
 		SearchFrame.Name = "SearchFrame"
@@ -318,7 +318,7 @@ Backpack.Active = true
 		SearchFrame.Position = UDim2.new(1,-220,0,2)
 		SearchFrame.Size = UDim2.new(0,220,0,24)
 		SearchFrame.Parent = Backpack
-		
+
 			-- SearchFrame Children
 			local SearchButton = Instance.new("ImageButton")
 			SearchButton.RobloxLocked = true
@@ -327,7 +327,7 @@ Backpack.Active = true
 			SearchButton.BackgroundTransparency = 1
 			SearchButton.Image = "rbxasset://textures/ui/SearchIcon.png"
 			SearchButton.Parent = SearchFrame
-			
+
 			local SearchBoxFrame = Instance.new("TextButton")
 			SearchBoxFrame.RobloxLocked = true
 			SearchBoxFrame.Position = UDim2.new(0,25,0,-2)
@@ -336,7 +336,7 @@ Backpack.Active = true
 			SearchBoxFrame.Text = ""
 			SearchBoxFrame.Style = Enum.ButtonStyle.RobloxRoundButton
 			SearchBoxFrame.Parent = SearchFrame
-			
+
 				-- SearchBoxFrame Children
 				local SearchBox = Instance.new("TextBox")
 				SearchBox.RobloxLocked = true
@@ -352,8 +352,8 @@ Backpack.Active = true
 				SearchBox.TextWrap = true
 				SearchBox.Text = "Search..."
 				SearchBox.Parent = SearchBoxFrame
-				
-			
+
+
 			local ResetButton = Instance.new("TextButton")
 			ResetButton.RobloxLocked = true
 			ResetButton.Visible = false
@@ -367,7 +367,7 @@ Backpack.Active = true
 			ResetButton.FontSize = Enum.FontSize.Size18
 			ResetButton.ZIndex = 3
 			ResetButton.Parent = SearchFrame
-		
+
 ------------------------------- GEAR -------------------------------------------------------
 	local Gear = Instance.new("Frame")
 	Gear.Name = "Gear"
@@ -386,15 +386,15 @@ Backpack.Active = true
 		AssetsList.Style = Enum.FrameStyle.RobloxSquare
 		AssetsList.Visible = false
 		AssetsList.Parent = Gear
-			
+
 		local GearGrid = Instance.new("Frame")
 		GearGrid.RobloxLocked = true
 		GearGrid.Name = "GearGrid"
 		GearGrid.Size = UDim2.new(0.95, 0, 1, 0)
 		GearGrid.BackgroundTransparency = 1
-		GearGrid.Parent = Gear	
-				
-			
+		GearGrid.Parent = Gear
+
+
 			local GearButton = Instance.new("ImageButton")
 			GearButton.RobloxLocked = true
 			GearButton.Visible = false
@@ -418,7 +418,7 @@ Backpack.Active = true
 				GearReference.RobloxLocked = true
 				GearReference.Name = "GearReference"
 				GearReference.Parent = GearButton
-				
+
 				local GreyOutButton = Instance.new("Frame")
 				GreyOutButton.RobloxLocked = true
 				GreyOutButton.Name = "GreyOutButton"
@@ -428,7 +428,7 @@ Backpack.Active = true
 				GreyOutButton.Visible = false
 				GreyOutButton.ZIndex = 3
 				GreyOutButton.Parent = GearButton
-				
+
 				local GearText = Instance.new("TextLabel")
 				GearText.RobloxLocked = true
 				GearText.Name = "GearText"
@@ -459,7 +459,7 @@ Backpack.Active = true
 		GearLoadouts.Size = UDim2.new(0.3,-23,0.5,-1)
 		GearLoadouts.Parent = Gear
 		GearLoadouts.Visible = false
-		
+
 			-- GearLoadouts Children
 			local GearLoadoutsHeader = Instance.new("Frame")
 			GearLoadoutsHeader.RobloxLocked = true
@@ -481,7 +481,7 @@ Backpack.Active = true
 				LoadoutsHeaderText.Text = "Loadouts"
 				LoadoutsHeaderText.TextColor3 = Color3.new(1,1,1)
 				LoadoutsHeaderText.Parent = GearLoadoutsHeader
-	
+
 				local GearLoadoutsScrollingArea = GearGridScrollingArea:clone()
 				GearLoadoutsScrollingArea.RobloxLocked = true
 				GearLoadoutsScrollingArea.Name = "GearLoadoutsScrollingArea"
@@ -496,7 +496,7 @@ Backpack.Active = true
 				LoadoutsList.Size = UDim2.new(1,-17,0.85,-2)
 				LoadoutsList.Style = Enum.FrameStyle.RobloxSquare
 				LoadoutsList.Parent = GearLoadouts
-							
+
 		local GearPreview = Instance.new("Frame")
 		GearPreview.RobloxLocked = true
 		GearPreview.Name = "GearPreview"
@@ -505,7 +505,7 @@ Backpack.Active = true
 		GearPreview.BackgroundTransparency = 1
 		GearPreview.ZIndex = 7
 		GearPreview.Parent = Gear
-		
+
 			-- GearPreview Children
 			local GearStats = Instance.new("Frame")
 			GearStats.RobloxLocked = true
@@ -515,7 +515,7 @@ Backpack.Active = true
 			GearStats.Size = UDim2.new(1,0,0.25,0)
 			GearStats.ZIndex = 8
 			GearStats.Parent = GearPreview
-				
+
 				-- GearStats Children
 				local GearName = Instance.new("TextLabel")
 				GearName.RobloxLocked = true
@@ -530,7 +530,7 @@ Backpack.Active = true
 				GearName.TextWrap = true
 				GearName.ZIndex = 9
 				GearName.Parent = GearStats
-				
+
 			local GearImage = Instance.new("ImageLabel")
 			GearImage.RobloxLocked = true
 			GearImage.Name = "GearImage"
@@ -540,7 +540,7 @@ Backpack.Active = true
 			GearImage.Size = UDim2.new(0.75,0,0.75,0)
 			GearImage.ZIndex = 8
 			GearImage.Parent = GearPreview
-			
+
 				--GearImage Children
 				local GearIcons = Instance.new("Frame")
 				GearIcons.BackgroundColor3 = Color3.new(0,0,0)
@@ -553,7 +553,7 @@ Backpack.Active = true
 				GearIcons.Visible = false
 				GearIcons.ZIndex = 9
 				GearIcons.Parent = GearImage
-				
+
 					-- GearIcons Children
 					local GenreImage = Instance.new("ImageLabel")
 					GenreImage.RobloxLocked = true
@@ -563,21 +563,21 @@ Backpack.Active = true
 					GenreImage.BorderSizePixel = 0
 					GenreImage.Size = UDim2.new(0.25,0,1,0)
 					GenreImage.Parent = GearIcons
-					
+
 					local AttributeOneImage = GenreImage:clone()
 					AttributeOneImage.RobloxLocked = true
 					AttributeOneImage.Name = "AttributeOneImage"
 					AttributeOneImage.BackgroundColor3 = Color3.new(1,51/255,0)
 					AttributeOneImage.Position = UDim2.new(0.25,0,0,0)
 					AttributeOneImage.Parent = GearIcons
-					
+
 					local AttributeTwoImage = GenreImage:clone()
 					AttributeTwoImage.RobloxLocked = true
 					AttributeTwoImage.Name = "AttributeTwoImage"
 					AttributeTwoImage.BackgroundColor3 = Color3.new(153/255,1,153/255)
 					AttributeTwoImage.Position = UDim2.new(0.5,0,0,0)
 					AttributeTwoImage.Parent = GearIcons
-					
+
 					local AttributeThreeImage = GenreImage:clone()
 					AttributeThreeImage.RobloxLocked = true
 					AttributeThreeImage.Name = "AttributeThreeImage"
