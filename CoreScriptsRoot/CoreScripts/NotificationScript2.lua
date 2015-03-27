@@ -7,7 +7,7 @@
 			Player Points Awarded
 			Friend Request Recieved/New Friend
 			Graphics Quality Changed
-			Teleport Failed (studio only)
+			Teleports
 			CreatePlaceInPlayerInventoryAsync
 --]]
 
@@ -217,14 +217,14 @@ end
 
 local lastTimeInserted = 0
 insertNotifcation = function(notification)
+	notification.IsActive = true
 	local size = #NotificationQueue
 	if size == MAX_NOTIFICATIONS then
 		OverflowQueue[#OverflowQueue + 1] = notification
 		return
 	end
 	--
-	size = size + 1
-	NotificationQueue[size] = notification
+	NotificationQueue[size + 1] = notification
 	notification.Frame.Parent = NotificationFrame
 	delay(notification.Duration, function()
 		removeNotification(notification)
@@ -244,9 +244,11 @@ removeNotification = function(notification)
 	table.remove(NotificationQueue, index)
 	local frame = notification.Frame
 	if frame and frame.Parent then
+		notification.IsActive = false
 		frame:TweenPosition(UDim2.new(1, 0, 1, frame.Position.Y.Offset), EASE_DIR, EASE_STYLE, TWEEN_TIME, true,
 			function()
 				frame:Destroy()
+				notification = nil
 			end)
 	end
 	if #OverflowQueue > 0 then
@@ -274,6 +276,7 @@ local function sendFriendNotification(fromPlayer)
 	local notification = {}
 	local notificationFrame = createNotification(fromPlayer.Name, "Sent you a friend request!",
 		FRIEND_IMAGE..tostring(fromPlayer.userId).."&x=48&y=48")
+	notificationFrame.Position = UDim2.new(1, 4, 1, -(NOTIFICATION_Y_OFFSET + 2) * 1.5 - 4)
 	--
 	local acceptButton = createTextButton("AcceptButton", "Accept", UDim2.new(0, 0, 1, 2))
 	acceptButton.Parent = notificationFrame
@@ -282,6 +285,7 @@ local function sendFriendNotification(fromPlayer)
 	declineButton.Parent = notificationFrame
 
 	acceptButton.MouseButton1Click:connect(function()
+		if not notification.IsActive then return end
 		if notification then
 			removeNotification(notification)
 		end
@@ -289,6 +293,7 @@ local function sendFriendNotification(fromPlayer)
 	end)
 
 	declineButton.MouseButton1Click:connect(function()
+		if not notification.IsActive then return end
 		if notification then
 			removeNotification(notification)
 		end
