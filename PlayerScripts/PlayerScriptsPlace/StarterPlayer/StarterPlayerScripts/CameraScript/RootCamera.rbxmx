@@ -113,8 +113,8 @@ local function CreateCamera()
 				local humanoidRootPart = cameraSubject.Torso
 				if humanoidRootPart and humanoidRootPart:IsA('BasePart') then
 					local subjectCFrame = GetRenderCFrame(humanoidRootPart)
-					result = subjectCFrame.p + HEAD_OFFSET +
-						subjectCFrame:vectorToWorldSpace(cameraSubject.CameraOffset)
+					result = subjectCFrame.p +
+						subjectCFrame:vectorToWorldSpace(HEAD_OFFSET + cameraSubject.CameraOffset)
 				end
 			end
 		end
@@ -543,6 +543,7 @@ local function CreateCamera()
 		this.TurningLeft = false
 		this.TurningRight = false
 		this.LastCameraTransform = nil
+		self.LastSubjectCFrame = nil
 		this.UserPanningTheCamera = false
 		this.RotateInput = Vector2.new()
 		this.GamepadPanningCamera = Vector2.new(0,0)

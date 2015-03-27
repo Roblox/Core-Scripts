@@ -87,44 +87,53 @@ local function CreateFollowCamera()
 			module.LastUserPanCamera = tick()
 		end
 		
+		local userRecentlyPannedCamera = now - module.LastUserPanCamera < timeBeforeAutoRotate
+		
 		local subjectPosition = self:GetSubjectPosition()		
 		if subjectPosition and player and camera then
 			local zoom = self:GetCameraZoom()
-			if zoom <= 0 then
-				zoom = 0.1
+			if zoom < 0.5 then
+				zoom = 0.5
 			end
 			
 			if self:GetShiftLock() and not self:IsInFirstPerson() then
 				local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
 				local offset = ((newLookVector * XZ_VECTOR):Cross(UP_VECTOR).unit * 1.75)
-				-- Check for NaNs
 				if IsFiniteVector3(offset) then
 					subjectPosition = subjectPosition + offset
 				end
-				-- For now we want players to be able to zoom to first person from shift lock mode. We can
-				-- revisit this at a later time.
-				--zoom = math.max(zoom, 5)
 			else
-				if self.LastCameraTransform and not userPanningTheCamera and now - module.LastUserPanCamera > timeBeforeAutoRotate then
+				if self.LastCameraTransform and not userPanningTheCamera then
+					local isInFirstPerson = self:IsInFirstPerson()
 					if (isClimbing or isInVehicle or isOnASkateboard) and lastUpdate and humanoid and humanoid.Torso then
-						local forwardVector = humanoid.Torso.CFrame.lookVector
-						if isOnASkateboard then
-							forwardVector = cameraSubject.CFrame.lookVector
+						if isInFirstPerson then
+							if self.LastSubjectCFrame and (isInVehicle or isOnASkateboard) and cameraSubject:IsA('BasePart') then
+								local y = -findAngleBetweenXZVectors(self.LastSubjectCFrame.lookVector, cameraSubject.CFrame.lookVector)
+								if IsFinite(y) then
+									self.RotateInput = self.RotateInput + Vector2.new(y, 0)
+								end
+								tweenSpeed = 0
+							end
+						elseif not userRecentlyPannedCamera then
+							local forwardVector = humanoid.Torso.CFrame.lookVector
+							if isOnASkateboard then
+								forwardVector = cameraSubject.CFrame.lookVector
+							end
+							local timeDelta = (now - lastUpdate)
+
+							tweenSpeed = clamp(0, tweenMaxSpeed, tweenSpeed + tweenAcceleration * timeDelta)
+
+							local percent = clamp(0, 1, tweenSpeed * timeDelta)
+							if not isClimbing and self:IsInFirstPerson() then
+								percent = 1
+							end
+							local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
+							-- Check for NaN
+							if IsFinite(y) and math.abs(y) > 0.0001 then
+								self.RotateInput = self.RotateInput + Vector2.new(y * percent, 0)
+							end
 						end
-						local timeDelta = (now - lastUpdate)
-						
-						tweenSpeed = clamp(0, tweenMaxSpeed, tweenSpeed + tweenAcceleration * timeDelta)
-						
-						local percent = clamp(0, 1, tweenSpeed * timeDelta)
-						if not isClimbing and self:IsInFirstPerson() then
-							percent = 1
-						end
-						local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
-						-- Check for NaN
-						if IsFinite(y) and math.abs(y) > 0.0001 then
-							self.RotateInput = self.RotateInput + Vector2.new(y * percent, 0)
-						end
-					elseif not self:IsInFirstPerson() then
+					elseif not (isInFirstPerson or userRecentlyPannedCamera) then
 						local lastVec = -(self.LastCameraTransform.p - subjectPosition)
 						local y = findAngleBetweenXZVectors(lastVec, self:GetCameraLook())
 						-- Check for NaNs
@@ -140,6 +149,11 @@ local function CreateFollowCamera()
 			camera.Focus = CFrame.new(subjectPosition)
 			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
 			self.LastCameraTransform = camera.CoordinateFrame
+			if isInVehicle or isOnASkateboard and cameraSubject:IsA('BasePart') then
+				self.LastSubjectCFrame = cameraSubject.CFrame
+			else
+				self.LastSubjectCFrame = nil
+			end
 		end
 		
 		lastUpdate = now
