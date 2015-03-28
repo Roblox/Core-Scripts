@@ -394,6 +394,22 @@ local function CreateCamera()
 		end
 	end
 
+	local function round(num)
+		return math.floor(num + 0.5)
+	end
+
+	local eight2Pi = math.pi / 4
+
+	local function rotateVectorByAngleAndRound(camLook, rotateAngle, roundAmount)
+		if camLook ~= Vector3.new(0,0,0) then
+			camLook = camLook.unit
+			local currAngle = math.atan2(camLook.z, camLook.x)
+			local newAngle = round((math.atan2(camLook.z, camLook.x) + rotateAngle) / roundAmount) * roundAmount
+			return newAngle - currAngle
+		end
+		return 0
+	end
+
 	local function OnKeyDown(input, processed)
 		if processed then return end
 		if this.ZoomEnabled then
@@ -409,13 +425,19 @@ local function CreateCamera()
 			elseif input.KeyCode == Enum.KeyCode.Right then
 				this.TurningRight = true
 			elseif input.KeyCode == Enum.KeyCode.Comma then
-				this.RotateInput = this.RotateInput + Vector2.new(math.rad(-35),0)
-				this.LastUserPanCamera = tick()
-				this.LastCameraTransform = nil
+				local angle = rotateVectorByAngleAndRound(this:GetCameraLook() * Vector3.new(1,0,1), -eight2Pi * (3/4), eight2Pi)
+				if angle ~= 0 then
+					this.RotateInput = this.RotateInput + Vector2.new(angle, 0)
+					this.LastUserPanCamera = tick()
+					this.LastCameraTransform = nil
+				end
 			elseif input.KeyCode == Enum.KeyCode.Period then
-				this.RotateInput = this.RotateInput + Vector2.new(math.rad(35),0)
-				this.LastUserPanCamera = tick()
-				this.LastCameraTransform = nil
+				local angle = rotateVectorByAngleAndRound(this:GetCameraLook() * Vector3.new(1,0,1), eight2Pi * (3/4), eight2Pi)
+				if angle ~= 0 then
+					this.RotateInput = this.RotateInput + Vector2.new(angle, 0)
+					this.LastUserPanCamera = tick()
+					this.LastCameraTransform = nil
+				end
 			elseif input.KeyCode == Enum.KeyCode.PageUp then
 			--elseif input.KeyCode == Enum.KeyCode.Home then
 				this.RotateInput = this.RotateInput + Vector2.new(0,math.rad(15))
