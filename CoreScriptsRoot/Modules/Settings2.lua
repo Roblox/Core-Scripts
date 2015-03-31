@@ -414,7 +414,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 			ShiftLockCheckBox.Visible = LocalPlayer.DevEnableMouseLock
 			ShiftLockCheckBox.Parent = GameSettingsMenuFrame
 
-			ShiftLockOverrideText = createTextLabel(UDim2.new(0.5, 6, 0, CurrentYOffset), "Set By Game", "ShiftLockOverrideText")
+			ShiftLockOverrideText = createTextLabel(UDim2.new(0.5, 6, 0, CurrentYOffset), "Set By Developer", "ShiftLockOverrideText")
 			ShiftLockOverrideText.TextXAlignment = Enum.TextXAlignment.Left
 			ShiftLockOverrideText.TextColor3 = Color3.new(180/255, 180/255, 180/255)
 			ShiftLockOverrideText.Visible = not LocalPlayer.DevEnableMouseLock
@@ -461,7 +461,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 			CameraModeDropDown.Frame.Parent = GameSettingsMenuFrame
 		end
 
-		local CameraModeOverrideText = createTextLabel(UDim2.new(0.5, 6, 0, CurrentYOffset), "Set By Game", "CameraModeOverrideText")
+		local CameraModeOverrideText = createTextLabel(UDim2.new(0.5, 6, 0, CurrentYOffset), "Set By Developer", "CameraModeOverrideText")
 		CameraModeOverrideText.TextColor3 = Color3.new(180/255, 180/255, 180/255)
 		CameraModeOverrideText.TextXAlignment = Enum.TextXAlignment.Left
 		CameraModeOverrideText.Parent = GameSettingsMenuFrame
@@ -474,7 +474,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 				isUserChoice = LocalPlayer.DevComputerCameraMode == Enum.DevComputerCameraMovementMode.UserChoice
 			end
 			if CameraModeDropDown then
-				CameraModeDropDown.Visible = isUserChoice
+				CameraModeDropDown.SetVisible(isUserChoice)
 			end
 			CameraModeOverrideText.Visible = not isUserChoice
 		end
@@ -513,7 +513,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 			MovementModeDropDown.Frame.Parent = GameSettingsMenuFrame
 		end
 
-		local MovementModeOverrideText = createTextLabel(UDim2.new(0.5, 6, 0, CurrentYOffset), "Set By Game:", "MovementModeOverrideText")
+		local MovementModeOverrideText = createTextLabel(UDim2.new(0.5, 6, 0, CurrentYOffset), "Set By Developer", "MovementModeOverrideText")
 		MovementModeOverrideText.TextColor3 = Color3.new(180/255, 180/255, 180/255)
 		MovementModeOverrideText.TextXAlignment = Enum.TextXAlignment.Left
 		MovementModeOverrideText.Parent = GameSettingsMenuFrame
@@ -526,7 +526,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 				isUserChoice = LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.UserChoice
 			end
 			if MovementModeDropDown then
-				MovementModeDropDown.Visible = isUserChoice
+				MovementModeDropDown.SetVisible(isUserChoice)
 			end
 			MovementModeOverrideText.Visible = not isUserChoice
 		end
@@ -1330,20 +1330,20 @@ local function updateUserSettingsMenu(property)
 		ShiftLockCheckBox.Text = IsShiftLockEnabled and "X" or ""
 	elseif property == "DevComputerCameraMode" then
 		local isUserChoice = LocalPlayer.DevComputerCameraMode == Enum.DevComputerCameraMovementMode.UserChoice
-		CameraModeDropDown.Visible = isUserChoice
+		CameraModeDropDown.SetVisible(isUserChoice)
 		CameraModeOverrideText.Visible = not isUserChoice
 	elseif property == "DevComputerMovementMode" then
 		local isUserChoice = LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.UserChoice
-		MovementModeDropDown.Visible = isUserChoice
+		MovementModeDropDown.SetVisible(isUserChoice)
 		MovementModeOverrideText.Visible = not isUserChoice
 	-- TOUCH
 	elseif property == "DevTouchMovementMode" then
 		local isUserChoice = LocalPlayer.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
-		MovementModeDropDown.Visible = isUserChoice
+		MovementModeDropDown.SetVisible(isUserChoice)
 		MovementModeOverrideText.Visible = not isUserChoice
 	elseif property == "DevTouchCameraMode" then
-		local isUserChoice = LocalPlayer.DevTouchCameraMode == Enum.DevTouchCameraMode.UserChoice
-		CameraModeDropDown.Visible = isUserChoice
+		local isUserChoice = LocalPlayer.DevTouchCameraMode == Enum.DevTouchCameraMovementMode.UserChoice
+		CameraModeDropDown.SetVisible(isUserChoice)
 		CameraModeOverrideText.Visible = not isUserChoice
 	end
 end

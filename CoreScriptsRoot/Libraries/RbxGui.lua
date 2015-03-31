@@ -303,6 +303,12 @@ t.CreateScrollingDropDownMenu = function(onSelectedCallback, size, position, bas
 		onEntrySelected()
 	end
 
+	dropDownMenu.SetVisible = function(isVisible)
+		if frame then
+			frame.Visible = isVisible
+		end
+	end
+
 	dropDownMenu.UpdateZIndex = function(newZIndexBase)
 		currentSelectionName.ZIndex = newZIndexBase
 		icon.ZIndex = newZIndexBase
