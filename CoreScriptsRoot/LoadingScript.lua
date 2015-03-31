@@ -66,7 +66,6 @@ function InfoProvider:GetGameName()
 	end
 end
 
-
 function InfoProvider:GetCreatorName()
 	if GameAssetInfo ~= nil then
 		return GameAssetInfo.Creator.Name
@@ -74,7 +73,6 @@ function InfoProvider:GetCreatorName()
 		return ''
 	end
 end
-
 
 function InfoProvider:LoadAssets()
 	Spawn(function() 
@@ -86,7 +84,14 @@ function InfoProvider:LoadAssets()
 		end
 
 		-- load game asset info
-		coroutine.resume(coroutine.create(function() GameAssetInfo = MPS:GetProductInfo(PLACEID) end))
+		coroutine.resume(coroutine.create(function()
+			local success, result = pcall(function()
+				GameAssetInfo = MPS:GetProductInfo(PLACEID)
+			end)
+			if not success then
+				print("LoadingScript->InfoProvider:LoadAssets:", result)
+			end
+		end))
 	end)
 end
 
