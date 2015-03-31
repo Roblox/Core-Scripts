@@ -102,7 +102,7 @@ function MainGui:GenerateMain()
 	local mainBackgroundContainer = create 'Frame' {
 		Name = 'BlackFrame',
 		BackgroundColor3 = COLORS.BLACK,
-		Size = UDim2.new(1, 0, 1, 0),
+		Size = UDim2.new(1, 0, 1, 50),
 		Active = true,
 
 		create 'ImageButton' {
