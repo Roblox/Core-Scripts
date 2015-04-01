@@ -457,8 +457,11 @@ guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
 		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
 		currScreenGui.ErrorFrame.Visible = true
-		currScreenGui.BlackFrame.CloseButton.ImageTransparency = 0
-		currScreenGui.BlackFrame.CloseButton.Active = true
+		local blackFrame = currScreenGui:FindFirstChild('BlackFrame')
+		if blackFrame then
+			blackFrame.CloseButton.ImageTransparency = 0
+			blackFrame.CloseButton.Active = true
+		end
 	else
 		currScreenGui.ErrorFrame.Visible = false
 	end
@@ -466,11 +469,14 @@ end)
 
 guiService.UiMessageChanged:connect(function(type, newMessage)
 	if type == Enum.UiMessageType.UiMessageInfo then
-		currScreenGui.BlackFrame.UiMessageFrame.UiMessage.Text = newMessage
-		if newMessage ~= '' then
-			currScreenGui.BlackFrame.UiMessageFrame.Visible = true
-		else
-			currScreenGui.BlackFrame.UiMessageFrame.Visible = false
+		local blackFrame = currScreenGui and currScreenGui:FindFirstChild('BlackFrame')
+		if blackFrame then
+			blackFrame.UiMessageFrame.UiMessage.Text = newMessage
+			if newMessage ~= '' then
+				blackFrame.UiMessageFrame.Visible = true
+			else
+				blackFrame.UiMessageFrame.Visible = false
+			end
 		end
 	end
 end)
