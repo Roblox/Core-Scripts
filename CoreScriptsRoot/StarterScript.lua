@@ -17,7 +17,7 @@ end
 -- SettingsScript
 local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
 local newSettingsSuccess, newSettingsFlagValue = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
-local useNewSettings = (luaControlsSuccess and luaControlsFlagValue) and (newSettingsSuccess and newSettingsFlagValue)
+local useNewSettings = newSettingsSuccess and newSettingsFlagValue
 if useNewSettings then
 	spawn(function() require(RobloxGui.Modules.Settings2) end)
 else

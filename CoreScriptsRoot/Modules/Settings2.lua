@@ -1,7 +1,7 @@
 --[[
 		Filename: SettingNewControlsOnly.lua
 		Written by: jmargh
-		Version 1.2
+		Version 1.3
 		Description: Implements the in game settings menu with the new control schemes
 --]]
 
@@ -41,6 +41,8 @@ local IsStudioMode = GameSettings:InStudioMode()
 --[[ Fast Flags ]]--
 local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
 local isTopBar = topbarSuccess and topbarFlagValue == true
+local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
+local isLuaControls = luaControlsSuccess and luaControlsFlagValue == true
 
 --[[ Parent Frames ]]--
 -- TODO: Remove all references to engine created gui
@@ -50,7 +52,12 @@ local BottomLeftControl = ControlFrame:WaitForChild('BottomLeftControl')
 
 --[[ Control Variables ]]--
 local CurrentYOffset = 24
-local IsShiftLockEnabled = LocalPlayer.DevEnableMouseLock and GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch
+local IsShiftLockEnabled = false
+if isLuaControls then
+	IsShiftLockEnabled = LocalPlayer.DevEnableMouseLock and GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch
+else
+	IsShiftLockEnabled = GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch
+end
 local IsResumingGame = false
 -- TODO: Change dev console script to parent this to somewhere other than an engine created gui
 local BindableFunc_ToggleDevConsole = ControlFrame:WaitForChild('ToggleDevConsole')
@@ -398,10 +405,17 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 
 		local GameSettingsMenuTitle = createMenuTitleLabel("GameSettingsMenuTitle", "Settings", CurrentYOffset)
 		GameSettingsMenuTitle.Parent = GameSettingsMenuFrame
-		CurrentYOffset = CurrentYOffset + 32
+		CurrentYOffset = CurrentYOffset + 36
 		if IsTouchClient then CurrentYOffset = CurrentYOffset + 10 end
 
 		-- Shift Lock Controls
+		local shiftLockImageLabel = nil
+		if not isLuaControls then 	-- FFlag, remove when new controls are live
+			shiftLockImageLabel = not isLuaControls and RobloxGui:FindFirstChild('MouseLockLabel', true) or nil
+			if shiftLockImageLabel then
+				shiftLockImageLabel.Visible = GameSettings.ControlMode == Enum.ControlMode["Mouse Lock Switch"]
+			end
+		end
 		local ShiftLockText, ShiftLockCheckBox, ShiftLockOverrideText = nil, nil, nil
 		if not IsTouchClient then
 			ShiftLockText = createTextLabel(UDim2.new(0.5, -6, 0, CurrentYOffset), "Enable Shift Lock Switch:", "ShiftLockText")
@@ -411,13 +425,18 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 				IsShiftLockEnabled and "X" or "", Enum.FontSize.Size24, Enum.ButtonStyle.RobloxRoundButton)
 			ShiftLockCheckBox.Name = "ShiftLockCheckBox"
 			ShiftLockCheckBox.ZIndex = BASE_Z_INDEX + 4
-			ShiftLockCheckBox.Visible = LocalPlayer.DevEnableMouseLock
+			if isLuaControls then
+				ShiftLockCheckBox.Visible = LocalPlayer.DevEnableMouseLock
+			end
 			ShiftLockCheckBox.Parent = GameSettingsMenuFrame
 
 			ShiftLockOverrideText = createTextLabel(UDim2.new(0.5, 6, 0, CurrentYOffset), "Set By Developer", "ShiftLockOverrideText")
 			ShiftLockOverrideText.TextXAlignment = Enum.TextXAlignment.Left
 			ShiftLockOverrideText.TextColor3 = Color3.new(180/255, 180/255, 180/255)
-			ShiftLockOverrideText.Visible = not LocalPlayer.DevEnableMouseLock
+			ShiftLockOverrideText.Visible = false
+			if isLuaControls then
+				ShiftLockOverrideText.Visible = not LocalPlayer.DevEnableMouseLock
+			end
 			ShiftLockOverrideText.Parent = GameSettingsMenuFrame
 
 			CurrentYOffset = CurrentYOffset + 36
@@ -430,7 +449,9 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 		local CameraModeDropDown = nil
 		do
 			local enumItems = nil
-			if IsTouchClient then
+			if not isLuaControls then
+				enumItems = Enum.CustomCameraMode:GetEnumItems()
+			elseif IsTouchClient then
 				enumItems = Enum.TouchCameraMovementMode:GetEnumItems()
 			else
 				enumItems = Enum.ComputerCameraMovementMode:GetEnumItems()
@@ -448,14 +469,21 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 			end
 			CameraModeDropDown = RbxGuiLibaray.CreateScrollingDropDownMenu(
 				function(text)
-					if IsTouchClient then
+					if not isLuaControls then
+						GameSettings.CameraMode = enumNameToItem[text]
+					elseif IsTouchClient then
 						GameSettings.TouchCameraMovementMode = enumNameToItem[text]
 					else
 						GameSettings.ComputerCameraMovementMode = enumNameToItem[text]
 					end
 				end, UDim2.new(0, 200, 0, 32), UDim2.new(0.5, 6, 0, CurrentYOffset - 16), BASE_Z_INDEX + 4)
 			CameraModeDropDown.CreateList(enumNames)
-			local displayName = IsTouchClient and GameSettings.TouchCameraMovementMode.Name or GameSettings.ComputerCameraMovementMode.Name
+			local displayName = ""
+			if not isLuaControls then
+				displayName = GameSettings.CameraMode.Name
+			else
+				displayName = IsTouchClient and GameSettings.TouchCameraMovementMode.Name or GameSettings.ComputerCameraMovementMode.Name
+			end
 			if displayName == 'Default' then displayName = CAMERA_MODE_DEFAULT_STRING end
 			CameraModeDropDown.SetSelectionText(displayName)
 			CameraModeDropDown.Frame.Parent = GameSettingsMenuFrame
@@ -468,7 +496,9 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 
 		do
 			local isUserChoice = false
-			if IsTouchClient then
+			if not isLuaControls then
+				isUserChoice = true
+			elseif IsTouchClient then
 				isUserChoice = LocalPlayer.DevTouchCameraMode == Enum.DevTouchCameraMovementMode.UserChoice
 			else
 				isUserChoice = LocalPlayer.DevComputerCameraMode == Enum.DevComputerCameraMovementMode.UserChoice
@@ -481,56 +511,65 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 		CurrentYOffset = CurrentYOffset + 36
 
 		-- Movement Mode Controls
-		local MovementModeText = createTextLabel(UDim2.new(0.5, -6, 0, CurrentYOffset), "Movement Mode:", "MovementModeText")
-		MovementModeText.Parent = GameSettingsMenuFrame
-
 		local MovementModeDropDown = nil
-		do
-			local enumItems = IsTouchClient and Enum.TouchMovementMode:GetEnumItems() or Enum.ComputerMovementMode:GetEnumItems()
-			local enumNames = {}
-			local enumNameToItem = {}
-			for i = 1, #enumItems do
-				local displayName = enumItems[i].Name
-				if displayName == "Default" then
-					displayName = MOVEMENT_MODE_DEFAULT_STRING
-				end
-				enumNames[i] = displayName
-				enumNameToItem[displayName] = enumItems[i]
-			end
-			--
-			MovementModeDropDown = RbxGuiLibaray.CreateScrollingDropDownMenu(
-				function(text)
-					if IsTouchClient then
-						GameSettings.TouchMovementMode = enumNameToItem[text]
+		local MovementModeOverrideText = nil
+		if isLuaControls or IsTouchClient then
+			local MovementModeText = createTextLabel(UDim2.new(0.5, -6, 0, CurrentYOffset), "Movement Mode:", "MovementModeText")
+			MovementModeText.Parent = GameSettingsMenuFrame
+
+			do
+				local enumItems = IsTouchClient and Enum.TouchMovementMode:GetEnumItems() or Enum.ComputerMovementMode:GetEnumItems()
+				local enumNames = {}
+				local enumNameToItem = {}
+				for i = 1, #enumItems do
+					if not isLuaControls and enumItems[i].Name == "ClickToMove" then
+						-- lets skip click to move until new controls are live
 					else
-						GameSettings.ComputerMovementMode = enumNameToItem[text]
+						local displayName = enumItems[i].Name
+						if displayName == "Default" then
+							displayName = MOVEMENT_MODE_DEFAULT_STRING
+						end
+						enumNames[i] = displayName
+						enumNameToItem[displayName] = enumItems[i]
 					end
-				end, UDim2.new(0, 200, 0, 32), UDim2.new(0.5, 6, 0, CurrentYOffset - 16), BASE_Z_INDEX + 4)
-			MovementModeDropDown.CreateList(enumNames)
-			local displayName = IsTouchClient and GameSettings.TouchMovementMode.Name or GameSettings.ComputerMovementMode.Name
-			if displayName == 'Default' then displayName = MOVEMENT_MODE_DEFAULT_STRING end
-			MovementModeDropDown.SetSelectionText(displayName)
-			MovementModeDropDown.Frame.Parent = GameSettingsMenuFrame
-		end
-
-		local MovementModeOverrideText = createTextLabel(UDim2.new(0.5, 6, 0, CurrentYOffset), "Set By Developer", "MovementModeOverrideText")
-		MovementModeOverrideText.TextColor3 = Color3.new(180/255, 180/255, 180/255)
-		MovementModeOverrideText.TextXAlignment = Enum.TextXAlignment.Left
-		MovementModeOverrideText.Parent = GameSettingsMenuFrame
-
-		do
-			local isUserChoice = false
-			if IsTouchClient then
-				isUserChoice = LocalPlayer.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
-			else
-				isUserChoice = LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.UserChoice
+				end
+				--
+				MovementModeDropDown = RbxGuiLibaray.CreateScrollingDropDownMenu(
+					function(text)
+						if IsTouchClient then
+							GameSettings.TouchMovementMode = enumNameToItem[text]
+						else
+							GameSettings.ComputerMovementMode = enumNameToItem[text]
+						end
+					end, UDim2.new(0, 200, 0, 32), UDim2.new(0.5, 6, 0, CurrentYOffset - 16), BASE_Z_INDEX + 4)
+				MovementModeDropDown.CreateList(enumNames)
+				local displayName = IsTouchClient and GameSettings.TouchMovementMode.Name or GameSettings.ComputerMovementMode.Name
+				if displayName == 'Default' then displayName = MOVEMENT_MODE_DEFAULT_STRING end
+				MovementModeDropDown.SetSelectionText(displayName)
+				MovementModeDropDown.Frame.Parent = GameSettingsMenuFrame
 			end
-			if MovementModeDropDown then
-				MovementModeDropDown.SetVisible(isUserChoice)
+
+			MovementModeOverrideText = createTextLabel(UDim2.new(0.5, 6, 0, CurrentYOffset), "Set By Developer", "MovementModeOverrideText")
+			MovementModeOverrideText.TextColor3 = Color3.new(180/255, 180/255, 180/255)
+			MovementModeOverrideText.TextXAlignment = Enum.TextXAlignment.Left
+			MovementModeOverrideText.Parent = GameSettingsMenuFrame
+
+			do
+				local isUserChoice = false
+				if not isLuaControls then
+					isUserChoice = true
+				elseif IsTouchClient then
+					isUserChoice = LocalPlayer.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
+				else
+					isUserChoice = LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.UserChoice
+				end
+				if MovementModeDropDown then
+					MovementModeDropDown.SetVisible(isUserChoice)
+				end
+				MovementModeOverrideText.Visible = not isUserChoice
 			end
-			MovementModeOverrideText.Visible = not isUserChoice
+			CurrentYOffset = CurrentYOffset + 36
 		end
-		CurrentYOffset = CurrentYOffset + 36
 
 		-- Video Capture Settings
 		local VideoCaptureDropDown = nil
@@ -788,9 +827,14 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 		end)
 
 		CurrentYOffset = CurrentYOffset + 42
+		if not isLuaControls and not IsTouchClient then
+			CurrentYOffset = CurrentYOffset + 36
+		end
 
 		--[[ OK/Return button ]]--
-		if IsTouchClient then CurrentYOffset = CurrentYOffset + 48 end
+		if IsTouchClient then
+			CurrentYOffset = CurrentYOffset + 134
+		end
 		local GameSettingsBackButton = createTextButton(MENU_BTN_SML, UDim2.new(0.5, -84, 0, CurrentYOffset),
 			"Back", Enum.FontSize.Size24, Enum.ButtonStyle.RobloxRoundDefaultButton)
 		GameSettingsBackButton.Name = "GameSettingsBackButton"
@@ -1323,6 +1367,7 @@ local function toggleDevConsole(actionName, inputState, inputObject)
 end
 
 local function updateUserSettingsMenu(property)
+	if not isLuaControls then return end
 	if property == "DevEnableMouseLock" then
 		ShiftLockCheckBox.Visible = LocalPlayer.DevEnableMouseLock
 		ShiftLockOverrideText.Visible = not LocalPlayer.DevEnableMouseLock
@@ -1334,13 +1379,13 @@ local function updateUserSettingsMenu(property)
 		CameraModeOverrideText.Visible = not isUserChoice
 	elseif property == "DevComputerMovementMode" then
 		local isUserChoice = LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.UserChoice
-		MovementModeDropDown.SetVisible(isUserChoice)
-		MovementModeOverrideText.Visible = not isUserChoice
+		if MovementModeDropDown then MovementModeDropDown.SetVisible(isUserChoice) end
+		if MovementModeOverrideText then MovementModeOverrideText.Visible = not isUserChoice end
 	-- TOUCH
 	elseif property == "DevTouchMovementMode" then
 		local isUserChoice = LocalPlayer.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
-		MovementModeDropDown.SetVisible(isUserChoice)
-		MovementModeOverrideText.Visible = not isUserChoice
+		if MovementModeDropDown then MovementModeDropDown.SetVisible(isUserChoice) end
+		if MovementModeOverrideText then MovementModeOverrideText.Visible = not isUserChoice end
 	elseif property == "DevTouchCameraMode" then
 		local isUserChoice = LocalPlayer.DevTouchCameraMode == Enum.DevTouchCameraMovementMode.UserChoice
 		CameraModeDropDown.SetVisible(isUserChoice)
@@ -1456,6 +1501,9 @@ do
 			IsShiftLockEnabled = not IsShiftLockEnabled
 			ShiftLockCheckBox.Text = IsShiftLockEnabled and "X" or ""
 			GameSettings.ControlMode = IsShiftLockEnabled and "MouseLockSwitch" or "Classic"
+			if shiftLockImageLabel then
+				shiftLockImageLabel.Visible = IsShiftLockEnabled
+			end
 		end)
 		GameSettingsBackButton.MouseButton1Click:connect(popMenu)
 

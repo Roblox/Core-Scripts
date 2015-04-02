@@ -28,9 +28,8 @@ local HURT_OVERLAY_IMAGE = "http://www.roblox.com/asset/?id=34854607"
 --[[ END OF CONSTANTS ]]
 
 --[[ FFLAG VALUES ]]
-local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
 local newSettingsSuccess, newSettingsFlagValue = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
-local useNewSettings = (luaControlsSuccess and luaControlsFlagValue) and (newSettingsSuccess and newSettingsFlagValue)
+local useNewSettings = newSettingsSuccess and newSettingsFlagValue
 
 local luaChatSuccess, chatFlagValue = pcall(function() return settings():GetFFlag("NewLuaChatScript") end)
 local useNewLuaChat = (luaChatSuccess and chatFlagValue)
