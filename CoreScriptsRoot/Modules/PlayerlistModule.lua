@@ -211,7 +211,7 @@ local function getFollowerStatus(selectedPlayer)
 	end
 
 	-- ignore guest
-	if selectedPlayer.userId <= 0 then
+	if selectedPlayer.userId <= 0 or Player.userId <= 0 then
 		return
 	end
 
