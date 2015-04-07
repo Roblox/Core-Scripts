@@ -287,15 +287,6 @@ function setDisabledState(guiObject)
 end
 
 local function createHelpDialog(baseZIndex)
-
-	if helpButton == nil then
-		if gui:FindFirstChild("TopLeftControl") and gui.TopLeftControl:FindFirstChild("Help") then
-			helpButton = gui.TopLeftControl.Help
-		elseif gui:FindFirstChild("BottomRightControl") and gui.BottomRightControl:FindFirstChild("Help") then
-			helpButton = gui.BottomRightControl.Help
-		end
-	end
-
 	local shield = Instance.new("Frame")
 	shield.Name = "HelpDialogShield"
 	shield.Active = true
