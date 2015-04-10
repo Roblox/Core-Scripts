@@ -713,6 +713,21 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 				setGraphicsQualityLevel(level)
 			end
 
+			local function setStudioGraphicsMode(isEnabled)
+				settings().Rendering.EnableFRM = isEnabled
+				if isEnabled then
+					isAutoGraphics = GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic
+					if isAutoGraphics then
+						setGraphicsToAtuo()
+					else
+						local level = tostring(GameSettings.SavedQualityLevel)
+						if GRAPHICS_QUALITY_TO_INT[level] then
+							setGraphicsToManual(GRAPHICS_QUALITY_TO_INT[level])
+						end
+					end
+				end
+			end
+
 			local function onGraphicsCheckBoxPressed()
 				if IsStudioMode then return end
 				--
@@ -774,10 +789,26 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 				setGraphicsGuiZIndex()
 			end)
 
+			-- set up for studio mode, NOTE: These events will not fire on the client, but will in play solo (F5)
+			Players.PlayerAdded:connect(function(player)
+				if player == LocalPlayer and IsStudioMode then
+					setStudioGraphicsMode(true)
+				end
+			end)
+			Players.PlayerRemoving:connect(function(player)
+				if player == LocalPlayer and IsStudioMode then
+					setStudioGraphicsMode(false)
+				end
+			end)
+
 			-- initial load setup
 			setGraphicsGuiZIndex()
 			if IsStudioMode then
-				settings().Rendering.EnableFRM = false
+				if Players.LocalPlayer then
+					setStudioGraphicsMode(true)
+				else
+					setStudioGraphicsMode(false)
+				end
 				setGraphicsGuiZIndex()
 				qualityAutoCheckBox.Text = isAutoGraphics and "X" or ""
 				qualityAutoCheckBox.Active = false
