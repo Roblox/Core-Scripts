@@ -362,7 +362,7 @@ local PopupFrame = nil
 local PopupClipFrame = Instance.new('Frame')
 PopupClipFrame.Name = "PopupClipFrame"
 PopupClipFrame.Size = UDim2.new(0, 150, 1.5, 0)
-PopupClipFrame.Position = UDim2.new(0, -151, 0, 2)
+PopupClipFrame.Position = UDim2.new(0, -150 - ENTRY_PAD, 0, 0)
 PopupClipFrame.BackgroundTransparency = 1
 PopupClipFrame.ClipsDescendants = true
 PopupClipFrame.Parent = Container
@@ -370,8 +370,8 @@ PopupClipFrame.Parent = Container
 -- Report Abuse Gui
 local ReportAbuseShield = Instance.new('TextButton')
 ReportAbuseShield.Name = "ReportAbuseShield"
-ReportAbuseShield.Size = UDim2.new(1, 0, 1, 0)
-ReportAbuseShield.Position = UDim2.new(0, 0, 0, 0)
+ReportAbuseShield.Size = UDim2.new(1, 0, 1, 36)
+ReportAbuseShield.Position = UDim2.new(0, 0, 0, -36)
 ReportAbuseShield.BackgroundColor3 = Color3.new(51/255, 51/255, 51/255)
 ReportAbuseShield.BackgroundTransparency = 0.4
 ReportAbuseShield.ZIndex = 1
@@ -784,7 +784,7 @@ local selectedEntryMovedCn = nil
 local function createPopupFrame(buttons)
 	local frame = Instance.new('Frame')
 	frame.Name = "PopupFrame"
-	frame.Size = UDim2.new(1, 0, 0, (PlayerEntrySizeY * #buttons) + (#buttons - 1))
+	frame.Size = UDim2.new(1, 0, 0, (PlayerEntrySizeY * #buttons) + (#buttons - ENTRY_PAD))
 	frame.Position = UDim2.new(1, 1, 0, 0)
 	frame.BackgroundTransparency = 1
 	frame.Parent = PopupClipFrame
@@ -793,7 +793,7 @@ local function createPopupFrame(buttons)
 		local btn = Instance.new('TextButton')
 		btn.Name = button.Name
 		btn.Size = UDim2.new(1, 0, 0, PlayerEntrySizeY)
-		btn.Position = UDim2.new(0, 0, 0, PlayerEntrySizeY * (i - 1) + (i - 1))
+		btn.Position = UDim2.new(0, 0, 0, PlayerEntrySizeY * (i - 1) + ((i - 1) * ENTRY_PAD))
 		btn.BackgroundTransparency = BG_TRANSPARENCY
 		btn.BackgroundColor3 = BG_COLOR
 		btn.BorderSizePixel = 0
