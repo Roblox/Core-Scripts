@@ -18,6 +18,7 @@ local NON_CORESCRIPT_MODE = false
 
 local MESSAGES_FADE_OUT_TIME = 30
 local MAX_BLOCKLIST_SIZE = 50
+local MAX_UDIM_SIZE = 2^15 - 1
 
 local CHAT_COLORS =
 {
@@ -1508,6 +1509,12 @@ local function CreateChatWindowWidget(settings)
 		else
 			this:FadeInChats()
 			lastChatActivity = tick()
+		end
+
+		-- NOTE: Sort of hacky, but if we are approaching the max 16 bit size
+		-- we need to rebase y back to 0 which can be done with the resize function
+		if ySize > (MAX_UDIM_SIZE / 2) then
+			self:OnResize()
 		end
 	end
 
