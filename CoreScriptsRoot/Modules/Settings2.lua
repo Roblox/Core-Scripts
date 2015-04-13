@@ -117,7 +117,7 @@ local GRAPHICS_QUALITY_TO_INT = {
 
 local ABUSE_TYPES_PLAYER = {
 	"Swearing",
-	"Inapproiate Username",
+	"Inappropriate Username",
 	"Bullying",
 	"Scamming",
 	"Dating",
@@ -127,7 +127,7 @@ local ABUSE_TYPES_PLAYER = {
 }
 
 local ABUSE_TYPES_GAME = {
-	"Inapproiate Content",
+	"Inappropriate Content",
 	"Bad Model or Script",
 	"Offsite Link",
 }
