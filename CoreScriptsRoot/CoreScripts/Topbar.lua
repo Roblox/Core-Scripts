@@ -31,9 +31,6 @@ local HURT_OVERLAY_IMAGE = "http://www.roblox.com/asset/?id=34854607"
 local newSettingsSuccess, newSettingsFlagValue = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local useNewSettings = newSettingsSuccess and newSettingsFlagValue
 
-local luaChatSuccess, chatFlagValue = pcall(function() return settings():GetFFlag("NewLuaChatScript") end)
-local useNewLuaChat = (luaChatSuccess and chatFlagValue)
-
 local backPackSuccess, backpackFlagValue = pcall(function() return settings():GetFFlag("NewBackpackScript") end)
 local useNewBackpack = (backPackSuccess and backpackFlagValue)
 
@@ -889,7 +886,7 @@ end
 ----------------------
 
 local settingsIcon = useNewSettings and CreateSettingsIcon()
-local chatIcon = useNewLuaChat and CreateChatIcon()
+local chatIcon = CreateChatIcon()
 local backpackIcon = useNewBackpack and CreateBackpackIcon()
 --local shiftlockIcon = CreateShiftLockIcon()
 local nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
