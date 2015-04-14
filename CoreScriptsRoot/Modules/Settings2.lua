@@ -214,7 +214,7 @@ local function createMenuTitleLabel(name, text, yOffset)
 	label.BackgroundTransparency = 1
 	label.Font = Enum.Font.SourceSansBold
 	label.FontSize = Enum.FontSize.Size36
-	label.TextColor3 = Color3.new(1, 1, 1, 1)
+	label.TextColor3 = Color3.new(1, 1, 1)
 	label.ZIndex = BASE_Z_INDEX + 4
 	label.Text = text
 
@@ -636,7 +636,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 
 			local qualityAutoText = createTextLabel(UDim2.new(0.5, 44, 0, CurrentYOffset), "Auto", "QualityAutoText")
 			qualityAutoText.TextXAlignment = Enum.TextXAlignment.Left
-			qualityAutoText.TextColor3 = GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic and Color3.new(1, 1, 1, 1) or Color3.new(128/255,128/255,128/255)
+			qualityAutoText.TextColor3 = GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic and Color3.new(1, 1, 1) or Color3.new(128/255,128/255,128/255)
 			qualityAutoText.Parent = GameSettingsMenuFrame
 
 			local graphicsSlider, graphicsLevel = RbxGuiLibaray.CreateSliderNew(GRAPHICS_QUALITY_LEVELS, 300, UDim2.new(0.5, -150, 0, CurrentYOffset + 36))

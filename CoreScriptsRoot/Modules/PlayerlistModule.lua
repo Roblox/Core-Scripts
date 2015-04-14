@@ -380,18 +380,31 @@ ReportAbuseShield.AutoButtonColor = false
 
 	local ReportAbuseFrame = Instance.new('Frame')
 	ReportAbuseFrame.Name = "ReportAbuseFrame"
-	ReportAbuseFrame.Size = UDim2.new(0, 480, 0, 320)
-	ReportAbuseFrame.Position = UDim2.new(0.5, -240, 0.5, -160)
+	ReportAbuseFrame.Size = UDim2.new(0, 525, 0, 390)
+	ReportAbuseFrame.Position = UDim2.new(0.5, -262, 0.5, -195)
 	ReportAbuseFrame.BackgroundTransparency = 0.7
 	ReportAbuseFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 	ReportAbuseFrame.Style = Enum.FrameStyle.DropShadow
 	ReportAbuseFrame.Parent = ReportAbuseShield
 
+		local reportYOffset = 24
+		local ReportAbuseTitle = Instance.new('TextLabel')
+		ReportAbuseTitle.Name = "ReportAbuseTitle"
+		ReportAbuseTitle.Text = "Report Abuse"
+		ReportAbuseTitle.Size = UDim2.new(0, 0, 0, 0)
+		ReportAbuseTitle.Position = UDim2.new(0.5, 0, 0, reportYOffset)
+		ReportAbuseTitle.BackgroundTransparency = 1
+		ReportAbuseTitle.Font = Enum.Font.SourceSansBold
+		ReportAbuseTitle.FontSize = Enum.FontSize.Size36
+		ReportAbuseTitle.TextColor3 = Color3.new(1, 1, 1)
+		ReportAbuseTitle.Parent = ReportAbuseFrame
+		reportYOffset = reportYOffset + 32
+
 		local ReportAbuseDescription = Instance.new('TextLabel')
 		ReportAbuseDescription.Name = "ReportAbuseDescription"
 		ReportAbuseDescription.Text = "This will send a complete report to a moderator.  The moderator will review the chat log and take appropriate action."
-		ReportAbuseDescription.Size = UDim2.new(1, -20, 0, 40)
-		ReportAbuseDescription.Position = UDim2.new(0, 10, 0, 10)
+		ReportAbuseDescription.Size = UDim2.new(1, -40, 0, 40)
+		ReportAbuseDescription.Position = UDim2.new(0, 35, 0, reportYOffset)
 		ReportAbuseDescription.BackgroundTransparency = 1
 		ReportAbuseDescription.Font = Enum.Font.SourceSans
 		ReportAbuseDescription.FontSize = Enum.FontSize.Size18
@@ -400,62 +413,86 @@ ReportAbuseShield.AutoButtonColor = false
 		ReportAbuseDescription.TextXAlignment = Enum.TextXAlignment.Left
 		ReportAbuseDescription.TextYAlignment = Enum.TextYAlignment.Top
 		ReportAbuseDescription.Parent = ReportAbuseFrame
+		reportYOffset = reportYOffset + 70
 
 		local ReportPlayerLabel = Instance.new('TextLabel')
 		ReportPlayerLabel.Name = "ReportPlayerLabel"
 		ReportPlayerLabel.Text = "Player Reporting:"
-		ReportPlayerLabel.Size = UDim2.new(0.4, 0, 0, 36)
-		ReportPlayerLabel.Position = UDim2.new(0.025, 20, 0, 80)
+		ReportPlayerLabel.Size = UDim2.new(0, 0, 0, 0)
+		ReportPlayerLabel.Position = UDim2.new(0.5, -6, 0, reportYOffset)
 		ReportPlayerLabel.BackgroundTransparency = 1
 		ReportPlayerLabel.Font = Enum.Font.SourceSans
 		ReportPlayerLabel.FontSize = Enum.FontSize.Size18
 		ReportPlayerLabel.TextColor3 = Color3.new(1, 1, 1)
-		ReportPlayerLabel.TextXAlignment = Enum.TextXAlignment.Left
+		ReportPlayerLabel.TextXAlignment = Enum.TextXAlignment.Right
 		ReportPlayerLabel.Parent = ReportAbuseFrame
 
 		local ReportPlayerName = Instance.new('TextLabel')
 		ReportPlayerName.Name = "ReportPlayerName"
 		ReportPlayerName.Text = ""
-		ReportPlayerName.Size = UDim2.new(0.95, 0, 0, 36)
-		ReportPlayerName.Position = UDim2.new(0.025, 0, 0, 80)
+		ReportPlayerName.Size = UDim2.new(0, 0, 0, 0)
+		ReportPlayerName.Position = UDim2.new(0.5, 18, 0, reportYOffset)
 		ReportPlayerName.BackgroundTransparency = 1
 		ReportPlayerName.Font = Enum.Font.SourceSans
 		ReportPlayerName.FontSize = Enum.FontSize.Size18
 		ReportPlayerName.TextColor3 = Color3.new(1, 1, 1)
-		ReportPlayerName.TextXAlignment = Enum.TextXAlignment.Right
+		ReportPlayerName.TextXAlignment = Enum.TextXAlignment.Left
 		ReportPlayerName.Parent = ReportAbuseFrame
+		reportYOffset = reportYOffset + 40
 
 		local ReportReasonLabel = Instance.new('TextLabel')
 		ReportReasonLabel.Name = "ReportReasonLabel"
 		ReportReasonLabel.Text = "Type of Abuse:"
-		ReportReasonLabel.Size = UDim2.new(0.4, 0, 0, 36)
-		ReportReasonLabel.Position = UDim2.new(0.025, 20, 0, 119)
+		ReportReasonLabel.Size = UDim2.new(0, 0, 0, 0)
+		ReportReasonLabel.Position = UDim2.new(0.5, -6, 0, reportYOffset)
 		ReportReasonLabel.BackgroundTransparency = 1
 		ReportReasonLabel.Font = Enum.Font.SourceSans
 		ReportReasonLabel.FontSize = Enum.FontSize.Size18
 		ReportReasonLabel.TextColor3 = Color3.new(1, 1, 1)
-		ReportReasonLabel.TextXAlignment = Enum.TextXAlignment.Left
+		ReportReasonLabel.TextXAlignment = Enum.TextXAlignment.Right
 		ReportReasonLabel.Parent = ReportAbuseFrame
+		reportYOffset = reportYOffset + 40
 
-		local ReportDescriptionLabel = Instance.new('TextLabel')
+		local ReportDescriptionLabel = ReportAbuseDescription:Clone()
 		ReportDescriptionLabel.Name = "ReportDescriptionLabel"
 		ReportDescriptionLabel.Text = "Short Description: (optional)"
-		ReportDescriptionLabel.Size = UDim2.new(0.95, 0, 0, 36)
-		ReportDescriptionLabel.Position = UDim2.new(0.025, 0, 0, 165)
-		ReportDescriptionLabel.BackgroundTransparency = 1
-		ReportDescriptionLabel.Font = Enum.Font.SourceSans
-		ReportDescriptionLabel.FontSize = Enum.FontSize.Size18
-		ReportDescriptionLabel.TextColor3 = Color3.new(1, 1, 1)
-		ReportDescriptionLabel.TextXAlignment = Enum.TextXAlignment.Left
+		ReportDescriptionLabel.Position = UDim2.new(0, 35, 0, reportYOffset)
 		ReportDescriptionLabel.Parent = ReportAbuseFrame
+		reportYOffset = reportYOffset + 28
+
+		local ReportDescriptionBox = Instance.new('TextBox')
+		ReportDescriptionBox.Name = "ReportDescriptionBox"
+		ReportDescriptionBox.Text = ""
+		ReportDescriptionBox.Size = UDim2.new(1, -70, 1, -reportYOffset - 80)
+		ReportDescriptionBox.Position = UDim2.new(0, 35, 0, reportYOffset)
+		ReportDescriptionBox.BackgroundTransparency = 1
+		ReportDescriptionBox.Font = Enum.Font.SourceSans
+		ReportDescriptionBox.FontSize = Enum.FontSize.Size18
+		ReportDescriptionBox.TextColor3 = Color3.new(0, 0, 0)
+		ReportDescriptionBox.TextXAlignment = Enum.TextXAlignment.Left
+		ReportDescriptionBox.TextYAlignment = Enum.TextYAlignment.Top
+		ReportDescriptionBox.TextWrap = true
+		ReportDescriptionBox.ClearTextOnFocus = false
+		ReportDescriptionBox.Parent = ReportAbuseFrame
+
+		local ReportDescriptionBg = Instance.new('TextButton')
+		ReportDescriptionBg.Name = "ReportDescriptionBg"
+		ReportDescriptionBg.Size = UDim2.new(1, 16, 1, 16)
+		ReportDescriptionBg.Position = UDim2.new(0, -8, 0, -8)
+		ReportDescriptionBg.Text = ""
+		ReportDescriptionBg.Active = false
+		ReportDescriptionBg.AutoButtonColor = false
+		ReportDescriptionBg.Style = Enum.ButtonStyle.RobloxRoundDropdownButton
+		ReportDescriptionBg.Parent = ReportDescriptionBox
+		reportYOffset = reportYOffset + ReportDescriptionBox.AbsoluteSize.y + 20
 
 		local ReportSubmitButton = Instance.new('TextButton')
 		ReportSubmitButton.Name = "ReportSubmitButton"
-		ReportSubmitButton.Text = "Submit Report"
-		ReportSubmitButton.Size = UDim2.new(0.35, 0, 0, 40)
-		ReportSubmitButton.Position = UDim2.new(0.1, 0, 1, -50)
-		ReportSubmitButton.Font = Enum.Font.SourceSans
-		ReportSubmitButton.FontSize = Enum.FontSize.Size18
+		ReportSubmitButton.Text = "Submit"
+		ReportSubmitButton.Size = UDim2.new(0, 168, 0, 50)
+		ReportSubmitButton.Position = UDim2.new(0.5, 2, 0, reportYOffset)
+		ReportSubmitButton.Font = Enum.Font.SourceSansBold
+		ReportSubmitButton.FontSize = Enum.FontSize.Size24
 		ReportSubmitButton.TextColor3 = Color3.new(163/255, 162/255, 165/255)
 		ReportSubmitButton.Active = false
 		ReportSubmitButton.AutoButtonColor = true
@@ -466,12 +503,12 @@ ReportAbuseShield.AutoButtonColor = false
 		local ReportCanelButton = Instance.new('TextButton')
 		ReportCanelButton.Name = "ReportCanelButton"
 		ReportCanelButton.Text = "Cancel"
-		ReportCanelButton.Size = UDim2.new(0.35, 0, 0, 40)
-		ReportCanelButton.Position = UDim2.new(0.55, 0, 1, -50)
-		ReportCanelButton.Font = Enum.Font.SourceSans
-		ReportCanelButton.FontSize = Enum.FontSize.Size18
+		ReportCanelButton.Size = UDim2.new(0, 168, 0, 50)
+		ReportCanelButton.Position = UDim2.new(0.5, -170, 0, reportYOffset)
+		ReportCanelButton.Font = Enum.Font.SourceSansBold
+		ReportCanelButton.FontSize = Enum.FontSize.Size24
 		ReportCanelButton.TextColor3 = Color3.new(1, 1, 1)
-		ReportCanelButton.Style = Enum.ButtonStyle.RobloxRoundDefaultButton
+		ReportCanelButton.Style = Enum.ButtonStyle.RobloxRoundButton
 		ReportCanelButton.Parent = ReportAbuseFrame
 
 		local AbuseDropDown, updateAbuseSelection = nil, nil
@@ -483,7 +520,7 @@ ReportAbuseShield.AutoButtonColor = false
 						ReportSubmitButton.Active = true
 						ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
 					end
-				end, UDim2.new(0.55, 0, 0, 32), UDim2.new(0.425, 0, 0, 121), 1)
+				end, UDim2.new(0, 200, 0, 32), UDim2.new(0.5, 6, 0, ReportReasonLabel.Position.Y.Offset - 16), 1)
 			AbuseDropDown.CreateList(ABUSES)
 			AbuseDropDown.Frame.Parent = ReportAbuseFrame
 		else
@@ -496,39 +533,15 @@ ReportAbuseShield.AutoButtonColor = false
 					end
 				end, true, true, 1)
 			AbuseDropDown.Name = "AbuseDropDown"
-			AbuseDropDown.Size = UDim2.new(0.55, 0, 0, 32)
-			AbuseDropDown.Position = UDim2.new(0.425, 0, 0, 121)
+			AbuseDropDown.Size = UDim2.new(0, 200, 0, 32)
+			AbuseDropDown.Position = UDim2.new(0.5, 6, 0, ReportReasonLabel.Position.Y.Offset - 16)
 			AbuseDropDown.Parent = ReportAbuseFrame
 		end
-
-		local ReportDescriptionTextFrame = Instance.new('Frame')
-		ReportDescriptionTextFrame.Name = "ReportDescriptionTextFrame"
-		ReportDescriptionTextFrame.Size = UDim2.new(0.95, 0, 1, -250)
-		ReportDescriptionTextFrame.Position = UDim2.new(0.025, 0, 0, 195)
-		ReportDescriptionTextFrame.BackgroundColor3 = Color3.new(206/255, 206/255, 206/255)
-		ReportDescriptionTextFrame.BorderSizePixel = 0
-		ReportDescriptionTextFrame.Parent = ReportAbuseFrame
-
-			local ReportDescriptionBox = Instance.new('TextBox')
-			ReportDescriptionBox.Name = "ReportDescriptionBox"
-			ReportDescriptionBox.Text = ""
-			ReportDescriptionBox.Size = UDim2.new(1, -6, 1, -6)
-			ReportDescriptionBox.Position = UDim2.new(0, 3, 0, 3)
-			ReportDescriptionBox.Font = Enum.Font.SourceSans
-			ReportDescriptionBox.FontSize = Enum.FontSize.Size18
-			ReportDescriptionBox.TextColor3 = Color3.new(0, 0, 0)
-			ReportDescriptionBox.BackgroundColor3 = Color3.new(206/255, 206/255, 206/255)
-			ReportDescriptionBox.BorderColor3 = Color3.new(206/255, 206/255, 206/255)
-			ReportDescriptionBox.TextXAlignment = Enum.TextXAlignment.Left
-			ReportDescriptionBox.TextYAlignment = Enum.TextYAlignment.Top
-			ReportDescriptionBox.TextWrap = true
-			ReportDescriptionBox.ClearTextOnFocus = false
-			ReportDescriptionBox.Parent = ReportDescriptionTextFrame
 
 -- Report Confirm Gui
 local ReportConfirmFrame = Instance.new('Frame')
 ReportConfirmFrame.Name = "ReportConfirmFrame"
-ReportConfirmFrame.Size = UDim2.new(0, 400, 0, 160)
+ReportConfirmFrame.Size = UDim2.new(0, 400, 0, 170)
 ReportConfirmFrame.Position = UDim2.new(0.5, -200, 0.5, -80)
 ReportConfirmFrame.BackgroundTransparency = 0.7
 ReportConfirmFrame.BackgroundColor3 = Color3.new(0, 0, 0)
@@ -539,7 +552,7 @@ ReportConfirmFrame.Style = Enum.FrameStyle.DropShadow
 	ReportConfirmHeader.Size = UDim2.new(0, 0, 0, 0)
 	ReportConfirmHeader.Position = UDim2.new(0.5, 0, 0, 14)
 	ReportConfirmHeader.BackgroundTransparency = 1
-	ReportConfirmHeader.Text = "Thank You For Your Report"
+	ReportConfirmHeader.Text = "Thank you for your Report"
 	ReportConfirmHeader.Font = Enum.Font.SourceSans
 	ReportConfirmHeader.FontSize = Enum.FontSize.Size36
 	ReportConfirmHeader.TextColor3 = Color3.new(1, 1, 1)
@@ -562,10 +575,10 @@ ReportConfirmFrame.Style = Enum.FrameStyle.DropShadow
 	local ReportConfirmButton = Instance.new('TextButton')
 	ReportConfirmButton.Name = "ReportConfirmButton"
 	ReportConfirmButton.Text = "OK"
-	ReportConfirmButton.Size = UDim2.new(0, 162, 0, 40)
-	ReportConfirmButton.Position = UDim2.new(0.5, -81, 1, -50)
+	ReportConfirmButton.Size = UDim2.new(0, 168, 0, 50)
+	ReportConfirmButton.Position = UDim2.new(0.5, -81, 1, -60)
 	ReportConfirmButton.Font = Enum.Font.SourceSans
-	ReportConfirmButton.FontSize = Enum.FontSize.Size18
+	ReportConfirmButton.FontSize = Enum.FontSize.Size24
 	ReportConfirmButton.TextColor3 = Color3.new(1, 1, 1)
 	ReportConfirmButton.Style = Enum.ButtonStyle.RobloxRoundDefaultButton
 	ReportConfirmButton.Parent = ReportConfirmFrame
@@ -1027,8 +1040,11 @@ end
 local function resetReportDialog()
 	AbuseReason = nil
 	AbusingPlayer = nil
-	if IsNewSettings then 	-- FFlag
+	if IsNewSettings and AbuseDropDown then 	-- FFlag
 		AbuseDropDown.SetSelectionText("Choose One")
+		if AbuseDropDown.IsOpen() then
+			AbuseDropDown.Reset()
+		end
 	else
 		updateAbuseSelection(nil)
 	end
@@ -1039,15 +1055,20 @@ local function resetReportDialog()
 end
 
 local function onAbuseDialogCanceled()
-	ReportAbuseShield.Parent = nil
 	resetReportDialog()
+	ReportAbuseShield.Parent = nil
 end
 ReportCanelButton.MouseButton1Click:connect(onAbuseDialogCanceled)
 
 local function onAbuseDialogSubmit()
 	if ReportSubmitButton.Active then
 		if AbuseReason and AbusingPlayer then
-			Players:ReportAbuse(AbusingPlayer, AbuseReason, ReportDescriptionBox.Text)
+			local success, errorMsg = pcall(function()
+				Players:ReportAbuse(AbusingPlayer, AbuseReason, ReportDescriptionBox.Text)
+			end)
+			if not success then
+				print("PlayerlistModule: Players:ReportAbuse() failed because", errorMsg)
+			end
 			resetReportDialog()
 			ReportAbuseFrame.Parent = nil
 			ReportConfirmFrame.Parent = ReportAbuseShield
@@ -1790,6 +1811,17 @@ UserInputService.InputBegan:connect(function(inputObject, isProcessed)
 		inputType == Enum.UserInputType.MouseButton1 then
 		if LastSelectedFrame then
 			hideFriendReportPopup()
+		end
+	end
+end)
+
+ReportAbuseShield.InputBegan:connect(function(inputObject)
+	if not IsNewSettings then return end 	-- FFlag
+	--
+	local inputType = inputObject.UserInputType
+	if inputType == Enum.UserInputType.MouseButton1 or inputType == Enum.UserInputType.Touch then
+		if AbuseDropDown and AbuseDropDown.IsOpen() then
+			AbuseDropDown.Close()
 		end
 	end
 end)

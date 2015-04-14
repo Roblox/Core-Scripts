@@ -266,8 +266,10 @@ t.CreateScrollingDropDownMenu = function(onSelectedCallback, size, position, bas
 		--
 		listMenu.ScrollBarThickness = 0
 		listMenu:TweenSize(UDim2.new(1, -16, 0, 24), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, 0.15, true, function()
-			listMenu.Visible = false
-			scrollingBackground.Visible = false
+			if not isOpen then
+				listMenu.Visible = false
+				scrollingBackground.Visible = false
+			end
 		end)
 		isOpen = false
 	end
@@ -301,6 +303,15 @@ t.CreateScrollingDropDownMenu = function(onSelectedCallback, size, position, bas
 
 	dropDownMenu.Close = function()
 		onEntrySelected()
+	end
+
+	dropDownMenu.Reset = function()
+		isOpen = false
+		icon.Rotation = 0
+		listMenu.ScrollBarThickness = 0
+		listMenu.Size = UDim2.new(1, -16, 0, 24)
+		listMenu.Visible = false
+		scrollingBackground.Visible = false
 	end
 
 	dropDownMenu.SetVisible = function(isVisible)
