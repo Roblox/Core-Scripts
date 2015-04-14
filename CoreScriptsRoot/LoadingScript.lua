@@ -505,7 +505,7 @@ function fadeBackground()
 	local lastTime = nil
 	local backgroundRemovalTime = 3.2
 
-	while currScreenGui and currScreenGui.BlackFrame and currScreenGui.BlackFrame.BackgroundTransparency < 1 do
+	while currScreenGui and currScreenGui:FindFirstChild("BlackFrame") and currScreenGui.BlackFrame.BackgroundTransparency < 1 do
 		if lastTime == nil then
 			currScreenGui.BlackFrame.Active = false
 			lastTime = tick()
