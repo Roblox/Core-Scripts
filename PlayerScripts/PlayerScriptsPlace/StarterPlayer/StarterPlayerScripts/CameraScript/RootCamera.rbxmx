@@ -56,6 +56,10 @@ local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*2)
 local SEAT_OFFSET = Vector3.new(0,5,0)
 local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
 
+-- Reset the camera look vector when the camera is enabled for the first time
+local SetCameraOnSpawn = true
+
+
 local UseRenderCFrame = false
 pcall(function()
 	local rc = Instance.new('Part'):GetRenderCFrame()
@@ -630,6 +634,8 @@ local function CreateCamera()
 				OnKeyUp(input, processed)
 			end
 		end)
+				
+		this.RotateInput = Vector2.new()
 	end
 
 	function this:SetEnabled(newState)
@@ -653,7 +659,7 @@ local function CreateCamera()
 		end)
 
 		local function OnCharacterAdded(newCharacter)
-			this:ZoomCamera(10)
+			this:ZoomCamera(12.5)
 			local humanoid = findPlayerHumanoid(player)
 			local start = tick()
 			while tick() - start < 0.3 and (humanoid == nil or humanoid.Torso == nil) do
@@ -662,7 +668,7 @@ local function CreateCamera()
 			end
 			local function setLookBehindChatacter()
 				if humanoid and humanoid.Torso and player.Character == newCharacter then
-					local newDesiredLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.7,0)).unit
+					local newDesiredLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.23,0)).unit
 					local horizontalShift = findAngleBetweenXZVectors(newDesiredLook, this:GetCameraLook())
 					local vertShift = math.asin(this:GetCameraLook().y) - math.asin(newDesiredLook.y)
 					if not IsFinite(horizontalShift) then
@@ -672,6 +678,7 @@ local function CreateCamera()
 						vertShift = 0
 					end
 					this.RotateInput = Vector2.new(horizontalShift, vertShift)
+					
 					-- reset old camera info so follow cam doesn't rotate us
 					this.LastCameraTransform = nil
 				end
@@ -681,8 +688,9 @@ local function CreateCamera()
 		end
 
 		player.CharacterAdded:connect(function(character)
-			if this.Enabled then
+			if this.Enabled or SetCameraOnSpawn then
 				OnCharacterAdded(character)
+				SetCameraOnSpawn = false
 			end
 		end)
 		if player.Character then
