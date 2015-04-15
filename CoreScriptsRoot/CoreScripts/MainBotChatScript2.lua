@@ -11,6 +11,7 @@ local PROMPT_SIZE = Vector2.new(80, 90)
 
 local WIDTH_BONUS = (STYLE_PADDING * 2) - BAR_THICKNESS
 local XPOS_OFFSET = -(STYLE_PADDING - BAR_THICKNESS)
+local YPOS_OFFSET = -math.floor(STYLE_PADDING / 2)
 
 
 function waitForProperty(instance, name)
@@ -73,9 +74,9 @@ function createChatNotificationGui()
 	chatNotificationGui = Instance.new("BillboardGui")
 	chatNotificationGui.Name = "ChatNotificationGui"
 	chatNotificationGui.ExtentsOffset = Vector3.new(0,1,0)
-	chatNotificationGui.Size = UDim2.new(PROMPT_SIZE.X / 21, 0, PROMPT_SIZE.Y / 21, 0)
+	chatNotificationGui.Size = UDim2.new(PROMPT_SIZE.X / 31.5, 0, PROMPT_SIZE.Y / 31.5, 0)
 	chatNotificationGui.SizeOffset = Vector2.new(0,0)
-	chatNotificationGui.StudsOffset = Vector3.new(0, 4.3, 0)
+	chatNotificationGui.StudsOffset = Vector3.new(0, 3.7, 0)
 	chatNotificationGui.Enabled = true
 	chatNotificationGui.RobloxLocked = true
 	chatNotificationGui.Active = true
@@ -147,7 +148,9 @@ end
 function createMessageDialog()
 	messageDialog = Instance.new("Frame");
 	messageDialog.Name = "DialogScriptMessage"
-	messageDialog.Style = Enum.FrameStyle.RobloxRound
+	messageDialog.Style = Enum.FrameStyle.Custom
+	messageDialog.BackgroundTransparency = 0.5
+	messageDialog.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255)
 	messageDialog.Visible = false
 
 	local text = Instance.new("TextLabel")
@@ -250,7 +253,7 @@ end
 
 function newChoice()
 	local frame = Instance.new("TextButton")
-	frame.BackgroundColor3 = Color3.new(1, 1, 1)
+	frame.BackgroundColor3 = Color3.new(227/255, 227/255, 227/255)
 	frame.BackgroundTransparency = 1
 	frame.AutoButtonColor = false
 	frame.BorderSizePixel = 0
@@ -263,7 +266,6 @@ function newChoice()
 	local prompt = Instance.new("TextLabel")
 	prompt.Name = "UserPrompt"
 	prompt.BackgroundTransparency = 1
-	prompt.TextColor3 = Color3.new(75/255, 75/255, 75/255)
 	prompt.Font = Enum.Font.SourceSans
 	prompt.FontSize = Enum.FontSize.Size24
 	prompt.Position = UDim2.new(0, 28, 0, 0)
@@ -336,7 +338,7 @@ function presentDialogChoices(talkingPart, dialogChoices)
 			choices[pos].UserPrompt.Text = obj.UserDialog
 			local height = (math.ceil(choices[pos].UserPrompt.TextBounds.Y / TEXT_HEIGHT) * TEXT_HEIGHT) + CHOICE_PADDING
 
-			choices[pos].Position = UDim2.new(0, XPOS_OFFSET, 0, yPosition)
+			choices[pos].Position = UDim2.new(0, XPOS_OFFSET, 0, YPOS_OFFSET + yPosition)
 			choices[pos].Size = UDim2.new(1, WIDTH_BONUS, 0, height)
 			choices[pos].Visible = true
 
@@ -347,9 +349,9 @@ function presentDialogChoices(talkingPart, dialogChoices)
 		end
 	end
 
-	lastChoice.Position = UDim2.new(0, XPOS_OFFSET, 0, yPosition)
+	lastChoice.Position = UDim2.new(0, XPOS_OFFSET, 0, YPOS_OFFSET + yPosition)
 
-	mainFrame.Size = UDim2.new(0, 350, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2))
+	mainFrame.Size = UDim2.new(0, 350, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
 	mainFrame.Position = UDim2.new(0,20,1.0, -mainFrame.Size.Y.Offset-20)
 	styleMainFrame(currentTone())
 	mainFrame.Visible = true
