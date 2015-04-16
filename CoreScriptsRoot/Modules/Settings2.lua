@@ -1293,18 +1293,24 @@ local function showSettingsRootMenu()
 	SettingsShowSignal:fire(true)
 end
 
-local function closeSettingsMenu()
+local function turnOffSettingsMenu()
+	SettingsShield.Active = false
+	SettingsShield.Visible = false
+	SettingsButton.Active = true
+	SettingClipFrame.Position = CLOSE_MENU_POS
+	--
+	emptyMenuStack()
+	IsMenuClosing = false
+	pcall(function() game:GetService("UserInputService").OverrideMouseIconEnabled = false end)
+end
+
+local function closeSettingsMenu(forceClose)
 	IsMenuClosing = true
-	SettingClipFrame:TweenPosition(CLOSE_MENU_POS, Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true,
-	function()
-		SettingsShield.Active = false
-		SettingsShield.Visible = false
-		SettingsButton.Active = true
-		--
-		emptyMenuStack()
-		IsMenuClosing = false
-		pcall(function() game:GetService("UserInputService").OverrideMouseIconEnabled = false end)
-	end)
+	if forceClose then
+		turnOffSettingsMenu()
+	else
+		SettingClipFrame:TweenPosition(CLOSE_MENU_POS, Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true, turnOffSettingsMenu)
+	end
 	SettingsShowSignal:fire(false)
 end
 
@@ -1494,13 +1500,15 @@ do
 		end)
 		LeaveGameButton.MouseButton1Click:connect(function() pushMenu(LeaveGameMenuFrame) end)
 		if ScreenshotButton then
-			ScreenshotButton.MouseButton1Click:connect(closeSettingsMenu)
+			ScreenshotButton.MouseButton1Click:connect(function()
+				closeSettingsMenu(true)
+			end)
 		end
 
 		--[[ Video Recording ]]--
 		if RecordVideoButton then
 			RecordVideoButton.MouseButton1Click:connect(function()
-				closeSettingsMenu()
+				closeSettingsMenu(true)
 			end)
 		end
 		local gameOptions = settings():FindFirstChild("Game Options")
@@ -1598,9 +1606,9 @@ local moduleApiTable = {}
 
 function moduleApiTable:ToggleVisibility(visible)
 	if visible then
-		showSettingsRootMenu();
+		showSettingsRootMenu()
 	else
-		closeSettingsMenu();
+		closeSettingsMenu()
 	end
 end
 
