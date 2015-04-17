@@ -36,6 +36,9 @@ local useNewBackpack = (backPackSuccess and backpackFlagValue)
 
 local playerListSuccess, playerListFlagValue = pcall(function() return settings():GetFFlag("NewPlayerListScript") end)
 local useNewPlayerlist = (playerListSuccess and playerListFlagValue)
+
+local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("TopbarGamepadSupport") end)
+local useGamepadSupport = (gamepadSupportSuccess and gamepadSupportFlagValue)
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -142,6 +145,115 @@ local function CreateTopBar()
 		Parent = topbarContainer;
 	};
 
+	local gamepadSettingsFrame = nil
+
+	local function createGamepadControl()
+		gamepadSettingsFrame = Util.Create'Frame'{
+			Name = "GamepadSettingsFrame";
+			BorderSizePixel = 2;
+			Position = UDim2.new(0.5,0,0.5,0);
+			BackgroundTransparency = 1;
+			BorderSizePixel = 0;
+			Size = UDim2.new(0,1,0,1);
+			Visible = false;
+			Parent = GuiRoot;
+		}
+
+		local backpackGamepad = Util.Create'TextButton'{
+			Name = "Backpack";
+			Position = UDim2.new(0,100,0,-50);
+			Size = UDim2.new(0,100,0,100);
+			Font = Enum.Font.SourceSansBold;
+			FontSize = Enum.FontSize.Size24;
+			BackgroundColor3 = Color3.new(1,1,1);
+			Text = "Backpack";
+			Parent = gamepadSettingsFrame;
+		}
+		local settingsGamepad = Util.Create'TextButton'{
+			Name = "Settings";
+			Position = UDim2.new(0,-50,0,-200);
+			Size = UDim2.new(0,100,0,100);
+			Font = Enum.Font.SourceSansBold;
+			FontSize = Enum.FontSize.Size24;
+			BackgroundColor3 = Color3.new(1,1,1);
+			Text = "Settings";
+			Parent = gamepadSettingsFrame;
+		}
+		local playerListGamepad = Util.Create'TextButton'{
+			Name = "PlayerList";
+			Position = UDim2.new(0,-200,0,-50);
+			Size = UDim2.new(0,100,0,100);
+			Font = Enum.Font.SourceSansBold;
+			FontSize = Enum.FontSize.Size24;
+			BackgroundColor3 = Color3.new(1,1,1);
+			Text = "Player List";
+			Parent = gamepadSettingsFrame;
+		}
+		local chatGamepad = Util.Create'TextButton'{
+			Name = "Chat";
+			Position = UDim2.new(0,-50,0,100);
+			Size = UDim2.new(0,100,0,100);
+			Font = Enum.Font.SourceSansBold;
+			FontSize = Enum.FontSize.Size24;
+			BackgroundColor3 = Color3.new(1,1,1);
+			Text = "Chat";
+			Parent = gamepadSettingsFrame;
+		}
+		--todo: notications!
+		
+		local closeHintImage = Util.Create'ImageLabel'{
+			Name = "CloseHint";
+			Position = UDim2.new(0,200,0,200);
+			Size = UDim2.new(0,40,0,40);
+			BackgroundTransparency = 1;
+			Image = "http://www.roblox.com/asset?id=238273272";
+			Parent = gamepadSettingsFrame;
+		}
+		local closeHintText = Util.Create'TextLabel'{
+			Name = "closeHintText";
+			Position = UDim2.new(1,0,0,0);
+			Size = UDim2.new(0,80,0,40);
+			Font = Enum.Font.SourceSans;
+			FontSize = Enum.FontSize.Size18;
+			BackgroundTransparency = 1;
+			Text = "   Close";
+			TextColor3 = Color3.new(1,1,1);
+			TextStrokeTransparency = 0;
+			TextXAlignment = Enum.TextXAlignment.Left;
+			Parent = closeHintImage;
+		}
+
+		game.GuiService:AddSelectionParent("CoreUIMainGroup", gamepadSettingsFrame)
+
+		settingsGamepad.MouseButton1Click:connect(function()
+			gamepadSettingsFrame.Visible = false
+			toggleSettings()
+		end)
+		backpackGamepad.MouseButton1Click:connect(function()
+			gamepadSettingsFrame.Visible = false
+			toggleBackpack()
+		end)
+		playerListGamepad.MouseButton1Click:connect(function()
+			gamepadSettingsFrame.Visible = false
+			local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
+			PlayerlistModule.ToggleVisibility()
+		end)
+		chatGamepad.MouseButton1Click:connect(function()
+			gamepadSettingsFrame.Visible = false
+			toggleChat()
+		end)
+	end
+
+	if InputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
+		createGamepadControl()
+	else
+		InputService.GamepadConnected:connect(function(gamepadEnum) 
+			if gamepadEnum == Enum.UserInputType.Gamepad1 then
+				createGamepadControl()
+			end
+		end)
+	end
+
 	local function UpdateBackgroundTransparency()
 		local playerGui = Player:FindFirstChild('PlayerGui')
 		if playerGui then
@@ -154,6 +266,10 @@ local function CreateTopBar()
 
 	function this:GetInstance()
 		return topbarContainer
+	end
+
+	function this:GetGamepadSettingsRadial()
+		return gamepadSettingsFrame
 	end
 
 	function this:SetTopbarDisplayMode(opaque)
@@ -637,7 +753,7 @@ local function CreateSettingsIcon()
 		end
 	end
 
-	settingsIconButton.MouseButton1Click:connect(function()
+	function toggleSettings()
 		if settingsActive == false then
 			settingsActive = true
 		else
@@ -646,7 +762,11 @@ local function CreateSettingsIcon()
 
 		MenuModule:ToggleVisibility(settingsActive)
 		UpdateHamburgerIcon()
-	end)
+
+		return settingsActive
+	end
+
+	settingsIconButton.MouseButton1Click:connect(function() toggleSettings() end)
 
 	MenuModule.SettingsShowSignal:connect(function(active)
 		settingsActive = active
@@ -746,7 +866,7 @@ local function CreateChatIcon()
 		OnUnreadMessagesChanged(ChatModule:GetMessageCount())
 	end
 
-	chatIconButton.MouseButton1Click:connect(function()
+	function toggleChat()
 		if Util.IsTouchDevice() then
 			if debounce + DEBOUNCE_TIME < tick() then
 				ChatModule:FocusChatBar()
@@ -754,6 +874,10 @@ local function CreateChatIcon()
 		else
 			ChatModule:ToggleVisibility()
 		end
+	end
+
+	chatIconButton.MouseButton1Click:connect(function()
+		toggleChat()
 	end)
 
 	if ChatModule.MessagesChanged then
@@ -815,6 +939,10 @@ local function CreateBackpackIcon()
 	end
 
 	BackpackModule.StateChanged.Event:connect(onBackpackStateChanged)
+
+	function toggleBackpack()
+		BackpackModule:OpenClose()
+	end
 
 	backpackIconButton.MouseButton1Click:connect(function()
 		BackpackModule:OpenClose()
@@ -1001,6 +1129,8 @@ local function CheckShiftLockMode()
 	end
 end
 
+
+
 local function OnGameSettingsChanged(property)
 	if property == 'ControlMode' or property == 'ComputerMovementMode' then
 		CheckShiftLockMode()
@@ -1011,6 +1141,144 @@ local function OnPlayerChanged(property)
 	if property == 'DevEnableMouseLock' or property == 'DevComputerMovementMode' then
 		CheckShiftLockMode()
 	end
+end
+
+
+
+local function isCoreGuiDisabled()
+	for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do
+		if StarterGui:GetCoreGuiEnabled(enumItem) then
+			return false
+		end
+	end
+
+	return true
+end
+
+local function setupGamepadControls()
+
+	local freezeControllerActionName = "doNothingAction"
+	local radialSelectActionName = "topBarRadialSelectAction"
+	local radialCancelActionName = "topbarRadialSelectCancel"
+
+	local noOptFunc = function() end
+
+	function unbindAllRadialActions()
+		game.ContextActionService:UnbindCoreAction(radialSelectActionName)
+		game.ContextActionService:UnbindCoreAction(radialCancelActionName)
+		game.ContextActionService:UnbindCoreAction(freezeControllerActionName)
+	end
+
+	local radialSelect = function(name, state, input)
+		local inputVector = Vector2.new(0,0)
+		local radial = TopBar:GetGamepadSettingsRadial()
+
+		if input.KeyCode == Enum.KeyCode.Thumbstick1 then
+			inputVector = Vector2.new(input.Position.x, -input.Position.y)
+		elseif state == Enum.UserInputState.Begin then
+			if input.KeyCode == Enum.KeyCode.DPadLeft then
+				inputVector = Vector2.new(-1,0)
+			elseif input.KeyCode == Enum.KeyCode.DPadRight then
+				inputVector = Vector2.new(1,0)
+			elseif input.KeyCode == Enum.KeyCode.DPadUp then
+				inputVector = Vector2.new(0,-1)
+			elseif input.KeyCode == Enum.KeyCode.DPadDown then
+				inputVector = Vector2.new(0,1)
+			end
+		end
+
+		local selectedObject = nil
+
+		-- get input direction gui
+		if inputVector.magnitude > 0.5 then
+			if math.abs(inputVector.x) > math.abs(inputVector.y) then
+				if inputVector.x < 0 then
+					selectedObject = radial.PlayerList
+				else
+					selectedObject = radial.Backpack
+				end
+			else
+				if inputVector.y < 0 then
+					selectedObject = radial.Settings
+				else
+					selectedObject = radial.Chat
+				end
+			end
+
+			GuiService.SelectedObject = selectedObject
+		end
+	end
+
+	local radialSelectCancel = function(name, state, input)
+		if state == Enum.UserInputState.Begin then
+			local radial = TopBar:GetGamepadSettingsRadial()
+			if radial.Visible then
+				toggleCoreGuiRadial()
+			end
+		end
+	end
+
+	function toggleCoreGuiRadial()
+		local radial = TopBar:GetGamepadSettingsRadial()
+		radial.Visible = not radial.Visible
+
+		if radial.Visible then
+			game.GuiService.SelectedObject = nil
+
+			game.ContextActionService:BindCoreAction(freezeControllerActionName, noOptFunc, false, Enum.KeyCode.Thumbstick2, 
+					Enum.KeyCode.ButtonA,Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonSelect,
+					Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, 
+					Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonR3)
+
+			game.ContextActionService:BindCoreAction(radialCancelActionName, radialSelectCancel, false, Enum.KeyCode.ButtonB)
+			game.ContextActionService:BindCoreAction(radialSelectActionName, radialSelect, false, Enum.KeyCode.Thumbstick1, 
+				Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
+		else
+			unbindAllRadialActions()
+		end
+
+		return radial.Visible
+	end
+
+
+	local doGamepadMenuButton = function(name, state, input)
+		if input.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
+		if state ~= Enum.UserInputState.Begin then return end
+
+		if isCoreGuiDisabled() then
+
+			game.ContextActionService:BindCoreAction(freezeControllerActionName, noOptFunc, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2, 
+					Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonSelect,
+					Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonR3,
+					Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
+
+			local shouldKillGamepadInput = toggleSettings()
+			if not shouldKillGamepadInput then
+				unbindAllRadialActions()
+			end
+		else
+			local radialIsShown = toggleCoreGuiRadial()
+			if not radialIsShown then
+				unbindAllRadialActions()
+			end
+		end
+	end
+
+	local radial = TopBar:GetGamepadSettingsRadial()
+	while not radial do
+		wait()
+		radial = TopBar:GetGamepadSettingsRadial()
+	end
+
+	radial.Changed:connect(function(prop)
+		if prop == "Visible" then
+			if not radial.Visible then
+				unbindAllRadialActions()
+			end
+		end
+	end)
+
+	game:GetService("ContextActionService"):BindCoreAction("RBXToggleMenuAction", doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
 end
 
 
@@ -1054,7 +1322,10 @@ GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" then RobloxClie
 RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize)
 
 
-
+-- hook up gamepad stuff
+if useGamepadSupport then
+	setupGamepadControls()
+end
 
 
 

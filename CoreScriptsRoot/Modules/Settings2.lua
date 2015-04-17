@@ -44,6 +44,9 @@ local isTopBar = topbarSuccess and topbarFlagValue == true
 local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
 local isLuaControls = luaControlsSuccess and luaControlsFlagValue == true
 
+local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("TopbarGamepadSupport") end)
+local isGamepadSupport = gamepadSupportSuccess and gamepadSupportFlagValue == true
+
 --[[ Parent Frames ]]--
 -- TODO: Remove all references to engine created gui
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
@@ -202,6 +205,8 @@ local function createMenuFrame(name, position)
 	frame.Position = position
 	frame.BackgroundTransparency = 1
 	frame.ZIndex = BASE_Z_INDEX + 4
+
+	GuiService:AddSelectionParent(name .. "Group", frame)
 
 	return frame
 end
@@ -1240,6 +1245,25 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 		LeaveCancelButton.Parent = LeaveGameMenuFrame
 
 --[[ Menu Functions ]]--
+local function setGamepadButton(currentMenu)
+	if not isGamepadSupport then return end
+ 	if not UserInputService.GamepadEnabled then return end 
+ 	
+ 	if currentMenu == LeaveGameMenuFrame then 
+ 		GuiService.SelectedObject = LeaveGameMenuFrame.LeaveConfirmButton 
+	elseif currentMenu == RootMenuFrame then 
+		GuiService.SelectedObject = ResumeGameButton 
+	elseif currentMenu == ResetCharacterFrame then 
+		GuiService.SelectedObject = ConfirmResetButton 
+	elseif currentMenu == GameSettingsMenuFrame then 
+		if GameSettingsMenuFrame.ShiftLockCheckBox and GameSettingsMenuFrame.ShiftLockCheckBox.Visible then 
+			GuiService.SelectedObject = GameSettingsMenuFrame.ShiftLockCheckBox 
+		else 
+			GuiService.SelectedObject = CameraModeDropDown.CurrentSelectionButton 
+		end 
+	end 
+ end 
+
 local function pushMenu(nextMenu)
 	if IsMenuClosing then return end
 	local prevMenu = MenuStack[#MenuStack]
@@ -1251,6 +1275,8 @@ local function pushMenu(nextMenu)
 	if #MenuStack > 1 then
 		nextMenu:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true)
 	end
+
+	setGamepadButton(nextMenu)
 end
 
 local function popMenu()
@@ -1267,6 +1293,7 @@ local function popMenu()
 	end
 	if prevMenu then
 		prevMenu:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true)
+		setGamepadButton(prevMenu)
 	end
 end
 
@@ -1281,6 +1308,18 @@ local function emptyMenuStack()
 	end
 end
 
+local backButtonFunc = function(actionName, state, input)
+	if state ~= Enum.UserInputState.Begin then return end
+
+	if #MenuStack == 1 then
+		closeSettingsMenu()
+	else
+		popMenu()
+	end
+end
+
+local noOptFunc = function() end
+
 local function showSettingsRootMenu()
 	SettingsButton.Active = false
 	pushMenu(RootMenuFrame)
@@ -1291,6 +1330,16 @@ local function showSettingsRootMenu()
 	--
 	SettingClipFrame:TweenPosition(SHOW_MENU_POS, Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true)
 	SettingsShowSignal:fire(true)
+
+	if not isGamepadSupport then return end
+	if UserInputService.GamepadEnabled then
+		game.ContextActionService:BindCoreAction("DontMove", noOptFunc, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2, 
+				Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonSelect,
+				Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonR3,
+				Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
+
+		ContextActionService:BindCoreAction("backbutton", backButtonFunc, false, Enum.KeyCode.ButtonB)
+	end
 end
 
 local function turnOffSettingsMenu()
@@ -1311,6 +1360,13 @@ local function closeSettingsMenu(forceClose)
 	else
 		SettingClipFrame:TweenPosition(CLOSE_MENU_POS, Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true, turnOffSettingsMenu)
 	end
+
+	if UserInputService.GamepadEnabled and isGamepadSupport then
+		GuiService.SelectedObject = nil
+		ContextActionService:UnbindCoreAction("backbutton")
+		ContextActionService:UnbindCoreAction("DontMove")
+	end
+
 	SettingsShowSignal:fire(false)
 end
 
@@ -1574,7 +1630,7 @@ do
 
 		-- Dev Console Connections
 		HelpConsoleButton.MouseButton1Click:connect(toggleDevConsole)
-		ContextActionService:BindActionToInputTypes("Open Dev Console", toggleDevConsole, false, Enum.KeyCode.F9)
+		ContextActionService:BindCoreAction("Open Dev Console", toggleDevConsole, false, Enum.KeyCode.F9)
 	end
 
 	LocalPlayer.Changed:connect(function(property)
