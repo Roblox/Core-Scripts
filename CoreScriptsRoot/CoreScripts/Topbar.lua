@@ -168,6 +168,7 @@ local function CreateTopBar()
 		pcall(function()
 			playerGuiChangedConn = playerGui.TopbarTransparencyChangedSignal:connect(UpdateBackgroundTransparency)
 		end)
+		UpdateBackgroundTransparency()
 	end)
 
 	return this
