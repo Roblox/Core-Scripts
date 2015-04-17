@@ -25,6 +25,12 @@ local fadingBackground = false
 local destroyedLoadingGui = false
 local hasReplicatedFirstElements = false
 
+-- Fast Flags
+local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
+local useTopBar = (topbarSuccess and topbarFlagValue == true)
+local bgFrameOffset = useTopBar and 36 or 20
+local offsetPosition = useTopBar and UDim2.new(0, 0, 0, -36) or UDim2.new(0, 0, 0, 0)
+
 --
 -- Utility functions
 local create = function(className, defaultParent)
@@ -107,7 +113,8 @@ function MainGui:GenerateMain()
 	local mainBackgroundContainer = create 'Frame' {
 		Name = 'BlackFrame',
 		BackgroundColor3 = COLORS.BLACK,
-		Size = UDim2.new(1, 0, 1, 0),
+		Size = UDim2.new(1, 0, 1, bgFrameOffset),
+		Position = offsetPosition,
 		Active = true,
 
 		create 'ImageButton' {
