@@ -88,6 +88,11 @@ if useTopBar and (luaVehicleHudSuccess and luaVehicleHudEnabled == true) then
 	scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", screenGui)
 end
 
+local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("TopbarGamepadSupport") end)
+if gamepadSupportSuccess and gamepadSupportFlagValue then
+	scriptContext:AddCoreScriptLocal("CoreScripts/GamepadMenu", screenGui)
+end
+
 if touchEnabled then -- touch devices don't use same control frame
 	-- only used for touch device button generation
 	scriptContext:AddCoreScriptLocal("CoreScripts/ContextActionTouch", screenGui)
