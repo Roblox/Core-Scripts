@@ -244,6 +244,10 @@ local function CreateTopBar()
 		end)
 	end
 
+	function this:GetGamepadSettingsRadial()
+		return gamepadSettingsFrame
+	end
+
 	if InputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
 		createGamepadControl()
 	else
@@ -266,10 +270,6 @@ local function CreateTopBar()
 
 	function this:GetInstance()
 		return topbarContainer
-	end
-
-	function this:GetGamepadSettingsRadial()
-		return gamepadSettingsFrame
 	end
 
 	function this:SetTopbarDisplayMode(opaque)
