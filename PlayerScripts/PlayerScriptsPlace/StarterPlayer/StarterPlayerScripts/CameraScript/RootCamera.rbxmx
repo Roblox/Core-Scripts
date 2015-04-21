@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXd7bd3683934543a3ad56e7f332167461">
+	<Item class="ModuleScript" referent="RBX5B8543649EDF481C8934D02BAAC85717">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">RootCamera</string>
@@ -596,12 +596,6 @@ local function CreateCamera()
 				OnTouchBegan(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.MouseButton2 and not IsTouch then
 				OnMouse2Down(input, processed)
-			elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.ButtonR3 then
-				if this.currentZoom > 0.5 then
-					this:ZoomCamera(0)
-				else
-					this:ZoomCamera(10)
-				end
 			end
 			-- Keyboard
 			if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -616,8 +610,6 @@ local function CreateCamera()
 				OnMouseMoved(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.MouseWheel and not IsTouch then
 				OnMouseWheel(input, processed)
-			elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
-				this.GamepadPanningCamera = Vector2.new(input.Position.X, -input.Position.Y)
 			end
 		end)
 
@@ -626,16 +618,44 @@ local function CreateCamera()
 				OnTouchEnded(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.MouseButton2 and not IsTouch then
 				OnMouse2Up(input, processed)
-			elseif input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
-				this.GamepadPanningCamera = Vector2.new(0,0)
 			end
 			-- Keyboard
 			if input.UserInputType == Enum.UserInputType.Keyboard then
 				OnKeyUp(input, processed)
 			end
 		end)
-				
+		
 		this.RotateInput = Vector2.new()
+		
+		local getGamepadPan = function(name, state, input)
+			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
+				
+				if state == Enum.UserInputState.Cancel then
+					this.GamepadPanningCamera = Vector2.new(0,0)
+					return
+				end
+				
+				local inputVector = Vector2.new(input.Position.X, -input.Position.Y)
+				if inputVector.magnitude > 0.1 then
+					this.GamepadPanningCamera = Vector2.new(input.Position.X, -input.Position.Y)
+				else
+					this.GamepadPanningCamera = Vector2.new(0,0)
+				end
+			end
+		end
+		
+		local doGamepadZoom = function(name, state, input)
+			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.ButtonR3 and state == Enum.UserInputState.Begin then
+				if this.currentZoom > 0.5 then
+					this:ZoomCamera(0)
+				else
+					this:ZoomCamera(10)
+				end
+			end
+		end
+		
+		game.ContextActionService:BindAction("RootCamGamepadPan", getGamepadPan, false, Enum.KeyCode.Thumbstick2)
+		game.ContextActionService:BindAction("RootCamGamepadZoom", doGamepadZoom, false, Enum.KeyCode.ButtonR3)
 	end
 
 	function this:SetEnabled(newState)
@@ -678,7 +698,7 @@ local function CreateCamera()
 						vertShift = 0
 					end
 					this.RotateInput = Vector2.new(horizontalShift, vertShift)
-					
+
 					-- reset old camera info so follow cam doesn't rotate us
 					this.LastCameraTransform = nil
 				end
