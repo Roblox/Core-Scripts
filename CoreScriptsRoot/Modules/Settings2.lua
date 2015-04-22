@@ -1,7 +1,7 @@
 --[[
-		Filename: SettingNewControlsOnly.lua
+		Filename: Settings2.lua
 		Written by: jmargh
-		Version 1.3
+		Version 1.4
 		Description: Implements the in game settings menu with the new control schemes
 --]]
 
@@ -35,8 +35,6 @@ IsMacClient = isMacSuccess and isMac
 local IsTouchClient = false
 local isTouchSuccess, isTouch = pcall(function() return UserInputService.TouchEnabled end)
 IsTouchClient = isTouchSuccess and isTouch
-
-local IsStudioMode = GameSettings:InStudioMode()
 
 --[[ Fast Flags ]]--
 local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
@@ -652,6 +650,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 			graphicsSlider.Bar.Fill.ZIndex = BASE_Z_INDEX + 5
 			graphicsSlider.FillLeft.ZIndex = BASE_Z_INDEX + 5
 			graphicsSlider.Parent = GameSettingsMenuFrame
+			-- TODO: We don't save the previous non-auto setting. So what should this default to?
 			graphicsLevel.Value = math.floor((settings().Rendering:GetMaxQualityLevel() - 1)/2)
 
 			local graphicsMinText = createTextLabel(UDim2.new(0.5, -164, 0, CurrentYOffset + 37), "Min", "GraphicsMinText")
@@ -662,11 +661,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 			graphicsMaxText.Parent = GameSettingsMenuFrame
 
 			local isAutoGraphics = true
-			if not IsStudioMode then
-				isAutoGraphics = GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic
-			else
-				settings().Rendering.EnableFRM = false
-			end
+			isAutoGraphics = GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic
 
 			local function setGraphicsQualityLevel(newLevel)
 				local percentage = newLevel/GRAPHICS_QUALITY_LEVELS
@@ -690,7 +685,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 					graphicsSlider.BarLeft.ZIndex = 1
 					graphicsSlider.BarRight.ZIndex = 1
 					graphicsSlider.Bar.Fill.ZIndex = 1
-					graphicsSlider.Bar.Slider.ZIndex = 1
+					graphicsSlider.Bar.Slider.ZIndex = 2
 					graphicsSlider.Bar.Slider.Active = false
 					graphicsSlider.FillLeft.ZIndex = 1
 					graphicsMinText.ZIndex = 1
@@ -718,24 +713,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 				setGraphicsQualityLevel(level)
 			end
 
-			local function setStudioGraphicsMode(isEnabled)
-				settings().Rendering.EnableFRM = isEnabled
-				if isEnabled then
-					isAutoGraphics = GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic
-					if isAutoGraphics then
-						setGraphicsToAtuo()
-					else
-						local level = tostring(GameSettings.SavedQualityLevel)
-						if GRAPHICS_QUALITY_TO_INT[level] then
-							setGraphicsToManual(GRAPHICS_QUALITY_TO_INT[level])
-						end
-					end
-				end
-			end
-
 			local function onGraphicsCheckBoxPressed()
-				if IsStudioMode then return end
-				--
 				isAutoGraphics = not isAutoGraphics
 				setGraphicsGuiZIndex()
 				if isAutoGraphics then
@@ -772,55 +750,9 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 				end
 			end)
 
-			local wasManualGraphics = settings().Rendering.QualityLevel ~= Enum.QualityLevel.Automatic
-			GameSettings.StudioModeChanged:connect(function(isStudioMode)
-				IsStudioMode = isStudioMode
-				if IsStudioMode then
-					wasManualGraphics = settings().Rendering.QualityLevel ~= Enum.QualityLevel.Automatic
-					isAutoGraphics = true
-					setGraphicsToAtuo()
-					qualityText.ZIndex = 1
-					qualityAutoText.ZIndex = 1
-					qualityAutoCheckBox.ZIndex = 1
-				else
-					isAutoGraphics = not wasManualGraphics
-					if wasManualGraphics then
-						setGraphicsToManual()
-					end
-					qualityText.ZIndex = BASE_Z_INDEX + 4
-					qualityAutoText.ZIndex = BASE_Z_INDEX + 4
-					qualityAutoCheckBox.ZIndex = BASE_Z_INDEX + 4
-				end
-				setGraphicsGuiZIndex()
-			end)
-
-			-- set up for studio mode, NOTE: These events will not fire on the client, but will in play solo (F5)
-			Players.PlayerAdded:connect(function(player)
-				if player == LocalPlayer and IsStudioMode then
-					setStudioGraphicsMode(true)
-				end
-			end)
-			Players.PlayerRemoving:connect(function(player)
-				if player == LocalPlayer and IsStudioMode then
-					setStudioGraphicsMode(false)
-				end
-			end)
-
 			-- initial load setup
 			setGraphicsGuiZIndex()
-			if IsStudioMode then
-				if Players.LocalPlayer then
-					setStudioGraphicsMode(true)
-				else
-					setStudioGraphicsMode(false)
-				end
-				setGraphicsGuiZIndex()
-				qualityAutoCheckBox.Text = isAutoGraphics and "X" or ""
-				qualityAutoCheckBox.Active = false
-				qualityText.ZIndex = 1
-				qualityAutoText.ZIndex = 1
-				qualityAutoCheckBox.ZIndex = 1
-			elseif GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic then
+			if GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic then
 				settings().Rendering.EnableFRM = true
 				setGraphicsToAtuo()
 			else
