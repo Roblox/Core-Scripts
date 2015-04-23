@@ -507,6 +507,7 @@ function initializeDeveloperConsole()
 		Position = UDim2.new(0, 0, 0, 0);
 		Size = UDim2.new(1, -23, 1, 0);
 		Text = "";
+		Modal = true;	-- make modal to unlock mouse in first-person/shift-lock
 	}
 
 	Create'TextLabel'{

@@ -1569,7 +1569,19 @@ do
 
 		-- Dev Console Connections
 		HelpConsoleButton.MouseButton1Click:connect(toggleDevConsole)
-		pcall(function() ContextActionService:BindCoreAction("Open Dev Console", toggleDevConsole, false, Enum.KeyCode.F9) end)
+		local success = pcall(function() ContextActionService:BindCoreAction("Open Dev Console", toggleDevConsole, false, Enum.KeyCode.F9) end)
+		if not success then
+			UserInputService.InputBegan:connect(function(inputObject)
+				if inputObject.KeyCode == Enum.KeyCode.F9 then
+					toggleDevConsole("Open Dev Console", Enum.UserInputState.Begin, inputObject)
+				end
+			end)
+			UserInputService.InputEnded:connect(function(inputObject)
+				if inputObject.KeyCode == Enum.KeyCode.F9 then
+					toggleDevConsole("Open Dev Console", Enum.UserInputState.End, inputObject)
+				end
+			end)
+		end
 	end
 
 	LocalPlayer.Changed:connect(function(property)
