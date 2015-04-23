@@ -394,6 +394,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 		local ConfirmResetButton = createTextButton(MENU_BTN_SML, UDim2.new(0.5, 2, 0, CurrentYOffset),
 			"Confirm", Enum.FontSize.Size24, Enum.ButtonStyle.RobloxRoundDefaultButton)
 		ConfirmResetButton.Name = "ConfirmResetButton"
+		ConfirmResetButton.Modal = true
 		ConfirmResetButton.Parent = ResetCharacterFrame
 
 		local CancelResetButton = createTextButton(MENU_BTN_SML, UDim2.new(0.5, -170, 0, CurrentYOffset),
@@ -618,6 +619,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 			fullScreenTextCheckBox.Name = "FullScreenTextCheckBox"
 			fullScreenTextCheckBox.ZIndex = BASE_Z_INDEX + 4
 			fullScreenTextCheckBox.Parent = GameSettingsMenuFrame
+			fullScreenTextCheckBox.Modal = true
 			fullScreenTextCheckBox:SetVerb("ToggleFullScreen")
 
 			GameSettings.FullscreenChanged:connect(function(isFullscreen)
@@ -807,6 +809,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 			"Back", Enum.FontSize.Size24, Enum.ButtonStyle.RobloxRoundDefaultButton)
 		GameSettingsBackButton.Name = "GameSettingsBackButton"
 		GameSettingsBackButton.Parent = GameSettingsMenuFrame
+		GameSettingsBackButton.Modal = true
 
 		--[[ Game Settings Menu Drop Down Connections ]]--
 		if CameraModeDropDown then
@@ -906,6 +909,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 		local HelpMenuBackButton = createTextButton(MENU_BTN_SML, UDim2.new(0.5, -84, 0, CurrentYOffset),
 			"Back", Enum.FontSize.Size24, Enum.ButtonStyle.RobloxRoundDefaultButton)
 		HelpMenuBackButton.Name = "HelpMenuBackButton"
+		HelpMenuBackButton.Modal = true
 		HelpMenuBackButton.Parent = HelpMenuFrame
 
 --[[ Report Abuse Menu ]]--
@@ -1002,6 +1006,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 			"Cancel", Enum.FontSize.Size24, Enum.ButtonStyle.RobloxRoundButton)
 		ReportCancelButton.Name = "ReportSubmitButton"
 		ReportCancelButton.Parent = ReportAbuseFrame
+		ReportCancelButton.Modal = true
 
 		local ReportPlayerDropDown = nil
 		local ReportTypeOfAbuseDropDown = nil
@@ -1169,6 +1174,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 			"Confirm", Enum.FontSize.Size24, Enum.ButtonStyle.RobloxRoundDefaultButton)
 		LeaveConfirmButton.Name = "LeaveConfirmButton"
 		LeaveConfirmButton.Parent = LeaveGameMenuFrame
+		LeaveConfirmButton.Modal = true
 		LeaveConfirmButton:SetVerb("Exit")
 
 		local LeaveCancelButton = createTextButton(MENU_BTN_SML, UDim2.new(0.5, -170, 0, CurrentYOffset),
