@@ -478,7 +478,23 @@ local function CreateUsernameHealthMenuItem()
 	setmetatable(this, {})
 	function this:SetHealthbarEnabled(enabled)
 		healthContainer.Visible = enabled
+		if enabled then
+			username.Size = UDim2.new(1, -14, 0, 22);
+			username.TextYAlignment = Enum.TextYAlignment.Bottom;
+		else
+			username.Size = UDim2.new(1, -14, 1, 0);
+			username.TextYAlignment = Enum.TextYAlignment.Center;
+		end
 	end
+
+	function this:SetNameAlignment(leftAligned)
+		if leftAligned then
+			username.TextXAlignment = Enum.TextXAlignment.Left;
+		else
+			username.TextXAlignment = Enum.TextXAlignment.Right;
+		end
+	end
+
 	setmetatable(this, mtStore)
 
 	-- Don't need to disconnect this one because we never reconnect it.
@@ -991,6 +1007,12 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 				LeftMenubar:RemoveItem(chatIcon)
 			end
 		end
+	end
+	if nameAndHealthMenuItem then
+		local playerListOn = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList)
+		local healthbarOn = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health)
+		-- Left-align the player's name if either playerlist or healthbar is shown
+		nameAndHealthMenuItem:SetNameAlignment(playerListOn or healthbarOn)
 	end
 end
 
