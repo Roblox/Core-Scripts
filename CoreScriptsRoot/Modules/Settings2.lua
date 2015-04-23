@@ -204,7 +204,7 @@ local function createMenuFrame(name, position)
 	frame.BackgroundTransparency = 1
 	frame.ZIndex = BASE_Z_INDEX + 4
 
-	GuiService:AddSelectionParent(name .. "Group", frame)
+	pcall(function() GuiService:AddSelectionParent(name .. "Group", frame) end)
 
 	return frame
 end
