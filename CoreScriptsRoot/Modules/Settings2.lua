@@ -1268,8 +1268,8 @@ local function closeSettingsMenu(forceClose)
 
 	if UserInputService.GamepadEnabled and isGamepadSupport then
 		GuiService.SelectedObject = nil
-		ContextActionService:UnbindCoreAction("backbutton")
-		ContextActionService:UnbindCoreAction("DontMove")
+		pcall(function() ContextActionService:UnbindCoreAction("backbutton")
+		ContextActionService:UnbindCoreAction("DontMove") end)
 	end
 
 	SettingsShowSignal:fire(false)
@@ -1300,12 +1300,12 @@ local function showSettingsRootMenu()
 
 	if not isGamepadSupport then return end
 	if UserInputService.GamepadEnabled then
-		game.ContextActionService:BindCoreAction("DontMove", noOptFunc, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2, 
+		pcall(function() game.ContextActionService:BindCoreAction("DontMove", noOptFunc, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2, 
 				Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonSelect,
 				Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonR3,
 				Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
 
-		ContextActionService:BindCoreAction("backbutton", backButtonFunc, false, Enum.KeyCode.ButtonB)
+		ContextActionService:BindCoreAction("backbutton", backButtonFunc, false, Enum.KeyCode.ButtonB) end)
 	end
 end
 
@@ -1569,7 +1569,7 @@ do
 
 		-- Dev Console Connections
 		HelpConsoleButton.MouseButton1Click:connect(toggleDevConsole)
-		ContextActionService:BindCoreAction("Open Dev Console", toggleDevConsole, false, Enum.KeyCode.F9)
+		pcall(function() ContextActionService:BindCoreAction("Open Dev Console", toggleDevConsole, false, Enum.KeyCode.F9) end)
 	end
 
 	LocalPlayer.Changed:connect(function(property)
