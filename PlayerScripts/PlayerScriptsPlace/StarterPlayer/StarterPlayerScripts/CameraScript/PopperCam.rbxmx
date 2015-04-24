@@ -1,17 +1,18 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX905CF110249A46068288C08544C9FAEE">
+	<Item class="ModuleScript" referent="RBX5F704B4B4E0D4E0B8FF5629A0F6EEB46">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">PopperCam</string>
-			<ProtectedString name="Source"><![CDATA[-- PopperCam Version 12
+			<ProtectedString name="Source"><![CDATA[-- PopperCam Version 13
 -- OnlyTwentyCharacters
 
 local PopperCam = {} -- Guarantees your players won't see outside the bounds of your map!
 
----------------
--- Constants --
----------------
+-----------------
+--| Constants |--
+-----------------
 
 local POP_RESTORE_RATE = 0.3
 local CAST_SCREEN_SCALES = { -- (Relative)
@@ -23,13 +24,11 @@ local CAST_SCREEN_SCALES = { -- (Relative)
 }
 local NEAR_CLIP_PLANE_OFFSET = 0.5 --NOTE: Not configurable
 
----------------
--- Variables --
----------------
+-----------------
+--| Variables |--
+-----------------
 
 local PlayersService = game:GetService('Players')
-local Player = PlayersService.LocalPlayer
-local PlayerMouse = Player:GetMouse()
 
 local Camera = nil
 local CameraChangeConn = nil
@@ -40,9 +39,9 @@ local VehicleParts = {} -- Also just for ignoring
 local LastPopAmount = 0
 local LastZoomLevel = 0
 
----------------------
--- Local Functions --
----------------------
+-----------------------
+--| Local Functions |--
+-----------------------
 
 local function CastRay(fromPoint, toPoint, ignoreList)
 	local vector = toPoint - fromPoint
@@ -118,16 +117,16 @@ local function OnWorkspaceChanged(property)
 	end
 end
 
------------------------
--- Exposed Functions --
------------------------
+-------------------------
+--| Exposed Functions |--
+-------------------------
 
 function PopperCam:Update()
 	-- First, prep some intermediate vars
 	local focusPoint = Camera.Focus.p
 	local cameraCFrame = Camera.CoordinateFrame
 	local cameraFrontPoint = cameraCFrame.p + (cameraCFrame.lookVector * NEAR_CLIP_PLANE_OFFSET)
-	local screenSize = Vector2.new(PlayerMouse.ViewSizeX, PlayerMouse.ViewSizeY)
+	local screenSize = Camera.ViewportSize
 	local ignoreList = {}
 	for _, character in pairs(PlayerCharacters) do
 		table.insert(ignoreList, character)
@@ -160,15 +159,15 @@ function PopperCam:Update()
 	local popAmount = math.max(largest, LastPopAmount)
 	if popAmount > 0 then
 		Camera.CoordinateFrame = cameraCFrame + (cameraCFrame.lookVector * popAmount)
-		LastPopAmount = math.max(popAmount - POP_RESTORE_RATE, 0) -- Shrink it for the next frame
+		LastPopAmount = math.max(0, popAmount - POP_RESTORE_RATE) -- Shrink it for the next frame
 	end
 	
 	LastZoomLevel = zoomLevel
 end
 
-------------------
--- Script Logic --
-------------------
+--------------------
+--| Script Logic |--
+--------------------
 
 -- Connect to the current and all future cameras
 workspace.Changed:connect(OnWorkspaceChanged)
