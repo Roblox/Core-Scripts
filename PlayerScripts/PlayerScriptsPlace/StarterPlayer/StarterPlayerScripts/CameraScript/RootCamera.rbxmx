@@ -51,7 +51,7 @@ local MIN_Y = math.rad(-80)
 local MAX_Y = math.rad(80)
 
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
-local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*2)
+local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
 
 local SEAT_OFFSET = Vector3.new(0,5,0)
 local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
@@ -172,6 +172,12 @@ local function CreateCamera()
 		local screenY = this:ViewSizeY()
 		local xTheta = (translationVector.x / screenX)
 		local yTheta = (translationVector.y / screenY)
+		return Vector2.new(xTheta, yTheta)
+	end
+	
+	function this:MouseTranslationToAngle(translationVector)
+		local xTheta = (translationVector.x / 1920)
+		local yTheta = (translationVector.y / 1200)
 		return Vector2.new(xTheta, yTheta)
 	end
 
@@ -378,13 +384,13 @@ local function CreateCamera()
 			local currPos = lastPos + input.Delta
 			local totalTrans = currPos - startPos
 			if this.PanEnabled then
-				local desiredXYVector = this:ScreenTranslationToAngle(input.Delta) * MOUSE_SENSITIVITY
+				local desiredXYVector = this:MouseTranslationToAngle(input.Delta) * MOUSE_SENSITIVITY
 				this.RotateInput = this.RotateInput + desiredXYVector
 			end
 			lastPos = currPos
 		elseif this:IsInFirstPerson() or this:GetShiftLock() then
 			if this.PanEnabled then
-				local desiredXYVector = this:ScreenTranslationToAngle(input.Delta) * MOUSE_SENSITIVITY
+				local desiredXYVector = this:MouseTranslationToAngle(input.Delta) * MOUSE_SENSITIVITY
 				this.RotateInput = this.RotateInput + desiredXYVector
 			end
 		end
