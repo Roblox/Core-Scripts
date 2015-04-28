@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBX6342d2bba4244554b4de5749e0b3c94c">
+	<Item class="LocalScript" referent="RBX19d54c212fd1424ab4aed39398914980">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -113,38 +113,32 @@ local function Update()
 	end
 end
 
+local function SetEnabledCamera(newCamera)
+	if EnabledCamera ~= newCamera then
+		if EnabledCamera then
+			EnabledCamera:SetEnabled(false)
+		end
+		EnabledCamera = newCamera
+		if EnabledCamera then
+			EnabledCamera:SetEnabled(true)
+		end
+	end
+end
+
 local function OnCameraMovementModeChange(newCameraMode)
 	if newCameraMode == Enum.DevComputerMovementMode.ClickToMove.Name then
 		ClickToMove:Start()
-		if EnabledCamera then
-			EnabledCamera:SetEnabled(false)
-			EnabledCamera = nil
-		end
+		SetEnabledCamera(nil)
 		TransparencyController:SetEnabled(false)
 	else
 		if newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
-			if EnabledCamera ~= ClassicCamera then
-				if EnabledCamera then
-					EnabledCamera:SetEnabled(false)
-				end
-				EnabledCamera = ClassicCamera
-				EnabledCamera:SetEnabled(true)
-			end
+			SetEnabledCamera(ClassicCamera)
 			TransparencyController:SetEnabled(true)
 		elseif newCameraMode == Enum.ComputerCameraMovementMode.Follow.Name then
-			if EnabledCamera ~= FollowCamera then
-				if EnabledCamera then 
-					EnabledCamera:SetEnabled(false)
-				end
-				EnabledCamera = FollowCamera
-				EnabledCamera:SetEnabled(true)
-			end
+			SetEnabledCamera(FollowCamera)
 			TransparencyController:SetEnabled(true)
 		else -- Our camera movement code was disabled by the developer
-			if EnabledCamera then
-				EnabledCamera:SetEnabled(false)
-				EnabledCamera = nil
-			end
+			SetEnabledCamera(nil)
 			TransparencyController:SetEnabled(false)
 		end
 		ClickToMove:Stop()
@@ -171,6 +165,14 @@ local function OnCameraMovementModeChange(newCameraMode)
 	end
 end
 
+local function OnCameraTypeChanged(newCameraType)
+	if newCameraType == Enum.CameraType.Scriptable then
+		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		end
+	end
+end
+
 
 local function OnCameraSubjectChanged(newSubject)
 	TransparencyController:SetSubject(newSubject)
@@ -187,12 +189,14 @@ local function OnNewCamera()
 		currentCameraConn = currentCamera.Changed:connect(function(prop)
 			if prop == 'CameraType' then
 				OnCameraMovementModeChange(getCurrentCameraMode())
+				OnCameraTypeChanged(currentCamera.CameraType)
 			elseif prop == 'CameraSubject' then
 				OnCameraSubjectChanged(currentCamera.CameraSubject)
 			end
 		end)
 
 		OnCameraSubjectChanged(currentCamera.CameraSubject)
+		OnCameraTypeChanged(currentCamera.CameraType)
 	end
 end
 

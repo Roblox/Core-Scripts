@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX5B8543649EDF481C8934D02BAAC85717">
+	<Item class="ModuleScript" referent="RBX5f0e968c3f69431d924a85cbccb42f33">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">RootCamera</string>
@@ -174,7 +174,7 @@ local function CreateCamera()
 		local yTheta = (translationVector.y / screenY)
 		return Vector2.new(xTheta, yTheta)
 	end
-	
+
 	function this:MouseTranslationToAngle(translationVector)
 		local xTheta = (translationVector.x / 1920)
 		local yTheta = (translationVector.y / 1200)
@@ -194,6 +194,14 @@ local function CreateCamera()
 		return isFirstPerson
 	end
 
+	function this:UpdateMouseBehavior()
+		if self:IsInFirstPerson() then
+			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+		elseif not self:GetShiftLock() then
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		end
+	end
+
 	function this:ZoomCamera(desiredZoom)
 		local player = PlayersService.LocalPlayer
 		if player then
@@ -203,17 +211,12 @@ local function CreateCamera()
 				this.currentZoom = clamp(player.CameraMinZoomDistance, player.CameraMaxZoomDistance, desiredZoom)
 			end
 		end
-		-- set mouse behavior
-		if self:GetCameraZoom() < 2 then
-			isFirstPerson = true
-			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-		else
-			isFirstPerson = false
-			if not self:GetShiftLock() then
-				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-			end
-		end
+
+		isFirstPerson = self:GetCameraZoom() < 2
+
 		ShiftLockController:SetIsInFirstPerson(isFirstPerson)
+		-- set mouse behavior
+		self:UpdateMouseBehavior()
 		return self:GetCameraZoom()
 	end
 
@@ -476,7 +479,7 @@ local function CreateCamera()
 	local lastThumbstickPos = Vector2.new(0,0)
 	local ySensitivity = 0.65
 	local lastVelocity = nil
-	
+
 	-- K is a tunable parameter that changes the shape of the S-curve
 	-- the larger K is the more straight/linear the curve gets
 	local k = 0.35
@@ -488,17 +491,17 @@ local function CreateCamera()
 		end
 		return -((lowerK*-t) / (lowerK + t + 1))
 	end
-	
+
 	-- DEADZONE
 	local DEADZONE = 0.1
 	local function toSCurveSpace(t)
 		return (1 + DEADZONE) * (2*math.abs(t) - 1) - DEADZONE
 	end
-	
+
 	local function fromSCurveSpace(t)
 		return t/2 + 0.5
 	end
-	
+
 	local function gamepadLinearToCurve(thumbstickPosition)
 		local function onAxis(axisValue)
 			local sign = 1
@@ -591,6 +594,7 @@ local function CreateCamera()
 		StartingDiff = nil
 		pinchBeginZoom = nil
 
+		-- Unlock mouse for example if right mouse button was being held down
 		if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 		end
@@ -630,17 +634,17 @@ local function CreateCamera()
 				OnKeyUp(input, processed)
 			end
 		end)
-		
+
 		this.RotateInput = Vector2.new()
-		
+
 		local getGamepadPan = function(name, state, input)
 			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
-				
+
 				if state == Enum.UserInputState.Cancel then
 					this.GamepadPanningCamera = Vector2.new(0,0)
 					return
 				end
-				
+
 				local inputVector = Vector2.new(input.Position.X, -input.Position.Y)
 				if inputVector.magnitude > 0.1 then
 					this.GamepadPanningCamera = Vector2.new(input.Position.X, -input.Position.Y)
@@ -649,7 +653,7 @@ local function CreateCamera()
 				end
 			end
 		end
-		
+
 		local doGamepadZoom = function(name, state, input)
 			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.ButtonR3 and state == Enum.UserInputState.Begin then
 				if this.currentZoom > 0.5 then
@@ -659,9 +663,12 @@ local function CreateCamera()
 				end
 			end
 		end
-		
+
 		game.ContextActionService:BindAction("RootCamGamepadPan", getGamepadPan, false, Enum.KeyCode.Thumbstick2)
 		game.ContextActionService:BindAction("RootCamGamepadZoom", doGamepadZoom, false, Enum.KeyCode.ButtonR3)
+
+		-- set mouse behavior
+		self:UpdateMouseBehavior()
 	end
 
 	function this:SetEnabled(newState)
