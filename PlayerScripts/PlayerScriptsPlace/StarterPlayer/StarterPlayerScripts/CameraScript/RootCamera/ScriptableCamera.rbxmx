@@ -1,0 +1,24 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBX52a0aa1e09ea496e9200c5751fa67aeb">
+		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
+			<string name="Name">ScriptableCamera</string>
+			<ProtectedString name="Source"><![CDATA[local RootCameraCreator = require(script.Parent)
+
+local function CreateScriptableCamera()
+	local module = RootCameraCreator()
+	
+	local lastUpdate = tick()
+	function module:Update()
+	end
+	
+	return module
+end
+
+return CreateScriptableCamera
+]]></ProtectedString>
+		</Properties>
+	</Item>
+</roblox>
