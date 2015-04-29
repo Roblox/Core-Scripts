@@ -31,143 +31,6 @@ local CHAT_COLORS =
 	BrickColor.new("Light reddish violet").Color,
 	BrickColor.new("Brick yellow").Color,
 }
-
-local ADMIN_LIST = {
-    ['68465808'] = true, -- IMightBeLying
-    ['32345429'] = true, -- Rbadam
-    ['48453004'] = true, -- Adamintygum
-    ['57705391'] = true, -- androidtest
-    ['58491921'] = true, -- RobloxFrenchie
-    ['29341155'] = true, -- JacksSmirkingRevenge
-    ['60629145'] = true, -- Mandaari
-    ['6729993'] = true, -- vaiobot
-    ['9804369'] = true, -- Goddessnoob
-    ['67906358'] = true, -- Thr33pakShak3r
-    ['41101356'] = true, -- effward
-    ['29667843'] = true, -- Blockhaak
-    ['26076267'] = true, -- Drewbda
-    ['65171466'] = true, -- triptych999
-    ['264635'] = true, -- Tone
-    ['59257875'] = true, -- fasterbuilder19
-    ['30068452'] = true, -- Zeuxcg
-    ['53627251'] = true, -- concol2
-    ['56449'] = true, -- ReeseMcBlox
-    ['7210880'] = true, -- Jeditkacheff
-    ['35187797'] = true, -- ChiefJustus
-    ['21964644'] = true, -- Ellissar
-    ['63971416'] = true, -- geekndestroy
-    ['111627'] = true, -- Noob007
-    ['482238'] = true, -- Limon
-    ['39861325'] = true, -- hawkington
-    ['32580099'] = true, -- Tabemono
-    ['504316'] = true, -- BrightEyes
-    ['35825637'] = true, -- Monsterinc3D
-    ['55311255'] = true, -- IsolatedEvent
-    ['48988254'] = true, -- CountOnConnor
-    ['357346'] = true, -- Scubasomething
-    ['28969907'] = true, -- OnlyTwentyCharacters
-    ['17707636'] = true, -- LordRugdumph
-    ['26714811'] = true, -- bellavour
-    ['24941'] = true, -- david.baszucki
-    ['13057592'] = true, -- ibanez2189
-    ['66766775'] = true, -- ConvexHero
-    ['13268404'] = true, -- Sorcus
-    ['26065068'] = true, -- DeeAna00
-    ['4108667'] = true, -- TheLorekt
-    ['605367'] = true, -- MSE6
-    ['28350010'] = true, -- CorgiParade
-    ['1636196'] = true, -- Varia
-    ['27861308'] = true, -- 4runningwolves
-    ['26699190'] = true, -- pulmoesflor
-    ['9733258'] = true, -- Olive71
-    ['2284059'] = true, -- groundcontroll2
-    ['28080592'] = true, -- GuruKrish
-    ['28137935'] = true, -- Countvelcro
-    ['25964666'] = true, -- IltaLumi
-    ['31221099'] = true, -- juanjuan23
-    ['13965343'] = true, -- OstrichSized
-    ['541489'] = true, -- jackintheblox
-    ['38324232'] = true, -- SlingshotJunkie
-    ['146569'] = true, -- gordonrox24
-    ['61666252'] = true, -- sharpnine
-    ['25540124'] = true, -- Motornerve
-    ['29044576'] = true, -- watchmedogood
-    ['49626068'] = true, -- jmargh
-    ['57352126'] = true, -- JayKorean
-    ['25682044'] = true, -- Foyle
-    ['1113299'] = true, -- MajorTom4321
-    ['30598693'] = true, -- supernovacaine
-    ['1311'] = true, -- FFJosh
-    ['23603273'] = true, -- Sickenedmonkey
-    ['28568151'] = true, -- Doughtless
-    ['8298697'] = true, -- KBUX
-    ['39871898'] = true, -- totallynothere
-    ['57708043'] = true, -- ErzaStar
-    ['22'] = true, -- Keith
-    ['2430782'] = true, -- Chro
-    ['29373363'] = true, -- SolarCrane
-    ['29116915'] = true, -- GloriousSalt
-    ['6783205'] = true, -- UristMcSparks
-    ['62155769'] = true, -- ITOlaurEN
-    ['24162607'] = true, -- Malcomso
-    ['66692187'] = true, -- HeySeptember
-    ['80254'] = true, -- Stickmasterluke
-    ['66093461'] = true, -- chefdeletat
-    ['62968051'] = true, -- windlight13
-    ['80119'] = true, -- Stravant
-    ['61890000'] = true, -- imaginationsensation
-    ['916'] = true, -- Matt Dusek
-    ['4550725'] = true, -- CrimmsonGhost
-    ['59737068'] = true, -- Mcrtest
-    ['5600283'] = true, -- Seranok
-    ['48656806'] = true, -- maxvee
-    ['48656806'] = true, -- Coatp0cketninja
-    ['35231885'] = true, -- Screenme
-    ['55958416'] = true, -- b1tsh1ft
-    ['51763936'] = true, -- ConvexRumbler
-    ['59638684'] = true, -- mpliner476
-    ['44231609'] = true, -- Totbl
-    ['16906083'] = true, -- Aquabot8
-    ['23984372'] = true, -- grossinger
-    ['13416513'] = true, -- Merely
-    ['27416429'] = true, -- CDakkar
-    ['46526337'] = true, -- logitek00
-    ['21969613'] = true, -- Siekiera
-    ['39488230'] = true, -- Robloxkidsaccount
-    ['60425210'] = true, -- flotsamthespork
-    ['16732061'] = true, -- Soggoth
-    ['33904052'] = true, -- Phil
-    ['39882028'] = true, -- OrcaSparkles
-    ['62060462'] = true, -- skullgoblin
-    ['29044708'] = true, -- RickROSStheB0SS
-    ['15782010'] = true, -- ArgonPirate
-    ['6949935'] = true, -- NobleDragon
-    ['41256555'] = true, -- Squidcod
-    ['16150324'] = true, -- Raeglyn
-    ['24419770'] = true, -- Xerolayne
-    ['20396599'] = true, -- Robloxsai
-    ['55579189'] = true, -- Briarroze
-    ['21641566'] = true, -- hawkeyebandit
-    ['39871292'] = true, -- DapperBuffalo
-    ['48725400'] = true, -- Vukota
-    ['60880618'] = true, -- swiftstone
-    ['8736269'] = true, -- Gemlocker
-    ['17199995'] = true, -- Tarabyte
-    ['6983145'] = true, -- Timobius
-    ['20048521'] = true, -- Tobotrobot
-    ['1644345'] = true, -- Foster008
-    ['33067469'] = true, -- Twberg
-    ['57741156'] = true, -- DarthVaden
-    ['51164101'] = true, -- Khanovich
-    ['61380399'] = true, -- oLEFTo
-    ['39876101'] = true, -- CodeWriter
-    ['23598967'] = true, -- VladTheFirst
-    ['39299049'] = true, -- Phaedre
-    ['39855185'] = true, -- gorroth
-    ['61004766'] = true, -- jynj1984
-    ['10261020'] = true, -- RoboYZ
-    ['44564747'] = true, -- ZodiacZak
-}
 --[[ END OF CONSTANTS ]]
 
 --[[ SERVICES ]]
@@ -201,11 +64,6 @@ local function GetBlockedUsersFlag()
 	return blockUserFlagSuccess and blockUserFlagFlagValue == true
 end
 
-local function GetUsePlayerInGroupFlag()
-	local flagSuccess, flagValue = pcall(function() return settings():GetFFlag("UsePlayerInGroupLuaChat") end)
-	return flagSuccess and flagValue == true
-end
-
 local function GetTopBarFlag()
 	local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
 	return topbarSuccess and topbarFlagValue == true
@@ -214,6 +72,11 @@ end
 local function GetChatMovedUpPlaceIdCutoffFlag()
 	local chatMoveUpSuccess, placeIdFlagValue = pcall(function() return settings():GetFVariable("MoveInGameChatToTopPlaceId") end)
 	return chatMoveUpSuccess and tonumber(placeIdFlagValue) or 0
+end
+
+local function GetBubbleChatbarFlag()
+	local bubbleChatbarSuccess, bubbleChatbarFlagValue = pcall(function() return settings():GetFFlag("BubbleChatbarDocksAtTop") end)
+	return bubbleChatbarSuccess and bubbleChatbarFlagValue == true
 end
 
 local Util = {}
@@ -377,18 +240,15 @@ do
 	function Util.IsPlayerAdminAsync(player)
 		local userId = player and player.userId
 		if userId then
-			if GetUsePlayerInGroupFlag() then
-				if adminCache[userId] == nil then
-					local isAdmin = false
-					-- Many things can error is the IsInGroup check
-					pcall(function()
-						isAdmin = player:IsInGroup(1200769)
-					end)
-					adminCache[userId] = isAdmin
-				end
-				return adminCache[userId]
+			if adminCache[userId] == nil then
+				local isAdmin = false
+				-- Many things can error is the IsInGroup check
+				pcall(function()
+					isAdmin = player:IsInGroup(1200769)
+				end)
+				adminCache[userId] = isAdmin
 			end
-			return ADMIN_LIST[tostring(userId)]
+			return adminCache[userId]
 		end
 		return false
 	end
@@ -1308,6 +1168,10 @@ local function CreateChatBarWidget(settings)
 		end
 		if self.ClickToChatButton then
 			self.ClickToChatButton.Visible = true
+			-- Fade-back in the text so it doesn't abruptly appear
+			-- Normally I would like to cancel the old tween but it is so short that it doesn't matter
+			self.ClickToChatButton.TextTransparency = 1
+			Util.PropertyTweener(self.ClickToChatButton, 'TextTransparency', 1, 0, 0.25, Util.Linear)
 		end
 		if this.ChatModeText then
 			this.ChatModeText.Visible = false
@@ -1441,18 +1305,32 @@ local function CreateChatBarWidget(settings)
 			local function RobloxClientScreenSizeChanged(newSize)
 				if chatBarContainer then
 					local chatbarVisible = this.ChatBar and this.ChatBar.Visible
+					local moveBubbleChatbarUp = GetBubbleChatbarFlag()
+					local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
 					-- Phone
 					if newSize.X <= 640 then
 						chatBarContainer.Size = UDim2.new(0.5, 0,0, chatbarVisible and 40 or 32)
-						chatBarContainer.Position = UDim2.new(0, 0, 0.5, 2)
+						if moveBubbleChatbarUp and bubbleChatIsOn then
+							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
+						else
+							chatBarContainer.Position = UDim2.new(0, 0, 0.5, 2)
+						end
 					-- Tablet
 					elseif newSize.X <= 1024 then
 						chatBarContainer.Size = UDim2.new(0.4, 0,0, chatbarVisible and 40 or 32)
-						chatBarContainer.Position = UDim2.new(0, 0, 0.3, 2)
+						if moveBubbleChatbarUp and bubbleChatIsOn then
+							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
+						else
+							chatBarContainer.Position = UDim2.new(0, 0, 0.3, 2)
+						end
 					-- Desktop
 					else
 						chatBarContainer.Size = UDim2.new(0.3, 0,0, chatbarVisible and 40 or 32)
-						chatBarContainer.Position = UDim2.new(0,0,0.25, 2)
+						if moveBubbleChatbarUp and bubbleChatIsOn then
+							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
+						else
+							chatBarContainer.Position = UDim2.new(0,0,0.25, 2)
+						end
 					end
 
 					if Util.IsTouchDevice() then
@@ -1508,7 +1386,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:IsHovering()
-		if this.ChatContainer and this.LastMousePosition then
+		if this.ChatContainer and this.LastMousePosition and self:CalculateVisibility() then
 			return PointInChatWindow(this.LastMousePosition)
 		end
 		return false
@@ -1765,16 +1643,16 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:CalculateVisibility()
-		if this.ChatContainer then
-			local chatEnabled = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat)
-			this.ChatContainer.Visible = this.WidgetVisible and ((chatEnabled and PlayersService.ClassicChat) or NON_CORESCRIPT_MODE)
-		end
+		local chatEnabled = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat)
+		return this.WidgetVisible and ((chatEnabled and PlayersService.ClassicChat) or NON_CORESCRIPT_MODE)
 	end
 
 	function this:ToggleVisibility(visible)
 		if visible ~= self.WidgetVisible then
 			self.WidgetVisible = visible
-			self:CalculateVisibility()
+			if this.ChatContainer then
+				this.ChatContainer.Visible = self:CalculateVisibility()
+			end
 		end
 		if NON_CORESCRIPT_MODE then
 			this.ChatContainer.Visible = true
@@ -1782,7 +1660,9 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
-		self:CalculateVisibility()
+		if this.ChatContainer then
+			this.ChatContainer.Visible = self:CalculateVisibility()
+		end
 	end
 
 	local function CreateChatWindow()

@@ -36,6 +36,11 @@ local useNewBackpack = (backPackSuccess and backpackFlagValue)
 
 local playerListSuccess, playerListFlagValue = pcall(function() return settings():GetFFlag("NewPlayerListScript") end)
 local useNewPlayerlist = (playerListSuccess and playerListFlagValue)
+
+local function GetBubbleChatbarFlag()
+	local bubbleChatbarSuccess, bubbleChatbarFlagValue = pcall(function() return settings():GetFFlag("BubbleChatbarDocksAtTop") end)
+	return bubbleChatbarSuccess and bubbleChatbarFlagValue == true
+end
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -727,6 +732,7 @@ local function CreateChatIcon()
 		Parent = chatCounter;
 	};
 
+	local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
 	local DEBOUNCE_TIME = 0.25
 	local chatActive = false
 	local debounce = 0
@@ -767,7 +773,7 @@ local function CreateChatIcon()
 	end
 
 	function toggleChat()
-		if Util.IsTouchDevice() then
+		if Util.IsTouchDevice() or (GetBubbleChatbarFlag() and bubbleChatIsOn) then
 			if debounce + DEBOUNCE_TIME < tick() then
 				ChatModule:FocusChatBar()
 			end
@@ -784,7 +790,7 @@ local function CreateChatIcon()
 		ChatModule.MessagesChanged:connect(OnUnreadMessagesChanged)
 	end
 
-	if Util.IsTouchDevice() then
+	if Util.IsTouchDevice() or (GetBubbleChatbarFlag() and bubbleChatIsOn) then
 		if ChatModule.ChatBarFocusChanged then
 			ChatModule.ChatBarFocusChanged:connect(function(isFocused)
 				updateIcon(isFocused)
