@@ -184,13 +184,13 @@ local StarterGui = game:GetService('StarterGui')
 
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
-local Player = PlayersService.LocalPlayer
+local LocalPlayer = PlayersService.LocalPlayer
 -- GuiRoot will act as the top-node for parenting GUIs
 local GuiRoot = nil
 if NON_CORESCRIPT_MODE then
 	GuiRoot = Instance.new("ScreenGui")
 	GuiRoot.Name = "RobloxGui"
-	GuiRoot.Parent = Player:WaitForChild('PlayerGui')
+	GuiRoot.Parent = LocalPlayer:WaitForChild('PlayerGui')
 else
 	GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 end
@@ -622,7 +622,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 	function this:FormatPlayerNameText()
 		local playerName = ""
 		-- If we are sending a whisper to someone, then we should show their name
-		if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer and this.SendingPlayer == Player then
+		if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer and this.SendingPlayer == LocalPlayer then
 			playerName = (this.ReceivingPlayer and this.ReceivingPlayer.Name or "")
 		else
 			playerName = (this.SendingPlayer and this.SendingPlayer.Name or "")
@@ -709,7 +709,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		local playerColor = this.Settings.DefaultMessageTextColor
 		if this.SendingPlayer then
 			if this.PlayerChatType == Enum.PlayerChatType.Whisper then
-				if this.SendingPlayer == Player and this.ReceivingPlayer then
+				if this.SendingPlayer == LocalPlayer and this.ReceivingPlayer then
 					playerColor = Util.ComputeChatColor(this.ReceivingPlayer.Name)
 				else
 					playerColor = Util.ComputeChatColor(this.SendingPlayer.Name)
@@ -733,7 +733,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		};
 			local xOffset = 0
 
-			if this.SendingPlayer and this.SendingPlayer == Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
+			if this.SendingPlayer and this.SendingPlayer == LocalPlayer and this.PlayerChatType == Enum.PlayerChatType.Whisper then
 				local whisperToText = Util.Create'TextLabel'
 				{
 					Name = 'WhisperTo';
@@ -755,7 +755,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				};
 				xOffset = xOffset + toMessageSize.X
 				this.WhisperToText = whisperToText
-			elseif this.SendingPlayer and this.SendingPlayer ~= Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
+			elseif this.SendingPlayer and this.SendingPlayer ~= LocalPlayer and this.PlayerChatType == Enum.PlayerChatType.Whisper then
 				local whisperFromText = Util.Create'TextLabel'
 				{
 					Name = 'WhisperFromText';
@@ -840,7 +840,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			}
 			if userNameButton:IsA('TextButton') then
 				this.ClickedOnPlayerConn = userNameButton.MouseButton1Click:connect(function()
-					if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer == Player and this.ReceivingPlayer then
+					if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer == LocalPlayer and this.ReceivingPlayer then
 						SelectPlayerEvent:fire(this.ReceivingPlayer)
 					else
 						SelectPlayerEvent:fire(this.SendingPlayer)
@@ -1032,7 +1032,7 @@ local function CreateChatBarWidget(settings)
 						if this:IsAChatMode(actionType) then
 							if actionType == "Whisper" then
 								local targetPlayer = capture and Util.GetPlayerByName(capture)
-								if targetPlayer then --and targetPlayer ~= Player then
+								if targetPlayer then --and targetPlayer ~= LocalPlayer then
 									this.TargetWhisperPlayer = targetPlayer
 									-- start from two over to eat the space or tab character after the slash command
 									this:SetChatBarText(string.sub(chatBarText, finish + 2))
@@ -1199,14 +1199,14 @@ local function CreateChatBarWidget(settings)
 						local currentMessageMode = this:GetMessageMode()
 						-- {All, Team, Whisper}
 						if currentMessageMode == 'Team' then
-							if Player and Player.Neutral == true then
+							if LocalPlayer and LocalPlayer.Neutral == true then
 								this.ChatErrorEvent:fire("You are not in any team.")
 							else
 								pcall(function() PlayersService:TeamChat(cText) end)
 							end
 						elseif currentMessageMode == 'Whisper' then
 							if this.TargetWhisperPlayer then
-								if this.TargetWhisperPlayer == Player then
+								if this.TargetWhisperPlayer == LocalPlayer then
 									this.ChatErrorEvent:fire("You cannot send a whisper to yourself.")
 								else
 									pcall(function() PlayersService:WhisperChat(cText, this.TargetWhisperPlayer) end)
@@ -1868,7 +1868,7 @@ local function CreateChat()
 	end
 
 	function this:GetBlockedPlayersAsync()
-		local userId = Player.userId
+		local userId = LocalPlayer.userId
 		local secureBaseUrl = Util.GetSecureApiBaseUrl()
 		local url = secureBaseUrl .. "userblock/getblockedusers" .. "?" .. "userId=" .. tostring(userId) .. "&" .. "page=" .. "1"
 		if userId > 0 then
@@ -1885,7 +1885,7 @@ local function CreateChat()
 	end
 
 	function this:BlockPlayerAsync(playerToBlock)
-		if playerToBlock and Player ~= playerToBlock then
+		if playerToBlock and LocalPlayer ~= playerToBlock then
 			local blockUserId = playerToBlock.userId
 			local playerToBlockName = playerToBlock.Name
 			if blockUserId > 0 then
@@ -1896,7 +1896,7 @@ local function CreateChat()
 						this.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is now blocked.")
 						-- Make Block call
 						pcall(function()
-							local success = PlayersService:BlockUser(Player.userId, blockUserId)
+							local success = PlayersService:BlockUser(LocalPlayer.userId, blockUserId)
 						end)
 					--else
 					--	this.ChatWindowWidget:AddSystemChatMessage("You cannot block " .. playerToBlockName .. " because your list is full.")
@@ -1930,7 +1930,7 @@ local function CreateChat()
 				this.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is no longer blocked.")
 				-- Make Unblock call
 				pcall(function()
-					local success = PlayersService:UnblockUser(Player.userId, unblockUserId)
+					local success = PlayersService:UnblockUser(LocalPlayer.userId, unblockUserId)
 				end)
 			else
 				this.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is not blocked.")
@@ -1970,7 +1970,7 @@ local function CreateChat()
 	end
 
 	function this:CreateGUI()
-		if FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu then
+		if FORCE_CHAT_GUI or LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu then
 			-- NOTE: eventually we will make multiple chat window frames
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
 			this.ChatBarWidget = CreateChatBarWidget(this.Settings)
@@ -2064,7 +2064,7 @@ local function CreateChat()
 			end)
 		end
 
-		this:OnPlayerAdded(Player)
+		this:OnPlayerAdded(LocalPlayer)
 		-- Upsettingly, it seems everytime a player is added, you have to redo the connection
 		-- NOTE: PlayerAdded only fires on the server, hence ChildAdded is used here
 		PlayersService.ChildAdded:connect(function(child)
