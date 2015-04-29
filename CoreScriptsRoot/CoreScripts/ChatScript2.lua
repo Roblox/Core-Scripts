@@ -33,164 +33,164 @@ local CHAT_COLORS =
 }
 
 local ADMIN_LIST = {
-    ['68465808'] = true, -- IMightBeLying
-    ['32345429'] = true, -- Rbadam
-    ['48453004'] = true, -- Adamintygum
-    ['57705391'] = true, -- androidtest
-    ['58491921'] = true, -- RobloxFrenchie
-    ['29341155'] = true, -- JacksSmirkingRevenge
-    ['60629145'] = true, -- Mandaari
-    ['6729993'] = true, -- vaiobot
-    ['9804369'] = true, -- Goddessnoob
-    ['67906358'] = true, -- Thr33pakShak3r
-    ['41101356'] = true, -- effward
-    ['29667843'] = true, -- Blockhaak
-    ['26076267'] = true, -- Drewbda
-    ['65171466'] = true, -- triptych999
-    ['264635'] = true, -- Tone
-    ['59257875'] = true, -- fasterbuilder19
-    ['30068452'] = true, -- Zeuxcg
-    ['53627251'] = true, -- concol2
-    ['56449'] = true, -- ReeseMcBlox
-    ['7210880'] = true, -- Jeditkacheff
-    ['35187797'] = true, -- ChiefJustus
-    ['21964644'] = true, -- Ellissar
-    ['63971416'] = true, -- geekndestroy
-    ['111627'] = true, -- Noob007
-    ['482238'] = true, -- Limon
-    ['39861325'] = true, -- hawkington
-    ['32580099'] = true, -- Tabemono
-    ['504316'] = true, -- BrightEyes
-    ['35825637'] = true, -- Monsterinc3D
-    ['55311255'] = true, -- IsolatedEvent
-    ['48988254'] = true, -- CountOnConnor
-    ['357346'] = true, -- Scubasomething
-    ['28969907'] = true, -- OnlyTwentyCharacters
-    ['17707636'] = true, -- LordRugdumph
-    ['26714811'] = true, -- bellavour
-    ['24941'] = true, -- david.baszucki
-    ['13057592'] = true, -- ibanez2189
-    ['66766775'] = true, -- ConvexHero
-    ['13268404'] = true, -- Sorcus
-    ['26065068'] = true, -- DeeAna00
-    ['4108667'] = true, -- TheLorekt
-    ['605367'] = true, -- MSE6
-    ['28350010'] = true, -- CorgiParade
-    ['1636196'] = true, -- Varia
-    ['27861308'] = true, -- 4runningwolves
-    ['26699190'] = true, -- pulmoesflor
-    ['9733258'] = true, -- Olive71
-    ['2284059'] = true, -- groundcontroll2
-    ['28080592'] = true, -- GuruKrish
-    ['28137935'] = true, -- Countvelcro
-    ['25964666'] = true, -- IltaLumi
-    ['31221099'] = true, -- juanjuan23
-    ['13965343'] = true, -- OstrichSized
-    ['541489'] = true, -- jackintheblox
-    ['38324232'] = true, -- SlingshotJunkie
-    ['146569'] = true, -- gordonrox24
-    ['61666252'] = true, -- sharpnine
-    ['25540124'] = true, -- Motornerve
-    ['29044576'] = true, -- watchmedogood
-    ['49626068'] = true, -- jmargh
-    ['57352126'] = true, -- JayKorean
-    ['25682044'] = true, -- Foyle
-    ['1113299'] = true, -- MajorTom4321
-    ['30598693'] = true, -- supernovacaine
-    ['1311'] = true, -- FFJosh
-    ['23603273'] = true, -- Sickenedmonkey
-    ['28568151'] = true, -- Doughtless
-    ['8298697'] = true, -- KBUX
-    ['39871898'] = true, -- totallynothere
-    ['57708043'] = true, -- ErzaStar
-    ['22'] = true, -- Keith
-    ['2430782'] = true, -- Chro
-    ['29373363'] = true, -- SolarCrane
-    ['29116915'] = true, -- GloriousSalt
-    ['6783205'] = true, -- UristMcSparks
-    ['62155769'] = true, -- ITOlaurEN
-    ['24162607'] = true, -- Malcomso
-    ['66692187'] = true, -- HeySeptember
-    ['80254'] = true, -- Stickmasterluke
-    ['66093461'] = true, -- chefdeletat
-    ['62968051'] = true, -- windlight13
-    ['80119'] = true, -- Stravant
-    ['61890000'] = true, -- imaginationsensation
-    ['916'] = true, -- Matt Dusek
-    ['4550725'] = true, -- CrimmsonGhost
-    ['59737068'] = true, -- Mcrtest
-    ['5600283'] = true, -- Seranok
-    ['48656806'] = true, -- maxvee
-    ['48656806'] = true, -- Coatp0cketninja
-    ['35231885'] = true, -- Screenme
-    ['55958416'] = true, -- b1tsh1ft
-    ['51763936'] = true, -- ConvexRumbler
-    ['59638684'] = true, -- mpliner476
-    ['44231609'] = true, -- Totbl
-    ['16906083'] = true, -- Aquabot8
-    ['23984372'] = true, -- grossinger
-    ['13416513'] = true, -- Merely
-    ['27416429'] = true, -- CDakkar
-    ['46526337'] = true, -- logitek00
-    ['21969613'] = true, -- Siekiera
-    ['39488230'] = true, -- Robloxkidsaccount
-    ['60425210'] = true, -- flotsamthespork
-    ['16732061'] = true, -- Soggoth
-    ['33904052'] = true, -- Phil
-    ['39882028'] = true, -- OrcaSparkles
-    ['62060462'] = true, -- skullgoblin
-    ['29044708'] = true, -- RickROSStheB0SS
-    ['15782010'] = true, -- ArgonPirate
-    ['6949935'] = true, -- NobleDragon
-    ['41256555'] = true, -- Squidcod
-    ['16150324'] = true, -- Raeglyn
-    ['24419770'] = true, -- Xerolayne
-    ['20396599'] = true, -- Robloxsai
-    ['55579189'] = true, -- Briarroze
-    ['21641566'] = true, -- hawkeyebandit
-    ['39871292'] = true, -- DapperBuffalo
-    ['48725400'] = true, -- Vukota
-    ['60880618'] = true, -- swiftstone
-    ['8736269'] = true, -- Gemlocker
-    ['17199995'] = true, -- Tarabyte
-    ['6983145'] = true, -- Timobius
-    ['20048521'] = true, -- Tobotrobot
-    ['1644345'] = true, -- Foster008
-    ['33067469'] = true, -- Twberg
-    ['57741156'] = true, -- DarthVaden
-    ['51164101'] = true, -- Khanovich
-    ['61380399'] = true, -- oLEFTo
-    ['39876101'] = true, -- CodeWriter
-    ['23598967'] = true, -- VladTheFirst
-    ['39299049'] = true, -- Phaedre
-    ['39855185'] = true, -- gorroth
-    ['61004766'] = true, -- jynj1984
-    ['10261020'] = true, -- RoboYZ
-    ['44564747'] = true, -- ZodiacZak
+	['68465808'] = true, -- IMightBeLying
+	['32345429'] = true, -- Rbadam
+	['48453004'] = true, -- Adamintygum
+	['57705391'] = true, -- androidtest
+	['58491921'] = true, -- RobloxFrenchie
+	['29341155'] = true, -- JacksSmirkingRevenge
+	['60629145'] = true, -- Mandaari
+	['6729993']  = true, -- vaiobot
+	['9804369']  = true, -- Goddessnoob
+	['67906358'] = true, -- Thr33pakShak3r
+	['41101356'] = true, -- effward
+	['29667843'] = true, -- Blockhaak
+	['26076267'] = true, -- Drewbda
+	['65171466'] = true, -- triptych999
+	['264635']   = true, -- Tone
+	['59257875'] = true, -- fasterbuilder19
+	['30068452'] = true, -- Zeuxcg
+	['53627251'] = true, -- concol2
+	['56449']    = true, -- ReeseMcBlox
+	['7210880']  = true, -- Jeditkacheff
+	['35187797'] = true, -- ChiefJustus
+	['21964644'] = true, -- Ellissar
+	['63971416'] = true, -- geekndestroy
+	['111627']   = true, -- Noob007
+	['482238']   = true, -- Limon
+	['39861325'] = true, -- hawkington
+	['32580099'] = true, -- Tabemono
+	['504316']   = true, -- BrightEyes
+	['35825637'] = true, -- Monsterinc3D
+	['55311255'] = true, -- IsolatedEvent
+	['48988254'] = true, -- CountOnConnor
+	['357346']   = true, -- Scubasomething
+	['28969907'] = true, -- OnlyTwentyCharacters
+	['17707636'] = true, -- LordRugdumph
+	['26714811'] = true, -- bellavour
+	['24941']    = true, -- david.baszucki
+	['13057592'] = true, -- ibanez2189
+	['66766775'] = true, -- ConvexHero
+	['13268404'] = true, -- Sorcus
+	['26065068'] = true, -- DeeAna00
+	['4108667']  = true, -- TheLorekt
+	['605367']   = true, -- MSE6
+	['28350010'] = true, -- CorgiParade
+	['1636196']  = true, -- Varia
+	['27861308'] = true, -- 4runningwolves
+	['26699190'] = true, -- pulmoesflor
+	['9733258']  = true, -- Olive71
+	['2284059']  = true, -- groundcontroll2
+	['28080592'] = true, -- GuruKrish
+	['28137935'] = true, -- Countvelcro
+	['25964666'] = true, -- IltaLumi
+	['31221099'] = true, -- juanjuan23
+	['13965343'] = true, -- OstrichSized
+	['541489']   = true, -- jackintheblox
+	['38324232'] = true, -- SlingshotJunkie
+	['146569']   = true, -- gordonrox24
+	['61666252'] = true, -- sharpnine
+	['25540124'] = true, -- Motornerve
+	['29044576'] = true, -- watchmedogood
+	['49626068'] = true, -- jmargh
+	['57352126'] = true, -- JayKorean
+	['25682044'] = true, -- Foyle
+	['1113299']  = true, -- MajorTom4321
+	['30598693'] = true, -- supernovacaine
+	['1311']     = true, -- FFJosh
+	['23603273'] = true, -- Sickenedmonkey
+	['28568151'] = true, -- Doughtless
+	['8298697']  = true, -- KBUX
+	['39871898'] = true, -- totallynothere
+	['57708043'] = true, -- ErzaStar
+	['22']       = true, -- Keith
+	['2430782']  = true, -- Chro
+	['29373363'] = true, -- SolarCrane
+	['29116915'] = true, -- GloriousSalt
+	['6783205']  = true, -- UristMcSparks
+	['62155769'] = true, -- ITOlaurEN
+	['24162607'] = true, -- Malcomso
+	['66692187'] = true, -- HeySeptember
+	['80254']    = true, -- Stickmasterluke
+	['66093461'] = true, -- chefdeletat
+	['62968051'] = true, -- windlight13
+	['80119']    = true, -- Stravant
+	['61890000'] = true, -- imaginationsensation
+	['916']      = true, -- Matt Dusek
+	['4550725']  = true, -- CrimmsonGhost
+	['59737068'] = true, -- Mcrtest
+	['5600283']  = true, -- Seranok
+	['48656806'] = true, -- maxvee
+	['48656806'] = true, -- Coatp0cketninja
+	['35231885'] = true, -- Screenme
+	['55958416'] = true, -- b1tsh1ft
+	['51763936'] = true, -- ConvexRumbler
+	['59638684'] = true, -- mpliner476
+	['44231609'] = true, -- Totbl
+	['16906083'] = true, -- Aquabot8
+	['23984372'] = true, -- grossinger
+	['13416513'] = true, -- Merely
+	['27416429'] = true, -- CDakkar
+	['46526337'] = true, -- logitek00
+	['21969613'] = true, -- Siekiera
+	['39488230'] = true, -- Robloxkidsaccount
+	['60425210'] = true, -- flotsamthespork
+	['16732061'] = true, -- Soggoth
+	['33904052'] = true, -- Phil
+	['39882028'] = true, -- OrcaSparkles
+	['62060462'] = true, -- skullgoblin
+	['29044708'] = true, -- RickROSStheB0SS
+	['15782010'] = true, -- ArgonPirate
+	['6949935']  = true, -- NobleDragon
+	['41256555'] = true, -- Squidcod
+	['16150324'] = true, -- Raeglyn
+	['24419770'] = true, -- Xerolayne
+	['20396599'] = true, -- Robloxsai
+	['55579189'] = true, -- Briarroze
+	['21641566'] = true, -- hawkeyebandit
+	['39871292'] = true, -- DapperBuffalo
+	['48725400'] = true, -- Vukota
+	['60880618'] = true, -- swiftstone
+	['8736269']  = true, -- Gemlocker
+	['17199995'] = true, -- Tarabyte
+	['6983145']  = true, -- Timobius
+	['20048521'] = true, -- Tobotrobot
+	['1644345']  = true, -- Foster008
+	['33067469'] = true, -- Twberg
+	['57741156'] = true, -- DarthVaden
+	['51164101'] = true, -- Khanovich
+	['61380399'] = true, -- oLEFTo
+	['39876101'] = true, -- CodeWriter
+	['23598967'] = true, -- VladTheFirst
+	['39299049'] = true, -- Phaedre
+	['39855185'] = true, -- gorroth
+	['61004766'] = true, -- jynj1984
+	['10261020'] = true, -- RoboYZ
+	['44564747'] = true, -- ZodiacZak
 }
 --[[ END OF CONSTANTS ]]
 
 --[[ SERVICES ]]
-local RunService = game:GetService('RunService')
+local RunService     = game:GetService('RunService')
 local CoreGuiService = game:GetService('CoreGui')
 local PlayersService = game:GetService('Players')
-local DebrisService = game:GetService('Debris')
-local GuiService = game:GetService('GuiService')
-local InputService = game:GetService('UserInputService')
-local StarterGui = game:GetService('StarterGui')
+local DebrisService  = game:GetService('Debris')
+local GuiService     = game:GetService('GuiService')
+local InputService   = game:GetService('UserInputService')
+local StarterGui     = game:GetService('StarterGui')
 --[[ END OF SERVICES ]]
 
 --[[ SCRIPT VARIABLES ]]
 
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
-local Player = PlayersService.LocalPlayer
+local LocalPlayer = PlayersService.LocalPlayer
 -- GuiRoot will act as the top-node for parenting GUIs
 local GuiRoot = nil
 if NON_CORESCRIPT_MODE then
 	GuiRoot = Instance.new("ScreenGui")
 	GuiRoot.Name = "RobloxGui"
-	GuiRoot.Parent = Player:WaitForChild('PlayerGui')
+	GuiRoot.Parent = LocalPlayer:WaitForChild('PlayerGui')
 else
 	GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 end
@@ -622,7 +622,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 	function this:FormatPlayerNameText()
 		local playerName = ""
 		-- If we are sending a whisper to someone, then we should show their name
-		if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer and this.SendingPlayer == Player then
+		if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer and this.SendingPlayer == LocalPlayer then
 			playerName = (this.ReceivingPlayer and this.ReceivingPlayer.Name or "")
 		else
 			playerName = (this.SendingPlayer and this.SendingPlayer.Name or "")
@@ -709,7 +709,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		local playerColor = this.Settings.DefaultMessageTextColor
 		if this.SendingPlayer then
 			if this.PlayerChatType == Enum.PlayerChatType.Whisper then
-				if this.SendingPlayer == Player and this.ReceivingPlayer then
+				if this.SendingPlayer == LocalPlayer and this.ReceivingPlayer then
 					playerColor = Util.ComputeChatColor(this.ReceivingPlayer.Name)
 				else
 					playerColor = Util.ComputeChatColor(this.SendingPlayer.Name)
@@ -733,7 +733,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		};
 			local xOffset = 0
 
-			if this.SendingPlayer and this.SendingPlayer == Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
+			if this.SendingPlayer and this.SendingPlayer == LocalPlayer and this.PlayerChatType == Enum.PlayerChatType.Whisper then
 				local whisperToText = Util.Create'TextLabel'
 				{
 					Name = 'WhisperTo';
@@ -755,7 +755,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				};
 				xOffset = xOffset + toMessageSize.X
 				this.WhisperToText = whisperToText
-			elseif this.SendingPlayer and this.SendingPlayer ~= Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
+			elseif this.SendingPlayer and this.SendingPlayer ~= LocalPlayer and this.PlayerChatType == Enum.PlayerChatType.Whisper then
 				local whisperFromText = Util.Create'TextLabel'
 				{
 					Name = 'WhisperFromText';
@@ -840,7 +840,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			}
 			if userNameButton:IsA('TextButton') then
 				this.ClickedOnPlayerConn = userNameButton.MouseButton1Click:connect(function()
-					if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer == Player and this.ReceivingPlayer then
+					if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer == LocalPlayer and this.ReceivingPlayer then
 						SelectPlayerEvent:fire(this.ReceivingPlayer)
 					else
 						SelectPlayerEvent:fire(this.SendingPlayer)
@@ -1032,7 +1032,7 @@ local function CreateChatBarWidget(settings)
 						if this:IsAChatMode(actionType) then
 							if actionType == "Whisper" then
 								local targetPlayer = capture and Util.GetPlayerByName(capture)
-								if targetPlayer then --and targetPlayer ~= Player then
+								if targetPlayer then --and targetPlayer ~= LocalPlayer then
 									this.TargetWhisperPlayer = targetPlayer
 									-- start from two over to eat the space or tab character after the slash command
 									this:SetChatBarText(string.sub(chatBarText, finish + 2))
@@ -1199,14 +1199,14 @@ local function CreateChatBarWidget(settings)
 						local currentMessageMode = this:GetMessageMode()
 						-- {All, Team, Whisper}
 						if currentMessageMode == 'Team' then
-							if Player and Player.Neutral == true then
+							if LocalPlayer and LocalPlayer.Neutral == true then
 								this.ChatErrorEvent:fire("You are not in any team.")
 							else
 								pcall(function() PlayersService:TeamChat(cText) end)
 							end
 						elseif currentMessageMode == 'Whisper' then
 							if this.TargetWhisperPlayer then
-								if this.TargetWhisperPlayer == Player then
+								if this.TargetWhisperPlayer == LocalPlayer then
 									this.ChatErrorEvent:fire("You cannot send a whisper to yourself.")
 								else
 									pcall(function() PlayersService:WhisperChat(cText, this.TargetWhisperPlayer) end)
@@ -1776,325 +1776,325 @@ local function CreateChatWindowWidget(settings)
 end
 
 
-local function CreateChat()
-	local this = {}
+local ChatWindow = {}
+ChatWindow.__index = ChatWindow
 
-	this.Settings =
-	{
-		GlobalTextColor = Color3.new(255/255, 255/255, 243/255);
-		WhisperTextColor = Color3.new(77/255, 139/255, 255/255);
-		TeamTextColor = Color3.new(230/255, 207/255, 0);
-		DefaultMessageTextColor = Color3.new(255/255, 255/255, 243/255);
-		AdminTextColor = Color3.new(1, 215/255, 0);
-		TextStrokeTransparency = 0.75;
-		TextStrokeColor = Color3.new(34/255,34/255,34/255);
-		Font = Enum.Font.SourceSansBold;
-		--Font = Enum.Font.ArialBold;
-		FontSize = Enum.FontSize.Size18;
-		MaxWindowChatMessages = 50;
-		MaxCharactersInMessage = 140;
-	}
+ChatWindow.Settings = {
+	GlobalTextColor = Color3.new(255/255, 255/255, 243/255);
+	WhisperTextColor = Color3.new(77/255, 139/255, 255/255);
+	TeamTextColor = Color3.new(230/255, 207/255, 0);
+	DefaultMessageTextColor = Color3.new(255/255, 255/255, 243/255);
+	AdminTextColor = Color3.new(1, 215/255, 0);
+	TextStrokeTransparency = 0.75;
+	TextStrokeColor = Color3.new(34/255,34/255,34/255);
+	Font = Enum.Font.SourceSansBold;
+	FontSize = Enum.FontSize.Size18;
+	MaxWindowChatMessages = 50;
+	MaxCharactersInMessage = 140;
+}
 
-	this.BlockList = {}
-
-	function this:CoreGuiChanged(coreGuiType, enabled)
-		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
-			if Util:IsTouchDevice() then
+function ChatWindow:CoreGuiChanged(coreGuiType, enabled)
+	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+		if Util:IsTouchDevice() then
+			Util.SetGUIInsetBounds(0, 0)
+		else
+			if enabled and self.ChatBarWidget then
+				-- Reserve bottom 20 pixels for our chat bar
+				Util.SetGUIInsetBounds(0, 20)
+			else
 				Util.SetGUIInsetBounds(0, 0)
+			end
+		end
+		if self.MobileChatButton then
+			if enabled == true then
+				self.MobileChatButton.Parent = GuiRoot
+				-- we need to set it to be visible in-case we missed a lost focus event while chat was turned off.
+				self.MobileChatButton.Visible = true
 			else
-				if enabled and this.ChatBarWidget then
-					-- Reserve bottom 20 pixels for our chat bar
-					Util.SetGUIInsetBounds(0, 20)
-				else
-					Util.SetGUIInsetBounds(0, 0)
-				end
-			end
-			if this.MobileChatButton then
-				if enabled == true then
-					this.MobileChatButton.Parent = GuiRoot
-					-- we need to set it to be visible in-case we missed a lost focus event while chat was turned off.
-					this.MobileChatButton.Visible = true
-				else
-					this.MobileChatButton.Parent = nil
-				end
-			end
-		end
-		if this.ChatWindowWidget then
-			this.ChatWindowWidget:CoreGuiChanged(coreGuiType, enabled)
-		end
-		if this.ChatBarWidget then
-			this.ChatBarWidget:CoreGuiChanged(coreGuiType, enabled)
-		end
-	end
-
-	-- This event has 4 callback arguments
-	-- Enum.PlayerChatType.{All|Team|Whisper}, chatPlayer, message, targetPlayer
-	function this:OnPlayerChatted(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
-		if this.ChatWindowWidget then
-			-- Don't add messages from blocked players
-			if not this:IsPlayerBlocked(sendingPlayer) then
-				this.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+				self.MobileChatButton.Parent = nil
 			end
 		end
 	end
-
-	function this:OnPlayerAdded(newPlayer)
-		if newPlayer then
-			spawn(function() Util.IsPlayerAdminAsync(newPlayer) end)
-		end
-		if NON_CORESCRIPT_MODE then
-			newPlayer.Chatted:connect(function(msg, recipient)
-				this:OnPlayerChatted(Enum.PlayerChatType.All, newPlayer, msg, recipient)
-			end)
-		else
-			this.PlayerChattedConn = Util.DisconnectEvent(this.PlayerChattedConn)
-			this.PlayerChattedConn = PlayersService.PlayerChatted:connect(function(...)
-				this:OnPlayerChatted(...)
-			end)
-		end
+	if self.ChatWindowWidget then
+		self.ChatWindowWidget:CoreGuiChanged(coreGuiType, enabled)
 	end
-
-	function this:IsPlayerBlockedByUserId(userId)
-		for _, currentBlockedUserId in pairs(this.BlockList) do
-			if currentBlockedUserId == userId then
-				return true
-			end
-		end
-		return false
+	if self.ChatBarWidget then
+		self.ChatBarWidget:CoreGuiChanged(coreGuiType, enabled)
 	end
-
-	function this:IsPlayerBlocked(player)
-		return player and this:IsPlayerBlockedByUserId(player.userId)
-	end
-
-	function this:GetBlockedPlayersAsync()
-		local userId = Player.userId
-		local secureBaseUrl = Util.GetSecureApiBaseUrl()
-		local url = secureBaseUrl .. "userblock/getblockedusers" .. "?" .. "userId=" .. tostring(userId) .. "&" .. "page=" .. "1"
-		if userId > 0 then
-			local blockList = nil
-			local success, msg = ypcall(function()
-				local request = game:HttpGetAsync(url)
-				blockList = request and game:GetService('HttpService'):JSONDecode(request)
-			end)
-			if blockList and blockList['success'] == true and blockList['userList'] then
-				return blockList['userList']
-			end
-		end
-		return {}
-	end
-
-	function this:BlockPlayerAsync(playerToBlock)
-		if playerToBlock and Player ~= playerToBlock then
-			local blockUserId = playerToBlock.userId
-			local playerToBlockName = playerToBlock.Name
-			if blockUserId > 0 then
-				if not this:IsPlayerBlockedByUserId(blockUserId) then
-					-- TODO: We may want to use a more dynamic way of changing the blockList size.
-					--if #this.BlockList < MAX_BLOCKLIST_SIZE then
-						table.insert(this.BlockList, blockUserId)
-						this.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is now blocked.")
-						-- Make Block call
-						pcall(function()
-							local success = PlayersService:BlockUser(Player.userId, blockUserId)
-						end)
-					--else
-					--	this.ChatWindowWidget:AddSystemChatMessage("You cannot block " .. playerToBlockName .. " because your list is full.")
-					--end
-				else
-					this.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is already blocked.")
-				end
-			else
-				this.ChatWindowWidget:AddSystemChatMessage("You cannot block guests.")
-			end
-		else
-			this.ChatWindowWidget:AddSystemChatMessage("You cannot block yourself.")
-		end
-	end
-
-	function this:UnblockPlayerAsync(playerToUnblock)
-		if playerToUnblock then
-			local unblockUserId = playerToUnblock.userId
-			local playerToUnblockName = playerToUnblock.Name
-
-			if this:IsPlayerBlockedByUserId(unblockUserId) then
-				local blockedUserIndex = nil
-				for index, blockedUserId in pairs(this.BlockList) do
-					if blockedUserId == unblockUserId then
-						blockedUserIndex = index
-					end
-				end
-				if blockedUserIndex then
-					table.remove(this.BlockList, blockedUserIndex)
-				end
-				this.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is no longer blocked.")
-				-- Make Unblock call
-				pcall(function()
-					local success = PlayersService:UnblockUser(Player.userId, unblockUserId)
-				end)
-			else
-				this.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is not blocked.")
-			end
-		end
-	end
-
-	function this:CreateTouchDeviceChatButton()
-		return Util.Create'ImageButton'
-		{
-			Name = 'TouchDeviceChatButton';
-			Size = UDim2.new(0, 128, 0, 32);
-			Position = UDim2.new(0, 88, 0, 0);
-			BackgroundTransparency = 1.0;
-			Image = 'http://www.roblox.com/asset/?id=97078724';
-		};
-	end
-
-	function this:PrintWelcome()
-		if this.ChatWindowWidget then
-			this.ChatWindowWidget:AddSystemChatMessage("Please type /? for a list of commands", true)
-		end
-	end
-
-	function this:PrintHelp()
-		if this.ChatWindowWidget then
-			this.ChatWindowWidget:AddSystemChatMessage("Help Menu")
-			this.ChatWindowWidget:AddSystemChatMessage("Chat Commands:")
-			this.ChatWindowWidget:AddSystemChatMessage("/w [PlayerName] or /whisper [PlayerName] - Whisper Chat")
-			this.ChatWindowWidget:AddSystemChatMessage("/t or /team - Team Chat")
-			this.ChatWindowWidget:AddSystemChatMessage("/a or /all - All Chat")
-			if GetBlockedUsersFlag() then
-				this.ChatWindowWidget:AddSystemChatMessage("/block [PlayerName] or /ignore [PlayerName] - Block communications from Target Player")
-				this.ChatWindowWidget:AddSystemChatMessage("/unblock [PlayerName] or /unignore [PlayerName] - Restore communications with Target Player")
-			end
-		end
-	end
-
-	function this:CreateGUI()
-		if FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu then
-			-- NOTE: eventually we will make multiple chat window frames
-			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
-			this.ChatBarWidget = CreateChatBarWidget(this.Settings)
-			this.ChatWindowWidget:FadeOut(0)
-			local focusCount = 0
-			this.ChatBarWidget.ChatBarGainedFocusEvent:connect(function()
-				focusCount = focusCount + 1
-				this.ChatWindowWidget:FadeIn(0.25)
-				this.ChatWindowWidget:SetFadeLock(true)
-			end)
-			this.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
-				local focusNow = focusCount
-				if Util:IsTouchDevice() then
-					wait(2)
-					if focusNow == focusCount then
-						this.ChatWindowWidget:SetFadeLock(false)
-					end
-				else
-					this.ChatWindowWidget:SetFadeLock(false)
-				end
-			end)
-
-			this.ChatBarWidget.ChatErrorEvent:connect(function(msg)
-				if msg then
-					this.ChatWindowWidget:AddSystemChatMessage(msg)
-				end
-			end)
-
-			this.ChatBarWidget.ChatCommandEvent:connect(function(success, actionType, capture)
-				if actionType == "Help" then
-					this:PrintHelp()
-				elseif actionType == "Block" then
-					if GetBlockedUsersFlag() then
-						local blockPlayerName = capture and tostring(capture) or ""
-						local playerToBlock = Util.GetPlayerByName(blockPlayerName)
-						if playerToBlock then
-							spawn(function() this:BlockPlayerAsync(playerToBlock) end)
-						else
-							this.ChatWindowWidget:AddSystemChatMessage("Cannot block " .. blockPlayerName .. " because they are not in the game.")
-						end
-					end
-				elseif actionType == "Unblock" then
-					if GetBlockedUsersFlag() then
-						local unblockPlayerName = capture and tostring(capture) or ""
-						local playerToBlock = Util.GetPlayerByName(unblockPlayerName)
-						if playerToBlock then
-							spawn(function() this:UnblockPlayerAsync(playerToBlock) end)
-						else
-							this.ChatWindowWidget:AddSystemChatMessage("Cannot unblock " .. unblockPlayerName .. " because they are not in the game.")
-						end
-					end
-				elseif actionType == "Whisper" then
-					if success == false then
-						local playerName = capture and tostring(capture) or "Unknown"
-						this.ChatWindowWidget:AddSystemChatMessage("Unable to Send a Whisper to Player: " .. playerName)
-					end
-				elseif actionType == "Unknown" then
-					if success == false then
-						local commandText = capture and tostring(capture) or "Unknown"
-						this.ChatWindowWidget:AddSystemChatMessage("Invalid Slash Command: " .. commandText)
-					end
-				end
-			end)
-
-			if Util.IsTouchDevice() then
-				local mobileChatButton = this:CreateTouchDeviceChatButton()
-				if StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat) then
-					mobileChatButton.Parent = GuiRoot
-				end
-
-				mobileChatButton.TouchTap:connect(function()
-					mobileChatButton.Visible = false
-					if this.ChatBarWidget then
-						this.ChatBarWidget:FocusChatBar()
-					end
-				end)
-
-				this.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
-					mobileChatButton.Visible = true
-				end)
-
-				this.MobileChatButton = mobileChatButton
-			end
-		end
-	end
-
-	function this:Initialize()
-		if GetBlockedUsersFlag() then
-			spawn(function()
-				this.BlockList = this:GetBlockedPlayersAsync()
-			end)
-		end
-
-		this:OnPlayerAdded(Player)
-		-- Upsettingly, it seems everytime a player is added, you have to redo the connection
-		-- NOTE: PlayerAdded only fires on the server, hence ChildAdded is used here
-		PlayersService.ChildAdded:connect(function(child)
-			if child:IsA('Player') then
-				this:OnPlayerAdded(child)
-			end
-		end)
-
-		this:CreateGUI()
-
-
-		this:CoreGuiChanged(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
-		this.CoreGuiChangedConn = Util.DisconnectEvent(this.CoreGuiChangedConn)
-		pcall(function()
-			this.CoreGuiChangedConn = StarterGui.CoreGuiChangedSignal:connect(
-				function(coreGuiType,enabled)
-					this:CoreGuiChanged(coreGuiType, enabled)
-				end)
-		end)
-
-		if not NON_CORESCRIPT_MODE then
-			this:PrintWelcome()
-		end
-	end
-
-	return this
 end
+
+-- This event has 4 callback arguments
+-- Enum.PlayerChatType.{All|Team|Whisper}, chatPlayer, message, targetPlayer
+function ChatWindow:OnPlayerChatted(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+	if self.ChatWindowWidget then
+		-- Don't add messages from blocked players
+		if not self:IsPlayerBlocked(sendingPlayer) then
+			self.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		end
+	end
+end
+
+function ChatWindow:OnPlayerAdded(newPlayer)
+	if newPlayer then
+		spawn(function() Util.IsPlayerAdminAsync(newPlayer) end)
+	end
+	if NON_CORESCRIPT_MODE then
+		newPlayer.Chatted:connect(function(msg, recipient)
+			self:OnPlayerChatted(Enum.PlayerChatType.All, newPlayer, msg, recipient)
+		end)
+	else
+		self.PlayerChattedConn = Util.DisconnectEvent(self.PlayerChattedConn)
+		self.PlayerChattedConn = PlayersService.PlayerChatted:connect(function(...)
+			self:OnPlayerChatted(...)
+		end)
+	end
+end
+
+function ChatWindow:IsPlayerBlockedByUserId(userId)
+	for _, currentBlockedUserId in pairs(self.BlockList) do
+		if currentBlockedUserId == userId then
+			return true
+		end
+	end
+	return false
+end
+
+function ChatWindow:IsPlayerBlocked(player)
+	return player and self:IsPlayerBlockedByUserId(player.userId)
+end
+
+function ChatWindow:GetBlockedPlayersAsync()
+	local userId = LocalPlayer.userId
+	local secureBaseUrl = Util.GetSecureApiBaseUrl()
+	local url = secureBaseUrl .. "userblock/getblockedusers" .. "?" .. "userId=" .. tostring(userId) .. "&" .. "page=" .. "1"
+	if userId > 0 then
+		local blockList = nil
+		local success, msg = ypcall(function()
+			local request = game:HttpGetAsync(url)
+			blockList = request and game:GetService('HttpService'):JSONDecode(request)
+		end)
+		if blockList and blockList['success'] == true and blockList['userList'] then
+			return blockList['userList']
+		end
+	end
+	return {}
+end
+
+function ChatWindow:BlockPlayerAsync(playerToBlock)
+	if playerToBlock and LocalPlayer ~= playerToBlock then
+		local blockUserId = playerToBlock.userId
+		local playerToBlockName = playerToBlock.Name
+		if blockUserId > 0 then
+			if not self:IsPlayerBlockedByUserId(blockUserId) then
+				-- TODO: We may want to use a more dynamic way of changing the blockList size.
+				--if #self.BlockList < MAX_BLOCKLIST_SIZE then
+					table.insert(self.BlockList, blockUserId)
+					self.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is now blocked.")
+					-- Make Block call
+					pcall(function()
+						local success = PlayersService:BlockUser(LocalPlayer.userId, blockUserId)
+					end)
+				--else
+				--	self.ChatWindowWidget:AddSystemChatMessage("You cannot block " .. playerToBlockName .. " because your list is full.")
+				--end
+			else
+				self.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is already blocked.")
+			end
+		else
+			self.ChatWindowWidget:AddSystemChatMessage("You cannot block guests.")
+		end
+	else
+		self.ChatWindowWidget:AddSystemChatMessage("You cannot block yourself.")
+	end
+end
+
+function ChatWindow:UnblockPlayerAsync(playerToUnblock)
+	if playerToUnblock then
+		local unblockUserId = playerToUnblock.userId
+		local playerToUnblockName = playerToUnblock.Name
+
+		if self:IsPlayerBlockedByUserId(unblockUserId) then
+			local blockedUserIndex = nil
+			for index, blockedUserId in pairs(self.BlockList) do
+				if blockedUserId == unblockUserId then
+					blockedUserIndex = index
+				end
+			end
+			if blockedUserIndex then
+				table.remove(self.BlockList, blockedUserIndex)
+			end
+			self.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is no longer blocked.")
+			-- Make Unblock call
+			pcall(function()
+				local success = PlayersService:UnblockUser(LocalPlayer.userId, unblockUserId)
+			end)
+		else
+			self.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is not blocked.")
+		end
+	end
+end
+
+function ChatWindow:CreateTouchDeviceChatButton()
+	return Util.Create'ImageButton'
+	{
+		Name = 'TouchDeviceChatButton';
+		Size = UDim2.new(0, 128, 0, 32);
+		Position = UDim2.new(0, 88, 0, 0);
+		BackgroundTransparency = 1.0;
+		Image = 'http://www.roblox.com/asset/?id=97078724';
+	};
+end
+
+function ChatWindow:PrintWelcome()
+	if self.ChatWindowWidget then
+		self.ChatWindowWidget:AddSystemChatMessage("Please type /? for a list of commands", true)
+	end
+end
+
+function ChatWindow:PrintHelp()
+	if self.ChatWindowWidget then
+		self.ChatWindowWidget:AddSystemChatMessage("Help Menu")
+		self.ChatWindowWidget:AddSystemChatMessage("Chat Commands:")
+		self.ChatWindowWidget:AddSystemChatMessage("/w [PlayerName] or /whisper [PlayerName] - Whisper Chat")
+		self.ChatWindowWidget:AddSystemChatMessage("/t or /team - Team Chat")
+		self.ChatWindowWidget:AddSystemChatMessage("/a or /all - All Chat")
+		if GetBlockedUsersFlag() then
+			self.ChatWindowWidget:AddSystemChatMessage("/block [PlayerName] or /ignore [PlayerName] - Block communications from Target Player")
+			self.ChatWindowWidget:AddSystemChatMessage("/unblock [PlayerName] or /unignore [PlayerName] - Restore communications with Target Player")
+		end
+	end
+end
+
+function ChatWindow:CreateGUI()
+	if FORCE_CHAT_GUI or LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu then
+		-- NOTE: eventually we will make multiple chat window frames
+		self.ChatWindowWidget = CreateChatWindowWidget(self.Settings)
+		self.ChatBarWidget = CreateChatBarWidget(self.Settings)
+		self.ChatWindowWidget:FadeOut(0)
+		local focusCount = 0
+		self.ChatBarWidget.ChatBarGainedFocusEvent:connect(function()
+			focusCount = focusCount + 1
+			self.ChatWindowWidget:FadeIn(0.25)
+			self.ChatWindowWidget:SetFadeLock(true)
+		end)
+		self.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
+			if Util:IsTouchDevice() then
+				local focusNow = focusCount
+				wait(2)
+				if focusNow == focusCount then
+					self.ChatWindowWidget:SetFadeLock(false)
+				end
+			else
+				self.ChatWindowWidget:SetFadeLock(false)
+			end
+		end)
+
+		self.ChatBarWidget.ChatErrorEvent:connect(function(msg)
+			if msg then
+				self.ChatWindowWidget:AddSystemChatMessage(msg)
+			end
+		end)
+
+		self.ChatBarWidget.ChatCommandEvent:connect(function(success, actionType, capture)
+			if actionType == "Help" then
+				self:PrintHelp()
+			elseif actionType == "Block" then
+				if GetBlockedUsersFlag() then
+					local blockPlayerName = capture and tostring(capture) or ""
+					local playerToBlock = Util.GetPlayerByName(blockPlayerName)
+					if playerToBlock then
+						spawn(function() self:BlockPlayerAsync(playerToBlock) end)
+					else
+						self.ChatWindowWidget:AddSystemChatMessage("Cannot block " .. blockPlayerName .. " because they are not in the game.")
+					end
+				end
+			elseif actionType == "Unblock" then
+				if GetBlockedUsersFlag() then
+					local unblockPlayerName = capture and tostring(capture) or ""
+					local playerToBlock = Util.GetPlayerByName(unblockPlayerName)
+					if playerToBlock then
+						spawn(function() self:UnblockPlayerAsync(playerToBlock) end)
+					else
+						self.ChatWindowWidget:AddSystemChatMessage("Cannot unblock " .. unblockPlayerName .. " because they are not in the game.")
+					end
+				end
+			elseif actionType == "Whisper" then
+				if success == false then
+					local playerName = capture and tostring(capture) or "Unknown"
+					self.ChatWindowWidget:AddSystemChatMessage("Unable to Send a Whisper to Player: " .. playerName)
+				end
+			elseif actionType == "Unknown" then
+				if success == false then
+					local commandText = capture and tostring(capture) or "Unknown"
+					self.ChatWindowWidget:AddSystemChatMessage("Invalid Slash Command: " .. commandText)
+				end
+			end
+		end)
+
+		if Util.IsTouchDevice() then
+			local mobileChatButton = self:CreateTouchDeviceChatButton()
+			if StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat) then
+				mobileChatButton.Parent = GuiRoot
+			end
+
+			mobileChatButton.TouchTap:connect(function()
+				mobileChatButton.Visible = false
+				if self.ChatBarWidget then
+					self.ChatBarWidget:FocusChatBar()
+				end
+			end)
+
+			self.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
+				mobileChatButton.Visible = true
+			end)
+
+			self.MobileChatButton = mobileChatButton
+		end
+	end
+end
+
+function ChatWindow.new()
+	local self = {}
+	setmetatable(self, ChatWindow)
+
+	self.BlockList = {} 
+
+	if GetBlockedUsersFlag() then
+		spawn(function()
+			self.BlockList = self:GetBlockedPlayersAsync()
+		end)
+	end
+
+	self:OnPlayerAdded(LocalPlayer)
+	-- Upsettingly, it seems everytime a player is added, you have to redo the connection
+	-- NOTE: PlayerAdded only fires on the server, hence ChildAdded is used here
+	PlayersService.ChildAdded:connect(function(child)
+		if child:IsA('Player') then
+			self:OnPlayerAdded(child)
+		end
+	end)
+
+	self:CreateGUI()
+
+
+	self:CoreGuiChanged(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
+	self.CoreGuiChangedConn = Util.DisconnectEvent(self.CoreGuiChangedConn)
+	pcall(function()
+		self.CoreGuiChangedConn = StarterGui.CoreGuiChangedSignal:connect(
+			function(coreGuiType,enabled)
+				self:CoreGuiChanged(coreGuiType, enabled)
+			end)
+	end)
+
+	if not NON_CORESCRIPT_MODE then
+		self:PrintWelcome()
+	end
+
+	return self
+end
+
 
 -- Main Entry Point
 do
-	local ChatInstance = CreateChat()
-	ChatInstance:Initialize()
+	local ChatInstance = ChatWindow.new()
 end
