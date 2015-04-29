@@ -1982,8 +1982,8 @@ local function CreateChat()
 				this.ChatWindowWidget:SetFadeLock(true)
 			end)
 			this.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
-				local focusNow = focusCount
 				if Util:IsTouchDevice() then
+					local focusNow = focusCount
 					wait(2)
 					if focusNow == focusCount then
 						this.ChatWindowWidget:SetFadeLock(false)
