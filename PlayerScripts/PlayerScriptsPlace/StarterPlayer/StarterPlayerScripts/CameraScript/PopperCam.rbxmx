@@ -5,7 +5,7 @@
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">PopperCam</string>
-			<ProtectedString name="Source"><![CDATA[-- PopperCam Version 14
+			<ProtectedString name="Source"><![CDATA[-- PopperCam Version 15
 -- OnlyTwentyCharacters
 
 local PopperCam = {} -- Guarantees your players won't see outside the bounds of your map!
@@ -55,7 +55,7 @@ local PopperEnabled = false
 local function CastRay(fromPoint, toPoint, ignoreList)
 	local vector = toPoint - fromPoint
 	local ray = Ray.new(fromPoint, vector.Unit * math.min(vector.Magnitude, 999))
-	return workspace:FindPartOnRayWithIgnoreList(ray, ignoreList or {})
+	return workspace:FindPartOnRayWithIgnoreList(ray, ignoreList or {}, false, true)
 end
 
 -- Casts and recasts until it hits either: nothing, or something not transparent or collidable
