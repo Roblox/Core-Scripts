@@ -492,12 +492,8 @@ local function CreateUsernameHealthMenuItem()
 		end
 	end
 
-	function this:SetNameAlignment(leftAligned)
-		if leftAligned then
-			username.TextXAlignment = Enum.TextXAlignment.Left;
-		else
-			username.TextXAlignment = Enum.TextXAlignment.Right;
-		end
+	function this:SetNameVisible(visible)
+		username.Visible = visible
 	end
 
 	setmetatable(this, mtStore)
@@ -1018,7 +1014,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 		local playerListOn = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList)
 		local healthbarOn = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health)
 		-- Left-align the player's name if either playerlist or healthbar is shown
-		nameAndHealthMenuItem:SetNameAlignment(playerListOn or healthbarOn)
+		nameAndHealthMenuItem:SetNameVisible(playerListOn or healthbarOn)
 	end
 end
 
