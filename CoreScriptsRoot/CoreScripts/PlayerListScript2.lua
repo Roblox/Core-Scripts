@@ -150,7 +150,7 @@ local function clamp(value, min, max)
 	elseif value > max then
 		value = max
 	end
-	
+
 	return value
 end
 
@@ -294,10 +294,10 @@ end
 local function sortLeaderStats(a, b)
 	if a.IsPrimary ~= b.IsPrimary then
 		return a.IsPrimary
-	end	
+	end
 	if a.Priority == b.Priority then
 		return a.AddId < b.AddId
-	end	
+	end
 	return a.Priority < b.Priority
 end
 
@@ -336,7 +336,7 @@ Header.BorderSizePixel = 0
 Header.Active = true
 Header.ClipsDescendants = true
 Header.Parent = Container
-	
+
 	local HeaderName = Instance.new('TextLabel')
 	HeaderName.Name = "HeaderName"
 	HeaderName.Size = UDim2.new(1, 0, 0.5, 0)
@@ -364,7 +364,7 @@ Header.Parent = Container
 	HeaderScore.TextXAlignment = Enum.TextXAlignment.Right
 	HeaderScore.Text = ""
 	HeaderScore.Parent = Header
-	
+
 -- Scrolling Frame
 local ScrollList = Instance.new('ScrollingFrame')
 ScrollList.Name = "ScrollList"
@@ -666,7 +666,7 @@ local function createStatFrame(offset, parent, name)
 	statFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 	statFrame.BorderSizePixel = 0
 	statFrame.Parent = parent
-	
+
 	return statFrame
 end
 
@@ -684,7 +684,7 @@ local function createStatText(parent, text)
 	statText.Text = text
 	statText.Active = true
 	statText.Parent = parent
-	
+
 	return statText
 end
 
@@ -867,7 +867,7 @@ local function getFriendCountAsync(userId)
 		return nil
 	end
 	result = HttpService:JSONDecode(result)
-	
+
 	if result["success"] and result["count"] then
 		friendCount = result["count"]
 	end
@@ -882,7 +882,7 @@ local function canSendFriendRequestAsync(otherPlayer)
 	--
 	local theirFriendCount = getFriendCountAsync(otherPlayer.userId)
 	local myFriendCount = getFriendCountAsync()
-	
+
 	-- assume max friends if web call fails
 	if not myFriendCount or not theirFriendCount then
 		return false
@@ -952,7 +952,7 @@ local function onFollowerStatusChanged()
 	if not LastSelectedFrame or not LastSelectedPlayer then
 		return
 	end
-	
+
 	-- don't update icon if already friends
 	local friendStatus = getFriendStatus(LastSelectedPlayer)
 	if friendStatus == Enum.FriendStatus.Friend then
@@ -992,7 +992,7 @@ local function onFollowButtonPressed()
 		-- now update the social icon
 		onFollowerStatusChanged()
 	end
-	
+
 	hideFriendReportPopup()
 end
 
@@ -1282,7 +1282,7 @@ local function updateAllTeamScores()
 					break
 				end
 			end
-		end 
+		end
 		if isInValidColor then
 			team = 'Neutral'
 		end
@@ -1453,12 +1453,12 @@ updateLeaderstatFrames = function()
 		local mainFrame = entry.Frame
 		local offset = NameEntrySizeX * ScaleX
 		local leaderstats = player:FindFirstChild('leaderstats')
-		
+
 		if leaderstats then
 			for _,stat in ipairs(GameStats) do
 				local statObject = leaderstats:FindFirstChild(stat.Name)
 				local statFrame = mainFrame:FindFirstChild(stat.Name)
-				
+
 				if not statFrame then
 					statFrame = createStatFrame(offset, mainFrame, stat.Name)
 					if statObject then
@@ -1482,7 +1482,7 @@ updateLeaderstatFrames = function()
 				offset = offset + statFrame.Size.X.Offset + 1
 			end
 		end
-		
+
 		Container.Position = IsPlayerListExpanded and UDim2.new(0.5, -offset/2, 0.15, 0) or
 			UDim2.new(1, -offset - 2, 0, 2)
 		Container.Size = UDim2.new(0, offset, 0.5, 0)
@@ -1524,7 +1524,7 @@ local function addNewStats(leaderstats)
 					break
 				end
 			end
-			
+
 			if not gameHasStat then
 				local newStat = {}
 				newStat.Name = stat.Name
@@ -1636,7 +1636,7 @@ end
 local function setLeaderStats(entry)
 	local player = entry.Player
 	local leaderstats = player:FindFirstChild('leaderstats')
-	
+
 	if leaderstats then
 		onStatAdded(leaderstats, entry)
 	end
@@ -1646,7 +1646,7 @@ local function setLeaderStats(entry)
 			onStatAdded(child, entry)
 		end
 	end
-	
+
 	player.ChildAdded:connect(function(child)
 		if child.Name == 'leaderstats' then
 			onStatAdded(child, entry)
@@ -1656,7 +1656,7 @@ local function setLeaderStats(entry)
 	for _,child in pairs(player:GetChildren()) do
 		child.Changed:connect(function(property) onPlayerChildChanged(property, child) end)
 	end
-	
+
 	player.ChildRemoved:connect(function(child)
 		if child.Name == 'leaderstats' then
 			for i,stat in ipairs(child:GetChildren()) do
@@ -1680,9 +1680,9 @@ local function createPlayerEntry(player)
 		onEntryFrameSelected(containerFrame, player)
 	end
 	entryFrame.MouseButton1Click:connect(localEntrySelected)
-	
+
 	local currentXOffset = 1
-	
+
 	-- check membership
 	local membershipIconImage = getMembershipIcon(player)
 	local membershipIcon = nil
@@ -1722,13 +1722,13 @@ local function createPlayerEntry(player)
 		-- event. This event is fired when any player joins the game. onFriendshipChanged will check Follower status in
 		-- the case that we are not friends with the new player who is joining.
 	end)
-	
+
 	local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
 	local playerName = createEntryNameText("PlayerName", name, playerNameXSize, currentXOffset)
 	playerName.Parent = entryFrame
 	playerEntry.Player = player
 	playerEntry.Frame = containerFrame
-	
+
 	return playerEntry
 end
 
@@ -1959,7 +1959,7 @@ UserInputService.InputChanged:connect(function(inputObject)
 		local delta = LastExpandInputPosition - currentPosition
 		local newPosition = clamp(ScrollList.Size.Y.Offset - delta, 0, Container.AbsoluteSize.y - Header.AbsoluteSize.y)
 		ScrollList.Size = UDim2.new(1, 0, 0, newPosition)
-		
+
 		clampCanvasPosition()
 		setExpandFramePosition()
 		LastExpandInputPosition = currentPosition

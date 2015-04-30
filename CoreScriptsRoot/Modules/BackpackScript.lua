@@ -467,7 +467,7 @@ local function MakeSlot(parent, index)
 			local lowestPoint = SlotFrame.Position.Y.Offset + SlotFrame.Size.Y.Offset
 			ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, lowestPoint + ICON_BUFFER)
 		end
-		
+
 		-- Scroll to new inventory slot, if we're open and not viewing search results
 		if InventoryFrame.Visible and not ResultsIndices then
 			local offset = ScrollingFrame.CanvasSize.Y.Offset - ScrollingFrame.AbsoluteSize.Y
@@ -899,7 +899,7 @@ do -- Search stuff
 				slot.Frame.Visible = true
 			end
 		end
-		
+
 		ScrollingFrame.CanvasPosition = Vector2.new(0, 0)
 
 		xButton.Visible = true

@@ -17,9 +17,9 @@ waitForProperty(Game:GetService("Players"),"LocalPlayer")
 waitForProperty(Game:GetService("Players").LocalPlayer,"userId")
 
 local player = Game:GetService("Players").LocalPlayer
-if not player then 
+if not player then
 	script:Destroy()
-	return 
+	return
 end
 
 function getIds(idTable, assetTable)
@@ -40,11 +40,11 @@ function storeInContainer(modelName, assetTable)
 	local model = Instance.new("Model")
 	model.Archivable = false
 	model.Name = modelName
-	
+
 	for i = 1, #assetTable do
 		assetTable[i].Parent = model
 	end
-	
+
 	if not container:FindFirstChild(modelName) then -- no one beat us to it, we get to insert
 		model.Parent = container
 	end
@@ -73,20 +73,20 @@ if not toolsArray then -- no one has made build tools yet, we get to!
 		table.insert(buildToolIds,70353319) -- ConfigTool
 		table.insert(buildToolIds,70353320) -- WiringTool
 	end
-	
+
 	table.insert(buildToolIds,58921588) -- ClassicTool
 	table.insert(ownerToolIds, 65347268) -- OwnerCameraTool
 
 	-- next, create array of our tools
 	local buildTools = {}
 	local ownerTools = {}
-	
+
 	getIds(buildToolIds, buildTools)
 	getIds(ownerToolIds, ownerTools)
-	
+
 	storeInContainer("BuildToolsModel",buildTools)
 	storeInContainer("OwnerToolsModel",ownerTools)
-	
+
 	toolsArray = container:FindFirstChild("BuildToolsModel")
 	ownerArray = container:FindFirstChild("OwnerToolsModel")
 end
@@ -139,19 +139,19 @@ player.Changed:connect(function(prop)
 		while debounce do
 			wait(0.5)
 		end
-		
+
 		debounce = true
-		
+
 		if player.HasBuildTools then
 			giveBuildTools()
 		else
 			removeBuildTools()
 		end
-		
+
 		if player.PersonalServerRank >= 255 then
 			giveOwnerTools()
 		end
-		
+
 		debounce = false
 	elseif prop == "PersonalServerRank" then
 		if player.PersonalServerRank >= 255 then

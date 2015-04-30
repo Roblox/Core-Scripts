@@ -1094,12 +1094,3 @@ CheckShiftLockMode()
 
 GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
 RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize)
-
-
-
-
-
-
-
-
-
