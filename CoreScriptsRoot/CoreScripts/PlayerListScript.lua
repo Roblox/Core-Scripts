@@ -1,6 +1,6 @@
---------------------  
+--------------------
 -- Super Util
--------------------- 
+--------------------
 
 local ADMINS =
 {
@@ -161,15 +161,15 @@ local Images = {
 	LightPopupBottom = '97109175',
 }
 
-local BASE_TWEEN = .25 
+local BASE_TWEEN = .25
 
 local MOUSE_HOLD_TIME = .15
 local MOUSE_DRAG_DISTANCE = 15
 
 local BACKGROUND_TRANSPARENCY = 0.7
 --[[
-	Generic object Create function, which I am using to create Gui's 
-	Thanks to Stravant! 
+	Generic object Create function, which I am using to create Gui's
+	Thanks to Stravant!
 --]]
 local Obj = {}
 function Obj.Create(guiType)
@@ -184,7 +184,7 @@ function Obj.Create(guiType)
 		end
 		return obj
 	end
-end 
+end
 
 --[[
 	makes a full sized background for a guiobject
@@ -244,7 +244,7 @@ function getMembershipTypeIcon(membershipType,playerName)
 		return "rbxasset://textures/ui/TinyObcIcon.png"
 	else
 		error("Unknown membershipType" .. membershipType)
-	end	
+	end
 end
 
 local function getFriendStatusIcon(friendStatus)
@@ -317,15 +317,15 @@ function WaitForChild(parent,child)
 	return parent[child]
 end
 
- ---------------------------  
+ ---------------------------
  -- Workspace Objects
- --------------------------- 
+ ---------------------------
 
 -- might want to move all this to an init function, wait for localplayer elsewhere
 local Players = game:GetService('Players')
 -- make sure this doesn't run on the server(it will if you dont do this)
 while not Players.LocalPlayer do
-	Players.Changed:wait() 
+	Players.Changed:wait()
 end
 
 local LocalPlayer = Players.LocalPlayer
@@ -336,7 +336,7 @@ local ScreenGui = Obj.Create"Frame"
 	Name = 'PlayerListScreen',
 	Size = UDim2.new(1, 0, 1, 0),
 	BackgroundTransparency = 1,
-	Parent = script.Parent 
+	Parent = script.Parent
 }
 local MainFrame = Obj.Create"Frame"
 {
@@ -487,7 +487,7 @@ local TopClipFrame = Obj.Create"Frame"
 				Size = UDim2.new(1, 0, .5, 0),
 				ZIndex = 5,
 				Parent = ScrollBarFrame,
-				
+
 			}
 		local ListFrame = Obj.Create"Frame"
 		{
@@ -517,7 +517,7 @@ local PopUpPanel = nil
 		Size = UDim2.new(1,0,.032,0),
 		Parent = PopUpClipFrame,
 	}
-		
+
 local StatTitles = Obj.Create"Frame"
 {
 	Name = 'StatTitles',
@@ -549,7 +549,7 @@ local MiddleTemplate = Obj.Create"Frame"
 		SizeConstraint = 'RelativeYY',
 		Image = "",
 		ZIndex = 4,
-	}, 
+	},
 	Obj.Create'ImageLabel'
 	{
 		Name = 'FriendLabel',
@@ -593,7 +593,7 @@ local MiddleTemplate = Obj.Create"Frame"
 			ZIndex = 3,
 		},
 	},
-	
+
 	Obj.Create"TextLabel"
 	{
 		Name = 'PlayerScore',
@@ -610,7 +610,7 @@ local MiddleTemplate = Obj.Create"Frame"
 	},
 	--Obj.Create'IntValue'{Name = 'ID'},
 	--Obj.Create'ObjectValue'{Name = 'Player'},
-	--Obj.Create'IntValue'{Name = 'Score'},	
+	--Obj.Create'IntValue'{Name = 'Score'},
 	ZIndex = 3,
 }
 local MiddleBGTemplate = Obj.Create"Frame"
@@ -620,7 +620,7 @@ local MiddleBGTemplate = Obj.Create"Frame"
 	Position = UDim2.new(100,0,.07,0),
 	Size = UDim2.new(.5, 0, .025, 0),--UDim2.new(1, 0, .03, 0),
 	MakeBackgroundGuiObj('http://www.roblox.com/asset/?id=94692025'),
-	
+
 }
 
  -- REPORT ABUSE OBJECTS
@@ -766,7 +766,7 @@ local AbuseDescriptionWrapper = Obj.Create"Frame"
 	Parent = AbuseSettingsFrame,
 }
 
-local AbuseDescriptionBox 
+local AbuseDescriptionBox
 
 local OriginalAbuseDescriptionBox = Obj.Create"TextBox"
 {
@@ -883,15 +883,15 @@ local BigButton=Instance.new('ImageButton')
 	BigButton.Visible=false
 	--BigButton.Active=false
 	BigButton.Parent=ScreenGui
-	
-	
+
+
  local debugFrame = Obj.Create"Frame"
 	{
 		Name = 'debugframe',
 		Position = UDim2.new(0, 0, 0, 0),
 		Size = UDim2.new(0, 150, 0, 800),--0.99000001
 		BackgroundTransparency = 1,
-		
+
 	}
 	local debugplayers = Obj.Create"TextLabel"
 	{
@@ -924,7 +924,7 @@ local BigButton=Instance.new('ImageButton')
 		TextStrokeTransparency = 0,
 		TextXAlignment = 'Right',
 		TextYAlignment = 'Center',
-	}	
+	}
 
 
 --[[
@@ -939,16 +939,16 @@ function debugprint(str)
 end
 
 
- -------------------------  
+ -------------------------
  -- Script objects
- ------------------------- 
+ -------------------------
 local RbxGui = assert(LoadLibrary('RbxGui'))
 
  -- number of entries to show if you click minimize
 local DefaultEntriesOnScreen = 8
 
 
-	
+
 
 
 for _,i in pairs(Images) do
@@ -1051,7 +1051,7 @@ local Abuses = {
 local UpdateAbuseFunction
 local AbuseDropDown, UpdateAbuseSelection
 
-local PrivilegeLevel = 
+local PrivilegeLevel =
 {
 	Owner = 255,
 	Admin = 240,
@@ -1068,9 +1068,9 @@ game:GetService("Workspace").ChildAdded:connect(function(nchild)
 		IsPersonalServer=true
 	end
 end)
- -------------------------------  
+ -------------------------------
  -- Static Functions
- ------------------------------- 
+ -------------------------------
 function GetTotalEntries()
 	return math.min(#MiddleFrameBackgrounds,DefaultEntriesOnScreen)
 end
@@ -1122,7 +1122,7 @@ function TweenProperty(obj, propName, inita, enda, length)
 		obj[propName] = ((enda-inita)*((tick()-startTime)/length))+inita
 		wait(1/30)
 	end
-	obj[propName] = enda	
+	obj[propName] = enda
 end
 --[[
 	UGLY UGLY HACK FUNCTION
@@ -1135,7 +1135,7 @@ end
 --]]
 
 function WaitForClick(frameParent,polledFunction,exitFunction)
-	
+
 	if WaitForClickLock then return end
 	WaitForClickLock=true
 	local upHappened=false
@@ -1151,14 +1151,14 @@ function WaitForClick(frameParent,polledFunction,exitFunction)
 	end)
 	connection2=BigButton.MouseMoved:connect( function(nx,ny)
 		polledFunction(nx,ny)
-		
+
 	end)
-	
+
 	--debugprint('waiting for click!')
 	BigButton.Visible=true
 	BigButton.Active=true
 	BigButton.Parent=frameParent
-	frameParent.AncestryChanged:connect(function(child,nparent) 
+	frameParent.AncestryChanged:connect(function(child,nparent)
 		if child == frameParent and nparent ==nil then
 			exitFunction(nx,ny)
 			BigButton.Visible=false
@@ -1235,7 +1235,7 @@ function HighlightMyRank(player,BanPlayerButton,VisitorButton,MemberButton,Admin
 	VisitorButton.Image= 'http://www.roblox.com/asset/?id='..Images['DarkPopupMid']
 	MemberButton.Image= 'http://www.roblox.com/asset/?id='..Images['LightPopupMid']
 	AdminButton.Image= 'http://www.roblox.com/asset/?id='..Images['DarkPopupBottom']
-	
+
 	local rank=player.PersonalServerRank
 	if rank <= PrivilegeLevel['Banned'] then
 		BanPlayerButton.Image='http://www.roblox.com/asset/?id='..Images['LightBluePopupMid']
@@ -1248,9 +1248,9 @@ function HighlightMyRank(player,BanPlayerButton,VisitorButton,MemberButton,Admin
 	end
 end
 
- --------------------------  
+ --------------------------
  -- Report abuse handling
- -------------------------- 
+ --------------------------
 --[[
 	does final reporting of abuse on selected player, calls closeAbuseDialog
 --]]
@@ -1303,24 +1303,24 @@ end
 --]]
 function InitReportAbuse()
 
-	UpdateAbuseFunction = function(abuseText) 
-		AbuseName = abuseText 
+	UpdateAbuseFunction = function(abuseText)
+		AbuseName = abuseText
 		if AbuseName and SelectedPlayer then
 			SubmitReportButton.Active = true
 			SubmitReportButton.Image = 'http://www.roblox.com/asset/?id=96501119'
 		end
 	end
-	
+
 	AbuseDropDown, UpdateAbuseSelection = RbxGui.CreateDropDownMenu(Abuses, UpdateAbuseFunction, true)
 	AbuseDropDown.Name = "AbuseComboBox"
 	AbuseDropDown.Position = UDim2.new(0.425, 0, 0, 142)
 	AbuseDropDown.Size = UDim2.new(0.55,0,0,32)
 	AbuseDropDown.Parent = AbuseSettingsFrame
-	
-	
+
+
 	CancelReportButton.MouseButton1Click:connect(CloseAbuseDialog)
 	SubmitReportButton.MouseButton1Click:connect(OnSubmitAbuse)
-	
+
 	CalmingAbuseBox:FindFirstChild('OkButton').MouseButton1Down:connect(CloseAbuseDialog)
 	NormalAbuseBox:FindFirstChild('OkButton').MouseButton1Down:connect(CloseAbuseDialog)
 end
@@ -1348,11 +1348,11 @@ local function GetFriendStatus(player)
 end
 
 --[[
-	when friend button is clicked, tries to take appropriate action, 
+	when friend button is clicked, tries to take appropriate action,
 	based on current friend status with SelectedPlayer
 --]]
 function OnFriendButtonSelect()
-	
+
 	local friendStatus=GetFriendStatus(SelectedPlayer)
 	if friendStatus==Enum.FriendStatus.Friend then
 		LocalPlayer:RevokeFriendship(SelectedPlayer)
@@ -1369,15 +1369,15 @@ function OnFriendButtonSelect()
 end
 
 function OnFriendRefuseButtonSelect()
-	
+
 
 	LocalPlayer:RevokeFriendship(SelectedPlayer)
 	ClosePopUpPanel()
 	PopUpPanel:TweenPosition(UDim2.new(1,0,0,0), "Out", "Linear", BASE_TWEEN,true)
 end
-------------------------------------  
+------------------------------------
 -- Player Entry Handling
------------------------------------- 
+------------------------------------
 --[[
 	used by lua's table.sort to sort player entries
 --]]
@@ -1391,9 +1391,9 @@ function PlayerSortFunction(a,b)
 	return a['Score'] < b['Score']
 end
 
- ---------------------------------  
+ ---------------------------------
  -- Stat Handling
- ---------------------------------  
+ ---------------------------------
  -- removes and closes all leaderboard stuffs
 function BlowThisPopsicleStand()
 	--ScreenGui:Destroy()
@@ -1475,8 +1475,8 @@ function StatAdded(nchild,playerEntry)
 		AddingStatLock = false
 		StatChanged(playerEntry)
 		nchild.Changed:connect(function(property) StatChanged(playerEntry,property) end)
-	
-	
+
+
 end
 --returns whether any of the existing players has this stat
 function DoesStatExist(statName, exception)
@@ -1534,12 +1534,12 @@ function RemoveAllStats(playerEntry)
 	for i,val in ipairs(ScoreNames) do
 		StatRemoved(val,playerEntry)
 	end HeaderScore.Text = ''
-	
+
 end
 
 
 function GetScoreValue(score)
-	if score:IsA('DoubleConstrainedValue') or score:IsA('IntConstrainedValue') then 
+	if score:IsA('DoubleConstrainedValue') or score:IsA('IntConstrainedValue') then
 		return score.ConstrainedValue
 	elseif score:IsA('BoolValue') then
 		if score.Value then return 1 else return 0 end
@@ -1548,7 +1548,7 @@ function GetScoreValue(score)
 	end
 end
 --[[
-	
+
 --]]
 function MakeScoreEntry(entry,scoreval,panel)
 	if not panel:FindFirstChild('PlayerScore') then return end
@@ -1563,9 +1563,9 @@ function MakeScoreEntry(entry,scoreval,panel)
 	else
 		return
 	end
-	
+
 	if not entry['Player'].Parent then return end
-	
+
 	nscoretxt.Name = scoreval['Name']
 	nscoretxt.Text = tostring(GetScoreValue(thisScore))
 	if scoreval['Name'] == ScoreNames[1]['Name'] then
@@ -1577,7 +1577,7 @@ function MakeScoreEntry(entry,scoreval,panel)
 	thisScore.Changed:connect(function()
 		if not thisScore.Parent then return end
 		if scoreval['Name'] == ScoreNames[1]['Name'] then
-			
+
 			entry['Score'] = GetScoreValue(thisScore)
 			if entry['Player'] == LocalPlayer then HeaderScore.Text = tostring(GetScoreValue(thisScore)) end
 		end
@@ -1589,7 +1589,7 @@ function MakeScoreEntry(entry,scoreval,panel)
 end
 
 function CreateStatTitle(statName)
-	
+
 	local ntitle = MiddleTemplate:FindFirstChild('PlayerScore'):Clone()
 	ntitle.Name = statName
 	ntitle.Text = statName
@@ -1608,7 +1608,7 @@ function RecreateScoreColumns(ptable)
 	local Xoffset=5--15 --current offset from Right
 	local maxXOffset=Xoffset
 	local MaxSizeColumn=0 --max size for this column
-	
+
 	-- foreach known leaderstat
 	for j = #ScoreNames, 1,-1 do
 		local scoreval = ScoreNames[j]
@@ -1631,7 +1631,7 @@ function RecreateScoreColumns(ptable)
 						--ntitle.TextXAlignment  = 'Right'
 						ntitle.Parent = entry['MyTeam']['Frame']
 					end
-					
+
 				end
 			end
 			scoreval['XOffset']=Xoffset
@@ -1655,12 +1655,12 @@ function RecreateScoreColumns(ptable)
 	NormalPosition = UDim2.new(1 , -NormalBounds.X.Offset, NormalPosition.Y.Scale, 0)
 	UpdateHeaderNameSize()
 	UpdateMaximize()
-	
+
 	AddingStatLock = false
 end
- ---------------------------  
+ ---------------------------
  -- Minimizing and maximizing
- --------------------------- 
+ ---------------------------
 
 function ToggleMinimize()
 	IsMinimized.Value = not IsMinimized.Value
@@ -1702,7 +1702,7 @@ function UpdateMinimize()
 		if not IsTabified.Value then
 			MainFrame.Size = UDim2.new(0.010, HeaderName.TextBounds.X, NormalBounds.Y.Scale,NormalBounds.Y.Offset)
 			MainFrame.Position = UDim2.new(.990, -HeaderName.TextBounds.X, NormalPosition.Y.Scale,0)
-		else 
+		else
 			MainFrame.Size = NormalBounds
 			MainFrame.Position = NormalPosition
 		end
@@ -1724,7 +1724,7 @@ function UpdateMinimize()
 		local bottomPositon = (DefaultBottomClipPos+BottomClipFrame.Size.Y.Scale)
 		BottomFrame.Position=UDim2.new(0,0,bottomPositon,0)
 		FocusFrame.Size=UDim2.new(1,0,bottomPositon + HeaderFrameHeight,0)
-		ExtendTab.Image = 'rbxasset://textures/ui/expandPlayerList.png' 
+		ExtendTab.Image = 'rbxasset://textures/ui/expandPlayerList.png'
 	end
 end
 
@@ -1738,13 +1738,13 @@ function UpdateMaximize()
 			local scoreval = ScoreNames[j]
 			StatTitles[scoreval['Name'] ]:TweenPosition(UDim2.new(.4+((.6/#ScoreNames)*(j-1))-1,0,0,0),'Out','Linear',BASE_TWEEN,true)
 		end
-		
+
 		if IsMinimized.Value then
 			ToggleMinimize()
 		else
 			UpdateMinimize()
 		end
-		
+
 
 		MainFrame:TweenSizeAndPosition(MaximizedBounds,MaximizedPosition,'Out','Linear',BASE_TWEEN*1.2,true)
 		HeaderScore:TweenPosition(UDim2.new(0,0,HeaderName.Position.Y.Scale,0), "Out", "Linear", BASE_TWEEN*1.2,true)
@@ -1765,11 +1765,11 @@ function UpdateMaximize()
 		for i,entry in ipairs(PlayerFrames) do
 			WaitForChild(entry['Frame'],'TitleFrame').Size=UDim2.new(.38,0,entry['Frame'].TitleFrame.Size.Y.Scale,0)
 		end
-		
+
 		for i,entry in ipairs(TeamFrames) do
 			WaitForChild(entry['Frame'],'TitleFrame').Size=UDim2.new(.38,0,entry['Frame'].TitleFrame.Size.Y.Scale,0)
 		end
-		
+
 	else
 		if not IsMinimized.Value then
 			MainFrame:TweenSizeAndPosition(NormalBounds,NormalPosition,'Out','Linear',BASE_TWEEN*1.2,true)
@@ -1788,10 +1788,10 @@ function UpdateMaximize()
 				end
 			end
 		end
-		
+
 		for i,entry in ipairs(TeamFrames) do
 			WaitForChild(entry['Frame'],'TitleFrame').Size=UDim2.new(0,BaseScreenXSize*.9,entry['Frame'].TitleFrame.Size.Y.Scale,0)
-			
+
 		end
 		for i,entry in ipairs(PlayerFrames) do
 			WaitForChild(entry['Frame'],'TitleFrame').Size=UDim2.new(0,BaseScreenXSize*.9,entry['Frame'].TitleFrame.Size.Y.Scale,0)
@@ -1818,9 +1818,9 @@ function ExpandNames()
 		HeaderFrame.Position,'Out','Linear',BASE_TWEEN*1.2,true)
 		TopClipFrame:TweenPosition(UDim2.new(TopClipFrame.Position.X.Scale,0,HeaderFrameHeight,0),'Out','Linear',BASE_TWEEN*1.2,true)
 		BottomShiftFrame:TweenPosition(UDim2.new(0,0,HeaderFrameHeight,0), "Out", 'Linear', BASE_TWEEN*1.2,true)
-		
+
 	end
-	
+
 end
 
 function CloseNames()
@@ -1868,20 +1868,20 @@ function DetachScrollWheel()
 	ScrollWheelConnections=nil
 end
 
-FocusFrame.MouseEnter:connect(function() 
-	if not (IsMinimized.Value or IsTabified.Value) then 
+FocusFrame.MouseEnter:connect(function()
+	if not (IsMinimized.Value or IsTabified.Value) then
 		AttachScrollWheel()
-	end 
+	end
 end)
-FocusFrame.MouseLeave:connect(function() 
-	--if not (IsMaximized.Value or IsMinimized.Value) then 
+FocusFrame.MouseLeave:connect(function()
+	--if not (IsMaximized.Value or IsMinimized.Value) then
 		DetachScrollWheel()
-	--end 
+	--end
 end)
 
- ------------------------  
+ ------------------------
  -- Scroll Bar functions
- ------------------------ 
+ ------------------------
 --[[
 	updates whether the scroll bar should be showing, if it is showing, updates
 	the size of it
@@ -1893,7 +1893,7 @@ function UpdateScrollBarVisibility()
 		ScrollBar.BackgroundTransparency = 0
 		UpdateScrollBarSize()
 	end
-end 
+end
 --[[
 	updates size of scrollbar depending on how many entries exist
 --]]
@@ -1901,8 +1901,8 @@ function UpdateScrollBarSize()
 	local entryListSize = #MiddleFrameBackgrounds * MiddleTemplate.Size.Y.Scale
 	local shownAreaSize = ((BottomClipFrame.Position.Y.Scale) + 1)
 	ScrollBar.Size = UDim2.new(1,0,shownAreaSize/entryListSize,0)
-	
-end 
+
+end
 --[[
 	updates position of listframe so that no gaps at the bottom or top of the list are visible
 	updates position of scrollbar to match what parts of the list are visible
@@ -1911,15 +1911,15 @@ function UpdateScrollPosition()
 	local minPos = GetMinScroll()
 	local maxPos = GetMaxScroll()
 	local scrollLength = maxPos - minPos
-	
+
 	local yscrollpos=math.max(math.min(ListFrame.Position.Y.Scale,maxPos),minPos)
 	ListFrame.Position=UDim2.new(ListFrame.Position.X.Scale,ListFrame.Position.X.Offset,yscrollpos,ListFrame.Position.Y.Offset)
-	
+
 	local adjustedLength = 1 - ScrollBar.Size.Y.Scale
 	ScrollBar.Position = UDim2.new(0,0,adjustedLength - (adjustedLength * ((ListFrame.Position.Y.Scale - minPos)/scrollLength)),0)
 end
 
---[[ 
+--[[
 	WARNING:this is in a working state, but uses massive hacks
 	revize when global input is available
 	Manages scrolling of the playerlist on mouse drag
@@ -1929,15 +1929,15 @@ function StartDrag(entry,startx,starty)
 		local stopDrag = false
 		local openPanel = true
 		local draggedFrame = WaitForChild(entry['Frame'],'ClickListener')
-		local function dragExit() 
-			stopDrag = true 
+		local function dragExit()
+			stopDrag = true
 
 			if  entry['Player'] and SelectedPlayer and openPanel
 				and (entry['Player']~=LocalPlayer and (SelectedPlayer.userId>1 and LocalPlayer.userId>1)) then
 				ActivatePlayerEntryPanel(entry)
 			end
 		end
-		local startY = nil 
+		local startY = nil
 		local StartFrame = ListFrame.Position
 		local function dragpoll(nx,ny)
 			if not startY then
@@ -1948,7 +1948,7 @@ function StartDrag(entry,startx,starty)
 			if Vector2.new(startx-nx,starty-ny).magnitude>MOUSE_DRAG_DISTANCE then
 				openPanel=false
 			end
-			
+
 			local newFrameY = math.max(math.min(StartFrame.Y.Scale + (nowY - startY),GetMaxScroll()),GetMinScroll())
 			ListFrame.Position = UDim2.new(StartFrame.X.Scale,StartFrame.X.Offset,newFrameY,StartFrame.Y.Offset)
 			UpdateScrollPosition()
@@ -1962,32 +1962,32 @@ function StartMinimizeDrag()
 		local startTime=tick()
 		debugprint('Got Click2')
 		local stopDrag = false
-		local function dragExit() 
-			--debugprint('undone click2') 
+		local function dragExit()
+			--debugprint('undone click2')
 			if tick()-startTime<.25 then --was click
 				ToggleMinimize()
 			else --was drag
 				if (DefaultBottomClipPos >= -1+(#MiddleFrameBackgrounds*MiddleBGTemplate.Size.Y.Scale)) then
 					DidMinimizeDrag = false
 				else
-					DidMinimizeDrag = true					
+					DidMinimizeDrag = true
 				end
 				if IsMinimized.Value then
 					ToggleMinimize()
 				end
 			end
-			stopDrag = true 
+			stopDrag = true
 		end
-		local startY = nil 
+		local startY = nil
 		local StartFrame = DefaultBottomClipPos
 		local function dragpoll(nx,ny)
 			if not IsMinimized.Value then
-				
+
 				if not startY then
 					startY = AbsoluteToPercent(nx,ny).Y
 				end
 				local nowY = AbsoluteToPercent(nx,ny).Y
-				local newFrameY 
+				local newFrameY
 				newFrameY = math.min(math.max(StartFrame + (nowY - startY),-1),-1+(#MiddleFrameBackgrounds*MiddleBGTemplate.Size.Y.Scale))
 				DefaultBottomClipPos = newFrameY
 				UpdateMinimize()
@@ -1996,23 +1996,23 @@ function StartMinimizeDrag()
 				UpdateScrollBarSize()
 				UpdateScrollPosition()
 				UpdateScrollBarVisibility()
-				
+
 			end
 		end
 		Spawn(function() WaitForClick(ScreenGui,dragpoll,dragExit) end)
 	end)
-	
+
 end
 
- -------------------------------  
+ -------------------------------
  -- Input Callback functions
- ------------------------------- 
+ -------------------------------
 IsMaximized.Value=false
 IsMinimized.Value=false
 IsMaximized.Changed:connect(UpdateMaximize)
 IsMinimized.Changed:connect(UpdateMinimize)
 
-ExtendButton.MouseButton1Down:connect(function() 
+ExtendButton.MouseButton1Down:connect(function()
 	if(time() - LastClick < ButtonCooldown) or InPopupWaitForClick then return end
 	LastClick = time()
 	if IsTabified.Value then
@@ -2051,9 +2051,9 @@ MaximizeButton.MouseButton2Click:connect(function()
 end)
 
 
--------------------------------  
+-------------------------------
 -- MiddleFrames management
-------------------------------- 
+-------------------------------
 --[[
 	adds a background frame to the listframe
 --]]
@@ -2064,13 +2064,13 @@ function AddMiddleBGFrame()
 
 	nBGFrame.Parent = ListFrame
 	table.insert(MiddleFrameBackgrounds,nBGFrame)
-	
+
 	if #MiddleFrameBackgrounds<DefaultListSize and not DidMinimizeDrag then
 		--print('readjusting bottom clip')
 		DefaultBottomClipPos=-1+(#MiddleFrameBackgrounds*MiddleBGTemplate.Size.Y.Scale)
 	end
-	
-	if not IsMinimized.Value  then 
+
+	if not IsMinimized.Value  then
 		UpdateMinimize()
 	end
 end
@@ -2084,10 +2084,10 @@ function RemoveMiddleBGFrame()
 		UpdateMinimize()
 	end
 end
--------------------------------  
+-------------------------------
 -- Player Callback functions
-------------------------------- 
-local FONT_SIZES = 
+-------------------------------
+local FONT_SIZES =
 {'Size8','Size9','Size10','Size11','Size12','Size14','Size24','Size36','Size48'}
 --[[
 	note:should probably set to something other than mainFrame.AbsoluteSize, should work for now
@@ -2098,7 +2098,7 @@ function ChangeHeaderName(nname)
 	UpdateHeaderNameSize()
 end
 
---[[ 
+--[[
 	Will fit the player's name to the bounds of the header
 	called on resize of the window and playedr name change events
 	HACK: cannot use 'Textscaled' due to unable to find text bounds when scaled
@@ -2145,7 +2145,7 @@ end
 	playerEntry		A reference to the ENTRY(table) of the player
 --]]
 function LeaderstatsRemoved(oldLeaderstats,playerEntry)
-	while AddingFrameLock do debugprint('waiting to insert '..playerEntry['Player'].Name) wait(1/30) end 
+	while AddingFrameLock do debugprint('waiting to insert '..playerEntry['Player'].Name) wait(1/30) end
 	AddingFrameLock = true
 	RemoveAllStats(playerEntry)
 	AddingFrameLock = false
@@ -2168,19 +2168,19 @@ end
 --]]
 function InitMovingPanel( entry, player)
 	PopUpClipFrame.Parent= ScreenGui
-	
+
 	if PopUpPanel then
 		PopUpPanel:Destroy()
 	end
 	PopUpPanel= PopUpPanelTemplate:Clone()
 	PopUpPanel.Parent= PopUpClipFrame
-	
+
 	local nextIndex = 2
 	local friendStatus = GetFriendStatus(player)
 	debugprint (tostring(friendStatus))
 	local showRankMenu = IsPersonalServer and LocalPlayer.PersonalServerRank >= PrivilegeLevel['Admin'] and LocalPlayer.PersonalServerRank > SelectedPlayer.PersonalServerRank
-	
-	
+
+
 	local ReportPlayerButton = MakePopupButton(PopUpPanel,'Report Player',0)
 	ReportPlayerButton.MouseButton1Click:connect(function() OpenAbuseDialog() end)
 
@@ -2189,7 +2189,7 @@ function InitMovingPanel( entry, player)
 	if enableFriendRequests then
 		local FriendPlayerButton = MakePopupButton(PopUpPanel,'Friend',1, not showRankMenu and  friendStatus~=Enum.FriendStatus.FriendRequestReceived)
 		FriendPlayerButton.MouseButton1Click:connect(OnFriendButtonSelect)
-		
+
 
 		if friendStatus==Enum.FriendStatus.Friend then
 			FriendPlayerButton:FindFirstChild('ButtonText').Text='UnFriend Player'
@@ -2210,20 +2210,20 @@ function InitMovingPanel( entry, player)
 		local VisitorButton = MakePopupButton(PopUpPanel,'Visitor',nextIndex+1)
 		local MemberButton = MakePopupButton(PopUpPanel,'Member',nextIndex+2)
 		local AdminButton = MakePopupButton(PopUpPanel,'Admin',nextIndex+3,true)
-		
+
 		BanPlayerButton.MouseButton1Click:connect(function()
-			OnPrivilegeLevelSelect(player,PrivilegeLevel['Banned'],BanPlayerButton,VisitorButton,MemberButton,AdminButton) 
+			OnPrivilegeLevelSelect(player,PrivilegeLevel['Banned'],BanPlayerButton,VisitorButton,MemberButton,AdminButton)
 		end)
 		VisitorButton.MouseButton1Click:connect(function()
 			OnPrivilegeLevelSelect(player,PrivilegeLevel['Visitor'],BanPlayerButton,VisitorButton,MemberButton,AdminButton)
 		end)
 		MemberButton.MouseButton1Click:connect(function()
-			OnPrivilegeLevelSelect(player,PrivilegeLevel['Member'],BanPlayerButton,VisitorButton,MemberButton,AdminButton) 
+			OnPrivilegeLevelSelect(player,PrivilegeLevel['Member'],BanPlayerButton,VisitorButton,MemberButton,AdminButton)
 		end)
 		AdminButton.MouseButton1Click:connect(function()
 			OnPrivilegeLevelSelect(player,PrivilegeLevel['Admin'],BanPlayerButton,VisitorButton,MemberButton,AdminButton)
 		end)
-		
+
 		HighlightMyRank(SelectedPlayer,BanPlayerButton,VisitorButton,MemberButton,AdminButton)
 	end
 
@@ -2235,7 +2235,7 @@ function InitMovingPanel( entry, player)
 			ClosePopUpPanel()
 		end)
 	end)
-	
+
 	local myFrame = entry['Frame']
 	-- THIS IS GARBAGE.
 	-- if I parent to frame to auto update position, it gets clipped
@@ -2246,7 +2246,7 @@ function InitMovingPanel( entry, player)
 			wait()
 		end
 	end)
-	
+
 end
 
 --[[
@@ -2258,14 +2258,14 @@ end
 function OnPlayerEntrySelect(entry,startx,starty)
 
 	if not InPopupWaitForClick then
-	
+
 		SelectedPlayerEntry = entry
 		SelectedPlayer = entry['Player']
-		
+
 		StartDrag(entry,startx,starty)
 	end
 
-	
+
 end
 
 function ActivatePlayerEntryPanel(entry)
@@ -2298,39 +2298,39 @@ end
 	nplayer		new player object to insert
 --]]
 function InsertPlayerFrame(nplayer)
-	while AddingFrameLock do debugprint('waiting to insert '..nplayer.Name) wait(1/30) end 
+	while AddingFrameLock do debugprint('waiting to insert '..nplayer.Name) wait(1/30) end
 	AddingFrameLock = true
-	
+
 	local nFrame = MiddleTemplate:Clone()
 	nFrame.ClickListener.BackgroundColor3 = Color3.new(0,0,0)
 	nFrame.ClickListener.BackgroundTransparency = BACKGROUND_TRANSPARENCY
 	nFrame.ClickListener.AutoButtonColor=false
 
-	local playerName = nplayer.Name	
+	local playerName = nplayer.Name
 	local clansEnabled, clanTag = pcall(function() nplayer:GetClanTag() end)
 	if clansEnabled and clanTag and clanTag ~= "" then
 		playerName = "[" .. tostring(clanTag) .. "] " .. playerName
 	end
-	
+
 	WaitForChild(WaitForChild(nFrame,'TitleFrame'),'Title').Text = playerName
-	
+
 	nFrame.Position = UDim2.new(1,0,((#MiddleFrames) * nFrame.Size.Y.Scale),0)
-	
+
 	local nfriendstatus = GetFriendStatus(nplayer)
-	
+
 	nFrame:FindFirstChild('BCLabel').Image = getMembershipTypeIcon(nplayer.MembershipType,nplayer.Name)
 	nFrame:FindFirstChild('FriendLabel').Image = getFriendStatusIcon(nfriendstatus)
 	nFrame.Name = nplayer.Name
 	WaitForChild(WaitForChild(nFrame,'TitleFrame'),'Title').Text = playerName
-	
+
 	--move for bc label
 	nFrame.FriendLabel.Position=nFrame.FriendLabel.Position+UDim2.new(0,17,0,0)
 	nFrame.TitleFrame.Title.Position=nFrame.TitleFrame.Title.Position+UDim2.new(0,17,0,0)
-	
+
 	if(nFrame:FindFirstChild('FriendLabel').Image ~= '') then
 		nFrame.TitleFrame.Title.Position=nFrame.TitleFrame.Title.Position+UDim2.new(0,17,0,0)
 	end
-	
+
 	if nplayer.Name == LocalPlayer.Name then
 		nFrame.TitleFrame.Title.Font = 'ArialBold'
 		nFrame.PlayerScore.Font = 'ArialBold'
@@ -2347,7 +2347,7 @@ function InsertPlayerFrame(nplayer)
 	end
 	nFrame.TitleFrame.Title.Font = 'ArialBold'
 
-	
+
 	nFrame.Parent = ListFrame
 	nFrame.Position = UDim2.new(.5,0,((#MiddleFrames) * nFrame.Size.Y.Scale),0)
 	UpdateMinimize()
@@ -2358,15 +2358,15 @@ function InsertPlayerFrame(nplayer)
 	AddId = AddId + 1
 	table.insert(PlayerFrames,nentry)
 	if #TeamFrames~=0 then
-		
+
 		if nplayer.Neutral then
 			nentry['MyTeam'] = nil
-			if not NeutralTeam then 
-				AddNeutralTeam() 
+			if not NeutralTeam then
+				AddNeutralTeam()
 			else
 				AddPlayerToTeam(NeutralTeam,nentry)
 			end
-			
+
 		else
 			local addedToTeam=false
 			for i,tval in ipairs(TeamFrames) do
@@ -2378,22 +2378,22 @@ function InsertPlayerFrame(nplayer)
 			end
 			if not addedToTeam then
 				nentry['MyTeam']=nil
-				if not NeutralTeam then 
-					AddNeutralTeam() 
+				if not NeutralTeam then
+					AddNeutralTeam()
 				else
 					AddPlayerToTeam(NeutralTeam,nentry)
 				end
 				nentry['MyTeam'] = NeutralTeam
 			end
 		end
-		
+
 	end
-	
+
 	if  nplayer:FindFirstChild('leaderstats') then
 		LeaderstatsAdded(nentry)
 	end
-	
-	nplayer.ChildAdded:connect(function(nchild) 
+
+	nplayer.ChildAdded:connect(function(nchild)
 		if nchild.Name == 'leaderstats' then
 			while AddingFrameLock do debugprint('in adding leaderstats lock') wait(1/30) end
 			if not nplayer:FindFirstChild("leaderstats") then return end
@@ -2409,11 +2409,11 @@ function InsertPlayerFrame(nplayer)
 		end
 	end)
 	nplayer.Changed:connect(function(prop)PlayerChanged(nentry,prop) end)
-	
+
 	local listener = WaitForChild(nFrame,'ClickListener')
 	listener.Active = true
 	listener.MouseButton1Down:connect(function(nx,ny) OnPlayerEntrySelect(nentry, nx,ny) end)
-	
+
 	AddMiddleBGFrame()
 	BaseUpdate()
 	AddingFrameLock = false
@@ -2424,9 +2424,9 @@ end
 	removes this player's frame if it exists, calls base update
 --]]
 function RemovePlayerFrame(tplayer)
-	while AddingFrameLock do debugprint('in removing player frame lock') wait(1/30) end 
+	while AddingFrameLock do debugprint('in removing player frame lock') wait(1/30) end
 	AddingFrameLock = true
-	
+
 	local tteam
 	for i,key in ipairs(PlayerFrames) do
 		if tplayer == key['Player'] then
@@ -2440,8 +2440,8 @@ function RemovePlayerFrame(tplayer)
 	end
 	if tteam then
 		for j,tentry in ipairs(tteam['MyPlayers']) do
-			if tentry['Player'] == tplayer then 
-				RemovePlayerFromTeam(tteam,j) 
+			if tentry['Player'] == tplayer then
+				RemovePlayerFromTeam(tteam,j)
 			end
 		end
 	end
@@ -2454,9 +2454,9 @@ end
 
 Players.ChildRemoved:connect(RemovePlayerFrame)
 
-----------------------------  
+----------------------------
 -- Team Callback Functions
----------------------------- 
+----------------------------
 --[[
 	turns a list of team entries with sub lists of players into a single ordered
 	list, in the correct order,and of the correct length
@@ -2505,10 +2505,10 @@ end
 	consider adding lock with wait for performance
 	sorts each of the team's player lists induvidually, adds up the team scores.
 	@Args:
-	tentries		table of team entries	
+	tentries		table of team entries
 --]]
 function SortTeams(tentries)
-	
+
 	for i,val in ipairs(tentries) do
 
 		table.sort(val['MyPlayers'],PlayerSortFunction)
@@ -2535,7 +2535,7 @@ end
 	team		team entry to sum the scores of
 --]]
 function AddTeamScores(team)
-	
+
 	for j = 1, #ScoreNames,1 do
 		local i = ScoreNames[j]
 		local tscore = 0
@@ -2551,7 +2551,7 @@ function AddTeamScores(team)
 		end
 	end
 	UpdateMinimize()
-	
+
 end
 
 --[[
@@ -2560,7 +2560,7 @@ end
 	entry	Player entry
 --]]
 function FindRemovePlayerFromTeam(entry)
-	if entry['MyTeam'] then 
+	if entry['MyTeam'] then
 		for j,oldEntry in ipairs(entry['MyTeam']['MyPlayers']) do
 			if oldEntry['Player'] == entry['Player'] then
 				RemovePlayerFromTeam(entry['MyTeam'],j)
@@ -2623,7 +2623,7 @@ function SetPlayerToTeam(entry)
 	if not setToTeam and #(game:GetService("Teams"):GetTeams())>0 then
 		debugprint(entry['Player'].Name..'could not find team')
 		entry['MyTeam']=nil
-		if not NeutralTeam then 
+		if not NeutralTeam then
 			AddNeutralTeam()
 		else AddPlayerToTeam(NeutralTeam,entry) end
 	end
@@ -2638,7 +2638,7 @@ end
 	property	name of property changed
 --]]
 function PlayerChanged(entry, property)
-	while PlayerChangedLock do 
+	while PlayerChangedLock do
 		debugprint('in playerchanged lock')
 		wait(1/30)
 	end
@@ -2708,9 +2708,9 @@ LocalPlayer.FriendStatusChanged:connect(OnFriendshipChanged)
 	Note: a lot of redundant code here, might want to refactor to share a function with insertteamframe
 --]]
 function AddNeutralTeam()
-	while NeutralTeamLock do debugprint('in neutral team 2 lock') wait() end 
+	while NeutralTeamLock do debugprint('in neutral team 2 lock') wait() end
 	NeutralTeamLock = true
-	
+
 	local defaultTeam = Instance.new('Team')
 	defaultTeam.TeamColor = BrickColor.new('White')
 	defaultTeam.Name = 'Neutral'
@@ -2730,7 +2730,7 @@ function AddNeutralTeam()
 	nentry['AutoHide'] = true
 	nentry['IsHidden'] = true
 	for _,i in pairs(PlayerFrames) do
-		if i['Player'].Neutral or not i['MyTeam'] then 
+		if i['Player'].Neutral or not i['MyTeam'] then
 			AddPlayerToTeam(nentry,i)
 		end
 	end
@@ -2743,7 +2743,7 @@ function AddNeutralTeam()
 end
 
 function RemoveNeutralTeam()
-	while NeutralTeamLock do debugprint('in neutral team lock') wait() end 
+	while NeutralTeamLock do debugprint('in neutral team lock') wait() end
 	NeutralTeamLock = true
 	NeutralTeam['Frame']:Destroy()
 	NeutralTeam=nil
@@ -2752,7 +2752,7 @@ function RemoveNeutralTeam()
 end
 
 --[[
-	
+
 --]]
 function TeamScoreChanged(entry,nscore)
 	WaitForChild(entry['Frame'],'PlayerScore').Text = tostring(nscore)
@@ -2787,20 +2787,20 @@ end
 function TeamChanged(entry, property)
 	if property=='Name' then
 		WaitForChild(WaitForChild(entry['Frame'],'TitleFrame'),'Title').Text = entry['MyTeam'].Name
-		
+
 	elseif property=='TeamColor' then
 		entry['Frame'].ClickListener.BackgroundColor3 = entry['MyTeam'].TeamColor.Color
-		
+
 		for _,i in pairs(TeamFrames) do
 			if i['MyTeam'].TeamColor == entry['MyTeam'] then
 				RemoveTeamFrame(entry['MyTeam'])	--NO DUPLICATE TEAMS!
 			end
 		end
-		
+
 		entry['MyPlayers']={}
-		
+
 		for _,i in pairs(PlayerFrames) do
-			SetPlayerToTeam(i) 
+			SetPlayerToTeam(i)
 		end
 		BaseUpdate()
 	end
@@ -2813,8 +2813,8 @@ end
 	@Args:
 	nteam	new team object added
 --]]
-function InsertTeamFrame(nteam) 
-	while AddingFrameLock do debugprint('in adding team frame lock') wait(1/30) end 
+function InsertTeamFrame(nteam)
+	while AddingFrameLock do debugprint('in adding team frame lock') wait(1/30) end
 	AddingFrameLock = true
 	--for _,i in pairs(TeamFrames) do
 	local nentry = {}
@@ -2837,16 +2837,16 @@ function InsertTeamFrame(nteam)
 	end
 	if nteam:FindFirstChild('TeamScore') then
 		TeamChildAdded(nentry,nteam.TeamScore)
-		
+
 	end
-	
+
 	nteam.ChildAdded:connect(function(nchild) TeamChildAdded(nentry,nchild) end)
 	nteam.ChildRemoved:connect(function(nchild) TeamChildRemoved(nentry,nchild) end)
 	nteam.Changed:connect(function(prop) TeamChanged(nentry,prop) end)
-	
+
 	for _,i in pairs(PlayerFrames) do
-		if not i['Player'].Neutral and i['Player'].TeamColor == nteam.TeamColor then 
-			AddPlayerToTeam(nentry,i) 
+		if not i['Player'].Neutral and i['Player'].TeamColor == nteam.TeamColor then
+			AddPlayerToTeam(nentry,i)
 		end
 	end
 	nentry['IsHidden'] = false
@@ -2872,7 +2872,7 @@ end
 	nteam		Teamobject to remove
 --]]
 function RemoveTeamFrame(nteam)
-	while AddingFrameLock do debugprint('in removing team frame lock') wait(1/30) end 
+	while AddingFrameLock do debugprint('in removing team frame lock') wait(1/30) end
 	AddingFrameLock = true
 	if IsMinimized.Value then
 	end
@@ -2886,12 +2886,12 @@ function RemoveTeamFrame(nteam)
 	end
 	if #TeamFrames==0 then
 		debugprint('removeteamframe, remove neutral')
-		if NeutralTeam then 
+		if NeutralTeam then
 			RemoveNeutralTeam()
 		end
 	end
 	for i,key in ipairs(myEntry['MyPlayers']) do
-		RemovePlayerFromTeam(myEntry,i) 
+		RemovePlayerFromTeam(myEntry,i)
 		PlayerChanged(key, 'TeamColor')
 	end
 	RemoveMiddleBGFrame()
@@ -2906,7 +2906,7 @@ end
 function TeamRemoved(nteam)
 	RemoveTeamFrame(nteam)
 end
- --------------------------------- 
+ ---------------------------------
 --[[
 	called when ANYTHING changes the state of the playerlist
 	re-sorts everything,assures correct positions of all elements
@@ -2916,7 +2916,7 @@ function BaseUpdate()
 	BaseUpdateLock = true
 	--print ('baseupdate')
 	UpdateStatNames()
-	
+
 	if #TeamFrames == 0 and not NeutralTeam then
 		PlayerListModeUpdate()
 	else
@@ -2930,7 +2930,7 @@ function BaseUpdate()
 	if not IsMinimized.Value and #MiddleFrames>DefaultEntriesOnScreen then
 		UpdateScrollPosition()
 	end
-	
+
 	UpdateMinimize()
 
 	UpdateScrollBarSize()
@@ -2966,7 +2966,7 @@ function(key)
 				else
 					ToggleMaximize()
 				end
-				
+
 			end
 		end
 	end
@@ -2974,8 +2974,8 @@ end)
 
 
 function PlayersChildAdded(tplayer)
-	if tplayer:IsA('Player') then 
-		Spawn(function() debugPlayerAdd(tplayer) end) 
+	if tplayer:IsA('Player') then
+		Spawn(function() debugPlayerAdd(tplayer) end)
 	else
 		BlowThisPopsicleStand()
 	end
@@ -2988,24 +2988,24 @@ function coreGuiChanged(coreGuiType, enabled)
 end
 
 function TeamsChildAdded(nteam)
-	if nteam:IsA('Team') then 
+	if nteam:IsA('Team') then
 		TeamAdded(nteam)
 	else
-		BlowThisPopsicleStand() 
+		BlowThisPopsicleStand()
 	end
 end
 
 function TeamsChildRemoved(nteam)
-	if nteam:IsA('Team')  then 
-		TeamRemoved(nteam) 
+	if nteam:IsA('Team')  then
+		TeamRemoved(nteam)
 	else
-		BlowThisPopsicleStand() 
+		BlowThisPopsicleStand()
 	end
 end
 
- ----------------------------  
+ ----------------------------
  -- Hookups and initialization
- ----------------------------  
+ ----------------------------
 function debugPlayerAdd(p)
 	InsertPlayerFrame(p)
 end
@@ -3014,7 +3014,7 @@ pcall(function()
 	coreGuiChanged(Enum.CoreGuiType.PlayerList, Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
 	Game:GetService("StarterGui").CoreGuiChangedSignal:connect(coreGuiChanged)
 end)
- 
+
 while not game:GetService('Teams') do wait(1/30) debugprint('Waiting For Teams') end
 for _,i in pairs(game:GetService("Teams"):GetTeams()) do TeamAdded(i) end
 for _,i in pairs(Players:GetPlayers()) do Spawn(function() debugPlayerAdd(i) end) end
@@ -3033,9 +3033,9 @@ BaseUpdate()
 wait(2)
 IsPersonalServer= not not game:GetService("Workspace"):FindFirstChild("PSVariable")
 
- ----------------------------  
+ ----------------------------
  -- Running Logic
- ---------------------------- 
+ ----------------------------
 
  --debug stuffs, will only run for 'newplayerlistisbad'
  if LocalPlayer.Name == 'newplayerlistisbad' or LocalPlayer.Name == 'imtotallyadmin' then
@@ -3051,5 +3051,3 @@ IsPersonalServer= not not game:GetService("Workspace"):FindFirstChild("PSVariabl
 		end
 	end)
  end
-
-

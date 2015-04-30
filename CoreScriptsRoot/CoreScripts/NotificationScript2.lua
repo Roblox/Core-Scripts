@@ -321,7 +321,7 @@ local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 			if FriendRequestBlacklist[fromPlayer] then return end
 			sendFriendNotification(fromPlayer)
 		elseif event == Enum.FriendRequestEvent.Accept then
-			sendNotifcation("New Friend", "You are now friends with "..fromPlayer.Name.."!", 
+			sendNotifcation("New Friend", "You are now friends with "..fromPlayer.Name.."!",
 				FRIEND_IMAGE..tostring(fromPlayer.userId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil)
 		end
 	end

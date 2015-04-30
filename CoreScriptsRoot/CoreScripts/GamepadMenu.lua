@@ -79,7 +79,7 @@ local function createGamepadMenuGui()
 		Parent = gamepadSettingsFrame;
 	}
 	--todo: notications!
-	
+
 	local closeHintImage = Util.Create'ImageLabel'{
 		Name = "CloseHint";
 		Position = UDim2.new(0,200,0,200);
@@ -210,13 +210,13 @@ local function setupGamepadControls()
 		if gamepadSettingsFrame.Visible then
 			game.GuiService.SelectedObject = nil
 
-			ContextActionService:BindCoreAction(freezeControllerActionName, noOptFunc, false, Enum.KeyCode.Thumbstick2, 
+			ContextActionService:BindCoreAction(freezeControllerActionName, noOptFunc, false, Enum.KeyCode.Thumbstick2,
 					Enum.KeyCode.ButtonA,Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonSelect,
-					Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, 
+					Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3,
 					Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonR3)
 
 			ContextActionService:BindCoreAction(radialCancelActionName, radialSelectCancel, false, Enum.KeyCode.ButtonB)
-			ContextActionService:BindCoreAction(radialSelectActionName, radialSelect, false, Enum.KeyCode.Thumbstick1, 
+			ContextActionService:BindCoreAction(radialSelectActionName, radialSelect, false, Enum.KeyCode.Thumbstick1,
 				Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
 		else
 			unbindAllRadialActions()
@@ -230,7 +230,7 @@ local function setupGamepadControls()
 		if input.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
 		if state ~= Enum.UserInputState.Begin then return end
 
-		ContextActionService:BindCoreAction(freezeControllerActionName, noOptFunc, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2, 
+		ContextActionService:BindCoreAction(freezeControllerActionName, noOptFunc, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2,
 				Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonSelect,
 				Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonR3,
 				Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
@@ -251,7 +251,7 @@ local function setupGamepadControls()
 	if InputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
 		createGamepadMenuGui()
 	else
-		InputService.GamepadConnected:connect(function(gamepadEnum) 
+		InputService.GamepadConnected:connect(function(gamepadEnum)
 			if gamepadEnum == Enum.UserInputType.Gamepad1 then
 				createGamepadMenuGui()
 			end

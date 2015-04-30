@@ -1,4 +1,4 @@
---[[ 
+--[[
 	This script controls the gui the player sees in regards to his or her health.
 	Can be turned with Game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health,false)
 	Copyright ROBLOX 2014. Written by Ben Tkacheff.
@@ -53,9 +53,9 @@ local capHeight = 15
 local capWidth = 7
 
 function CreateGui()
-	if HealthGui and #HealthGui:GetChildren() > 0 then 
+	if HealthGui and #HealthGui:GetChildren() > 0 then
 		HealthGui.Parent = Game:GetService("CoreGui").RobloxGui
-		return 
+		return
 	end
 
 	local hurtOverlay = Instance.new("ImageLabel")
@@ -66,7 +66,7 @@ function CreateGui()
 	hurtOverlay.Size = UDim2.new(20,0,20,0)
 	hurtOverlay.Visible = false
 	hurtOverlay.Parent = HealthGui
-	
+
 	local healthFrame = Instance.new("Frame")
 	healthFrame.Name = "HealthFrame"
 	healthFrame.BackgroundTransparency = 1
@@ -150,13 +150,13 @@ end
 
 function UpdateGui(health)
 	if not HealthGui then return end
-	
+
 	local healthFrame = HealthGui:FindFirstChild("HealthFrame")
 	if not healthFrame then return end
-	
+
 	local healthBar = healthFrame:FindFirstChild("HealthBar")
 	if not healthBar then return end
-	
+
 	-- If more than 1/4 health, bar = green.  Else, bar = red.
 	local percentHealth = (health/currentHumanoid.MaxHealth)
 	if percentHealth ~= percentHealth then
@@ -164,7 +164,7 @@ function UpdateGui(health)
 		healthBar.healthBarCenter.ImageColor3 = yellowColor
 		healthBar.healthBarRight.ImageColor3 = yellowColor
 		healthBar.healthBarLeft.ImageColor3 = yellowColor
-	elseif percentHealth > 0.25  then		
+	elseif percentHealth > 0.25  then
 		healthBar.healthBarCenter.ImageColor3 = greenColor
 		healthBar.healthBarRight.ImageColor3 = greenColor
 		healthBar.healthBarLeft.ImageColor3 = greenColor
@@ -173,20 +173,20 @@ function UpdateGui(health)
 		healthBar.healthBarRight.ImageColor3 = redColor
 		healthBar.healthBarLeft.ImageColor3 = redColor
 	end
-		
+
 	local width = (health / currentHumanoid.MaxHealth)
  	width = math.max(math.min(width,1),0) -- make sure width is between 0 and 1
  	if width ~= width then width = 1 end
 
 	local healthDelta = lastHealth - health
 	lastHealth = health
-	
+
 	local percentOfTotalHealth = math.abs(healthDelta/currentHumanoid.MaxHealth)
 	percentOfTotalHealth = math.max(math.min(percentOfTotalHealth,1),0) -- make sure percentOfTotalHealth is between 0 and 1
 	if percentOfTotalHealth ~= percentOfTotalHealth then percentOfTotalHealth = 1 end
 
 	local newHealthSize = UDim2.new(width,0,1,0)
-	
+
 	healthBar.Size = newHealthSize
 
 	local sizeX = healthBar.AbsoluteSize.X
@@ -204,7 +204,7 @@ function UpdateGui(health)
 	end
 
 	local thresholdForHurtOverlay = currentHumanoid.MaxHealth * (HealthPercentageForOverlay/100)
-	
+
 	if healthDelta >= thresholdForHurtOverlay then
 		AnimateHurtOverlay()
 	end
@@ -213,22 +213,22 @@ end
 
 function AnimateHurtOverlay()
 	if not HealthGui then return end
-	
+
 	local overlay = HealthGui:FindFirstChild("HurtOverlay")
 	if not overlay then return end
-	
+
 	local newSize = UDim2.new(20, 0, 20, 0)
 	local newPos = UDim2.new(-10, 0, -10, 0)
 
 	if overlay:IsDescendantOf(Game) then
 		-- stop any tweens on overlay
 		overlay:TweenSizeAndPosition(newSize,newPos,Enum.EasingDirection.Out,Enum.EasingStyle.Linear,0,true,function()
-			
+
 			-- show the gui
 			overlay.Size = UDim2.new(1,0,1,0)
 			overlay.Position = UDim2.new(0,0,0,0)
 			overlay.Visible = true
-			
+
 			-- now tween the hide
 			if overlay:IsDescendantOf(Game) then
 				overlay:TweenSizeAndPosition(newSize,newPos,Enum.EasingDirection.Out,Enum.EasingStyle.Quad,10,false,function()
@@ -281,7 +281,7 @@ function startGui()
 	healthChangedConnection = currentHumanoid.HealthChanged:connect(UpdateGui)
 	humanoidDiedConnection = currentHumanoid.Died:connect(humanoidDied)
 	UpdateGui(currentHumanoid.Health)
-		
+
 	CreateGui()
 end
 
@@ -305,7 +305,7 @@ Game:GetService("StarterGui").CoreGuiChangedSignal:connect(function(coreGuiType,
 		elseif not guiEnabled and enabled then
 			startGui()
 		end
-		
+
 		guiEnabled = enabled
 	end
 end)

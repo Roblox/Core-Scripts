@@ -1185,22 +1185,22 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 --[[ Menu Functions ]]--
 local function setGamepadButton(currentMenu)
 	if not isGamepadSupport then return end
- 	if not UserInputService.GamepadEnabled then return end 
- 	
- 	if currentMenu == LeaveGameMenuFrame then 
- 		GuiService.SelectedObject = LeaveGameMenuFrame.LeaveConfirmButton 
-	elseif currentMenu == RootMenuFrame then 
-		GuiService.SelectedObject = ResumeGameButton 
-	elseif currentMenu == ResetCharacterFrame then 
-		GuiService.SelectedObject = ConfirmResetButton 
-	elseif currentMenu == GameSettingsMenuFrame then 
-		if GameSettingsMenuFrame.ShiftLockCheckBox and GameSettingsMenuFrame.ShiftLockCheckBox.Visible then 
-			GuiService.SelectedObject = GameSettingsMenuFrame.ShiftLockCheckBox 
-		else 
-			GuiService.SelectedObject = CameraModeDropDown.CurrentSelectionButton 
-		end 
-	end 
- end 
+ 	if not UserInputService.GamepadEnabled then return end
+
+ 	if currentMenu == LeaveGameMenuFrame then
+ 		GuiService.SelectedObject = LeaveGameMenuFrame.LeaveConfirmButton
+	elseif currentMenu == RootMenuFrame then
+		GuiService.SelectedObject = ResumeGameButton
+	elseif currentMenu == ResetCharacterFrame then
+		GuiService.SelectedObject = ConfirmResetButton
+	elseif currentMenu == GameSettingsMenuFrame then
+		if GameSettingsMenuFrame.ShiftLockCheckBox and GameSettingsMenuFrame.ShiftLockCheckBox.Visible then
+			GuiService.SelectedObject = GameSettingsMenuFrame.ShiftLockCheckBox
+		else
+			GuiService.SelectedObject = CameraModeDropDown.CurrentSelectionButton
+		end
+	end
+ end
 
 local function pushMenu(nextMenu)
 	if IsMenuClosing then return end
@@ -1300,7 +1300,7 @@ local function showSettingsRootMenu()
 
 	if not isGamepadSupport then return end
 	if UserInputService.GamepadEnabled then
-		pcall(function() game.ContextActionService:BindCoreAction("DontMove", noOptFunc, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2, 
+		pcall(function() game.ContextActionService:BindCoreAction("DontMove", noOptFunc, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2,
 				Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonSelect,
 				Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonR3,
 				Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)

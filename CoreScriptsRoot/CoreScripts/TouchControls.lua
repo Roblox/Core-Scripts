@@ -55,7 +55,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 		arrow.Size = size
 		arrow.Position = pos
 		arrow.Parent = parent
-		
+
 		return arrow
 	end
 
@@ -66,7 +66,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 		frame.Size = UDim2.new(0, size, 0, size)
 		frame.Position = position
 		frame.BackgroundTransparency = 1
-		
+
 		return frame
 	end
 
@@ -80,7 +80,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 		image.Size = UDim2.new(0, THUMBSTICK_SIZE, 0, THUMBSTICK_SIZE)
 		image.Position = position
 		image.Parent = parent
-		
+
 		return image
 	end
 
@@ -105,7 +105,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 			else
 				JumpButton.Position = UDim2.new(1, JUMP_BUTTON_SIZE * -2.75, 1, -JUMP_BUTTON_SIZE - 120)
 			end
-			
+
 			local playerJump_func = Player.JumpCharacter
 			local doJumpLoop = function()
 				while JumpTouchObject do
@@ -115,17 +115,17 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 					wait(1/60)
 				end
 			end
-			
+
 			JumpButton.InputBegan:connect(function(inputObject)
 				if inputObject.UserInputType ~= Enum.UserInputType.Touch or JumpTouchObject then
 					return
 				end
-				
+
 				JumpTouchObject = inputObject
 				JumpButton.ImageRectOffset = Vector2.new(0, 222)
 				doJumpLoop()
 			end)
-			
+
 			JumpButton.InputEnded:connect(function(inputObject)
 				if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
 				if inputObject == JumpTouchObject then
@@ -133,7 +133,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 					JumpButton.ImageRectOffset = Vector2.new(176, 222)
 				end
 			end)
-			
+
 			JumpButton.Parent = parentFrame
 			JumpButton.Visible = not UserInputService.ModalEnabled
 		end
@@ -148,14 +148,14 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 	local IsFollowStick = true
 	local function setupThumbstick(parentFrame)
 		if ThumbstickFrame then return end
-		
+
 		local isSmallScreen = isSmallScreenDevice()
 		local position = isSmallScreen and UDim2.new(0, (THUMBSTICK_SIZE/2) - 10, 1, -THUMBSTICK_SIZE - 20) or
 			UDim2.new(0, THUMBSTICK_SIZE/2, 1, -THUMBSTICK_SIZE * 1.75)
-			
+
 		ThumbstickFrame = createControlFrame("ThumbstickFrame", position, THUMBSTICK_SIZE)
 		local outerImage = createOuterImage("OuterImage", UDim2.new(0, 0, 0, 0), ThumbstickFrame)
-		
+
 		local innerImage = Instance.new('ImageLabel')
 		innerImage.Name = "InnerImage"
 		innerImage.Image = TOUCH_CONTROL_SHEET
@@ -166,12 +166,12 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 		innerImage.Position = UDim2.new(0, ThumbstickFrame.Size.X.Offset/2 - THUMBSTICK_SIZE/4, 0, ThumbstickFrame.Size.Y.Offset/2 - THUMBSTICK_SIZE/4)
 		innerImage.ZIndex = 2
 		innerImage.Parent = ThumbstickFrame
-		
+
 		local centerPosition = nil
 		local deadZone = 0.05
 		local function doMove(direction)
 			local inputAxis = direction / (THUMBSTICK_SIZE/2)
-			
+
 			-- Scaled Radial Dead Zone
 			local inputAxisMagnitude = inputAxis.magnitude
 			if inputAxisMagnitude < deadZone then
@@ -181,12 +181,12 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 				-- NOTE: Making this a unit vector will cause the player to instantly go max speed
 				inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y)
 			end
-			
+
 			if Player then
 				Player:Move(inputAxis, true)
 			end
 		end
-		
+
 		local function moveStick(position)
 			local relativePosition = Vector2.new(position.x - centerPosition.x, position.y - centerPosition.y)
 			local length = relativePosition.magnitude
@@ -202,14 +202,14 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 			end
 			innerImage.Position = UDim2.new(0, relativePosition.x + innerImage.AbsoluteSize.x/2, 0, relativePosition.y + innerImage.AbsoluteSize.y/2)
 		end
-		
+
 		-- input connections
 		local moveTouchObject = nil
 		ThumbstickFrame.InputBegan:connect(function(inputObject)
 			if moveTouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
 				return
 			end
-			
+
 			moveTouchObject = inputObject
 			ThumbstickFrame.Position = UDim2.new(0, inputObject.Position.x - ThumbstickFrame.Size.X.Offset/2, 0, inputObject.Position.y - ThumbstickFrame.Size.Y.Offset/2)
 			centerPosition = Vector2.new(ThumbstickFrame.AbsolutePosition.x + ThumbstickFrame.AbsoluteSize.x/2,
@@ -217,7 +217,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 			local direction = Vector2.new(inputObject.Position.x - centerPosition.x, inputObject.Position.y - centerPosition.y)
 			moveStick(inputObject.Position)
 		end)
-		
+
 		UserInputService.TouchMoved:connect(function(inputObject, isProcessed)
 			if inputObject == moveTouchObject then
 				centerPosition = Vector2.new(ThumbstickFrame.AbsolutePosition.x + ThumbstickFrame.AbsoluteSize.x/2,
@@ -227,7 +227,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 				moveStick(inputObject.Position)
 			end
 		end)
-		
+
 		UserInputService.TouchEnded:connect(function(inputObject, isProcessed)
 			if inputObject == moveTouchObject then
 				ThumbstickFrame.Position = position
@@ -238,7 +238,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 				end
 			end
 		end)
-		
+
 		ThumbstickFrame.Parent = parentFrame
 	end
 
@@ -250,15 +250,15 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 	local DPadFrame = nil
 	local function setupDPadControls(parentFrame)
 		if DPadFrame then return end
-		
+
 		local position = UDim2.new(0, 10, 1, -230)
 		DPadFrame = createControlFrame("DPadFrame", position, 192)
-		
+
 		local smArrowSize = UDim2.new(0, 23, 0, 23)
 		local lgArrowSize = UDim2.new(0, 64, 0, 64)
 		local smImgOffset = Vector2.new(46, 46)
 		local lgImgOffset = Vector2.new(128, 128)
-		
+
 		local bBtn = createArrowLabel("BackButton", DPadFrame, UDim2.new(0.5, -32, 1, -64), lgArrowSize, Vector2.new(0, 0), lgImgOffset)
 		local fBtn = createArrowLabel("ForwardButton", DPadFrame, UDim2.new(0.5, -32, 0, 0), lgArrowSize, Vector2.new(0, 258), lgImgOffset)
 		local lBtn = createArrowLabel("LeftButton", DPadFrame, UDim2.new(0, 0, 0.5, -32), lgArrowSize, Vector2.new(129, 129), lgImgOffset)
@@ -268,13 +268,13 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 		local frBtn = createArrowLabel("ForwardRightButton", DPadFrame, UDim2.new(1, -55, 0, 35), smArrowSize, Vector2.new(176, 258), smImgOffset)
 		flBtn.Visible = false
 		frBtn.Visible = false
-		
+
 		-- input connections
 		local playerJump_func = Player.JumpCharacter
 		jumpBtn.InputBegan:connect(function(inputObject)
 			playerJump_func(Player)
 		end)
-		
+
 		local compassDir = {
 			Vector3.new(1, 0, 0),			-- E
 			Vector3.new(1, 0, 1).unit,		-- SE
@@ -290,30 +290,30 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 			local jumpRadius = jumpBtn.AbsoluteSize.x/2
 			local centerPos = Vector2.new(DPadFrame.AbsolutePosition.x + DPadFrame.AbsoluteSize.x/2, DPadFrame.AbsolutePosition.y + DPadFrame.AbsoluteSize.y/2)
 			local direction = Vector2.new(inputPosition.x - centerPos.x, inputPosition.y - centerPos.y)
-			
+
 			if direction.magnitude > jumpRadius then
 				local angle = math.atan2(direction.y, direction.x)
 				local octant = (math.floor(8 * angle / (2 * math.pi) + 8.5)%8) + 1
 				movementVector = compassDir[octant]
 			end
-			
+
 			if not flBtn.Visible and movementVector == compassDir[7] then
 				flBtn.Visible = true
 				frBtn.Visible = true
 			end
 		end
-		
+
 		local moveTouchObject = nil
 		local endStep = 0.1
 		local function endMoveFunc()
 			flBtn.Visible = false
 			frBtn.Visible = false
-			
+
 			spawn(function()
 				while not moveTouchObject and movementVector.magnitude ~= 0 do
 					local newX = movementVector.x
 					local newZ = movementVector.y
-					
+
 					if movementVector.x > 0 then
 						newX = movementVector.x - endStep
 						if newX < 0 then newX = 0 end
@@ -321,7 +321,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 						newX = movementVector.x + endStep
 						if newX > 0 then newX = 0 end
 					end
-					
+
 					if movementVector.z > 0 then
 						newZ = movementVector.z - endStep
 						if newZ < 0 then newZ = 0 end
@@ -329,43 +329,43 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 						newZ = movementVector.z + endStep
 						if newZ > 0 then newZ = 0 end
 					end
-					
+
 					movementVector = Vector3.new(newX, 0, newZ)
 					Player:Move(movementVector, true)
 					wait()
 				end
-				
+
 				if movementVector.magnitude ~= 0 then
 					movementVector = Vector3.new(0, 0, 0)
 					Player:Move(movementVector, true)
 				end
 			end)
 		end
-		
+
 		DPadFrame.InputBegan:connect(function(inputObject)
 			if moveTouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
 				return
 			end
-			
+
 			moveTouchObject = inputObject
 			setDirection(inputObject.Position)
 			Player:Move(movementVector, true)
 		end)
-		
+
 		DPadFrame.InputChanged:connect(function(inputObject)
 			if inputObject == moveTouchObject then
 				setDirection(inputObject.Position)
 				Player:Move(movementVector, true)
 			end
 		end)
-		
+
 		DPadFrame.InputEnded:connect(function(inputObject)
 			if inputObject == moveTouchObject then
 				moveTouchObject = nil
 				endMoveFunc()
 			end
 		end)
-		
+
 		DPadFrame.Parent = parentFrame
 	end
 
@@ -377,39 +377,39 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 	local ThumbpadFrame = nil
 	local function setupThumbpad(parentFrame)
 		if ThumbpadFrame then return end
-		
+
 		local isSmallScreen = isSmallScreenDevice()
 		local position = isSmallScreen and UDim2.new(0, THUMBSTICK_SIZE * 0.5 - 20, 1, -THUMBSTICK_SIZE - 30) or
 			UDim2.new(0, THUMBSTICK_SIZE/2 - 10, 1, -THUMBSTICK_SIZE * 1.75 - 10)
-		
+
 		ThumbpadFrame = createControlFrame("ThumbpadFrame", position, THUMBSTICK_SIZE + 20)
 		local outerImage = createOuterImage("OuterImage", UDim2.new(0, 10, 0, 10), ThumbpadFrame)
-		
+
 		-- arrow set up
 		local smArrowSize = isSmallScreen and UDim2.new(0, 32, 0, 32) or UDim2.new(0, 64, 0, 64)
 		local lgArrowSize = UDim2.new(0, smArrowSize.X.Offset * 2, 0, smArrowSize.Y.Offset * 2)
 		local imgRectSize = Vector2.new(116, 116)
 		local smImgOffset = isSmallScreen and -4 or -9
 		local lgImgOffset = isSmallScreen and -28 or -55
-		
+
 		local dArrow = createArrowLabel("DownArrow", outerImage, UDim2.new(0.5, -smArrowSize.X.Offset/2, 1, lgImgOffset), smArrowSize, Vector2.new(6, 6), imgRectSize)
 		local uArrow = createArrowLabel("UpArrow", outerImage, UDim2.new(0.5, -smArrowSize.X.Offset/2, 0, smImgOffset), smArrowSize, Vector2.new(6, 264), imgRectSize)
 		local lArrow = createArrowLabel("LeftArrow", outerImage, UDim2.new(0, smImgOffset, 0.5, -smArrowSize.Y.Offset/2), smArrowSize, Vector2.new(135, 135), imgRectSize)
 		local rArrow = createArrowLabel("RightArrow", outerImage, UDim2.new(1, lgImgOffset, 0.5, -smArrowSize.Y.Offset/2), smArrowSize, Vector2.new(6, 135), imgRectSize)
-		
+
 		local function doTween(guiObject, endSize, endPosition)
 			guiObject:TweenSizeAndPosition(endSize, endPosition, Enum.EasingDirection.InOut, Enum.EasingStyle.Linear, 0.15, true)
 		end
-		
+
 		local padOrigin = nil
-		local deadZone = 0.5	
+		local deadZone = 0.5
 		local isRight, isLeft, isUp, isDown = false, false, false, false
 		local vForward = Vector3.new(0, 0, -1)
 		local vRight = Vector3.new(1, 0, 0)
 		local function doMove(pos)
 			local delta = Vector2.new(pos.x, pos.y) - padOrigin
 			local inputAxis = delta / (THUMBSTICK_SIZE/2)
-			
+
 			-- Scaled Radial Dead Zone
 			local inputAxisMagnitude = inputAxis.magnitude
 			if inputAxisMagnitude < deadZone then
@@ -423,11 +423,11 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 					inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y).unit
 				end
 			end
-			
+
 			if Player then
 				Player:Move(inputAxis, true)
 			end
-			
+
 			local forwardDot = inputAxis:Dot(vForward)
 			local rightDot = inputAxis:Dot(vRight)
 			if forwardDot > 0.5 then		-- UP
@@ -447,7 +447,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 				doTween(dArrow, smArrowSize, UDim2.new(0.5, -smArrowSize.X.Offset/2, 1, lgImgOffset))
 				doTween(uArrow, smArrowSize, UDim2.new(0.5, -smArrowSize.X.Offset/2, 0, smImgOffset))
 			end
-			
+
 			if rightDot > 0.5 then
 				if not isRight then
 					isRight, isLeft = true, false
@@ -466,26 +466,26 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 				doTween(rArrow, smArrowSize, UDim2.new(1, lgImgOffset, 0.5, -smArrowSize.Y.Offset/2))
 			end
 		end
-		
+
 		--input connections
 		local moveTouchObject = nil
 		ThumbpadFrame.InputBegan:connect(function(inputObject)
 			if moveTouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
 				return
 			end
-			
+
 			moveTouchObject = inputObject
 			padOrigin = Vector2.new(ThumbpadFrame.AbsolutePosition.x + ThumbpadFrame.AbsoluteSize.x/2,
 				ThumbpadFrame.AbsolutePosition.y + ThumbpadFrame.AbsoluteSize.y/2)
 			doMove(inputObject.Position)
 		end)
-		
+
 		UserInputService.InputChanged:connect(function(inputObject, isProcessed)
 			if inputObject == moveTouchObject then
 				doMove(inputObject.Position)
 			end
 		end)
-		
+
 		UserInputService.InputEnded:connect(function(inputObject)
 			if inputObject == moveTouchObject then
 				if Player then
@@ -499,7 +499,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 				doTween(rArrow, smArrowSize, UDim2.new(1, lgImgOffset, 0.5, -smArrowSize.Y.Offset/2))
 			end
 		end)
-		
+
 		ThumbpadFrame.Parent = parentFrame
 	end
 
@@ -521,7 +521,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 			local isThumbstickMode = false
 			local isThumbpadMode = false
 			local modeName = GameSettings.TouchMovementMode.Name
-			
+
 			-- TODO: Need option from c++, is called "Thumbpad"
 			if modeName == "Default" or modeName == "Thumbstick" then
 				isThumbstickMode = true
@@ -533,7 +533,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 				isThumbstickMode = false
 				isThumbpadMode = false
 			end
-			
+
 			JumpButton.Visible = isThumbstickMode or isThumbpadMode
 			ThumbstickFrame.Visible = isThumbstickMode
 			ThumbpadFrame.Visible = isThumbpadMode
@@ -547,18 +547,18 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 		touchControlFrame.Size = UDim2.new(1, 0, 1, 0)
 		touchControlFrame.BackgroundTransparency = 1
 		touchControlFrame.Parent = RobloxGui
-		
+
 		setupJumpButton(touchControlFrame)
 		setupThumbstick(touchControlFrame)
 		setupDPadControls(touchControlFrame)
-		setupThumbpad(touchControlFrame)	
-		
+		setupThumbpad(touchControlFrame)
+
 		UserInputService.Changed:connect(function(property)
 			if property == "ModalEnabled" then
 				configTouchControls()
 			end
 		end)
-		
+
 		configTouchControls()
 	end
 
@@ -573,7 +573,7 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 	local LastPinchScale = nil
 	local function onTouchStarted(inputObject, isProcessed)
 		if isProcessed then return end
-		
+
 		if CameraTouchObject then
 			PinchTouchObject = inputObject
 		else
@@ -693,7 +693,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 
 	local thumbstickInactiveAlpha = 0.3
 	local thumbstickSize = 120
-	if isSmallScreenDevice() then 
+	if isSmallScreenDevice() then
 		thumbstickSize = 70
 	end
 
@@ -704,7 +704,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 	local thumbstickTouches = {}
 
 	local jumpButtonSize = 90
-	if isSmallScreenDevice() then 
+	if isSmallScreenDevice() then
 		jumpButtonSize = 70
 	end
 	local oldJumpTouches = {}
@@ -733,7 +733,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 				return true
 			end
 		end
-		
+
 		return false
 	end
 
@@ -764,16 +764,16 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 	function rotatePointAboutLocation(pointToRotate, pointToRotateAbout, radians)
 		local sinAnglePercent = math.sin(radians)
 		local cosAnglePercent = math.cos(radians)
-		
+
 		local transformedPoint = pointToRotate
-		
+
 		-- translate point back to origin:
 		transformedPoint = Vector2.new(transformedPoint.x - pointToRotateAbout.x, transformedPoint.y - pointToRotateAbout.y)
-		
+
 		-- rotate point
 		local xNew = transformedPoint.x * cosAnglePercent - transformedPoint.y * sinAnglePercent
 		local yNew = transformedPoint.x * sinAnglePercent + transformedPoint.y * cosAnglePercent
-		
+
 		-- translate point back:
 		transformedPoint = Vector2.new(xNew + pointToRotateAbout.x, yNew + pointToRotateAbout.y)
 
@@ -787,7 +787,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 	function stationaryThumbstickTouchMove(thumbstickFrame, thumbstickOuter, touchLocation)
 		local thumbstickOuterCenterPosition = Vector2.new(thumbstickOuter.Position.X.Offset + thumbstickOuter.AbsoluteSize.x/2, thumbstickOuter.Position.Y.Offset + thumbstickOuter.AbsoluteSize.y/2)
 		local centerDiff = DistanceBetweenTwoPoints(touchLocation, thumbstickOuterCenterPosition)
-		
+
 		-- thumbstick is moving outside our region, need to cap its distance
 		if centerDiff > (thumbstickSize/2) then
 			local thumbVector = Vector2.new(touchLocation.x - thumbstickOuterCenterPosition.x,touchLocation.y - thumbstickOuterCenterPosition.y);
@@ -798,7 +798,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 			if normal.y == math.nan or normal.y == math.inf then
 				normal = Vector2.new(normal.x,0)
 			end
-			
+
 			local newThumbstickInnerPosition = thumbstickOuterCenterPosition + (normal * (thumbstickSize/2))
 			thumbstickFrame.Position = transformFromCenterToTopLeft(newThumbstickInnerPosition, thumbstickFrame)
 		else
@@ -810,7 +810,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 
 	function followThumbstickTouchMove(thumbstickFrame, thumbstickOuter, touchLocation)
 		local thumbstickOuterCenter = Vector2.new(thumbstickOuter.Position.X.Offset + thumbstickOuter.AbsoluteSize.x/2, thumbstickOuter.Position.Y.Offset + thumbstickOuter.AbsoluteSize.y/2)
-		
+
 		-- thumbstick is moving outside our region, need to position outer thumbstick texture carefully (to make look and feel like actual joystick controller)
 		if DistanceBetweenTwoPoints(touchLocation, thumbstickOuterCenter) > thumbstickSize/2 then
 			local thumbstickInnerCenter = Vector2.new(thumbstickFrame.Position.X.Offset + thumbstickFrame.AbsoluteSize.x/2, thumbstickFrame.Position.Y.Offset + thumbstickFrame.AbsoluteSize.y/2)
@@ -819,14 +819,14 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 			local outerToInnerVectorCurrent = Vector2.new(thumbstickInnerCenter.x - thumbstickOuterCenter.x, thumbstickInnerCenter.y - thumbstickOuterCenter.y)
 			local outerToInnerVectorCurrentUnit = outerToInnerVectorCurrent.unit
 			local movementVector = Vector2.new(touchLocation.x - thumbstickInnerCenter.x, touchLocation.y - thumbstickInnerCenter.y)
-			
+
 			-- First, find the angle between the new thumbstick movement vector,
 			-- and the vector between thumbstick inner and thumbstick outer.
 			-- We will use this to pivot thumbstick outer around thumbstick inner, gives a nice joystick feel
 			local crossOuterToInnerWithMovement = (outerToInnerVectorCurrentUnit.x * movementVectorUnit.y) - (outerToInnerVectorCurrentUnit.y * movementVectorUnit.x)
 			local angle = math.atan2(crossOuterToInnerWithMovement, dotProduct(outerToInnerVectorCurrentUnit, movementVectorUnit))
 			local anglePercent = angle * math.min( (movementVector.magnitude)/(outerToInnerVectorCurrent.magnitude), 1.0);
-			
+
 			-- If angle is significant, rotate about the inner thumbsticks current center
 			if math.abs(anglePercent) > 0.00001 then
 				local outerThumbCenter = rotatePointAboutLocation(thumbstickOuterCenter, thumbstickInnerCenter, anglePercent)
@@ -984,21 +984,21 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		createDPadArrowButton("RightButton", DPadFrame, UDim2.new(1, -64, 0.5, -32), bigSize, image, Vector2.new(0, 129), spriteSizeLarge)
 		createDPadArrowButton("forwardLeftButton", DPadFrame, UDim2.new(0, 35, 0, 35), smallSize, image, Vector2.new(129,258), spriteSizeSmall)
 		createDPadArrowButton("forwardRightButton", DPadFrame, UDim2.new(1, -55, 0, 35), smallSize, image, Vector2.new(176,258), spriteSizeSmall)
-		
+
 		return DPadFrame
 	end
 
 
 
-		
+
 	function setupDPadControls(DPadFrame)
-		
+
 		local moveCharacterFunc = localPlayer.MoveCharacter
 		DPadFrame.JumpButton.InputBegan:connect(function(inputObject)
 			localPlayer:JumpCharacter()
 		end)
 		local movementVector = Vector2.new(0,0)
-		
+
 		function setupButton(button,funcToCallBegin,funcToCallEnd)
 			button.InputBegan:connect(function(inputObject)
 				if not dpadTouch and inputObject.UserInputType == Enum.UserInputType.Touch and inputObject.UserInputState == Enum.UserInputState.Begin then
@@ -1014,45 +1014,45 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 				end
 			end)
 		end
-		
+
 		local forwardButtonBegin = function()
 			movementVector = Vector2.new(0,-1)
 			moveCharacterFunc(localPlayer, Vector2.new(0,-1), 1)
-			
+
 			DPadFrame.forwardLeftButton.Visible = true
 			DPadFrame.forwardRightButton.Visible = true
 		end
-		
+
 		local backwardButtonBegin = function()
 			movementVector = Vector2.new(0,1)
 			moveCharacterFunc(localPlayer, Vector2.new(0,1),1)
 		end
-		
+
 		local leftButtonBegin = function()
 			movementVector = Vector2.new(-1,0)
 			moveCharacterFunc(localPlayer, Vector2.new(-1,0),1)
 		end
-		
+
 		local rightButtonBegin = function()
 			movementVector = Vector2.new(1,0)
 			moveCharacterFunc(localPlayer,  Vector2.new(1,0),1)
 		end
-		
+
 		DPadFrame.InputEnded:connect(function()
 			DPadFrame.forwardLeftButton.Visible = false
 			DPadFrame.forwardRightButton.Visible = false
 		end)
-		
+
 		local endStep = 0.08
 		local endMovementFunc = function()
 			DPadFrame.forwardLeftButton.Visible = false
 			DPadFrame.forwardRightButton.Visible = false
-			
+
 			Spawn(function()
 				while not dpadTouch and movementVector ~= Vector2.new(0,0) do
 					local newX = movementVector.x
 					local newY = movementVector.y
-					
+
 					if movementVector.x > 0 then
 						newX = movementVector.x - endStep
 						if newX < 0 then newX = 0 end
@@ -1060,7 +1060,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 						newX = movementVector.x + endStep
 						if newX > 0 then newX = 0 end
 					end
-					
+
 					if movementVector.y > 0 then
 						newY = movementVector.y - endStep
 						if newY < 0 then newY = 0 end
@@ -1068,40 +1068,40 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 						newY = movementVector.y + endStep
 						if newY > 0 then newY = 0 end
 					end
-					
+
 					movementVector = Vector2.new(newX,newY)
 					moveCharacterFunc(localPlayer, movementVector,1)
 					wait(1/60)
 				end
-				
+
 				if movementVector ~= Vector2.new(0,0) then
-					movementVector = Vector2.new(0,0) 
+					movementVector = Vector2.new(0,0)
 					moveCharacterFunc(localPlayer,Vector2.new(0,0) ,0)
 				end
 			end)
 		end
-		
+
 		local removeDiagonalButtons = function()
 			if isPointInRect(dpadTouch.Position,DPadFrame.ForwardButton.AbsolutePosition,DPadFrame.ForwardButton.AbsoluteSize) then
 				DPadFrame.forwardLeftButton.Visible = false
 				DPadFrame.forwardRightButton.Visible = false
 			end
 		end
-		
+
 		setupButton(DPadFrame.ForwardButton,forwardButtonBegin,removeDiagonalButtons)
 		setupButton(DPadFrame.BackButton,backwardButtonBegin,nil)
 		setupButton(DPadFrame.LeftButton,leftButtonBegin,nil)
 		setupButton(DPadFrame.RightButton,rightButtonBegin,nil)
-		
+
 		local getMovementVector = function(touchPosition)
 			local xDiff = touchPosition.x - (DPadFrame.AbsolutePosition.x + DPadFrame.AbsoluteSize.x/2)
 			local yDiff = touchPosition.y - (DPadFrame.AbsolutePosition.y + DPadFrame.AbsoluteSize.y/2)
 			local vectorNew = Vector2.new(xDiff,yDiff)
-			
+
 			movementVector = vectorNew.unit
 			return vectorNew.unit
 		end
-		
+
 		Game:GetService("UserInputService").TouchMoved:connect(function(touchObject)
 			if touchObject == dpadTouch then
 				if isPointInRect(dpadTouch.Position,DPadFrame.AbsolutePosition,DPadFrame.AbsoluteSize) then
@@ -1120,7 +1120,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 
 
 		DPadFrame.Visible = not userInputService.ModalEnabled
-			
+
 	end
 
 	----------------------------------------------------------------------------
@@ -1157,7 +1157,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		if isSmallScreenDevice() then
 			thumbstickPos = UDim2.new(0,(thumbstickSize/2) - 10,1,-thumbstickSize - 20)
 		end
-		
+
 		characterThumbstick, characterOuterThumbstick  = constructThumbstick(thumbstickPos, moveCharacterFunction, false)
 		characterThumbstick.Name = "CharacterThumbstick"
 		characterThumbstick.Parent = parentFrame
@@ -1186,14 +1186,14 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 			jumpButton.ImageRectOffset = Vector2.new(176,222)
 			jumpButton.ImageRectSize = Vector2.new(174,174)
 			jumpButton.Size = UDim2.new(0,jumpButtonSize,0,jumpButtonSize)
-			if isSmallScreenDevice() then 
+			if isSmallScreenDevice() then
 				jumpButton.Position = UDim2.new(1, -(jumpButtonSize*2.25), 1, -jumpButtonSize - 20)
 			else
 				jumpButton.Position = UDim2.new(1, -(jumpButtonSize*2.75), 1, -jumpButtonSize - 120)
 			end
-		
+
 			local playerJumpFunc = localPlayer.JumpCharacter
-		
+
 			local doJumpLoop = function ()
 				while currentJumpTouch do
 					if localPlayer then
@@ -1202,7 +1202,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 					wait(1/60)
 				end
 			end
-		
+
 			jumpButton.InputBegan:connect(function(inputObject)
 				if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
 				if currentJumpTouch then return end
@@ -1212,18 +1212,18 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 						return
 					end
 				end
-		
+
 				currentJumpTouch = inputObject
 				jumpButton.ImageRectOffset = Vector2.new(0,222)
 				jumpButton.ImageRectSize = Vector2.new(174,174)
-				doJumpLoop()		
+				doJumpLoop()
 			end)
 			jumpButton.InputEnded:connect(function (inputObject)
 				if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
-				
+
 				jumpButton.ImageRectOffset = Vector2.new(176,222)
 				jumpButton.ImageRectSize = Vector2.new(174,174)
-		
+
 				if inputObject == currentJumpTouch then
 					table.insert(oldJumpTouches,currentJumpTouch)
 					currentJumpTouch = nil
@@ -1295,7 +1295,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 			pinchTime = -1
 			lastPinchScale = nil
 			shouldPinch = false
-			pinchFrame:Destroy() 
+			pinchFrame:Destroy()
 			pinchFrame = nil
 		end
 
@@ -1311,7 +1311,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 			pinchFrame.InputChanged:connect(function(inputObject)
 				if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
 
-				if not shouldPinch then 
+				if not shouldPinch then
 					resetPinchState()
 					return
 				end
@@ -1344,7 +1344,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 			end)
 			pinchFrame.InputEnded:connect(function(inputObject) -- pinch is over, destroy all
 				if inputObject == firstTouch or inputObject == secondTouch then
-					resetPinchState() 
+					resetPinchState()
 				end
 			end)
 		end
@@ -1387,7 +1387,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 				lastTick = tick()
 			end
 		end)
-		
+
 		userInputService.InputChanged:connect(function (inputObject)
 			if inputObject.UserInputType ~= Enum.UserInputType.Touch then return end
 			if cameraTouch ~= inputObject then return end
@@ -1434,14 +1434,14 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		local isSmallScreen = isSmallScreenDevice()
 		local position = isSmallScreen and UDim2.new(0, thumbstickSize * 0.5 - 20, 1, -thumbstickSize - 30) or
 			UDim2.new(0, thumbstickSize/2 - 10, 1, -thumbstickSize * 1.75 - 10)
-		
+
 		thumbpadFrame = Instance.new('Frame')	-- container
 		thumbpadFrame.Name = "NewThumbstickFrame"
 		thumbpadFrame.Active = true
 		thumbpadFrame.Size = UDim2.new(0, thumbstickSize + 20, 0, thumbstickSize + 20)
 		thumbpadFrame.Position = position
 		thumbpadFrame.BackgroundTransparency = 1
-		
+
 		local outerStickFrame = Instance.new('ImageLabel')	-- circle image
 		outerStickFrame.Name = "OuterImage"
 		outerStickFrame.Image = touchControlsSheet
@@ -1451,14 +1451,14 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		outerStickFrame.Size = UDim2.new(0, thumbstickSize, 0, thumbstickSize)
 		outerStickFrame.Position = UDim2.new(0, 10, 0, 10)
 		outerStickFrame.Parent = thumbpadFrame
-		
+
 		-- arrow set up
 		local arrowSize = isSmallScreen and UDim2.new(0, 32, 0, 32) or UDim2.new(0, 64, 0, 64)
 		local tweenSize = UDim2.new(0, arrowSize.X.Offset * 2, 0, arrowSize.Y.Offset * 2)
 		local rectSize = Vector2.new(116, 116)
 		local smallOffset = isSmallScreen and -4 or -9
 		local largeOffset = isSmallScreen and -28 or -55
-		
+
 		local function createArrow(name, position, size, offset)
 			local arrow = Instance.new('ImageLabel')
 			arrow.Name = name
@@ -1476,20 +1476,20 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		local uArrow = createArrow("UpImage", UDim2.new(0.5, -arrowSize.X.Offset/2, 0, smallOffset), arrowSize, Vector2.new(6, 264))
 		local lArrow = createArrow("LeftImage", UDim2.new(0, smallOffset, 0.5, -arrowSize.Y.Offset/2), arrowSize, Vector2.new(135, 135))
 		local rArrow = createArrow("RightImage", UDim2.new(1, largeOffset, 0.5, -arrowSize.Y.Offset/2), arrowSize, Vector2.new(6, 135))
-		
+
 		local function doTween(guiObject, endSize, endPosition)
 			guiObject:TweenSizeAndPosition(endSize, endPosition, Enum.EasingDirection.InOut,
 				Enum.EasingStyle.Linear, 0.15, true)
-		end	
-		
+		end
+
 		local padOrigin = nil
 		local deadZone = 0.5
-		
+
 		local isRight, isLeft, isUp, isDown = false, false, false, false
 		local function move(pos)
 			local delta = Vector2.new(pos.x, pos.y) - padOrigin
 			local inputAxis = delta / (thumbstickSize/2)
-			
+
 			-- Dead Zone
 			local inputAxisMagnitude = inputAxis.magnitude
 			if inputAxisMagnitude < deadZone then
@@ -1503,12 +1503,12 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 					inputAxis = Vector3.new(inputAxis.x, 0, inputAxis.y).unit
 				end
 			end
-			
+
 			localPlayer:Move(inputAxis, true)
-			
+
 			-- arrow tweening
 			local forwardDot = inputAxis:Dot(Vector3.new(0, 0, -1))
-			local rightDot = inputAxis:Dot(Vector3.new(1, 0, 0))		
+			local rightDot = inputAxis:Dot(Vector3.new(1, 0, 0))
 			if forwardDot > 0.5 then		-- UP
 				if not isUp then
 					isUp = true
@@ -1528,7 +1528,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 				doTween(dArrow, arrowSize, UDim2.new(0.5, -arrowSize.X.Offset/2, 1, largeOffset))
 				doTween(uArrow, arrowSize, UDim2.new(0.5, -arrowSize.X.Offset/2, 0, smallOffset))
 			end
-			
+
 			if rightDot > 0.5 then		-- RIGHT
 				if not isRight then
 					isRight = true
@@ -1549,30 +1549,30 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 				doTween(rArrow, arrowSize, UDim2.new(1, largeOffset, 0.5, -arrowSize.Y.Offset/2))
 			end
 		end
-		
+
 		-- input connections
 		thumbpadFrame.InputBegan:connect(function(inputObject)
 			if thumbpadTouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
 				return
 			end
-			
+
 			thumbpadTouchObject = inputObject
 			padOrigin = Vector2.new(thumbpadFrame.AbsolutePosition.x + thumbpadFrame.AbsoluteSize.x/2,
 				thumbpadFrame.AbsolutePosition.y + thumbpadFrame.AbsoluteSize.y/2)
 			move(inputObject.Position)
 		end)
-		
+
 		userInputService.InputChanged:connect(function(inputObject, isProcessed)
 			if inputObject == thumbpadTouchObject then
 				move(inputObject.Position)
 			end
 		end)
-		
+
 		userInputService.InputEnded:connect(function(inputObject, isProcessed)
 			if inputObject == thumbpadTouchObject then
 				localPlayer:Move(Vector3.new(), true)
 				thumbpadTouchObject = nil
-				
+
 				isUp, isDown, isLeft, isRight = false, false, false, false
 				doTween(dArrow, arrowSize, UDim2.new(0.5, -arrowSize.X.Offset/2, 1, largeOffset))
 				doTween(uArrow, arrowSize, UDim2.new(0.5, -arrowSize.X.Offset/2, 0, smallOffset))
@@ -1580,7 +1580,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 				doTween(rArrow, arrowSize, UDim2.new(1, largeOffset, 0.5, -arrowSize.Y.Offset/2))
 			end
 		end)
-		
+
 		thumbpadFrame.Parent = parentFrame
 	end
 
@@ -1617,9 +1617,9 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		characterDPad.Name = "CharacterDPad"
 		characterDPad.Parent = touchControlFrame
 		setupDPadControls(characterDPad)
-		
+
 		setupThumbpad(touchControlFrame)
-		
+
 		userInputService.Changed:connect(function(prop)
 			if prop == "ModalEnabled" then
 				activateTouchControls()
@@ -1629,7 +1629,7 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		activateTouchControls()
 	end
 
-	function activateTouchControls()	
+	function activateTouchControls()
 		-- set user controlled visibility
 		if userInputService.ModalEnabled then
 			characterThumbstick.Visible = false
@@ -1649,11 +1649,11 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 			elseif modeName == "Thumbpad" then
 				isInThumbstickMode = false
 				isThumbpadMode = true
-			else 
+			else
 				isInThumbstickMode = false
 				isThumbpadMode = false
 			end
-			
+
 			characterThumbstick.Visible = isInThumbstickMode
 			characterOuterThumbstick.Visible = isInThumbstickMode
 			thumbpadFrame.Visible = isThumbpadMode

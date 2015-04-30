@@ -16,8 +16,8 @@ local ContextUpImage = "http://www.roblox.com/asset/?id=97166444"
 
 local oldTouches = {}
 
-local buttonPositionTable = {	
-								[1] = UDim2.new(0,123,0,70), 
+local buttonPositionTable = {
+								[1] = UDim2.new(0,123,0,70),
 								[2] = UDim2.new(0,30,0,60),
 								[3] = UDim2.new(0,180,0,160),
 								[4] = UDim2.new(0,85,0,-25),
@@ -101,7 +101,7 @@ function createNewButton(actionName, functionInfoTable)
 	contextButton.BackgroundTransparency = 1
 	contextButton.Size = UDim2.new(0,90,0,90)
 	contextButton.Active = true
-	if isSmallScreenDevice() then 
+	if isSmallScreenDevice() then
 		contextButton.Size = UDim2.new(0,70,0,70)
 	end
 	contextButton.Image = ContextUpImage
@@ -197,7 +197,7 @@ function removeAction(actionName)
 	if not functionTable[actionName] then return end
 
 	local actionButton = functionTable[actionName]["button"]
-	
+
 	if actionButton then
 		actionButton.Parent = nil
 

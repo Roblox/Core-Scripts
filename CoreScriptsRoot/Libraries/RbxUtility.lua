@@ -1,6 +1,6 @@
 local t = {}
 
- 
+
 
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
@@ -14,26 +14,26 @@ local t = {}
  --
  --Copyright 2007 Shaun Brown  (http://www.chipmunkav.com)
  --All Rights Reserved.
- 
- --Permission is hereby granted, free of charge, to any person 
- --obtaining a copy of this software to deal in the Software without 
- --restriction, including without limitation the rights to use, 
- --copy, modify, merge, publish, distribute, sublicense, and/or 
- --sell copies of the Software, and to permit persons to whom the 
+
+ --Permission is hereby granted, free of charge, to any person
+ --obtaining a copy of this software to deal in the Software without
+ --restriction, including without limitation the rights to use,
+ --copy, modify, merge, publish, distribute, sublicense, and/or
+ --sell copies of the Software, and to permit persons to whom the
  --Software is furnished to do so, subject to the following conditions:
- 
- --The above copyright notice and this permission notice shall be 
+
+ --The above copyright notice and this permission notice shall be
  --included in all copies or substantial portions of the Software.
  --If you find this software useful please give www.chipmunkav.com a mention.
 
- --THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
- --EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
+ --THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ --EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
  --OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- --IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR 
- --ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF 
- --CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+ --IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+ --ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ --CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
  --CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- 
+
 local string = string
 local math = math
 local table = table
@@ -71,12 +71,12 @@ end
 local JsonWriter = {
 	backslashes = {
 		['\b'] = "\\b",
-		['\t'] = "\\t",	
-		['\n'] = "\\n", 
+		['\t'] = "\\t",
+		['\n'] = "\\n",
 		['\f'] = "\\f",
-		['\r'] = "\\r", 
-		['"']  = "\\\"", 
-		['\\'] = "\\\\", 
+		['\r'] = "\\r",
+		['"']  = "\\\"",
+		['\\'] = "\\\\",
 		['/']  = "\\/"
 	}
 }
@@ -138,7 +138,7 @@ end
 
 function JsonWriter:IsArray(t)
 	local count = 0
-	local isindex = function(k) 
+	local isindex = function(k)
 		if type(k) == "number" and k > 0 then
 			if math.floor(k) == k then
 				return true
@@ -158,8 +158,8 @@ end
 
 function JsonWriter:WriteTable(t)
 	local ba, st, et, n = self:IsArray(t)
-	self:Append(st)	
-	if ba then		
+	self:Append(st)
+	if ba then
 		for i = 1, n do
 			self:Write(t[i])
 			if i < n then
@@ -172,10 +172,10 @@ function JsonWriter:WriteTable(t)
 			if not first then
 				self:Append(',')
 			end
-			first = false;			
+			first = false;
 			self:ParseString(k)
 			self:Append(':')
-			self:Write(v)			
+			self:Write(v)
 		end
 	end
 	self:Append(et)
@@ -183,12 +183,12 @@ end
 
 function JsonWriter:WriteError(o)
 	error(string.format(
-		"Encoding of %s unsupported", 
+		"Encoding of %s unsupported",
 		tostring(o)))
 end
 
 function JsonWriter:WriteFunction(o)
-	if o == Null then 
+	if o == Null then
 		self:WriteNil()
 	else
 		self:WriteError(o)
@@ -205,7 +205,7 @@ function StringReader:New(s)
 	setmetatable(o, self)
 	self.__index = self
 	o.s = s or o.s
-	return o	
+	return o
 end
 
 function StringReader:Peek()
@@ -251,7 +251,7 @@ function JsonReader:Read()
 	local peek = self:Peek()
 	if peek == nil then
 		error(string.format(
-			"Nil string: '%s'", 
+			"Nil string: '%s'",
 			self:All()))
 	elseif peek == '{' then
 		return self:ReadObject()
@@ -274,7 +274,7 @@ function JsonReader:Read()
 		return nil
 	end
 end
-		
+
 function JsonReader:ReadTrue()
 	self:TestReservedWord{'t','r','u','e'}
 	return true
@@ -294,8 +294,8 @@ function JsonReader:TestReservedWord(t)
 	for i, v in ipairs(t) do
 		if self:Next() ~= v then
 			 error(string.format(
-				"Error reading '%s': %s", 
-				table.concat(t), 
+				"Error reading '%s': %s",
+				table.concat(t),
 				self:All()))
 		end
 	end
@@ -305,7 +305,7 @@ function JsonReader:ReadNumber()
         local result = self:Next()
         local peek = self:Peek()
         while peek ~= nil and string.find(
-		peek, 
+		peek,
 		"[%+%-%d%.eE]") do
             result = result .. self:Next()
             peek = self:Peek()
@@ -313,7 +313,7 @@ function JsonReader:ReadNumber()
 	result = tonumber(result)
 	if result == nil then
 	        error(string.format(
-			"Invalid number: '%s'", 
+			"Invalid number: '%s'",
 			result))
 	else
 		return result
@@ -338,8 +338,8 @@ function JsonReader:ReadString()
 		return string.char(tonumber(m, 16))
 	end
 	return string.gsub(
-		result, 
-		"u%x%x(%x%x)", 
+		result,
+		"u%x%x(%x%x)",
 		fromunicode)
 end
 
@@ -352,7 +352,7 @@ function JsonReader:ReadComment()
             self:ReadBlockComment()
         else
             error(string.format(
-		"Invalid comment: %s", 
+		"Invalid comment: %s",
 		self:All()))
 	end
 end
@@ -360,15 +360,15 @@ end
 function JsonReader:ReadBlockComment()
 	local done = false
 	while not done do
-		local ch = self:Next()		
+		local ch = self:Next()
 		if ch == '*' and self:Peek() == '/' then
 			done = true
                 end
-		if not done and 
-			ch == '/' and 
+		if not done and
+			ch == '/' and
 			self:Peek() == "*" then
                     error(string.format(
-			"Invalid comment: %s, '/*' illegal.",  
+			"Invalid comment: %s, '/*' illegal.",
 			self:All()))
 		end
 	end
@@ -400,7 +400,7 @@ function JsonReader:ReadArray()
 			local ch = self:Next()
 			if ch ~= ',' then
 				error(string.format(
-					"Invalid array: '%s' due to: '%s'", 
+					"Invalid array: '%s' due to: '%s'",
 					self:All(), ch))
 			end
 		end
@@ -420,15 +420,15 @@ function JsonReader:ReadObject()
 		local key = self:Read()
 		if type(key) ~= "string" then
 			error(string.format(
-				"Invalid non-string object key: %s", 
+				"Invalid non-string object key: %s",
 				key))
 		end
 		self:SkipWhiteSpace()
 		local ch = self:Next()
 		if ch ~= ':' then
 			error(string.format(
-				"Invalid object: '%s' due to: '%s'", 
-				self:All(), 
+				"Invalid object: '%s' due to: '%s'",
+				self:All(),
 				ch))
 		end
 		self:SkipWhiteSpace()
@@ -442,8 +442,8 @@ function JsonReader:ReadObject()
 			ch = self:Next()
                 	if ch ~= ',' then
 				error(string.format(
-					"Invalid array: '%s' near: '%s'", 
-					self:All(), 
+					"Invalid array: '%s' near: '%s'",
+					self:All(),
 					ch))
 			end
 		end
@@ -615,7 +615,7 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 
 			selectionBoxClone.Parent = selectionContainer
 		end
-			
+
 		if theColor then
 			selectionBoxClone.Color = theColor
 		end
@@ -657,7 +657,7 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 			for z = cellPosBegin.z, cellPosEnd.z do
 				for x = cellPosBegin.x, cellPosEnd.x do
 					local cellMaterial = GetCell(terrain, x, y, z)
-					
+
 					if cellMaterial ~= emptyMaterial then
 						local cframePos = CellCenterToWorld(terrain, x, y, z)
 						local cellPos = Vector3int16.new(x,y,z)
@@ -671,7 +671,7 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 								end
 								updated = true
 								break
-							end 
+							end
 						end
 
 						if not updated then
@@ -701,7 +701,7 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 		adornments.SelectionPart = selectionPart
 		adornments.SelectionBox = selectionBox
 
-		updateSelection = 
+		updateSelection =
 			function (newRegion, color)
 				if newRegion and newRegion ~= lastRegion then
 					lastRegion = newRegion
@@ -714,7 +714,7 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 			end
 	else -- use individual cell adorns to represent the area selected
 		adornFullCellsInRegion(regionToSelect, color)
-		updateSelection = 
+		updateSelection =
 			function (newRegion, color)
 				if newRegion and newRegion ~= lastRegion then
 					lastRegion = newRegion
@@ -749,7 +749,7 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 --[[
-A 'Signal' object identical to the internal RBXScriptSignal object in it's public API and semantics. This function 
+A 'Signal' object identical to the internal RBXScriptSignal object in it's public API and semantics. This function
 can be used to create "custom events" for user-made code.
 API:
 Method :connect( function handler )
@@ -773,7 +773,7 @@ Method :fire( ... )
 Method :wait()
 	Arguments:   None
 	Returns:     The arguments given to fire
-	Description: This call blocks until 
+	Description: This call blocks until
 ]]
 
 function t.CreateSignal()
@@ -830,8 +830,8 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 --[[
 A "Create" function for easy creation of Roblox instances. The function accepts a string which is the classname of
-the object to be created. The function then returns another function which either accepts accepts no arguments, in 
-which case it simply creates an object of the given type, or a table argument that may contain several types of data, 
+the object to be created. The function then returns another function which either accepts accepts no arguments, in
+which case it simply creates an object of the given type, or a table argument that may contain several types of data,
 in which case it mutates the object in varying ways depending on the nature of the aggregate data. These are the
 type of data and what operation each will perform:
 1) A string key mapping to some value:
@@ -845,18 +845,18 @@ type of data and what operation each will perform:
       need for temporary variables to store references to those objects.
 
 3) A key which is a value returned from Create.Event( eventname ), and a value which is a function function
-      The Create.E( string ) function provides a limited way to connect to signals inside of a Create hierarchy 
-      for those who really want such a functionality. The name of the event whose name is passed to 
+      The Create.E( string ) function provides a limited way to connect to signals inside of a Create hierarchy
+      for those who really want such a functionality. The name of the event whose name is passed to
       Create.E( string )
 
 4) A key which is the Create function itself, and a value which is a function
-      The function will be run with the argument of the object itself after all other initialization of the object is 
-      done by create. This provides a way to do arbitrary things involving the object from withing the create 
-      hierarchy. 
+      The function will be run with the argument of the object itself after all other initialization of the object is
+      done by create. This provides a way to do arbitrary things involving the object from withing the create
+      hierarchy.
       Note: This function is called SYNCHRONOUSLY, that means that you should only so initialization in
-      it, not stuff which requires waiting, as the Create call will block until it returns. While waiting in the 
+      it, not stuff which requires waiting, as the Create call will block until it returns. While waiting in the
       constructor callback function is possible, it is probably not a good design choice.
-      Note: Since the constructor function is called after all other initialization, a Create block cannot have two 
+      Note: Since the constructor function is called after all other initialization, a Create block cannot have two
       constructor functions, as it would not be possible to call both of them last, also, this would be unnecessary.
 
 
@@ -892,7 +892,7 @@ An example using the event syntax:
 local part = Create'Part'{
     [Create.E'Touched'] = function(part)
         print("I was touched by "..part.Name)
-    end,	
+    end,
 }
 
 
@@ -1004,19 +1004,19 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 
-t.Help = 
-	function(funcNameOrFunc) 
+t.Help =
+	function(funcNameOrFunc)
 		--input argument can be a string or a function.  Should return a description (of arguments and expected side effects)
 		if funcNameOrFunc == "DecodeJSON" or funcNameOrFunc == t.DecodeJSON then
 			return "Function DecodeJSON.  " ..
-			       "Arguments: (string).  " .. 
-			       "Side effect: returns a table with all parsed JSON values" 
+			       "Arguments: (string).  " ..
+			       "Side effect: returns a table with all parsed JSON values"
 		end
 		if funcNameOrFunc == "EncodeJSON" or funcNameOrFunc == t.EncodeJSON then
 			return "Function EncodeJSON.  " ..
-			       "Arguments: (table).  " .. 
-			       "Side effect: returns a string composed of argument table in JSON data format" 
-		end  
+			       "Arguments: (table).  " ..
+			       "Side effect: returns a string composed of argument table in JSON data format"
+		end
 		if funcNameOrFunc == "MakeWedge" or funcNameOrFunc == t.MakeWedge then
 			return "Function MakeWedge. " ..
 			       "Arguments: (x, y, z, [default material]). " ..
@@ -1085,33 +1085,7 @@ t.Help =
 			       "is best described via example, please see the wiki page for a description of how to use it."
 		end
 	end
-	
+
 --------------------------------------------Documentation Ends----------------------------------------------------------
 
 return t
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

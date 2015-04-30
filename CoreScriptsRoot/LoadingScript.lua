@@ -81,7 +81,7 @@ function InfoProvider:GetCreatorName()
 end
 
 function InfoProvider:LoadAssets()
-	Spawn(function() 
+	Spawn(function()
 		if PLACEID <= 0 then
 			while Game.PlaceId <= 0 do
 				wait()
@@ -128,7 +128,7 @@ function MainGui:GenerateMain()
 				Active = false,
 				ZIndex = 10
 		},
-		
+
 		create 'Frame' {
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
@@ -155,7 +155,7 @@ function MainGui:GenerateMain()
 				ZIndex = 2
 			}
 		},
-		
+
 		create 'Frame' {
 			Name = 'UiMessageFrame',
 			BackgroundTransparency = 1,
@@ -175,7 +175,7 @@ function MainGui:GenerateMain()
 				ZIndex = 2
 			},
 		},
-		
+
 		create 'Frame' {
 			Name = 'CountFrame',
 			BackgroundTransparency = 1,
@@ -449,7 +449,7 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 			fadeDown = true
 		end
 	end
-	
+
 	-- fade in close button after 5 seconds
 	if currentTime - startTime > 5 and currScreenGui.BlackFrame.CloseButton.ImageTransparency > 0 then
 		currScreenGui.BlackFrame.CloseButton.ImageTransparency = currScreenGui.BlackFrame.CloseButton.ImageTransparency - fadeAmount
@@ -504,7 +504,7 @@ end
 function fadeBackground()
 	if not currScreenGui then return end
 	if fadingBackground then return end
-	
+
 	if not currScreenGui:findFirstChild("BlackFrame") then return end
 
 	fadingBackground = true
@@ -563,7 +563,7 @@ function destroyLoadingElements()
 	if not currScreenGui then return end
 	if destroyedLoadingGui then return end
 	destroyedLoadingGui = true
-	
+
 	local guiChildren = currScreenGui:GetChildren()
 	for i=1, #guiChildren do
 		-- need to keep this around in case we get a connection error later
