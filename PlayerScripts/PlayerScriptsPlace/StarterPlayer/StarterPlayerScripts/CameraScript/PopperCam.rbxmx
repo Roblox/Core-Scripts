@@ -1,11 +1,11 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX5F704B4B4E0D4E0B8FF5629A0F6EEB46">
+	<Item class="ModuleScript" referent="RBX03506543CD1E432CA7C789C156BA6488">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">PopperCam</string>
-			<ProtectedString name="Source"><![CDATA[-- PopperCam Version 15
+			<ProtectedString name="Source"><![CDATA[-- PopperCam Version 16
 -- OnlyTwentyCharacters
 
 local PopperCam = {} -- Guarantees your players won't see outside the bounds of your map!
@@ -134,6 +134,7 @@ local function OnWorkspaceChanged(property)
 				CameraChangeConn:disconnect()
 			end
 			CameraChangeConn = Camera.Changed:connect(OnCameraChanged)
+			OnCameraChanged('CameraSubject')
 		end
 	end
 end
