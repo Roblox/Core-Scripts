@@ -1,6 +1,9 @@
 --Include
 local Create = assert(LoadLibrary("RbxUtility")).Create
 
+local HttpService = game:GetService('HttpService')
+local HttpRbxApiService = game:GetService('HttpRbxApiService')
+
 -- A Few Script Globals
 local gui
 if script.Parent:FindFirstChild("ControlFrame") then
@@ -305,11 +308,32 @@ function initializeDeveloperConsole()
 		Image = "http://www.roblox.com/Asset?id=151205813";
 	}
 	
+	local userId = game:GetService("Players").LocalPlayer.userId
 	local flagExists, flagValue = pcall(function () return settings():GetFFlag("ConsoleCodeExecutionEnabled") end)
 	local codeExecutionEnabled = flagExists and flagValue
 	local creatorFlagExists, creatorFlagValue = pcall(function () return settings():GetFFlag("UseCanManageApiToDetermineConsoleAccess") end)
 	local creatorFlagEnabled = creatorFlagExists and creatorFlagValue
-	local isCreator = creatorFlagEnabled or game:GetService("Players").LocalPlayer.userId == game.CreatorId
+	local isCreator = creatorFlagEnabled or userId == game.CreatorId
+	if creatorFlagEnabled then -- Use the new API
+		local success, result = pcall(function()
+			local url = "http://api.roblox.com/users/%d/canmanage/"..game.PlaceId
+			return HttpRbxApiService:GetAsync(url:format(userId), false,
+				Enum.ThrottlingPriority.Extreme)
+		end)
+		if success then
+			-- API returns: {"Success":BOOLEAN,"CanManage":BOOLEAN}
+			if type(result) == "string" then
+				-- Convert from JSON to a table
+				-- pcall in case of invalid JSON
+				success,result = pcall(function()
+					return HttpService:JSONDecode(result)
+				end)
+				if not sucess then return end
+				if not result.Success then return end
+				isCreator = result.CanManage
+			end
+		end
+	end
 	local function shouldShowCommandBar()
 		return codeExecutionEnabled and isCreator
 	end
