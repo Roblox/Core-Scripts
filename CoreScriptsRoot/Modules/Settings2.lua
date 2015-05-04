@@ -803,7 +803,11 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 
 		--[[ OK/Return button ]]--
 		if IsTouchClient then
-			CurrentYOffset = CurrentYOffset + 134
+			if IsSmallScreen then
+				CurrentYOffset = CurrentYOffset + 64
+			else
+				CurrentYOffset = CurrentYOffset + 134
+			end
 		end
 		local GameSettingsBackButton = createTextButton(MENU_BTN_SML, UDim2.new(0.5, -84, 0, CurrentYOffset),
 			"Back", Enum.FontSize.Size24, Enum.ButtonStyle.RobloxRoundDefaultButton)
