@@ -103,12 +103,18 @@ local function onVehicleSeatChanged(property)
 	end
 end
 
-local function onSeated(active)
+local function onSeated(active, currentSeatPart)
 	if active then
-		-- TODO: Can we make an API change to get the seat that the humanoid is sitting in?
-		local camSubject = workspace.CurrentCamera.CameraSubject
-		if camSubject and camSubject:IsA('VehicleSeat') then
-			CurrentVehicleSeat = camSubject
+		-- TODO: Clean up when new API is live for a while
+		if currentSeatPart and currentSeatPart:IsA('VehicleSeat') then
+			CurrentVehicleSeat = currentSeatPart
+		else
+			local camSubject = workspace.CurrentCamera.CameraSubject
+			if camSubject and camSubject:IsA('VehicleSeat') then
+				CurrentVehicleSeat = camSubject
+			end
+		end
+		if CurrentVehicleSeat then
 			VehicleHudFrame.Visible = CurrentVehicleSeat.HeadsUpDisplay
 			VehicleSeatRenderCn = RunService.RenderStepped:connect(onRenderStepped)
 			VehicleSeatHUDChangedCn = CurrentVehicleSeat.Changed:connect(onVehicleSeatChanged)

@@ -987,7 +987,7 @@ local function onFollowButtonPressed()
 	if result["success"] then
 		sendNotification("You are", "now following "..LastSelectedPlayer.Name, FRIEND_IMAGE..followedUserId.."&x=48&y=48", 5, function() end)
 		if IsServerCoreScripts and RemoteEvent_OnNewFollower then
-			RemoteEvent_OnNewFollower:FireServer(Player, LastSelectedPlayer)
+			RemoteEvent_OnNewFollower:FireServer(LastSelectedPlayer)
 		end
 		-- now update the social icon
 		onFollowerStatusChanged()
