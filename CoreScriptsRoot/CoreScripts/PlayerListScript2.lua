@@ -60,7 +60,7 @@ local BinbableFunction_SendNotification = RobloxGui:FindFirstChild('SendNotifica
 
 --[[ Remotes ]]--
 local RemoteEvent_OnNewFollower = nil
-if IsServerCoreScripts then
+if IsServerCoreScripts and game:FindService("NetworkClient") then
 	RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
 	RemoteEvent_OnNewFollower = RobloxReplicatedStorage:WaitForChild('OnNewFollower')
 end
