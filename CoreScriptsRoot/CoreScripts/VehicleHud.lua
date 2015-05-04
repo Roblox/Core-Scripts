@@ -103,12 +103,34 @@ local function onVehicleSeatChanged(property)
 	end
 end
 
+local function getVehicleSeat(part)
+	-- Same as GetConnectedParts(false)
+	-- Returns a list of all directly connected parts
+	-- (Those include parts directly welded to it)
+	-- Won't count other VSeats welded to the same vehicle
+	-- Could check for SeatWeld and its Part1, but
+	-- that isn't needed, this works fine already
+	for k,v in pairs(part:GetConnectedParts()) do
+		if v:IsA("VehicleSeat") then
+			return v
+		end
+	end
+end
+
 local function onSeated(active)
 	if active then
 		-- TODO: Can we make an API change to get the seat that the humanoid is sitting in?
-		local camSubject = workspace.CurrentCamera.CameraSubject
-		if camSubject and camSubject:IsA('VehicleSeat') then
-			CurrentVehicleSeat = camSubject
+		-- The Lua function used here does work, but just in case...
+		local ch = LocalPlayer.Character
+		-- Note to people: new characters use the HumanoidRootPart
+		-- If it isn't present, a VehicleSet uses the Torso
+		-- Shouldn't need to get the Torso if the HRP is missing
+		-- If it is missing, it's not a "real" player character
+		local hrp = ch and ch:findFirstChild("HumanoidRootPart")
+		local seat = hrp and getVehicleSeat(hrp)
+		-- Also no "IsA"-check, getVehicleSeat does that
+		if seat then
+			CurrentVehicleSeat = seat
 			VehicleHudFrame.Visible = CurrentVehicleSeat.HeadsUpDisplay
 			VehicleSeatRenderCn = RunService.RenderStepped:connect(onRenderStepped)
 			VehicleSeatHUDChangedCn = CurrentVehicleSeat.Changed:connect(onVehicleSeatChanged)
