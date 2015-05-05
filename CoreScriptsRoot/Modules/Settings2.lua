@@ -1600,6 +1600,22 @@ do
 		end
 	end)
 
+	-- connect back button on android
+	local showLeaveEvent = nil
+	pcall(function() showLeaveEvent = GuiService.ShowLeaveConfirmation end)
+	if showLeaveEvent then
+		GuiService.ShowLeaveConfirmation:connect(function()
+			if #MenuStack == 0 then
+				showSettingsRootMenu()
+				RootMenuFrame.Position = UDim2.new(-1, 0, 0, 0)
+				LeaveGameMenuFrame.Position = UDim2.new(0, 0, 0, 0)
+				pushMenu(LeaveGameMenuFrame)
+			else
+				closeSettingsMenu()
+			end
+		end)
+	end
+
 	-- Remove old gui buttons
 	-- TODO: Gut this from the engine code
 	local oldLeaveGameButton = TopLeftControl:FindFirstChild('Exit')
