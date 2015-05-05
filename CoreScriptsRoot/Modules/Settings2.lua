@@ -1192,16 +1192,16 @@ local function setGamepadButton(currentMenu)
  	if not UserInputService.GamepadEnabled then return end 
  	
  	if currentMenu == LeaveGameMenuFrame then 
- 		GuiService.SelectedObject = LeaveGameMenuFrame.LeaveConfirmButton 
+ 		pcall(function() GuiService.SelectedCoreObject = LeaveGameMenuFrame.LeaveConfirmButton end)
 	elseif currentMenu == RootMenuFrame then 
-		GuiService.SelectedObject = ResumeGameButton 
+		pcall(function() GuiService.SelectedCoreObject = ResumeGameButton end)
 	elseif currentMenu == ResetCharacterFrame then 
-		GuiService.SelectedObject = ConfirmResetButton 
+		pcall(function() GuiService.SelectedCoreObject = ConfirmResetButton end)
 	elseif currentMenu == GameSettingsMenuFrame then 
 		if GameSettingsMenuFrame.ShiftLockCheckBox and GameSettingsMenuFrame.ShiftLockCheckBox.Visible then 
-			GuiService.SelectedObject = GameSettingsMenuFrame.ShiftLockCheckBox 
+			pcall(function() GuiService.SelectedCoreObject = GameSettingsMenuFrame.ShiftLockCheckBox end)
 		else 
-			GuiService.SelectedObject = CameraModeDropDown.CurrentSelectionButton 
+			pcall(function() GuiService.SelectedCoreObject = CameraModeDropDown.CurrentSelectionButton end)
 		end 
 	end 
  end 
@@ -1271,8 +1271,8 @@ local function closeSettingsMenu(forceClose)
 	end
 
 	if UserInputService.GamepadEnabled and isGamepadSupport then
-		GuiService.SelectedObject = nil
-		pcall(function() ContextActionService:UnbindCoreAction("backbutton")
+		pcall(function() GuiService.SelectedCoreObject = nil
+		ContextActionService:UnbindCoreAction("backbutton")
 		ContextActionService:UnbindCoreAction("DontMove") end)
 	end
 

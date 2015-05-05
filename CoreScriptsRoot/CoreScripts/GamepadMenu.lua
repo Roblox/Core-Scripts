@@ -102,24 +102,28 @@ local function createGamepadMenuGui()
 		Parent = closeHintImage;
 	}
 
-	game.GuiService:AddSelectionParent("CoreUIMainGroup", gamepadSettingsFrame)
+	GuiService:AddSelectionParent("CoreUIMainGroup", gamepadSettingsFrame)
 
 	settingsGamepad.MouseButton1Click:connect(function()
+		unbindAllRadialActions()
 		gamepadSettingsFrame.Visible = false
-		local MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings2)
+		local MenuModule = require(GuiRoot.Modules.Settings2)
 		MenuModule:ToggleVisibility(true)
 	end)
 	backpackGamepad.MouseButton1Click:connect(function()
+		unbindAllRadialActions()
 		gamepadSettingsFrame.Visible = false
 		local BackpackModule = require(GuiRoot.Modules.BackpackScript)
 		BackpackModule:OpenClose()
 	end)
 	playerListGamepad.MouseButton1Click:connect(function()
+		unbindAllRadialActions()
 		gamepadSettingsFrame.Visible = false
 		local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
 		PlayerlistModule.ToggleVisibility()
 	end)
 	chatGamepad.MouseButton1Click:connect(function()
+		unbindAllRadialActions()
 		gamepadSettingsFrame.Visible = false
 		local ChatModule = require(GuiRoot.Modules.Chat)
 		ChatModule:ToggleVisibility()
@@ -149,9 +153,10 @@ local function setupGamepadControls()
 	local radialSelectActionName = "RadialSelectAction"
 	local radialCancelActionName = "RadialSelectCancel"
 
-	local noOptFunc = function() end
+	local noOpFunc = function() end
 
 	function unbindAllRadialActions()
+		pcall(function() GuiService.GamepadNavigationEnabled = true end)
 		ContextActionService:UnbindCoreAction(radialSelectActionName)
 		ContextActionService:UnbindCoreAction(radialCancelActionName)
 		ContextActionService:UnbindCoreAction(freezeControllerActionName)
@@ -192,7 +197,7 @@ local function setupGamepadControls()
 				end
 			end
 
-			GuiService.SelectedObject = selectedObject
+			pcall(function() GuiService.SelectedCoreObject = selectedObject end)
 		end
 	end
 
@@ -204,21 +209,21 @@ local function setupGamepadControls()
 		end
 	end
 
+	function toggleSettings()
+	end
+
 	function toggleCoreGuiRadial()
 		gamepadSettingsFrame.Visible = not gamepadSettingsFrame.Visible
 
 		if gamepadSettingsFrame.Visible then
-			game.GuiService.SelectedObject = nil
+			pcall(function() GuiService.GamepadNavigationEnabled = false end)
 
-			ContextActionService:BindCoreAction(freezeControllerActionName, noOptFunc, false, Enum.KeyCode.Thumbstick2, 
-					Enum.KeyCode.ButtonA,Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonSelect,
-					Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, 
-					Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonR3)
-
+			ContextActionService:BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
 			ContextActionService:BindCoreAction(radialCancelActionName, radialSelectCancel, false, Enum.KeyCode.ButtonB)
 			ContextActionService:BindCoreAction(radialSelectActionName, radialSelect, false, Enum.KeyCode.Thumbstick1, 
 				Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
 		else
+			pcall(function() GuiService.SelectedCoreObject = nil end)
 			unbindAllRadialActions()
 		end
 
@@ -230,10 +235,7 @@ local function setupGamepadControls()
 		if input.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
 		if state ~= Enum.UserInputState.Begin then return end
 
-		ContextActionService:BindCoreAction(freezeControllerActionName, noOptFunc, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.Thumbstick2, 
-				Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonSelect,
-				Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonR3,
-				Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
+		ContextActionService:BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
 
 		if isCoreGuiDisabled() then
 			local shouldKillGamepadInput = toggleSettings()
