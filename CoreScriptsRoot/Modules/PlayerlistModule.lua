@@ -11,6 +11,7 @@ local HttpService = game:GetService('HttpService')
 local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local Players = game:GetService('Players')
 local TeamsService = game:FindService('Teams')
+local ContextActionService = game:GetService('ContextActionService')
 local RobloxReplicatedStorage = nil	-- NOTE: Can only use in core scripts
 
 local RbxGuiLibrary = nil
@@ -29,11 +30,13 @@ local maxFriendSuccess, isMaxFriendsCountEnabled = pcall(function() return setti
 local followersSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("LuaFollowers") end)
 local newSettingsSuccess, newSettingsEnabled = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local serverCoreScriptsSuccess, serverCoreScriptsEnabled = pcall(function() return settings():GetFFlag("UseServerCoreScripts") end)
+local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("TopbarGamepadSupport") end)
 --
 local IsMaxFriendsCount = maxFriendSuccess and isMaxFriendsCountEnabled
 local IsFollowersEnabled = followersSuccess and isFollowersEnabled
 local IsNewSettings = newSettingsSuccess and newSettingsEnabled
 local IsServerCoreScripts = serverCoreScriptsSuccess and serverCoreScriptsEnabled
+local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
 
 --[[ Start Module ]]--
 local Playerlist = {}
@@ -1903,11 +1906,44 @@ Playerlist.GetStats = function()
 	return GameStats
 end
 
+local noOpFunc = function ( )
+end
+
+local closeListFunc = function(name, state, input)
+	if state ~= Enum.UserInputState.Begin then return end
+
+	ContextActionService:UnbindCoreAction("CloseList")
+	ContextActionService:UnbindCoreAction("StopAction")
+	GuiService.SelectedObject = nil
+end
+
 Playerlist.ToggleVisibility = function()
 	if IsSmallScreenDevice then return end
 	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
 	isOpen = not isOpen
 	Container.Visible = isOpen
+
+	if IsGamepadSupported and UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
+		if isOpen then
+			local children = ScrollList:GetChildren()
+			if children and #children > 0 then
+				local frame = children[1]
+				local frameChildren = frame:GetChildren()
+				for i = 1, #frameChildren do
+					if frameChildren[i]:IsA("TextButton") then
+						GuiService.SelectedObject = frameChildren[i]
+						ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
+						ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
+						break
+					end
+				end
+			end
+		else
+			ContextActionService:UnbindCoreAction("CloseList")
+			ContextActionService:UnbindCoreAction("StopAction")
+			GuiService.SelectedObject = nil
+		end
+	end
 end
 
 Playerlist.IsOpen = function()
@@ -1921,6 +1957,10 @@ if GuiService then
 			Playerlist.ToggleVisibility()
 		end
 	end)
+
+	GuiService:AddSelectionParent("PlayerListSelection", Container)
 end
+
+
 
 return Playerlist

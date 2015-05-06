@@ -13,7 +13,12 @@ BackpackScript.StateChanged = Instance.new('BindableEvent') -- Fires after any o
 --| Configurables |--
 ---------------------
 
+local UseExperimentalGamepadEquip = false -- hotbar equipping in a new way! (its better!)
+
 local ICON_SIZE = 60
+if UseExperimentalGamepadEquip then
+	ICON_SIZE = 100
+end
 local ICON_BUFFER = 5
 
 local BACKGROUND_FADE = 0.50
@@ -36,6 +41,9 @@ local ARROW_HOTKEY = Enum.KeyCode.Backquote.Value --TODO: Hookup '~' too?
 local ARROW_HOTKEY_STRING = '`'
 
 local HOTBAR_SLOTS_FULL = 10
+if UseExperimentalGamepadEquip then
+	HOTBAR_SLOTS_FULL = 8
+end
 local HOTBAR_SLOTS_MINI = 3
 local HOTBAR_SLOTS_WIDTH_CUTOFF = 1024 -- Anything smaller is MINI
 local HOTBAR_OFFSET_FROMBOTTOM = -30 -- Offset to make room for the Health GUI
@@ -49,8 +57,8 @@ local INVENTORY_HEADER_SIZE = 40
 
 local SEARCH_BUFFER = 5
 local SEARCH_WIDTH = 200
-local SEARCH_TEXT = "Search"
-local SEARCH_TEXT_OFFSET_FROMLEFT = 15
+local SEARCH_TEXT = "   Search"
+local SEARCH_TEXT_OFFSET_FROMLEFT = 0
 local SEARCH_BACKGROUND_COLOR = Color3.new(0.37, 0.37, 0.37)
 local SEARCH_BACKGROUND_FADE = 0.15
 
@@ -65,7 +73,11 @@ local UserInputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 local GuiService = game:GetService('GuiService')
 local CoreGui = game:GetService('CoreGui')
+local ContextActionService = game:GetService('ContextActionService')
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
+
+local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("TopbarGamepadSupport") end)
+local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
 
 local IS_PHONE = UserInputService.TouchEnabled and GuiService:GetScreenResolution().X < HOTBAR_SLOTS_WIDTH_CUTOFF
 
@@ -101,6 +113,8 @@ local ResultsIndices = nil -- Results of a search, or nil
 local HotkeyStrings = {} -- Used for eating/releasing hotkeys
 local CharConns = {} -- Holds character connections to be cleared later
 local TopBarEnabled = false
+local GamepadEnabled = false -- determines if our gui needs to be gamepad friendly
+
 
 -----------------
 --| Functions |--
@@ -147,7 +161,10 @@ local function AdjustHotbarFrames()
 		if slot.Tool or inventoryOpen then
 			visualIndex = visualIndex + 1
 			slot:Readjust(visualIndex, visualTotal)
-			slot.Frame.Visible = true
+
+			if not UseExperimentalGamepadEquip then
+				slot.Frame.Visible = true
+			end
 		else
 			slot.Frame.Visible = false
 		end
@@ -191,7 +208,7 @@ local function EquipNewTool(tool) --NOTE: HopperBin
 end
 
 local function IsEquipped(tool)
-	return ((tool:IsA('HopperBin') and tool.Active) or tool.Parent == Character) --NOTE: HopperBin
+	return tool and ((tool:IsA('HopperBin') and tool.Active) or tool.Parent == Character) --NOTE: HopperBin
 end
 
 local function MakeSlot(parent, index)
@@ -226,12 +243,30 @@ local function MakeSlot(parent, index)
 		-- Slots are positioned into rows
 		local index = (ResultsIndices and ResultsIndices[self]) or self.Index
 		local sizePlus = ICON_BUFFER + ICON_SIZE
-		local modSlots = ((index - 1) % HOTBAR_SLOTS) + 1
-		local row = (index > HOTBAR_SLOTS) and (math.floor((index - 1) / HOTBAR_SLOTS)) - 1 or 0
+
+		local modSlots = 0
+		if UseExperimentalGamepadEquip then
+			modSlots = ((index - HOTBAR_SLOTS) % 5)
+			if modSlots == 0 then
+				modSlots = 5
+			end
+		else
+			modSlots = ((index - 1) % HOTBAR_SLOTS) + 1
+		end
+
+		local row = 0 
+		if UseExperimentalGamepadEquip then
+			row = math.floor( (index - HOTBAR_SLOTS - 1) / 5 )
+		else
+			row = (index > HOTBAR_SLOTS) and (math.floor((index - 1) / HOTBAR_SLOTS)) - 1 or 0
+		end
+
 		SlotFrame.Position = UDim2.new(0, ICON_BUFFER + ((modSlots - 1) * sizePlus), 0, ICON_BUFFER + (sizePlus * row))
 	end
 
 	function slot:Readjust(visualIndex, visualTotal) --NOTE: Only used for Hotbar slots
+		if UseExperimentalGamepadEquip then return end
+
 		local centered = HOTBAR_SIZE.X.Offset / 2
 		local sizePlus = ICON_BUFFER + ICON_SIZE
 		local midpointish = (visualTotal / 2) + 0.5
@@ -240,6 +275,10 @@ local function MakeSlot(parent, index)
 	end
 
 	function slot:Fill(tool)
+		if not tool then
+			return self:Clear()
+		end
+
 		self.Tool = tool
 
 		local function assignToolData()
@@ -254,6 +293,11 @@ local function MakeSlot(parent, index)
 			end
 		end
 		assignToolData()
+
+		if ToolChangeConn then 
+			ToolChangeConn:disconnect()
+			ToolChangeConn = nil
+		end
 
 		ToolChangeConn = tool.Changed:connect(function(property)
 			if property == 'TextureId' or property == 'Name' or property == 'ToolTip' then
@@ -280,8 +324,12 @@ local function MakeSlot(parent, index)
 	end
 
 	function slot:Clear()
-		ToolChangeConn:disconnect()
-		ToolChangeConn = nil
+		if not self.Tool then return end
+
+		if ToolChangeConn then 
+			ToolChangeConn:disconnect()
+			ToolChangeConn = nil
+		end
 
 		ToolIcon.Image = ''
 		ToolName.Text = ''
@@ -334,6 +382,10 @@ local function MakeSlot(parent, index)
 		UpdateSlotFading()
 	end
 
+	function slot:IsEquipped()
+		return IsEquipped(self.Tool)
+	end
+
 	function slot:Delete()
 		SlotFrame:Destroy() --NOTE: Also clears connections
 		table.remove(Slots, self.Index)
@@ -358,7 +410,11 @@ local function MakeSlot(parent, index)
 			targetSlot:Clear()
 			self:Fill(otherTool)
 		end
-		targetSlot:Fill(myTool)
+		if myTool then
+			targetSlot:Fill(myTool)
+		else
+			targetSlot:Clear()
+		end
 	end
 
 	function slot:SlideBack() -- For inventory slot shifting
@@ -399,13 +455,17 @@ local function MakeSlot(parent, index)
 
 	-- Slot Init Logic --
 
-	SlotFrame = NewGui('Frame', index)
+	SlotFrame = NewGui('TextButton', index)
 	SlotFrame.BackgroundColor3 = BACKGROUND_COLOR
 	SlotFrame.BorderColor3 = SLOT_BORDER_COLOR
+	SlotFrame.Text = ""
+	SlotFrame.AutoButtonColor = false
+	SlotFrame.BorderSizePixel = 0
 	SlotFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
 	SlotFrame.Active = true
-	SlotFrame.Draggable = false
+	SlotFramefg.Draggable = false
 	SlotFrame.BackgroundTransparency = SLOT_FADE_LOCKED
+	SlotFrame.MouseButton1Click:connect(function() changeSlot(slot) end)
 	slot.Frame = SlotFrame
 
 	ToolIcon = NewGui('ImageLabel', 'Icon')
@@ -437,7 +497,7 @@ local function MakeSlot(parent, index)
 		SlotFrame.MouseLeave:connect(function() ToolTip.Visible = false end)
 
 		-- Slot select logic, activated by clicking or pressing hotkey
-		local function selectSlot()
+		function slot:Select()
 			local tool = slot.Tool
 			if tool then
 				if IsEquipped(tool) then --NOTE: HopperBin
@@ -448,9 +508,26 @@ local function MakeSlot(parent, index)
 			end
 		end
 
-		ClickArea = NewGui('TextButton', 'GimmieYerClicks')
-		ClickArea.MouseButton1Click:connect(selectSlot)
-		ClickArea.Parent = SlotFrame
+		function slot:MoveToInventory()
+			if slot.Index <= HOTBAR_SLOTS then -- From a Hotbar slot
+				local tool = slot.Tool
+				self:Clear() --NOTE: Order matters here
+				local newSlot = MakeSlot(ScrollingFrame)
+				newSlot:Fill(tool)
+				if IsEquipped(tool) then -- Also unequip it --NOTE: HopperBin
+					UnequipAllTools()
+				end
+				-- Also hide the inventory slot if we're showing results right now
+				if ResultsIndices then
+					newSlot.Frame.Visible = false
+				end
+			end
+		end
+
+		--todo: remove
+		--[[ClickArea = NewGui('TextButton', 'GimmieYerClicks')
+		ClickArea.MouseButton1Click:connect(slot.Select)
+		ClickArea.Parent = SlotFrame]]
 
 		-- Show label and assign hotkeys for 1-9 and 0 (zero is always last slot when > 10 total)
 		if index < 10 or index == HOTBAR_SLOTS then -- NOTE: Hardcoded on purpose!
@@ -460,10 +537,26 @@ local function MakeSlot(parent, index)
 			SlotNumber.Size = UDim2.new(0.15, 0, 0.15, 0)
 			SlotNumber.Visible = false
 			SlotNumber.Parent = SlotFrame
-			HotkeyFns[ZERO_KEY_VALUE + slotNum] = selectSlot
+			HotkeyFns[ZERO_KEY_VALUE + slotNum] = slot.Select
 		end
+
+		if UseExperimentalGamepadEquip then
+			local radius = 200
+			local angle = (index + 5) * (math.pi/4)
+			SlotFrame.Position = UDim2.new(0.5,-50 + math.cos(angle) * radius,0.5,-50 + math.sin(angle) * radius)
+			SlotFrame.Visible = false
+		end
+
 	else -- Inventory-Specific Slot Stuff
-		if index % HOTBAR_SLOTS == 1 then -- We are the first slot of a new row! Adjust the CanvasSize
+
+		local newRow = false
+		if UseExperimentalGamepadEquip then
+			newRow = (index % 5 == 1)
+		else
+			newRow = (index % HOTBAR_SLOTS == 1)
+		end
+
+		if newRow then -- We are the first slot of a new row! Adjust the CanvasSize
 			local lowestPoint = SlotFrame.Position.Y.Offset + SlotFrame.Size.Y.Offset
 			ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, lowestPoint + ICON_BUFFER)
 		end
@@ -538,25 +631,11 @@ local function MakeSlot(parent, index)
 				return
 			end
 
-			local function moveToInventory()
-				if slot.Index <= HOTBAR_SLOTS then -- From a Hotbar slot
-					local tool = slot.Tool
-					slot:Clear() --NOTE: Order matters here
-					local newSlot = MakeSlot(ScrollingFrame)
-					newSlot:Fill(tool)
-					if IsEquipped(tool) then -- Also unequip it --NOTE: HopperBin
-						UnequipAllTools()
-					end
-					-- Also hide the inventory slot if we're showing results right now
-					if ResultsIndices then
-						newSlot.Frame.Visible = false
-					end
-				end
-			end
-
 			-- Check where we were dropped
 			if CheckBounds(InventoryFrame, x, y) then
-				moveToInventory()
+				if slot.Index <= HOTBAR_SLOTS then
+					slot:MoveToInventory()
+				end
 				-- Check for double clicking on an inventory slot, to move into empty hotbar slot
 				if slot.Index > HOTBAR_SLOTS and now - lastUpTime < DOUBLE_CLICK_TIME then
 					if LowestEmptySlot then
@@ -600,7 +679,9 @@ local function MakeSlot(parent, index)
 					-- tool.Parent = workspace
 					-- --TODO: Move away from character
 				-- end
-				moveToInventory() --NOTE: Temporary
+				if slot.Index <= HOTBAR_SLOTS then
+					slot:MoveToInventory() --NOTE: Temporary
+				end
 			end
 
 			lastUpTime = now
@@ -759,6 +840,304 @@ local function OnUISChanged(property)
 	end
 end
 
+
+
+-------------------------
+--| Gamepad Functions |--
+-------------------------
+local lastChangeToolInputObject = nil
+local lastChangeToolInputTime = nil
+local maxEquipDeltaTime = 0.06
+local noOpFunc = function() end
+local selectDirection = Vector2.new(0,0)
+local hotbarVisible = false
+
+function unbindAllGamepadEquipActions()
+	ContextActionService:UnbindCoreAction("RBXBackpackHasGamepadFocus")
+	ContextActionService:UnbindCoreAction("RBXCloseInventory")
+end
+
+local function setHotbarVisibility(visible, isInventoryScreen)
+	for i = 1, HOTBAR_SLOTS do
+		local hotbarSlot = Slots[i]
+		if hotbarSlot and hotbarSlot.Frame and (isInventoryScreen or hotbarSlot.Tool) then
+			hotbarSlot.Frame.Visible = visible
+		end
+	end
+end
+
+local function getInputDirection(inputObject)
+	local buttonModifier = 1
+	if inputObject.UserInputState == Enum.UserInputState.End then
+		buttonModifier = -1
+	end
+
+	if inputObject.KeyCode == Enum.KeyCode.Thumbstick1 then
+
+		local magnitude = inputObject.Position.magnitude
+
+		if magnitude > 0.98 then
+			local normalizedVector = Vector2.new(inputObject.Position.x / magnitude, -inputObject.Position.y / magnitude)
+			selectDirection =  normalizedVector
+		else
+			selectDirection = Vector2.new(0,0)
+		end
+	elseif inputObject.KeyCode == Enum.KeyCode.DPadLeft then
+		selectDirection = Vector2.new(selectDirection.x - 1 * buttonModifier, selectDirection.y)
+	elseif inputObject.KeyCode == Enum.KeyCode.DPadRight then
+		selectDirection = Vector2.new(selectDirection.x + 1 * buttonModifier, selectDirection.y)
+	elseif inputObject.KeyCode == Enum.KeyCode.DPadUp then
+		selectDirection = Vector2.new(selectDirection.x, selectDirection.y - 1 * buttonModifier)
+	elseif inputObject.KeyCode == Enum.KeyCode.DPadDown then
+		selectDirection = Vector2.new(selectDirection.x, selectDirection.y + 1 * buttonModifier)
+	else
+		selectDirection = Vector2.new(0,0)
+	end
+
+	return selectDirection
+end
+
+local selectToolExperiment = function(actionName, inputState, inputObject)
+
+	local inputDirection = getInputDirection(inputObject)
+
+	if inputDirection == Vector2.new(0,0) then
+		return
+	end
+
+	local angle = math.atan2(inputDirection.y, inputDirection.x) - math.atan2(-1, 0)
+	if angle < 0 then
+		angle = angle + (math.pi * 2)
+	end
+
+	local quarterPi = (math.pi * 0.25)
+
+	local index = (angle/quarterPi) + 1
+	index = math.floor(index + 0.5) -- round index to whole number
+	if index > HOTBAR_SLOTS then
+		index = 1
+	end
+
+	if index > 0 then
+		local selectedSlot = Slots[index]
+		if selectedSlot and selectedSlot.Tool and not selectedSlot:IsEquipped() then
+			selectedSlot:Select()
+		end
+	else
+		UnequipAllTools()
+	end
+end
+
+local changeToolFuncExperiment = nil
+changeToolFuncExperiment = function(actionName, inputState, inputObject)
+	local hasHotBar = false
+	for i = 1, HOTBAR_SLOTS do
+		if Slots[i].Tool then
+			hasHotBar = true
+			break
+		end
+	end
+
+	if not hasHotBar then return end
+
+	if inputState == Enum.UserInputState.Begin then
+		hotbarVisible = not hotbarVisible
+		if hotbarVisible then
+			HotbarFrame.Position = UDim2.new(0.5, -HotbarFrame.AbsoluteSize.x/2, 0.5, -HotbarFrame.AbsoluteSize.y/2)
+		end
+		setHotbarVisibility(hotbarVisible)
+	else
+		return
+	end
+
+	if not hotbarVisible then
+		selectDirection = Vector2.new(0,0)
+		ContextActionService:UnbindCoreAction("RBXRadialSelectTool")
+		ContextActionService:UnbindCoreAction("RBXRadialSelectToolKillInput")
+		ContextActionService:UnbindCoreAction("RBXHotbarEquip")
+		ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1)
+	else
+		UnequipAllTools()
+
+		ContextActionService:BindCoreAction("RBXRadialSelectToolKillInput", noOpFunc, false, Enum.UserInputType.Gamepad1)
+		ContextActionService:UnbindCoreAction("RBXHotbarEquip")
+		ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonB)
+		ContextActionService:BindCoreAction("RBXRadialSelectTool", selectToolExperiment, false, Enum.KeyCode.Thumbstick1, 
+											Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
+	end
+end
+
+local changeToolFunc = function(actionName, inputState, inputObject)
+	if inputState ~= Enum.UserInputState.Begin then return end
+
+	if lastChangeToolInputObject then
+		if (lastChangeToolInputObject.KeyCode == Enum.KeyCode.ButtonR1 and 
+			inputObject.KeyCode == Enum.KeyCode.ButtonL1) or
+			(lastChangeToolInputObject.KeyCode == Enum.KeyCode.ButtonL1 and 
+			inputObject.KeyCode == Enum.KeyCode.ButtonR1) then
+				if (tick() - lastChangeToolInputTime) <= maxEquipDeltaTime then
+					UnequipAllTools()
+					lastChangeToolInputObject = inputObject
+					lastChangeToolInputTime = tick()
+					return
+				end
+		end
+	end
+
+	lastChangeToolInputObject = inputObject
+	lastChangeToolInputTime = tick()
+
+	delay(maxEquipDeltaTime, function()
+		if lastChangeToolInputObject ~= inputObject then return end
+
+		local moveDirection = 0
+		if (inputObject.KeyCode == Enum.KeyCode.ButtonL1) then
+			moveDirection = -1
+		else
+			moveDirection = 1
+		end
+
+		for i = 1, HOTBAR_SLOTS do
+			local hotbarSlot = Slots[i]
+			if hotbarSlot:IsEquipped() then
+
+				local newSlotPosition = moveDirection + i
+				if newSlotPosition > HOTBAR_SLOTS then
+					newSlotPosition = 1
+				elseif newSlotPosition < 1 then
+					newSlotPosition = HOTBAR_SLOTS
+				end
+
+				local origNewSlotPos = newSlotPosition
+				while not Slots[newSlotPosition].Tool do
+					newSlotPosition = newSlotPosition + moveDirection
+					if newSlotPosition == origNewSlotPos then return end
+
+					if newSlotPosition > HOTBAR_SLOTS then
+						newSlotPosition = 1
+					elseif newSlotPosition < 1 then
+						newSlotPosition = HOTBAR_SLOTS
+					end
+				end
+
+				Slots[newSlotPosition]:Select()
+				return
+			end
+		end
+
+		for i = 1, HOTBAR_SLOTS do
+			if Slots[i].Tool then
+				Slots[i]:Select()
+				return
+			end
+		end
+	end)
+end
+
+function getGamepadSwapSlot()
+	for i = 1, #Slots do
+		if Slots[i].Frame.BorderSizePixel > 0 then
+			return Slots[i]
+		end
+	end
+end
+
+
+--todo: combine with GimmieYerClicks (slot:select)
+function changeSlot(slot)
+	local currentlySelectedSlot = getGamepadSwapSlot()
+
+	if currentlySelectedSlot then
+		currentlySelectedSlot.Frame.BorderSizePixel = 0
+		if currentlySelectedSlot ~= slot then
+			slot:Swap(currentlySelectedSlot)
+			
+			if slot.Index > HOTBAR_SLOTS and not slot.Tool then
+				if GuiService.SelectedObject == slot.Frame then
+					GuiService.SelectedObject = currentlySelectedSlot.Frame
+				end
+				slot:Delete()
+			end
+
+			if currentlySelectedSlot.Index > HOTBAR_SLOTS and not currentlySelectedSlot.Tool then
+				if GuiService.SelectedObject == currentlySelectedSlot.Frame then
+					GuiService.SelectedObject = slot.Frame
+				end
+				currentlySelectedSlot:Delete()
+			end
+		end
+	else
+		slot.Frame.BorderSizePixel = 1
+	end
+end
+
+
+function enableGamepadInventoryControl()
+	local goBackOneLevel = function(actionName, inputState, inputObject)
+		if inputState ~= Enum.UserInputState.Begin then return end
+
+		local selectedSlot = getGamepadSwapSlot()
+		if selectedSlot then
+			local selectedSlot = getGamepadSwapSlot()
+			if selectedSlot then
+				selectedSlot.Frame.BorderSizePixel = 0
+				return
+			end
+		elseif InventoryFrame.Visible then
+			BackpackScript.OpenClose()
+		end
+	end
+
+	ContextActionService:BindCoreAction("RBXBackpackHasGamepadFocus",noOpFunc, false, Enum.UserInputType.Gamepad1)
+	ContextActionService:BindCoreAction("RBXCloseInventory", goBackOneLevel, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
+
+	GuiService.SelectedObject = HotbarFrame:FindFirstChild("1")
+end
+
+function disableGamepadInventoryControl()
+	unbindAllGamepadEquipActions()
+
+	for i = 1, HOTBAR_SLOTS do
+		local hotbarSlot = Slots[i]
+		if hotbarSlot and hotbarSlot.Frame then
+			hotbarSlot.Frame.BorderSizePixel = 0
+		end
+	end
+
+	GuiService.SelectedObject = nil
+end
+
+function gamepadDisconnected()
+	GamepadEnabled = false
+	InventoryFrame.Search.Visible = true
+
+	disableGamepadInventoryControl()
+	ContextActionService:UnbindCoreAction("RBXHotbarEquip")
+end
+
+function gamepadConnected()
+	GamepadEnabled = true
+	InventoryFrame.Search.Visible = false
+
+	GuiService:AddSelectionParent("RBXBackpackSelection", MainFrame)
+
+	if UseExperimentalGamepadEquip then
+		ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1)
+		HotbarFrame.Position = UDim2.new(HotbarFrame.Position.X.Scale, HotbarFrame.Position.X.Offset, 0.5, -35)
+	else
+		ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
+	end
+
+	if InventoryFrame.Visible then
+		enableGamepadInventoryControl()
+	end
+end
+-----------------------------
+--| End Gamepad Functions |--
+-----------------------------
+
+
+
 local function OnCoreGuiChanged(coreGuiType, enabled)
 	-- Check for enabling/disabling the whole thing
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
@@ -773,6 +1152,19 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 				GuiService:RemoveKey(keyString)
 			end
 		end
+
+		if IsGamepadSupported and GamepadEnabled then
+			if enabled then
+				if UseExperimentalGamepadEquip then
+					ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1)
+				else
+					ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
+				end
+			else
+				disableGamepadInventoryControl()
+				ContextActionService:UnbindCoreAction("RBXHotbarEquip")
+			end
+		end
 	end
 
 	-- Also check if the Health GUI is showing, and shift everything down (or back up) accordingly
@@ -780,6 +1172,8 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 		MainFrame.Position = UDim2.new(0, 0, 0, enabled and HOTBAR_OFFSET_FROMBOTTOM or 0)
 	end
 end
+
+
 
 --------------------
 --| Script Logic |--
@@ -814,14 +1208,24 @@ InventoryFrame = NewGui('Frame', 'Inventory')
 InventoryFrame.BackgroundTransparency = BACKGROUND_FADE
 InventoryFrame.BackgroundColor3 = BACKGROUND_COLOR
 InventoryFrame.Active = true
-InventoryFrame.Size = UDim2.new(0, HotbarFrame.Size.X.Offset, 0, (HotbarFrame.Size.Y.Offset * INVENTORY_ROWS) + INVENTORY_HEADER_SIZE)
-InventoryFrame.Position = UDim2.new(0.5, -InventoryFrame.Size.X.Offset / 2, 1, HotbarFrame.Position.Y.Offset - InventoryFrame.Size.Y.Offset)
+if UseExperimentalGamepadEquip then
+	InventoryFrame.Size = UDim2.new(0, 530, 0, 480)
+	InventoryFrame.Position = UDim2.new(0.5, -530, 0.5, -240)
+else
+	InventoryFrame.Size = UDim2.new(0, HotbarFrame.Size.X.Offset, 0, (HotbarFrame.Size.Y.Offset * INVENTORY_ROWS) + INVENTORY_HEADER_SIZE)
+	InventoryFrame.Position = UDim2.new(0.5, -InventoryFrame.Size.X.Offset / 2, 1, HotbarFrame.Position.Y.Offset - InventoryFrame.Size.Y.Offset)
+end
 InventoryFrame.Visible = false
 InventoryFrame.Parent = MainFrame
 
 -- Make the ScrollingFrame, which holds the rest of the Slots (however many)
 ScrollingFrame = NewGui('ScrollingFrame', 'ScrollingFrame')
-ScrollingFrame.Size = UDim2.new(1, ScrollingFrame.ScrollBarThickness + 1, 1, -INVENTORY_HEADER_SIZE)
+if UseExperimentalGamepadEquip then
+	ScrollingFrame.Size = UDim2.new(1, 0, 1, -INVENTORY_HEADER_SIZE)
+else
+	ScrollingFrame.Size = UDim2.new(1, ScrollingFrame.ScrollBarThickness + 1, 1, -INVENTORY_HEADER_SIZE)
+end
+
 ScrollingFrame.Position = UDim2.new(0, 0, 0, INVENTORY_HEADER_SIZE)
 ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 ScrollingFrame.Parent = InventoryFrame
@@ -864,13 +1268,10 @@ do -- Search stuff
 	xButton.BackgroundTransparency = 0
 	xButton.Size = UDim2.new(0, searchFrame.Size.Y.Offset - (SEARCH_BUFFER * 2), 0, searchFrame.Size.Y.Offset - (SEARCH_BUFFER * 2))
 	xButton.Position = UDim2.new(1, -xButton.Size.X.Offset - (SEARCH_BUFFER * 2), 0.5, -xButton.Size.Y.Offset / 2)
-	xButton.ZIndex = 3
-	xButton.Visible = false
+	xButton.ZIndex = 0
+	xButton.Visible = true
+	xButton.BorderSizePixel = 0
 	xButton.Parent = searchFrame
-
-	local clickArea = NewGui('TextButton', 'GimmieYerClicks')
-	clickArea.ZIndex = 2
-	clickArea.Parent = searchFrame
 
 	local function search()
 		local terms = {}
@@ -902,18 +1303,18 @@ do -- Search stuff
 		
 		ScrollingFrame.CanvasPosition = Vector2.new(0, 0)
 
-		xButton.Visible = true
+		xButton.ZIndex = 3
 	end
 
 	local function clearResults()
-		if xButton.Visible then
+		if xButton.ZIndex > 0 then
 			ResultsIndices = nil
 			for i = HOTBAR_SLOTS + 1, #Slots do
 				local slot = Slots[i]
 				slot:Reposition()
 				slot.Frame.Visible = true
 			end
-			xButton.Visible = false
+			xButton.ZIndex = 0
 		end
 	end
 
@@ -933,8 +1334,7 @@ do -- Search stuff
 		end
 	end
 
-	local function gainFocus()
-		searchBox:CaptureFocus()
+	local function onFocused()
 		if searchBox.Text == SEARCH_TEXT then
 			searchBox.Text = ''
 		end
@@ -949,13 +1349,13 @@ do -- Search stuff
 		end
 	end
 
-	clickArea.MouseButton1Click:connect(gainFocus)
+	searchBox.Focused:connect(onFocused)
 	xButton.MouseButton1Click:connect(reset)
 	searchBox.Changed:connect(onChanged)
 	searchBox.FocusLost:connect(focusLost)
 
 	BackpackScript.StateChanged.Event:connect(function(isNowOpen)
-		clickArea.Modal = isNowOpen -- Allows free mouse movement even in first person
+		xButton.Modal = isNowOpen -- Allows free mouse movement even in first person
 		if not isNowOpen then
 			reset()
 		end
@@ -974,6 +1374,18 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 	local arrowFrame, arrowIcon, clickArea = nil, nil, nil
 	local collapsed, closed, opened = nil, nil, nil
 
+	local removeHotBarSlot = function(name, state, input)
+		if state ~= Enum.UserInputState.Begin then return end
+		if not GuiService.SelectedObject then return end
+
+		for i = 1, HOTBAR_SLOTS do
+			if Slots[i].Frame == GuiService.SelectedObject and Slots[i].Tool then
+				Slots[i]:MoveToInventory()
+				return
+			end
+		end
+	end
+
 	local function openClose()
 		if not next(Dragging) then -- Only continue if nothing is being dragged
 			InventoryFrame.Visible = not InventoryFrame.Visible
@@ -986,6 +1398,31 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 			HotbarFrame.Active = not HotbarFrame.Active
 			for i = 1, HOTBAR_SLOTS do
 				Slots[i]:SetClickability(not nowOpen)
+			end
+		end
+
+		if IsGamepadSupported then
+			if GamepadEnabled then
+				if InventoryFrame.Visible then
+					enableGamepadInventoryControl()
+				else
+					disableGamepadInventoryControl()
+				end
+			end
+
+			if InventoryFrame.Visible and GamepadEnabled then
+				ContextActionService:BindCoreAction("RBXRemoveSlot", removeHotBarSlot, false, Enum.KeyCode.ButtonX)
+				if UseExperimentalGamepadEquip then
+					HotbarFrame.Position = UDim2.new(1, -800, 0.5, -35)
+					setHotbarVisibility(true, true)
+				end
+			elseif GamepadEnabled then
+				ContextActionService:UnbindCoreAction("RBXRemoveSlot")
+
+				if UseExperimentalGamepadEquip then
+					setHotbarVisibility(false)
+					HotbarFrame.Position = UDim2.new(0.5, -HotbarFrame.AbsoluteSize.x/2, 0.5, -HotbarFrame.AbsoluteSize.y/2)
+				end
 			end
 		end
 		BackpackScript.StateChanged:Fire(InventoryFrame.Visible)
@@ -1064,6 +1501,23 @@ do -- Hotkey stuff
 	-- Listen to keyboard status, for showing/hiding hotkey labels
 	UserInputService.Changed:connect(OnUISChanged)
 	OnUISChanged('KeyboardEnabled')
+
+	-- Listen to gamepad status, for allowing gamepad style selection/equip
+	if IsGamepadSupported then
+		if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
+			gamepadConnected()
+		end
+		UserInputService.GamepadConnected:connect(function(gamepadEnum) 
+			if gamepadEnum == Enum.UserInputType.Gamepad1 then
+				gamepadConnected()
+			end
+		end)
+		UserInputService.GamepadDisconnected:connect(function(gamepadEnum) 
+			if gamepadEnum == Enum.UserInputType.Gamepad1 then
+				gamepadDisconnected()
+			end
+		end)
+	end
 end
 
 -- Listen to enable/disable signals from the StarterGui
