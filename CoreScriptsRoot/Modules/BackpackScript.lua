@@ -230,7 +230,6 @@ local function MakeSlot(parent, index)
 	--NOTE: The following are only defined for Hotbar Slots
 	local ToolTip = nil
 	local SlotNumber = nil
-	local ClickArea = nil
 
 	-- Slot Functions --
 
@@ -430,7 +429,6 @@ local function MakeSlot(parent, index)
 	end
 
 	function slot:SetClickability(on) -- (Happens on open/close arrow)
-		ClickArea.Visible = on
 		if self.Tool then
 			SlotFrame.Draggable = not on
 			UpdateSlotFading()
@@ -463,7 +461,7 @@ local function MakeSlot(parent, index)
 	SlotFrame.BorderSizePixel = 0
 	SlotFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
 	SlotFrame.Active = true
-	SlotFramefg.Draggable = false
+	SlotFrame.Draggable = false
 	SlotFrame.BackgroundTransparency = SLOT_FADE_LOCKED
 	SlotFrame.MouseButton1Click:connect(function() changeSlot(slot) end)
 	slot.Frame = SlotFrame
@@ -523,11 +521,6 @@ local function MakeSlot(parent, index)
 				end
 			end
 		end
-
-		--todo: remove
-		--[[ClickArea = NewGui('TextButton', 'GimmieYerClicks')
-		ClickArea.MouseButton1Click:connect(slot.Select)
-		ClickArea.Parent = SlotFrame]]
 
 		-- Show label and assign hotkeys for 1-9 and 0 (zero is always last slot when > 10 total)
 		if index < 10 or index == HOTBAR_SLOTS then -- NOTE: Hardcoded on purpose!
@@ -1053,15 +1046,15 @@ function changeSlot(slot)
 			slot:Swap(currentlySelectedSlot)
 			
 			if slot.Index > HOTBAR_SLOTS and not slot.Tool then
-				if GuiService.SelectedObject == slot.Frame then
-					GuiService.SelectedObject = currentlySelectedSlot.Frame
+				if GuiService.SelectedCoreObject == slot.Frame then
+					GuiService.SelectedCoreObject = currentlySelectedSlot.Frame
 				end
 				slot:Delete()
 			end
 
 			if currentlySelectedSlot.Index > HOTBAR_SLOTS and not currentlySelectedSlot.Tool then
-				if GuiService.SelectedObject == currentlySelectedSlot.Frame then
-					GuiService.SelectedObject = slot.Frame
+				if GuiService.SelectedCoreObject == currentlySelectedSlot.Frame then
+					GuiService.SelectedCoreObject = slot.Frame
 				end
 				currentlySelectedSlot:Delete()
 			end
@@ -1091,7 +1084,7 @@ function enableGamepadInventoryControl()
 	ContextActionService:BindCoreAction("RBXBackpackHasGamepadFocus",noOpFunc, false, Enum.UserInputType.Gamepad1)
 	ContextActionService:BindCoreAction("RBXCloseInventory", goBackOneLevel, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
 
-	GuiService.SelectedObject = HotbarFrame:FindFirstChild("1")
+	GuiService.SelectedCoreObject = HotbarFrame:FindFirstChild("1")
 end
 
 function disableGamepadInventoryControl()
@@ -1104,21 +1097,17 @@ function disableGamepadInventoryControl()
 		end
 	end
 
-	GuiService.SelectedObject = nil
+	GuiService.SelectedCoreObject = nil
 end
 
 function gamepadDisconnected()
 	GamepadEnabled = false
-	InventoryFrame.Search.Visible = true
-
 	disableGamepadInventoryControl()
 	ContextActionService:UnbindCoreAction("RBXHotbarEquip")
 end
 
 function gamepadConnected()
 	GamepadEnabled = true
-	InventoryFrame.Search.Visible = false
-
 	GuiService:AddSelectionParent("RBXBackpackSelection", MainFrame)
 
 	if UseExperimentalGamepadEquip then
@@ -1371,15 +1360,15 @@ do -- Search stuff
 end
 
 do -- Make the Inventory expand/collapse arrow (unless TopBar)
-	local arrowFrame, arrowIcon, clickArea = nil, nil, nil
+	local arrowFrame, arrowIcon = nil, nil, nil
 	local collapsed, closed, opened = nil, nil, nil
 
 	local removeHotBarSlot = function(name, state, input)
 		if state ~= Enum.UserInputState.Begin then return end
-		if not GuiService.SelectedObject then return end
+		if not GuiService.SelectedCoreObject then return end
 
 		for i = 1, HOTBAR_SLOTS do
-			if Slots[i].Frame == GuiService.SelectedObject and Slots[i].Tool then
+			if Slots[i].Frame == GuiService.SelectedCoreObject and Slots[i].Tool then
 				Slots[i]:MoveToInventory()
 				return
 			end
@@ -1390,7 +1379,7 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 		if not next(Dragging) then -- Only continue if nothing is being dragged
 			InventoryFrame.Visible = not InventoryFrame.Visible
 			local nowOpen = InventoryFrame.Visible
-			if arrowIcon and clickArea then
+			if arrowIcon then
 				arrowIcon.Image = (nowOpen) and ARROW_IMAGE_CLOSE or ARROW_IMAGE_OPEN
 			end
 			AdjustHotbarFrames()
@@ -1443,10 +1432,6 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 		arrowIcon.Size = ARROW_SIZE
 		arrowIcon.Position = UDim2.new(0.5, -arrowIcon.Size.X.Offset / 2, 0.5, -arrowIcon.Size.Y.Offset / 2)
 		arrowIcon.Parent = arrowFrame
-
-		clickArea = NewGui('TextButton', 'GimmieYerClicks')
-		clickArea.MouseButton1Click:connect(openClose)
-		clickArea.Parent = arrowFrame
 
 		collapsed = arrowFrame.Position
 		closed = collapsed + UDim2.new(0, 0, 0, -HotbarFrame.Size.Y.Offset)
