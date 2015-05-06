@@ -76,11 +76,7 @@ local IsSmallScreenDevice = UserInputService.TouchEnabled and GuiService:GetScre
 local BinbableFunction_SendNotification = RobloxGui:FindFirstChild('SendNotification')
 
 --[[ Remotes ]]--
-local RemoteEvent_OnNewFollower = nil
-if IsServerCoreScripts then
-	RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-	RemoteEvent_OnNewFollower = RobloxReplicatedStorage:WaitForChild('OnNewFollower')
-end
+local RemoteEvent_OnNewFollower = nil 	-- we get this later in the script
 
 local IsPersonalServer = false
 local PersonalServerService = nil
@@ -956,7 +952,7 @@ local function onFollowButtonPressed()
 	result = HttpService:JSONDecode(result)
 	if result["success"] then
 		sendNotification("You are", "now following "..LastSelectedPlayer.Name, FRIEND_IMAGE..followedUserId.."&x=48&y=48", 5, function() end)
-		if IsServerCoreScripts and RemoteEvent_OnNewFollower then
+		if RemoteEvent_OnNewFollower then
 			RemoteEvent_OnNewFollower:FireServer(LastSelectedPlayer)
 		end
 		-- now update the social icon
@@ -968,10 +964,16 @@ end
 
 -- TODO: Move this to the notifications script. For now I want to keep it here until the
 -- new notifications system goes live
-if IsServerCoreScripts and RemoteEvent_OnNewFollower then
-	RemoteEvent_OnNewFollower.OnClientEvent:connect(function(followerRbxPlayer)
-		sendNotification("New Follower", followerRbxPlayer.Name.."is now following you!",
-			FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
+if IsServerCoreScripts then
+	-- don't block the rest of the core gui
+	spawn(function()
+		RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
+		RemoteEvent_OnNewFollower = RobloxReplicatedStorage:WaitForChild('OnNewFollower')
+		--
+		RemoteEvent_OnNewFollower.OnClientEvent:connect(function(followerRbxPlayer)
+			sendNotification("New Follower", followerRbxPlayer.Name.."is now following you!",
+				FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
+		end)
 	end)
 end
 
