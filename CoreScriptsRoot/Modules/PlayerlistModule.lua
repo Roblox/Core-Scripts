@@ -26,14 +26,10 @@ local Player = Players.LocalPlayer
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 
 --[[ Fast Flags ]]--
-local maxFriendSuccess, isMaxFriendsCountEnabled = pcall(function() return settings():GetFFlag("MaxFriendsCount") end)
-local followersSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("LuaFollowers") end)
 local newSettingsSuccess, newSettingsEnabled = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local serverCoreScriptsSuccess, serverCoreScriptsEnabled = pcall(function() return settings():GetFFlag("UseServerCoreScripts") end)
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("TopbarGamepadSupport") end)
 --
-local IsMaxFriendsCount = maxFriendSuccess and isMaxFriendsCountEnabled
-local IsFollowersEnabled = followersSuccess and isFollowersEnabled
 local IsNewSettings = newSettingsSuccess and newSettingsEnabled
 local IsServerCoreScripts = serverCoreScriptsSuccess and serverCoreScriptsEnabled
 local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
@@ -854,8 +850,6 @@ end
 -- checks if we can send a friend request. Right now the only way we
 -- can't is if one of the players is at the max friend limit
 local function canSendFriendRequestAsync(otherPlayer)
-	if not IsMaxFriendsCount then return true end
-	--
 	local theirFriendCount = getFriendCountAsync(otherPlayer.userId)
 	local myFriendCount = getFriendCountAsync()
 
@@ -1162,15 +1156,13 @@ local function showFriendReportPopup(selectedFrame, selectedPlayer)
 			})
 	end
 	-- following status
-	if IsFollowersEnabled then 		-- FFlag
-		local following = isFollowing(selectedPlayer.userId, Player.userId)
-		local followerText = following and "Unfollow Player" or "Follow Player"
-		table.insert(buttons, {
-			Name = "FollowerButton",
-			Text = followerText,
-			OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
-			})
-	end
+	local following = isFollowing(selectedPlayer.userId, Player.userId)
+	local followerText = following and "Unfollow Player" or "Follow Player"
+	table.insert(buttons, {
+		Name = "FollowerButton",
+		Text = followerText,
+		OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
+		})
 	table.insert(buttons, {
 		Name = "ReportButton",
 		Text = "Report Abuse",
@@ -1239,7 +1231,7 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 	local bgFrame = frame:FindFirstChild('BGFrame')
 	if bgFrame then
 		-- no longer friends, but might still be following
-		if IsFollowersEnabled and not newIcon then
+		if not newIcon then
 			local followerStatus = getFollowerStatus(otherPlayer)
 			newIcon = getFollowerStatusIcon(followerStatus)
 		end
