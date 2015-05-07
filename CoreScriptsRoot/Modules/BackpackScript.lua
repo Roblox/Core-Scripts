@@ -1036,31 +1036,34 @@ function getGamepadSwapSlot()
 end
 
 
---todo: combine with GimmieYerClicks (slot:select)
 function changeSlot(slot)
-	local currentlySelectedSlot = getGamepadSwapSlot()
+	if slot.Frame == GuiService.SelectedCoreObject then
+		local currentlySelectedSlot = getGamepadSwapSlot()
 
-	if currentlySelectedSlot then
-		currentlySelectedSlot.Frame.BorderSizePixel = 0
-		if currentlySelectedSlot ~= slot then
-			slot:Swap(currentlySelectedSlot)
-			
-			if slot.Index > HOTBAR_SLOTS and not slot.Tool then
-				if GuiService.SelectedCoreObject == slot.Frame then
-					GuiService.SelectedCoreObject = currentlySelectedSlot.Frame
+		if currentlySelectedSlot then
+			currentlySelectedSlot.Frame.BorderSizePixel = 0
+			if currentlySelectedSlot ~= slot then
+				slot:Swap(currentlySelectedSlot)
+				
+				if slot.Index > HOTBAR_SLOTS and not slot.Tool then
+					if GuiService.SelectedCoreObject == slot.Frame then
+						GuiService.SelectedCoreObject = currentlySelectedSlot.Frame
+					end
+					slot:Delete()
 				end
-				slot:Delete()
-			end
 
-			if currentlySelectedSlot.Index > HOTBAR_SLOTS and not currentlySelectedSlot.Tool then
-				if GuiService.SelectedCoreObject == currentlySelectedSlot.Frame then
-					GuiService.SelectedCoreObject = slot.Frame
+				if currentlySelectedSlot.Index > HOTBAR_SLOTS and not currentlySelectedSlot.Tool then
+					if GuiService.SelectedCoreObject == currentlySelectedSlot.Frame then
+						GuiService.SelectedCoreObject = slot.Frame
+					end
+					currentlySelectedSlot:Delete()
 				end
-				currentlySelectedSlot:Delete()
 			end
+		else
+			slot.Frame.BorderSizePixel = 1
 		end
 	else
-		slot.Frame.BorderSizePixel = 1
+		slot:Select()
 	end
 end
 
