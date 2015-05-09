@@ -144,21 +144,8 @@ do
 	Utility.FindChacterAncestor = FindChacterAncestor
 
 
-	local NEAR_CLIP_PLANE_OFFSET = 0.5
-	local function ScreenToWorld(screenPoint, screenSize, pushDepth, camera)
-		local cameraFOV, cameraCFrame = camera.FieldOfView, camera.CoordinateFrame
-		local imagePlaneDepth = screenSize.y / (2 * math.tan(math.rad(cameraFOV) / 2))
-		local direction = Vector3.new(screenPoint.x - (screenSize.x / 2), (screenSize.y / 2) - screenPoint.y, -imagePlaneDepth)
-		local worldDirection = (cameraCFrame:vectorToWorldSpace(direction)).Unit
-		local theta = math.acos(math.min(1, worldDirection:Dot(cameraCFrame.lookVector)))
-		local fixedPushDepth = pushDepth / math.sin((math.pi / 2) - theta)
-		return cameraCFrame.p + worldDirection * fixedPushDepth, worldDirection
-	end
 	local function GetUnitRay(x, y, viewWidth, viewHeight, camera)
-
-		local rayOrigin, rayDirection = ScreenToWorld(Vector2.new(x,y), Vector2.new(viewWidth, viewHeight), NEAR_CLIP_PLANE_OFFSET, camera)
-
-		return Ray.new(rayOrigin, rayDirection.unit);
+		return camera:ScreenPointToRay(x, y)
 	end
 	Utility.GetUnitRay = GetUnitRay
 
@@ -983,11 +970,8 @@ local function OnTap(tapPositions)
 
 
 	if not CheckAlive(character) then return end
-
 	-- This is a path tap position
 	if #tapPositions == 1 then
-		-- Filter out inputs that are by the sticks.
-		if UIS.TouchEnabled == true and UIS.ModalEnabled == false and (IsInBottomRight(tapPositions[1]) or IsInBottomLeft(tapPositions[1])) then return end
 		if camera then
 			local unitRay = Utility.GetUnitRay(tapPositions[1].x, tapPositions[1].y, MyMouse.ViewSizeX, MyMouse.ViewSizeY, camera)
 			local ray = Ray.new(unitRay.Origin, unitRay.Direction*400)
@@ -1251,6 +1235,10 @@ local function CreateClickToMoveModule()
 	end
 
 	local function OnTouchEnded(input, processed)
+			--print("Touch tap fake:" , processed)
+			--if not processed then
+			--	OnTap({input.Position})
+			--end
 		if FingerTouches[input] ~= nil and FingerTouches[input] == false then
 			NumUnsunkTouches = NumUnsunkTouches - 1
 		end
@@ -1271,11 +1259,15 @@ local function CreateClickToMoveModule()
 				local wasInBottomRight = IsInBottomRight(input.Position)
 				if wasInBottomRight or wasInBottomLeft then
 					for otherInput, _ in pairs(FingerTouches) do
-						local otherInputInLeft = IsInBottomLeft(otherInput.Position)
-						local otherInputInRight = IsInBottomRight(otherInput.Position)
-						if otherInput.UserInputState ~= Enum.UserInputState.End and ((wasInBottomLeft and otherInputInRight) or (wasInBottomRight and otherInputInLeft)) then
-							UIS.ModalEnabled = false
-							return
+						if otherInput ~= input then
+							local otherInputInLeft = IsInBottomLeft(otherInput.Position)
+							local otherInputInRight = IsInBottomRight(otherInput.Position)
+							if otherInput.UserInputState ~= Enum.UserInputState.End and ((wasInBottomLeft and otherInputInRight) or (wasInBottomRight and otherInputInLeft)) then
+								if BindableEvent_OnFailStateChanged then
+									BindableEvent_OnFailStateChanged:Fire(true)
+								end
+								return
+							end
 						end
 					end
 				end
@@ -1315,7 +1307,6 @@ local function CreateClickToMoveModule()
 				end
 			end
 		end)
-
 		TapConn = UIS.TouchTap:connect(function(touchPositions, processed)
 			if not processed then
 				OnTap(touchPositions)
