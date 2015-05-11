@@ -28,6 +28,7 @@ local LocalPlayer = Players.LocalPlayer
 local CachedHumanoid = nil
 local SeatJumpCn = nil
 local TextFocusReleasedCn = nil
+local TextFocusGainedCn = nil
 local WindowFocusReleasedCn = nil
 
 local MasterControl = require(script.Parent)
@@ -150,7 +151,12 @@ function KeyboardMovement:Enable()
 			MasterControl:AddToPlayerMovement(-currentMoveVector)
 			currentMoveVector = Vector3.new(0, 0, 0)
 			forwardValue, backwardValue, leftValue, rightValue = 0, 0, 0, 0
+			MasterControl:SetIsJumping(false)
 		end
+	end
+	
+	local function onTextFocusGained(textboxFocused)
+		MasterControl:SetIsJumping(false)
 	end
 	
 	SeatJumpCn = UserInputService.InputBegan:connect(function(inputObject, isProcessed)
@@ -163,10 +169,9 @@ function KeyboardMovement:Enable()
 	end)
 	
 	TextFocusReleasedCn = UserInputService.TextBoxFocusReleased:connect(onFocusReleased)
+	TextFocusGainedCn = UserInputService.TextBoxFocused:connect(onTextFocusGained)
 	-- TODO: remove pcall when API is live
-	pcall(function()
-		WindowFocusReleasedCn = UserInputService.WindowFocused:connect(onFocusReleased)
-	end)
+	WindowFocusReleasedCn = UserInputService.WindowFocused:connect(onFocusReleased)
 end
 
 function KeyboardMovement:Disable()
@@ -185,6 +190,10 @@ function KeyboardMovement:Disable()
 	if TextFocusReleasedCn then
 		TextFocusReleasedCn:disconnect()
 		TextFocusReleasedCn = nil
+	end
+	if TextFocusGainedCn then
+		TextFocusGainedCn:disconnect()
+		TextFocusGainedCn = nil
 	end
 	if WindowFocusReleasedCn then
 		WindowFocusReleasedCn:disconnect()
