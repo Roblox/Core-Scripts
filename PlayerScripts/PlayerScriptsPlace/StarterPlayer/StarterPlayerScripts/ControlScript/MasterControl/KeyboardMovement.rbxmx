@@ -26,6 +26,7 @@ while not Players.LocalPlayer do
 end
 local LocalPlayer = Players.LocalPlayer
 local CachedHumanoid = nil
+local SeatJumpCn = nil
 local TextFocusReleasedCn = nil
 local WindowFocusReleasedCn = nil
 
@@ -115,21 +116,12 @@ function KeyboardMovement:Enable()
 		MasterControl:SetIsJumping(inputState == Enum.UserInputState.Begin)
 	end
 	
-	-- enable jumping from seat on backspace
-	local jumpFromSeat = function(actionName, inputState, inputObject)
-		local humanoid = getHumanoid()
-		if humanoid and (humanoid.Sit or humanoid.PlatformStand) and inputState == Enum.UserInputState.Begin then
-			MasterControl:DoJump()
-		end
-	end
-	
 	-- TODO: remove up and down arrows, these seem unnecessary
 	ContextActionService:BindActionToInputTypes("forwardMovement", moveForwardFunc, false, Enum.PlayerActions.CharacterForward)
 	ContextActionService:BindActionToInputTypes("backwardMovement", moveBackwardFunc, false, Enum.PlayerActions.CharacterBackward)
 	ContextActionService:BindActionToInputTypes("leftMovement", moveLeftFunc, false, Enum.PlayerActions.CharacterLeft)
 	ContextActionService:BindActionToInputTypes("rightMovement", moveRightFunc, false, Enum.PlayerActions.CharacterRight)
 	ContextActionService:BindActionToInputTypes("jumpAction", jumpFunc, false, Enum.PlayerActions.CharacterJump)
-	ContextActionService:BindActionToInputTypes("jumpFromSeat", jumpFromSeat, false, Enum.KeyCode.Backspace)
 	-- TODO: make sure we check key state before binding to check if key is already down
 	
 	local renderSteppedFunction = function()
@@ -161,6 +153,15 @@ function KeyboardMovement:Enable()
 		end
 	end
 	
+	SeatJumpCn = UserInputService.InputBegan:connect(function(inputObject, isProcessed)
+		if inputObject.KeyCode == Enum.KeyCode.Backspace then
+			local humanoid = getHumanoid()
+			if humanoid and (humanoid.Sit or humanoid.PlatformStand) then
+				MasterControl:DoJump()
+			end
+		end
+	end)
+	
 	TextFocusReleasedCn = UserInputService.TextBoxFocusReleased:connect(onFocusReleased)
 	-- TODO: remove pcall when API is live
 	pcall(function()
@@ -174,10 +175,13 @@ function KeyboardMovement:Disable()
 	ContextActionService:UnbindAction("leftMovement")
 	ContextActionService:UnbindAction("rightMovement")
 	ContextActionService:UnbindAction("jumpAction")
-	ContextActionService:UnbindAction("jumpFromSeat")
 	
 	RunService:UnbindFromRenderStep("keyboardUpdate")
 	
+	if SeatJumpCn then
+		SeatJumpCn:disconnect()
+		SeatJumpCn = nil
+	end
 	if TextFocusReleasedCn then
 		TextFocusReleasedCn:disconnect()
 		TextFocusReleasedCn = nil
