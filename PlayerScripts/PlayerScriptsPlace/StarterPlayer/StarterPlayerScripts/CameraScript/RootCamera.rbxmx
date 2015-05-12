@@ -686,7 +686,7 @@ local function CreateCamera()
 		player.Changed:connect(function(prop)
 			if this.Enabled then
 				if prop == "CameraMode" or prop == "CameraMaxZoomDistance" or prop == "CameraMinZoomDistance" then
-					 this:ZoomCameraBy(0)
+					 this:ZoomCameraFixedBy(0)
 				end
 			end
 		end)
