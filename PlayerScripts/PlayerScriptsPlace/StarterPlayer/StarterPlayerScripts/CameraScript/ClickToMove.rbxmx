@@ -1134,7 +1134,9 @@ local function CreateClickToMoveModule()
 	local HumanoidDiedConn = nil
 	local CharacterChildAddedConn = nil
 	local OnCharacterAddedConn = nil
+	local CharacterChildRemovedConn = nil
 	local RenderSteppedConn = nil
+
 
 	local function disconnectEvent(event)
 		if event then
@@ -1151,6 +1153,8 @@ local function CreateClickToMoveModule()
 		disconnectEvent(CharacterChildAddedConn)
 		disconnectEvent(OnCharacterAddedConn)
 		disconnectEvent(RenderSteppedConn)
+		disconnectEvent(CharacterChildRemovedConn)
+		pcall(function() RunService:UnbindFromRenderStep("ClickToMoveRenderUpdate") end)
 	end
 
 
@@ -1321,7 +1325,7 @@ local function CreateClickToMoveModule()
 			AutoJumperInstance = AutoJumper()
 		end
 
-		RenderSteppedConn = RunService.RenderStepped:connect(function()
+		local function Update()
 			if CameraModule then
 				if CameraModule.UserPanningTheCamera then
 					CameraModule.UpdateTweenFunction = nil
@@ -1335,7 +1339,15 @@ local function CreateClickToMoveModule()
 				end
 				CameraModule:Update()
 			end
-		end)
+		end
+		
+		local success = pcall(function() RunService:BindToRenderStep("ClickToMoveRenderUpdate",Enum.RenderPriority.Camera.Value - 1,Update) end)
+		if not success then
+			if RenderSteppedConn then
+				RenderSteppedConn:disconnect()
+			end
+			RenderSteppedConn = RunService.RenderStepped:connect(Update)
+		end
 
 		local function OnCharacterChildAdded(child)
 			if UIS.TouchEnabled then
@@ -1358,6 +1370,13 @@ local function CreateClickToMoveModule()
 		CharacterChildAddedConn = character.ChildAdded:connect(function(child)
 			OnCharacterChildAdded(child)
 		end)
+		CharacterChildRemovedConn = character.ChildRemoved:connect(function(child)
+			if UIS.TouchEnabled then
+				if child:IsA('Tool') then
+					child.ManualActivationOnly = false
+				end
+			end
+		end)
 		for _, child in pairs(character:GetChildren()) do
 			OnCharacterChildAdded(child)
 		end
@@ -1376,6 +1395,17 @@ local function CreateClickToMoveModule()
 			if CameraModule then
 				CameraModule.UpdateTweenFunction = nil
 				CameraModule:SetEnabled(false)
+			end
+			-- Restore tool activation on shutdown
+			if UIS.TouchEnabled then
+				local character = Player.Character
+				if character then
+					for _, child in pairs(character:GetChildren()) do
+						if child:IsA('Tool') then
+							child.ManualActivationOnly = false
+						end
+					end
+				end
 			end
 			Running = false
 		end
