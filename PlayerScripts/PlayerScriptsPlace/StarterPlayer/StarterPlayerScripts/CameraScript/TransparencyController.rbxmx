@@ -163,7 +163,8 @@ local function CreateTransparencyController()
 
 				if LastTransparency then
 					local deltaTransparency = transparency - LastTransparency
-					if not instant and transparency < 1 then		
+					-- Don't tween transparency if it is instant or your character was fully invisible last frame
+					if not instant and transparency < 1 and LastTransparency < 0.95 then
 						local maxDelta = MAX_TWEEN_RATE * (now - LastUpdate)
 						deltaTransparency = clamp(-maxDelta, maxDelta, deltaTransparency)
 					end
