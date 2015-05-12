@@ -129,7 +129,7 @@ local function OnCameraMovementModeChange(newCameraMode)
 	if newCameraMode == Enum.DevComputerMovementMode.ClickToMove.Name then
 		ClickToMove:Start()
 		SetEnabledCamera(nil)
-		TransparencyController:SetEnabled(false)
+		TransparencyController:SetEnabled(true)
 	else
 		if newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
 			SetEnabledCamera(ClassicCamera)
