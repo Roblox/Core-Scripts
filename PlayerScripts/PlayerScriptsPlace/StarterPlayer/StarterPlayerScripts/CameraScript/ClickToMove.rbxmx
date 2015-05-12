@@ -97,8 +97,9 @@ do
 	Utility.Clamp = clamp
 
 	local function ViewSizeX()
-		local x = MyMouse and MyMouse.ViewSizeX or 0
-		local y = MyMouse and MyMouse.ViewSizeY or 0
+		local camera = workspace.CurrentCamera
+		local x = camera and camera.ViewportSize.X or 0
+		local y = camera and camera.ViewportSize.Y or 0
 		if x == 0 then
 			return 1024
 		else
@@ -112,8 +113,9 @@ do
 	Utility.ViewSizeX = ViewSizeX
 
 	local function ViewSizeY()
-		local x = MyMouse and MyMouse.ViewSizeX or 0
-		local y = MyMouse and MyMouse.ViewSizeY or 0
+		local camera = workspace.CurrentCamera
+		local x = camera and camera.ViewportSize.X or 0
+		local y = camera and camera.ViewportSize.Y or 0
 		if y == 0 then
 			return 768
 		else
@@ -869,13 +871,17 @@ local function FlashRed(object)
 	end)
 end
 
-local joystickWidth = 250
-local joystickHeight = 250
+--local joystickWidth = 250
+--local joystickHeight = 250
 local function IsInBottomLeft(pt)
+	local joystickHeight = math.min(Utility.ViewSizeY() * 0.33, 250)
+	local joystickWidth = joystickHeight
 	return pt.X <= joystickWidth and pt.Y > Utility.ViewSizeY() - joystickHeight
 end
 
 local function IsInBottomRight(pt)
+	local joystickHeight = math.min(Utility.ViewSizeY() * 0.33, 250)
+	local joystickWidth = joystickHeight
 	return pt.X >= Utility.ViewSizeX() - joystickWidth and pt.Y > Utility.ViewSizeY() - joystickHeight
 end
 
