@@ -518,7 +518,7 @@ local function Pather(character, point)
 			local xzMagnitude = (diffVector * Vector3.new(1,0,1)).magnitude
 			if xzMagnitude < 6 then
 				-- Jump if the path is telling is to go upwards
-				if diffVector.Y >= 2 then
+				if diffVector.Y >= 2.2 then
 					humanoid.Jump = true
 				end
 			end
@@ -675,11 +675,13 @@ local function Pather(character, point)
 			-- Will yield the script since it is an Async script (start, finish, maxDistance)
 			-- Try to use the smooth function, but it may not exist yet :(
 			local success = pcall(function()
-				this.pathResult = PathfindingService:ComputeSmoothPathAsync(torso.CFrame.p, point, 400)
+				-- 3 is height from torso cframe to ground
+				this.pathResult = PathfindingService:ComputeSmoothPathAsync(torso.CFrame.p - Vector3.new(0,3,0), point, 400)
 				smoothed = true
 			end)
 			if not success then
-				this.pathResult = PathfindingService:ComputeRawPathAsync(torso.CFrame.p, point, 400)
+				-- 3 is height from torso cframe to ground
+				this.pathResult = PathfindingService:ComputeRawPathAsync(torso.CFrame.p - Vector3.new(0,3,0), point, 400)
 				smoothed = false
 			end
 			this.pointList = this.pathResult and this.pathResult:GetPointCoordinates()
@@ -784,6 +786,7 @@ local function Pather(character, point)
 								wayPoint = CreateDestinationIndicator(point)
 								wayPoint.BrickColor = BrickColor.new("New Yeller")
 								wayPoint.Parent = workspace
+								print(wayPoint.CFrame.p)
 							end
 
 							humanoid:MoveTo(point)
