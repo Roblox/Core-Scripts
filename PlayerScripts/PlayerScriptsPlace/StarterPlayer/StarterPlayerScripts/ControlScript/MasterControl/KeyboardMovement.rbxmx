@@ -160,7 +160,7 @@ function KeyboardMovement:Enable()
 	end
 	
 	SeatJumpCn = UserInputService.InputBegan:connect(function(inputObject, isProcessed)
-		if inputObject.KeyCode == Enum.KeyCode.Backspace then
+		if inputObject.KeyCode == Enum.KeyCode.Backspace and not isProcessed then
 			local humanoid = getHumanoid()
 			if humanoid and (humanoid.Sit or humanoid.PlatformStand) then
 				MasterControl:DoJump()
