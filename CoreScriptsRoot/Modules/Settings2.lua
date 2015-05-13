@@ -731,11 +731,7 @@ SettingsShield.ZIndex = BASE_Z_INDEX + 2
 				setGraphicsQualityLevel(graphicsLevel.Value)
 			end)
 
-			if IsTouchClient then
-				qualityAutoCheckBox.TouchTap:connect(onGraphicsCheckBoxPressed)
-			else
-				qualityAutoCheckBox.MouseButton1Click:connect(onGraphicsCheckBoxPressed)
-			end
+			qualityAutoCheckBox.MouseButton1Click:connect(onGraphicsCheckBoxPressed)
 
 			-- graphics can be changed with F10 and Shift+F10
 			game.GraphicsQualityChangeRequest:connect(function(isIncrease)
@@ -1441,100 +1437,70 @@ do
 	local escapePressedCn = nil
 	SettingsShield.Parent = SettingsMenuFrame
 	--
-	if IsTouchClient then
-		SettingsButton.TouchTap:connect(showSettingsRootMenu)
-		-- Root Menu Connections
-		ResumeGameButton.TouchTap:connect(closeSettingsMenu)
-		ResetCharacterButton.TouchTap:connect(function() pushMenu(ResetCharacterFrame) end)
-		GameSettingsButton.TouchTap:connect(function() pushMenu(GameSettingsMenuFrame) end)
-		ReportAbuseButton.TouchTap:connect(function()
-			createReportAbuseMenu()
-			pushMenu(ReportAbuseFrame)
-		end)
-		LeaveGameButton.TouchTap:connect(function() pushMenu(LeaveGameMenuFrame) end)
 
-		-- Reset Character Menu Connections
-		ConfirmResetButton.TouchTap:connect(function()
-			resetLocalCharacter()
+	escapePressedCn = GuiService.EscapeKeyPressed:connect(function()
+		if #MenuStack == 0 then
+			showSettingsRootMenu()
+		elseif #MenuStack == 1 then
 			closeSettingsMenu()
-		end)
-		CancelResetButton.TouchTap:connect(popMenu)
-
-		-- Game Settings Menu Connections
-		GameSettingsBackButton.TouchTap:connect(popMenu)
-
-		-- Report Abuse Menu Connections
-		ReportCancelButton.TouchTap:connect(function()
+		else
+			local currentMenu = MenuStack[#MenuStack]
 			popMenu()
-			cleanupReportAbuseMenu()
-		end)
-		ReportSubmitButton.TouchTap:connect(onReportSubmitted)
-		ReportAbuseConfirmationButton.TouchTap:connect(closeSettingsMenu)
-
-		-- Leave Game Menu
-		LeaveCancelButton.TouchTap:connect(popMenu)
-	else
-		escapePressedCn = GuiService.EscapeKeyPressed:connect(function()
-			if #MenuStack == 0 then
-				showSettingsRootMenu()
-			elseif #MenuStack == 1 then
-				closeSettingsMenu()
-			else
-				local currentMenu = MenuStack[#MenuStack]
-				popMenu()
-				if currentMenu == ReportAbuseFrame then
-					cleanupReportAbuseMenu()
-				end
+			if currentMenu == ReportAbuseFrame then
+				cleanupReportAbuseMenu()
 			end
+		end
+	end)
+	SettingsButton.MouseButton1Click:connect(showSettingsRootMenu)
+	-- Root Menu Connections
+	ResumeGameButton.MouseButton1Click:connect(closeSettingsMenu)
+	ResetCharacterButton.MouseButton1Click:connect(function() pushMenu(ResetCharacterFrame) end)
+	GameSettingsButton.MouseButton1Click:connect(function() pushMenu(GameSettingsMenuFrame) end)
+	ReportAbuseButton.MouseButton1Click:connect(function()
+		createReportAbuseMenu()
+		pushMenu(ReportAbuseFrame)
+	end)
+	LeaveGameButton.MouseButton1Click:connect(function() pushMenu(LeaveGameMenuFrame) end)
+	if ScreenshotButton then
+		ScreenshotButton.MouseButton1Click:connect(function()
+			closeSettingsMenu(true)
 		end)
-		SettingsButton.MouseButton1Click:connect(showSettingsRootMenu)
-		-- Root Menu Connections
-		ResumeGameButton.MouseButton1Click:connect(closeSettingsMenu)
-		ResetCharacterButton.MouseButton1Click:connect(function() pushMenu(ResetCharacterFrame) end)
-		GameSettingsButton.MouseButton1Click:connect(function() pushMenu(GameSettingsMenuFrame) end)
+	end
+	if HelpButton then
 		HelpButton.MouseButton1Click:connect(function() pushMenu(HelpMenuFrame) end)
-		ReportAbuseButton.MouseButton1Click:connect(function()
-			createReportAbuseMenu()
-			pushMenu(ReportAbuseFrame)
+	end
+
+	--[[ Video Recording ]]--
+	if RecordVideoButton then
+		RecordVideoButton.MouseButton1Click:connect(function()
+			closeSettingsMenu(true)
 		end)
-		LeaveGameButton.MouseButton1Click:connect(function() pushMenu(LeaveGameMenuFrame) end)
-		if ScreenshotButton then
-			ScreenshotButton.MouseButton1Click:connect(function()
-				closeSettingsMenu(true)
+	end
+	local gameOptions = settings():FindFirstChild("Game Options")
+	if gameOptions then
+		local success, result = pcall(function()
+			gameOptions.VideoRecordingChangeRequest:connect(function(recording)
+				if isTopBar then
+					IsRecordingVideo = not IsRecordingVideo
+					RecordVideoButton.Text = IsRecordingVideo and "Stop Recording" or "Record Video"
+				else
+					onRecordVideoToggle()
+				end
 			end)
-		end
-
-		--[[ Video Recording ]]--
-		if RecordVideoButton then
-			RecordVideoButton.MouseButton1Click:connect(function()
-				closeSettingsMenu(true)
-			end)
-		end
-		local gameOptions = settings():FindFirstChild("Game Options")
-		if gameOptions then
-			local success, result = pcall(function()
-				gameOptions.VideoRecordingChangeRequest:connect(function(recording)
-					if isTopBar then
-						IsRecordingVideo = not IsRecordingVideo
-						RecordVideoButton.Text = IsRecordingVideo and "Stop Recording" or "Record Video"
-					else
-						onRecordVideoToggle()
-					end
-				end)
-			end)
-			if not success then
-				print("Settings2.lua: VideoRecordingChangeRequest connection failed because", result)
-			end
-		end
-
-		-- Reset Character Menu Connections
-		ConfirmResetButton.MouseButton1Click:connect(function()
-			resetLocalCharacter()
-			closeSettingsMenu()
 		end)
-		CancelResetButton.MouseButton1Click:connect(popMenu)
+		if not success then
+			print("Settings2.lua: VideoRecordingChangeRequest connection failed because", result)
+		end
+	end
 
-		-- Game Settings Menu Connections
+	-- Reset Character Menu Connections
+	ConfirmResetButton.MouseButton1Click:connect(function()
+		resetLocalCharacter()
+		closeSettingsMenu()
+	end)
+	CancelResetButton.MouseButton1Click:connect(popMenu)
+
+	if ShiftLockCheckBox then
 		ShiftLockCheckBox.MouseButton1Click:connect(function()
 			IsShiftLockEnabled = not IsShiftLockEnabled
 			ShiftLockCheckBox.Text = IsShiftLockEnabled and "X" or ""
@@ -1543,49 +1509,51 @@ do
 				shiftLockImageLabel.Visible = IsShiftLockEnabled
 			end
 		end)
-		GameSettingsBackButton.MouseButton1Click:connect(popMenu)
+	end
+	-- Game Settings Menu Connections
 
-		-- Help Menu Connections
-		HelpMenuBackButton.MouseButton1Click:connect(popMenu)
-		HelpLookButton.MouseButton1Click:connect(function()
-			changeHelpDialog(HelpLookButton, GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch and HELP_IMG.SHIFT_LOCK or HELP_IMG.CLASSIC_MOVE)
-		end)
-		HelpMoveButton.MouseButton1Click:connect(function()
-			changeHelpDialog(HelpMoveButton, HELP_IMG.MOVEMENT)
-		end)
-		HelpGearButton.MouseButton1Click:connect(function()
-			changeHelpDialog(HelpGearButton, HELP_IMG.GEAR)
-		end)
-		HelpZoomButton.MouseButton1Click:connect(function()
-			changeHelpDialog(HelpZoomButton, HELP_IMG.ZOOM)
-		end)
+	GameSettingsBackButton.MouseButton1Click:connect(popMenu)
 
-		-- Report Abuse Connections
-		ReportCancelButton.MouseButton1Click:connect(function()
-			popMenu()
-			cleanupReportAbuseMenu()
+	-- Help Menu Connections
+	HelpMenuBackButton.MouseButton1Click:connect(popMenu)
+	HelpLookButton.MouseButton1Click:connect(function()
+		changeHelpDialog(HelpLookButton, GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch and HELP_IMG.SHIFT_LOCK or HELP_IMG.CLASSIC_MOVE)
+	end)
+	HelpMoveButton.MouseButton1Click:connect(function()
+		changeHelpDialog(HelpMoveButton, HELP_IMG.MOVEMENT)
+	end)
+	HelpGearButton.MouseButton1Click:connect(function()
+		changeHelpDialog(HelpGearButton, HELP_IMG.GEAR)
+	end)
+	HelpZoomButton.MouseButton1Click:connect(function()
+		changeHelpDialog(HelpZoomButton, HELP_IMG.ZOOM)
+	end)
+
+	-- Report Abuse Connections
+	ReportCancelButton.MouseButton1Click:connect(function()
+		popMenu()
+		cleanupReportAbuseMenu()
+	end)
+	ReportSubmitButton.MouseButton1Click:connect(onReportSubmitted)
+	ReportAbuseConfirmationButton.MouseButton1Click:connect(closeSettingsMenu)
+
+	-- Leave Game Menu
+	LeaveCancelButton.MouseButton1Click:connect(popMenu)
+
+	-- Dev Console Connections
+	HelpConsoleButton.MouseButton1Click:connect(toggleDevConsole)
+	local success = pcall(function() ContextActionService:BindCoreAction("Open Dev Console", toggleDevConsole, false, Enum.KeyCode.F9) end)
+	if not success then
+		UserInputService.InputBegan:connect(function(inputObject)
+			if inputObject.KeyCode == Enum.KeyCode.F9 then
+				toggleDevConsole("Open Dev Console", Enum.UserInputState.Begin, inputObject)
+			end
 		end)
-		ReportSubmitButton.MouseButton1Click:connect(onReportSubmitted)
-		ReportAbuseConfirmationButton.MouseButton1Click:connect(closeSettingsMenu)
-
-		-- Leave Game Menu
-		LeaveCancelButton.MouseButton1Click:connect(popMenu)
-
-		-- Dev Console Connections
-		HelpConsoleButton.MouseButton1Click:connect(toggleDevConsole)
-		local success = pcall(function() ContextActionService:BindCoreAction("Open Dev Console", toggleDevConsole, false, Enum.KeyCode.F9) end)
-		if not success then
-			UserInputService.InputBegan:connect(function(inputObject)
-				if inputObject.KeyCode == Enum.KeyCode.F9 then
-					toggleDevConsole("Open Dev Console", Enum.UserInputState.Begin, inputObject)
-				end
-			end)
-			UserInputService.InputEnded:connect(function(inputObject)
-				if inputObject.KeyCode == Enum.KeyCode.F9 then
-					toggleDevConsole("Open Dev Console", Enum.UserInputState.End, inputObject)
-				end
-			end)
-		end
+		UserInputService.InputEnded:connect(function(inputObject)
+			if inputObject.KeyCode == Enum.KeyCode.F9 then
+				toggleDevConsole("Open Dev Console", Enum.UserInputState.End, inputObject)
+			end
+		end)
 	end
 
 	LocalPlayer.Changed:connect(function(property)
