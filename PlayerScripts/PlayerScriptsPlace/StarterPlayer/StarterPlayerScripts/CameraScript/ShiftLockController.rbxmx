@@ -39,7 +39,6 @@ local ShiftLockIcon = nil
 local InputCn = nil
 local IsShiftLockMode = false
 local IsShiftLocked = false
-pcall(function() IsShiftLocked = GameSettings.ShiftLocked end)
 local IsActionBound = false
 local IsInFirstPerson = false
 
@@ -63,7 +62,6 @@ local SHIFT_LOCK_CURSOR = 'rbxasset://textures/MouseLockedCursor.png'
 --[[ Local Functions ]]--
 local function onShiftLockToggled()
 	IsShiftLocked = not IsShiftLocked
-	pcall(function() GameSettings.ShiftLocked = IsShiftLocked end)
 	if IsShiftLocked then
 		ShiftLockIcon.Image = SHIFT_LOCK_ON
 		Mouse.Icon = SHIFT_LOCK_CURSOR
@@ -168,6 +166,9 @@ local function enableShiftLock()
 	end
 end
 
+-- NOTE: This will fire for ControlMode when the settings menu is closed. If ControlMode is
+-- MouseLockSwitch on settings close, it will change the mode to Classic, then to ShiftLockSwitch.
+-- This is a silly hack, but needed to raise an event when the settings menu closes.
 GameSettings.Changed:connect(function(property)
 	if property == 'ControlMode' then
 		if GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch then
@@ -218,10 +219,6 @@ if not UserInputService.TouchEnabled then
 		InputCn = UserInputService.InputBegan:connect(onShiftInputBegan)
 		IsActionBound = true
 	end
-end
-
-if ShiftLockController:IsShiftLocked() then
-	enableShiftLock()
 end
 
 return ShiftLockController
