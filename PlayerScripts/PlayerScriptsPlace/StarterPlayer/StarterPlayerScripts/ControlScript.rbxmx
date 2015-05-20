@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBXCB39AA2E475648429E608F1EF38CEF51">
+	<Item class="LocalScript" referent="RBXF85863EB1DD84C5896C4A1E82D902337">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -35,7 +35,7 @@ local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
 -- Issue with play solo? (F6)
-while not UserInputService.KeyboardEnabled and not UserInputService.TouchEnabled do
+while not UserInputService.KeyboardEnabled and not UserInputService.TouchEnabled and not UserInputService.GamepadEnabled do
 	wait()
 end
 
@@ -201,6 +201,10 @@ elseif UserInputService.KeyboardEnabled then
 				CurrentControlModule:Enable()
 			end
 		end
+	end
+elseif UserInputService.GamepadEnabled then
+	onControlsChanged = function()
+		-- nil for now, probably needs some stuff later
 	end
 end
 
