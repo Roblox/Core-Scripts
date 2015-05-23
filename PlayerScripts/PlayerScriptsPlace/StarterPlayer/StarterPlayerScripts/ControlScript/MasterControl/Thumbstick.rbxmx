@@ -3,6 +3,7 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBX4085E7D84B9F4D049BA1EB9C1D13F5D2">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">Thumbstick</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: Thumbstick
@@ -103,7 +104,7 @@ function Thumbstick:Create(parentFrame)
 			currentMoveVector = Vector3.new()
 		else
 			currentMoveVector = currentMoveVector.unit * ((inputAxisMagnitude - deadZone) / (1 - deadZone))
-			-- NOTE: Making inputAxis a unit vector will cause the player to instantly go max speed
+			-- NOTE: Making currentMoveVector a unit vector will cause the player to instantly go max speed
 			-- must check for zero length vector is using unit
 			currentMoveVector = Vector3.new(currentMoveVector.x, 0, currentMoveVector.y)
 		end

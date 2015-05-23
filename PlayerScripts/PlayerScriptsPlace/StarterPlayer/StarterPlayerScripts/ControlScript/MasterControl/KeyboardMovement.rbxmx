@@ -7,12 +7,11 @@
 			<string name="Name">KeyboardMovement</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: ComputerMovementKeyboardMovement
-	// Version 1.1
+	// Version 1.2
 	// Written by: jeditkacheff/jmargh
 	// Description: Implements movement controls for keyboard devices
 --]]
 local Players = game:GetService('Players')
-local RunService = game:GetService('RunService')
 local UserInputService = game:GetService('UserInputService')
 local ContextActionService = game:GetService('ContextActionService')
 local StarterPlayer = game:GetService('StarterPlayer')
@@ -125,26 +124,6 @@ function KeyboardMovement:Enable()
 	ContextActionService:BindActionToInputTypes("jumpAction", jumpFunc, false, Enum.PlayerActions.CharacterJump)
 	-- TODO: make sure we check key state before binding to check if key is already down
 	
-	local renderSteppedFunction = function()
-		if LocalPlayer and LocalPlayer.Character then
-			local humanoid = getHumanoid()
-			if not humanoid then return end
-			if isFirstPersonOrShiftLocked() then
-				local rootPart = humanoid.Torso
-				if humanoid and humanoid.AutoRotate and not humanoid.Sit and not humanoid.PlatformStand and humanoid:GetState() ~= Enum.HumanoidStateType.Swimming and rootPart then
-					local desiredLook = game.Workspace.CurrentCamera.CoordinateFrame.lookVector * Vector3.new(1, 0, 1)
-					-- check case of camera looking straight down/up at character. If this is the case, then there is
-					-- no rotation around the y-axis
-					if desiredLook.magnitude >= 0.1 then
-						rootPart.CFrame = CFrame.new(rootPart.Position, rootPart.Position + desiredLook)
-					end
-				end
-			end
-		end
-	end
-	
-	RunService:BindToRenderStep("keyboardUpdate",Enum.RenderPriority.Character.Value,renderSteppedFunction)
-	
 	local function onFocusReleased()
 		local humanoid = getHumanoid()
 		if humanoid then
@@ -180,8 +159,6 @@ function KeyboardMovement:Disable()
 	ContextActionService:UnbindAction("leftMovement")
 	ContextActionService:UnbindAction("rightMovement")
 	ContextActionService:UnbindAction("jumpAction")
-	
-	RunService:UnbindFromRenderStep("keyboardUpdate")
 	
 	if SeatJumpCn then
 		SeatJumpCn:disconnect()
