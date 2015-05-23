@@ -2088,7 +2088,10 @@ local function CreateChat()
 
 	function this:PrintWelcome()
 		if this.ChatWindowWidget then
-			this.ChatWindowWidget:AddSystemChatMessage("Please type /? for a list of commands", true)
+			if Util.IsTouchDevice() then
+				this.ChatWindowWidget:AddSystemChatMessage("Please press the '...' icon to chat", true)
+			end
+			this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
 		end
 	end
 

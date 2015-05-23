@@ -4,6 +4,7 @@
 	// Description: Code for lua side Top Menu items in ROBLOX.
 ]]
 
+
 --[[ CONSTANTS ]]
 
 local TOPBAR_THICKNESS = 36
@@ -25,6 +26,8 @@ local HEALTH_PERCANTAGE_FOR_OVERLAY = 5 / 100
 
 local HURT_OVERLAY_IMAGE = "http://www.roblox.com/asset/?id=34854607"
 
+local DEBOUNCE_TIME = 0.25
+
 --[[ END OF CONSTANTS ]]
 
 --[[ FFLAG VALUES ]]
@@ -40,6 +43,11 @@ local useNewPlayerlist = (playerListSuccess and playerListFlagValue)
 local function GetBubbleChatbarFlag()
 	local bubbleChatbarSuccess, bubbleChatbarFlagValue = pcall(function() return settings():GetFFlag("BubbleChatbarDocksAtTop") end)
 	return bubbleChatbarSuccess and bubbleChatbarFlagValue == true
+end
+
+local function GetChatVisibleIconFlag()
+	local chatVisibleIconSuccess, chatVisibleIconFlagValue = pcall(function() return settings():GetFFlag("MobileToggleChatVisibleIcon") end)
+	return chatVisibleIconSuccess and chatVisibleIconFlagValue == true
 end
 --[[ END OF FFLAG VALUES ]]
 
@@ -535,7 +543,7 @@ local function CreateLeaderstatsMenuItem()
 	setmetatable(this, {})
 	function this:SetColumns(columnsList)
 		-- Should we handle is the screen dimensions change and it is no longer a small touch device after we set columns?
-		local isSmallTouchDevice = Util.IsTouchDevice() and Game:GetService("GuiService"):GetScreenResolution().Y < 500
+		local isSmallTouchDevice = Util.IsTouchDevice() and GuiService:GetScreenResolution().Y < 500
 		local numColumns = #columnsList
 
 		-- Destroy old columns
@@ -654,7 +662,7 @@ local function CreateSettingsIcon()
 		end
 	end
 
-	function toggleSettings()
+	local function toggleSettings()
 		if settingsActive == false then
 			settingsActive = true
 		else
@@ -679,27 +687,9 @@ end
 ------------
 
 --- CHAT ---
-local function CreateChatIcon()
-	local ChatModule = require(GuiRoot.Modules.Chat)
-
-	local chatIconButton = Util.Create'ImageButton'
-	{
-		Name = "Chat";
-		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
-		Image = "";
-		AutoButtonColor = false;
-		BackgroundTransparency = 1;
-	};
-
-	local chatIconImage = Util.Create'ImageLabel'
-	{
-		Name = "ChatIcon";
-		Size = UDim2.new(0, 28, 0, 27);
-		Position = UDim2.new(0.5, -14, 0.5, -13);
-		BackgroundTransparency = 1;
-		Image = "rbxasset://textures/ui/Chat/Chat.png";
-		Parent = chatIconButton;
-	};
+local function CreateUnreadMessagesNotifier(ChatModule)
+	local chatActive = false
+	local lastMessageCount = 0
 
 	local chatCounter = Util.Create'ImageLabel'
 	{
@@ -709,7 +699,6 @@ local function CreateChatIcon()
 		BackgroundTransparency = 1;
 		Image = "rbxasset://textures/ui/Chat/MessageCounter.png";
 		Visible = false;
-		Parent = chatIconImage;
 	};
 
 	local chatCountText = Util.Create'TextLabel'
@@ -728,11 +717,6 @@ local function CreateChatIcon()
 		Parent = chatCounter;
 	};
 
-	local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
-	local DEBOUNCE_TIME = 0.25
-	local chatActive = false
-	local debounce = 0
-	local lastMessageCount = 0
 	local function OnUnreadMessagesChanged(count)
 		if chatActive then
 			lastMessageCount = count
@@ -752,6 +736,58 @@ local function CreateChatIcon()
 		end
 	end
 
+	local function onChatStateChanged(visible)
+		chatActive = visible
+		if ChatModule then
+			OnUnreadMessagesChanged(ChatModule:GetMessageCount())
+		end
+	end
+
+
+	if ChatModule then
+		if ChatModule.VisibilityStateChanged then
+			ChatModule.VisibilityStateChanged:connect(onChatStateChanged)
+		end
+		if ChatModule.MessagesChanged then
+			ChatModule.MessagesChanged:connect(OnUnreadMessagesChanged)
+		end
+
+		onChatStateChanged(ChatModule:GetVisibility())
+		OnUnreadMessagesChanged(ChatModule:GetMessageCount())
+	end
+
+	return chatCounter
+end
+
+local function CreateChatIcon()
+	local ChatModule = require(GuiRoot.Modules.Chat)
+
+	local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
+	local debounce = 0
+
+	local chatIconButton = Util.Create'ImageButton'
+	{
+		Name = "Chat";
+		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
+		Image = "";
+		AutoButtonColor = false;
+		BackgroundTransparency = 1;
+	};
+
+	local chatIconImage = Util.Create'ImageLabel'
+	{
+		Name = "ChatIcon";
+		Size = UDim2.new(0, 28, 0, 27);
+		Position = UDim2.new(0.5, -14, 0.5, -13);
+		BackgroundTransparency = 1;
+		Image = "rbxasset://textures/ui/Chat/Chat.png";
+		Parent = chatIconButton;
+	};
+	if not Util.IsTouchDevice() or not GetChatVisibleIconFlag() then
+		local chatCounter = CreateUnreadMessagesNotifier(ChatModule)
+		chatCounter.Parent = chatIconImage;
+	end
+
 	local function updateIcon(down)
 		if down then
 			chatIconImage.Image = "rbxasset://textures/ui/Chat/ChatDown.png";
@@ -761,16 +797,17 @@ local function CreateChatIcon()
 	end
 
 	local function onChatStateChanged(visible)
-		chatActive = visible
 		if not Util.IsTouchDevice() then
-			updateIcon(chatActive)
+			updateIcon(visible)
 		end
-		OnUnreadMessagesChanged(ChatModule:GetMessageCount())
 	end
 
-	function toggleChat()
+	local function toggleChat()
 		if Util.IsTouchDevice() or (GetBubbleChatbarFlag() and bubbleChatIsOn) then
 			if debounce + DEBOUNCE_TIME < tick() then
+				if Util.IsTouchDevice() and not ChatModule:GetVisibility() then
+					ChatModule:ToggleVisibility()
+				end
 				ChatModule:FocusChatBar()
 			end
 		else
@@ -781,10 +818,6 @@ local function CreateChatIcon()
 	chatIconButton.MouseButton1Click:connect(function()
 		toggleChat()
 	end)
-
-	if ChatModule.MessagesChanged then
-		ChatModule.MessagesChanged:connect(OnUnreadMessagesChanged)
-	end
 
 	if Util.IsTouchDevice() or (GetBubbleChatbarFlag() and bubbleChatIsOn) then
 		if ChatModule.ChatBarFocusChanged then
@@ -801,12 +834,66 @@ local function CreateChatIcon()
 	end
 	onChatStateChanged(ChatModule:GetVisibility())
 
-	OnUnreadMessagesChanged(ChatModule:GetMessageCount())
-
-	ChatModule:ToggleVisibility(true)
+	if not Util.IsTouchDevice() then
+		ChatModule:ToggleVisibility(true)
+	end
 
 	return CreateMenuItem(chatIconButton)
 end
+
+local function CreateMobileHideChatIcon()
+	local ChatModule = require(GuiRoot.Modules.Chat)
+
+	local chatHideIconButton = Util.Create'ImageButton'
+	{
+		Name = "ChatVisible";
+		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
+		Image = "";
+		AutoButtonColor = false;
+		BackgroundTransparency = 1;
+	};
+
+	local chatIconImage = Util.Create'ImageLabel'
+	{
+		Name = "ChatVisibleIcon";
+		Size = UDim2.new(0, 28, 0, 27);
+		Position = UDim2.new(0.5, -14, 0.5, -13);
+		BackgroundTransparency = 1;
+		Image = "rbxasset://textures/ui/Chat/ToggleChat.png";
+		Parent = chatHideIconButton;
+	};
+
+	local unreadMessageNotifier = CreateUnreadMessagesNotifier(ChatModule)
+	unreadMessageNotifier.Parent = chatIconImage
+
+	local function updateIcon(down)
+		if down then
+			chatIconImage.Image = "rbxasset://textures/ui/Chat/ToggleChatDown.png";
+		else
+			chatIconImage.Image = "rbxasset://textures/ui/Chat/ToggleChat.png";
+		end
+	end
+
+	local function toggleChat()
+		ChatModule:ToggleVisibility()
+	end
+
+	local function onChatStateChanged(visible)
+		updateIcon(visible)
+	end
+
+	chatHideIconButton.MouseButton1Click:connect(function()
+		toggleChat()
+	end)
+
+	if ChatModule.VisibilityStateChanged then
+		ChatModule.VisibilityStateChanged:connect(onChatStateChanged)
+	end
+	onChatStateChanged(ChatModule:GetVisibility())
+
+	return CreateMenuItem(chatHideIconButton)
+end
+
 -----------
 
 --- Backpack ---
@@ -842,7 +929,7 @@ local function CreateBackpackIcon()
 
 	BackpackModule.StateChanged.Event:connect(onBackpackStateChanged)
 
-	function toggleBackpack()
+	local function toggleBackpack()
 		BackpackModule:OpenClose()
 	end
 
@@ -918,8 +1005,9 @@ end
 
 local settingsIcon = useNewSettings and CreateSettingsIcon()
 local chatIcon = CreateChatIcon()
+local mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
 local backpackIcon = useNewBackpack and CreateBackpackIcon()
---local shiftlockIcon = CreateShiftLockIcon()
+local shiftlockIcon = nil --CreateShiftLockIcon()
 local nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
 local leaderstatsMenuItem = useNewPlayerlist and CreateLeaderstatsMenuItem()
 local stopRecordingIcon = CreateStopRecordIcon()
@@ -932,16 +1020,21 @@ local LEFT_ITEM_ORDER = {}
 if settingsIcon then
 	LEFT_ITEM_ORDER[settingsIcon] = 1
 end
+if GetChatVisibleIconFlag() then
+	if mobileShowChatIcon then
+		LEFT_ITEM_ORDER[mobileShowChatIcon] = 2
+	end
+end
 if chatIcon then
-	LEFT_ITEM_ORDER[chatIcon] = 2
+	LEFT_ITEM_ORDER[chatIcon] = 3
 end
 if backpackIcon then
-	LEFT_ITEM_ORDER[backpackIcon] = 3
+	LEFT_ITEM_ORDER[backpackIcon] = 4
 end
 if shiftlockIcon then
-	LEFT_ITEM_ORDER[shiftlockIcon] = 4
+	LEFT_ITEM_ORDER[shiftlockIcon] = 5
 end
-LEFT_ITEM_ORDER[stopRecordingIcon] = 5
+LEFT_ITEM_ORDER[stopRecordingIcon] = 6
 
 local RIGHT_ITEM_ORDER = {}
 if leaderstatsMenuItem then
@@ -960,21 +1053,6 @@ local function AddItemInOrder(Bar, Item, ItemOrder)
 		index = index + 1
 	end
 	Bar:AddItem(Item, index)
-end
-
-local function RobloxClientScreenSizeChanged(newSize)
-	if container then
-		-- Portait Phone
-		if newSize.X <= 400 then
-		-- Phone
-		elseif newSize.X <= 640 then
-		-- Tablet
-		elseif newSize.X <= 1024 then
-		-- Desktop
-		else
-
-		end
-	end
 end
 
 local function OnCoreGuiChanged(coreGuiType, enabled)
@@ -1002,14 +1080,23 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 		end
 	end
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
-		if chatIcon then
-			if enabled and Player.ChatMode == Enum.ChatMode.TextAndMenu then
+		if enabled and Player.ChatMode == Enum.ChatMode.TextAndMenu then
+			if chatIcon then
 				AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
-			else
+			end
+			if mobileShowChatIcon then
+				AddItemInOrder(LeftMenubar, mobileShowChatIcon, LEFT_ITEM_ORDER)
+			end
+		else
+			if chatIcon then
 				LeftMenubar:RemoveItem(chatIcon)
+			end
+			if mobileShowChatIcon then
+				LeftMenubar:RemoveItem(mobileShowChatIcon)
 			end
 		end
 	end
+
 	if nameAndHealthMenuItem then
 		local playerListOn = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList)
 		local healthbarOn = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health)
@@ -1087,9 +1174,6 @@ end
 GameSettings.Changed:connect(OnGameSettingsChanged)
 Player.Changed:connect(OnPlayerChanged)
 CheckShiftLockMode()
-
-GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
-RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize)
 
 
 
