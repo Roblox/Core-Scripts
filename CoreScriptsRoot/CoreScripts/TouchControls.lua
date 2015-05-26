@@ -1627,6 +1627,12 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 		end)
 
 		activateTouchControls()
+
+		GameSettings.Changed:connect(function(property)
+			if (property == "TouchMovementMode") then
+				activateTouchControls()
+			end
+		end)
 	end
 
 	function activateTouchControls()	
@@ -1667,14 +1673,14 @@ else	-- OLD TOUCH CONTROLS WITH THUMBPAD
 	-- Start of Script
 
 	if userInputService:IsLuaTouchControls() then
-		setupTouchControls()
+		if game:IsLoaded() then
+			setupTouchControls()
+		else
+			game.Loaded:connect(function()
+				setupTouchControls()
+			end)
+		end
 	else
 		script:Destroy()
 	end
-
-	GameSettings.Changed:connect(function(property)
-		if (property == "TouchMovementMode") then
-			activateTouchControls()
-		end
-	end)
 end
