@@ -1037,6 +1037,7 @@ end
 
 
 function changeSlot(slot)
+	if Dragging[slot.Frame] then return end -- Dragging, not meant to click
 	if slot.Frame == GuiService.SelectedCoreObject then
 		local currentlySelectedSlot = getGamepadSwapSlot()
 
@@ -1062,8 +1063,11 @@ function changeSlot(slot)
 		else
 			slot.Frame.BorderSizePixel = 1
 		end
-	else
+	elseif slot.Index <= HOTBAR_SLOTS then
 		slot:Select()
+	elseif LowestEmptySlot then
+		LowestEmptySlot:Fill(slot.Tool)
+		slot:Destroy()
 	end
 end
 
