@@ -26,6 +26,8 @@ function waitForChild(instance, name)
 	end
 end
 
+local gamepadDialogFlagSuccess, gamepadDialogFlagValue = pcall(function() return settings():GetFFlag("GamepadDialogSupport") end)
+local gamepadDialogSupportEnabled = (gamepadDialogFlagSuccess and gamepadDialogFlagValue == true)
 
 local mainFrame
 local choices = {}
@@ -72,7 +74,12 @@ end
 
 function createChatNotificationGui()
 	chatNotificationGui = Instance.new("BillboardGui")
-	chatNotificationGui.Name = "ChatNotificationGui"
+	if gamepadDialogSupportEnabled then
+		chatNotificationGui.Name = "RBXChatNotificationGui"
+	else
+		chatNotificationGui.Name = "ChatNotificationGui"
+	end
+
 	chatNotificationGui.ExtentsOffset = Vector3.new(0,1,0)
 	chatNotificationGui.Size = UDim2.new(PROMPT_SIZE.X / 31.5, 0, PROMPT_SIZE.Y / 31.5, 0)
 	chatNotificationGui.SizeOffset = Vector2.new(0,0)
@@ -355,6 +362,10 @@ function presentDialogChoices(talkingPart, dialogChoices)
 	mainFrame.Position = UDim2.new(0,20,1.0, -mainFrame.Size.Y.Offset-20)
 	styleMainFrame(currentTone())
 	mainFrame.Visible = true
+
+	if gamepadDialogSupportEnabled then
+		Game:GetService("GuiService").SelectedCoreObject = choices[1]
+	end
 end
 
 function doDialog(dialog)
@@ -436,7 +447,15 @@ function addDialog(dialog)
 			chatGui.Enabled = not dialog.InUse
 			chatGui.Adornee = dialog.Parent
 			chatGui.RobloxLocked = true
-			chatGui.Parent = game:GetService("CoreGui")
+
+			if gamepadDialogSupportEnabled then
+				waitForProperty(game:GetService("Players"), "LocalPlayer")
+	 			game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+				chatGui.Parent = game:GetService("Players").LocalPlayer.PlayerGui
+			else
+				chatGui.Parent = game:GetService("CoreGui")
+			end
+
 			chatGui.Background.MouseButton1Click:connect(function() startDialog(dialog) end)
 			setChatNotificationTone(chatGui, dialog.Purpose, dialog.Tone)
 
@@ -510,6 +529,9 @@ function onLoad()
   frame.Size = UDim2.new(0,0,0,0)
   frame.BackgroundTransparency = 1
   frame.RobloxLocked = true
+  if gamepadDialogSupportEnabled then
+  		game:GetService("GuiService"):AddSelectionParent("RBXDialogGroup", frame)
+  end
 
   if (touchEnabled) then
 	frame.Position = UDim2.new(0,20,0.5,0)
