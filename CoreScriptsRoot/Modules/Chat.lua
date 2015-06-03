@@ -20,6 +20,7 @@ local MESSAGES_FADE_OUT_TIME = 30
 local MAX_BLOCKLIST_SIZE = 50
 local MAX_UDIM_SIZE = 2^15 - 1
 
+
 local CHAT_COLORS =
 {
 	Color3.new(253/255, 41/255, 67/255), -- BrickColor.new("Bright red").Color,
@@ -59,11 +60,6 @@ else
 end
 --[[ END OF SCRIPT VARIABLES ]]
 
-local function GetBlockedUsersFlag()
-	local blockUserFlagSuccess, blockUserFlagFlagValue = pcall(function() return settings():GetFFlag("BlockUsersInLuaChat") end)
-	return blockUserFlagSuccess and blockUserFlagFlagValue == true
-end
-
 local function GetTopBarFlag()
 	local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
 	return topbarSuccess and topbarFlagValue == true
@@ -74,9 +70,19 @@ local function GetChatMovedUpPlaceIdCutoffFlag()
 	return chatMoveUpSuccess and tonumber(placeIdFlagValue) or 0
 end
 
-local function GetBubbleChatbarFlag()
-	local bubbleChatbarSuccess, bubbleChatbarFlagValue = pcall(function() return settings():GetFFlag("BubbleChatbarDocksAtTop") end)
-	return bubbleChatbarSuccess and bubbleChatbarFlagValue == true
+local function GetChatFloodCheckMessagesFlag()
+	local flagSuccess, flagValue = pcall(function() return settings():GetFVariable("LuaChatFloodCheckMessages") end)
+	return flagSuccess and tonumber(flagValue) or 7
+end
+
+local function GetChatFloodCheckIntervalFlag()
+	local flagSuccess, flagValue = pcall(function() return settings():GetFVariable("LuaChatFloodCheckInterval") end)
+	return flagSuccess and tonumber(flagValue) or 15
+end
+
+local function GetLuaChatFilteringFlag()
+	local flagSuccess, flagValue = pcall(function() return settings():GetFFlag("LuaChatFiltering") end)
+	return flagSuccess and flagValue == true
 end
 
 local Util = {}
@@ -305,6 +311,18 @@ do
 			TextSizeCache[text][font][sizeBounds][fontSize] = testLabel.TextBounds
 		end
 		return TextSizeCache[text][font][sizeBounds][fontSize]
+	end
+
+	local PRINTABLE_CHARS = '[^' .. string.char(32) .. '-' ..  string.char(126) .. ']'
+	local WHITESPACE_CHARS = '(' .. string.rep('%s', 7) .. ')%s+'
+	function Util.FilterUnprintableCharacters(str)
+		if not GetLuaChatFilteringFlag() then
+			return str
+		end
+
+		local result = str:gsub(PRINTABLE_CHARS, '');
+		result = str:gsub(WHITESPACE_CHARS, '%1');
+		return result
 	end
 end
 
@@ -772,6 +790,7 @@ local function CreateChatBarWidget(settings)
 	this.ChatBarLostFocusEvent = Util.Signal()
 	this.ChatCommandEvent = Util.Signal() -- Signal Signatue: success, actionType, [captures]
 	this.ChatErrorEvent = Util.Signal() -- Signal Signatue: success, actionType, [captures]
+	this.ChatBarFloodEvent = Util.Signal()
 
 	-- This function while lets string.find work case-insensitively without clobbering the case of the captures
 	local function nocase(s)
@@ -1002,20 +1021,23 @@ local function CreateChatBarWidget(settings)
 	function this:OnChatBarTextChanged()
 		if not Util.IsTouchDevice() then
 			this:ProcessChatBarModes(true)
-			local newText = this:GetChatBarText()
-			if #newText > this.Settings.MaxCharactersInMessage then
-				local fixedText = ""
+			local originalText = this:GetChatBarText()
+			local newText = Util.FilterUnprintableCharacters(originalText)
+			if newText ~= originalText then
+				previousText = newText
+			end
+
+			local fixedText = newText
+			if #newText > this.Settings.MaxCharactersInMessage or originalText ~= newText then
 				-- This is a hack to deal with the bug that holding down a key for repeated input doesn't trigger the textChanged event
 				if #newText == #previousText + 1 then
 					fixedText = string.sub(previousText, 1, this.Settings.MaxCharactersInMessage)
 				else
 					fixedText = string.sub(newText, 1, this.Settings.MaxCharactersInMessage)
 				end
-				this:SetChatBarText(fixedText)
-				previousText = fixedText
-			else
-				previousText = newText
 			end
+			this:SetChatBarText(fixedText)
+			previousText = fixedText
 		end
 	end
 
@@ -1046,7 +1068,7 @@ local function CreateChatBarWidget(settings)
 	end
 
 	function this:SetChatBarText(newText)
-		if this.ChatBar then
+		if this.ChatBar and newText ~= this.ChatBar.Text then
 			this.ChatBar.Text = newText
 		end
 	end
@@ -1127,43 +1149,64 @@ local function CreateChatBarWidget(settings)
 		return sanitizedInput
 	end
 
+
+	local sentMessageTimeQueue = {}
+	function this:FloodCheck()
+		if not GetLuaChatFilteringFlag() then
+			return false
+		end
+
+		while sentMessageTimeQueue[1] and tick() - sentMessageTimeQueue[1] > GetChatFloodCheckIntervalFlag() do
+			table.remove(sentMessageTimeQueue, 1)
+		end
+		if #sentMessageTimeQueue > GetChatFloodCheckMessagesFlag() then
+			return true
+		end
+		return false
+	end
+
 	function this:OnChatBarFocusLost(enterPressed)
 		if self.ChatBar then
 			self.ChatBar.Visible = false
 			if enterPressed then
-				local didMatchSlashCommand = this:ProcessChatBarModes(false)
-				local cText = this:SanitizeInput(this:GetChatBarText())
+				local didMatchSlashCommand = self:ProcessChatBarModes(false)
+				local cText = self:SanitizeInput(self:GetChatBarText())
 				if cText ~= "" then
-					-- For now we will let any slash command go through, NOTE: these will show up in bubble-chat
-					--if not didMatchSlashCommand and string.sub(cText,1,1) == "/" then
-					--	this.ChatCommandEvent:fire(false, "Unknown", cText)
-					--else
-						local currentMessageMode = this:GetMessageMode()
+					if self:FloodCheck() then -- and not didMatchSlashCommand then
+						self.ChatBarFloodEvent:fire()
+					else
+						-- For now we will let any slash command go through, NOTE: these will show up in bubble-chat
+						--if not didMatchSlashCommand and string.sub(cText,1,1) == "/" then
+						--	self.ChatCommandEvent:fire(false, "Unknown", cText)
+						--else
+						local currentMessageMode = self:GetMessageMode()
 						-- {All, Team, Whisper}
 						if currentMessageMode == 'Team' then
 							if Player and Player.Neutral == true then
-								this.ChatErrorEvent:fire("You're not on a team.")
+								self.ChatErrorEvent:fire("You're not on a team.")
 							else
 								pcall(function() PlayersService:TeamChat(cText) end)
 							end
 						elseif currentMessageMode == 'Whisper' then
-							if this.TargetWhisperPlayer then
-								if this.TargetWhisperPlayer == Player then
-									this.ChatErrorEvent:fire("You cannot send a whisper to yourself.")
+							if self.TargetWhisperPlayer then
+								if self.TargetWhisperPlayer == Player then
+									self.ChatErrorEvent:fire("You cannot send a whisper to yourself.")
 								else
-									pcall(function() PlayersService:WhisperChat(cText, this.TargetWhisperPlayer) end)
+									pcall(function() PlayersService:WhisperChat(cText, self.TargetWhisperPlayer) end)
 								end
 							else
-								this.ChatErrorEvent:fire("Invalid whisper target.")
+								self.ChatErrorEvent:fire("Invalid whisper target.")
 							end
 						elseif currentMessageMode == 'All' then
 							pcall(function() PlayersService:Chat(cText) end)
 						else
 							spawn(function() error("ChatScript: Unknown Message Mode of " .. tostring(currentMessageMode)) end)
 						end
-					--end
+						table.insert(sentMessageTimeQueue, tick())
+						--end
+						self:SetChatBarText("")
+					end
 				end
-				this:SetChatBarText("")
 			end
 		end
 		if self.ClickToChatButton then
@@ -1173,8 +1216,8 @@ local function CreateChatBarWidget(settings)
 			self.ClickToChatButton.TextTransparency = 1
 			Util.PropertyTweener(self.ClickToChatButton, 'TextTransparency', 1, 0, 0.25, Util.Linear)
 		end
-		if this.ChatModeText then
-			this.ChatModeText.Visible = false
+		if self.ChatModeText then
+			self.ChatModeText.Visible = false
 		end
 		if GetTopBarFlag() and this.ChatBarContainer then
 			local currSize = this.ChatBarContainer.Size
@@ -1305,12 +1348,11 @@ local function CreateChatBarWidget(settings)
 			local function RobloxClientScreenSizeChanged(newSize)
 				if chatBarContainer then
 					local chatbarVisible = this.ChatBar and this.ChatBar.Visible
-					local moveBubbleChatbarUp = GetBubbleChatbarFlag()
 					local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
 					-- Phone
 					if newSize.X <= 640 then
 						chatBarContainer.Size = UDim2.new(0.5, 0,0, chatbarVisible and 40 or 32)
-						if moveBubbleChatbarUp and bubbleChatIsOn then
+						if bubbleChatIsOn then
 							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
 						else
 							chatBarContainer.Position = UDim2.new(0, 0, 0.5, 2)
@@ -1318,7 +1360,7 @@ local function CreateChatBarWidget(settings)
 					-- Tablet
 					elseif newSize.X <= 1024 then
 						chatBarContainer.Size = UDim2.new(0.4, 0,0, chatbarVisible and 40 or 32)
-						if moveBubbleChatbarUp and bubbleChatIsOn then
+						if bubbleChatIsOn then
 							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
 						else
 							chatBarContainer.Position = UDim2.new(0, 0, 0.3, 2)
@@ -1326,7 +1368,7 @@ local function CreateChatBarWidget(settings)
 					-- Desktop
 					else
 						chatBarContainer.Size = UDim2.new(0.3, 0,0, chatbarVisible and 40 or 32)
-						if moveBubbleChatbarUp and bubbleChatIsOn then
+						if bubbleChatIsOn then
 							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
 						else
 							chatBarContainer.Position = UDim2.new(0,0,0.25, 2)
@@ -1594,8 +1636,9 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer, silently)
-		if this:FilterMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer) then
-			local chatMessage = CreatePlayerChatMessage(this.Settings, playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
+		local fixedChattedMessage = Util.FilterUnprintableCharacters(chattedMessage)
+		if this:FilterMessage(playerChatType, sendingPlayer, fixedChattedMessage, receivingPlayer) then
+			local chatMessage = CreatePlayerChatMessage(this.Settings, playerChatType, sendingPlayer, fixedChattedMessage, receivingPlayer)
 			this:PushMessageIntoQueue(chatMessage, silently)
 		end
 	end
@@ -2102,10 +2145,9 @@ local function CreateChat()
 			this.ChatWindowWidget:AddSystemChatMessage("/w [PlayerName] or /whisper [PlayerName] - Whisper Chat")
 			this.ChatWindowWidget:AddSystemChatMessage("/t or /team - Team Chat")
 			this.ChatWindowWidget:AddSystemChatMessage("/a or /all - All Chat")
-			if GetBlockedUsersFlag() then
-				this.ChatWindowWidget:AddSystemChatMessage("/block [PlayerName] or /ignore [PlayerName] - Block communications from Target Player")
-				this.ChatWindowWidget:AddSystemChatMessage("/unblock [PlayerName] or /unignore [PlayerName] - Restore communications with Target Player")
-			end
+
+			this.ChatWindowWidget:AddSystemChatMessage("/block [PlayerName] or /ignore [PlayerName] - Block communications from Target Player")
+			this.ChatWindowWidget:AddSystemChatMessage("/unblock [PlayerName] or /unignore [PlayerName] - Restore communications with Target Player")
 		end
 	end
 
@@ -2147,6 +2189,11 @@ local function CreateChat()
 					end
 					this.ChatBarFocusChanged:fire(false)
 				end)
+				this.ChatBarWidget.ChatBarFloodEvent:connect(function()
+					if this.ChatWindowWidget then
+						this.ChatWindowWidget:AddSystemChatMessage("Wait before sending another message.")
+					end
+				end)
 			--else
 			--	this.ChatWindowWidget:FadeIn(0)
 			--end
@@ -2161,24 +2208,20 @@ local function CreateChat()
 				if actionType == "Help" then
 					this:PrintHelp()
 				elseif actionType == "Block" then
-					if GetBlockedUsersFlag() then
-						local blockPlayerName = capture and tostring(capture) or ""
-						local playerToBlock = Util.GetPlayerByName(blockPlayerName)
-						if playerToBlock then
-							spawn(function() this:BlockPlayerAsync(playerToBlock) end)
-						else
-							this.ChatWindowWidget:AddSystemChatMessage("Cannot block " .. blockPlayerName .. " because they are not in the game.")
-						end
+					local blockPlayerName = capture and tostring(capture) or ""
+					local playerToBlock = Util.GetPlayerByName(blockPlayerName)
+					if playerToBlock then
+						spawn(function() this:BlockPlayerAsync(playerToBlock) end)
+					else
+						this.ChatWindowWidget:AddSystemChatMessage("Cannot block " .. blockPlayerName .. " because they are not in the game.")
 					end
 				elseif actionType == "Unblock" then
-					if GetBlockedUsersFlag() then
-						local unblockPlayerName = capture and tostring(capture) or ""
-						local playerToBlock = Util.GetPlayerByName(unblockPlayerName)
-						if playerToBlock then
-							spawn(function() this:UnblockPlayerAsync(playerToBlock) end)
-						else
-							this.ChatWindowWidget:AddSystemChatMessage("Cannot unblock " .. unblockPlayerName .. " because they are not in the game.")
-						end
+					local unblockPlayerName = capture and tostring(capture) or ""
+					local playerToBlock = Util.GetPlayerByName(unblockPlayerName)
+					if playerToBlock then
+						spawn(function() this:UnblockPlayerAsync(playerToBlock) end)
+					else
+						this.ChatWindowWidget:AddSystemChatMessage("Cannot unblock " .. unblockPlayerName .. " because they are not in the game.")
 					end
 				elseif actionType == "Whisper" then
 					if success == false then
@@ -2260,11 +2303,9 @@ local function CreateChat()
 	end
 
 	function this:Initialize()
-		if GetBlockedUsersFlag() then
-			spawn(function()
-				this.BlockList = this:GetBlockedPlayersAsync()
-			end)
-		end
+		spawn(function()
+			this.BlockList = this:GetBlockedPlayersAsync()
+		end)
 
 		this:OnPlayerAdded(Player)
 		-- Upsettingly, it seems everytime a player is added, you have to redo the connection
