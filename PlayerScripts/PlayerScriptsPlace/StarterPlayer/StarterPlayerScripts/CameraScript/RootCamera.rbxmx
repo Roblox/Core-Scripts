@@ -80,6 +80,7 @@ local function CreateCamera()
 	this.Enabled = false
 	local pinchZoomSpeed = 20
 	local isFirstPerson = false
+	local isRightMouseDown = false
 	this.RotateInput = Vector2.new()
 
 	function this:GetShiftLock()
@@ -197,13 +198,21 @@ local function CreateCamera()
 		return isFirstPerson
 	end
 
+	-- there are several cases to consider based on the state of input and camera rotation mode
 	function this:UpdateMouseBehavior()
-		if self:IsInFirstPerson() then
-			pcall(function() GameSettings.RotationType = Enum.RotationType.CameraRelative end)
-			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-		elseif not self:GetShiftLock() then
+		-- first time transition to first person mode or shiftlock
+		if isFirstPerson or self:GetShiftLock() then
+			if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
+				pcall(function() GameSettings.RotationType = Enum.RotationType.CameraRelative end)
+				UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+			end
+		else
 			pcall(function() GameSettings.RotationType = Enum.RotationType.MovementRelative end)
-			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+			if isRightMouseDown then
+				UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+			else
+				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+			end	
 		end
 	end
 
@@ -365,10 +374,8 @@ local function CreateCamera()
 
 	local function OnMouse2Down(input, processed)
 		if processed then return end
-		-- Check if they are in first-person
-		if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
-			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
-		end
+		isRightMouseDown = true
+		this:UpdateMouseBehavior()
 		panBeginLook = this:GetCameraLook()
 		startPos = input.Position
 		lastPos = startPos
@@ -376,11 +383,8 @@ local function CreateCamera()
 	end
 
 	local function OnMouse2Up(input, processed)
-		-- Check if they are in first-person
-		if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
-			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-		end
-
+		isRightMouseDown = false
+		this:UpdateMouseBehavior()
 		panBeginLook = nil
 		startPos = nil
 		lastPos = nil
@@ -565,7 +569,7 @@ local function CreateCamera()
 		return Vector2.new(0,0)
 	end
 
-	local InputBeganConn, InputChangedConn, InputEndedConn = nil, nil, nil
+	local InputBeganConn, InputChangedConn, InputEndedConn, ShiftLockToggleConn = nil, nil, nil, nil
 
 	function this:DisconnectInputEvents()
 		if InputBeganConn then
@@ -579,6 +583,10 @@ local function CreateCamera()
 		if InputEndedConn then
 			InputEndedConn:disconnect()
 			InputEndedConn = nil
+		end
+		if ShiftLockToggleConn then
+			ShiftLockToggleConn:disconnect()
+			ShiftLockToggleConn = nil
 		end
 		this.TurningLeft = false
 		this.TurningRight = false
@@ -638,6 +646,10 @@ local function CreateCamera()
 			if input.UserInputType == Enum.UserInputType.Keyboard then
 				OnKeyUp(input, processed)
 			end
+		end)
+		
+		ShiftLockToggleConn = ShiftLockController.OnShiftLockToggled.Event:connect(function()
+			this:UpdateMouseBehavior()
 		end)
 
 		this.RotateInput = Vector2.new()

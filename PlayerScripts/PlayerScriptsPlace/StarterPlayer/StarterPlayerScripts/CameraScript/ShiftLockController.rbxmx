@@ -42,6 +42,9 @@ local IsShiftLocked = false
 local IsActionBound = false
 local IsInFirstPerson = false
 
+-- Toggle Event
+ShiftLockController.OnShiftLockToggled = Instance.new('BindableEvent')
+
 -- wrapping long conditional in function
 local function isShiftLockMode()
 	return LocalPlayer.DevEnableMouseLock and GameSettings.ControlMode == Enum.ControlMode.MouseLockSwitch and
@@ -65,20 +68,11 @@ local function onShiftLockToggled()
 	if IsShiftLocked then
 		ShiftLockIcon.Image = SHIFT_LOCK_ON
 		Mouse.Icon = SHIFT_LOCK_CURSOR
-		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-		pcall(function()
-			GameSettings.RotationType = Enum.RotationType.CameraRelative
-		end)
 	else
 		ShiftLockIcon.Image = SHIFT_LOCK_OFF
 		Mouse.Icon = ""
-		if not IsInFirstPerson then
-			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-			pcall(function()
-				GameSettings.RotationType = Enum.RotationType.MovementRelative
-			end)
-		end
 	end
+	ShiftLockController.OnShiftLockToggled:Fire()
 end
 
 local function initialize()
@@ -121,7 +115,6 @@ end
 
 --[[ Input/Settings Changed Events ]]--
 local mouseLockSwitchFunc = function(actionName, inputState, inputObject)
-
 	if IsShiftLockMode then
 		onShiftLockToggled()
 	end
@@ -130,15 +123,13 @@ end
 local function disableShiftLock()
 	if ShiftLockIcon then ShiftLockIcon.Visible = false end
 	IsShiftLockMode = false
-	if not IsInFirstPerson then
-		UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-	end
 	Mouse.Icon = ""
 	if InputCn then
 		InputCn:disconnect()
 		InputCn = nil
 	end
 	IsActionBound = false
+	ShiftLockController.OnShiftLockToggled:Fire()
 end
 
 -- TODO: Remove when we figure out ContextActionService without sinking keys
@@ -159,7 +150,7 @@ local function enableShiftLock()
 		end
 		if IsShiftLocked then
 			Mouse.Icon = SHIFT_LOCK_CURSOR
-			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+			ShiftLockController.OnShiftLockToggled:Fire()
 		end
 		if not IsActionBound then
 			InputCn = UserInputService.InputBegan:connect(onShiftInputBegan)

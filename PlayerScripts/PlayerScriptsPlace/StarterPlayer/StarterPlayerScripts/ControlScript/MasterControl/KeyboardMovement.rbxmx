@@ -68,14 +68,6 @@ function KeyboardMovement:Enable()
 		MasterControl:AddToPlayerMovement(currentMoveVector)
 	end
 	
-	local function isFirstPersonOrShiftLocked()
-		-- Mouse behavior is being set by the camera script. So be warned that if you
-		-- modify that script or implement a new camera, this may not work.
-		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
-			return true
-		end
-	end
-	
 	local moveForwardFunc = function(actionName, inputState, inputObject)
 		if inputState == Enum.UserInputState.Begin then
 			forwardValue = -1
