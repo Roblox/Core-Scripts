@@ -600,6 +600,7 @@ local function CreateCamera()
 		startPos = nil
 		lastPos = nil
 		panBeginLook = nil
+		isRightMouseDown = false
 
 		fingerTouches = {}
 		NumUnsunkTouches = 0
