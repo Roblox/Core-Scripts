@@ -461,7 +461,6 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 end)
 
 guiService.ErrorMessageChanged:connect(function()
-	print("ErrorMessageChanged")
 	if guiService:GetErrorMessage() ~= '' then
 		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
 		currScreenGui.ErrorFrame.Visible = true
