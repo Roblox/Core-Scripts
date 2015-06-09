@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX0D3AD21C0C6B451AA4768A0C10A0789F">
+	<Item class="ModuleScript" referent="RBX7441C7686732497F97F2119BEAB662F5">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ShiftLockController</string>
@@ -92,8 +92,8 @@ local function initialize()
 	
 	ShiftLockIcon = Instance.new('ImageButton')
 	ShiftLockIcon.Name = "MouseLockLabel"
-	ShiftLockIcon.Size = UDim2.new(0, 62, 0, 62)
-	ShiftLockIcon.Position = UDim2.new(0, 2, 0, -65)
+	ShiftLockIcon.Size = UDim2.new(0, 31, 0, 31)
+	ShiftLockIcon.Position = UDim2.new(0, 12, 0, 2)
 	ShiftLockIcon.BackgroundTransparency = 1
 	ShiftLockIcon.Image = IsShiftLocked and SHIFT_LOCK_ON or SHIFT_LOCK_OFF
 	ShiftLockIcon.Visible = IsShiftLockMode
