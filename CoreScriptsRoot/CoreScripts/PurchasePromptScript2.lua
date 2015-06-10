@@ -552,7 +552,6 @@ local function showPurchasePrompt()
 	stopPurchaseAnimation()
 	PurchaseDialog.Visible = true
 	PurchaseDialog:TweenPosition(SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
-	UserInputService.ModalEnabled = true
 end
 
 --[[ Close and Cancel Functions ]]--
@@ -599,7 +598,6 @@ local function closePurchaseDialog()
 			IsCurrentlyPrompting = false
 			IsCurrentlyPurchasing = false
 			IsCheckingPlayerFunds = false
-			UserInputService.ModalEnabled = false
 		end)
 end
 
