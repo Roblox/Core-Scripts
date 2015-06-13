@@ -55,7 +55,6 @@ local function CreateClassicCamera()
 	function module:Update()
 		local now = tick()
 		
-		local userPanningTheCamera = (self.UserPanningTheCamera == true)
 		local camera = 	workspace.CurrentCamera
 		local player = PlayersService.LocalPlayer
 		local humanoid = self:GetHumanoid()
@@ -79,23 +78,15 @@ local function CreateClassicCamera()
 			
 			local gamepadRotation = self:UpdateGamepad()
 			if gamepadRotation ~= Vector2.new(0,0) then
-				userPanningTheCamera = true
 				self.RotateInput = self.RotateInput + gamepadRotation
 			end
 					
 			if angle ~= 0 then
-				userPanningTheCamera = true
 				self.RotateInput = self.RotateInput + Vector2.new(math.rad(angle * delta), 0)
 			end
 		end
 
 		-- Reset tween speed if user is panning
-		if userPanningTheCamera then
-			tweenSpeed = 0
-			module.LastUserPanCamera = tick()
-		end
-		
-		local userRecentlyPannedCamera = now - module.LastUserPanCamera < timeBeforeAutoRotate
 		local subjectPosition = self:GetSubjectPosition()
 		
 		if subjectPosition and player and camera then
@@ -113,35 +104,14 @@ local function CreateClassicCamera()
 					subjectPosition = subjectPosition + offset
 				end
 			else
-				if self.LastCameraTransform and not userPanningTheCamera then
-					local isInFirstPerson = self:IsInFirstPerson()
+				if self.LastCameraTransform then
 					if (isInVehicle or isOnASkateboard) and lastUpdate and humanoid and humanoid.Torso then
-						if isInFirstPerson then
-							if self.LastSubjectCFrame and (isInVehicle or isOnASkateboard) and cameraSubject:IsA('BasePart') then
-								local y = -findAngleBetweenXZVectors(self.LastSubjectCFrame.lookVector, cameraSubject.CFrame.lookVector)
-								if IsFinite(y) then
-									self.RotateInput = self.RotateInput + Vector2.new(y, 0)
-								end
-								tweenSpeed = 0
+						if self.LastSubjectCFrame and (isInVehicle or isOnASkateboard) and cameraSubject:IsA('BasePart') then
+							local y = -findAngleBetweenXZVectors(self.LastSubjectCFrame.lookVector, cameraSubject.CFrame.lookVector)
+							if IsFinite(y) then
+								self.RotateInput = self.RotateInput + Vector2.new(y, 0)
 							end
-						elseif not userRecentlyPannedCamera then
-							local forwardVector = humanoid.Torso.CFrame.lookVector
-							if isOnASkateboard then
-								forwardVector = cameraSubject.CFrame.lookVector
-							end
-							local timeDelta = (now - lastUpdate)
-							
-							tweenSpeed = clamp(0, tweenMaxSpeed, tweenSpeed + tweenAcceleration * timeDelta)
-	
-							local percent = clamp(0, 1, tweenSpeed * timeDelta)
-							if self:IsInFirstPerson() then
-								percent = 1
-							end
-							
-							local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
-							if IsFinite(y) and math.abs(y) > 0.0001 then
-								self.RotateInput = self.RotateInput + Vector2.new(y * percent, 0)
-							end
+							tweenSpeed = 0
 						end
 					end
 				end
