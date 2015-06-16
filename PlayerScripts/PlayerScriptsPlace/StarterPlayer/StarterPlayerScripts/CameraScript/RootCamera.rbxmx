@@ -377,9 +377,7 @@ local function CreateCamera()
 
 	local function OnMouse2Up(input, processed)
 		-- Check if they are in first-person
-		if this:IsInFirstPerson() then
-			UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-		else
+		if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 		end
 
@@ -410,9 +408,6 @@ local function CreateCamera()
 		if not processed then
 			if this.ZoomEnabled then
 				this:ZoomCameraBy(clamp(-1, 1, -input.Position.Z) * 1.4)
-			end
-			if this.UserPanningTheCamera then
-				UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
 			end
 		end
 	end
