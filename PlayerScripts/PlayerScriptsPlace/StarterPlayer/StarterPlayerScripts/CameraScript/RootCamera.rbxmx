@@ -408,6 +408,9 @@ local function CreateCamera()
 		if not processed then
 			if this.ZoomEnabled then
 				this:ZoomCameraBy(clamp(-1, 1, -input.Position.Z) * 1.4)
+				if this.UserPanningTheCamera then
+					UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
+				end
 			end
 		end
 	end
