@@ -1211,10 +1211,10 @@ local function pushMenu(nextMenu)
 		prevMenu:TweenPosition(UDim2.new(-1, 0, 0, 0), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true)
 	end
 	if #MenuStack > 1 then
-		nextMenu:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true)
+		nextMenu:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true, function()
+			setGamepadButton(nextMenu)
+		end)
 	end
-
-	setGamepadButton(nextMenu)
 end
 
 local function popMenu()
@@ -1230,8 +1230,9 @@ local function popMenu()
 		closeCurrentDropDownMenu()
 	end
 	if prevMenu then
-		prevMenu:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true)
-		setGamepadButton(prevMenu)
+		prevMenu:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true, function()
+			setGamepadButton(prevMenu)
+		end)
 	end
 end
 
@@ -1295,7 +1296,9 @@ local function showSettingsRootMenu()
 	SettingsShield.Visible = true
 	SettingsShield.Active = true
 	--
-	SettingClipFrame:TweenPosition(SHOW_MENU_POS, Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true)
+	SettingClipFrame:TweenPosition(SHOW_MENU_POS, Enum.EasingDirection.InOut, Enum.EasingStyle.Sine, TWEEN_TIME, true, function()
+		setGamepadButton(RootMenuFrame)
+	end)
 	SettingsShowSignal:fire(true)
 
 	if not isGamepadSupport then return end
