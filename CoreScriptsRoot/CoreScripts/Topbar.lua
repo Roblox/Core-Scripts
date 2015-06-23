@@ -1168,7 +1168,11 @@ end
 -- Hook-up coregui changing
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
 for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do
-	OnCoreGuiChanged(enumItem, StarterGui:GetCoreGuiEnabled(enumItem))
+	-- The All enum will be false if any of the coreguis are false
+	-- therefore by force updating it we are clobbering the previous sets
+	if enumItem ~= Enum.CoreGuiType.All then
+		OnCoreGuiChanged(enumItem, StarterGui:GetCoreGuiEnabled(enumItem))
+	end
 end
 -- Hook up Shiftlock detection
 GameSettings.Changed:connect(OnGameSettingsChanged)
