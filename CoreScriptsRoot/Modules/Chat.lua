@@ -20,6 +20,7 @@ local MESSAGES_FADE_OUT_TIME = 30
 local MAX_BLOCKLIST_SIZE = 50
 local MAX_UDIM_SIZE = 2^15 - 1
 
+local SCROLLBAR_THICKNESS = 7
 
 local CHAT_COLORS =
 {
@@ -1468,6 +1469,7 @@ local function CreateChatWindowWidget(settings)
 			lastFadeInTime = tick()
 			lastChatActivity = tick()
 			this.ScrollingFrame.ScrollingEnabled = true
+			this.ScrollingFrame.ScrollBarThickness = SCROLLBAR_THICKNESS
 			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, backgroundTransparency, duration, Util.Linear)
 			this.BackgroundVisible = true
 			this:FadeInChats()
@@ -1501,6 +1503,7 @@ local function CreateChatWindowWidget(settings)
 			lastFadeOutTime = tick()
 			lastChatActivity = tick()
 			this.ScrollingFrame.ScrollingEnabled = false
+			this.ScrollingFrame.ScrollBarThickness = 0
 			this.BackgroundTweener = Util.PropertyTweener(this.ChatContainer, 'BackgroundTransparency', this.ChatContainer.BackgroundTransparency, 1, duration, Util.Linear)
 			this.BackgroundVisible = false
 
@@ -1735,7 +1738,7 @@ local function CreateChatWindowWidget(settings)
 				BottomImage = "rbxasset://textures/ui/scroll-bottom.png";
 				MidImage = "rbxasset://textures/ui/scroll-middle.png";
 				TopImage = "rbxasset://textures/ui/scroll-top.png";
-				ScrollBarThickness = 7;
+				ScrollBarThickness = 0;
 				BorderSizePixel = 0;
 				ScrollingEnabled = false;
 				Parent = container;
@@ -1743,7 +1746,7 @@ local function CreateChatWindowWidget(settings)
 				local messageContainer = Util.Create'Frame'
 				{
 					Name = 'MessageContainer';
-					Size = UDim2.new(1, -scrollingFrame.ScrollBarThickness - 1, 0, 0);
+					Size = UDim2.new(1, -SCROLLBAR_THICKNESS - 1, 0, 0);
 					Position = UDim2.new(0, 0, 1, 0);
 					ZIndex = 1;
 					BackgroundColor3 = Color3.new(0, 0, 0);
