@@ -1302,22 +1302,11 @@ do -- Script performance/Chart list
 		return this
 	end
 	
-	local defaultSorter; do
-		local function alphabetSort(a, b)
-			local a, b = {a:byte()}, {b:byte()}
-			for i = 1, math.min(#a, #b) do
-				if a[i] < b[i] then
-					return true
-				end
-			end
-			return #a < #b
-		end
-		function defaultSorter(a, b) -- this sorts chartButtons
-			return alphabetSort(a.ChartStat.Name, b.ChartStat.Name)
-		end
+	
+	local function defaultSorter(a, b) -- this sorts chartButtons
+		return a.ChartStat.Name < b.ChartStat.Name
 	end
-	
-	
+
 	function Methods.CreateChartList(devConsole, config)
 		
 		local this = {
