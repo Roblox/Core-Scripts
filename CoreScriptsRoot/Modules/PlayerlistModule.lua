@@ -28,7 +28,7 @@ local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 --[[ Fast Flags ]]--
 local newSettingsSuccess, newSettingsEnabled = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local serverCoreScriptsSuccess, serverCoreScriptsEnabled = pcall(function() return settings():GetFFlag("UseServerCoreScripts") end)
-local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("TopbarGamepadSupport") end)
+local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 --
 local IsNewSettings = newSettingsSuccess and newSettingsEnabled
 local IsServerCoreScripts = serverCoreScriptsSuccess and serverCoreScriptsEnabled

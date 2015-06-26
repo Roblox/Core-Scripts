@@ -14,14 +14,20 @@ if useTopBar then
 	scriptContext:AddCoreScriptLocal("CoreScripts/Topbar", screenGui)
 end
 
+local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
+local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
+
 -- SettingsScript
 local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
 local newSettingsSuccess, newSettingsFlagValue = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local useNewSettings = newSettingsSuccess and newSettingsFlagValue
-if useNewSettings then
-	spawn(function() require(RobloxGui.Modules.Settings2) end)
-else
-	scriptContext:AddCoreScriptLocal("CoreScripts/Settings", screenGui)
+
+if not useNewControllerMenu then
+	if useNewSettings then
+		spawn(function() require(RobloxGui.Modules.Settings2) end)
+	else
+		scriptContext:AddCoreScriptLocal("CoreScripts/Settings", screenGui)
+	end
 end
 
 -- Set up touch controls. TODO: Remove when new lua controls are stable.
@@ -88,8 +94,7 @@ if useTopBar and (luaVehicleHudSuccess and luaVehicleHudEnabled == true) then
 	scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", screenGui)
 end
 
-local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("TopbarGamepadSupport") end)
-if gamepadSupportSuccess and gamepadSupportFlagValue then
+if useNewControllerMenu then
 	scriptContext:AddCoreScriptLocal("CoreScripts/GamepadMenu", screenGui)
 end
 

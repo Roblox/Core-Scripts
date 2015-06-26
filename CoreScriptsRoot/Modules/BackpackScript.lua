@@ -7,6 +7,7 @@
 
 local BackpackScript = {}
 BackpackScript.OpenClose = nil -- Function to toggle open/close
+BackpackScript.IsOpen = false
 BackpackScript.StateChanged = Instance.new('BindableEvent') -- Fires after any open/close, passes IsNowOpen
 
 ---------------------
@@ -76,7 +77,7 @@ local CoreGui = game:GetService('CoreGui')
 local ContextActionService = game:GetService('ContextActionService')
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 
-local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("TopbarGamepadSupport") end)
+local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
 
 local IS_PHONE = UserInputService.TouchEnabled and GuiService:GetScreenResolution().X < HOTBAR_SLOTS_WIDTH_CUTOFF
@@ -1100,7 +1101,9 @@ function disableGamepadInventoryControl()
 		end
 	end
 
-	GuiService.SelectedCoreObject = nil
+	if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(MainFrame) then
+		GuiService.SelectedCoreObject = nil
+	end
 end
 
 function gamepadDisconnected()
@@ -1417,6 +1420,7 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 				end
 			end
 		end
+		BackpackScript.IsOpen = InventoryFrame.Visible
 		BackpackScript.StateChanged:Fire(InventoryFrame.Visible)
 	end
 	HotkeyFns[ARROW_HOTKEY] = openClose

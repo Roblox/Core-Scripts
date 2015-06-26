@@ -18,6 +18,10 @@ local Players = game:GetService('Players')
 local PointsService = game:GetService('PointsService')
 local MarketplaceService = game:GetService('MarketplaceService')
 local TeleportService = game:GetService('TeleportService')
+local HttpService = game:GetService("HttpService")
+local ContextActionService = game:GetService("ContextActionService")
+local CoreGui = game:GetService("CoreGui")
+local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
@@ -35,6 +39,10 @@ local CurrentGraphicsQualityLevel = GameSettings.SavedQualityLevel.Value
 local BindableEvent_SendNotification = Instance.new('BindableFunction')
 BindableEvent_SendNotification.Name = "SendNotification"
 BindableEvent_SendNotification.Parent = RbxGui
+local isPaused = false
+
+local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
+local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
 
 --[[ Constants ]]--
 local BG_TRANSPARENCY = 0.7
@@ -186,6 +194,8 @@ local function createNotification(title, text, image)
 		notificationText.TextXAlignment = Enum.TextXAlignment.Left
 	end
 
+	GuiService:AddSelectionParent(HttpService:GenerateGUID(false), notificationFrame)
+
 	return notificationFrame
 end
 
@@ -217,24 +227,27 @@ end
 
 local lastTimeInserted = 0
 insertNotifcation = function(notification)
-	notification.IsActive = true
-	local size = #NotificationQueue
-	if size == MAX_NOTIFICATIONS then
-		OverflowQueue[#OverflowQueue + 1] = notification
-		return
-	end
-	--
-	NotificationQueue[size + 1] = notification
-	notification.Frame.Parent = NotificationFrame
-	delay(notification.Duration, function()
-		removeNotification(notification)
+	spawn(function() 
+		while isPaused do wait() end
+		notification.IsActive = true
+		local size = #NotificationQueue
+		if size == MAX_NOTIFICATIONS then
+			OverflowQueue[#OverflowQueue + 1] = notification
+			return
+		end
+		--
+		NotificationQueue[size + 1] = notification
+		notification.Frame.Parent = NotificationFrame
+		delay(notification.Duration, function()
+			removeNotification(notification)
+		end)
+		while tick() - lastTimeInserted < TWEEN_TIME do
+			wait()
+		end
+		lastTimeInserted = tick()
+		--
+		updateNotifications()
 	end)
-	while tick() - lastTimeInserted < TWEEN_TIME do
-		wait()
-	end
-	lastTimeInserted = tick()
-	--
-	updateNotifications()
 end
 
 removeNotification = function(notification)
@@ -245,11 +258,15 @@ removeNotification = function(notification)
 	local frame = notification.Frame
 	if frame and frame.Parent then
 		notification.IsActive = false
-		frame:TweenPosition(UDim2.new(1, 0, 1, frame.Position.Y.Offset), EASE_DIR, EASE_STYLE, TWEEN_TIME, true,
-			function()
-				frame:Destroy()
-				notification = nil
-			end)
+		spawn(function() 
+			while isPaused do wait() end
+
+			frame:TweenPosition(UDim2.new(1, 0, 1, frame.Position.Y.Offset), EASE_DIR, EASE_STYLE, TWEEN_TIME, true,
+				function()
+					frame:Destroy()
+					notification = nil
+				end)
+		end)
 	end
 	if #OverflowQueue > 0 then
 		local nextNofication = OverflowQueue[1]
@@ -472,3 +489,52 @@ local function onClientLuaDialogRequested(msg, accept, decline)
 	return true
 end
 MarketplaceService.ClientLuaDialogRequested:connect(onClientLuaDialogRequested)
+
+if useNewControllerMenu then
+	local gamepadMenu = RobloxGui:WaitForChild("CoreScripts/GamepadMenu")
+	local gamepadNotifications = gamepadMenu:FindFirstChild("GamepadNotifications")
+	while not gamepadNotifications do
+		wait()
+		gamepadNotifications = gamepadMenu:FindFirstChild("GamepadNotifications")
+	end
+
+	local leaveNotificationFunc = function(name, state, inputObject)
+		if state ~= Enum.UserInputState.Begin then return end
+
+		if GuiService.SelectedCoreObject:IsDescendantOf(NotificationFrame) then
+			GuiService.SelectedCoreObject = nil
+		end
+
+		ContextActionService:UnbindCoreAction("LeaveNotificationSelection")
+	end
+
+	gamepadNotifications.Event:connect(function(isSelected)
+		if not isSelected then return end
+
+		isPaused = true
+		local notifications = NotificationFrame:GetChildren()
+		for i = 1, #notifications do
+			local noteComponents = notifications[i]:GetChildren()
+			for j = 1, #noteComponents do
+				if noteComponents[j]:IsA("GuiButton") and noteComponents[j].Visible then
+					GuiService.SelectedCoreObject = noteComponents[j]
+					break
+				end
+			end
+		end
+
+		if GuiService.SelectedCoreObject then
+			ContextActionService:BindCoreAction("LeaveNotificationSelection", leaveNotificationFunc, false, Enum.KeyCode.ButtonB)
+		else
+			isPaused = false
+		end
+	end)
+
+	GuiService.Changed:connect(function(prop)
+		if prop == "SelectedCoreObject" then
+			if not GuiService.SelectedCoreObject or not GuiService.SelectedCoreObject:IsDescendantOf(NotificationFrame) then
+				isPaused = false
+			end
+		end
+	end)
+end

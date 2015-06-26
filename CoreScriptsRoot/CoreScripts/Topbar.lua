@@ -40,6 +40,10 @@ local useNewBackpack = (backPackSuccess and backpackFlagValue)
 local playerListSuccess, playerListFlagValue = pcall(function() return settings():GetFFlag("NewPlayerListScript") end)
 local useNewPlayerlist = (playerListSuccess and playerListFlagValue)
 
+local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
+local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
+
+
 local function GetBubbleChatbarFlag()
 	local bubbleChatbarSuccess, bubbleChatbarFlagValue = pcall(function() return settings():GetFFlag("BubbleChatbarDocksAtTop") end)
 	return bubbleChatbarSuccess and bubbleChatbarFlagValue == true
@@ -631,7 +635,14 @@ end
 
 --- SETTINGS ---
 local function CreateSettingsIcon()
-	local MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings2)
+	local MenuModule = nil
+	if useNewControllerMenu then
+		game.CoreGui.RobloxGui.Modules:WaitForChild("Settings")
+		game.CoreGui.RobloxGui.Modules.Settings:WaitForChild("SettingsHub")
+		MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings.SettingsHub)
+	else
+		MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings2)
+	end
 
 	local settingsIconButton = Util.Create'ImageButton'
 	{
