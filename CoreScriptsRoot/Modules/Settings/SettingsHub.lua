@@ -77,7 +77,7 @@ local function CreateSettingsHub()
 		this[buttonName], this[textName] = utility:MakeStyledButton(name .. "Button", text, UDim2.new(0,230,0,70), clickFunc)
 		this[buttonName].Position = position
 		this[buttonName].Parent = this.BottomButtonFrame
-		if platform == Enum.Platform.XBoxOne then
+		if platform == Enum.Platform.XBoxOne or  UserInputService:GetPlatform() == Enum.Platform.AndroidTV then
 			this[buttonName].ImageTransparency = 1
 		end
 

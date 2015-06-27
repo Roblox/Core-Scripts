@@ -38,7 +38,7 @@ local function Initialize()
 
 		if lastInputType == nil then -- we don't know what controls the user has, just use reasonable defaults
 			local platform = UserInputService:GetPlatform()
-			if platform == Enum.Platform.XBoxOne then
+			if platform == Enum.Platform.XBoxOne or UserInputService:GetPlatform() == Enum.Platform.WiiU then
 				this.HubRef.PageView.ClipsDescendants = false
 				return GAMEPAD_TAG
 			elseif platform == Enum.Platform.Windows or platform == Enum.Platform.OSX then
@@ -196,9 +196,11 @@ local function Initialize()
 	local function createGamepadHelp(parentFrame)
 		local gamepadImage = "rbxasset://textures/ui/Settings/Help/GenericController.png"
 		local imageSize = UDim2.new(0,650,0,239)
-		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne or  UserInputService:GetPlatform() == Enum.Platform.Xbox360 then
 			gamepadImage = "rbxasset://textures/ui/Settings/Help/XboxController.png"
 			imageSize = UDim2.new(0,1116,0,428)
+		elseif UserInputService:GetPlatform() == Enum.Platform.PS4 or UserInputService:GetPlatform() == Enum.Platform.PS3 then
+			gamepadImage = "rbxasset://textures/ui/Settings/Help/PSController.png"
 		end
 
 		local gamepadImageLabel = utility:Create'ImageLabel'
