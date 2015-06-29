@@ -508,8 +508,8 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 	--
 	-- Movement Mode Setup/Config
 	--
-	local function configTouchControls()
-		if UserInputService.ModalEnabled then
+	local function configTouchControls(forceOff)
+		if forceOff or UserInputService.ModalEnabled then
 			JumpButton.Visible = false
 			ThumbstickFrame.Visible = false
 			ThumbpadFrame.Visible = false
@@ -559,7 +559,15 @@ if hasNewTouchControls then		-- NEW TOUCH CONTROLS WITH THUMBPAD
 			end
 		end)
 		
-		configTouchControls()
+		if game:IsLoaded() then
+			configTouchControls()
+		else
+			configTouchControls(true)
+			local loadedConnection = nil
+			loadedConnection = game.Loaded:connect(function()
+				configTouchControls()
+			end)
+		end
 	end
 
 	----------------------------------------------------------------------------
