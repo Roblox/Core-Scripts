@@ -304,7 +304,7 @@ function Methods.SetVisible(devConsole, visible, animate)
 		return
 	end
 	devConsole.Visible = visible
-	devConsole.VisibleChanged:fire(true)
+	devConsole.VisibleChanged:fire(visible)
 	if devConsole.Frame then
 		devConsole.Frame.Visible = visible
 	end	
@@ -323,6 +323,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	local visibleChanged = CreateSignal()
 	
 	local devConsole = {
+		ScreenGui = screenGui;
 		Permissions = permissions;
 		MessagesAndStats = messagesAndStats;
 		Initialized = false;
@@ -332,6 +333,8 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	}
 	
 	setmetatable(devConsole, Metatable)
+
+	devConsole:EnableGUIMouse()
 	
 	-- It's a button so it catches mouse events
 	local frame = Primitives.Button(screenGui, 'DeveloperConsole')
@@ -1175,8 +1178,46 @@ end
 
 
 
-
-
+----------------------
+-- Backup GUI Mouse --
+----------------------
+do -- This doesn't support multiple windows very well
+	function Methods.EnableGUIMouse(devConsole)
+		local label = Instance.new("ImageLabel")
+		label.BackgroundTransparency = 1
+		label.BorderSizePixel = 0
+		label.Size = UDim2.new(0, 64, 0, 64)
+		label.Image = "rbxasset://Textures/ArrowFarCursor.png"
+		label.Name = "BackupMouse"
+		label.ZIndex = ZINDEX + 2
+		
+		local disconnector = CreateDisconnectSignal()
+		
+		local function onVisibleChanged(visible)
+			label.Visible = visible
+			label.Parent = visible and devConsole.ScreenGui or nil
+			disconnector:fire()
+			if visible then
+				pcall(function()
+					local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+					label.Position = UDim2.new(0, mouse.X - 32, 0, mouse.Y - 32)
+				end)
+				disconnector:connect(UserInputService.InputChanged:connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseMovement then
+						local p = input.Position
+						if p then
+							label.Position = UDim2.new(0, p.X - 32, 0, p.Y - 32)
+						end
+					end
+				end))
+			end
+		end
+		
+		onVisibleChanged(devConsole.Visible)
+		devConsole.VisibleChanged:connect(onVisibleChanged)
+		
+	end
+end
 
 
 ----------------------
