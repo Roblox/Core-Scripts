@@ -2724,11 +2724,29 @@ do
 			permissions.IsCreator = permissions.CreatorFlagValue or game:GetService("Players").LocalPlayer.userId == game.CreatorId
 		end)
 		
+		if permissions.CreatorFlagValue then -- Use the new API
+			local success, result = pcall(function()
+				local url = string.format("/users/%d/canmanage/%d", game:GetService("Players").LocalPlayer.userId, game.PlaceId)
+				return game:GetService('HttpRbxApiService'):GetAsync(url, false, Enum.ThrottlingPriority.Default)
+			end)
+			if success and type(result) == "string" then
+				-- API returns: {"Success":BOOLEAN,"CanManage":BOOLEAN}
+				-- Convert from JSON to a table
+				-- pcall in case of invalid JSON
+				success, result = pcall(function()
+					return game:GetService('HttpService'):JSONDecode(result)
+				end)
+				if success and result.CanManage == true then
+					permissions.IsCreator = result.CanManage
+				end
+			end
+		end
 		
 		permissions.ClientCodeExecutionEnabled = false
 		pcall(function()
 			permissions.ServerCodeExecutionEnabled = permissions.IsCreator and settings():GetFFlag("ConsoleCodeExecutionEnabled")
 		end)
+		
 		
 		if DEBUG then
 			permissions.IsCreator = true
