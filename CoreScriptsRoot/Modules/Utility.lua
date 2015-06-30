@@ -17,6 +17,14 @@ local NON_SELECTED_RIGHT_IMAGE= "rbxasset://textures/ui/Settings/Slider/BarRight
 local CONTROLLER_SCROLL_DELTA = 0.2
 local CONTROLLER_THUMBSTICK_DEADZONE = 0.8
 
+------------- SERVICES ----------------
+local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local ContextActionService = game:GetService("ContextActionService")
+
 ----------- UTILITIES --------------
 local Util = {}
 do
@@ -36,13 +44,101 @@ do
 end
 
 
-------------- SERVICES ----------------
-local HttpService = game:GetService("HttpService")
-local UserInputService = game:GetService("UserInputService")
-local GuiService = game:GetService("GuiService")
-local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
-local ContextActionService = game:GetService("ContextActionService")
+-- MATH --
+function clamp(low, high, input)
+	return math.max(low, math.min(high, input))
+end
+
+function ClampVector2(low, high, input)
+	return Vector2.new(clamp(low.x, high.x, input.x), clamp(low.y, high.y, input.y))
+end
+
+---- TWEENZ ----
+local Linear = function(t, b, c, d)
+	if t >= d then return b + c end
+
+	return c*t/d + b
+end
+
+local EaseOutQuad = function(t, b, c, d)
+	if t >= d then return b + c end
+
+	t = t/d;
+	return -c * t*(t-2) + b
+end
+
+local EaseInOutQuad = function(t, b, c, d)
+	if t >= d then return b + c end
+
+	t = t / (d/2);
+	if (t < 1) then return c/2*t*t + b end;
+	t = t - 1;
+	return -c/2 * (t*(t-2) - 1) + b;
+end
+
+function PropertyTweener(instance, prop, start, final, duration, easingFunc, cbFunc)
+	local this = {}
+	this.StartTime = tick()
+	this.EndTime = this.StartTime + duration
+	this.Cancelled = false
+
+	local finished = false
+	local percentComplete = 0
+
+	local function finalize()
+		if instance then
+			instance[prop] = easingFunc(1, start, final - start, 1)
+		end
+		finished = true
+		percentComplete = 1
+		if cbFunc then
+			cbFunc()
+		end
+	end
+
+	-- Initial set
+	instance[prop] = easingFunc(0, start, final - start, duration)
+	spawn(function()
+		local now = tick()
+		while now < this.EndTime and instance do
+			if this.Cancelled then
+				return
+			end
+			instance[prop] = easingFunc(now - this.StartTime, start, final - start, duration)
+			percentComplete = clamp(0, 1, (now - this.StartTime) / duration)
+			RunService.RenderStepped:wait()
+			now = tick()
+		end
+		if this.Cancelled == false and instance then
+			finalize()
+		end
+	end)
+
+	function this:GetFinal()
+		return final
+	end
+
+	function this:GetPercentComplete()
+		return percentComplete
+	end
+
+	function this:IsFinished()
+		return finished
+	end
+
+	function this:Finish()
+		if not finished then
+			self:Cancel()
+			finalize()
+		end
+	end
+
+	function this:Cancel()
+		this.Cancelled = true
+	end
+
+	return this
+end
 
 ----------- CLASS DECLARATION --------------
 
@@ -453,6 +549,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 	-------------------- VARIABLES ------------------------
 	local lastInputDirection = 0
+	local TweenTime = 0.15
 
 	-------------------- SETUP ------------------------
 	local this = {}
@@ -551,7 +648,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			Size = UDim2.new(1,leftButton.Size.X.Offset * -2, 1, 0),
-			Position = UDim2.new(0,leftButton.Size.X.Offset,0,0),
+			Position = UDim2.new(1,0,0,0),
 			TextColor3 = Color3.new(1,1,1),
 			TextYAlignment = Enum.TextYAlignment.Center,
 			Font = Enum.Font.SourceSans,
@@ -564,6 +661,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 		if i == startPosition then
 			this.CurrentIndex = i
+			nextSelection.Position = UDim2.new(0,leftButton.Size.X.Offset,0,0)
 			nextSelection.Visible = true
 		end
 
@@ -572,18 +670,49 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 
 	---------------------- FUNCTIONS -----------------------------------
-	local function setSelection(index)
-		local shouldFireChanged = false
+	local function setSelection(index, direction)
 		for i, selectionLabel in pairs(this.Selections) do
-			selectionLabel.Visible = (i == index)
+			local isSelected = (i == index)
 
-			if i == index then
+			if not selectionLabel:IsDescendantOf(game) then
 				this.CurrentIndex = i
-				shouldFireChanged = true
+				indexChangedEvent:Fire(index)
+				return
+			end
+
+			local tweenPos = UDim2.new(0,leftButton.Size.X.Offset * direction * 3,0,0)
+			if selectionLabel.Visible then
+				tweenPos = UDim2.new(0,leftButton.Size.X.Offset * -direction * 3,0,0)
+			end
+
+			if tweenPos.X.Offset < 0 then
+				tweenPos = UDim2.new(0,tweenPos.X.Offset + (selectionLabel.AbsoluteSize.X/4),0,0)
+			end
+
+			if isSelected then
+				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0, false, function()
+					selectionLabel.Position = tweenPos
+					selectionLabel.Visible = true
+					PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
+					selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, false, function(completed)
+						if completed then
+							selectionLabel.Visible = true
+							this.CurrentIndex = i
+							indexChangedEvent:Fire(index)
+						end
+					end)
+				end)
+			else
+				if selectionLabel.Visible then
+					PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
+					selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, false, function(completed)
+						if completed then
+							selectionLabel.Visible = false
+						end
+					end)
+				end
 			end
 		end
-
-		indexChangedEvent:Fire(index)
 	end
 
 	local function stepFunc(inputObject, step)
@@ -597,20 +726,29 @@ local function CreateSelector(selectionStringTable, startPosition)
 		end
 
 		local newIndex = step + this.CurrentIndex
+
+		local direction = 0
+		if newIndex > this.CurrentIndex then
+			direction = 1
+		else
+			direction = -1
+		end
+
 		if newIndex > #this.Selections then
 			newIndex = 1
 		elseif newIndex < 1 then
 			newIndex = #this.Selections
 		end
 
-		setSelection(newIndex)
+
+		setSelection(newIndex, direction)
 	end
 
 	--------------------- PUBLIC FACING FUNCTIONS -----------------------
 	this.IndexChanged = indexChangedEvent.Event
 
 	function this:SetSelectionIndex(newIndex)
-		setSelection(newIndex)
+		setSelection(newIndex, 1)
 	end
 
 	function this:GetSelectedIndex()
@@ -1321,103 +1459,6 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 
 	pageToAddTo:AddRow(RowFrame, RowLabel, ValueChangerInstance, extraSpacing)
 	return RowFrame, RowLabel, ValueChangerInstance
-end
-
-
--- MATH --
-function clamp(low, high, input)
-	return math.max(low, math.min(high, input))
-end
-
-function ClampVector2(low, high, input)
-	return Vector2.new(clamp(low.x, high.x, input.x), clamp(low.y, high.y, input.y))
-end
-
----- TWEENZ ----
-local Linear = function(t, b, c, d)
-	if t >= d then return b + c end
-
-	return c*t/d + b
-end
-
-local EaseOutQuad = function(t, b, c, d)
-	if t >= d then return b + c end
-
-	t = t/d;
-	return -c * t*(t-2) + b
-end
-
-local EaseInOutQuad = function(t, b, c, d)
-	if t >= d then return b + c end
-
-	t = t / (d/2);
-	if (t < 1) then return c/2*t*t + b end;
-	t = t - 1;
-	return -c/2 * (t*(t-2) - 1) + b;
-end
-
-function PropertyTweener(instance, prop, start, final, duration, easingFunc, cbFunc)
-	local this = {}
-	this.StartTime = tick()
-	this.EndTime = this.StartTime + duration
-	this.Cancelled = false
-
-	local finished = false
-	local percentComplete = 0
-
-	local function finalize()
-		if instance then
-			instance[prop] = easingFunc(1, start, final - start, 1)
-		end
-		finished = true
-		percentComplete = 1
-		if cbFunc then
-			cbFunc()
-		end
-	end
-
-	-- Initial set
-	instance[prop] = easingFunc(0, start, final - start, duration)
-	spawn(function()
-		local now = tick()
-		while now < this.EndTime and instance do
-			if this.Cancelled then
-				return
-			end
-			instance[prop] = easingFunc(now - this.StartTime, start, final - start, duration)
-			percentComplete = clamp(0, 1, (now - this.StartTime) / duration)
-			RunService.RenderStepped:wait()
-			now = tick()
-		end
-		if this.Cancelled == false and instance then
-			finalize()
-		end
-	end)
-
-	function this:GetFinal()
-		return final
-	end
-
-	function this:GetPercentComplete()
-		return percentComplete
-	end
-
-	function this:IsFinished()
-		return finished
-	end
-
-	function this:Finish()
-		if not finished then
-			self:Cancel()
-			finalize()
-		end
-	end
-
-	function this:Cancel()
-		this.Cancelled = true
-	end
-
-	return this
 end
 
 

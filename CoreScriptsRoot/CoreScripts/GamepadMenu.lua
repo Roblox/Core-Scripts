@@ -191,9 +191,9 @@ local function createRadialButton(name, text, slot, disabled, coreGuiType, activ
 		Size = UDim2.new(1,0,1,0),
 		Position = UDim2.new(0,0,0,2),
 		BackgroundTransparency = 1,
-		Image = "rbxasset://textures/ui/Settings/Radial/RadialLabel.png",
+		Image = "rbxasset://textures/ui/Settings/Radial/RadialLabel@2x.png",
 		ScaleType = Enum.ScaleType.Slice,
-		SliceCenter = Rect.new(25,3,129,43),
+		SliceCenter = Rect.new(24,4,130,42),
 		ZIndex = 2,
 		Parent = nameLabel
 	};

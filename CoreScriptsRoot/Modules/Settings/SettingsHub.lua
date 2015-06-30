@@ -74,7 +74,7 @@ local function CreateSettingsHub()
 		local buttonName = name .. "Button"
 		local textName = name .. "Text"
 
-		this[buttonName], this[textName] = utility:MakeStyledButton(name .. "Button", text, UDim2.new(0,230,0,70), clickFunc)
+		this[buttonName], this[textName] = utility:MakeStyledButton(name .. "Button", text, UDim2.new(0,260,0,70), clickFunc)
 		this[buttonName].Position = position
 		this[buttonName].Parent = this.BottomButtonFrame
 		if platform == Enum.Platform.XBoxOne or  UserInputService:GetPlatform() == Enum.Platform.AndroidTV then
@@ -86,8 +86,8 @@ local function CreateSettingsHub()
 		local hintLabelText = nil
 
 		if not UserInputService.TouchEnabled then
-			this[textName].Size = UDim2.new(2,0,1,0)
-			this[textName].Position = UDim2.new(1,5,0,-4)
+			this[textName].Size = UDim2.new(1,0,1,0)
+			this[textName].Position = UDim2.new(0,10,0,-4)
 
 			local hintNameText = name .. "HintText"
 			local hintName = name .. "Hint"
@@ -122,8 +122,6 @@ local function CreateSettingsHub()
 				Visible = (image == ""),
 				Parent = this[buttonName]
 			};
-
-			this[textName].Parent = hintLabel
 		end
 
 		UserInputService.InputBegan:connect(function(inputObject)
@@ -240,13 +238,13 @@ local function CreateSettingsHub()
 			end
 
 			addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight.png", 
-				"L", UDim2.new(0.5,-115,0.5,-25), 
+				"L", UDim2.new(0.5,-130,0.5,-25), 
 				leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
 			addBottomBarButton("ResetCharacter", "Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight.png", 
-				"R", UDim2.new(0.5,-350,0.5,-25), 
+				"R", UDim2.new(0.5,-400,0.5,-25), 
 				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY})
 			addBottomBarButton("Resume", "Resume", "rbxasset://textures/ui/Settings/Help/BButtonLight.png",
-				"Esc", UDim2.new(0.5,120,0.5,-25), 
+				"Esc", UDim2.new(0.5,140,0.5,-25), 
 				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart})
 		end
 	end
@@ -420,7 +418,6 @@ local function CreateSettingsHub()
 			ContextActionService:BindCoreAction("RbxSettingsHubStopCharacter", noOpFunc, false,
 												 Enum.UserInputType.Keyboard, Enum.UserInputType.Gamepad1,
 												 Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
-			ContextActionService:BindCoreAction(DEV_CONSOLE_ACTION_NAME, toggleDevConsole, false, Enum.KeyCode.F9)
 
 			ContextActionService:BindCoreAction("RbxSettingsHubSwitchTab", switchTabFunc, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL1, Enum.KeyCode.Q, Enum.KeyCode.E)
 			setBottomBarBindings()
@@ -557,7 +554,6 @@ local function CreateSettingsHub()
 			this:PopMenu()
 		end
 	end)
-
 
 	-- Dev Console Connections
 	ContextActionService:BindCoreAction(DEV_CONSOLE_ACTION_NAME, toggleDevConsole, false, Enum.KeyCode.F9)
