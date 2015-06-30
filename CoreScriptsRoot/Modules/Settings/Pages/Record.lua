@@ -93,7 +93,7 @@ local function Initialize()
 												false, UDim2.new(1,-10,0,70), UDim2.new(0,0,1,0), screenshotTitle)
 
 		local closeSettingsFunc = function()
-			this.HubRef:SetVisibility(false)
+			this.HubRef:SetVisibility(false, true)
 		end
 		this.ScreenshotButton = utility:MakeStyledButton("ScreenshotButton", "Take Screenshot", UDim2.new(0,300,0,44), closeSettingsFunc)
 		

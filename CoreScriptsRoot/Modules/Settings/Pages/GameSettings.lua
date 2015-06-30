@@ -75,7 +75,6 @@ local function Initialize()
 		local fullScreenSelectionFrame = this.FullscreenEnabler.SliderFrame and this.FullscreenEnabler.SliderFrame or this.FullscreenEnabler.SelectorFrame
 
 		this.FullscreenEnabler.IndexChanged:connect(function(newIndex)
-			print("full screen index is now",newIndex)
 			GuiService:ToggleFullscreen()
 		end)
 		
@@ -130,8 +129,6 @@ local function Initialize()
 			end
 		end
 
-
-
 		game.GraphicsQualityChangeRequest:connect(function(isIncrease)
 			if settings().Rendering.QualityLevel == Enum.QualityLevel.Automatic then return end
 			--
@@ -160,6 +157,7 @@ local function Initialize()
 		-- initialize the slider position
 		if GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic then
 			this.GraphicsQualitySlider:SetValue(5)
+			this.GraphicsQualityEnabler:SetSelectionIndex(1)
 		else
 			local graphicsLevel = tostring(GameSettings.SavedQualityLevel)
 			if GRAPHICS_QUALITY_TO_INT[graphicsLevel] then
@@ -168,13 +166,10 @@ local function Initialize()
 				graphicsLevel = GRAPHICS_QUALITY_LEVELS
 			end
 
-			this.GraphicsQualitySlider:SetValue(graphicsLevel)
-		end
-
-		if GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic then
-			this.GraphicsQualityEnabler:SetSelectionIndex(1)
-		else
-			this.GraphicsQualityEnabler:SetSelectionIndex(2)
+			spawn(function()
+				this.GraphicsQualitySlider:SetValue(graphicsLevel)
+				this.GraphicsQualityEnabler:SetSelectionIndex(2)
+			end)
 		end
 	end
 

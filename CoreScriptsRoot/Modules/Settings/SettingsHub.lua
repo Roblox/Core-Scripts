@@ -405,14 +405,18 @@ local function CreateSettingsHub()
 		end
 	end
 
-	function setVisibilityInternal(visible)
+	function setVisibilityInternal(visible, noAnimation)
 		this.Visible = visible
 
 		this.SettingsShowSignal:fire(this.Visible)
 
 		if this.Visible then
 			this.Shield.Visible = this.Visible
-			this.Shield:TweenPosition(SETTINGS_SHIELD_ACTIVE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quart, 0.5, true)
+			if noAnimation then
+				this.Shield.Position = SETTINGS_SHIELD_ACTIVE_POSITION
+			else
+				this.Shield:TweenPosition(SETTINGS_SHIELD_ACTIVE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quart, 0.5, true)
+			end
 
 			local noOpFunc = function() end
 			ContextActionService:BindCoreAction("RbxSettingsHubStopCharacter", noOpFunc, false,
@@ -440,9 +444,14 @@ local function CreateSettingsHub()
 				backpack:OpenClose()
 			end
 		else
-			this.Shield:TweenPosition(SETTINGS_SHIELD_INACTIVE_POSITION, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.4, true, function()
+			if noAnimation then
+				this.Shield.Position = SETTINGS_SHIELD_INACTIVE_POSITION
 				this.Shield.Visible = this.Visible
-			end)
+			else
+				this.Shield:TweenPosition(SETTINGS_SHIELD_INACTIVE_POSITION, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.4, true, function()
+					this.Shield.Visible = this.Visible
+				end)
+			end
 
 			this.MenuStack = {}
 			game.GuiService.SelectedCoreObject = nil
@@ -453,10 +462,10 @@ local function CreateSettingsHub()
 
 	end
 
-	function this:SetVisibility(visible)
+	function this:SetVisibility(visible, noAnimation)
 		if this.Visible == visible then return end
 
-		setVisibilityInternal(visible)
+		setVisibilityInternal(visible, noAnimation)
 	end
 
 	function this:ToggleVisibility()
@@ -568,8 +577,8 @@ local moduleApiTable = {}
 
 	local SettingsHubInstance = CreateSettingsHub()
 
-	function moduleApiTable:SetVisibility(visible)
-		SettingsHubInstance:SetVisibility(visible)
+	function moduleApiTable:SetVisibility(visible, noAnimation)
+		SettingsHubInstance:SetVisibility(visible, noAnimation)
 	end
 
 	function moduleApiTable:ToggleVisibility()
