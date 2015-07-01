@@ -196,7 +196,7 @@ local function Initialize()
 	local function createGamepadHelp(parentFrame)
 		local gamepadImage = "rbxasset://textures/ui/Settings/Help/GenericController.png"
 		local imageSize = UDim2.new(0,650,0,239)
-		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne or  UserInputService:GetPlatform() == Enum.Platform.Xbox360 then
+		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne or  UserInputService:GetPlatform() == Enum.Platform.XBox360 then
 			gamepadImage = "rbxasset://textures/ui/Settings/Help/XboxController.png"
 			imageSize = UDim2.new(0,1116,0,428)
 		elseif UserInputService:GetPlatform() == Enum.Platform.PS4 or UserInputService:GetPlatform() == Enum.Platform.PS3 then

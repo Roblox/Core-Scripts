@@ -376,6 +376,7 @@ end
 local function setupGamepadControls()
 	local freezeControllerActionName = "doNothingAction"
 	local radialSelectActionName = "RadialSelectAction"
+	local thumbstick2RadialActionName = "Thumbstick2RadialAction"
 	local radialCancelActionName = "RadialSelectCancel"
 	local radialAcceptActionName = "RadialSelectAccept"
 	local toggleMenuActionName = "RBXToggleMenuAction"
@@ -389,6 +390,7 @@ local function setupGamepadControls()
 		ContextActionService:UnbindCoreAction(radialCancelActionName)
 		ContextActionService:UnbindCoreAction(radialAcceptActionName)
 		ContextActionService:UnbindCoreAction(freezeControllerActionName)
+		ContextActionService:UnbindCoreAction(thumbstick2RadialActionName)
 	end
 
 	local radialSelect = function(name, state, input)
@@ -503,6 +505,7 @@ local function setupGamepadControls()
 			ContextActionService:BindCoreAction(radialCancelActionName, radialSelectAccept, false, Enum.KeyCode.ButtonA)
 			ContextActionService:BindCoreAction(radialAcceptActionName, radialSelectCancel, false, Enum.KeyCode.ButtonB)
 			ContextActionService:BindCoreAction(radialSelectActionName, radialSelect, false, Enum.KeyCode.Thumbstick1)
+			ContextActionService:BindCoreAction(thumbstick2RadialActionName, noOpFunc, false, Enum.KeyCode.Thumbstick2)
 			ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
 		else
 			unbindAllRadialActions()

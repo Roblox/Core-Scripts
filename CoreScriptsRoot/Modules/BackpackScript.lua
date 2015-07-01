@@ -80,6 +80,8 @@ local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
 
+local gamepadActionsBound = false
+
 local IS_PHONE = UserInputService.TouchEnabled and GuiService:GetScreenResolution().X < HOTBAR_SLOTS_WIDTH_CUTOFF
 
 local HOTBAR_SLOTS = (IS_PHONE) and HOTBAR_SLOTS_MINI or HOTBAR_SLOTS_FULL
@@ -948,14 +950,10 @@ changeToolFuncExperiment = function(actionName, inputState, inputObject)
 		selectDirection = Vector2.new(0,0)
 		ContextActionService:UnbindCoreAction("RBXRadialSelectTool")
 		ContextActionService:UnbindCoreAction("RBXRadialSelectToolKillInput")
-		ContextActionService:UnbindCoreAction("RBXHotbarEquip")
-		ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1)
 	else
 		UnequipAllTools()
 
 		ContextActionService:BindCoreAction("RBXRadialSelectToolKillInput", noOpFunc, false, Enum.UserInputType.Gamepad1)
-		ContextActionService:UnbindCoreAction("RBXHotbarEquip")
-		ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonB)
 		ContextActionService:BindCoreAction("RBXRadialSelectTool", selectToolExperiment, false, Enum.KeyCode.Thumbstick1, 
 											Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
 	end
@@ -1109,7 +1107,6 @@ end
 function gamepadDisconnected()
 	GamepadEnabled = false
 	disableGamepadInventoryControl()
-	ContextActionService:UnbindCoreAction("RBXHotbarEquip")
 end
 
 function gamepadConnected()
@@ -1117,9 +1114,13 @@ function gamepadConnected()
 	GuiService:AddSelectionParent("RBXBackpackSelection", MainFrame)
 
 	if UseExperimentalGamepadEquip then
-		ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1)
+		if not gamepadActionsBound then
+			gamepadActionsBound = true
+			ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1)
+		end
 		HotbarFrame.Position = UDim2.new(HotbarFrame.Position.X.Scale, HotbarFrame.Position.X.Offset, 0.5, -35)
-	else
+	elseif not gamepadActionsBound then
+		gamepadActionsBound = true
 		ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
 	end
 
@@ -1151,12 +1152,15 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 		if IsGamepadSupported and GamepadEnabled then
 			if enabled then
 				if UseExperimentalGamepadEquip then
+					gamepadActionsBound = true
 					ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1)
 				else
+					gamepadActionsBound = true
 					ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
 				end
 			else
 				disableGamepadInventoryControl()
+				gamepadActionsBound = false
 				ContextActionService:UnbindCoreAction("RBXHotbarEquip")
 			end
 		end
