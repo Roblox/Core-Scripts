@@ -23,7 +23,7 @@ local Style; do
 	local function c3(r, g, b)
 		return Color3_new(r / 255, g / 255, b / 255)
 	end
-	local frameColor = Color3_new(0.125, 0.125, 0.125)
+	local frameColor = Color3_new(0.1, 0.1, 0.1)
 	local textColor = Color3_new(1, 1, 1)
 	local optionsFrameColor = Color3_new(1, 1, 1)
 	
@@ -35,8 +35,6 @@ local Style; do
 		local FunColors = {
 			[56449]   = {c3(255, 63,  127)}; -- ReeseMcBlox
 			[6949935] = {c3(255, 63,  127)}; -- NobleDragon
-			--[4812582] = {c3(0,   128, 255)}; -- Arceusinator -- this color makes it unusable
-			--[4402987] = {c3(170, 255, 127), c3(0, 0, 0)}; -- Rukiryo
 		}
 		local funColor = FunColors[Players.LocalPlayer.userId]
 		if funColor then
@@ -306,7 +304,7 @@ function Methods.SetVisible(devConsole, visible, animate)
 		return
 	end
 	devConsole.Visible = visible
-	devConsole.VisibleChanged:fire(true)
+	devConsole.VisibleChanged:fire(visible)
 	if devConsole.Frame then
 		devConsole.Frame.Visible = visible
 	end	
@@ -325,6 +323,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	local visibleChanged = CreateSignal()
 	
 	local devConsole = {
+		ScreenGui = screenGui;
 		Permissions = permissions;
 		MessagesAndStats = messagesAndStats;
 		Initialized = false;
@@ -334,6 +333,8 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	}
 	
 	setmetatable(devConsole, Metatable)
+
+	devConsole:EnableGUIMouse()
 	
 	-- It's a button so it catches mouse events
 	local frame = Primitives.Button(screenGui, 'DeveloperConsole')
@@ -379,7 +380,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	end
 	
 	do -- Create top right exit button
-		local exitButton, exitButtonImage = createCornerButton('Exit', 1, 0, 'rbxassetid://261878266', 2/3)
+		local exitButton, exitButtonImage = createCornerButton('Exit', 1, 0, 'http://www.roblox.com/asset/?id=261878266', 2/3)
 		exitButton.AutoButtonColor = false
 		
 		local buttonEffectFunction = devConsole:CreateButtonEffectFunction(exitButton)
@@ -402,7 +403,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	do -- Repositioning and Resizing
 		
 		do -- Create bottom right window resize button and activate resize dragging
-			local resizeButton, resizeButtonImage = createCornerButton('Resize', 1, 1, 'rbxassetid://261880743', 1)
+			local resizeButton, resizeButtonImage = createCornerButton('Resize', 1, 1, 'http://www.roblox.com/asset/?id=261880743', 1)
 			resizeButtonImage.Position = UDim2_new(0, 0, 0, 0)
 			resizeButtonImage.Size = UDim2_new(1, 0, 1, 0)
 
@@ -490,7 +491,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		local offset = (tabHeight - gearSize) / 2
 		optionsButton.Size = UDim2_new(0, Style.GearSize, 0, Style.GearSize)
 		optionsButton.Position = UDim2_new(1, -(Style.GearSize + offset + Style.HandleHeight), 0, Style.HandleHeight + offset)
-		local gear = Primitives.InvisibleImageLabel(optionsButton, 'Image', 'rbxassetid://261882463')
+		local gear = Primitives.InvisibleImageLabel(optionsButton, 'Image', 'http://www.roblox.com/asset/?id=261882463')
 		--gear.ZIndex = ZINDEX + 1
 		local animationToggle = devConsole:GenerateOptionButtonAnimationToggle(interiorFrame, optionsButton, gear, tabContainer, optionsClippingFrame, optionsFrame)
 		local open = false
@@ -1177,8 +1178,46 @@ end
 
 
 
-
-
+----------------------
+-- Backup GUI Mouse --
+----------------------
+do -- This doesn't support multiple windows very well
+	function Methods.EnableGUIMouse(devConsole)
+		local label = Instance.new("ImageLabel")
+		label.BackgroundTransparency = 1
+		label.BorderSizePixel = 0
+		label.Size = UDim2.new(0, 64, 0, 64)
+		label.Image = "rbxasset://Textures/ArrowFarCursor.png"
+		label.Name = "BackupMouse"
+		label.ZIndex = ZINDEX + 2
+		
+		local disconnector = CreateDisconnectSignal()
+		
+		local function onVisibleChanged(visible)
+			label.Visible = visible
+			label.Parent = visible and devConsole.ScreenGui or nil
+			disconnector:fire()
+			if visible then
+				pcall(function()
+					local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+					label.Position = UDim2.new(0, mouse.X - 32, 0, mouse.Y - 32)
+				end)
+				disconnector:connect(UserInputService.InputChanged:connect(function(input)
+					if input.UserInputType == Enum.UserInputType.MouseMovement then
+						local p = input.Position
+						if p then
+							label.Position = UDim2.new(0, p.X - 32, 0, p.Y - 32)
+						end
+					end
+				end))
+			end
+		end
+		
+		onVisibleChanged(devConsole.Visible)
+		devConsole.VisibleChanged:connect(onVisibleChanged)
+		
+	end
+end
 
 
 ----------------------
@@ -2307,14 +2346,14 @@ function Methods.CreateScrollbar(devConsole, rotation)
 		frame2.Visible = not visible
 	end
 	
-	local buttonUp = Primitives.ImageButton(frame, 'Up', 'rbxassetid://261880783')
+	local buttonUp = Primitives.ImageButton(frame, 'Up', 'http://www.roblox.com/asset/?id=261880783')
 	scrollbar.ButtonUp = buttonUp
 	buttonUp.Size = UDim2_new(1, 0, 0, Style.HandleHeight)
 	buttonUp.Position = UDim2_new(0, 0, 0, -Style.HandleHeight - 1)
 	buttonUp.AutoButtonColor = false
 	devConsole:ConnectButtonHover(buttonUp, devConsole:CreateButtonEffectFunction(buttonUp))
 	
-	local buttonDown = Primitives.ImageButton(frame, 'Down', 'rbxassetid://261880783')
+	local buttonDown = Primitives.ImageButton(frame, 'Down', 'http://www.roblox.com/asset/?id=261880783')
 	scrollbar.ButtonDown = buttonDown
 	buttonDown.Size = UDim2_new(1, 0, 0, Style.HandleHeight)
 	buttonDown.Position = UDim2_new(0, 0, 1, 1)
@@ -2329,7 +2368,7 @@ function Methods.CreateScrollbar(devConsole, rotation)
 	
 	bar.AutoButtonColor = false
 	
-	local grip = Primitives.InvisibleImageLabel(bar, 'Image', 'rbxassetid://261904959')
+	local grip = Primitives.InvisibleImageLabel(bar, 'Image', 'http://www.roblox.com/asset/?id=261904959')
 	grip.Size = UDim2_new(0, 16, 0, 16)
 	grip.Position = UDim2_new(0.5, -8, 0.5, -8)
 
@@ -2685,11 +2724,29 @@ do
 			permissions.IsCreator = permissions.CreatorFlagValue or game:GetService("Players").LocalPlayer.userId == game.CreatorId
 		end)
 		
+		if permissions.CreatorFlagValue then -- Use the new API
+			local success, result = pcall(function()
+				local url = string.format("/users/%d/canmanage/%d", game:GetService("Players").LocalPlayer.userId, game.PlaceId)
+				return game:GetService('HttpRbxApiService'):GetAsync(url, false, Enum.ThrottlingPriority.Default)
+			end)
+			if success and type(result) == "string" then
+				-- API returns: {"Success":BOOLEAN,"CanManage":BOOLEAN}
+				-- Convert from JSON to a table
+				-- pcall in case of invalid JSON
+				success, result = pcall(function()
+					return game:GetService('HttpService'):JSONDecode(result)
+				end)
+				if success and result.CanManage == true then
+					permissions.IsCreator = result.CanManage
+				end
+			end
+		end
 		
 		permissions.ClientCodeExecutionEnabled = false
 		pcall(function()
 			permissions.ServerCodeExecutionEnabled = permissions.IsCreator and settings():GetFFlag("ConsoleCodeExecutionEnabled")
 		end)
+		
 		
 		if DEBUG then
 			permissions.IsCreator = true
@@ -2838,11 +2895,13 @@ do
 				if not stats then
 					stats = {}
 					pcall(function()
-						local clientReplicator = game:GetService("NetworkClient"):GetChildren()[1]
-						statsListenerConnection = clientReplicator.StatsReceived:connect(function(stat)
-							statsSyncServer.StatsReceived:fire(stat)
-						end)
-						clientReplicator:RequestServerStats(true)
+						local clientReplicator = game:FindService("NetworkClient"):GetChildren()[1]
+							if clientReplicator then
+							statsListenerConnection = clientReplicator.StatsReceived:connect(function(stat)
+								statsSyncServer.StatsReceived:fire(stat)
+							end)
+							clientReplicator:RequestServerStats(true)
+						end
 					end)
 					statsSyncServer.Stats = stats
 				end
