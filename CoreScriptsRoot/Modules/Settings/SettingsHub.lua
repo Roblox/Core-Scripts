@@ -154,10 +154,23 @@ local function CreateSettingsHub()
 			PageViewSizeReducer = 5
 		end
 
-		this.Shield = utility:Create'Frame'
+		local clippingShield = utility:Create'Frame'
 		{
 			Name = "SettingsShield",
 			Size = SETTINGS_SHIELD_SIZE,
+			Position = SETTINGS_SHIELD_ACTIVE_POSITION,
+			BorderSizePixel = 0,
+			ClipsDescendants = true,
+			BackgroundTransparency = 1,
+			Visible = true,
+			ZIndex = SETTINGS_BASE_ZINDEX,
+			Parent = RobloxGui
+		};
+
+		this.Shield = utility:Create'Frame'
+		{
+			Name = "SettingsShield",
+			Size = UDim2.new(1,0,1,0),
 			Position = SETTINGS_SHIELD_INACTIVE_POSITION,
 			BackgroundTransparency = SETTINGS_SHIELD_TRANSPARENCY,
 			BackgroundColor3 = SETTINGS_SHIELD_COLOR,
@@ -165,7 +178,7 @@ local function CreateSettingsHub()
 			Visible = false,
 			Active = true,
 			ZIndex = SETTINGS_BASE_ZINDEX,
-			Parent = RobloxGui
+			Parent = clippingShield
 		};
 
 		this.HubBar = utility:Create'ImageLabel'
@@ -369,6 +382,20 @@ local function CreateSettingsHub()
 		RemoveHeader(pageToRemove:GetTabHeader())
 	end
 
+	function this:HideBar()
+		this.HubBar.Visible = false
+		if this.BottomButtonFrame then
+			this.BottomButtonFrame.Visible = false
+		end
+	end
+
+	function this:ShowBar()
+		this.HubBar.Visible = true
+		if this.BottomButtonFrame then
+			this.BottomButtonFrame.Visible = true
+		end
+	end
+
 	function this:SwitchToPage(pageToSwitchTo, ignoreStack, direction)
 		if this.Pages.PageTable[pageToSwitchTo] == nil then return end
 
@@ -417,7 +444,6 @@ local function CreateSettingsHub()
 
 	function setVisibilityInternal(visible, noAnimation)
 		this.Visible = visible
-		print("noAnimation",noAnimation)
 
 		this.SettingsShowSignal:fire(this.Visible)
 

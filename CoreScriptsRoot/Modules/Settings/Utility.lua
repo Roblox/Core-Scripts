@@ -274,6 +274,8 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	-------------------- CONSTANTS ------------------------
 	local DEFAULT_DROPDOWN_TEXT = "Choose One"
 	local SCROLLING_FRAME_PIXEL_OFFSET = 25
+	local SELECTION_TEXT_COLOR_NORMAL = Color3.new(0.7,0.7,0.7)
+	local SELECTION_TEXT_COLOR_HIGHLIGHTED = Color3.new(1,1,1)
 
 	-------------------- VARIABLES ------------------------
 	local lastSelectedCoreObject= nil
@@ -338,6 +340,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		Parent = DropDownSelectionFrame
 	};
 
+	local guiServiceChangeCon = nil
 	local hideDropDownSelection = function(name, inputState)
 		if name ~= nil and inputState ~= Enum.UserInputState.Begin then return end
 		this.DropDownFrame.Selectable = interactable
@@ -346,6 +349,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 			GuiService.SelectedCoreObject = lastSelectedCoreObject
 		end
 		DropDownFullscreenFrame.Visible = false
+		if guiServiceChangeCon then guiServiceChangeCon:disconnect() end
 		ContextActionService:UnbindCoreAction(guid .. "Action")
 		ContextActionService:UnbindCoreAction(guid .. "FreezeAction")
 	end
@@ -363,7 +367,17 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		lastSelectedCoreObject = this.DropDownFrame
 		GuiService.SelectedCoreObject = this.Selections[this.CurrentIndex]
 
-		--settingsHub:AddToMenuStack(DropDownFullscreenFrame)
+		guiServiceChangeCon = GuiService.Changed:connect(function(prop)
+			if not prop == "SelectedCoreObject" then return end
+			for i = 1, #this.Selections do
+				if GuiService.SelectedCoreObject == this.Selections[i] then
+					this.Selections[i].TextColor3 = SELECTION_TEXT_COLOR_HIGHLIGHTED
+				else
+					this.Selections[i].TextColor3 = SELECTION_TEXT_COLOR_NORMAL
+				end
+			end
+		end)
+
 		ContextActionService:BindCoreAction(guid .. "FreezeAction", noOpFunc, false, Enum.UserInputType.Keyboard, Enum.UserInputType.Gamepad1)
 		ContextActionService:BindCoreAction(guid .. "Action", hideDropDownSelection, false, Enum.KeyCode.ButtonB, Enum.KeyCode.Escape)
 	end
@@ -446,16 +460,14 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 		this.Selections = {}
 
-		local SelectionOverrideObject = Util.Create'Frame'
-		{
-			Size = UDim2.new(1,0,1,0),
-			BackgroundTransparency = 0.5,
-			BorderSizePixel = 0
-		};
-
-		local SELECTION_TEXT_COLOR_NORMAL = Color3.new(0.9,0.9,0.9)
-		local SELECTION_TEXT_COLOR_HIGHLIGHTED = Color3.new(1,1,1)
 		for i,v in pairs(dropDownStringTable) do
+			local SelectionOverrideObject =	Util.Create'Frame'
+			{
+				BackgroundTransparency = 0.7,
+				BorderSizePixel = 0,
+				Size = UDim2.new(1, 0, 1, 0)
+			};
+
 			local nextSelection = Util.Create'TextButton'
 			{
 				Name = "Selection" .. tostring(i),
@@ -476,11 +488,13 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 			if i == startPosition then
 				this.CurrentIndex = i
 				selectedTextLabel.Text = v
+				nextSelection.TextColor3 = SELECTION_TEXT_COLOR_HIGHLIGHTED
+			elseif not startPosition and i == 1 then
+				nextSelection.TextColor3 = SELECTION_TEXT_COLOR_HIGHLIGHTED
 			end
 
 			nextSelection.MouseButton1Click:connect(function()
 				selectedTextLabel.Text = nextSelection.Text
-				nextSelection.TextColor3 = SELECTION_TEXT_COLOR_NORMAL
 				hideDropDownSelection()
 				this.CurrentIndex = i
 				indexChangedEvent:Fire(i)
@@ -489,15 +503,6 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 			nextSelection.MouseEnter:connect(function()
 				if usesSelectedObject() then
 					GuiService.SelectedCoreObject = nextSelection
-				end
-				if nextSelection.Selectable and UserInputService.MouseEnabled then
-					nextSelection.TextColor3 = SELECTION_TEXT_COLOR_HIGHLIGHTED
-				end
-			end)
-
-			nextSelection.MouseLeave:connect(function()
-				if nextSelection.Selectable and UserInputService.MouseEnabled then
-					nextSelection.TextColor3 = SELECTION_TEXT_COLOR_NORMAL
 				end
 			end)
 
@@ -536,7 +541,6 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 	settingsHub.PoppedMenu:connect(function(poppedMenu)
 		if poppedMenu == DropDownFullscreenFrame then
-			print("hide drop DropDown")
 			hideDropDownSelection()
 		end
 	end)
@@ -665,6 +669,20 @@ local function CreateSelector(selectionStringTable, startPosition)
 			nextSelection.Position = UDim2.new(0,leftButton.Size.X.Offset,0,0)
 			nextSelection.Visible = true
 		end
+
+		nextSelection.InputBegan:connect(function(inputObject)
+			if inputObject.UserInputType == Enum.UserInputType.MouseButton1 or 
+				inputObject.UserInputType == Enum.UserInputType.Touch then
+					local newIndex = this.CurrentIndex + 1
+					if newIndex > #this.Selections then
+						newIndex = 1
+					end
+					this:SetSelectionIndex(newIndex)
+					if usesSelectedObject() then
+						GuiService.SelectedCoreObject = this.SelectorFrame
+					end
+			end
+		end)
 
 		this.Selections[i] = nextSelection
 	end
@@ -856,25 +874,11 @@ local function CreateSelector(selectionStringTable, startPosition)
 	return this
 end
 
-local function ShowAlert(alertMessage, okButtonText, okPressedFunc)
+local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc)
 	if CoreGui.RobloxGui:FindFirstChild("AlertViewFullScreen") then return end
 
 	local NON_SELECTED_TEXT_COLOR = Color3.new(59/255, 166/255, 241/255)
 	local SELECTED_TEXT_COLOR = Color3.new(1,1,1)
-
-	local AlertViewFullScreen = Util.Create'ImageButton'
-	{
-		Name = "AlertViewFullScreen",
-		BackgroundTransparency = 0.2,
-		BorderSizePixel = 0,
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundColor3 = Color3.new(0,0,0),
-		ZIndex = 10,
-		Active = true,
-		Selectable = false,
-		AutoButtonColor = false,
-		Parent = CoreGui.RobloxGui
-	};
 
 	local AlertViewBacking = Util.Create'ImageLabel'
 	{
@@ -883,10 +887,11 @@ local function ShowAlert(alertMessage, okButtonText, okPressedFunc)
 		ScaleType = Enum.ScaleType.Slice,
 		SliceCenter = Rect.new(8,6,46,44),
 		BackgroundTransparency = 1,
+		ImageTransparency = 1,
 		Size = UDim2.new(0, 400, 0, 350),
 		Position = UDim2.new(0.5, -200, 0.5, -175),
 		ZIndex = 10,
-		Parent = AlertViewFullScreen
+		Parent = CoreGui.RobloxGui
 	};
 	if CoreGui.RobloxGui.AbsoluteSize.Y <= AlertViewBacking.Size.Y.Offset then
 		AlertViewBacking.Size = UDim2.new(AlertViewBacking.Size.X.Scale, AlertViewBacking.Size.X.Offset, 
@@ -917,51 +922,33 @@ local function ShowAlert(alertMessage, okButtonText, okPressedFunc)
 		BackgroundTransparency = 1
 	};
 
-	local AlertViewButton = Util.Create'TextButton'
-	{
-		Name = "AlertViewButton",
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1, 0, 0.35, 0),
-		Position = UDim2.new(0, 0, 0.65, 0),
-		Font = Enum.Font.SourceSans,
-		FontSize = Enum.FontSize.Size36,
-		Text = okButtonText,
-		TextColor3 = NON_SELECTED_TEXT_COLOR,
-		TextXAlignment = Enum.TextXAlignment.Center,
-		TextYAlignment = Enum.TextYAlignment.Center,
-		ZIndex = 10,
-		SelectionImageObject = SelectionOverrideObject,
-		Parent = AlertViewBacking
-	};
+	local removeId = HttpService:GenerateGUID(false)
+
+	local destroyAlert = function()
+		AlertViewBacking:Destroy()
+		if okPressedFunc then okPressedFunc() end
+		ContextActionService:UnbindCoreAction(removeId)
+		GuiService.GuiNavigationEnabled = true
+	end
+
+	local AlertViewButton = MakeButton("AlertViewButton", okButtonText, UDim2.new(1, 0, 0.2, 0), destroyAlert)
+	AlertViewButton.Position = UDim2.new(0, 0, 0.65, 0)
 	AlertViewButton.NextSelectionLeft = AlertViewButton
 	AlertViewButton.NextSelectionRight = AlertViewButton
 	AlertViewButton.NextSelectionUp = AlertViewButton
 	AlertViewButton.NextSelectionDown = AlertViewButton
-
-	AlertViewButton.MouseEnter:connect(function()
-		AlertViewButton.TextColor3 = SELECTED_TEXT_COLOR
-	end)
-	AlertViewButton.MouseLeave:connect(function()
-		AlertViewButton.TextColor3 = NON_SELECTED_TEXT_COLOR
-	end)
+	AlertViewButton.Parent = AlertViewBacking
 
 	if usesSelectedObject() then
 		Game.GuiService.SelectedCoreObject = AlertViewButton
 	end
 
-	local removeId = HttpService:GenerateGUID(false)
-
-	local destroyAlert = function()
-		AlertViewFullScreen:Destroy()
-		if okPressedFunc then okPressedFunc() end
-		ContextActionService:UnbindCoreAction(removeId)
-		GuiService.GuiNavigationEnabled = true
-	end
-	AlertViewFullScreen.MouseButton1Click:connect(destroyAlert)
-	AlertViewButton.MouseButton1Click:connect(destroyAlert)
 	GuiService.SelectedCoreObject = AlertViewButton
 
 	ContextActionService:BindCoreAction(removeId, destroyAlert, false, Enum.KeyCode.Escape, Enum.KeyCode.ButtonB)
+
+	settingsHub:HideBar()
+	settingsHub.Pages.CurrentPage:Hide(1, 1)
 end
 
 local function CreateNewSlider(numOfSteps, startStep, minStep)
@@ -1362,7 +1349,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 			modifySelection(0)
 			RunService:BindToRenderStep(renderStepBindName, Enum.RenderPriority.Input.Value + 1, stepSliderFunc)
 		else
-			modifySelection(0.5)
+			modifySelection(0.36)
 			RunService:UnbindFromRenderStep(renderStepBindName)
 		end
 	end)
@@ -1490,7 +1477,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 	nextPosTable[pageToAddTo] = nextRowPositionY
 
 	if RowFrame then
-		RowFrame.MouseButton1Click:connect(function()
+		local setRowSelection = function()
 			local valueFrame = ValueChangerInstance.SliderFrame 
 			if not valueFrame then
 				valueFrame = ValueChangerInstance.SliderFrame
@@ -1505,7 +1492,8 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			if valueFrame and valueFrame.Visible and valueFrame.ZIndex > 1 and usesSelectedObject() then
 				GuiService.SelectedCoreObject = valueFrame
 			end
-		end)
+		end
+		RowFrame.MouseEnter:connect(setRowSelection)
 	end
 
 	pageToAddTo:AddRow(RowFrame, RowLabel, ValueChangerInstance, extraSpacing)
@@ -1556,8 +1544,8 @@ function moduleApiTable:AddNewRow(pageToAddTo, rowDisplayName, selectionType, ro
 	return AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, rowDefault, extraSpacing)
 end
 
-function moduleApiTable:ShowAlert(alertMessage, okButtonText, okPressedFunc)
-	ShowAlert(alertMessage, okButtonText, okPressedFunc)
+function moduleApiTable:ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc)
+	ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc)
 end
 
 function moduleApiTable:IsSmallTouchScreen()

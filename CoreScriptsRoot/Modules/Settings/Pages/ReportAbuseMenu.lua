@@ -171,15 +171,17 @@ local function Initialize()
 			end
 
 			if abuseReason then
+				local alertText = "Thanks for your report! Our moderators will review the chat logs and evaluate what happened."
+
 				if abuseReason == 'Cheating/Exploiting' then
-					utility:ShowAlert("Thanks for your report! We've recorded your report for evaluation.", "Ok", cleanupReportAbuseMenu)
+					alertText = "Thanks for your report! We've recorded your report for evaluation."
 				elseif abuseReason == 'Inappropriate Username' then
-					utility:ShowAlert("Thanks for your report! Our moderators will evaluate the username.", "Ok", cleanupReportAbuseMenu)
+					alertText = "Thanks for your report! Our moderators will evaluate the username."
 				elseif abuseReason == "Bad Model or Script" or  abuseReason == "Inappropriate Content" or abuseReason == "Offsite Link" or abuseReason == "Offsite Links" then
-					utility:ShowAlert("Thanks for your report! Our moderators will review the place and make a determination.", "Ok", cleanupReportAbuseMenu)
-				else
-					utility:ShowAlert("Thanks for your report! Our moderators will review the chat logs and evaluate what happened.", "Ok", cleanupReportAbuseMenu)
+					alertText = "Thanks for your report! Our moderators will review the place and make a determination."
 				end
+
+				utility:ShowAlert(alertText, "Ok", this.HubRef, cleanupReportAbuseMenu)
 
 				this.LastSelectedObject = nil
 			end
