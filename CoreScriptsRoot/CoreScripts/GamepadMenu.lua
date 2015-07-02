@@ -292,7 +292,7 @@ local function createGamepadMenuGui()
 		local ChatModule = require(GuiRoot.Modules.Chat)
 		ChatModule:ToggleVisibility()
 	end
-	local chatRadial = createRadialButton("Chat", "Chat", 5,not StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat), Enum.CoreGuiType.Chat, chatFunc)
+	local chatRadial = createRadialButton("Chat", "Chat", 5, not StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat), Enum.CoreGuiType.Chat, chatFunc)
 	chatRadial.Parent = gamepadSettingsFrame
 
 
@@ -441,16 +441,6 @@ local function setupGamepadControls()
 		end
 	end
 
-	function toggleInGameSettings()
-		local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
-		if not MenuModule:GetVisibility() then
-			MenuModule:SetVisibility(true)
-			unbindAllRadialActions()
-		else
-			MenuModule:SetVisibility(false)
-		end
-	end
-
 	function setVisibility()
 		gamepadSettingsFrame.CloseHint.Visible = isVisible
 		local children = gamepadSettingsFrame:GetChildren()
@@ -475,7 +465,11 @@ local function setupGamepadControls()
 			local settingsChildren = gamepadSettingsFrame:GetChildren()
 			for i = 1, #settingsChildren do
 				if settingsChildren[i]:IsA("GuiButton") then
-					utility:TweenProperty(settingsChildren[i], "ImageTransparency", 1, 0, 0.09, utility:GetEaseOutQuad(), nil)
+					local transparency = 0
+					if radialButtons[settingsChildren[i]] and radialButtons[settingsChildren[i]]["Disabled"] then
+						transparency = 0.5
+					end
+					utility:TweenProperty(settingsChildren[i], "ImageTransparency", 1, transparency, 0.1, utility:GetEaseOutQuad(), nil)
 				end
 			end
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,408,0,408), UDim2.new(0.5,-204,0.5,-204),
@@ -487,7 +481,7 @@ local function setupGamepadControls()
 			local settingsChildren = gamepadSettingsFrame:GetChildren()
 			for i = 1, #settingsChildren do
 				if settingsChildren[i]:IsA("GuiButton") then
-					utility:TweenProperty(settingsChildren[i], "ImageTransparency", 0, 1, 0.09, utility:GetEaseOutQuad(), nil)
+					utility:TweenProperty(settingsChildren[i], "ImageTransparency", 0, 1, 0.1, utility:GetEaseOutQuad(), nil)
 				end
 			end
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,102,0,102), UDim2.new(0.5,-51,0.5,-51),
@@ -517,13 +511,8 @@ local function setupGamepadControls()
 		if input.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
 		if state ~= Enum.UserInputState.Begin then return end
 
-		if isCoreGuiDisabled() then
-			toggleInGameSettings()
-		else
-			local radialIsShown = toggleCoreGuiRadial()
-			if not radialIsShown then
-				unbindAllRadialActions()
-			end
+		if not toggleCoreGuiRadial() then
+			unbindAllRadialActions()
 		end
 	end
 
