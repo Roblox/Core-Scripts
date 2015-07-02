@@ -172,11 +172,13 @@ local function Initialize()
 
 			if abuseReason then
 				if abuseReason == 'Cheating/Exploiting' then
-					utility:ShowAlert("Thanks for your report!\n We've recorded your report for evaluation.", "Ok", cleanupReportAbuseMenu)
-				elseif abuseReason == 'Bullying' or abuseReason == 'Swearing' then
-					utility:ShowAlert("Thanks for your report! Our moderators will review the chat logs and determine what happened. The other user is probably just trying to make you mad. If anyone used swear words, inappropriate language, or threatened you in real life, please report them for Bad Words or Threats", "Ok", cleanupReportAbuseMenu)
+					utility:ShowAlert("Thanks for your report! We've recorded your report for evaluation.", "Ok", cleanupReportAbuseMenu)
+				elseif abuseReason == 'Inappropriate Username' then
+					utility:ShowAlert("Thanks for your report! Our moderators will evaluate the username.", "Ok", cleanupReportAbuseMenu)
+				elseif abuseReason == "Bad Model or Script" or  abuseReason == "Inappropriate Content" or abuseReason == "Offsite Link" or abuseReason == "Offsite Links" then
+					utility:ShowAlert("Thanks for your report! Our moderators will review the place and make a determination.", "Ok", cleanupReportAbuseMenu)
 				else
-					utility:ShowAlert("Thanks for your report! Our moderators will review the chat logs and determine what happened.", "Ok", cleanupReportAbuseMenu)
+					utility:ShowAlert("Thanks for your report! Our moderators will review the chat logs and evaluate what happened.", "Ok", cleanupReportAbuseMenu)
 				end
 
 				this.LastSelectedObject = nil
