@@ -234,7 +234,7 @@ local function CreateSettingsHub()
 			end
 
 			local resumeFunc = function()
-				this:SetVisibility(false)
+				clearMenuStack()
 			end
 
 			addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight.png", 
@@ -417,6 +417,7 @@ local function CreateSettingsHub()
 
 	function setVisibilityInternal(visible, noAnimation)
 		this.Visible = visible
+		print("noAnimation",noAnimation)
 
 		this.SettingsShowSignal:fire(this.Visible)
 
