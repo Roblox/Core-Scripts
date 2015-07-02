@@ -16,7 +16,7 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local UserInputService = game:GetService("UserInputService")
 
 ----------- UTILITIES --------------
-local utility = require(RobloxGui.Modules.Utility)
+local utility = require(RobloxGui.Modules.Settings.Utility)
 
 ------------ Variables -------------------
 local PageInstance = nil

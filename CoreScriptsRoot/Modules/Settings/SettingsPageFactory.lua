@@ -13,7 +13,7 @@ local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 
 ----------- UTILITIES --------------
-local utility = require(RobloxGui.Modules.Utility)
+local utility = require(RobloxGui.Modules.Settings.Utility)
 
 
 ----------- CONSTANTS --------------

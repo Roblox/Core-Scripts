@@ -44,7 +44,7 @@ local MOVEMENT_MODE_KEYBOARDMOUSE_STRING = "Keyboard + Mouse"
 local MOVEMENT_MODE_CLICKTOMOVE_STRING = UserInputService.TouchEnabled and "Tap to Move" or "Click to Move"
 
 ----------- UTILITIES --------------
-local utility = require(RobloxGui.Modules.Utility)
+local utility = require(RobloxGui.Modules.Settings.Utility)
 
 ------------ Variables -------------------
 local PageInstance = nil

@@ -30,7 +30,7 @@ local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
 local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
 
 --[[ UTILITIES ]]
-local utility = require(RobloxGui.Modules.Utility)
+local utility = require(RobloxGui.Modules.Settings.Utility)
 
 --[[ CORE MODULES ]]
 local playerList = require(RobloxGui.Modules.PlayerlistModule)

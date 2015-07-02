@@ -29,7 +29,7 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
 
 ----------- UTILITIES --------------
-local utility = require(RobloxGui.Modules.Utility)
+local utility = require(RobloxGui.Modules.Settings.Utility)
 
 ------------ VARIABLES -------------------
 local PageInstance = nil

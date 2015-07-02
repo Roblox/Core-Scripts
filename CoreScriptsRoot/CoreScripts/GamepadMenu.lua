@@ -16,7 +16,7 @@ local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 --[[ END OF SERVICES ]]
 
 --[[ MODULES ]]
-local utility = require(GuiRoot.Modules.Utility)
+local utility = require(GuiRoot.Modules.Settings.Utility)
 local recordPage = require(GuiRoot.Modules.Settings.Pages.Record) 
 
 --[[ VARIABLES ]]
