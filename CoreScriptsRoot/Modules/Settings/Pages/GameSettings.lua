@@ -87,6 +87,7 @@ local function Initialize()
 		this.GraphicsQualityFrame, 
 		this.GraphicsQualityLabel,
 		this.GraphicsQualitySlider = utility:AddNewRow(this, "Graphics Quality", "Slider", GRAPHICS_QUALITY_LEVELS, 1)
+		this.GraphicsQualitySlider:SetMinStep(1)
 
 		------------------------- Connection Setup ----------------------------
 		settings().Rendering.EnableFRM = true
@@ -475,6 +476,7 @@ local function Initialize()
 		this.MouseSensitivityFrame, 
 		this.MouseSensitivityLabel,
 		this.MouseSensitivitySlider = utility:AddNewRow(this, "Mouse Sensitivity", "Slider", MouseSteps, startMouseLevel)
+		this.MouseSensitivitySlider:SetMinStep(1)
 
 		this.MouseSensitivitySlider.ValueChanged:connect(function(newValue)
 			GameSettings.MouseSensitivity = translateGuiMouseSensitivityToEngine(newValue)

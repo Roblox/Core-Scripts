@@ -170,8 +170,8 @@ local function Initialize()
 												 	[2] = {["Record Video"] = "F12"},
 													[3] = {["Dev Console"] = "F9"},
 													[4] = {["Mouselock"] = "Shift"},
-													[5] = {["Change Graphics"] = "F10"},
-													[6] = {["Toggle Fullscreen"] = "F11"} })
+													[5] = {["Graphics Level"] = "F10"},
+													[6] = {["Fullscreen"] = "F11"} })
 		miscFrame.Position = UDim2.new(2/3,PC_TABLE_SPACING * 2,0,0)
 		miscFrame.Parent = parentFrame
 

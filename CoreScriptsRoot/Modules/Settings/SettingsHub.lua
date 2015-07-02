@@ -262,9 +262,9 @@ local function CreateSettingsHub()
 		if inputState ~= Enum.UserInputState.Begin then return end
 
 		local direction = 0
-		if inputObject.KeyCode == Enum.KeyCode.ButtonR1 or inputObject.KeyCode == Enum.KeyCode.E then 
+		if inputObject.KeyCode == Enum.KeyCode.ButtonR1 or inputObject.KeyCode == Enum.KeyCode.Tab then 
 			direction = 1
-		elseif inputObject.KeyCode == Enum.KeyCode.ButtonL1 or inputObject.KeyCode == Enum.KeyCode.Q then 
+		elseif inputObject.KeyCode == Enum.KeyCode.ButtonL1 then 
 			direction = -1
 		end
 
@@ -273,6 +273,10 @@ local function CreateSettingsHub()
 
 		local newTabPosition = currentTabPosition + direction
 		local newHeader = this.TabHeaders[newTabPosition]
+
+		if not newHeader and inputObject.KeyCode == Enum.KeyCode.Tab then
+			newHeader = this.TabHeaders[1]
+		end
 
 		if newHeader then
 			for pager,v in pairs(this.Pages.PageTable) do
@@ -405,6 +409,12 @@ local function CreateSettingsHub()
 		end
 	end
 
+	function clearMenuStack()
+		while this.MenuStack and #this.MenuStack > 0 do
+			this:PopMenu()
+		end
+	end
+
 	function setVisibilityInternal(visible, noAnimation)
 		this.Visible = visible
 
@@ -420,10 +430,14 @@ local function CreateSettingsHub()
 
 			local noOpFunc = function() end
 			ContextActionService:BindCoreAction("RbxSettingsHubStopCharacter", noOpFunc, false,
-												 Enum.UserInputType.Keyboard, Enum.UserInputType.Gamepad1,
-												 Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
+												 Enum.PlayerActions.CharacterForward, 
+												 Enum.PlayerActions.CharacterBackward, 
+												 Enum.PlayerActions.CharacterLeft,
+												 Enum.PlayerActions.CharacterRight,
+												 Enum.PlayerActions.CharacterJump, 
+												 Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
 
-			ContextActionService:BindCoreAction("RbxSettingsHubSwitchTab", switchTabFunc, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL1, Enum.KeyCode.Q, Enum.KeyCode.E)
+			ContextActionService:BindCoreAction("RbxSettingsHubSwitchTab", switchTabFunc, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL1, Enum.KeyCode.Tab)
 			setBottomBarBindings()
 
 			if this.HomePage then
@@ -453,7 +467,8 @@ local function CreateSettingsHub()
 				end)
 			end
 
-			this.MenuStack = {}
+
+			clearMenuStack()
 			game.GuiService.SelectedCoreObject = nil
 			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab")
 			ContextActionService:UnbindCoreAction("RbxSettingsHubStopCharacter")
@@ -477,6 +492,7 @@ local function CreateSettingsHub()
 			this.MenuStack[#this.MenuStack + 1] = newItem
 		end
 	end
+
 
 	function this:PopMenu()
 		if this.MenuStack and #this.MenuStack > 0 then
@@ -503,14 +519,15 @@ local function CreateSettingsHub()
 		this.Shield.BackgroundTransparency = SETTINGS_SHIELD_TRANSPARENCY
 	end
 	function this:HideShield()
-		--this.PageView.ClipsDescendants = false
 		this.Shield.BackgroundTransparency = 1
 	end
 
-	GuiService.EscapeKeyPressed:connect(function()
+	local closeMenuFunc = function(name, inputState, input)
+		if inputState ~= Enum.UserInputState.Begin then return end
 		this:PopMenu()
-	end)
-
+	end
+	ContextActionService:BindCoreAction("RBXEscapeMainMenu", closeMenuFunc, false, Enum.KeyCode.Escape)
+	
 	this.ResetCharacterPage:SetHub(this)
 	this.LeaveGamePage:SetHub(this)
 

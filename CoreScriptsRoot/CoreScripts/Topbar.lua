@@ -159,12 +159,10 @@ local function CreateTopBar()
 		Parent = topbarContainer;
 	};
 
-	local function UpdateBackgroundTransparency()
+	function this:UpdateBackgroundTransparency()
 		local playerGui = Player:FindFirstChild('PlayerGui')
 		if playerGui then
-			pcall(function()
-				topbarContainer.BackgroundTransparency = playerGui:GetTopbarTransparency()
-			end)
+			topbarContainer.BackgroundTransparency = playerGui:GetTopbarTransparency()
 			topbarShadow.Visible = (topbarContainer.BackgroundTransparency == 0)
 		end
 	end
@@ -176,16 +174,21 @@ local function CreateTopBar()
 	function this:SetTopbarDisplayMode(opaque)
 		topbarContainer.BackgroundTransparency = opaque and TOPBAR_OPAQUE_TRANSPARENCY or TOPBAR_TRANSLUCENT_TRANSPARENCY
 		topbarShadow.Visible = not opaque
-		UpdateBackgroundTransparency()
+		this:UpdateBackgroundTransparency()
+	end
+
+	function this:ForceTopbarOpaque()
+		topbarContainer.BackgroundTransparency = TOPBAR_OPAQUE_TRANSPARENCY
+		topbarShadow.Visible = false
 	end
 
 	spawn(function()
 		local playerGui = Player:WaitForChild('PlayerGui')
 		playerGuiChangedConn = Util.DisconnectEvent(playerGuiChangedConn)
 		pcall(function()
-			playerGuiChangedConn = playerGui.TopbarTransparencyChangedSignal:connect(UpdateBackgroundTransparency)
+			playerGuiChangedConn = playerGui.TopbarTransparencyChangedSignal:connect(this.UpdateBackgroundTransparency)
 		end)
-		UpdateBackgroundTransparency()
+		this:UpdateBackgroundTransparency()
 	end)
 
 	return this
@@ -634,7 +637,7 @@ end
 ----- END OF LEADERSTATS -----
 
 --- SETTINGS ---
-local function CreateSettingsIcon()
+local function CreateSettingsIcon(topBarInstance)
 	local MenuModule = nil
 	if useNewControllerMenu then
 		game.CoreGui.RobloxGui.Modules:WaitForChild("Settings")
@@ -691,6 +694,11 @@ local function CreateSettingsIcon()
 	MenuModule.SettingsShowSignal:connect(function(active)
 		settingsActive = active
 		UpdateHamburgerIcon()
+		if active then
+			topBarInstance:ForceTopbarOpaque()
+		else
+			topBarInstance:UpdateBackgroundTransparency()
+		end
 	end)
 
 	return CreateMenuItem(settingsIconButton)
@@ -1014,7 +1022,9 @@ local function CreateShiftLockIcon()
 end
 ----------------------
 
-local settingsIcon = useNewSettings and CreateSettingsIcon()
+local TopBar = CreateTopBar()
+
+local settingsIcon = useNewSettings and CreateSettingsIcon(TopBar)
 local chatIcon = CreateChatIcon()
 local mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
 local backpackIcon = useNewBackpack and CreateBackpackIcon()
@@ -1056,7 +1066,6 @@ if nameAndHealthMenuItem then
 end
 -------------------------
 
-local TopBar = CreateTopBar()
 
 local function AddItemInOrder(Bar, Item, ItemOrder)
 	local index = 1

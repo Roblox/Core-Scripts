@@ -363,8 +363,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		lastSelectedCoreObject = this.DropDownFrame
 		GuiService.SelectedCoreObject = this.Selections[this.CurrentIndex]
 
-		settingsHub:AddToMenuStack(DropDownFullscreenFrame)
-
+		--settingsHub:AddToMenuStack(DropDownFullscreenFrame)
 		ContextActionService:BindCoreAction(guid .. "FreezeAction", noOpFunc, false, Enum.UserInputType.Keyboard, Enum.UserInputType.Gamepad1)
 		ContextActionService:BindCoreAction(guid .. "Action", hideDropDownSelection, false, Enum.KeyCode.ButtonB, Enum.KeyCode.Escape)
 	end
@@ -537,6 +536,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 	settingsHub.PoppedMenu:connect(function(poppedMenu)
 		if poppedMenu == DropDownFullscreenFrame then
+			print("hide drop DropDown")
 			hideDropDownSelection()
 		end
 	end)
@@ -651,6 +651,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 			Position = UDim2.new(1,0,0,0),
 			TextColor3 = Color3.new(1,1,1),
 			TextYAlignment = Enum.TextYAlignment.Center,
+			TextTransparency = 0.5,
 			Font = Enum.Font.SourceSans,
 			FontSize = Enum.FontSize.Size24,
 			Text = v,
@@ -695,7 +696,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 					selectionLabel.Visible = true
 					PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
 					selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, false, function(completed)
-						if completed then
+						if completed == Enum.TweenStatus.Completed then
 							selectionLabel.Visible = true
 							this.CurrentIndex = i
 							indexChangedEvent:Fire(index)
@@ -706,7 +707,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 				if selectionLabel.Visible then
 					PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
 					selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, false, function(completed)
-						if completed then
+						if  completed == Enum.TweenStatus.Completed then
 							selectionLabel.Visible = false
 						end
 					end)
@@ -742,6 +743,19 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 
 		setSelection(newIndex, direction)
+	end
+
+	local guiServiceCon = nil
+	local function connectToGuiService()
+		guiServiceCon = GuiService.Changed:connect(function(prop)
+			if prop == "SelectedCoreObject" then
+				if GuiService.SelectedCoreObject == this.SelectorFrame then 
+					this.Selections[this.CurrentIndex].TextTransparency = 0
+				else
+					this.Selections[this.CurrentIndex].TextTransparency = 0.5
+				end
+			end
+		end)
 	end
 
 	--------------------- PUBLIC FACING FUNCTIONS -----------------------
@@ -793,6 +807,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 	end)
 
 	local isInTree = true
+
 	UserInputService.InputBegan:connect(function(inputObject)
 		if not interactable then return end
 		if not isInTree then return end
@@ -829,7 +844,14 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 	this.SelectorFrame.AncestryChanged:connect(function(child, parent)
 		isInTree = parent
+		if not isInTree then
+			if guiServiceCon then guiServiceCon:disconnect() end
+		else
+			connectToGuiService()
+		end
 	end)
+
+	connectToGuiService()
 
 	return this
 end
@@ -942,7 +964,7 @@ local function ShowAlert(alertMessage, okButtonText, okPressedFunc)
 	ContextActionService:BindCoreAction(removeId, destroyAlert, false, Enum.KeyCode.Escape, Enum.KeyCode.ButtonB)
 end
 
-local function CreateNewSlider(numOfSteps, startStep)
+local function CreateNewSlider(numOfSteps, startStep, minStep)
 	-------------------- SETUP ------------------------
 	local this = {}
 
@@ -1095,33 +1117,49 @@ local function CreateNewSlider(numOfSteps, startStep)
 
 
 	------------------- FUNCTIONS ---------------------
+	local function hideSelection()
+		for i = 1, steps do
+			this.Steps[i].BackgroundColor3 = NON_SELECTED_COLOR
+			if i == 1 then
+				this.Steps[i].Image = NON_SELECTED_LEFT_IMAGE
+			elseif i == steps then
+				this.Steps[i].Image = NON_SELECTED_RIGHT_IMAGE
+			end
+		end
+	end
+	local function showSelection()
+		for i = 1, steps do
+			if i > currentStep then break end
+			this.Steps[i].BackgroundColor3 = SELECTED_COLOR
+			if i == 1 then
+				this.Steps[i].Image = SELECTED_LEFT_IMAGE
+			elseif i == steps then
+				this.Steps[i].Image = SELECTED_RIGHT_IMAGE
+			end
+		end
+	end
+	local function modifySelection(alpha)
+		for i = 1, steps do
+			if i > currentStep then break end
+			if i == 1 or i == steps then
+				this.Steps[i].ImageTransparency = alpha
+			else
+				this.Steps[i].BackgroundTransparency = alpha
+			end
+		end
+	end
+
 	local function setCurrentStep(newStepPosition)
-		if newStepPosition < 0 then newStepPosition = 0 end
+		if not minStep then minStep = 0 end
+		if newStepPosition < minStep then newStepPosition = minStep end
 		if newStepPosition > steps then newStepPosition = steps end
 
 		if currentStep == newStepPosition then return end
 
 		currentStep = newStepPosition
 
-		for i = 1, steps do
-			if i <= currentStep then
-				this.Steps[i].BackgroundColor3 = SELECTED_COLOR
-
-				if i == 1 then
-					this.Steps[i].Image = SELECTED_LEFT_IMAGE
-				elseif i == steps then
-					this.Steps[i].Image = SELECTED_RIGHT_IMAGE
-				end
-			else
-				this.Steps[i].BackgroundColor3 = NON_SELECTED_COLOR
-
-				if i == 1 then
-					this.Steps[i].Image = NON_SELECTED_LEFT_IMAGE
-				elseif i == steps then
-					this.Steps[i].Image = NON_SELECTED_RIGHT_IMAGE
-				end
-			end
-		end
+		hideSelection()
+		showSelection()
 
 		timeAtLastInput = tick()
 		valueChangedEvent:Fire(currentStep)
@@ -1201,6 +1239,11 @@ local function CreateNewSlider(numOfSteps, startStep)
 		lastInputDirection = 0
 		interactable = value
 		this.SliderFrame.Selectable = value
+		if not interactable then
+			hideSelection()
+		else
+			showSelection()
+		end
 	end
 
 	function this:SetZIndex(newZIndex)
@@ -1211,6 +1254,12 @@ local function CreateNewSlider(numOfSteps, startStep)
 
 		for i = 1, #this.Steps do
 			this.Steps[i].ZIndex = newZIndex
+		end
+	end
+
+	function this:SetMinStep(newMinStep)
+		if newMinStep >= 0 and newMinStep <= steps then
+			minStep = newMinStep
 		end
 	end
 
@@ -1310,8 +1359,10 @@ local function CreateNewSlider(numOfSteps, startStep)
 		if prop ~= "SelectedCoreObject" then return end
 
 		if GuiService.SelectedCoreObject == this.SliderFrame then
+			modifySelection(0)
 			RunService:BindToRenderStep(renderStepBindName, Enum.RenderPriority.Input.Value + 1, stepSliderFunc)
 		else
+			modifySelection(0.5)
 			RunService:UnbindFromRenderStep(renderStepBindName)
 		end
 	end)
@@ -1489,8 +1540,8 @@ function moduleApiTable:GetEaseInOutQuad()
 	return EaseInOutQuad
 end
 
-function moduleApiTable:CreateNewSlider(numOfSteps, startStep)
-	return CreateNewSlider(numOfSteps, startStep)
+function moduleApiTable:CreateNewSlider(numOfSteps, startStep, minStep)
+	return CreateNewSlider(numOfSteps, startStep, minStep)
 end
 
 function moduleApiTable:CreateNewSelector(selectionStringTable, startPosition)

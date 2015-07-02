@@ -69,7 +69,9 @@ local function Initialize()
 			end
 		end
 
-		this.HubRef:SetVisibility(false)
+		if this.HubRef then
+			this.HubRef:SetVisibility(false)
+		end
 	end
 
 	this.ResetCharacterButton = utility:MakeStyledButton("ResetCharacter", "Reset", UDim2.new(0, 200, 0, 50), resetCharFunc)

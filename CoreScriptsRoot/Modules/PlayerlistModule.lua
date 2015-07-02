@@ -1885,7 +1885,11 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 			return
 		end
 		Container.Visible = enabled and isOpen
-		GuiService[enabled and "AddKey" or "RemoveKey"](GuiService, "\t")
+		if enabled then
+			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
+		else
+			ContextActionService:UnbindCoreAction("RbxPlayerListToggle")
+		end
 	end
 end
 pcall(function()
@@ -1945,13 +1949,8 @@ Playerlist.IsOpen = function()
 end
 
 -- NOTE: Core script only
+ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
 if GuiService then
-	GuiService.KeyPressed:connect(function(key)
-		if key == "\t" then
-			Playerlist.ToggleVisibility()
-		end
-	end)
-
 	GuiService:AddSelectionParent("PlayerListSelection", Container)
 end
 
