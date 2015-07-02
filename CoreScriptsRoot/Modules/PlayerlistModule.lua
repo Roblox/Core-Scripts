@@ -1915,7 +1915,8 @@ local closeListFunc = function(name, state, input)
 	GuiService.SelectedObject = nil
 end
 
-Playerlist.ToggleVisibility = function()
+Playerlist.ToggleVisibility = function(name, inputState, inputObject)
+	if inputState and inputState ~= Enum.UserInputState.Begin then return end
 	if IsSmallScreenDevice then return end
 	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
 	isOpen = not isOpen
