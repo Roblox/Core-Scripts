@@ -24,6 +24,7 @@ local UserInputService = game:GetService("UserInputService")
 
 --[[ VARIABLES ]]
 local isTouchDevice = UserInputService.TouchEnabled
+local isGamepadOnly = UserInputService.GamepadEnabled and not UserInputService.MouseEnabled and not UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
 local platform = UserInputService:GetPlatform()
 -- TODO: Change dev console script to parent this to somewhere other than an engine created gui
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
@@ -77,7 +78,7 @@ local function CreateSettingsHub()
 		this[buttonName], this[textName] = utility:MakeStyledButton(name .. "Button", text, UDim2.new(0,260,0,70), clickFunc)
 		this[buttonName].Position = position
 		this[buttonName].Parent = this.BottomButtonFrame
-		if platform == Enum.Platform.XBoxOne or  UserInputService:GetPlatform() == Enum.Platform.AndroidTV then
+		if isGamepadOnly then
 			this[buttonName].ImageTransparency = 1
 		end
 
@@ -221,6 +222,8 @@ local function CreateSettingsHub()
 			local bottomOffset = 20
 			if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
 				bottomOffset = 80
+			elseif isGamepadOnly then
+				bottomOffset = 200
 			end
 			this.BottomButtonFrame = utility:Create'Frame'
 			{
@@ -253,7 +256,7 @@ local function CreateSettingsHub()
 			addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight.png", 
 				"L", UDim2.new(0.5,-130,0.5,-25), 
 				leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
-			addBottomBarButton("ResetCharacter", "Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight.png", 
+			addBottomBarButton("ResetCharacter", "    Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight.png", 
 				"R", UDim2.new(0.5,-400,0.5,-25), 
 				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY})
 			addBottomBarButton("Resume", "Resume", "rbxasset://textures/ui/Settings/Help/BButtonLight.png",
@@ -567,8 +570,10 @@ local function CreateSettingsHub()
 	this.GameSettingsPage = require(RobloxGui.Modules.Settings.Pages.GameSettings)
 	this.GameSettingsPage:SetHub(this)
 
-	this.ReportAbusePage = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
-	this.ReportAbusePage:SetHub(this)
+	if platform ~= Enum.Platform.XBoxOne and platform ~= Enum.Platform.PS4 then
+		this.ReportAbusePage = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
+		this.ReportAbusePage:SetHub(this)
+	end
 
 	this.HelpPage = require(RobloxGui.Modules.Settings.Pages.Help)
 	this.HelpPage:SetHub(this)
@@ -585,7 +590,9 @@ local function CreateSettingsHub()
 		this:AddPage(this.HomePage)
 	end
 	this:AddPage(this.GameSettingsPage)
-	this:AddPage(this.ReportAbusePage)
+	if this.ReportAbusePage then
+		this:AddPage(this.ReportAbusePage)
+	end
 	this:AddPage(this.HelpPage)
 	if this.RecordPage then
 		this:AddPage(this.RecordPage)

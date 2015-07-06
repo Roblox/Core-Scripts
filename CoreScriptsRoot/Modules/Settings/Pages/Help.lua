@@ -196,7 +196,7 @@ local function Initialize()
 	local function createGamepadHelp(parentFrame)
 		local gamepadImage = "rbxasset://textures/ui/Settings/Help/GenericController.png"
 		local imageSize = UDim2.new(0,650,0,239)
-		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne or  UserInputService:GetPlatform() == Enum.Platform.XBox360 then
+		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne or UserInputService:GetPlatform() == Enum.Platform.XBox360 then
 			gamepadImage = "rbxasset://textures/ui/Settings/Help/XboxController.png"
 			imageSize = UDim2.new(0,1116,0,428)
 		elseif UserInputService:GetPlatform() == Enum.Platform.PS4 or UserInputService:GetPlatform() == Enum.Platform.PS3 then
@@ -231,24 +231,36 @@ local function Initialize()
 			};
 		end
 
-		createGamepadLabel("Switch Tool", UDim2.new(-0.01,0,-0.05,0), UDim2.new(0,100,0,24))
-		createGamepadLabel("Game Menu Toggle", UDim2.new(-0.11,0,0.12,0), UDim2.new(0,164,0,24))
-		createGamepadLabel("Move", UDim2.new(-0.08,0,0.275,0), UDim2.new(0,46,0,24))
-		createGamepadLabel("Menu Navigation", UDim2.new(-0.125,0,0.44,0), UDim2.new(0,164,0,24))
-		createGamepadLabel("Use Tool", UDim2.new(0.96,0,-0.05,0), UDim2.new(0,73,0,24))
-		createGamepadLabel("ROBLOX Menu", UDim2.new(0.9,0,0.11,0), UDim2.new(0,122,0,24))
-		createGamepadLabel("Back", UDim2.new(1.01,0,0.275,0), UDim2.new(0,43,0,24))
-		createGamepadLabel("Jump", UDim2.new(0.91,0,0.435,0), UDim2.new(0,49,0,24))
-		createGamepadLabel("Rotate Camera", UDim2.new(0.91,0,0.6,0), UDim2.new(0,132,0,24))
-		createGamepadLabel("Camera Zoom", UDim2.new(0.91,0,0.755,0), UDim2.new(0,122,0,24))
+		if gamepadImage == "rbxasset://textures/ui/Settings/Help/XboxController.png" then
+			createGamepadLabel("Switch Tool", UDim2.new(0,50,0,-12), UDim2.new(0,100,0,24))
+			createGamepadLabel("Game Menu Toggle", UDim2.new(0,-20,0.15,-12), UDim2.new(0,164,0,24))
+			createGamepadLabel("Move", UDim2.new(0,-65,0.31,-12), UDim2.new(0,46,0,24))
+			createGamepadLabel("Menu Navigation", UDim2.new(0,-50,0.46,-12), UDim2.new(0,164,0,24))
+		else
+			createGamepadLabel("Switch Tool", UDim2.new(-0.01,0,0,-12), UDim2.new(0,100,0,24))
+			createGamepadLabel("Game Menu Toggle", UDim2.new(-0.11,0,0.15,-12), UDim2.new(0,164,0,24))
+			createGamepadLabel("Move", UDim2.new(-0.08,0,0.31,-12), UDim2.new(0,46,0,24))
+			createGamepadLabel("Menu Navigation", UDim2.new(-0.125,0,0.46,-12), UDim2.new(0,164,0,24))
+		end
+
+		createGamepadLabel("Use Tool", UDim2.new(0.96,0,0,-12), UDim2.new(0,73,0,24))
+		createGamepadLabel("ROBLOX Menu", UDim2.new(0.9,0,0.15,-12), UDim2.new(0,122,0,24))
+		createGamepadLabel("Back", UDim2.new(1.01,0,0.31,-12), UDim2.new(0,43,0,24))
+		createGamepadLabel("Jump", UDim2.new(0.91,0,0.46,-12), UDim2.new(0,49,0,24))
+		createGamepadLabel("Rotate Camera", UDim2.new(0.91,0,0.62,-12), UDim2.new(0,132,0,24))
+		createGamepadLabel("Camera Zoom", UDim2.new(0.91,0,0.77,-12), UDim2.new(0,122,0,24))
 
 		local openDevConsoleFunc = function()
+			this.HubRef:SetVisibility(false)
 			ToggleDevConsoleBindableFunc:Invoke()
 		end
 		local devConsoleButton = utility:MakeStyledButton("ConsoleButton", "      Toggle Dev Console", UDim2.new(0,300,0,44), openDevConsoleFunc)
 		devConsoleButton.Size = UDim2.new(devConsoleButton.Size.X.Scale, devConsoleButton.Size.X.Offset, 0, 60)
-		devConsoleButton.Position = UDim2.new(1,-300,0,340)
-		devConsoleButton.Parent = parentFrame
+		devConsoleButton.Position = UDim2.new(1,-300,1,30)
+		if UserInputService.GamepadEnabled and not UserInputService.TouchEnabled and not UserInputService.MouseEnabled and not UserInputService.KeyboardEnabled then
+			devConsoleButton.ImageTransparency = 1
+		end
+		devConsoleButton.Parent = gamepadImageLabel
 		local aButtonImage = utility:Create'ImageLabel'
 		{
 			Name = "AButtonImage",

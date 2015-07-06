@@ -174,7 +174,7 @@ local function Initialize()
 		end
 	end
 
-	local function createCameraModeOptions()
+	local function createCameraModeOptions(movementModeEnabled)
 		------------------------------------------------------
 		------------------
 		------------------ Shift Lock Switch -----------------
@@ -287,7 +287,7 @@ local function Initialize()
 		------------------------------------------------------
 		------------------
 		------------------ Movement Mode ---------------------
-		do
+		if movementModeEnabled then
 			local movementEnumItems = nil
 			local startingMovementEnumItem = 1
 			if UserInputService.TouchEnabled then
@@ -395,12 +395,14 @@ local function Initialize()
 				isUserChoiceMovement = LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.UserChoice
 			end
 
-			if not isUserChoiceMovement then
-				this.MovementModeOverrideText.Visible = true
-				setMovementModeVisible(false)
-			else
-				this.MovementModeOverrideText.Visible = false
-				setMovementModeVisible(true)
+			if this.MovementModeOverrideText then
+				if not isUserChoiceMovement then
+					this.MovementModeOverrideText.Visible = true
+					setMovementModeVisible(false)
+				else
+					this.MovementModeOverrideText.Visible = false
+					setMovementModeVisible(true)
+				end
 			end
 
 			if this.ShiftLockOverrideText then
@@ -483,7 +485,7 @@ local function Initialize()
 		end)
 	end
 
-	createCameraModeOptions()
+	createCameraModeOptions(not UserInputService.GamepadEnabled and (UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
 
 	if UserInputService.MouseEnabled then
 		local mouseSensSuccess, mouseSensFlagValue = pcall(function() return settings():GetFFlag("MouseSensitivity") end)

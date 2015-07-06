@@ -874,7 +874,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 	return this
 end
 
-local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc)
+local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc, hasBackground)
 	if CoreGui.RobloxGui:FindFirstChild("AlertViewFullScreen") then return end
 
 	local NON_SELECTED_TEXT_COLOR = Color3.new(59/255, 166/255, 241/255)
@@ -890,9 +890,11 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc)
 		ImageTransparency = 1,
 		Size = UDim2.new(0, 400, 0, 350),
 		Position = UDim2.new(0.5, -200, 0.5, -175),
-		ZIndex = 10,
+		ZIndex = 9,
 		Parent = CoreGui.RobloxGui
 	};
+	if hasBackground then AlertViewBacking.ImageTransparency = 0 end
+
 	if CoreGui.RobloxGui.AbsoluteSize.Y <= AlertViewBacking.Size.Y.Offset then
 		AlertViewBacking.Size = UDim2.new(AlertViewBacking.Size.X.Scale, AlertViewBacking.Size.X.Offset, 
 											AlertViewBacking.Size.Y.Scale, CoreGui.RobloxGui.AbsoluteSize.Y)
@@ -928,15 +930,17 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc)
 		AlertViewBacking:Destroy()
 		if okPressedFunc then okPressedFunc() end
 		ContextActionService:UnbindCoreAction(removeId)
-		GuiService.GuiNavigationEnabled = true
+		Game.GuiService.SelectedCoreObject = nil
 	end
 
-	local AlertViewButton = MakeButton("AlertViewButton", okButtonText, UDim2.new(1, 0, 0.2, 0), destroyAlert)
-	AlertViewButton.Position = UDim2.new(0, 0, 0.65, 0)
+	local AlertViewButton, AlertViewText = MakeButton("AlertViewButton", okButtonText, UDim2.new(1, -20, 0.2, 0), destroyAlert)
+	AlertViewButton.Position = UDim2.new(0, 10, 0.65, 0)
 	AlertViewButton.NextSelectionLeft = AlertViewButton
 	AlertViewButton.NextSelectionRight = AlertViewButton
 	AlertViewButton.NextSelectionUp = AlertViewButton
 	AlertViewButton.NextSelectionDown = AlertViewButton
+	AlertViewButton.ZIndex = 10
+	AlertViewText.ZIndex = AlertViewButton.ZIndex
 	AlertViewButton.Parent = AlertViewBacking
 
 	if usesSelectedObject() then
@@ -945,10 +949,12 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc)
 
 	GuiService.SelectedCoreObject = AlertViewButton
 
-	ContextActionService:BindCoreAction(removeId, destroyAlert, false, Enum.KeyCode.Escape, Enum.KeyCode.ButtonB)
+	ContextActionService:BindCoreAction(removeId, destroyAlert, false, Enum.KeyCode.Escape, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonA)
 
-	settingsHub:HideBar()
-	settingsHub.Pages.CurrentPage:Hide(1, 1)
+	if settingsHub then
+		settingsHub:HideBar()
+		settingsHub.Pages.CurrentPage:Hide(1, 1)
+	end
 end
 
 local function CreateNewSlider(numOfSteps, startStep, minStep)
@@ -1544,8 +1550,8 @@ function moduleApiTable:AddNewRow(pageToAddTo, rowDisplayName, selectionType, ro
 	return AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, rowDefault, extraSpacing)
 end
 
-function moduleApiTable:ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc)
-	ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc)
+function moduleApiTable:ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc, hasBackground)
+	ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc, hasBackground)
 end
 
 function moduleApiTable:IsSmallTouchScreen()

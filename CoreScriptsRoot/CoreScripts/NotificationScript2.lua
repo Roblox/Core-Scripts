@@ -527,6 +527,9 @@ if useNewControllerMenu then
 			ContextActionService:BindCoreAction("LeaveNotificationSelection", leaveNotificationFunc, false, Enum.KeyCode.ButtonB)
 		else
 			isPaused = false
+			local utility = require(RobloxGui.Modules.Settings.Utility)
+			local okPressedFunc = function() end
+			utility:ShowAlert("You have no notifications", "Ok", settingsHub, okPressedFunc, true)
 		end
 	end)
 
