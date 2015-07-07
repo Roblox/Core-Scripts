@@ -5,6 +5,14 @@
 		Description: Takes care of the report abuse page in Settings Menu
 --]]
 
+-------------- SERVICES --------------
+local CoreGui = game:GetService("CoreGui")
+local RobloxGui = CoreGui:WaitForChild("RobloxGui")
+local GuiService = game:GetService("GuiService")
+
+----------- UTILITIES --------------
+local utility = require(RobloxGui.Modules.Settings.Utility)
+
 ------------ CONSTANTS -------------------
 local ABUSE_TYPES_PLAYER = {
 	"Swearing",
@@ -23,13 +31,9 @@ local ABUSE_TYPES_GAME = {
 	"Offsite Link",
 }
 local DEFAULT_ABUSE_DESC_TEXT = "   Short Description (Optional)"
--------------- SERVICES --------------
-local CoreGui = game:GetService("CoreGui")
-local RobloxGui = CoreGui:WaitForChild("RobloxGui")
-local GuiService = game:GetService("GuiService")
-
------------ UTILITIES --------------
-local utility = require(RobloxGui.Modules.Settings.Utility)
+if utility:IsSmallTouchScreen() then
+	DEFAULT_ABUSE_DESC_TEXT = "   (Optional)"
+end
 
 ------------ VARIABLES -------------------
 local PageInstance = nil
@@ -95,7 +99,7 @@ local function Initialize()
 		if utility:IsSmallTouchScreen() then
 			this.GameOrPlayerFrame, 
 			this.GameOrPlayerLabel,
-			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1)
+			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1, -10)
 		else
 			this.GameOrPlayerFrame, 
 			this.GameOrPlayerLabel,
@@ -112,12 +116,25 @@ local function Initialize()
 		this.TypeOfAbuseLabel,
 		this.TypeOfAbuseMode = utility:AddNewRow(this, "Type Of Abuse", "DropDown", ABUSE_TYPES_GAME)
 
-		this.AbuseDescriptionFrame, 
-		this.AbuseDescriptionLabel,
-		this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 10)
 		if utility:IsSmallTouchScreen() then
-			this.AbuseDescription.Size = UDim2.new(this.AbuseDescription.Size.X.Scale,this.AbuseDescription.Size.X.Offset - 20,
-															0, 28)
+			this.AbuseDescriptionFrame, 
+			this.AbuseDescriptionLabel,
+			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil)
+		else
+			this.AbuseDescriptionFrame, 
+			this.AbuseDescriptionLabel,
+			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
+		end
+		
+		if utility:IsSmallTouchScreen() then
+			this.AbuseDescription.Size = UDim2.new(0, 290, 0, 30)
+			this.AbuseDescription.Position = UDim2.new(1,-345,this.AbuseDescription.Position.Y.Scale, this.AbuseDescription.Position.Y.Offset)
+
+			this.AbuseDescriptionLabel = this.TypeOfAbuseLabel:clone()
+			this.AbuseDescriptionLabel.Text = "Abuse Description"
+			this.AbuseDescriptionLabel.Position = UDim2.new(this.AbuseDescriptionLabel.Position.X.Scale, this.AbuseDescriptionLabel.Position.X.Offset,
+														0,50)
+			this.AbuseDescriptionLabel.Parent = this.Page
 		end
 
 		local SelectionOverrideObject = utility:Create'ImageLabel'
@@ -199,7 +216,7 @@ local function Initialize()
 
 		submitButton, submitText = utility:MakeStyledButton("SubmitButton", "Submit", UDim2.new(0,194,0,50), onReportSubmitted)
 		if utility:IsSmallTouchScreen() then
-			submitButton.Position = UDim2.new(1,-240,1,5)
+			submitButton.Position = UDim2.new(1,-220,1,5)
 		else
 			submitButton.Position = UDim2.new(1,-194,1,5)
 		end
@@ -233,6 +250,8 @@ local function Initialize()
 		this.GameOrPlayerMode.IndexChanged:connect(updateAbuseDropDown)
 
 		this:AddRow(nil, nil, submitButton)
+
+		this.Page.Size = UDim2.new(1,0,0,submitButton.AbsolutePosition.Y + submitButton.AbsoluteSize.Y)
 	end
 
 	return this

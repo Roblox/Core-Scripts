@@ -6,7 +6,6 @@
 --]]
 
 --[[ CONSTANTS ]]
-
 local SETTINGS_SHIELD_COLOR = Color3.new(41/255,41/255,41/255)
 local SETTINGS_SHIELD_TRANSPARENCY = 0.2
 local SETTINGS_SHIELD_SIZE = UDim2.new(1, 0, 1, -2)
@@ -37,6 +36,11 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 local playerList = require(RobloxGui.Modules.PlayerlistModule)
 local chat = require(RobloxGui.Modules.Chat)
 local backpack = require(RobloxGui.Modules.BackpackScript)
+
+if utility:IsSmallTouchScreen() then
+	SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0,0,0,0)
+	SETTINGS_SHIELD_SIZE = UDim2.new(1,0,1,0)
+end
 
 local function CreateSettingsHub()
 	local this = {}
@@ -237,7 +241,7 @@ local function CreateSettingsHub()
 			end
 
 			local resumeFunc = function()
-				clearMenuStack()
+				setVisibilityInternal(false)
 			end
 
 			addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight.png", 
