@@ -71,7 +71,7 @@ local function CreateSettingsHub()
 	end
 			
 
-	local function addBottomBarButton(name, text, gamepadImage, keyboardString, position, clickFunc, hotkeys)
+	local function addBottomBarButton(name, text, gamepadImage, keyboardImage, position, clickFunc, hotkeys)
 		local buttonName = name .. "Button"
 		local textName = name .. "Text"
 
@@ -84,7 +84,6 @@ local function CreateSettingsHub()
 
 		this[textName].FontSize = Enum.FontSize.Size24
 		local hintLabel = nil
-		local hintLabelText = nil
 
 		if not UserInputService.TouchEnabled then
 			this[textName].Size = UDim2.new(1,0,1,0)
@@ -95,6 +94,8 @@ local function CreateSettingsHub()
 			local image = ""
 			if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
 				image = gamepadImage
+			else
+				image = keyboardImage
 			end
 
 			hintLabel = utility:Create'ImageLabel'
@@ -107,22 +108,6 @@ local function CreateSettingsHub()
 				Image = image,
 				Parent = this[buttonName]
 			};
-
-			hintLabelText= utility:Create'TextLabel'
-			{
-				Name = hintName .. "Text",
-				Text = keyboardString,
-				Font = Enum.Font.SourceSans,
-				FontSize = Enum.FontSize.Size36,
-				TextColor3 = Color3.new(0.9,0.9,0.9),
-				TextWrapped = true,
-				Size = UDim2.new(0,60,0,60),
-				Position = UDim2.new(0,10,0,0),
-				ZIndex = this.Shield.ZIndex + 2,
-				BackgroundTransparency = 1,
-				Visible = (image == ""),
-				Parent = this[buttonName]
-			};
 		end
 
 		UserInputService.InputBegan:connect(function(inputObject)
@@ -130,12 +115,14 @@ local function CreateSettingsHub()
 				inputObject.UserInputType == Enum.UserInputType.Gamepad3 or inputObject.UserInputType == Enum.UserInputType.Gamepad4 then
 					if hintLabel then
 						hintLabel.Image = gamepadImage
-						hintLabelText.Visible = false
+						hintLabel.Size = UDim2.new(0,60,0,60)
+						hintLabel.Position = UDim2.new(0,10,0,5)
 					end
 			elseif inputObject.UserInputType == Enum.UserInputType.Keyboard then
 				if hintLabel then
-					hintLabel.Image = ""
-					hintLabelText.Visible = true
+					hintLabel.Image = keyboardImage
+					hintLabel.Size = UDim2.new(0,48,0,48)
+					hintLabel.Position = UDim2.new(0,10,0,8)
 				end
 			end
 		end)
@@ -254,13 +241,13 @@ local function CreateSettingsHub()
 			end
 
 			addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight.png", 
-				"L", UDim2.new(0.5,-130,0.5,-25), 
+				"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,-130,0.5,-25), 
 				leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
 			addBottomBarButton("ResetCharacter", "    Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight.png", 
-				"R", UDim2.new(0.5,-400,0.5,-25), 
+				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,-400,0.5,-25), 
 				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY})
 			addBottomBarButton("Resume", "Resume", "rbxasset://textures/ui/Settings/Help/BButtonLight.png",
-				"Esc", UDim2.new(0.5,140,0.5,-25), 
+				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,140,0.5,-25), 
 				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart})
 		end
 	end

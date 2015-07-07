@@ -92,9 +92,15 @@ local function Initialize()
 	function this:SetHub(newHubRef)
 		this.HubRef = newHubRef
 
-		this.GameOrPlayerFrame, 
-		this.GameOrPlayerLabel,
-		this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1, 3)
+		if utility:IsSmallTouchScreen() then
+			this.GameOrPlayerFrame, 
+			this.GameOrPlayerLabel,
+			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1)
+		else
+			this.GameOrPlayerFrame, 
+			this.GameOrPlayerLabel,
+			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1, 3)
+		end
 
 		this.WhichPlayerFrame, 
 		this.WhichPlayerLabel,
