@@ -20,6 +20,10 @@ local MESSAGES_FADE_OUT_TIME = 30
 local MAX_BLOCKLIST_SIZE = 50
 local MAX_UDIM_SIZE = 2^15 - 1
 
+local PHONE_SCREEN_WIDTH = 640
+local TABLET_SCREEN_WIDTH = 1024
+
+
 local SCROLLBAR_THICKNESS = 7
 
 local CHAT_COLORS =
@@ -66,11 +70,6 @@ local function GetTopBarFlag()
 	return topbarSuccess and topbarFlagValue == true
 end
 
-local function GetChatMovedUpPlaceIdCutoffFlag()
-	local chatMoveUpSuccess, placeIdFlagValue = pcall(function() return settings():GetFVariable("MoveInGameChatToTopPlaceId") end)
-	return chatMoveUpSuccess and tonumber(placeIdFlagValue) or 0
-end
-
 local function GetChatFloodCheckMessagesFlag()
 	local flagSuccess, flagValue = pcall(function() return settings():GetFVariable("LuaChatFloodCheckMessages") end)
 	return flagSuccess and tonumber(flagValue) or 7
@@ -86,6 +85,11 @@ local function GetLuaChatFilteringFlag()
 	return flagSuccess and flagValue == true
 end
 
+local function GetLuaChatPhoneFontSizeFlag()
+	local flagSuccess, flagValue = pcall(function() return settings():GetFFlag("LuaChatPhoneFontSize") end)
+	return flagSuccess and flagValue == true
+end
+
 local Util = {}
 do
 	-- Check if we are running on a touch device
@@ -93,6 +97,10 @@ do
 		local touchEnabled = false
 		pcall(function() touchEnabled = InputService.TouchEnabled end)
 		return touchEnabled
+	end
+
+	function Util.IsSmallScreenSize()
+		return GuiRoot.AbsoluteSize.X <= PHONE_SCREEN_WIDTH
 	end
 
 	function Util.Create(instanceType)
@@ -334,6 +342,14 @@ local function CreateChatMessage()
 	local this = {}
 	this.FadeRoutines = {}
 
+	function this:GetMessageFontSize(settings)
+		if GetLuaChatPhoneFontSizeFlag() then
+			return Util.IsSmallScreenSize() and settings.SmallScreenFontSize or settings.FontSize
+		else
+			return settings.FontSize
+		end
+	end
+
 	function this:OnResize()
 		-- Nothing!
 	end
@@ -423,8 +439,10 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 	end
 
 	local function CreateMessageGuiElement()
+		local fontSize = this:GetMessageFontSize(this.Settings)
+
 		local systemMesasgeDisplayText = this.chatMessage or ""
-		local systemMessageSize = Util.GetStringTextBounds(systemMesasgeDisplayText, this.Settings.Font, this.Settings.FontSize, UDim2.new(0, 400, 0, 1000))
+		local systemMessageSize = Util.GetStringTextBounds(systemMesasgeDisplayText, this.Settings.Font, fontSize, UDim2.new(0, 400, 0, 1000))
 
 		local container = Util.Create'Frame'
 		{
@@ -448,7 +466,7 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 				TextYAlignment = Enum.TextYAlignment.Top;
 				TextWrapped = true;
 				TextColor3 = this.Settings.DefaultMessageTextColor;
-				FontSize = this.Settings.FontSize;
+				FontSize = fontSize;
 				Font = this.Settings.Font;
 				TextStrokeColor3 = this.Settings.TextStrokeColor;
 				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
@@ -580,19 +598,21 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 	end
 
 	local function CreateMessageGuiElement()
-		local toMesasgeDisplayText = "To "
-		local toMessageSize = Util.GetStringTextBounds(toMesasgeDisplayText, this.Settings.Font, this.Settings.FontSize)
-		local fromMesasgeDisplayText = "From "
-		local fromMessageSize = Util.GetStringTextBounds(fromMesasgeDisplayText, this.Settings.Font, this.Settings.FontSize)
-		local chatTypeDisplayText = this:FormatChatType()
-		local chatTypeSize = chatTypeDisplayText and Util.GetStringTextBounds(chatTypeDisplayText, this.Settings.Font, this.Settings.FontSize) or Vector2.new(0,0)
-		local playerNameDisplayText = this:FormatPlayerNameText()
-		local playerNameSize = Util.GetStringTextBounds(playerNameDisplayText, this.Settings.Font, this.Settings.FontSize)
+		local fontSize = this:GetMessageFontSize(this.Settings)
 
-		local singleSpaceSize = Util.GetStringTextBounds(" ", this.Settings.Font, this.Settings.FontSize)
+		local toMesasgeDisplayText = "To "
+		local toMessageSize = Util.GetStringTextBounds(toMesasgeDisplayText, this.Settings.Font, fontSize)
+		local fromMesasgeDisplayText = "From "
+		local fromMessageSize = Util.GetStringTextBounds(fromMesasgeDisplayText, this.Settings.Font, fontSize)
+		local chatTypeDisplayText = this:FormatChatType()
+		local chatTypeSize = chatTypeDisplayText and Util.GetStringTextBounds(chatTypeDisplayText, this.Settings.Font, fontSize) or Vector2.new(0,0)
+		local playerNameDisplayText = this:FormatPlayerNameText()
+		local playerNameSize = Util.GetStringTextBounds(playerNameDisplayText, this.Settings.Font, fontSize)
+
+		local singleSpaceSize = Util.GetStringTextBounds(" ", this.Settings.Font, fontSize)
 		local numNeededSpaces = math.ceil(playerNameSize.X / singleSpaceSize.X) + 1
 		local chatMessageDisplayText = string.rep(" ", numNeededSpaces) .. this:FormatMessage()
-		local chatMessageSize = Util.GetStringTextBounds(chatMessageDisplayText, this.Settings.Font, this.Settings.FontSize, UDim2.new(0, 400 - 5 - playerNameSize.X, 0, 1000))
+		local chatMessageSize = Util.GetStringTextBounds(chatMessageDisplayText, this.Settings.Font, fontSize, UDim2.new(0, 400 - 5 - playerNameSize.X, 0, 1000))
 
 
 		local playerColor = this.Settings.DefaultMessageTextColor
@@ -636,7 +656,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 					TextYAlignment = Enum.TextYAlignment.Top;
 					TextWrapped = true;
 					TextColor3 = this.Settings.DefaultMessageTextColor;
-					FontSize = this.Settings.FontSize;
+					FontSize = fontSize;
 					Font = this.Settings.Font;
 					TextStrokeColor3 = this.Settings.TextStrokeColor;
 					TextStrokeTransparency = this.Settings.TextStrokeTransparency;
@@ -658,7 +678,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 					TextYAlignment = Enum.TextYAlignment.Top;
 					TextWrapped = true;
 					TextColor3 = this.Settings.DefaultMessageTextColor;
-					FontSize = this.Settings.FontSize;
+					FontSize = fontSize;
 					Font = this.Settings.Font;
 					TextStrokeColor3 = this.Settings.TextStrokeColor;
 					TextStrokeTransparency = this.Settings.TextStrokeTransparency;
@@ -692,7 +712,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				Position = UDim2.new(0, xOffset, 0, 0);
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
-				FontSize = this.Settings.FontSize;
+				FontSize = fontSize;
 				Font = this.Settings.Font;
 				Size = UDim2.new(0, chatTypeSize.X, 0, chatTypeSize.Y);
 				TextStrokeColor3 = this.Settings.TextStrokeColor;
@@ -720,7 +740,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				Position = UDim2.new(0, xOffset, 0, 0);
 				TextXAlignment = Enum.TextXAlignment.Left;
 				TextYAlignment = Enum.TextYAlignment.Top;
-				FontSize = this.Settings.FontSize;
+				FontSize = fontSize;
 				Font = this.Settings.Font;
 				Size = UDim2.new(0, playerNameSize.X, 0, playerNameSize.Y);
 				TextStrokeColor3 = this.Settings.TextStrokeColor;
@@ -750,7 +770,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				TextYAlignment = Enum.TextYAlignment.Top;
 				TextWrapped = true;
 				TextColor3 = this.Settings.DefaultMessageTextColor;
-				FontSize = this.Settings.FontSize;
+				FontSize = fontSize;
 				Font = this.Settings.Font;
 				TextStrokeColor3 = this.Settings.TextStrokeColor;
 				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
@@ -1351,7 +1371,7 @@ local function CreateChatBarWidget(settings)
 					local chatbarVisible = this.ChatBar and this.ChatBar.Visible
 					local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
 					-- Phone
-					if newSize.X <= 640 then
+					if newSize.X <= PHONE_SCREEN_WIDTH then
 						chatBarContainer.Size = UDim2.new(0.5, 0,0, chatbarVisible and 40 or 32)
 						if bubbleChatIsOn then
 							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
@@ -1359,7 +1379,7 @@ local function CreateChatBarWidget(settings)
 							chatBarContainer.Position = UDim2.new(0, 0, 0.5, 2)
 						end
 					-- Tablet
-					elseif newSize.X <= 1024 then
+					elseif newSize.X <= TABLET_SCREEN_WIDTH then
 						chatBarContainer.Size = UDim2.new(0.4, 0,0, chatbarVisible and 40 or 32)
 						if bubbleChatIsOn then
 							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
@@ -1772,14 +1792,7 @@ local function CreateChatWindowWidget(settings)
 		local function RobloxClientScreenSizeChanged(newSize)
 			if container then
 				if GetTopBarFlag() then
-					local placeIdCutoff = GetChatMovedUpPlaceIdCutoffFlag()
-					if placeIdCutoff and game.PlaceId then
-						if game.PlaceId < placeIdCutoff or placeIdCutoff == 0 then
-							container.Position = UDim2.new(0,0,0,37);
-						else
-							container.Position = UDim2.new(0,0,0,2);
-						end
-					end
+					container.Position = UDim2.new(0,0,0,2);
 				end
 				-- Phone
 				if newSize.X <= 640 then
@@ -1945,6 +1958,7 @@ local function CreateChat()
 		TextStrokeTransparency = 0.75;
 		TextStrokeColor = Color3.new(34/255,34/255,34/255);
 		Font = Enum.Font.SourceSansBold;
+		SmallScreenFontSize = Enum.FontSize.Size14;
 		FontSize = Enum.FontSize.Size18;
 		MaxWindowChatMessages = 50;
 		MaxCharactersInMessage = 140;
