@@ -91,7 +91,6 @@ local function Initialize()
 		Parent = this.TabHeader
 	};
 
-
 	------ PAGE CREATION -------
 	this.Page = utility:Create'Frame'
 	{

@@ -109,6 +109,10 @@ local function Initialize()
 		this.AbuseDescriptionFrame, 
 		this.AbuseDescriptionLabel,
 		this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 10)
+		if utility:IsSmallTouchScreen() then
+			this.AbuseDescription.Size = UDim2.new(this.AbuseDescription.Size.X.Scale,this.AbuseDescription.Size.X.Offset - 20,
+															0, 28)
+		end
 
 		local SelectionOverrideObject = utility:Create'ImageLabel'
 		{
@@ -188,7 +192,11 @@ local function Initialize()
 		end
 
 		submitButton, submitText = utility:MakeStyledButton("SubmitButton", "Submit", UDim2.new(0,194,0,50), onReportSubmitted)
-		submitButton.Position = UDim2.new(1,-194,1,5)
+		if utility:IsSmallTouchScreen() then
+			submitButton.Position = UDim2.new(1,-240,1,5)
+		else
+			submitButton.Position = UDim2.new(1,-194,1,5)
+		end
 		submitButton.Selectable = false
 		submitButton.ZIndex = 1
 		submitText.ZIndex = 1

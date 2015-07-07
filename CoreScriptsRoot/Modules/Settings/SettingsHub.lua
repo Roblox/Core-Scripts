@@ -196,7 +196,7 @@ local function CreateSettingsHub()
 		};
 		
 		if utility:IsSmallTouchScreen() then
-			this.HubBar.Size = UDim2.new(1,-10,0,36)
+			this.HubBar.Size = UDim2.new(1,-10,0,40)
 			this.HubBar.Position = UDim2.new(0,5,0,6)
 		else
 			this.HubBar.Size = UDim2.new(0,800,0,60)

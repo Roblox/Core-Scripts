@@ -14,6 +14,7 @@ local PC_TABLE_SPACING = 4
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
@@ -277,6 +278,8 @@ local function Initialize()
 
 	local function createTouchHelp(parentFrame)
 		local smallScreen = utility:IsSmallTouchScreen()
+		local ySize = GuiService:GetScreenResolution().y - 60
+		parentFrame.Size = UDim2.new(1,0,0,ySize)
 
 		local function createTouchLabel(text, position, size, parent)
 			local nameLabel = utility:Create'TextLabel'
@@ -391,7 +394,6 @@ local function Initialize()
 			if helpPage == currentPage then
 				helpPage.Parent = this.Page
 				this.Page.Size = helpPage.Size
-
 			else
 				helpPage.Parent = nil
 			end

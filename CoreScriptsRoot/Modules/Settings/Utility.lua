@@ -713,7 +713,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 					selectionLabel.Position = tweenPos
 					selectionLabel.Visible = true
 					PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
-					selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, false, function(completed)
+					selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true, function(completed)
 						if completed == Enum.TweenStatus.Completed then
 							selectionLabel.Visible = true
 							this.CurrentIndex = i
@@ -724,7 +724,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 			else
 				if selectionLabel.Visible then
 					PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
-					selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, false, function(completed)
+					selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, true, function(completed)
 						if  completed == Enum.TweenStatus.Completed then
 							selectionLabel.Visible = false
 						end
@@ -805,21 +805,23 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 	--------------------- SETUP -----------------------
 
-	leftButton.InputBegan:connect(function(inputObject) 
-		if inputObject.UserInputType == Enum.UserInputType.Gamepad1 then return end
-		stepFunc(inputObject, -1) 
+	leftButton.InputBegan:connect(function(inputObject)
+		if inputObject.UserInputType == Enum.UserInputType.Touch then
+			stepFunc(nil, -1) 
+		end
 	end)
 	leftButton.MouseButton1Click:connect(function()
-		if UserInputService.TouchEnabled and not UserInputService.GamepadEnabled then
+		if not UserInputService.TouchEnabled then
 			stepFunc(nil, -1) 
 		end
 	end)
 	rightButton.InputBegan:connect(function(inputObject) 
-		if inputObject.UserInputType == Enum.UserInputType.Gamepad1 then return end
-		stepFunc(inputObject, 1)
+		if inputObject.UserInputType == Enum.UserInputType.Touch then
+			stepFunc(nil, 1)
+		end
 	end)
 	rightButton.MouseButton1Click:connect(function()
-		if UserInputService.TouchEnabled and not UserInputService.GamepadEnabled then
+		if not UserInputService.TouchEnabled then
 			stepFunc(nil, 1) 
 		end
 	end)
@@ -931,6 +933,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		if okPressedFunc then okPressedFunc() end
 		ContextActionService:UnbindCoreAction(removeId)
 		Game.GuiService.SelectedCoreObject = nil
+		if settingsHub then settingsHub:ShowBar() end
 	end
 
 	local AlertViewButton, AlertViewText = MakeButton("AlertViewButton", okButtonText, UDim2.new(1, -20, 0.2, 0), destroyAlert)
