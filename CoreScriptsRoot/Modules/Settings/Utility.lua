@@ -689,7 +689,11 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 
 	---------------------- FUNCTIONS -----------------------------------
+	local settingSelection = false
 	local function setSelection(index, direction)
+		if settingSelection then return end
+
+		settingSelection = true
 		for i, selectionLabel in pairs(this.Selections) do
 			local isSelected = (i == index)
 
@@ -709,22 +713,24 @@ local function CreateSelector(selectionStringTable, startPosition)
 			end
 
 			if isSelected then
-				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0, false, function()
-					selectionLabel.Position = tweenPos
-					selectionLabel.Visible = true
-					PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
-					selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true, function(completed)
-						if completed == Enum.TweenStatus.Completed then
-							selectionLabel.Visible = true
-							this.CurrentIndex = i
-							indexChangedEvent:Fire(index)
-						end
-					end)
+				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0, false, function(completed)
+					if completed == Enum.TweenStatus.Completed then
+						selectionLabel.Position = tweenPos
+						selectionLabel.Visible = true
+						PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
+						selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true, function(completed)
+							if completed == Enum.TweenStatus.Completed then
+								selectionLabel.Visible = true
+								this.CurrentIndex = i
+								indexChangedEvent:Fire(index)
+							end
+						end)
+					end
 				end)
 			else
 				if selectionLabel.Visible then
 					PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
-					selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, true, function(completed)
+					selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, false, function(completed)
 						if  completed == Enum.TweenStatus.Completed then
 							selectionLabel.Visible = false
 						end
@@ -732,6 +738,10 @@ local function CreateSelector(selectionStringTable, startPosition)
 				end
 			end
 		end
+
+		delay(TweenTime, function()
+			settingSelection = false
+		end)
 	end
 
 	local function stepFunc(inputObject, step)
@@ -804,7 +814,6 @@ local function CreateSelector(selectionStringTable, startPosition)
 	end
 
 	--------------------- SETUP -----------------------
-
 	leftButton.InputBegan:connect(function(inputObject)
 		if inputObject.UserInputType == Enum.UserInputType.Touch then
 			stepFunc(nil, -1) 

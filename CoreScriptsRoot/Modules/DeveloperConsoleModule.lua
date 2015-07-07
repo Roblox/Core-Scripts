@@ -14,6 +14,8 @@ local os_time = os.time
 
 local DEBUG = false
 
+local ContextActionService = game:GetService("ContextActionService")
+
 -- Eye candy uses RenderStepped
 local EYECANDY_ENABLED = true
 
@@ -397,6 +399,13 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		exitButton.MouseButton1Click:connect(function()
 			devConsole:SetVisible(false, true)
 		end)
+
+		local closeDevConsole = function(name, inputState, input)
+			ContextActionService:UnbindCoreAction("RBXDevConsoleCloseAction")
+			devConsole:SetVisible(false, true)
+		end
+
+		ContextActionService:BindCoreAction("RBXDevConsoleCloseAction", closeDevConsole, false, Enum.KeyCode.ButtonB)
 
 	end
 	
