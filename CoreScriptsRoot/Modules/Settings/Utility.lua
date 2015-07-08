@@ -474,8 +474,8 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				AutoButtonColor = false,
-				Size = UDim2.new(1, 0, 0, 50),
-				Position = UDim2.new(0,0,0, (i - 1) * 51),
+				Size = UDim2.new(1, -28, 0, 50),
+				Position = UDim2.new(0,14,0, (i - 1) * 51),
 				TextColor3 = SELECTION_TEXT_COLOR_NORMAL,
 				Font = Enum.Font.SourceSans,
 				FontSize = Enum.FontSize.Size24,
@@ -1497,6 +1497,9 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 
 	if RowFrame then
 		local setRowSelection = function()
+			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
+			if fullscreenDropDown and fullscreenDropDown.Visible then return end
+
 			local valueFrame = ValueChangerInstance.SliderFrame 
 			if not valueFrame then
 				valueFrame = ValueChangerInstance.SliderFrame
