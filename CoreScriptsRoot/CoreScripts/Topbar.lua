@@ -44,11 +44,6 @@ local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return se
 local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
 
 
-local function GetBubbleChatbarFlag()
-	local bubbleChatbarSuccess, bubbleChatbarFlagValue = pcall(function() return settings():GetFFlag("BubbleChatbarDocksAtTop") end)
-	return bubbleChatbarSuccess and bubbleChatbarFlagValue == true
-end
-
 local function GetChatVisibleIconFlag()
 	local chatVisibleIconSuccess, chatVisibleIconFlagValue = pcall(function() return settings():GetFFlag("MobileToggleChatVisibleIcon") end)
 	return chatVisibleIconSuccess and chatVisibleIconFlagValue == true
@@ -822,7 +817,7 @@ local function CreateChatIcon()
 	end
 
 	local function toggleChat()
-		if Util.IsTouchDevice() or (GetBubbleChatbarFlag() and bubbleChatIsOn) then
+		if Util.IsTouchDevice() or bubbleChatIsOn then
 			if debounce + DEBOUNCE_TIME < tick() then
 				if Util.IsTouchDevice() and not ChatModule:GetVisibility() then
 					ChatModule:ToggleVisibility()
@@ -838,7 +833,7 @@ local function CreateChatIcon()
 		toggleChat()
 	end)
 
-	if Util.IsTouchDevice() or (GetBubbleChatbarFlag() and bubbleChatIsOn) then
+	if Util.IsTouchDevice() or bubbleChatIsOn then
 		if ChatModule.ChatBarFocusChanged then
 			ChatModule.ChatBarFocusChanged:connect(function(isFocused)
 				updateIcon(isFocused)
@@ -1104,7 +1099,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 			if chatIcon then
 				AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
 			end
-			if mobileShowChatIcon then
+			if mobileShowChatIcon and PlayersService.ClassicChat then
 				AddItemInOrder(LeftMenubar, mobileShowChatIcon, LEFT_ITEM_ORDER)
 			end
 		else
