@@ -51,6 +51,12 @@ local BUTTON_DOWN = 'rbxasset://textures/ui/SingleButtonDown.png'
 local ROBUX_ICON = 'rbxasset://textures/ui/RobuxIcon.png'
 local TIX_ICON = 'rbxasset://textures/ui/TixIcon.png'
 local ERROR_ICON = 'rbxasset://textures/ui/ErrorIcon.png'
+local A_BUTTON = "rbxasset://textures/ui/Settings/Help/AButtonDark.png"
+local B_BUTTON = "rbxasset://textures/ui/Settings/Help/BButtonDark.png"
+--Context Actions
+local CONTROLLER_CONFIRM_ACTION_NAME = "CoreScriptPurchasePromptControllerConfirm"
+local CONTROLLER_CANCEL_ACTION_NAME = "CoreScriptPurchasePromptControllerCancel"
+local GAMEPAD_BUTTONS = {}
 
 local ERROR_MSG = {
 	PURCHASE_DISABLED = "In-game purchases are temporarily disabled",
@@ -254,18 +260,44 @@ PurchaseDialog.Parent = RobloxGui
 
 		local BuyButton = createImageButtonWithText("BuyButton", BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Buy Now", Enum.Font.SourceSansBold)
 		BuyButton.Parent = ContainerFrame
+		
+		local buyButtonGamepadImage = Instance.new("ImageLabel")
+		buyButtonGamepadImage.BackgroundTransparency = 1
+		buyButtonGamepadImage.Image = A_BUTTON
+		buyButtonGamepadImage.Size = UDim2.new(1, -8, 1, -8)
+		buyButtonGamepadImage.Position = UDim2.new(0, 4, 0, 5)
+		buyButtonGamepadImage.SizeConstraint = Enum.SizeConstraint.RelativeYY
+		buyButtonGamepadImage.ZIndex = BuyButton.ZIndex
+		buyButtonGamepadImage.Parent = BuyButton
+		table.insert(GAMEPAD_BUTTONS, buyButtonGamepadImage)
 
 		local CancelButton = createImageButtonWithText("CancelButton", BTN_R_POS, BUTTON_RIGHT, BUTTON_RIGHT_DOWN, "Cancel", Enum.Font.SourceSans)
 		CancelButton.Parent = ContainerFrame
+		
+		local cancelButtonGamepadImage = buyButtonGamepadImage:Clone()
+		cancelButtonGamepadImage.Image = B_BUTTON
+		cancelButtonGamepadImage.ZIndex = CancelButton.ZIndex
+		cancelButtonGamepadImage.Parent = CancelButton
+		table.insert(GAMEPAD_BUTTONS, cancelButtonGamepadImage)
 
 		local BuyRobuxButton = createImageButtonWithText("BuyRobuxButton", BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, IsNativePurchasing and "Buy" or "Buy R$",
 			Enum.Font.SourceSansBold)
 		BuyRobuxButton.Visible = false
 		BuyRobuxButton.Parent = ContainerFrame
+		
+		local buyRobuxGamepadImage = buyButtonGamepadImage:Clone()
+		buyRobuxGamepadImage.ZIndex = BuyRobuxButton.ZIndex
+		buyRobuxGamepadImage.Parent = BuyRobuxButton
+		table.insert(GAMEPAD_BUTTONS, buyRobuxGamepadImage)
 
 		local BuyBCButton = createImageButtonWithText("BuyBCButton", BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Upgrade", Enum.Font.SourceSansBold)
 		BuyBCButton.Visible = false
 		BuyBCButton.Parent = ContainerFrame
+		
+		local buyBCGamepadImage = buyButtonGamepadImage:Clone()
+		buyBCGamepadImage.ZIndex = BuyBCButton.ZIndex
+		buyBCGamepadImage.Parent = BuyBCButton
+		table.insert(GAMEPAD_BUTTONS, buyBCGamepadImage)
 
 		local FreeButton = createImageButtonWithText("FreeButton", BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Take Free", Enum.Font.SourceSansBold)
 		FreeButton.Visible = false
@@ -275,11 +307,21 @@ PurchaseDialog.Parent = RobloxGui
 		OkButton.Size = UDim2.new(0, 320, 0, 44)
 		OkButton.Visible = false
 		OkButton.Parent = ContainerFrame
+		
+		local okButtonGamepadImage = buyButtonGamepadImage:Clone()
+		okButtonGamepadImage.ZIndex = OkButton.ZIndex
+		okButtonGamepadImage.Parent = OkButton
+		table.insert(GAMEPAD_BUTTONS, okButtonGamepadImage)
 
 		local OkPurchasedButton = createImageButtonWithText("OkPurchasedButton", UDim2.new(0, 2, 0, 136), BUTTON, BUTTON_DOWN, "OK", Enum.Font.SourceSans)
 		OkPurchasedButton.Size = UDim2.new(0, 320, 0, 44)
 		OkPurchasedButton.Visible = false
 		OkPurchasedButton.Parent = ContainerFrame
+		
+		local okPurchasedGamepadImage = buyButtonGamepadImage:Clone()
+		okPurchasedGamepadImage.ZIndex = OkPurchasedButton.ZIndex
+		okPurchasedGamepadImage.Parent = OkPurchasedButton
+		table.insert(GAMEPAD_BUTTONS, okButtonGamepadImage)
 
 	local PurchaseFrame = createImageLabel("PurchaseFrame", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), PURCHASE_BG)
 	PurchaseFrame.ZIndex = 8
@@ -552,6 +594,7 @@ local function showPurchasePrompt()
 	stopPurchaseAnimation()
 	PurchaseDialog.Visible = true
 	PurchaseDialog:TweenPosition(SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
+	enableControllerInput()
 end
 
 --[[ Close and Cancel Functions ]]--
@@ -610,6 +653,7 @@ local function onPromptEnded(isSuccess)
 		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, isSuccess)
 	end
 	clearPurchaseData()
+	disableControllerInput()
 end
 
 --[[ Purchase Validation ]]--
@@ -1046,6 +1090,83 @@ local function onUpgradeBCPrompt()
 	IsCheckingPlayerFunds = true
 	GuiService:OpenBrowserWindow(BASE_URL.."Upgrades/BuildersClubMemberships.aspx")
 end
+
+function enableControllerInput()
+	local cas = game:GetService("ContextActionService")
+	
+	--accept the purchase when the user presses the a button
+	cas:BindAction(
+		CONTROLLER_CONFIRM_ACTION_NAME,
+		function(actionName, inputState, inputObject)
+			if inputState ~= Enum.UserInputState.Begin then return end
+			
+			if OkPurchasedButton.Visible or OkButton.Visible then
+				onPromptEnded(true)
+			elseif BuyButton.Visible then
+				onAcceptPurchase()
+			elseif BuyRobuxButton.Visible then
+				onBuyRobuxPrompt()
+			elseif BuyBCButton.Visible then
+				onUpgradeBCPrompt()
+			end
+		end,
+		false,
+		Enum.KeyCode.ButtonA
+	)
+
+	--cancel the purchase when the user presses the b button
+	cas:BindAction(
+		CONTROLLER_CANCEL_ACTION_NAME,
+		function(actionName, inputState, inputObject)
+			if inputState ~= Enum.UserInputState.Begin then return end
+			
+			if (OkPurchasedButton.Visible or OkButton.Visible or CancelButton.Visible) and (not PurchaseFrame.Visible) then
+				onPromptEnded(false)
+			end
+		end,
+		false,
+		Enum.KeyCode.ButtonB
+	)
+end
+
+function disableControllerInput()
+	local cas = game:GetService("ContextActionService")
+	cas:UnbindAction(CONTROLLER_CONFIRM_ACTION_NAME)
+	cas:UnbindAction(CONTROLLER_CANCEL_ACTION_NAME)
+end
+
+function showGamepadButtons()
+	for _, button in pairs(GAMEPAD_BUTTONS) do
+		button.Visible = true
+	end
+end
+
+function hideGamepadButtons()
+	for _, button in pairs(GAMEPAD_BUTTONS) do
+		button.Visible = false
+	end
+end
+
+function valueInTable(val, tab)
+	for _, v in pairs(tab) do
+		if v == val then
+			return true
+		end
+	end
+	return false
+end
+
+function onInputBegan(inputObject)
+	local input = inputObject.UserInputType
+	local inputs = Enum.UserInputType
+	if valueInTable(input, {inputs.Gamepad1, inputs.Gamepad2, inputs.Gamepad3, inputs.Gamepad4}) then
+		showGamepadButtons()
+	else
+		hideGamepadButtons()
+	end
+end
+game:GetService("UserInputService").InputBegan:connect(onInputBegan)
+hideGamepadButtons()
 
 --[[ Event Connections ]]--
 CancelButton.MouseButton1Click:connect(function()
