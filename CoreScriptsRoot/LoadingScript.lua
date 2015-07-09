@@ -27,7 +27,7 @@ local destroyingBackground = false
 local destroyedLoadingGui = false
 local hasReplicatedFirstElements = false
 local backgroundImageTransparency = 0
-local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false)
+local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
 
 -- Fast Flags
 local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
@@ -295,6 +295,18 @@ end
 function round(num, idp)
   local mult = 10^(idp or 0)
   return math.floor(num * mult + 0.5) / mult
+end
+
+local function getViewportSize()
+	while not game.Workspace.CurrentCamera do
+		game.Workspace.Changed:wait()
+	end
+
+	while game.Workspace.CurrentCamera.ViewportSize == Vector2.new(0,0) do
+		game.Workspace.CurrentCamera.Changed:wait()
+	end
+
+	return game.Workspace.CurrentCamera.ViewportSize
 end
 
 ---------------------------------------------------------
