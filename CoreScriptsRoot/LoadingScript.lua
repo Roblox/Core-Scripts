@@ -6,6 +6,7 @@
 local PLACEID = Game.PlaceId
 
 local MPS = Game:GetService 'MarketplaceService'
+local UIS = Game:GetService 'UserInputService'
 local CP = Game:GetService 'ContentProvider'
 
 local startTime = tick()
@@ -22,8 +23,11 @@ local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
 local currScreenGui = nil
 local renderSteppedConnection = nil
 local fadingBackground = false
+local destroyingBackground = false
 local destroyedLoadingGui = false
 local hasReplicatedFirstElements = false
+local backgroundImageTransparency = 0
+local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false)
 
 -- Fast Flags
 local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
@@ -101,26 +105,48 @@ function InfoProvider:LoadAssets()
 	end)
 end
 
+function MainGui:tileBackgroundTexture(frameToFill)
+	if not frameToFill then return end
+	frameToFill:ClearAllChildren()
+	if backgroundImageTransparency < 1 then
+		local backgroundTextureSize = Vector2.new(502, 502)
+		for i = 0, math.ceil(frameToFill.AbsoluteSize.X/backgroundTextureSize.X) do
+			for j = 0, math.ceil(frameToFill.AbsoluteSize.Y/backgroundTextureSize.Y) do
+				create 'ImageLabel' {
+					Name = 'BackgroundTextureImage',
+					BackgroundTransparency = 1,
+					ImageTransparency = backgroundImageTransparency,
+					Image = 'rbxasset://textures/loading/darkLoadingTexture.png',
+					Position = UDim2.new(0, i*502, 0, j*502),
+					Size = UDim2.new(0, 502, 0, 502),
+					ZIndex = 1,
+					Parent = frameToFill
+				}
+			end
+		end
+	end
+end
+
 --
 -- Declare member functions
 function MainGui:GenerateMain()
 	local screenGui = create 'ScreenGui' {
 		Name = 'RobloxLoadingGui'
 	}
-
+	
 	--
 	-- create descendant frames
 	local mainBackgroundContainer = create 'Frame' {
 		Name = 'BlackFrame',
 		BackgroundColor3 = COLORS.BLACK,
+		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 1, bgFrameOffset),
 		Position = offsetPosition,
 		Active = true,
 
 		create 'ImageButton' {
 				Name = 'CloseButton',
-				Image = 'rbxasset://textures/ui/CloseButton_dn.png',
-				ImageColor3=Color3.new(0.9,0.9,0.9),
+				Image = 'rbxasset://textures/loading/cancelButton.png',
 				ImageTransparency = 1,
 				BackgroundTransparency = 1,
 				Position = UDim2.new(1, -37, 0, 5),
@@ -133,27 +159,31 @@ function MainGui:GenerateMain()
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
 			BackgroundTransparency = 1,
-			Position = UDim2.new(1, -125, 1, -125),
-			Size = UDim2.new(0, 120, 0, 120),
+			Position = UDim2.new(1, (isMobile == true and -65 or -225), 1, (isMobile == true and -65 or -165)),
+			Size = UDim2.new(0, (isMobile == true and 60 or 120), 0, (isMobile == true and 60 or 120)),
 			ZIndex = 2,
 
 			create 'ImageLabel' {
 				Name = 'LoadingImage',
 				BackgroundTransparency = 1,
-				Image = 'rbxasset://textures/Roblox-loading-glow.png',
+				Image = 'rbxasset://textures/loading/loadingCircle.png',
 				Position = UDim2.new(0, 0, 0, 0),
 				Size = UDim2.new(1, 0, 1, 0),
 				ZIndex = 2
 			},
 
-			create 'ImageLabel' {
-				Name = 'LogoImage',
+			create 'TextLabel' {
+				Name = 'LoadingText',
 				BackgroundTransparency = 1,
-				Image = 'rbxasset://textures/Roblox-loading.png',
-				Position = UDim2.new(0.125, 0, 0.125, 0),
-				Size = UDim2.new(0.75, 0, 0.75, 0),
+				Size = UDim2.new(1, 0, 1, 0),
+				Position = UDim2.new(0, 0, 0, 0),
+				Font = Enum.Font.SourceSans,
+				FontSize = (isMobile == true and Enum.FontSize.Size12 or Enum.FontSize.Size18),
+				TextWrapped = true,
+				TextColor3 = COLORS.WHITE,
+				Text = "Loading...",
 				ZIndex = 2
-			}
+			},
 		},
 		
 		create 'Frame' {
@@ -177,165 +207,57 @@ function MainGui:GenerateMain()
 		},
 		
 		create 'Frame' {
-			Name = 'CountFrame',
+			Name = 'InfoFrame',
 			BackgroundTransparency = 1,
-			Position = UDim2.new(0, 0, 1, -120),
-			Size = UDim2.new(0.3, 0, 0, 120),
+			Position = UDim2.new(0, (isMobile == true and 20 or 100), 1, (isMobile == true and -120 or -150)),
+			Size = UDim2.new(0.4, 0, 0, 110),
 			ZIndex = 2,
 
 			create 'TextLabel' {
 				Name = 'PlaceLabel',
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1, -5, 0, 18),
-				Position = UDim2.new(0, 5, 0, 0),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size14,
+				Size = UDim2.new(1, 0, 0, 80),
+				Position = UDim2.new(0, 0, 0, 0),
+				Font = Enum.Font.SourceSans,
+				FontSize = Enum.FontSize.Size24,
 				TextWrapped = true,
 				TextScaled = true,
 				TextColor3 = COLORS.WHITE,
 				TextStrokeTransparency = 0,
 				Text = "",
 				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Bottom,
 				ZIndex = 2
 			},
 
 			create 'TextLabel' {
 				Name = 'CreatorLabel',
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0,5,0,18),
-				Size = UDim2.new(1, -5, 0, 18),
+				Size = UDim2.new(1, 0, 0, 30),
+				Position = UDim2.new(0, 0, 0, 80),
 				Font = Enum.Font.SourceSans,
-				FontSize = Enum.FontSize.Size12,
+				FontSize = Enum.FontSize.Size18,
 				TextWrapped = true,
 				TextScaled = true,
 				TextColor3 = COLORS.WHITE,
 				TextStrokeTransparency = 0,
 				Text = "",
 				TextXAlignment = Enum.TextXAlignment.Left,
-				ZIndex = 2
-			},
-
-			create 'TextLabel' {
-				Name = 'BrickLabel',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 63),
-				Size = UDim2.new(0, 85, 0, 18),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size18,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "Bricks:",
-				TextXAlignment = Enum.TextXAlignment.Right,
-				ZIndex = 2
-			},
-
-			create 'TextLabel' {
-				Name = 'ConnectorLabel',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 81),
-				Size = UDim2.new(0, 85, 0, 18),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size18,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "Connectors:",
-				TextXAlignment = Enum.TextXAlignment.Right,
-				ZIndex = 2
-			},
-
-			create 'TextLabel' {
-				Name = 'InstanceLabel',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 45),
-				Size = UDim2.new(0, 85, 0, 18),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size18,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "Instances:",
-				TextXAlignment = Enum.TextXAlignment.Right,
-				ZIndex = 2
-			},
-
-			create 'TextLabel' {
-				Name = 'VoxelLabel',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 5, 0, 99),
-				Size = UDim2.new(0, 85, 0, 18),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size18,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "Voxels:",
-				TextXAlignment = Enum.TextXAlignment.Right,
-				ZIndex = 2
-			},
-
-			create 'TextLabel' {
-				Name = 'BrickCount',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 95, 0, 63),
-				Size = UDim2.new(0.5, -5, 0, 18),
-				Font = Enum.Font.SourceSans,
-				FontSize = Enum.FontSize.Size18,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "",
-				TextXAlignment = Enum.TextXAlignment.Left,
-				ZIndex = 2
-			},
-
-			create 'TextLabel' {
-				Name = 'ConnectorCount',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 95, 0, 81),
-				Size = UDim2.new(0.5, -5, 0, 18),
-				Font = Enum.Font.SourceSans,
-				FontSize = Enum.FontSize.Size18,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "",
-				TextXAlignment = Enum.TextXAlignment.Left,
-				ZIndex = 2
-			},
-
-			create 'TextLabel' {
-				Name = 'InstanceCount',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 95, 0, 45),
-				Size = UDim2.new(0.5, -5, 0, 18),
-				Font = Enum.Font.SourceSans,
-				FontSize = Enum.FontSize.Size18,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "",
-				TextXAlignment = Enum.TextXAlignment.Left,
-				ZIndex = 2
-			},
-
-			create 'TextLabel' {
-				Name = 'VoxelCount',
-				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 95, 0, 99),
-				Size = UDim2.new(0.5, -5, 0, 18),
-				Font = Enum.Font.SourceSans,
-				FontSize = Enum.FontSize.Size18,
-				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
-				Text = "",
-				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Top,
 				ZIndex = 2
 			},
 		},
-
+		
+		create 'Frame' {
+			Name = 'BackgroundTextureFrame',
+			BorderSizePixel = 0,
+			Size = UDim2.new(1, 0, 1, bgFrameOffset), 
+			Position = offsetPosition,
+			ClipsDescendants = true,
+			ZIndex = 1,
+			BackgroundTransparency = 1,
+		},
+		
 		Parent = screenGui
 	}
 
@@ -385,14 +307,16 @@ MainGui:GenerateMain()
 local guiService = Game:GetService("GuiService")
 
 local removedLoadingScreen = false
-local instanceCount = 0
-local voxelCount = 0
-local brickCount = 0
-local connectorCount = 0
 local setVerb = true
-local fadeDown = true
 local lastRenderTime = nil
 local fadeCycleTime = 1.7
+local turnCycleTime = 2
+local lastAbsoluteSize = Vector2.new(0, 0)
+local loadingDots = "..."
+local lastDotUpdateTime = nil
+local dotChangeTime = .2
+local brickCountChange = nil
+local lastBrickCount = 0
 
 renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(function()
 	if not currScreenGui then return end
@@ -402,60 +326,67 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 		currScreenGui.BlackFrame.CloseButton:SetVerb("Exit")
 		setVerb = false
 	end
+	
+	if currScreenGui.BlackFrame:FindFirstChild("BackgroundTextureFrame") and currScreenGui.BlackFrame.BackgroundTextureFrame.AbsoluteSize ~= lastAbsoluteSize then
+		lastAbsoluteSize = currScreenGui.BlackFrame.BackgroundTextureFrame.AbsoluteSize
+		MainGui:tileBackgroundTexture(currScreenGui.BlackFrame.BackgroundTextureFrame)
+	end 
 
-	if currScreenGui.BlackFrame.CountFrame.PlaceLabel.Text == "" then
-		currScreenGui.BlackFrame.CountFrame.PlaceLabel.Text = InfoProvider:GetGameName()
+	if currScreenGui.BlackFrame.InfoFrame.PlaceLabel.Text == "" then
+		currScreenGui.BlackFrame.InfoFrame.PlaceLabel.Text = InfoProvider:GetGameName()
 	end
 
-	if currScreenGui.BlackFrame.CountFrame.CreatorLabel.Text == "" then
+	if currScreenGui.BlackFrame.InfoFrame.CreatorLabel.Text == "" then
 		local creatorName = InfoProvider:GetCreatorName()
 		if creatorName ~= "" then
-			currScreenGui.BlackFrame.CountFrame.CreatorLabel.Text = "By " .. creatorName
+			currScreenGui.BlackFrame.InfoFrame.CreatorLabel.Text = "By " .. creatorName
 		end
-	end
-
-	instanceCount = guiService:GetInstanceCount()
-	voxelCount = guiService:GetVoxelCount()
-	brickCount = guiService:GetBrickCount()
-	connectorCount = guiService:GetConnectorCount()
-
-	currScreenGui.BlackFrame.CountFrame.InstanceCount.Text = tostring(instanceCount)
-	currScreenGui.BlackFrame.CountFrame.BrickCount.Text = tostring(brickCount)
-	currScreenGui.BlackFrame.CountFrame.ConnectorCount.Text = tostring(connectorCount)
-
-	if voxelCount <= 0 then
-		currScreenGui.BlackFrame.CountFrame.VoxelCount.Text = "0"
-	else
-		currScreenGui.BlackFrame.CountFrame.VoxelCount.Text = tostring(round(voxelCount,4)) .." million"
 	end
 
 	if not lastRenderTime then
 		lastRenderTime = tick()
+		lastDotUpdateTime = lastRenderTime
 		return
 	end
 
 	local currentTime = tick()
 	local fadeAmount = (currentTime - lastRenderTime) * fadeCycleTime
+	local turnAmount = (currentTime - lastRenderTime) * (360/turnCycleTime)
 	lastRenderTime = currentTime
 
-	if fadeDown then
-		currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.ImageTransparency = currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.ImageTransparency - fadeAmount
-		if currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.ImageTransparency <= 0 then
-			fadeDown = false
+	currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.Rotation = currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.Rotation + turnAmount
+	
+	local updateLoadingDots =  function()
+		loadingDots = loadingDots.. "."
+		if loadingDots == "...." then
+			loadingDots = ""
 		end
+		currScreenGui.BlackFrame.GraphicsFrame.LoadingText.Text = "Loading" ..loadingDots
+	end
+	
+	if currentTime - lastDotUpdateTime >= dotChangeTime and InfoProvider:GetCreatorName() == "" then
+		lastDotUpdateTime = currentTime
+		updateLoadingDots()
 	else
-		currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.ImageTransparency = currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.ImageTransparency + fadeAmount
-		if currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.ImageTransparency >= 1 then
-			fadeDown = true
+		if guiService:GetBrickCount() > 0 then  
+			if brickCountChange == nil then
+				brickCountChange = guiService:GetBrickCount()
+			end
+			if guiService:GetBrickCount() - lastBrickCount >= brickCountChange then
+				lastBrickCount = guiService:GetBrickCount()
+				updateLoadingDots()
+			end
 		end
 	end
 	
 	-- fade in close button after 5 seconds
-	if currentTime - startTime > 5 and currScreenGui.BlackFrame.CloseButton.ImageTransparency > 0 then
-		currScreenGui.BlackFrame.CloseButton.ImageTransparency = currScreenGui.BlackFrame.CloseButton.ImageTransparency - fadeAmount
+	if  UIS:GetPlatform() ~= Enum.Platform.WiiU and UIS:GetPlatform() ~= Enum.Platform.PS4 and UIS:GetPlatform() ~= Enum.Platform.XBoxOne then
+		if currentTime - startTime > 5 and currScreenGui.BlackFrame.CloseButton.ImageTransparency > 0 then
+			currScreenGui.BlackFrame.CloseButton.ImageTransparency = currScreenGui.BlackFrame.CloseButton.ImageTransparency - fadeAmount
 
-		if currScreenGui.BlackFrame.CloseButton.ImageTransparency <= 0 then
-			currScreenGui.BlackFrame.CloseButton.Active = true
+			if currScreenGui.BlackFrame.CloseButton.ImageTransparency <= 0 then
+				currScreenGui.BlackFrame.CloseButton.Active = true
+			end
 		end
 	end
 end)
@@ -512,16 +443,26 @@ function fadeBackground()
 	local lastTime = nil
 	local backgroundRemovalTime = 3.2
 
-	while currScreenGui and currScreenGui.BlackFrame and currScreenGui.BlackFrame.BackgroundTransparency < 1 do
+	while currScreenGui and currScreenGui:FindFirstChild("BlackFrame") and currScreenGui.BlackFrame:FindFirstChild("BackgroundTextureFrame") and backgroundImageTransparency < 1 do
 		if lastTime == nil then
 			currScreenGui.BlackFrame.Active = false
+			
+			if currScreenGui.BlackFrame:FindFirstChild("CloseButton") then
+				currScreenGui.BlackFrame.CloseButton.Visible = false
+				currScreenGui.BlackFrame.CloseButton.Active = false
+			end
 			lastTime = tick()
 		else
 			local currentTime = tick()
 			local fadeAmount = (currentTime - lastTime) * backgroundRemovalTime
 			lastTime = currentTime
-
-			currScreenGui.BlackFrame.BackgroundTransparency = currScreenGui.BlackFrame.BackgroundTransparency + fadeAmount
+			
+			backgroundImageTransparency = backgroundImageTransparency + fadeAmount
+			local backgroundImages = currScreenGui.BlackFrame.BackgroundTextureFrame:GetChildren()
+			for i = 1, #backgroundImages do
+				backgroundImages[i].ImageTransparency = backgroundImageTransparency
+			end
+			
 		end
 
 		wait()
@@ -529,11 +470,13 @@ function fadeBackground()
 end
 
 function fadeAndDestroyBlackFrame(blackFrame)
+	if destroyingBackground then return end
+	destroyingBackground = true
 	Spawn(function()
-		local countFrame = blackFrame:FindFirstChild("CountFrame")
+		local infoFrame = blackFrame:FindFirstChild("InfoFrame")
 		local graphicsFrame = blackFrame:FindFirstChild("GraphicsFrame")
 
-		local textChildren = countFrame:GetChildren()
+		local textChildren = infoFrame:GetChildren()
 		local transparency = 0
 		local rateChange = 1.8
 		local lastUpdateTime = nil
@@ -549,13 +492,22 @@ function fadeAndDestroyBlackFrame(blackFrame)
 					textChildren[i].TextStrokeTransparency = transparency
 				end
 				graphicsFrame.LoadingImage.ImageTransparency = transparency
-				graphicsFrame.LogoImage.ImageTransparency = transparency
+				
+				if backgroundImageTransparency < 1 then
+					backgroundImageTransparency = transparency
+					local backgroundImages = blackFrame.BackgroundTextureFrame:GetChildren()
+					for i = 1, #backgroundImages do
+						backgroundImages[i].ImageTransparency = backgroundImageTransparency
+					end
+				end
 
 				lastUpdateTime = newTime
 			end
 			wait()
 		end
-		blackFrame:Destroy()
+		if blackFrame ~= nil then
+			blackFrame:Destroy()
+		end
 	end)
 end
 
