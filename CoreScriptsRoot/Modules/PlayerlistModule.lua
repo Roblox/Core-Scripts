@@ -1892,10 +1892,6 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 		end
 	end
 end
-pcall(function()
-	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
-	game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
-end)
 
 resizePlayerList()
 
@@ -1944,6 +1940,11 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 		end
 	end
 end
+
+pcall(function()
+	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+	game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
+end)
 
 Playerlist.IsOpen = function()
 	return isOpen
