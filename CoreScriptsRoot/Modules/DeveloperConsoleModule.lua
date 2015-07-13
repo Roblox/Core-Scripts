@@ -766,6 +766,10 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		
 		-- Wrapper for :AddTab
 		local function createConsoleTab(name, text, width, outputMessageSync, commandLineVisible, commandInputtedCallback, openCallback)
+			if not outputMessageSync then
+				return
+			end
+
 			local tabBody = Primitives.FolderFrame(body, name)
 			local output, commandLine;
 			local disconnector = CreateDisconnectSignal()
@@ -846,8 +850,10 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				devConsole.MessagesAndStats.OutputMessageSyncLocal,
 				permissions.ClientCodeExecutionEnabled
 			)
-			tab:SetVisible(true)
-			tab:SetOpen(true)
+			if tab then
+				tab:SetVisible(true)
+				tab:SetOpen(true)
+			end
 		end
 		
 		
@@ -855,7 +861,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		if permissions.MayViewServerLog then
 			local LogService = game:GetService('LogService')
 			local tab = createConsoleTab(
-				'ServerLog', "Server Log", 70,
+				'ServerLog', "Server Log", 55,
 				devConsole.MessagesAndStats.OutputMessageSyncServer,
 				permissions.ServerCodeExecutionEnabled,
 				function(text)
@@ -863,12 +869,15 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 						return
 					end
 					if permissions.ServerCodeExecutionEnabled then
-						-- print("Server Loadstring:", text)
 						LogService:ExecuteScript(text)
+					else
+						print("Server Loadstring Failed:", text)
 					end
 				end
 			)
-			tab:SetVisible(true)
+			if tab then
+				tab:SetVisible(true)
+			end
 		end
 		
 	end
@@ -899,8 +908,10 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		end
 		
 		-- Wrapper for :AddTab
-		local function createStatsTab(name, text, width, config, openCallback, filterStats, shownOptionTypes)
-			local statsSyncServer = devConsole.MessagesAndStats.StatsSyncServer
+		local function createStatsTab(name, text, width, config, openCallback, stat, shownOptionTypes)
+			if not stat then
+				return
+			end
 			
 			local open = false
 			
@@ -913,17 +924,18 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			tabBody.Size = UDim2_new(1, 0, 1, 0)
 			statList.SideMenu.Parent = windowContainer -- so the left side menu doesn't resize with the contents on right
 			
-			statsSyncServer:GetStats()
-			statsSyncServer.StatsReceived:connect(function(stats)
-				local statsFiltered = filterStats(stats)
-				if statsFiltered then
-					statList:UpdateStats(statsFiltered)
-				end
+			local function GetStats()
+				stat:SetEnabled(true)
+			end
+			stat.StatsReceived:connect(function(stats)
+				statList:UpdateStats(stats)
 			end)
 			
 			local tab = devConsole:AddTab(text, width, tabBody, function(openNew)
 				open = openNew
 				if open then
+					GetStats()
+					
 					devConsole.WindowScrollbar:SetValue(0)
 					setShownOptionTypes(shownOptionTypes)
 				end
@@ -936,6 +948,56 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			
 			return tab, statList
 		end
+		
+		-- Local Stats --
+		if permissions.MayViewClientStats then
+
+			local open = false
+			
+			local config = {
+				GetNotifyColor = function(chartButton)
+					return Color3.new(0.5, 0.5, 0.5)
+				end;
+				CreateChartPage = function(chartButton, statsBody)
+					local chartStat = chartButton.ChartStat
+					local chart1 = devConsole:CreateChart(chartStat.Stats, chartStat.Name, 1)
+					
+					local y = 16
+					chart1.Frame.Parent = statsBody
+					chart1.Frame.Position = UDim2_new(0, 16, 0, y)
+					y = y + 16 + chart1.Frame.Size.Y.Offset
+
+					local this = {}
+					function this.OnPointAdded(this)
+						chart1:OnPointAdded()
+					end
+					function this.SetVisible(this, visible)
+						chart1:SetVisible(visible)
+						body.Size = open and UDim2_new(1, 0, 0, y) or UDim2_new(1, 0, 1, 0)
+					end
+					function this.Dispose(this)
+						this:SetVisible(false)
+					end
+					return this
+				end;
+				FilterButton = function(chartButton)
+					return textFilter(chartButton.ChartStat.Name)
+				end;
+			}
+			
+			local function openCallback(openNew)
+				open = openNew
+			end
+
+			local tab, statList = createStatsTab('LocalStats', "Local Stats", 60, config, openCallback, devConsole.MessagesAndStats.StatsSyncLocal.Stats.Stats, {Stats = true})
+			
+			textFilterChanged:connect(function()
+				statList:Refresh()
+			end)
+			if tab then
+				tab:SetVisible(true)
+			end
+		end	
 		
 		-- Server Scripts --
 		if permissions.MayViewServerScripts then
@@ -995,22 +1057,11 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				end;
 			}
 
-			local function filterStats(stats)
-				-- return stats.Scripts
-				if stats.Scripts then
-					local statsFiltered = {}
-					for k, v in pairs(stats.Scripts) do
-						statsFiltered[k] = {v[1]/100, v[2]}
-					end
-					return statsFiltered
-				end
-			end
-
 			local function openCallback(openNew)
 				open = openNew
 			end
 			
-			local tab, statList = createStatsTab('ServerScripts', "Server Scripts", 80, config, openCallback, filterStats, {Scripts = true})
+			local tab, statList = createStatsTab('ServerScripts', "Server Scripts", 80, config, openCallback, devConsole.MessagesAndStats.StatsSyncServer.Stats.Scripts, {Scripts = true})
 
 			textFilterChanged:connect(function()
 				statList:Refresh()
@@ -1018,8 +1069,9 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			scriptStatFilterChanged:connect(function()
 				statList:Refresh()
 			end)
-
-			tab:SetVisible(true)
+			if tab then
+				tab:SetVisible(true)
+			end
 		end
 		
 		
@@ -1060,27 +1112,18 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				end;
 			}
 			
-			local function filterStats(stats)
-				local statsFiltered = {}
-				for k, v in pairs(stats) do
-					if type(v) == 'number' then
-						statsFiltered[k] = {v}
-					end
-				end
-				return statsFiltered
-			end
-			
 			local function openCallback(openNew)
 				open = openNew
 			end
 
-			local tab, statList = createStatsTab('ServerStats', "Server Stats", 70, config, openCallback, filterStats, {Stats = true})
+			local tab, statList = createStatsTab('ServerStats', "Server Stats", 70, config, openCallback, devConsole.MessagesAndStats.StatsSyncServer.Stats.Stats, {Stats = true})
 			
 			textFilterChanged:connect(function()
 				statList:Refresh()
 			end)
-						
-			tab:SetVisible(true)
+			if tab then
+				tab:SetVisible(true)
+			end
 		end	
 		
 		
@@ -1141,21 +1184,18 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				end;
 			}		
 			
-			local function filterStats(stats)
-				return stats.Jobs
-			end
-
 			local function openCallback(openNew)
 				open = openNew
 			end
 			
-			local tab, statList = createStatsTab('ServerJobs', "Server Jobs", 70, config, openCallback, filterStats, {Stats = true})
+			local tab, statList = createStatsTab('ServerJobs', "Server Jobs", 70, config, openCallback, devConsole.MessagesAndStats.StatsSyncServer.Stats.Jobs, {Stats = true})
 			
 			textFilterChanged:connect(function()
 				statList:Refresh()
 			end)
-			
-			tab:SetVisible(true)
+			if tab then
+				tab:SetVisible(true)
+			end
 		end
 	end
 	
@@ -1193,11 +1233,18 @@ do -- This doesn't support multiple windows very well
 		
 		local disconnector = CreateDisconnectSignal()
 		
-		local function onVisibleChanged(visible)
-			label.Visible = visible
-			label.Parent = visible and devConsole.ScreenGui or nil
+		local enabled = false
+		
+		local function Refresh()
+			local enabledNew = devConsole.Visible and not UserInputService.MouseIconEnabled
+			if enabledNew == enabled then
+				return
+			end
+			enabled = enabledNew
+			label.Visible = enabled
+			label.Parent = enabled and devConsole.ScreenGui or nil
 			disconnector:fire()
-			if visible then
+			if enabled then
 				pcall(function()
 					local mouse = game:GetService("Players").LocalPlayer:GetMouse()
 					label.Position = UDim2.new(0, mouse.X - 32, 0, mouse.Y - 32)
@@ -1213,8 +1260,18 @@ do -- This doesn't support multiple windows very well
 			end
 		end
 		
-		onVisibleChanged(devConsole.Visible)
-		devConsole.VisibleChanged:connect(onVisibleChanged)
+		Refresh()
+		local userInputServiceListener;
+		devConsole.VisibleChanged:connect(function(visible)
+			if userInputServiceListener then
+				userInputServiceListener:disconnect()
+				userInputServiceListener = nil
+			end
+			
+			userInputServiceListener = UserInputService.Changed:connect(Refresh)
+			
+			Refresh()
+		end)
 		
 	end
 end
@@ -2725,6 +2782,7 @@ do
 		end)
 		
 		if permissions.CreatorFlagValue then -- Use the new API
+		permissions.IsCreator = false
 			local success, result = pcall(function()
 				local url = string.format("/users/%d/canmanage/%d", game:GetService("Players").LocalPlayer.userId, game.PlaceId)
 				return game:GetService('HttpRbxApiService'):GetAsync(url, false, Enum.ThrottlingPriority.Default)
@@ -2755,6 +2813,8 @@ do
 		
 		permissions.MayViewServerLog = permissions.IsCreator
 		permissions.MayViewClientLog = true
+		
+		permissions.MayViewClientStats = true
 		
 		permissions.MayViewServerStats = permissions.IsCreator
 		permissions.MayViewServerScripts = permissions.IsCreator
@@ -2882,40 +2942,297 @@ do
 				return messages
 			end)
 		end
-	
+		
+
+		
 		local statsSyncServer;
-		if permissions.MayViewServerStats or permissions.MayViewServerScripts then
-			statsSyncServer = {
-				Stats = nil; -- Private member, use GetStats instead
-				StatsReceived = CreateSignal();
+		do
+			local self = {
+				Stats = {};
+				
 			}
+			local stats = self.Stats
+
+			
 			local statsListenerConnection;
-			function statsSyncServer.GetStats(statsSyncServer)
-				local stats = statsSyncServer.Stats
-				if not stats then
-					stats = {}
-					pcall(function()
-						local clientReplicator = game:FindService("NetworkClient"):GetChildren()[1]
-							if clientReplicator then
-							statsListenerConnection = clientReplicator.StatsReceived:connect(function(stat)
-								statsSyncServer.StatsReceived:fire(stat)
-							end)
-							clientReplicator:RequestServerStats(true)
-						end
-					end)
-					statsSyncServer.Stats = stats
+			
+			local GlobalStatsReceived = CreateSignal()
+			
+			local SetEnabled; do
+				
+				local function Enable()
+					local networkClient = game:FindService("NetworkClient")
+					if not networkClient then
+						warn("Developer Console is creating a NetworkClient")
+						networkClient = game:GetService("NetworkClient")
+					end
+					if not networkClient then
+						return
+					end
+					local clientReplicator = networkClient:GetChildren()[1]
+					if clientReplicator then
+						statsListenerConnection = clientReplicator.StatsReceived:connect(function(stat)
+							GlobalStatsReceived:fire(stat)
+						end)
+						clientReplicator:RequestServerStats(true)
+					end
 				end
-				return stats
+				local function Disable()
+					if statsListenerConnection then
+						statsListenerConnection:disconnect()
+						statsListenerConnection = nil
+					end
+				end
+				
+				local OR_Lookup = {}
+				local function GetEnabled()
+					for k, v in pairs(OR_Lookup) do
+						if v then
+							return true
+						end
+					end
+					return false
+				end
+				
+				local enabled = false
+				function SetEnabled(id, value)
+					OR_Lookup[id] = value
+					local enabledNew = GetEnabled()
+					if enabledNew == enabled then
+						return
+					end
+					enabled = enabledNew
+					pcall(enabled and Enable or Disable)
+				end
+			
 			end
 			
+			
+			local function newStat(id, filter)
+				local statsReceived = CreateSignal()
+				local stat = {
+					StatsReceived = statsReceived;
+				}
+				
+				local connection;
+				
+				local enabled = false
+				function stat:SetEnabled(enabledNew)
+					if enabledNew == enabled then
+						return
+					end
+					enabled = enabledNew
+					SetEnabled(id, enabledNew)
+					
+					if enabled then
+						connection = GlobalStatsReceived:connect(function(stats)
+							local statsFiltered = filter(stats) or {}
+							if statsFiltered then
+								statsReceived:fire(statsFiltered)
+							end
+						end)
+					else
+						if connection then
+							connection:disconnect()
+							connection = nil
+						end
+					end
+					
+				end
+				
+				stats[id] = stat
+			end
+			
+			if permissions.MayViewServerScripts then
+				newStat("Scripts", function(stats)
+					-- return stats.Scripts
+					if stats.Scripts then
+						local statsFiltered = {}
+						for k, v in pairs(stats.Scripts) do
+							statsFiltered[k] = {v[1]/100, v[2]}
+						end
+						return statsFiltered
+					end
+				end)
+			end
+			
+			if permissions.MayViewServerStats then
+				newStat("Stats", function(stats)
+					local statsFiltered = {}
+					for k, v in pairs(stats) do
+						if type(v) == 'number' then
+							statsFiltered[k] = {v}
+						end
+					end
+					return statsFiltered
+				end)
+			end
+			
+			if permissions.MayViewServerJobs then
+				newStat("Jobs", function(stats)
+					return stats.Jobs
+				end)
+			end
+
+			statsSyncServer = self
 		end
-		--]]
 		
+		local statsSyncLocal;
+		do
+			local self = {
+				Stats = {};
+				
+			}
+			local stats = self.Stats
+			
+			local function newSecondAverage()
+				local self = {}
+				
+				local valueList = {}
+				local timestampList = {}
+				
+				function self:Clean()
+					local timestamp = tick() - 1
+					for i = #timestampList, 1, -1 do
+						if timestampList[i] <= timestamp then
+							table.remove(timestampList, i)
+							table.remove(valueList, i)
+						end
+					end
+				end
+				
+				function self:Get()
+					self:Clean()
+					
+					if #valueList == 0 then
+						return self.LastValue or 0
+					end
+					
+					local total = 0
+					for i = 1, #valueList do
+						total = total + valueList[i]
+					end
+					
+					local value = total / #valueList
+					self.LastValue = value
+					return value
+				end
+				
+				function self:Add(value)
+					valueList[#valueList + 1] = value
+					timestampList[#timestampList + 1] = tick()
+					self:Clean()
+				end
+				
+				return self
+			end
+
+			if permissions.MayViewClientStats then
+				local statsReceived = CreateSignal()
+				local stat = {
+					StatsReceived = statsReceived;
+				}
+				stats.Stats = stat
+				
+				local connections = {}
+				
+				local averages = {
+					["Render FPS"] = newSecondAverage();
+					["1/wait()"] = newSecondAverage();
+				}
+				
+				local function GetClientStats(stats)
+					for k, v in pairs(averages) do
+						stats[k] = {v:Get()}
+					end
+				end
+				
+				local function Disconnect()
+					for i = #connections, 1, -1 do
+						connections[i]:disconnect()
+						connections[i] = nil
+					end
+				end
+				
+				local function Connect()
+					Disconnect()
+				
+					local enabled = true
+					connections[#connections + 1] = {
+						disconnect = function()
+							enabled = false
+						end
+					}
+					do
+						local average = averages["1/wait()"]
+						coroutine.wrap(function()
+							while enabled do
+								average:Add(1 / wait())
+							end
+						end)()
+					end
+					
+					do
+						local RenderStepped = game:GetService("RunService").RenderStepped
+						local average = averages["Render FPS"]
+						coroutine.wrap(function()
+							while enabled do
+								local t = tick()
+								RenderStepped:wait()
+								average:Add(1 / (tick() - t))
+							end
+						end)()
+					end
+					
+				end
+				
+
+				
+				local loopHandle;
+				function stat:SetEnabled(enabledNew)
+					
+					if enabledNew then
+						if loopHandle then
+							return
+						end
+					else
+						loopHandle = nil
+						Disconnect()
+						return
+					end
+					
+					pcall(Connect)
+					
+					local handle = {}
+					loopHandle = handle
+					
+					coroutine.wrap(function()
+						while true do
+							local stats = {}
+							coroutine.wrap(function()
+								GetClientStats(stats)
+							end)()
+							wait(1)
+							if handle ~= loopHandle then
+								return
+							end
+							statsReceived:fire(stats)
+						end
+					end)()
+					
+					
+				end
+				
+			end
+
+			statsSyncLocal = self
+		end
 		
 		messagesAndStats = {
 			OutputMessageSyncLocal = outputMessageSyncLocal;
 			OutputMessageSyncServer = outputMessageSyncServer;
 			StatsSyncServer = statsSyncServer;
+			StatsSyncLocal = statsSyncLocal;
 		}
 		
 		return messagesAndStats
