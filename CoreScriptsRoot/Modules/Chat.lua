@@ -2170,7 +2170,9 @@ local function CreateChat()
 
 	local focusCount = 0
 	function this:CreateGUI()
-		if FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu then
+		if	FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu and
+			game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
+		then
 			-- NOTE: eventually we will make multiple chat window frames
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
 			this.ChatBarWidget = CreateChatBarWidget(this.Settings)
@@ -2357,26 +2359,26 @@ end
 
 local moduleApiTable = {}
 -- Main Entry Point
-do
+do	
 	local ChatInstance = CreateChat()
 	ChatInstance:Initialize()
 
-	function moduleApiTable:ToggleVisibility()
+	function moduleApiTable:ToggleVisibility()		
 		ChatInstance:ToggleVisibility()
 	end
 
-	function moduleApiTable:FocusChatBar()
+	function moduleApiTable:FocusChatBar()		
 		ChatInstance:FocusChatBar()
 	end
 
-	function moduleApiTable:GetVisibility()
+	function moduleApiTable:GetVisibility()		
 		return ChatInstance.Visible
 	end
 
-	function moduleApiTable:GetMessageCount()
+	function moduleApiTable:GetMessageCount()		
 		return ChatInstance:GetCurrentWindowMessageCount()
 	end
-
+	
 	moduleApiTable.ChatBarFocusChanged = ChatInstance.ChatBarFocusChanged
 	moduleApiTable.VisibilityStateChanged = ChatInstance.VisibilityStateChanged
 	moduleApiTable.MessagesChanged = ChatInstance.CurrentWindowMessageCountChanged

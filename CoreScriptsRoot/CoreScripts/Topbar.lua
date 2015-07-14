@@ -774,6 +774,9 @@ local function CreateUnreadMessagesNotifier(ChatModule)
 end
 
 local function CreateChatIcon()
+	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
+	if not chatEnabled then return end
+	
 	local ChatModule = require(GuiRoot.Modules.Chat)
 
 	local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
