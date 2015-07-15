@@ -19,6 +19,16 @@ local EYECANDY_ENABLED = true
 
 local ZINDEX = 6
 
+-- Useful wrapper for pcall
+local function pcall_warn(contextMessage, func, ...)
+	local success, message = pcall(func, ...)
+	if not success and message then
+		warn("Developer Console pcall error: " .. tostring(contextMessage) .. "; " .. tostring(message))
+	end
+	return success, message
+end
+
+
 local Style; do
 	local function c3(r, g, b)
 		return Color3_new(r / 255, g / 255, b / 255)
@@ -27,7 +37,7 @@ local Style; do
 	local textColor = Color3_new(1, 1, 1)
 	local optionsFrameColor = Color3_new(1, 1, 1)
 	
-	pcall(function() -- Fun window colors for cool people
+	pcall_warn("Fun Colors", function() -- Fun window colors for cool people
 		local Players = game:GetService("Players")
 		if not Players or not Players.LocalPlayer then
 			return
@@ -1245,7 +1255,7 @@ do -- This doesn't support multiple windows very well
 			label.Parent = enabled and devConsole.ScreenGui or nil
 			disconnector:fire()
 			if enabled then
-				pcall(function()
+				pcall_warn("Find LocalPlayer Mouse", function()
 					local mouse = game:GetService("Players").LocalPlayer:GetMouse()
 					label.Position = UDim2.new(0, mouse.X - 32, 0, mouse.Y - 32)
 				end)
@@ -2772,18 +2782,12 @@ do
 		end
 		permissions = {}
 		
-		pcall(function()
+		pcall_warn("FFlagUseCanManageApiToDetermineConsoleAccess", function()
 			permissions.CreatorFlagValue = settings():GetFFlag("UseCanManageApiToDetermineConsoleAccess")
-		end)
-	
-		pcall(function()
-			-- This might not support group games, I'll leave it up to "UseCanManageApiToDetermineConsoleAccess"
-			permissions.IsCreator = permissions.CreatorFlagValue or game:GetService("Players").LocalPlayer.userId == game.CreatorId
 		end)
 		
 		if permissions.CreatorFlagValue then -- Use the new API
-		permissions.IsCreator = false
-			local success, result = pcall(function()
+			local success, result = pcall_warn("CanManage Http Get", function()
 				local url = string.format("/users/%d/canmanage/%d", game:GetService("Players").LocalPlayer.userId, game.PlaceId)
 				return game:GetService('HttpRbxApiService'):GetAsync(url, false, Enum.ThrottlingPriority.Default)
 			end)
@@ -2791,17 +2795,22 @@ do
 				-- API returns: {"Success":BOOLEAN,"CanManage":BOOLEAN}
 				-- Convert from JSON to a table
 				-- pcall in case of invalid JSON
-				success, result = pcall(function()
+				success, result = pcall_warn("CanManage Http Get JSONDecode", function()
 					return game:GetService('HttpService'):JSONDecode(result)
 				end)
 				if success and result.CanManage == true then
 					permissions.IsCreator = result.CanManage
 				end
 			end
+		else
+			pcall_warn("CreatorId check", function()
+				-- This might not support group games, I'll leave it up to "UseCanManageApiToDetermineConsoleAccess"
+				permissions.IsCreator = game:GetService("Players").LocalPlayer.userId == game.CreatorId
+			end)
 		end
 		
-		permissions.ClientCodeExecutionEnabled = false
-		pcall(function()
+		
+		pcall_warn("FFlagConsoleCodeExecutionEnabled", function()
 			permissions.ServerCodeExecutionEnabled = permissions.IsCreator and settings():GetFFlag("ConsoleCodeExecutionEnabled")
 		end)
 		
@@ -2810,6 +2819,9 @@ do
 			permissions.IsCreator = true
 			permissions.ServerCodeExecutionEnabled = true
 		end
+		
+		permissions.ClientCodeExecutionEnabled = false
+		permissions.ServerCodeExecutionEnabled = permissions.IsCreator
 		
 		permissions.MayViewServerLog = permissions.IsCreator
 		permissions.MayViewClientLog = true
@@ -3002,7 +3014,7 @@ do
 						return
 					end
 					enabled = enabledNew
-					pcall(enabled and Enable or Disable)
+					pcall_warn("Enable server stats", enabled and Enable or Disable)
 				end
 			
 			end
@@ -3201,7 +3213,7 @@ do
 						return
 					end
 					
-					pcall(Connect)
+					pcall_warn("Connect client stats", Connect)
 					
 					local handle = {}
 					loopHandle = handle
