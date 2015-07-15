@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX5f0e968c3f69431d924a85cbccb42f33">
+	<Item class="ModuleScript" referent="RBX111DCB5EDF814D0CB25DC3588133363A">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">RootCamera</string>
@@ -30,6 +30,8 @@ end
 local function IsFinite(num)
 	return num == num and num ~= 1/0 and num ~= -1/0
 end
+
+local THUMBSTICK_DEADZONE = 0.2
 
 local humanoidCache = {}
 local function findPlayerHumanoid(player)
@@ -664,7 +666,7 @@ local function CreateCamera()
 				end
 
 				local inputVector = Vector2.new(input.Position.X, -input.Position.Y)
-				if inputVector.magnitude > 0.1 then
+				if inputVector.magnitude > THUMBSTICK_DEADZONE then
 					this.GamepadPanningCamera = Vector2.new(input.Position.X, -input.Position.Y)
 				else
 					this.GamepadPanningCamera = Vector2.new(0,0)
