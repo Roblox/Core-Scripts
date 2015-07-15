@@ -1,8 +1,9 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXD9B35571CD9D4255A0E8DB48B3D22FCD">
+	<Item class="ModuleScript" referent="RBX3D4DA58BA847457EA409CCC72356F9FF">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">Gamepad</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: Gamepad
@@ -124,22 +125,6 @@ function Gamepad:Enable()
 		doDpadMoveUpdate()
 	end
 	
-	local activateToolFunc = function(actionName, inputState, inputObject)
-		if inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
-		
-		if inputObject.Position.Z >= 0.5 and inputObject.Delta.Z > 0 then
-			local character = LocalPlayer and LocalPlayer.Character
-			if character then
-				local children = character:GetChildren()
-				for i = 1, #children do
-					if children[i]:IsA("Tool") then
-						children[i]:Activate()
-					end
-				end
-			end
-		end
-	end
-	
 	ContextActionService:BindAction("JumpButton",jumpCharacterGamepad1, false, Enum.KeyCode.ButtonA)
 	ContextActionService:BindAction("MoveThumbstick",controlCharacterGamepad1, false, Enum.KeyCode.Thumbstick1)
 	
@@ -148,7 +133,7 @@ function Gamepad:Enable()
 	ContextActionService:BindAction("leftDpad", moveLeftFunc, false, Enum.KeyCode.DPadLeft)
 	ContextActionService:BindAction("rightDpad", moveRightFunc, false, Enum.KeyCode.DPadRight)
 	
-	ContextActionService:BindAction("ActivateTool", activateToolFunc, false, Enum.KeyCode.ButtonR2)
+	ContextActionService:BindActivate(Enum.UserInputType.Gamepad1, Enum.KeyCode.ButtonR2)
 	
 	
 	UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
@@ -175,7 +160,7 @@ function Gamepad:Disable()
 	
 	ContextActionService:UnbindAction("MoveThumbstick")
 	ContextActionService:UnbindAction("JumpButton")
-	ContextActionService:UnbindAction("ActivateTool")
+	ContextActionService:UnbindActivate(Enum.UserInputType.Gamepad1, Enum.KeyCode.ButtonR2)
 	
 	MasterControl:AddToPlayerMovement(-currentMoveVector)
 	currentMoveVector = Vector3.new(0,0,0)
