@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX927EFD443165410D965FA29B81ED2146">
+	<Item class="ModuleScript" referent="RBX32BC74A117AE433697E588A77C2E4619">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">MasterControl</string>
@@ -24,11 +24,13 @@ end
 local LocalPlayer = Players.LocalPlayer
 local CachedHumanoid = nil
 local RenderSteppedCon = nil
+local SeatedCn = nil
 local moveFunc = LocalPlayer.Move
 
 local isJumping = false
+local isSeated = false
+local myVehicleSeat = nil
 local moveValue = Vector3.new(0,0,0)
-
 
 --[[ Local Functions ]]--
 local function getHumanoid()
@@ -59,8 +61,8 @@ function MasterControl:Init()
 			if humanoid and not humanoid.PlatformStand and isJumping then
 				humanoid.Jump = isJumping
 			end
-
-			moveFunc(LocalPlayer, moveValue, true)
+			
+			moveFunc(LocalPlayer, moveValue, true)	
 		end
 	end
 	
@@ -87,6 +89,10 @@ end
 
 function MasterControl:AddToPlayerMovement(playerMoveVector)
 	moveValue = Vector3.new(moveValue.X + playerMoveVector.X, moveValue.Y + playerMoveVector.Y, moveValue.Z + playerMoveVector.Z)
+end
+
+function MasterControl:GetMoveVector()
+	return moveValue
 end
 
 function MasterControl:SetIsJumping(jumping)
