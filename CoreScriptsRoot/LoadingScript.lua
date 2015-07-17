@@ -149,7 +149,7 @@ function MainGui:GenerateMain()
 				Image = 'rbxasset://textures/loading/cancelButton.png',
 				ImageTransparency = 1,
 				BackgroundTransparency = 1,
-				Position = UDim2.new(1, -37, 0, 5),
+				Position = UDim2.new(1, -37, 0, 5 + bgFrameOffset),
 				Size = UDim2.new(0, 32, 0, 32),
 				Active = false,
 				ZIndex = 10
