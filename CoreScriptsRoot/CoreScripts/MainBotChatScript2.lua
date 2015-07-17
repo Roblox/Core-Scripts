@@ -1,7 +1,7 @@
 local PURPOSE_DATA = {
-	[Enum.DialogPurpose.Quest] = {"rbxasset://textures/ui/dialog_purpose_quest.png", Vector2.new(6, 22)},
-	[Enum.DialogPurpose.Help] = {"rbxasset://textures/ui/dialog_purpose_help.png", Vector2.new(12, 22)},
-	[Enum.DialogPurpose.Shop] = {"rbxasset://textures/ui/dialog_purpose_shop.png", Vector2.new(14, 27)},
+	[Enum.DialogPurpose.Quest] = {"rbxasset://textures/DialogQuest.png", Vector2.new(10, 34)},
+	[Enum.DialogPurpose.Help] = {"rbxasset://textures/DialogHelp.png", Vector2.new(20, 35)},
+	[Enum.DialogPurpose.Shop] = {"rbxasset://textures/ui/DialogShop.png", Vector2.new(22, 43)},
 }
 local TEXT_HEIGHT = 24 -- Pixel height of one row
 local BAR_THICKNESS = 6
@@ -11,8 +11,22 @@ local PROMPT_SIZE = Vector2.new(80, 90)
 
 local WIDTH_BONUS = (STYLE_PADDING * 2) - BAR_THICKNESS
 local XPOS_OFFSET = -(STYLE_PADDING - BAR_THICKNESS)
-local YPOS_OFFSET = -math.floor(STYLE_PADDING / 2)
 
+local contextActionService = game:GetService("ContextActionService")
+local guiService = game:GetService("GuiService")
+local YPOS_OFFSET = -math.floor(STYLE_PADDING / 2)
+local usingGamepad = false
+
+function setUsingGamepad(input, processed)
+	if input.UserInputType == Enum.UserInputType.Gamepad1 then
+		usingGamepad = true
+	else
+		usingGamepad = false
+	end
+end
+
+game:GetService("UserInputService").InputBegan:connect(setUsingGamepad)
+game:GetService("UserInputService").InputChanged:connect(setUsingGamepad)
 
 function waitForProperty(instance, name)
 	while not instance[name] do
@@ -74,11 +88,7 @@ end
 
 function createChatNotificationGui()
 	chatNotificationGui = Instance.new("BillboardGui")
-	if gamepadDialogSupportEnabled then
-		chatNotificationGui.Name = "RBXChatNotificationGui"
-	else
-		chatNotificationGui.Name = "ChatNotificationGui"
-	end
+	chatNotificationGui.Name = "ChatNotificationGui"
 
 	chatNotificationGui.ExtentsOffset = Vector3.new(0,1,0)
 	chatNotificationGui.Size = UDim2.new(PROMPT_SIZE.X / 31.5, 0, PROMPT_SIZE.Y / 31.5, 0)
@@ -106,6 +116,16 @@ function createChatNotificationGui()
 	icon.BackgroundTransparency = 1
 	icon.RobloxLocked = true
 	icon.Parent = button
+	
+	local activationButton = Instance.new("ImageLabel")
+	activationButton.Name = "ActivationButton"
+	activationButton.Position = UDim2.new(-0.3, 0, -0.4, 0)
+	activationButton.Size = UDim2.new(.8, 0, .8*(PROMPT_SIZE.X/PROMPT_SIZE.Y), 0)
+	activationButton.Image = "rbxasset://textures/ui/Settings/Help/XButtonDark.png"
+	activationButton.BackgroundTransparency = 1
+	activationButton.Visible = false
+	activationButton.RobloxLocked = true
+	activationButton.Parent = button
 end
 
 function getChatColor(tone)
@@ -225,6 +245,7 @@ function endDialog()
 		end
 	end
 
+	contextActionService:UnbindCoreAction("Nothing")
 	currentConversationPartner = nil
 end
 
@@ -259,6 +280,9 @@ function selectChoice(choice)
 end
 
 function newChoice()
+	local dummyFrame = Instance.new("Frame")
+	dummyFrame.Visible = false
+
 	local frame = Instance.new("TextButton")
 	frame.BackgroundColor3 = Color3.new(227/255, 227/255, 227/255)
 	frame.BackgroundTransparency = 1
@@ -267,6 +291,7 @@ function newChoice()
 	frame.Text = ""
 	frame.MouseEnter:connect(function() frame.BackgroundTransparency = 0 end)
 	frame.MouseLeave:connect(function() frame.BackgroundTransparency = 1 end)
+	frame.SelectionImageObject = dummyFrame
 	frame.MouseButton1Click:connect(function() selectChoice(frame) end)
 	frame.RobloxLocked = true
 
@@ -275,14 +300,24 @@ function newChoice()
 	prompt.BackgroundTransparency = 1
 	prompt.Font = Enum.Font.SourceSans
 	prompt.FontSize = Enum.FontSize.Size24
-	prompt.Position = UDim2.new(0, 28, 0, 0)
-	prompt.Size = UDim2.new(1, -32-28, 1, 0)
+	prompt.Position = UDim2.new(0, 40, 0, 0)
+	prompt.Size = UDim2.new(1, -32-40, 1, 0)
 	prompt.TextXAlignment = Enum.TextXAlignment.Left
 	prompt.TextYAlignment = Enum.TextYAlignment.Center
 	prompt.TextWrap = true
 	prompt.RobloxLocked = true
 	prompt.Parent = frame
 
+	local selectionButton = Instance.new("ImageLabel")
+	selectionButton.Name = "RBXchatDialogSelectionButton"
+	selectionButton.Position = UDim2.new(0, 0, 0.5, -33/2)
+	selectionButton.Size = UDim2.new(0, 33, 0, 33)
+	selectionButton.Image = "rbxasset://textures/ui/Settings/Help/AButtonLightSmall.png"
+	selectionButton.BackgroundTransparency = 1
+	selectionButton.Visible = false
+	selectionButton.RobloxLocked = true
+	selectionButton.Parent = frame
+	
 	return frame
 end
 function initialize(parent)
@@ -363,7 +398,7 @@ function presentDialogChoices(talkingPart, dialogChoices)
 	styleMainFrame(currentTone())
 	mainFrame.Visible = true
 
-	if gamepadDialogSupportEnabled then
+	if gamepadDialogSupportEnabled and usingGamepad then
 		Game:GetService("GuiService").SelectedCoreObject = choices[1]
 	end
 end
@@ -421,6 +456,8 @@ function startDialog(dialog)
 				gui.Enabled = false
 			end
 		end
+		
+		contextActionService:BindCoreAction("Nothing", function() end, false, Enum.UserInputType.Gamepad1)
 
 		renewKillswitch(dialog)
 
@@ -431,7 +468,7 @@ end
 
 function removeDialog(dialog)
    if dialogMap[dialog] then
-      dialogMap[dialog]:Remove()
+      dialogMap[dialog]:Destroy()
       dialogMap[dialog] = nil
    end
 	if dialogConnections[dialog] then
@@ -448,14 +485,8 @@ function addDialog(dialog)
 			chatGui.Adornee = dialog.Parent
 			chatGui.RobloxLocked = true
 
-			if gamepadDialogSupportEnabled then
-				waitForProperty(game:GetService("Players"), "LocalPlayer")
-	 			game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-				chatGui.Parent = game:GetService("Players").LocalPlayer.PlayerGui
-			else
-				chatGui.Parent = game:GetService("CoreGui")
-			end
-
+			chatGui.Parent = game:GetService("CoreGui")
+			
 			chatGui.Background.MouseButton1Click:connect(function() startDialog(dialog) end)
 			setChatNotificationTone(chatGui, dialog.Purpose, dialog.Tone)
 
@@ -550,6 +581,63 @@ function onLoad()
        addDialog(obj)
     end
   end
+end
+
+local lastClosestDialog = nil
+local getClosestDialogToPosition = guiService.GetClosestDialogToPosition
+
+if gamepadDialogSupportEnabled then 
+	game:GetService("RunService").Heartbeat:connect(function()
+		local closestDistance = math.huge
+		local closestDialog = nil
+		if usingGamepad == true then
+			if game.Players.LocalPlayer and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+				local characterPosition = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position
+				closestDialog = getClosestDialogToPosition(guiService, characterPosition)
+			end
+		end
+
+		if closestDialog ~= lastClosestDialog then
+			if dialogMap[lastClosestDialog] then
+				dialogMap[lastClosestDialog].Background.ActivationButton.Visible = false
+			end
+			lastClosestDialog = closestDialog
+			contextActionService:UnbindCoreAction("StartDialogAction")
+			if closestDialog ~= nil then
+				contextActionService:BindCoreAction("StartDialogAction",
+													function(actionName, userInputState, inputObject) 
+														if userInputState == Enum.UserInputState.Begin then 
+															if closestDialog and closestDialog.Parent then
+																startDialog(closestDialog) 
+															end
+														end
+													end, 
+													false, 
+													Enum.KeyCode.ButtonX)
+				if dialogMap[closestDialog] then
+					dialogMap[closestDialog].Background.ActivationButton.Visible = true
+				end
+			end
+		end
+	end)
+end
+
+local lastSelectedChoice = nil
+
+if gamepadDialogSupportEnabled then 
+	guiService.Changed:connect(function(property)
+		if property == "SelectedCoreObject" then
+			if lastSelectedChoice and lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton") then
+				lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton").Visible = false
+				lastSelectedChoice.BackgroundTransparency = 1
+			end
+			lastSelectedChoice = guiService.SelectedCoreObject
+			if lastSelectedChoice and lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton") then
+				lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton").Visible = true
+				lastSelectedChoice.BackgroundTransparency = 0
+			end
+		end
+	end)
 end
 
 onLoad()
