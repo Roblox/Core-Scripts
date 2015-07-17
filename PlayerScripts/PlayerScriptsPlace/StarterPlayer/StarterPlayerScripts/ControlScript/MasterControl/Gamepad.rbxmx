@@ -3,6 +3,7 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBXD9B35571CD9D4255A0E8DB48B3D22FCD">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">Gamepad</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: Gamepad
@@ -179,6 +180,7 @@ function Gamepad:Disable()
 	
 	MasterControl:AddToPlayerMovement(-currentMoveVector)
 	currentMoveVector = Vector3.new(0,0,0)
+	MasterControl:SetIsJumping(false)
 end
 
 return Gamepad
