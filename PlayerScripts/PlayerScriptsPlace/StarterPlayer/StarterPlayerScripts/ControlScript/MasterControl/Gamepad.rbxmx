@@ -164,6 +164,7 @@ function Gamepad:Disable()
 	
 	MasterControl:AddToPlayerMovement(-currentMoveVector)
 	currentMoveVector = Vector3.new(0,0,0)
+	MasterControl:SetIsJumping(false)
 end
 
 return Gamepad
