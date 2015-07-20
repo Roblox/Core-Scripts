@@ -77,8 +77,8 @@ else
 	ControlModules.Keyboard = require(script.MasterControl:WaitForChild('KeyboardMovement'))
 end
 ControlModules.Gamepad = require(script.MasterControl:WaitForChild('Gamepad'))
-local sucess, value = pcall(function() return UserSettings():IsUserFeatureEnabled("UserUseLuaVehicleController") end)
-if sucess and value then
+local success, value = pcall(function() return UserSettings():IsUserFeatureEnabled("UserUseLuaVehicleController") end)
+if success and value then
 	local VehicleController = require(script.MasterControl:WaitForChild('VehicleController')) 	-- Not used, but needs to be required
 end
 
