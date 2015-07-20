@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBXCDA097EECF134E9A9DE7A8ED65B8C529">
+	<Item class="LocalScript" referent="RBX7AA6E6B5C1A34B98AEBA3ADA9E707A31">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -56,6 +56,7 @@ local TouchControlFrame = nil
 local TouchJumpModule = nil
 local IsModalEnabled = UserInputService.ModalEnabled
 local BindableEvent_OnFailStateChanged = nil
+local BindableEvent_EnableTouchJump = nil
 local isJumpEnabled = false
 
 
@@ -73,6 +74,7 @@ if IsTouchDevice then
 	ControlModules.Default = ControlModules.Thumbstick
 	TouchJumpModule = require(script.MasterControl:WaitForChild('TouchJump'))
 	BindableEvent_OnFailStateChanged = script.Parent:WaitForChild('OnClickToMoveFailStateChange')
+	BindableEvent_EnableTouchJump = script.Parent:WaitForChild('EnableTouchJump')
 else
 	ControlModules.Keyboard = require(script.MasterControl:WaitForChild('KeyboardMovement'))
 end
@@ -282,6 +284,13 @@ if IsTouchDevice then
 					TouchJumpModule:Disable()
 				end
 			end
+		end
+	end)
+	BindableEvent_EnableTouchJump.Event:connect(function(enable)
+		if enable then
+			TouchJumpModule:Enable()
+		else
+			TouchJumpModule:Disable()
 		end
 	end)
 end
