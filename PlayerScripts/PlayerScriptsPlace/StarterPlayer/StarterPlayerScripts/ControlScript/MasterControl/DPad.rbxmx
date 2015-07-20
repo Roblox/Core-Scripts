@@ -3,7 +3,6 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBX54AF403FDF86481C8A957949FBE7F81D">
 		<Properties>
-			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">DPad</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: DPad
@@ -155,7 +154,6 @@ function DPad:Create(parentFrame)
 		
 		MasterControl:AddToPlayerMovement(-movementVector)
 		movementVector = Vector3.new(0, 0, 0)
-		MasterControl:SetIsJumping(false)
 	end
 	
 	DPadFrame.InputEnded:connect(function(inputObject)

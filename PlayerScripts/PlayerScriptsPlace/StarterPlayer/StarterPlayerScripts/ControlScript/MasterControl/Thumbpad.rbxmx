@@ -3,7 +3,6 @@
 	<External>nil</External>
 	<Item class="ModuleScript" referent="RBX1E3E090B922241488CF1527B6A17D7C7">
 		<Properties>
-			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">Thumbpad</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: Thumbpad
@@ -201,7 +200,6 @@ function Thumbpad:Create(parentFrame)
 	OnInputEnded = function()
 		MasterControl:AddToPlayerMovement(-currentMoveVector)
 		currentMoveVector = Vector3.new(0,0,0)
-		MasterControl:SetIsJumping(false)
 
 		ThumbpadFrame.Position = position
 		TouchObject = nil
