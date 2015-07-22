@@ -19,25 +19,13 @@ local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
 
 -- SettingsScript
 local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
-local newSettingsSuccess, newSettingsFlagValue = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
-local useNewSettings = newSettingsSuccess and newSettingsFlagValue
 
 if not useNewControllerMenu then
-	if useNewSettings then
-		spawn(function() require(RobloxGui.Modules.Settings2) end)
-	else
-		scriptContext:AddCoreScriptLocal("CoreScripts/Settings", screenGui)
-	end
+	spawn(function() require(RobloxGui.Modules.Settings2) end)
 end
 
 -- MainBotChatScript (the Lua part of Dialogs)
-local useNewDialogLook = false
-pcall(function() useNewDialogLook = settings():GetFFlag("UseNewBubbleSkin") end)
-if useNewDialogLook then
-	scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", screenGui)
-else
-	scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript", screenGui)
-end
+scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", screenGui)
 
 -- Developer Console Script
 scriptContext:AddCoreScriptLocal("CoreScripts/DeveloperConsole", screenGui)
@@ -48,42 +36,22 @@ scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", screenGui)
 -- Chat script
 if useTopBar then
 	spawn(function() require(RobloxGui.Modules.Chat) end)
-else
-	scriptContext:AddCoreScriptLocal("CoreScripts/ChatScript2", screenGui)
+	spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
 end
 
 -- Purchase Prompt Script
-local newPurchaseSuccess, newPurchaseEnabled = pcall(function() return settings():GetFFlag("NewPurchaseScript") end)
-local isNewPurchaseScript = newPurchaseSuccess and newPurchaseEnabled
-if isNewPurchaseScript then
-	scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", screenGui)
-else
-	scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript", screenGui)
-end
+scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", screenGui)
+
 -- Health Script
 if not useTopBar then
 	scriptContext:AddCoreScriptLocal("CoreScripts/HealthScript", screenGui)
-end
-
-local playerListSuccess, playerListFlagValue = pcall(function() return settings():GetFFlag("NewPlayerListScript") end)
-local isNotSmallTouchDevice = not touchEnabled or Game:GetService("GuiService"):GetScreenResolution().Y >= 500
--- New Player List
-if playerListSuccess and playerListFlagValue == true then
-	if useTopBar then
-		spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
-	elseif isNotSmallTouchDevice then
-		scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript2", screenGui)
-	end
-elseif isNotSmallTouchDevice then
-	scriptContext:AddCoreScriptLocal("CoreScripts/PlayerListScript", screenGui)
 end
 
 do -- Backpack!
 	spawn(function() require(RobloxGui.Modules.BackpackScript) end)
 end
 
-local luaVehicleHudSuccess, luaVehicleHudEnabled = pcall(function() return settings():GetFFlag('NewVehicleHud') end)
-if useTopBar and (luaVehicleHudSuccess and luaVehicleHudEnabled == true) then
+if useTopBar then
 	scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", screenGui)
 end
 
