@@ -30,13 +30,6 @@ if not useNewControllerMenu then
 	end
 end
 
--- Set up touch controls. TODO: Remove when new lua controls are stable.
-if touchEnabled then
-	if not luaControlsSuccess or luaControlsFlagValue == false then
-		scriptContext:AddCoreScriptLocal("CoreScripts/TouchControls", screenGui)
-	end
-end
-
 -- MainBotChatScript (the Lua part of Dialogs)
 local useNewDialogLook = false
 pcall(function() useNewDialogLook = settings():GetFFlag("UseNewBubbleSkin") end)
