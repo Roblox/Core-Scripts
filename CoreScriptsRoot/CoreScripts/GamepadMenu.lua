@@ -17,7 +17,7 @@ local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 
 --[[ MODULES ]]
 local utility = require(GuiRoot.Modules.Settings.Utility)
-local recordPage = require(GuiRoot.Modules.Settings.Pages.Record) 
+local recordPage = require(GuiRoot.Modules.Settings.Pages.Record)
 
 --[[ VARIABLES ]]
 local gamepadSettingsFrame = nil
@@ -321,6 +321,30 @@ local function createGamepadMenuGui()
 		Parent = closeHintImage
 	}
 
+	local leaveGameImage = utility:Create'ImageLabel'
+	{
+		Name = "LeaveGameHint",
+		Position = UDim2.new(0,-100,1,10),
+		Size = UDim2.new(0,61,0,61),
+		BackgroundTransparency = 1,
+		Image = "rbxasset://textures/ui/Settings/Help/XButtonDark.png",
+		Visible = true,
+		Parent = gamepadSettingsFrame
+	}
+	local leaveGameText = utility:Create'TextLabel'
+	{
+		Name = "LeaveGameText",
+		Position = UDim2.new(1,10,0.5,-12),
+		Size = UDim2.new(0,43,0,24),
+		Font = Enum.Font.SourceSansBold,
+		FontSize = Enum.FontSize.Size24,
+		BackgroundTransparency = 1,
+		Text = "Leave Game",
+		TextColor3 = Color3.new(1,1,1),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = leaveGameImage
+	}
+
 	------------------------------------------
 	--------- Stop Recording Button ----------
 	--todo: enable this when recording is not a verb
@@ -379,6 +403,7 @@ local function setupGamepadControls()
 	local thumbstick2RadialActionName = "Thumbstick2RadialAction"
 	local radialCancelActionName = "RadialSelectCancel"
 	local radialAcceptActionName = "RadialSelectAccept"
+	local radialLeaveGameActionName = "RadialLeaveGameAction"
 	local toggleMenuActionName = "RBXToggleMenuAction"
 
 	local noOpFunc = function() end
@@ -441,6 +466,14 @@ local function setupGamepadControls()
 		end
 	end
 
+	local radialSelectLeaveGame = function(name, state, input)
+		if gamepadSettingsFrame.Visible and state == Enum.UserInputState.Begin then
+			toggleCoreGuiRadial()
+			local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
+			MenuModule:SetVisibility(true, false, require(GuiRoot.Modules.Settings.Pages.LeaveGame))
+		end
+	end
+
 	function setVisibility()
 		gamepadSettingsFrame.CloseHint.Visible = isVisible
 		local children = gamepadSettingsFrame:GetChildren()
@@ -496,8 +529,9 @@ local function setupGamepadControls()
 			GuiService.GuiNavigationEnabled = false
 
 			ContextActionService:BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
-			ContextActionService:BindCoreAction(radialCancelActionName, radialSelectAccept, false, Enum.KeyCode.ButtonA)
-			ContextActionService:BindCoreAction(radialAcceptActionName, radialSelectCancel, false, Enum.KeyCode.ButtonB)
+			ContextActionService:BindCoreAction(radialAcceptActionName, radialSelectAccept, false, Enum.KeyCode.ButtonA)
+			ContextActionService:BindCoreAction(radialCancelActionName, radialSelectCancel, false, Enum.KeyCode.ButtonB)
+			ContextActionService:BindCoreAction(radialLeaveGameActionName, radialSelectLeaveGame, false, Enum.KeyCode.ButtonX)
 			ContextActionService:BindCoreAction(radialSelectActionName, radialSelect, false, Enum.KeyCode.Thumbstick1)
 			ContextActionService:BindCoreAction(thumbstick2RadialActionName, noOpFunc, false, Enum.KeyCode.Thumbstick2)
 			ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)

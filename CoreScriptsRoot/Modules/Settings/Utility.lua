@@ -23,7 +23,17 @@ local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
+local RobloxGui = CoreGui:FindFirstChild("RobloxGui")
 local ContextActionService = game:GetService("ContextActionService")
+
+------------------ VARIABLES --------------------
+local tenFootInterfaceEnabled = false
+do
+	RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+	tenFootInterfaceEnabled = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+end
+
+
 
 ----------- UTILITIES --------------
 local Util = {}
@@ -188,6 +198,10 @@ local function isSmallTouchScreen()
 	return UserInputService.TouchEnabled and getViewportSize().Y <= 500
 end
 
+local function isTenFootInterface()
+	return tenFootInterfaceEnabled
+end
+
 local function usesSelectedObject()
 	if UserInputService.TouchEnabled and not UserInputService.GamepadEnabled then return false end
 
@@ -251,6 +265,8 @@ local function MakeButton(name, text, size, clickFunc)
 
 	if isSmallTouchScreen() then
 		textLabel.FontSize = Enum.FontSize.Size18
+	elseif isTenFootInterface() then
+		textLabel.FontSize = Enum.FontSize.Size36
 	end
 
 	local guiServiceCon = GuiService.Changed:connect(function(prop)
@@ -663,6 +679,9 @@ local function CreateSelector(selectionStringTable, startPosition)
 			Visible = false,
 			Parent = this.SelectorFrame
 		};
+		if isTenFootInterface() then
+			nextSelection.FontSize = Enum.FontSize.Size36
+		end
 
 		if i == startPosition then
 			this.CurrentIndex = i
@@ -1380,6 +1399,8 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 end
 
 local ROW_HEIGHT = 50
+if isTenFootInterface() then ROW_HEIGHT = 90 end
+
 local nextPosTable = {}
 local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, rowDefault, extraSpacing)
 	local nextRowPositionY = 0
@@ -1427,6 +1448,9 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			ZIndex = 2,
 			Parent = RowFrame
 		};
+		if isTenFootInterface() then
+			RowLabel.FontSize = Enum.FontSize.Size36
+		end
 	end
 
 	local ValueChangerInstance = nil

@@ -20,6 +20,9 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 
 ------------ Variables -------------------
 local PageInstance = nil
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+
 
 ----------- CLASS DECLARATION --------------
 
@@ -27,8 +30,8 @@ local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
-	this.DontLeaveFunc = function()
-		if this.HubRef then
+	this.DontLeaveFunc = function(name, state, input)
+		if this.HubRef and (not state or state == Enum.UserInputState.Begin) then
 			this.HubRef:PopMenu()
 		end
 	end
@@ -57,25 +60,32 @@ local function Initialize()
 		leaveGameText.Size = UDim2.new(1,0,0,100)
 	end
 
-	this.LeaveGameButton = utility:MakeStyledButton("LeaveGame", "Leave", UDim2.new(0, 200, 0, 50))
+	local buttonSpacing = 20
+	local buttonSize = UDim2.new(0, 200, 0, 50)
+	if isTenFootInterface then
+		leaveGameText.Position = UDim2.new(0,0,0,100)
+		buttonSize = UDim2.new(0, 300, 0, 80)
+	end
+
+	this.LeaveGameButton = utility:MakeStyledButton("LeaveGame", "Leave", buttonSize)
 	this.LeaveGameButton.NextSelectionRight = nil
 	this.LeaveGameButton:SetVerb("Exit")
 	if utility:IsSmallTouchScreen() then
-		this.LeaveGameButton.Position = UDim2.new(0.5, -220, 1, 0)
+		this.LeaveGameButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, 0)
 	else
-		this.LeaveGameButton.Position = UDim2.new(0.5, -220, 1, -30)
+		this.LeaveGameButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, -30)
 	end
 	this.LeaveGameButton.Parent = leaveGameText
 
 
 	------------- Init ----------------------------------
 	
-	local dontleaveGameButton = utility:MakeStyledButton("DontLeaveGame", "Don't Leave", UDim2.new(0, 200, 0, 50), this.DontLeaveFunc)
+	local dontleaveGameButton = utility:MakeStyledButton("DontLeaveGame", "Don't Leave", buttonSize, this.DontLeaveFunc)
 	dontleaveGameButton.NextSelectionLeft = nil
 	if utility:IsSmallTouchScreen() then
-		dontleaveGameButton.Position = UDim2.new(0.5, 20, 1, 0)
+		dontleaveGameButton.Position = UDim2.new(0.5, buttonSpacing, 1, 0)
 	else
-		dontleaveGameButton.Position = UDim2.new(0.5, 20, 1, -30)
+		dontleaveGameButton.Position = UDim2.new(0.5, buttonSpacing, 1, -30)
 	end
 	dontleaveGameButton.Parent = leaveGameText
 

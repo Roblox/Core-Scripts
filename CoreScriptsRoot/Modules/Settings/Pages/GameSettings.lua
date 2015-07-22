@@ -47,6 +47,8 @@ local MOVEMENT_MODE_CLICKTOMOVE_STRING = UserInputService.TouchEnabled and "Tap 
 local utility = require(RobloxGui.Modules.Settings.Utility)
 
 ------------ Variables -------------------
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local PageInstance = nil
 local LocalPlayer = game.Players.LocalPlayer
 local platform = UserInputService:GetPlatform()
@@ -485,7 +487,8 @@ local function Initialize()
 		end)
 	end
 
-	createCameraModeOptions(not UserInputService.GamepadEnabled and (UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
+	createCameraModeOptions(not UserInputService.GamepadEnabled and 
+								(UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
 
 	if UserInputService.MouseEnabled then
 		local mouseSensSuccess, mouseSensFlagValue = pcall(function() return settings():GetFFlag("MouseSensitivity") end)
@@ -508,6 +511,11 @@ local function Initialize()
 		this.TabHeader.Icon.Size = UDim2.new(0,34,0,34)
 		this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-17)
 		this.TabHeader.Size = UDim2.new(0,125,1,0)
+	elseif isTenFootInterface then
+		this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsTab@2x.png"
+		this.TabHeader.Icon.Size = UDim2.new(0,90,0,90)
+		this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
+		this.TabHeader.Size = UDim2.new(0,280,1,0)
 	else
 		this.TabHeader.Icon.Size = UDim2.new(0,45,0,45)
 		this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-22)

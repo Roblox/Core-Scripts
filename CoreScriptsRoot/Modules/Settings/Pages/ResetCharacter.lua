@@ -19,6 +19,8 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 
 ------------ Variables -------------------
 local PageInstance = nil
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
 ----------- CLASS DECLARATION --------------
 
@@ -26,8 +28,8 @@ local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
-	this.DontResetCharFunc = function()
-		if this.HubRef then
+	this.DontResetCharFunc = function(name, state, input)
+		if this.HubRef and (not state or state == Enum.UserInputState.Begin) then
 			this.HubRef:PopMenu()
 		end
 	end
@@ -74,22 +76,29 @@ local function Initialize()
 		end
 	end
 
-	this.ResetCharacterButton = utility:MakeStyledButton("ResetCharacter", "Reset", UDim2.new(0, 200, 0, 50), resetCharFunc)
+	local buttonSpacing = 20
+	local buttonSize = UDim2.new(0, 200, 0, 50)
+	if isTenFootInterface then
+		resetCharacterText.Position = UDim2.new(0,0,0,100)
+		buttonSize = UDim2.new(0, 300, 0, 80)
+	end
+
+	this.ResetCharacterButton = utility:MakeStyledButton("ResetCharacter", "Reset", buttonSize, resetCharFunc)
 	this.ResetCharacterButton.NextSelectionRight = nil
 	if utility:IsSmallTouchScreen() then
-		this.ResetCharacterButton.Position = UDim2.new(0.5, -220, 1, 0)
+		this.ResetCharacterButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, 0)
 	else
-		this.ResetCharacterButton.Position = UDim2.new(0.5, -220, 1, -30)
+		this.ResetCharacterButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, -30)
 	end
 	this.ResetCharacterButton.Parent = resetCharacterText
 
 
-	local dontResetCharacterButton = utility:MakeStyledButton("DontResetCharacter", "Don't Reset", UDim2.new(0, 200, 0, 50), this.DontResetCharFunc)
+	local dontResetCharacterButton = utility:MakeStyledButton("DontResetCharacter", "Don't Reset", buttonSize, this.DontResetCharFunc)
 	dontResetCharacterButton.NextSelectionLeft = nil
 	if utility:IsSmallTouchScreen() then
-		dontResetCharacterButton.Position = UDim2.new(0.5, 20, 1, 0)
+		dontResetCharacterButton.Position = UDim2.new(0.5, buttonSpacing, 1, 0)
 	else
-		dontResetCharacterButton.Position = UDim2.new(0.5, 20, 1, -30)
+		dontResetCharacterButton.Position = UDim2.new(0.5, buttonSpacing, 1, -30)
 	end
 	dontResetCharacterButton.Parent = resetCharacterText
 

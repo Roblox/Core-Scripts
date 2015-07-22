@@ -4,6 +4,7 @@
 		// Written by: jmargh
 		// Description: Implementation of in game player list and leaderboard
 ]]
+
 local CoreGui = game:GetService'CoreGui'
 local GuiService = game:GetService('GuiService')	-- NOTE: Can only use in core scripts
 local UserInputService = game:GetService('UserInputService')
@@ -24,6 +25,11 @@ while not Players.LocalPlayer do
 end
 local Player = Players.LocalPlayer
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
+
+
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
+local isTenFootInterface = TenFootInterface:IsEnabled()
 
 --[[ Fast Flags ]]--
 local newSettingsSuccess, newSettingsEnabled = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
@@ -1694,6 +1700,8 @@ end
 
 --[[ Insert/Remove Player Functions ]]--
 local function insertPlayerEntry(player)
+	if isTenFootInterface then return end
+
 	local entry = createPlayerEntry(player)
 	if player == Player then
 		MyPlayerEntry = entry.Frame
@@ -1715,6 +1723,8 @@ local function insertPlayerEntry(player)
 end
 
 local function removePlayerEntry(player)
+	if isTenFootInterface then return end
+
 	for i = 1, #PlayerEntries do
 		if PlayerEntries[i].Player == player then
 			PlayerEntries[i].Frame:Destroy()
@@ -1955,6 +1965,8 @@ if GuiService then
 	GuiService:AddSelectionParent("PlayerListSelection", Container)
 end
 
-
+if isTenFootInterface then
+	TenFootInterface:SetupPlayerList()
+end
 
 return Playerlist

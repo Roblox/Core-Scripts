@@ -71,6 +71,9 @@ end
 
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 
+local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
+local isTenFootInterface = TenFootInterface:IsEnabled()
+
 local Util = {}
 do
 	-- Check if we are running on a touch device
@@ -319,9 +322,7 @@ local function CreateMenuItem(origInstance)
 	return this
 end
 
-
------ HEALTH -----
-local function CreateUsernameHealthMenuItem()
+local function createNormalHealthBar()
 	local container = Util.Create'ImageButton'
 	{
 		Name = "NameHealthContainer";
@@ -362,6 +363,20 @@ local function CreateUsernameHealthMenuItem()
 		Parent = healthContainer;
 	};
 
+	return container, username, healthContainer, healthFill
+end
+
+----- HEALTH -----
+local function CreateUsernameHealthMenuItem()
+
+	local container, username, healthContainer, healthFill = nil
+
+	if isTenFootInterface then
+		container, username, healthContainer, healthFill = TenFootInterface:CreateHealthBar()
+	else
+		container, username, healthContainer, healthFill = createNormalHealthBar()
+	end
+
 	local hurtOverlay = Util.Create'ImageLabel'
 	{
 		Name = "HurtOverlay";
@@ -373,7 +388,9 @@ local function CreateUsernameHealthMenuItem()
 		Parent = GuiRoot;
 	};
 
-	local this = CreateMenuItem(container)
+	if not isTenFootInterface then
+		local this = CreateMenuItem(container)
+	end
 
 	--- EVENTS ---
 	local humanoidChangedConn, childAddedConn, childRemovedConn = nil
@@ -459,8 +476,12 @@ local function CreateUsernameHealthMenuItem()
 				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth then
 					AnimateHurtOverlay()
 				end
-				healthFill.BackgroundColor3 = healthColor
-				healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
+				
+				if isTenFootInterface then
+					healthFill.Size = UDim2.new(healthPercent, -10, 1, -10)
+				else
+					healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
+				end
 
 				lastHealth = health
 			end
@@ -489,24 +510,26 @@ local function CreateUsernameHealthMenuItem()
 		childRemovedConn = character.ChildRemoved:connect(onChildAddedOrRemoved)
 	end
 
-	local mtStore = getmetatable(this)
-	setmetatable(this, {})
-	function this:SetHealthbarEnabled(enabled)
-		healthContainer.Visible = enabled
-		if enabled then
-			username.Size = UDim2.new(1, -14, 0, 22);
-			username.TextYAlignment = Enum.TextYAlignment.Bottom;
-		else
-			username.Size = UDim2.new(1, -14, 1, 0);
-			username.TextYAlignment = Enum.TextYAlignment.Center;
+	if this then
+		local mtStore = getmetatable(this)
+		setmetatable(this, {})
+		function this:SetHealthbarEnabled(enabled)
+			healthContainer.Visible = enabled
+			if enabled then
+				username.Size = UDim2.new(1, -14, 0, 22);
+				username.TextYAlignment = Enum.TextYAlignment.Bottom;
+			else
+				username.Size = UDim2.new(1, -14, 1, 0);
+				username.TextYAlignment = Enum.TextYAlignment.Center;
+			end
 		end
-	end
 
-	function this:SetNameVisible(visible)
-		username.Visible = visible
-	end
+		function this:SetNameVisible(visible)
+			username.Visible = visible
+		end
 
-	setmetatable(this, mtStore)
+		setmetatable(this, mtStore)
+	end
 
 	-- Don't need to disconnect this one because we never reconnect it.
 	Player.CharacterAdded:connect(OnCharacterAdded)
@@ -1020,47 +1043,73 @@ local function CreateShiftLockIcon()
 end
 ----------------------
 
-local TopBar = CreateTopBar()
+local TopBar = nil
+local LeftMenubar = nil
+local RightMenubar = nil
 
-local settingsIcon = useNewSettings and CreateSettingsIcon(TopBar)
-local chatIcon = CreateChatIcon()
-local mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
-local backpackIcon = useNewBackpack and CreateBackpackIcon()
-local shiftlockIcon = nil --CreateShiftLockIcon()
-local nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
-local leaderstatsMenuItem = useNewPlayerlist and CreateLeaderstatsMenuItem()
-local stopRecordingIcon = CreateStopRecordIcon()
+local settingsIcon = nil
+local chatIcon = nil
+local mobileShowChatIcon = nil
+local backpackIcon = nil
+local shiftlockIcon = nil
+local nameAndHealthMenuItem = nil
+local leaderstatsMenuItem = nil
+local stopRecordingIcon = nil
 
-local LeftMenubar = CreateMenuBar('Left')
-local RightMenubar = CreateMenuBar('Right')
+local LEFT_ITEM_ORDER = nil
+local RIGHT_ITEM_ORDER = nil
 
--- Set Item Orders
-local LEFT_ITEM_ORDER = {}
-if settingsIcon then
-	LEFT_ITEM_ORDER[settingsIcon] = 1
-end
-if GetChatVisibleIconFlag() then
-	if mobileShowChatIcon then
-		LEFT_ITEM_ORDER[mobileShowChatIcon] = 2
+if not isTenFootInterface then
+	TopBar = CreateTopBar()
+
+	settingsIcon = useNewSettings and CreateSettingsIcon(TopBar)
+	chatIcon = CreateChatIcon()
+	mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
+	backpackIcon = useNewBackpack and CreateBackpackIcon()
+	shiftlockIcon = nil --CreateShiftLockIcon()
+	nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
+	leaderstatsMenuItem = useNewPlayerlist and CreateLeaderstatsMenuItem()
+	stopRecordingIcon = CreateStopRecordIcon()
+
+	LeftMenubar = CreateMenuBar('Left')
+	RightMenubar = CreateMenuBar('Right')
+
+	-- Set Item Orders
+	LEFT_ITEM_ORDER = {}
+	if settingsIcon then
+		LEFT_ITEM_ORDER[settingsIcon] = 1
 	end
-end
-if chatIcon then
-	LEFT_ITEM_ORDER[chatIcon] = 3
-end
-if backpackIcon then
-	LEFT_ITEM_ORDER[backpackIcon] = 4
-end
-if shiftlockIcon then
-	LEFT_ITEM_ORDER[shiftlockIcon] = 5
-end
-LEFT_ITEM_ORDER[stopRecordingIcon] = 6
+	if GetChatVisibleIconFlag() then
+		if mobileShowChatIcon then
+			LEFT_ITEM_ORDER[mobileShowChatIcon] = 2
+		end
+	end
+	if chatIcon then
+		LEFT_ITEM_ORDER[chatIcon] = 3
+	end
+	if backpackIcon then
+		LEFT_ITEM_ORDER[backpackIcon] = 4
+	end
+	if shiftlockIcon then
+		LEFT_ITEM_ORDER[shiftlockIcon] = 5
+	end
+	LEFT_ITEM_ORDER[stopRecordingIcon] = 6
 
-local RIGHT_ITEM_ORDER = {}
-if leaderstatsMenuItem then
-	RIGHT_ITEM_ORDER[leaderstatsMenuItem] = 1
-end
-if nameAndHealthMenuItem then
-	RIGHT_ITEM_ORDER[nameAndHealthMenuItem] = 2
+	RIGHT_ITEM_ORDER = {}
+	if leaderstatsMenuItem then
+		RIGHT_ITEM_ORDER[leaderstatsMenuItem] = 1
+	end
+	if nameAndHealthMenuItem then
+		RIGHT_ITEM_ORDER[nameAndHealthMenuItem] = 2
+	end
+else
+	if useNewControllerMenu then
+		game.CoreGui.RobloxGui.Modules:WaitForChild("Settings")
+		game.CoreGui.RobloxGui.Modules.Settings:WaitForChild("SettingsHub")
+		MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings.SettingsHub)
+	else
+		MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings2)
+	end
 end
 -------------------------
 
@@ -1156,22 +1205,28 @@ local function OnPlayerChanged(property)
 	end
 end
 
+if not isTenFootInterface then
+	TopBar:SetTopbarDisplayMode(false)
 
-TopBar:SetTopbarDisplayMode(false)
+	LeftMenubar:SetDock(TopBar:GetInstance())
+	RightMenubar:SetDock(TopBar:GetInstance())
 
-LeftMenubar:SetDock(TopBar:GetInstance())
-RightMenubar:SetDock(TopBar:GetInstance())
-Util.SetGUIInsetBounds(0, TOPBAR_THICKNESS, 0, 0)
+	Util.SetGUIInsetBounds(0, TOPBAR_THICKNESS, 0, 0)
 
-if settingsIcon then
-	AddItemInOrder(LeftMenubar, settingsIcon, LEFT_ITEM_ORDER)
+	if settingsIcon then
+		AddItemInOrder(LeftMenubar, settingsIcon, LEFT_ITEM_ORDER)
+	end
+	if nameAndHealthMenuItem then
+		AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
+	end
+else
+	CreateUsernameHealthMenuItem()
 end
-if nameAndHealthMenuItem then
-	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
-end
+
+
 
 local gameOptions = settings():FindFirstChild("Game Options")
-if gameOptions then
+if gameOptions and not isTenFootInterface then
 	local success, result = pcall(function()
 		gameOptions.VideoRecordingChangeRequest:connect(function(recording)
 			if recording then

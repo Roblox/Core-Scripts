@@ -16,6 +16,10 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local utility = require(RobloxGui.Modules.Settings.Utility)
 
 
+----------- VARIABLES --------------
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+
 ----------- CONSTANTS --------------
 local HEADER_SPACING = 5
 if utility:IsSmallTouchScreen() then
@@ -42,6 +46,8 @@ local function Initialize()
 	};
 	if utility:IsSmallTouchScreen() then
 		this.TabHeader.Size = UDim2.new(0,84,1,0)
+	elseif isTenFootInterface then
+		this.TabHeader.Size = UDim2.new(0,220,1,0)
 	end
 	this.TabHeader.MouseButton1Click:connect(function()
 		if this.HubRef then
@@ -76,6 +82,8 @@ local function Initialize()
 	};
 	if utility:IsSmallTouchScreen() then
 		title.FontSize = Enum.FontSize.Size18
+	elseif isTenFootInterface then
+		title.FontSize = Enum.FontSize.Size48
 	end
 
 	local tabSelection = utility:Create'ImageLabel'
