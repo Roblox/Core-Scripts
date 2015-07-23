@@ -1866,31 +1866,6 @@ game.ChildAdded:connect(function(child)
 	end
 end)
 
---[[ Core Gui Changed events ]]--
--- NOTE: Core script only
-local isOpen = true
-local function onCoreGuiChanged(coreGuiType, enabled)
-	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
-		-- not visible on small screen devices
-		if IsSmallScreenDevice then
-			Container.Visible = false
-			return
-		end
-		Container.Visible = enabled and isOpen
-		if enabled then
-			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
-		else
-			ContextActionService:UnbindCoreAction("RbxPlayerListToggle")
-		end
-	end
-end
-pcall(function()
-	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
-	game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
-end)
-
-resizePlayerList()
-
 --[[ Public API ]]--
 Playerlist.GetStats = function()
 	return GameStats
@@ -1906,6 +1881,8 @@ local closeListFunc = function(name, state, input)
 	ContextActionService:UnbindCoreAction("StopAction")
 	GuiService.SelectedObject = nil
 end
+
+local isOpen = true
 
 Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 	if inputState and inputState ~= Enum.UserInputState.Begin then return end
@@ -1941,8 +1918,29 @@ Playerlist.IsOpen = function()
 	return isOpen
 end
 
+--[[ Core Gui Changed events ]]--
 -- NOTE: Core script only
-ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
+local function onCoreGuiChanged(coreGuiType, enabled)
+	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
+		-- not visible on small screen devices
+		if IsSmallScreenDevice then
+			Container.Visible = false
+			return
+		end
+		Container.Visible = enabled and isOpen
+		if enabled then
+			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
+		else
+			ContextActionService:UnbindCoreAction("RbxPlayerListToggle")
+		end
+	end
+end
+
+onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
+
+resizePlayerList()
+
 if GuiService then
 	GuiService:AddSelectionParent("PlayerListSelection", Container)
 end
