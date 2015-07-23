@@ -31,15 +31,6 @@ local DEBOUNCE_TIME = 0.25
 --[[ END OF CONSTANTS ]]
 
 --[[ FFLAG VALUES ]]
-local newSettingsSuccess, newSettingsFlagValue = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
-local useNewSettings = newSettingsSuccess and newSettingsFlagValue
-
-local backPackSuccess, backpackFlagValue = pcall(function() return settings():GetFFlag("NewBackpackScript") end)
-local useNewBackpack = (backPackSuccess and backpackFlagValue)
-
-local playerListSuccess, playerListFlagValue = pcall(function() return settings():GetFFlag("NewPlayerListScript") end)
-local useNewPlayerlist = (playerListSuccess and playerListFlagValue)
-
 local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
 
@@ -537,12 +528,10 @@ local function CreateUsernameHealthMenuItem()
 		OnCharacterAdded(Player.Character)
 	end
 
-	if useNewPlayerlist then
-		local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
-		container.MouseButton1Click:connect(function()
-			PlayerlistModule.ToggleVisibility()
-		end)
-	end
+	local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
+	container.MouseButton1Click:connect(function()
+		PlayerlistModule.ToggleVisibility()
+	end)
 
 	return this
 end
@@ -1062,13 +1051,13 @@ local RIGHT_ITEM_ORDER = nil
 if not isTenFootInterface then
 	TopBar = CreateTopBar()
 
-	settingsIcon = useNewSettings and CreateSettingsIcon(TopBar)
+	settingsIcon = CreateSettingsIcon(TopBar)
 	chatIcon = CreateChatIcon()
 	mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
-	backpackIcon = useNewBackpack and CreateBackpackIcon()
+	backpackIcon = CreateBackpackIcon()
 	shiftlockIcon = nil --CreateShiftLockIcon()
 	nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
-	leaderstatsMenuItem = useNewPlayerlist and CreateLeaderstatsMenuItem()
+	leaderstatsMenuItem = CreateLeaderstatsMenuItem()
 	stopRecordingIcon = CreateStopRecordIcon()
 
 	LeftMenubar = CreateMenuBar('Left')

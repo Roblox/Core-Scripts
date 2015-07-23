@@ -32,11 +32,9 @@ local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 
 --[[ Fast Flags ]]--
-local newSettingsSuccess, newSettingsEnabled = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local serverCoreScriptsSuccess, serverCoreScriptsEnabled = pcall(function() return settings():GetFFlag("UseServerCoreScripts") end)
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 --
-local IsNewSettings = newSettingsSuccess and newSettingsEnabled
 local IsServerCoreScripts = serverCoreScriptsSuccess and serverCoreScriptsEnabled
 local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
 
@@ -513,31 +511,16 @@ ReportAbuseShield.AutoButtonColor = false
 		ReportCanelButton.Parent = ReportAbuseFrame
 
 		local AbuseDropDown, updateAbuseSelection = nil, nil
-		if IsNewSettings then
-			AbuseDropDown = RbxGuiLibrary.CreateScrollingDropDownMenu(
-				function(text)
-					AbuseReason = text
-					if AbuseReason and AbusingPlayer then
-						ReportSubmitButton.Active = true
-						ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
-					end
-				end, UDim2.new(0, 200, 0, 32), UDim2.new(0.5, 6, 0, ReportReasonLabel.Position.Y.Offset - 16), 1)
-			AbuseDropDown.CreateList(ABUSES)
-			AbuseDropDown.Frame.Parent = ReportAbuseFrame
-		else
-			AbuseDropDown, updateAbuseSelection = RbxGuiLibrary.CreateDropDownMenu(ABUSES,
-				function(abuseText)
-					AbuseReason = abuseText
-					if AbuseReason and AbusingPlayer then
-						ReportSubmitButton.Active = true
-						ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
-					end
-				end, true, true, 1)
-			AbuseDropDown.Name = "AbuseDropDown"
-			AbuseDropDown.Size = UDim2.new(0, 200, 0, 32)
-			AbuseDropDown.Position = UDim2.new(0.5, 6, 0, ReportReasonLabel.Position.Y.Offset - 16)
-			AbuseDropDown.Parent = ReportAbuseFrame
-		end
+		AbuseDropDown = RbxGuiLibrary.CreateScrollingDropDownMenu(
+			function(text)
+				AbuseReason = text
+				if AbuseReason and AbusingPlayer then
+					ReportSubmitButton.Active = true
+					ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
+				end
+			end, UDim2.new(0, 200, 0, 32), UDim2.new(0.5, 6, 0, ReportReasonLabel.Position.Y.Offset - 16), 1)
+		AbuseDropDown.CreateList(ABUSES)
+		AbuseDropDown.Frame.Parent = ReportAbuseFrame
 
 -- Report Confirm Gui
 local ReportConfirmFrame = Instance.new('Frame')
@@ -1045,7 +1028,7 @@ end
 local function resetReportDialog()
 	AbuseReason = nil
 	AbusingPlayer = nil
-	if IsNewSettings and AbuseDropDown then 	-- FFlag
+	if AbuseDropDown then 
 		AbuseDropDown.SetSelectionText("Choose One")
 		if AbuseDropDown.IsOpen() then
 			AbuseDropDown.Reset()
@@ -1823,7 +1806,6 @@ UserInputService.InputBegan:connect(function(inputObject, isProcessed)
 end)
 
 ReportAbuseShield.InputBegan:connect(function(inputObject)
-	if not IsNewSettings then return end 	-- FFlag
 	--
 	local inputType = inputObject.UserInputType
 	if inputType == Enum.UserInputType.MouseButton1 or inputType == Enum.UserInputType.Touch then
