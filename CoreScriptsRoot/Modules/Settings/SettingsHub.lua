@@ -106,7 +106,7 @@ local function CreateSettingsHub()
 			local hintNameText = name .. "HintText"
 			local hintName = name .. "Hint"
 			local image = ""
-			if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
+			if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) or platform == Enum.Platform.XBoxOne then
 				image = gamepadImage
 			else
 				image = keyboardImage

@@ -542,7 +542,6 @@ local function setupGamepadControls()
 	end
 
 	doGamepadMenuButton = function(name, state, input)
-		if input.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
 		if state ~= Enum.UserInputState.Begin then return end
 
 		if not toggleCoreGuiRadial() then

@@ -766,8 +766,10 @@ local function CreateSelector(selectionStringTable, startPosition)
 	local function stepFunc(inputObject, step)
 		if not interactable then return end
 
-		if inputObject ~= nil and inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 and inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 
-			and inputObject.UserInputType ~= Enum.UserInputType.Keyboard then return end
+		if inputObject ~= nil and inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 and 
+			inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 and inputObject.UserInputType ~= Enum.UserInputType.Gamepad2 and
+			inputObject.UserInputType ~= Enum.UserInputType.Gamepad3 and inputObject.UserInputType ~= Enum.UserInputType.Gamepad4 and 
+			inputObject.UserInputType ~= Enum.UserInputType.Keyboard then return end
 
 		if usesSelectedObject() then
 			GuiService.SelectedCoreObject = this.SelectorFrame
