@@ -13,6 +13,7 @@ local startTime = tick()
 
 local COLORS = {
 	BLACK = Color3.new(0, 0, 0),
+	BACKGROUND_COLOR = Color3.new(45/255, 45/255, 45/255),
 	WHITE = Color3.new(1, 1, 1),
 	ERROR = Color3.new(253/255,68/255,72/255)
 }
@@ -109,7 +110,7 @@ function MainGui:tileBackgroundTexture(frameToFill)
 	if not frameToFill then return end
 	frameToFill:ClearAllChildren()
 	if backgroundImageTransparency < 1 then
-		local backgroundTextureSize = Vector2.new(502, 502)
+		local backgroundTextureSize = Vector2.new(512, 512)
 		for i = 0, math.ceil(frameToFill.AbsoluteSize.X/backgroundTextureSize.X) do
 			for j = 0, math.ceil(frameToFill.AbsoluteSize.Y/backgroundTextureSize.Y) do
 				create 'ImageLabel' {
@@ -117,8 +118,8 @@ function MainGui:tileBackgroundTexture(frameToFill)
 					BackgroundTransparency = 1,
 					ImageTransparency = backgroundImageTransparency,
 					Image = 'rbxasset://textures/loading/darkLoadingTexture.png',
-					Position = UDim2.new(0, i*502, 0, j*502),
-					Size = UDim2.new(0, 502, 0, 502),
+					Position = UDim2.new(0, i*backgroundTextureSize.X, 0, j*backgroundTextureSize.Y),
+					Size = UDim2.new(0, backgroundTextureSize.X, 0, backgroundTextureSize.Y),
 					ZIndex = 1,
 					Parent = frameToFill
 				}
@@ -138,8 +139,8 @@ function MainGui:GenerateMain()
 	-- create descendant frames
 	local mainBackgroundContainer = create 'Frame' {
 		Name = 'BlackFrame',
-		BackgroundColor3 = COLORS.BLACK,
-		BackgroundTransparency = 1,
+		BackgroundColor3 = COLORS.BACKGROUND_COLOR,
+		BackgroundTransparency = 0,
 		Size = UDim2.new(1, 0, 1, bgFrameOffset),
 		Position = offsetPosition,
 		Active = true,
@@ -175,12 +176,13 @@ function MainGui:GenerateMain()
 			create 'TextLabel' {
 				Name = 'LoadingText',
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 1, 0),
-				Position = UDim2.new(0, 0, 0, 0),
+				Size = UDim2.new(1, (isMobile == true and -14 or -56), 1, 0),
+				Position = UDim2.new(0, (isMobile == true and 7 or 28), 0, 0),
 				Font = Enum.Font.SourceSans,
 				FontSize = (isMobile == true and Enum.FontSize.Size12 or Enum.FontSize.Size18),
 				TextWrapped = true,
 				TextColor3 = COLORS.WHITE,
+				TextXAlignment = Enum.TextXAlignment.Left,
 				Text = "Loading...",
 				ZIndex = 2
 			},
@@ -470,6 +472,7 @@ function fadeBackground()
 			lastTime = currentTime
 			
 			backgroundImageTransparency = backgroundImageTransparency + fadeAmount
+			currScreenGui.BlackFrame.BackgroundTransparency = backgroundImageTransparency
 			local backgroundImages = currScreenGui.BlackFrame.BackgroundTextureFrame:GetChildren()
 			for i = 1, #backgroundImages do
 				backgroundImages[i].ImageTransparency = backgroundImageTransparency
@@ -504,6 +507,7 @@ function fadeAndDestroyBlackFrame(blackFrame)
 					textChildren[i].TextStrokeTransparency = transparency
 				end
 				graphicsFrame.LoadingImage.ImageTransparency = transparency
+				blackFrame.BackgroundTransparency = transparency
 				
 				if backgroundImageTransparency < 1 then
 					backgroundImageTransparency = transparency
@@ -552,7 +556,6 @@ function handleFinishedReplicating()
 end
 
 function handleRemoveDefaultLoadingGui()
-	fadeBackground()
 	destroyLoadingElements()
 end
 
