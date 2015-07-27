@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX897F449FE4DD4FC9A5138C94EA70571C">
+	<Item class="ModuleScript" referent="RBXB523CD8AA51D47C9AD19485522A7C634">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">VehicleController</string>
@@ -29,10 +29,13 @@ end
 local LocalPlayer = Players.LocalPlayer
 local CurrentVehicleSeat = nil
 local CurrentThrottle = 0
+local CurrentSteer = 0
 local HumanoidSeatedCn = nil
 local RenderSteppedCn = nil
 local Accelerating = false
 local Deccelerating = false
+local TurningRight = false
+local TurningLeft = false
 -- Set this to true if you want to instead use the triggers for the throttle
 local useTriggersForThrottle = true
 -- Also set this to true if you want the thumbstick to not affect throttle, only triggers when a gamepad is conected
@@ -57,6 +60,28 @@ local function onThrottleDeccel(actionName, inputState, inputObject)
 	if (inputState == Enum.UserInputState.End) and Accelerating then
 		CurrentThrottle = -1
 		MasterControl:AddToPlayerMovement(Vector3.new(0, 0, CurrentThrottle))
+	end
+end
+
+local function onSteerRight(actionName, inputState, inputObject)
+	MasterControl:AddToPlayerMovement(Vector3.new(-CurrentSteer, 0, 0))
+	CurrentSteer = (inputState == Enum.UserInputState.End or TurningLeft) and 0 or 1
+	MasterControl:AddToPlayerMovement(Vector3.new(CurrentSteer, 0, 0))
+	TurningRight = not (inputState == Enum.UserInputState.End)
+	if (inputState == Enum.UserInputState.End) and TurningLeft then
+		CurrentSteer = -1
+		MasterControl:AddToPlayerMovement(Vector3.new(CurrentSteer, 0, 0))
+	end
+end
+
+local function onSteerLeft(actionName, inputState, inputObject)
+	MasterControl:AddToPlayerMovement(Vector3.new(-CurrentSteer, 0, 0))
+	CurrentSteer = (inputState == Enum.UserInputState.End or TurningRight) and 0 or -1
+	MasterControl:AddToPlayerMovement(Vector3.new(CurrentSteer, 0, 0))
+	TurningLeft = not (inputState == Enum.UserInputState.End)
+	if (inputState == Enum.UserInputState.End) and TurningRight then
+		CurrentSteer = 1
+		MasterControl:AddToPlayerMovement(Vector3.new(CurrentSteer, 0, 0))
 	end
 end
 
@@ -100,6 +125,8 @@ local function onSeated(active, currentSeatPart)
 				ContextActionService:BindAction("throttleAccel", onThrottleAccel, false, Enum.KeyCode.ButtonR2)
 				ContextActionService:BindAction("throttleDeccel", onThrottleDeccel, false, Enum.KeyCode.ButtonL2)
 			end
+			ContextActionService:BindAction("arrowSteerRight", onSteerRight, false, Enum.KeyCode.Right)
+			ContextActionService:BindAction("arrowSteerLeft", onSteerLeft, false, Enum.KeyCode.Left)
 			local success = pcall(function() RunService:BindToRenderStep("VehicleControlStep", Enum.RenderPriority.Input.Value, onRenderStepped) end)
 
 			if not success then
@@ -113,8 +140,11 @@ local function onSeated(active, currentSeatPart)
 			ContextActionService:UnbindAction("throttleAccel")
 			ContextActionService:UnbindAction("throttleDeccel")
 		end
-		MasterControl:AddToPlayerMovement(Vector3.new(0, 0, -CurrentThrottle))
+		ContextActionService:UnbindAction("arrowSteerRight")
+		ContextActionService:UnbindAction("arrowSteerLeft")
+		MasterControl:AddToPlayerMovement(Vector3.new(-CurrentSteer, 0, -CurrentThrottle))
 		CurrentThrottle = 0
+		CurrentSteer = 0
 		local success = pcall(function() RunService:UnbindFromRenderStep("VehicleControlStep") end)
 		if not success and RenderSteppedCn then
 			RenderSteppedCn:disconnect()
