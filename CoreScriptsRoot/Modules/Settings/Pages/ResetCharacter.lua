@@ -56,6 +56,8 @@ local function Initialize()
 	if utility:IsSmallTouchScreen() then
 		resetCharacterText.FontSize = Enum.FontSize.Size24
 		resetCharacterText.Size = UDim2.new(1,0,0,100)
+	elseif isTenFootInterface then
+		resetCharacterText.FontSize = Enum.FontSize.Size48
 	end
 
 	------ Init -------
@@ -72,7 +74,7 @@ local function Initialize()
 		end
 
 		if this.HubRef then
-			this.HubRef:SetVisibility(false)
+			this.HubRef:SetVisibility(false, true)
 		end
 	end
 

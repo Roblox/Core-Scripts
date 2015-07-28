@@ -16,6 +16,7 @@ local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 --[[ END OF SERVICES ]]
 
 --[[ MODULES ]]
+local tenFootInterface = require(GuiRoot.Modules.TenFootInterface)
 local utility = require(GuiRoot.Modules.Settings.Utility)
 local recordPage = require(GuiRoot.Modules.Settings.Pages.Record)
 
@@ -23,6 +24,7 @@ local recordPage = require(GuiRoot.Modules.Settings.Pages.Record)
 local gamepadSettingsFrame = nil
 local isVisible = false
 local smallScreen = utility:IsSmallTouchScreen()
+local isTenFootInterface = tenFootInterface:IsEnabled()
 local radialButtons = {}
 
 local function getButtonForCoreGuiType(coreGuiType)
@@ -321,6 +323,11 @@ local function createGamepadMenuGui()
 		Image = "rbxasset://textures/ui/Settings/Help/BButtonDark.png",
 		Parent = gamepadSettingsFrame
 	}
+	if isTenFootInterface then
+		closeHintImage.Image = "rbxasset://textures/ui/Settings/Help/BButtonDark@2x.png"
+		closeHintImage.Size =  UDim2.new(0,90,0,90)
+	end
+
 	local closeHintText = utility:Create'TextLabel'
 	{
 		Name = "closeHintText",
@@ -334,6 +341,9 @@ local function createGamepadMenuGui()
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = closeHintImage
 	}
+	if isTenFootInterface then
+		closeHintText.FontSize = Enum.FontSize.Size36
+	end
 
 	------------------------------------------
 	--------- Stop Recording Button ----------

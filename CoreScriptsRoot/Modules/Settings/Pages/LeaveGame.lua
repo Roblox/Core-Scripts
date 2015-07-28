@@ -58,6 +58,8 @@ local function Initialize()
 	if utility:IsSmallTouchScreen() then
 		leaveGameText.FontSize = Enum.FontSize.Size24
 		leaveGameText.Size = UDim2.new(1,0,0,100)
+	elseif isTenFootInterface then
+		leaveGameText.FontSize = Enum.FontSize.Size48
 	end
 
 	local buttonSpacing = 20

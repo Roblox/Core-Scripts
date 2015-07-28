@@ -456,8 +456,15 @@ local function Initialize()
 		this.VolumeLabel,
 		this.VolumeSlider = utility:AddNewRow(this, "Volume", "Slider", 10, startVolumeLevel)
 
+		local volumeSound = Instance.new("Sound", game.CoreGui.RobloxGui.Sounds)
+		volumeSound.Name = "VolumeChangeSound"
+		volumeSound.SoundId = "rbxasset://sounds/metalstone2.mp3"
+
 		this.VolumeSlider.ValueChanged:connect(function(newValue)
-			GameSettings.MasterVolume = newValue/10
+			local soundPercent = newValue/10
+			GameSettings.MasterVolume = soundPercent
+			volumeSound.Volume = soundPercent
+			volumeSound:Play()
 		end)
 	end
 

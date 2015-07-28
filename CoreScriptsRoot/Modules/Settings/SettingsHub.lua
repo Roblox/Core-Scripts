@@ -67,14 +67,15 @@ local function CreateSettingsHub()
 			local hotKeyTable = buttonTable[2]
 			ContextActionService:BindCoreAction(buttonName, hotKeyTable[1], false, unpack(hotKeyTable[2]))
 		end
+		this.BottomButtonFrame.Visible = true
 	end
 
 	local function removeBottomBarBindings()
 		for _, hotKeyTable in pairs(this.BottomBarButtons) do
 			ContextActionService:UnbindCoreAction(hotKeyTable[1])
 		end
+		this.BottomButtonFrame.Visible = false
 	end
-			
 
 	local function addBottomBarButton(name, text, gamepadImage, keyboardImage, position, clickFunc, hotkeys)
 		local buttonName = name .. "Button"
@@ -255,15 +256,15 @@ local function CreateSettingsHub()
 
 			local leaveGameFunc = function()
 				this:AddToMenuStack(this.Pages.CurrentPage)
-				this.BottomButtonFrame.Visible = false
 				this.HubBar.Visible = false
+				removeBottomBarBindings()
 				this:SwitchToPage(this.LeaveGamePage, nil, 1)
 			end
 
 			local resetCharFunc = function()
 				this:AddToMenuStack(this.Pages.CurrentPage)
-				this.BottomButtonFrame.Visible = false
 				this.HubBar.Visible = false
+				removeBottomBarBindings()
 				this:SwitchToPage(this.ResetCharacterPage, nil, 1)
 			end
 
@@ -412,14 +413,14 @@ local function CreateSettingsHub()
 	function this:HideBar()
 		this.HubBar.Visible = false
 		if this.BottomButtonFrame then
-			this.BottomButtonFrame.Visible = false
+			removeBottomBarBindings()
 		end
 	end
 
 	function this:ShowBar()
 		this.HubBar.Visible = true
 		if this.BottomButtonFrame then
-			this.BottomButtonFrame.Visible = true
+			setBottomBarBindings()
 		end
 	end
 
@@ -558,6 +559,10 @@ local function CreateSettingsHub()
 
 			if type(lastStackItem) ~= "table" then
 				PoppedMenuEvent:Fire(lastStackItem)
+			end
+
+			if lastStackItem == this.LeaveGamePage or lastStackItem == this.ResetCharacterPage then
+				setBottomBarBindings()
 			end
 
 			table.remove(this.MenuStack, #this.MenuStack)

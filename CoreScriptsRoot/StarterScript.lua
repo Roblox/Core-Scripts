@@ -5,13 +5,16 @@ local scriptContext = game:GetService("ScriptContext")
 local touchEnabled = game:GetService("UserInputService").TouchEnabled
 
 local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
-local screenGui = Game:GetService("CoreGui"):FindFirstChild("RobloxGui")
+
+local soundFolder = Instance.new("Folder")
+soundFolder.Name = "Sounds"
+soundFolder.Parent = RobloxGui
 
 -- TopBar
 local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
 local useTopBar = (topbarSuccess and topbarFlagValue == true)
 if useTopBar then
-	scriptContext:AddCoreScriptLocal("CoreScripts/Topbar", screenGui)
+	scriptContext:AddCoreScriptLocal("CoreScripts/Topbar", RobloxGui)
 end
 
 local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
@@ -25,13 +28,13 @@ if not useNewControllerMenu then
 end
 
 -- MainBotChatScript (the Lua part of Dialogs)
-scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", screenGui)
+scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", RobloxGui)
 
 -- Developer Console Script
-scriptContext:AddCoreScriptLocal("CoreScripts/DeveloperConsole", screenGui)
+scriptContext:AddCoreScriptLocal("CoreScripts/DeveloperConsole", RobloxGui)
 
 -- In-game notifications script
-scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", screenGui)
+scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", RobloxGui)
 
 -- Chat script
 if useTopBar then
@@ -40,11 +43,11 @@ if useTopBar then
 end
 
 -- Purchase Prompt Script
-scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", screenGui)
+scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", RobloxGui)
 
 -- Health Script
 if not useTopBar then
-	scriptContext:AddCoreScriptLocal("CoreScripts/HealthScript", screenGui)
+	scriptContext:AddCoreScriptLocal("CoreScripts/HealthScript", RobloxGui)
 end
 
 do -- Backpack!
@@ -52,18 +55,18 @@ do -- Backpack!
 end
 
 if useTopBar then
-	scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", screenGui)
+	scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", RobloxGui)
 end
 
 if useNewControllerMenu then
-	scriptContext:AddCoreScriptLocal("CoreScripts/GamepadMenu", screenGui)
+	scriptContext:AddCoreScriptLocal("CoreScripts/GamepadMenu", RobloxGui)
 end
 
 if touchEnabled then -- touch devices don't use same control frame
 	-- only used for touch device button generation
-	scriptContext:AddCoreScriptLocal("CoreScripts/ContextActionTouch", screenGui)
+	scriptContext:AddCoreScriptLocal("CoreScripts/ContextActionTouch", RobloxGui)
 
-	screenGui:WaitForChild("ControlFrame")
-	screenGui.ControlFrame:WaitForChild("BottomLeftControl")
-	screenGui.ControlFrame.BottomLeftControl.Visible = false
+	RobloxGui:WaitForChild("ControlFrame")
+	RobloxGui.ControlFrame:WaitForChild("BottomLeftControl")
+	RobloxGui.ControlFrame.BottomLeftControl.Visible = false
 end

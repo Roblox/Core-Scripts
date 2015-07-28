@@ -1177,8 +1177,18 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 
 	local function setCurrentStep(newStepPosition)
 		if not minStep then minStep = 0 end
-		if newStepPosition < minStep then newStepPosition = minStep end
-		if newStepPosition > steps then newStepPosition = steps end
+		
+		leftButton.Visible = true
+		rightButton.Visible = true
+
+		if newStepPosition <= minStep then 
+			newStepPosition = minStep 
+			leftButton.Visible = false
+		end
+		if newStepPosition >= steps then
+			newStepPosition = steps
+			rightButton.Visible = false
+		end
 
 		if currentStep == newStepPosition then return end
 
@@ -1396,6 +1406,8 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	this.SliderFrame.AncestryChanged:connect(function(child, parent)
 		isInTree = parent
 	end)
+
+	setCurrentStep(currentStep)
 
 	return this
 end
