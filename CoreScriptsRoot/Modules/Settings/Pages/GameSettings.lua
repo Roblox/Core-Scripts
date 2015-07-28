@@ -510,13 +510,6 @@ local function Initialize()
 		createGraphicsOptions()
 	end
 
-	--[[local ScreenManager = require(RobloxGui.Modules.ScreenManager)
-	local createOverscanFunc = require(RobloxGui.Modules.OverscanScreen)
-
-	local overscanScreen = createOverscanFunc(RobloxGui)
-	ScreenManager:OpenScreen(overscanScreen)]]
-
-
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "GameSettingsTab"
 

@@ -379,9 +379,8 @@ local function CreateUsernameHealthMenuItem()
 		Parent = GuiRoot;
 	};
 
-	local this = nil
 	if not isTenFootInterface then
-		this = CreateMenuItem(container)
+		local this = CreateMenuItem(container)
 	end
 
 	--- EVENTS ---
