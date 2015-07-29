@@ -145,6 +145,7 @@ if IsTouchDevice then
 				isJumpEnabled = true
 			elseif DevMovementMode == Enum.DevTouchMovementMode.DPad then
 				newModuleToEnable = ControlModules.DPad
+				isJumpEnabled = false
 			elseif DevMovementMode == Enum.DevTouchMovementMode.ClickToMove then
 				-- Managed by CameraScript
 				newModuleToEnable = nil
@@ -160,6 +161,7 @@ if IsTouchDevice then
 				isJumpEnabled = true
 			elseif UserMovementMode == Enum.TouchMovementMode.DPad then
 				newModuleToEnable = ControlModules.DPad
+				isJumpEnabled = false
 			elseif UserMovementMode == Enum.TouchMovementMode.ClickToMove then
 				-- Managed by CameraScript
 				newModuleToEnable = nil
