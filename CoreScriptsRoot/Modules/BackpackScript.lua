@@ -1367,6 +1367,17 @@ do -- Search stuff
 			BackpackScript.OpenClose()
 		end
 	end
+	
+	local function detectGamepad(input, processed)
+		if input.UserInputType == Enum.UserInputType.Gamepad1 then
+			searchFrame.Visible = false
+		else
+			searchFrame.Visible = true
+		end
+	end
+	local uis = game:GetService("UserInputService")
+	uis.InputBegan:connect(detectGamepad)
+	uis.InputChanged:connect(detectGamepad)
 end
 
 do -- Make the Inventory expand/collapse arrow (unless TopBar)

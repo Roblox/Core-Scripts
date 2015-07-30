@@ -4,6 +4,7 @@
 		// Written by: jmargh
 		// Description: Implementation of in game player list and leaderboard
 ]]
+
 local CoreGui = game:GetService'CoreGui'
 local GuiService = game:GetService('GuiService')	-- NOTE: Can only use in core scripts
 local UserInputService = game:GetService('UserInputService')
@@ -25,12 +26,15 @@ end
 local Player = Players.LocalPlayer
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 
+
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
+local isTenFootInterface = TenFootInterface:IsEnabled()
+
 --[[ Fast Flags ]]--
-local newSettingsSuccess, newSettingsEnabled = pcall(function() return settings():GetFFlag("NewMenuSettingsScript") end)
 local serverCoreScriptsSuccess, serverCoreScriptsEnabled = pcall(function() return settings():GetFFlag("UseServerCoreScripts") end)
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 --
-local IsNewSettings = newSettingsSuccess and newSettingsEnabled
 local IsServerCoreScripts = serverCoreScriptsSuccess and serverCoreScriptsEnabled
 local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
 
@@ -507,31 +511,16 @@ ReportAbuseShield.AutoButtonColor = false
 		ReportCanelButton.Parent = ReportAbuseFrame
 
 		local AbuseDropDown, updateAbuseSelection = nil, nil
-		if IsNewSettings then
-			AbuseDropDown = RbxGuiLibrary.CreateScrollingDropDownMenu(
-				function(text)
-					AbuseReason = text
-					if AbuseReason and AbusingPlayer then
-						ReportSubmitButton.Active = true
-						ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
-					end
-				end, UDim2.new(0, 200, 0, 32), UDim2.new(0.5, 6, 0, ReportReasonLabel.Position.Y.Offset - 16), 1)
-			AbuseDropDown.CreateList(ABUSES)
-			AbuseDropDown.Frame.Parent = ReportAbuseFrame
-		else
-			AbuseDropDown, updateAbuseSelection = RbxGuiLibrary.CreateDropDownMenu(ABUSES,
-				function(abuseText)
-					AbuseReason = abuseText
-					if AbuseReason and AbusingPlayer then
-						ReportSubmitButton.Active = true
-						ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
-					end
-				end, true, true, 1)
-			AbuseDropDown.Name = "AbuseDropDown"
-			AbuseDropDown.Size = UDim2.new(0, 200, 0, 32)
-			AbuseDropDown.Position = UDim2.new(0.5, 6, 0, ReportReasonLabel.Position.Y.Offset - 16)
-			AbuseDropDown.Parent = ReportAbuseFrame
-		end
+		AbuseDropDown = RbxGuiLibrary.CreateScrollingDropDownMenu(
+			function(text)
+				AbuseReason = text
+				if AbuseReason and AbusingPlayer then
+					ReportSubmitButton.Active = true
+					ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
+				end
+			end, UDim2.new(0, 200, 0, 32), UDim2.new(0.5, 6, 0, ReportReasonLabel.Position.Y.Offset - 16), 1)
+		AbuseDropDown.CreateList(ABUSES)
+		AbuseDropDown.Frame.Parent = ReportAbuseFrame
 
 -- Report Confirm Gui
 local ReportConfirmFrame = Instance.new('Frame')
@@ -1039,7 +1028,7 @@ end
 local function resetReportDialog()
 	AbuseReason = nil
 	AbusingPlayer = nil
-	if IsNewSettings and AbuseDropDown then 	-- FFlag
+	if AbuseDropDown then 
 		AbuseDropDown.SetSelectionText("Choose One")
 		if AbuseDropDown.IsOpen() then
 			AbuseDropDown.Reset()
@@ -1694,6 +1683,8 @@ end
 
 --[[ Insert/Remove Player Functions ]]--
 local function insertPlayerEntry(player)
+	if isTenFootInterface then return end
+
 	local entry = createPlayerEntry(player)
 	if player == Player then
 		MyPlayerEntry = entry.Frame
@@ -1715,6 +1706,8 @@ local function insertPlayerEntry(player)
 end
 
 local function removePlayerEntry(player)
+	if isTenFootInterface then return end
+
 	for i = 1, #PlayerEntries do
 		if PlayerEntries[i].Player == player then
 			PlayerEntries[i].Frame:Destroy()
@@ -1813,7 +1806,6 @@ UserInputService.InputBegan:connect(function(inputObject, isProcessed)
 end)
 
 ReportAbuseShield.InputBegan:connect(function(inputObject)
-	if not IsNewSettings then return end 	-- FFlag
 	--
 	local inputType = inputObject.UserInputType
 	if inputType == Enum.UserInputType.MouseButton1 or inputType == Enum.UserInputType.Touch then
@@ -1874,31 +1866,6 @@ game.ChildAdded:connect(function(child)
 	end
 end)
 
---[[ Core Gui Changed events ]]--
--- NOTE: Core script only
-local isOpen = true
-local function onCoreGuiChanged(coreGuiType, enabled)
-	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
-		-- not visible on small screen devices
-		if IsSmallScreenDevice then
-			Container.Visible = false
-			return
-		end
-		Container.Visible = enabled and isOpen
-		if enabled then
-			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
-		else
-			ContextActionService:UnbindCoreAction("RbxPlayerListToggle")
-		end
-	end
-end
-pcall(function()
-	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
-	game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
-end)
-
-resizePlayerList()
-
 --[[ Public API ]]--
 Playerlist.GetStats = function()
 	return GameStats
@@ -1914,6 +1881,8 @@ local closeListFunc = function(name, state, input)
 	ContextActionService:UnbindCoreAction("StopAction")
 	GuiService.SelectedObject = nil
 end
+
+local isOpen = true
 
 Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 	if inputState and inputState ~= Enum.UserInputState.Begin then return end
@@ -1949,12 +1918,35 @@ Playerlist.IsOpen = function()
 	return isOpen
 end
 
+--[[ Core Gui Changed events ]]--
 -- NOTE: Core script only
-ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
+local function onCoreGuiChanged(coreGuiType, enabled)
+	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
+		-- not visible on small screen devices
+		if IsSmallScreenDevice then
+			Container.Visible = false
+			return
+		end
+		Container.Visible = enabled and isOpen
+		if enabled then
+			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
+		else
+			ContextActionService:UnbindCoreAction("RbxPlayerListToggle")
+		end
+	end
+end
+
+onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
+
+resizePlayerList()
+
 if GuiService then
 	GuiService:AddSelectionParent("PlayerListSelection", Container)
 end
 
-
+if isTenFootInterface then
+	TenFootInterface:SetupPlayerList()
+end
 
 return Playerlist

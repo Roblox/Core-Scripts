@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBXF85863EB1DD84C5896C4A1E82D902337">
+	<Item class="LocalScript" referent="RBXCDA097EECF134E9A9DE7A8ED65B8C529">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -24,6 +24,7 @@
 		Thumbstick
 		TouchJump
 		MasterControl
+		VehicleController
 --]]
 
 --[[ Services ]]--
@@ -76,6 +77,10 @@ else
 	ControlModules.Keyboard = require(script.MasterControl:WaitForChild('KeyboardMovement'))
 end
 ControlModules.Gamepad = require(script.MasterControl:WaitForChild('Gamepad'))
+local success, value = pcall(function() return UserSettings():IsUserFeatureEnabled("UserUseLuaVehicleController") end)
+if success and value then
+	local VehicleController = require(script.MasterControl:WaitForChild('VehicleController')) 	-- Not used, but needs to be required
+end
 
 
 --[[ Initialization/Setup ]]--

@@ -10,6 +10,8 @@ local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
+local PlatformService = game:GetService("PlatformService")
+local ContextActionService = game:GetService("ContextActionService")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
@@ -47,11 +49,14 @@ local MOVEMENT_MODE_CLICKTOMOVE_STRING = UserInputService.TouchEnabled and "Tap 
 local utility = require(RobloxGui.Modules.Settings.Utility)
 
 ------------ Variables -------------------
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local PageInstance = nil
 local LocalPlayer = game.Players.LocalPlayer
 local platform = UserInputService:GetPlatform()
 local nextRowPositionY = 0
 local rowHeight = 50
+local overscanScreen = nil
 
 ----------- CLASS DECLARATION --------------
 
@@ -454,8 +459,15 @@ local function Initialize()
 		this.VolumeLabel,
 		this.VolumeSlider = utility:AddNewRow(this, "Volume", "Slider", 10, startVolumeLevel)
 
+		local volumeSound = Instance.new("Sound", game.CoreGui.RobloxGui.Sounds)
+		volumeSound.Name = "VolumeChangeSound"
+		volumeSound.SoundId = "rbxasset://sounds/metalstone2.mp3"
+
 		this.VolumeSlider.ValueChanged:connect(function(newValue)
-			GameSettings.MasterVolume = newValue/10
+			local soundPercent = newValue/10
+			GameSettings.MasterVolume = soundPercent
+			volumeSound.Volume = soundPercent
+			volumeSound:Play()
 		end)
 	end
 
@@ -485,7 +497,47 @@ local function Initialize()
 		end)
 	end
 
-	createCameraModeOptions(not UserInputService.GamepadEnabled and (UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
+	local function createOverscanOption()
+		local showOverscanScreen = function()
+
+			if not overscanScreen then
+				local createOverscanFunc = require(RobloxGui.Modules.OverscanScreen)
+				overscanScreen = createOverscanFunc(RobloxGui)
+				overscanScreen:SetStyleForInGame()
+			end
+
+			local MenuModule = require(RobloxGui.Modules.Settings.SettingsHub)
+ 	  		MenuModule:SetVisibility(false, true)
+
+ 	  		local closedCon = nil
+			closedCon = overscanScreen.Closed:connect(function()
+				closedCon:disconnect()
+				pcall(function() PlatformService.BlurIntensity = 0 end)
+				ContextActionService:UnbindCoreAction("RbxStopOverscanMovement")
+				MenuModule:SetVisibility(true, true)
+			end)
+
+			pcall(function() PlatformService.BlurIntensity = 10 end)
+
+			local noOpFunc = function() end
+			ContextActionService:BindCoreAction("RbxStopOverscanMovement", noOpFunc, false,
+												Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2,
+												Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
+
+			local ScreenManager = require(RobloxGui.Modules.ScreenManager)
+			ScreenManager:OpenScreen(overscanScreen)
+
+		end
+
+		local adjustButton, adjustText = utility:MakeStyledButton("AdjustButton", "Adjust", UDim2.new(0,300,1,-20), showOverscanScreen)
+		adjustText.Font = Enum.Font.SourceSans
+		adjustButton.Position = UDim2.new(1,-400,0,12)
+
+		utility:AddNewRowObject(this, "Safe Zone", adjustButton)
+	end
+
+	createCameraModeOptions(not UserInputService.GamepadEnabled and 
+								(UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
 
 	if UserInputService.MouseEnabled then
 		local mouseSensSuccess, mouseSensFlagValue = pcall(function() return settings():GetFFlag("MouseSensitivity") end)
@@ -500,6 +552,10 @@ local function Initialize()
 		createGraphicsOptions()
 	end
 
+	if isTenFootInterface then
+		createOverscanOption()
+	end
+
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "GameSettingsTab"
 
@@ -508,6 +564,11 @@ local function Initialize()
 		this.TabHeader.Icon.Size = UDim2.new(0,34,0,34)
 		this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-17)
 		this.TabHeader.Size = UDim2.new(0,125,1,0)
+	elseif isTenFootInterface then
+		this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsTab@2x.png"
+		this.TabHeader.Icon.Size = UDim2.new(0,90,0,90)
+		this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
+		this.TabHeader.Size = UDim2.new(0,280,1,0)
 	else
 		this.TabHeader.Icon.Size = UDim2.new(0,45,0,45)
 		this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-22)

@@ -18,7 +18,8 @@ local YPOS_OFFSET = -math.floor(STYLE_PADDING / 2)
 local usingGamepad = false
 
 function setUsingGamepad(input, processed)
-	if input.UserInputType == Enum.UserInputType.Gamepad1 then
+	if input.UserInputType == Enum.UserInputType.Gamepad1 or input.UserInputType == Enum.UserInputType.Gamepad2 or
+		input.UserInputType == Enum.UserInputType.Gamepad3 or input.UserInputType == Enum.UserInputType.Gamepad4 then
 		usingGamepad = true
 	else
 		usingGamepad = false
@@ -457,7 +458,7 @@ function startDialog(dialog)
 			end
 		end
 		
-		contextActionService:BindCoreAction("Nothing", function() end, false, Enum.UserInputType.Gamepad1)
+		contextActionService:BindCoreAction("Nothing", function() end, false, Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
 
 		renewKillswitch(dialog)
 

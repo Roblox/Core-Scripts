@@ -21,23 +21,24 @@ local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
 
+--[[ UTILITIES ]]
+local utility = require(RobloxGui.Modules.Settings.Utility)
+
 --[[ VARIABLES ]]
 local isTouchDevice = UserInputService.TouchEnabled
-local isGamepadOnly = UserInputService.GamepadEnabled and not UserInputService.MouseEnabled and not UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local platform = UserInputService:GetPlatform()
 -- TODO: Change dev console script to parent this to somewhere other than an engine created gui
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
 local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
-
---[[ UTILITIES ]]
-local utility = require(RobloxGui.Modules.Settings.Utility)
 
 --[[ CORE MODULES ]]
 local playerList = require(RobloxGui.Modules.PlayerlistModule)
 local chat = require(RobloxGui.Modules.Chat)
 local backpack = require(RobloxGui.Modules.BackpackScript)
 
-if utility:IsSmallTouchScreen() then
+if utility:IsSmallTouchScreen() or isTenFootInterface then
 	SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0,0,0,0)
 	SETTINGS_SHIELD_SIZE = UDim2.new(1,0,1,0)
 end
@@ -66,23 +67,29 @@ local function CreateSettingsHub()
 			local hotKeyTable = buttonTable[2]
 			ContextActionService:BindCoreAction(buttonName, hotKeyTable[1], false, unpack(hotKeyTable[2]))
 		end
+		this.BottomButtonFrame.Visible = true
 	end
 
 	local function removeBottomBarBindings()
 		for _, hotKeyTable in pairs(this.BottomBarButtons) do
 			ContextActionService:UnbindCoreAction(hotKeyTable[1])
 		end
+		this.BottomButtonFrame.Visible = false
 	end
-			
 
 	local function addBottomBarButton(name, text, gamepadImage, keyboardImage, position, clickFunc, hotkeys)
 		local buttonName = name .. "Button"
 		local textName = name .. "Text"
 
-		this[buttonName], this[textName] = utility:MakeStyledButton(name .. "Button", text, UDim2.new(0,260,0,70), clickFunc)
+		local size = UDim2.new(0,260,0,70)
+		if isTenFootInterface then
+			size = UDim2.new(0,320,0,120)
+		end
+
+		this[buttonName], this[textName] = utility:MakeStyledButton(name .. "Button", text, size, clickFunc)
 		this[buttonName].Position = position
 		this[buttonName].Parent = this.BottomButtonFrame
-		if isGamepadOnly then
+		if isTenFootInterface then
 			this[buttonName].ImageTransparency = 1
 		end
 
@@ -91,12 +98,16 @@ local function CreateSettingsHub()
 
 		if not UserInputService.TouchEnabled then
 			this[textName].Size = UDim2.new(1,0,1,0)
-			this[textName].Position = UDim2.new(0,10,0,-4)
+			if isTenFootInterface then
+				this[textName].Position = UDim2.new(0,60,0,-4)
+			else
+				this[textName].Position = UDim2.new(0,10,0,-4)
+			end
 
 			local hintNameText = name .. "HintText"
 			local hintName = name .. "Hint"
 			local image = ""
-			if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
+			if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) or platform == Enum.Platform.XBoxOne then
 				image = gamepadImage
 			else
 				image = keyboardImage
@@ -112,6 +123,14 @@ local function CreateSettingsHub()
 				Image = image,
 				Parent = this[buttonName]
 			};
+			if isTenFootInterface then
+				hintLabel.Size = UDim2.new(0,90,0,90)
+				hintLabel.Position = UDim2.new(0,10,0.5,-45)
+			end
+		end
+
+		if isTenFootInterface then
+			this[textName].FontSize = Enum.FontSize.Size36
 		end
 
 		UserInputService.InputBegan:connect(function(inputObject)
@@ -119,8 +138,13 @@ local function CreateSettingsHub()
 				inputObject.UserInputType == Enum.UserInputType.Gamepad3 or inputObject.UserInputType == Enum.UserInputType.Gamepad4 then
 					if hintLabel then
 						hintLabel.Image = gamepadImage
-						hintLabel.Size = UDim2.new(0,60,0,60)
-						hintLabel.Position = UDim2.new(0,10,0,5)
+						if isTenFootInterface then
+							hintLabel.Size = UDim2.new(0,90,0,90)
+							hintLabel.Position = UDim2.new(0,10,0.5,-45)
+						else
+							hintLabel.Size = UDim2.new(0,60,0,60)
+							hintLabel.Position = UDim2.new(0,10,0,5)
+						end
 					end
 			elseif inputObject.UserInputType == Enum.UserInputType.Keyboard then
 				if hintLabel then
@@ -132,8 +156,9 @@ local function CreateSettingsHub()
 		end)
 
 		local hotKeyFunc = function(contextName, inputState, inputObject)
-			if inputState ~= Enum.UserInputState.Begin then return end
-			clickFunc()
+			if inputState == Enum.UserInputState.Begin then
+				clickFunc()
+			end
 		end
 
 		local hotKeyTable = {hotKeyFunc, hotkeys}
@@ -189,6 +214,9 @@ local function CreateSettingsHub()
 		if utility:IsSmallTouchScreen() then
 			this.HubBar.Size = UDim2.new(1,-10,0,40)
 			this.HubBar.Position = UDim2.new(0,5,0,6)
+		elseif isTenFootInterface then
+			this.HubBar.Size = UDim2.new(0,1200,0,100)
+			this.HubBar.Position = UDim2.new(0.5,-600,0.1,0)
 		else
 			this.HubBar.Size = UDim2.new(0,800,0,60)
 			this.HubBar.Position = UDim2.new(0.5,-400,0.05,0)
@@ -213,7 +241,7 @@ local function CreateSettingsHub()
 			local bottomOffset = 20
 			if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
 				bottomOffset = 80
-			elseif isGamepadOnly then
+			elseif isTenFootInterface then
 				bottomOffset = 200
 			end
 			this.BottomButtonFrame = utility:Create'Frame'
@@ -228,15 +256,15 @@ local function CreateSettingsHub()
 
 			local leaveGameFunc = function()
 				this:AddToMenuStack(this.Pages.CurrentPage)
-				this.BottomButtonFrame.Visible = false
 				this.HubBar.Visible = false
+				removeBottomBarBindings()
 				this:SwitchToPage(this.LeaveGamePage, nil, 1)
 			end
 
 			local resetCharFunc = function()
 				this:AddToMenuStack(this.Pages.CurrentPage)
-				this.BottomButtonFrame.Visible = false
 				this.HubBar.Visible = false
+				removeBottomBarBindings()
 				this:SwitchToPage(this.ResetCharacterPage, nil, 1)
 			end
 
@@ -244,14 +272,20 @@ local function CreateSettingsHub()
 				setVisibilityInternal(false)
 			end
 
-			addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight.png", 
-				"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,-130,0.5,-25), 
+			local buttonImageAppend = ""
+
+			if isTenFootInterface then
+				buttonImageAppend = "@2x"
+			end
+
+			addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
+				"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
 				leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
-			addBottomBarButton("ResetCharacter", "    Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight.png", 
-				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,-400,0.5,-25), 
+			addBottomBarButton("ResetCharacter", "    Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png", 
+				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25), 
 				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY})
-			addBottomBarButton("Resume", "Resume", "rbxasset://textures/ui/Settings/Help/BButtonLight.png",
-				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,140,0.5,-25), 
+			addBottomBarButton("Resume", "Resume Game", "rbxasset://textures/ui/Settings/Help/BButtonLight" .. buttonImageAppend .. ".png",
+				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25), 
 				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart})
 		end
 	end
@@ -379,14 +413,14 @@ local function CreateSettingsHub()
 	function this:HideBar()
 		this.HubBar.Visible = false
 		if this.BottomButtonFrame then
-			this.BottomButtonFrame.Visible = false
+			removeBottomBarBindings()
 		end
 	end
 
 	function this:ShowBar()
 		this.HubBar.Visible = true
 		if this.BottomButtonFrame then
-			this.BottomButtonFrame.Visible = true
+			setBottomBarBindings()
 		end
 	end
 
@@ -436,7 +470,7 @@ local function CreateSettingsHub()
 		end
 	end
 
-	function setVisibilityInternal(visible, noAnimation)
+	function setVisibilityInternal(visible, noAnimation, customStartPage)
 		this.Visible = visible
 
 		this.SettingsShowSignal:fire(this.Visible)
@@ -461,10 +495,19 @@ local function CreateSettingsHub()
 			ContextActionService:BindCoreAction("RbxSettingsHubSwitchTab", switchTabFunc, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL1, Enum.KeyCode.Tab)
 			setBottomBarBindings()
 
-			if this.HomePage then
-				this:SwitchToPage(this.HomePage, nil, 1)
+			if UserInputService.GamepadEnabled and not UserInputService.MouseEnabled then
+				UserInputService.OverrideMouseIconEnabled = true
+			end
+			pcall(function() PlatformService.BlurIntensity = 10 end)
+
+			if customStartPage then
+				this:SwitchToPage(customStartPage, nil, 1)
 			else
-				this:SwitchToPage(this.GameSettingsPage, nil, 1)
+				if this.HomePage then
+					this:SwitchToPage(this.HomePage, nil, 1)
+				else
+					this:SwitchToPage(this.GameSettingsPage, nil, 1)
+				end
 			end
 
 			if playerList:IsOpen() then
@@ -488,20 +531,24 @@ local function CreateSettingsHub()
 				end)
 			end
 
+			if UserInputService.GamepadEnabled and not UserInputService.MouseEnabled then
+				UserInputService.OverrideMouseIconEnabled = false
+			end
+			pcall(function() PlatformService.BlurIntensity = 0 end)
 
 			clearMenuStack()
-			game.GuiService.SelectedCoreObject = nil
 			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab")
 			ContextActionService:UnbindCoreAction("RbxSettingsHubStopCharacter")
 			removeBottomBarBindings()
+			game.GuiService.SelectedCoreObject = nil
 		end
 
 	end
 
-	function this:SetVisibility(visible, noAnimation)
+	function this:SetVisibility(visible, noAnimation, customStartPage)
 		if this.Visible == visible then return end
 
-		setVisibilityInternal(visible, noAnimation)
+		setVisibilityInternal(visible, noAnimation, customStartPage)
 	end
 
 	function this:ToggleVisibility()
@@ -523,10 +570,14 @@ local function CreateSettingsHub()
 				PoppedMenuEvent:Fire(lastStackItem)
 			end
 
+			if lastStackItem == this.LeaveGamePage or lastStackItem == this.ResetCharacterPage then
+				setBottomBarBindings()
+			end
+
 			table.remove(this.MenuStack, #this.MenuStack)
 			this:SwitchToPage(this.MenuStack[#this.MenuStack], true, 1)
 			if #this.MenuStack == 0 then
-				this:ToggleVisibility()
+				this:SetVisibility(false)
 			end
 		else
 			this.MenuStack = {}
@@ -619,16 +670,16 @@ local moduleApiTable = {}
 
 	local SettingsHubInstance = CreateSettingsHub()
 
-	function moduleApiTable:SetVisibility(visible, noAnimation)
-		SettingsHubInstance:SetVisibility(visible, noAnimation)
+	function moduleApiTable:SetVisibility(visible, noAnimation, customStartPage)
+		SettingsHubInstance:SetVisibility(visible, noAnimation, customStartPage)
 	end
 
 	function moduleApiTable:ToggleVisibility()
 		SettingsHubInstance:ToggleVisibility()
 	end
 
-	function moduleApiTable:SwitchToPage(pageToSwitchTo)
-		SettingsHubInstance:SwitchToPage(pageToSwitchTo, nil, 1)
+	function moduleApiTable:SwitchToPage(pageToSwitchTo, ignoreStack)
+		SettingsHubInstance:SwitchToPage(pageToSwitchTo, ignoreStack, 1)
 	end
 
 	function moduleApiTable:GetVisibility()

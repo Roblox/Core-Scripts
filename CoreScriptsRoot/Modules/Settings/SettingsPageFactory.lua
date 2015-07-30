@@ -16,6 +16,10 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local utility = require(RobloxGui.Modules.Settings.Utility)
 
 
+----------- VARIABLES --------------
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+
 ----------- CONSTANTS --------------
 local HEADER_SPACING = 5
 if utility:IsSmallTouchScreen() then
@@ -42,6 +46,8 @@ local function Initialize()
 	};
 	if utility:IsSmallTouchScreen() then
 		this.TabHeader.Size = UDim2.new(0,84,1,0)
+	elseif isTenFootInterface then
+		this.TabHeader.Size = UDim2.new(0,220,1,0)
 	end
 	this.TabHeader.MouseButton1Click:connect(function()
 		if this.HubRef then
@@ -76,6 +82,8 @@ local function Initialize()
 	};
 	if utility:IsSmallTouchScreen() then
 		title.FontSize = Enum.FontSize.Size18
+	elseif isTenFootInterface then
+		title.FontSize = Enum.FontSize.Size48
 	end
 
 	local tabSelection = utility:Create'ImageLabel'
@@ -101,65 +109,6 @@ local function Initialize()
 
 	-- make sure each page has a unique selection group (for gamepad selection)
 	GuiService:AddSelectionParent(HttpService:GenerateGUID(false), this.Page)
-
-	GuiService.Changed:connect(function(prop)
-		if not this.Page.Parent then return end
-		if prop ~= "SelectedCoreObject" then return end
-		if not utility:UsesSelectedObject() then return end
-
-		for i = 1, #rows do
-			local valueChangerFrame = rows[i].ValueChanger
-			local isATextBox = false
-			local isAButton = false
-			pcall(function() 
-				isATextBox = valueChangerFrame:IsA("TextBox") 
-				isAButton = valueChangerFrame:IsA("GuiButton")
-			end)
-			if not isATextBox and not isAButton then
-				valueChangerFrame = rows[i].ValueChanger.SliderFrame
-			end
-			if not valueChangerFrame then
-				valueChangerFrame = rows[i].ValueChanger.SelectorFrame
-			end
-			if not valueChangerFrame then
-				valueChangerFrame = rows[i].ValueChanger.DropDownFrame
-			end
-
-			if GuiService.SelectedCoreObject == valueChangerFrame then
-				if valueChangerFrame:FindFirstChild("LeftButton") then
-					valueChangerFrame.LeftButton.LeftButton.ImageTransparency = 0
-					valueChangerFrame.RightButton.RightButton.ImageTransparency = 0
-				end
-
-				if rows[i].SelectionFrame then
-					rows[i].SelectionFrame.BackgroundTransparency = 0.5
-				end
-				if rows[i].Label then
-					rows[i].Label.TextTransparency = 0
-				end
-				if valueChangerFrame:IsA("TextBox") then
-					valueChangerFrame.BackgroundTransparency = 0.05
-				end
-
-				this.LastSelectedObject = valueChangerFrame
-			else
-				if valueChangerFrame:FindFirstChild("LeftButton") then
-					valueChangerFrame.LeftButton.LeftButton.ImageTransparency = 0.5
-					valueChangerFrame.RightButton.RightButton.ImageTransparency = 0.5
-				end
-
-				if rows[i].SelectionFrame then
-					rows[i].SelectionFrame.BackgroundTransparency = 1
-				end
-				if rows[i].Label then
-					rows[i].Label.TextTransparency = 0.5
-				end
-				if valueChangerFrame:IsA("TextBox") then
-					valueChangerFrame.BackgroundTransparency = 0.5
-				end
-			end
-		end
-	end)
 
 	local tweenAllDescendants = nil
 	tweenAllDescendants = function(root, posDiff, completeFunction)

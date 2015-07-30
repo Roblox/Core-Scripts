@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX5744EB97A6D34E5AA94E31CE07E5D09D">
+	<Item class="ModuleScript" referent="RBX87EB83BDA3824A0F92607F9EC4CC1B68">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ClassicCamera</string>
