@@ -29,6 +29,15 @@ local destroyedLoadingGui = false
 local hasReplicatedFirstElements = false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
+local isTenFootInterface = nil
+
+spawn(function()
+	while not Game:GetService("CoreGui") do
+		wait()
+	end
+	local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+	isTenFootInterface = require(RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")):IsEnabled()
+end)
 
 -- Fast Flags
 local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
@@ -393,8 +402,8 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 		end
 	end
 	
-	-- fade in close button after 5 seconds
-	if  UIS:GetPlatform() ~= Enum.Platform.WiiU and UIS:GetPlatform() ~= Enum.Platform.PS4 and UIS:GetPlatform() ~= Enum.Platform.XBoxOne then
+	-- fade in close button after 5 seconds unless we are running on a console
+	if  not isTenFootInterface then
 		if currentTime - startTime > 5 and currScreenGui.BlackFrame.CloseButton.ImageTransparency > 0 then
 			currScreenGui.BlackFrame.CloseButton.ImageTransparency = currScreenGui.BlackFrame.CloseButton.ImageTransparency - fadeAmount
 
@@ -405,8 +414,34 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 	end
 end)
 
+local leaveGameButton, leaveGameTextLabel = nil
+
 guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
+		if isTenFootInterface then 
+			currScreenGui.ErrorFrame.Size = UDim2.new(0.5, 0, 0, 160)
+			currScreenGui.ErrorFrame.Position = UDim2.new(0.25, 0, .5, -75)
+			currScreenGui.ErrorFrame.ErrorText.FontSize = Enum.FontSize.Size36 
+			currScreenGui.ErrorFrame.ErrorText.Size = UDim2.new(1, 0, 0, 100)
+			if leaveGameButton == nil then
+				local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+				local utility = require(RobloxGui.Modules.Settings.Utility)
+				local textLabel = nil
+				leaveGameButton, leaveGameTextLabel = utility:MakeStyledButton("LeaveGame", "Leave Game", UDim2.new(.5, 0, 0, 50))
+				leaveGameButton:SetVerb("Exit")
+				leaveGameButton.NextSelectionDown = nil
+				leaveGameButton.NextSelectionLeft = nil
+				leaveGameButton.NextSelectionRight = nil 
+				leaveGameButton.NextSelectionUp = nil
+				leaveGameButton.ZIndex = 9
+				leaveGameButton.Position = UDim2.new(.25, 0, 0, 100)
+				leaveGameButton.Parent = currScreenGui.ErrorFrame
+				leaveGameTextLabel.ZIndex = 10
+				game:GetService("GuiService").SelectedCoreObject = leaveGameButton
+			else
+				game:GetService("GuiService").SelectedCoreObject = leaveGameButton
+			end
+		end 
 		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
 		currScreenGui.ErrorFrame.Visible = true
 		local blackFrame = currScreenGui:FindFirstChild('BlackFrame')
