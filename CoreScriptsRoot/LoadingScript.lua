@@ -36,7 +36,7 @@ spawn(function()
 		wait()
 	end
 	local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
-	isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+	isTenFootInterface = require(RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")):IsEnabled()
 end)
 
 -- Fast Flags
@@ -414,10 +414,33 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 	end
 end)
 
+local leaveGameButton, leaveGameTextLabel = nil
+
 guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
 		if isTenFootInterface then 
+			currScreenGui.ErrorFrame.Size = UDim2.new(0.5, 0, 0, 160)
+			currScreenGui.ErrorFrame.Position = UDim2.new(0.25, 0, .5, -75)
 			currScreenGui.ErrorFrame.ErrorText.FontSize = Enum.FontSize.Size36 
+			currScreenGui.ErrorFrame.ErrorText.Size = UDim2.new(1, 0, 0, 100)
+			if leaveGameButton == nil then
+				local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+				local utility = require(RobloxGui.Modules.Settings.Utility)
+				local textLabel = nil
+				leaveGameButton, leaveGameTextLabel = utility:MakeStyledButton("LeaveGame", "Leave Game", UDim2.new(.5, 0, 0, 50))
+				leaveGameButton:SetVerb("Exit")
+				leaveGameButton.NextSelectionDown = nil
+				leaveGameButton.NextSelectionLeft = nil
+				leaveGameButton.NextSelectionRight = nil 
+				leaveGameButton.NextSelectionUp = nil
+				leaveGameButton.ZIndex = 9
+				leaveGameButton.Position = UDim2.new(.25, 0, 0, 100)
+				leaveGameButton.Parent = currScreenGui.ErrorFrame
+				leaveGameTextLabel.ZIndex = 10
+				game:GetService("GuiService").SelectedCoreObject = leaveGameButton
+			else
+				game:GetService("GuiService").SelectedCoreObject = leaveGameButton
+			end
 		end 
 		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
 		currScreenGui.ErrorFrame.Visible = true
