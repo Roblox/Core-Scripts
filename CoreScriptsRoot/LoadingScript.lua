@@ -29,6 +29,15 @@ local destroyedLoadingGui = false
 local hasReplicatedFirstElements = false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
+local isTenFootInterface = nil
+
+spawn(function()
+	while not Game:GetService("CoreGui") do
+		wait()
+	end
+	local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+	isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+end)
 
 -- Fast Flags
 local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
@@ -393,8 +402,8 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 		end
 	end
 	
-	-- fade in close button after 5 seconds
-	if  UIS:GetPlatform() ~= Enum.Platform.WiiU and UIS:GetPlatform() ~= Enum.Platform.PS4 and UIS:GetPlatform() ~= Enum.Platform.XBoxOne then
+	-- fade in close button after 5 seconds unless we are running on a console
+	if  not isTenFootInterface then
 		if currentTime - startTime > 5 and currScreenGui.BlackFrame.CloseButton.ImageTransparency > 0 then
 			currScreenGui.BlackFrame.CloseButton.ImageTransparency = currScreenGui.BlackFrame.CloseButton.ImageTransparency - fadeAmount
 
@@ -407,6 +416,9 @@ end)
 
 guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
+		if isTenFootInterface then 
+			currScreenGui.ErrorFrame.ErrorText.FontSize = Enum.FontSize.Size36 
+		end 
 		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
 		currScreenGui.ErrorFrame.Visible = true
 		local blackFrame = currScreenGui:FindFirstChild('BlackFrame')
