@@ -48,8 +48,8 @@ local function CreateModule()
 		this.Container = Util.Create'ImageButton'
 		{
 			Name = "TopRightContainer";
-			Size = UDim2.new(0, 250, 0, 100);
-			Position = UDim2.new(1,-260,0,10);
+			Size = UDim2.new(0, 350, 0, 100);
+			Position = UDim2.new(1,-360,0,10);
 			AutoButtonColor = false;
 			Image = "";
 			BackgroundTransparency = 1;
@@ -60,7 +60,7 @@ local function CreateModule()
 	function this:CreateHealthBar()
 		local healthContainer = Util.Create'Frame'{
 			Name = "HealthContainer";
-			Size = UDim2.new(1, -66, 0, 29);
+			Size = UDim2.new(1, -66, 0, 50);
 			Position = UDim2.new(0, 67, 0, 0);
 			BorderSizePixel = 0;
 			BackgroundColor3 = Color3.new(0,0,0);
@@ -79,7 +79,7 @@ local function CreateModule()
 
 		local healthText = Util.Create'TextLabel'{
 			Name = "HealthText";
-			Size = UDim2.new(0, 65, 0, 29);
+			Size = UDim2.new(0, 65, 0, 50);
 			BackgroundTransparency = 0.5;
 			BackgroundColor3 = Color3.new(0,0,0);
 			Font = Enum.Font.SourceSans;
