@@ -485,6 +485,11 @@ local function setupGamepadControls()
 		setVisibility()
 
 		if isVisible then
+
+			if InputService.GamepadEnabled and not InputService.MouseEnabled then
+				InputService.OverrideMouseIconEnabled = true
+			end
+
 			gamepadSettingsFrame.Visible = isVisible
 
 			local settingsChildren = gamepadSettingsFrame:GetChildren()
@@ -503,6 +508,10 @@ local function setupGamepadControls()
 				setVisibility()
 			end)
 		else
+			if InputService.GamepadEnabled and not InputService.MouseEnabled then
+				InputService.OverrideMouseIconEnabled = false
+			end
+
 			local settingsChildren = gamepadSettingsFrame:GetChildren()
 			for i = 1, #settingsChildren do
 				if settingsChildren[i]:IsA("GuiButton") then

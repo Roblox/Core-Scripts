@@ -495,6 +495,11 @@ local function CreateSettingsHub()
 			ContextActionService:BindCoreAction("RbxSettingsHubSwitchTab", switchTabFunc, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL1, Enum.KeyCode.Tab)
 			setBottomBarBindings()
 
+			if UserInputService.GamepadEnabled and not UserInputService.MouseEnabled then
+				UserInputService.OverrideMouseIconEnabled = true
+			end
+			pcall(function() PlatformService.BlurIntensity = 10 end)
+
 			if customStartPage then
 				this:SwitchToPage(customStartPage, nil, 1)
 			else
@@ -526,6 +531,10 @@ local function CreateSettingsHub()
 				end)
 			end
 
+			if UserInputService.GamepadEnabled and not UserInputService.MouseEnabled then
+				UserInputService.OverrideMouseIconEnabled = false
+			end
+			pcall(function() PlatformService.BlurIntensity = 0 end)
 
 			clearMenuStack()
 			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab")

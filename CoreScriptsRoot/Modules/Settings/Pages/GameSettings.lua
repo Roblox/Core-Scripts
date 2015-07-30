@@ -10,6 +10,8 @@ local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
+local PlatformService = game:GetService("PlatformService")
+local ContextActionService = game:GetService("ContextActionService")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
@@ -54,6 +56,7 @@ local LocalPlayer = game.Players.LocalPlayer
 local platform = UserInputService:GetPlatform()
 local nextRowPositionY = 0
 local rowHeight = 50
+local overscanScreen = nil
 
 ----------- CLASS DECLARATION --------------
 
@@ -494,6 +497,45 @@ local function Initialize()
 		end)
 	end
 
+	local function createOverscanOption()
+		local showOverscanScreen = function()
+
+			if not overscanScreen then
+				local createOverscanFunc = require(RobloxGui.Modules.OverscanScreen)
+				overscanScreen = createOverscanFunc(RobloxGui)
+				overscanScreen:SetStyleForInGame()
+			end
+
+			local MenuModule = require(RobloxGui.Modules.Settings.SettingsHub)
+ 	  		MenuModule:SetVisibility(false, true)
+
+ 	  		local closedCon = nil
+			closedCon = overscanScreen.Closed:connect(function()
+				closedCon:disconnect()
+				pcall(function() PlatformService.BlurIntensity = 0 end)
+				ContextActionService:UnbindCoreAction("RbxStopOverscanMovement")
+				MenuModule:SetVisibility(true, true)
+			end)
+
+			pcall(function() PlatformService.BlurIntensity = 10 end)
+
+			local noOpFunc = function() end
+			ContextActionService:BindCoreAction("RbxStopOverscanMovement", noOpFunc, false,
+												Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2,
+												Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
+
+			local ScreenManager = require(RobloxGui.Modules.ScreenManager)
+			ScreenManager:OpenScreen(overscanScreen)
+
+		end
+
+		local adjustButton, adjustText = utility:MakeStyledButton("AdjustButton", "Adjust", UDim2.new(0,300,1,-20), showOverscanScreen)
+		adjustText.Font = Enum.Font.SourceSans
+		adjustButton.Position = UDim2.new(1,-400,0,12)
+
+		utility:AddNewRowObject(this, "Safe Zone", adjustButton)
+	end
+
 	createCameraModeOptions(not UserInputService.GamepadEnabled and 
 								(UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
 
@@ -508,6 +550,10 @@ local function Initialize()
 
 	if platform == Enum.Platform.Windows or platform == Enum.Platform.OSX then
 		createGraphicsOptions()
+	end
+
+	if isTenFootInterface then
+		createOverscanOption()
 	end
 
 	------ TAB CUSTOMIZATION -------

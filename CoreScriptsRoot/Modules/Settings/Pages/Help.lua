@@ -41,7 +41,7 @@ local function Initialize()
 
 		if lastInputType == nil then -- we don't know what controls the user has, just use reasonable defaults
 			local platform = UserInputService:GetPlatform()
-			if platform == Enum.Platform.XBoxOne or UserInputService:GetPlatform() == Enum.Platform.WiiU then
+			if platform == Enum.Platform.XBoxOne or platform == Enum.Platform.WiiU then
 				this.HubRef.PageView.ClipsDescendants = false
 				return GAMEPAD_TAG
 			elseif platform == Enum.Platform.Windows or platform == Enum.Platform.OSX then
@@ -256,7 +256,8 @@ local function Initialize()
 		createGamepadLabel("Rotate Camera", UDim2.new(0.91,0,0.62,-12), UDim2.new(0,132,0,24))
 		createGamepadLabel("Camera Zoom", UDim2.new(0.91,0,0.77,-12), UDim2.new(0,122,0,24))
 
-		local openDevConsoleFunc = function()
+		-- todo: turn on dev console button when dev console is ready
+		--[[local openDevConsoleFunc = function()
 			this.HubRef:SetVisibility(false)
 			ToggleDevConsoleBindableFunc:Invoke()
 		end
@@ -278,7 +279,7 @@ local function Initialize()
 			Parent = devConsoleButton
 		};
 
-		this:AddRow(nil, nil, devConsoleButton, 340)
+		this:AddRow(nil, nil, devConsoleButton, 340)]]
 	end
 
 	local function createTouchHelp(parentFrame)
@@ -390,7 +391,7 @@ local function Initialize()
 		if this:GetDisplayed() then
 			if this:GetCurrentInputType() == TOUCH_TAG then
 				this.HubRef:HideShield()
-			else
+			elseif not isTenFootInterface then
 				this.HubRef:ShowShield()
 			end
 		end
