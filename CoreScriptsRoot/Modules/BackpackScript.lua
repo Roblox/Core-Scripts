@@ -76,6 +76,12 @@ local GuiService = game:GetService('GuiService')
 local CoreGui = game:GetService('CoreGui')
 local ContextActionService = game:GetService('ContextActionService')
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+
+if isTenFootInterface then
+	ICON_SIZE = 100
+end
 
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
@@ -1242,129 +1248,131 @@ ScrollingFrame.Parent = InventoryFrame
 --headerText.Parent = InventoryFrame
 
 do -- Search stuff
-	local searchFrame = NewGui('Frame', 'Search')
-	searchFrame.BackgroundColor3 = SEARCH_BACKGROUND_COLOR
-	searchFrame.BackgroundTransparency = SEARCH_BACKGROUND_FADE
-	searchFrame.Size = UDim2.new(0, SEARCH_WIDTH - (SEARCH_BUFFER * 2), 0, INVENTORY_HEADER_SIZE - (SEARCH_BUFFER * 2))
-	searchFrame.Position = UDim2.new(1, -searchFrame.Size.X.Offset - SEARCH_BUFFER, 0, SEARCH_BUFFER)
-	searchFrame.Parent = InventoryFrame
+	if not isTenFootInterface then
+		local searchFrame = NewGui('Frame', 'Search')
+		searchFrame.BackgroundColor3 = SEARCH_BACKGROUND_COLOR
+		searchFrame.BackgroundTransparency = SEARCH_BACKGROUND_FADE
+		searchFrame.Size = UDim2.new(0, SEARCH_WIDTH - (SEARCH_BUFFER * 2), 0, INVENTORY_HEADER_SIZE - (SEARCH_BUFFER * 2))
+		searchFrame.Position = UDim2.new(1, -searchFrame.Size.X.Offset - SEARCH_BUFFER, 0, SEARCH_BUFFER)
+		searchFrame.Parent = InventoryFrame
 
-	local searchBox = NewGui('TextBox', 'TextBox')
-	searchBox.Text = SEARCH_TEXT
-	searchBox.ClearTextOnFocus = false
-	searchBox.FontSize = Enum.FontSize.Size24
-	searchBox.TextXAlignment = Enum.TextXAlignment.Left
-	searchBox.Size = searchFrame.Size - UDim2.new(0, SEARCH_TEXT_OFFSET_FROMLEFT, 0, 0)
-	searchBox.Position = UDim2.new(0, SEARCH_TEXT_OFFSET_FROMLEFT, 0, 0)
-	searchBox.Parent = searchFrame
-
-	local xButton = NewGui('TextButton', 'X')
-	xButton.Text = 'x'
-	xButton.TextColor3 = SLOT_EQUIP_COLOR
-	xButton.FontSize = Enum.FontSize.Size24
-	xButton.TextYAlignment = Enum.TextYAlignment.Bottom
-	xButton.BackgroundColor3 = SEARCH_BACKGROUND_COLOR
-	xButton.BackgroundTransparency = 0
-	xButton.Size = UDim2.new(0, searchFrame.Size.Y.Offset - (SEARCH_BUFFER * 2), 0, searchFrame.Size.Y.Offset - (SEARCH_BUFFER * 2))
-	xButton.Position = UDim2.new(1, -xButton.Size.X.Offset - (SEARCH_BUFFER * 2), 0.5, -xButton.Size.Y.Offset / 2)
-	xButton.ZIndex = 0
-	xButton.Visible = true
-	xButton.BorderSizePixel = 0
-	xButton.Parent = searchFrame
-
-	local function search()
-		local terms = {}
-		for word in searchBox.Text:gmatch('%S+') do
-			terms[word:lower()] = true
-		end
-
-		local hitTable = {}
-		for i = HOTBAR_SLOTS + 1, #Slots do -- Only search inventory slots
-			local slot = Slots[i]
-			local hits = slot:CheckTerms(terms)
-			table.insert(hitTable, {slot, hits})
-			slot.Frame.Visible = false
-		end
-
-		table.sort(hitTable, function(left, right)
-			return left[2] > right[2]
-		end)
-		ResultsIndices = {}
-
-		for i, data in ipairs(hitTable) do
-			local slot, hits = data[1], data[2]
-			if hits > 0 then
-				ResultsIndices[slot] = HOTBAR_SLOTS + i
-				slot:Reposition()
-				slot.Frame.Visible = true
-			end
-		end
-		
-		ScrollingFrame.CanvasPosition = Vector2.new(0, 0)
-
-		xButton.ZIndex = 3
-	end
-
-	local function clearResults()
-		if xButton.ZIndex > 0 then
-			ResultsIndices = nil
-			for i = HOTBAR_SLOTS + 1, #Slots do
-				local slot = Slots[i]
-				slot:Reposition()
-				slot.Frame.Visible = true
-			end
-			xButton.ZIndex = 0
-		end
-	end
-
-	local function reset()
-		clearResults()
+		local searchBox = NewGui('TextBox', 'TextBox')
 		searchBox.Text = SEARCH_TEXT
-	end
+		searchBox.ClearTextOnFocus = false
+		searchBox.FontSize = Enum.FontSize.Size24
+		searchBox.TextXAlignment = Enum.TextXAlignment.Left
+		searchBox.Size = searchFrame.Size - UDim2.new(0, SEARCH_TEXT_OFFSET_FROMLEFT, 0, 0)
+		searchBox.Position = UDim2.new(0, SEARCH_TEXT_OFFSET_FROMLEFT, 0, 0)
+		searchBox.Parent = searchFrame
 
-	local function onChanged(property)
-		if property == 'Text' then
-			local text = searchBox.Text
-			if text == '' then
-				clearResults()
-			elseif text ~= SEARCH_TEXT then
-				search()
+		local xButton = NewGui('TextButton', 'X')
+		xButton.Text = 'x'
+		xButton.TextColor3 = SLOT_EQUIP_COLOR
+		xButton.FontSize = Enum.FontSize.Size24
+		xButton.TextYAlignment = Enum.TextYAlignment.Bottom
+		xButton.BackgroundColor3 = SEARCH_BACKGROUND_COLOR
+		xButton.BackgroundTransparency = 0
+		xButton.Size = UDim2.new(0, searchFrame.Size.Y.Offset - (SEARCH_BUFFER * 2), 0, searchFrame.Size.Y.Offset - (SEARCH_BUFFER * 2))
+		xButton.Position = UDim2.new(1, -xButton.Size.X.Offset - (SEARCH_BUFFER * 2), 0.5, -xButton.Size.Y.Offset / 2)
+		xButton.ZIndex = 0
+		xButton.Visible = true
+		xButton.BorderSizePixel = 0
+		xButton.Parent = searchFrame
+
+		local function search()
+			local terms = {}
+			for word in searchBox.Text:gmatch('%S+') do
+				terms[word:lower()] = true
+			end
+
+			local hitTable = {}
+			for i = HOTBAR_SLOTS + 1, #Slots do -- Only search inventory slots
+				local slot = Slots[i]
+				local hits = slot:CheckTerms(terms)
+				table.insert(hitTable, {slot, hits})
+				slot.Frame.Visible = false
+			end
+
+			table.sort(hitTable, function(left, right)
+				return left[2] > right[2]
+			end)
+			ResultsIndices = {}
+
+			for i, data in ipairs(hitTable) do
+				local slot, hits = data[1], data[2]
+				if hits > 0 then
+					ResultsIndices[slot] = HOTBAR_SLOTS + i
+					slot:Reposition()
+					slot.Frame.Visible = true
+				end
+			end
+			
+			ScrollingFrame.CanvasPosition = Vector2.new(0, 0)
+
+			xButton.ZIndex = 3
+		end
+
+		local function clearResults()
+			if xButton.ZIndex > 0 then
+				ResultsIndices = nil
+				for i = HOTBAR_SLOTS + 1, #Slots do
+					local slot = Slots[i]
+					slot:Reposition()
+					slot.Frame.Visible = true
+				end
+				xButton.ZIndex = 0
 			end
 		end
-	end
 
-	local function onFocused()
-		if searchBox.Text == SEARCH_TEXT then
-			searchBox.Text = ''
-		end
-	end
-
-	local function focusLost(enterPressed)
-		if enterPressed then
-			--TODO: Could optimize
-			search()
-		elseif searchBox.Text == '' then
+		local function reset()
+			clearResults()
 			searchBox.Text = SEARCH_TEXT
 		end
-	end
 
-	searchBox.Focused:connect(onFocused)
-	xButton.MouseButton1Click:connect(reset)
-	searchBox.Changed:connect(onChanged)
-	searchBox.FocusLost:connect(focusLost)
-
-	BackpackScript.StateChanged.Event:connect(function(isNowOpen)
-		xButton.Modal = isNowOpen -- Allows free mouse movement even in first person
-		if not isNowOpen then
-			reset()
+		local function onChanged(property)
+			if property == 'Text' then
+				local text = searchBox.Text
+				if text == '' then
+					clearResults()
+				elseif text ~= SEARCH_TEXT then
+					search()
+				end
+			end
 		end
-	end)
 
-	HotkeyFns[Enum.KeyCode.Escape.Value] = function(isProcessed)
-		if isProcessed then -- Pressed from within a TextBox
-			reset()
-		elseif InventoryFrame.Visible then
-			BackpackScript.OpenClose()
+		local function onFocused()
+			if searchBox.Text == SEARCH_TEXT then
+				searchBox.Text = ''
+			end
+		end
+
+		local function focusLost(enterPressed)
+			if enterPressed then
+				--TODO: Could optimize
+				search()
+			elseif searchBox.Text == '' then
+				searchBox.Text = SEARCH_TEXT
+			end
+		end
+
+		searchBox.Focused:connect(onFocused)
+		xButton.MouseButton1Click:connect(reset)
+		searchBox.Changed:connect(onChanged)
+		searchBox.FocusLost:connect(focusLost)
+
+		BackpackScript.StateChanged.Event:connect(function(isNowOpen)
+			xButton.Modal = isNowOpen -- Allows free mouse movement even in first person
+			if not isNowOpen then
+				reset()
+			end
+		end)
+
+		HotkeyFns[Enum.KeyCode.Escape.Value] = function(isProcessed)
+			if isProcessed then -- Pressed from within a TextBox
+				reset()
+			elseif InventoryFrame.Visible then
+				BackpackScript.OpenClose()
+			end
 		end
 	end
 	
