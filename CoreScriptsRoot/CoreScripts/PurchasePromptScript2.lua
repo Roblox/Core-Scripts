@@ -24,6 +24,15 @@ local IsCurrentlyPrompting = false
 local IsCurrentlyPurchasing = false
 local IsPurchasingConsumable = false
 local IsCheckingPlayerFunds = false
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
+local isTenFootInterface = TenFootInterface:IsEnabled()
+local freezeControllerActionName = "doNothingActionPrompt"
+local freezeThumbstick1Name = "doNothingThumbstickPrompt"
+local freezeThumbstick2Name = "doNothingThumbstickPrompt"
+local _,largeFont = pcall(function() return Enum.FontSize.Size42 end)
+largeFont = largeFont or Enum.FontSize.Size36
+local scaleFactor = 2.5
 
 --[[ Purchase Data ]]--
 local PurchaseData = {
@@ -129,14 +138,21 @@ local BC_ROBUX_PRODUCTS = { 90, 180, 270, 360, 450, 1000, 2750 }
 local NON_BC_ROBUX_PRODUCTS = { 80, 160, 240, 320, 400, 800, 2000 }
 
 local DIALOG_SIZE = UDim2.new(0, 324, 0, 180)
+local DIALOG_SIZE_TENFOOT = UDim2.new(0, 324*scaleFactor, 0, 180*scaleFactor)
 local SHOW_POSITION = UDim2.new(0.5, -162, 0.5, -90)
+local SHOW_POSITION_TENFOOT = UDim2.new(0.5, -162*scaleFactor, 0.5, -90*scaleFactor)
 local HIDE_POSITION = UDim2.new(0.5, -162, 0, -181)
+local HIDE_POSITION_TENFOOT = UDim2.new(0.5, -162*scaleFactor, 0, -180*scaleFactor - 1)
 local BTN_SIZE = UDim2.new(0, 162, 0, 44)
+local BTN_SIZE_TENFOOT = UDim2.new(0, 162*scaleFactor, 0, 44*scaleFactor)
 local BODY_SIZE = UDim2.new(0, 324, 0, 136)
+local BODY_SIZE_TENFOOT = UDim2.new(0, 324*scaleFactor, 0, 136*scaleFactor)
 local TWEEN_TIME = 0.3
 
 local BTN_L_POS = UDim2.new(0, 0, 0, 136)
+local BTN_L_POS_TENFOOT = UDim2.new(0, 0, 0, 136*scaleFactor)
 local BTN_R_POS = UDim2.new(0.5, 0, 0, 136)
+local BTN_R_POS_TENFOOT = UDim2.new(0.5, 0, 0, 136*scaleFactor)
 
 --[[ Utility Functions ]]--
 local function lerp( start, finish, t)
@@ -190,14 +206,14 @@ end
 local function createImageButtonWithText(name, position, image, imageDown, text, font)
 	local imageButton = Instance.new('ImageButton')
 	imageButton.Name = name
-	imageButton.Size = BTN_SIZE
+	imageButton.Size = isTenFootInterface and BTN_SIZE_TENFOOT or BTN_SIZE
 	imageButton.Position = position
 	imageButton.Image = image
 	imageButton.BackgroundTransparency = 1
 	imageButton.AutoButtonColor = false
 	imageButton.ZIndex = 8
 
-	local textLabel = createTextLabel(name.."Text", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), font, Enum.FontSize.Size24, text)
+	local textLabel = createTextLabel(name.."Text", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), font, isTenFootInterface and largeFont or Enum.FontSize.Size24, text)
 	textLabel.ZIndex = 9
 	textLabel.Parent = imageButton
 
@@ -215,63 +231,65 @@ local function createImageButtonWithText(name, position, image, imageDown, text,
 end
 
 --[[ Begin Gui Creation ]]--
-local PurchaseDialog = createFrame("PurchaseDialog", DIALOG_SIZE, HIDE_POSITION, 1, nil)
+local PurchaseDialog = isTenFootInterface and createFrame("PurchaseDialog", DIALOG_SIZE_TENFOOT, HIDE_POSITION_TENFOOT, 1, nil) or createFrame("PurchaseDialog", DIALOG_SIZE, HIDE_POSITION, 1, nil)
 PurchaseDialog.Visible = false
 PurchaseDialog.Parent = RobloxGui
 
 	local ContainerFrame = createFrame("ContainerFrame", UDim2.new(1, 0, 1, 0), nil, 1, nil)
 	ContainerFrame.Parent = PurchaseDialog
 
-		local ContainerImage = createImageLabel("ContainerImage", BODY_SIZE, UDim2.new(0, 0, 0, 0), BG_IMAGE)
+		local ContainerImage = createImageLabel("ContainerImage", isTenFootInterface and BODY_SIZE_TENFOOT or BODY_SIZE, UDim2.new(0, 0, 0, 0), BG_IMAGE)
 		ContainerImage.ZIndex = 8
 		ContainerImage.Parent = ContainerFrame
 
-		local ItemPreviewImage = createImageLabel("ItemPreviewImage", UDim2.new(0, 64, 0, 64), UDim2.new(0, 27, 0, 20), "")
+		local ItemPreviewImage = isTenFootInterface and createImageLabel("ItemPreviewImage", UDim2.new(0, 64*scaleFactor, 0, 64*scaleFactor), UDim2.new(0, 27*scaleFactor, 0, 20*scaleFactor), "") or createImageLabel("ItemPreviewImage", UDim2.new(0, 64, 0, 64), UDim2.new(0, 27, 0, 20), "")
 		ItemPreviewImage.ZIndex = 9
 		ItemPreviewImage.Parent = ContainerFrame
 
-		local ItemDescriptionText = createTextLabel("ItemDescriptionText", UDim2.new(0, 210, 0, 96), UDim2.new(0, 110, 0, 18),
-			Enum.Font.SourceSans, Enum.FontSize.Size18, PURCHASE_MSG.PURCHASE)
+		local ItemDescriptionText = createTextLabel("ItemDescriptionText", isTenFootInterface and UDim2.new(0, 210*scaleFactor - 20, 0, 96*scaleFactor) or UDim2.new(0, 210, 0, 96), isTenFootInterface and UDim2.new(0, 110*scaleFactor, 0, 18*scaleFactor) or UDim2.new(0, 110, 0, 18),
+			Enum.Font.SourceSans, isTenFootInterface and Enum.FontSize.Size48 or Enum.FontSize.Size18, PURCHASE_MSG.PURCHASE)
 		ItemDescriptionText.TextXAlignment = Enum.TextXAlignment.Left
 		ItemDescriptionText.TextYAlignment = Enum.TextYAlignment.Top
 		ItemDescriptionText.TextWrapped = true
 		ItemDescriptionText.Parent = ContainerFrame
 
-		local RobuxIcon = createImageLabel("RobuxIcon", UDim2.new(0, 20, 0, 20), UDim2.new(0, 0, 0, 0), ROBUX_ICON)
+		local RobuxIcon = createImageLabel("RobuxIcon", isTenFootInterface and UDim2.new(0, 20*scaleFactor, 0, 20*scaleFactor) or UDim2.new(0, 20, 0, 20), UDim2.new(0, 0, 0, 0), ROBUX_ICON)
 		RobuxIcon.ZIndex = 9
 		RobuxIcon.Visible = false
 		RobuxIcon.Parent = ContainerFrame
 
-		local TixIcon = createImageLabel("TixIcon", UDim2.new(0, 20, 0, 20), UDim2.new(0, 0, 0, 0), TIX_ICON)
+		local TixIcon = createImageLabel("TixIcon", isTenFootInterface and UDim2.new(0, 20*scaleFactor, 0, 20*scaleFactor) or UDim2.new(0, 20, 0, 20), UDim2.new(0, 0, 0, 0), TIX_ICON)
 		TixIcon.ZIndex = 9
 		TixIcon.Visible = false
 		TixIcon.Parent = ContainerFrame
 
 		local CostText = createTextLabel("CostText", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0),
-			Enum.Font.SourceSansBold, Enum.FontSize.Size18, "")
+			Enum.Font.SourceSansBold, isTenFootInterface and largeFont or Enum.FontSize.Size18, "")
 		CostText.TextXAlignment = Enum.TextXAlignment.Left
 		CostText.Visible = false
 		CostText.Parent = ContainerFrame
 
-		local PostBalanceText = createTextLabel("PostBalanceText", UDim2.new(1, -20, 0, 30), UDim2.new(0, 10, 0, 100), Enum.Font.SourceSans,
-			Enum.FontSize.Size14, "")
+		local PostBalanceText = createTextLabel("PostBalanceText", UDim2.new(1, -20, 0, 30), isTenFootInterface and UDim2.new(0, 10, 0, 100*scaleFactor) or UDim2.new(0, 10, 0, 100), Enum.Font.SourceSans,
+			isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size14, "")
 		PostBalanceText.TextWrapped = true
 		PostBalanceText.Parent = ContainerFrame
 
-		local BuyButton = createImageButtonWithText("BuyButton", BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Buy Now", Enum.Font.SourceSansBold)
+		local BuyButton = createImageButtonWithText("BuyButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Buy Now", Enum.Font.SourceSansBold)
 		BuyButton.Parent = ContainerFrame
+		local BuyButtonText = BuyButton:FindFirstChild("BuyButtonText")
 		
+		local gamepadButtonXLocation = (BuyButton.AbsoluteSize.X/2 - BuyButtonText.TextBounds.X/2)/2
 		local buyButtonGamepadImage = Instance.new("ImageLabel")
 		buyButtonGamepadImage.BackgroundTransparency = 1
 		buyButtonGamepadImage.Image = A_BUTTON
 		buyButtonGamepadImage.Size = UDim2.new(1, -8, 1, -8)
-		buyButtonGamepadImage.Position = UDim2.new(0, 4, 0, 5)
 		buyButtonGamepadImage.SizeConstraint = Enum.SizeConstraint.RelativeYY
-		buyButtonGamepadImage.ZIndex = BuyButton.ZIndex
 		buyButtonGamepadImage.Parent = BuyButton
+		buyButtonGamepadImage.Position = UDim2.new(0, gamepadButtonXLocation - buyButtonGamepadImage.AbsoluteSize.X/2, 0, 5)
+		buyButtonGamepadImage.ZIndex = BuyButton.ZIndex
 		table.insert(GAMEPAD_BUTTONS, buyButtonGamepadImage)
 
-		local CancelButton = createImageButtonWithText("CancelButton", BTN_R_POS, BUTTON_RIGHT, BUTTON_RIGHT_DOWN, "Cancel", Enum.Font.SourceSans)
+		local CancelButton = createImageButtonWithText("CancelButton", isTenFootInterface and BTN_R_POS_TENFOOT or BTN_R_POS, BUTTON_RIGHT, BUTTON_RIGHT_DOWN, "Cancel", Enum.Font.SourceSans)
 		CancelButton.Parent = ContainerFrame
 		
 		local cancelButtonGamepadImage = buyButtonGamepadImage:Clone()
@@ -280,7 +298,7 @@ PurchaseDialog.Parent = RobloxGui
 		cancelButtonGamepadImage.Parent = CancelButton
 		table.insert(GAMEPAD_BUTTONS, cancelButtonGamepadImage)
 
-		local BuyRobuxButton = createImageButtonWithText("BuyRobuxButton", BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, IsNativePurchasing and "Buy" or "Buy R$",
+		local BuyRobuxButton = createImageButtonWithText("BuyRobuxButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, IsNativePurchasing and "Buy" or "Buy R$",
 			Enum.Font.SourceSansBold)
 		BuyRobuxButton.Visible = false
 		BuyRobuxButton.Parent = ContainerFrame
@@ -290,7 +308,7 @@ PurchaseDialog.Parent = RobloxGui
 		buyRobuxGamepadImage.Parent = BuyRobuxButton
 		table.insert(GAMEPAD_BUTTONS, buyRobuxGamepadImage)
 
-		local BuyBCButton = createImageButtonWithText("BuyBCButton", BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Upgrade", Enum.Font.SourceSansBold)
+		local BuyBCButton = createImageButtonWithText("BuyBCButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Upgrade", Enum.Font.SourceSansBold)
 		BuyBCButton.Visible = false
 		BuyBCButton.Parent = ContainerFrame
 		
@@ -299,12 +317,12 @@ PurchaseDialog.Parent = RobloxGui
 		buyBCGamepadImage.Parent = BuyBCButton
 		table.insert(GAMEPAD_BUTTONS, buyBCGamepadImage)
 
-		local FreeButton = createImageButtonWithText("FreeButton", BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Take Free", Enum.Font.SourceSansBold)
+		local FreeButton = createImageButtonWithText("FreeButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Take Free", Enum.Font.SourceSansBold)
 		FreeButton.Visible = false
 		FreeButton.Parent = ContainerFrame
 
-		local OkButton = createImageButtonWithText("OkButton", UDim2.new(0, 2, 0, 136), BUTTON, BUTTON_DOWN, "OK", Enum.Font.SourceSans)
-		OkButton.Size = UDim2.new(0, 320, 0, 44)
+		local OkButton = createImageButtonWithText("OkButton", isTenFootInterface and UDim2.new(0, 2, 0, 136*scaleFactor) or UDim2.new(0, 2, 0, 136), BUTTON, BUTTON_DOWN, "OK", Enum.Font.SourceSans)
+		OkButton.Size = isTenFootInterface and UDim2.new(0, 320*scaleFactor, 0, 44*scaleFactor) or UDim2.new(0, 320, 0, 44)
 		OkButton.Visible = false
 		OkButton.Parent = ContainerFrame
 		
@@ -313,8 +331,8 @@ PurchaseDialog.Parent = RobloxGui
 		okButtonGamepadImage.Parent = OkButton
 		table.insert(GAMEPAD_BUTTONS, okButtonGamepadImage)
 
-		local OkPurchasedButton = createImageButtonWithText("OkPurchasedButton", UDim2.new(0, 2, 0, 136), BUTTON, BUTTON_DOWN, "OK", Enum.Font.SourceSans)
-		OkPurchasedButton.Size = UDim2.new(0, 320, 0, 44)
+		local OkPurchasedButton = createImageButtonWithText("OkPurchasedButton", isTenFootInterface and UDim2.new(0, 2, 0, 136*scaleFactor) or UDim2.new(0, 2, 0, 136), BUTTON, BUTTON_DOWN, "OK", Enum.Font.SourceSans)
+		OkPurchasedButton.Size = isTenFootInterface and UDim2.new(0, 320*scaleFactor, 0, 44*scaleFactor) or UDim2.new(0, 320, 0, 44)
 		OkPurchasedButton.Visible = false
 		OkPurchasedButton.Parent = ContainerFrame
 		
@@ -329,7 +347,7 @@ PurchaseDialog.Parent = RobloxGui
 	PurchaseFrame.Parent = PurchaseDialog
 
 		local PurchaseText = createTextLabel("PurchaseText", nil, UDim2.new(0.5, 0, 0.5, -36), Enum.Font.SourceSans,
-			Enum.FontSize.Size36, "Purchasing")
+			isTenFootInterface and largeFont or Enum.FontSize.Size36, "Purchasing")
 		PurchaseText.Parent = PurchaseFrame
 
 		local LoadingFrames = {}
@@ -340,6 +358,21 @@ PurchaseDialog.Parent = RobloxGui
 			frame.Parent = PurchaseFrame
 			xOffset = xOffset + 32
 		end
+		
+		
+local function noOpFunc() end
+
+local function enableControllerMovement()
+	game:GetService("ContextActionService"):UnbindCoreAction(freezeThumbstick1Name)
+	game:GetService("ContextActionService"):UnbindCoreAction(freezeThumbstick2Name)
+	game:GetService("ContextActionService"):UnbindCoreAction(freezeControllerActionName)
+end
+
+local function disableControllerMovement()
+	game:GetService("ContextActionService"):BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
+	game:GetService("ContextActionService"):BindCoreAction(freezeThumbstick1Name, noOpFunc, false, Enum.KeyCode.Thumbstick1)
+	game:GetService("ContextActionService"):BindCoreAction(freezeThumbstick2Name, noOpFunc, false, Enum.KeyCode.Thumbstick2)
+end
 
 --[[ Purchase Data Functions ]]--
 local function getCurrencyString(currencyType)
@@ -490,15 +523,15 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 	if not isFree then
 		if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
 			TixIcon.Visible = true
-			TixIcon.Position = UDim2.new(0, 110, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + 6)
+			TixIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + (isTenFootInterface and 6*scaleFactor or 6))
 			CostText.TextColor3 = Color3.new(204/255, 158/255, 113/255)
 		else
 			RobuxIcon.Visible = true
-			RobuxIcon.Position = UDim2.new(0, 110, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + 6)
+			RobuxIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + (isTenFootInterface and 6*scaleFactor or 6))
 			CostText.TextColor3 = Color3.new(2/255, 183/255, 87/255)
 		end
 		CostText.Text = formatNumber(PurchaseData.CurrencyAmount)
-		CostText.Position = UDim2.new(0, 134, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + 15)
+		CostText.Position = UDim2.new(0, isTenFootInterface and 134*scaleFactor or 134, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + (isTenFootInterface and 15*scaleFactor or 15))
 		CostText.Visible = true
 	end
 
@@ -593,7 +626,8 @@ end
 local function showPurchasePrompt()
 	stopPurchaseAnimation()
 	PurchaseDialog.Visible = true
-	PurchaseDialog:TweenPosition(SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
+	PurchaseDialog:TweenPosition(isTenFootInterface and SHOW_POSITION_TENFOOT or SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
+	disableControllerMovement()
 	enableControllerInput()
 end
 
@@ -636,7 +670,7 @@ local function onPurchaseFailed(failType)
 end
 
 local function closePurchaseDialog()
-	PurchaseDialog:TweenPosition(HIDE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true, function()
+	PurchaseDialog:TweenPosition(isTenFootInterface and HIDE_POSITION_TENFOOT or HIDE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true, function()
 			PurchaseDialog.Visible = false
 			IsCurrentlyPrompting = false
 			IsCurrentlyPurchasing = false
@@ -653,6 +687,7 @@ local function onPromptEnded(isSuccess)
 		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, isSuccess)
 	end
 	clearPurchaseData()
+	enableControllerMovement()
 	disableControllerInput()
 end
 
@@ -1095,7 +1130,7 @@ function enableControllerInput()
 	local cas = game:GetService("ContextActionService")
 	
 	--accept the purchase when the user presses the a button
-	cas:BindAction(
+	cas:BindCoreAction(
 		CONTROLLER_CONFIRM_ACTION_NAME,
 		function(actionName, inputState, inputObject)
 			if inputState ~= Enum.UserInputState.Begin then return end
@@ -1115,7 +1150,7 @@ function enableControllerInput()
 	)
 
 	--cancel the purchase when the user presses the b button
-	cas:BindAction(
+	cas:BindCoreAction(
 		CONTROLLER_CANCEL_ACTION_NAME,
 		function(actionName, inputState, inputObject)
 			if inputState ~= Enum.UserInputState.Begin then return end
@@ -1131,8 +1166,8 @@ end
 
 function disableControllerInput()
 	local cas = game:GetService("ContextActionService")
-	cas:UnbindAction(CONTROLLER_CONFIRM_ACTION_NAME)
-	cas:UnbindAction(CONTROLLER_CANCEL_ACTION_NAME)
+	cas:UnbindCoreAction(CONTROLLER_CONFIRM_ACTION_NAME)
+	cas:UnbindCoreAction(CONTROLLER_CANCEL_ACTION_NAME)
 end
 
 function showGamepadButtons()
@@ -1156,16 +1191,23 @@ function valueInTable(val, tab)
 	return false
 end
 
-function onInputBegan(inputObject)
+function onInputChanged(inputObject)
 	local input = inputObject.UserInputType
 	local inputs = Enum.UserInputType
 	if valueInTable(input, {inputs.Gamepad1, inputs.Gamepad2, inputs.Gamepad3, inputs.Gamepad4}) then
-		showGamepadButtons()
+		if inputObject.KeyCode == Enum.KeyCode.Thumbstick1 or inputObject.KeyCode == Enum.KeyCode.Thumbstick2 then
+			if math.abs(inputObject.Position.X) > 0.1 or math.abs(inputObject.Position.Z) > 0.1 or math.abs(inputObject.Position.Y) > 0.1 then
+				showGamepadButtons()
+			end
+		else
+			showGamepadButtons()
+		end
 	else
 		hideGamepadButtons()
 	end
 end
-game:GetService("UserInputService").InputBegan:connect(onInputBegan)
+UserInputService.InputChanged:connect(onInputChanged)
+UserInputService.InputBegan:connect(onInputChanged)
 hideGamepadButtons()
 
 --[[ Event Connections ]]--
