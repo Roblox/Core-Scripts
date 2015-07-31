@@ -6,6 +6,8 @@
 --]]
 -------------- CONSTANTS --------------
 local HEALTH_GREEN_COLOR = Color3.new(27/255, 252/255, 107/255)
+local DISPLAY_POS_INIT_INSET = 0
+local DISPLAY_ITEM_OFFSET = 4
 
 -------------- SERVICES --------------
 local CoreGui = game:GetService("CoreGui")
@@ -42,30 +44,100 @@ end
 
 local function CreateModule()
 	local this = {}
+	local nextObjectDisplayYPos = DISPLAY_POS_INIT_INSET
+	local displayStack = {}
 
 	-- setup base gui
-	do
-		this.Container = Util.Create'ImageButton'
-		{
-			Name = "TopRightContainer";
-			Size = UDim2.new(0, 350, 0, 100);
-			Position = UDim2.new(1,-360,0,10);
-			AutoButtonColor = false;
-			Image = "";
-			BackgroundTransparency = 1;
-			Parent = RobloxGui;
-		};
+	local function createContainer()
+		if not this.Container then
+			this.Container = Util.Create'ImageButton'
+			{
+				Name = "TopRightContainer";
+				Size = UDim2.new(0, 350, 0, 100);
+				Position = UDim2.new(1,-360,0,10);
+				AutoButtonColor = false;
+				Image = "";
+				Active = false;
+				BackgroundTransparency = 1;
+				Parent = RobloxGui;
+			};
+		end
+	end
+
+	function removeFromDisplayStack(displayObject)
+		local moveUpFromHere = nil
+
+		for i = 1, #displayStack do
+			if displayStack[i] == displayObject then
+				moveUpFromHere = i + 1
+				break
+			end
+		end
+
+		local prevObject = displayObject
+		for i = moveUpFromHere, #displayStack do
+			local objectToMoveUp = displayStack[i]
+			objectToMoveUp.Position = UDim2.new(objectToMoveUp.Position.X.Scale, objectToMoveUp.Position.X.Offset,
+												objectToMoveUp.Position.Y.Scale, prevObject.AbsolutePosition.Y)
+			prevObject = objectToMoveUp
+		end
+	end
+
+	function addBackToDisplayStack(displayObject)
+		for i = 1, #displayStack do
+			if displayStack[i] == displayObject then
+				moveDownFromHere = i + 1
+				break
+			end
+		end
+
+		local prevObject = displayObject
+		for i = moveDownFromHere, #displayStack do
+			local objectToMoveDown = displayStack[i]
+			local nextDisplayPos = prevObject.AbsolutePosition.Y + prevObject.AbsoluteSize.Y + DISPLAY_ITEM_OFFSET
+			objectToMoveDown.Position = UDim2.new(objectToMoveDown.Position.X.Scale, objectToMoveDown.Position.X.Offset,
+												objectToMoveDown.Position.Y.Scale, nextDisplayPos)
+			prevObject = objectToMoveDown
+		end
+	end
+
+	function addToDisplayStack(displayObject)
+		local lastDisplayed = nil
+		if #displayStack > 0 then
+			lastDisplayed = displayStack[#displayStack]
+		end
+		displayStack[#displayStack + 1] = displayObject
+
+		local nextDisplayPos = DISPLAY_POS_INIT_INSET
+		if lastDisplayed then
+			nextDisplayPos = lastDisplayed.AbsolutePosition.Y + lastDisplayed.AbsoluteSize.Y + DISPLAY_ITEM_OFFSET
+		end
+
+		displayObject.Position = UDim2.new(displayObject.Position.X.Scale, displayObject.Position.X.Offset,
+											displayObject.Position.Y.Scale, nextDisplayPos)
+
+		createContainer()
+		displayObject.Parent = this.Container
+
+		displayObject.Changed:connect(function(prop)
+			if prop == "Visible" then
+				if not displayObject.Visible then
+					removeFromDisplayStack(displayObject)
+				else
+					addBackToDisplayStack(displayObject)
+				end
+			end
+		end)
 	end
 
 	function this:CreateHealthBar()
-		local healthContainer = Util.Create'Frame'{
+		this.HealthContainer = Util.Create'Frame'{
 			Name = "HealthContainer";
-			Size = UDim2.new(1, -66, 0, 50);
-			Position = UDim2.new(0, 67, 0, 0);
+			Size = UDim2.new(1, -86, 0, 50);
+			Position = UDim2.new(0, 92, 0, 0);
 			BorderSizePixel = 0;
 			BackgroundColor3 = Color3.new(0,0,0);
 			BackgroundTransparency = 0.5;
-			Parent = this.Container;
 		};
 
 		local healthFill = Util.Create'Frame'{
@@ -74,26 +146,34 @@ local function CreateModule()
 			Position = UDim2.new(0, 5, 0, 5);
 			BorderSizePixel = 0;
 			BackgroundColor3 = HEALTH_GREEN_COLOR;
-			Parent = healthContainer;
+			Parent = this.HealthContainer;
 		};
 
 		local healthText = Util.Create'TextLabel'{
 			Name = "HealthText";
-			Size = UDim2.new(0, 65, 0, 50);
+			Size = UDim2.new(0, 88, 0, 50);
+			Position = UDim2.new(0, -90, 0, 0);
 			BackgroundTransparency = 0.5;
 			BackgroundColor3 = Color3.new(0,0,0);
 			Font = Enum.Font.SourceSans;
-			FontSize = Enum.FontSize.Size24;
+			FontSize = Enum.FontSize.Size36;
 			Text = "Health";
 			TextColor3 = Color3.new(1,1,1);
 			BorderSizePixel = 0;
-			Parent = this.Container;
+			Parent = this.HealthContainer;
 		};
 
-		return this.Container, username, healthContainer, healthFill
+		local username = Util.Create'TextLabel'{
+			Visible = false
+		}
+
+		addToDisplayStack(this.HealthContainer)
+		createContainer()
+		
+		return this.Container, username, this.HealthContainer, healthFill
 	end
 
-	function this:SetupPlayerList()
+	function this:SetupTopStat()
 		local displayedStat = nil
 		local displayedStatChangedCon = nil
 		local displayedStatParentedCon = nil
@@ -105,30 +185,33 @@ local function CreateModule()
 			tenFootInterfaceStat = Util.Create'Frame'{
 				Name = "OneStatFrame";
 				Size = UDim2.new(1, 0, 0, 36);
-				Position = UDim2.new(0, 0, 0, 32);
+				Position = UDim2.new(0, 0, 0, 0);
 				BorderSizePixel = 0;
 				BackgroundTransparency = 1;
-				Parent = this.Container;
 			};
 			local statName = Util.Create'TextLabel'{
 				Name = "StatName";
-				Size = UDim2.new(1,0,0,24);
+				Size = UDim2.new(0.5,0,0,24);
 				BackgroundTransparency = 1;
 				Font = Enum.Font.SourceSans;
-				FontSize = Enum.FontSize.Size24;
+				FontSize = Enum.FontSize.Size36;
 				TextStrokeColor3 = Color3.new(104/255, 104/255, 104/255);
 				TextStrokeTransparency = 0;
 				Text = " StatName:";
 				TextColor3 = Color3.new(1,1,1);
 				TextXAlignment = Enum.TextXAlignment.Left;
 				BorderSizePixel = 0;
+				ClipsDescendants = true;
 				Parent = tenFootInterfaceStat;
 			};
 			local statValue = statName:clone()
+			statValue.Position = UDim2.new(0.5,0,0,0)
 			statValue.Name = "StatValue"
 			statValue.Text = "123,643,231"
 			statValue.TextXAlignment = Enum.TextXAlignment.Right
 			statValue.Parent = tenFootInterfaceStat
+
+			addToDisplayStack(tenFootInterfaceStat)
 		end
 
 		local function tenFootInterfaceRemoveStat( statToRemove )
@@ -229,8 +312,8 @@ local moduleApiTable = {}
 		return TenFootInterfaceModule:CreateHealthBar()
 	end
 
-	function moduleApiTable:SetupPlayerList()
-		return TenFootInterfaceModule:SetupPlayerList()
+	function moduleApiTable:SetupTopStat()
+		return TenFootInterfaceModule:SetupTopStat()
 	end
 
 return moduleApiTable

@@ -70,10 +70,31 @@ local IsShowingNeutralFrame = false
 local LastSelectedFrame = nil
 local LastSelectedPlayer = nil
 local MinContainerSize = UDim2.new(0, 165, 0.5, 0)
+if isTenFootInterface then
+	MinContainerSize = UDim2.new(0, 1000, 0, 720)
+end
+
 local PlayerEntrySizeY = 24
+if isTenFootInterface then
+	PlayerEntrySizeY = 48
+end
+
 local TeamEntrySizeY = 18
+
+if isTenFootInterface then
+	TeamEntrySizeY = 32
+end
+
 local NameEntrySizeX = 170
+if isTenFootInterface then
+	NameEntrySizeX = 300
+end
+
 local StatEntrySizeX = 75
+if isTenFootInterface then
+	StatEntrySizeX = 250
+end
+
 local IsSmallScreenDevice = UserInputService.TouchEnabled and GuiService:GetScreenResolution().Y <= 500
 
 --[[ Bindables ]]--
@@ -274,23 +295,31 @@ local function getAdminIcon(player)
 	end
 end
 
+local function getGamerIcon()
+
+end
+
 local function getMembershipIcon(player)
-	local userIdStr = tostring(player.userId)
-	local membershipType = player.MembershipType
-	if ADMINS[userIdStr] then
-		return ADMINS[userIdStr]
-	elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
-		return PLACE_OWNER_ICON
-	elseif membershipType == Enum.MembershipType.None then
-		return nil
-	elseif membershipType == Enum.MembershipType.BuildersClub then
-		return BC_ICON
-	elseif membershipType == Enum.MembershipType.TurboBuildersClub then
-		return TBC_ICON
-	elseif membershipType == Enum.MembershipType.OutrageousBuildersClub then
-		return OBC_ICON
+	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		return getGamerIcon()
 	else
-		error("PlayerList: Unknown value for membershipType"..tostring(membershipType))
+		local userIdStr = tostring(player.userId)
+		local membershipType = player.MembershipType
+		if ADMINS[userIdStr] then
+			return ADMINS[userIdStr]
+		elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
+			return PLACE_OWNER_ICON
+		elseif membershipType == Enum.MembershipType.None then
+			return nil
+		elseif membershipType == Enum.MembershipType.BuildersClub then
+			return BC_ICON
+		elseif membershipType == Enum.MembershipType.TurboBuildersClub then
+			return TBC_ICON
+		elseif membershipType == Enum.MembershipType.OutrageousBuildersClub then
+			return OBC_ICON
+		else
+			error("PlayerList: Unknown value for membershipType"..tostring(membershipType))
+		end
 	end
 end
 
@@ -336,8 +365,14 @@ end
 -- Start of Gui Creation
 local Container = Instance.new('Frame')
 Container.Name = "PlayerListContainer"
-Container.Position = UDim2.new(1, -167, 0, 2)
-Container.Size = MinContainerSize
+if isTenFootInterface then
+	Container.Position = UDim2.new(0.5, -MinContainerSize.X.Offset/2, 0.25, 0)
+	Container.Size = MinContainerSize
+else
+	Container.Position = UDim2.new(1, -167, 0, 2)
+	Container.Size = MinContainerSize
+end
+
 Container.BackgroundTransparency = 1
 Container.Visible = false
 Container.Parent = RobloxGui
@@ -604,7 +639,11 @@ local function createEntryNameText(name, text, sizeXOffset, posXOffset)
 	nameLabel.Position = UDim2.new(0.01, posXOffset, 0.245, 0)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Font = Enum.Font.SourceSans
-	nameLabel.FontSize = Enum.FontSize.Size14
+	if isTenFootInterface then
+		nameLabel.FontSize = Enum.FontSize.Size32
+	else
+		nameLabel.FontSize = Enum.FontSize.Size14
+	end
 	nameLabel.TextColor3 = TEXT_COLOR
 	nameLabel.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
 	nameLabel.TextStrokeColor3 = TEXT_STROKE_COLOR
@@ -634,7 +673,11 @@ local function createStatText(parent, text)
 	statText.Position = UDim2.new(0, 0, 0, 0)
 	statText.BackgroundTransparency = 1
 	statText.Font = Enum.Font.SourceSans
-	statText.FontSize = Enum.FontSize.Size14
+	if isTenFootInterface then
+		statText.FontSize = Enum.FontSize.Size32
+	else
+		statText.FontSize = Enum.FontSize.Size14
+	end
 	statText.TextColor3 = TEXT_COLOR
 	statText.TextStrokeColor3 = TEXT_STROKE_COLOR
 	statText.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
@@ -796,7 +839,11 @@ local function createPopupFrame(buttons)
 		btn.BorderSizePixel = 0
 		btn.Text = button.Text
 		btn.Font = Enum.Font.SourceSans
-		btn.FontSize = Enum.FontSize.Size14
+		if isTenFootInterface then
+			btn.FontSize = Enum.FontSize.Size32
+		else
+			btn.FontSize = Enum.FontSize.Size14
+		end
 		btn.TextColor3 = TEXT_COLOR
 		btn.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
 		btn.TextStrokeColor3 = TEXT_STROKE_COLOR
@@ -1426,8 +1473,15 @@ updateLeaderstatFrames = function()
 				offset = offset + statFrame.Size.X.Offset + 2
 			end
 		end
-		Container.Position = UDim2.new(1, -offset, 0, 2)
-		Container.Size = UDim2.new(0, offset, 0.5, 0)
+
+		if isTenFootInterface then
+			Container.Position = UDim2.new(0.5, -offset/2, 0, 110)
+			Container.Size = UDim2.new(0, offset, 0.8, 0)
+		else
+			Container.Position = UDim2.new(1, -offset, 0, 2)
+			Container.Size = UDim2.new(0, offset, 0.5, 0)
+		end
+
 		local newMinContainerOffset = offset
 		MinContainerSize = UDim2.new(0, newMinContainerOffset, 0.5, 0)
 	end
@@ -1580,16 +1634,23 @@ local function setLeaderStats(entry)
 		end
 	end)
 end
+
+local offsetSize = 18
+if isTenFootInterface then offsetSize = 32 end
+
 local function createPlayerEntry(player)
 	local playerEntry = {}
 	local name = player.Name
 
 	local containerFrame, entryFrame = createEntryFrame(name, PlayerEntrySizeY)
 	entryFrame.Active = true
-	local function localEntrySelected()
-		onEntryFrameSelected(containerFrame, player)
+
+	if not isTenFootInterface then
+		local function localEntrySelected()
+			onEntryFrameSelected(containerFrame, player)
+		end
+		entryFrame.MouseButton1Click:connect(localEntrySelected)
 	end
-	entryFrame.MouseButton1Click:connect(localEntrySelected)
 
 	local currentXOffset = 1
 
@@ -1600,7 +1661,7 @@ local function createPlayerEntry(player)
 		membershipIcon = createImageIcon(membershipIconImage, "MembershipIcon", currentXOffset, entryFrame)
 		currentXOffset = currentXOffset + membershipIcon.Size.X.Offset + 2
 	else
-		currentXOffset = currentXOffset + 18
+		currentXOffset = currentXOffset + offsetSize
 	end
 
 	-- Some functions yield, so we need to spawn off in order to not cause a race condition with other events like Players.ChildRemoved
@@ -1683,8 +1744,6 @@ end
 
 --[[ Insert/Remove Player Functions ]]--
 local function insertPlayerEntry(player)
-	if isTenFootInterface then return end
-
 	local entry = createPlayerEntry(player)
 	if player == Player then
 		MyPlayerEntry = entry.Frame
@@ -1706,8 +1765,6 @@ local function insertPlayerEntry(player)
 end
 
 local function removePlayerEntry(player)
-	if isTenFootInterface then return end
-
 	for i = 1, #PlayerEntries do
 		if PlayerEntries[i].Player == player then
 			PlayerEntries[i].Frame:Destroy()
@@ -1927,7 +1984,11 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 			Container.Visible = false
 			return
 		end
-		Container.Visible = enabled and isOpen
+		if not isTenFootInterface then
+			Container.Visible = enabled and isOpen
+		else
+			
+		end
 		if enabled then
 			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
 		else
@@ -1946,7 +2007,7 @@ if GuiService then
 end
 
 if isTenFootInterface then
-	TenFootInterface:SetupPlayerList()
+	TenFootInterface:SetupTopStat()
 end
 
 return Playerlist
