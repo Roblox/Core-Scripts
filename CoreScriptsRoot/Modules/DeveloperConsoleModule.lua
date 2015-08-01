@@ -2708,7 +2708,9 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 		[Enum.UserInputType.MouseButton1] = true;
 		[Enum.UserInputType.Touch] = true; -- I'm not sure if touch actually works here
 	}
-
+	
+	local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+	
 	local function startDragging()
 		if dragging then
 			return
@@ -2718,15 +2720,8 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 		mouseInteractCallback(dragging, hovering)
 		local deltaCallback;
 		
-		local x0, y0;
-		listeners[#listeners + 1] = UserInputService.InputBegan:connect(function(input)
-			if ButtonUserInputTypes[input.UserInputType] then
-				local position = input.Position
-				if position and not x0 then
-					x0, y0 = position.X, position.Y -- The same click
-				end
-			end
-		end)
+		local x0, y0 = mouse.X, mouse.Y;
+
 		listeners[#listeners + 1] = UserInputService.InputEnded:connect(function(input)
 			if ButtonUserInputTypes[input.UserInputType] then
 				stopDragging()
@@ -2740,7 +2735,7 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 			if not p1 then
 				return
 			end
-			local x1, y1 = p1.X, p1.Y
+			local x1, y1 = mouse.X, mouse.Y --p1.X, p1.Y
 			if not deltaCallback then
 				deltaCallback, disconnectCallback = dragCallback(x0 or x1, y0 or y1)
 			end
@@ -2775,11 +2770,17 @@ end
 -- Permissions --
 -----------------
 do
+	local loading = false
+	local onLoaded = CreateSignal()
 	local permissions;
 	function DeveloperConsole.GetPermissions()
+		if loading then
+			onLoaded:wait()
+		end
 		if permissions then
 			return permissions
 		end
+		loading = true
 		permissions = {}
 		
 		pcall_warn("FFlagUseCanManageApiToDetermineConsoleAccess", function()
@@ -2831,6 +2832,9 @@ do
 		permissions.MayViewServerStats = permissions.IsCreator
 		permissions.MayViewServerScripts = permissions.IsCreator
 		permissions.MayViewServerJobs = permissions.IsCreator
+		loading = false
+		
+		onLoaded:fire()
 		
 		return permissions
 		

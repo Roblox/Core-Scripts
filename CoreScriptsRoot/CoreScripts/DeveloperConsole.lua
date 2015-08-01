@@ -19,12 +19,18 @@ if useNewConsole then
 	ToggleConsole.Parent = screenGui
 
 	local developerConsole;
+	local debounce = false
 	function ToggleConsole.OnInvoke(duplicate)
+		if debounce then
+			return
+		end
 		RequireDeveloperConsoleModule()
 		if not developerConsole or duplicate == true then
+			debounce = true
 			local permissions = DeveloperConsoleModule.GetPermissions()
 			local messagesAndStats = DeveloperConsoleModule.GetMessagesAndStats(permissions)
 			developerConsole = DeveloperConsoleModule.new(screenGui, permissions, messagesAndStats)
+			debounce = false
 			developerConsole:SetVisible(true)
 		else
 			developerConsole:SetVisible(not developerConsole.Visible)
