@@ -414,28 +414,41 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 	end
 end)
 
-local leaveGameButton, leaveGameTextLabel = nil
+local leaveGameButton, leaveGameTextLabel, errorImage = nil
 
 guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
 		if isTenFootInterface then 
-			currScreenGui.ErrorFrame.Size = UDim2.new(0.5, 0, 0, 160)
-			currScreenGui.ErrorFrame.Position = UDim2.new(0.25, 0, .5, -75)
+			currScreenGui.ErrorFrame.Size = UDim2.new(1, 0, 0, 144)
+			currScreenGui.ErrorFrame.Position = UDim2.new(0, 0, 0, 0)
+			currScreenGui.ErrorFrame.BackgroundColor3 = COLORS.BLACK
+			currScreenGui.ErrorFrame.BackgroundTransparency = 0.5
 			currScreenGui.ErrorFrame.ErrorText.FontSize = Enum.FontSize.Size36 
-			currScreenGui.ErrorFrame.ErrorText.Size = UDim2.new(1, 0, 0, 100)
+			currScreenGui.ErrorFrame.ErrorText.Position = UDim2.new(.3, 0, 0, 0) 
+			currScreenGui.ErrorFrame.ErrorText.Size = UDim2.new(.4, 0, 0, 144)
+			if errorImage == nil then
+				errorImage = Instance.new("ImageLabel")
+				errorImage.Image = "rbxasset://textures/ui/ErrorIconSmall.png"
+				errorImage.Size = UDim2.new(0, 96, 0, 79)
+				errorImage.Position = UDim2.new(0.228125, 0, 0, 32)
+				errorImage.ZIndex = 9
+				errorImage.BackgroundTransparency = 1
+				errorImage.Parent = currScreenGui.ErrorFrame
+			end
 			if leaveGameButton == nil then
 				local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
 				local utility = require(RobloxGui.Modules.Settings.Utility)
 				local textLabel = nil
-				leaveGameButton, leaveGameTextLabel = utility:MakeStyledButton("LeaveGame", "Leave Game", UDim2.new(.5, 0, 0, 50))
+				leaveGameButton, leaveGameTextLabel = utility:MakeStyledButton("LeaveGame", "Leave", UDim2.new(0, 288, 0, 78))
 				leaveGameButton:SetVerb("Exit")
 				leaveGameButton.NextSelectionDown = nil
 				leaveGameButton.NextSelectionLeft = nil
 				leaveGameButton.NextSelectionRight = nil 
 				leaveGameButton.NextSelectionUp = nil
 				leaveGameButton.ZIndex = 9
-				leaveGameButton.Position = UDim2.new(.25, 0, 0, 100)
+				leaveGameButton.Position = UDim2.new(0.771875, 0, 0, 37)
 				leaveGameButton.Parent = currScreenGui.ErrorFrame
+				leaveGameTextLabel.FontSize = Enum.FontSize.Size36 
 				leaveGameTextLabel.ZIndex = 10
 				game:GetService("GuiService").SelectedCoreObject = leaveGameButton
 			else

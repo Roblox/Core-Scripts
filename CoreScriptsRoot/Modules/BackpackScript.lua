@@ -76,6 +76,12 @@ local GuiService = game:GetService('GuiService')
 local CoreGui = game:GetService('CoreGui')
 local ContextActionService = game:GetService('ContextActionService')
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+
+if isTenFootInterface then
+	ICON_SIZE = 100
+end
 
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue

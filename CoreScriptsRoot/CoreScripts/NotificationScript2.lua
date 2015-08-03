@@ -40,6 +40,8 @@ local BindableEvent_SendNotification = Instance.new('BindableFunction')
 BindableEvent_SendNotification.Name = "SendNotification"
 BindableEvent_SendNotification.Parent = RbxGui
 local isPaused = false
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
 local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
@@ -343,7 +345,6 @@ local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 		end
 	end
 end
-Players.FriendRequestEvent:connect(onFriendRequestEvent)
 
 --[[ Player Points Notifications ]]--
 local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
@@ -357,7 +358,6 @@ local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTot
 		end
 	end
 end
-PointsService.PointsAwarded:connect(onPointsAwarded)
 
 --[[ Badge Notification ]]--
 local function onBadgeAwarded(message, userId, badgeId)
@@ -365,10 +365,9 @@ local function onBadgeAwarded(message, userId, badgeId)
 		sendNotifcation("Badge Awarded", message, BADGE_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
 	end
 end
-BadgeService.BadgeAwarded:connect(onBadgeAwarded)
 
 --[[ Graphics Changes Notification ]]--
-GameSettings.Changed:connect(function(property)
+function onGameSettingsChanged(property)
 	if property == "SavedQualityLevel" then
 		local level = GameSettings.SavedQualityLevel.Value
 		-- value of 0 is automatic, we do not want to send a notification in that case
@@ -381,7 +380,15 @@ GameSettings.Changed:connect(function(property)
 			CurrentGraphicsQualityLevel = level
 		end
 	end
-end)
+end
+
+--[[ Connections ]]--
+if not isTenFootInterface then
+	Players.FriendRequestEvent:connect(onFriendRequestEvent)
+	PointsService.PointsAwarded:connect(onPointsAwarded)
+	BadgeService.BadgeAwarded:connect(onBadgeAwarded)
+	GameSettings.Changed:connect(onGameSettingsChanged)
+end
 
 --[[ Teleport Notifications ]]--
 local TeleportMessage = nil
@@ -490,7 +497,7 @@ local function onClientLuaDialogRequested(msg, accept, decline)
 end
 MarketplaceService.ClientLuaDialogRequested:connect(onClientLuaDialogRequested)
 
-if useNewControllerMenu then
+if useNewControllerMenu and not isTenFootInterface then
 	local gamepadMenu = RobloxGui:WaitForChild("CoreScripts/GamepadMenu")
 	local gamepadNotifications = gamepadMenu:FindFirstChild("GamepadNotifications")
 	while not gamepadNotifications do
