@@ -18,6 +18,18 @@ local COLORS = {
 	ERROR = Color3.new(253/255,68/255,72/255)
 }
 
+local function getViewportSize()
+	while not game.Workspace.CurrentCamera do
+		game.Workspace.Changed:wait()
+	end
+
+	while game.Workspace.CurrentCamera.ViewportSize == Vector2.new(0,0) do
+		game.Workspace.CurrentCamera.Changed:wait()
+	end
+
+	return game.Workspace.CurrentCamera.ViewportSize
+end
+
 --
 -- Variables
 local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
@@ -306,18 +318,6 @@ end
 function round(num, idp)
   local mult = 10^(idp or 0)
   return math.floor(num * mult + 0.5) / mult
-end
-
-local function getViewportSize()
-	while not game.Workspace.CurrentCamera do
-		game.Workspace.Changed:wait()
-	end
-
-	while game.Workspace.CurrentCamera.ViewportSize == Vector2.new(0,0) do
-		game.Workspace.CurrentCamera.Changed:wait()
-	end
-
-	return game.Workspace.CurrentCamera.ViewportSize
 end
 
 ---------------------------------------------------------
