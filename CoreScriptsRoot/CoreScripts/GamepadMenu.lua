@@ -90,6 +90,18 @@ local function activateSelectedRadialButton()
 	return false
 end
 
+local function setButtonEnabled(button, enabled)
+	if enabled then
+		button.ImageTransparency = 0
+		button.RadialIcon.ImageTransparency = 0
+	else
+		button.ImageTransparency = 0.5
+		button.RadialIcon.ImageTransparency = 0.5
+	end
+
+	radialButtons[button]["Disabled"] = not enabled
+end
+
 local function setRadialButtonEnabled(coreGuiType, enabled)
 	local returnValue = getButtonForCoreGuiType(coreGuiType)
 	if not returnValue then return end
@@ -107,16 +119,7 @@ local function setRadialButtonEnabled(coreGuiType, enabled)
 
 	for i = 1, #buttonsToDisable do
 		local button = buttonsToDisable[i]
-
-		if enabled then
-			button.ImageTransparency = 0
-			button.RadialIcon.ImageTransparency = 0
-		else
-			button.ImageTransparency = 0.5
-			button.RadialIcon.ImageTransparency = 0.5
-		end
-
-		radialButtons[button]["Disabled"] = not enabled
+		setButtonEnabled(button, enabled)
 	end
 end
 
@@ -279,6 +282,9 @@ local function createGamepadMenuGui()
 		gamepadNotifications:Fire(true)
 	end
 	local notificationsRadial = createRadialButton("Notifications", "Notifications", 3, false, nil, notificationsFunc)
+	if isTenFootInterface then
+		setButtonEnabled(notificationsRadial, false)
+	end
 	notificationsRadial.Parent = gamepadSettingsFrame
 
 	---------------------------------
@@ -309,6 +315,9 @@ local function createGamepadMenuGui()
 		ChatModule:ToggleVisibility()
 	end
 	local chatRadial = createRadialButton("Chat", "Chat", 6, not StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat), Enum.CoreGuiType.Chat, chatFunc)
+	if isTenFootInterface then
+		setButtonEnabled(chatRadial, false)
+	end
 	chatRadial.Parent = gamepadSettingsFrame
 
 
