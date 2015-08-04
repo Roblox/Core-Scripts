@@ -241,8 +241,6 @@ local function CreateSettingsHub()
 			local bottomOffset = 20
 			if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
 				bottomOffset = 80
-			elseif isTenFootInterface then
-				bottomOffset = 200
 			end
 			this.BottomButtonFrame = utility:Create'Frame'
 			{
@@ -253,6 +251,9 @@ local function CreateSettingsHub()
 				BackgroundTransparency = 1,
 				Parent = this.Shield
 			};
+			if isTenFootInterface then
+				this.BottomButtonFrame.Position =  UDim2.new(0.5, -this.HubBar.Size.X.Offset/2, 0.9, -this.HubBar.Size.Y.Offset)
+			end
 
 			local leaveGameFunc = function()
 				this:AddToMenuStack(this.Pages.CurrentPage)
