@@ -26,6 +26,7 @@ local isVisible = false
 local smallScreen = utility:IsSmallTouchScreen()
 local isTenFootInterface = tenFootInterface:IsEnabled()
 local radialButtons = {}
+local lastInputChangedCon = nil
 
 local function getButtonForCoreGuiType(coreGuiType)
 	if coreGuiType == Enum.CoreGuiType.All then
@@ -488,16 +489,24 @@ local function setupGamepadControls()
 		end
 	end
 
+	function setOverrideMouseIconBehavior()
+		pcall(function()
+			if InputService:GetLastInputType() == Enum.UserInputType.Gamepad1 then
+				InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+			else
+				InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
+			end
+		end)
+	end
+
 	function toggleCoreGuiRadial()
 		isVisible = not gamepadSettingsFrame.Visible
 		
 		setVisibility()
 
 		if isVisible then
-
-			if InputService.GamepadEnabled and not InputService.MouseEnabled then
-				InputService.OverrideMouseIconEnabled = true
-			end
+			setOverrideMouseIconBehavior()
+			pcall(function() lastInputChangedCon = InputService.LastInputTypeChanged:connect(setOverrideMouseIconBehavior) end)
 
 			gamepadSettingsFrame.Visible = isVisible
 
@@ -517,9 +526,8 @@ local function setupGamepadControls()
 				setVisibility()
 			end)
 		else
-			if InputService.GamepadEnabled and not InputService.MouseEnabled then
-				InputService.OverrideMouseIconEnabled = false
-			end
+			lastInputChangedCon:disconnect()
+			pcall(function() InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
 
 			local settingsChildren = gamepadSettingsFrame:GetChildren()
 			for i = 1, #settingsChildren do

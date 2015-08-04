@@ -178,7 +178,7 @@ local function Initialize()
 		local function cleanupReportAbuseMenu()
 			updateAbuseDropDown()
 			this.AbuseDescription.Text = DEFAULT_ABUSE_DESC_TEXT
-			this.HubRef:SetVisibility(false)
+			this.HubRef:SetVisibility(false, true)
 		end
 
 		local function onReportSubmitted()

@@ -32,6 +32,7 @@ local platform = UserInputService:GetPlatform()
 -- TODO: Change dev console script to parent this to somewhere other than an engine created gui
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
 local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
+local lastInputChangedCon = nil
 
 --[[ CORE MODULES ]]
 local playerList = require(RobloxGui.Modules.PlayerlistModule)
@@ -166,7 +167,7 @@ local function CreateSettingsHub()
 	end
 
 	local function createGui()
-		local PageViewSizeReducer = 140
+		local PageViewSizeReducer = 0
 		if utility:IsSmallTouchScreen() then
 			PageViewSizeReducer = 5
 		end
@@ -219,7 +220,7 @@ local function CreateSettingsHub()
 			this.HubBar.Position = UDim2.new(0.5,-600,0.1,0)
 		else
 			this.HubBar.Size = UDim2.new(0,800,0,60)
-			this.HubBar.Position = UDim2.new(0.5,-400,0.05,0)
+			this.HubBar.Position = UDim2.new(0.5,-400,0.12,0)
 		end
 
 		this.PageView = utility:Create'ScrollingFrame'
@@ -235,10 +236,15 @@ local function CreateSettingsHub()
 			Selectable = false,
 			Parent = this.Shield
 		};
+		if UserInputService.MouseEnabled then
+			this.PageView.Size = UDim2.new(this.HubBar.Size.X.Scale,this.HubBar.Size.X.Offset,
+				 							0.62, -this.HubBar.Size.Y.Offset - this.HubBar.Position.Y.Offset)
+		end
+
 		if utility:IsSmallTouchScreen() then
 			this.PageView.CanvasSize = this.PageView.Size
 		else
-			local bottomOffset = 20
+			local bottomOffset = 0
 			if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
 				bottomOffset = 80
 			end
@@ -253,6 +259,8 @@ local function CreateSettingsHub()
 			};
 			if isTenFootInterface then
 				this.BottomButtonFrame.Position =  UDim2.new(0.5, -this.HubBar.Size.X.Offset/2, 0.9, -this.HubBar.Size.Y.Offset)
+			elseif UserInputService.MouseEnabled then
+				this.BottomButtonFrame.Position =  UDim2.new(0.5, -this.HubBar.Size.X.Offset/2, 0.85, -this.HubBar.Size.Y.Offset)
 			end
 
 			local leaveGameFunc = function()
@@ -471,6 +479,16 @@ local function CreateSettingsHub()
 		end
 	end
 
+	function setOverrideMouseIconBehavior()
+		pcall(function()
+			if UserInputService:GetLastInputType() == Enum.UserInputType.Gamepad1 then
+				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+			else
+				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
+			end
+		end)
+	end
+
 	function setVisibilityInternal(visible, noAnimation, customStartPage)
 		this.Visible = visible
 
@@ -496,9 +514,9 @@ local function CreateSettingsHub()
 			ContextActionService:BindCoreAction("RbxSettingsHubSwitchTab", switchTabFunc, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL1, Enum.KeyCode.Tab)
 			setBottomBarBindings()
 
-			if UserInputService.GamepadEnabled and not UserInputService.MouseEnabled then
-				UserInputService.OverrideMouseIconEnabled = true
-			end
+			setOverrideMouseIconBehavior()
+			pcall(function() lastInputChangedCon = UserInputService.LastInputTypeChanged:connect(setOverrideMouseIconBehavior) end)
+
 			pcall(function() PlatformService.BlurIntensity = 10 end)
 
 			if customStartPage then
@@ -532,9 +550,8 @@ local function CreateSettingsHub()
 				end)
 			end
 
-			if UserInputService.GamepadEnabled and not UserInputService.MouseEnabled then
-				UserInputService.OverrideMouseIconEnabled = false
-			end
+			lastInputChangedCon:disconnect()
+			pcall(function() UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
 			pcall(function() PlatformService.BlurIntensity = 0 end)
 
 			clearMenuStack()
