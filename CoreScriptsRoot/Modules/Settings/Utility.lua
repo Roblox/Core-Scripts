@@ -237,7 +237,7 @@ local function MakeButton(name, text, size, clickFunc)
 	};
 	button.NextSelectionLeft = button
 	button.NextSelectionRight = button	
-	if clickFunc then button.MouseButton1Click:connect(clickFunc) end
+	if clickFunc then button.MouseButton1Click:connect(function() print(button,"clicked") clickFunc() end) end
 
 	local function isPointerInput(inputObject)
 		return (inputObject.UserInputType == Enum.UserInputType.MouseMovement or inputObject.UserInputType == Enum.UserInputType.Touch)
@@ -721,6 +721,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 	local function setSelection(index, direction)
 		if settingSelection then return end
 
+
 		settingSelection = true
 		for i, selectionLabel in pairs(this.Selections) do
 			local isSelected = (i == index)
@@ -728,6 +729,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 			if not selectionLabel:IsDescendantOf(game) then
 				this.CurrentIndex = i
 				indexChangedEvent:Fire(index)
+				settingSelection = false
 				return
 			end
 
@@ -798,7 +800,6 @@ local function CreateSelector(selectionStringTable, startPosition)
 		elseif newIndex < 1 then
 			newIndex = #this.Selections
 		end
-
 
 		setSelection(newIndex, direction)
 	end
@@ -934,7 +935,12 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		ZIndex = 9,
 		Parent = CoreGui.RobloxGui
 	};
-	if hasBackground then AlertViewBacking.ImageTransparency = 0 end
+	if hasBackground then 
+		AlertViewBacking.ImageTransparency = 0
+	else
+		AlertViewBacking.Size = UDim2.new(0.8, 0, 0, 350)
+		AlertViewBacking.Position = UDim2.new(0.1, 0, 0.1, 0)
+	end
 
 	if CoreGui.RobloxGui.AbsoluteSize.Y <= AlertViewBacking.Size.Y.Offset then
 		AlertViewBacking.Size = UDim2.new(AlertViewBacking.Size.X.Scale, AlertViewBacking.Size.X.Offset, 
@@ -948,8 +954,8 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0.95, 0, 0.6, 0),
 		Position = UDim2.new(0.025, 0, 0.05, 0),
-		Font = Enum.Font.SourceSans,
-		FontSize = Enum.FontSize.Size24,
+		Font = Enum.Font.SourceSansBold,
+		FontSize = Enum.FontSize.Size36,
 		Text = alertMessage,
 		TextWrapped = true,
 		TextColor3 = Color3.new(1,1,1),
@@ -975,8 +981,15 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		if settingsHub then settingsHub:ShowBar() end
 	end
 
-	local AlertViewButton, AlertViewText = MakeButton("AlertViewButton", okButtonText, UDim2.new(1, -20, 0.2, 0), destroyAlert)
-	AlertViewButton.Position = UDim2.new(0, 10, 0.65, 0)
+	local AlertViewButtonSize = UDim2.new(1, -20, 0, 60)
+	local AlertViewButtonPosition = UDim2.new(0, 10, 0.65, 0)
+	if not hasBackground then 
+		AlertViewButtonSize = UDim2.new(0, 200, 0, 50)
+		AlertViewButtonPosition = UDim2.new(0.5, -100, 0.65, 0)
+	end
+
+	local AlertViewButton, AlertViewText = MakeButton("AlertViewButton", okButtonText, AlertViewButtonSize, destroyAlert)
+	AlertViewButton.Position = AlertViewButtonPosition
 	AlertViewButton.NextSelectionLeft = AlertViewButton
 	AlertViewButton.NextSelectionRight = AlertViewButton
 	AlertViewButton.NextSelectionUp = AlertViewButton
@@ -1529,6 +1542,13 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			ValueChangerInstance.Position = UDim2.new(ValueChangerInstance.Position.X.Scale,ValueChangerInstance.Position.X.Offset,
 										ValueChangerInstance.Position.Y.Scale,ValueChangerInstance.Position.Y.Offset + extraSpacing)
 		end
+
+		ValueChangerSelection.SelectionGained:connect(function()
+			ValueChangerInstance.BackgroundTransparency = 0.1
+		end)
+		ValueChangerSelection.SelectionLost:connect(function()
+			ValueChangerInstance.BackgroundTransparency = 0.5
+		end)
 	end
 
 	ValueChangerInstance.Name = rowDisplayName .. "ValueChanger"

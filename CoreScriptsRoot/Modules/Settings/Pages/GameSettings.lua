@@ -537,7 +537,7 @@ local function Initialize()
 		utility:AddNewRowObject(this, "Safe Zone", adjustButton)
 	end
 
-	createCameraModeOptions(not UserInputService.GamepadEnabled and 
+	createCameraModeOptions(not isTenFootInterface and 
 								(UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
 
 	if UserInputService.MouseEnabled then
