@@ -140,19 +140,30 @@ local function CreateModule()
 			BackgroundTransparency = 0.5;
 		};
 
-		local healthFill = Util.Create'Frame'{
-			Name = "HealthFill";
+		local healthFillHolder = Util.Create'Frame'{
+			Name = "HealthFillHolder";
 			Size = UDim2.new(1, -10, 1, -10);
 			Position = UDim2.new(0, 5, 0, 5);
 			BorderSizePixel = 0;
-			BackgroundColor3 = HEALTH_GREEN_COLOR;
+			BackgroundColor3 = Color3.new(1,1,1);
+			BackgroundTransparency = 1.0;
 			Parent = this.HealthContainer;
 		};
 
+		local healthFill = Util.Create'Frame'{
+			Name = "HealthFill";
+			Size = UDim2.new(1, 0, 1, 0);
+			Position = UDim2.new(0, 0, 0, 0);
+			BorderSizePixel = 0;
+			BackgroundTransparency = 0.0;
+			BackgroundColor3 = HEALTH_GREEN_COLOR;
+			Parent = healthFillHolder;
+		};
+		
 		local healthText = Util.Create'TextLabel'{
 			Name = "HealthText";
-			Size = UDim2.new(0, 88, 0, 50);
-			Position = UDim2.new(0, -90, 0, 0);
+			Size = UDim2.new(0, 98, 0, 50);
+			Position = UDim2.new(0, -100, 0, 0);
 			BackgroundTransparency = 0.5;
 			BackgroundColor3 = Color3.new(0,0,0);
 			Font = Enum.Font.SourceSans;

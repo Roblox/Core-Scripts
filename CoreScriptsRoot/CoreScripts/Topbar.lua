@@ -466,11 +466,8 @@ local function CreateUsernameHealthMenuItem()
 					AnimateHurtOverlay()
 				end
 				
-				if isTenFootInterface then
-					healthFill.Size = UDim2.new(healthPercent, -10, 1, -10)
-				else
-					healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
-				end
+				healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
+				healthFill.BackgroundColor3 = healthColor
 
 				lastHealth = health
 			end
