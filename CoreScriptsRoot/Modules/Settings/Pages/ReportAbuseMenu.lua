@@ -188,12 +188,16 @@ local function Initialize()
 
 				local currentAbusingPlayer = this:GetPlayerFromIndex(this.WhichPlayerMode.CurrentIndex)
 				if currentAbusingPlayer and abuseReason then
-					game.Players:ReportAbuse(currentAbusingPlayer, abuseReason, this.AbuseDescription.Text)
+					spawn(function()
+						game.Players:ReportAbuse(currentAbusingPlayer, abuseReason, this.AbuseDescription.Text)
+					end)
 				end
 			else
 				abuseReason = ABUSE_TYPES_GAME[this.TypeOfAbuseMode.CurrentIndex]
 				if abuseReason then
-					game.Players:ReportAbuse(nil, abuseReason, this.AbuseDescription.Text)
+					spawn(function()
+						game.Players:ReportAbuse(nil, abuseReason, this.AbuseDescription.Text)
+					end)
 				end
 			end
 
