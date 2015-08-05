@@ -68,14 +68,20 @@ local function CreateSettingsHub()
 			local hotKeyTable = buttonTable[2]
 			ContextActionService:BindCoreAction(buttonName, hotKeyTable[1], false, unpack(hotKeyTable[2]))
 		end
-		this.BottomButtonFrame.Visible = true
+
+		if this.BottomButtonFrame then
+			this.BottomButtonFrame.Visible = true
+		end
 	end
 
 	local function removeBottomBarBindings()
 		for _, hotKeyTable in pairs(this.BottomBarButtons) do
 			ContextActionService:UnbindCoreAction(hotKeyTable[1])
 		end
-		this.BottomButtonFrame.Visible = false
+
+		if this.BottomButtonFrame then
+			this.BottomButtonFrame.Visible = false
+		end
 	end
 
 	local function addBottomBarButton(name, text, gamepadImage, keyboardImage, position, clickFunc, hotkeys)
@@ -550,7 +556,10 @@ local function CreateSettingsHub()
 				end)
 			end
 
-			lastInputChangedCon:disconnect()
+			if lastInputChangedCon then
+				lastInputChangedCon:disconnect()
+			end
+
 			pcall(function() UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
 			pcall(function() PlatformService.BlurIntensity = 0 end)
 

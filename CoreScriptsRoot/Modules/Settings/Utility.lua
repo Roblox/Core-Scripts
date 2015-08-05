@@ -625,10 +625,10 @@ local function CreateSelector(selectionStringTable, startPosition)
 	{
 		Name = "LeftButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0,0,0.5,-25),
-		Size =  UDim2.new(0,50,0,50),
+		Position = UDim2.new(0,-10,0.5,-25),
+		Size =  UDim2.new(0,60,0,50),
 		Image =  "",
-		ZIndex = 2,
+		ZIndex = 3,
 		Selectable = false,
 		Active = true,
 		Parent = this.SelectorFrame
@@ -640,7 +640,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 		Position = UDim2.new(1,-50,0.5,-25),
 		Size =  UDim2.new(0,50,0,50),
 		Image =  "",
-		ZIndex = 2,
+		ZIndex = 3,
 		Selectable = false,
 		Parent = this.SelectorFrame
 	};
@@ -1544,10 +1544,14 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		end
 
 		ValueChangerSelection.SelectionGained:connect(function()
-			ValueChangerInstance.BackgroundTransparency = 0.1
+			if usesSelectedObject() then
+				ValueChangerInstance.BackgroundTransparency = 0.1
+			end
 		end)
 		ValueChangerSelection.SelectionLost:connect(function()
-			ValueChangerInstance.BackgroundTransparency = 0.5
+			if usesSelectedObject() then
+				ValueChangerInstance.BackgroundTransparency = 0.5
+			end
 		end)
 	end
 
@@ -1583,10 +1587,14 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		RowFrame.MouseEnter:connect(setRowSelection)
 
 		ValueChangerSelection.SelectionGained:connect(function()
-			RowFrame.BackgroundTransparency = 0.5
+			if usesSelectedObject() then
+				RowFrame.BackgroundTransparency = 0.5
+			end
 		end)
 		ValueChangerSelection.SelectionLost:connect(function()
-			RowFrame.BackgroundTransparency = 1
+			if usesSelectedObject() then
+				RowFrame.BackgroundTransparency = 1
+			end
 		end)
 	end
 
