@@ -200,6 +200,7 @@ function Thumbpad:Create(parentFrame)
 	OnInputEnded = function()
 		MasterControl:AddToPlayerMovement(-currentMoveVector)
 		currentMoveVector = Vector3.new(0,0,0)
+		MasterControl:SetIsJumping(false)
 
 		ThumbpadFrame.Position = position
 		TouchObject = nil
