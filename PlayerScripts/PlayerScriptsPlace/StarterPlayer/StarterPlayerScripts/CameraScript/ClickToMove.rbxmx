@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX28335AC9D27C48AF9C552EF0F55B1117">
+	<Item class="ModuleScript" referent="RBXDA9B92363FC7485AB3F18C42997E05F5">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ClickToMove</string>
@@ -27,17 +27,23 @@ local SHOW_PATH = false
 
 local RayCastIgnoreList = workspace.FindPartOnRayWithIgnoreList
 local GetPartsTouchingExtents = workspace.FindPartsInRegion3
+local CurrentSeatPart = nil
+local DrivingTo = nil
 
 -- Bindable for when we want touch emergency controls
 -- TODO: Click to move should probably have it's own gui touch controls
 -- to manage this.
 local BindableEvent_OnFailStateChanged = nil
+local BindableEvent_EnableTouchJump = nil
 if UIS.TouchEnabled then
 	BindableEvent_OnFailStateChanged = Instance.new('BindableEvent')
 	BindableEvent_OnFailStateChanged.Name = "OnClickToMoveFailStateChange"
+	BindableEvent_EnableTouchJump = Instance.new('BindableEvent')
+	BindableEvent_EnableTouchJump.Name = "EnableTouchJump"
 	local CameraScript = script.Parent
 	local PlayerScripts = CameraScript.Parent
 	BindableEvent_OnFailStateChanged.Parent = PlayerScripts
+	BindableEvent_EnableTouchJump.Parent = PlayerScripts
 end
 
 
@@ -762,6 +768,9 @@ local function Pather(character, point)
 	end
 
 	function this:Start()
+		if CurrentSeatPart then
+			return
+		end
 		spawn(function()
 			local humanoid = findPlayerHumanoid(Player)
 			--humanoid.AutoRotate = false
@@ -947,6 +956,7 @@ local PathCompleteListener = nil
 local PathFailedListener = nil
 
 local function CleanupPath()
+	DrivingTo = nil
 	if ExistingPather then
 		ExistingPather:Cancel()
 	end
@@ -964,11 +974,39 @@ local function CleanupPath()
 	end
 end
 
+local function getExtentsSize(Parts)
+	local maxX = Parts[1].Position.X
+	local maxY = Parts[1].Position.Y
+	local maxZ = Parts[1].Position.Z
+	local minX = Parts[1].Position.X
+	local minY = Parts[1].Position.Y
+	local minZ = Parts[1].Position.Z
+	for i = 2, #Parts do
+		maxX = math.max(maxX, Parts[i].Position.X)
+		maxY = math.max(maxY, Parts[i].Position.Y)
+		maxZ = math.max(maxZ, Parts[i].Position.Z)
+		minX = math.min(minX, Parts[i].Position.X)
+		minY = math.min(minY, Parts[i].Position.Y)
+		minZ = math.min(minZ, Parts[i].Position.Z)
+	end
+	return Region3.new(Vector3.new(minX, minY, minZ), Vector3.new(maxX, maxY, maxZ))
+end
+
+local function inExtents(Extents, Position)
+	if Position.X < (Extents.CFrame.p.X - Extents.Size.X/2) or Position.X > (Extents.CFrame.p.X + Extents.Size.X/2) then
+		return false
+	end
+	if Position.Z < (Extents.CFrame.p.Z - Extents.Size.Z/2) or Position.Z > (Extents.CFrame.p.Z + Extents.Size.Z/2) then
+		return false
+	end
+	--ignoring Y for now
+	return true
+end
 
 local AutoJumperInstance = nil
 local ShootCount = 0
 local FailCount = 0
-local function OnTap(tapPositions)
+local function OnTap(tapPositions, goToPoint)
 	-- Good to remember if this is the latest tap event
 	TapId = TapId + 1
 	local thisTapId = TapId
@@ -979,8 +1017,9 @@ local function OnTap(tapPositions)
 
 
 	if not CheckAlive(character) then return end
+
 	-- This is a path tap position
-	if #tapPositions == 1 then
+	if #tapPositions == 1 or goToPoint then
 		if camera then
 			local unitRay = Utility.GetUnitRay(tapPositions[1].x, tapPositions[1].y, MyMouse.ViewSizeX, MyMouse.ViewSizeY, camera)
 			local ray = Ray.new(unitRay.Origin, unitRay.Direction*400)
@@ -989,6 +1028,10 @@ local function OnTap(tapPositions)
 			local hitChar, hitHumanoid = Utility.FindChacterAncestor(hitPart)
 			local torso = character and character:FindFirstChild("Humanoid") and character:FindFirstChild("Humanoid").Torso
 			local startPos = torso.CFrame.p
+			if goToPoint then
+				hitPt = goToPoint
+				hitChar = nil
+			end
 			if hitChar and hitHumanoid and hitHumanoid.Torso and (hitHumanoid.Torso.CFrame.p - torso.CFrame.p).magnitude < 7 then
 				CleanupPath()
 
@@ -1005,7 +1048,7 @@ local function OnTap(tapPositions)
 					currentWeapon:Activate()
 					LastFired = tick()
 				end
-			elseif hitPt and character then
+			elseif hitPt and character and not CurrentSeatPart then
 				local thisPather = Pather(character, hitPt)
 				if thisPather:IsValidPath() then
 					FailCount = 0
@@ -1092,6 +1135,33 @@ local function OnTap(tapPositions)
 						end
 					end
 				end
+			elseif hitPt and character and CurrentSeatPart then 
+				local destinationGlobe = CreateDestinationIndicator(hitPt)
+				destinationGlobe.Parent = camera
+				ExistingIndicator = destinationGlobe
+				DrivingTo = hitPt		
+				local ConnectedParts = CurrentSeatPart:GetConnectedParts(true)
+				
+				while wait() do
+					if CurrentSeatPart and ExistingIndicator == destinationGlobe then
+						local ExtentsSize = getExtentsSize(ConnectedParts)
+						if inExtents(ExtentsSize, destinationGlobe.Position) then
+							DebrisService:AddItem(destinationGlobe, 0)
+							destinationGlobe = nil
+							DrivingTo = nil
+							break
+						end
+					else
+						DebrisService:AddItem(destinationGlobe, 0)
+						if CurrentSeatPart == nil and destinationGlobe == ExistingIndicator then
+							DrivingTo = nil
+							OnTap(tapPositions, hitPt)
+						end
+						destinationGlobe = nil
+						break
+					end
+				end		
+				
 			else
 				-- no hit pt
 			end
@@ -1145,7 +1215,7 @@ local function CreateClickToMoveModule()
 	local OnCharacterAddedConn = nil
 	local CharacterChildRemovedConn = nil
 	local RenderSteppedConn = nil
-
+	local HumanoidSeatedConn = nil
 
 	local function disconnectEvent(event)
 		if event then
@@ -1164,6 +1234,7 @@ local function CreateClickToMoveModule()
 		disconnectEvent(RenderSteppedConn)
 		disconnectEvent(CharacterChildRemovedConn)
 		pcall(function() RunService:UnbindFromRenderStep("ClickToMoveRenderUpdate") end)
+		disconnectEvent(HumanoidSeatedConn)
 	end
 
 
@@ -1320,6 +1391,7 @@ local function CreateClickToMoveModule()
 				end
 			end
 		end)
+
 		TapConn = UIS.TouchTap:connect(function(touchPositions, processed)
 			if not processed then
 				OnTap(touchPositions)
@@ -1333,7 +1405,53 @@ local function CreateClickToMoveModule()
 			end
 			AutoJumperInstance = AutoJumper()
 		end
-
+		
+		local function getThrottleAndSteer(object, point)
+			local lookVector = (point - object.Position)
+			lookVector = Vector3.new(lookVector.X, 0, lookVector.Z).unit
+			local objectVector = Vector3.new(object.CFrame.lookVector.X, 0, object.CFrame.lookVector.Z).unit
+			local dirVector = lookVector - objectVector
+			local mag = dirVector.magnitude
+			local degrees = math.deg(math.acos(lookVector:Dot(objectVector)))
+			local side = (object.CFrame:pointToObjectSpace(point).X > 0)
+			local throttle = 0
+			if mag < 0.25 then
+				throttle = 1
+			end
+			if mag > 1.8 then
+				throttle = -1
+			end
+			local distance = CurrentSeatPart.Position - DrivingTo
+			local velocity = CurrentSeatPart.Velocity
+			if velocity.magnitude*1.5 > distance.magnitude then
+				if velocity.magnitude*0.5 > distance.magnitude then
+					throttle = -throttle
+				else
+					throttle = 0
+				end
+			end
+			local steer = 0
+			if degrees > 5 and degrees < 175 then
+				if side then
+					steer = 1
+				else
+					steer = -1
+				end
+			end
+			local rotatingAt = math.deg(CurrentSeatPart.RotVelocity.magnitude)
+			local degreesAway = math.max(math.min(degrees, 180 - degrees), 10)
+			if (CurrentSeatPart.RotVelocity.X < 0)== (steer < 0) then
+				if rotatingAt*1.5 > degreesAway then
+					if rotatingAt*0.5 > degreesAway then
+						steer = -steer
+					else
+						steer = 0
+					end
+				end
+			end
+			return throttle, steer
+		end
+		
 		local function Update()
 			if CameraModule then
 				if CameraModule.UserPanningTheCamera then
@@ -1348,6 +1466,13 @@ local function CreateClickToMoveModule()
 				end
 				CameraModule:Update()
 			end
+			if CurrentSeatPart then
+				if DrivingTo then
+					local throttle, steer = getThrottleAndSteer(CurrentSeatPart, DrivingTo)
+					CurrentSeatPart.Throttle = throttle
+					CurrentSeatPart.Steer = steer
+				end
+			end
 		end
 		
 		local success = pcall(function() RunService:BindToRenderStep("ClickToMoveRenderUpdate",Enum.RenderPriority.Camera.Value - 1,Update) end)
@@ -1356,6 +1481,39 @@ local function CreateClickToMoveModule()
 				RenderSteppedConn:disconnect()
 			end
 			RenderSteppedConn = RunService.RenderStepped:connect(Update)
+		end
+		
+		local WasAutoJumper = false
+		local WasAutoJumpMobile = false		
+		local function onSeated(child, active, currentSeatPart)
+			if active then
+				CurrentSeatPart = currentSeatPart
+				if BindableEvent_EnableTouchJump then
+					BindableEvent_EnableTouchJump:Fire(true)
+				end
+				if AutoJumperInstance then
+					AutoJumperInstance:Stop()
+					AutoJumperInstance = nil
+					WasAutoJumper = true
+				else
+					WasAutoJumper = false
+				end
+				if child.AutoJumpEnabled then
+					WasAutoJumpMobile = true
+					child.AutoJumpEnabled = false
+				end
+			else
+				CurrentSeatPart = nil
+				if BindableEvent_EnableTouchJump then
+					BindableEvent_EnableTouchJump:Fire(false)
+				end
+				if WasAutoJumper then
+					AutoJumperInstance = AutoJumper()
+				end
+				if WasAutoJumpMobile then
+					child.AutoJumpEnabled = true
+				end
+			end
 		end
 
 		local function OnCharacterChildAdded(child)
@@ -1373,6 +1531,12 @@ local function CreateClickToMoveModule()
 						AutoJumperInstance = nil
 					end
 				end)
+				local WasAutoJumper = false
+				local WasAutoJumpMobile = false
+				HumanoidSeatedConn = child.Seated:connect(function(active, seat) onSeated(child, active, seat) end)
+				if child.SeatPart then
+					onSeated(child, true, child.SeatPart)
+				end
 			end
 		end
 
@@ -1416,6 +1580,7 @@ local function CreateClickToMoveModule()
 					end
 				end
 			end
+			DrivingTo = nil
 			Running = false
 		end
 	end
