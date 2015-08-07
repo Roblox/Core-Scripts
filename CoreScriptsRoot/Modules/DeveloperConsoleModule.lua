@@ -1202,28 +1202,44 @@ do -- This doesn't support multiple windows very well
 		
 		local disconnector = CreateDisconnectSignal()
 		
-		local function onVisibleChanged(visible)
-			label.Visible = visible
-			label.Parent = visible and devConsole.ScreenGui or nil
+		local enabled = false
+		
+		local mouse = game:GetService("Players").LocalPlayer:GetMouse()
+		
+		local function Refresh()
+			local enabledNew = devConsole.Visible and not UserInputService.MouseIconEnabled
+			if enabledNew == enabled then
+				return
+			end
+			enabled = enabledNew
+			label.Visible = enabled
+			label.Parent = enabled and devConsole.ScreenGui or nil
 			disconnector:fire()
-			if visible then
-				pcall(function()
-					local mouse = game:GetService("Players").LocalPlayer:GetMouse()
-					label.Position = UDim2.new(0, mouse.X - 32, 0, mouse.Y - 32)
-				end)
+			if enabled then
+				label.Position = UDim2.new(0, mouse.X - 32, 0, mouse.Y - 32)
 				disconnector:connect(UserInputService.InputChanged:connect(function(input)
 					if input.UserInputType == Enum.UserInputType.MouseMovement then
-						local p = input.Position
-						if p then
-							label.Position = UDim2.new(0, p.X - 32, 0, p.Y - 32)
-						end
+						--local p = input.Position
+						--if p then
+						label.Position = UDim2.new(0, mouse.X - 32, 0, mouse.Y - 32)
+						--end
 					end
 				end))
 			end
 		end
 		
-		onVisibleChanged(devConsole.Visible)
-		devConsole.VisibleChanged:connect(onVisibleChanged)
+		Refresh()
+		local userInputServiceListener;
+		devConsole.VisibleChanged:connect(function(visible)
+			if userInputServiceListener then
+				userInputServiceListener:disconnect()
+				userInputServiceListener = nil
+			end
+			
+			userInputServiceListener = UserInputService.Changed:connect(Refresh)
+			
+			Refresh()
+		end)
 		
 	end
 end
@@ -2650,6 +2666,8 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 		[Enum.UserInputType.MouseButton1] = true;
 		[Enum.UserInputType.Touch] = true; -- I'm not sure if touch actually works here
 	}
+	
+	local mouse = game:GetService("Players").LocalPlayer:GetMouse()
 
 	local function startDragging()
 		if dragging then
@@ -2660,7 +2678,8 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 		mouseInteractCallback(dragging, hovering)
 		local deltaCallback;
 		
-		local x0, y0;
+		local x0, y0 = mouse.X, mouse.Y
+		--[[
 		listeners[#listeners + 1] = UserInputService.InputBegan:connect(function(input)
 			if ButtonUserInputTypes[input.UserInputType] then
 				local position = input.Position
@@ -2669,6 +2688,7 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 				end
 			end
 		end)
+		--]]
 		listeners[#listeners + 1] = UserInputService.InputEnded:connect(function(input)
 			if ButtonUserInputTypes[input.UserInputType] then
 				stopDragging()
@@ -2682,7 +2702,7 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 			if not p1 then
 				return
 			end
-			local x1, y1 = p1.X, p1.Y
+			local x1, y1 = mouse.X, mouse.Y --p1.X, p1.Y
 			if not deltaCallback then
 				deltaCallback, disconnectCallback = dragCallback(x0 or x1, y0 or y1)
 			end
