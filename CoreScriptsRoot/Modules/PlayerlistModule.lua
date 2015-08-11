@@ -2011,13 +2011,20 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 				local frameChildren = frame:GetChildren()
 				for i = 1, #frameChildren do
 					if frameChildren[i]:IsA("TextButton") then
+						local lastInputType = UserInputService:GetLastInputType()
+						local isUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
+													lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
 						if not isTenFootInterface then
-							GuiService.SelectedCoreObject = frameChildren[i]
+							if isUsingGamepad then
+								GuiService.SelectedCoreObject = frameChildren[i]
+							end
 						else
 							GuiService.SelectedCoreObject = ScrollList
 						end
-						ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
-						ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
+						if isUsingGamepad then
+							ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
+							ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
+						end
 						break
 					end
 				end
