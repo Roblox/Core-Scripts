@@ -486,7 +486,10 @@ do
 	PageInstance.Hidden.Event:connect(function()
 		PageInstance.HubRef:ShowShield()
 		PageInstance.HubRef.PageView.ClipsDescendants = true
-		PageInstance.HubRef.BottomButtonFrame.Visible = true
+		
+		if PageInstance:GetCurrentInputType() == TOUCH_TAG then
+			PageInstance.HubRef.BottomButtonFrame.Visible = true
+		end
 	end)
 end
 

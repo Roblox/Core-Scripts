@@ -110,22 +110,6 @@ local function Initialize()
 	-- make sure each page has a unique selection group (for gamepad selection)
 	GuiService:AddSelectionParent(HttpService:GenerateGUID(false), this.Page)
 
-	local tweenAllDescendants = nil
-	tweenAllDescendants = function(root, posDiff, completeFunction)
-		local pageChildren = root:GetChildren()
-		for i = 1, #pageChildren do
-			local descendant = pageChildren[i]
-			local property = "Position"
-			if descendant["Position"] and descendant:IsDescendantOf(game) then
-				local endPos = posDiff + descendant["Position"]
-				descendant:TweenPosition(endPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 1, true, completeFunction)
-				completeFunction = nil
-			end
-			tweenAllDescendants(descendant, posDiff, completeFunction)
-		end
-	end
-
-
 	----------------- Events ------------------------
 
 	this.Displayed = Instance.new("BindableEvent")
@@ -147,7 +131,6 @@ local function Initialize()
 						valueChangerFrame = rows[1].ValueChanger.SliderFrame and 
 													rows[1].ValueChanger.SliderFrame or rows[1].ValueChanger.SelectorFrame
 					end
-
 					GuiService.SelectedCoreObject = valueChangerFrame
 				end
 			end
@@ -155,6 +138,11 @@ local function Initialize()
 	end)
 
 	this.Hidden = Instance.new("BindableEvent")
+	this.Hidden.Event:connect(function()
+		if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(this.Page) then
+			GuiService.SelectedCoreObject = nil
+		end
+	end)
 	this.Hidden.Name = "Hidden"
 
 

@@ -237,7 +237,7 @@ local function MakeButton(name, text, size, clickFunc)
 	};
 	button.NextSelectionLeft = button
 	button.NextSelectionRight = button	
-	if clickFunc then button.MouseButton1Click:connect(function() print(button,"clicked") clickFunc() end) end
+	if clickFunc then button.MouseButton1Click:connect(function() clickFunc() end) end
 
 	local function isPointerInput(inputObject)
 		return (inputObject.UserInputType == Enum.UserInputType.MouseMovement or inputObject.UserInputType == Enum.UserInputType.Touch)
@@ -1662,7 +1662,9 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 	nextPosTable[pageToAddTo] = nextRowPositionY
 
 	local setRowSelection = function()
-		GuiService.SelectedCoreObject = RowFrame
+		if RowFrame.Visible then
+			GuiService.SelectedCoreObject = RowFrame
+		end
 	end
 	RowFrame.MouseEnter:connect(setRowSelection)
 

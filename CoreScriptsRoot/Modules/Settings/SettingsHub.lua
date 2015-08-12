@@ -567,6 +567,7 @@ local function CreateSettingsHub()
 			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab")
 			ContextActionService:UnbindCoreAction("RbxSettingsHubStopCharacter")
 			removeBottomBarBindings()
+
 			game.GuiService.SelectedCoreObject = nil
 		end
 
@@ -605,6 +606,7 @@ local function CreateSettingsHub()
 			this:SwitchToPage(this.MenuStack[#this.MenuStack], true, 1)
 			if #this.MenuStack == 0 then
 				this:SetVisibility(false)
+				this.Pages.CurrentPage:Hide(0,0)
 			end
 		else
 			this.MenuStack = {}
