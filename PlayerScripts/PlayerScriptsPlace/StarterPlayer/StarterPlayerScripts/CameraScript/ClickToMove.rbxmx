@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXDA9B92363FC7485AB3F18C42997E05F5">
+	<Item class="ModuleScript" referent="RBXC6F5D24E04174F7C8BECEAE8BA85B4FC">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ClickToMove</string>
@@ -1487,20 +1487,22 @@ local function CreateClickToMoveModule()
 		local WasAutoJumpMobile = false		
 		local function onSeated(child, active, currentSeatPart)
 			if active then
-				CurrentSeatPart = currentSeatPart
 				if BindableEvent_EnableTouchJump then
 					BindableEvent_EnableTouchJump:Fire(true)
 				end
-				if AutoJumperInstance then
-					AutoJumperInstance:Stop()
-					AutoJumperInstance = nil
-					WasAutoJumper = true
-				else
-					WasAutoJumper = false
-				end
-				if child.AutoJumpEnabled then
-					WasAutoJumpMobile = true
-					child.AutoJumpEnabled = false
+				if currentSeatPart.ClassName == "VehicleSeat" then
+					CurrentSeatPart = currentSeatPart
+					if AutoJumperInstance then
+						AutoJumperInstance:Stop()
+						AutoJumperInstance = nil
+						WasAutoJumper = true
+					else
+						WasAutoJumper = false
+					end
+					if child.AutoJumpEnabled then
+						WasAutoJumpMobile = true
+						child.AutoJumpEnabled = false
+					end
 				end
 			else
 				CurrentSeatPart = nil
@@ -1509,9 +1511,11 @@ local function CreateClickToMoveModule()
 				end
 				if WasAutoJumper then
 					AutoJumperInstance = AutoJumper()
+					WasAutoJumper = false
 				end
 				if WasAutoJumpMobile then
 					child.AutoJumpEnabled = true
+					WasAutoJumpMobile = false
 				end
 			end
 		end
