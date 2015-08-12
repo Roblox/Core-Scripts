@@ -526,7 +526,10 @@ local function setupGamepadControls()
 				setVisibility()
 			end)
 		else
-			lastInputChangedCon:disconnect()
+			if lastInputChangedCon ~= nil then
+				lastInputChangedCon:disconnect()
+				lastInputChangedCon = nil
+			end
 			pcall(function() InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
 
 			local settingsChildren = gamepadSettingsFrame:GetChildren()

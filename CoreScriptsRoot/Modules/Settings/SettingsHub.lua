@@ -217,11 +217,14 @@ local function CreateSettingsHub()
 			SliceCenter = Rect.new(4,4,6,6),
 			Parent = this.Shield
 		};
-		
+
+		local barHeight = 60
 		if utility:IsSmallTouchScreen() then
+			barHeight = 40
 			this.HubBar.Size = UDim2.new(1,-10,0,40)
 			this.HubBar.Position = UDim2.new(0,5,0,6)
 		elseif isTenFootInterface then
+			barHeight = 100
 			this.HubBar.Size = UDim2.new(0,1200,0,100)
 			this.HubBar.Position = UDim2.new(0.5,-600,0.1,0)
 		else
@@ -244,7 +247,7 @@ local function CreateSettingsHub()
 		};
 		if UserInputService.MouseEnabled then
 			this.PageView.Size = UDim2.new(this.HubBar.Size.X.Scale,this.HubBar.Size.X.Offset,
-				 							0.62, -this.HubBar.Size.Y.Offset - this.HubBar.Position.Y.Offset)
+				 							0.5, -(this.HubBar.Position.Y.Offset - this.HubBar.Size.Y.Offset))
 		end
 
 		if utility:IsSmallTouchScreen() then
@@ -258,16 +261,11 @@ local function CreateSettingsHub()
 			{
 				Name = "BottomButtonFrame",
 				Size = this.HubBar.Size,
-				Position = UDim2.new(0.5, -this.HubBar.Size.X.Offset/2, 1, -this.HubBar.Size.Y.Offset - bottomOffset),
+				Position = UDim2.new(0.5, -this.HubBar.Size.X.Offset/2, 1-this.HubBar.Position.Y.Scale-this.HubBar.Size.Y.Scale, -this.HubBar.Position.Y.Offset-this.HubBar.Size.Y.Offset),
 				ZIndex = this.Shield.ZIndex + 1,
 				BackgroundTransparency = 1,
 				Parent = this.Shield
 			};
-			if isTenFootInterface then
-				this.BottomButtonFrame.Position =  UDim2.new(0.5, -this.HubBar.Size.X.Offset/2, 0.9, -this.HubBar.Size.Y.Offset)
-			elseif UserInputService.MouseEnabled then
-				this.BottomButtonFrame.Position =  UDim2.new(0.5, -this.HubBar.Size.X.Offset/2, 0.85, -this.HubBar.Size.Y.Offset)
-			end
 
 			local leaveGameFunc = function()
 				this:AddToMenuStack(this.Pages.CurrentPage)
@@ -303,6 +301,84 @@ local function CreateSettingsHub()
 				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25), 
 				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart})
 		end
+
+
+		local function onScreenSizeChanged()
+			local largestPageSize = 405
+			local fullScreenSize = RobloxGui.AbsoluteSize.y
+			local bufferSize = (1-0.85) * fullScreenSize
+			if isTenFootInterface then
+				bufferSize = (1-0.9) * fullScreenSize
+			end
+			local barSize = this.HubBar.Size.Y.Offset
+			local extraSpace = bufferSize*2+barSize*2
+			local usableScreenHeight = fullScreenSize - extraSpace
+			local minimumPageSize = 100
+			local usePageSize = minimumPageSize
+
+			if largestPageSize < usableScreenHeight then
+				usePageSize = largestPageSize
+				this.HubBar.Position = UDim2.new(
+					this.HubBar.Position.X.Scale,
+					this.HubBar.Position.X.Offset,
+					0.5,
+					-largestPageSize/2 - this.HubBar.Size.Y.Offset
+				)
+				this.BottomButtonFrame.Position = UDim2.new(
+					this.BottomButtonFrame.Position.X.Scale,
+					this.BottomButtonFrame.Position.X.Offset,
+					0.5,
+					largestPageSize/2
+				)
+			elseif usableScreenHeight < minimumPageSize then
+				usePageSize = minimumPageSize
+				this.HubBar.Position = UDim2.new(
+					this.HubBar.Position.X.Scale,
+					this.HubBar.Position.X.Offset,
+					0.5,
+					-minimumPageSize/2 - this.HubBar.Size.Y.Offset
+				)
+				this.BottomButtonFrame.Position = UDim2.new(
+					this.BottomButtonFrame.Position.X.Scale,
+					this.BottomButtonFrame.Position.X.Offset,
+					0.5,
+					minimumPageSize/2
+				)
+			else
+				usePageSize = usableScreenHeight
+				this.HubBar.Position = UDim2.new(
+					this.HubBar.Position.X.Scale,
+					this.HubBar.Position.X.Offset,
+					0,
+					bufferSize
+				)
+				this.BottomButtonFrame.Position = UDim2.new(
+					this.BottomButtonFrame.Position.X.Scale,
+					this.BottomButtonFrame.Position.X.Offset,
+					1,
+					-(bufferSize + barSize)
+				)
+			end
+
+			this.PageView.Size = UDim2.new(
+				this.PageView.Size.X.Scale,
+				this.PageView.Size.X.Offset,
+				0,
+				usePageSize
+			)
+			this.PageView.Position = UDim2.new(
+				this.PageView.Position.X.Scale,
+				this.PageView.Position.X.Offset,
+				0.5,
+				-usePageSize/2
+			)
+		end
+		screenSizeChangedCon = RobloxGui.Changed:connect(function(prop)
+			if prop == "AbsoluteSize" then
+				onScreenSizeChanged()
+			end
+		end)
+		onScreenSizeChanged()
 	end
 
 	local function toggleDevConsole(actionName, inputState, inputObject)
