@@ -5,7 +5,8 @@
 
 -- Variables
 local contextActionService = Game:GetService("ContextActionService")
-local isTouchDevice = Game:GetService("UserInputService").TouchEnabled
+local userInputService = Game:GetService("UserInputService")
+local isTouchDevice = userInputService.TouchEnabled
 local functionTable = {}
 local buttonVector = {}
 local buttonScreenGui = nil
@@ -50,6 +51,13 @@ function createContextActionGui()
 		buttonFrame.Position = UDim2.new(0.7,0,0.5,0)
 		buttonFrame.Name = "ContextButtonFrame"
 		buttonFrame.Parent = buttonScreenGui
+
+		buttonFrame.Visible = not userInputService.ModalEnabled
+		userInputService.Changed:connect(function(property)
+			if property == "ModalEnabled" then
+				buttonFrame.Visible = not userInputService.ModalEnabled
+			end
+		end)
 	end
 end
 
@@ -109,7 +117,7 @@ function createNewButton(actionName, functionInfoTable)
 
 	local currentButtonTouch = nil
 
-	Game:GetService("UserInputService").InputEnded:connect(function ( inputObject )
+	userInputService.InputEnded:connect(function ( inputObject )
 		oldTouches[inputObject] = nil
 	end)
 	contextButton.InputBegan:connect(function(inputObject)
