@@ -789,6 +789,9 @@ local function setPlayerEntryPositions()
 		if isTenFootInterface and PlayerEntries[i].Frame ~= MyPlayerEntryTopFrame then
 			PlayerEntries[i].Frame.Position = UDim2.new(0, 0, 0, position)
 			position = position + PlayerEntrySizeY + 2
+		else
+			PlayerEntries[i].Frame.Position = UDim2.new(0, 0, 0, position)
+			position = position + PlayerEntrySizeY + 2
 		end
 	end
 end
