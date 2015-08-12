@@ -144,6 +144,7 @@ function DPad:Create(parentFrame)
 			MasterControl:AddToPlayerMovement(-movementVector)
 			normalizeDirection(TouchObject.Position)
 			MasterControl:AddToPlayerMovement(movementVector)
+			MasterControl:SetIsJumping(false)
 		end
 	end)
 	
