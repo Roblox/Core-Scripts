@@ -626,6 +626,9 @@ end
 local function showPurchasePrompt()
 	stopPurchaseAnimation()
 	PurchaseDialog.Visible = true
+	if isTenFootInterface then
+		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+	end
 	PurchaseDialog:TweenPosition(isTenFootInterface and SHOW_POSITION_TENFOOT or SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
 	disableControllerMovement()
 	enableControllerInput()
@@ -675,6 +678,9 @@ local function closePurchaseDialog()
 			IsCurrentlyPrompting = false
 			IsCurrentlyPurchasing = false
 			IsCheckingPlayerFunds = false
+			if isTenFootInterface then
+				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+			end
 		end)
 end
 

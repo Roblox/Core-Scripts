@@ -300,7 +300,7 @@ local function getAdminIcon(player)
 end
 
 local function getAvatarIcon()
-	return BaseUrl .. 'Thumbs/Avatar.ashx?userid=7210880&width=64&height=64'
+	return BaseUrl .. "Thumbs/Avatar.ashx?userid=" .. tostring(Player.userId) .. "&width=64&height=64"
 end
 
 local function getMembershipIcon(player)
@@ -2019,6 +2019,7 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 								GuiService.SelectedCoreObject = frameChildren[i]
 							end
 						else
+							UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 							GuiService.SelectedCoreObject = ScrollList
 						end
 						if isUsingGamepad then
@@ -2030,6 +2031,9 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 				end
 			end
 		else
+			if isTenFootInterface then
+				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+			end
 			ContextActionService:UnbindCoreAction("CloseList")
 			ContextActionService:UnbindCoreAction("StopAction")
 			GuiService.SelectedCoreObject = nil
