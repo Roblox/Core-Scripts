@@ -126,9 +126,6 @@ local AbuseReason = nil
 --[[ Constants ]]--
 local ENTRY_PAD = 2
 local BG_TRANSPARENCY = 0.5
-if isTenFootInterface then
-	BG_TRANSPARENCY = 0.1
-end
 local BG_COLOR = Color3.new(31/255, 31/255, 31/255)
 local BG_COLOR_TOP = Color3.new(106/255, 106/255, 106/255)
 local TEXT_STROKE_TRANSPARENCY = 0.75
