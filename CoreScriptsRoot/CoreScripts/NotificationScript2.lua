@@ -349,13 +349,8 @@ end
 --[[ Player Points Notifications ]]--
 local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
 	if userId == LocalPlayer.userId then
-		if pointsAwarded == 1 then
-			sendNotifcation("Point Awarded", "You received "..tostring(pointsAwarded).." point!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
-		elseif pointsAwarded > 0 then
-			sendNotifcation("Points Awarded", "You received "..tostring(pointsAwarded).." points!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
-		elseif pointsAwarded < 0 then
-			sendNotifcation("Points Lost", "You lost "..tostring(-pointsAwarded).." points!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
-		end
+		local pointsPositive = math.abs(pointsAwarded)
+		sendNotifcation("Point Awarded", "You "..(pointsAwarded >= 0 and "received" or "lost").." "..tostring(pointsPositive).." point"..(pointsPositive == 1 and "!" or "s!"), PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
 	end
 end
 
