@@ -309,9 +309,16 @@ local function CreateSettingsHub()
 			local bufferSize = (1-0.85) * fullScreenSize
 			if isTenFootInterface then
 				bufferSize = (1-0.9) * fullScreenSize
+			elseif utility:IsSmallTouchScreen() then
+				bufferSize = (1-0.99) * fullScreenSize
 			end
 			local barSize = this.HubBar.Size.Y.Offset
 			local extraSpace = bufferSize*2+barSize*2
+			
+			if utility:IsSmallTouchScreen() then
+				extraSpace = bufferSize+barSize+4
+			end
+
 			local usableScreenHeight = fullScreenSize - extraSpace
 			local minimumPageSize = 100
 			local usePageSize = minimumPageSize
@@ -324,12 +331,14 @@ local function CreateSettingsHub()
 					0.5,
 					-largestPageSize/2 - this.HubBar.Size.Y.Offset
 				)
-				this.BottomButtonFrame.Position = UDim2.new(
-					this.BottomButtonFrame.Position.X.Scale,
-					this.BottomButtonFrame.Position.X.Offset,
-					0.5,
-					largestPageSize/2
-				)
+				if this.BottomButtonFrame then
+					this.BottomButtonFrame.Position = UDim2.new(
+						this.BottomButtonFrame.Position.X.Scale,
+						this.BottomButtonFrame.Position.X.Offset,
+						0.5,
+						largestPageSize/2
+					)
+				end
 			elseif usableScreenHeight < minimumPageSize then
 				usePageSize = minimumPageSize
 				this.HubBar.Position = UDim2.new(
@@ -338,12 +347,14 @@ local function CreateSettingsHub()
 					0.5,
 					-minimumPageSize/2 - this.HubBar.Size.Y.Offset
 				)
-				this.BottomButtonFrame.Position = UDim2.new(
-					this.BottomButtonFrame.Position.X.Scale,
-					this.BottomButtonFrame.Position.X.Offset,
-					0.5,
-					minimumPageSize/2
-				)
+				if this.BottomButtonFrame then
+					this.BottomButtonFrame.Position = UDim2.new(
+						this.BottomButtonFrame.Position.X.Scale,
+						this.BottomButtonFrame.Position.X.Offset,
+						0.5,
+						minimumPageSize/2
+					)
+				end
 			else
 				usePageSize = usableScreenHeight
 				this.HubBar.Position = UDim2.new(
@@ -352,12 +363,14 @@ local function CreateSettingsHub()
 					0,
 					bufferSize
 				)
-				this.BottomButtonFrame.Position = UDim2.new(
-					this.BottomButtonFrame.Position.X.Scale,
-					this.BottomButtonFrame.Position.X.Offset,
-					1,
-					-(bufferSize + barSize)
-				)
+				if this.BottomButtonFrame then
+					this.BottomButtonFrame.Position = UDim2.new(
+						this.BottomButtonFrame.Position.X.Scale,
+						this.BottomButtonFrame.Position.X.Offset,
+						1,
+						-(bufferSize + barSize)
+					)
+				end
 			end
 
 			this.PageView.Size = UDim2.new(
@@ -369,8 +382,8 @@ local function CreateSettingsHub()
 			this.PageView.Position = UDim2.new(
 				this.PageView.Position.X.Scale,
 				this.PageView.Position.X.Offset,
-				0.5,
-				-usePageSize/2
+				0,
+				bufferSize+barSize
 			)
 		end
 		screenSizeChangedCon = RobloxGui.Changed:connect(function(prop)
