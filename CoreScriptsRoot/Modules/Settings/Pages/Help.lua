@@ -293,7 +293,10 @@ local function Initialize()
 
 	local function createTouchHelp(parentFrame)
 		local smallScreen = utility:IsSmallTouchScreen()
-		local ySize = GuiService:GetScreenResolution().y - 60
+		local ySize = GuiService:GetScreenResolution().y - 350
+		if smallScreen then
+			ySize = GuiService:GetScreenResolution().y - 100
+		end
 		parentFrame.Size = UDim2.new(1,0,0,ySize)
 
 		local function createTouchLabel(text, position, size, parent)
@@ -345,18 +348,6 @@ local function Initialize()
 			return gestureImage
 		end
 
-		local backgroundFrame = utility:Create'Frame'
-		{
-			Name = "HelpBackground",
-			Size = UDim2.new(3,0,3,0),
-			Position = UDim2.new(-1,0,-1,0),	
-			BackgroundColor3 = Color3.new(0,0,0),
-			BackgroundTransparency = 0.7,
-			ZIndex = 2,
-			Active = true,
-			Parent = parentFrame
-		};
-
 		local xSizeOffset = 30
 		local ySize = 25
 		if smallScreen then xSizeOffset = 0 end
@@ -397,14 +388,6 @@ local function Initialize()
 	end
 
 	local function displayHelp(currentPage)
-		if this:GetDisplayed() then
-			if this:GetCurrentInputType() == TOUCH_TAG then
-				this.HubRef:HideShield()
-			elseif not isTenFootInterface then
-				this.HubRef:ShowShield()
-			end
-		end
-
 		for i, helpPage in pairs(this.HelpPages) do
 			if helpPage == currentPage then
 				helpPage.Parent = this.Page
@@ -475,8 +458,6 @@ do
 		if PageInstance:GetCurrentInputType() == GAMEPAD_TAG then
 			PageInstance.HubRef.PageView.ClipsDescendants = false
 		elseif PageInstance:GetCurrentInputType() == TOUCH_TAG then
-			PageInstance.HubRef:HideShield()
-
 			if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() then
 				PageInstance.HubRef.BottomButtonFrame.Visible = false
 			end
