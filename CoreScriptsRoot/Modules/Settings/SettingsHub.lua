@@ -308,7 +308,8 @@ local function CreateSettingsHub()
 			local fullScreenSize = RobloxGui.AbsoluteSize.y
 			local bufferSize = (1-0.85) * fullScreenSize
 			if isTenFootInterface then
-				bufferSize = (1-0.9) * fullScreenSize
+				largestPageSize = 800
+				bufferSize = 0.07 * fullScreenSize
 			end
 			local barSize = this.HubBar.Size.Y.Offset
 			local extraSpace = bufferSize*2+barSize*2

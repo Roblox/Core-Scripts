@@ -786,7 +786,7 @@ local function setPlayerEntryPositions()
 		if isTenFootInterface and PlayerEntries[i].Frame ~= MyPlayerEntryTopFrame then
 			PlayerEntries[i].Frame.Position = UDim2.new(0, 0, 0, position)
 			position = position + PlayerEntrySizeY + 2
-		else
+		elseif PlayerEntries[i].Frame ~= MyPlayerEntryTopFrame then
 			PlayerEntries[i].Frame.Position = UDim2.new(0, 0, 0, position)
 			position = position + PlayerEntrySizeY + 2
 		end
@@ -1811,6 +1811,8 @@ local function insertPlayerEntry(player)
 	if player == Player and isTenFootInterface then
 		local localEntry = createPlayerEntry(player, true)
 		MyPlayerEntryTopFrame = localEntry.Frame
+		MyPlayerEntryTopFrame.BackgroundTransparency = 0
+		MyPlayerEntryTopFrame.BorderSizePixel = 0
 		setupEntry(player, localEntry, true)
 	end
 end
@@ -1992,6 +1994,7 @@ local closeListFunc = function(name, state, input)
 	ContextActionService:UnbindCoreAction("CloseList")
 	ContextActionService:UnbindCoreAction("StopAction")
 	GuiService.SelectedCoreObject = nil
+	UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 end
 
 
@@ -2019,10 +2022,11 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 								GuiService.SelectedCoreObject = frameChildren[i]
 							end
 						else
-							UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 							GuiService.SelectedCoreObject = ScrollList
 						end
+
 						if isUsingGamepad then
+							UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 							ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
 							ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
 						end
@@ -2031,7 +2035,7 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 				end
 			end
 		else
-			if isTenFootInterface then
+			if isUsingGamepad then
 				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 			end
 			ContextActionService:UnbindCoreAction("CloseList")
