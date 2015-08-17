@@ -201,7 +201,9 @@ local function Initialize()
 		this.HubRef = hubRef
 
 		for i, row in next, rows do
-			row.ValueChanger.HubRef = this.HubRef
+			if type(row.ValueChanger) == 'table' then
+				row.ValueChanger.HubRef = this.HubRef
+			end
 		end
 	end
 
@@ -223,7 +225,7 @@ local function Initialize()
 			this.Page.Size = UDim2.new(1, 0, 0, this.Page.Size.Y.Offset + rowFrameYSize)
 		end
 
-		if this.HubRef then
+		if this.HubRef and type(ValueChangerInstance) == 'table' then
 			ValueChangerInstance.HubRef = this.HubRef
 		end
 	end

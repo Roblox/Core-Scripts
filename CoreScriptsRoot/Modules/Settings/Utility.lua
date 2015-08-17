@@ -1454,6 +1454,7 @@ if isTenFootInterface() then ROW_HEIGHT = 90 end
 local nextPosTable = {}
 local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, rowDefault, extraSpacing)
 	local nextRowPositionY = 0
+	local isARealRow = selectionType ~= 'TextBox' -- Textboxes are constructed in this function - they don't have an associated class.
 
 	if nextPosTable[pageToAddTo] then
 		nextRowPositionY = nextPosTable[pageToAddTo]
@@ -1498,7 +1499,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 	if isTenFootInterface() then
 		RowLabel.FontSize = Enum.FontSize.Size36
 	end
-	if selectionType == 'TextBox' then
+	if not isARealRow then
 		RowLabel.Text = ''
 	end
 
@@ -1603,7 +1604,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 
 	nextPosTable[pageToAddTo] = nextRowPositionY
 
-	if selectionType ~= 'TextBox' then
+	if isARealRow then
 		local setRowSelection = function()
 			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
 			if fullscreenDropDown and fullscreenDropDown.Visible then return end
@@ -1641,7 +1642,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		end)
 	end
 
-	pageToAddTo:AddRow(RowFrame, RowLabel, ValueChangerInstance, extraSpacing)
+	pageToAddTo:AddRow(RowFrame, RowLabel, ValueChangerInstance, extraSpacing, false)
 
 	ValueChangerInstance.Selection = ValueChangerSelection
 
@@ -1725,7 +1726,7 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 
 	rowObject.Parent = RowFrame
 
-	pageToAddTo:AddRow(RowFrame, RowLabel, rowObject, extraSpacing)
+	pageToAddTo:AddRow(RowFrame, RowLabel, rowObject, extraSpacing, true)
 	return RowFrame
 end
 
