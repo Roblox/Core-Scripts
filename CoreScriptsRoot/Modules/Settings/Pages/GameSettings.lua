@@ -51,6 +51,7 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 
 ------------ Variables -------------------
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local PageInstance = nil
 local LocalPlayer = game.Players.LocalPlayer
@@ -61,7 +62,7 @@ local overscanScreen = nil
 
 ----------- CLASS DECLARATION --------------
 
-local function Initialize()	
+local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
@@ -487,7 +488,7 @@ local function Initialize()
 		end
 
 		local startMouseLevel = translateEngineMouseSensitivityToGui(GameSettings.MouseSensitivity)
-
+		
 		this.MouseSensitivityFrame, 
 		this.MouseSensitivityLabel,
 		this.MouseSensitivitySlider = utility:AddNewRow(this, "Mouse Sensitivity", "Slider", MouseSteps, startMouseLevel)
@@ -580,7 +581,7 @@ local function Initialize()
 
 	------ PAGE CUSTOMIZATION -------
 	this.Page.ZIndex = 5
-
+	
 	return this
 end
 

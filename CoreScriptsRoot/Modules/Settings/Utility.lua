@@ -216,7 +216,7 @@ local function usesSelectedObject()
 	return true
 end
 
-local function MakeButton(name, text, size, clickFunc)
+local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 	local SelectionOverrideObject = Util.Create'ImageLabel'
 	{
 		Image = "",
@@ -244,7 +244,7 @@ local function MakeButton(name, text, size, clickFunc)
 	end
 
 	button.InputBegan:connect(function(inputObject)
-		if button.Selectable and isPointerInput(inputObject) then
+		if button.Selectable and isPointerInput(inputObject) and (hubRef and hubRef.Active or hubRef == nil) then
 			button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButtonSelected.png"
 		end
 	end)
@@ -256,6 +256,13 @@ local function MakeButton(name, text, size, clickFunc)
 
 	button.SelectionGained:connect(function()
 		button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButtonSelected.png"
+
+		if pageRef then
+			local hub = pageRef.HubRef
+			if hub then
+				hub:ScrollToFrame(button)
+			end
+		end
 	end)
 	button.SelectionLost:connect(function()
 		button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
@@ -383,6 +390,8 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		if guiServiceChangeCon then guiServiceChangeCon:disconnect() end
 		ContextActionService:UnbindCoreAction(guid .. "Action")
 		ContextActionService:UnbindCoreAction(guid .. "FreezeAction")
+
+		settingsHub:SetActive(true)
 	end
 	local noOpFunc = function() end
 
@@ -411,6 +420,8 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 		ContextActionService:BindCoreAction(guid .. "FreezeAction", noOpFunc, false, Enum.UserInputType.Keyboard, Enum.UserInputType.Gamepad1)
 		ContextActionService:BindCoreAction(guid .. "Action", hideDropDownSelection, false, Enum.KeyCode.ButtonB, Enum.KeyCode.Escape)
+
+		settingsHub:SetActive(false)
 	end
 
 	local dropDownFrameSize = UDim2.new(0,400,0,44)
@@ -589,6 +600,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 	-------------------- SETUP ------------------------
 	local this = {}
+	this.HubRef = nil
 
 	if type(selectionStringTable) ~= "table" then
 		error("CreateSelector selectionStringTable (first arg) is not a table")
@@ -1050,7 +1062,8 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		NextSelectionRight = this.SliderFrame,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0,502,0,30),
-		SelectionImageObject = noSelectionObject
+		SelectionImageObject = noSelectionObject,
+		ZIndex = 2
 	};
 	if isSmallTouchScreen() then
 		this.SliderFrame.Size = UDim2.new(0,400,0,30)
@@ -1181,7 +1194,6 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	end
 	local function modifySelection(alpha)
 		for i = 1, steps do
-			if i > currentStep then break end
 			if i == 1 or i == steps then
 				this.Steps[i].ImageTransparency = alpha
 			else
@@ -1312,6 +1324,15 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		if newMinStep >= 0 and newMinStep <= steps then
 			minStep = newMinStep
 		end
+
+		if currentStep <= minStep then 
+			currentStep = minStep 
+			leftButton.Visible = false
+		end
+		if currentStep >= steps then
+			currentStep = steps
+			rightButton.Visible = false
+		end
 	end
 
 	--------------------- SETUP -----------------------
@@ -1439,22 +1460,20 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 	end
 
 	local RowFrame = nil
-	if selectionType ~= "TextBox" then
-		RowFrame = Util.Create'ImageButton'
-		{
-			Name = rowDisplayName .. "Frame",
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			Image = "",
-			Active = false,
-			AutoButtonColor = false,
-			Size = UDim2.new(1,0,0,ROW_HEIGHT),
-			Position = UDim2.new(0,0,0.025,nextRowPositionY),
-			ZIndex = 2,
-			Selectable = false,
-			Parent = pageToAddTo.Page
-		};
-	end
+	RowFrame = Util.Create'ImageButton'
+	{
+		Name = rowDisplayName .. "Frame",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Image = "",
+		Active = false,
+		AutoButtonColor = false,
+		Size = UDim2.new(1,0,0,ROW_HEIGHT),
+		Position = UDim2.new(0,0,0,nextRowPositionY),
+		ZIndex = 2,
+		Selectable = false,
+		Parent = pageToAddTo.Page
+	};
 
 	if RowFrame and extraSpacing then
 		RowFrame.Position = UDim2.new(RowFrame.Position.X.Scale,RowFrame.Position.X.Offset,
@@ -1462,24 +1481,25 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 	end
 
 	local RowLabel = nil
-	if selectionType ~= "TextBox" then
-		RowLabel = Util.Create'TextLabel'
-		{
-			Name = rowDisplayName .. "Label",
-			Text = rowDisplayName,
-			Font = Enum.Font.SourceSansBold,
-			FontSize = Enum.FontSize.Size24,
-			TextColor3 = Color3.new(1,1,1),
-			TextXAlignment = Enum.TextXAlignment.Left,
-			BackgroundTransparency = 1,
-			Size = UDim2.new(0,200,1,0),
-			Position = UDim2.new(0,10,0,0),
-			ZIndex = 2,
-			Parent = RowFrame
-		};
-		if isTenFootInterface() then
-			RowLabel.FontSize = Enum.FontSize.Size36
-		end
+	RowLabel = Util.Create'TextLabel'
+	{
+		Name = rowDisplayName .. "Label",
+		Text = rowDisplayName,
+		Font = Enum.Font.SourceSansBold,
+		FontSize = Enum.FontSize.Size24,
+		TextColor3 = Color3.new(1,1,1),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(0,200,1,0),
+		Position = UDim2.new(0,10,0,0),
+		ZIndex = 2,
+		Parent = RowFrame
+	};
+	if isTenFootInterface() then
+		RowLabel.FontSize = Enum.FontSize.Size36
+	end
+	if selectionType == 'TextBox' then
+		RowLabel.Text = ''
 	end
 
 	local ValueChangerSelection = nil
@@ -1509,10 +1529,13 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			BackgroundTransparency = 1,
 		};
 
-		ValueChangerInstance = Util.Create'TextBox'
+		ValueChangerInstance = {}
+		ValueChangerInstance.HubRef = nil
+
+		local box = Util.Create'TextBox'
 		{
 			Size = UDim2.new(1,-10,0,100),
-			Position = UDim2.new(0,5,0.025,nextRowPositionY),
+			Position = UDim2.new(0,5,0,nextRowPositionY),
 			Text = rowDisplayName,
 			TextColor3 = Color3.new(49/255, 49/255, 49/255),
 			BackgroundTransparency = 0.5,
@@ -1527,32 +1550,48 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			ClearTextOnFocus = false,
 			Parent = pageToAddTo.Page
 		};
-		ValueChangerSelection = ValueChangerInstance
+		ValueChangerSelection = box
 
-		ValueChangerInstance.Focused:connect(function()
+		box.Focused:connect(function()
 			if usesSelectedObject() then
-				GuiService.SelectedCoreObject = ValueChangerInstance
+				GuiService.SelectedCoreObject = box
 			end
 
-			if ValueChangerInstance.Text == rowDisplayName then
-				ValueChangerInstance.Text = ""
+			if box.Text == rowDisplayName then
+				box.Text = ""
 			end
 		end)
 		if extraSpacing then
-			ValueChangerInstance.Position = UDim2.new(ValueChangerInstance.Position.X.Scale,ValueChangerInstance.Position.X.Offset,
-										ValueChangerInstance.Position.Y.Scale,ValueChangerInstance.Position.Y.Offset + extraSpacing)
+			box.Position = UDim2.new(box.Position.X.Scale,box.Position.X.Offset,
+										box.Position.Y.Scale,box.Position.Y.Offset + extraSpacing)
 		end
 
 		ValueChangerSelection.SelectionGained:connect(function()
 			if usesSelectedObject() then
-				ValueChangerInstance.BackgroundTransparency = 0.1
+				box.BackgroundTransparency = 0.1
+
+				if ValueChangerInstance.HubRef then
+					ValueChangerInstance.HubRef:ScrollToFrame(ValueChangerSelection)
+				end
 			end
 		end)
 		ValueChangerSelection.SelectionLost:connect(function()
 			if usesSelectedObject() then
-				ValueChangerInstance.BackgroundTransparency = 0.5
+				box.BackgroundTransparency = 0.5
 			end
 		end)
+
+		local setRowSelection = function()
+			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
+			if fullscreenDropDown and fullscreenDropDown.Visible then return end
+
+			local valueFrame = ValueChangerSelection
+
+			if valueFrame and valueFrame.Visible and valueFrame.ZIndex > 1 and usesSelectedObject() and pageToAddTo.Active then
+				GuiService.SelectedCoreObject = valueFrame
+			end
+		end
+		RowFrame.MouseEnter:connect(setRowSelection)
 	end
 
 	ValueChangerInstance.Name = rowDisplayName .. "ValueChanger"
@@ -1564,7 +1603,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 
 	nextPosTable[pageToAddTo] = nextRowPositionY
 
-	if RowFrame then
+	if selectionType ~= 'TextBox' then
 		local setRowSelection = function()
 			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
 			if fullscreenDropDown and fullscreenDropDown.Visible then return end
@@ -1580,7 +1619,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				valueFrame = ValueChangerInstance.SelectorFrame
 			end
 
-			if valueFrame and valueFrame.Visible and valueFrame.ZIndex > 1 and usesSelectedObject() then
+			if valueFrame and valueFrame.Visible and valueFrame.ZIndex > 1 and usesSelectedObject() and pageToAddTo.Active then
 				GuiService.SelectedCoreObject = valueFrame
 			end
 		end
@@ -1589,6 +1628,10 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		ValueChangerSelection.SelectionGained:connect(function()
 			if usesSelectedObject() then
 				RowFrame.BackgroundTransparency = 0.5
+
+				if ValueChangerInstance.HubRef then
+					ValueChangerInstance.HubRef:ScrollToFrame(RowFrame)
+				end
 			end
 		end)
 		ValueChangerSelection.SelectionLost:connect(function()
@@ -1599,6 +1642,9 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 	end
 
 	pageToAddTo:AddRow(RowFrame, RowLabel, ValueChangerInstance, extraSpacing)
+
+	ValueChangerInstance.Selection = ValueChangerSelection
+
 	return RowFrame, RowLabel, ValueChangerInstance
 end
 
@@ -1738,8 +1784,8 @@ function moduleApiTable:IsSmallTouchScreen()
 	return isSmallTouchScreen()
 end
 
-function moduleApiTable:MakeStyledButton(name, text, size, clickFunc)
-	return MakeButton(name, text, size, clickFunc)
+function moduleApiTable:MakeStyledButton(name, text, size, clickFunc, pageRef, hubRef)
+	return MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 end
 
 function moduleApiTable:CreateSignal()

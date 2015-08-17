@@ -32,6 +32,7 @@ local function Initialize()
 	this.HubRef = nil
 	this.LastSelectedObject = nil
 	this.TabPosition = 0
+	this.Active = false
 	local rows = {}
 	local displayed = false
 
@@ -198,6 +199,10 @@ local function Initialize()
 
 	function this:SetHub(hubRef)
 		this.HubRef = hubRef
+
+		for i, row in next, rows do
+			row.ValueChanger.HubRef = this.HubRef
+		end
 	end
 
 	function this:GetSize()
@@ -205,19 +210,21 @@ local function Initialize()
 	end
 
 	function this:AddRow(RowFrame, RowLabel, ValueChangerInstance, ExtraRowSpacing)
-		rows[#rows + 1] = {SelectionFrame = RowFrame, Label = RowLabel, ValueChanger = ValueChangerInstance} 
+		rows[#rows + 1] = {SelectionFrame = RowFrame, Label = RowLabel, ValueChanger = ValueChangerInstance}
 
 		local rowFrameYSize = 0
 		if RowFrame then 
-			rowFrameYSize = RowFrame.Size.Y.Offset 
-		else
-			rowFrameYSize = ValueChangerInstance.Size.Y.Offset
+			rowFrameYSize = RowFrame.Size.Y.Offset
 		end
 
 		if ExtraRowSpacing then
 			this.Page.Size = UDim2.new(1, 0, 0, this.Page.Size.Y.Offset + rowFrameYSize + ExtraRowSpacing)
 		else
 			this.Page.Size = UDim2.new(1, 0, 0, this.Page.Size.Y.Offset + rowFrameYSize)
+		end
+
+		if this.HubRef then
+			ValueChangerInstance.HubRef = this.HubRef
 		end
 	end
 

@@ -95,7 +95,7 @@ local function Initialize()
 		local closeSettingsFunc = function()
 			this.HubRef:SetVisibility(false, true)
 		end
-		this.ScreenshotButton = utility:MakeStyledButton("ScreenshotButton", "Take Screenshot", UDim2.new(0,300,0,44), closeSettingsFunc)
+		this.ScreenshotButton = utility:MakeStyledButton("ScreenshotButton", "Take Screenshot", UDim2.new(0,300,0,44), closeSettingsFunc, this)
 		
 		this.ScreenshotButton.Position = UDim2.new(0,400,1,0)
 		this.ScreenshotButton.Parent = screenshotBody
@@ -124,7 +124,7 @@ local function Initialize()
 		end)
 
 
-		local recordButton = utility:MakeStyledButton("RecordButton", "Record Video", UDim2.new(0,300,0,44), closeSettingsFunc)
+		local recordButton = utility:MakeStyledButton("RecordButton", "Record Video", UDim2.new(0,300,0,44), closeSettingsFunc, this)
 		
 		recordButton.Position = UDim2.new(0,410,1,10)
 		recordButton.Parent = this.VideoSettingsMode.SelectorFrame.Parent

@@ -127,8 +127,8 @@ local function Initialize()
 		end
 		
 		if utility:IsSmallTouchScreen() then
-			this.AbuseDescription.Size = UDim2.new(0, 290, 0, 30)
-			this.AbuseDescription.Position = UDim2.new(1,-345,this.AbuseDescription.Position.Y.Scale, this.AbuseDescription.Position.Y.Offset)
+			this.AbuseDescription.Selection.Size = UDim2.new(0, 290, 0, 30)
+			this.AbuseDescription.Selection.Position = UDim2.new(1,-345,this.AbuseDescription.Selection.Position.Y.Scale, this.AbuseDescription.Selection.Position.Y.Offset)
 
 			this.AbuseDescriptionLabel = this.TypeOfAbuseLabel:clone()
 			this.AbuseDescriptionLabel.Text = "Abuse Description"
@@ -177,7 +177,7 @@ local function Initialize()
 
 		local function cleanupReportAbuseMenu()
 			updateAbuseDropDown()
-			this.AbuseDescription.Text = DEFAULT_ABUSE_DESC_TEXT
+			this.AbuseDescription.Selection.Text = DEFAULT_ABUSE_DESC_TEXT
 			this.HubRef:SetVisibility(false, true)
 		end
 
@@ -189,14 +189,14 @@ local function Initialize()
 				local currentAbusingPlayer = this:GetPlayerFromIndex(this.WhichPlayerMode.CurrentIndex)
 				if currentAbusingPlayer and abuseReason then
 					spawn(function()
-						game.Players:ReportAbuse(currentAbusingPlayer, abuseReason, this.AbuseDescription.Text)
+						game.Players:ReportAbuse(currentAbusingPlayer, abuseReason, this.AbuseDescription.Selection.Text)
 					end)
 				end
 			else
 				abuseReason = ABUSE_TYPES_GAME[this.TypeOfAbuseMode.CurrentIndex]
 				if abuseReason then
 					spawn(function()
-						game.Players:ReportAbuse(nil, abuseReason, this.AbuseDescription.Text)
+						game.Players:ReportAbuse(nil, abuseReason, this.AbuseDescription.Selection.Text)
 					end)
 				end
 			end
@@ -218,7 +218,7 @@ local function Initialize()
 			end
 		end
 
-		submitButton, submitText = utility:MakeStyledButton("SubmitButton", "Submit", UDim2.new(0,194,0,50), onReportSubmitted)
+		submitButton, submitText = utility:MakeStyledButton("SubmitButton", "Submit", UDim2.new(0,194,0,50), onReportSubmitted, this)
 		if utility:IsSmallTouchScreen() then
 			submitButton.Position = UDim2.new(1,-220,1,5)
 		else
@@ -227,7 +227,7 @@ local function Initialize()
 		submitButton.Selectable = false
 		submitButton.ZIndex = 1
 		submitText.ZIndex = 1
-		submitButton.Parent = this.AbuseDescription
+		submitButton.Parent = this.AbuseDescription.Selection
 
 		local function playerSelectionChanged(newIndex)
 			if newIndex ~= nil and this.TypeOfAbuseMode:GetSelectedIndex() ~= nil then
@@ -253,7 +253,7 @@ local function Initialize()
 
 		this.GameOrPlayerMode.IndexChanged:connect(updateAbuseDropDown)
 
-		this:AddRow(nil, nil, submitButton)
+		this:AddRow(nil, nil, this.AbuseDescription)
 
 		this.Page.Size = UDim2.new(1,0,0,submitButton.AbsolutePosition.Y + submitButton.AbsoluteSize.Y)
 	end
