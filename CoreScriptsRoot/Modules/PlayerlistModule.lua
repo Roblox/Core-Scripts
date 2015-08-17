@@ -126,9 +126,6 @@ local AbuseReason = nil
 --[[ Constants ]]--
 local ENTRY_PAD = 2
 local BG_TRANSPARENCY = 0.5
-if isTenFootInterface then
-	BG_TRANSPARENCY = 0.1
-end
 local BG_COLOR = Color3.new(31/255, 31/255, 31/255)
 local BG_COLOR_TOP = Color3.new(106/255, 106/255, 106/255)
 local TEXT_STROKE_TRANSPARENCY = 0.75
@@ -303,7 +300,7 @@ local function getAdminIcon(player)
 end
 
 local function getAvatarIcon()
-	return BaseUrl .. 'Thumbs/Avatar.ashx?userid=7210880&width=64&height=64'
+	return BaseUrl .. "Thumbs/Avatar.ashx?userid=" .. tostring(Player.userId) .. "&width=64&height=64"
 end
 
 local function getMembershipIcon(player)
@@ -789,7 +786,7 @@ local function setPlayerEntryPositions()
 		if isTenFootInterface and PlayerEntries[i].Frame ~= MyPlayerEntryTopFrame then
 			PlayerEntries[i].Frame.Position = UDim2.new(0, 0, 0, position)
 			position = position + PlayerEntrySizeY + 2
-		else
+		elseif PlayerEntries[i].Frame ~= MyPlayerEntryTopFrame then
 			PlayerEntries[i].Frame.Position = UDim2.new(0, 0, 0, position)
 			position = position + PlayerEntrySizeY + 2
 		end
@@ -1814,6 +1811,8 @@ local function insertPlayerEntry(player)
 	if player == Player and isTenFootInterface then
 		local localEntry = createPlayerEntry(player, true)
 		MyPlayerEntryTopFrame = localEntry.Frame
+		MyPlayerEntryTopFrame.BackgroundTransparency = 0
+		MyPlayerEntryTopFrame.BorderSizePixel = 0
 		setupEntry(player, localEntry, true)
 	end
 end
@@ -1995,6 +1994,7 @@ local closeListFunc = function(name, state, input)
 	ContextActionService:UnbindCoreAction("CloseList")
 	ContextActionService:UnbindCoreAction("StopAction")
 	GuiService.SelectedCoreObject = nil
+	UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 end
 
 
@@ -2024,7 +2024,9 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 						else
 							GuiService.SelectedCoreObject = ScrollList
 						end
+
 						if isUsingGamepad then
+							UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 							ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
 							ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
 						end
@@ -2033,6 +2035,9 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 				end
 			end
 		else
+			if isUsingGamepad then
+				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+			end
 			ContextActionService:UnbindCoreAction("CloseList")
 			ContextActionService:UnbindCoreAction("StopAction")
 			GuiService.SelectedCoreObject = nil

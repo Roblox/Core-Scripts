@@ -4,10 +4,12 @@ local PURPOSE_DATA = {
 	[Enum.DialogPurpose.Shop] = {"rbxasset://textures/ui/DialogShop.png", Vector2.new(22, 43)},
 }
 local TEXT_HEIGHT = 24 -- Pixel height of one row
+local FONT_SIZE = Enum.FontSize.Size24
 local BAR_THICKNESS = 6
 local STYLE_PADDING = 17
 local CHOICE_PADDING = 6 * 2 -- (Added to vertical height)
 local PROMPT_SIZE = Vector2.new(80, 90)
+local FRAME_WIDTH = 350
 
 local WIDTH_BONUS = (STYLE_PADDING * 2) - BAR_THICKNESS
 local XPOS_OFFSET = -(STYLE_PADDING - BAR_THICKNESS)
@@ -67,10 +69,27 @@ local timeoutScript
 local reenableDialogScript
 local dialogMap = {}
 local dialogConnections = {}
+local touchControlGui = nil
 
 local gui = nil
 waitForChild(game,"CoreGui")
 waitForChild(game:GetService("CoreGui"),"RobloxGui")
+
+game:GetService("CoreGui").RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(game:GetService("CoreGui").RobloxGui.Modules.TenFootInterface):IsEnabled()
+local utility = require(game:GetService("CoreGui").RobloxGui.Modules.Settings.Utility)
+local isSmallTouchScreen = utility:IsSmallTouchScreen()
+
+if isTenFootInterface then
+	FONT_SIZE = Enum.FontSize.Size36
+	TEXT_HEIGHT = 36
+	FRAME_WIDTH = 500
+elseif isSmallTouchScreen then
+	FONT_SIZE = Enum.FontSize.Size14
+	TEXT_HEIGHT = 14
+	FRAME_WIDTH = 250
+end
+
 if game:GetService("CoreGui").RobloxGui:FindFirstChild("ControlFrame") then
 	gui = game:GetService("CoreGui").RobloxGui.ControlFrame
 else
@@ -248,6 +267,10 @@ function endDialog()
 
 	contextActionService:UnbindCoreAction("Nothing")
 	currentConversationPartner = nil
+	
+	if touchControlGui then
+		touchControlGui.Visible = true
+	end
 end
 
 function sanitizeMessage(msg)
@@ -300,7 +323,7 @@ function newChoice()
 	prompt.Name = "UserPrompt"
 	prompt.BackgroundTransparency = 1
 	prompt.Font = Enum.Font.SourceSans
-	prompt.FontSize = Enum.FontSize.Size24
+	prompt.FontSize = FONT_SIZE
 	prompt.Position = UDim2.new(0, 40, 0, 0)
 	prompt.Size = UDim2.new(1, -32-40, 1, 0)
 	prompt.TextXAlignment = Enum.TextXAlignment.Left
@@ -333,7 +356,7 @@ function initialize(parent)
 
 	mainFrame = Instance.new("Frame")
 	mainFrame.Name = "UserDialogArea"
-	mainFrame.Size = UDim2.new(0, 350, 0, 200)
+	mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, 200)
 	mainFrame.Style = Enum.FrameStyle.ChatBlue
 	mainFrame.Visible = false
 
@@ -394,8 +417,18 @@ function presentDialogChoices(talkingPart, dialogChoices)
 
 	lastChoice.Position = UDim2.new(0, XPOS_OFFSET, 0, YPOS_OFFSET + yPosition)
 
-	mainFrame.Size = UDim2.new(0, 350, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
+	mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
 	mainFrame.Position = UDim2.new(0,20,1.0, -mainFrame.Size.Y.Offset-20)
+	if isSmallTouchScreen then
+		local touchScreenGui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("TouchGui")
+		if touchScreenGui then
+			touchControlGui = touchScreenGui:FindFirstChild("TouchControlFrame")
+			if touchControlGui then
+				touchControlGui.Visible = false
+			end
+		end
+		mainFrame.Position = UDim2.new(0,10,1.0, -mainFrame.Size.Y.Offset)
+	end
 	styleMainFrame(currentTone())
 	mainFrame.Visible = true
 
@@ -565,8 +598,12 @@ function onLoad()
   		game:GetService("GuiService"):AddSelectionParent("RBXDialogGroup", frame)
   end
 
-  if (touchEnabled) then
+  if (touchEnabled and not isSmallTouchScreen) then
 	frame.Position = UDim2.new(0,20,0.5,0)
+	frame.Size = UDim2.new(0.25,0,0.1,0)
+	frame.Parent = gui
+  elseif isSmallTouchScreen then
+	frame.Position = UDim2.new(0,0,.9,-10)
 	frame.Size = UDim2.new(0.25,0,0.1,0)
 	frame.Parent = gui
   else
