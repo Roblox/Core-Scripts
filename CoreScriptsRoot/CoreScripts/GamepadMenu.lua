@@ -521,11 +521,9 @@ local function setupGamepadControls()
 				end
 			end
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,408,0,408), UDim2.new(0.5,-204,0.5,-204),
-														Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.18, true, 
-			function(status)
-				if status == Enum.TweenStatus.Completed then
-					setVisibility()
-				end
+														Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.18, true, nil)
+			delay(0.18, function()
+				setVisibility()
 			end)
 		else
 			if lastInputChangedCon ~= nil then
@@ -541,11 +539,9 @@ local function setupGamepadControls()
 				end
 			end
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,102,0,102), UDim2.new(0.5,-51,0.5,-51),
-														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, 
-			function(status)
-				if status == Enum.TweenStatus.Completed then
-					gamepadSettingsFrame.Visible = isVisible
-				end
+														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, nil)
+			delay(0.1, function()
+				gamepadSettingsFrame.Visible = isVisible
 			end)
 		end
 
@@ -562,6 +558,7 @@ local function setupGamepadControls()
 		else
 			unbindAllRadialActions()
 		end
+
 		return gamepadSettingsFrame.Visible
 	end
 
