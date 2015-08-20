@@ -1657,6 +1657,39 @@ local function CreateChatWindowWidget(settings)
 		local chatMessage = CreateSystemChatMessage(this.Settings, chattedMessage)
 		this:PushMessageIntoQueue(chatMessage, silently)
 	end
+	
+	local function checkEnum(enumItems, value)
+		for _, enum in pairs(enumItems) do
+			if enum.Value == value then
+				return enum
+			end
+		end
+		return nil
+	end
+	
+	function this:AddDeveloperSystemChatMessage(informationTable)
+		local settings = this.Settings
+
+		if informationTable["Text"] and type(informationTable["Text"]) == "string" then
+			if informationTable["Color"] and pcall(function() Color3.new(informationTable["Color"].r, informationTable["Color"].g, informationTable["Color"].b) end) then
+				settings.DefaultMessageTextColor = informationTable["Color"]
+			end
+			if informationTable["Font"] then
+				local success, value = pcall(function() return checkEnum(Enum.Font:GetEnumItems(), informationTable["Font"].Value) end)
+				if success and value ~= nil then
+					settings.Font = value
+				end
+			end
+			if informationTable["FontSize"] then
+				local success, value = pcall(function() return checkEnum(Enum.FontSize:GetEnumItems(), informationTable["FontSize"].Value) end)
+				if success and value ~= nil then
+					settings.FontSize = value
+				end
+			end
+			local chatMessage = CreateSystemChatMessage(settings, informationTable["Text"])
+			this:PushMessageIntoQueue(chatMessage, false)
+		end
+	end
 
 	function this:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer, silently)
 		local fixedChattedMessage = Util.FilterUnprintableCharacters(chattedMessage)
@@ -2325,7 +2358,13 @@ local function CreateChat()
 		spawn(function()
 			this.BlockList = this:GetBlockedPlayersAsync()
 		end)
-
+		
+		game:WaitForChild("StarterGui"):RegisterSetCore("ChatMakeSystemMessage", 	function(informationTable) 
+																						if this.ChatWindowWidget then 
+																							this.ChatWindowWidget:AddDeveloperSystemChatMessage(informationTable) 
+																						end 
+																					end)
+		
 		this:OnPlayerAdded(Player)
 		-- Upsettingly, it seems everytime a player is added, you have to redo the connection
 		-- NOTE: PlayerAdded only fires on the server, hence ChildAdded is used here
