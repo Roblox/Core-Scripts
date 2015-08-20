@@ -32,6 +32,7 @@ local function Initialize()
 	this.HubRef = nil
 	this.LastSelectedObject = nil
 	this.TabPosition = 0
+	this.Active = false
 	local rows = {}
 	local displayed = false
 
@@ -110,22 +111,6 @@ local function Initialize()
 	-- make sure each page has a unique selection group (for gamepad selection)
 	GuiService:AddSelectionParent(HttpService:GenerateGUID(false), this.Page)
 
-	local tweenAllDescendants = nil
-	tweenAllDescendants = function(root, posDiff, completeFunction)
-		local pageChildren = root:GetChildren()
-		for i = 1, #pageChildren do
-			local descendant = pageChildren[i]
-			local property = "Position"
-			if descendant["Position"] and descendant:IsDescendantOf(game) then
-				local endPos = posDiff + descendant["Position"]
-				descendant:TweenPosition(endPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 1, true, completeFunction)
-				completeFunction = nil
-			end
-			tweenAllDescendants(descendant, posDiff, completeFunction)
-		end
-	end
-
-
 	----------------- Events ------------------------
 
 	this.Displayed = Instance.new("BindableEvent")
@@ -147,7 +132,6 @@ local function Initialize()
 						valueChangerFrame = rows[1].ValueChanger.SliderFrame and 
 													rows[1].ValueChanger.SliderFrame or rows[1].ValueChanger.SelectorFrame
 					end
-
 					GuiService.SelectedCoreObject = valueChangerFrame
 				end
 			end
@@ -155,8 +139,12 @@ local function Initialize()
 	end)
 
 	this.Hidden = Instance.new("BindableEvent")
+	this.Hidden.Event:connect(function()
+		if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(this.Page) then
+			GuiService.SelectedCoreObject = nil
+		end
+	end)
 	this.Hidden.Name = "Hidden"
-
 
 	----------------- FUNCTIONS ------------------------
 	function this:Display(pageParent)
@@ -168,7 +156,9 @@ local function Initialize()
 
 		this.Page.Parent = pageParent
 
-		this.Page:TweenPosition(UDim2.new(0,0,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.2, true, function(tweenStatus)
+		local tweenTime = 0.2
+		local endPos = UDim2.new(0,0,0,0)
+		this.Page:TweenPosition(endPos, Enum.EasingDirection.In, Enum.EasingStyle.Quad, tweenTime, true, function(tweenStatus)
 			if tweenStatus == Enum.TweenStatus.Completed then
 				displayed = true
 				this.Displayed:Fire()
@@ -183,7 +173,9 @@ local function Initialize()
 		end
 
 		if this.Page.Parent then
-			this.Page:TweenPosition(UDim2.new(1 * direction,0,0,0), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true, function(tweenStatus) 
+			local tweenTime = 0.1
+			local endPos = UDim2.new(1 * direction,0,0,0)
+			this.Page:TweenPosition(endPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true, function(tweenStatus)
 				if tweenStatus == Enum.TweenStatus.Completed then
 					this.Page.Parent = nil 
 					this.Page.Position = UDim2.new(this.TabPosition - newPagePos,0,0,0)
@@ -210,6 +202,12 @@ local function Initialize()
 
 	function this:SetHub(hubRef)
 		this.HubRef = hubRef
+
+		for i, row in next, rows do
+			if type(row.ValueChanger) == 'table' then
+				row.ValueChanger.HubRef = this.HubRef
+			end
+		end
 	end
 
 	function this:GetSize()
@@ -217,19 +215,21 @@ local function Initialize()
 	end
 
 	function this:AddRow(RowFrame, RowLabel, ValueChangerInstance, ExtraRowSpacing)
-		rows[#rows + 1] = {SelectionFrame = RowFrame, Label = RowLabel, ValueChanger = ValueChangerInstance} 
+		rows[#rows + 1] = {SelectionFrame = RowFrame, Label = RowLabel, ValueChanger = ValueChangerInstance}
 
 		local rowFrameYSize = 0
 		if RowFrame then 
-			rowFrameYSize = RowFrame.Size.Y.Offset 
-		else
-			rowFrameYSize = ValueChangerInstance.Size.Y.Offset
+			rowFrameYSize = RowFrame.Size.Y.Offset
 		end
 
 		if ExtraRowSpacing then
 			this.Page.Size = UDim2.new(1, 0, 0, this.Page.Size.Y.Offset + rowFrameYSize + ExtraRowSpacing)
 		else
 			this.Page.Size = UDim2.new(1, 0, 0, this.Page.Size.Y.Offset + rowFrameYSize)
+		end
+
+		if this.HubRef and type(ValueChangerInstance) == 'table' then
+			ValueChangerInstance.HubRef = this.HubRef
 		end
 	end
 

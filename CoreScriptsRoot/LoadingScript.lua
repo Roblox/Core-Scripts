@@ -441,10 +441,10 @@ guiService.ErrorMessageChanged:connect(function()
 				local textLabel = nil
 				leaveGameButton, leaveGameTextLabel = utility:MakeStyledButton("LeaveGame", "Leave", UDim2.new(0, 288, 0, 78))
 				leaveGameButton:SetVerb("Exit")
-				leaveGameButton.NextSelectionDown = nil
-				leaveGameButton.NextSelectionLeft = nil
-				leaveGameButton.NextSelectionRight = nil 
-				leaveGameButton.NextSelectionUp = nil
+				leaveGameButton.NextSelectionDown = leaveGameButton
+				leaveGameButton.NextSelectionLeft = leaveGameButton
+				leaveGameButton.NextSelectionRight = leaveGameButton 
+				leaveGameButton.NextSelectionUp = leaveGameButton
 				leaveGameButton.ZIndex = 9
 				leaveGameButton.Position = UDim2.new(0.771875, 0, 0, 37)
 				leaveGameButton.Parent = currScreenGui.ErrorFrame

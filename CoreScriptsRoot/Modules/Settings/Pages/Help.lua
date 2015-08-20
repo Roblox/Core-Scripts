@@ -37,11 +37,13 @@ local function Initialize()
 	local lastInputType = nil
 
 	function this:GetCurrentInputType()
+		this.HubRef.PageViewClipper.ClipsDescendants = true
 		this.HubRef.PageView.ClipsDescendants = true
 
 		if lastInputType == nil then -- we don't know what controls the user has, just use reasonable defaults
 			local platform = UserInputService:GetPlatform()
 			if platform == Enum.Platform.XBoxOne or platform == Enum.Platform.WiiU then
+				this.HubRef.PageViewClipper.ClipsDescendants = false
 				this.HubRef.PageView.ClipsDescendants = false
 				return GAMEPAD_TAG
 			elseif platform == Enum.Platform.Windows or platform == Enum.Platform.OSX then
@@ -57,11 +59,13 @@ local function Initialize()
 					return KEYBOARD_MOUSE_TAG
 		elseif lastInputType == Enum.UserInputType.Touch then
 					if not utility:IsSmallTouchScreen() then
+						this.HubRef.PageViewClipper.ClipsDescendants = false
 						this.HubRef.PageView.ClipsDescendants = false
 					end
 					return TOUCH_TAG
 		elseif lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or 
 				inputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4 then
+					this.HubRef.PageViewClipper.ClipsDescendants = false
 					this.HubRef.PageView.ClipsDescendants = false
 					return GAMEPAD_TAG
 		end
@@ -199,9 +203,11 @@ local function Initialize()
 	local function createGamepadHelp(parentFrame)
 		local gamepadImage = "rbxasset://textures/ui/Settings/Help/GenericController.png"
 		local imageSize = UDim2.new(0,650,0,239)
+		local imagePosition = UDim2.new(0.5,-imageSize.X.Offset/2,0.5,-imageSize.Y.Offset/2)
 		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne or UserInputService:GetPlatform() == Enum.Platform.XBox360 then
 			gamepadImage = "rbxasset://textures/ui/Settings/Help/XboxController.png"
-			imageSize = UDim2.new(0,1116,0,428)
+			imageSize = UDim2.new(0,1334,0,570)
+			imagePosition = UDim2.new(0.5, (-imageSize.X.Offset/2) - 50, 0.5, -imageSize.Y.Offset/2)
 		elseif UserInputService:GetPlatform() == Enum.Platform.PS4 or UserInputService:GetPlatform() == Enum.Platform.PS3 then
 			gamepadImage = "rbxasset://textures/ui/Settings/Help/PSController.png"
 		end
@@ -210,7 +216,7 @@ local function Initialize()
 		{
 			Name = "GamepadImage",
 			Size = imageSize,
-			Position = UDim2.new(0.5,-imageSize.X.Offset/2,0.5,-imageSize.Y.Offset/2),
+			Position = imagePosition,
 			Image = gamepadImage,
 			BackgroundTransparency = 1,
 			ZIndex = 2,
@@ -218,6 +224,7 @@ local function Initialize()
 		};
 		parentFrame.Size = UDim2.new(parentFrame.Size.X.Scale, parentFrame.Size.X.Offset, 0, gamepadImageLabel.Size.Y.Offset + 100)
 
+		local gamepadFontSize = isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size24
 		local function createGamepadLabel(text, position, size)
 			local nameLabel = utility:Create'TextLabel'
 			{
@@ -225,36 +232,42 @@ local function Initialize()
 				Size = size,
 				BackgroundTransparency = 1,
 				Text = text,
+				TextXAlignment = Enum.TextXAlignment.Left,
 				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size24,
+				FontSize = gamepadFontSize,
 				TextColor3 = Color3.new(1,1,1),
 				Name = text .. "Label",
 				ZIndex = 2,
 				Parent = gamepadImageLabel
 			};
-			if isTenFootInterface then
-				FontSize = Enum.FontSize.Size36
-			end
 		end
+
+		local textVerticalSize = (gamepadFontSize == Enum.FontSize.Size36) and 36 or 24
 
 		if gamepadImage == "rbxasset://textures/ui/Settings/Help/XboxController.png" then
-			createGamepadLabel("Switch Tool", UDim2.new(0,50,0,-12), UDim2.new(0,100,0,24))
-			createGamepadLabel("Game Menu Toggle", UDim2.new(0,-20,0.15,-12), UDim2.new(0,164,0,24))
-			createGamepadLabel("Move", UDim2.new(0,-65,0.31,-12), UDim2.new(0,46,0,24))
-			createGamepadLabel("Menu Navigation", UDim2.new(0,-50,0.46,-12), UDim2.new(0,164,0,24))
+			createGamepadLabel("Switch Tool", UDim2.new(0,50,0,-textVerticalSize/2), UDim2.new(0,100,0,textVerticalSize))
+			createGamepadLabel("Game Menu Toggle", UDim2.new(0,-38,0.15,-textVerticalSize/2), UDim2.new(0,164,0,textVerticalSize))
+			createGamepadLabel("Move", UDim2.new(0,-80,0.31,-textVerticalSize/2), UDim2.new(0,46,0,textVerticalSize))
+			createGamepadLabel("Menu Navigation", UDim2.new(0,-50,0.46,-textVerticalSize/2), UDim2.new(0,164,0,textVerticalSize))
+			createGamepadLabel("Use Tool", UDim2.new(0.96,0,0,-textVerticalSize/2), UDim2.new(0,73,0,textVerticalSize))
+			createGamepadLabel("ROBLOX Menu", UDim2.new(0.96,0,0.15,-textVerticalSize/2), UDim2.new(0,122,0,textVerticalSize))
+			createGamepadLabel("Back", UDim2.new(0.96,0,0.31,-textVerticalSize/2), UDim2.new(0,43,0,textVerticalSize))
+			createGamepadLabel("Jump", UDim2.new(0.96,0,0.46,-textVerticalSize/2), UDim2.new(0,49,0,textVerticalSize))
+			createGamepadLabel("Rotate Camera", UDim2.new(1,0,0.62,-textVerticalSize/2), UDim2.new(0,132,0,textVerticalSize))
+			createGamepadLabel("Camera Zoom", UDim2.new(1,0,0.77,-textVerticalSize/2), UDim2.new(0,122,0,textVerticalSize))
 		else
-			createGamepadLabel("Switch Tool", UDim2.new(-0.01,0,0,-12), UDim2.new(0,100,0,24))
-			createGamepadLabel("Game Menu Toggle", UDim2.new(-0.11,0,0.15,-12), UDim2.new(0,164,0,24))
-			createGamepadLabel("Move", UDim2.new(-0.08,0,0.31,-12), UDim2.new(0,46,0,24))
-			createGamepadLabel("Menu Navigation", UDim2.new(-0.125,0,0.46,-12), UDim2.new(0,164,0,24))
+			createGamepadLabel("Switch Tool", UDim2.new(-0.01,0,0,-textVerticalSize/2), UDim2.new(0,100,0,textVerticalSize))
+			createGamepadLabel("Game Menu Toggle", UDim2.new(-0.11,0,0.15,-textVerticalSize/2), UDim2.new(0,164,0,textVerticalSize))
+			createGamepadLabel("Move", UDim2.new(-0.08,0,0.31,-textVerticalSize/2), UDim2.new(0,46,0,textVerticalSize))
+			createGamepadLabel("Menu Navigation", UDim2.new(-0.125,0,0.46,-textVerticalSize/2), UDim2.new(0,164,0,textVerticalSize))
+			createGamepadLabel("Use Tool", UDim2.new(0.96,0,0,-textVerticalSize/2), UDim2.new(0,73,0,textVerticalSize))
+			createGamepadLabel("ROBLOX Menu", UDim2.new(0.9,0,0.15,-textVerticalSize/2), UDim2.new(0,122,0,textVerticalSize))
+			createGamepadLabel("Back", UDim2.new(1.01,0,0.31,-textVerticalSize/2), UDim2.new(0,43,0,textVerticalSize))
+			createGamepadLabel("Jump", UDim2.new(0.91,0,0.46,-textVerticalSize/2), UDim2.new(0,49,0,textVerticalSize))
+			createGamepadLabel("Rotate Camera", UDim2.new(0.91,0,0.62,-textVerticalSize/2), UDim2.new(0,132,0,textVerticalSize))
+			createGamepadLabel("Camera Zoom", UDim2.new(0.91,0,0.77,-textVerticalSize/2), UDim2.new(0,122,0,textVerticalSize))
 		end
 
-		createGamepadLabel("Use Tool", UDim2.new(0.96,0,0,-12), UDim2.new(0,73,0,24))
-		createGamepadLabel("ROBLOX Menu", UDim2.new(0.9,0,0.15,-12), UDim2.new(0,122,0,24))
-		createGamepadLabel("Back", UDim2.new(1.01,0,0.31,-12), UDim2.new(0,43,0,24))
-		createGamepadLabel("Jump", UDim2.new(0.91,0,0.46,-12), UDim2.new(0,49,0,24))
-		createGamepadLabel("Rotate Camera", UDim2.new(0.91,0,0.62,-12), UDim2.new(0,132,0,24))
-		createGamepadLabel("Camera Zoom", UDim2.new(0.91,0,0.77,-12), UDim2.new(0,122,0,24))
 
 		-- todo: turn on dev console button when dev console is ready
 		--[[local openDevConsoleFunc = function()
@@ -284,7 +297,10 @@ local function Initialize()
 
 	local function createTouchHelp(parentFrame)
 		local smallScreen = utility:IsSmallTouchScreen()
-		local ySize = GuiService:GetScreenResolution().y - 60
+		local ySize = GuiService:GetScreenResolution().y - 350
+		if smallScreen then
+			ySize = GuiService:GetScreenResolution().y - 100
+		end
 		parentFrame.Size = UDim2.new(1,0,0,ySize)
 
 		local function createTouchLabel(text, position, size, parent)
@@ -336,18 +352,6 @@ local function Initialize()
 			return gestureImage
 		end
 
-		local backgroundFrame = utility:Create'Frame'
-		{
-			Name = "HelpBackground",
-			Size = UDim2.new(3,0,3,0),
-			Position = UDim2.new(-1,0,-1,0),	
-			BackgroundColor3 = Color3.new(0,0,0),
-			BackgroundTransparency = 0.7,
-			ZIndex = 2,
-			Active = true,
-			Parent = parentFrame
-		};
-
 		local xSizeOffset = 30
 		local ySize = 25
 		if smallScreen then xSizeOffset = 0 end
@@ -388,14 +392,6 @@ local function Initialize()
 	end
 
 	local function displayHelp(currentPage)
-		if this:GetDisplayed() then
-			if this:GetCurrentInputType() == TOUCH_TAG then
-				this.HubRef:HideShield()
-			elseif not isTenFootInterface then
-				this.HubRef:ShowShield()
-			end
-		end
-
 		for i, helpPage in pairs(this.HelpPages) do
 			if helpPage == currentPage then
 				helpPage.Parent = this.Page
@@ -464,10 +460,9 @@ do
 
 	PageInstance.Displayed.Event:connect(function()
 		if PageInstance:GetCurrentInputType() == GAMEPAD_TAG then
+			PageInstance.HubRef.PageViewClipper.ClipsDescendants = false
 			PageInstance.HubRef.PageView.ClipsDescendants = false
 		elseif PageInstance:GetCurrentInputType() == TOUCH_TAG then
-			PageInstance.HubRef:HideShield()
-
 			if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() then
 				PageInstance.HubRef.BottomButtonFrame.Visible = false
 			end
@@ -476,8 +471,11 @@ do
 
 	PageInstance.Hidden.Event:connect(function()
 		PageInstance.HubRef:ShowShield()
+		PageInstance.HubRef.PageViewClipper.ClipsDescendants = true
 		PageInstance.HubRef.PageView.ClipsDescendants = true
-		PageInstance.HubRef.BottomButtonFrame.Visible = true
+		if PageInstance:GetCurrentInputType() == TOUCH_TAG then
+			PageInstance.HubRef.BottomButtonFrame.Visible = true
+		end
 	end)
 end
 

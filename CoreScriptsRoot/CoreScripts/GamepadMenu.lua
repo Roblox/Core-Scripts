@@ -26,6 +26,7 @@ local isVisible = false
 local smallScreen = utility:IsSmallTouchScreen()
 local isTenFootInterface = tenFootInterface:IsEnabled()
 local radialButtons = {}
+local lastInputChangedCon = nil
 
 local function getButtonForCoreGuiType(coreGuiType)
 	if coreGuiType == Enum.CoreGuiType.All then
@@ -90,6 +91,18 @@ local function activateSelectedRadialButton()
 	return false
 end
 
+local function setButtonEnabled(button, enabled)
+	if enabled then
+		button.ImageTransparency = 0
+		button.RadialIcon.ImageTransparency = 0
+	else
+		button.ImageTransparency = 0.5
+		button.RadialIcon.ImageTransparency = 0.5
+	end
+
+	radialButtons[button]["Disabled"] = not enabled
+end
+
 local function setRadialButtonEnabled(coreGuiType, enabled)
 	local returnValue = getButtonForCoreGuiType(coreGuiType)
 	if not returnValue then return end
@@ -107,16 +120,7 @@ local function setRadialButtonEnabled(coreGuiType, enabled)
 
 	for i = 1, #buttonsToDisable do
 		local button = buttonsToDisable[i]
-
-		if enabled then
-			button.ImageTransparency = 0
-			button.RadialIcon.ImageTransparency = 0
-		else
-			button.ImageTransparency = 0.5
-			button.RadialIcon.ImageTransparency = 0.5
-		end
-
-		radialButtons[button]["Disabled"] = not enabled
+		setButtonEnabled(button, enabled)
 	end
 end
 
@@ -279,6 +283,9 @@ local function createGamepadMenuGui()
 		gamepadNotifications:Fire(true)
 	end
 	local notificationsRadial = createRadialButton("Notifications", "Notifications", 3, false, nil, notificationsFunc)
+	if isTenFootInterface then
+		setButtonEnabled(notificationsRadial, false)
+	end
 	notificationsRadial.Parent = gamepadSettingsFrame
 
 	---------------------------------
@@ -309,6 +316,9 @@ local function createGamepadMenuGui()
 		ChatModule:ToggleVisibility()
 	end
 	local chatRadial = createRadialButton("Chat", "Chat", 6, not StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat), Enum.CoreGuiType.Chat, chatFunc)
+	if isTenFootInterface then
+		setButtonEnabled(chatRadial, false)
+	end
 	chatRadial.Parent = gamepadSettingsFrame
 
 
@@ -479,16 +489,24 @@ local function setupGamepadControls()
 		end
 	end
 
+	function setOverrideMouseIconBehavior()
+		pcall(function()
+			if InputService:GetLastInputType() == Enum.UserInputType.Gamepad1 then
+				InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+			else
+				InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
+			end
+		end)
+	end
+
 	function toggleCoreGuiRadial()
 		isVisible = not gamepadSettingsFrame.Visible
 		
 		setVisibility()
 
 		if isVisible then
-
-			if InputService.GamepadEnabled and not InputService.MouseEnabled then
-				InputService.OverrideMouseIconEnabled = true
-			end
+			setOverrideMouseIconBehavior()
+			pcall(function() lastInputChangedCon = InputService.LastInputTypeChanged:connect(setOverrideMouseIconBehavior) end)
 
 			gamepadSettingsFrame.Visible = isVisible
 
@@ -503,14 +521,16 @@ local function setupGamepadControls()
 				end
 			end
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,408,0,408), UDim2.new(0.5,-204,0.5,-204),
-														Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.18, true, 
-			function()
+														Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.18, true, nil)
+			delay(0.18, function()
 				setVisibility()
 			end)
 		else
-			if InputService.GamepadEnabled and not InputService.MouseEnabled then
-				InputService.OverrideMouseIconEnabled = false
+			if lastInputChangedCon ~= nil then
+				lastInputChangedCon:disconnect()
+				lastInputChangedCon = nil
 			end
+			pcall(function() InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
 
 			local settingsChildren = gamepadSettingsFrame:GetChildren()
 			for i = 1, #settingsChildren do
@@ -519,8 +539,8 @@ local function setupGamepadControls()
 				end
 			end
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,102,0,102), UDim2.new(0.5,-51,0.5,-51),
-														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, 
-			function()
+														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, nil)
+			delay(0.1, function()
 				gamepadSettingsFrame.Visible = isVisible
 			end)
 		end
@@ -538,6 +558,7 @@ local function setupGamepadControls()
 		else
 			unbindAllRadialActions()
 		end
+
 		return gamepadSettingsFrame.Visible
 	end
 

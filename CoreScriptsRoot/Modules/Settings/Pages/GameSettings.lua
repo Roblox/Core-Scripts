@@ -10,7 +10,8 @@ local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
-local PlatformService = game:GetService("PlatformService")
+local PlatformService = nil 
+pcall(function() PlatformService = game:GetService("PlatformService") end)
 local ContextActionService = game:GetService("ContextActionService")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
@@ -50,6 +51,7 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 
 ------------ Variables -------------------
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local PageInstance = nil
 local LocalPlayer = game.Players.LocalPlayer
@@ -60,7 +62,7 @@ local overscanScreen = nil
 
 ----------- CLASS DECLARATION --------------
 
-local function Initialize()	
+local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
@@ -362,18 +364,24 @@ local function Initialize()
 		------------------
 		------------------------- Connection Setup -----------
 		function setCameraModeVisible(visible)
-			this.CameraMode.SelectorFrame.Visible = visible
-			this.CameraMode:SetInteractable(visible)
+			if this.CameraMode then
+				this.CameraMode.SelectorFrame.Visible = visible
+				this.CameraMode:SetInteractable(visible)
+			end
 		end
 
 		function setMovementModeVisible(visible)
-			this.MovementMode.SelectorFrame.Visible = visible
-			this.MovementMode:SetInteractable(visible)
+			if this.MovementMode then
+				this.MovementMode.SelectorFrame.Visible = visible
+				this.MovementMode:SetInteractable(visible)
+			end
 		end
 
 		function setShiftLockVisible(visible)
-			this.ShiftLockMode.SelectorFrame.Visible = visible
-			this.ShiftLockMode:SetInteractable(visible)
+			if this.ShiftLockMode then
+				this.ShiftLockMode.SelectorFrame.Visible = visible
+				this.ShiftLockMode:SetInteractable(visible)
+			end
 		end
 
 		do -- initial set of dev vs user choice for guis
@@ -486,7 +494,7 @@ local function Initialize()
 		end
 
 		local startMouseLevel = translateEngineMouseSensitivityToGui(GameSettings.MouseSensitivity)
-
+		
 		this.MouseSensitivityFrame, 
 		this.MouseSensitivityLabel,
 		this.MouseSensitivitySlider = utility:AddNewRow(this, "Mouse Sensitivity", "Slider", MouseSteps, startMouseLevel)
@@ -536,7 +544,7 @@ local function Initialize()
 		utility:AddNewRowObject(this, "Safe Zone", adjustButton)
 	end
 
-	createCameraModeOptions(not UserInputService.GamepadEnabled and 
+	createCameraModeOptions(not isTenFootInterface and 
 								(UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
 
 	if UserInputService.MouseEnabled then
@@ -579,7 +587,7 @@ local function Initialize()
 
 	------ PAGE CUSTOMIZATION -------
 	this.Page.ZIndex = 5
-
+	
 	return this
 end
 

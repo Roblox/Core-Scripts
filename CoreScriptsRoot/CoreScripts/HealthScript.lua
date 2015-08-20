@@ -205,7 +205,7 @@ function UpdateGui(health)
 
 	local thresholdForHurtOverlay = currentHumanoid.MaxHealth * (HealthPercentageForOverlay/100)
 	
-	if healthDelta >= thresholdForHurtOverlay then
+	if healthDelta >= thresholdForHurtOverlay and guiEnabled then
 		AnimateHurtOverlay()
 	end
 

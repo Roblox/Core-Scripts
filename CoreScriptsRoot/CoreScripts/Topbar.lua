@@ -379,10 +379,7 @@ local function CreateUsernameHealthMenuItem()
 		Parent = GuiRoot;
 	};
 
-	local this = nil
-	if not isTenFootInterface then
-		this = CreateMenuItem(container)
-	end
+	local this = CreateMenuItem(container)
 
 	--- EVENTS ---
 	local humanoidChangedConn, childAddedConn, childRemovedConn = nil
@@ -469,11 +466,8 @@ local function CreateUsernameHealthMenuItem()
 					AnimateHurtOverlay()
 				end
 				
-				if isTenFootInterface then
-					healthFill.Size = UDim2.new(healthPercent, -10, 1, -10)
-				else
-					healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
-				end
+				healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
+				healthFill.BackgroundColor3 = healthColor
 
 				lastHealth = health
 			end
@@ -1049,57 +1043,47 @@ local stopRecordingIcon = nil
 local LEFT_ITEM_ORDER = nil
 local RIGHT_ITEM_ORDER = nil
 
-if not isTenFootInterface then
-	TopBar = CreateTopBar()
+TopBar = CreateTopBar()
 
-	settingsIcon = CreateSettingsIcon(TopBar)
-	chatIcon = CreateChatIcon()
-	mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
-	backpackIcon = CreateBackpackIcon()
-	shiftlockIcon = nil --CreateShiftLockIcon()
-	nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
-	leaderstatsMenuItem = CreateLeaderstatsMenuItem()
-	stopRecordingIcon = CreateStopRecordIcon()
+settingsIcon = CreateSettingsIcon(TopBar)
+chatIcon = CreateChatIcon()
+mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
+backpackIcon = CreateBackpackIcon()
+shiftlockIcon = nil --CreateShiftLockIcon()
+nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
+leaderstatsMenuItem = CreateLeaderstatsMenuItem()
+stopRecordingIcon = CreateStopRecordIcon()
 
-	LeftMenubar = CreateMenuBar('Left')
-	RightMenubar = CreateMenuBar('Right')
+LeftMenubar = CreateMenuBar('Left')
+RightMenubar = CreateMenuBar('Right')
 
-	-- Set Item Orders
-	LEFT_ITEM_ORDER = {}
-	if settingsIcon then
-		LEFT_ITEM_ORDER[settingsIcon] = 1
+-- Set Item Orders
+LEFT_ITEM_ORDER = {}
+if settingsIcon then
+	LEFT_ITEM_ORDER[settingsIcon] = 1
+end
+if GetChatVisibleIconFlag() then
+	if mobileShowChatIcon then
+		LEFT_ITEM_ORDER[mobileShowChatIcon] = 2
 	end
-	if GetChatVisibleIconFlag() then
-		if mobileShowChatIcon then
-			LEFT_ITEM_ORDER[mobileShowChatIcon] = 2
-		end
-	end
-	if chatIcon then
-		LEFT_ITEM_ORDER[chatIcon] = 3
-	end
-	if backpackIcon then
-		LEFT_ITEM_ORDER[backpackIcon] = 4
-	end
-	if shiftlockIcon then
-		LEFT_ITEM_ORDER[shiftlockIcon] = 5
-	end
-	LEFT_ITEM_ORDER[stopRecordingIcon] = 6
+end
+if chatIcon then
+	LEFT_ITEM_ORDER[chatIcon] = 3
+end
+if backpackIcon then
+	LEFT_ITEM_ORDER[backpackIcon] = 4
+end
+if shiftlockIcon then
+	LEFT_ITEM_ORDER[shiftlockIcon] = 5
+end
+LEFT_ITEM_ORDER[stopRecordingIcon] = 6
 
-	RIGHT_ITEM_ORDER = {}
-	if leaderstatsMenuItem then
-		RIGHT_ITEM_ORDER[leaderstatsMenuItem] = 1
-	end
-	if nameAndHealthMenuItem then
-		RIGHT_ITEM_ORDER[nameAndHealthMenuItem] = 2
-	end
-else
-	if useNewControllerMenu then
-		game.CoreGui.RobloxGui.Modules:WaitForChild("Settings")
-		game.CoreGui.RobloxGui.Modules.Settings:WaitForChild("SettingsHub")
-		MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings.SettingsHub)
-	else
-		MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings2)
-	end
+RIGHT_ITEM_ORDER = {}
+if leaderstatsMenuItem then
+	RIGHT_ITEM_ORDER[leaderstatsMenuItem] = 1
+end
+if nameAndHealthMenuItem and not isTenFootInterface then
+	RIGHT_ITEM_ORDER[nameAndHealthMenuItem] = 2
 end
 -------------------------
 
@@ -1195,22 +1179,20 @@ local function OnPlayerChanged(property)
 	end
 end
 
+TopBar:SetTopbarDisplayMode(false)
+
+LeftMenubar:SetDock(TopBar:GetInstance())
+RightMenubar:SetDock(TopBar:GetInstance())
+
 if not isTenFootInterface then
-	TopBar:SetTopbarDisplayMode(false)
-
-	LeftMenubar:SetDock(TopBar:GetInstance())
-	RightMenubar:SetDock(TopBar:GetInstance())
-
 	Util.SetGUIInsetBounds(0, TOPBAR_THICKNESS, 0, 0)
+end
 
-	if settingsIcon then
-		AddItemInOrder(LeftMenubar, settingsIcon, LEFT_ITEM_ORDER)
-	end
-	if nameAndHealthMenuItem then
-		AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
-	end
-else
-	CreateUsernameHealthMenuItem()
+if settingsIcon then
+	AddItemInOrder(LeftMenubar, settingsIcon, LEFT_ITEM_ORDER)
+end
+if nameAndHealthMenuItem and not isTenFootInterface then
+	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
 end
 
 

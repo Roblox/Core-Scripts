@@ -60,7 +60,7 @@ local GameStats = {}
 -- They can be un-supported at anytime. You should prefer using child add order to order your stats in the leader board.
 
 --[[ Script Variables ]]--
-local MyPlayerEntry = nil
+local MyPlayerEntryTopFrame = nil
 local PlayerEntries = {}
 local StatAddId = 0
 local TeamEntries = {}
@@ -70,11 +70,35 @@ local IsShowingNeutralFrame = false
 local LastSelectedFrame = nil
 local LastSelectedPlayer = nil
 local MinContainerSize = UDim2.new(0, 165, 0.5, 0)
+if isTenFootInterface then
+	MinContainerSize = UDim2.new(0, 1000, 0, 720)
+end
+
 local PlayerEntrySizeY = 24
+if isTenFootInterface then
+	PlayerEntrySizeY = 80
+end
+
 local TeamEntrySizeY = 18
+
+if isTenFootInterface then
+	TeamEntrySizeY = 32
+end
+
 local NameEntrySizeX = 170
+if isTenFootInterface then
+	NameEntrySizeX = 350
+end
+
 local StatEntrySizeX = 75
+if isTenFootInterface then
+	StatEntrySizeX = 250
+end
+
 local IsSmallScreenDevice = UserInputService.TouchEnabled and GuiService:GetScreenResolution().Y <= 500
+
+local BaseUrl = game:GetService('ContentProvider').BaseUrl:lower()
+BaseUrl = string.gsub(BaseUrl, "/m.", "/www.")
 
 --[[ Bindables ]]--
 local BinbableFunction_SendNotification = RobloxGui:FindFirstChild('SendNotification')
@@ -103,6 +127,7 @@ local AbuseReason = nil
 local ENTRY_PAD = 2
 local BG_TRANSPARENCY = 0.5
 local BG_COLOR = Color3.new(31/255, 31/255, 31/255)
+local BG_COLOR_TOP = Color3.new(106/255, 106/255, 106/255)
 local TEXT_STROKE_TRANSPARENCY = 0.75
 local TEXT_COLOR = Color3.new(1, 1, 243/255)
 local TEXT_STROKE_COLOR = Color3.new(34/255, 34/255, 34/255)
@@ -110,6 +135,17 @@ local TWEEN_TIME = 0.15
 local MAX_LEADERSTATS = 4
 local MAX_STR_LEN = 12
 local MAX_FRIEND_COUNT = 200
+local TILE_SPACING = 2
+if isTenFootInterface then
+	BG_COLOR_TOP = Color3.new(25/255, 25/255, 25/255)
+	BG_COLOR = Color3.new(60/255, 60/255, 60/255) -- Color3.new(25/255, 25/255, 25/255)
+	BG_TRANSPARENCY = 0.25
+	TEXT_STROKE_TRANSPARENCY = 1
+	TILE_SPACING = 5
+end
+local SHADOW_IMAGE = 'rbxasset://textures/ui/PlayerList/TileShadowMissingTop.png'--'http://www.roblox.com/asset?id=286965900'
+local SHADOW_SLICE_SIZE = 5
+local SHADOW_SLICE_RECT = Rect.new(SHADOW_SLICE_SIZE+1, SHADOW_SLICE_SIZE+1, SHADOW_SLICE_SIZE*2-1, SHADOW_SLICE_SIZE*2-1)
 
 local ADMINS = {	-- Admins with special icons
     ['7210880'] = 'http://www.roblox.com/asset/?id=134032333', -- Jeditkacheff
@@ -159,6 +195,7 @@ local FOLLOWING_ICON = 'rbxasset://textures/ui/icon_following-16.png'
 local MUTUAL_FOLLOWING_ICON = 'rbxasset://textures/ui/icon_mutualfollowing-16.png'
 
 local FRIEND_IMAGE = 'http://www.roblox.com/thumbs/avatar.ashx?userId='
+local CHARACTER_BACKGROUND_IMAGE = 'rbxasset://textures/ui/PlayerList/CharacterBackgroundImage.png'
 
 --[[ Helper Functions ]]--
 local function clamp(value, min, max)
@@ -274,23 +311,31 @@ local function getAdminIcon(player)
 	end
 end
 
+local function getAvatarIcon()
+	return BaseUrl .. "Thumbs/Avatar.ashx?userid=" .. tostring(Player.userId) .. "&width=64&height=64"
+end
+
 local function getMembershipIcon(player)
-	local userIdStr = tostring(player.userId)
-	local membershipType = player.MembershipType
-	if ADMINS[userIdStr] then
-		return ADMINS[userIdStr]
-	elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
-		return PLACE_OWNER_ICON
-	elseif membershipType == Enum.MembershipType.None then
-		return nil
-	elseif membershipType == Enum.MembershipType.BuildersClub then
-		return BC_ICON
-	elseif membershipType == Enum.MembershipType.TurboBuildersClub then
-		return TBC_ICON
-	elseif membershipType == Enum.MembershipType.OutrageousBuildersClub then
-		return OBC_ICON
+	if isTenFootInterface then
+		return getAvatarIcon()
 	else
-		error("PlayerList: Unknown value for membershipType"..tostring(membershipType))
+		local userIdStr = tostring(player.userId)
+		local membershipType = player.MembershipType
+		if ADMINS[userIdStr] then
+			return ADMINS[userIdStr]
+		elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
+			return PLACE_OWNER_ICON
+		elseif membershipType == Enum.MembershipType.None then
+			return nil
+		elseif membershipType == Enum.MembershipType.BuildersClub then
+			return BC_ICON
+		elseif membershipType == Enum.MembershipType.TurboBuildersClub then
+			return TBC_ICON
+		elseif membershipType == Enum.MembershipType.OutrageousBuildersClub then
+			return OBC_ICON
+		else
+			error("PlayerList: Unknown value for membershipType"..tostring(membershipType))
+		end
 	end
 end
 
@@ -336,16 +381,29 @@ end
 -- Start of Gui Creation
 local Container = Instance.new('Frame')
 Container.Name = "PlayerListContainer"
-Container.Position = UDim2.new(1, -167, 0, 2)
-Container.Size = MinContainerSize
+if isTenFootInterface then
+	Container.Position = UDim2.new(0.5, -MinContainerSize.X.Offset/2, 0.25, 0)
+	Container.Size = MinContainerSize
+else
+	Container.Position = UDim2.new(1, -167, 0, 2)
+	Container.Size = MinContainerSize
+end
+
 Container.BackgroundTransparency = 1
 Container.Visible = false
 Container.Parent = RobloxGui
 
 -- Scrolling Frame
+local noSelectionObject = Instance.new("Frame")
+noSelectionObject.BackgroundTransparency = 1
+noSelectionObject.BorderSizePixel = 0
+
 local ScrollList = Instance.new('ScrollingFrame')
 ScrollList.Name = "ScrollList"
-ScrollList.Size = UDim2.new(1, -1, 0, 0)
+if isTenFootInterface then
+	ScrollList.Position = UDim2.new(0, 0, 0, PlayerEntrySizeY + TILE_SPACING)
+end
+ScrollList.Size = UDim2.new(1, 19, 0, 0)
 ScrollList.BackgroundTransparency = 1
 ScrollList.BackgroundColor3 = Color3.new()
 ScrollList.BorderSizePixel = 0
@@ -354,6 +412,7 @@ ScrollList.ScrollBarThickness = 6
 ScrollList.BottomImage = 'rbxasset://textures/ui/scroll-bottom.png'
 ScrollList.MidImage = 'rbxasset://textures/ui/scroll-middle.png'
 ScrollList.TopImage = 'rbxasset://textures/ui/scroll-top.png'
+ScrollList.SelectionImageObject = noSelectionObject
 ScrollList.Parent = Container
 
 -- Friend/Report Popup
@@ -575,24 +634,29 @@ ReportConfirmFrame.Style = Enum.FrameStyle.DropShadow
 	ReportConfirmButton.MouseButton1Click:connect(onReportConfirmPressed)
 
 --[[ Creation Helper Functions ]]--
-local function createEntryFrame(name, sizeYOffset)
+local function createEntryFrame(name, sizeYOffset, isTopStat)
 	local containerFrame = Instance.new('Frame')
 	containerFrame.Name = name
 	containerFrame.Position = UDim2.new(0, 0, 0, 0)
 	containerFrame.Size = UDim2.new(1, 0, 0, sizeYOffset)
+	if isTenFootInterface then
+		containerFrame.Position = UDim2.new(0, 10, 0, 0)
+		containerFrame.Size = containerFrame.Size + UDim2.new(0, -20, 0, 0)
+	end
 	containerFrame.BackgroundTransparency = 1
+	containerFrame.ZIndex = isTenFootInterface and 2 or 1
 
 	local nameFrame = Instance.new('TextButton')
 	nameFrame.Name = "BGFrame"
 	nameFrame.Position = UDim2.new(0, 0, 0, 0)
 	nameFrame.Size = UDim2.new(0, NameEntrySizeX, 0, sizeYOffset)
-	nameFrame.BackgroundTransparency = BG_TRANSPARENCY
-	nameFrame.BackgroundColor3 = BG_COLOR
+	nameFrame.BackgroundTransparency = isTopStat and 0 or BG_TRANSPARENCY
+	nameFrame.BackgroundColor3 = isTopStat and BG_COLOR_TOP or BG_COLOR
 	nameFrame.BorderSizePixel = 0
-	nameFrame.ClipsDescendants = true
 	nameFrame.AutoButtonColor = false
 	nameFrame.Text = ""
 	nameFrame.Parent = containerFrame
+	nameFrame.ZIndex = isTenFootInterface and 2 or 1
 
 	return containerFrame, nameFrame
 end
@@ -600,47 +664,91 @@ end
 local function createEntryNameText(name, text, sizeXOffset, posXOffset)
 	local nameLabel = Instance.new('TextLabel')
 	nameLabel.Name = name
-	nameLabel.Size = UDim2.new(-0.01, sizeXOffset, 0.5, 0)
-	nameLabel.Position = UDim2.new(0.01, posXOffset, 0.245, 0)
+	nameLabel.Size = UDim2.new(-0.01, sizeXOffset, 1, 0)
+	nameLabel.Position = UDim2.new(0.01, posXOffset, 0, 0)
 	nameLabel.BackgroundTransparency = 1
 	nameLabel.Font = Enum.Font.SourceSans
-	nameLabel.FontSize = Enum.FontSize.Size14
+	if isTenFootInterface then
+		nameLabel.FontSize = Enum.FontSize.Size32
+	else
+		nameLabel.FontSize = Enum.FontSize.Size14
+	end
 	nameLabel.TextColor3 = TEXT_COLOR
 	nameLabel.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
 	nameLabel.TextStrokeColor3 = TEXT_STROKE_COLOR
 	nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+	nameLabel.ClipsDescendants = true
 	nameLabel.Text = text
+	nameLabel.ZIndex = isTenFootInterface and 2 or 1
 
 	return nameLabel
 end
 
-local function createStatFrame(offset, parent, name)
+local function createStatFrame(offset, parent, name, isTopStat)
 	local statFrame = Instance.new('Frame')
 	statFrame.Name = name
 	statFrame.Size = UDim2.new(0, StatEntrySizeX, 1, 0)
-	statFrame.Position = UDim2.new(0, offset + 2, 0, 0)
-	statFrame.BackgroundTransparency = BG_TRANSPARENCY
-	statFrame.BackgroundColor3 = BG_COLOR
+	statFrame.Position = UDim2.new(0, offset + TILE_SPACING, 0, 0)
+	statFrame.BackgroundTransparency = isTopStat and 0 or BG_TRANSPARENCY
+	statFrame.BackgroundColor3 = isTopStat and BG_COLOR_TOP or BG_COLOR
 	statFrame.BorderSizePixel = 0
 	statFrame.Parent = parent
+
+	if isTenFootInterface then
+		statFrame.ZIndex = 2
+
+		local shadow = Instance.new("ImageLabel")
+		shadow.BackgroundTransparency = 1
+		shadow.Name = 'Shadow'
+		shadow.Image = SHADOW_IMAGE
+		shadow.Position = UDim2.new(0, -SHADOW_SLICE_SIZE, 0, 0)
+		shadow.Size = UDim2.new(1, SHADOW_SLICE_SIZE*2, 1, SHADOW_SLICE_SIZE)
+		shadow.ScaleType = 'Slice'
+		shadow.SliceCenter = SHADOW_SLICE_RECT
+		shadow.Parent = statFrame
+	end
 
 	return statFrame
 end
 
-local function createStatText(parent, text)
+local function createStatText(parent, text, isTopStat, isTeamStat)
 	local statText = Instance.new('TextLabel')
 	statText.Name = "StatText"
-	statText.Size = UDim2.new(1, 0, 1, 0)
-	statText.Position = UDim2.new(0, 0, 0, 0)
+	statText.Size = isTopStat and UDim2.new(1, 0, 0.5, 0) or UDim2.new(1, 0, 1, 0)
+	statText.Position = isTopStat and UDim2.new(0, 0, 0.5, 0) or UDim2.new(0, 0, 0, 0)
 	statText.BackgroundTransparency = 1
-	statText.Font = Enum.Font.SourceSans
-	statText.FontSize = Enum.FontSize.Size14
+	statText.Font = isTopStat and Enum.Font.SourceSansBold or Enum.Font.SourceSans
+	if isTenFootInterface then
+		statText.FontSize = Enum.FontSize.Size32
+	else
+		statText.FontSize = Enum.FontSize.Size14
+	end
 	statText.TextColor3 = TEXT_COLOR
 	statText.TextStrokeColor3 = TEXT_STROKE_COLOR
 	statText.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
 	statText.Text = text
 	statText.Active = true
 	statText.Parent = parent
+	if isTenFootInterface then
+		statText.ZIndex = 2
+	end
+
+	if isTopStat then
+		local statName = statText:Clone()
+		statName.Name = "StatName"
+		statName.Text = tostring(parent.Name)
+		statName.Position = UDim2.new(0,0,0,0)
+		statName.Font = Enum.Font.SourceSans
+		statName.ClipsDescendants = true
+		statName.Parent = parent
+		if isTenFootInterface then
+			statName.ZIndex = 2
+		end
+	end
+
+	if isTeamStat then
+		statText.Font = 'SourceSansBold'
+	end
 
 	return statText
 end
@@ -648,7 +756,20 @@ end
 local function createImageIcon(image, name, xOffset, parent)
 	local imageLabel = Instance.new('ImageLabel')
 	imageLabel.Name = name
-	imageLabel.Size = UDim2.new(0, 16, 0, 16)
+	if isTenFootInterface then
+		imageLabel.Size = UDim2.new(0, 64, 0, 64)
+		imageLabel.ZIndex = 2
+
+		local background = Instance.new("ImageLabel", imageLabel)
+		background.Name = 'Background'
+		background.BackgroundTransparency = 1
+		background.Image = CHARACTER_BACKGROUND_IMAGE
+		background.Size = UDim2.new(0, 66, 0, 66)
+		background.Position = UDim2.new(0.5, -66/2, 0.5, -66/2)
+		background.ZIndex = 2
+	else
+		imageLabel.Size = UDim2.new(0, 16, 0, 16)
+	end
 	imageLabel.Position = UDim2.new(0.01, xOffset, 0.5, -imageLabel.Size.Y.Offset/2)
 	imageLabel.BackgroundTransparency = 1
 	imageLabel.Image = image
@@ -705,7 +826,7 @@ local function setScrollListSize()
 	ScrollList.CanvasSize = UDim2.new(0, 0, 0, canvasSize)
 	local newScrollListSize = math.min(canvasSize, Container.AbsoluteSize.y)
 	if ScrollList.Size.Y.Offset == LastMaxScrollSize then
-		ScrollList.Size = UDim2.new(1, 0, 0, newScrollListSize)
+		ScrollList.Size = UDim2.new(1, 20, 0, newScrollListSize)
 	end
 	LastMaxScrollSize = newScrollListSize
 end
@@ -714,8 +835,13 @@ end
 local function setPlayerEntryPositions()
 	local position = 0
 	for i = 1, #PlayerEntries do
-		PlayerEntries[i].Frame.Position = UDim2.new(0, 0, 0, position)
-		position = position + PlayerEntrySizeY + 2
+		if isTenFootInterface and PlayerEntries[i].Frame ~= MyPlayerEntryTopFrame then
+			PlayerEntries[i].Frame.Position = UDim2.new(0, 10, 0, position)
+			position = position + PlayerEntrySizeY + TILE_SPACING
+		elseif PlayerEntries[i].Frame ~= MyPlayerEntryTopFrame then
+			PlayerEntries[i].Frame.Position = UDim2.new(0, 0, 0, position)
+			position = position + PlayerEntrySizeY + TILE_SPACING
+		end
 	end
 end
 
@@ -730,36 +856,38 @@ local function setTeamEntryPositions()
 	end
 
 	for _,playerEntry in ipairs(PlayerEntries) do
-		local player = playerEntry.Player
-		if player.Neutral then
-			table.insert(teams.Neutral, playerEntry)
-		elseif teams[tostring(player.TeamColor)] then
-			table.insert(teams[tostring(player.TeamColor)], playerEntry)
-		else
-			table.insert(teams.Neutral, playerEntry)
+		if playerEntry.Frame ~= MyPlayerEntryTopFrame then
+			local player = playerEntry.Player
+			if player.Neutral then
+				table.insert(teams.Neutral, playerEntry)
+			elseif teams[tostring(player.TeamColor)] then
+				table.insert(teams[tostring(player.TeamColor)], playerEntry)
+			else
+				table.insert(teams.Neutral, playerEntry)
+			end
 		end
 	end
 
 	local position = 0
 	for _,teamEntry in ipairs(TeamEntries) do
 		local team = teamEntry.Team
-		teamEntry.Frame.Position = UDim2.new(0, 0, 0, position)
-		position = position + TeamEntrySizeY + 2
+		teamEntry.Frame.Position = UDim2.new(0, isTenFootInterface and 10 or 0, 0, position)
+		position = position + TeamEntrySizeY + TILE_SPACING
 		local players = teams[tostring(team.TeamColor)]
 		for _,playerEntry in ipairs(players) do
-			playerEntry.Frame.Position = UDim2.new(0, 0, 0, position)
-			position = position + PlayerEntrySizeY + 2
+			playerEntry.Frame.Position = UDim2.new(0, isTenFootInterface and 10 or 0, 0, position)
+			position = position + PlayerEntrySizeY + TILE_SPACING
 		end
 	end
 	if NeutralTeam then
-		NeutralTeam.Frame.Position = UDim2.new(0, 0, 0, position)
-		position = position + TeamEntrySizeY + 2
+		NeutralTeam.Frame.Position = UDim2.new(0, isTenFootInterface and 10 or 0, 0, position)
+		position = position + TeamEntrySizeY + TILE_SPACING
 		if #teams.Neutral > 0 then
 			IsShowingNeutralFrame = true
 			local players = teams.Neutral
 			for _,playerEntry in ipairs(players) do
-				playerEntry.Frame.Position = UDim2.new(0, 0, 0, position)
-				position = position + PlayerEntrySizeY + 2
+				playerEntry.Frame.Position = UDim2.new(0, isTenFootInterface and 10 or 0, 0, position)
+				position = position + PlayerEntrySizeY + TILE_SPACING
 			end
 		else
 			IsShowingNeutralFrame = false
@@ -796,7 +924,11 @@ local function createPopupFrame(buttons)
 		btn.BorderSizePixel = 0
 		btn.Text = button.Text
 		btn.Font = Enum.Font.SourceSans
-		btn.FontSize = Enum.FontSize.Size14
+		if isTenFootInterface then
+			btn.FontSize = Enum.FontSize.Size32
+		else
+			btn.FontSize = Enum.FontSize.Size14
+		end
 		btn.TextColor3 = TEXT_COLOR
 		btn.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
 		btn.TextStrokeColor3 = TEXT_STROKE_COLOR
@@ -1256,14 +1388,16 @@ local function updateAllTeamScores()
 		if not teamScores[team] then
 			teamScores[team] = {}
 		end
-		if leaderstats then
-			for _,stat in ipairs(GameStats) do
-				local statObject = leaderstats:FindFirstChild(stat.Name)
-				if statObject and not statObject:IsA('StringValue') then
-					if not teamScores[team][stat.Name] then
-						teamScores[team][stat.Name] = 0
+		if playerEntry.Frame ~= MyPlayerEntryTopFrame then
+			if leaderstats then
+				for _,stat in ipairs(GameStats) do
+					local statObject = leaderstats:FindFirstChild(stat.Name)
+					if statObject and not statObject:IsA('StringValue') then
+						if not teamScores[team][stat.Name] then
+							teamScores[team][stat.Name] = 0
+						end
+						teamScores[team][stat.Name] = teamScores[team][stat.Name] + getScoreValue(statObject)
 					end
-					teamScores[team][stat.Name] = teamScores[team][stat.Name] + getScoreValue(statObject)
 				end
 			end
 		end
@@ -1297,6 +1431,7 @@ local function updateAllTeamScores()
 		local frame = NeutralTeam.Frame
 		local stats = teamScores['Neutral']
 		if stats then
+			frame.Visible = true
 			for statName,statValue in pairs(stats) do
 				local statFrame = frame:FindFirstChild(statName)
 				if statFrame then
@@ -1306,6 +1441,8 @@ local function updateAllTeamScores()
 					end
 				end
 			end
+		else
+			frame.Visible = false
 		end
 	end
 end
@@ -1320,10 +1457,10 @@ local function updateTeamEntry(entry)
 		if not statFrame then
 			statFrame = createStatFrame(offset, frame, stat.Name)
 			statFrame.BackgroundColor3 = color
-			createStatText(statFrame, "")
+			createStatText(statFrame, "", false, true)
 		end
-		statFrame.Position = UDim2.new(0, offset + 2, 0, 0)
-		offset = offset + statFrame.Size.X.Offset + 2
+		statFrame.Position = UDim2.new(0, offset + TILE_SPACING, 0, 0)
+		offset = offset + statFrame.Size.X.Offset + TILE_SPACING
 	end
 end
 
@@ -1344,13 +1481,13 @@ end
 
 local updateLeaderstatFrames = nil
 -- TODO: fire event to top bar?
-local function initializeStatText(stat, statObject, entry, statFrame, index)
+local function initializeStatText(stat, statObject, entry, statFrame, index, isTopStat)
 	local player = entry.Player
 	local statValue = getScoreValue(statObject)
 	if statObject.Name == GameStats[1].Name then
 		entry.PrimaryStat = statValue
 	end
-	local statText = createStatText(statFrame, formatStatString(tostring(statValue)))
+	local statText = createStatText(statFrame, formatStatString(tostring(statValue)), isTopStat)
 	-- Top Bar insertion
 	if player == Player then
 		stat.Text = statText.Text
@@ -1397,6 +1534,7 @@ updateLeaderstatFrames = function()
 		local mainFrame = entry.Frame
 		local offset = NameEntrySizeX
 		local leaderstats = player:FindFirstChild('leaderstats')
+		local isTopStat = (entry.Frame == MyPlayerEntryTopFrame)
 
 		if leaderstats then
 			for _,stat in ipairs(GameStats) do
@@ -1404,32 +1542,41 @@ updateLeaderstatFrames = function()
 				local statFrame = mainFrame:FindFirstChild(stat.Name)
 
 				if not statFrame then
-					statFrame = createStatFrame(offset, mainFrame, stat.Name)
+					statFrame = createStatFrame(offset, mainFrame, stat.Name, isTopStat)
 					if statObject then
-						initializeStatText(stat, statObject, entry, statFrame, _)
+						initializeStatText(stat, statObject, entry, statFrame, _, isTopStat)
 					end
 				elseif statObject then
 					local statText = statFrame:FindFirstChild('StatText')
 					if not statText then
-						initializeStatText(stat, statObject, entry, statFrame, _)
+						initializeStatText(stat, statObject, entry, statFrame, _, isTopStat)
 					end
 				end
-				statFrame.Position = UDim2.new(0, offset + 2, 0, 0)
-				offset = offset + statFrame.Size.X.Offset + 2
+				statFrame.Position = UDim2.new(0, offset + TILE_SPACING, 0, 0)
+				offset = offset + statFrame.Size.X.Offset + TILE_SPACING
 			end
 		else
 			for _,stat in ipairs(GameStats) do
 				local statFrame = mainFrame:FindFirstChild(stat.Name)
 				if not statFrame then
-					statFrame = createStatFrame(offset, mainFrame, stat.Name)
+					statFrame = createStatFrame(offset, mainFrame, stat.Name, isTopStat)
 				end
-				offset = offset + statFrame.Size.X.Offset + 2
+				offset = offset + statFrame.Size.X.Offset + TILE_SPACING
 			end
 		end
-		Container.Position = UDim2.new(1, -offset, 0, 2)
-		Container.Size = UDim2.new(0, offset, 0.5, 0)
-		local newMinContainerOffset = offset
-		MinContainerSize = UDim2.new(0, newMinContainerOffset, 0.5, 0)
+
+		if entry.Frame ~= MyPlayerEntryTopFrame then
+			if isTenFootInterface then
+				Container.Position = UDim2.new(0.5, -offset/2, 0, 110)
+				Container.Size = UDim2.new(0, offset, 0.8, 0)
+			else
+				Container.Position = UDim2.new(1, -offset, 0, 2)
+				Container.Size = UDim2.new(0, offset, 0.5, 0)
+			end
+
+			local newMinContainerOffset = offset
+			MinContainerSize = UDim2.new(0, newMinContainerOffset, 0.5, 0)
+		end
 	end
 	updateAllTeamScores()
 	setEntryPositions()
@@ -1580,16 +1727,23 @@ local function setLeaderStats(entry)
 		end
 	end)
 end
-local function createPlayerEntry(player)
+
+local offsetSize = 18
+if isTenFootInterface then offsetSize = 32 end
+
+local function createPlayerEntry(player, isTopStat)
 	local playerEntry = {}
 	local name = player.Name
 
-	local containerFrame, entryFrame = createEntryFrame(name, PlayerEntrySizeY)
+	local containerFrame, entryFrame = createEntryFrame(name, PlayerEntrySizeY, isTopStat)
 	entryFrame.Active = true
-	local function localEntrySelected()
-		onEntryFrameSelected(containerFrame, player)
+
+	if not isTenFootInterface then
+		local function localEntrySelected()
+			onEntryFrameSelected(containerFrame, player)
+		end
+		entryFrame.MouseButton1Click:connect(localEntrySelected)
 	end
-	entryFrame.MouseButton1Click:connect(localEntrySelected)
 
 	local currentXOffset = 1
 
@@ -1600,7 +1754,7 @@ local function createPlayerEntry(player)
 		membershipIcon = createImageIcon(membershipIconImage, "MembershipIcon", currentXOffset, entryFrame)
 		currentXOffset = currentXOffset + membershipIcon.Size.X.Offset + 2
 	else
-		currentXOffset = currentXOffset + 18
+		currentXOffset = currentXOffset + offsetSize
 	end
 
 	-- Some functions yield, so we need to spawn off in order to not cause a race condition with other events like Players.ChildRemoved
@@ -1639,6 +1793,22 @@ local function createPlayerEntry(player)
 	playerEntry.Player = player
 	playerEntry.Frame = containerFrame
 
+	if isTenFootInterface then
+		local shadow = Instance.new("ImageLabel")
+		shadow.BackgroundTransparency = 1
+		shadow.Name = 'Shadow'
+		shadow.Image = SHADOW_IMAGE
+		shadow.Position = UDim2.new(0, -SHADOW_SLICE_SIZE, 0, 0)
+		shadow.Size = UDim2.new(1, SHADOW_SLICE_SIZE*2, 1, SHADOW_SLICE_SIZE)
+		shadow.ScaleType = 'Slice'
+		shadow.SliceCenter = SHADOW_SLICE_RECT
+		shadow.Parent = entryFrame
+	end
+
+	if isTopStat then
+		playerName.Font = 'SourceSansBold'
+	end
+
 	return playerEntry
 end
 
@@ -1655,16 +1825,33 @@ local function createTeamEntry(team)
 
 	teamEntry.Frame = containerFrame
 
+	if isTenFootInterface then
+		local shadow = Instance.new("ImageLabel")
+		shadow.BackgroundTransparency = 1
+		shadow.Name = 'Shadow'
+		shadow.Image = SHADOW_IMAGE
+		shadow.Position = UDim2.new(0, -SHADOW_SLICE_SIZE, 0, 0)
+		shadow.Size = UDim2.new(1, SHADOW_SLICE_SIZE*2, 1, SHADOW_SLICE_SIZE)
+		shadow.ScaleType = 'Slice'
+		shadow.SliceCenter = SHADOW_SLICE_RECT
+		shadow.Parent = entryFrame
+	end
+
 	-- connections
 	team.Changed:connect(function(property)
 		if property == 'Name' then
 			teamName.Text = team.Name
 		elseif property == 'TeamColor' then
 			for _,childFrame in pairs(containerFrame:GetChildren()) do
-				if childFrame:IsA('Frame') then
+				if childFrame:IsA('GuiObject') then
 					childFrame.BackgroundColor3 = team.TeamColor.Color
 				end
 			end
+
+			setTeamEntryPositions()
+			updateAllTeamScores()
+			setEntryPositions()
+			setScrollListSize()
 		end
 	end)
 
@@ -1682,18 +1869,19 @@ local function createNeutralTeam()
 end
 
 --[[ Insert/Remove Player Functions ]]--
-local function insertPlayerEntry(player)
-	if isTenFootInterface then return end
-
-	local entry = createPlayerEntry(player)
-	if player == Player then
-		MyPlayerEntry = entry.Frame
+local function setupEntry(player, newEntry, isTopStat)
+	setLeaderStats(newEntry)
+	
+	if isTopStat then
+		newEntry.Frame.Parent = Container
+		table.insert(PlayerEntries, newEntry)
+	else
+		newEntry.Frame.Parent = ScrollList
+		table.insert(PlayerEntries, newEntry)
+		setScrollListSize()
 	end
-	setLeaderStats(entry)
-	table.insert(PlayerEntries, entry)
-	setScrollListSize()
+		
 	updateLeaderstatFrames()
-	entry.Frame.Parent = ScrollList
 
 	player.Changed:connect(function(property)
 		if #TeamEntries > 0 and (property == 'Neutral' or property == 'TeamColor') then
@@ -1705,9 +1893,21 @@ local function insertPlayerEntry(player)
 	end)
 end
 
-local function removePlayerEntry(player)
-	if isTenFootInterface then return end
+local function insertPlayerEntry(player)
+	local entry = createPlayerEntry(player)
+	setupEntry(player, entry)
 
+	-- create an entry on the top of the playerlist
+	if player == Player and isTenFootInterface then
+		local localEntry = createPlayerEntry(player, true)
+		MyPlayerEntryTopFrame = localEntry.Frame
+		MyPlayerEntryTopFrame.BackgroundTransparency = 1
+		MyPlayerEntryTopFrame.BorderSizePixel = 0
+		setupEntry(player, localEntry, true)
+	end
+end
+
+local function removePlayerEntry(player)
 	for i = 1, #PlayerEntries do
 		if PlayerEntries[i].Player == player then
 			PlayerEntries[i].Frame:Destroy()
@@ -1874,24 +2074,29 @@ end
 local noOpFunc = function ( )
 end
 
+local isOpen = not isTenFootInterface
+
 local closeListFunc = function(name, state, input)
 	if state ~= Enum.UserInputState.Begin then return end
 
+	isOpen = false
+	Container.Visible = false
 	ContextActionService:UnbindCoreAction("CloseList")
 	ContextActionService:UnbindCoreAction("StopAction")
-	GuiService.SelectedObject = nil
+	GuiService.SelectedCoreObject = nil
+	UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 end
 
-local isOpen = true
 
 Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 	if inputState and inputState ~= Enum.UserInputState.Begin then return end
 	if IsSmallScreenDevice then return end
 	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
+
 	isOpen = not isOpen
 	Container.Visible = isOpen
 
-	if IsGamepadSupported and UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
+	if IsGamepadSupported then
 		if isOpen then
 			local children = ScrollList:GetChildren()
 			if children and #children > 0 then
@@ -1899,17 +2104,33 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 				local frameChildren = frame:GetChildren()
 				for i = 1, #frameChildren do
 					if frameChildren[i]:IsA("TextButton") then
-						GuiService.SelectedObject = frameChildren[i]
-						ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
-						ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
+						local lastInputType = UserInputService:GetLastInputType()
+						local isUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
+													lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
+						if not isTenFootInterface then
+							if isUsingGamepad then
+								GuiService.SelectedCoreObject = frameChildren[i]
+							end
+						else
+							GuiService.SelectedCoreObject = ScrollList
+						end
+
+						if isUsingGamepad then
+							UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+							ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
+							ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
+						end
 						break
 					end
 				end
 			end
 		else
+			if isUsingGamepad then
+				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+			end
 			ContextActionService:UnbindCoreAction("CloseList")
 			ContextActionService:UnbindCoreAction("StopAction")
-			GuiService.SelectedObject = nil
+			GuiService.SelectedCoreObject = nil
 		end
 	end
 end
@@ -1927,7 +2148,9 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 			Container.Visible = false
 			return
 		end
+		
 		Container.Visible = enabled and isOpen
+
 		if enabled then
 			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
 		else
@@ -1942,11 +2165,15 @@ game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
 resizePlayerList()
 
 if GuiService then
-	GuiService:AddSelectionParent("PlayerListSelection", Container)
+	if isTenFootInterface then
+		GuiService:AddSelectionTuple("PlayerListSelection", ScrollList)
+	else
+		GuiService:AddSelectionParent("PlayerListSelection", Container)
+	end
 end
 
 if isTenFootInterface then
-	TenFootInterface:SetupPlayerList()
+	TenFootInterface:SetupTopStat()
 end
 
 return Playerlist
