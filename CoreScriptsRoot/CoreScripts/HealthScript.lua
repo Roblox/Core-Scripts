@@ -30,7 +30,6 @@ local redColor = Color3.new(1, 0.2, 0.2)
 local yellowColor = Color3.new(1, 1, 0.2)
 
 local guiEnabled = false
-local hurtOverlayEnabled = true
 local healthChangedConnection = nil
 local humanoidDiedConnection = nil
 local characterAddedConnection = nil
@@ -206,7 +205,7 @@ function UpdateGui(health)
 
 	local thresholdForHurtOverlay = currentHumanoid.MaxHealth * (HealthPercentageForOverlay/100)
 	
-	if hurtOverlayEnabled and healthDelta >= thresholdForHurtOverlay then
+	if healthDelta >= thresholdForHurtOverlay then
 		AnimateHurtOverlay()
 	end
 
@@ -315,7 +314,3 @@ if Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
 	guiEnabled = true
 	startGui()
 end
-
-game:GetService("StarterGui"):RegisterSetCore("HurtOverlayEnabled", function(value) if type(value) == "boolean" then hurtOverlayEnabled = value end end)
-game:GetService("StarterGui"):RegisterGetCore("HurtOverlayEnabled", function() return hurtOverlayEnabled end)
-
