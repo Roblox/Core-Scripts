@@ -85,6 +85,7 @@ local PURCHASE_FAILED = {
 	UNDER_13 = 6,
 	LIMITED = 7,
 	DID_NOT_BUY_ROBUX = 8,
+	PROMT_PURCHASE_ON_GUEST = 9,
 }
 local BC_LVL_TO_STRING = {
 	"Builders Club",
@@ -629,6 +630,8 @@ local function onPurchaseFailed(failType)
 		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 	elseif failType == PURCHASE_FAILED.DID_NOT_BUY_ROBUX then
 		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.INVALID_FUNDS)
+	elseif failType == PURCHASE_FAILED.PROMT_PURCHASE_ON_GUEST then
+		failedText = "You need to create an account to buy items"
 	end
 
 	ItemDescriptionText.Text = failedText
@@ -824,6 +827,11 @@ end
 
 -- main validation function
 local function canPurchase()
+	if game.Players.LocalPlayer.userId < 0 then
+		onPurchaseFailed(PURCHASE_FAILED.PROMT_PURCHASE_ON_GUEST)
+		return false
+	end
+
 	if isMarketplaceDown() then 	-- FFlag
 		onPurchaseFailed(PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED)
 		return false
