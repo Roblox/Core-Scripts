@@ -364,18 +364,24 @@ local function Initialize()
 		------------------
 		------------------------- Connection Setup -----------
 		function setCameraModeVisible(visible)
-			this.CameraMode.SelectorFrame.Visible = visible
-			this.CameraMode:SetInteractable(visible)
+			if this.CameraMode then
+				this.CameraMode.SelectorFrame.Visible = visible
+				this.CameraMode:SetInteractable(visible)
+			end
 		end
 
 		function setMovementModeVisible(visible)
-			this.MovementMode.SelectorFrame.Visible = visible
-			this.MovementMode:SetInteractable(visible)
+			if this.MovementMode then
+				this.MovementMode.SelectorFrame.Visible = visible
+				this.MovementMode:SetInteractable(visible)
+			end
 		end
 
 		function setShiftLockVisible(visible)
-			this.ShiftLockMode.SelectorFrame.Visible = visible
-			this.ShiftLockMode:SetInteractable(visible)
+			if this.ShiftLockMode then
+				this.ShiftLockMode.SelectorFrame.Visible = visible
+				this.ShiftLockMode:SetInteractable(visible)
+			end
 		end
 
 		do -- initial set of dev vs user choice for guis

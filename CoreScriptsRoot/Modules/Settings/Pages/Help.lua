@@ -37,11 +37,13 @@ local function Initialize()
 	local lastInputType = nil
 
 	function this:GetCurrentInputType()
+		this.HubRef.PageViewClipper.ClipsDescendants = true
 		this.HubRef.PageView.ClipsDescendants = true
 
 		if lastInputType == nil then -- we don't know what controls the user has, just use reasonable defaults
 			local platform = UserInputService:GetPlatform()
 			if platform == Enum.Platform.XBoxOne or platform == Enum.Platform.WiiU then
+				this.HubRef.PageViewClipper.ClipsDescendants = false
 				this.HubRef.PageView.ClipsDescendants = false
 				return GAMEPAD_TAG
 			elseif platform == Enum.Platform.Windows or platform == Enum.Platform.OSX then
@@ -57,11 +59,13 @@ local function Initialize()
 					return KEYBOARD_MOUSE_TAG
 		elseif lastInputType == Enum.UserInputType.Touch then
 					if not utility:IsSmallTouchScreen() then
+						this.HubRef.PageViewClipper.ClipsDescendants = false
 						this.HubRef.PageView.ClipsDescendants = false
 					end
 					return TOUCH_TAG
 		elseif lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or 
 				inputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4 then
+					this.HubRef.PageViewClipper.ClipsDescendants = false
 					this.HubRef.PageView.ClipsDescendants = false
 					return GAMEPAD_TAG
 		end
@@ -456,6 +460,7 @@ do
 
 	PageInstance.Displayed.Event:connect(function()
 		if PageInstance:GetCurrentInputType() == GAMEPAD_TAG then
+			PageInstance.HubRef.PageViewClipper.ClipsDescendants = false
 			PageInstance.HubRef.PageView.ClipsDescendants = false
 		elseif PageInstance:GetCurrentInputType() == TOUCH_TAG then
 			if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() then
@@ -466,8 +471,8 @@ do
 
 	PageInstance.Hidden.Event:connect(function()
 		PageInstance.HubRef:ShowShield()
+		PageInstance.HubRef.PageViewClipper.ClipsDescendants = true
 		PageInstance.HubRef.PageView.ClipsDescendants = true
-		
 		if PageInstance:GetCurrentInputType() == TOUCH_TAG then
 			PageInstance.HubRef.BottomButtonFrame.Visible = true
 		end
