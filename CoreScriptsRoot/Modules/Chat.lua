@@ -1658,6 +1658,15 @@ local function CreateChatWindowWidget(settings)
 		this:PushMessageIntoQueue(chatMessage, silently)
 	end
 	
+	local function checkEnum(enumItems, value)
+		for _, enum in pairs(enumItems) do
+			if enum.Value == value then
+				return enum
+			end
+		end
+		return nil
+	end
+	
 	function this:AddDeveloperSystemChatMessage(informationTable)
 		local settings = this.Settings
 
@@ -1666,15 +1675,15 @@ local function CreateChatWindowWidget(settings)
 				settings.DefaultMessageTextColor = informationTable["Color"]
 			end
 			if informationTable["Font"] then
-				local success, value = pcall(function() return informationTable["Font"].Value < #Enum.Font:GetEnumItems() end)
-				if success and value then
-					settings.Font = informationTable["Font"]
+				local success, value = pcall(function() return checkEnum(Enum.Font:GetEnumItems(), informationTable["Font"].Value) end)
+				if success and value ~= nil then
+					settings.Font = value
 				end
 			end
 			if informationTable["FontSize"] then
-				local success, value = pcall(function() return informationTable["FontSize"].Value < #Enum.FontSize:GetEnumItems() end)
-				if success and value then
-					settings.FontSize = informationTable["FontSize"]
+				local success, value = pcall(function() return checkEnum(Enum.FontSize:GetEnumItems(), informationTable["FontSize"].Value) end)
+				if success and value ~= nil then
+					settings.FontSize = value
 				end
 			end
 			local chatMessage = CreateSystemChatMessage(settings, informationTable["Text"])
