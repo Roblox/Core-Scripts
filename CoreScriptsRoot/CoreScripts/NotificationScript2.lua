@@ -46,6 +46,9 @@ local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled
 local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
 
+local pointsNotificationsActive = true
+local badgesNotificationsActive = true
+
 --[[ Constants ]]--
 local BG_TRANSPARENCY = 0.7
 local MAX_NOTIFICATIONS = 3
@@ -348,7 +351,7 @@ end
 
 --[[ Player Points Notifications ]]--
 local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
-	if userId == LocalPlayer.userId then
+	if pointsNotificationsActive and userId == LocalPlayer.userId then
 		if pointsAwarded == 1 then
 			sendNotifcation("Point Awarded", "You received "..tostring(pointsAwarded).." point!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
 		elseif pointsAwarded > 0 then
@@ -361,7 +364,7 @@ end
 
 --[[ Badge Notification ]]--
 local function onBadgeAwarded(message, userId, badgeId)
-	if userId == LocalPlayer.userId then
+	if badgesNotificationsActive and userId == LocalPlayer.userId then
 		sendNotifcation("Badge Awarded", message, BADGE_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
 	end
 end
@@ -548,3 +551,11 @@ if useNewControllerMenu and not isTenFootInterface then
 		end
 	end)
 end
+
+--[[ Developer customization API ]]--
+game:WaitForChild("StarterGui"):RegisterSetCore("PointsNotificationsActive", function(value) if type(value) == "boolean" then pointsNotificationsActive = value end end)
+game:WaitForChild("StarterGui"):RegisterGetCore("PointsNotificationsActive", function() return pointsNotificationsActive end)
+game:WaitForChild("StarterGui"):RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
+game:WaitForChild("StarterGui"):RegisterGetCore("BadgesNotificationsActive", function() return badgesNotificationsActive end)
+
+
