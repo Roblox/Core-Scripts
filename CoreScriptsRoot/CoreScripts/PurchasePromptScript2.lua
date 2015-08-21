@@ -668,7 +668,7 @@ local function onPurchaseFailed(failType)
 	elseif failType == PURCHASE_FAILED.DID_NOT_BUY_ROBUX then
 		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.INVALID_FUNDS)
 	elseif failType == PURCHASE_FAILED.PROMT_PURCHASE_ON_GUEST then
-		failedText = "You need to create an account to buy items"
+		failedText = "You need to create a ROBLOX account to buy items, visit www.roblox.com for more info."
 	end
 
 	ItemDescriptionText.Text = failedText
