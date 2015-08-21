@@ -172,13 +172,25 @@ local function Initialize()
 																[5] = {["Drop Hats"] = "+"} })
 		accessoriesFrame.Position = UDim2.new(1/3,PC_TABLE_SPACING,0,0)
 		accessoriesFrame.Parent = parentFrame
-
-		local miscFrame = createPCGroup("Misc", {	[1] = {["Screenshot"] = "Print Screen"}, 
-												 	[2] = {["Record Video"] = "F12"},
-													[3] = {["Dev Console"] = "F9"},
-													[4] = {["Mouselock"] = "Shift"},
-													[5] = {["Graphics Level"] = "F10"},
-													[6] = {["Fullscreen"] = "F11"} })
+		
+		local miscFrame = nil
+		local hideHudSuccess, hideHudFlagValue = pcall(function() return settings():GetFFlag("AllowHideHudShortcut") end)
+		if (hideHudSuccess and hideHudFlagValue) then
+			miscFrame = createPCGroup("Misc", {	[1] = {["Screenshot"] = "Print Screen"}, 
+												[2] = {["Record Video"] = "F12"},
+												[3] = {["Hide HUD"] = "F7"},
+												[4] = {["Dev Console"] = "F9"},
+												[5] = {["Mouselock"] = "Shift"},
+												[6] = {["Graphics Level"] = "F10"},
+												[7] = {["Fullscreen"] = "F11"} })
+		else
+			miscFrame = createPCGroup("Misc", {	[1] = {["Screenshot"] = "Print Screen"}, 
+												[2] = {["Record Video"] = "F12"},
+												[3] = {["Dev Console"] = "F9"},
+												[4] = {["Mouselock"] = "Shift"},
+												[5] = {["Graphics Level"] = "F10"},
+												[6] = {["Fullscreen"] = "F11"} })
+		end
 		miscFrame.Position = UDim2.new(2/3,PC_TABLE_SPACING * 2,0,0)
 		miscFrame.Parent = parentFrame
 
