@@ -175,10 +175,11 @@ local function Initialize()
 
 		local miscFrame = createPCGroup("Misc", {	[1] = {["Screenshot"] = "Print Screen"}, 
 												 	[2] = {["Record Video"] = "F12"},
-													[3] = {["Dev Console"] = "F9"},
-													[4] = {["Mouselock"] = "Shift"},
-													[5] = {["Graphics Level"] = "F10"},
-													[6] = {["Fullscreen"] = "F11"} })
+													[3] = {["Hide HUD"] = "F7"},
+													[4] = {["Dev Console"] = "F9"},
+													[5] = {["Mouselock"] = "Shift"},
+													[6] = {["Graphics Level"] = "F10"},
+													[7] = {["Fullscreen"] = "F11"} })
 		miscFrame.Position = UDim2.new(2/3,PC_TABLE_SPACING * 2,0,0)
 		miscFrame.Parent = parentFrame
 
