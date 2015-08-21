@@ -759,18 +759,14 @@ local function CreateSelector(selectionStringTable, startPosition)
 				selectionLabel.Visible = true
 				PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
 				selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, false, function(tweenStatus)
-					if tweenStatus == Enum.TweenStatus.Completed then
-						selectionLabel.Visible = true
-						this.CurrentIndex = i
-						indexChangedEvent:Fire(index)
-					end
+					selectionLabel.Visible = true
+					this.CurrentIndex = i
+					indexChangedEvent:Fire(index)
 				end)
 			elseif selectionLabel.Visible then
 				PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
 				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, false, function(tweenStatus)
-					if tweenStatus == Enum.TweenStatus.Completed then
-						selectionLabel.Visible = false
-					end
+					selectionLabel.Visible = false
 				end)
 			end
 		end
