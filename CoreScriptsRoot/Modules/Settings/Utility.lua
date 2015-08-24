@@ -263,7 +263,7 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 
 		local scrollTo = button
 		if rowRef then
-
+			scrollTo = rowRef
 		end
 		local hub = hubRef
 		if hub == nil then
