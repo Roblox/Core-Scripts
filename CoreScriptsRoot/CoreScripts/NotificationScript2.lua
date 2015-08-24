@@ -393,6 +393,21 @@ if not isTenFootInterface then
 	GameSettings.Changed:connect(onGameSettingsChanged)
 end
 
+GuiService.SendCoreUiNotification = function(title, text)
+	local notification = createNotification(title, text, "")
+	notification.BackgroundTransparency = .5
+	notification.Size = UDim2.new(.5, 0, .1, 0)
+	notification.Position = UDim2.new(.25, 0, -0.1, 0)
+	notification.NotificationTitle.FontSize = Enum.FontSize.Size36
+	notification.NotificationText.FontSize = Enum.FontSize.Size24
+	notification.Parent = RbxGui
+	notification:TweenPosition(UDim2.new(.25, 0, 0, 0), EASE_DIR, EASE_STYLE, TWEEN_TIME, true)
+	wait(5)
+	if notification then
+		notification:Destroy()
+	end
+end
+
 --[[ Teleport Notifications ]]--
 local TeleportMessage = nil
 local function sendTeleportNotification(msg, time)
