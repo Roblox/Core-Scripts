@@ -43,8 +43,6 @@ local function Initialize()
 		if lastInputType == nil then -- we don't know what controls the user has, just use reasonable defaults
 			local platform = UserInputService:GetPlatform()
 			if platform == Enum.Platform.XBoxOne or platform == Enum.Platform.WiiU then
-				this.HubRef.PageViewClipper.ClipsDescendants = false
-				this.HubRef.PageView.ClipsDescendants = false
 				return GAMEPAD_TAG
 			elseif platform == Enum.Platform.Windows or platform == Enum.Platform.OSX then
 				return KEYBOARD_MOUSE_TAG
@@ -58,15 +56,9 @@ local function Initialize()
 			lastInputType == Enum.UserInputType.MouseButton3 or lastInputType == Enum.UserInputType.MouseWheel then
 					return KEYBOARD_MOUSE_TAG
 		elseif lastInputType == Enum.UserInputType.Touch then
-					if not utility:IsSmallTouchScreen() then
-						this.HubRef.PageViewClipper.ClipsDescendants = false
-						this.HubRef.PageView.ClipsDescendants = false
-					end
 					return TOUCH_TAG
 		elseif lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or 
 				inputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4 then
-					this.HubRef.PageViewClipper.ClipsDescendants = false
-					this.HubRef.PageView.ClipsDescendants = false
 					return GAMEPAD_TAG
 		end
 

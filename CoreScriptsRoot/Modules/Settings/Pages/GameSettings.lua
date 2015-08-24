@@ -537,11 +537,12 @@ local function Initialize()
 
 		end
 
-		local adjustButton, adjustText = utility:MakeStyledButton("AdjustButton", "Adjust", UDim2.new(0,300,1,-20), showOverscanScreen)
+		local adjustButton, adjustText, setButtonRowRef = utility:MakeStyledButton("AdjustButton", "Adjust", UDim2.new(0,300,1,-20), showOverscanScreen, this)
 		adjustText.Font = Enum.Font.SourceSans
 		adjustButton.Position = UDim2.new(1,-400,0,12)
 
-		utility:AddNewRowObject(this, "Safe Zone", adjustButton)
+		local row = utility:AddNewRowObject(this, "Safe Zone", adjustButton)
+		setButtonRowRef(row)
 	end
 
 	createCameraModeOptions(not isTenFootInterface and 

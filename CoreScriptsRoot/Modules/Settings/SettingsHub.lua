@@ -747,6 +747,9 @@ local function CreateSettingsHub()
 	function this:SwitchToPage(pageToSwitchTo, ignoreStack, direction)
 		if this.Pages.PageTable[pageToSwitchTo] == nil then return end
 
+		-- scroll back up
+		this:ScrollToProgress(0)
+
 		-- if we have a page we need to let it know to go away
 		if this.Pages.CurrentPage then
 			pageChangeCon:disconnect()
