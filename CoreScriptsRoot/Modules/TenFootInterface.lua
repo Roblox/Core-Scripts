@@ -23,11 +23,11 @@ do
 
 	tenFootInterfaceEnabled = (platform == Enum.Platform.XBoxOne or platform == Enum.Platform.WiiU or platform == Enum.Platform.PS4 or 
 		platform == Enum.Platform.AndroidTV or platform == Enum.Platform.XBox360 or platform == Enum.Platform.PS3 or
-		platform == Enum.Platform.Ouya or platform == Enum.Platform.SteamOS) or FORCE_TEN_FOOT_INTERFACE
+		platform == Enum.Platform.Ouya or platform == Enum.Platform.SteamOS)
 end
 
 if FORCE_TEN_FOOT_INTERFACE then
-	
+	tenFootInterfaceEnabled = true
 end
 
 local Util = {}
