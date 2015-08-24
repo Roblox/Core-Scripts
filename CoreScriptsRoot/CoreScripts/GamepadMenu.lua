@@ -92,12 +92,16 @@ local function activateSelectedRadialButton()
 end
 
 local function setButtonEnabled(button, enabled)
+	if radialButtons[button]["Disabled"] == not enabled then return end
+
 	if enabled then
+		button.Image = string.gsub(button.Image, "rbxasset://textures/ui/Settings/Radial/Empty", "rbxasset://textures/ui/Settings/Radial/")
 		button.ImageTransparency = 0
 		button.RadialIcon.ImageTransparency = 0
 	else
-		button.ImageTransparency = 0.5
-		button.RadialIcon.ImageTransparency = 0.5
+		button.Image = string.gsub(button.Image, "rbxasset://textures/ui/Settings/Radial/", "rbxasset://textures/ui/Settings/Radial/Empty")
+		button.ImageTransparency = 0
+		button.RadialIcon.ImageTransparency = 1
 	end
 
 	radialButtons[button]["Disabled"] = not enabled
@@ -147,7 +151,7 @@ local function createRadialButton(name, text, slot, disabled, coreGuiType, activ
 		Parent = gamepadSettingsFrame
 	};
 	if disabled then
-		radialButton.ImageTransparency = 0.5
+		radialButton.Image = string.gsub(radialButton.Image, "rbxasset://textures/ui/Settings/Radial/", "rbxasset://textures/ui/Settings/Radial/Empty")
 	end
 
 	local selectedRadial = utility:Create'ImageLabel'
@@ -170,11 +174,9 @@ local function createRadialButton(name, text, slot, disabled, coreGuiType, activ
 		BackgroundTransparency = 1,
 		Image = slotIcon,
 		ZIndex = 3,
+		ImageTransparency = disabled and 1 or 0,
 		Parent = radialButton
 	};
-	if disabled then
-		radialIcon.ImageTransparency = 0.5
-	end
 
 	local nameLabel = utility:Create'TextLabel'
 	{
@@ -513,17 +515,13 @@ local function setupGamepadControls()
 			local settingsChildren = gamepadSettingsFrame:GetChildren()
 			for i = 1, #settingsChildren do
 				if settingsChildren[i]:IsA("GuiButton") then
-					local transparency = 0
-					if radialButtons[settingsChildren[i]] and radialButtons[settingsChildren[i]]["Disabled"] then
-						transparency = 0.5
-					end
-					utility:TweenProperty(settingsChildren[i], "ImageTransparency", 1, transparency, 0.1, utility:GetEaseOutQuad(), nil)
+					utility:TweenProperty(settingsChildren[i], "ImageTransparency", 1, 0, 0.1, utility:GetEaseOutQuad(), nil)
 				end
 			end
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,408,0,408), UDim2.new(0.5,-204,0.5,-204),
-														Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.18, true, nil)
-			delay(0.18, function()
-				setVisibility()
+														Enum.EasingDirection.Out, Enum.EasingStyle.Back, 0.18, true,
+				function()
+					setVisibility()
 			end)
 		else
 			if lastInputChangedCon ~= nil then
@@ -539,9 +537,9 @@ local function setupGamepadControls()
 				end
 			end
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,102,0,102), UDim2.new(0.5,-51,0.5,-51),
-														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, nil)
-			delay(0.1, function()
-				gamepadSettingsFrame.Visible = isVisible
+														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, 
+				function()
+					gamepadSettingsFrame.Visible = isVisible
 			end)
 		end
 
