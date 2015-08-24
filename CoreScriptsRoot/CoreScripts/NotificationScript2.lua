@@ -9,7 +9,6 @@
 			Graphics Quality Changed
 			Teleports
 			CreatePlaceInPlayerInventoryAsync
-			HideHUD for first time
 --]]
 
 --[[ Services ]]--
