@@ -8,6 +8,7 @@
 local HEALTH_GREEN_COLOR = Color3.new(27/255, 252/255, 107/255)
 local DISPLAY_POS_INIT_INSET = 0
 local DISPLAY_ITEM_OFFSET = 4
+local FORCE_TEN_FOOT_INTERFACE = false
 
 -------------- SERVICES --------------
 local CoreGui = game:GetService("CoreGui")
@@ -22,7 +23,11 @@ do
 
 	tenFootInterfaceEnabled = (platform == Enum.Platform.XBoxOne or platform == Enum.Platform.WiiU or platform == Enum.Platform.PS4 or 
 		platform == Enum.Platform.AndroidTV or platform == Enum.Platform.XBox360 or platform == Enum.Platform.PS3 or
-		platform == Enum.Platform.Ouya or platform == Enum.Platform.SteamOS)
+		platform == Enum.Platform.Ouya or platform == Enum.Platform.SteamOS) or FORCE_TEN_FOOT_INTERFACE
+end
+
+if FORCE_TEN_FOOT_INTERFACE then
+	
 end
 
 local Util = {}
