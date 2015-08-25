@@ -8,6 +8,7 @@ local PLACEID = Game.PlaceId
 local MPS = Game:GetService 'MarketplaceService'
 local UIS = Game:GetService 'UserInputService'
 local CP = Game:GetService 'ContentProvider'
+local guiService = Game:GetService("GuiService")
 
 local startTime = tick()
 
@@ -41,15 +42,8 @@ local destroyedLoadingGui = false
 local hasReplicatedFirstElements = false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
-local isTenFootInterface = nil
-
-spawn(function()
-	while not Game:GetService("CoreGui") do
-		wait()
-	end
-	local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
-	isTenFootInterface = require(RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")):IsEnabled()
-end)
+local isTenFootInterface = false 
+pcall(function() isTenFootInterface = guiService:isTenFootInterface() end)
 
 -- Fast Flags
 local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
@@ -326,8 +320,6 @@ end
 -- start loading assets asap
 InfoProvider:LoadAssets()
 MainGui:GenerateMain()
-
-local guiService = Game:GetService("GuiService")
 
 local removedLoadingScreen = false
 local setVerb = true
