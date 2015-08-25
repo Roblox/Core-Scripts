@@ -43,7 +43,7 @@ local hasReplicatedFirstElements = false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
 local isTenFootInterface = false 
-pcall(function() isTenFootInterface = guiService:isTenFootInterface() end)
+pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
 
 -- Fast Flags
 local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
