@@ -70,9 +70,17 @@ VehicleHudFrame.BackgroundTransparency = 1
 VehicleHudFrame.Visible = false
 VehicleHudFrame.Parent = RobloxGui
 
+local speedBarClippingFrame = Instance.new("Frame")
+speedBarClippingFrame.Name = "SpeedBarClippingFrame"
+speedBarClippingFrame.Size = UDim2.new(0, 0, 0, (isTenFootInterface and 24 or 4))
+speedBarClippingFrame.Position = UDim2.new(0.5, (isTenFootInterface and -142 or -71), 0.5, (isTenFootInterface and -13 or -2))
+speedBarClippingFrame.BackgroundTransparency = 1
+speedBarClippingFrame.ClipsDescendants = true
+speedBarClippingFrame.Parent = VehicleHudFrame
+
 local HudBG = createImageLabel("HudBG", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 1), VEHICLE_HUD_BG, VehicleHudFrame)
 local SpeedBG = createImageLabel("SpeedBG", UDim2.new(0, (isTenFootInterface and 284 or 142), 0, (isTenFootInterface and 24 or 4)), UDim2.new(0.5, (isTenFootInterface and -142 or -71), 0.5, (isTenFootInterface and -13 or -2)), SPEED_BAR_EMPTY, VehicleHudFrame)
-local SpeedBarImage = createImageLabel("SpeedBarImage", UDim2.new(0, 0, 0, (isTenFootInterface and 24 or 4)), UDim2.new(0.5, (isTenFootInterface and -142 or -71), 0.5, (isTenFootInterface and -13 or -2)), SPEED_BAR, VehicleHudFrame)
+local SpeedBarImage = createImageLabel("SpeedBarImage", UDim2.new(0, (isTenFootInterface and 284 or 142), 1, 0), UDim2.new(0, 0, 0, 0), SPEED_BAR, speedBarClippingFrame)
 SpeedBarImage.ZIndex = 2
 
 local SpeedLabel = createTextLabel("SpeedLabel", Enum.TextXAlignment.Left, "Speed", VehicleHudFrame)
@@ -96,8 +104,7 @@ local function onRenderStepped()
 		SpeedText.Text = tostring(math.min(math.floor(speed), 9999))
 		local drawSize = math.floor((speed / CurrentVehicleSeat.MaxSpeed) * SpeedBG.Size.X.Offset)
 		drawSize = math.min(drawSize, SpeedBG.Size.X.Offset)
-		SpeedBarImage.Size = UDim2.new(0, drawSize, 0, (isTenFootInterface and 24 or 4))
-		SpeedBarImage.ImageRectSize = Vector2.new(drawSize, 0)
+		speedBarClippingFrame.Size = UDim2.new(0, drawSize, 0, (isTenFootInterface and 24 or 4))
 	end
 end
 
