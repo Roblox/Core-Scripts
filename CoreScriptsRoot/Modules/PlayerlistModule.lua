@@ -138,7 +138,7 @@ local MAX_FRIEND_COUNT = 200
 local TILE_SPACING = 2
 if isTenFootInterface then
 	BG_COLOR_TOP = Color3.new(25/255, 25/255, 25/255)
-	BG_COLOR = Color3.new(60/255, 60/255, 60/255) -- Color3.new(25/255, 25/255, 25/255)
+	BG_COLOR = Color3.new(60/255, 60/255, 60/255)
 	BG_TRANSPARENCY = 0.25
 	TEXT_STROKE_TRANSPARENCY = 1
 	TILE_SPACING = 5
@@ -400,10 +400,11 @@ noSelectionObject.BorderSizePixel = 0
 
 local ScrollList = Instance.new('ScrollingFrame')
 ScrollList.Name = "ScrollList"
+ScrollList.Size = UDim2.new(1, -1, 0, 0)
 if isTenFootInterface then
 	ScrollList.Position = UDim2.new(0, 0, 0, PlayerEntrySizeY + TILE_SPACING)
+	ScrollList.Size = UDim2.new(1, 19, 0, 0)
 end
-ScrollList.Size = UDim2.new(1, 19, 0, 0)
 ScrollList.BackgroundTransparency = 1
 ScrollList.BackgroundColor3 = Color3.new()
 ScrollList.BorderSizePixel = 0
@@ -826,7 +827,11 @@ local function setScrollListSize()
 	ScrollList.CanvasSize = UDim2.new(0, 0, 0, canvasSize)
 	local newScrollListSize = math.min(canvasSize, Container.AbsoluteSize.y)
 	if ScrollList.Size.Y.Offset == LastMaxScrollSize then
-		ScrollList.Size = UDim2.new(1, 20, 0, newScrollListSize)
+		if isTenFootInterface then
+			ScrollList.Size = UDim2.new(1, 20, 0, newScrollListSize)
+		else
+			ScrollList.Size = UDim2.new(1, 0, 0, newScrollListSize)
+		end
 	end
 	LastMaxScrollSize = newScrollListSize
 end

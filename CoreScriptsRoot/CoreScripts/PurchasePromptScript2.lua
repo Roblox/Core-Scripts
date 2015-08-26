@@ -213,6 +213,7 @@ local function createImageButtonWithText(name, position, image, imageDown, text,
 	imageButton.BackgroundTransparency = 1
 	imageButton.AutoButtonColor = false
 	imageButton.ZIndex = 8
+	imageButton.Modal = true
 
 	local textLabel = createTextLabel(name.."Text", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), font, isTenFootInterface and largeFont or Enum.FontSize.Size24, text)
 	textLabel.ZIndex = 9

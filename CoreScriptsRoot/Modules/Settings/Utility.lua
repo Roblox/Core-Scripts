@@ -254,14 +254,25 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		end
 	end)
 
+	local rowRef = nil
+	local function setRowRef(ref)
+		rowRef = ref
+	end
 	button.SelectionGained:connect(function()
 		button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButtonSelected.png"
 
-		if pageRef then
-			local hub = pageRef.HubRef
-			if hub then
-				hub:ScrollToFrame(button)
+		local scrollTo = button
+		if rowRef then
+			scrollTo = rowRef
+		end
+		local hub = hubRef
+		if hub == nil then
+			if pageRef then
+				hub = pageRef.HubRef
 			end
+		end
+		if hub then
+			hub:ScrollToFrame(scrollTo)
 		end
 	end)
 	button.SelectionLost:connect(function()
@@ -305,7 +316,7 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		end
 	end)
 
-	return button, textLabel
+	return button, textLabel, setRowRef
 end
 
 local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
@@ -759,18 +770,14 @@ local function CreateSelector(selectionStringTable, startPosition)
 				selectionLabel.Visible = true
 				PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
 				selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, false, function(tweenStatus)
-					if tweenStatus == Enum.TweenStatus.Completed then
-						selectionLabel.Visible = true
-						this.CurrentIndex = i
-						indexChangedEvent:Fire(index)
-					end
+					selectionLabel.Visible = true
+					this.CurrentIndex = i
+					indexChangedEvent:Fire(index)
 				end)
 			elseif selectionLabel.Visible then
 				PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
 				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, false, function(tweenStatus)
-					if tweenStatus == Enum.TweenStatus.Completed then
-						selectionLabel.Visible = false
-					end
+					selectionLabel.Visible = false
 				end)
 			end
 		end
@@ -1659,7 +1666,7 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 		Active = false,
 		AutoButtonColor = false,
 		Size = UDim2.new(1,0,0,ROW_HEIGHT),
-		Position = UDim2.new(0,0,0.025,nextRowPositionY),
+		Position = UDim2.new(0,0,0,nextRowPositionY),
 		ZIndex = 2,
 		Selectable = false,
 		SelectionImageObject = noSelectionObject,

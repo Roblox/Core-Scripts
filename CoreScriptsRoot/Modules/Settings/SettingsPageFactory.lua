@@ -155,14 +155,13 @@ local function Initialize()
 		end
 
 		this.Page.Parent = pageParent
+		this.Page.Visible = true
 
-		local tweenTime = 0.2
 		local endPos = UDim2.new(0,0,0,0)
-		this.Page:TweenPosition(endPos, Enum.EasingDirection.In, Enum.EasingStyle.Quad, tweenTime, true, function(tweenStatus)
-			if tweenStatus == Enum.TweenStatus.Completed then
-				displayed = true
-				this.Displayed:Fire()
-			end
+		this.Page:TweenPosition(endPos, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.1, true, function()
+			this.Page.Visible = true
+			displayed = true
+			this.Displayed:Fire()
 		end)
 	end
 	function this:Hide(direction, newPagePos)
@@ -173,18 +172,13 @@ local function Initialize()
 		end
 
 		if this.Page.Parent then
-			local tweenTime = 0.1
 			local endPos = UDim2.new(1 * direction,0,0,0)
-			this.Page:TweenPosition(endPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true, function(tweenStatus)
-				if tweenStatus == Enum.TweenStatus.Completed then
-					this.Page.Parent = nil 
-					this.Page.Position = UDim2.new(this.TabPosition - newPagePos,0,0,0)
-					displayed = false
-					this.Hidden:Fire()
-				end
+			this.Page:TweenPosition(endPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true, function()
+				this.Page.Visible = false
+				this.Page.Position = UDim2.new(this.TabPosition - newPagePos,0,0,0)
+				displayed = false
+				this.Hidden:Fire()
 			end)
-		else
-			this.Page.Position = UDim2.new(this.TabPosition - newPagePos,0,0,0)
 		end
 	end
 
