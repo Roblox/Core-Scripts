@@ -1074,7 +1074,8 @@ function changeSlot(slot)
 			end
 		else
 			local startSize = slot.Frame.Size
-			slot.Frame:TweenSize(startSize + UDim2.new(0, 10, 0, 10), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, .1, true, function() slot.Frame:TweenSize(startSize, Enum.EasingDirection.In, Enum.EasingStyle.Quad, .1, true) end)
+			local startPosition = slot.Frame.Position
+			slot.Frame:TweenSizeAndPosition(startSize + UDim2.new(0, 10, 0, 10), startPosition - UDim2.new(0, 5, 0, 5), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, .1, true, function() slot.Frame:TweenSizeAndPosition(startSize, startPosition, Enum.EasingDirection.In, Enum.EasingStyle.Quad, .1, true) end)
 			slot.Frame.BorderSizePixel = 3
 		end
 	else
@@ -1305,22 +1306,28 @@ end
 local function resizeGamepadHintsFrame()
 	gamepadHintsFrame.Size = UDim2.new(HotbarFrame.Size.X.Scale, HotbarFrame.Size.X.Offset, 0, (isTenFootInterface and 95 or 60))
 	gamepadHintsFrame.Position = UDim2.new(HotbarFrame.Position.X.Scale, HotbarFrame.Position.X.Offset, InventoryFrame.Position.Y.Scale, InventoryFrame.Position.Y.Offset - gamepadHintsFrame.Size.Y.Offset)
-
+	
+	local spaceTaken = 0
+	
 	local gamepadHints = gamepadHintsFrame:GetChildren()
+	--First get the total space taken by all the hints
 	for i = 1, #gamepadHints do
-		--First set the hint frame to large size to get the TextBounds
-		gamepadHints[i].Size = UDim2.new(1/(#gamepadHints), 0, 1, -5)
-		gamepadHints[i].Position = UDim2.new((1/(#gamepadHints))*(i-1), 0, 0, 0)
-		--We can now get the TextBounds and then we can get the left-over space to center the frame
-		local space = gamepadHintsFrame.AbsoluteSize.X/(#gamepadHints) - (gamepadHints[i].HintImage.Size.X.Offset + gamepadHints[i].HintText.TextBounds.X) --Total available space - space actually taken up
-		gamepadHints[i].Size = UDim2.new(1/(#gamepadHints), -space, 1, -5)
-		gamepadHints[i].Position = UDim2.new((1/(#gamepadHints))*(i-1), space/2, 0, 0)
+		gamepadHints[i].Size = UDim2.new(1, 0, 1, -5)
+		gamepadHints[i].Position = UDim2.new(0, 0, 0, 0)
+		spaceTaken = spaceTaken + (gamepadHints[i].HintText.Position.X.Offset + gamepadHints[i].HintText.TextBounds.X)
+	end
+	
+	--The space between all the frames should be equal
+	local spaceBetweenElements = (gamepadHintsFrame.AbsoluteSize.X - spaceTaken)/(#gamepadHints - 1)
+	for i = 1, #gamepadHints do
+		gamepadHints[i].Position = (i == 1 and UDim2.new(0, 0, 0, 0) or UDim2.new(0, gamepadHints[i-1].Position.X.Offset + gamepadHints[i-1].Size.X.Offset + spaceBetweenElements, 0, 0))
+		gamepadHints[i].Size = UDim2.new(0, (gamepadHints[i].HintText.Position.X.Offset + gamepadHints[i].HintText.TextBounds.X), 1, -5)
 	end
 end
 
 addGamepadHint("rbxasset://textures/ui/Settings/Help/XButtonDark.png", "rbxasset://textures/ui/Settings/Help/XButtonDark@2x.png", "Remove From Hotbar")
-addGamepadHint("rbxasset://textures/ui/Settings/Help/BButtonDark.png", "rbxasset://textures/ui/Settings/Help/BButtonDark@2x.png", "Close Backpack")
 addGamepadHint("rbxasset://textures/ui/Settings/Help/AButtonDark.png", "rbxasset://textures/ui/Settings/Help/AButtonDark@2x.png", "Select/Swap")
+addGamepadHint("rbxasset://textures/ui/Settings/Help/BButtonDark.png", "rbxasset://textures/ui/Settings/Help/BButtonDark@2x.png", "Close Backpack")
 
 do -- Search stuff
 	local searchFrame = NewGui('Frame', 'Search')
