@@ -1073,7 +1073,8 @@ function changeSlot(slot)
 				end
 			end
 		else
-			slot.Frame:TweenSize(UDim2.new(0, 110, 0, 110), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, .1, true, function() slot.Frame:TweenSize(UDim2.new(0, 100, 0, 100), Enum.EasingDirection.In, Enum.EasingStyle.Quad, .1, true) end)
+			local startSize = slot.Frame.Size
+			slot.Frame:TweenSize(startSize + UDim2.new(0, 10, 0, 10), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, .1, true, function() slot.Frame:TweenSize(startSize, Enum.EasingDirection.In, Enum.EasingStyle.Quad, .1, true) end)
 			slot.Frame.BorderSizePixel = 3
 		end
 	else
