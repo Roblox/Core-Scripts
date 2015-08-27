@@ -2144,6 +2144,11 @@ Playerlist.IsOpen = function()
 	return isOpen
 end
 
+local topStat = nil
+if isTenFootInterface then
+	topStat = TenFootInterface:SetupTopStat()
+end
+
 --[[ Core Gui Changed events ]]--
 -- NOTE: Core script only
 local function onCoreGuiChanged(coreGuiType, enabled)
@@ -2155,7 +2160,11 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 		end
 		
 		Container.Visible = enabled and isOpen
-
+		
+		if isTenFootInterface and topStat then
+			topStat:SetTopStatEnabled(enabled)
+		end
+		
 		if enabled then
 			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
 		else
@@ -2175,10 +2184,6 @@ if GuiService then
 	else
 		GuiService:AddSelectionParent("PlayerListSelection", Container)
 	end
-end
-
-if isTenFootInterface then
-	TenFootInterface:SetupTopStat()
 end
 
 return Playerlist

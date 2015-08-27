@@ -194,10 +194,11 @@ function MainGui:GenerateMain()
 				Size = UDim2.new(1, (isMobile == true and -14 or -56), 1, 0),
 				Position = UDim2.new(0, (isMobile == true and 7 or 28), 0, 0),
 				Font = Enum.Font.SourceSans,
-				FontSize = (isMobile == true and Enum.FontSize.Size12 or (isTenFootInterface == true and Enum.FontSize.Size24 or Enum.FontSize.Size18)),
+				FontSize = (isMobile == true and Enum.FontSize.Size12 or Enum.FontSize.Size18),
 				TextWrapped = true,
 				TextColor3 = COLORS.WHITE,
 				TextXAlignment = Enum.TextXAlignment.Left,
+				Visible = (isTenFootInterface and false or true),
 				Text = "Loading...",
 				ZIndex = 2
 			},

@@ -8,7 +8,7 @@
 local HEALTH_GREEN_COLOR = Color3.new(27/255, 252/255, 107/255)
 local DISPLAY_POS_INIT_INSET = 0
 local DISPLAY_ITEM_OFFSET = 4
-local FORCE_TEN_FOOT_INTERFACE = false
+local FORCE_TEN_FOOT_INTERFACE = true
 
 -------------- SERVICES --------------
 local CoreGui = game:GetService("CoreGui")
@@ -190,9 +190,11 @@ local function CreateModule()
 	end
 
 	function this:SetupTopStat()
+		local topStatEnabled = true
 		local displayedStat = nil
 		local displayedStatChangedCon = nil
 		local displayedStatParentedCon = nil
+		local leaderstatsChildAddedCon = nil
 		local tenFootInterfaceStat = nil
 
 		local function makeTenFootInterfaceStat()
@@ -207,7 +209,7 @@ local function CreateModule()
 			};
 			local statName = Util.Create'TextLabel'{
 				Name = "StatName";
-				Size = UDim2.new(0.5,0,0,24);
+				Size = UDim2.new(0.5,0,0,36);
 				BackgroundTransparency = 1;
 				Font = Enum.Font.SourceSans;
 				FontSize = Enum.FontSize.Size36;
@@ -228,13 +230,6 @@ local function CreateModule()
 			statValue.Parent = tenFootInterfaceStat
 
 			addToDisplayStack(tenFootInterfaceStat)
-		end
-
-		local function tenFootInterfaceRemoveStat( statToRemove )
-			if statToRemove == displayedStat then
-				displayedStat = nil
-
-			end
 		end
 
 		local function setDisplayedStat(newStat)
@@ -259,8 +254,13 @@ local function CreateModule()
 
 				tenFootInterfaceChanged()
 			else
-				tenFootInterfaceStat.StatName.Text = " " .. tostring(statObj.Name) .. ":"
-				tenFootInterfaceStat.StatValue.Text = tostring(statObj.Value)
+				if topStatEnabled then
+					tenFootInterfaceStat.StatName.Text = " " .. tostring(statObj.Name) .. ":"
+					tenFootInterfaceStat.StatValue.Text = tostring(statObj.Value)
+				else
+					tenFootInterfaceStat.StatName.Text = ""
+					tenFootInterfaceStat.StatValue.Text = ""
+				end
 			end
 		end
 
@@ -287,11 +287,9 @@ local function CreateModule()
 				for i = 1, #statChildren do
 					tenFootInterfaceNewStat(statChildren[i])
 				end
-				leaderstats.ChildAdded:connect(function(newStat)
+				if leaderstatsChildAddedCon then leaderstatsChildAddedCon:disconnect() end
+				leaderstatsChildAddedCon = leaderstats.ChildAdded:connect(function(newStat)
 					tenFootInterfaceNewStat(newStat)
-				end)
-				leaderstats.ChildRemoved:connect(function(child)
-					tenFootInterfaceRemoveStat(child)
 				end)
 			end
 		end
@@ -307,7 +305,19 @@ local function CreateModule()
 		else
 			game.Players.LocalPlayer.ChildAdded:connect(tenFootInterfaceChanged)
 		end
-
+		
+		--Top Stat Public API
+		
+		local topStatApiTable = {}
+		
+		function topStatApiTable:SetTopStatEnabled(value)
+			topStatEnabled = value
+			if displayedStat then
+				updateTenFootStat(displayedStat, "")
+			end
+		end
+		
+		return topStatApiTable
 	end
 
 	return this
