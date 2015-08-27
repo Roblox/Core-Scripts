@@ -8,7 +8,7 @@
 local HEALTH_GREEN_COLOR = Color3.new(27/255, 252/255, 107/255)
 local DISPLAY_POS_INIT_INSET = 0
 local DISPLAY_ITEM_OFFSET = 4
-local FORCE_TEN_FOOT_INTERFACE = true
+local FORCE_TEN_FOOT_INTERFACE = false
 
 -------------- SERVICES --------------
 local CoreGui = game:GetService("CoreGui")
