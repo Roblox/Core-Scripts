@@ -198,7 +198,7 @@ function MainGui:GenerateMain()
 				TextWrapped = true,
 				TextColor3 = COLORS.WHITE,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				Visible = (isTenFootInterface and false or true),
+				Visible = not isTenFootInterface,
 				Text = "Loading...",
 				ZIndex = 2
 			},
