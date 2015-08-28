@@ -99,6 +99,9 @@ do
 
 	function Util.SetGUIInsetBounds(x1, y1, x2, y2)
 		GuiService:SetGlobalGuiInset(x1, y1, x2, y2)
+		if GuiRoot:FindFirstChild("GuiInsetChanged") then
+			GuiRoot.GuiInsetChanged:Fire(x1, y1, x2, y2)
+		end
 	end
 
 	local humanoidCache = {}
