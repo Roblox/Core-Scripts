@@ -408,8 +408,8 @@ spawn(function()
 	guiInsetChangedEvent.Parent = RobloxGui
 	guiInsetChangedEvent.Event:connect(function(x1, y1, x2, y2)
 		if currScreenGui and currScreenGui:FindFirstChild("BlackFrame") then
-			currScreenGui.BlackFrame.Position = UDim2.new(0, 0, 0, -y1)
-			currScreenGui.BlackFrame.Size = UDim2.new(1, 0, 1, y1)
+			currScreenGui.BlackFrame.Position = UDim2.new(0, -x1, 0, -y1)
+			currScreenGui.BlackFrame.Size = UDim2.new(1, x1 + x2, 1, y1 + y2)
 		end
 	end)
 end)
