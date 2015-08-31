@@ -154,7 +154,7 @@ local function Initialize()
 		end
 	end
 
-	function this:Display(pageParent, autoSelectRow, skipAnimation) print('display skip',skipAnimation)
+	function this:Display(pageParent, autoSelectRow, skipAnimation)
 		this.OpenStateChangedCount = this.OpenStateChangedCount + 1
 
 		if this.TabHeader then
@@ -179,7 +179,7 @@ local function Initialize()
 			this.Page:TweenPosition(endPos, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.1, true, animationComplete)
 		end
 	end
-	function this:Hide(direction, newPagePos, skipAnimation, delayBeforeHiding) print('hide skip',skipAnimation)
+	function this:Hide(direction, newPagePos, skipAnimation, delayBeforeHiding)
 		this.OpenStateChangedCount = this.OpenStateChangedCount + 1
 
 		if this.TabHeader then

@@ -80,10 +80,6 @@ local ContextActionService = game:GetService('ContextActionService')
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
-local SettingsHub
-if useNewControllerMenu then
-	SettingsHub = require(RobloxGui.Modules.Settings:WaitForChild("SettingsHub")
-end
 
 if isTenFootInterface then
 	ICON_SIZE = 100
@@ -1449,6 +1445,13 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 		end
 		BackpackScript.IsOpen = InventoryFrame.Visible
 		BackpackScript.StateChanged:Fire(InventoryFrame.Visible)
+
+		if useNewControllerMenu then
+			local SettingsHub = require(RobloxGui.Modules.Settings:WaitForChild("SettingsHub"))
+			if SettingsHub.Instance.Visible then
+				SettingsHub:SetVisibility(false)
+			end
+		end
 	end
 	HotkeyFns[ARROW_HOTKEY] = openClose
 	BackpackScript.OpenClose = openClose -- Exposed

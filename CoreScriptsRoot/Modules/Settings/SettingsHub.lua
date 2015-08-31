@@ -223,7 +223,7 @@ local function CreateSettingsHub()
 			Name = 'Modal',
 			BackgroundTransparency = 1,
 			Position = UDim2.new(0, 0, 1, -1),
-			Size = UDim2.new(0, 1, 0, 1),
+			Size = UDim2.new(1, 0, 1, 0),
 			Modal = true,
 			Text = '',
 			Parent = this.Shield
@@ -820,7 +820,7 @@ local function CreateSettingsHub()
 		end
 	end
 
-	function this:SwitchToPage(pageToSwitchTo, ignoreStack, direction, autoSelectRow, skipAnimation) print('switch',skipAnimation)
+	function this:SwitchToPage(pageToSwitchTo, ignoreStack, direction, autoSelectRow, skipAnimation)
 		if this.Pages.PageTable[pageToSwitchTo] == nil then return end
 
 		-- detect direction
@@ -954,9 +954,7 @@ local function CreateSettingsHub()
 				end
 			end
 
-			if playerList:IsOpen() then
-				playerList:ToggleVisibility()
-			end
+			playerList:HideTemp('SettingsMenu', true)
 
 			if chat:GetVisibility() then
 				chat:ToggleVisibility()
@@ -978,6 +976,8 @@ local function CreateSettingsHub()
 			if lastInputChangedCon then
 				lastInputChangedCon:disconnect()
 			end
+
+			playerList:HideTemp('SettingsMenu', false)
 
 			pcall(function() UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
 			pcall(function() PlatformService.BlurIntensity = 0 end)
@@ -1009,7 +1009,7 @@ local function CreateSettingsHub()
 	end
 
 
-	function this:PopMenu(switchedFromGamepadInput, skipAnimation) print('pop',skipAnimation)
+	function this:PopMenu(switchedFromGamepadInput, skipAnimation)
 		if this.MenuStack and #this.MenuStack > 0 then
 			local lastStackItem = this.MenuStack[#this.MenuStack]
 
@@ -1155,5 +1155,7 @@ local moduleApiTable = {}
 	end
 
 	moduleApiTable.SettingsShowSignal = SettingsHubInstance.SettingsShowSignal
+
+	moduleApiTable.Instance = SettingsHubInstance
 
 return moduleApiTable
