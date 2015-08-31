@@ -235,7 +235,7 @@ do
 	baseUrl = string.gsub(baseUrl,"/m.","/www.") --mobile site does not work for this stuff!
 	function Util.GetSecureApiBaseUrl()
 		local secureApiUrl = baseUrl
-		secureApiUrl = string.gsub(secureApiUrl,"http","https")
+		secureApiUrl = string.gsub(secureApiUrl,"http://","https://")
 		secureApiUrl = string.gsub(secureApiUrl,"www","api")
 		return secureApiUrl
 	end
