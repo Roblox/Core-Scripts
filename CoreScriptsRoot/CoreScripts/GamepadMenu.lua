@@ -93,7 +93,11 @@ end
 
 local function setButtonEnabled(button, enabled)
 	if radialButtons[button]["Disabled"] == not enabled then return end
-
+	
+	if button:FindFirstChild("Selected").Visible == true then
+		setSelectedRadialButton(nil)
+	end
+	
 	if enabled then
 		button.Image = string.gsub(button.Image, "rbxasset://textures/ui/Settings/Radial/Empty", "rbxasset://textures/ui/Settings/Radial/")
 		button.ImageTransparency = 0
@@ -464,7 +468,7 @@ local function setupGamepadControls()
 	
 	local function getSelectedObjectFromAngle(angle, depth)
 		local closest = nil
-		local closestDistance = math.huge
+		local closestDistance = 30 -- threshold of 30 for selecting the closest radial button
 		for radialKey, buttonLayout in pairs(radialButtonLayout) do
 			if radialButtons[gamepadSettingsFrame[radialKey]]["Disabled"] == false then
 				--Check for exact match
