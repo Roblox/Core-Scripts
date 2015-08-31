@@ -428,6 +428,67 @@ local function setupGamepadControls()
 		ContextActionService:UnbindCoreAction(freezeControllerActionName)
 		ContextActionService:UnbindCoreAction(thumbstick2RadialActionName)
 	end
+	
+	local radialButtonLayout = {	PlayerList = 	{
+														Range = {	Begin = 36,
+																	End = 96
+																}
+													},
+									Notifications = {	
+														Range = {	Begin = 96,
+																	End = 156
+																}
+													},
+									LeaveGame = 	{	
+														Range = {	Begin = 156,
+																	End = 216
+																}
+													},	
+									Backpack = 		{	
+														Range = {	Begin = 216,
+																	End = 276
+																}
+													},			
+									Chat = 			{	
+														Range = {	Begin = 276,
+																	End = 336
+																}
+													},			
+									Settings = 		{	
+														Range = {	Begin = 336,
+																	End = 36
+																}
+													},															
+								}
+	
+	
+	local function getSelectedObjectFromAngle(angle, depth)
+		local closest = nil
+		local closestDistance = math.huge
+		for radialKey, buttonLayout in pairs(radialButtonLayout) do
+			if radialButtons[gamepadSettingsFrame[radialKey]]["Disabled"] == false then
+				--Check for exact match
+				if buttonLayout.Range.Begin < buttonLayout.Range.End then
+					if angle > buttonLayout.Range.Begin and angle <= buttonLayout.Range.End then
+						return gamepadSettingsFrame[radialKey]
+					end
+				else 
+					if angle > buttonLayout.Range.Begin or angle <= buttonLayout.Range.End then
+						return gamepadSettingsFrame[radialKey]
+					end
+				end
+				--Check if this is the closest button so far
+				local distanceBegin = math.min(math.abs((buttonLayout.Range.Begin + 360) - angle), math.abs(buttonLayout.Range.Begin - angle))
+				local distanceEnd = math.min(math.abs((buttonLayout.Range.End + 360) - angle), math.abs(buttonLayout.Range.End - angle))
+				local distance = math.min(distanceBegin, distanceEnd)
+				if distance < closestDistance then
+					closestDistance = distance
+					closest = gamepadSettingsFrame[radialKey]
+				end
+			end
+		end
+		return closest
+	end
 
 	local radialSelect = function(name, state, input)
 		local inputVector = Vector2.new(0,0)
@@ -445,23 +506,7 @@ local function setupGamepadControls()
 				angle = angle + 360
 			end
 
-			if angle > 36 and angle <= 96 then
-				selectedObject = gamepadSettingsFrame.PlayerList
-			elseif angle > 96 and angle <= 156 then
-				selectedObject = gamepadSettingsFrame.Notifications
-			elseif angle > 156 and angle <= 216 then
-				selectedObject = gamepadSettingsFrame.LeaveGame
-			elseif angle > 216 and angle <= 276 then
-				selectedObject = gamepadSettingsFrame.Backpack
-			elseif angle > 276 and angle <= 336 then
-				selectedObject = gamepadSettingsFrame.Chat
-			elseif angle > 336 or angle <= 36 then
-				selectedObject = gamepadSettingsFrame.Settings
-			end
-
-			if radialButtons[selectedObject]["Disabled"] then 
-				selectedObject = nil
-			end
+			selectedObject = getSelectedObjectFromAngle(angle)
 
 			setSelectedRadialButton(selectedObject)
 		end
