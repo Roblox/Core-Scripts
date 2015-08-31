@@ -33,6 +33,7 @@ local function Initialize()
 	this.LastSelectedObject = nil
 	this.TabPosition = 0
 	this.Active = false
+	this.OpenStateChangedCount = 0
 	local rows = {}
 	local displayed = false
 
@@ -52,7 +53,7 @@ local function Initialize()
 	end
 	this.TabHeader.MouseButton1Click:connect(function()
 		if this.HubRef then
-			this.HubRef:SwitchToPage(this, true, 1)
+			this.HubRef:SwitchToPage(this, true)
 		end
 	end)
 
@@ -105,7 +106,7 @@ local function Initialize()
 	{
 		Name = "Page",
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1,0,1,HEADER_SPACING)
+		Size = UDim2.new(1,0,1,0)
 	};
 
 	-- make sure each page has a unique selection group (for gamepad selection)
@@ -116,10 +117,25 @@ local function Initialize()
 	this.Displayed = Instance.new("BindableEvent")
 	this.Displayed.Name = "Displayed"
 	
-	this.Displayed.Event:connect(function()
+	this.Displayed.Event:connect(function(autoSelectRow)
 		if not this.HubRef.Shield.Visible then return end
 
-		if not GuiService.SelectedCoreObject or not GuiService.SelectedCoreObject:IsDescendantOf(this.Page) then
+		if autoSelectRow then
+			this:SelectARow()
+		end
+	end)
+
+	this.Hidden = Instance.new("BindableEvent")
+	this.Hidden.Event:connect(function()
+		if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(this.Page) then
+			GuiService.SelectedCoreObject = nil
+		end
+	end)
+	this.Hidden.Name = "Hidden"
+
+	----------------- FUNCTIONS ------------------------
+	function this:SelectARow(forced) -- Selects the first row or the most recently selected row
+		if forced or not GuiService.SelectedCoreObject or not GuiService.SelectedCoreObject:IsDescendantOf(this.Page) then
 			if this.LastSelectedObject then
 				GuiService.SelectedCoreObject = this.LastSelectedObject
 			else
@@ -136,18 +152,11 @@ local function Initialize()
 				end
 			end
 		end
-	end)
+	end
 
-	this.Hidden = Instance.new("BindableEvent")
-	this.Hidden.Event:connect(function()
-		if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(this.Page) then
-			GuiService.SelectedCoreObject = nil
-		end
-	end)
-	this.Hidden.Name = "Hidden"
+	function this:Display(pageParent, autoSelectRow, skipAnimation) print('display skip',skipAnimation)
+		this.OpenStateChangedCount = this.OpenStateChangedCount + 1
 
-	----------------- FUNCTIONS ------------------------
-	function this:Display(pageParent)
 		if this.TabHeader then
 			this.TabHeader.TabSelection.Visible = true
 			this.TabHeader.Icon.ImageTransparency = 0
@@ -158,13 +167,21 @@ local function Initialize()
 		this.Page.Visible = true
 
 		local endPos = UDim2.new(0,0,0,0)
-		this.Page:TweenPosition(endPos, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.1, true, function()
+		local animationComplete = function()
 			this.Page.Visible = true
 			displayed = true
-			this.Displayed:Fire()
-		end)
+			this.Displayed:Fire(autoSelectRow)
+		end
+		if skipAnimation then
+			this.Page.Position = endPos
+			animationComplete()
+		else
+			this.Page:TweenPosition(endPos, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.1, true, animationComplete)
+		end
 	end
-	function this:Hide(direction, newPagePos)
+	function this:Hide(direction, newPagePos, skipAnimation, delayBeforeHiding) print('hide skip',skipAnimation)
+		this.OpenStateChangedCount = this.OpenStateChangedCount + 1
+
 		if this.TabHeader then
 			this.TabHeader.TabSelection.Visible = false
 			this.TabHeader.Icon.ImageTransparency = 0.5
@@ -173,12 +190,32 @@ local function Initialize()
 
 		if this.Page.Parent then
 			local endPos = UDim2.new(1 * direction,0,0,0)
-			this.Page:TweenPosition(endPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true, function()
+			local animationComplete = function()
 				this.Page.Visible = false
 				this.Page.Position = UDim2.new(this.TabPosition - newPagePos,0,0,0)
 				displayed = false
 				this.Hidden:Fire()
-			end)
+			end
+
+			local remove = function()
+				if skipAnimation then
+					this.Page.Position = endPos
+					animationComplete()
+				else
+					this.Page:TweenPosition(endPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.1, true, animationComplete)
+				end
+			end
+
+			if delayBeforeHiding then
+				local myOpenStateChangedCount = this.OpenStateChangedCount
+				delay(delayBeforeHiding, function()
+					if myOpenStateChangedCount == this.OpenStateChangedCount then
+						remove()
+					end
+				end)
+			else
+				remove()
+			end
 		end
 	end
 

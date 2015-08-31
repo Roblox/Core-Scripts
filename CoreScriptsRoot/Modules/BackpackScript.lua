@@ -68,6 +68,8 @@ local DOUBLE_CLICK_TIME = 0.5
 -----------------
 --| Variables |--
 -----------------
+local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
+local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
 
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
@@ -78,6 +80,10 @@ local ContextActionService = game:GetService('ContextActionService')
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+local SettingsHub
+if useNewControllerMenu then
+	SettingsHub = require(RobloxGui.Modules.Settings:WaitForChild("SettingsHub")
+end
 
 if isTenFootInterface then
 	ICON_SIZE = 100

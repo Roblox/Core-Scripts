@@ -216,6 +216,103 @@ local function usesSelectedObject()
 	return true
 end
 
+local function isPosOverGui(pos, gui, debug) -- does not account for rotation
+	local ax, ay = gui.AbsolutePosition.x, gui.AbsolutePosition.y
+	local sx, sy = gui.AbsoluteSize.x, gui.AbsoluteSize.y
+	local bx, by = ax+sx, ay+sy
+
+	if pos.x > ax and pos.x < bx and pos.y > ay and pos.y < by then
+		return true
+	else
+		return false
+	end
+end
+
+local function isPosOverGuiWithClipping(pos, gui) -- isPosOverGui, accounts for clipping and visibility, does not account for rotation
+	if not isPosOverGui(pos, gui) then
+		return false
+	end
+
+	local clipping = false
+	local check = gui
+	while true do
+		if check == nil or (not check:IsA'GuiObject' and not check:IsA'LayerCollector') then
+			clipping = true
+			if check and check:IsA'CoreGui' then
+				clipping = false
+			end
+			break
+		end
+		
+		if check:IsA'GuiObject' and not check.Visible then
+			clipping = true
+			break
+		end
+		if check:IsA'LayerCollector' or check.ClipsDescendants then
+			if not isPosOverGui(pos, check) then
+				clipping = true
+				break
+			end
+		end
+
+		check = check.Parent
+	end
+	
+	if clipping then
+		return false
+	else
+		return true
+	end
+end
+
+local function areGuisIntersecting(a, b) -- does not account for rotation
+	local aax, aay = a.AbsolutePosition.x, a.AbsolutePosition.y
+	local asx, asy = a.AbsoluteSize.x, a.AbsoluteSize.y
+	local abx, aby = aax+asx, aay+asy
+	local bax, bay = b.AbsolutePosition.x, b.AbsolutePosition.y
+	local bsx, bsy = b.AbsoluteSize.x, b.AbsoluteSize.y
+	local bbx, bby = bax+bsx, bay+bsy
+
+	local intersectingX = aax < bbx and abx > bax
+	local intersectingY = aay < bby and aby > bay
+	local intersecting = intersectingX and intersectingY
+
+	return intersecting
+end
+
+local function isGuiVisible(gui, debug) -- true if any part of the gui is visible on the screen, considers clipping, does not account for rotation
+	local clipping = false
+	local check = gui
+	while true do
+		if check == nil or not check:IsA'GuiObject' and not check:IsA'LayerCollector' then
+			clipping = true
+			if check and check:IsA'CoreGui' then
+				clipping = false
+			end
+			break
+		end
+		
+		if check:IsA'GuiObject' and not check.Visible then
+			clipping = true
+			break
+		end
+		if check:IsA'LayerCollector' or check.ClipsDescendants then
+			if not areGuisIntersecting(check, gui) then
+				clipping = true
+				break
+			end
+		end
+
+		check = check.Parent
+	end
+	
+	if clipping then
+		return false
+	else
+		return true
+	end
+end
+
 local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 	local SelectionOverrideObject = Util.Create'ImageLabel'
 	{
@@ -236,21 +333,99 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		SelectionImageObject = SelectionOverrideObject
 	};
 	button.NextSelectionLeft = button
-	button.NextSelectionRight = button	
-	if clickFunc then button.MouseButton1Click:connect(function() clickFunc() end) end
+	button.NextSelectionRight = button
+
+	local enabled = Util.Create'BoolValue'
+	{
+		Name = 'Enabled',
+		Parent = button,
+		Value = true
+	}
+
+	--if clickFunc then button.MouseButton1Click:connect(function() clickFunc() end) end
+	-- Have to do custom click detection so the function can know if it was activated by a mouse or a gamepad
+	local down = false
+	local detect = function(input)
+		if enabled.Value then
+			if isGuiVisible(button) then
+				if input.UserInputType == Enum.UserInputType.MouseButton1 then
+					if isPosOverGuiWithClipping(input.Position, button) then
+						if input.UserInputState == Enum.UserInputState.Begin then
+							down = true
+						elseif input.UserInputState == Enum.UserInputState.End then
+							if down then
+								down = false
+								if clickFunc then
+									clickFunc(false)
+								end
+							end
+						end
+					elseif input.UserInputState == Enum.UserInputState.End then
+						down = false
+					end
+				elseif input.UserInputType == Enum.UserInputType.Gamepad1 or input.UserInputType == Enum.UserInputType.Gamepad2 or input.UserInputType == Enum.UserInputType.Gamepad3 or input.UserInputType == Enum.UserInputType.Gamepad4 then
+					if UserInputService:IsNavigationGamepad(input.UserInputType) then
+						if input.KeyCode == Enum.KeyCode.ButtonA then
+							if GuiService.SelectedCoreObject == button then
+								if input.UserInputState == Enum.UserInputState.Begin then
+									down = true
+								elseif input.UserInputState == Enum.UserInputState.End then
+									if down then
+										down = false
+										if clickFunc then
+											clickFunc(true)
+										end
+									end
+								end
+							elseif input.UserInputState == Enum.UserInputState.End then
+								down = false
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+	UserInputService.InputBegan:connect(detect)
+	UserInputService.InputEnded:connect(detect)
 
 	local function isPointerInput(inputObject)
 		return (inputObject.UserInputType == Enum.UserInputType.MouseMovement or inputObject.UserInputType == Enum.UserInputType.Touch)
 	end
 
-	button.InputBegan:connect(function(inputObject)
-		if button.Selectable and isPointerInput(inputObject) and (hubRef and hubRef.Active or hubRef == nil) then
+	local function selectButton()
+		local hub = hubRef
+		if hub == nil then
+			if pageRef then
+				hub = pageRef.HubRef
+			end
+		end
+
+		if (hub and hub.Active or hub == nil) then
 			button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButtonSelected.png"
+
+			local scrollTo = button
+			if rowRef then
+				scrollTo = rowRef
+			end
+			if hub then
+				hub:ScrollToFrame(scrollTo)
+			end
+		end
+	end
+
+	local function deselectButton()
+		button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
+	end
+
+	button.InputBegan:connect(function(inputObject)
+		if button.Selectable and isPointerInput(inputObject) then
+			selectButton()
 		end
 	end)
 	button.InputEnded:connect(function(inputObject)
 		if button.Selectable and GuiService.SelectedCoreObject ~= button and isPointerInput(inputObject) then
-			button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
+			deselectButton()
 		end
 	end)
 
@@ -259,24 +434,10 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		rowRef = ref
 	end
 	button.SelectionGained:connect(function()
-		button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButtonSelected.png"
-
-		local scrollTo = button
-		if rowRef then
-			scrollTo = rowRef
-		end
-		local hub = hubRef
-		if hub == nil then
-			if pageRef then
-				hub = pageRef.HubRef
-			end
-		end
-		if hub then
-			hub:ScrollToFrame(scrollTo)
-		end
+		selectButton()
 	end)
 	button.SelectionLost:connect(function()
-		button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
+		deselectButton()
 	end)
 
 	local textLabel = Util.Create'TextLabel'
@@ -307,12 +468,12 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		if not usesSelectedObject() then return end
 
 		if GuiService.SelectedCoreObject == nil or GuiService.SelectedCoreObject ~= button then 
-			button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
+			deselectButton()
 			return 
 		end
 
 		if button.Selectable then
-			button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButtonSelected.png"
+			selectButton()
 		end
 	end)
 
@@ -346,6 +507,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 	local interactable = true
 	local guid = HttpService:GenerateGUID(false)
+	local dropDownButtonEnabled
 
 	this.CurrentIndex = 0
 
@@ -390,6 +552,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	};
 
 	local guiServiceChangeCon = nil
+	local active = false
 	local hideDropDownSelection = function(name, inputState)
 		if name ~= nil and inputState ~= Enum.UserInputState.Begin then return end
 		this.DropDownFrame.Selectable = interactable
@@ -403,6 +566,9 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		ContextActionService:UnbindCoreAction(guid .. "FreezeAction")
 
 		settingsHub:SetActive(true)
+
+		dropDownButtonEnabled.Value = interactable
+		active = false
 	end
 	local noOpFunc = function() end
 
@@ -410,6 +576,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		if not interactable then return end
 
 		this.DropDownFrame.Selectable = false
+		active = true
 
 		DropDownFullscreenFrame.Visible = true
 		if not this.CurrentIndex then this.CurrentIndex = 1 end
@@ -433,6 +600,8 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		ContextActionService:BindCoreAction(guid .. "Action", hideDropDownSelection, false, Enum.KeyCode.ButtonB, Enum.KeyCode.Escape)
 
 		settingsHub:SetActive(false)
+
+		dropDownButtonEnabled.Value = false
 	end
 
 	local dropDownFrameSize = UDim2.new(0,400,0,44)
@@ -440,6 +609,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		dropDownFrameSize = UDim2.new(0,300,0,44)
 	end
 	this.DropDownFrame = MakeButton("DropDownFrame", DEFAULT_DROPDOWN_TEXT, dropDownFrameSize, DropDownFrameClicked)
+	dropDownButtonEnabled = this.DropDownFrame.Enabled
 	local selectedTextLabel = this.DropDownFrame.DropDownFrameTextLabel
 	local dropDownImage = Util.Create'ImageLabel'
 	{
@@ -466,6 +636,27 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		end
 
 		indexChangedEvent:Fire(index)
+	end
+
+	local enterIsDown = false
+	local function processInput(input)
+		if input.UserInputState == Enum.UserInputState.Begin then
+			if input.KeyCode == Enum.KeyCode.Return then
+				if GuiService.SelectedCoreObject == this.DropDownFrame or this.SelectionInfo and this.SelectionInfo[GuiService.SelectedCoreObject] then
+					enterIsDown = true
+				end
+			end
+		elseif input.UserInputState == Enum.UserInputState.End then
+			if input.KeyCode == Enum.KeyCode.Return and enterIsDown then
+				enterIsDown = false
+				if GuiService.SelectedCoreObject == this.DropDownFrame then
+					DropDownFrameClicked()
+				elseif this.SelectionInfo and this.SelectionInfo[GuiService.SelectedCoreObject] then
+					local info = this.SelectionInfo[GuiService.SelectedCoreObject]
+					info.Clicked()
+				end
+			end
+		end
 	end
 
 
@@ -502,6 +693,8 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		else
 			this:SetZIndex(2)
 		end
+
+		dropDownButtonEnabled.Value = value and not active
 	end
 
 
@@ -513,6 +706,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		end
 
 		this.Selections = {}
+		this.SelectionInfo = {}
 
 		for i,v in pairs(dropDownStringTable) do
 			local SelectionOverrideObject =	Util.Create'Frame'
@@ -547,12 +741,14 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				nextSelection.TextColor3 = SELECTION_TEXT_COLOR_HIGHLIGHTED
 			end
 
-			nextSelection.MouseButton1Click:connect(function()
+			local clicked = function()
 				selectedTextLabel.Text = nextSelection.Text
 				hideDropDownSelection()
 				this.CurrentIndex = i
 				indexChangedEvent:Fire(i)
-			end)
+			end
+
+			nextSelection.MouseButton1Click:connect(clicked)
 
 			nextSelection.MouseEnter:connect(function()
 				if usesSelectedObject() then
@@ -561,6 +757,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 			end)
 
 			this.Selections[i] = nextSelection
+			this.SelectionInfo[nextSelection] = {Clicked = clicked}
 		end
 
 		GuiService:RemoveSelectionGroup(guid)
@@ -598,6 +795,9 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 			hideDropDownSelection()
 		end
 	end)
+
+	UserInputService.InputBegan:connect(processInput)
+	UserInputService.InputEnded:connect(processInput)
 
 	return this
 end
@@ -692,6 +892,8 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 
 	this.Selections = {}
+	local isSelectionLabelVisible = {}
+	local isAutoSelectButton = {}
 
 	for i,v in pairs(selectionStringTable) do
 		local nextSelection = Util.Create'TextLabel'
@@ -719,45 +921,49 @@ local function CreateSelector(selectionStringTable, startPosition)
 			this.CurrentIndex = i
 			nextSelection.Position = UDim2.new(0,leftButton.Size.X.Offset,0,0)
 			nextSelection.Visible = true
+
+			isSelectionLabelVisible[nextSelection] = true
+		else
+			isSelectionLabelVisible[nextSelection] = false
 		end
 
-		nextSelection.InputBegan:connect(function(inputObject)
-			if inputObject.UserInputType == Enum.UserInputType.MouseButton1 or 
-				inputObject.UserInputType == Enum.UserInputType.Touch then
-					local newIndex = this.CurrentIndex + 1
-					if newIndex > #this.Selections then
-						newIndex = 1
-					end
-					this:SetSelectionIndex(newIndex)
-					if usesSelectedObject() then
-						GuiService.SelectedCoreObject = this.SelectorFrame
-					end
+		local autoSelectButton = Util.Create'ImageButton'{
+			Name = 'AutoSelectButton',
+			BackgroundTransparency = 1,
+			Image = '',
+			Size = UDim2.new(1, 0, 1, 0),
+			Parent = nextSelection,
+			ZIndex = 2
+		}
+		autoSelectButton.MouseButton1Click:connect(function()
+			local newIndex = this.CurrentIndex + 1
+			if newIndex > #this.Selections then
+				newIndex = 1
+			end
+			this:SetSelectionIndex(newIndex)
+			if usesSelectedObject() then
+				GuiService.SelectedCoreObject = this.SelectorFrame
 			end
 		end)
+		isAutoSelectButton[autoSelectButton] = true
 
 		this.Selections[i] = nextSelection
 	end
 
 
 	---------------------- FUNCTIONS -----------------------------------
-	local settingSelection = false
 	local function setSelection(index, direction)
-		if settingSelection then return end
-
-
-		settingSelection = true
 		for i, selectionLabel in pairs(this.Selections) do
 			local isSelected = (i == index)
 
 			if not selectionLabel:IsDescendantOf(game) then
 				this.CurrentIndex = i
 				indexChangedEvent:Fire(index)
-				settingSelection = false
 				return
 			end
 
 			local tweenPos = UDim2.new(0,leftButton.Size.X.Offset * direction * 3,0,0)
-			if selectionLabel.Visible then
+			if isSelectionLabelVisible[selectionLabel] then
 				tweenPos = UDim2.new(0,leftButton.Size.X.Offset * -direction * 3,0,0)
 			end
 
@@ -766,25 +972,19 @@ local function CreateSelector(selectionStringTable, startPosition)
 			end
 
 			if isSelected then
+				isSelectionLabelVisible[selectionLabel] = true
 				selectionLabel.Position = tweenPos
 				selectionLabel.Visible = true
 				PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
-				selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, false, function(tweenStatus)
-					selectionLabel.Visible = true
-					this.CurrentIndex = i
-					indexChangedEvent:Fire(index)
-				end)
-			elseif selectionLabel.Visible then
+				selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true)
+				this.CurrentIndex = i
+				indexChangedEvent:Fire(index)
+			elseif isSelectionLabelVisible[selectionLabel] then
+				isSelectionLabelVisible[selectionLabel] = false
 				PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
-				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, false, function(tweenStatus)
-					selectionLabel.Visible = false
-				end)
+				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, true)
 			end
 		end
-
-		delay(TweenTime, function()
-			settingSelection = false
-		end)
 	end
 
 	local function stepFunc(inputObject, step)
@@ -824,7 +1024,11 @@ local function CreateSelector(selectionStringTable, startPosition)
 				if GuiService.SelectedCoreObject == this.SelectorFrame then 
 					this.Selections[this.CurrentIndex].TextTransparency = 0
 				else
-					this.Selections[this.CurrentIndex].TextTransparency = 0.5
+					if GuiService.SelectedCoreObject ~= nil and isAutoSelectButton[GuiService.SelectedCoreObject] then
+						GuiService.SelectedCoreObject = this.SelectorFrame
+					else
+						this.Selections[this.CurrentIndex].TextTransparency = 0.5
+					end
 				end
 			end
 		end)
@@ -1128,6 +1332,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		{
 			Name = "Step" .. tostring(i),
 			BackgroundColor3 = SELECTED_COLOR,
+			BackgroundTransparency = 0.36,
 			BorderSizePixel = 0,
 			AutoButtonColor = false,
 			Active = false,
@@ -1136,6 +1341,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 			Image =  "",
 			ZIndex = 2,
 			Selectable = false,
+			ImageTransparency = 0.36,
 			Parent = this.SliderFrame
 		};
 
@@ -1525,6 +1731,8 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		ValueChangerInstance.DropDownFrame.Parent = RowFrame
 		ValueChangerSelection = ValueChangerInstance.DropDownFrame
 	elseif selectionType == "TextBox" then
+		local isMouseOverRow = false
+		local forceReturnSelectionOnFocusLost = false
 		local SelectionOverrideObject = Util.Create'ImageLabel'
 		{
 			Image = "",
@@ -1563,6 +1771,12 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				box.Text = ""
 			end
 		end)
+		box.FocusLost:connect(function()
+			if GuiService.SelectedCoreObject == box and (not isMouseOverRow or forceReturnSelectionOnFocusLost) then
+				GuiService.SelectedCoreObject = nil
+			end
+			forceReturnSelectionOnFocusLost = false
+		end)
 		if extraSpacing then
 			box.Position = UDim2.new(box.Position.X.Scale,box.Position.X.Offset,
 										box.Position.Y.Scale,box.Position.Y.Offset + extraSpacing)
@@ -1591,9 +1805,37 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 
 			if valueFrame and valueFrame.Visible and valueFrame.ZIndex > 1 and usesSelectedObject() and pageToAddTo.Active then
 				GuiService.SelectedCoreObject = valueFrame
+				isMouseOverRow = true
+			end
+		end
+		local cancelRowSelection = function()
+			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
+			if fullscreenDropDown and fullscreenDropDown.Visible then return end
+
+			local valueFrame = ValueChangerSelection
+
+			if valueFrame and valueFrame.Visible and valueFrame.ZIndex > 1 and usesSelectedObject() and pageToAddTo.Active then
+				if GuiService.SelectedCoreObject == valueFrame then
+					GuiService.SelectedCoreObject = nil
+					isMouseOverRow = false
+				end
+			end
+		end
+		local function processInput(input)
+			if input.UserInputState == Enum.UserInputState.Begin then
+				if input.KeyCode == Enum.KeyCode.Return then
+					if GuiService.SelectedCoreObject == ValueChangerSelection then
+						forceReturnSelectionOnFocusLost = true
+						box:CaptureFocus()
+					end
+				end
 			end
 		end
 		RowFrame.MouseEnter:connect(setRowSelection)
+		RowFrame.MouseLeave:connect(cancelRowSelection)
+		RowFrame.Size = UDim2.new(1, 0, 0, 100)
+
+		UserInputService.InputBegan:connect(processInput)
 	end
 
 	ValueChangerInstance.Name = rowDisplayName .. "ValueChanger"
@@ -1625,7 +1867,29 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				GuiService.SelectedCoreObject = valueFrame
 			end
 		end
+		local cancelRowSelection = function()
+			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
+			if fullscreenDropDown and fullscreenDropDown.Visible then return end
+
+			local valueFrame = ValueChangerInstance.SliderFrame 
+			if not valueFrame then
+				valueFrame = ValueChangerInstance.SliderFrame
+			end
+			if not valueFrame then
+				valueFrame = ValueChangerInstance.DropDownFrame
+			end
+			if not valueFrame then
+				valueFrame = ValueChangerInstance.SelectorFrame
+			end
+
+			if valueFrame and valueFrame.Visible and valueFrame.ZIndex > 1 and usesSelectedObject() and pageToAddTo.Active then
+				if GuiService.SelectedCoreObject == valueFrame then
+					GuiService.SelectedCoreObject = nil
+				end
+			end
+		end
 		RowFrame.MouseEnter:connect(setRowSelection)
+		RowFrame.MouseLeave:connect(cancelRowSelection)
 
 		ValueChangerSelection.SelectionGained:connect(function()
 			if usesSelectedObject() then

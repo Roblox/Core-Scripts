@@ -463,10 +463,7 @@ do
 	PageInstance = Initialize()
 
 	PageInstance.Displayed.Event:connect(function()
-		if PageInstance:GetCurrentInputType() == GAMEPAD_TAG then
-			PageInstance.HubRef.PageViewClipper.ClipsDescendants = false
-			PageInstance.HubRef.PageView.ClipsDescendants = false
-		elseif PageInstance:GetCurrentInputType() == TOUCH_TAG then
+		if PageInstance:GetCurrentInputType() == TOUCH_TAG then
 			if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() then
 				PageInstance.HubRef.BottomButtonFrame.Visible = false
 			end
@@ -475,8 +472,6 @@ do
 
 	PageInstance.Hidden.Event:connect(function()
 		PageInstance.HubRef:ShowShield()
-		PageInstance.HubRef.PageViewClipper.ClipsDescendants = true
-		PageInstance.HubRef.PageView.ClipsDescendants = true
 		if PageInstance:GetCurrentInputType() == TOUCH_TAG then
 			PageInstance.HubRef.BottomButtonFrame.Visible = true
 		end
