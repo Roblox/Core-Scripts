@@ -819,6 +819,7 @@ local function CreateSettingsHub()
 		this.SettingsShowSignal:fire(this.Visible)
 
 		if this.Visible then
+			pcall(function() GuiService:SetMenuIsOpen(true) end)
 			this.Shield.Visible = this.Visible
 			if noAnimation then
 				this.Shield.Position = SETTINGS_SHIELD_ACTIVE_POSITION
@@ -882,11 +883,12 @@ local function CreateSettingsHub()
 			pcall(function() PlatformService.BlurIntensity = 0 end)
 
 			clearMenuStack()
-			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab")
+			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab") 
 			ContextActionService:UnbindCoreAction("RbxSettingsHubStopCharacter")
 			removeBottomBarBindings()
 
-			game.GuiService.SelectedCoreObject = nil
+			GuiService.SelectedCoreObject = nil
+			pcall(function() GuiService:SetMenuIsOpen(false) end)
 		end
 
 	end

@@ -256,7 +256,7 @@ local function createGamepadMenuGui()
 	---------------------------------
 	-------- Settings Menu ----------
 	local settingsFunc = function()
-		toggleCoreGuiRadial()
+		toggleCoreGuiRadial(true)
 		local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
 		MenuModule:SetVisibility(true)
 	end
@@ -501,7 +501,7 @@ local function setupGamepadControls()
 		end)
 	end
 
-	function toggleCoreGuiRadial()
+	function toggleCoreGuiRadial(goingToSettings)
 		isVisible = not gamepadSettingsFrame.Visible
 		
 		setVisibility()
@@ -547,6 +547,8 @@ local function setupGamepadControls()
 			setSelectedRadialButton(nil)
 			GuiService.GuiNavigationEnabled = false
 
+			pcall(function() GuiService:SetMenuIsOpen(true) end)
+
 			ContextActionService:BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
 			ContextActionService:BindCoreAction(radialAcceptActionName, radialSelectAccept, false, Enum.KeyCode.ButtonA)
 			ContextActionService:BindCoreAction(radialCancelActionName, radialSelectCancel, false, Enum.KeyCode.ButtonB)
@@ -554,6 +556,9 @@ local function setupGamepadControls()
 			ContextActionService:BindCoreAction(thumbstick2RadialActionName, noOpFunc, false, Enum.KeyCode.Thumbstick2)
 			ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
 		else
+			if not goingToSettings then
+				pcall(function() GuiService:SetMenuIsOpen(false) end)
+			end
 			unbindAllRadialActions()
 		end
 
