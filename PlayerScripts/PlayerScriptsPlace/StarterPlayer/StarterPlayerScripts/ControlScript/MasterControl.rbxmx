@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX32BC74A117AE433697E588A77C2E4619">
+	<Item class="ModuleScript" referent="RBX88BC9D73715D42258E60606D2C2EC7ED">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">MasterControl</string>

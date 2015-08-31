@@ -80,6 +80,7 @@ local ContextActionService = game:GetService('ContextActionService')
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+local utility = require(RobloxGui.Modules.Settings.Utility)
 
 if isTenFootInterface then
 	ICON_SIZE = 100
@@ -126,6 +127,7 @@ local CharConns = {} -- Holds character connections to be cleared later
 local TopBarEnabled = false
 local GamepadEnabled = false -- determines if our gui needs to be gamepad friendly
 
+local lastEquippedSlot = nil
 
 -----------------
 --| Functions |--
@@ -363,6 +365,7 @@ local function MakeSlot(parent, index)
 
 	function slot:UpdateEquipView(unequippedOverride)
 		if not unequippedOverride and IsEquipped(self.Tool) then -- Equipped
+			lastEquippedSlot = slot
 			if not HighlightFrame then
 				HighlightFrame = NewGui('Frame', 'Equipped')
 				HighlightFrame.ZIndex = SlotFrame.ZIndex
@@ -1019,12 +1022,17 @@ local changeToolFunc = function(actionName, inputState, inputObject)
 						newSlotPosition = HOTBAR_SLOTS
 					end
 				end
-
+				
 				Slots[newSlotPosition]:Select()
 				return
 			end
 		end
-
+		
+		if lastEquippedSlot and lastEquippedSlot.Tool then
+			lastEquippedSlot:Select()
+			return
+		end
+		
 		for i = 1, HOTBAR_SLOTS do
 			if Slots[i].Tool then
 				Slots[i]:Select()
@@ -1067,7 +1075,10 @@ function changeSlot(slot)
 				end
 			end
 		else
-			slot.Frame.BorderSizePixel = 1
+			local startSize = slot.Frame.Size
+			local startPosition = slot.Frame.Position
+			slot.Frame:TweenSizeAndPosition(startSize + UDim2.new(0, 10, 0, 10), startPosition - UDim2.new(0, 5, 0, 5), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, .1, true, function() slot.Frame:TweenSizeAndPosition(startSize, startPosition, Enum.EasingDirection.In, Enum.EasingStyle.Quad, .1, true) end)
+			slot.Frame.BorderSizePixel = 3
 		end
 	else
 		slot:Select()
@@ -1227,6 +1238,7 @@ InventoryFrame.Parent = MainFrame
 
 -- Make the ScrollingFrame, which holds the rest of the Slots (however many)
 ScrollingFrame = NewGui('ScrollingFrame', 'ScrollingFrame')
+ScrollingFrame.Selectable = false
 if UseExperimentalGamepadEquip then
 	ScrollingFrame.Size = UDim2.new(1, 0, 1, -INVENTORY_HEADER_SIZE)
 else
@@ -1248,6 +1260,76 @@ ScrollingFrame.Parent = InventoryFrame
 --headerText.Size = UDim2.new(0, (InventoryFrame.Size.X.Offset / 2) - TITLE_OFFSET, 0, INVENTORY_HEADER_SIZE)
 --headerText.Position = UDim2.new(0, TITLE_OFFSET, 0, 0)
 --headerText.Parent = InventoryFrame
+
+--Make the gamepad hint frame
+local gamepadHintsFrame = utility:Create'Frame'
+{
+	Name = "GamepadHintsFrame",
+	Size = UDim2.new(0, HotbarFrame.Size.X.Offset, 0, (isTenFootInterface and 95 or 60)),
+	BackgroundTransparency = 1,
+	Visible = false,
+	Parent = MainFrame
+}
+
+local function addGamepadHint(hintImage, hintImageLarge, hintText)
+	local hintFrame = utility:Create'Frame'
+	{
+		Name = "HintFrame",
+		Size = UDim2.new(1, 0, 1, -5),
+		Position = UDim2.new(0, 0, 0, 0),
+		BackgroundTransparency = 1,
+		Parent = gamepadHintsFrame
+	}
+
+	local hintImage = utility:Create'ImageLabel'
+	{
+		Name = "HintImage",
+		Size = (isTenFootInterface and UDim2.new(0,90,0,90) or UDim2.new(0,60,0,60)),
+		BackgroundTransparency = 1,
+		Image = (isTenFootInterface and hintImageLarge or hintImage),
+		Parent = hintFrame
+	}
+
+	local hintText = utility:Create'TextLabel'
+	{
+		Name = "HintText",
+		Position = UDim2.new(0, (isTenFootInterface and 100 or 70), 0, 0),
+		Size = UDim2.new(1, -(isTenFootInterface and 100 or 70), 1, 0),
+		Font = Enum.Font.SourceSansBold,
+		FontSize = (isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size24),
+		BackgroundTransparency = 1,
+		Text = hintText,
+		TextColor3 = Color3.new(1,1,1),
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = hintFrame
+	}
+end
+
+local function resizeGamepadHintsFrame()
+	gamepadHintsFrame.Size = UDim2.new(HotbarFrame.Size.X.Scale, HotbarFrame.Size.X.Offset, 0, (isTenFootInterface and 95 or 60))
+	gamepadHintsFrame.Position = UDim2.new(HotbarFrame.Position.X.Scale, HotbarFrame.Position.X.Offset, InventoryFrame.Position.Y.Scale, InventoryFrame.Position.Y.Offset - gamepadHintsFrame.Size.Y.Offset)
+	
+	local spaceTaken = 0
+	
+	local gamepadHints = gamepadHintsFrame:GetChildren()
+	--First get the total space taken by all the hints
+	for i = 1, #gamepadHints do
+		gamepadHints[i].Size = UDim2.new(1, 0, 1, -5)
+		gamepadHints[i].Position = UDim2.new(0, 0, 0, 0)
+		spaceTaken = spaceTaken + (gamepadHints[i].HintText.Position.X.Offset + gamepadHints[i].HintText.TextBounds.X)
+	end
+	
+	--The space between all the frames should be equal
+	local spaceBetweenElements = (gamepadHintsFrame.AbsoluteSize.X - spaceTaken)/(#gamepadHints - 1)
+	for i = 1, #gamepadHints do
+		gamepadHints[i].Position = (i == 1 and UDim2.new(0, 0, 0, 0) or UDim2.new(0, gamepadHints[i-1].Position.X.Offset + gamepadHints[i-1].Size.X.Offset + spaceBetweenElements, 0, 0))
+		gamepadHints[i].Size = UDim2.new(0, (gamepadHints[i].HintText.Position.X.Offset + gamepadHints[i].HintText.TextBounds.X), 1, -5)
+	end
+end
+
+addGamepadHint("rbxasset://textures/ui/Settings/Help/XButtonDark.png", "rbxasset://textures/ui/Settings/Help/XButtonDark@2x.png", "Remove From Hotbar")
+addGamepadHint("rbxasset://textures/ui/Settings/Help/AButtonDark.png", "rbxasset://textures/ui/Settings/Help/AButtonDark@2x.png", "Select/Swap")
+addGamepadHint("rbxasset://textures/ui/Settings/Help/BButtonDark.png", "rbxasset://textures/ui/Settings/Help/BButtonDark@2x.png", "Close Backpack")
 
 do -- Search stuff
 	local searchFrame = NewGui('Frame', 'Search')
@@ -1422,8 +1504,11 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 		if IsGamepadSupported then
 			if GamepadEnabled then
 				if InventoryFrame.Visible then
+					resizeGamepadHintsFrame()
+					gamepadHintsFrame.Visible = true
 					enableGamepadInventoryControl()
 				else
+					gamepadHintsFrame.Visible = false
 					disableGamepadInventoryControl()
 				end
 			end

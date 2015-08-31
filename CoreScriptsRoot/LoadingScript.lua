@@ -8,6 +8,7 @@ local PLACEID = Game.PlaceId
 local MPS = Game:GetService 'MarketplaceService'
 local UIS = Game:GetService 'UserInputService'
 local CP = Game:GetService 'ContentProvider'
+local guiService = Game:GetService("GuiService")
 
 local startTime = tick()
 
@@ -41,21 +42,8 @@ local destroyedLoadingGui = false
 local hasReplicatedFirstElements = false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
-local isTenFootInterface = nil
-
-spawn(function()
-	while not Game:GetService("CoreGui") do
-		wait()
-	end
-	local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
-	isTenFootInterface = require(RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")):IsEnabled()
-end)
-
--- Fast Flags
-local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
-local useTopBar = (topbarSuccess and topbarFlagValue == true)
-local bgFrameOffset = useTopBar and 36 or 20
-local offsetPosition = useTopBar and UDim2.new(0, 0, 0, -36) or UDim2.new(0, 0, 0, 0)
+local isTenFootInterface = false 
+pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
 
 --
 -- Utility functions
@@ -162,8 +150,8 @@ function MainGui:GenerateMain()
 		Name = 'BlackFrame',
 		BackgroundColor3 = COLORS.BACKGROUND_COLOR,
 		BackgroundTransparency = 0,
-		Size = UDim2.new(1, 0, 1, bgFrameOffset),
-		Position = offsetPosition,
+		Size = UDim2.new(1, 0, 1, 0),
+		Position = UDim2.new(0, 0, 0, 0),
 		Active = true,
 
 		create 'ImageButton' {
@@ -171,7 +159,7 @@ function MainGui:GenerateMain()
 				Image = 'rbxasset://textures/loading/cancelButton.png',
 				ImageTransparency = 1,
 				BackgroundTransparency = 1,
-				Position = UDim2.new(1, -37, 0, 5 + bgFrameOffset),
+				Position = UDim2.new(1, -37, 0, 5),
 				Size = UDim2.new(0, 32, 0, 32),
 				Active = false,
 				ZIndex = 10
@@ -200,10 +188,11 @@ function MainGui:GenerateMain()
 				Size = UDim2.new(1, (isMobile == true and -14 or -56), 1, 0),
 				Position = UDim2.new(0, (isMobile == true and 7 or 28), 0, 0),
 				Font = Enum.Font.SourceSans,
-				FontSize = (isMobile == true and Enum.FontSize.Size12 or (isTenFootInterface == true and Enum.FontSize.Size24 or Enum.FontSize.Size18)),
+				FontSize = (isMobile == true and Enum.FontSize.Size12 or Enum.FontSize.Size18),
 				TextWrapped = true,
 				TextColor3 = COLORS.WHITE,
 				TextXAlignment = Enum.TextXAlignment.Left,
+				Visible = not isTenFootInterface,
 				Text = "Loading...",
 				ZIndex = 2
 			},
@@ -274,8 +263,8 @@ function MainGui:GenerateMain()
 		create 'Frame' {
 			Name = 'BackgroundTextureFrame',
 			BorderSizePixel = 0,
-			Size = UDim2.new(1, 0, 1, bgFrameOffset), 
-			Position = offsetPosition,
+			Size = UDim2.new(1, 0, 1, 0), 
+			Position = UDim2.new(0, 0, 0, 0),
 			ClipsDescendants = true,
 			ZIndex = 1,
 			BackgroundTransparency = 1,
@@ -326,8 +315,6 @@ end
 -- start loading assets asap
 InfoProvider:LoadAssets()
 MainGui:GenerateMain()
-
-local guiService = Game:GetService("GuiService")
 
 local removedLoadingScreen = false
 local setVerb = true
@@ -412,6 +399,19 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 			end
 		end
 	end
+end)
+
+spawn(function() 
+	local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+	local guiInsetChangedEvent = Instance.new("BindableEvent")
+	guiInsetChangedEvent.Name = "GuiInsetChanged"
+	guiInsetChangedEvent.Parent = RobloxGui
+	guiInsetChangedEvent.Event:connect(function(x1, y1, x2, y2)
+		if currScreenGui and currScreenGui:FindFirstChild("BlackFrame") then
+			currScreenGui.BlackFrame.Position = UDim2.new(0, -x1, 0, -y1)
+			currScreenGui.BlackFrame.Size = UDim2.new(1, x1 + x2, 1, y1 + y2)
+		end
+	end)
 end)
 
 local leaveGameButton, leaveGameTextLabel, errorImage = nil

@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX3D4DA58BA847457EA409CCC72356F9FF">
+	<Item class="ModuleScript" referent="RBXE96B6D2DF2AE47DCB019CB99D748AAF6">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">Gamepad</string>
@@ -66,11 +66,6 @@ function Gamepad:Enable()
 	local jumpCharacterGamepad1 = function(actionName, inputState, inputObject)		
 		if inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
 		if inputObject.KeyCode ~= Enum.KeyCode.ButtonA then return end
-		
-		if hasCancelType and inputState == Enum.UserInputState.Cancel then
-			MasterControl:SetIsJumping(false)
-			return
-		end
 		
 		MasterControl:SetIsJumping(inputObject.UserInputState == Enum.UserInputState.Begin)
 	end
