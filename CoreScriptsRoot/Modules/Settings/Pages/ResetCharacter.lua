@@ -28,10 +28,21 @@ local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
-	this.DontResetCharFunc = function(name, state, input)
-		if this.HubRef and (not state or state == Enum.UserInputState.Begin) then
-			this.HubRef:PopMenu()
+	this.DontResetCharFunc = function(isUsingGamepad)
+		if this.HubRef then
+			this.HubRef:PopMenu(isUsingGamepad, true)
 		end
+	end
+	this.DontResetCharFromHotkey = function(name, state, input)
+		if state == Enum.UserInputState.Begin then
+			local isUsingGamepad = input.UserInputType == Enum.UserInputType.Gamepad1 or input.UserInputType == Enum.UserInputType.Gamepad2
+				or input.UserInputType == Enum.UserInputType.Gamepad3 or input.UserInputType == Enum.UserInputType.Gamepad4
+
+			this.DontResetCharFunc(isUsingGamepad)
+		end
+	end
+	this.DontResetCharFromButton = function(isUsingGamepad)
+		this.DontResetCharFunc(isUsingGamepad)
 	end
 	
 	------ TAB CUSTOMIZATION -------
@@ -95,7 +106,7 @@ local function Initialize()
 	this.ResetCharacterButton.Parent = resetCharacterText
 
 
-	local dontResetCharacterButton = utility:MakeStyledButton("DontResetCharacter", "Don't Reset", buttonSize, this.DontResetCharFunc)
+	local dontResetCharacterButton = utility:MakeStyledButton("DontResetCharacter", "Don't Reset", buttonSize, this.DontResetCharFromButton)
 	dontResetCharacterButton.NextSelectionLeft = nil
 	if utility:IsSmallTouchScreen() then
 		dontResetCharacterButton.Position = UDim2.new(0.5, buttonSpacing, 1, 0)
@@ -115,7 +126,7 @@ PageInstance = Initialize()
 
 PageInstance.Displayed.Event:connect(function()
 	GuiService.SelectedCoreObject = PageInstance.ResetCharacterButton
-	ContextActionService:BindCoreAction(RESET_CHARACTER_GAME_ACTION, PageInstance.DontResetCharFunc, false, Enum.KeyCode.ButtonB)
+	ContextActionService:BindCoreAction(RESET_CHARACTER_GAME_ACTION, PageInstance.DontResetCharFromHotkey, false, Enum.KeyCode.ButtonB)
 end)
 
 PageInstance.Hidden.Event:connect(function()

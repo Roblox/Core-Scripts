@@ -262,7 +262,7 @@ local function createGamepadMenuGui()
 	local settingsFunc = function()
 		toggleCoreGuiRadial(true)
 		local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
-		MenuModule:SetVisibility(true)
+		MenuModule:SetVisibility(true, nil, nil, true)
 	end
 	local settingsRadial = createRadialButton("Settings", "Settings", 1, false, nil, settingsFunc)
 	settingsRadial.Parent = gamepadSettingsFrame
@@ -299,7 +299,7 @@ local function createGamepadMenuGui()
 	local leaveGameFunc = function()
 		toggleCoreGuiRadial()
 		local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
-		MenuModule:SetVisibility(true, false, require(GuiRoot.Modules.Settings.Pages.LeaveGame))
+		MenuModule:SetVisibility(true, false, require(GuiRoot.Modules.Settings.Pages.LeaveGame), true)
 	end
 	local leaveGameRadial = createRadialButton("LeaveGame", "Leave Game", 4, false, nil, leaveGameFunc)
 	leaveGameRadial.Parent = gamepadSettingsFrame

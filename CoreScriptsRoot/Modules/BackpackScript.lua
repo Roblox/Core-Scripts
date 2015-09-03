@@ -68,6 +68,8 @@ local DOUBLE_CLICK_TIME = 0.5
 -----------------
 --| Variables |--
 -----------------
+local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
+local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
 
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
@@ -1528,6 +1530,13 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 		end
 		BackpackScript.IsOpen = InventoryFrame.Visible
 		BackpackScript.StateChanged:Fire(InventoryFrame.Visible)
+
+		if useNewControllerMenu then
+			local SettingsHub = require(RobloxGui.Modules.Settings:WaitForChild("SettingsHub"))
+			if SettingsHub.Instance.Visible then
+				SettingsHub:SetVisibility(false)
+			end
+		end
 	end
 	HotkeyFns[ARROW_HOTKEY] = openClose
 	BackpackScript.OpenClose = openClose -- Exposed

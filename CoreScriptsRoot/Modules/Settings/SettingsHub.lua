@@ -53,9 +53,11 @@ local function CreateSettingsHub()
 	this.MenuStack = {}
 	this.TabHeaders = {}
 	this.BottomBarButtons = {}
+	this.TabConnection = nil
 	this.LeaveGamePage = require(RobloxGui.Modules.Settings.Pages.LeaveGame)
 	this.ResetCharacterPage = require(RobloxGui.Modules.Settings.Pages.ResetCharacter)
 	this.SettingsShowSignal = utility:CreateSignal()
+	this.OpenStateChangedCount = 0
 
 	local pageChangeCon = nil
 
@@ -76,13 +78,22 @@ local function CreateSettingsHub()
 		end
 	end
 
-	local function removeBottomBarBindings()
+	local function removeBottomBarBindings(delayBeforeRemoving)
 		for _, hotKeyTable in pairs(this.BottomBarButtons) do
 			ContextActionService:UnbindCoreAction(hotKeyTable[1])
 		end
 
-		if this.BottomButtonFrame then
-			this.BottomButtonFrame.Visible = false
+		local myOpenStateChangedCount = this.OpenStateChangedCount
+		local remove = function()
+			if this.OpenStateChangedCount == myOpenStateChangedCount and this.BottomButtonFrame then
+				this.BottomButtonFrame.Visible = false
+			end
+		end
+
+		if delayBeforeRemoving then
+			delay(delayBeforeRemoving, remove)
+		else
+			remove()
 		end
 	end
 
@@ -207,6 +218,17 @@ local function CreateSettingsHub()
 			Parent = clippingShield
 		};
 
+		this.Modal = utility:Create'TextButton' -- Force unlocks the mouse, really need a way to do this via UIS
+		{
+			Name = 'Modal',
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0, 0, 1, -1),
+			Size = UDim2.new(1, 0, 1, 0),
+			Modal = true,
+			Text = '',
+			Parent = this.Shield
+		}
+
 		this.HubBar = utility:Create'ImageLabel'
 		{
 			Name = "HubBar",
@@ -329,14 +351,14 @@ local function CreateSettingsHub()
 				this:AddToMenuStack(this.Pages.CurrentPage)
 				this.HubBar.Visible = false
 				removeBottomBarBindings()
-				this:SwitchToPage(this.LeaveGamePage, nil, 1)
+				this:SwitchToPage(this.LeaveGamePage, nil, 1, isTenFootInterface, true)
 			end
 
 			local resetCharFunc = function()
 				this:AddToMenuStack(this.Pages.CurrentPage)
 				this.HubBar.Visible = false
 				removeBottomBarBindings()
-				this:SwitchToPage(this.ResetCharacterPage, nil, 1)
+				this:SwitchToPage(this.ResetCharacterPage, nil, 1, isTenFootInterface, true)
 			end
 
 			local resumeFunc = function()
@@ -588,35 +610,87 @@ local function CreateSettingsHub()
 		end
 	end
 
+	local lastInputUsedToSelectGui = isTenFootInterface
+	UserInputService.InputBegan:connect(function(input)
+		if input.UserInputType == Enum.UserInputType.Gamepad1 or input.UserInputType == Enum.UserInputType.Gamepad2 or input.UserInputType == Enum.UserInputType.Gamepad3 or input.UserInputType == Enum.UserInputType.Gamepad4
+			or input.KeyCode == Enum.KeyCode.Left or input.KeyCode == Enum.KeyCode.Right or input.KeyCode == Enum.KeyCode.Up or input.KeyCode == Enum.KeyCode.Down or input.KeyCode == Enum.KeyCode.Tab then
+			lastInputUsedToSelectGui = true
+		elseif input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
+			lastInputUsedToSelectGui = false
+		end
+	end)
+	UserInputService.InputChanged:connect(function(input)
+		if input.KeyCode == Enum.KeyCode.Thumbstick1 or input.KeyCode == Enum.KeyCode.Thumbstick2 then
+			if input.Position.magnitude >= 0.25 then
+				lastInputUsedToSelectGui = true
+			end
+		elseif input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
+			lastInputUsedToSelectGui = false
+		end
+	end)
 
-	local switchTabFunc = function(actionName, inputState, inputObject)
+
+	local switchTab = function(direction, cycle, autoSelectRow)
+		local currentTabPosition = GetHeaderPosition(this.Pages.CurrentPage)
+		if currentTabPosition < 0 then return end
+
+		local newTabPosition = currentTabPosition + direction
+		if cycle then
+			if newTabPosition > #this.TabHeaders then
+				newTabPosition = 1
+			elseif newTabPosition < 1 then
+				newTabPosition = #this.TabHeaders
+			end
+		end
+		local newHeader = this.TabHeaders[newTabPosition]
+
+		if newHeader then
+			for pager,v in pairs(this.Pages.PageTable) do
+				if pager:GetTabHeader() == newHeader then
+					this:SwitchToPage(pager, true, direction, autoSelectRow)
+					break
+				end
+			end
+		end
+	end
+
+	local switchTabFromBumpers = function(actionName, inputState, inputObject)
 		if inputState ~= Enum.UserInputState.Begin then return end
 
 		local direction = 0
-		if inputObject.KeyCode == Enum.KeyCode.ButtonR1 or inputObject.KeyCode == Enum.KeyCode.Tab then 
+		if inputObject.KeyCode == Enum.KeyCode.ButtonR1 then 
 			direction = 1
 		elseif inputObject.KeyCode == Enum.KeyCode.ButtonL1 then 
 			direction = -1
 		end
 
-		local currentTabPosition = GetHeaderPosition(this.Pages.CurrentPage)
-		if currentTabPosition < 0 then return end
+		switchTab(direction, true, true)
+	end
 
-		local newTabPosition = currentTabPosition + direction
-		local newHeader = this.TabHeaders[newTabPosition]
-
-		if not newHeader and inputObject.KeyCode == Enum.KeyCode.Tab then
-			newHeader = this.TabHeaders[1]
-		end
-
-		if newHeader then
-			for pager,v in pairs(this.Pages.PageTable) do
-				if pager:GetTabHeader() == newHeader then
-					this:SwitchToPage(pager, true, direction)
-					break
-				end
+	local switchTabFromKeyboard = function(input)
+		if input.KeyCode == Enum.KeyCode.Tab then
+			local direction = 0
+			if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) or UserInputService:IsKeyDown(Enum.KeyCode.RightShift) then
+				direction = -1
+			else
+				direction = 1
 			end
+
+			switchTab(direction, true, true)
 		end
+	end
+
+	local scrollHotkeyFunc = function(actionName, inputState, inputObject)
+		if inputState ~= Enum.UserInputState.Begin then return end
+
+		local direction = 0
+		if inputObject.KeyCode == Enum.KeyCode.PageUp then
+			direction = -100
+		elseif inputObject.KeyCode == Enum.KeyCode.PageDown then
+			direction = 100
+		end
+
+		this:ScrollPixels(direction)
 	end
 
 	-- need some stuff for functions below so init here
@@ -733,19 +807,31 @@ local function CreateSettingsHub()
 		this.PageView.CanvasPosition = Vector2.new(0, newY)
 	end
 
-	function this:ScrollToFrame(frame)
-		local ay = frame.AbsolutePosition.y - this.Pages.CurrentPage.Page.AbsolutePosition.y
-		local by = ay + frame.AbsoluteSize.y
+	function this:ScrollToFrame(frame, forced)
+		if lastInputUsedToSelectGui or forced then
+			local ay = frame.AbsolutePosition.y - this.Pages.CurrentPage.Page.AbsolutePosition.y
+			local by = ay + frame.AbsoluteSize.y
 
-		if ay < this.PageView.CanvasPosition.y then -- Scroll up to fit top
-			this.PageView.CanvasPosition = Vector2.new(0, ay)
-		elseif by - this.PageView.CanvasPosition.y > this.PageViewClipper.Size.Y.Offset then -- Scroll down to fit bottom
-			this.PageView.CanvasPosition = Vector2.new(0, by - this.PageViewClipper.Size.Y.Offset)
+			if ay < this.PageView.CanvasPosition.y then -- Scroll up to fit top
+				this.PageView.CanvasPosition = Vector2.new(0, ay)
+			elseif by - this.PageView.CanvasPosition.y > this.PageViewClipper.Size.Y.Offset then -- Scroll down to fit bottom
+				this.PageView.CanvasPosition = Vector2.new(0, by - this.PageViewClipper.Size.Y.Offset)
+			end
 		end
 	end
 
-	function this:SwitchToPage(pageToSwitchTo, ignoreStack, direction)
+	function this:SwitchToPage(pageToSwitchTo, ignoreStack, direction, autoSelectRow, skipAnimation)
 		if this.Pages.PageTable[pageToSwitchTo] == nil then return end
+
+		-- detect direction
+		if direction == nil then
+			if this.Pages.CurrentPage and this.Pages.CurrentPage.TabHeader and pageToSwitchTo and pageToSwitchTo.TabHeader then
+				direction = this.Pages.CurrentPage.TabHeader.AbsolutePosition.x < pageToSwitchTo.TabHeader.AbsolutePosition.x and 1 or -1
+			end
+		end
+		if direction == nil then
+			direction = 1
+		end
 
 		-- scroll back up
 		this:ScrollToProgress(0)
@@ -760,7 +846,7 @@ local function CreateSettingsHub()
 		local newPagePos = pageToSwitchTo.TabPosition
 		for page, _ in pairs(this.Pages.PageTable) do
 			if page ~= pageToSwitchTo then
-				page:Hide(-direction, newPagePos)
+				page:Hide(-direction, newPagePos, skipAnimation)
 			end
 		end
 
@@ -771,7 +857,7 @@ local function CreateSettingsHub()
 
 		-- make sure page is visible
 		this.Pages.CurrentPage = pageToSwitchTo
-		this.Pages.CurrentPage:Display(this.PageView)
+		this.Pages.CurrentPage:Display(this.PageView, autoSelectRow, skipAnimation)
 		this.Pages.CurrentPage.Active = true
 
 		local pageSize = this.Pages.CurrentPage:GetSize()
@@ -813,10 +899,19 @@ local function CreateSettingsHub()
 		end)
 	end
 
-	function setVisibilityInternal(visible, noAnimation, customStartPage)
+	function setVisibilityInternal(visible, noAnimation, customStartPage, switchedFromGamepadInput)
+		this.OpenStateChangedCount = this.OpenStateChangedCount + 1
+		local switchedFromGamepadInput = switchedFromGamepadInput or isTenFootInterface
 		this.Visible = visible
 
 		this.SettingsShowSignal:fire(this.Visible)
+
+		this.Modal.Visible = this.Visible
+
+		if this.TabConnection then
+			this.TabConnection:disconnect()
+			this.TabConnection = nil
+		end
 
 		if this.Visible then
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
@@ -834,10 +929,16 @@ local function CreateSettingsHub()
 												 Enum.PlayerActions.CharacterLeft,
 												 Enum.PlayerActions.CharacterRight,
 												 Enum.PlayerActions.CharacterJump, 
+												 Enum.KeyCode.LeftShift,
+												 Enum.KeyCode.RightShift,
+												 Enum.KeyCode.Tab,
 												 Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
 
-			ContextActionService:BindCoreAction("RbxSettingsHubSwitchTab", switchTabFunc, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL1, Enum.KeyCode.Tab)
+			ContextActionService:BindCoreAction("RbxSettingsHubSwitchTab", switchTabFromBumpers, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL1)
+			ContextActionService:BindCoreAction("RbxSettingsScrollHotkey", scrollHotkeyFunc, false, Enum.KeyCode.PageUp, Enum.KeyCode.PageDown)
 			setBottomBarBindings()
+
+			this.TabConnection = UserInputService.InputBegan:connect(switchTabFromKeyboard)
 
 			setOverrideMouseIconBehavior()
 			pcall(function() lastInputChangedCon = UserInputService.LastInputTypeChanged:connect(setOverrideMouseIconBehavior) end)
@@ -845,18 +946,16 @@ local function CreateSettingsHub()
 			pcall(function() PlatformService.BlurIntensity = 10 end)
 
 			if customStartPage then
-				this:SwitchToPage(customStartPage, nil, 1)
+				this:SwitchToPage(customStartPage, nil, 1, switchedFromGamepadInput, true)
 			else
 				if this.HomePage then
-					this:SwitchToPage(this.HomePage, nil, 1)
+					this:SwitchToPage(this.HomePage, nil, 1, switchedFromGamepadInput, true)
 				else
-					this:SwitchToPage(this.GameSettingsPage, nil, 1)
+					this:SwitchToPage(this.GameSettingsPage, nil, 1, switchedFromGamepadInput, true)
 				end
 			end
 
-			if playerList:IsOpen() then
-				playerList:ToggleVisibility()
-			end
+			playerList:HideTemp('SettingsMenu', true)
 
 			if chat:GetVisibility() then
 				chat:ToggleVisibility()
@@ -879,28 +978,30 @@ local function CreateSettingsHub()
 				lastInputChangedCon:disconnect()
 			end
 
+			playerList:HideTemp('SettingsMenu', false)
+
 			pcall(function() UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
 			pcall(function() PlatformService.BlurIntensity = 0 end)
 
 			clearMenuStack()
 			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab") 
 			ContextActionService:UnbindCoreAction("RbxSettingsHubStopCharacter")
-			removeBottomBarBindings()
+			ContextActionService:UnbindCoreAction("RbxSettingsScrollHotkey")
+			removeBottomBarBindings(0.4)
 
 			GuiService.SelectedCoreObject = nil
 			pcall(function() GuiService:SetMenuIsOpen(false) end)
 		end
-
 	end
 
-	function this:SetVisibility(visible, noAnimation, customStartPage)
+	function this:SetVisibility(visible, noAnimation, customStartPage, switchedFromGamepadInput)
 		if this.Visible == visible then return end
 
-		setVisibilityInternal(visible, noAnimation, customStartPage)
+		setVisibilityInternal(visible, noAnimation, customStartPage, switchedFromGamepadInput)
 	end
 
-	function this:ToggleVisibility()
-		setVisibilityInternal(not this.Visible)
+	function this:ToggleVisibility(switchedFromGamepadInput)
+		setVisibilityInternal(not this.Visible, nil, nil, switchedFromGamepadInput)
 	end
 
 	function this:AddToMenuStack(newItem)
@@ -910,7 +1011,7 @@ local function CreateSettingsHub()
 	end
 
 
-	function this:PopMenu()
+	function this:PopMenu(switchedFromGamepadInput, skipAnimation)
 		if this.MenuStack and #this.MenuStack > 0 then
 			local lastStackItem = this.MenuStack[#this.MenuStack]
 
@@ -923,10 +1024,10 @@ local function CreateSettingsHub()
 			end
 
 			table.remove(this.MenuStack, #this.MenuStack)
-			this:SwitchToPage(this.MenuStack[#this.MenuStack], true, 1)
+			this:SwitchToPage(this.MenuStack[#this.MenuStack], true, 1, switchedFromGamepadInput, skipAnimation)
 			if #this.MenuStack == 0 then
 				this:SetVisibility(false)
-				this.Pages.CurrentPage:Hide(0,0)
+				this.Pages.CurrentPage:Hide(0, 0)--, true, 0.4)
 			end
 		else
 			this.MenuStack = {}
@@ -944,7 +1045,7 @@ local function CreateSettingsHub()
 
 	local closeMenuFunc = function(name, inputState, input)
 		if inputState ~= Enum.UserInputState.Begin then return end
-		this:PopMenu()
+		this:PopMenu(false, true)
 	end
 	ContextActionService:BindCoreAction("RBXEscapeMainMenu", closeMenuFunc, false, Enum.KeyCode.Escape)
 	
@@ -989,16 +1090,16 @@ local function CreateSettingsHub()
 	end
 
 	if this.HomePage then
-		this:SwitchToPage(this.HomePage, true, 1)
+		this:SwitchToPage(this.HomePage, true, 1, isTenFootInterface)
 	else
-		this:SwitchToPage(this.GameSettingsPage, true, 1)
+		this:SwitchToPage(this.GameSettingsPage, true, 1, isTenFootInterface)
 	end
 	-- hook up to necessary signals
 
 	-- connect back button on android
 	GuiService.ShowLeaveConfirmation:connect(function()
 		if #this.MenuStack == 0 then
-			this:SwitchToPage(this.LeaveGamePage, nil, 1)
+			this:SwitchToPage(this.LeaveGamePage, nil, 1, isTenFootInterface)
 		else
 			this:SetVisibility(false)
 			this:PopMenu()
@@ -1007,6 +1108,19 @@ local function CreateSettingsHub()
 
 	-- Dev Console Connections
 	ContextActionService:BindCoreAction(DEV_CONSOLE_ACTION_NAME, toggleDevConsole, false, Enum.KeyCode.F9)
+
+	-- Keyboard control
+	UserInputService.InputBegan:connect(function(input)
+		if input.KeyCode == Enum.KeyCode.Left or input.KeyCode == Enum.KeyCode.Right or input.KeyCode == Enum.KeyCode.Up or input.KeyCode == Enum.KeyCode.Down then
+			if this.Visible and this.Active then
+				if this.Pages.CurrentPage then
+					if GuiService.SelectedCoreObject == nil then
+						this.Pages.CurrentPage:SelectARow()
+					end
+				end
+			end
+		end
+	end)
 
 	return this
 end
@@ -1018,16 +1132,16 @@ local moduleApiTable = {}
 
 	local SettingsHubInstance = CreateSettingsHub()
 
-	function moduleApiTable:SetVisibility(visible, noAnimation, customStartPage)
-		SettingsHubInstance:SetVisibility(visible, noAnimation, customStartPage)
+	function moduleApiTable:SetVisibility(visible, noAnimation, customStartPage, switchedFromGamepadInput)
+		SettingsHubInstance:SetVisibility(visible, noAnimation, customStartPage, switchedFromGamepadInput)
 	end
 
-	function moduleApiTable:ToggleVisibility()
-		SettingsHubInstance:ToggleVisibility()
+	function moduleApiTable:ToggleVisibility(switchedFromGamepadInput)
+		SettingsHubInstance:ToggleVisibility(switchedFromGamepadInput)
 	end
 
-	function moduleApiTable:SwitchToPage(pageToSwitchTo, ignoreStack)
-		SettingsHubInstance:SwitchToPage(pageToSwitchTo, ignoreStack, 1)
+	function moduleApiTable:SwitchToPage(pageToSwitchTo, ignoreStack, switchedFromGamepadInput)
+		SettingsHubInstance:SwitchToPage(pageToSwitchTo, ignoreStack, 1, switchedFromGamepadInput)
 	end
 
 	function moduleApiTable:GetVisibility()
@@ -1043,5 +1157,7 @@ local moduleApiTable = {}
 	end
 
 	moduleApiTable.SettingsShowSignal = SettingsHubInstance.SettingsShowSignal
+
+	moduleApiTable.Instance = SettingsHubInstance
 
 return moduleApiTable
