@@ -13,7 +13,6 @@ local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local Players = game:GetService('Players')
 local TeamsService = game:FindService('Teams')
 local ContextActionService = game:GetService('ContextActionService')
-local RobloxReplicatedStorage = nil	-- NOTE: Can only use in core scripts
 
 local RbxGuiLibrary = nil
 if LoadLibrary then
@@ -31,11 +30,12 @@ RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 
+local playerDropDownModule = require(RobloxGui.Modules:WaitForChild("PlayerDropDown"))
+local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
+
 --[[ Fast Flags ]]--
-local serverCoreScriptsSuccess, serverCoreScriptsEnabled = pcall(function() return settings():GetFFlag("UseServerCoreScripts") end)
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
 --
-local IsServerCoreScripts = serverCoreScriptsSuccess and serverCoreScriptsEnabled
 local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
 
 --[[ Start Module ]]--
@@ -101,29 +101,6 @@ local IsSmallScreenDevice = UserInputService.TouchEnabled and GuiService:GetScre
 local BaseUrl = game:GetService('ContentProvider').BaseUrl:lower()
 BaseUrl = string.gsub(BaseUrl, "/m.", "/www.")
 
---[[ Bindables ]]--
-local BinbableFunction_SendNotification = RobloxGui:FindFirstChild('SendNotification')
-
---[[ Remotes ]]--
-local RemoteEvent_OnNewFollower = nil 	-- we get this later in the script
-
-local IsPersonalServer = false
-local PersonalServerService = nil
-if workspace:FindFirstChild('PSVariable') then
-	IsPersonalServer = true
-	PersonalServerService = game:GetService('PersonalServerService')
-end
-workspace.ChildAdded:connect(function(child)
-	if child.Name == 'PSVariable' and child:IsA('BoolValue') then
-		IsPersonalServer = true
-		PersonalServerService = game:GetService('PersonalServerService')
-	end
-end)
-
---Report Abuse
-local AbusingPlayer = nil
-local AbuseReason = nil
-
 --[[ Constants ]]--
 local ENTRY_PAD = 2
 local BG_TRANSPARENCY = 0.5
@@ -135,7 +112,6 @@ local TEXT_STROKE_COLOR = Color3.new(34/255, 34/255, 34/255)
 local TWEEN_TIME = 0.15
 local MAX_LEADERSTATS = 4
 local MAX_STR_LEN = 12
-local MAX_FRIEND_COUNT = 200
 local TILE_SPACING = 2
 if isTenFootInterface then
 	BG_COLOR_TOP = Color3.new(25/255, 25/255, 25/255)
@@ -172,14 +148,6 @@ local FOLLOWER_STATUS = {
 	MUTUAL = 2,
 }
 
-local PRIVILEGE_LEVEL = {
-	OWNER = 255,
-	ADMIN = 240,
-	MEMBER = 128,
-	VISITOR = 10,
-	BANNED = 0,
-}
-
 --[[ Images ]]--
 local CHAT_ICON = 'rbxasset://textures/ui/chat_teamButton.png'
 local ADMIN_ICON = 'rbxasset://textures/ui/icon_admin-16.png'
@@ -195,7 +163,6 @@ local FOLLOWER_ICON = 'rbxasset://textures/ui/icon_follower-16.png'
 local FOLLOWING_ICON = 'rbxasset://textures/ui/icon_following-16.png'
 local MUTUAL_FOLLOWING_ICON = 'rbxasset://textures/ui/icon_mutualfollowing-16.png'
 
-local FRIEND_IMAGE = 'http://www.roblox.com/thumbs/avatar.ashx?userId='
 local CHARACTER_BACKGROUND_IMAGE = 'rbxasset://textures/ui/PlayerList/CharacterBackgroundImage.png'
 
 --[[ Helper Functions ]]--
@@ -207,22 +174,6 @@ local function clamp(value, min, max)
 	end
 
 	return value
-end
-
-local function getFriendStatus(selectedPlayer)
-	if selectedPlayer == Player then
-		return Enum.FriendStatus.NotFriend
-	else
-		local success, result = pcall(function()
-			-- NOTE: Core script only
-			return Player:GetFriendStatus(selectedPlayer)
-		end)
-		if success then
-			return result
-		else
-			return Enum.FriendStatus.NotFriend
-		end
-	end
 end
 
 -- Returns whether followerUserId is following userId
@@ -373,12 +324,6 @@ local function sortTeams(a, b)
 	return a.TeamScore < b.TeamScore
 end
 
-local function sendNotification(title, text, image, duration, callback)
-	if BinbableFunction_SendNotification then
-		BinbableFunction_SendNotification:Invoke(title, text, image, duration, callback)
-	end
-end
-
 -- Start of Gui Creation
 local Container = Instance.new('Frame')
 Container.Name = "PlayerListContainer"
@@ -417,8 +362,7 @@ ScrollList.TopImage = 'rbxasset://textures/ui/scroll-top.png'
 ScrollList.SelectionImageObject = noSelectionObject
 ScrollList.Parent = Container
 
--- Friend/Report Popup
-local PopupFrame = nil
+-- PlayerDropDown clipping frame
 local PopupClipFrame = Instance.new('Frame')
 PopupClipFrame.Name = "PopupClipFrame"
 PopupClipFrame.Size = UDim2.new(0, 150, 1.5, 0)
@@ -427,213 +371,6 @@ PopupClipFrame.BackgroundTransparency = 1
 PopupClipFrame.ClipsDescendants = true
 PopupClipFrame.Parent = Container
 
--- Report Abuse Gui
-local ReportAbuseShield = Instance.new('TextButton')
-ReportAbuseShield.Name = "ReportAbuseShield"
-ReportAbuseShield.Size = UDim2.new(1, 0, 1, 36)
-ReportAbuseShield.Position = UDim2.new(0, 0, 0, -36)
-ReportAbuseShield.BackgroundColor3 = Color3.new(51/255, 51/255, 51/255)
-ReportAbuseShield.BackgroundTransparency = 0.4
-ReportAbuseShield.ZIndex = 1
-ReportAbuseShield.Text = ""
-ReportAbuseShield.AutoButtonColor = false
-
-	local ReportAbuseFrame = Instance.new('Frame')
-	ReportAbuseFrame.Name = "ReportAbuseFrame"
-	ReportAbuseFrame.Size = UDim2.new(0, 525, 0, 390)
-	ReportAbuseFrame.Position = UDim2.new(0.5, -262, 0.5, -195)
-	ReportAbuseFrame.BackgroundTransparency = 0.7
-	ReportAbuseFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-	ReportAbuseFrame.Style = Enum.FrameStyle.DropShadow
-	ReportAbuseFrame.Parent = ReportAbuseShield
-
-		local reportYOffset = 24
-		local ReportAbuseTitle = Instance.new('TextLabel')
-		ReportAbuseTitle.Name = "ReportAbuseTitle"
-		ReportAbuseTitle.Text = "Report Abuse"
-		ReportAbuseTitle.Size = UDim2.new(0, 0, 0, 0)
-		ReportAbuseTitle.Position = UDim2.new(0.5, 0, 0, reportYOffset)
-		ReportAbuseTitle.BackgroundTransparency = 1
-		ReportAbuseTitle.Font = Enum.Font.SourceSansBold
-		ReportAbuseTitle.FontSize = Enum.FontSize.Size36
-		ReportAbuseTitle.TextColor3 = Color3.new(1, 1, 1)
-		ReportAbuseTitle.Parent = ReportAbuseFrame
-		reportYOffset = reportYOffset + 32
-
-		local ReportAbuseDescription = Instance.new('TextLabel')
-		ReportAbuseDescription.Name = "ReportAbuseDescription"
-		ReportAbuseDescription.Text = "This will send a complete report to a moderator.  The moderator will review the chat log and take appropriate action."
-		ReportAbuseDescription.Size = UDim2.new(1, -40, 0, 40)
-		ReportAbuseDescription.Position = UDim2.new(0, 35, 0, reportYOffset)
-		ReportAbuseDescription.BackgroundTransparency = 1
-		ReportAbuseDescription.Font = Enum.Font.SourceSans
-		ReportAbuseDescription.FontSize = Enum.FontSize.Size18
-		ReportAbuseDescription.TextColor3 = Color3.new(1, 1, 1)
-		ReportAbuseDescription.TextWrap = true
-		ReportAbuseDescription.TextXAlignment = Enum.TextXAlignment.Left
-		ReportAbuseDescription.TextYAlignment = Enum.TextYAlignment.Top
-		ReportAbuseDescription.Parent = ReportAbuseFrame
-		reportYOffset = reportYOffset + 70
-
-		local ReportPlayerLabel = Instance.new('TextLabel')
-		ReportPlayerLabel.Name = "ReportPlayerLabel"
-		ReportPlayerLabel.Text = "Player Reporting:"
-		ReportPlayerLabel.Size = UDim2.new(0, 0, 0, 0)
-		ReportPlayerLabel.Position = UDim2.new(0.5, -6, 0, reportYOffset)
-		ReportPlayerLabel.BackgroundTransparency = 1
-		ReportPlayerLabel.Font = Enum.Font.SourceSans
-		ReportPlayerLabel.FontSize = Enum.FontSize.Size18
-		ReportPlayerLabel.TextColor3 = Color3.new(1, 1, 1)
-		ReportPlayerLabel.TextXAlignment = Enum.TextXAlignment.Right
-		ReportPlayerLabel.Parent = ReportAbuseFrame
-
-		local ReportPlayerName = Instance.new('TextLabel')
-		ReportPlayerName.Name = "ReportPlayerName"
-		ReportPlayerName.Text = ""
-		ReportPlayerName.Size = UDim2.new(0, 0, 0, 0)
-		ReportPlayerName.Position = UDim2.new(0.5, 18, 0, reportYOffset)
-		ReportPlayerName.BackgroundTransparency = 1
-		ReportPlayerName.Font = Enum.Font.SourceSans
-		ReportPlayerName.FontSize = Enum.FontSize.Size18
-		ReportPlayerName.TextColor3 = Color3.new(1, 1, 1)
-		ReportPlayerName.TextXAlignment = Enum.TextXAlignment.Left
-		ReportPlayerName.Parent = ReportAbuseFrame
-		reportYOffset = reportYOffset + 40
-
-		local ReportReasonLabel = Instance.new('TextLabel')
-		ReportReasonLabel.Name = "ReportReasonLabel"
-		ReportReasonLabel.Text = "Type of Abuse:"
-		ReportReasonLabel.Size = UDim2.new(0, 0, 0, 0)
-		ReportReasonLabel.Position = UDim2.new(0.5, -6, 0, reportYOffset)
-		ReportReasonLabel.BackgroundTransparency = 1
-		ReportReasonLabel.Font = Enum.Font.SourceSans
-		ReportReasonLabel.FontSize = Enum.FontSize.Size18
-		ReportReasonLabel.TextColor3 = Color3.new(1, 1, 1)
-		ReportReasonLabel.TextXAlignment = Enum.TextXAlignment.Right
-		ReportReasonLabel.Parent = ReportAbuseFrame
-		reportYOffset = reportYOffset + 40
-
-		local ReportDescriptionLabel = ReportAbuseDescription:Clone()
-		ReportDescriptionLabel.Name = "ReportDescriptionLabel"
-		ReportDescriptionLabel.Text = "Short Description: (optional)"
-		ReportDescriptionLabel.Position = UDim2.new(0, 35, 0, reportYOffset)
-		ReportDescriptionLabel.Parent = ReportAbuseFrame
-		reportYOffset = reportYOffset + 28
-
-		local ReportDescriptionBox = Instance.new('TextBox')
-		ReportDescriptionBox.Name = "ReportDescriptionBox"
-		ReportDescriptionBox.Text = ""
-		ReportDescriptionBox.Size = UDim2.new(1, -70, 1, -reportYOffset - 80)
-		ReportDescriptionBox.Position = UDim2.new(0, 35, 0, reportYOffset)
-		ReportDescriptionBox.BackgroundTransparency = 1
-		ReportDescriptionBox.Font = Enum.Font.SourceSans
-		ReportDescriptionBox.FontSize = Enum.FontSize.Size18
-		ReportDescriptionBox.TextColor3 = Color3.new(0, 0, 0)
-		ReportDescriptionBox.TextXAlignment = Enum.TextXAlignment.Left
-		ReportDescriptionBox.TextYAlignment = Enum.TextYAlignment.Top
-		ReportDescriptionBox.TextWrap = true
-		ReportDescriptionBox.ClearTextOnFocus = false
-		ReportDescriptionBox.Parent = ReportAbuseFrame
-
-		local ReportDescriptionBg = Instance.new('TextButton')
-		ReportDescriptionBg.Name = "ReportDescriptionBg"
-		ReportDescriptionBg.Size = UDim2.new(1, 16, 1, 16)
-		ReportDescriptionBg.Position = UDim2.new(0, -8, 0, -8)
-		ReportDescriptionBg.Text = ""
-		ReportDescriptionBg.Active = false
-		ReportDescriptionBg.AutoButtonColor = false
-		ReportDescriptionBg.Style = Enum.ButtonStyle.RobloxRoundDropdownButton
-		ReportDescriptionBg.Parent = ReportDescriptionBox
-		reportYOffset = reportYOffset + ReportDescriptionBox.AbsoluteSize.y + 20
-
-		local ReportSubmitButton = Instance.new('TextButton')
-		ReportSubmitButton.Name = "ReportSubmitButton"
-		ReportSubmitButton.Text = "Submit"
-		ReportSubmitButton.Size = UDim2.new(0, 168, 0, 50)
-		ReportSubmitButton.Position = UDim2.new(0.5, 2, 0, reportYOffset)
-		ReportSubmitButton.Font = Enum.Font.SourceSansBold
-		ReportSubmitButton.FontSize = Enum.FontSize.Size24
-		ReportSubmitButton.TextColor3 = Color3.new(163/255, 162/255, 165/255)
-		ReportSubmitButton.Active = false
-		ReportSubmitButton.AutoButtonColor = true
-		ReportSubmitButton.Modal = true
-		ReportSubmitButton.Style = Enum.ButtonStyle.RobloxRoundDefaultButton
-		ReportSubmitButton.Parent = ReportAbuseFrame
-
-		local ReportCanelButton = Instance.new('TextButton')
-		ReportCanelButton.Name = "ReportCanelButton"
-		ReportCanelButton.Text = "Cancel"
-		ReportCanelButton.Size = UDim2.new(0, 168, 0, 50)
-		ReportCanelButton.Position = UDim2.new(0.5, -170, 0, reportYOffset)
-		ReportCanelButton.Font = Enum.Font.SourceSansBold
-		ReportCanelButton.FontSize = Enum.FontSize.Size24
-		ReportCanelButton.TextColor3 = Color3.new(1, 1, 1)
-		ReportCanelButton.Style = Enum.ButtonStyle.RobloxRoundButton
-		ReportCanelButton.Parent = ReportAbuseFrame
-
-		local AbuseDropDown, updateAbuseSelection = nil, nil
-		AbuseDropDown = RbxGuiLibrary.CreateScrollingDropDownMenu(
-			function(text)
-				AbuseReason = text
-				if AbuseReason and AbusingPlayer then
-					ReportSubmitButton.Active = true
-					ReportSubmitButton.TextColor3 = Color3.new(1, 1, 1)
-				end
-			end, UDim2.new(0, 200, 0, 32), UDim2.new(0.5, 6, 0, ReportReasonLabel.Position.Y.Offset - 16), 1)
-		AbuseDropDown.CreateList(ABUSES)
-		AbuseDropDown.Frame.Parent = ReportAbuseFrame
-
--- Report Confirm Gui
-local ReportConfirmFrame = Instance.new('Frame')
-ReportConfirmFrame.Name = "ReportConfirmFrame"
-ReportConfirmFrame.Size = UDim2.new(0, 400, 0, 170)
-ReportConfirmFrame.Position = UDim2.new(0.5, -200, 0.5, -80)
-ReportConfirmFrame.BackgroundTransparency = 0.7
-ReportConfirmFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-ReportConfirmFrame.Style = Enum.FrameStyle.DropShadow
-
-	local ReportConfirmHeader = Instance.new('TextLabel')
-	ReportConfirmHeader.Name = "ReportConfirmHeader"
-	ReportConfirmHeader.Size = UDim2.new(0, 0, 0, 0)
-	ReportConfirmHeader.Position = UDim2.new(0.5, 0, 0, 14)
-	ReportConfirmHeader.BackgroundTransparency = 1
-	ReportConfirmHeader.Text = "Thank you for your Report"
-	ReportConfirmHeader.Font = Enum.Font.SourceSans
-	ReportConfirmHeader.FontSize = Enum.FontSize.Size36
-	ReportConfirmHeader.TextColor3 = Color3.new(1, 1, 1)
-	ReportConfirmHeader.Parent = ReportConfirmFrame
-
-	local ReportConfirmText = Instance.new('TextLabel')
-	ReportConfirmText.Name = "ReportConfirmText"
-	ReportConfirmText.Text = "Our moderators will review your report and the chat log to determine what happened."
-	ReportConfirmText.Size = UDim2.new(1, -20, 0, 40)
-	ReportConfirmText.Position = UDim2.new(0, 10, 0, 46)
-	ReportConfirmText.BackgroundTransparency = 1
-	ReportConfirmText.Font = Enum.Font.SourceSans
-	ReportConfirmText.FontSize = Enum.FontSize.Size18
-	ReportConfirmText.TextColor3 = Color3.new(1, 1, 1)
-	ReportConfirmText.TextWrap = true
-	ReportConfirmText.TextXAlignment = Enum.TextXAlignment.Left
-	ReportConfirmText.TextYAlignment = Enum.TextYAlignment.Top
-	ReportConfirmText.Parent = ReportConfirmFrame
-
-	local ReportConfirmButton = Instance.new('TextButton')
-	ReportConfirmButton.Name = "ReportConfirmButton"
-	ReportConfirmButton.Text = "OK"
-	ReportConfirmButton.Size = UDim2.new(0, 168, 0, 50)
-	ReportConfirmButton.Position = UDim2.new(0.5, -81, 1, -60)
-	ReportConfirmButton.Font = Enum.Font.SourceSans
-	ReportConfirmButton.FontSize = Enum.FontSize.Size24
-	ReportConfirmButton.TextColor3 = Color3.new(1, 1, 1)
-	ReportConfirmButton.Style = Enum.ButtonStyle.RobloxRoundDefaultButton
-	ReportConfirmButton.Parent = ReportConfirmFrame
-
-	local function onReportConfirmPressed()
-		ReportConfirmFrame.Parent = nil
-		ReportAbuseShield.Parent = nil
-		ReportAbuseFrame.Parent = ReportAbuseShield
-	end
-	ReportConfirmButton.MouseButton1Click:connect(onReportConfirmPressed)
 
 --[[ Creation Helper Functions ]]--
 local function createEntryFrame(name, sizeYOffset, isTopStat)
@@ -910,111 +647,6 @@ local function setEntryPositions()
 	end
 end
 
---[[ Friend/Report Functions ]]--
-local selectedEntryMovedCn = nil
-local function createPopupFrame(buttons)
-	local frame = Instance.new('Frame')
-	frame.Name = "PopupFrame"
-	frame.Size = UDim2.new(1, 0, 0, (PlayerEntrySizeY * #buttons) + (#buttons - ENTRY_PAD))
-	frame.Position = UDim2.new(1, 1, 0, 0)
-	frame.BackgroundTransparency = 1
-	frame.Parent = PopupClipFrame
-
-	for i,button in ipairs(buttons) do
-		local btn = Instance.new('TextButton')
-		btn.Name = button.Name
-		btn.Size = UDim2.new(1, 0, 0, PlayerEntrySizeY)
-		btn.Position = UDim2.new(0, 0, 0, PlayerEntrySizeY * (i - 1) + ((i - 1) * ENTRY_PAD))
-		btn.BackgroundTransparency = BG_TRANSPARENCY
-		btn.BackgroundColor3 = BG_COLOR
-		btn.BorderSizePixel = 0
-		btn.Text = button.Text
-		btn.Font = Enum.Font.SourceSans
-		if isTenFootInterface then
-			btn.FontSize = Enum.FontSize.Size32
-		else
-			btn.FontSize = Enum.FontSize.Size14
-		end
-		btn.TextColor3 = TEXT_COLOR
-		btn.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
-		btn.TextStrokeColor3 = TEXT_STROKE_COLOR
-		btn.AutoButtonColor = true
-		btn.Parent = frame
-
-		btn.MouseButton1Click:connect(button.OnPress)
-	end
-
-	return frame
-end
-
--- if userId = nil, then it will get count for local player
-local function getFriendCountAsync(userId)
-	local friendCount = nil
-	local wasSuccess, result = pcall(function()
-		local str = 'user/get-friendship-count'
-		if userId then
-			str = str..'?userId='..tostring(userId)
-		end
-		return HttpRbxApiService:GetAsync(str, true)
-	end)
-	if not wasSuccess then
-		print("getFriendCountAsync() failed because", result)
-		return nil
-	end
-	result = HttpService:JSONDecode(result)
-
-	if result["success"] and result["count"] then
-		friendCount = result["count"]
-	end
-
-	return friendCount
-end
-
--- checks if we can send a friend request. Right now the only way we
--- can't is if one of the players is at the max friend limit
-local function canSendFriendRequestAsync(otherPlayer)
-	local theirFriendCount = getFriendCountAsync(otherPlayer.userId)
-	local myFriendCount = getFriendCountAsync()
-
-	-- assume max friends if web call fails
-	if not myFriendCount or not theirFriendCount then
-		return false
-	end
-	if myFriendCount < MAX_FRIEND_COUNT and theirFriendCount < MAX_FRIEND_COUNT then
-		return true
-	elseif myFriendCount >= MAX_FRIEND_COUNT then
-		sendNotification("Cannot send friend request", "You are at the max friends limit.", "", 5, function() end)
-		return false
-	elseif theirFriendCount >= MAX_FRIEND_COUNT then
-		sendNotification("Cannot send friend request", otherPlayer.Name.." is at the max friends limit.", "", 5, function() end)
-		return false
-	end
-end
-
-local function hideFriendReportPopup()
-	if PopupFrame then
-		PopupFrame:TweenPosition(UDim2.new(1, 1, 0, PopupFrame.Position.Y.Offset), Enum.EasingDirection.InOut,
-			Enum.EasingStyle.Quad, TWEEN_TIME, true, function()
-				PopupFrame:Destroy()
-				PopupFrame = nil
-				if selectedEntryMovedCn then
-					selectedEntryMovedCn:disconnect()
-					selectedEntryMovedCn = nil
-				end
-			end)
-	end
-	if LastSelectedFrame then
-		for _,childFrame in pairs(LastSelectedFrame:GetChildren()) do
-			if childFrame:IsA('TextButton') or childFrame:IsA('Frame') then
-				childFrame.BackgroundColor3 = BG_COLOR
-			end
-		end
-	end
-	ScrollList.ScrollingEnabled = true
-	LastSelectedFrame = nil
-	LastSelectedPlayer = nil
-end
-
 local function updateSocialIcon(newIcon, bgFrame)
 	local socialIcon = bgFrame:FindFirstChild('SocialIcon')
 	local nameFrame = bgFrame:FindFirstChild('PlayerName')
@@ -1041,6 +673,22 @@ local function updateSocialIcon(newIcon, bgFrame)
 	end
 end
 
+local function getFriendStatus(selectedPlayer)
+	if selectedPlayer == Player then
+		return Enum.FriendStatus.NotFriend
+	else
+		local success, result = pcall(function()
+			-- NOTE: Core script only
+			return Player:GetFriendStatus(selectedPlayer)
+		end)
+		if success then
+			return result
+		else
+			return Enum.FriendStatus.NotFriend
+		end
+	end
+end
+
 local function onFollowerStatusChanged()
 	if not LastSelectedFrame or not LastSelectedPlayer then
 		return
@@ -1059,262 +707,21 @@ local function onFollowerStatusChanged()
 		updateSocialIcon(newIcon, bgFrame)
 	end
 end
+playerDropDownModule.FollowerStatusChanged:connect(onFollowerStatusChanged)
 
--- Client follows followedUserId
-local function onFollowButtonPressed()
-	if not LastSelectedPlayer then return end
-	--
-	local followedUserId = tostring(LastSelectedPlayer.userId)
-	local apiPath = "user/follow"
-	local params = "followedUserId="..followedUserId
-	local success, result = pcall(function()
-		return HttpRbxApiService:PostAsync(apiPath, params, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
-	end)
-	if not success then
-		print("followPlayer() failed because", result)
-		hideFriendReportPopup()
-		return
-	end
-
-	result = HttpService:JSONDecode(result)
-	if result["success"] then
-		sendNotification("You are", "now following "..LastSelectedPlayer.Name, FRIEND_IMAGE..followedUserId.."&x=48&y=48", 5, function() end)
-		if RemoteEvent_OnNewFollower then
-			RemoteEvent_OnNewFollower:FireServer(LastSelectedPlayer)
-		end
-		-- now update the social icon
-		onFollowerStatusChanged()
-	end
-
-	hideFriendReportPopup()
-end
-
--- TODO: Move this to the notifications script. For now I want to keep it here until the
--- new notifications system goes live
-if IsServerCoreScripts then
-	-- don't block the rest of the core gui
-	spawn(function()
-		RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-		RemoteEvent_OnNewFollower = RobloxReplicatedStorage:WaitForChild('OnNewFollower')
-		--
-		RemoteEvent_OnNewFollower.OnClientEvent:connect(function(followerRbxPlayer)
-			sendNotification("New Follower", followerRbxPlayer.Name.."is now following you!",
-				FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
-		end)
-	end)
-end
-
--- Client unfollows followedUserId
-local function onUnfollowButtonPressed()
-	if not LastSelectedPlayer then return end
-	--
-	local apiPath = "user/unfollow"
-	local params = "followedUserId="..tostring(LastSelectedPlayer.userId)
-	local success, result = pcall(function()
-		return HttpRbxApiService:PostAsync(apiPath, params, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
-	end)
-	if not success then
-		print("unfollowPlayer() failed because", result)
-		hideFriendReportPopup()
-		return
-	end
-
-	result = HttpService:JSONDecode(result)
-	if result["success"] then
-		onFollowerStatusChanged()
-	end
-
-	hideFriendReportPopup()
-	-- no need to send notification when someone unfollows
-end
-
-local function onFriendButtonPressed()
-	if LastSelectedPlayer then
-		local status = getFriendStatus(LastSelectedPlayer)
-		if status == Enum.FriendStatus.Friend then
-			Player:RevokeFriendship(LastSelectedPlayer)
-		elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend then
-			-- cache and spawn
-			local cachedLastSelectedPlayer = LastSelectedPlayer
-			spawn(function()
-				-- check for max friends before letting them send the request
-				if canSendFriendRequestAsync(cachedLastSelectedPlayer) then 	-- Yields
-					if cachedLastSelectedPlayer and cachedLastSelectedPlayer.Parent == Players then
-						Player:RequestFriendship(cachedLastSelectedPlayer)
-					end
-				end
-			end)
-		elseif status == Enum.FriendStatus.FriendRequestSent then
-			Player:RevokeFriendship(LastSelectedPlayer)
-		elseif status == Enum.FriendStatus.FriendRequestReceived then
-			Player:RequestFriendship(LastSelectedPlayer)
-		end
-
-		hideFriendReportPopup()
-	end
-end
-
-local function onReportButtonPressed()
-	if LastSelectedPlayer then
-		AbusingPlayer = LastSelectedPlayer
-		ReportPlayerName.Text = AbusingPlayer.Name
-		ReportAbuseShield.Parent = RobloxGui
-		hideFriendReportPopup()
-	end
-end
-
-local function resetReportDialog()
-	AbuseReason = nil
-	AbusingPlayer = nil
-	if AbuseDropDown then 
-		AbuseDropDown.SetSelectionText("Choose One")
-		if AbuseDropDown.IsOpen() then
-			AbuseDropDown.Reset()
-		end
-	else
-		updateAbuseSelection(nil)
-	end
-	ReportPlayerName.Text = ""
-	ReportDescriptionBox.Text = ""
-	ReportSubmitButton.Active = false
-	ReportSubmitButton.TextColor3 = Color3.new(163/255, 162/255, 165/255)
-end
-
-local function onAbuseDialogCanceled()
-	resetReportDialog()
-	ReportAbuseShield.Parent = nil
-end
-ReportCanelButton.MouseButton1Click:connect(onAbuseDialogCanceled)
-
-local function onAbuseDialogSubmit()
-	if ReportSubmitButton.Active then
-		if AbuseReason and AbusingPlayer then
-			local success, errorMsg = pcall(function()
-				Players:ReportAbuse(AbusingPlayer, AbuseReason, ReportDescriptionBox.Text)
-			end)
-			if not success then
-				print("PlayerlistModule: Players:ReportAbuse() failed because", errorMsg)
+function popupHidden()
+	if LastSelectedFrame then
+		for _,childFrame in pairs(LastSelectedFrame:GetChildren()) do
+			if childFrame:IsA('TextButton') or childFrame:IsA('Frame') then
+				childFrame.BackgroundColor3 = BG_COLOR
 			end
-			resetReportDialog()
-			ReportAbuseFrame.Parent = nil
-			ReportConfirmFrame.Parent = ReportAbuseShield
 		end
 	end
+	ScrollList.ScrollingEnabled = true
+	LastSelectedFrame = nil
+	LastSelectedPlayer = nil
 end
-ReportSubmitButton.MouseButton1Click:connect(onAbuseDialogSubmit)
-
-local function onDeclineFriendButonPressed()
-	if LastSelectedPlayer then
-		Player:RevokeFriendship(LastSelectedPlayer)
-		hideFriendReportPopup()
-	end
-end
-
-local function onPrivilegeLevelSelect(player, rank)
-	while player.PersonalServerRank < rank do
-		PersonalServerService:Promote(player)
-	end
-	while player.PersonalServerRank > rank do
-		PersonalServerService:Demote(player)
-	end
-end
-
-local function createPersonalServerDialog(buttons, selectedPlayer)
-	local showPersonalServerRanks = IsPersonalServer and Player.PersonalServerRank >= PRIVILEGE_LEVEL.ADMIN and
-		Player.PersonalServerRank > selectedPlayer.PersonalServerRank
-	if showPersonalServerRanks then
-		table.insert(buttons, {
-			Name = "BanButton",
-			Text = "Ban",
-			OnPress = function()
-				hideFriendReportPopup()
-				onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.BANNED)
-			end,
-			})
-		table.insert(buttons, {
-			Name = "VistorButton",
-			Text = "Visitor",
-			OnPress = function()
-				onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.VISITOR)
-			end,
-			})
-		table.insert(buttons, {
-			Name = "MemberButton",
-			Text = "Member",
-			OnPress = function()
-				onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.MEMBER)
-			end,
-			})
-		table.insert(buttons, {
-			Name = "AdminButton",
-			Text = "Admin",
-			OnPress = function()
-				onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.ADMIN)
-			end,
-			})
-	end
-end
-
-local function showFriendReportPopup(selectedFrame, selectedPlayer)
-	local buttons = {}
-
-	local status = getFriendStatus(selectedPlayer)
-	local friendText = ""
-	local canDeclineFriend = false
-	if status == Enum.FriendStatus.Friend then
-		friendText = "Unfriend Player"
-	elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend then
-		friendText = "Send Friend Request"
-	elseif status == Enum.FriendStatus.FriendRequestSent then
-		friendText = "Revoke Friend Request"
-	elseif status == Enum.FriendStatus.FriendRequestReceived then
-		friendText = "Accept Friend Request"
-		canDeclineFriend = true
-	end
-
-	table.insert(buttons, {
-		Name = "FriendButton",
-		Text = friendText,
-		OnPress = onFriendButtonPressed,
-		})
-	if canDeclineFriend then
-		table.insert(buttons, {
-			Name = "DeclineFriend",
-			Text = "Decline Friend Request",
-			OnPress = onDeclineFriendButonPressed,
-			})
-	end
-	-- following status
-	local following = isFollowing(selectedPlayer.userId, Player.userId)
-	local followerText = following and "Unfollow Player" or "Follow Player"
-	table.insert(buttons, {
-		Name = "FollowerButton",
-		Text = followerText,
-		OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
-		})
-	table.insert(buttons, {
-		Name = "ReportButton",
-		Text = "Report Abuse",
-		OnPress = onReportButtonPressed,
-		})
-
-	createPersonalServerDialog(buttons, selectedPlayer)
-	if PopupFrame then
-		PopupFrame:Destroy()
-		if selectedEntryMovedCn then
-			selectedEntryMovedCn:disconnect()
-			selectedEntryMovedCn = nil
-		end
-	end
-	PopupFrame = createPopupFrame(buttons)
-	PopupFrame.Position = UDim2.new(1, 1, 0, selectedFrame.Position.Y.Offset - ScrollList.CanvasPosition.y)
-	PopupFrame:TweenPosition(UDim2.new(0, 0, 0, selectedFrame.Position.Y.Offset - ScrollList.CanvasPosition.y), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
-	selectedEntryMovedCn = selectedFrame.Changed:connect(function(property)
-		if property == "Position" then
-			PopupFrame.Position = UDim2.new(0, 0, 0, selectedFrame.Position.Y.Offset - ScrollList.CanvasPosition.y)
-		end
-	end)
-end
+playerDropDown.HiddenSignal:connect(popupHidden)
 
 local function onEntryFrameSelected(selectedFrame, selectedPlayer)
 	if selectedPlayer ~= Player and selectedPlayer.userId > 1 and Player.userId > 1 then
@@ -1335,9 +742,13 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
 			end
 			-- NOTE: Core script only
 			ScrollList.ScrollingEnabled = false
-			showFriendReportPopup(selectedFrame, selectedPlayer)
+			
+			local PopupFrame = playerDropDown:CreatePopup(selectedPlayer)		
+			PopupFrame.Position = UDim2.new(1, 1, 0, selectedFrame.Position.Y.Offset - ScrollList.CanvasPosition.y)
+			PopupFrame.Parent = PopupClipFrame
+			PopupFrame:TweenPosition(UDim2.new(0, 0, 0, selectedFrame.Position.Y.Offset - ScrollList.CanvasPosition.y), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
 		else
-			hideFriendReportPopup()
+			playerDropDown:Hide()
 			LastSelectedFrame = nil
 			LastSelectedPlayer = nil
 		end
@@ -1991,32 +1402,13 @@ RobloxGui.Changed:connect(function(property)
 	end
 end)
 
---[[ Input Connections ]]--
-UserInputService.InputEnded:connect(function(inputObject)
-	if ReportAbuseShield.Parent == RobloxGui then
-		if inputObject.KeyCode == Enum.KeyCode.Escape then
-			onAbuseDialogCanceled()
-		end
-	end
-end)
-
 UserInputService.InputBegan:connect(function(inputObject, isProcessed)
 	if isProcessed then return end
 	local inputType = inputObject.UserInputType
 	if (inputType == Enum.UserInputType.Touch and  inputObject.UserInputState == Enum.UserInputState.Begin) or
 		inputType == Enum.UserInputType.MouseButton1 then
 		if LastSelectedFrame then
-			hideFriendReportPopup()
-		end
-	end
-end)
-
-ReportAbuseShield.InputBegan:connect(function(inputObject)
-	--
-	local inputType = inputObject.UserInputType
-	if inputType == Enum.UserInputType.MouseButton1 or inputType == Enum.UserInputType.Touch then
-		if AbuseDropDown and AbuseDropDown.IsOpen() then
-			AbuseDropDown.Close()
+			playerDropDown:Hide()
 		end
 	end
 end)
@@ -2036,7 +1428,7 @@ end
 Players.ChildRemoved:connect(function(child)
 	if child:IsA('Player') then
 		if LastSelectedPlayer and child == LastSelectedPlayer then
-			hideFriendReportPopup()
+			playerDropDown:Hide()
 		end
 		removePlayerEntry(child)
 	end

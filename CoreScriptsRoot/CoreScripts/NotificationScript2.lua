@@ -294,6 +294,17 @@ BindableEvent_SendNotification.OnInvoke = function(title, text, image, duration,
 	sendNotifcation(title, text, image, duration, callback)
 end
 
+-- New follower notification
+spawn(function()
+	local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
+	local RemoteEvent_OnNewFollower = RobloxReplicatedStorage:WaitForChild('OnNewFollower')
+	--
+	RemoteEvent_OnNewFollower.OnClientEvent:connect(function(followerRbxPlayer)
+		sendNotifcation("New Follower", followerRbxPlayer.Name.."is now following you!",
+			FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
+	end)
+end)
+
 local function sendFriendNotification(fromPlayer)
 	local notification = {}
 	local notificationFrame = createNotification(fromPlayer.Name, "Sent you a friend request!",
@@ -572,5 +583,4 @@ game:WaitForChild("StarterGui"):RegisterSetCore("PointsNotificationsActive", fun
 game:WaitForChild("StarterGui"):RegisterGetCore("PointsNotificationsActive", function() return pointsNotificationsActive end)
 game:WaitForChild("StarterGui"):RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
 game:WaitForChild("StarterGui"):RegisterGetCore("BadgesNotificationsActive", function() return badgesNotificationsActive end)
-
 

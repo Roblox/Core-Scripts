@@ -169,8 +169,8 @@ function MainGui:GenerateMain()
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
 			BackgroundTransparency = 1,
-			Position = UDim2.new(1, (isMobile == true and -65 or (isTenFootInterface and -245 or -225)), 1, (isMobile == true and -65 or (isTenFootInterface and -185 or -165))),
-			Size = UDim2.new(0, (isMobile == true and 60 or (isTenFootInterface and 140 or 120)), 0, (isMobile == true and 60 or (isTenFootInterface and 140 or 120))),
+			Position = UDim2.new(1, (isMobile == true and -75 or (isTenFootInterface and -245 or -225)), 1, (isMobile == true and -75 or (isTenFootInterface and -185 or -165))),
+			Size = UDim2.new(0, (isMobile == true and 70 or (isTenFootInterface and 140 or 120)), 0, (isMobile == true and 70 or (isTenFootInterface and 140 or 120))),
 			ZIndex = 2,
 
 			create 'ImageLabel' {
@@ -186,7 +186,7 @@ function MainGui:GenerateMain()
 				Name = 'LoadingText',
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, (isMobile == true and -14 or -56), 1, 0),
-				Position = UDim2.new(0, (isMobile == true and 7 or 28), 0, 0),
+				Position = UDim2.new(0, (isMobile == true and 12 or 28), 0, 0),
 				Font = Enum.Font.SourceSans,
 				FontSize = (isMobile == true and Enum.FontSize.Size12 or Enum.FontSize.Size18),
 				TextWrapped = true,
