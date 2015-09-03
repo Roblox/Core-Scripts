@@ -37,12 +37,10 @@ local function Initialize()
 	local lastInputType = nil
 
 	function this:GetCurrentInputType()
-		this.HubRef.PageViewClipper.ClipsDescendants = true
-		this.HubRef.PageView.ClipsDescendants = true
-
 		if lastInputType == nil then -- we don't know what controls the user has, just use reasonable defaults
 			local platform = UserInputService:GetPlatform()
 			if platform == Enum.Platform.XBoxOne or platform == Enum.Platform.WiiU then
+
 				return GAMEPAD_TAG
 			elseif platform == Enum.Platform.Windows or platform == Enum.Platform.OSX then
 				return KEYBOARD_MOUSE_TAG
@@ -404,6 +402,10 @@ local function Initialize()
 				helpPage.Parent = nil
 			end
 		end
+		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+			this.HubRef.PageViewClipper.ClipsDescendants = false
+			this.HubRef.PageView.ClipsDescendants = false
+		end
 	end
 
 	local function switchToHelp(typeOfHelp)
@@ -471,7 +473,11 @@ do
 	end)
 
 	PageInstance.Hidden.Event:connect(function()
+		PageInstance.HubRef.PageViewClipper.ClipsDescendants = true
+		PageInstance.HubRef.PageView.ClipsDescendants = true
+
 		PageInstance.HubRef:ShowShield()
+		
 		if PageInstance:GetCurrentInputType() == TOUCH_TAG then
 			PageInstance.HubRef.BottomButtonFrame.Visible = true
 		end
