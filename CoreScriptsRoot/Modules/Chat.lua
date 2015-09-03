@@ -17,7 +17,6 @@ local NON_CORESCRIPT_MODE = false
 ---------------------------------
 
 local MESSAGES_FADE_OUT_TIME = 30
-local MAX_BLOCKLIST_SIZE = 50
 local MAX_UDIM_SIZE = 2^15 - 1
 
 local PHONE_SCREEN_WIDTH = 640
@@ -63,6 +62,20 @@ if NON_CORESCRIPT_MODE then
 else
 	GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 end
+
+local lastSelectedPlayer = nil
+local lastSelectedButton = nil
+
+local playerDropDownModule = nil
+local playerDropDown = nil
+local blockingUtility = nil
+
+if not NON_CORESCRIPT_MODE then
+	playerDropDownModule = require(GuiRoot.Modules:WaitForChild("PlayerDropDown"))
+	playerDropDown = playerDropDownModule:CreatePlayerDropDown()
+	blockingUtility = playerDropDownModule:CreateBlockingUtility()
+end
+
 --[[ END OF SCRIPT VARIABLES ]]
 
 local function GetTopBarFlag()
@@ -483,6 +496,61 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 	return this
 end
 
+--[[ Popup Handling ]]--
+function createPopupFrame(selectedPlayer, selectedButton)
+	if selectedPlayer and selectedPlayer.Parent == PlayersService then
+		if lastSelectedButton ~= selectedButton then
+			if lastSelectedButton ~= nil then
+				lastSelectedButton.BackgroundTransparency = 1
+				lastSelectedButton = nil
+			end
+			lastSelectedButton = selectedButton
+			lastSelectedPlayer = selectedPlayer
+			selectedButton.BackgroundTransparency = 0.5
+			
+			playerDropDown.HidePopupImmediately = true
+			local PopupFrame = playerDropDown:CreatePopup(selectedPlayer)		
+			PopupFrame.Position = UDim2.new(0, selectedButton.AbsolutePosition.X + selectedButton.AbsoluteSize.X + 2, 0, selectedButton.AbsolutePosition.Y)
+			PopupFrame.Size = UDim2.new(0, 150, PopupFrame.Size.Y.Scale, PopupFrame.Size.Y.Offset)
+			PopupFrame.ZIndex = 5
+			PopupFrame.Parent = GuiRoot
+			
+			for _, button in pairs(PopupFrame:GetChildren()) do
+				button.BackgroundTransparency = 0
+				button.ZIndex = 6
+			end
+		else
+			playerDropDown:Hide()
+			lastSelectedPlayer = nil
+		end
+	end
+end
+
+function popupHidden()
+	if lastSelectedButton then
+		lastSelectedPlayer = nil
+		lastSelectedButton.BackgroundTransparency = 1
+		lastSelectedButton = nil
+	end
+end
+
+if playerDropDown then
+	playerDropDown.HiddenSignal:connect(popupHidden)
+end
+
+InputService.InputBegan:connect(function(inputObject, isProcessed)
+	if isProcessed then return end
+	local inputType = inputObject.UserInputType
+	if (inputType == Enum.UserInputType.Touch and  inputObject.UserInputState == Enum.UserInputState.Begin) or
+		inputType == Enum.UserInputType.MouseButton1 then
+		if lastSelectedButton then
+			playerDropDown:Hide()
+		end
+	end
+end)
+
+--[[ End of popup handling ]]--
+
 local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 	local this = CreateChatMessage()
 
@@ -595,6 +663,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		end
 		this.ClickedOnModeConn = Util.DisconnectEvent(this.ClickedOnModeConn)
 		this.ClickedOnPlayerConn = Util.DisconnectEvent(this.ClickedOnPlayerConn)
+		this.RightClickedOnPlayerConn = Util.DisconnectEvent(this.RightClickedOnPlayerConn)
 	end
 
 	local function CreateMessageGuiElement()
@@ -734,6 +803,8 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			{
 				Name = 'PlayerName';
 				BackgroundTransparency = 1;
+				BackgroundColor3 = Color3.new(0, 1, 1);
+				BorderSizePixel = 0;
 				ZIndex = 2;
 				Text = playerNameDisplayText;
 				TextColor3 = playerColor;
@@ -749,10 +820,23 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			}
 			if userNameButton:IsA('TextButton') then
 				this.ClickedOnPlayerConn = userNameButton.MouseButton1Click:connect(function()
-					if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer == Player and this.ReceivingPlayer then
-						SelectPlayerEvent:fire(this.ReceivingPlayer)
-					else
-						SelectPlayerEvent:fire(this.SendingPlayer)
+					local gui = this:GetGui()
+					if gui and gui.Visible then
+						if this.PlayerChatType == Enum.PlayerChatType.Whisper and this.SendingPlayer == Player and this.ReceivingPlayer then
+							SelectPlayerEvent:fire(this.ReceivingPlayer)
+						else
+							SelectPlayerEvent:fire(this.SendingPlayer)
+						end
+					end
+				end)
+				this.RightClickedOnPlayerConn = userNameButton.MouseButton2Click:connect(function()
+					local gui = this:GetGui()
+					if gui and gui.Visible then
+						if playerDropDown then
+							if this.SendingPlayer and this.SendingPlayer ~= Player then
+								createPopupFrame(this.SendingPlayer, userNameButton)
+							end
+						end
 					end
 				end)
 			end
@@ -1545,6 +1629,9 @@ local function CreateChatWindowWidget(settings)
 	function this:FadeOutChats()
 		if this.ChatsVisible == false then return end
 		this.ChatsVisible = false
+		if playerDropDown then
+			playerDropDown:Hide()
+		end
 		for index, message in pairs(this.Chats) do
 			local messageGui = message:GetGui()
 			local instant = false
@@ -1997,8 +2084,6 @@ local function CreateChat()
 		MaxCharactersInMessage = 140;
 	}
 
-	this.BlockList = {}
-
 	this.CurrentWindowMessageCountChanged = nil
 	this.VisibilityStateChanged = Util.Signal()
 	this.ChatBarFocusChanged = Util.Signal()
@@ -2084,34 +2169,12 @@ local function CreateChat()
 		end
 	end
 
-	function this:IsPlayerBlockedByUserId(userId)
-		for _, currentBlockedUserId in pairs(this.BlockList) do
-			if currentBlockedUserId == userId then
-				return true
-			end
-		end
-		return false
-	end
-
 	function this:IsPlayerBlocked(player)
-		return player and this:IsPlayerBlockedByUserId(player.userId)
-	end
-
-	function this:GetBlockedPlayersAsync()
-		local userId = Player.userId
-		local secureBaseUrl = Util.GetSecureApiBaseUrl()
-		local url = secureBaseUrl .. "userblock/getblockedusers" .. "?" .. "userId=" .. tostring(userId) .. "&" .. "page=" .. "1"
-		if userId > 0 then
-			local blockList = nil
-			local success, msg = ypcall(function()
-				local request = game:HttpGetAsync(url)
-				blockList = request and game:GetService('HttpService'):JSONDecode(request)
-			end)
-			if blockList and blockList['success'] == true and blockList['userList'] then
-				return blockList['userList']
-			end
+		if blockingUtility then
+			return player and blockingUtility:IsPlayerBlockedByUserId(player.userId)
+		else
+			return false
 		end
-		return {}
 	end
 
 	function this:BlockPlayerAsync(playerToBlock)
@@ -2119,18 +2182,11 @@ local function CreateChat()
 			local blockUserId = playerToBlock.userId
 			local playerToBlockName = playerToBlock.Name
 			if blockUserId > 0 then
-				if not this:IsPlayerBlockedByUserId(blockUserId) then
-					-- TODO: We may want to use a more dynamic way of changing the blockList size.
-					--if #this.BlockList < MAX_BLOCKLIST_SIZE then
-						table.insert(this.BlockList, blockUserId)
+				if not this:IsPlayerBlocked(playerToBlock) then
+					if blockingUtility then
+						blockingUtility:BlockPlayerAsync(playerToBlock)
 						this.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is now blocked.")
-						-- Make Block call
-						pcall(function()
-							local success = PlayersService:BlockUser(Player.userId, blockUserId)
-						end)
-					--else
-					--	this.ChatWindowWidget:AddSystemChatMessage("You cannot block " .. playerToBlockName .. " because your list is full.")
-					--end
+					end
 				else
 					this.ChatWindowWidget:AddSystemChatMessage(playerToBlockName .. " is already blocked.")
 				end
@@ -2147,21 +2203,11 @@ local function CreateChat()
 			local unblockUserId = playerToUnblock.userId
 			local playerToUnblockName = playerToUnblock.Name
 
-			if this:IsPlayerBlockedByUserId(unblockUserId) then
-				local blockedUserIndex = nil
-				for index, blockedUserId in pairs(this.BlockList) do
-					if blockedUserId == unblockUserId then
-						blockedUserIndex = index
-					end
+			if this:IsPlayerBlocked(playerToUnblock) then
+				if blockingUtility then
+					this.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is no longer blocked.")
+					blockingUtility:UnblockPlayerAsync(playerToUnblock)
 				end
-				if blockedUserIndex then
-					table.remove(this.BlockList, blockedUserIndex)
-				end
-				this.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is no longer blocked.")
-				-- Make Unblock call
-				pcall(function()
-					local success = PlayersService:UnblockUser(Player.userId, unblockUserId)
-				end)
 			else
 				this.ChatWindowWidget:AddSystemChatMessage(playerToUnblockName .. " is not blocked.")
 			end
@@ -2334,6 +2380,11 @@ local function CreateChat()
 				this.ChatBarWidget:FadeIn()
 			end
 		end
+		if playerDropDown then
+			if not this.Visible then
+				playerDropDown:Hide()
+			end
+		end
 		this.VisibilityStateChanged:fire(this.Visible)
 	end
 
@@ -2355,9 +2406,6 @@ local function CreateChat()
 	end
 
 	function this:Initialize()
-		spawn(function()
-			this.BlockList = this:GetBlockedPlayersAsync()
-		end)
 		
 		game:WaitForChild("StarterGui"):RegisterSetCore("ChatMakeSystemMessage", 	function(informationTable) 
 																						if this.ChatWindowWidget then 

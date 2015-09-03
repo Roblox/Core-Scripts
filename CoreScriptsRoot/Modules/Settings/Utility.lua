@@ -600,8 +600,27 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				shouldFireChanged = true
 			end
 		end
+		
+		if shouldFireChanged then
+			indexChangedEvent:Fire(index)
+		end
+	end
+	
+	local function setSelectionByValue(value)
+		local shouldFireChanged = false
+		for i, selectionLabel in pairs(this.Selections) do
+			if selectionLabel.Text == value then
+				selectedTextLabel.Text = selectionLabel.Text
+				this.CurrentIndex = i
 
-		indexChangedEvent:Fire(index)
+				shouldFireChanged = true
+			end
+		end
+		
+		if shouldFireChanged then
+			indexChangedEvent:Fire(this.CurrentIndex)
+		end
+		return shouldFireChanged
 	end
 
 	local enterIsDown = false
@@ -631,6 +650,10 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 	function this:SetSelectionIndex(newIndex)
 		setSelection(newIndex)
+	end
+	
+	function this:SetSelectionByValue(value)
+		return setSelectionByValue(value)
 	end
 
 	function this:ResetSelectionIndex()
