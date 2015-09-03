@@ -1520,9 +1520,13 @@ local setVisible = function(state)
 			if isUsingGamepad then
 				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 			end
+			
 			ContextActionService:UnbindCoreAction("CloseList")
 			ContextActionService:UnbindCoreAction("StopAction")
-			GuiService.SelectedCoreObject = nil
+
+			if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(Container) then
+				GuiService.SelectedCoreObject = nil
+			end
 		end
 	end
 end

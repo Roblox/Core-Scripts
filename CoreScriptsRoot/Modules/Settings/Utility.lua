@@ -827,8 +827,6 @@ local function CreateSelector(selectionStringTable, startPosition)
 		ZIndex = 2,
 		SelectionImageObject = noSelectionObject
 	};
-	this.SelectorFrame.NextSelectionLeft = this.SelectorFrame
-	this.SelectorFrame.NextSelectionRight = this.SelectorFrame
 	if isSmallTouchScreen() then
 		this.SelectorFrame.Size = UDim2.new(0,400,0,30)
 	end
@@ -1797,19 +1795,6 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				isMouseOverRow = true
 			end
 		end
-		local cancelRowSelection = function()
-			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
-			if fullscreenDropDown and fullscreenDropDown.Visible then return end
-
-			local valueFrame = ValueChangerSelection
-
-			if valueFrame and valueFrame.Visible and valueFrame.ZIndex > 1 and usesSelectedObject() and pageToAddTo.Active then
-				if GuiService.SelectedCoreObject == valueFrame then
-					GuiService.SelectedCoreObject = nil
-					isMouseOverRow = false
-				end
-			end
-		end
 		local function processInput(input)
 			if input.UserInputState == Enum.UserInputState.Begin then
 				if input.KeyCode == Enum.KeyCode.Return then
@@ -1821,7 +1806,6 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			end
 		end
 		RowFrame.MouseEnter:connect(setRowSelection)
-		RowFrame.MouseLeave:connect(cancelRowSelection)
 		RowFrame.Size = UDim2.new(1, 0, 0, 100)
 
 		UserInputService.InputBegan:connect(processInput)
@@ -1856,29 +1840,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				GuiService.SelectedCoreObject = valueFrame
 			end
 		end
-		local cancelRowSelection = function()
-			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
-			if fullscreenDropDown and fullscreenDropDown.Visible then return end
-
-			local valueFrame = ValueChangerInstance.SliderFrame 
-			if not valueFrame then
-				valueFrame = ValueChangerInstance.SliderFrame
-			end
-			if not valueFrame then
-				valueFrame = ValueChangerInstance.DropDownFrame
-			end
-			if not valueFrame then
-				valueFrame = ValueChangerInstance.SelectorFrame
-			end
-
-			if valueFrame and valueFrame.Visible and valueFrame.ZIndex > 1 and usesSelectedObject() and pageToAddTo.Active then
-				if GuiService.SelectedCoreObject == valueFrame then
-					GuiService.SelectedCoreObject = nil
-				end
-			end
-		end
 		RowFrame.MouseEnter:connect(setRowSelection)
-		RowFrame.MouseLeave:connect(cancelRowSelection)
 
 		ValueChangerSelection.SelectionGained:connect(function()
 			if usesSelectedObject() then

@@ -117,12 +117,10 @@ local function Initialize()
 	this.Displayed = Instance.new("BindableEvent")
 	this.Displayed.Name = "Displayed"
 	
-	this.Displayed.Event:connect(function(autoSelectRow)
+	this.Displayed.Event:connect(function()
 		if not this.HubRef.Shield.Visible then return end
 
-		if autoSelectRow then
-			this:SelectARow()
-		end
+		this:SelectARow()
 	end)
 
 	this.Hidden = Instance.new("BindableEvent")
@@ -154,7 +152,7 @@ local function Initialize()
 		end
 	end
 
-	function this:Display(pageParent, autoSelectRow, skipAnimation)
+	function this:Display(pageParent, skipAnimation)
 		this.OpenStateChangedCount = this.OpenStateChangedCount + 1
 
 		if this.TabHeader then
@@ -170,7 +168,7 @@ local function Initialize()
 		local animationComplete = function()
 			this.Page.Visible = true
 			displayed = true
-			this.Displayed:Fire(autoSelectRow)
+			this.Displayed:Fire()
 		end
 		if skipAnimation then
 			this.Page.Position = endPos

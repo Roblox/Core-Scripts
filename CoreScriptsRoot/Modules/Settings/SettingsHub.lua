@@ -351,14 +351,14 @@ local function CreateSettingsHub()
 				this:AddToMenuStack(this.Pages.CurrentPage)
 				this.HubBar.Visible = false
 				removeBottomBarBindings()
-				this:SwitchToPage(this.LeaveGamePage, nil, 1, isTenFootInterface, true)
+				this:SwitchToPage(this.LeaveGamePage, nil, 1, true)
 			end
 
 			local resetCharFunc = function()
 				this:AddToMenuStack(this.Pages.CurrentPage)
 				this.HubBar.Visible = false
 				removeBottomBarBindings()
-				this:SwitchToPage(this.ResetCharacterPage, nil, 1, isTenFootInterface, true)
+				this:SwitchToPage(this.ResetCharacterPage, nil, 1, true)
 			end
 
 			local resumeFunc = function()
@@ -630,7 +630,7 @@ local function CreateSettingsHub()
 	end)
 
 
-	local switchTab = function(direction, cycle, autoSelectRow)
+	local switchTab = function(direction, cycle)
 		local currentTabPosition = GetHeaderPosition(this.Pages.CurrentPage)
 		if currentTabPosition < 0 then return end
 
@@ -647,7 +647,7 @@ local function CreateSettingsHub()
 		if newHeader then
 			for pager,v in pairs(this.Pages.PageTable) do
 				if pager:GetTabHeader() == newHeader then
-					this:SwitchToPage(pager, true, direction, autoSelectRow)
+					this:SwitchToPage(pager, true, direction)
 					break
 				end
 			end
@@ -820,7 +820,7 @@ local function CreateSettingsHub()
 		end
 	end
 
-	function this:SwitchToPage(pageToSwitchTo, ignoreStack, direction, autoSelectRow, skipAnimation)
+	function this:SwitchToPage(pageToSwitchTo, ignoreStack, direction, skipAnimation)
 		if this.Pages.PageTable[pageToSwitchTo] == nil then return end
 
 		-- detect direction
@@ -857,7 +857,7 @@ local function CreateSettingsHub()
 
 		-- make sure page is visible
 		this.Pages.CurrentPage = pageToSwitchTo
-		this.Pages.CurrentPage:Display(this.PageView, autoSelectRow, skipAnimation)
+		this.Pages.CurrentPage:Display(this.PageView, skipAnimation)
 		this.Pages.CurrentPage.Active = true
 
 		local pageSize = this.Pages.CurrentPage:GetSize()
@@ -899,7 +899,7 @@ local function CreateSettingsHub()
 		end)
 	end
 
-	function setVisibilityInternal(visible, noAnimation, customStartPage, switchedFromGamepadInput)
+	function setVisibilityInternal(visible, noAnimation, customStartPage)
 		this.OpenStateChangedCount = this.OpenStateChangedCount + 1
 		local switchedFromGamepadInput = switchedFromGamepadInput or isTenFootInterface
 		this.Visible = visible
@@ -946,12 +946,12 @@ local function CreateSettingsHub()
 			pcall(function() PlatformService.BlurIntensity = 10 end)
 
 			if customStartPage then
-				this:SwitchToPage(customStartPage, nil, 1, switchedFromGamepadInput, true)
+				this:SwitchToPage(customStartPage, nil, 1, true)
 			else
 				if this.HomePage then
-					this:SwitchToPage(this.HomePage, nil, 1, switchedFromGamepadInput, true)
+					this:SwitchToPage(this.HomePage, nil, 1, true)
 				else
-					this:SwitchToPage(this.GameSettingsPage, nil, 1, switchedFromGamepadInput, true)
+					this:SwitchToPage(this.GameSettingsPage, nil, 1, true)
 				end
 			end
 
@@ -1024,7 +1024,7 @@ local function CreateSettingsHub()
 			end
 
 			table.remove(this.MenuStack, #this.MenuStack)
-			this:SwitchToPage(this.MenuStack[#this.MenuStack], true, 1, switchedFromGamepadInput, skipAnimation)
+			this:SwitchToPage(this.MenuStack[#this.MenuStack], true, 1, skipAnimation)
 			if #this.MenuStack == 0 then
 				this:SetVisibility(false)
 				this.Pages.CurrentPage:Hide(0, 0)--, true, 0.4)
@@ -1090,16 +1090,16 @@ local function CreateSettingsHub()
 	end
 
 	if this.HomePage then
-		this:SwitchToPage(this.HomePage, true, 1, isTenFootInterface)
+		this:SwitchToPage(this.HomePage, true, 1)
 	else
-		this:SwitchToPage(this.GameSettingsPage, true, 1, isTenFootInterface)
+		this:SwitchToPage(this.GameSettingsPage, true, 1)
 	end
 	-- hook up to necessary signals
 
 	-- connect back button on android
 	GuiService.ShowLeaveConfirmation:connect(function()
 		if #this.MenuStack == 0 then
-			this:SwitchToPage(this.LeaveGamePage, nil, 1, isTenFootInterface)
+			this:SwitchToPage(this.LeaveGamePage, nil, 1)
 		else
 			this:SetVisibility(false)
 			this:PopMenu()
@@ -1140,8 +1140,8 @@ local moduleApiTable = {}
 		SettingsHubInstance:ToggleVisibility(switchedFromGamepadInput)
 	end
 
-	function moduleApiTable:SwitchToPage(pageToSwitchTo, ignoreStack, switchedFromGamepadInput)
-		SettingsHubInstance:SwitchToPage(pageToSwitchTo, ignoreStack, 1, switchedFromGamepadInput)
+	function moduleApiTable:SwitchToPage(pageToSwitchTo, ignoreStack)
+		SettingsHubInstance:SwitchToPage(pageToSwitchTo, ignoreStack, 1)
 	end
 	
 	function moduleApiTable:ReportPlayer(player)
