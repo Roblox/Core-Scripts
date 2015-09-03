@@ -342,52 +342,18 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		Value = true
 	}
 
-	--if clickFunc then button.MouseButton1Click:connect(function() clickFunc() end) end
-	-- Have to do custom click detection so the function can know if it was activated by a mouse or a gamepad
-	local down = false
-	local detect = function(input)
-		if enabled.Value then
-			if isGuiVisible(button) then
-				if input.UserInputType == Enum.UserInputType.MouseButton1 then
-					if isPosOverGuiWithClipping(input.Position, button) then
-						if input.UserInputState == Enum.UserInputState.Begin then
-							down = true
-						elseif input.UserInputState == Enum.UserInputState.End then
-							if down then
-								down = false
-								if clickFunc then
-									clickFunc(false)
-								end
-							end
-						end
-					elseif input.UserInputState == Enum.UserInputState.End then
-						down = false
-					end
-				elseif input.UserInputType == Enum.UserInputType.Gamepad1 or input.UserInputType == Enum.UserInputType.Gamepad2 or input.UserInputType == Enum.UserInputType.Gamepad3 or input.UserInputType == Enum.UserInputType.Gamepad4 then
-					if UserInputService:IsNavigationGamepad(input.UserInputType) then
-						if input.KeyCode == Enum.KeyCode.ButtonA then
-							if GuiService.SelectedCoreObject == button then
-								if input.UserInputState == Enum.UserInputState.Begin then
-									down = true
-								elseif input.UserInputState == Enum.UserInputState.End then
-									if down then
-										down = false
-										if clickFunc then
-											clickFunc(true)
-										end
-									end
-								end
-							elseif input.UserInputState == Enum.UserInputState.End then
-								down = false
-							end
-						end
-					end
-				end
+	if clickFunc then 
+		button.MouseButton1Click:connect(function() 
+			local lastInputType = nil
+			pcall(function() lastInputType = UserInputService:GetLastInputType() end)
+			if lastInputType then
+				clickFunc(lastInputTypee == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or 
+					lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
+			else
+				clickFunc(false)
 			end
-		end
+		end) 
 	end
-	UserInputService.InputBegan:connect(detect)
-	UserInputService.InputEnded:connect(detect)
 
 	local function isPointerInput(inputObject)
 		return (inputObject.UserInputType == Enum.UserInputType.MouseMovement or inputObject.UserInputType == Enum.UserInputType.Touch)
