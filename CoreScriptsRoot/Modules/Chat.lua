@@ -63,6 +63,9 @@ else
 	GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 end
 
+local chatRepositioned = false
+local chatBarDisabled = false
+
 local lastSelectedPlayer = nil
 local lastSelectedButton = nil
 
@@ -1039,7 +1042,7 @@ local function CreateChatBarWidget(settings)
 			else
 				TearDownEvents()
 			end
-			this.ChatBarContainer.Visible = enabled and self.FadedIn
+			this.ChatBarContainer.Visible = enabled and self.FadedIn and (not chatBarDisabled)
 		end
 	end
 
@@ -1048,7 +1051,7 @@ local function CreateChatBarWidget(settings)
 			self.WidgetVisible = visible
 			self:CalculateVisibility()
 		end
-		if NON_CORESCRIPT_MODE then
+		if NON_CORESCRIPT_MODE or chatBarDisabled then
 			this.ChatBarContainer.Visible = false
 		end
 	end
@@ -1221,7 +1224,7 @@ local function CreateChatBarWidget(settings)
 	end
 
 	function this:FocusChatBar()
-		if this.ChatBar then
+		if this.ChatBar and not chatBarDisabled then
 			this.ChatBar.Visible = true
 			this.ChatBar:CaptureFocus()
 			if self.ClickToChatButton then
@@ -1487,7 +1490,7 @@ local function CreateChatBarWidget(settings)
 				end
 			end
 
-			GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
+			GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" and not chatRepositioned then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
 			RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize)
 		end
 	end
@@ -1927,7 +1930,7 @@ local function CreateChatWindowWidget(settings)
 			end
 		end
 
-		GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
+		GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" and not chatRepositioned then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
 		RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize)
 
 		messageContainer.Changed:connect(OnChatWindowResize)
@@ -2406,12 +2409,73 @@ local function CreateChat()
 	end
 
 	function this:Initialize()
-		
-		game:WaitForChild("StarterGui"):RegisterSetCore("ChatMakeSystemMessage", 	function(informationTable) 
-																						if this.ChatWindowWidget then 
-																							this.ChatWindowWidget:AddDeveloperSystemChatMessage(informationTable) 
-																						end 
-																					end)
+		--[[ Developer Customization API ]]--
+		if not NON_CORESCRIPT_MODE then
+			game:WaitForChild("StarterGui"):RegisterSetCore("ChatMakeSystemMessage", 	function(informationTable) 
+																							if this.ChatWindowWidget then 
+																								this.ChatWindowWidget:AddDeveloperSystemChatMessage(informationTable) 
+																							end 
+																						end)
+			local function isUDim2Value(value)
+				local success, value = pcall(function() return UDim2.new(value.X.Scale, value.X.Offset, value.Y.Scale, value.Y.Offset) end)
+				return success and value or nil
+			end
+			
+			local function isBubbleChatOn()
+				return not PlayersService.ClassicChat and PlayersService.BubbleChat
+			end
+			
+			game.StarterGui:RegisterSetCore("ChatWindowPosition", 	function(value) 
+																		if this.ChatWindowWidget and this.ChatBarWidget then
+																			value = isUDim2Value(value)
+																			if value ~= nil and not isBubbleChatOn() then
+																				chatRepositioned = true -- Prevent chat from moving back to the original position on screen resolution change
+																				this.ChatWindowWidget.ChatContainer.Position = value 
+																				this.ChatBarWidget.ChatBarContainer.Position = value + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
+																			end 
+																		end
+																	end)
+															
+			game.StarterGui:RegisterGetCore("ChatWindowPosition", 	function() 
+																		if this.ChatWindowWidget then 
+																			return this.ChatWindowWidget.ChatContainer.Position
+																		else
+																			return nil
+																		end
+																	end)
+			
+			game.StarterGui:RegisterSetCore("ChatWindowSize", 	function(value)
+																	if this.ChatWindowWidget and this.ChatBarWidget then
+																		value = isUDim2Value(value)
+																		if value ~= nil and not isBubbleChatOn() then 
+																			chatRepositioned = true
+																			this.ChatWindowWidget.ChatContainer.Size = value 
+																			this.ChatBarWidget.ChatBarContainer.Size = UDim2.new(this.ChatWindowWidget.ChatContainer.Size.X.Scale, this.ChatWindowWidget.ChatContainer.Size.X.Offset, this.ChatBarWidget.ChatBarContainer.Size.Y.Scale, this.ChatBarWidget.ChatBarContainer.Size.Y.Offset)
+																			this.ChatBarWidget.ChatBarContainer.Position = this.ChatWindowWidget.ChatContainer.Position + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
+																		end 
+																	end
+																end)
+														
+			game.StarterGui:RegisterGetCore("ChatWindowSize", 	function()
+																	if this.ChatWindowWidget then
+																		return this.ChatWindowWidget.ChatContainer.Size
+																	else
+																		return nil
+																	end
+																 end)
+			
+			game.StarterGui:RegisterSetCore("ChatBarDisabled", 	function(value)
+																	if this.ChatBarWidget then
+																		if type(value) == "boolean" then 
+																			chatBarDisabled = value 
+																			if value == true then
+																				this.ChatBarWidget:ToggleVisibility(false)
+																			end
+																		end 
+																	end
+																end)
+			game.StarterGui:RegisterGetCore("ChatBarDisabled", function() return chatBarDisabled end)
+		end
 		
 		this:OnPlayerAdded(Player)
 		-- Upsettingly, it seems everytime a player is added, you have to redo the connection
@@ -2443,7 +2507,6 @@ local function CreateChat()
 	return this
 end
 
-
 local moduleApiTable = {}
 -- Main Entry Point
 do	
@@ -2469,6 +2532,7 @@ do
 	moduleApiTable.ChatBarFocusChanged = ChatInstance.ChatBarFocusChanged
 	moduleApiTable.VisibilityStateChanged = ChatInstance.VisibilityStateChanged
 	moduleApiTable.MessagesChanged = ChatInstance.CurrentWindowMessageCountChanged
+	
 end
 
 return moduleApiTable
