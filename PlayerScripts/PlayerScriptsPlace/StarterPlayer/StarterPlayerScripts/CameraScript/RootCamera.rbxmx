@@ -77,7 +77,7 @@ end
 
 local function CreateCamera()
 	local this = {}
-
+	
 	this.ShiftLock = false
 	this.Enabled = false
 	local pinchZoomSpeed = 20
@@ -490,6 +490,7 @@ local function CreateCamera()
 	local lastThumbstickPos = Vector2.new(0,0)
 	local ySensitivity = 0.65
 	local lastVelocity = nil
+	local lastZoomPress = 0
 
 	-- K is a tunable parameter that changes the shape of the S-curve
 	-- the larger K is the more straight/linear the curve gets
@@ -561,11 +562,24 @@ local function CreateCamera()
 				finalConstant = thumbstickSensitivity * currentSpeed
 				lastVelocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
 			end
+			
+			local finalPos = Vector2.new( gamepadPan.X * finalConstant, gamepadPan.Y * finalConstant * ySensitivity)
+			if this.GamepadZooming then
+				local currentZoom = this:GetCameraZoom()
+				local accel = clamp(10, 400, currentZoom)
+				local rate = (gamepadPan.magnitude * finalPos.Y)
+				local zoom = (rate * accel)
+				
+				this:ZoomCameraFixedBy(zoom)
+				
+				-- Reduce panning while zooming.
+				finalPos = finalPos * Vector2.new(0.5,0.1)
+			end
 
 			lastThumbstickPos = gamepadPan
 			lastThumbstickRotate = currentTime
 
-			return Vector2.new( gamepadPan.X * finalConstant, gamepadPan.Y * finalConstant * ySensitivity)
+			return finalPos
 		end
 
 		return Vector2.new(0,0)
@@ -597,12 +611,14 @@ local function CreateCamera()
 		this.UserPanningTheCamera = false
 		this.RotateInput = Vector2.new()
 		this.GamepadPanningCamera = Vector2.new(0,0)
+		this.GamepadZooming = false
 
 		-- Reset input states
 		startPos = nil
 		lastPos = nil
 		panBeginLook = nil
 		isRightMouseDown = false
+		lastZoomPress = 0
 
 		fingerTouches = {}
 		NumUnsunkTouches = 0
@@ -656,6 +672,7 @@ local function CreateCamera()
 		end)
 
 		this.RotateInput = Vector2.new()
+		this.GamepadZooming = false
 
 		local getGamepadPan = function(name, state, input)
 			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
@@ -675,11 +692,21 @@ local function CreateCamera()
 		end
 
 		local doGamepadZoom = function(name, state, input)
-			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.ButtonR3 and state == Enum.UserInputState.Begin then
-				if this.currentZoom > 0.5 then
-					this:ZoomCamera(0)
+			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.ButtonR3 then
+				local now = tick()
+				if state == Enum.UserInputState.Begin then
+					lastZoomPress = now
+					this.GamepadZooming = true
 				else
-					this:ZoomCamera(10)
+					this.GamepadZooming = false
+					-- If the user quickly releases the zoom press, just do a quick-swap between first/third person.
+					if (now - lastZoomPress) < 0.2 then
+						if this.currentZoom > 0.5 then
+							this:ZoomCamera(0)
+						else
+							this:ZoomCamera(10)
+						end
+					end
 				end
 			end
 		end
