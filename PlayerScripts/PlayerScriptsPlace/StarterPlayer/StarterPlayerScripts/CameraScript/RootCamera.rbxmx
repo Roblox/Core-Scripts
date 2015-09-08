@@ -265,7 +265,11 @@ local function CreateCamera()
 		local zoom = this:GetCameraActualZoom()
 		if zoom then
 			-- Can break into more steps to get more accurate integration
-			zoom = rk4Integrator(zoom, zoomScale, 1)
+			if UserSettings():IsUserFeatureEnabled("UserBetterInertialScrolling") then
+				zoom = rk4Integrator(zoom, zoomScale, 1/10)
+			else
+				zoom = rk4Integrator(zoom, zoomScale, 1)
+			end
 			self:ZoomCamera(zoom)
 		end
 		return self:GetCameraZoom()
@@ -413,7 +417,11 @@ local function CreateCamera()
 	local function OnMouseWheel(input, processed)
 		if not processed then
 			if this.ZoomEnabled then
-				this:ZoomCameraBy(clamp(-1, 1, -input.Position.Z) * 1.4)
+				if UserSettings():IsUserFeatureEnabled("UserBetterInertialScrolling") then
+					this:ZoomCameraBy(-input.Position.Z/15)
+				else
+					this:ZoomCameraBy(clamp(-1, 1, -input.Position.Z) * 1.4)
+				end
 			end
 		end
 	end
