@@ -1757,8 +1757,17 @@ local function CreateChatWindowWidget(settings)
 		return nil
 	end
 	
+	-- We only need to copy the top level for the settings table
+	local function shallowCopy(tableToCopy)
+		local newTable = {}
+		for key, value in pairs(tableToCopy) do
+			newTable[key] = value
+		end
+		return newTable
+	end
+	
 	function this:AddDeveloperSystemChatMessage(informationTable)
-		local settings = this.Settings
+		local settings = shallowCopy(this.Settings)
 
 		if informationTable["Text"] and type(informationTable["Text"]) == "string" then
 			if informationTable["Color"] and pcall(function() Color3.new(informationTable["Color"].r, informationTable["Color"].g, informationTable["Color"].b) end) then
