@@ -623,8 +623,3 @@ if Game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
 	handleRemoveDefaultLoadingGui()
 	return
 end
-
-Game.Loaded:connect(handleGameLoaded)
-if Game:IsLoaded() then
-	handleGameLoaded()
-end

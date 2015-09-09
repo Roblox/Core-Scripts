@@ -17,6 +17,7 @@ BackpackScript.StateChanged = Instance.new('BindableEvent') -- Fires after any o
 local UseExperimentalGamepadEquip = false -- hotbar equipping in a new way! (its better!)
 
 local ICON_SIZE = 60
+local FONT_SIZE = Enum.FontSize.Size14
 if UseExperimentalGamepadEquip then
 	ICON_SIZE = 100
 end
@@ -84,6 +85,7 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 
 if isTenFootInterface then
 	ICON_SIZE = 100
+	FONT_SIZE = Enum.FontSize.Size24
 end
 
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
@@ -145,7 +147,7 @@ local function NewGui(className, objectName)
 		newGui.TextColor3 = Color3.new(1, 1, 1)
 		newGui.Text = ''
 		newGui.Font = Enum.Font.SourceSans
-		newGui.FontSize = Enum.FontSize.Size14
+		newGui.FontSize = FONT_SIZE
 		newGui.TextWrapped = true
 		if className == 'TextButton' then
 			newGui.Font = Enum.Font.SourceSansBold

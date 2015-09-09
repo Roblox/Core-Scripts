@@ -342,7 +342,7 @@ PurchaseDialog.Parent = RobloxGui
 		local okPurchasedGamepadImage = buyButtonGamepadImage:Clone()
 		okPurchasedGamepadImage.ZIndex = OkPurchasedButton.ZIndex
 		okPurchasedGamepadImage.Parent = OkPurchasedButton
-		table.insert(GAMEPAD_BUTTONS, okButtonGamepadImage)
+		table.insert(GAMEPAD_BUTTONS, okPurchasedGamepadImage)
 
 	local PurchaseFrame = createImageLabel("PurchaseFrame", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), PURCHASE_BG)
 	PurchaseFrame.ZIndex = 8
