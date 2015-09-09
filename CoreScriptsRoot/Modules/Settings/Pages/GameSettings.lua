@@ -435,12 +435,16 @@ local function Initialize()
 			elseif property == "DevComputerMovementMode" then
 				local isUserChoice = LocalPlayer.DevComputerMovementMode == Enum.DevComputerMovementMode.UserChoice
 				setMovementModeVisible(isUserChoice)
-				this.MovementModeOverrideText.Visible = not isUserChoice
+				if this.MovementModeOverrideText then
+					this.MovementModeOverrideText.Visible = not isUserChoice
+				end
 			-- TOUCH
 			elseif property == "DevTouchMovementMode" then
 				local isUserChoice = LocalPlayer.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
 				setMovementModeVisible(isUserChoice)
-				this.MovementModeOverrideText.Visible = not isUserChoice
+				if this.MovementModeOverrideText then
+					this.MovementModeOverrideText.Visible = not isUserChoice
+				end
 			elseif property == "DevTouchCameraMode" then
 				local isUserChoice = LocalPlayer.DevTouchCameraMode == Enum.DevTouchCameraMovementMode.UserChoice
 				setCameraModeVisible(isUserChoice)
