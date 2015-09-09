@@ -19,7 +19,7 @@ local RobloxGui = script.Parent
 local ThirdPartyProductName = nil
 
 --[[ Flags ]]--
-local IsNativePurchasing = UserInputService.TouchEnabled
+local IsNativePurchasing = UserInputService.TouchEnabled or UserInputService:GetPlatform() == Enum.Platform.XBoxOne
 local IsCurrentlyPrompting = false
 local IsCurrentlyPurchasing = false
 local IsPurchasingConsumable = false
@@ -32,7 +32,7 @@ local freezeThumbstick1Name = "doNothingThumbstickPrompt"
 local freezeThumbstick2Name = "doNothingThumbstickPrompt"
 local _,largeFont = pcall(function() return Enum.FontSize.Size42 end)
 largeFont = largeFont or Enum.FontSize.Size36
-local scaleFactor = 2.5
+local scaleFactor = 3
 
 --[[ Purchase Data ]]--
 local PurchaseData = {
@@ -550,7 +550,24 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 end
 
 local function getRobuxProduct(amountNeeded, isBCMember)
-	local productArray = isBCMember and BC_ROBUX_PRODUCTS or NON_BC_ROBUX_PRODUCTS
+	local productArray = nil
+
+	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		productArray = {}
+		local createStorePane = require(RobloxGui.Modules.StorePane)
+		createStorePane = createStorePane()
+
+		local catalogInfo = createStorePane:GetCatalogInfo()
+		if catalogInfo then
+			for _, productInfo in pairs(catalogInfo) do
+				local robuxValue = createStorePane:ParseRobuxValue(productInfo)
+				table.insert(productArray, robuxValue)
+			end
+		end
+	else
+		productArray = isBCMember and BC_ROBUX_PRODUCTS or NON_BC_ROBUX_PRODUCTS
+	end
+	
 	local closestProduct = productArray[1]
 	local closestIndex = 1
 
@@ -587,6 +604,17 @@ local function getRobuxProductToBuyItem(amountNeeded)
 			appendStr = "bc"
 		end
 		appPrefix = "com.roblox.client."
+	elseif UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		local createStorePane = require(RobloxGui.Modules.StorePane)
+		createStorePane = createStorePane()
+		local catalogInfo = createStorePane:GetCatalogInfo()
+		if catalogInfo then
+			for _, productInfo in pairs(catalogInfo) do
+				if createStorePane:ParseRobuxValue(productInfo) == productCost then
+					return productInfo.ProductId, productCost
+				end
+			end
+		end 
 	else
 		appendStr = isBCMember and "RobuxBC" or "RobuxNonBC"
 		appPrefix = "com.roblox.robloxmobile."
@@ -729,7 +757,7 @@ local function isMarketplaceAvailable()
 			Enum.ThrottlingPriority.Extreme)
 	end)
 	if not success then
-		print("PurchasePromptScript: isMarketplaceUnavailable() failed because", result)
+		print("PurchasePromptScript: isMarketplaceAvailable() failed because", result)
 		return false
 	end
 	result = HttpService:JSONDecode(result)
@@ -844,6 +872,7 @@ local function playerHasFundsForPurchase(playerBalance)
 	else
 		PostBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..currencyStr..formatNumber(afterBalanceAmount).."."
 	end
+
 	return true, true
 end
 
@@ -1126,10 +1155,62 @@ local function onPurchasePrompt(player, assetId, equipIfPurchased, currencyType,
 	end
 end
 
+function hasEnoughMoneyForPurchase()
+	local playerBalance = getPlayerBalance()
+	if playerBalance then
+		local success, hasFunds = nil
+		success, hasFunds = playerHasFundsForPurchase(playerBalance)
+		return success and hasFunds
+	end
+
+	return false
+end
+
+function retryPurchase()
+	local canMakePurchase = canPurchase() and hasEnoughMoneyForPurchase()
+	if not canMakePurchase then
+		local retries = 40
+		while retries > 0 and not canMakePurchase do
+			wait(0.5)
+			canMakePurchase = canPurchase() and hasEnoughMoneyForPurchase()
+			retries = retries - 1
+		end
+	end
+
+	return canMakePurchase
+end
+
+function nativePurchaseFinished(wasPurchased)
+	if wasPurchased then
+		local isPurchasing = retryPurchase()
+		if isPurchasing then
+			onAcceptPurchase()
+		else
+			onPurchaseFailed(PURCHASE_FAILED.DEFAULT_ERROR)
+		end
+	else
+		onPurchaseFailed(PURCHASE_FAILED.DID_NOT_BUY_ROBUX)
+		stopPurchaseAnimation()
+	end
+end
+
 local function onBuyRobuxPrompt()
 	startPurchaseAnimation()
 	if IsNativePurchasing then
-		MarketplaceService:PromptNativePurchase(Players.LocalPlayer, ThirdPartyProductName)
+		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+			spawn(function()
+				local PlatformService = nil
+				pcall(function() PlatformService = Game:GetService('PlatformService') end)
+				if PlatformService then
+					local purchaseCallSuccess, purchaseErrorMsg = pcall(function()
+						PlatformService:BeginPlatformStorePurchase(ThirdPartyProductName)
+					end)
+					nativePurchaseFinished(purchaseCallSuccess)
+				end
+			end)
+		else
+			MarketplaceService:PromptNativePurchase(Players.LocalPlayer, ThirdPartyProductName)
+		end
 	else
 		IsCheckingPlayerFunds = true
 		GuiService:OpenBrowserWindow(BASE_URL.."Upgrades/Robux.aspx")
@@ -1258,17 +1339,6 @@ MarketplaceService.ServerPurchaseVerification:connect(function(serverResponseTab
 	end
 end)
 
-local function retryPurchase()
-	local canMakePurchase = canPurchase()
-	if not canMakePurchase then
-		local retries = 20
-		while retries > 0 and not canMakePurchase do
-			wait(0.5)
-			canMakePurchase = canPurchase()
-			retries = retries - 1
-		end
-	end
-end
 
 GuiService.BrowserWindowClosed:connect(function()
 	if IsCheckingPlayerFunds then
@@ -1279,11 +1349,6 @@ end)
 
 if IsNativePurchasing then
 	MarketplaceService.NativePurchaseFinished:connect(function(player, productId, wasPurchased)
-		if wasPurchased then
-			retryPurchase()
-		else
-			onPurchaseFailed(PURCHASE_FAILED.DID_NOT_BUY_ROBUX)
-		end
-		stopPurchaseAnimation()
+		nativePurchaseFinished(wasPurchased)
 	end)
 end
