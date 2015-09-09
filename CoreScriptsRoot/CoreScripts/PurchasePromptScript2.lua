@@ -288,6 +288,7 @@ PurchaseDialog.Parent = RobloxGui
 		buyButtonGamepadImage.SizeConstraint = Enum.SizeConstraint.RelativeYY
 		buyButtonGamepadImage.Parent = BuyButton
 		buyButtonGamepadImage.Position = UDim2.new(0, gamepadButtonXLocation - buyButtonGamepadImage.AbsoluteSize.X/2, 0, 5)
+		buyButtonGamepadImage.Visible = false
 		buyButtonGamepadImage.ZIndex = BuyButton.ZIndex
 		table.insert(GAMEPAD_BUTTONS, buyButtonGamepadImage)
 
