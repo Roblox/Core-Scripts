@@ -174,7 +174,7 @@ PopupText.Parent = PopupFrame
 local insertNotifcation = nil
 local removeNotification = nil
 --
-local function createNotification(title, text, image, callback)
+local function createNotification(title, text, image)
 	local notificationFrame = DefaultNotifcation:Clone()
 	notificationFrame.Position = UDim2.new(1, 4, 1, -NOTIFICATION_Y_OFFSET - 4)
 	--
@@ -197,34 +197,6 @@ local function createNotification(title, text, image, callback)
 		notificationText.Size = UDim2.new(1, -IMAGE_SIZE - 16, 0, 28)
 		notificationText.Position = UDim2.new(0, IMAGE_SIZE + 16, 0.5, 1)
 		notificationText.TextXAlignment = Enum.TextXAlignment.Left
-	end
-	
-	if callback then
-		local callbackConnection = nil
-		if type(callback) == "function" then
-			callbackConnection = notificationFrame.InputBegan:connect(	function(inputObject) 
-																			if inputObject.UserInputType == Enum.UserInputType.MouseButton1 or inputObject.UserInputType == Enum.UserInputType.Touch then
-																				if callbackConnection then 
-																					callbackConnection:disconnect() 
-																					callbackConnection = nil 
-																					callback() 
-																				end 
-																			end
-																		end)
-		else
-			callbackConnection = notificationFrame.InputBegan:connect(	function(inputObject) 
-																			if inputObject.UserInputType == Enum.UserInputType.MouseButton1 or inputObject.UserInputType == Enum.UserInputType.Touch then
-																				pcall(	function() 
-																							if callbackConnection then
-																								removeNotification(notification)
-																								callbackConnection:disconnect() 
-																								callbackConnection = nil 
-																								callback:Invoke() 
-																							end
-																						end)
-																			end
-																		end)
-		end
 	end
 
 	GuiService:AddSelectionParent(HttpService:GenerateGUID(false), notificationFrame)
@@ -310,10 +282,55 @@ removeNotification = function(notification)
 	end
 end
 
-local function sendNotifcation(title, text, image, duration, callback)
+local function sendNotifcation(title, text, image, duration, callback, button1Text, button2Text)
 	local notification = {}
 	local notificationFrame = createNotification(title, text, image, callback)
 	--
+	
+	local button1 = nil
+	if button1Text and button1Text ~= "" then
+		notification.IsFriend = true -- Prevents other notifications overlapping the buttons
+		button1 = createTextButton("Button1", button1Text, UDim2.new(0, 0, 1, 2))
+		button1.Parent = notificationFrame
+		local button1ClickedConnection = nil
+		button1ClickedConnection = button1.MouseButton1Click:connect(function()
+			if button1ClickedConnection then
+				button1ClickedConnection:disconnect()
+				button1ClickedConnection = nil
+				removeNotification(notification)
+				if callback and type(callback) ~= "function" then -- callback should be a bindable
+					pcall(function() callback:Invoke(button1Text) end)
+				elseif type(callback) == "function" then
+					callback(button2Text)
+				end
+			end
+		end)
+	end
+	
+	if button2Text and button2Text ~= "" then
+		notification.IsFriend = true 
+		local button2 = createTextButton("Button1", button2Text, UDim2.new(0.5, 2, 1, 2))
+		button2.Parent = notificationFrame
+		local button2ClickedConnection = nil
+		button2ClickedConnection = button2.MouseButton1Click:connect(function()
+			if button2ClickedConnection then
+				button2ClickedConnection:disconnect()
+				button2ClickedConnection = nil
+				removeNotification(notification)
+				if callback and type(callback) ~= "function" then -- callback should be a bindable
+					pcall(function() callback:Invoke(button2Text) end)
+				elseif type(callback) == "function" then
+					callback(button2Text)
+				end
+			end
+		end)
+	else
+		-- Resize button1 to take up all the space under the notification if button2 doesn't exist
+		if button1 then
+			button1.Size = UDim2.new(1, -2, .5, 0)
+		end
+	end
+	
 	notification.Frame = notificationFrame
 	notification.Duration = duration
 	insertNotifcation(notification)
@@ -555,20 +572,25 @@ end
 MarketplaceService.ClientLuaDialogRequested:connect(onClientLuaDialogRequested)
 
 --[[ Developer customization API ]]--
+local function createDeveloperNotification(notificationTable) 
+	if type(notificationTable) == "table" then 
+		if type(notificationTable.Title) == "string" and type(notificationTable.Text) == "string" then
+			local iconImage = (type(notificationTable.Icon) == "string" and notificationTable.Icon or "")
+			local duration = (type(notificationTable.Duration) == "number" and notificationTable.Duration or DEFAULT_NOTIFICATION_DURATION)
+			local success, bindable = pcall(function() return (notificationTable.Callback:IsA("BindableFunction") and notificationTable.Callback or nil) end)
+			local button1Text = (type(notificationTable.Button1) == "string" and notificationTable.Button1 or "")
+			local button2Text = (type(notificationTable.Button2) == "string" and notificationTable.Button2 or "")
+			sendNotifcation(notificationTable.Title, notificationTable.Text, iconImage, duration, bindable, button1Text, button2Text)
+		end
+	end 
+end
+
+
 game:WaitForChild("StarterGui"):RegisterSetCore("PointsNotificationsActive", function(value) if type(value) == "boolean" then pointsNotificationsActive = value end end)
 game:WaitForChild("StarterGui"):RegisterGetCore("PointsNotificationsActive", function() return pointsNotificationsActive end)
 game:WaitForChild("StarterGui"):RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
 game:WaitForChild("StarterGui"):RegisterGetCore("BadgesNotificationsActive", function() return badgesNotificationsActive end)
-game:WaitForChild("StarterGui"):RegisterSetCore("SendNotification", function(notificationTable) 
-																		if type(notificationTable) == "table" then 
-																			if type(notificationTable.Title) == "string" and type(notificationTable.Text) == "string" then
-																				local iconImage = (type(notificationTable.Icon) == "string" and notificationTable.Icon or "")
-																				local duration = (type(notificationTable.Duration) == "number" and notificationTable.Duration or DEFAULT_NOTIFICATION_DURATION)
-																				local success, bindable = pcall(function() return (notificationTable.Callback:IsA("BindableFunction") and notificationTable.Callback or nil) end)
-																				sendNotifcation(notificationTable.Title, notificationTable.Text, iconImage, duration, bindable)
-																			end
-																		end 
-																	end)
+game:WaitForChild("StarterGui"):RegisterSetCore("SendNotification", createDeveloperNotification)
 
 if useNewControllerMenu and not isTenFootInterface then
 	local gamepadMenu = RobloxGui:WaitForChild("CoreScripts/GamepadMenu")
