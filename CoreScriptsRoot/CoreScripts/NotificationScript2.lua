@@ -284,7 +284,7 @@ end
 
 local function sendNotifcation(title, text, image, duration, callback, button1Text, button2Text)
 	local notification = {}
-	local notificationFrame = createNotification(title, text, image, callback)
+	local notificationFrame = createNotification(title, text, image)
 	--
 	
 	local button1 = nil
