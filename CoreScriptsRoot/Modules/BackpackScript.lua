@@ -1505,9 +1505,14 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 
 		if IsGamepadSupported then
 			if GamepadEnabled then
-				if InventoryFrame.Visible then
-					resizeGamepadHintsFrame()
-					gamepadHintsFrame.Visible = true
+				if InventoryFrame.Visible then 
+					local lastInputType = UserInputService:GetLastInputType()
+                			local currentlyUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
+                                                    lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
+        				if currentlyUsingGamepad then
+						resizeGamepadHintsFrame()
+						gamepadHintsFrame.Visible = true
+					end    
 					enableGamepadInventoryControl()
 				else
 					gamepadHintsFrame.Visible = false
