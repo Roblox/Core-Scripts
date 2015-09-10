@@ -202,6 +202,7 @@ end
 
 --[[ Functions for Blocking users ]]--
 local BlockedList = {}
+local MutedList = {}
 
 local function GetBlockedPlayersAsync()
 	local userId = LocalPlayer.userId
@@ -232,6 +233,15 @@ local function isBlocked(userId)
 	return false
 end
 
+local function isMuted(userId)
+	for _, currentMutedUserId in pairs(MutedList) do
+		if currentMutedUserId == userId then
+			return true
+		end
+	end
+	return false
+end
+
 local function BlockPlayerAsync(playerToBlock)
 	if playerToBlock and LocalPlayer ~= playerToBlock then
 		local blockUserId = playerToBlock.UserId
@@ -255,6 +265,7 @@ local function UnblockPlayerAsync(playerToUnblock)
 			for index, blockedUserId in pairs(BlockedList) do
 				if blockedUserId == unblockUserId then
 					blockedUserIndex = index
+					break;
 				end
 			end
 			if blockedUserIndex then
@@ -263,6 +274,33 @@ local function UnblockPlayerAsync(playerToUnblock)
 			pcall(function()
 				local success = PlayersService:UnblockUser(LocalPlayer.userId, unblockUserId)
 			end)
+		end
+	end
+end
+
+local function MutePlayer(playerToMute)
+	if playerToMute and LocalPlayer ~= playerToMute then
+		local muteUserId = playerToMute.UserId
+		if muteUserId > 0 then
+			if not isMuted(muteUserId) then
+				table.insert(MutedList, muteUserId)
+			end
+		end
+	end
+end
+
+local function UnmutePlayer(playerToUnmute)
+	if playerToUnmute then
+		local unmuteUserId = playerToUnmute.UserId
+		local mutedUserIndex = nil
+		for index, mutedUserId in pairs(MutedList) do
+			if mutedUserId == unmuteUserId then
+				mutedUserIndex = index
+				break;
+			end
+		end
+		if mutedUserIndex then
+			table.remove(MutedList, mutedUserIndex)
 		end
 	end
 end
@@ -572,8 +610,20 @@ do
 			return UnblockPlayerAsync(player)
 		end
 		
+		function blockingUtility:MutePlayer(player)
+			return MutePlayer(player)
+		end
+		
+		function blockingUtility:UnmutePlayer(player)
+			return UnmutePlayer(player)
+		end
+		
 		function blockingUtility:IsPlayerBlockedByUserId(userId)
 			return isBlocked(userId)
+		end
+		
+		function blockingUtility:IsPlayerMutedByUserId(userId)
+			return isMuted(userId)
 		end
 		
 		return blockingUtility
