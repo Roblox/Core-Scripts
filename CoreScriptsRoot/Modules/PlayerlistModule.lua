@@ -1548,6 +1548,8 @@ Playerlist.IsOpen = function()
 end
 
 Playerlist.HideTemp = function(self, key, hidden)
+	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
+	
 	TempHideKeys[key] = hidden and true or nil
 
 	if next(TempHideKeys) == nil then
