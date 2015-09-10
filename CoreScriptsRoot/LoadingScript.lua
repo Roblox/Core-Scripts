@@ -607,12 +607,6 @@ function handleRemoveDefaultLoadingGui()
 	destroyLoadingElements()
 end
 
-function handleGameLoaded()
-	if not hasReplicatedFirstElements then
-		destroyLoadingElements()
-	end
-end
-
 Game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
 if Game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
 	handleFinishedReplicating()
