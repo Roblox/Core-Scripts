@@ -940,8 +940,16 @@ local function CreateSettingsHub()
 
 			this.TabConnection = UserInputService.InputBegan:connect(switchTabFromKeyboard)
 
+
+			pcall(function() UserInputService.OverrideMouseIconEnabled = true end)
 			setOverrideMouseIconBehavior()
 			pcall(function() lastInputChangedCon = UserInputService.LastInputTypeChanged:connect(setOverrideMouseIconBehavior) end)
+			if UserInputService.MouseEnabled then
+				pcall(function() 
+					UserInputService.OverrideMouseIconEnabled = true
+					UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow 
+				end)
+			end
 
 			pcall(function() PlatformService.BlurIntensity = 10 end)
 
@@ -965,6 +973,8 @@ local function CreateSettingsHub()
 				backpack:OpenClose()
 			end
 		else
+			pcall(function() UserInputService.OverrideMouseIconEnabled = false end)
+
 			if noAnimation then
 				this.Shield.Position = SETTINGS_SHIELD_INACTIVE_POSITION
 				this.Shield.Visible = this.Visible
