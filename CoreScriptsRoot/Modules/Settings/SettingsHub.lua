@@ -253,7 +253,7 @@ local function CreateSettingsHub()
 			this.HubBar.Position = UDim2.new(0.5,-600,0.1,0)
 		else
 			this.HubBar.Size = UDim2.new(0,800,0,60)
-			this.HubBar.Position = UDim2.new(0.5,-400,0.12,0)
+			this.HubBar.Position = UDim2.new(0.5,-400,0.1,0)
 		end
 
 		this.PageViewClipper = utility:Create'Frame'
@@ -384,7 +384,7 @@ local function CreateSettingsHub()
 
 
 		local function onScreenSizeChanged()
-			local largestPageSize = 405
+			local largestPageSize = 600
 			local fullScreenSize = RobloxGui.AbsoluteSize.y
 			local bufferSize = (1-0.85) * fullScreenSize
 			if isTenFootInterface then
