@@ -111,27 +111,6 @@ local function setButtonEnabled(button, enabled)
 	radialButtons[button]["Disabled"] = not enabled
 end
 
-local function setRadialButtonEnabled(coreGuiType, enabled)
-	local returnValue = getButtonForCoreGuiType(coreGuiType)
-	if not returnValue then return end
-
-	local buttonsToDisable = {}
-	if type(returnValue) == "table" then
-		for button, buttonTable in pairs(returnValue) do
-			if buttonTable["CoreGuiType"] then
-				buttonsToDisable[#buttonsToDisable + 1] = button
-			end
-		end
-	else
-		buttonsToDisable[1] = returnValue
-	end
-
-	for i = 1, #buttonsToDisable do
-		local button = buttonsToDisable[i]
-		setButtonEnabled(button, enabled)
-	end
-end
-
 local emptySelectedImageObject = utility:Create'ImageLabel'
 {
 	BackgroundTransparency = 1,
@@ -632,6 +611,32 @@ local function setupGamepadControls()
 		end)
 	end
 
+	local function setRadialButtonEnabled(coreGuiType, enabled)
+		local returnValue = getButtonForCoreGuiType(coreGuiType)
+		if not returnValue then return end
+
+		local buttonsToDisable = {}
+		if type(returnValue) == "table" then
+			for button, buttonTable in pairs(returnValue) do
+				if buttonTable["CoreGuiType"] then
+					if isTenFootInterface and buttonTable["CoreGuiType"] == Enum.CoreGuiType.Chat then
+					else
+						buttonsToDisable[#buttonsToDisable + 1] = button
+					end
+				end
+			end
+		else
+			if isTenFootInterface and returnValue.Name == "Chat" then
+			else
+				buttonsToDisable[1] = returnValue
+			end
+		end
+
+		for i = 1, #buttonsToDisable do
+			local button = buttonsToDisable[i]
+			setButtonEnabled(button, enabled)
+		end
+	end
 	StarterGui.CoreGuiChangedSignal:connect(setRadialButtonEnabled)
 
 	ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
