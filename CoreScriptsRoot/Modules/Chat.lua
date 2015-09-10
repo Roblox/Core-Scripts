@@ -48,6 +48,10 @@ local InputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 --[[ END OF SERVICES ]]
 
+--[[ Fast Flags ]]--
+local playerDropDownEnabledSuccess, playerDropDownEnabledFlagValue = pcall(function() return settings():GetFFlag("PlayerDropDownEnabled") end)
+local IsPlayerDropDownEnabled = playerDropDownEnabledSuccess and playerDropDownEnabledFlagValue
+
 --[[ SCRIPT VARIABLES ]]
 
 -- I am not fond of waiting at the top of the script here...
@@ -72,6 +76,8 @@ local lastSelectedButton = nil
 local playerDropDownModule = nil
 local playerDropDown = nil
 local blockingUtility = nil
+
+
 
 if not NON_CORESCRIPT_MODE then
 	playerDropDownModule = require(GuiRoot.Modules:WaitForChild("PlayerDropDown"))
@@ -511,19 +517,23 @@ function createPopupFrame(selectedPlayer, selectedButton)
 			lastSelectedPlayer = selectedPlayer
 			selectedButton.BackgroundTransparency = 0.5
 			
-			playerDropDown.HidePopupImmediately = true
-			local PopupFrame = playerDropDown:CreatePopup(selectedPlayer)		
-			PopupFrame.Position = UDim2.new(0, selectedButton.AbsolutePosition.X + selectedButton.AbsoluteSize.X + 2, 0, selectedButton.AbsolutePosition.Y)
-			PopupFrame.Size = UDim2.new(0, 150, PopupFrame.Size.Y.Scale, PopupFrame.Size.Y.Offset)
-			PopupFrame.ZIndex = 5
-			PopupFrame.Parent = GuiRoot
+			if IsPlayerDropDownEnabled then
+				playerDropDown.HidePopupImmediately = true
+				local PopupFrame = playerDropDown:CreatePopup(selectedPlayer)		
+				PopupFrame.Position = UDim2.new(0, selectedButton.AbsolutePosition.X + selectedButton.AbsoluteSize.X + 2, 0, selectedButton.AbsolutePosition.Y)
+				PopupFrame.Size = UDim2.new(0, 150, PopupFrame.Size.Y.Scale, PopupFrame.Size.Y.Offset)
+				PopupFrame.ZIndex = 5
+				PopupFrame.Parent = GuiRoot
+			end
 			
 			for _, button in pairs(PopupFrame:GetChildren()) do
 				button.BackgroundTransparency = 0
 				button.ZIndex = 6
 			end
 		else
-			playerDropDown:Hide()
+			if IsPlayerDropDownEnabled then
+				playerDropDown:Hide()
+			end
 			lastSelectedPlayer = nil
 		end
 	end
@@ -537,7 +547,7 @@ function popupHidden()
 	end
 end
 
-if playerDropDown then
+if IsPlayerDropDownEnabled and playerDropDown then
 	playerDropDown.HiddenSignal:connect(popupHidden)
 end
 
@@ -546,7 +556,7 @@ InputService.InputBegan:connect(function(inputObject, isProcessed)
 	local inputType = inputObject.UserInputType
 	if (inputType == Enum.UserInputType.Touch and  inputObject.UserInputState == Enum.UserInputState.Begin) or
 		inputType == Enum.UserInputType.MouseButton1 then
-		if lastSelectedButton then
+		if lastSelectedButton and IsPlayerDropDownEnabled then
 			playerDropDown:Hide()
 		end
 	end
@@ -835,7 +845,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				this.RightClickedOnPlayerConn = userNameButton.MouseButton2Click:connect(function()
 					local gui = this:GetGui()
 					if gui and gui.Visible then
-						if playerDropDown then
+						if IsPlayerDropDownEnabled and playerDropDown then
 							if this.SendingPlayer and this.SendingPlayer ~= Player then
 								createPopupFrame(this.SendingPlayer, userNameButton)
 							end
@@ -1632,7 +1642,7 @@ local function CreateChatWindowWidget(settings)
 	function this:FadeOutChats()
 		if this.ChatsVisible == false then return end
 		this.ChatsVisible = false
-		if playerDropDown then
+		if IsPlayerDropDownEnabled and playerDropDown then
 			playerDropDown:Hide()
 		end
 		for index, message in pairs(this.Chats) do
@@ -2392,7 +2402,7 @@ local function CreateChat()
 				this.ChatBarWidget:FadeIn()
 			end
 		end
-		if playerDropDown then
+		if IsPlayerDropDownEnabled and playerDropDown then
 			if not this.Visible then
 				playerDropDown:Hide()
 			end
