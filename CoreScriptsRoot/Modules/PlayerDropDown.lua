@@ -34,7 +34,9 @@ local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 local settingsHub = nil
 
 spawn(function()
-	settingsHub = require(RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub"))
+	if useNewMenuReport then
+		settingsHub = require(RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub"))
+	end
 end)
 
 --[[ Bindables ]]--
