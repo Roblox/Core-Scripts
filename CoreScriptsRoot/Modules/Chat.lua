@@ -49,6 +49,9 @@ local StarterGui = game:GetService('StarterGui')
 --[[ END OF SERVICES ]]
 
 --[[ Fast Flags ]]--
+local playerDropDownEnabledSuccess, playerDropDownEnabledFlagValue = pcall(function() return settings():GetFFlag("PlayerDropDownEnabled") end)
+local IsPlayerDropDownEnabled = playerDropDownEnabledSuccess and playerDropDownEnabledFlagValue
+
 local getMoveChatSuccess, moveChatActiveValue = pcall(function() return settings():GetFFlag("SetCoreMoveChat") end)
 local allowMoveChat = getNotificationDisableSuccess and notificationsDisableActiveValue
 
