@@ -2263,8 +2263,6 @@ local function CreateChat()
 
 			this.ChatWindowWidget:AddSystemChatMessage("/block [PlayerName] or /ignore [PlayerName] - Block communications from Target Player")
 			this.ChatWindowWidget:AddSystemChatMessage("/unblock [PlayerName] or /unignore [PlayerName] - Restore communications with Target Player")
-			this.ChatWindowWidget:AddSystemChatMessage("/mute [PlayerName] - Mute in-game communications from Target Player")
-			this.ChatWindowWidget:AddSystemChatMessage("/unmute [PlayerName] - Restore in-game communications with Target Player")
 		end
 	end
 
