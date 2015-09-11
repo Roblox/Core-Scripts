@@ -494,48 +494,10 @@ function stopListeningToRenderingStep()
 	end
 end
 
-function fadeBackground()
-	if not currScreenGui then return end
-	if fadingBackground then return end
-	
-	if not currScreenGui:findFirstChild("BlackFrame") then return end
-
-	fadingBackground = true
-
-	local lastTime = nil
-	local backgroundRemovalTime = 3.2
-
-	while currScreenGui and currScreenGui:FindFirstChild("BlackFrame") and currScreenGui.BlackFrame:FindFirstChild("BackgroundTextureFrame") and backgroundImageTransparency < 1 do
-		if lastTime == nil then
-			currScreenGui.BlackFrame.Active = false
-			
-			if currScreenGui.BlackFrame:FindFirstChild("CloseButton") then
-				currScreenGui.BlackFrame.CloseButton.Visible = false
-				currScreenGui.BlackFrame.CloseButton.Active = false
-			end
-			lastTime = tick()
-		else
-			local currentTime = tick()
-			local fadeAmount = (currentTime - lastTime) * backgroundRemovalTime
-			lastTime = currentTime
-			
-			backgroundImageTransparency = backgroundImageTransparency + fadeAmount
-			currScreenGui.BlackFrame.BackgroundTransparency = backgroundImageTransparency
-			local backgroundImages = currScreenGui.BlackFrame.BackgroundTextureFrame:GetChildren()
-			for i = 1, #backgroundImages do
-				backgroundImages[i].ImageTransparency = backgroundImageTransparency
-			end
-			
-		end
-
-		wait()
-	end
-end
-
 function fadeAndDestroyBlackFrame(blackFrame)
 	if destroyingBackground then return end
 	destroyingBackground = true
-	Spawn(function()
+	spawn(function()
 		local infoFrame = blackFrame:FindFirstChild("InfoFrame")
 		local graphicsFrame = blackFrame:FindFirstChild("GraphicsFrame")
 
@@ -570,6 +532,7 @@ function fadeAndDestroyBlackFrame(blackFrame)
 			wait()
 		end
 		if blackFrame ~= nil then
+			stopListeningToRenderingStep()
 			blackFrame:Destroy()
 		end
 	end)
@@ -579,7 +542,7 @@ function destroyLoadingElements()
 	if not currScreenGui then return end
 	if destroyedLoadingGui then return end
 	destroyedLoadingGui = true
-	
+
 	local guiChildren = currScreenGui:GetChildren()
 	for i=1, #guiChildren do
 		-- need to keep this around in case we get a connection error later
@@ -595,12 +558,15 @@ end
 
 function handleFinishedReplicating()
 	hasReplicatedFirstElements = (#Game:GetService("ReplicatedFirst"):GetChildren() > 0)
+
 	if not hasReplicatedFirstElements then
-		fadeBackground()
+		while game:GetService("ContentProvider").RequestQueueSize > 0 do
+			wait()
+		end
 	else
-		wait(20) -- make sure after 20 seconds we remove the default gui, even if the user doesn't
-		handleRemoveDefaultLoadingGui()
+		wait(5) -- make sure after 5 seconds we remove the default gui, even if the user doesn't
 	end
+	handleRemoveDefaultLoadingGui()
 end
 
 function handleRemoveDefaultLoadingGui()
