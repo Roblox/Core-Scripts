@@ -904,7 +904,6 @@ local function CreateSettingsHub()
 		local switchedFromGamepadInput = switchedFromGamepadInput or isTenFootInterface
 		this.Visible = visible
 
-		this.SettingsShowSignal:fire(this.Visible)
 
 		this.Modal.Visible = this.Visible
 
@@ -914,6 +913,8 @@ local function CreateSettingsHub()
 		end
 
 		if this.Visible then
+			this.SettingsShowSignal:fire(this.Visible)
+
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
 			this.Shield.Visible = this.Visible
 			if noAnimation then
@@ -978,9 +979,11 @@ local function CreateSettingsHub()
 			if noAnimation then
 				this.Shield.Position = SETTINGS_SHIELD_INACTIVE_POSITION
 				this.Shield.Visible = this.Visible
+				this.SettingsShowSignal:fire(this.Visible)
 			else
 				this.Shield:TweenPosition(SETTINGS_SHIELD_INACTIVE_POSITION, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.4, true, function()
 					this.Shield.Visible = this.Visible
+					this.SettingsShowSignal:fire(this.Visible)
 				end)
 			end
 
