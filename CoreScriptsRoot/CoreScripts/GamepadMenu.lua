@@ -111,27 +111,6 @@ local function setButtonEnabled(button, enabled)
 	radialButtons[button]["Disabled"] = not enabled
 end
 
-local function setRadialButtonEnabled(coreGuiType, enabled)
-	local returnValue = getButtonForCoreGuiType(coreGuiType)
-	if not returnValue then return end
-
-	local buttonsToDisable = {}
-	if type(returnValue) == "table" then
-		for button, buttonTable in pairs(returnValue) do
-			if buttonTable["CoreGuiType"] then
-				buttonsToDisable[#buttonsToDisable + 1] = button
-			end
-		end
-	else
-		buttonsToDisable[1] = returnValue
-	end
-
-	for i = 1, #buttonsToDisable do
-		local button = buttonsToDisable[i]
-		setButtonEnabled(button, enabled)
-	end
-end
-
 local emptySelectedImageObject = utility:Create'ImageLabel'
 {
 	BackgroundTransparency = 1,
@@ -260,9 +239,9 @@ local function createGamepadMenuGui()
 	---------------------------------
 	-------- Settings Menu ----------
 	local settingsFunc = function()
-		toggleCoreGuiRadial()
+		toggleCoreGuiRadial(true)
 		local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
-		MenuModule:SetVisibility(true)
+		MenuModule:SetVisibility(true, nil, nil, true)
 	end
 	local settingsRadial = createRadialButton("Settings", "Settings", 1, false, nil, settingsFunc)
 	settingsRadial.Parent = gamepadSettingsFrame
@@ -299,7 +278,7 @@ local function createGamepadMenuGui()
 	local leaveGameFunc = function()
 		toggleCoreGuiRadial()
 		local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
-		MenuModule:SetVisibility(true, false, require(GuiRoot.Modules.Settings.Pages.LeaveGame))
+		MenuModule:SetVisibility(true, false, require(GuiRoot.Modules.Settings.Pages.LeaveGame), true)
 	end
 	local leaveGameRadial = createRadialButton("LeaveGame", "Leave Game", 4, false, nil, leaveGameFunc)
 	leaveGameRadial.Parent = gamepadSettingsFrame
@@ -550,7 +529,7 @@ local function setupGamepadControls()
 		end)
 	end
 
-	function toggleCoreGuiRadial()
+	function toggleCoreGuiRadial(goingToSettings)
 		isVisible = not gamepadSettingsFrame.Visible
 		
 		setVisibility()
@@ -596,6 +575,8 @@ local function setupGamepadControls()
 			setSelectedRadialButton(nil)
 			GuiService.GuiNavigationEnabled = false
 
+			pcall(function() GuiService:SetMenuIsOpen(true) end)
+
 			ContextActionService:BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
 			ContextActionService:BindCoreAction(radialAcceptActionName, radialSelectAccept, false, Enum.KeyCode.ButtonA)
 			ContextActionService:BindCoreAction(radialCancelActionName, radialSelectCancel, false, Enum.KeyCode.ButtonB)
@@ -603,6 +584,9 @@ local function setupGamepadControls()
 			ContextActionService:BindCoreAction(thumbstick2RadialActionName, noOpFunc, false, Enum.KeyCode.Thumbstick2)
 			ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
 		else
+			if not goingToSettings then
+				pcall(function() GuiService:SetMenuIsOpen(false) end)
+			end
 			unbindAllRadialActions()
 		end
 
@@ -627,6 +611,32 @@ local function setupGamepadControls()
 		end)
 	end
 
+	local function setRadialButtonEnabled(coreGuiType, enabled)
+		local returnValue = getButtonForCoreGuiType(coreGuiType)
+		if not returnValue then return end
+
+		local buttonsToDisable = {}
+		if type(returnValue) == "table" then
+			for button, buttonTable in pairs(returnValue) do
+				if buttonTable["CoreGuiType"] then
+					if isTenFootInterface and buttonTable["CoreGuiType"] == Enum.CoreGuiType.Chat then
+					else
+						buttonsToDisable[#buttonsToDisable + 1] = button
+					end
+				end
+			end
+		else
+			if isTenFootInterface and returnValue.Name == "Chat" then
+			else
+				buttonsToDisable[1] = returnValue
+			end
+		end
+
+		for i = 1, #buttonsToDisable do
+			local button = buttonsToDisable[i]
+			setButtonEnabled(button, enabled)
+		end
+	end
 	StarterGui.CoreGuiChangedSignal:connect(setRadialButtonEnabled)
 
 	ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)

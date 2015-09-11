@@ -73,6 +73,7 @@ local MinContainerSize = UDim2.new(0, 165, 0.5, 0)
 if isTenFootInterface then
 	MinContainerSize = UDim2.new(0, 1000, 0, 720)
 end
+local TempHideKeys = {}
 
 local PlayerEntrySizeY = 24
 if isTenFootInterface then
@@ -1484,17 +1485,11 @@ local closeListFunc = function(name, state, input)
 	UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 end
 
-
-Playerlist.ToggleVisibility = function(name, inputState, inputObject)
-	if inputState and inputState ~= Enum.UserInputState.Begin then return end
-	if IsSmallScreenDevice then return end
-	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
-
-	isOpen = not isOpen
-	Container.Visible = isOpen
+local setVisible = function(state)
+	Container.Visible = state
 
 	if IsGamepadSupported then
-		if isOpen then
+		if state then
 			local children = ScrollList:GetChildren()
 			if children and #children > 0 then
 				local frame = children[1]
@@ -1525,10 +1520,26 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 			if isUsingGamepad then
 				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 			end
+			
 			ContextActionService:UnbindCoreAction("CloseList")
 			ContextActionService:UnbindCoreAction("StopAction")
-			GuiService.SelectedCoreObject = nil
+
+			if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(Container) then
+				GuiService.SelectedCoreObject = nil
+			end
 		end
+	end
+end
+
+Playerlist.ToggleVisibility = function(name, inputState, inputObject)
+	if inputState and inputState ~= Enum.UserInputState.Begin then return end
+	if IsSmallScreenDevice then return end
+	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
+
+	isOpen = not isOpen
+
+	if next(TempHideKeys) == nil then
+		setVisible(isOpen)
 	end
 end
 
@@ -1536,6 +1547,21 @@ Playerlist.IsOpen = function()
 	return isOpen
 end
 
+Playerlist.HideTemp = function(self, key, hidden)
+	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
+	
+	TempHideKeys[key] = hidden and true or nil
+
+	if next(TempHideKeys) == nil then
+		if isOpen then
+			setVisible(true)
+		end
+	else
+		if isOpen then
+			setVisible(false)
+		end
+	end
+end
 local topStat = nil
 if isTenFootInterface then
 	topStat = TenFootInterface:SetupTopStat()
@@ -1551,7 +1577,7 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 			return
 		end
 		
-		Container.Visible = enabled and isOpen
+		setVisible(enabled and isOpen and next(TempHideKeys) == nil)
 		
 		if isTenFootInterface and topStat then
 			topStat:SetTopStatEnabled(enabled)

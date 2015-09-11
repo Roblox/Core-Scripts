@@ -12,7 +12,9 @@ local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
 ----------- UTILITIES --------------
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local utility = require(RobloxGui.Modules.Settings.Utility)
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
 ------------ Variables -------------------
 local PageInstance = nil
@@ -129,15 +131,20 @@ local function Initialize()
 		recordButton.Position = UDim2.new(0,410,1,10)
 		recordButton.Parent = this.VideoSettingsMode.SelectorFrame.Parent
 		recordButton.MouseButton1Click:connect(function()
-			isRecordingVideo = not isRecordingVideo
-			if isRecordingVideo then
-				recordButton.RecordButtonTextLabel.Text = "Stop Recording"
-			else
-				recordButton.RecordButtonTextLabel.Text = "Record Video"
-			end
-			recordingEvent:Fire(isRecordingVideo)
+			recordingEvent:Fire(not isRecordingVideo)
 		end)
 
+		local gameOptions = settings():FindFirstChild("Game Options")
+		if gameOptions then
+			gameOptions.VideoRecordingChangeRequest:connect(function(recording)
+				isRecordingVideo = recording
+				if recording then
+					recordButton.RecordButtonTextLabel.Text = "Stop Recording"
+				else
+					recordButton.RecordButtonTextLabel.Text = "Record Video"
+				end
+			end)
+		end
 
 
 		recordButton:SetVerb("RecordToggle")
@@ -153,8 +160,10 @@ end
 ----------- Public Facing API Additions --------------
 PageInstance = Initialize()
 
-PageInstance.Displayed.Event:connect(function()
-	GuiService.SelectedCoreObject = PageInstance.ScreenshotButton
+PageInstance.Displayed.Event:connect(function(switchedFromGamepadInput)
+	if switchedFromGamepadInput then
+		GuiService.SelectedCoreObject = PageInstance.ScreenshotButton
+	end
 end)
 
 

@@ -218,7 +218,7 @@ local function Initialize()
 			end
 		end
 
-		submitButton, submitText = utility:MakeStyledButton("SubmitButton", "Submit", UDim2.new(0,194,0,50), onReportSubmitted, this)
+		submitButton, submitText = utility:MakeStyledButton("SubmitButton", "Submit", UDim2.new(0,198,0,50), onReportSubmitted, this)
 		if utility:IsSmallTouchScreen() then
 			submitButton.Position = UDim2.new(1,-220,1,5)
 		else

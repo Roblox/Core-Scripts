@@ -19,7 +19,7 @@ local RobloxGui = script.Parent
 local ThirdPartyProductName = nil
 
 --[[ Flags ]]--
-local IsNativePurchasing = UserInputService.TouchEnabled
+local IsNativePurchasing = UserInputService.TouchEnabled or UserInputService:GetPlatform() == Enum.Platform.XBoxOne
 local IsCurrentlyPrompting = false
 local IsCurrentlyPurchasing = false
 local IsPurchasingConsumable = false
@@ -32,7 +32,7 @@ local freezeThumbstick1Name = "doNothingThumbstickPrompt"
 local freezeThumbstick2Name = "doNothingThumbstickPrompt"
 local _,largeFont = pcall(function() return Enum.FontSize.Size42 end)
 largeFont = largeFont or Enum.FontSize.Size36
-local scaleFactor = 2.5
+local scaleFactor = 3
 
 --[[ Purchase Data ]]--
 local PurchaseData = {
@@ -279,7 +279,7 @@ PurchaseDialog.Parent = RobloxGui
 		local BuyButton = createImageButtonWithText("BuyButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Buy Now", Enum.Font.SourceSansBold)
 		BuyButton.Parent = ContainerFrame
 		local BuyButtonText = BuyButton:FindFirstChild("BuyButtonText")
-		
+
 		local gamepadButtonXLocation = (BuyButton.AbsoluteSize.X/2 - BuyButtonText.TextBounds.X/2)/2
 		local buyButtonGamepadImage = Instance.new("ImageLabel")
 		buyButtonGamepadImage.BackgroundTransparency = 1
@@ -288,12 +288,13 @@ PurchaseDialog.Parent = RobloxGui
 		buyButtonGamepadImage.SizeConstraint = Enum.SizeConstraint.RelativeYY
 		buyButtonGamepadImage.Parent = BuyButton
 		buyButtonGamepadImage.Position = UDim2.new(0, gamepadButtonXLocation - buyButtonGamepadImage.AbsoluteSize.X/2, 0, 5)
+		buyButtonGamepadImage.Visible = false
 		buyButtonGamepadImage.ZIndex = BuyButton.ZIndex
 		table.insert(GAMEPAD_BUTTONS, buyButtonGamepadImage)
 
 		local CancelButton = createImageButtonWithText("CancelButton", isTenFootInterface and BTN_R_POS_TENFOOT or BTN_R_POS, BUTTON_RIGHT, BUTTON_RIGHT_DOWN, "Cancel", Enum.Font.SourceSans)
 		CancelButton.Parent = ContainerFrame
-		
+
 		local cancelButtonGamepadImage = buyButtonGamepadImage:Clone()
 		cancelButtonGamepadImage.Image = B_BUTTON
 		cancelButtonGamepadImage.ZIndex = CancelButton.ZIndex
@@ -304,7 +305,7 @@ PurchaseDialog.Parent = RobloxGui
 			Enum.Font.SourceSansBold)
 		BuyRobuxButton.Visible = false
 		BuyRobuxButton.Parent = ContainerFrame
-		
+
 		local buyRobuxGamepadImage = buyButtonGamepadImage:Clone()
 		buyRobuxGamepadImage.ZIndex = BuyRobuxButton.ZIndex
 		buyRobuxGamepadImage.Parent = BuyRobuxButton
@@ -313,7 +314,7 @@ PurchaseDialog.Parent = RobloxGui
 		local BuyBCButton = createImageButtonWithText("BuyBCButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Upgrade", Enum.Font.SourceSansBold)
 		BuyBCButton.Visible = false
 		BuyBCButton.Parent = ContainerFrame
-		
+
 		local buyBCGamepadImage = buyButtonGamepadImage:Clone()
 		buyBCGamepadImage.ZIndex = BuyBCButton.ZIndex
 		buyBCGamepadImage.Parent = BuyBCButton
@@ -327,7 +328,7 @@ PurchaseDialog.Parent = RobloxGui
 		OkButton.Size = isTenFootInterface and UDim2.new(0, 320*scaleFactor, 0, 44*scaleFactor) or UDim2.new(0, 320, 0, 44)
 		OkButton.Visible = false
 		OkButton.Parent = ContainerFrame
-		
+
 		local okButtonGamepadImage = buyButtonGamepadImage:Clone()
 		okButtonGamepadImage.ZIndex = OkButton.ZIndex
 		okButtonGamepadImage.Parent = OkButton
@@ -337,11 +338,11 @@ PurchaseDialog.Parent = RobloxGui
 		OkPurchasedButton.Size = isTenFootInterface and UDim2.new(0, 320*scaleFactor, 0, 44*scaleFactor) or UDim2.new(0, 320, 0, 44)
 		OkPurchasedButton.Visible = false
 		OkPurchasedButton.Parent = ContainerFrame
-		
+
 		local okPurchasedGamepadImage = buyButtonGamepadImage:Clone()
 		okPurchasedGamepadImage.ZIndex = OkPurchasedButton.ZIndex
 		okPurchasedGamepadImage.Parent = OkPurchasedButton
-		table.insert(GAMEPAD_BUTTONS, okButtonGamepadImage)
+		table.insert(GAMEPAD_BUTTONS, okPurchasedGamepadImage)
 
 	local PurchaseFrame = createImageLabel("PurchaseFrame", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), PURCHASE_BG)
 	PurchaseFrame.ZIndex = 8
@@ -360,8 +361,8 @@ PurchaseDialog.Parent = RobloxGui
 			frame.Parent = PurchaseFrame
 			xOffset = xOffset + 32
 		end
-		
-		
+
+
 local function noOpFunc() end
 
 local function enableControllerMovement()
@@ -550,7 +551,23 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 end
 
 local function getRobuxProduct(amountNeeded, isBCMember)
-	local productArray = isBCMember and BC_ROBUX_PRODUCTS or NON_BC_ROBUX_PRODUCTS
+	local productArray = nil
+
+	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		productArray = {}
+		local platformCatalogData = require(RobloxGui.Modules.PlatformCatalogData)
+
+		local catalogInfo = platformCatalogData:GetCatalogInfoAsync()
+		if catalogInfo then
+			for _, productInfo in pairs(catalogInfo) do
+				local robuxValue = platformCatalogData:ParseRobuxValue(productInfo)
+				table.insert(productArray, robuxValue)
+			end
+		end
+	else
+		productArray = isBCMember and BC_ROBUX_PRODUCTS or NON_BC_ROBUX_PRODUCTS
+	end
+
 	local closestProduct = productArray[1]
 	local closestIndex = 1
 
@@ -587,6 +604,17 @@ local function getRobuxProductToBuyItem(amountNeeded)
 			appendStr = "bc"
 		end
 		appPrefix = "com.roblox.client."
+	elseif UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		local platformCatalogData = require(RobloxGui.Modules.PlatformCatalogData)
+
+		local catalogInfo = platformCatalogData:GetCatalogInfoAsync()
+		if catalogInfo then
+			for _, productInfo in pairs(catalogInfo) do
+				if platformCatalogData:ParseRobuxValue(productInfo) == productCost then
+					return productInfo.ProductId, productCost
+				end
+			end
+		end
 	else
 		appendStr = isBCMember and "RobuxBC" or "RobuxNonBC"
 		appPrefix = "com.roblox.robloxmobile."
@@ -708,7 +736,7 @@ local function isMarketplaceDown() 		-- FFlag
 		print("PurchasePromptScript: isMarketplaceDown failed because", result)
 		return false
 	end
-	
+
 	return result
 end
 
@@ -729,7 +757,7 @@ local function isMarketplaceAvailable()
 			Enum.ThrottlingPriority.Extreme)
 	end)
 	if not success then
-		print("PurchasePromptScript: isMarketplaceUnavailable() failed because", result)
+		print("PurchasePromptScript: isMarketplaceAvailable() failed because", result)
 		return false
 	end
 	result = HttpService:JSONDecode(result)
@@ -844,6 +872,7 @@ local function playerHasFundsForPurchase(playerBalance)
 	else
 		PostBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..currencyStr..formatNumber(afterBalanceAmount).."."
 	end
+
 	return true, true
 end
 
@@ -1126,10 +1155,62 @@ local function onPurchasePrompt(player, assetId, equipIfPurchased, currencyType,
 	end
 end
 
+function hasEnoughMoneyForPurchase()
+	local playerBalance = getPlayerBalance()
+	if playerBalance then
+		local success, hasFunds = nil
+		success, hasFunds = playerHasFundsForPurchase(playerBalance)
+		return success and hasFunds
+	end
+
+	return false
+end
+
+function retryPurchase()
+	local canMakePurchase = canPurchase() and hasEnoughMoneyForPurchase()
+	if not canMakePurchase then
+		local retries = 40
+		while retries > 0 and not canMakePurchase do
+			wait(0.5)
+			canMakePurchase = canPurchase() and hasEnoughMoneyForPurchase()
+			retries = retries - 1
+		end
+	end
+
+	return canMakePurchase
+end
+
+function nativePurchaseFinished(wasPurchased)
+	if wasPurchased then
+		local isPurchasing = retryPurchase()
+		if isPurchasing then
+			onAcceptPurchase()
+		else
+			onPurchaseFailed(PURCHASE_FAILED.DEFAULT_ERROR)
+		end
+	else
+		onPurchaseFailed(PURCHASE_FAILED.DID_NOT_BUY_ROBUX)
+		stopPurchaseAnimation()
+	end
+end
+
 local function onBuyRobuxPrompt()
 	startPurchaseAnimation()
 	if IsNativePurchasing then
-		MarketplaceService:PromptNativePurchase(Players.LocalPlayer, ThirdPartyProductName)
+		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+			spawn(function()
+				local PlatformService = nil
+				pcall(function() PlatformService = Game:GetService('PlatformService') end)
+				if PlatformService then
+					local purchaseCallSuccess, purchaseErrorMsg = pcall(function()
+						PlatformService:BeginPlatformStorePurchase(ThirdPartyProductName)
+					end)
+					nativePurchaseFinished(purchaseCallSuccess)
+				end
+			end)
+		else
+			MarketplaceService:PromptNativePurchase(Players.LocalPlayer, ThirdPartyProductName)
+		end
 	else
 		IsCheckingPlayerFunds = true
 		GuiService:OpenBrowserWindow(BASE_URL.."Upgrades/Robux.aspx")
@@ -1143,13 +1224,13 @@ end
 
 function enableControllerInput()
 	local cas = game:GetService("ContextActionService")
-	
+
 	--accept the purchase when the user presses the a button
 	cas:BindCoreAction(
 		CONTROLLER_CONFIRM_ACTION_NAME,
 		function(actionName, inputState, inputObject)
 			if inputState ~= Enum.UserInputState.Begin then return end
-			
+
 			if OkPurchasedButton.Visible or OkButton.Visible then
 				onPromptEnded(true)
 			elseif BuyButton.Visible then
@@ -1169,7 +1250,7 @@ function enableControllerInput()
 		CONTROLLER_CANCEL_ACTION_NAME,
 		function(actionName, inputState, inputObject)
 			if inputState ~= Enum.UserInputState.Begin then return end
-			
+
 			if (OkPurchasedButton.Visible or OkButton.Visible or CancelButton.Visible) and (not PurchaseFrame.Visible) then
 				onPromptEnded(false)
 			end
@@ -1258,17 +1339,6 @@ MarketplaceService.ServerPurchaseVerification:connect(function(serverResponseTab
 	end
 end)
 
-local function retryPurchase()
-	local canMakePurchase = canPurchase()
-	if not canMakePurchase then
-		local retries = 20
-		while retries > 0 and not canMakePurchase do
-			wait(0.5)
-			canMakePurchase = canPurchase()
-			retries = retries - 1
-		end
-	end
-end
 
 GuiService.BrowserWindowClosed:connect(function()
 	if IsCheckingPlayerFunds then
@@ -1279,11 +1349,6 @@ end)
 
 if IsNativePurchasing then
 	MarketplaceService.NativePurchaseFinished:connect(function(player, productId, wasPurchased)
-		if wasPurchased then
-			retryPurchase()
-		else
-			onPurchaseFailed(PURCHASE_FAILED.DID_NOT_BUY_ROBUX)
-		end
-		stopPurchaseAnimation()
+		nativePurchaseFinished(wasPurchased)
 	end)
 end

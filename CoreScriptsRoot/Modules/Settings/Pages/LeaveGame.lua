@@ -30,10 +30,21 @@ local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
-	this.DontLeaveFunc = function(name, state, input)
-		if this.HubRef and (not state or state == Enum.UserInputState.Begin) then
-			this.HubRef:PopMenu()
+	this.DontLeaveFunc = function(isUsingGamepad)
+		if this.HubRef then
+			this.HubRef:PopMenu(isUsingGamepad, true)
 		end
+	end
+	this.DontLeaveFromHotkey = function(name, state, input)
+		if state == Enum.UserInputState.Begin then
+			local isUsingGamepad = input.UserInputType == Enum.UserInputType.Gamepad1 or input.UserInputType == Enum.UserInputType.Gamepad2
+				or input.UserInputType == Enum.UserInputType.Gamepad3 or input.UserInputType == Enum.UserInputType.Gamepad4
+
+			this.DontLeaveFunc(isUsingGamepad)
+		end
+	end
+	this.DontLeaveFromButton = function(isUsingGamepad)
+		this.DontLeaveFunc(isUsingGamepad)
 	end
 	
 	------ TAB CUSTOMIZATION -------
@@ -82,7 +93,7 @@ local function Initialize()
 
 	------------- Init ----------------------------------
 	
-	local dontleaveGameButton = utility:MakeStyledButton("DontLeaveGame", "Don't Leave", buttonSize, this.DontLeaveFunc)
+	local dontleaveGameButton = utility:MakeStyledButton("DontLeaveGame", "Don't Leave", buttonSize, this.DontLeaveFromButton)
 	dontleaveGameButton.NextSelectionLeft = nil
 	if utility:IsSmallTouchScreen() then
 		dontleaveGameButton.Position = UDim2.new(0.5, buttonSpacing, 1, 0)
@@ -102,7 +113,7 @@ PageInstance = Initialize()
 
 PageInstance.Displayed.Event:connect(function()
 	GuiService.SelectedCoreObject = PageInstance.LeaveGameButton
-	ContextActionService:BindCoreAction(LEAVE_GAME_ACTION, PageInstance.DontLeaveFunc, false, Enum.KeyCode.ButtonB)
+	ContextActionService:BindCoreAction(LEAVE_GAME_ACTION, PageInstance.DontLeaveFromHotkey, false, Enum.KeyCode.ButtonB)
 end)
 
 PageInstance.Hidden.Event:connect(function()

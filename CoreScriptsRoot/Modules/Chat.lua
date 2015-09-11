@@ -48,6 +48,16 @@ local InputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 --[[ END OF SERVICES ]]
 
+--[[ Fast Flags ]]--
+local playerDropDownEnabledSuccess, playerDropDownEnabledFlagValue = pcall(function() return settings():GetFFlag("PlayerDropDownEnabled") end)
+local IsPlayerDropDownEnabled = playerDropDownEnabledSuccess and playerDropDownEnabledFlagValue
+
+local getMoveChatSuccess, moveChatActiveValue = pcall(function() return settings():GetFFlag("SetCoreMoveChat") end)
+local allowMoveChat = getNotificationDisableSuccess and notificationsDisableActiveValue
+
+local getDisableChatBarSuccess, disableChatBarValue = pcall(function() return settings():GetFFlag("SetCoreDisableChatBar") end)
+local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
+
 --[[ SCRIPT VARIABLES ]]
 
 -- I am not fond of waiting at the top of the script here...
@@ -72,6 +82,8 @@ local lastSelectedButton = nil
 local playerDropDownModule = nil
 local playerDropDown = nil
 local blockingUtility = nil
+
+
 
 if not NON_CORESCRIPT_MODE then
 	playerDropDownModule = require(GuiRoot.Modules:WaitForChild("PlayerDropDown"))
@@ -251,7 +263,7 @@ do
 	baseUrl = string.gsub(baseUrl,"/m.","/www.") --mobile site does not work for this stuff!
 	function Util.GetSecureApiBaseUrl()
 		local secureApiUrl = baseUrl
-		secureApiUrl = string.gsub(secureApiUrl,"http","https")
+		secureApiUrl = string.gsub(secureApiUrl,"http://","https://")
 		secureApiUrl = string.gsub(secureApiUrl,"www","api")
 		return secureApiUrl
 	end
@@ -511,19 +523,23 @@ function createPopupFrame(selectedPlayer, selectedButton)
 			lastSelectedPlayer = selectedPlayer
 			selectedButton.BackgroundTransparency = 0.5
 			
-			playerDropDown.HidePopupImmediately = true
-			local PopupFrame = playerDropDown:CreatePopup(selectedPlayer)		
-			PopupFrame.Position = UDim2.new(0, selectedButton.AbsolutePosition.X + selectedButton.AbsoluteSize.X + 2, 0, selectedButton.AbsolutePosition.Y)
-			PopupFrame.Size = UDim2.new(0, 150, PopupFrame.Size.Y.Scale, PopupFrame.Size.Y.Offset)
-			PopupFrame.ZIndex = 5
-			PopupFrame.Parent = GuiRoot
+			if IsPlayerDropDownEnabled then
+				playerDropDown.HidePopupImmediately = true
+				local PopupFrame = playerDropDown:CreatePopup(selectedPlayer)		
+				PopupFrame.Position = UDim2.new(0, selectedButton.AbsolutePosition.X + selectedButton.AbsoluteSize.X + 2, 0, selectedButton.AbsolutePosition.Y)
+				PopupFrame.Size = UDim2.new(0, 150, PopupFrame.Size.Y.Scale, PopupFrame.Size.Y.Offset)
+				PopupFrame.ZIndex = 5
+				PopupFrame.Parent = GuiRoot
+			end
 			
 			for _, button in pairs(PopupFrame:GetChildren()) do
 				button.BackgroundTransparency = 0
 				button.ZIndex = 6
 			end
 		else
-			playerDropDown:Hide()
+			if IsPlayerDropDownEnabled then
+				playerDropDown:Hide()
+			end
 			lastSelectedPlayer = nil
 		end
 	end
@@ -537,7 +553,7 @@ function popupHidden()
 	end
 end
 
-if playerDropDown then
+if IsPlayerDropDownEnabled and playerDropDown then
 	playerDropDown.HiddenSignal:connect(popupHidden)
 end
 
@@ -546,7 +562,7 @@ InputService.InputBegan:connect(function(inputObject, isProcessed)
 	local inputType = inputObject.UserInputType
 	if (inputType == Enum.UserInputType.Touch and  inputObject.UserInputState == Enum.UserInputState.Begin) or
 		inputType == Enum.UserInputType.MouseButton1 then
-		if lastSelectedButton then
+		if lastSelectedButton and IsPlayerDropDownEnabled then
 			playerDropDown:Hide()
 		end
 	end
@@ -835,7 +851,7 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				this.RightClickedOnPlayerConn = userNameButton.MouseButton2Click:connect(function()
 					local gui = this:GetGui()
 					if gui and gui.Visible then
-						if playerDropDown then
+						if IsPlayerDropDownEnabled and playerDropDown then
 							if this.SendingPlayer and this.SendingPlayer ~= Player then
 								createPopupFrame(this.SendingPlayer, userNameButton)
 							end
@@ -1636,7 +1652,7 @@ local function CreateChatWindowWidget(settings)
 	function this:FadeOutChats()
 		if this.ChatsVisible == false then return end
 		this.ChatsVisible = false
-		if playerDropDown then
+		if IsPlayerDropDownEnabled and playerDropDown then
 			playerDropDown:Hide()
 		end
 		for index, message in pairs(this.Chats) do
@@ -2454,7 +2470,7 @@ local function CreateChat()
 				this.ChatBarWidget:FadeIn()
 			end
 		end
-		if playerDropDown then
+		if IsPlayerDropDownEnabled and playerDropDown then
 			if not this.Visible then
 				playerDropDown:Hide()
 			end
@@ -2496,56 +2512,67 @@ local function CreateChat()
 				return not PlayersService.ClassicChat and PlayersService.BubbleChat
 			end
 			
-			game.StarterGui:RegisterSetCore("ChatWindowPosition", 	function(value) 
-																		if this.ChatWindowWidget and this.ChatBarWidget then
-																			value = isUDim2Value(value)
-																			if value ~= nil and not isBubbleChatOn() then
-																				chatRepositioned = true -- Prevent chat from moving back to the original position on screen resolution change
-																				this.ChatWindowWidget.ChatContainer.Position = value 
-																				this.ChatBarWidget.ChatBarContainer.Position = value + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
-																			end 
-																		end
-																	end)
-															
-			game.StarterGui:RegisterGetCore("ChatWindowPosition", 	function() 
-																		if this.ChatWindowWidget then 
-																			return this.ChatWindowWidget.ChatContainer.Position
-																		else
-																			return nil
-																		end
-																	end)
-			
-			game.StarterGui:RegisterSetCore("ChatWindowSize", 	function(value)
-																	if this.ChatWindowWidget and this.ChatBarWidget then
-																		value = isUDim2Value(value)
-																		if value ~= nil and not isBubbleChatOn() then 
-																			chatRepositioned = true
-																			this.ChatWindowWidget.ChatContainer.Size = value 
-																			this.ChatBarWidget.ChatBarContainer.Size = UDim2.new(this.ChatWindowWidget.ChatContainer.Size.X.Scale, this.ChatWindowWidget.ChatContainer.Size.X.Offset, this.ChatBarWidget.ChatBarContainer.Size.Y.Scale, this.ChatBarWidget.ChatBarContainer.Size.Y.Offset)
-																			this.ChatBarWidget.ChatBarContainer.Position = this.ChatWindowWidget.ChatContainer.Position + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
-																		end 
-																	end
-																end)
-														
-			game.StarterGui:RegisterGetCore("ChatWindowSize", 	function()
+			if allowMoveChat then
+				game.StarterGui:RegisterSetCore("ChatWindowPosition", 	function(value) 
+																			if this.ChatWindowWidget and this.ChatBarWidget then
+																				value = isUDim2Value(value)
+																				if value ~= nil and not isBubbleChatOn() then
+																					chatRepositioned = true -- Prevent chat from moving back to the original position on screen resolution change
+																					this.ChatWindowWidget.ChatContainer.Position = value 
+																					this.ChatBarWidget.ChatBarContainer.Position = value + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
+																				end 
+																			end
+																		end)
+																				
+				game.StarterGui:RegisterSetCore("ChatWindowSize", 	function(value)
+ 																		if this.ChatWindowWidget and this.ChatBarWidget then
+ 																			value = isUDim2Value(value)
+																			if value ~= nil and not isBubbleChatOn() then 
+																				chatRepositioned = true
+																				this.ChatWindowWidget.ChatContainer.Size = value 
+																				this.ChatBarWidget.ChatBarContainer.Size = UDim2.new(this.ChatWindowWidget.ChatContainer.Size.X.Scale, this.ChatWindowWidget.ChatContainer.Size.X.Offset, this.ChatBarWidget.ChatBarContainer.Size.Y.Scale, this.ChatBarWidget.ChatBarContainer.Size.Y.Offset)
+																				this.ChatBarWidget.ChatBarContainer.Position = this.ChatWindowWidget.ChatContainer.Position + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
+ 																			end 
+ 																		end
+ 																	end)														
+																	
+			else
+				game.StarterGui:RegisterSetCore("ChatWindowPosition", 	function() end)
+				game.StarterGui:RegisterSetCore("ChatWindowSize",		function() end)
+			end
+
+ 			game.StarterGui:RegisterGetCore("ChatWindowPosition", 	function() 
+ 																		if this.ChatWindowWidget then 
+ 																			return this.ChatWindowWidget.ChatContainer.Position
+ 																		else
+ 																			return nil
+ 																		end													
+																	end)			
+
+ 			game.StarterGui:RegisterGetCore("ChatWindowSize", 	function()
 																	if this.ChatWindowWidget then
 																		return this.ChatWindowWidget.ChatContainer.Size
 																	else
 																		return nil
 																	end
-																 end)
-			
-			game.StarterGui:RegisterSetCore("ChatBarDisabled", 	function(value)
-																	if this.ChatBarWidget then
-																		if type(value) == "boolean" then 
-																			chatBarDisabled = value 
-																			if value == true then
-																				this.ChatBarWidget:ToggleVisibility(false)
-																			end
-																		end 
-																	end
 																end)
-			game.StarterGui:RegisterGetCore("ChatBarDisabled", function() return chatBarDisabled end)
+			
+			if allowDisableChatBar then
+				game.StarterGui:RegisterSetCore("ChatBarDisabled", 	function(value)
+																		if this.ChatBarWidget then
+																			if type(value) == "boolean" then 
+																				chatBarDisabled = value 
+																				if value == true then
+																					this.ChatBarWidget:ToggleVisibility(false)
+																				end
+																			end 
+																		end
+																	end)
+			else
+				game.StarterGui:RegisterSetCore("ChatBarDisabled", 	function() end)
+			end
+ 			
+ 			game.StarterGui:RegisterGetCore("ChatBarDisabled", function() return chatBarDisabled end)
 		end
 		
 		this:OnPlayerAdded(Player)

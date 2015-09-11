@@ -17,6 +17,7 @@ BackpackScript.StateChanged = Instance.new('BindableEvent') -- Fires after any o
 local UseExperimentalGamepadEquip = false -- hotbar equipping in a new way! (its better!)
 
 local ICON_SIZE = 60
+local FONT_SIZE = Enum.FontSize.Size14
 if UseExperimentalGamepadEquip then
 	ICON_SIZE = 100
 end
@@ -68,6 +69,8 @@ local DOUBLE_CLICK_TIME = 0.5
 -----------------
 --| Variables |--
 -----------------
+local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
+local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
 
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
@@ -82,6 +85,7 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 
 if isTenFootInterface then
 	ICON_SIZE = 100
+	FONT_SIZE = Enum.FontSize.Size24
 end
 
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
@@ -143,7 +147,7 @@ local function NewGui(className, objectName)
 		newGui.TextColor3 = Color3.new(1, 1, 1)
 		newGui.Text = ''
 		newGui.Font = Enum.Font.SourceSans
-		newGui.FontSize = Enum.FontSize.Size14
+		newGui.FontSize = FONT_SIZE
 		newGui.TextWrapped = true
 		if className == 'TextButton' then
 			newGui.Font = Enum.Font.SourceSansBold
@@ -1501,9 +1505,14 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 
 		if IsGamepadSupported then
 			if GamepadEnabled then
-				if InventoryFrame.Visible then
-					resizeGamepadHintsFrame()
-					gamepadHintsFrame.Visible = true
+				if InventoryFrame.Visible then 
+					local lastInputType = UserInputService:GetLastInputType()
+                			local currentlyUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
+                                                    lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
+        				if currentlyUsingGamepad then
+						resizeGamepadHintsFrame()
+						gamepadHintsFrame.Visible = true
+					end    
 					enableGamepadInventoryControl()
 				else
 					gamepadHintsFrame.Visible = false
@@ -1528,6 +1537,13 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 		end
 		BackpackScript.IsOpen = InventoryFrame.Visible
 		BackpackScript.StateChanged:Fire(InventoryFrame.Visible)
+
+		if useNewControllerMenu then
+			local SettingsHub = require(RobloxGui.Modules.Settings:WaitForChild("SettingsHub"))
+			if SettingsHub.Instance.Visible then
+				SettingsHub:SetVisibility(false)
+			end
+		end
 	end
 	HotkeyFns[ARROW_HOTKEY] = openClose
 	BackpackScript.OpenClose = openClose -- Exposed
