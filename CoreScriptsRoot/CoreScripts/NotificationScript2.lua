@@ -308,7 +308,7 @@ local function sendNotifcation(title, text, image, duration, callback, button1Te
 				if callback and type(callback) ~= "function" then -- callback should be a bindable
 					pcall(function() callback:Invoke(button1Text) end)
 				elseif type(callback) == "function" then
-					callback(button2Text)
+					callback(button1Text)
 				end
 			end
 		end)
