@@ -30,6 +30,7 @@ local PlaceId = Game.PlaceId
 local Url = ContentProviderService.BaseUrl
 local UrlBase = Url:match('^http://www\.(.-)/?$') -- Turns "http://www.gametest1.robloxlabs.com/" into "gametest1.robloxlabs.com"
 local ApiProxyUrl = 'https://api.' ..  UrlBase
+local DataFarmUrl = 'https://data.' .. UrlBase
 
 -----------------
 --| Functions |--
@@ -172,8 +173,14 @@ for _, player in pairs(PlayersService:GetPlayers()) do
 	OnPlayerAdded(player)
 end
 
-if Url~=nil then
-	Game:SetServerSaveUrl(Url .. "Data/AutoSave.ashx?assetId=" .. PlaceId)
+local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function () return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
+local saveUrlBase = Url
+if(useSubdomainsFlagExists and useSubdomainsFlagValue and DataFarmUrl~=nil) then
+	saveUrlBase = DataFarmUrl
+end
+
+if saveUrlBase~=nil then
+	Game:SetServerSaveUrl(saveUrlBase .. "Data/AutoSave.ashx?assetId=" .. PlaceId)
 end
 
 if pcall(function()

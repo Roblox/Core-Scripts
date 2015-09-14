@@ -100,6 +100,7 @@ local IsSmallScreenDevice = UserInputService.TouchEnabled and GuiService:GetScre
 
 local BaseUrl = game:GetService('ContentProvider').BaseUrl:lower()
 BaseUrl = string.gsub(BaseUrl, "/m.", "/www.")
+AssetGameUrl = BaseUrl.gsub('www', 'assetgame')
 
 --[[ Constants ]]--
 local ENTRY_PAD = 2
@@ -264,7 +265,13 @@ local function getAdminIcon(player)
 end
 
 local function getAvatarIcon()
-	return BaseUrl .. "Thumbs/Avatar.ashx?userid=" .. tostring(Player.userId) .. "&width=64&height=64"
+	local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function () return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
+	local thumbsUrl = Url
+	if(useSubdomainsFlagExists and useSubdomainsFlagValue and AssetGameUrl~=nil) then
+		thumbsUrl = AssetGameUrl
+	end
+
+	return thumbsUrl .. "Thumbs/Avatar.ashx?userid=" .. tostring(Player.userId) .. "&width=64&height=64"
 end
 
 local function getMembershipIcon(player)
