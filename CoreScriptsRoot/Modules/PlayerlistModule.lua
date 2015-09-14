@@ -266,7 +266,7 @@ end
 
 local function getAvatarIcon()
 	local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function () return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
-	local thumbsUrl = Url
+	local thumbsUrl = BaseUrl
 	if(useSubdomainsFlagExists and useSubdomainsFlagValue and AssetGameUrl~=nil) then
 		thumbsUrl = AssetGameUrl
 	end

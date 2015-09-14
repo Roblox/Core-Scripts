@@ -2809,8 +2809,6 @@ t.CreateSetPanel = function(userIdsForSets, objectSelected, dialogClosed, size, 
 	local LargeThumbnailUrl = nil
 	local BaseUrl = game:GetService("ContentProvider").BaseUrl:lower()
 	local AssetGameUrl = BaseUrl.gsub("www", "assetgame")
-	print(BaseUrl)
-	print(AssetGameUrl)
 	
 	local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function () return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
 	local gameToolsUrl = BaseUrl
