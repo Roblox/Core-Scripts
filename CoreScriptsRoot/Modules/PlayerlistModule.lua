@@ -100,7 +100,7 @@ local IsSmallScreenDevice = UserInputService.TouchEnabled and GuiService:GetScre
 
 local BaseUrl = game:GetService('ContentProvider').BaseUrl:lower()
 BaseUrl = string.gsub(BaseUrl, "/m.", "/www.")
-AssetGameUrl = BaseUrl.gsub('www', 'assetgame')
+AssetGameUrl = string.gsub(BaseUrl, 'www', 'assetgame')
 
 --[[ Constants ]]--
 local ENTRY_PAD = 2
