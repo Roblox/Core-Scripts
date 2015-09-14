@@ -465,7 +465,7 @@ local function CreateUsernameHealthMenuItem()
 				local healthColor = HealthbarColorTransferFunction(healthPercent)
 				local thresholdForHurtOverlay = humanoid.MaxHealth * HEALTH_PERCANTAGE_FOR_OVERLAY
 
-				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth then
+				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth and game.StarterGui:GetCoreGuiEnabled("Health") == true then
 					AnimateHurtOverlay()
 				end
 				

@@ -253,7 +253,7 @@ local function CreateSettingsHub()
 			this.HubBar.Position = UDim2.new(0.5,-600,0.1,0)
 		else
 			this.HubBar.Size = UDim2.new(0,800,0,60)
-			this.HubBar.Position = UDim2.new(0.5,-400,0.12,0)
+			this.HubBar.Position = UDim2.new(0.5,-400,0.1,0)
 		end
 
 		this.PageViewClipper = utility:Create'Frame'
@@ -384,7 +384,7 @@ local function CreateSettingsHub()
 
 
 		local function onScreenSizeChanged()
-			local largestPageSize = 405
+			local largestPageSize = 600
 			local fullScreenSize = RobloxGui.AbsoluteSize.y
 			local bufferSize = (1-0.85) * fullScreenSize
 			if isTenFootInterface then
@@ -904,7 +904,6 @@ local function CreateSettingsHub()
 		local switchedFromGamepadInput = switchedFromGamepadInput or isTenFootInterface
 		this.Visible = visible
 
-		this.SettingsShowSignal:fire(this.Visible)
 
 		this.Modal.Visible = this.Visible
 
@@ -914,6 +913,8 @@ local function CreateSettingsHub()
 		end
 
 		if this.Visible then
+			this.SettingsShowSignal:fire(this.Visible)
+
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
 			this.Shield.Visible = this.Visible
 			if noAnimation then
@@ -940,8 +941,16 @@ local function CreateSettingsHub()
 
 			this.TabConnection = UserInputService.InputBegan:connect(switchTabFromKeyboard)
 
+
+			pcall(function() UserInputService.OverrideMouseIconEnabled = true end)
 			setOverrideMouseIconBehavior()
 			pcall(function() lastInputChangedCon = UserInputService.LastInputTypeChanged:connect(setOverrideMouseIconBehavior) end)
+			if UserInputService.MouseEnabled then
+				pcall(function() 
+					UserInputService.OverrideMouseIconEnabled = true
+					UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow 
+				end)
+			end
 
 			pcall(function() PlatformService.BlurIntensity = 10 end)
 
@@ -965,12 +974,16 @@ local function CreateSettingsHub()
 				backpack:OpenClose()
 			end
 		else
+			pcall(function() UserInputService.OverrideMouseIconEnabled = false end)
+
 			if noAnimation then
 				this.Shield.Position = SETTINGS_SHIELD_INACTIVE_POSITION
 				this.Shield.Visible = this.Visible
+				this.SettingsShowSignal:fire(this.Visible)
 			else
 				this.Shield:TweenPosition(SETTINGS_SHIELD_INACTIVE_POSITION, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.4, true, function()
 					this.Shield.Visible = this.Visible
+					this.SettingsShowSignal:fire(this.Visible)
 				end)
 			end
 

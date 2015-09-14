@@ -25,6 +25,13 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
+--[[ Fast Flags ]]--
+local getNotificationDisableSuccess, notificationsDisableActiveValue = pcall(function() return settings():GetFFlag("SetCoreDisableNotifications") end)
+local allowDisableNotifications = getNotificationDisableSuccess and notificationsDisableActiveValue
+
+local getSendNotificationSuccess, sendNotificationActiveValue = pcall(function() return settings():GetFFlag("SetCoreSendNotifications") end)
+local allowSendNotifications = getSendNotificationSuccess and sendNotificationActiveValue
+
 --[[ Script Variables ]]--
 local LocalPlayer = nil
 while not Players.LocalPlayer do
@@ -301,7 +308,7 @@ local function sendNotifcation(title, text, image, duration, callback, button1Te
 				if callback and type(callback) ~= "function" then -- callback should be a bindable
 					pcall(function() callback:Invoke(button1Text) end)
 				elseif type(callback) == "function" then
-					callback(button2Text)
+					callback(button1Text)
 				end
 			end
 		end)
@@ -585,12 +592,22 @@ local function createDeveloperNotification(notificationTable)
 	end 
 end
 
+if allowDisableNotifications then
+	game:WaitForChild("StarterGui"):RegisterSetCore("PointsNotificationsActive", function(value) if type(value) == "boolean" then pointsNotificationsActive = value end end)
+	game:WaitForChild("StarterGui"):RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
+else
+	game:WaitForChild("StarterGui"):RegisterSetCore("PointsNotificationsActive", function() end)
+	game:WaitForChild("StarterGui"):RegisterSetCore("BadgesNotificationsActive", function() end)
+end
 
-game:WaitForChild("StarterGui"):RegisterSetCore("PointsNotificationsActive", function(value) if type(value) == "boolean" then pointsNotificationsActive = value end end)
 game:WaitForChild("StarterGui"):RegisterGetCore("PointsNotificationsActive", function() return pointsNotificationsActive end)
-game:WaitForChild("StarterGui"):RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
 game:WaitForChild("StarterGui"):RegisterGetCore("BadgesNotificationsActive", function() return badgesNotificationsActive end)
-game:WaitForChild("StarterGui"):RegisterSetCore("SendNotification", createDeveloperNotification)
+
+if allowSendNotifications then
+	game:WaitForChild("StarterGui"):RegisterSetCore("SendNotification", createDeveloperNotification)
+else
+	game:WaitForChild("StarterGui"):RegisterSetCore("SendNotification", function() end)
+end
 
 if useNewControllerMenu and not isTenFootInterface then
 	local gamepadMenu = RobloxGui:WaitForChild("CoreScripts/GamepadMenu")
