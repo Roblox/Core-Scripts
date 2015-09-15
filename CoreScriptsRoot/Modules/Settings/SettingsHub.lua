@@ -386,7 +386,7 @@ local function CreateSettingsHub()
 		local function onScreenSizeChanged()
 			local largestPageSize = 600
 			local fullScreenSize = RobloxGui.AbsoluteSize.y
-			local bufferSize = (1-0.85) * fullScreenSize
+			local bufferSize = (1-0.95) * fullScreenSize
 			if isTenFootInterface then
 				largestPageSize = 800
 				bufferSize = 0.07 * fullScreenSize
