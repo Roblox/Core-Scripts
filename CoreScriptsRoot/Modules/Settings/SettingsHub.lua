@@ -34,6 +34,7 @@ local platform = UserInputService:GetPlatform()
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
 local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
 local lastInputChangedCon = nil
+local chatWasVisible = false 
 
 --[[ CORE MODULES ]]
 local playerList = require(RobloxGui.Modules.PlayerlistModule)
@@ -967,6 +968,7 @@ local function CreateSettingsHub()
 			playerList:HideTemp('SettingsMenu', true)
 
 			if chat:GetVisibility() then
+				chatWasVisible = true
 				chat:ToggleVisibility()
 			end
 
@@ -992,6 +994,11 @@ local function CreateSettingsHub()
 			end
 
 			playerList:HideTemp('SettingsMenu', false)
+
+			if chatWasVisible then
+				chat:ToggleVisibility()
+				chatWasVisible = false
+			end
 
 			pcall(function() UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
 			pcall(function() PlatformService.BlurIntensity = 0 end)
