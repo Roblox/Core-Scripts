@@ -31,11 +31,11 @@ local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 
 local playerDropDownModule = require(RobloxGui.Modules:WaitForChild("PlayerDropDown"))
+local blockingUtility = playerDropDownModule:CreateBlockingUtility()
 local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 
 --[[ Fast Flags ]]--
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
---
 local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
 
 --[[ Start Module ]]--
@@ -156,6 +156,7 @@ local PLACE_OWNER_ICON = 'rbxasset://textures/ui/icon_placeowner.png'
 local BC_ICON = 'rbxasset://textures/ui/icon_BC-16.png'
 local TBC_ICON = 'rbxasset://textures/ui/icon_TBC-16.png'
 local OBC_ICON = 'rbxasset://textures/ui/icon_OBC-16.png'
+local BLOCKED_ICON = 'rbxasset://textures/ui/PlayerList/BlockedIcon.png'
 local FRIEND_ICON = 'rbxasset://textures/ui/icon_friends_16.png'
 local FRIEND_REQUEST_ICON = 'rbxasset://textures/ui/icon_friendrequestsent_16.png'
 local FRIEND_RECEIVED_ICON = 'rbxasset://textures/ui/icon_friendrequestrecieved-16.png'
@@ -278,24 +279,30 @@ local function getMembershipIcon(player)
 	if isTenFootInterface then
 		return getAvatarIcon()
 	else
-		local userIdStr = tostring(player.userId)
-		local membershipType = player.MembershipType
-		if ADMINS[userIdStr] then
-			return ADMINS[userIdStr]
-		elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
-			return PLACE_OWNER_ICON
-		elseif membershipType == Enum.MembershipType.None then
-			return nil
-		elseif membershipType == Enum.MembershipType.BuildersClub then
-			return BC_ICON
-		elseif membershipType == Enum.MembershipType.TurboBuildersClub then
-			return TBC_ICON
-		elseif membershipType == Enum.MembershipType.OutrageousBuildersClub then
-			return OBC_ICON
+		if blockingUtility:IsPlayerBlockedByUserId(player.userId) then
+			return BLOCKED_ICON
 		else
-			error("PlayerList: Unknown value for membershipType"..tostring(membershipType))
+			local userIdStr = tostring(player.userId)
+			local membershipType = player.MembershipType
+			if ADMINS[userIdStr] then
+				return ADMINS[userIdStr]
+			elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
+				return PLACE_OWNER_ICON
+			elseif membershipType == Enum.MembershipType.None then
+				return ""
+			elseif membershipType == Enum.MembershipType.BuildersClub then
+				return BC_ICON
+			elseif membershipType == Enum.MembershipType.TurboBuildersClub then
+				return TBC_ICON
+			elseif membershipType == Enum.MembershipType.OutrageousBuildersClub then
+				return OBC_ICON
+			else
+				return ""
+			end
 		end
 	end
+
+	return ""
 end
 
 local function isValidStat(obj)
@@ -1610,5 +1617,18 @@ if GuiService then
 		GuiService:AddSelectionParent("PlayerListSelection", Container)
 	end
 end
+
+local blockStatusChanged = function(userId, isBlocked)
+	if userId < 0 then return end
+
+	for _,playerEntry in ipairs(PlayerEntries) do
+		if playerEntry.Player.UserId == userId then
+			playerEntry.Frame.BGFrame.MembershipIcon.Image = getMembershipIcon(playerEntry.Player)
+			return
+		end
+	end
+end
+
+blockingUtility:GetBlockedStatusChangedEvent():connect(blockStatusChanged)
 
 return Playerlist
