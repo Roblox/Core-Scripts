@@ -396,14 +396,10 @@ local function CreateSettingsHub()
 			end
 			local barSize = this.HubBar.Size.Y.Offset
 			local extraSpace = bufferSize*2+barSize*2
-			
-			if utility:IsSmallTouchScreen() then
-				extraSpace = bufferSize+barSize+4
-			end
 
 			local usableScreenHeight = fullScreenSize - extraSpace
 			local minimumPageSize = 150
-			local usePageSize = minimumPageSize
+			local usePageSize = nil
 
 			if largestPageSize < usableScreenHeight then
 				usePageSize = largestPageSize
