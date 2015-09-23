@@ -246,6 +246,7 @@ local function BlockPlayerAsync(playerToBlock)
 		if blockUserId > 0 then
 			if not isBlocked(blockUserId) then
 				BlockedList[blockUserId] = true
+				BlockStatusChanged:fire(blockUserId, true)
 				pcall(function()
 					local success = PlayersService:BlockUser(LocalPlayer.userId, blockUserId)
 				end)
@@ -260,6 +261,7 @@ local function UnblockPlayerAsync(playerToUnblock)
 
 		if isBlocked(unblockUserId) then
 			BlockedList[unblockUserId] = nil
+			BlockStatusChanged:fire(unblockUserId, false)
 			pcall(function()
 				local success = PlayersService:UnblockUser(LocalPlayer.userId, unblockUserId)
 			end)
