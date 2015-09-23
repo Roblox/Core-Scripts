@@ -2407,7 +2407,7 @@ local function CreateChat()
 					if playerToUnmute then
 						this:UnmutePlayer(playerToUnmute)
 					else
-						this.ChatWindowWidget:AddSystemChatMessage("Cannot mute " .. unmutePlayerName .. " because they are not in the game.")
+						this.ChatWindowWidget:AddSystemChatMessage("Cannot unmute " .. unmutePlayerName .. " because they are not in the game.")
 					end
 				elseif actionType == "Whisper" then
 					if success == false then
