@@ -1053,6 +1053,7 @@ end
 local function onAcceptPurchase()
 	if IsCurrentlyPurchasing then return end
 	--
+	disableControllerInput()
 	IsCurrentlyPurchasing = true
 	startPurchaseAnimation()
 	local startTime = tick()
@@ -1099,6 +1100,8 @@ local function onAcceptPurchase()
 	end
 
 	if tick() - startTime < 1 then wait(1) end 		-- artifical delay to show spinner for at least 1 second
+
+	enableControllerInput()
 
 	if not success then
 		print("PurchasePromptScript: onAcceptPurchase() failed because", result)
