@@ -946,10 +946,8 @@ local function CreateChatBarWidget(settings)
 		[function(chatBarText) return string.find(chatBarText, "^/%?") end] = "Help";
 		[function(chatBarText) return string.find(chatBarText, nocase("^/help")) end] = "Help";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/ignore ") .. "(%w+)") end] = "Block";
 		[function(chatBarText) return string.find(chatBarText, nocase("^/block ") .. "(%w+)") end] = "Block";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/unignore ") .. "(%w+)") end] = "Unblock";
 		[function(chatBarText) return string.find(chatBarText, nocase("^/unblock ") .. "(%w+)") end] = "Unblock";
 		
 		[function(chatBarText) return string.find(chatBarText, nocase("^/mute ") .. "(%w+)") end] = "Mute";
@@ -2314,8 +2312,8 @@ local function CreateChat()
 			this.ChatWindowWidget:AddSystemChatMessage("/t or /team - Team Chat")
 			this.ChatWindowWidget:AddSystemChatMessage("/a or /all - All Chat")
 
-			this.ChatWindowWidget:AddSystemChatMessage("/block [PlayerName] or /ignore [PlayerName] - Block communications from Target Player")
-			this.ChatWindowWidget:AddSystemChatMessage("/unblock [PlayerName] or /unignore [PlayerName] - Restore communications with Target Player")
+			this.ChatWindowWidget:AddSystemChatMessage("/block [PlayerName] - Block communications from Target Player")
+			this.ChatWindowWidget:AddSystemChatMessage("/unblock [PlayerName] - Restore communications with Target Player")
 			this.ChatWindowWidget:AddSystemChatMessage("/mute [PlayerName] - Mute in-game communications from Target Player")
 			this.ChatWindowWidget:AddSystemChatMessage("/unmute [PlayerName] - Restore in-game communications with Target Player")
 		end
