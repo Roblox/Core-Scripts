@@ -227,19 +227,15 @@ spawn(function()
 end)
 
 local function isBlocked(userId)
-	for _, currentBlockedUserId in pairs(BlockedList) do
-		if currentBlockedUserId == userId then
-			return true
-		end
+	if (BlockedList[userId] ~= nil and BlockedList[userId] == true) then
+		return true
 	end
 	return false
 end
 
 local function isMuted(userId)
-	for _, currentMutedUserId in pairs(MutedList) do
-		if currentMutedUserId == userId then
-			return true
-		end
+	if (MutedList[userId] ~= nil and MutedList[userId] == true) then
+		return true	
 	end
 	return false
 end
@@ -249,7 +245,7 @@ local function BlockPlayerAsync(playerToBlock)
 		local blockUserId = playerToBlock.UserId
 		if blockUserId > 0 then
 			if not isBlocked(blockUserId) then
-				table.insert(BlockedList, blockUserId)
+				BlockedList[blockUserId] = true
 				pcall(function()
 					local success = PlayersService:BlockUser(LocalPlayer.userId, blockUserId)
 				end)
@@ -263,16 +259,7 @@ local function UnblockPlayerAsync(playerToUnblock)
 		local unblockUserId = playerToUnblock.userId
 
 		if isBlocked(unblockUserId) then
-			local blockedUserIndex = nil
-			for index, blockedUserId in pairs(BlockedList) do
-				if blockedUserId == unblockUserId then
-					blockedUserIndex = index
-					break;
-				end
-			end
-			if blockedUserIndex then
-				table.remove(BlockedList, blockedUserIndex)
-			end
+			BlockedList[unblockUserId] = nil
 			pcall(function()
 				local success = PlayersService:UnblockUser(LocalPlayer.userId, unblockUserId)
 			end)
@@ -285,7 +272,7 @@ local function MutePlayer(playerToMute)
 		local muteUserId = playerToMute.UserId
 		if muteUserId > 0 then
 			if not isMuted(muteUserId) then
-				table.insert(MutedList, muteUserId)
+				MutedList[muteUserId] = true
 			end
 		end
 	end
@@ -294,16 +281,7 @@ end
 local function UnmutePlayer(playerToUnmute)
 	if playerToUnmute then
 		local unmuteUserId = playerToUnmute.UserId
-		local mutedUserIndex = nil
-		for index, mutedUserId in pairs(MutedList) do
-			if mutedUserId == unmuteUserId then
-				mutedUserIndex = index
-				break;
-			end
-		end
-		if mutedUserIndex then
-			table.remove(MutedList, mutedUserIndex)
-		end
+		MutedList[unmuteUserId] = nil
 	end
 end
 
