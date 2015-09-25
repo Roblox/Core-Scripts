@@ -978,10 +978,12 @@ local function CreateSettingsHub()
 				this.Shield.Position = SETTINGS_SHIELD_INACTIVE_POSITION
 				this.Shield.Visible = this.Visible
 				this.SettingsShowSignal:fire(this.Visible)
+				pcall(function() GuiService:SetMenuIsOpen(false) end)
 			else
 				this.Shield:TweenPosition(SETTINGS_SHIELD_INACTIVE_POSITION, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.4, true, function()
 					this.Shield.Visible = this.Visible
 					this.SettingsShowSignal:fire(this.Visible)
+					if not this.Visible then pcall(function() GuiService:SetMenuIsOpen(false) end) end
 				end)
 			end
 
@@ -1006,7 +1008,6 @@ local function CreateSettingsHub()
 			removeBottomBarBindings(0.4)
 
 			GuiService.SelectedCoreObject = nil
-			pcall(function() GuiService:SetMenuIsOpen(false) end)
 		end
 	end
 
@@ -1043,7 +1044,7 @@ local function CreateSettingsHub()
 			this:SwitchToPage(this.MenuStack[#this.MenuStack], true, 1, skipAnimation)
 			if #this.MenuStack == 0 then
 				this:SetVisibility(false)
-				this.Pages.CurrentPage:Hide(0, 0)--, true, 0.4)
+				this.Pages.CurrentPage:Hide(0, 0)
 			end
 		else
 			this.MenuStack = {}
