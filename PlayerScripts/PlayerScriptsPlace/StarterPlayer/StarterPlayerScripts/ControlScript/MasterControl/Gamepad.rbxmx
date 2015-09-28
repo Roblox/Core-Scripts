@@ -35,7 +35,8 @@ local thumbstickDeadzone = 0.14
 local hasCancelType = pcall(function() local test = Enum.UserInputState.Cancel end)
 
 function assignActivateGamepad()
-	local navigationGamepads = UserInputService:GetNavigationGamepads()
+	local navigationGamepads = {}
+	pcall(function() navigationGamepads = UserInputService:GetNavigationGamepads() end)
 	if #navigationGamepads > 1 then
 		for i = 1, #navigationGamepads do
 			if activateGamepad == nil then 
@@ -45,7 +46,8 @@ function assignActivateGamepad()
 			end
 		end
 	else
-		local connectedGamepads = UserInputService:GetConnectedGamepads()
+		local connectedGamepads = {}
+		pcall(function() connectedGamepads = UserInputService:GetConnectedGamepads() end)
 		if #connectedGamepads > 0 then
 			for i = 1, #connectedGamepads do
 				if activateGamepad == nil then
