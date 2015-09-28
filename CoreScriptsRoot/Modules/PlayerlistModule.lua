@@ -265,19 +265,19 @@ local function getAdminIcon(player)
 	end
 end
 
-local function getAvatarIcon()
+local function getAvatarIcon(player)
 	local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function () return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
 	local thumbsUrl = BaseUrl
 	if(useSubdomainsFlagExists and useSubdomainsFlagValue and AssetGameUrl~=nil) then
 		thumbsUrl = AssetGameUrl
 	end
 
-	return thumbsUrl .. "Thumbs/Avatar.ashx?userid=" .. tostring(Player.userId) .. "&width=64&height=64"
+	return thumbsUrl .. "Thumbs/Avatar.ashx?userid=" .. tostring(player.userId) .. "&width=64&height=64"
 end
 
 local function getMembershipIcon(player)
 	if isTenFootInterface then
-		return getAvatarIcon()
+		return getAvatarIcon(player)
 	else
 		if blockingUtility:IsPlayerBlockedByUserId(player.userId) then
 			return BLOCKED_ICON
