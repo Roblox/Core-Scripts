@@ -22,7 +22,7 @@ while not Players.LocalPlayer do
 	wait()
 end
 local LocalPlayer = Players.LocalPlayer
-local IsFollowStick = true
+local IsFollowStick = false
 local ThumbstickFrame = nil
 local MoveTouchObject = nil
 local OnTouchEnded = nil		-- defined in Create()
