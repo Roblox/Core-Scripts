@@ -204,9 +204,11 @@ local function DisableActiveHopper() --NOTE: HopperBin
 end
 
 local function UnequipAllTools() --NOTE: HopperBin
-	Humanoid:UnequipTools()
-	if ActiveHopper then
-		DisableActiveHopper()
+	if Humanoid then
+		Humanoid:UnequipTools()
+		if ActiveHopper then
+			DisableActiveHopper()
+		end
 	end
 end
 
