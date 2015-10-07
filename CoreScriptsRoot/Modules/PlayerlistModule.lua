@@ -1499,7 +1499,7 @@ local closeListFunc = function(name, state, input)
 	UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 end
 
-local setVisible = function(state)
+local setVisible = function(state, fromTemp)
 	Container.Visible = state
 
 	if IsGamepadSupported then
@@ -1514,14 +1514,14 @@ local setVisible = function(state)
 						local isUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
 													lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
 						if not isTenFootInterface then
-							if isUsingGamepad then
+							if isUsingGamepad and not fromTemp then
 								GuiService.SelectedCoreObject = frameChildren[i]
 							end
-						else
+						elseif not fromTemp then
 							GuiService.SelectedCoreObject = ScrollList
 						end
 
-						if isUsingGamepad then
+						if isUsingGamepad and not fromTemp then
 							UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 							ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
 							ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
@@ -1568,11 +1568,11 @@ Playerlist.HideTemp = function(self, key, hidden)
 
 	if next(TempHideKeys) == nil then
 		if isOpen then
-			setVisible(true)
+			setVisible(true, true)
 		end
 	else
 		if isOpen then
-			setVisible(false)
+			setVisible(false, true)
 		end
 	end
 end
@@ -1591,7 +1591,7 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 			return
 		end
 		
-		setVisible(enabled and isOpen and next(TempHideKeys) == nil)
+		setVisible(enabled and isOpen and next(TempHideKeys) == nil, true)
 		
 		if isTenFootInterface and topStat then
 			topStat:SetTopStatEnabled(enabled)

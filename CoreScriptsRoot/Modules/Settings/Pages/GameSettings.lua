@@ -475,9 +475,9 @@ local function Initialize()
 
 		this.VolumeSlider.ValueChanged:connect(function(newValue)
 			local soundPercent = newValue/10
-			GameSettings.MasterVolume = soundPercent
 			volumeSound.Volume = soundPercent
 			volumeSound:Play()
+			GameSettings.MasterVolume = soundPercent
 		end)
 	end
 
