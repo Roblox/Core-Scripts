@@ -826,8 +826,10 @@ local function isFreeItem()
 end
 
 local function getPlayerBalance()
+	local platform = UserInputService:GetPlatform()
+	local apiPath = platform == Enum.Platform.XBoxOne and 'my/platform-currency-budget' or 'currency/balance'
+
 	local success, result = pcall(function()
-		local apiPath = "currency/balance"
 		return HttpRbxApiService:GetAsync(apiPath, true)
 	end)
 
@@ -838,7 +840,13 @@ local function getPlayerBalance()
 
 	if result == '' then return end
 
-	return HttpService:JSONDecode(result)
+	result = HttpService:JSONDecode(result)
+	if platform == Enum.Platform.XBoxOne then
+		result["robux"] = result["Robux"]
+		result["tickets"] = "0"
+	end
+
+	return result
 end
 
 local function isNotForSale()

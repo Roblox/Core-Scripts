@@ -44,6 +44,7 @@ local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
 local isTenFootInterface = false 
 pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
+local platform = UIS:GetPlatform()
 
 --
 -- Utility functions
@@ -396,11 +397,20 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 			local creatorName = InfoProvider:GetCreatorName()
 			if creatorName ~= "" then
 				if isTenFootInterface then
-					creatorLabel.Text = creatorName
+					local showDevName = true
+					if platform == Enum.Platform.XBoxOne then
+						local success, result = pcall(function()
+							return settings():GetFFlag("ShowDevNameInXboxApp")
+						end)
+						if success then
+							showDevName = result
+						end
+					end
+					creatorLabel.Text = showDevName and creatorName or ""
 					local creatorIcon = infoFrame:FindFirstChild('CreatorIcon')
 					local byLabel = infoFrame:FindFirstChild('ByLabel')
-					if creatorIcon then creatorIcon.Visible = true end
-					if byLabel then byLabel.Visible = true end
+					if creatorIcon then creatorIcon.Visible = showDevName end
+					if byLabel then byLabel.Visible = showDevName end
 				else
 					creatorLabel.Text = "By "..creatorName
 				end
