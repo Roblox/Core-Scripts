@@ -1493,6 +1493,7 @@ local closeListFunc = function(name, state, input)
 
 	isOpen = false
 	Container.Visible = false
+	spawn(function() GuiService:SetMenuIsOpen(false) end)
 	ContextActionService:UnbindCoreAction("CloseList")
 	ContextActionService:UnbindCoreAction("StopAction")
 	GuiService.SelectedCoreObject = nil

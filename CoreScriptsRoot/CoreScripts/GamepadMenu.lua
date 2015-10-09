@@ -249,7 +249,7 @@ local function createGamepadMenuGui()
 	---------------------------------
 	-------- Player List ------------
 	local playerListFunc = function() 
-		toggleCoreGuiRadial()
+		toggleCoreGuiRadial(true)
 		local PlayerListModule = require(GuiRoot.Modules.PlayerlistModule)
 		if not PlayerListModule:IsOpen() then
 			PlayerListModule:ToggleVisibility()
@@ -276,7 +276,7 @@ local function createGamepadMenuGui()
 	---------------------------------
 	---------- Leave Game -----------
 	local leaveGameFunc = function()
-		toggleCoreGuiRadial()
+		toggleCoreGuiRadial(true)
 		local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
 		MenuModule:SetVisibility(true, false, require(GuiRoot.Modules.Settings.Pages.LeaveGame), true)
 	end
@@ -286,7 +286,7 @@ local function createGamepadMenuGui()
 	---------------------------------
 	---------- Backpack -------------
 	local backpackFunc = function()
-		toggleCoreGuiRadial()
+		toggleCoreGuiRadial(true)
 		local BackpackModule = require(GuiRoot.Modules.BackpackScript)
 		BackpackModule:OpenClose() 
 	end
