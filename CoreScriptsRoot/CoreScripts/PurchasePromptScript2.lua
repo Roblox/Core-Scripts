@@ -700,6 +700,10 @@ local function onPurchaseFailed(failType)
 		failedText = "You need to create a ROBLOX account to buy items, visit www.roblox.com for more info."
 	end
 
+	RobuxIcon.Visible = false
+	TixIcon.Visible = false
+	CostText.Visible = false
+
 	ItemDescriptionText.Text = failedText
 	showPurchasePrompt()
 end
