@@ -1209,10 +1209,15 @@ local function onBuyRobuxPrompt()
 				local PlatformService = nil
 				pcall(function() PlatformService = Game:GetService('PlatformService') end)
 				if PlatformService then
+					local platformPurchaseReturnInt = -1
 					local purchaseCallSuccess, purchaseErrorMsg = pcall(function()
-						PlatformService:BeginPlatformStorePurchase(ThirdPartyProductName)
+						platformPurchaseReturnInt = PlatformService:BeginPlatformStorePurchase(ThirdPartyProductName)
 					end)
-					nativePurchaseFinished(purchaseCallSuccess)
+					if purchaseCallSuccess then
+						nativePurchaseFinished(platformPurchaseReturnInt == 0)
+					else
+						nativePurchaseFinished(purchaseCallSuccess)
+					end
 				end
 			end)
 		else
