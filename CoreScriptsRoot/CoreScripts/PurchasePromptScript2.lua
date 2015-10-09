@@ -69,8 +69,8 @@ local GAMEPAD_BUTTONS = {}
 
 local ERROR_MSG = {
 	PURCHASE_DISABLED = "In-game purchases are temporarily disabled",
-	INVALID_FUNDS = "your account does not have enought Robux",
-	UNKNOWN = "Roblox is performing maintenance",
+	INVALID_FUNDS = "your account does not have enough ROBUX",
+	UNKNOWN = "ROBLOX is performing maintenance",
 	UNKNWON_FAILURE = "something went wrong"
 }
 local PURCHASE_MSG = {
