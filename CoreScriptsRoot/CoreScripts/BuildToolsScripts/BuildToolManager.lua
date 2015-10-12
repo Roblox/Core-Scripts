@@ -157,8 +157,7 @@ player.Changed:connect(function(prop)
 		if player.PersonalServerRank >= 255 then
 			giveOwnerTools()
 		elseif player.PersonalServerRank <= 0 then
-			player:Kick() -- you're banned, goodbye!
-			Game:SetMessage("You're banned from this PBS")
+			player:Kick("You're banned from this PBS") -- you're banned, goodbye!
 		end
 	end
 end)
