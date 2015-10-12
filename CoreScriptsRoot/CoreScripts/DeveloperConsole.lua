@@ -105,6 +105,9 @@ function initializeDeveloperConsole()
 	local serverOffset = 0
 	local serverStatsOffset = 0
 	
+	local localStart = 1
+	local serverStart = 1
+	
 	local errorToggleOn = true
 	local warningToggleOn = true
 	local infoToggleOn = true
@@ -141,7 +144,7 @@ function initializeDeveloperConsole()
 		Parent = Dev_OptionsHolder;
 		BackgroundColor3 = Color3.new(0,0,0);
 		BackgroundTransparency = 1.0;
-		Position = UDim2.new(0.0, -250, 0, 4);
+		Position = UDim2.new(0.0, -350, 0, 4);
 		Size = UDim2.new(0, 234, 0, 18);
 	}
 	
@@ -256,6 +259,29 @@ function initializeDeveloperConsole()
 		Visible = false
 	}
 	
+	local Dev_HidePreviousToggle = Create'TextButton'{
+		Name = 'HidePreviousToggleButton';
+		Parent = Dev_OptionsBar;
+		BackgroundColor3 = Color3.new(0,0,0);
+		BorderColor3 = Color3.new(0.8, 0.8, 0.8);
+		Position = UDim2.new(0, 320, 0, 0);
+		Size = UDim2.new(0, 18, 0, 18);
+		Font = "SourceSansBold";
+		FontSize = Enum.FontSize.Size14;
+		Text = "";
+		TextColor3 = Color3.new(0.8, 0.8, 0.8);
+	}
+	
+	Create'Frame'{
+		Name = 'CheckFrame';
+		Parent = Dev_HidePreviousToggle;
+		BackgroundColor3 = Color3.new(0.8, 0.8, 0.8);
+		BorderColor3 = Color3.new(0.8, 0.8, 0.8);
+		Position = UDim2.new(0, 4, 0, 4);
+		Size = UDim2.new(0, 10, 0, 10);
+		Visible = false
+	}
+	
 	Create'TextLabel'{
 		Name = 'Filter';
 		Parent = Dev_OptionsBar;
@@ -273,10 +299,22 @@ function initializeDeveloperConsole()
 		Parent = Dev_OptionsBar;
 		BackgroundTransparency = 1;
 		Position = UDim2.new(0, 150, 0, 0);
-		Size = UDim2.new(0, 50, 0, 18);
+		Size = UDim2.new(0, 60, 0, 18);
 		Font = "SourceSansBold";
 		FontSize = Enum.FontSize.Size14;
 		Text = "Word Wrap";
+		TextColor3 = Color3.new(1, 1, 1);
+	}
+	
+	Create'TextLabel'{
+		Name = 'HidePrevious';
+		Parent = Dev_OptionsBar;
+		BackgroundTransparency = 1;
+		Position = UDim2.new(0, 250, 0, 0);
+		Size = UDim2.new(0, 50, 0, 18);
+		Font = "SourceSansBold";
+		FontSize = Enum.FontSize.Size14;
+		Text = "Hide Previous";
 		TextColor3 = Color3.new(1, 1, 1);
 	}
 
@@ -851,13 +889,13 @@ function initializeDeveloperConsole()
 				frameNumber = frameNumber + 1
 			end
 			
-			local x = frameNumber / 5
+			local x = frameNumber / 7
 			local smoothStep = x * x * (3 - (2 * x))
-			Dev_OptionsButton.ImageLabel.Rotation = smoothStep * 5 * 9
-			Dev_OptionsBar.Position = UDim2.new(0, (smoothStep * 5 * 50) - 250, 0, 4)
+			Dev_OptionsButton.ImageLabel.Rotation = smoothStep * 7 * 9
+			Dev_OptionsBar.Position = UDim2.new(0, (smoothStep * 7 * 50) - 350, 0, 4)
 			
 			wait()
-			if (frameNumber <= 0 and optionsHidden) or (frameNumber >= 5 and not optionsHidden) then
+			if (frameNumber <= 0 and optionsHidden) or (frameNumber >= 7 and not optionsHidden) then
 				animating = false
 			end
 		until not animating
@@ -900,12 +938,15 @@ function initializeDeveloperConsole()
 			childMessages[i].Visible = false
 		end
 		
-		for i = 1, #messageList do
+		local start = currentConsole == LOCAL_CONSOLE and localStart or serverStart
+		
+		for i = start, #messageList do
+			local pos = i - start + 1
 			local message
 			
 			local movePosition = false
 			
-			if i > #childMessages then
+			if pos > #childMessages then
 				message = Create'TextLabel'{
 					Name = 'Message';
 					Parent = Dev_TextHolder;
@@ -917,7 +958,7 @@ function initializeDeveloperConsole()
 				}
 				movePosition = true
 			else
-				message = childMessages[i]
+				message = childMessages[pos]
 			end
 			
 			if (outputToggleOn or messageList[i].Type ~= Enum.MessageType.MessageOutput) and
@@ -1202,6 +1243,17 @@ function initializeDeveloperConsole()
 	Dev_OptionsBar.WordWrapToggleButton.MouseButton1Down:connect(function(x, y)
 		wordWrapToggleOn = not wordWrapToggleOn
 		Dev_OptionsBar.WordWrapToggleButton.CheckFrame.Visible = wordWrapToggleOn
+		refreshTextHolder()
+	end)
+	
+	Dev_OptionsBar.HidePreviousToggleButton.MouseButton1Down:connect(function(x, y)
+		if localStart == 1 then
+			localStart = #localMessageList + 1
+			serverStart = #serverMessageList + 1
+		else
+			localStart, serverStart = 1,1
+		end
+		Dev_OptionsBar.HidePreviousToggleButton.CheckFrame.Visible = localStart ~= 1
 		refreshTextHolder()
 	end)
 
