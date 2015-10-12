@@ -582,15 +582,16 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		
 		
 		local string_find = string.find
-		local containsString; -- the text typed into the search textBox, nil if equal to ""
+		local containsString; -- the text typed into the search textBox, nil if equal to "" or in case of an invalid pattern
+		local usePatterns = false -- whether or not string patterns should be used during filtering
 		
 		function textFilter(text)
-			return not containsString or string_find(text:lower(), containsString)
+			return not containsString or string_find(text:lower(), containsString, nil, not usePatterns)
 		end
 		
 		local filterLookup = {} -- filterLookup[Enum.MessageType.x.Value] = true or false
 		function messageFilter(message)
-			return filterLookup[message.Type] and (not containsString or string_find(message.Message:lower(), containsString))
+			return filterLookup[message.Type] and (not containsString or string_find(message.Message:lower(), containsString, nil, not usePatterns))
 		end
 		
 		-- Events
@@ -656,6 +657,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 					checkbox:SetValue(false)
 					checkbox.Frame.Parent = container
 					checkbox.Frame.Position = UDim2_new(0, x + label.Size.X.Offset, 0, 4)
+					x = x + label.Size.X.Offset + Style.CheckboxSize + 4
 				end
 			end
 		end
@@ -691,7 +693,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 					end
 					function scriptStatFilter(chartStat)
 						return (showInactive or getScriptCurrentlyActive(chartStat))
-							and (not containsString or string_find(chartStat.Name:lower(), containsString))
+							and (not containsString or string_find(chartStat.Name:lower(), containsString, nil, not usePatterns))
 					end
 						
 					local checkbox = createCheckbox(Color3_new(1, 1, 1), function(value)
@@ -728,36 +730,72 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		
 		do -- Search/filter/contains textbox
 			
+			local height = 4 + Style.CheckboxSize + 4
+			
 			local label = Primitives.InvisibleTextLabel(optionsFrame, 'FilterLabel', "Contains:")
 			label.FontSize = 'Size18'
 			label.TextXAlignment = 'Left'
 			label.Size = UDim2_new(0, 60, 0, Style.CheckboxSize)
-			label.Position = UDim2_new(0, 4, 0, 4 + Style.CheckboxSize + 4)
+			label.Position = UDim2_new(0, 4, 0, height)
 			
 			local textBox = Primitives.TextBox(optionsFrame, 'ContainsFilter')
 			textBox.ClearTextOnFocus = true
 			textBox.FontSize = 'Size18'
 			textBox.TextXAlignment = 'Left'
 			textBox.Size = UDim2_new(0, 150, 0, Style.CheckboxSize)
-			textBox.Position = UDim2_new(0, label.Position.X.Offset + label.Size.X.Offset + 4, 0, 4 + Style.CheckboxSize + 4)
+			textBox.Position = UDim2_new(0, label.Position.X.Offset + label.Size.X.Offset + 4, 0, height)
 			textBox.Text = ""
+			
+			local label2 = Primitives.InvisibleTextLabel(optionsFrame, 'PatternLabel', "Use string patterns:")
+			label2.FontSize = 'Size18'
+			label2.TextXAlignment = 'Left'
+			label2.Size = UDim2_new(0, 131, 0, Style.CheckboxSize)
+			label2.Position = UDim2_new(0, textBox.Position.X.Offset + textBox.Size.X.Offset + 4, 0, height)
 		
+			local errorColor = Color3.new(0.5, 0, 0)
 			local runningColor = Color3.new(0, 0.5, 0)
 			local normalColor = textBox.BackgroundColor3
 			
-			connectPropertyChanged(textBox, 'Text', function(text)
-				text = text:lower()
+			-- string.find only errors for an invalid pattern under certain circumstances
+			-- for example: "%d%" only errors if the string contains at least one digit
+			local testString = ""
+			for i=0,255 do
+				testString = testString..string.char(i)
+			end
+			
+			local function textChanged(text)
+				local forced = not text
 				if text == "" then
 					text = nil
+				elseif forced then
+					text = textBox.Text
+					if text == "" then
+						text = nil
+					end
+				else
+					text = text:lower()
 				end
-				if text == containsString then
+				if text == containsString and not forced then
 					return
 				end
-				textBox.BackgroundColor3 = text and runningColor or normalColor
+				if usePatterns and text and not pcall(string.find,testString,text) then
+					textBox.BackgroundColor3,text = errorColor
+				else
+					textBox.BackgroundColor3 = text and runningColor or normalColor
+				end
 				containsString = text
 				messageFilterChanged:fire()
 				textFilterChanged:fire()
+			end
+			
+			connectPropertyChanged(textBox, 'Text', textChanged)
+			
+			local checkbox = createCheckbox(Color3.new(0.65, 0.65, 0.65), function(value)
+				usePatterns = value textChanged() -- change and enforce the new setting
 			end)
+			checkbox:SetValue(false)
+			checkbox.Frame.Parent = optionsFrame
+			checkbox.Frame.Position = UDim2_new(0, label2.Position.X.Offset + label2.Size.X.Offset + 4, 0, height)
 			
 			connectPropertyChanged(textBox, 'TextBounds', function(textBounds)
 				textBox.Size = UDim2_new(0, math.max(textBounds.X, 150), 0, Style.CheckboxSize)
