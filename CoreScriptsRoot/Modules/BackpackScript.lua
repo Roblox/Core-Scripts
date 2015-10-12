@@ -985,6 +985,7 @@ end
 
 
 function changeSlot(slot)
+	if Dragging[slot.Frame] then return end -- Dragging, not meant to click
 	if slot.Frame == GuiService.SelectedCoreObject then
 		local currentlySelectedSlot = getGamepadSwapSlot()
 
@@ -1013,8 +1014,11 @@ function changeSlot(slot)
 			slot.Frame:TweenSizeAndPosition(startSize + UDim2.new(0, 10, 0, 10), startPosition - UDim2.new(0, 5, 0, 5), Enum.EasingDirection.Out, Enum.EasingStyle.Quad, .1, true, function() slot.Frame:TweenSizeAndPosition(startSize, startPosition, Enum.EasingDirection.In, Enum.EasingStyle.Quad, .1, true) end)
 			slot.Frame.BorderSizePixel = 3
 		end
-	else
+	elseif slot.Index <= HOTBAR_SLOTS then
 		slot:Select()
+	elseif LowestEmptySlot then
+		LowestEmptySlot:Fill(slot.Tool)
+		slot:Destroy()
 	end
 end
 
