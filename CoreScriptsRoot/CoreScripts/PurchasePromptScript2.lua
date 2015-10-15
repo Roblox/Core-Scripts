@@ -62,6 +62,7 @@ local TIX_ICON = 'rbxasset://textures/ui/TixIcon.png'
 local ERROR_ICON = 'rbxasset://textures/ui/ErrorIcon.png'
 local A_BUTTON = "rbxasset://textures/ui/Settings/Help/AButtonDark.png"
 local B_BUTTON = "rbxasset://textures/ui/Settings/Help/BButtonDark.png"
+local DEFAULT_XBOX_IMAGE = 'rbxasset://textures/ui/Shell/Icons/ROBUXIcon@1080.png'
 --Context Actions
 local CONTROLLER_CONFIRM_ACTION_NAME = "CoreScriptPurchasePromptControllerConfirm"
 local CONTROLLER_CANCEL_ACTION_NAME = "CoreScriptPurchasePromptControllerCancel"
@@ -413,7 +414,53 @@ local function setCurrencyData(playerBalance)
 	end
 end
 
+local function setPreviewImageXbox(productInfo, assetId)
+	-- get the asset id we want
+	local id = nil
+	if IsPurchasingConsumable and productInfo and productInfo["IconImageAssetId"] then
+		id = productInfo["IconImageAssetId"]
+	elseif assetId then
+		id = assetId
+	else
+		ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+		return
+	end
+
+	local path = 'asset-thumbnail/json?assetId=%d&width=100&height=100&format=png'
+	path = BASE_URL..string.format(path, id)
+	spawn(function()
+		-- check if thumb has been generated, if not generated or if anything fails
+		-- set to the default image
+		local success, result = pcall(function()
+			return game:HttpGetAsync(path)
+		end)
+		if not success then
+			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+			return
+		end
+
+		local decodeSuccess, decodeResult = pcall(function()
+			return HttpService:JSONDecode(result)
+		end)
+		if not decodeSuccess then
+			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+			return
+		end
+
+		if decodeResult["Final"] == true then
+			ItemPreviewImage.Image = THUMBNAIL_URL..tostring(id).."&x=100&y=100&format=png"
+		else
+			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+		end
+	end)
+end
+
 local function setPreviewImage(productInfo, assetId)
+	-- For now let's only run this logic on Xbox
+	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		setPreviewImageXbox(productInfo, assetId)
+		return
+	end
 	if IsPurchasingConsumable then
 		if productInfo then
 			ItemPreviewImage.Image = THUMBNAIL_URL..tostring(productInfo["IconImageAssetId"].."&x=100&y=100&format=png")
