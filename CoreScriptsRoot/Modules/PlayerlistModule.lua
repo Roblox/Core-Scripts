@@ -265,19 +265,39 @@ local function getAdminIcon(player)
 	end
 end
 
-local function getAvatarIcon(player)
+local function getAvatarIconAsync(player)
 	local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function () return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
 	local thumbsUrl = BaseUrl
 	if(useSubdomainsFlagExists and useSubdomainsFlagValue and AssetGameUrl~=nil) then
 		thumbsUrl = AssetGameUrl
 	end
 
-	return thumbsUrl .. "Thumbs/Avatar.ashx?userid=" .. tostring(player.userId) .. "&width=64&height=64"
+	-- check if thumb has been generated and if not replace with default
+	local path = 'avatar-thumbnail/json?userId=%d&width=100&height=100&format=png'
+	path = BaseUrl..string.format(path, player.userId)
+	local isThumbnailFinal = false
+
+	local success, result = pcall(function()
+		return game:HttpGetAsync(path)
+	end)
+	if success then
+		local decodeSuccess, decodeResult = pcall(function()
+			return HttpService:JSONDecode(result)
+		end)
+		if decodeSuccess and decodeResult and decodeResult["Final"] == true then
+			isThumbnailFinal = true
+		end
+	end
+	local finalImage = isThumbnailFinal and thumbsUrl.."Thumbs/Avatar.ashx?userid="..tostring(player.userId).."&width=100&height=100"
+		or 'rbxasset://textures/ui/Shell/Icons/DefaultProfileIcon.png'
+
+	return finalImage
 end
 
 local function getMembershipIcon(player)
 	if isTenFootInterface then
-		return getAvatarIcon(player)
+		-- return nothing, we need to spawn off getAvatarIconAsync() as a later time to not block
+		return ""
 	else
 		if blockingUtility:IsPlayerBlockedByUserId(player.userId) then
 			return BLOCKED_ICON
@@ -1187,6 +1207,12 @@ local function createPlayerEntry(player, isTopStat)
 	else
 		currentXOffset = currentXOffset + offsetSize
 	end
+
+	spawn(function()
+		if isTenFootInterface and membershipIcon then
+			membershipIcon.Image = getAvatarIconAsync(player)
+		end
+	end)
 
 	-- Some functions yield, so we need to spawn off in order to not cause a race condition with other events like Players.ChildRemoved
 	spawn(function()

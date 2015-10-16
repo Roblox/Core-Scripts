@@ -362,6 +362,14 @@ local function CreateSettingsHub()
 				this:SwitchToPage(this.ResetCharacterPage, nil, 1, true)
 			end
 
+			-- Xbox Only
+			local inviteToGameFunc = function()
+				local platformService = game:GetService('PlatformService')
+				if platformService then
+					platformService:PopupGameInviteUI()
+				end
+			end
+
 			local resumeFunc = function()
 				setVisibilityInternal(false)
 			end
@@ -372,9 +380,16 @@ local function CreateSettingsHub()
 				buttonImageAppend = "@2x"
 			end
 
-			addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
-				"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
-				leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
+			if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+				addBottomBarButton("InviteToGame", "Send Game Invites", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
+					"", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
+					inviteToGameFunc, {Enum.KeyCode.ButtonX})
+			else
+				addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
+					"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
+					leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
+			end
+
 			addBottomBarButton("ResetCharacter", "    Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png", 
 				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25), 
 				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY})
