@@ -2857,7 +2857,10 @@ do
 				return string_format("%s:%s:%s", h, m, s)
 			end
 		end
-	
+		
+		local function filterMessageOnAdd(message)
+			return (message.Type == Enum.MessageType.MessageWarning.Value) and (string.find(message.Message, "failed to learn") ~= nil) -- Filter "ClassDescriptor failed to learn" errors
+		end
 	
 		local outputMessageSyncLocal;
 		if permissions.MayViewClientLog then
@@ -2869,11 +2872,14 @@ do
 					local history = LogService:GetLogHistory()
 					for i = 1, #history do
 						local msg = history[i]
-						messages[i] = {
+						local message = {
 							Message = msg.message or "[DevConsole Error 1]";
 							Time = ConvertTimeStamp(msg.timestamp);
 							Type = msg.messageType.Value;
 						}
+						if not filterMessageOnAdd(message) then
+							messages[#messages + 1] = message
+						end
 					end
 				end
 				
@@ -2883,8 +2889,10 @@ do
 						Time = ConvertTimeStamp(os_time());
 						Type = messageType.Value;
 					}
-					messages[#messages + 1] = message
-					this.MessageAdded:fire(message)
+					if not filterMessageOnAdd(message) then
+						messages[#messages + 1] = message
+						this.MessageAdded:fire(message)
+					end
 				end)
 			
 				return messages
@@ -2904,8 +2912,10 @@ do
 						Time = ConvertTimeStamp(os_time());
 						Type = messageType.Value;
 					}
-					messages[#messages + 1] = message
-					this.MessageAdded:fire(message)
+					if not filterMessageOnAdd(message) then
+						messages[#messages + 1] = message
+						this.MessageAdded:fire(message)
+					end
 				end)
 				LogService:RequestServerOutput()
 				
