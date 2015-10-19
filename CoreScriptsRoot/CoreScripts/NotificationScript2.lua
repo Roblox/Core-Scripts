@@ -352,7 +352,7 @@ spawn(function()
 	local RemoteEvent_OnNewFollower = RobloxReplicatedStorage:WaitForChild('OnNewFollower')
 	--
 	RemoteEvent_OnNewFollower.OnClientEvent:connect(function(followerRbxPlayer)
-		sendNotifcation("New Follower", followerRbxPlayer.Name.."is now following you!",
+		sendNotifcation("New Follower", followerRbxPlayer.Name.." is now following you!",
 			FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
 	end)
 end)
