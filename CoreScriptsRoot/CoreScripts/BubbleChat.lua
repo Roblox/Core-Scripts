@@ -13,6 +13,7 @@ local TextService = game:GetService("TextService")
 local GameOptions = settings()["Game Options"]
 --[[ END OF SERVICES ]]
 
+
 --[[ SCRIPT VARIABLES ]]
 local CHAT_BUBBLE_FONT = Enum.Font.SourceSans
 local CHAT_BUBBLE_FONT_SIZE = Enum.FontSize.Size24 -- if you change CHAT_BUBBLE_FONT_SIZE_INT please change this to match
@@ -30,6 +31,7 @@ local CchMaxChatMessageLength = 128 -- max chat message length, including null t
 local CchMaxChatMessageLengthExclusive = CchMaxChatMessageLength - string.len(ELIPSES) - 1
 --[[ END OF SCRIPT VARIABLES ]]
 
+
 -- [[ SCRIPT ENUMS ]]
 local ChatType = {	PLAYER_CHAT = "pChat", 
 					PLAYER_TEAM_CHAT = "pChatTeam", 
@@ -44,6 +46,7 @@ local BubbleColor = {	WHITE = "dub",
 					RED = "red" }
 
 --[[ END OF SCRIPT ENUMS ]]
+
 
 
 --[[ FUNCTIONS ]]
@@ -264,6 +267,7 @@ function createChatImposter(filePrefix, dotDotDot, yOffset)
 
 	return result
 end
+
 
 local function createChatOutput()
 	local MaxChatBubblesPerPlayer = 10
@@ -624,13 +628,13 @@ local function createChatOutput()
 			end
 		end
 	end)
-
 end
 
-local isRunMode = false
-local success = pcall(function() isRunMode = game:GetService("RunService"):IsRunMode()end)
+
+local isClient = false
+local success = pcall(function() isClient = game:GetService("RunService"):IsClient()end)
 
 -- init only if we have a simulation going
-if isRunMode or not success then
+if isClient or not success then
 	createChatOutput()
 end
