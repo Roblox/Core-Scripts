@@ -2858,8 +2858,21 @@ do
 			end
 		end
 		
+		local warningsToFilter = {"ClassDescriptor failed to learn", "EventDescriptor failed to learn", "Type failed to learn"}
+		
+		-- Filter "ClassDescriptor failed to learn" errors
 		local function filterMessageOnAdd(message)
-			return (message.Type == Enum.MessageType.MessageWarning.Value) and (string.find(message.Message, "failed to learn") ~= nil) -- Filter "ClassDescriptor failed to learn" errors
+			if message.Type ~= Enum.MessageType.MessageWarning.Value then
+				return false
+			end
+			local found = false
+			for _, filterString in ipairs(warningsToFilter) do
+				if string.find(message.Message, filterString) ~= nil then
+					found = true
+					break
+				end
+			end
+			return found
 		end
 	
 		local outputMessageSyncLocal;
