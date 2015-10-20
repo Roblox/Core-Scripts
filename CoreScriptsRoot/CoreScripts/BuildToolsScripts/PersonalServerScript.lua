@@ -30,7 +30,7 @@ local PlaceId = Game.PlaceId
 local Url = ContentProviderService.BaseUrl
 local UrlBase = Url:match('^http://www\.(.-)/?$') -- Turns "http://www.gametest1.robloxlabs.com/" into "gametest1.robloxlabs.com"
 local ApiProxyUrl = 'https://api.' ..  UrlBase
-local DataFarmUrl = 'https://data.' .. UrlBase
+local DataFarmUrl = 'https://data.' .. UrlBase .. '/'
 
 -----------------
 --| Functions |--
