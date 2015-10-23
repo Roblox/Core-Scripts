@@ -718,22 +718,9 @@ local function CreateCamera()
 				end
 			end
 		end)
-
-		player.OnTeleport:connect(function(teleportState)
-			if teleportState ~= Enum.TeleportState.Failed then
-				GameSettings.StartInFirstPerson = this:IsInFirstPerson()
-			else
-				GameSettings.StartInFirstPerson = false
-			end
-		end)
 		
 		local function OnCharacterAdded(newCharacter)
-			if GameSettings.StartInFirstPerson and UserSettings():IsUserFeatureEnabled("UserCameraZoomPersistThroughTeleport") then
-				GameSettings.StartInFirstPerson = false
-				this:ZoomCamera(0)
-			else
-				this:ZoomCamera(12.5)
-			end
+			this:ZoomCamera(12.5)
 			local humanoid = findPlayerHumanoid(player)
 			local start = tick()
 			while tick() - start < 0.3 and (humanoid == nil or humanoid.Torso == nil) do
