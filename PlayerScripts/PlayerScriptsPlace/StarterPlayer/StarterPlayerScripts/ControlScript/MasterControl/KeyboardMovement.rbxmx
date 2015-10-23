@@ -62,19 +62,24 @@ function KeyboardMovement:Enable()
 	local leftValue = 0
 	local rightValue = 0
 	
-	local updateMovement = function()
-		MasterControl:AddToPlayerMovement(-currentMoveVector)
-		currentMoveVector = Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue)
-		MasterControl:AddToPlayerMovement(currentMoveVector)
+	local updateMovement = function(inputState)
+		if inputState == Enum.UserInputState.Cancel then
+			MasterControl:AddToPlayerMovement(-currentMoveVector)
+			currentMoveVector = Vector3.new(0, 0, 0)
+		else
+			MasterControl:AddToPlayerMovement(-currentMoveVector)
+			currentMoveVector = Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue)
+			MasterControl:AddToPlayerMovement(currentMoveVector)	
+		end
 	end
 	
-	local moveForwardFunc = function(actionName, inputState, inputObject)
+	local moveForwardFunc = function(actionName, inputState, inputObject)			
 		if inputState == Enum.UserInputState.Begin then
 			forwardValue = -1
 		elseif inputState == Enum.UserInputState.End then
 			forwardValue = 0
 		end
-		updateMovement()
+		updateMovement(inputState)
 	end
 	
 	local moveBackwardFunc = function(actionName, inputState, inputObject)	
@@ -83,7 +88,7 @@ function KeyboardMovement:Enable()
 		elseif inputState == Enum.UserInputState.End then
 			backwardValue = 0
 		end
-		updateMovement()
+		updateMovement(inputState)
 	end
 	
 	local moveLeftFunc = function(actionName, inputState, inputObject)	
@@ -92,7 +97,7 @@ function KeyboardMovement:Enable()
 		elseif inputState == Enum.UserInputState.End then
 			leftValue = 0
 		end
-		updateMovement()
+		updateMovement(inputState)
 	end
 	
 	local moveRightFunc = function(actionName, inputState, inputObject)	
@@ -101,7 +106,7 @@ function KeyboardMovement:Enable()
 		elseif inputState == Enum.UserInputState.End then
 			rightValue = 0
 		end
-		updateMovement()
+		updateMovement(inputState)
 	end
 	
 	local jumpFunc = function(actionName, inputState, inputObject)
