@@ -52,7 +52,9 @@ local lastChoice
 local choiceMap = {}
 local currentConversationDialog
 local currentConversationPartner
-local currentAbortDialogScript
+
+local coroutineMap = {}
+local currentDialogTimeoutCoroutine = nil
 
 local tooFarAwayMessage =           "You are too far away to chat!"
 local tooFarAwaySize = 300
@@ -61,12 +63,13 @@ local characterWanderedOffSize = 350
 local conversationTimedOut =        "Chat ended because you didn't reply"
 local conversationTimedOutSize = 350
 
+local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
+local setDialogInUseEvent = RobloxReplicatedStorage:WaitForChild("SetDialogInUse")
+
 local player
 local screenGui
 local chatNotificationGui
 local messageDialog
-local timeoutScript
-local reenableDialogScript
 local dialogMap = {}
 local dialogConnections = {}
 local touchControlGui = nil
@@ -240,23 +243,24 @@ function timeoutDialog()
 	endDialog()
 	showMessage(conversationTimedOut, conversationTimedOutSize)
 end
+
 function normalEndDialog()
 	endDialog()
 end
 
 function endDialog()
-   if currentAbortDialogScript then
-		currentAbortDialogScript:Remove()
-		currentAbortDialogScript = nil
+   if currentDialogTimeoutCoroutine then
+		coroutineMap[currentDialogTimeoutCoroutine] = false
+		currentDialogTimeoutCoroutine = nil
 	end
 
 	local dialog = currentConversationDialog
 	currentConversationDialog = nil
 	if dialog and dialog.InUse then
-		local reenableScript = reenableDialogScript:Clone()
-		reenableScript.archivable = false
-		reenableScript.Disabled = false
-		reenableScript.Parent = dialog
+		coroutine.resume(coroutine.create(function()
+			wait(5)
+			setDialogInUseEvent:FireServer(dialog, false)
+		end))
 	end
 
 	for dialog, gui in pairs(dialogMap) do
@@ -438,16 +442,11 @@ function presentDialogChoices(talkingPart, dialogChoices)
 end
 
 function doDialog(dialog)
-	while not Instance.Lock(dialog, player) do
-		wait()
-	end
-
 	if dialog.InUse then
-		Instance.Unlock(dialog)
 		return
 	else
 		dialog.InUse = true
-		Instance.Unlock(dialog)
+		setDialogInUseEvent:FireServer(dialog, true)
 	end
 
 	currentConversationDialog = dialog
@@ -458,15 +457,21 @@ function doDialog(dialog)
 end
 
 function renewKillswitch(dialog)
-	if currentAbortDialogScript then
-		currentAbortDialogScript:Remove()
-		currentAbortDialogScript = nil
+	if currentDialogTimeoutCoroutine then
+		coroutineMap[currentDialogTimeoutCoroutine] = false
+		currentDialogTimeoutCoroutine = nil
 	end
 
-	currentAbortDialogScript = timeoutScript:Clone()
-	currentAbortDialogScript.archivable = false
-	currentAbortDialogScript.Disabled = false
-	currentAbortDialogScript.Parent = dialog
+	currentDialogTimeoutCoroutine = coroutine.create(function(thisCoroutine)
+		wait(15)
+		if thisCoroutine ~= nil then
+			if coroutineMap[thisCoroutine] == nil then
+				setDialogInUseEvent:FireServer(dialog, false)
+			end
+			coroutineMap[thisCoroutine] = nil
+		end
+	end)
+	coroutine.resume(currentDialogTimeoutCoroutine, currentDialogTimeoutCoroutine)
 end
 
 function checkForLeaveArea()
@@ -552,29 +557,10 @@ function addDialog(dialog)
 	end
 end
 
-function fetchScripts()
-	local model = game:GetService("InsertService"):LoadAsset(39226062)
-    if type(model) == "string" then -- load failed, lets try again
-		wait(0.1)
-		model = game:GetService("InsertService"):LoadAsset(39226062)
-	end
-	if type(model) == "string" then -- not going to work, lets bail
-		return
-	end
-
-	waitForChild(model,"TimeoutScript")
-	timeoutScript = model.TimeoutScript
-	waitForChild(model,"ReenableDialogScript")
-	reenableDialogScript = model.ReenableDialogScript
-end
-
 function onLoad()
   waitForProperty(game:GetService("Players"), "LocalPlayer")
   player = game:GetService("Players").LocalPlayer
   waitForProperty(player, "Character")
-
-  --print("Fetching Scripts")
-  fetchScripts()
 
   --print("Creating Guis")
   createChatNotificationGui()
