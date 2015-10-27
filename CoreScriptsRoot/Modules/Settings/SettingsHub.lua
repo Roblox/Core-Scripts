@@ -34,6 +34,7 @@ local platform = UserInputService:GetPlatform()
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
 local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
 local lastInputChangedCon = nil
+local chatWasVisible = false 
 
 --[[ CORE MODULES ]]
 local playerList = require(RobloxGui.Modules.PlayerlistModule)
@@ -386,7 +387,7 @@ local function CreateSettingsHub()
 		local function onScreenSizeChanged()
 			local largestPageSize = 600
 			local fullScreenSize = RobloxGui.AbsoluteSize.y
-			local bufferSize = (1-0.85) * fullScreenSize
+			local bufferSize = (1-0.95) * fullScreenSize
 			if isTenFootInterface then
 				largestPageSize = 800
 				bufferSize = 0.07 * fullScreenSize
@@ -395,14 +396,10 @@ local function CreateSettingsHub()
 			end
 			local barSize = this.HubBar.Size.Y.Offset
 			local extraSpace = bufferSize*2+barSize*2
-			
-			if utility:IsSmallTouchScreen() then
-				extraSpace = bufferSize+barSize+4
-			end
 
 			local usableScreenHeight = fullScreenSize - extraSpace
 			local minimumPageSize = 150
-			local usePageSize = minimumPageSize
+			local usePageSize = nil
 
 			if largestPageSize < usableScreenHeight then
 				usePageSize = largestPageSize
@@ -967,6 +964,7 @@ local function CreateSettingsHub()
 			playerList:HideTemp('SettingsMenu', true)
 
 			if chat:GetVisibility() then
+				chatWasVisible = true
 				chat:ToggleVisibility()
 			end
 
@@ -980,10 +978,12 @@ local function CreateSettingsHub()
 				this.Shield.Position = SETTINGS_SHIELD_INACTIVE_POSITION
 				this.Shield.Visible = this.Visible
 				this.SettingsShowSignal:fire(this.Visible)
+				pcall(function() GuiService:SetMenuIsOpen(false) end)
 			else
 				this.Shield:TweenPosition(SETTINGS_SHIELD_INACTIVE_POSITION, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.4, true, function()
 					this.Shield.Visible = this.Visible
 					this.SettingsShowSignal:fire(this.Visible)
+					if not this.Visible then pcall(function() GuiService:SetMenuIsOpen(false) end) end
 				end)
 			end
 
@@ -992,6 +992,11 @@ local function CreateSettingsHub()
 			end
 
 			playerList:HideTemp('SettingsMenu', false)
+
+			if chatWasVisible then
+				chat:ToggleVisibility()
+				chatWasVisible = false
+			end
 
 			pcall(function() UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
 			pcall(function() PlatformService.BlurIntensity = 0 end)
@@ -1003,7 +1008,6 @@ local function CreateSettingsHub()
 			removeBottomBarBindings(0.4)
 
 			GuiService.SelectedCoreObject = nil
-			pcall(function() GuiService:SetMenuIsOpen(false) end)
 		end
 	end
 
@@ -1040,7 +1044,7 @@ local function CreateSettingsHub()
 			this:SwitchToPage(this.MenuStack[#this.MenuStack], true, 1, skipAnimation)
 			if #this.MenuStack == 0 then
 				this:SetVisibility(false)
-				this.Pages.CurrentPage:Hide(0, 0)--, true, 0.4)
+				this.Pages.CurrentPage:Hide(0, 0)
 			end
 		else
 			this.MenuStack = {}

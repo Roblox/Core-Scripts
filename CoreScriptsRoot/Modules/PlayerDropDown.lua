@@ -84,6 +84,9 @@ local function createSignal()
 	return sig
 end
 
+--[[ Events ]]--
+local BlockStatusChanged = createSignal()
+
 --[[ Personal Server Stuff ]]--
 local IsPersonalServer = false
 local PersonalServerService = nil
@@ -204,6 +207,7 @@ end
 
 --[[ Functions for Blocking users ]]--
 local BlockedList = {}
+local MutedList = {}
 
 local function GetBlockedPlayersAsync()
 	local userId = LocalPlayer.userId
@@ -226,10 +230,15 @@ spawn(function()
 end)
 
 local function isBlocked(userId)
-	for _, currentBlockedUserId in pairs(BlockedList) do
-		if currentBlockedUserId == userId then
-			return true
-		end
+	if (BlockedList[userId] ~= nil and BlockedList[userId] == true) then
+		return true
+	end
+	return false
+end
+
+local function isMuted(userId)
+	if (MutedList[userId] ~= nil and MutedList[userId] == true) then
+		return true	
 	end
 	return false
 end
@@ -239,7 +248,8 @@ local function BlockPlayerAsync(playerToBlock)
 		local blockUserId = playerToBlock.UserId
 		if blockUserId > 0 then
 			if not isBlocked(blockUserId) then
-				table.insert(BlockedList, blockUserId)
+				BlockedList[blockUserId] = true
+				BlockStatusChanged:fire(blockUserId, true)
 				pcall(function()
 					local success = PlayersService:BlockUser(LocalPlayer.userId, blockUserId)
 				end)
@@ -253,19 +263,30 @@ local function UnblockPlayerAsync(playerToUnblock)
 		local unblockUserId = playerToUnblock.userId
 
 		if isBlocked(unblockUserId) then
-			local blockedUserIndex = nil
-			for index, blockedUserId in pairs(BlockedList) do
-				if blockedUserId == unblockUserId then
-					blockedUserIndex = index
-				end
-			end
-			if blockedUserIndex then
-				table.remove(BlockedList, blockedUserIndex)
-			end
+			BlockedList[unblockUserId] = nil
+			BlockStatusChanged:fire(unblockUserId, false)
 			pcall(function()
 				local success = PlayersService:UnblockUser(LocalPlayer.userId, unblockUserId)
 			end)
 		end
+	end
+end
+
+local function MutePlayer(playerToMute)
+	if playerToMute and LocalPlayer ~= playerToMute then
+		local muteUserId = playerToMute.UserId
+		if muteUserId > 0 then
+			if not isMuted(muteUserId) then
+				MutedList[muteUserId] = true
+			end
+		end
+	end
+end
+
+local function UnmutePlayer(playerToUnmute)
+	if playerToUnmute then
+		local unmuteUserId = playerToUnmute.UserId
+		MutedList[unmuteUserId] = nil
 	end
 end
 
@@ -502,12 +523,17 @@ function createPlayerDropDown()
 			canDeclineFriend = true
 		end
 
-		table.insert(buttons, {
-			Name = "FriendButton",
-			Text = friendText,
-			OnPress = onFriendButtonPressed,
-			})
-		if canDeclineFriend then
+		local blocked = isBlocked(playerDropDown.Player.userId)
+
+		if not blocked then
+			table.insert(buttons, {
+				Name = "FriendButton",
+				Text = friendText,
+				OnPress = onFriendButtonPressed,
+				})
+		end
+
+		if canDeclineFriend and not blocked then
 			table.insert(buttons, {
 				Name = "DeclineFriend",
 				Text = "Decline Friend Request",
@@ -517,12 +543,15 @@ function createPlayerDropDown()
 		-- following status
 		local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
 		local followerText = following and "Unfollow Player" or "Follow Player"
-		table.insert(buttons, {
-			Name = "FollowerButton",
-			Text = followerText,
-			OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
-			})
-		local blocked = isBlocked(playerDropDown.Player.userId)
+		
+		if not blocked then
+			table.insert(buttons, {
+				Name = "FollowerButton",
+				Text = followerText,
+				OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
+				})
+		end
+
 		local blockedText = blocked and "Unblock Player" or "Block Player"
 		table.insert(buttons, {
 			Name = "BlockButton",
@@ -574,8 +603,24 @@ do
 			return UnblockPlayerAsync(player)
 		end
 		
+		function blockingUtility:MutePlayer(player)
+			return MutePlayer(player)
+		end
+		
+		function blockingUtility:UnmutePlayer(player)
+			return UnmutePlayer(player)
+		end
+		
 		function blockingUtility:IsPlayerBlockedByUserId(userId)
 			return isBlocked(userId)
+		end
+
+		function blockingUtility:GetBlockedStatusChangedEvent()
+			return BlockStatusChanged
+		end
+		
+		function blockingUtility:IsPlayerMutedByUserId(userId)
+			return isMuted(userId)
 		end
 		
 		return blockingUtility

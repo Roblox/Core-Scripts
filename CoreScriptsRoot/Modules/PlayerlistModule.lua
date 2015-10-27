@@ -31,11 +31,11 @@ local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 
 local playerDropDownModule = require(RobloxGui.Modules:WaitForChild("PlayerDropDown"))
+local blockingUtility = playerDropDownModule:CreateBlockingUtility()
 local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 
 --[[ Fast Flags ]]--
 local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
---
 local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
 
 --[[ Start Module ]]--
@@ -100,7 +100,7 @@ local IsSmallScreenDevice = UserInputService.TouchEnabled and GuiService:GetScre
 
 local BaseUrl = game:GetService('ContentProvider').BaseUrl:lower()
 BaseUrl = string.gsub(BaseUrl, "/m.", "/www.")
-AssetGameUrl = BaseUrl.gsub('www', 'assetgame')
+AssetGameUrl = string.gsub(BaseUrl, 'www', 'assetgame')
 
 --[[ Constants ]]--
 local ENTRY_PAD = 2
@@ -156,6 +156,7 @@ local PLACE_OWNER_ICON = 'rbxasset://textures/ui/icon_placeowner.png'
 local BC_ICON = 'rbxasset://textures/ui/icon_BC-16.png'
 local TBC_ICON = 'rbxasset://textures/ui/icon_TBC-16.png'
 local OBC_ICON = 'rbxasset://textures/ui/icon_OBC-16.png'
+local BLOCKED_ICON = 'rbxasset://textures/ui/PlayerList/BlockedIcon.png'
 local FRIEND_ICON = 'rbxasset://textures/ui/icon_friends_16.png'
 local FRIEND_REQUEST_ICON = 'rbxasset://textures/ui/icon_friendrequestsent_16.png'
 local FRIEND_RECEIVED_ICON = 'rbxasset://textures/ui/icon_friendrequestrecieved-16.png'
@@ -264,38 +265,44 @@ local function getAdminIcon(player)
 	end
 end
 
-local function getAvatarIcon()
+local function getAvatarIcon(player)
 	local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function () return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
 	local thumbsUrl = BaseUrl
 	if(useSubdomainsFlagExists and useSubdomainsFlagValue and AssetGameUrl~=nil) then
 		thumbsUrl = AssetGameUrl
 	end
 
-	return thumbsUrl .. "Thumbs/Avatar.ashx?userid=" .. tostring(Player.userId) .. "&width=64&height=64"
+	return thumbsUrl .. "Thumbs/Avatar.ashx?userid=" .. tostring(player.userId) .. "&width=64&height=64"
 end
 
 local function getMembershipIcon(player)
 	if isTenFootInterface then
-		return getAvatarIcon()
+		return getAvatarIcon(player)
 	else
-		local userIdStr = tostring(player.userId)
-		local membershipType = player.MembershipType
-		if ADMINS[userIdStr] then
-			return ADMINS[userIdStr]
-		elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
-			return PLACE_OWNER_ICON
-		elseif membershipType == Enum.MembershipType.None then
-			return nil
-		elseif membershipType == Enum.MembershipType.BuildersClub then
-			return BC_ICON
-		elseif membershipType == Enum.MembershipType.TurboBuildersClub then
-			return TBC_ICON
-		elseif membershipType == Enum.MembershipType.OutrageousBuildersClub then
-			return OBC_ICON
+		if blockingUtility:IsPlayerBlockedByUserId(player.userId) then
+			return BLOCKED_ICON
 		else
-			error("PlayerList: Unknown value for membershipType"..tostring(membershipType))
+			local userIdStr = tostring(player.userId)
+			local membershipType = player.MembershipType
+			if ADMINS[userIdStr] then
+				return ADMINS[userIdStr]
+			elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
+				return PLACE_OWNER_ICON
+			elseif membershipType == Enum.MembershipType.None then
+				return ""
+			elseif membershipType == Enum.MembershipType.BuildersClub then
+				return BC_ICON
+			elseif membershipType == Enum.MembershipType.TurboBuildersClub then
+				return TBC_ICON
+			elseif membershipType == Enum.MembershipType.OutrageousBuildersClub then
+				return OBC_ICON
+			else
+				return ""
+			end
 		end
 	end
+
+	return ""
 end
 
 local function isValidStat(obj)
@@ -1486,13 +1493,14 @@ local closeListFunc = function(name, state, input)
 
 	isOpen = false
 	Container.Visible = false
+	spawn(function() GuiService:SetMenuIsOpen(false) end)
 	ContextActionService:UnbindCoreAction("CloseList")
 	ContextActionService:UnbindCoreAction("StopAction")
 	GuiService.SelectedCoreObject = nil
 	UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 end
 
-local setVisible = function(state)
+local setVisible = function(state, fromTemp)
 	Container.Visible = state
 
 	if IsGamepadSupported then
@@ -1507,14 +1515,14 @@ local setVisible = function(state)
 						local isUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
 													lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
 						if not isTenFootInterface then
-							if isUsingGamepad then
+							if isUsingGamepad and not fromTemp then
 								GuiService.SelectedCoreObject = frameChildren[i]
 							end
-						else
+						elseif not fromTemp then
 							GuiService.SelectedCoreObject = ScrollList
 						end
 
-						if isUsingGamepad then
+						if isUsingGamepad and not fromTemp then
 							UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 							ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
 							ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
@@ -1561,11 +1569,11 @@ Playerlist.HideTemp = function(self, key, hidden)
 
 	if next(TempHideKeys) == nil then
 		if isOpen then
-			setVisible(true)
+			setVisible(true, true)
 		end
 	else
 		if isOpen then
-			setVisible(false)
+			setVisible(false, true)
 		end
 	end
 end
@@ -1584,7 +1592,7 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 			return
 		end
 		
-		setVisible(enabled and isOpen and next(TempHideKeys) == nil)
+		setVisible(enabled and isOpen and next(TempHideKeys) == nil, true)
 		
 		if isTenFootInterface and topStat then
 			topStat:SetTopStatEnabled(enabled)
@@ -1610,5 +1618,18 @@ if GuiService then
 		GuiService:AddSelectionParent("PlayerListSelection", Container)
 	end
 end
+
+local blockStatusChanged = function(userId, isBlocked)
+	if userId < 0 then return end
+
+	for _,playerEntry in ipairs(PlayerEntries) do
+		if playerEntry.Player.UserId == userId then
+			playerEntry.Frame.BGFrame.MembershipIcon.Image = getMembershipIcon(playerEntry.Player)
+			return
+		end
+	end
+end
+
+blockingUtility:GetBlockedStatusChangedEvent():connect(blockStatusChanged)
 
 return Playerlist

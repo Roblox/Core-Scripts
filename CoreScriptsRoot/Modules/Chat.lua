@@ -946,11 +946,13 @@ local function CreateChatBarWidget(settings)
 		[function(chatBarText) return string.find(chatBarText, "^/%?") end] = "Help";
 		[function(chatBarText) return string.find(chatBarText, nocase("^/help")) end] = "Help";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/ignore ") .. "(%w+)") end] = "Block";
 		[function(chatBarText) return string.find(chatBarText, nocase("^/block ") .. "(%w+)") end] = "Block";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/unignore ") .. "(%w+)") end] = "Unblock";
 		[function(chatBarText) return string.find(chatBarText, nocase("^/unblock ") .. "(%w+)") end] = "Unblock";
+		
+		[function(chatBarText) return string.find(chatBarText, nocase("^/mute ") .. "(%w+)") end] = "Mute";
+
+		[function(chatBarText) return string.find(chatBarText, nocase("^/unmute ") .. "(%w+)") end] = "Unmute";
 	}
 
 	local ChatModesDict =
@@ -2175,7 +2177,7 @@ local function CreateChat()
 	function this:OnPlayerChatted(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		if this.ChatWindowWidget then
 			-- Don't add messages from blocked players
-			if not this:IsPlayerBlocked(sendingPlayer) then
+			if not (this:IsPlayerBlocked(sendingPlayer) or this:IsPlayerMuted(sendingPlayer)) then
 				this.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 			end
 		end
@@ -2241,6 +2243,46 @@ local function CreateChat()
 			end
 		end
 	end
+	
+	function this:IsPlayerMuted(player)
+		if blockingUtility then
+			return player and blockingUtility:IsPlayerMutedByUserId(player.userId)
+		else
+			return false
+		end
+	end
+	
+	function this:MutePlayer(playerToMute)
+		if playerToMute and playerToMute ~= Player then
+			if playerToMute.UserId > 0 then
+				if not this:IsPlayerMuted(playerToMute) then
+					if blockingUtility then
+						blockingUtility:MutePlayer(playerToMute)
+						this.ChatWindowWidget:AddSystemChatMessage(playerToMute.Name .. " is now muted.")
+					end
+				else
+					this.ChatWindowWidget:AddSystemChatMessage(playerToMute.Name .. " is already muted.")
+				end
+			else
+				this.ChatWindowWidget:AddSystemChatMessage("You cannot mute guests.")
+			end
+		else
+			this.ChatWindowWidget:AddSystemChatMessage("You cannot mute yourself.")
+		end
+	end
+	
+	function this:UnmutePlayer(playerToUnmute)
+		if playerToUnmute then
+			if this:IsPlayerMuted(playerToUnmute) then
+				if blockingUtility then
+					blockingUtility:UnmutePlayer(playerToUnmute)
+					this.ChatWindowWidget:AddSystemChatMessage(playerToUnmute.Name .. " is no longer muted.")
+				end
+			else
+				this.ChatWindowWidget:AddSystemChatMessage(playerToUnmute.Name .. " is not muted.")
+			end
+		end
+	end
 
 	function this:CreateTouchDeviceChatButton()
 		return Util.Create'ImageButton'
@@ -2270,8 +2312,10 @@ local function CreateChat()
 			this.ChatWindowWidget:AddSystemChatMessage("/t or /team - Team Chat")
 			this.ChatWindowWidget:AddSystemChatMessage("/a or /all - All Chat")
 
-			this.ChatWindowWidget:AddSystemChatMessage("/block [PlayerName] or /ignore [PlayerName] - Block communications from Target Player")
-			this.ChatWindowWidget:AddSystemChatMessage("/unblock [PlayerName] or /unignore [PlayerName] - Restore communications with Target Player")
+			this.ChatWindowWidget:AddSystemChatMessage("/block [PlayerName] - Block communications from Target Player")
+			this.ChatWindowWidget:AddSystemChatMessage("/unblock [PlayerName] - Restore communications with Target Player")
+			this.ChatWindowWidget:AddSystemChatMessage("/mute [PlayerName] - Mute in-game communications from Target Player")
+			this.ChatWindowWidget:AddSystemChatMessage("/unmute [PlayerName] - Restore in-game communications with Target Player")
 		end
 	end
 
@@ -2348,6 +2392,22 @@ local function CreateChat()
 						spawn(function() this:UnblockPlayerAsync(playerToBlock) end)
 					else
 						this.ChatWindowWidget:AddSystemChatMessage("Cannot unblock " .. unblockPlayerName .. " because they are not in the game.")
+					end
+				elseif actionType == "Mute" then
+					local mutePlayerName = capture and tostring(capture) or ""
+					local playerToMute = Util.GetPlayerByName(mutePlayerName)
+					if playerToMute then
+						this:MutePlayer(playerToMute)
+					else
+						this.ChatWindowWidget:AddSystemChatMessage("Cannot mute " .. mutePlayerName .. " because they are not in the game.")
+					end
+				elseif actionType == "Unmute" then
+					local unmutePlayerName = capture and tostring(capture) or ""
+					local playerToUnmute = Util.GetPlayerByName(unmutePlayerName)
+					if playerToUnmute then
+						this:UnmutePlayer(playerToUnmute)
+					else
+						this.ChatWindowWidget:AddSystemChatMessage("Cannot unmute " .. unmutePlayerName .. " because they are not in the game.")
 					end
 				elseif actionType == "Whisper" then
 					if success == false then

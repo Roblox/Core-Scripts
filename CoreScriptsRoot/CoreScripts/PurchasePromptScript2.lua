@@ -69,8 +69,8 @@ local GAMEPAD_BUTTONS = {}
 
 local ERROR_MSG = {
 	PURCHASE_DISABLED = "In-game purchases are temporarily disabled",
-	INVALID_FUNDS = "your account does not have enought Robux",
-	UNKNOWN = "Roblox is performing maintenance",
+	INVALID_FUNDS = "your account does not have enough ROBUX",
+	UNKNOWN = "ROBLOX is performing maintenance",
 	UNKNWON_FAILURE = "something went wrong"
 }
 local PURCHASE_MSG = {
@@ -700,6 +700,10 @@ local function onPurchaseFailed(failType)
 		failedText = "You need to create a ROBLOX account to buy items, visit www.roblox.com for more info."
 	end
 
+	RobuxIcon.Visible = false
+	TixIcon.Visible = false
+	CostText.Visible = false
+
 	ItemDescriptionText.Text = failedText
 	showPurchasePrompt()
 end
@@ -822,8 +826,10 @@ local function isFreeItem()
 end
 
 local function getPlayerBalance()
+	local platform = UserInputService:GetPlatform()
+	local apiPath = platform == Enum.Platform.XBoxOne and 'my/platform-currency-budget' or 'currency/balance'
+
 	local success, result = pcall(function()
-		local apiPath = "currency/balance"
 		return HttpRbxApiService:GetAsync(apiPath, true)
 	end)
 
@@ -834,7 +840,13 @@ local function getPlayerBalance()
 
 	if result == '' then return end
 
-	return HttpService:JSONDecode(result)
+	result = HttpService:JSONDecode(result)
+	if platform == Enum.Platform.XBoxOne then
+		result["robux"] = result["Robux"]
+		result["tickets"] = "0"
+	end
+
+	return result
 end
 
 local function isNotForSale()
@@ -1053,6 +1065,7 @@ end
 local function onAcceptPurchase()
 	if IsCurrentlyPurchasing then return end
 	--
+	disableControllerInput()
 	IsCurrentlyPurchasing = true
 	startPurchaseAnimation()
 	local startTime = tick()
@@ -1099,6 +1112,8 @@ local function onAcceptPurchase()
 	end
 
 	if tick() - startTime < 1 then wait(1) end 		-- artifical delay to show spinner for at least 1 second
+
+	enableControllerInput()
 
 	if not success then
 		print("PurchasePromptScript: onAcceptPurchase() failed because", result)
@@ -1202,10 +1217,15 @@ local function onBuyRobuxPrompt()
 				local PlatformService = nil
 				pcall(function() PlatformService = Game:GetService('PlatformService') end)
 				if PlatformService then
+					local platformPurchaseReturnInt = -1
 					local purchaseCallSuccess, purchaseErrorMsg = pcall(function()
-						PlatformService:BeginPlatformStorePurchase(ThirdPartyProductName)
+						platformPurchaseReturnInt = PlatformService:BeginPlatformStorePurchase(ThirdPartyProductName)
 					end)
-					nativePurchaseFinished(purchaseCallSuccess)
+					if purchaseCallSuccess then
+						nativePurchaseFinished(platformPurchaseReturnInt == 0)
+					else
+						nativePurchaseFinished(purchaseCallSuccess)
+					end
 				end
 			end)
 		else

@@ -147,6 +147,7 @@ local function Initialize()
 		end
 
 		local rowOffset = 50
+		local isOSX = UserInputService:GetPlatform() == Enum.Platform.OSX
 
 		local charMoveFrame = createPCGroup( "Character Movement", {[1] = {["Move Forward"] = "W/Up Arrow"}, 
 																	[2] = {["Move Backward"] = "S/Down Arrow"},
@@ -167,19 +168,19 @@ local function Initialize()
 		local hideHudSuccess, hideHudFlagValue = pcall(function() return settings():GetFFlag("AllowHideHudShortcut") end)
 		if (hideHudSuccess and hideHudFlagValue) then
 			miscFrame = createPCGroup("Misc", {	[1] = {["Screenshot"] = "Print Screen"}, 
-												[2] = {["Record Video"] = "F12"},
-												[3] = {["Hide HUD"] = "F7"},
-												[4] = {["Dev Console"] = "F9"},
+												[2] = {["Record Video"] = isOSX and "F12/fn + F12" or "F12"},
+												[3] = {["Hide HUD"] = isOSX and "F7/fn + F7" or "F7"},
+												[4] = {["Dev Console"] = isOSX and "F9/fn + F9" or "F9"},
 												[5] = {["Mouselock"] = "Shift"},
-												[6] = {["Graphics Level"] = "F10"},
-												[7] = {["Fullscreen"] = "F11"} })
+												[6] = {["Graphics Level"] = isOSX and "F10/fn + F10" or "F10"},
+												[7] = {["Fullscreen"] = isOSX and "F11/fn + F11" or "F11"} })
 		else
 			miscFrame = createPCGroup("Misc", {	[1] = {["Screenshot"] = "Print Screen"}, 
-												[2] = {["Record Video"] = "F12"},
-												[3] = {["Dev Console"] = "F9"},
+												[2] = {["Record Video"] = isOSX and "F12/fn + F12" or "F12"},
+												[3] = {["Dev Console"] = isOSX and "F9/fn + F9" or "F9"},
 												[4] = {["Mouselock"] = "Shift"},
-												[5] = {["Graphics Level"] = "F10"},
-												[6] = {["Fullscreen"] = "F11"} })
+												[5] = {["Graphics Level"] = isOSX and "F10/fn + F10" or "F10"},
+												[6] = {["Fullscreen"] = isOSX and "F11/fn + F11" or "F11"} })
 		end
 		miscFrame.Position = UDim2.new(2/3,PC_TABLE_SPACING * 2,0,0)
 		miscFrame.Parent = parentFrame
