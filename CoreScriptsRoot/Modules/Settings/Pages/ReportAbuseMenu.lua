@@ -71,6 +71,14 @@ local function Initialize()
 		end
 
 		this.WhichPlayerMode:UpdateDropDownList(playerNames)
+		
+		if index == 1 then
+			this.GameOrPlayerMode:SetSelectionIndex(1)
+			this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
+		end
+
+		this.WhichPlayerMode:SetInteractable(index > 1 and this.GameOrPlayerMode.CurrentIndex ~= 1)
+		this.GameOrPlayerMode:SetInteractable(index > 1)
 	end
 
 	------ TAB CUSTOMIZATION -------
@@ -99,7 +107,7 @@ local function Initialize()
 		if utility:IsSmallTouchScreen() then
 			this.GameOrPlayerFrame, 
 			this.GameOrPlayerLabel,
-			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1, -10)
+			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1)
 		else
 			this.GameOrPlayerFrame, 
 			this.GameOrPlayerLabel,

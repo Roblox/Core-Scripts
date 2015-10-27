@@ -1758,7 +1758,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				box.Text = ""
 			end
 		end)
-		box.FocusLost:connect(function()
+		box.FocusLost:connect(function(enterPressed, inputObject)
 			if GuiService.SelectedCoreObject == box and (not isMouseOverRow or forceReturnSelectionOnFocusLost) then
 				GuiService.SelectedCoreObject = nil
 			end
