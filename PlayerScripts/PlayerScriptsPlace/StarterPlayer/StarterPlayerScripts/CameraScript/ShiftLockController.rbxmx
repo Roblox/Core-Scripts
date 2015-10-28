@@ -219,7 +219,7 @@ LocalPlayer.OnTeleport:connect(function(teleportState)
 		if teleportSettings == nil then
 			teleportSettings = {}
 		end
-		teleportSettings["MouseLocked"] = isShiftLockMode
+		teleportSettings["MouseLocked"] = IsShiftLocked
 		TeleportService:SetTeleportSettings(teleportSettings)
 	end
 end)
