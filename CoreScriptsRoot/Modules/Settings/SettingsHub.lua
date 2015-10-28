@@ -34,6 +34,7 @@ local platform = UserInputService:GetPlatform()
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
 local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
 local lastInputChangedCon = nil
+local chatWasVisible = false 
 
 --[[ CORE MODULES ]]
 local playerList = require(RobloxGui.Modules.PlayerlistModule)
@@ -361,6 +362,14 @@ local function CreateSettingsHub()
 				this:SwitchToPage(this.ResetCharacterPage, nil, 1, true)
 			end
 
+			-- Xbox Only
+			local inviteToGameFunc = function()
+				local platformService = game:GetService('PlatformService')
+				if platformService then
+					platformService:PopupGameInviteUI()
+				end
+			end
+
 			local resumeFunc = function()
 				setVisibilityInternal(false)
 			end
@@ -371,9 +380,16 @@ local function CreateSettingsHub()
 				buttonImageAppend = "@2x"
 			end
 
-			addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
-				"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
-				leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
+			if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+				addBottomBarButton("InviteToGame", "Send Game Invites", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
+					"", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
+					inviteToGameFunc, {Enum.KeyCode.ButtonX})
+			else
+				addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
+					"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
+					leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
+			end
+
 			addBottomBarButton("ResetCharacter", "    Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png", 
 				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25), 
 				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY})
@@ -386,7 +402,7 @@ local function CreateSettingsHub()
 		local function onScreenSizeChanged()
 			local largestPageSize = 600
 			local fullScreenSize = RobloxGui.AbsoluteSize.y
-			local bufferSize = (1-0.85) * fullScreenSize
+			local bufferSize = (1-0.95) * fullScreenSize
 			if isTenFootInterface then
 				largestPageSize = 800
 				bufferSize = 0.07 * fullScreenSize
@@ -395,14 +411,10 @@ local function CreateSettingsHub()
 			end
 			local barSize = this.HubBar.Size.Y.Offset
 			local extraSpace = bufferSize*2+barSize*2
-			
-			if utility:IsSmallTouchScreen() then
-				extraSpace = bufferSize+barSize+4
-			end
 
 			local usableScreenHeight = fullScreenSize - extraSpace
 			local minimumPageSize = 150
-			local usePageSize = minimumPageSize
+			local usePageSize = nil
 
 			if largestPageSize < usableScreenHeight then
 				usePageSize = largestPageSize
@@ -904,7 +916,6 @@ local function CreateSettingsHub()
 		local switchedFromGamepadInput = switchedFromGamepadInput or isTenFootInterface
 		this.Visible = visible
 
-		this.SettingsShowSignal:fire(this.Visible)
 
 		this.Modal.Visible = this.Visible
 
@@ -914,6 +925,8 @@ local function CreateSettingsHub()
 		end
 
 		if this.Visible then
+			this.SettingsShowSignal:fire(this.Visible)
+
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
 			this.Shield.Visible = this.Visible
 			if noAnimation then
@@ -966,6 +979,7 @@ local function CreateSettingsHub()
 			playerList:HideTemp('SettingsMenu', true)
 
 			if chat:GetVisibility() then
+				chatWasVisible = true
 				chat:ToggleVisibility()
 			end
 
@@ -978,9 +992,13 @@ local function CreateSettingsHub()
 			if noAnimation then
 				this.Shield.Position = SETTINGS_SHIELD_INACTIVE_POSITION
 				this.Shield.Visible = this.Visible
+				this.SettingsShowSignal:fire(this.Visible)
+				pcall(function() GuiService:SetMenuIsOpen(false) end)
 			else
 				this.Shield:TweenPosition(SETTINGS_SHIELD_INACTIVE_POSITION, Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.4, true, function()
 					this.Shield.Visible = this.Visible
+					this.SettingsShowSignal:fire(this.Visible)
+					if not this.Visible then pcall(function() GuiService:SetMenuIsOpen(false) end) end
 				end)
 			end
 
@@ -989,6 +1007,11 @@ local function CreateSettingsHub()
 			end
 
 			playerList:HideTemp('SettingsMenu', false)
+
+			if chatWasVisible then
+				chat:ToggleVisibility()
+				chatWasVisible = false
+			end
 
 			pcall(function() UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
 			pcall(function() PlatformService.BlurIntensity = 0 end)
@@ -1000,7 +1023,6 @@ local function CreateSettingsHub()
 			removeBottomBarBindings(0.4)
 
 			GuiService.SelectedCoreObject = nil
-			pcall(function() GuiService:SetMenuIsOpen(false) end)
 		end
 	end
 
@@ -1037,7 +1059,7 @@ local function CreateSettingsHub()
 			this:SwitchToPage(this.MenuStack[#this.MenuStack], true, 1, skipAnimation)
 			if #this.MenuStack == 0 then
 				this:SetVisibility(false)
-				this.Pages.CurrentPage:Hide(0, 0)--, true, 0.4)
+				this.Pages.CurrentPage:Hide(0, 0)
 			end
 		else
 			this.MenuStack = {}

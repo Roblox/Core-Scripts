@@ -14,13 +14,8 @@ BackpackScript.StateChanged = Instance.new('BindableEvent') -- Fires after any o
 --| Configurables |--
 ---------------------
 
-local UseExperimentalGamepadEquip = false -- hotbar equipping in a new way! (its better!)
-
 local ICON_SIZE = 60
 local FONT_SIZE = Enum.FontSize.Size14
-if UseExperimentalGamepadEquip then
-	ICON_SIZE = 100
-end
 local ICON_BUFFER = 5
 
 local BACKGROUND_FADE = 0.50
@@ -43,9 +38,6 @@ local ARROW_HOTKEY = Enum.KeyCode.Backquote.Value --TODO: Hookup '~' too?
 local ARROW_HOTKEY_STRING = '`'
 
 local HOTBAR_SLOTS_FULL = 10
-if UseExperimentalGamepadEquip then
-	HOTBAR_SLOTS_FULL = 8
-end
 local HOTBAR_SLOTS_MINI = 3
 local HOTBAR_SLOTS_WIDTH_CUTOFF = 1024 -- Anything smaller is MINI
 local HOTBAR_OFFSET_FROMBOTTOM = -30 -- Offset to make room for the Health GUI
@@ -176,10 +168,7 @@ local function AdjustHotbarFrames()
 		if slot.Tool or inventoryOpen then
 			visualIndex = visualIndex + 1
 			slot:Readjust(visualIndex, visualTotal)
-
-			if not UseExperimentalGamepadEquip then
-				slot.Frame.Visible = true
-			end
+			slot.Frame.Visible = true
 		else
 			slot.Frame.Visible = false
 		end
@@ -261,28 +250,15 @@ local function MakeSlot(parent, index)
 		local sizePlus = ICON_BUFFER + ICON_SIZE
 
 		local modSlots = 0
-		if UseExperimentalGamepadEquip then
-			modSlots = ((index - HOTBAR_SLOTS) % 5)
-			if modSlots == 0 then
-				modSlots = 5
-			end
-		else
-			modSlots = ((index - 1) % HOTBAR_SLOTS) + 1
-		end
+		modSlots = ((index - 1) % HOTBAR_SLOTS) + 1
 
 		local row = 0 
-		if UseExperimentalGamepadEquip then
-			row = math.floor( (index - HOTBAR_SLOTS - 1) / 5 )
-		else
-			row = (index > HOTBAR_SLOTS) and (math.floor((index - 1) / HOTBAR_SLOTS)) - 1 or 0
-		end
+		row = (index > HOTBAR_SLOTS) and (math.floor((index - 1) / HOTBAR_SLOTS)) - 1 or 0
 
 		SlotFrame.Position = UDim2.new(0, ICON_BUFFER + ((modSlots - 1) * sizePlus), 0, ICON_BUFFER + (sizePlus * row))
 	end
 
 	function slot:Readjust(visualIndex, visualTotal) --NOTE: Only used for Hotbar slots
-		if UseExperimentalGamepadEquip then return end
-
 		local centered = HOTBAR_SIZE.X.Offset / 2
 		local sizePlus = ICON_BUFFER + ICON_SIZE
 		local midpointish = (visualTotal / 2) + 0.5
@@ -550,22 +526,10 @@ local function MakeSlot(parent, index)
 			SlotNumber.Parent = SlotFrame
 			HotkeyFns[ZERO_KEY_VALUE + slotNum] = slot.Select
 		end
-
-		if UseExperimentalGamepadEquip then
-			local radius = 200
-			local angle = (index + 5) * (math.pi/4)
-			SlotFrame.Position = UDim2.new(0.5,-50 + math.cos(angle) * radius,0.5,-50 + math.sin(angle) * radius)
-			SlotFrame.Visible = false
-		end
-
 	else -- Inventory-Specific Slot Stuff
 
 		local newRow = false
-		if UseExperimentalGamepadEquip then
-			newRow = (index % 5 == 1)
-		else
-			newRow = (index % HOTBAR_SLOTS == 1)
-		end
+		newRow = (index % HOTBAR_SLOTS == 1)
 
 		if newRow then -- We are the first slot of a new row! Adjust the CanvasSize
 			local lowestPoint = SlotFrame.Position.Y.Offset + SlotFrame.Size.Y.Offset
@@ -939,41 +903,6 @@ local selectToolExperiment = function(actionName, inputState, inputObject)
 	end
 end
 
-local changeToolFuncExperiment = nil
-changeToolFuncExperiment = function(actionName, inputState, inputObject)
-	local hasHotBar = false
-	for i = 1, HOTBAR_SLOTS do
-		if Slots[i].Tool then
-			hasHotBar = true
-			break
-		end
-	end
-
-	if not hasHotBar then return end
-
-	if inputState == Enum.UserInputState.Begin then
-		hotbarVisible = not hotbarVisible
-		if hotbarVisible then
-			HotbarFrame.Position = UDim2.new(0.5, -HotbarFrame.AbsoluteSize.x/2, 0.5, -HotbarFrame.AbsoluteSize.y/2)
-		end
-		setHotbarVisibility(hotbarVisible)
-	else
-		return
-	end
-
-	if not hotbarVisible then
-		selectDirection = Vector2.new(0,0)
-		ContextActionService:UnbindCoreAction("RBXRadialSelectTool")
-		ContextActionService:UnbindCoreAction("RBXRadialSelectToolKillInput")
-	else
-		UnequipAllTools()
-
-		ContextActionService:BindCoreAction("RBXRadialSelectToolKillInput", noOpFunc, false, Enum.UserInputType.Gamepad1)
-		ContextActionService:BindCoreAction("RBXRadialSelectTool", selectToolExperiment, false, Enum.KeyCode.Thumbstick1, 
-											Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown)
-	end
-end
-
 local changeToolFunc = function(actionName, inputState, inputObject)
 	if inputState ~= Enum.UserInputState.Begin then return end
 
@@ -1103,10 +1032,11 @@ function enableGamepadInventoryControl()
 			end
 		elseif InventoryFrame.Visible then
 			BackpackScript.OpenClose()
+			spawn(function() GuiService:SetMenuIsOpen(false) end)
 		end
 	end
 
-	ContextActionService:BindCoreAction("RBXBackpackHasGamepadFocus",noOpFunc, false, Enum.UserInputType.Gamepad1)
+	ContextActionService:BindCoreAction("RBXBackpackHasGamepadFocus", noOpFunc, false, Enum.UserInputType.Gamepad1)
 	ContextActionService:BindCoreAction("RBXCloseInventory", goBackOneLevel, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
 
 	GuiService.SelectedCoreObject = HotbarFrame:FindFirstChild("1")
@@ -1136,13 +1066,7 @@ function gamepadConnected()
 	GamepadEnabled = true
 	GuiService:AddSelectionParent("RBXBackpackSelection", MainFrame)
 
-	if UseExperimentalGamepadEquip then
-		if not gamepadActionsBound then
-			gamepadActionsBound = true
-			ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1)
-		end
-		HotbarFrame.Position = UDim2.new(HotbarFrame.Position.X.Scale, HotbarFrame.Position.X.Offset, 0.5, -35)
-	elseif not gamepadActionsBound then
+	if not gamepadActionsBound then
 		gamepadActionsBound = true
 		ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
 	end
@@ -1174,13 +1098,8 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 
 		if IsGamepadSupported and GamepadEnabled then
 			if enabled then
-				if UseExperimentalGamepadEquip then
-					gamepadActionsBound = true
-					ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFuncExperiment, false, Enum.KeyCode.ButtonR1)
-				else
-					gamepadActionsBound = true
-					ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
-				end
+				gamepadActionsBound = true
+				ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
 			else
 				disableGamepadInventoryControl()
 				gamepadActionsBound = false
@@ -1230,24 +1149,15 @@ InventoryFrame = NewGui('Frame', 'Inventory')
 InventoryFrame.BackgroundTransparency = BACKGROUND_FADE
 InventoryFrame.BackgroundColor3 = BACKGROUND_COLOR
 InventoryFrame.Active = true
-if UseExperimentalGamepadEquip then
-	InventoryFrame.Size = UDim2.new(0, 530, 0, 480)
-	InventoryFrame.Position = UDim2.new(0.5, -530, 0.5, -240)
-else
-	InventoryFrame.Size = UDim2.new(0, HotbarFrame.Size.X.Offset, 0, (HotbarFrame.Size.Y.Offset * INVENTORY_ROWS) + INVENTORY_HEADER_SIZE)
-	InventoryFrame.Position = UDim2.new(0.5, -InventoryFrame.Size.X.Offset / 2, 1, HotbarFrame.Position.Y.Offset - InventoryFrame.Size.Y.Offset)
-end
+InventoryFrame.Size = UDim2.new(0, HotbarFrame.Size.X.Offset, 0, (HotbarFrame.Size.Y.Offset * INVENTORY_ROWS) + INVENTORY_HEADER_SIZE)
+InventoryFrame.Position = UDim2.new(0.5, -InventoryFrame.Size.X.Offset / 2, 1, HotbarFrame.Position.Y.Offset - InventoryFrame.Size.Y.Offset)
 InventoryFrame.Visible = false
 InventoryFrame.Parent = MainFrame
 
 -- Make the ScrollingFrame, which holds the rest of the Slots (however many)
 ScrollingFrame = NewGui('ScrollingFrame', 'ScrollingFrame')
 ScrollingFrame.Selectable = false
-if UseExperimentalGamepadEquip then
-	ScrollingFrame.Size = UDim2.new(1, 0, 1, -INVENTORY_HEADER_SIZE)
-else
-	ScrollingFrame.Size = UDim2.new(1, ScrollingFrame.ScrollBarThickness + 1, 1, -INVENTORY_HEADER_SIZE)
-end
+ScrollingFrame.Size = UDim2.new(1, ScrollingFrame.ScrollBarThickness + 1, 1, -INVENTORY_HEADER_SIZE)
 
 ScrollingFrame.Position = UDim2.new(0, 0, 0, INVENTORY_HEADER_SIZE)
 ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -1524,17 +1434,8 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 
 			if InventoryFrame.Visible and GamepadEnabled then
 				ContextActionService:BindCoreAction("RBXRemoveSlot", removeHotBarSlot, false, Enum.KeyCode.ButtonX)
-				if UseExperimentalGamepadEquip then
-					HotbarFrame.Position = UDim2.new(1, -800, 0.5, -35)
-					setHotbarVisibility(true, true)
-				end
 			elseif GamepadEnabled then
 				ContextActionService:UnbindCoreAction("RBXRemoveSlot")
-
-				if UseExperimentalGamepadEquip then
-					setHotbarVisibility(false)
-					HotbarFrame.Position = UDim2.new(0.5, -HotbarFrame.AbsoluteSize.x/2, 0.5, -HotbarFrame.AbsoluteSize.y/2)
-				end
 			end
 		end
 		BackpackScript.IsOpen = InventoryFrame.Visible

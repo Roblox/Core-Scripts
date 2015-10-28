@@ -308,7 +308,7 @@ local function sendNotifcation(title, text, image, duration, callback, button1Te
 				if callback and type(callback) ~= "function" then -- callback should be a bindable
 					pcall(function() callback:Invoke(button1Text) end)
 				elseif type(callback) == "function" then
-					callback(button2Text)
+					callback(button1Text)
 				end
 			end
 		end)
@@ -352,7 +352,7 @@ spawn(function()
 	local RemoteEvent_OnNewFollower = RobloxReplicatedStorage:WaitForChild('OnNewFollower')
 	--
 	RemoteEvent_OnNewFollower.OnClientEvent:connect(function(followerRbxPlayer)
-		sendNotifcation("New Follower", followerRbxPlayer.Name.."is now following you!",
+		sendNotifcation("New Follower", followerRbxPlayer.Name.." is now following you!",
 			FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
 	end)
 end)
@@ -433,9 +433,14 @@ local function onBadgeAwarded(message, userId, badgeId)
 end
 
 --[[ Graphics Changes Notification ]]--
-function onGameSettingsChanged(property)
+function onGameSettingsChanged(property, amount)
 	if property == "SavedQualityLevel" then
-		local level = GameSettings.SavedQualityLevel.Value
+		local level = GameSettings.SavedQualityLevel.Value + amount
+		if level > 10 then
+			level = 10
+		elseif level < 1 then
+			level = 1
+		end
 		-- value of 0 is automatic, we do not want to send a notification in that case
 		if level > 0 and level ~= CurrentGraphicsQualityLevel then
 			if level > CurrentGraphicsQualityLevel then
@@ -453,7 +458,10 @@ if not isTenFootInterface then
 	Players.FriendRequestEvent:connect(onFriendRequestEvent)
 	PointsService.PointsAwarded:connect(onPointsAwarded)
 	BadgeService.BadgeAwarded:connect(onBadgeAwarded)
-	GameSettings.Changed:connect(onGameSettingsChanged)
+	--GameSettings.Changed:connect(onGameSettingsChanged)
+	game.GraphicsQualityChangeRequest:connect(function(graphicsIncrease) --graphicsIncrease is a boolean
+		onGameSettingsChanged("SavedQualityLevel", graphicsIncrease == true and 1 or -1)
+	end)
 end
 
 GuiService.SendCoreUiNotification = function(title, text)
@@ -603,3 +611,22 @@ if useNewControllerMenu and not isTenFootInterface then
 	end)
 end
 
+local UserInputService = game:GetService('UserInputService')
+local Platform = UserInputService:GetPlatform()
+local Modules = RobloxGui:FindFirstChild('Modules')
+if Platform == Enum.Platform.XBoxOne then
+	-- Platform hook for controller connection events
+	-- Displays overlay to user on controller connection lost
+	local PlatformService = nil
+	pcall(function() PlatformService = game:GetService('PlatformService') end)
+	if PlatformService and Modules then
+		local controllerStateManager = require(Modules:FindFirstChild('ControllerStateManager'))
+		if controllerStateManager then
+			controllerStateManager:Initialize()
+
+			-- retro check in case of controller disconnect while loading
+			-- for now, gamepad1 is always mapped to the active user
+			controllerStateManager:CheckUserConnected()
+		end
+	end
+end

@@ -2176,8 +2176,14 @@ local function CreateChat()
 	-- Enum.PlayerChatType.{All|Team|Whisper}, chatPlayer, message, targetPlayer
 	function this:OnPlayerChatted(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 		if this.ChatWindowWidget then
-			-- Don't add messages from blocked players
-			if not (this:IsPlayerBlocked(sendingPlayer) or this:IsPlayerMuted(sendingPlayer)) then
+			-- Don't add messages from blocked players, don't show message if is a debug command
+			local isDebugCommand = false
+			pcall(function()
+				if sendingPlayer == PlayersService.LocalPlayer then
+					isDebugCommand = game:GetService("GuiService"):ShowStatsBasedOnInputString(chattedMessage)
+				end
+			end)
+			if not (this:IsPlayerBlocked(sendingPlayer) or this:IsPlayerMuted(sendingPlayer) or isDebugCommand) then
 				this.ChatWindowWidget:AddChatMessage(playerChatType, sendingPlayer, chattedMessage, receivingPlayer)
 			end
 		end

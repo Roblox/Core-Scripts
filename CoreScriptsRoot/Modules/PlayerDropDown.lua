@@ -84,6 +84,9 @@ local function createSignal()
 	return sig
 end
 
+--[[ Events ]]--
+local BlockStatusChanged = createSignal()
+
 --[[ Personal Server Stuff ]]--
 local IsPersonalServer = false
 local PersonalServerService = nil
@@ -520,12 +523,17 @@ function createPlayerDropDown()
 			canDeclineFriend = true
 		end
 
-		table.insert(buttons, {
-			Name = "FriendButton",
-			Text = friendText,
-			OnPress = onFriendButtonPressed,
-			})
-		if canDeclineFriend then
+		local blocked = isBlocked(playerDropDown.Player.userId)
+
+		if not blocked then
+			table.insert(buttons, {
+				Name = "FriendButton",
+				Text = friendText,
+				OnPress = onFriendButtonPressed,
+				})
+		end
+
+		if canDeclineFriend and not blocked then
 			table.insert(buttons, {
 				Name = "DeclineFriend",
 				Text = "Decline Friend Request",
@@ -535,12 +543,15 @@ function createPlayerDropDown()
 		-- following status
 		local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
 		local followerText = following and "Unfollow Player" or "Follow Player"
-		table.insert(buttons, {
-			Name = "FollowerButton",
-			Text = followerText,
-			OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
-			})
-		local blocked = isBlocked(playerDropDown.Player.userId)
+		
+		if not blocked then
+			table.insert(buttons, {
+				Name = "FollowerButton",
+				Text = followerText,
+				OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
+				})
+		end
+
 		local blockedText = blocked and "Unblock Player" or "Block Player"
 		table.insert(buttons, {
 			Name = "BlockButton",
@@ -602,6 +613,10 @@ do
 		
 		function blockingUtility:IsPlayerBlockedByUserId(userId)
 			return isBlocked(userId)
+		end
+
+		function blockingUtility:GetBlockedStatusChangedEvent()
+			return BlockStatusChanged
 		end
 		
 		function blockingUtility:IsPlayerMutedByUserId(userId)
