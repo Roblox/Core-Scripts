@@ -18,6 +18,7 @@
 	// keys, this module will use UserInputService.
 --]]
 local ContextActionService = game:GetService('ContextActionService')
+local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService('Players')
 local StarterPlayer = game:GetService('StarterPlayer')
 local UserInputService = game:GetService('UserInputService')
@@ -75,6 +76,8 @@ local function onShiftLockToggled()
 	ShiftLockController.OnShiftLockToggled:Fire()
 end
 
+local firstRun = true
+
 local function initialize()
 	if ScreenGui then
 		ScreenGui:Destroy()
@@ -102,6 +105,16 @@ local function initialize()
 	ShiftLockIcon.MouseButton1Click:connect(onShiftLockToggled)
 	
 	ScreenGui.Parent = PlayerGui
+	
+	if firstRun and UserSettings():IsUserFeatureEnabled("UserMouseLockSettingSaveTeleport") then
+		firstRun = false
+		local teleportSettings = TeleportService:GetTeleportSettings()
+		if teleportSettings ~= nil and teleportSettings["MouseLocked"] ~= nil and teleportSettings["MouseLocked"] then
+			if not IsShiftLocked then
+				onShiftLockToggled()
+			end
+		end
+	end
 end
 
 --[[ Public API ]]--
@@ -197,6 +210,17 @@ LocalPlayer.CharacterAdded:connect(function(character)
 	-- we need to recreate guis on character load
 	if not UserInputService.TouchEnabled then
 		initialize()
+	end
+end)
+
+LocalPlayer.OnTeleport:connect(function(teleportState)
+	if teleportState ~= Enum.TeleportState.Failed then
+		local teleportSettings = TeleportService:GetTeleportSettings()
+		if teleportSettings == nil then
+			teleportSettings = {}
+		end
+		teleportSettings["MouseLocked"] = isShiftLockMode
+		TeleportService:SetTeleportSettings(teleportSettings)
 	end
 end)
 
