@@ -615,19 +615,15 @@ local function getRobuxProduct(amountNeeded, isBCMember)
 		productArray = isBCMember and BC_ROBUX_PRODUCTS or NON_BC_ROBUX_PRODUCTS
 	end
 
-	local closestProduct = productArray[1]
-	local closestIndex = 1
+	table.sort(productArray, function(a,b) return a < b end)
 
 	for i = 1, #productArray do
-		if (math.abs(productArray[i] - amountNeeded) < math.abs(closestProduct - amountNeeded)) then
-			closestProduct = productArray[i]
-			closestIndex = i
+		if productArray[i] >= amountNeeded then
+			return productArray[i]
 		end
 	end
-	if closestProduct < amountNeeded then
-		closestProduct = productArray[1 + closestIndex]
-	end
-	return closestProduct
+
+	return productArray[1]
 end
 
 local function getRobuxProductToBuyItem(amountNeeded)
