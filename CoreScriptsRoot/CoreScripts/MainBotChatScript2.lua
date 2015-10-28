@@ -46,6 +46,9 @@ end
 local gamepadDialogFlagSuccess, gamepadDialogFlagValue = pcall(function() return settings():GetFFlag("GamepadDialogSupport") end)
 local gamepadDialogSupportEnabled = (gamepadDialogFlagSuccess and gamepadDialogFlagValue == true)
 
+local filteringEnabledFixFlagSuccess, filteringEnabledFixFlagValue = pcall(function() return settings():GetFFlag("FilteringEnabledDialogFix") end)
+local filterEnabledFixActive = (filteringEnabledFixFlagSuccess and filteringEnabledFixFlagValue)
+
 local mainFrame
 local choices = {}
 local lastChoice
@@ -54,12 +57,18 @@ local currentConversationDialog
 local currentConversationPartner
 local currentAbortDialogScript
 
+local coroutineMap = {}
+local currentDialogTimeoutCoroutine = nil
+
 local tooFarAwayMessage =           "You are too far away to chat!"
 local tooFarAwaySize = 300
 local characterWanderedOffMessage = "Chat ended because you walked away"
 local characterWanderedOffSize = 350
 local conversationTimedOut =        "Chat ended because you didn't reply"
 local conversationTimedOutSize = 350
+
+local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
+local setDialogInUseEvent = RobloxReplicatedStorage:WaitForChild("SetDialogInUse")
 
 local player
 local screenGui
@@ -240,23 +249,38 @@ function timeoutDialog()
 	endDialog()
 	showMessage(conversationTimedOut, conversationTimedOutSize)
 end
+
 function normalEndDialog()
 	endDialog()
 end
 
 function endDialog()
-   if currentAbortDialogScript then
-		currentAbortDialogScript:Remove()
-		currentAbortDialogScript = nil
+	if filterEnabledFixActive then
+		if currentDialogTimeoutCoroutine then
+			coroutineMap[currentDialogTimeoutCoroutine] = false
+			currentDialogTimeoutCoroutine = nil
+		end
+	else
+		if currentAbortDialogScript then
+			currentAbortDialogScript:Destroy()
+			currentAbortDialogScript = nil
+		end
 	end
 
 	local dialog = currentConversationDialog
 	currentConversationDialog = nil
 	if dialog and dialog.InUse then
-		local reenableScript = reenableDialogScript:Clone()
-		reenableScript.archivable = false
-		reenableScript.Disabled = false
-		reenableScript.Parent = dialog
+		if filterEnabledFixActive then
+			spawn(function()
+				wait(5)
+				setDialogInUseEvent:FireServer(dialog, false)
+			end)
+		else
+			local reenableScript = reenableDialogScript:Clone()
+			reenableScript.Archivable = false
+			reenableScript.Disabled = false
+			reenableScript.Parent = dialog
+		end
 	end
 
 	for dialog, gui in pairs(dialogMap) do
@@ -438,16 +462,13 @@ function presentDialogChoices(talkingPart, dialogChoices)
 end
 
 function doDialog(dialog)
-	while not Instance.Lock(dialog, player) do
-		wait()
-	end
-
 	if dialog.InUse then
-		Instance.Unlock(dialog)
 		return
 	else
 		dialog.InUse = true
-		Instance.Unlock(dialog)
+		if filterEnabledFixActive then
+			setDialogInUseEvent:FireServer(dialog, true)
+		end
 	end
 
 	currentConversationDialog = dialog
@@ -458,15 +479,35 @@ function doDialog(dialog)
 end
 
 function renewKillswitch(dialog)
-	if currentAbortDialogScript then
-		currentAbortDialogScript:Remove()
-		currentAbortDialogScript = nil
+	if filterEnabledFixActive then
+		if currentDialogTimeoutCoroutine then
+			coroutineMap[currentDialogTimeoutCoroutine] = false
+			currentDialogTimeoutCoroutine = nil
+		end
+	else
+		if currentAbortDialogScript then
+			currentAbortDialogScript:Destroy()
+			currentAbortDialogScript = nil
+		end
 	end
 
-	currentAbortDialogScript = timeoutScript:Clone()
-	currentAbortDialogScript.archivable = false
-	currentAbortDialogScript.Disabled = false
-	currentAbortDialogScript.Parent = dialog
+	if filterEnabledFixActive then
+		currentDialogTimeoutCoroutine = coroutine.create(function(thisCoroutine)
+			wait(15)
+			if thisCoroutine ~= nil then
+				if coroutineMap[thisCoroutine] == nil then
+					setDialogInUseEvent:FireServer(dialog, false)
+				end
+				coroutineMap[thisCoroutine] = nil
+			end
+		end)
+		coroutine.resume(currentDialogTimeoutCoroutine, currentDialogTimeoutCoroutine)
+	else
+		currentAbortDialogScript = timeoutScript:Clone()
+		currentAbortDialogScript.Archivable = false
+		currentAbortDialogScript.Disabled = false
+		currentAbortDialogScript.Parent = dialog
+	end
 end
 
 function checkForLeaveArea()
@@ -573,9 +614,6 @@ function onLoad()
   player = game:GetService("Players").LocalPlayer
   waitForProperty(player, "Character")
 
-  --print("Fetching Scripts")
-  fetchScripts()
-
   --print("Creating Guis")
   createChatNotificationGui()
 
@@ -584,6 +622,10 @@ function onLoad()
   messageDialog.RobloxLocked = true
   messageDialog.Parent = gui
 
+  if not filterEnabledFixActive then
+	fetchScripts()
+  end 
+  
   --print("Waiting for BottomLeftControl")
   waitForChild(gui, "BottomLeftControl")
 
