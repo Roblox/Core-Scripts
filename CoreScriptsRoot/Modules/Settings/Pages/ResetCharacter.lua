@@ -15,7 +15,13 @@ local CoreGui = game:GetService("CoreGui")
 local ContextActionService = game:GetService("ContextActionService")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
-local Players = game:GetService("Players)
+local Players = game:GetService("Players")
+
+------------ Variables -------------------
+local PageInstance = nil
+RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
+local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+local Player = Players.LocalPlayer
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
@@ -29,12 +35,6 @@ local function canResetChar()
 		end
 	end return false	
 end
-
------------- Variables -------------------
-local PageInstance = nil
-RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
-local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
-local Player = Players.LocalPlayer
 
 ----------- CLASS DECLARATION --------------
 local function Initialize()
@@ -86,7 +86,7 @@ local function Initialize()
 	end
 
 	------ Init -------
-	local function resetCharFuncn()
+	local function resetCharFunc()
 		local character = Player.Character
 		if character then
 			local humanoid = character:FindFirstChild("Humanoid")
