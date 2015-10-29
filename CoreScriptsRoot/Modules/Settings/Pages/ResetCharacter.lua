@@ -8,7 +8,7 @@
 -------------- CONSTANTS -------------
 local RESET_CHARACTER_GAME_ACTION = "ResetCharacterAction"
 local RESET_ENABLED_TEXT = "Are you sure you want to reset your character?"
-local RESET_DISABLED_TEXT = "The game doesn't allow you to reset!"
+local RESET_DISABLED_TEXT = "You can currently not reset!"
 
 -------------- SERVICES --------------
 local CoreGui = game:GetService("CoreGui")
