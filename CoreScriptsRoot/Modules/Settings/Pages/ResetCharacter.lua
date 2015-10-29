@@ -7,20 +7,35 @@
 
 -------------- CONSTANTS -------------
 local RESET_CHARACTER_GAME_ACTION = "ResetCharacterAction"
+local RESET_ENABLED_TEXT = "Are you sure you want to reset your character?"
+local RESET_DISABLED_TEXT = "The game doesn't allow you to reset!"
+
 
 -------------- SERVICES --------------
 local CoreGui = game:GetService("CoreGui")
 local ContextActionService = game:GetService("ContextActionService")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
+local Players = game:GetService("Players)
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
+
+local function canResetChar()
+	local character = Player.Character
+	if character then
+		local humanoid = character:FindFirstChild("Humanoid")
+		if humanoid then
+			return humanoid:GetStateEnabled(Enum.HumanoidStateType.Dead)
+		end
+	end return false	
+end
 
 ------------ Variables -------------------
 local PageInstance = nil
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+local Player = Players.LocalPlayer
 
 ----------- CLASS DECLARATION --------------
 
@@ -54,7 +69,7 @@ local function Initialize()
 	local resetCharacterText =  utility:Create'TextLabel'
 	{
 		Name = "ResetCharacterText",
-		Text = "Are you sure you want to reset your character?",
+		Text = RESET_ENABLED_TEXT,
 		Font = Enum.Font.SourceSansBold,
 		FontSize = Enum.FontSize.Size36,
 		TextColor3 = Color3.new(1,1,1),
@@ -64,6 +79,7 @@ local function Initialize()
 		ZIndex = 2,
 		Parent = this.Page
 	};
+	this.resetCharacterText = resetCharacterText
 	if utility:IsSmallTouchScreen() then
 		resetCharacterText.FontSize = Enum.FontSize.Size24
 		resetCharacterText.Size = UDim2.new(1,0,0,100)
@@ -72,13 +88,12 @@ local function Initialize()
 	end
 
 	------ Init -------
-	local resetCharFunc = function()
-		local player = game.Players.LocalPlayer
-		if player then
-			local character = player.Character
-			if character then
-				local humanoid = character:FindFirstChild('Humanoid')
-				if humanoid then
+	local function resetCharFuncn()
+		local character = Player.Character
+		if character then
+			local humanoid = character:FindFirstChild("Humanoid")
+			if humanoid then
+				if humanoid:GetStateEnabled(Enum.HumanoidStateType.Dead) then
 					humanoid.Health = 0
 				end
 			end
@@ -96,17 +111,19 @@ local function Initialize()
 		buttonSize = UDim2.new(0, 300, 0, 80)
 	end
 
-	this.ResetCharacterButton = utility:MakeStyledButton("ResetCharacter", "Reset", buttonSize, resetCharFunc)
-	this.ResetCharacterButton.NextSelectionRight = nil
+	local ResetCharacterButton = utility:MakeStyledButton("ResetCharacter", "Reset", buttonSize, resetCharFunc)
+	this.ResetCharacterButton = ResetCharacterButton
+	ResetCharacterButton.NextSelectionRight = nil
 	if utility:IsSmallTouchScreen() then
-		this.ResetCharacterButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, 0)
+		ResetCharacterButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, 0)
 	else
-		this.ResetCharacterButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, -30)
+		ResetCharacterButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, -30)
 	end
-	this.ResetCharacterButton.Parent = resetCharacterText
+	ResetCharacterButton.Parent = resetCharacterText
 
 
 	local dontResetCharacterButton = utility:MakeStyledButton("DontResetCharacter", "Don't Reset", buttonSize, this.DontResetCharFromButton)
+	this.dontResetCharacterButton = dontResetCharacterButton
 	dontResetCharacterButton.NextSelectionLeft = nil
 	if utility:IsSmallTouchScreen() then
 		dontResetCharacterButton.Position = UDim2.new(0.5, buttonSpacing, 1, 0)
@@ -125,7 +142,10 @@ end
 PageInstance = Initialize()
 
 PageInstance.Displayed.Event:connect(function()
-	GuiService.SelectedCoreObject = PageInstance.ResetCharacterButton
+	local canReset = canResetChar()
+	PageInstance.ResetCharacterButton.Visible = canReset
+	PageInstance.resetCharacterText.Text = canReset and RESET_ENABLED_TEXT or RESET_DISABLED_TEXT
+	GuiService.SelectedCoreObject = PageInstance[canReset and "ResetCharacterButton" or "dontResetCharacterButton"]
 	ContextActionService:BindCoreAction(RESET_CHARACTER_GAME_ACTION, PageInstance.DontResetCharFromHotkey, false, Enum.KeyCode.ButtonB)
 end)
 
