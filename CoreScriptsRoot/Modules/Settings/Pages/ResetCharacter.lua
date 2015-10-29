@@ -10,7 +10,6 @@ local RESET_CHARACTER_GAME_ACTION = "ResetCharacterAction"
 local RESET_ENABLED_TEXT = "Are you sure you want to reset your character?"
 local RESET_DISABLED_TEXT = "The game doesn't allow you to reset!"
 
-
 -------------- SERVICES --------------
 local CoreGui = game:GetService("CoreGui")
 local ContextActionService = game:GetService("ContextActionService")
@@ -38,7 +37,6 @@ local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled
 local Player = Players.LocalPlayer
 
 ----------- CLASS DECLARATION --------------
-
 local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
