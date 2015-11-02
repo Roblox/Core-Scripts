@@ -108,8 +108,7 @@ local function initialize()
 	
 	if firstRun and UserSettings():IsUserFeatureEnabled("UserMouseLockSettingSaveTeleport") then
 		firstRun = false
-		local teleportSettings = TeleportService:GetTeleportSettings()
-		if teleportSettings ~= nil and teleportSettings["MouseLocked"] ~= nil and teleportSettings["MouseLocked"] then
+		if TeleportService:GetTeleportSetting("MouseLocked") == true then
 			if not IsShiftLocked then
 				onShiftLockToggled()
 			end
@@ -215,12 +214,7 @@ end)
 
 LocalPlayer.OnTeleport:connect(function(teleportState)
 	if teleportState ~= Enum.TeleportState.Failed then
-		local teleportSettings = TeleportService:GetTeleportSettings()
-		if teleportSettings == nil then
-			teleportSettings = {}
-		end
-		teleportSettings["MouseLocked"] = IsShiftLocked
-		TeleportService:SetTeleportSettings(teleportSettings)
+		TeleportService:SetTeleportSetting("MouseLocked", IsShiftLocked)
 	end
 end)
 

@@ -722,12 +722,7 @@ local function CreateCamera()
 
 		player.OnTeleport:connect(function(teleportState)
 			if teleportState ~= Enum.TeleportState.Failed then
-				local teleportSettings = TeleportService:GetTeleportSettings()
-				if teleportSettings == nil then
-					teleportSettings = {}
-				end
-				teleportSettings["StartInFirstPerson"] = this:IsInFirstPerson()
-				TeleportService:SetTeleportSettings(teleportSettings)
+				TeleportService:SetTeleportSetting("StartInFirstPerson", this:IsInFirstPerson())
 			end
 		end)
 		
@@ -736,8 +731,7 @@ local function CreateCamera()
 		local function OnCharacterAdded(newCharacter)
 			if firstRun and UserSettings():IsUserFeatureEnabled("UserCameraZoomPersistThroughTeleport") then
 				firstRun = false
-				local teleportSettings = TeleportService:GetTeleportSettings()
-				if teleportSettings ~= nil and teleportSettings["StartInFirstPerson"] ~= nil and teleportSettings["StartInFirstPerson"] then
+				if TeleportService:GetTeleportSetting("StartInFirstPerson") == true then
 					this:ZoomCamera(0)
 				end
 			else
