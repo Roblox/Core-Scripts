@@ -25,7 +25,6 @@ end
 local Player = Players.LocalPlayer
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 
-
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
@@ -265,38 +264,35 @@ local function getAdminIcon(player)
 	end
 end
 
-local function getAvatarIconAsync(player)
-	local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function () return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
+local function setAvatarIconAsync(player, iconImage)
+	-- this function is pretty much for xbox right now and makes use of modules that are part
+	-- of the xbox app. Please see Kip or Jason if you have any questions
+	local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function() return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
 	local thumbsUrl = BaseUrl
 	if(useSubdomainsFlagExists and useSubdomainsFlagValue and AssetGameUrl~=nil) then
 		thumbsUrl = AssetGameUrl
 	end
 
-	-- check if thumb has been generated and if not replace with default
-	local path = 'avatar-thumbnail/json?userId=%d&width=100&height=100&format=png'
-	path = BaseUrl..string.format(path, player.userId)
-	local isThumbnailFinal = false
-
-	local success, result = pcall(function()
-		return game:HttpGetAsync(path)
+	local thumbnailLoader = nil
+	pcall(function()
+		thumbnailLoader = require(RobloxGui.Modules.ThumbnailLoader)
 	end)
-	if success then
-		local decodeSuccess, decodeResult = pcall(function()
-			return HttpService:JSONDecode(result)
-		end)
-		if decodeSuccess and decodeResult and decodeResult["Final"] == true then
-			isThumbnailFinal = true
-		end
-	end
-	local finalImage = isThumbnailFinal and thumbsUrl.."Thumbs/Avatar.ashx?userid="..tostring(player.userId).."&width=100&height=100"
-		or 'rbxasset://textures/ui/Shell/Icons/DefaultProfileIcon.png'
 
-	return finalImage
+	local isFinalSuccess = false
+	if thumbnailLoader then
+		local loader = thumbnailLoader:Create(iconImage, player.userId,
+			thumbnailLoader.Sizes.Small, thumbnailLoader.AssetType.Avatar, true)
+		isFinalSuccess = loader:LoadAsync(false, true, nil)
+	end
+
+	if not isFinalSuccess then
+		iconImage.Image = 'rbxasset://textures/ui/Shell/Icons/DefaultProfileIcon.png'
+	end
 end
 
 local function getMembershipIcon(player)
 	if isTenFootInterface then
-		-- return nothing, we need to spawn off getAvatarIconAsync() as a later time to not block
+		-- return nothing, we need to spawn off setAvatarIconAsync() as a later time to not block
 		return ""
 	else
 		if blockingUtility:IsPlayerBlockedByUserId(player.userId) then
@@ -1210,7 +1206,7 @@ local function createPlayerEntry(player, isTopStat)
 
 	spawn(function()
 		if isTenFootInterface and membershipIcon then
-			membershipIcon.Image = getAvatarIconAsync(player)
+			setAvatarIconAsync(player, membershipIcon)
 		end
 	end)
 
