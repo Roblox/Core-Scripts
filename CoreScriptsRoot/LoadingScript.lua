@@ -278,7 +278,7 @@ function MainGui:GenerateMain()
 					Size = UDim2.new(0, 30, 0, 30),
 					Position = UDim2.new(0, 38, 0, 80),
 					ImageTransparency = 0,
-					Image = 'rbxasset://textures/Roblox-loading.png',
+					Image = 'rbxasset://textures/ui/Shell/Icons/RobloxIcon32.png',
 					ZIndex = 2,
 					Visible = false,
 					Parent = infoFrame,
