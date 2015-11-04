@@ -96,6 +96,7 @@ local PURCHASE_FAILED = {
 	LIMITED = 7,
 	DID_NOT_BUY_ROBUX = 8,
 	PROMPT_PURCHASE_ON_GUEST = 9,
+	THIRD_PARTY_DISABLED = 10,
 }
 local BC_LVL_TO_STRING = {
 	"Builders Club",
@@ -741,6 +742,9 @@ local function onPurchaseFailed(failType)
 		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.INVALID_FUNDS)
 	elseif failType == PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST then
 		failedText = "You need to create a ROBLOX account to buy items, visit www.roblox.com for more info."
+	elseif failType == PURCHASE_FAILED.THIRD_PARTY_DISABLED then
+		failedText = "Third-party item sales have been disabled for this place. Your account has not been charged."
+		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 	end
 
 	RobuxIcon.Visible = false
@@ -796,6 +800,17 @@ local function checkMarketplaceAvailable() 	-- FFlag
 
 	return result
 end
+
+local function areThirdPartySalesRestricted() 	-- FFlag
+	local success, result = pcall(function() return settings():GetFFlag("RestrictSales") end)
+	if not success then
+		print("PurchasePromptScript: areThirdPartySalesRestricted failed because", result)
+		return false
+	end
+
+	return result
+end
+
 
 -- return success and isAvailable
 local function isMarketplaceAvailable()
@@ -1003,6 +1018,16 @@ local function canPurchase()
 			PostBalanceText.Visible = false
 			setButtonsVisible(OkButton)
 			return true
+		end
+		
+		-- most places will not need to sell third party assets.
+		if areThirdPartySalesRestricted() and not game:GetService("Workspace").AllowThirdPartySales then
+			local ProductCreator = tonumber(PurchaseData.ProductInfo["Creator"]["Id"])
+			local RobloxCreator = 1
+			if ProductCreator ~= game.CreatorId and ProductCreator ~= RobloxCreator then
+				onPurchaseFailed(PURCHASE_FAILED.THIRD_PARTY_DISABLED)
+				return false    
+			end
 		end
 	end
 
