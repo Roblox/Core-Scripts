@@ -34,8 +34,6 @@ local blockingUtility = playerDropDownModule:CreateBlockingUtility()
 local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 
 --[[ Fast Flags ]]--
-local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
-local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
 
 --[[ Start Module ]]--
 local Playerlist = {}
@@ -1525,45 +1523,43 @@ end
 local setVisible = function(state, fromTemp)
 	Container.Visible = state
 
-	if IsGamepadSupported then
-		if state then
-			local children = ScrollList:GetChildren()
-			if children and #children > 0 then
-				local frame = children[1]
-				local frameChildren = frame:GetChildren()
-				for i = 1, #frameChildren do
-					if frameChildren[i]:IsA("TextButton") then
-						local lastInputType = UserInputService:GetLastInputType()
-						local isUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
-													lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
-						if not isTenFootInterface then
-							if isUsingGamepad and not fromTemp then
-								GuiService.SelectedCoreObject = frameChildren[i]
-							end
-						elseif not fromTemp then
-							GuiService.SelectedCoreObject = ScrollList
-						end
-
+	if state then
+		local children = ScrollList:GetChildren()
+		if children and #children > 0 then
+			local frame = children[1]
+			local frameChildren = frame:GetChildren()
+			for i = 1, #frameChildren do
+				if frameChildren[i]:IsA("TextButton") then
+					local lastInputType = UserInputService:GetLastInputType()
+					local isUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
+												lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
+					if not isTenFootInterface then
 						if isUsingGamepad and not fromTemp then
-							UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
-							ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
-							ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
+							GuiService.SelectedCoreObject = frameChildren[i]
 						end
-						break
+					elseif not fromTemp then
+						GuiService.SelectedCoreObject = ScrollList
 					end
+
+					if isUsingGamepad and not fromTemp then
+						UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+						ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
+						ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
+					end
+					break
 				end
 			end
-		else
-			if isUsingGamepad then
-				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
-			end
-			
-			ContextActionService:UnbindCoreAction("CloseList")
-			ContextActionService:UnbindCoreAction("StopAction")
+		end
+	else
+		if isUsingGamepad then
+			UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+		end
+		
+		ContextActionService:UnbindCoreAction("CloseList")
+		ContextActionService:UnbindCoreAction("StopAction")
 
-			if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(Container) then
-				GuiService.SelectedCoreObject = nil
-			end
+		if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(Container) then
+			GuiService.SelectedCoreObject = nil
 		end
 	end
 end

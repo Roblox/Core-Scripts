@@ -26,17 +26,13 @@ local MAX_FRIEND_COUNT = 200
 local FRIEND_IMAGE = 'http://www.roblox.com/thumbs/avatar.ashx?userId='
 
 --[[ Fast Flags ]]--
-local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
-local useNewMenuReport = controllerMenuSuccess and controllerMenuFlagValue
 
 --[[ Modules ]]--
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 local settingsHub = nil
 
 spawn(function()
-	if useNewMenuReport then
-		settingsHub = require(RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub"))
-	end
+	settingsHub = require(RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub"))
 end)
 
 --[[ Bindables ]]--
@@ -380,9 +376,7 @@ function createPlayerDropDown()
 	
 	local function onReportButtonPressed()
 		if playerDropDown.Player then
-			if useNewMenuReport then
-				settingsHub:ReportPlayer(playerDropDown.Player)
-			end
+			settingsHub:ReportPlayer(playerDropDown.Player)
 			playerDropDown:Hide()
 		end
 	end
@@ -558,13 +552,11 @@ function createPlayerDropDown()
 			Text = blockedText,
 			OnPress = blocked and onUnblockButtonPressed or onBlockButtonPressed,
 			})
-		if useNewMenuReport then
-			table.insert(buttons, {
-				Name = "ReportButton",
-				Text = "Report Abuse",
-				OnPress = onReportButtonPressed,
-				})
-		end
+		table.insert(buttons, {
+			Name = "ReportButton",
+			Text = "Report Abuse",
+			OnPress = onReportButtonPressed,
+			})
 
 		createPersonalServerDialog(buttons, playerDropDown.Player)
 		if playerDropDown.PopupFrame then

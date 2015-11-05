@@ -50,9 +50,6 @@ local isPaused = false
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
-local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
-local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
-
 local pointsNotificationsActive = true
 local badgesNotificationsActive = true
 
@@ -559,7 +556,7 @@ else
 	game:WaitForChild("StarterGui"):RegisterSetCore("SendNotification", function() end)
 end
 
-if useNewControllerMenu and not isTenFootInterface then
+if not isTenFootInterface then
 	local gamepadMenu = RobloxGui:WaitForChild("CoreScripts/GamepadMenu")
 	local gamepadNotifications = gamepadMenu:FindFirstChild("GamepadNotifications")
 	while not gamepadNotifications do

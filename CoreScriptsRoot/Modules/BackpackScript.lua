@@ -80,9 +80,6 @@ if isTenFootInterface then
 	FONT_SIZE = Enum.FontSize.Size24
 end
 
-local gamepadSupportSuccess, gamepadSupportFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
-local IsGamepadSupported = gamepadSupportSuccess and gamepadSupportFlagValue
-
 local gamepadActionsBound = false
 
 local IS_PHONE = UserInputService.TouchEnabled and GuiService:GetScreenResolution().X < HOTBAR_SLOTS_WIDTH_CUTOFF
@@ -1096,7 +1093,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 			end
 		end
 
-		if IsGamepadSupported and GamepadEnabled then
+		if GamepadEnabled then
 			if enabled then
 				gamepadActionsBound = true
 				ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
@@ -1415,29 +1412,28 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 			end
 		end
 
-		if IsGamepadSupported then
-			if GamepadEnabled then
-				if InventoryFrame.Visible then 
-					local lastInputType = UserInputService:GetLastInputType()
-                			local currentlyUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
-                                                    lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
-        				if currentlyUsingGamepad then
-						resizeGamepadHintsFrame()
-						gamepadHintsFrame.Visible = true
-					end    
-					enableGamepadInventoryControl()
-				else
-					gamepadHintsFrame.Visible = false
-					disableGamepadInventoryControl()
-				end
-			end
-
-			if InventoryFrame.Visible and GamepadEnabled then
-				ContextActionService:BindCoreAction("RBXRemoveSlot", removeHotBarSlot, false, Enum.KeyCode.ButtonX)
-			elseif GamepadEnabled then
-				ContextActionService:UnbindCoreAction("RBXRemoveSlot")
+		if GamepadEnabled then
+			if InventoryFrame.Visible then 
+				local lastInputType = UserInputService:GetLastInputType()
+            			local currentlyUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
+                                                lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
+    				if currentlyUsingGamepad then
+					resizeGamepadHintsFrame()
+					gamepadHintsFrame.Visible = true
+				end    
+				enableGamepadInventoryControl()
+			else
+				gamepadHintsFrame.Visible = false
+				disableGamepadInventoryControl()
 			end
 		end
+
+		if InventoryFrame.Visible and GamepadEnabled then
+			ContextActionService:BindCoreAction("RBXRemoveSlot", removeHotBarSlot, false, Enum.KeyCode.ButtonX)
+		elseif GamepadEnabled then
+			ContextActionService:UnbindCoreAction("RBXRemoveSlot")
+		end
+
 		BackpackScript.IsOpen = InventoryFrame.Visible
 		BackpackScript.StateChanged:Fire(InventoryFrame.Visible)
 
@@ -1520,21 +1516,19 @@ do -- Hotkey stuff
 	OnUISChanged('KeyboardEnabled')
 
 	-- Listen to gamepad status, for allowing gamepad style selection/equip
-	if IsGamepadSupported then
-		if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
+	if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
+		gamepadConnected()
+	end
+	UserInputService.GamepadConnected:connect(function(gamepadEnum) 
+		if gamepadEnum == Enum.UserInputType.Gamepad1 then
 			gamepadConnected()
 		end
-		UserInputService.GamepadConnected:connect(function(gamepadEnum) 
-			if gamepadEnum == Enum.UserInputType.Gamepad1 then
-				gamepadConnected()
-			end
-		end)
-		UserInputService.GamepadDisconnected:connect(function(gamepadEnum) 
-			if gamepadEnum == Enum.UserInputType.Gamepad1 then
-				gamepadDisconnected()
-			end
-		end)
-	end
+	end)
+	UserInputService.GamepadDisconnected:connect(function(gamepadEnum) 
+		if gamepadEnum == Enum.UserInputType.Gamepad1 then
+			gamepadDisconnected()
+		end
+	end)
 end
 
 -- Listen to enable/disable signals from the StarterGui
