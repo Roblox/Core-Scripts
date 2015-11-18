@@ -62,6 +62,7 @@ local TIX_ICON = 'rbxasset://textures/ui/TixIcon.png'
 local ERROR_ICON = 'rbxasset://textures/ui/ErrorIcon.png'
 local A_BUTTON = "rbxasset://textures/ui/Settings/Help/AButtonDark.png"
 local B_BUTTON = "rbxasset://textures/ui/Settings/Help/BButtonDark.png"
+local DEFAULT_XBOX_IMAGE = 'rbxasset://textures/ui/Shell/Icons/ROBUXIcon@1080.png'
 --Context Actions
 local CONTROLLER_CONFIRM_ACTION_NAME = "CoreScriptPurchasePromptControllerConfirm"
 local CONTROLLER_CANCEL_ACTION_NAME = "CoreScriptPurchasePromptControllerCancel"
@@ -69,8 +70,8 @@ local GAMEPAD_BUTTONS = {}
 
 local ERROR_MSG = {
 	PURCHASE_DISABLED = "In-game purchases are temporarily disabled",
-	INVALID_FUNDS = "your account does not have enought Robux",
-	UNKNOWN = "Roblox is performing maintenance",
+	INVALID_FUNDS = "your account does not have enough ROBUX",
+	UNKNOWN = "ROBLOX is performing maintenance",
 	UNKNWON_FAILURE = "something went wrong"
 }
 local PURCHASE_MSG = {
@@ -95,6 +96,7 @@ local PURCHASE_FAILED = {
 	LIMITED = 7,
 	DID_NOT_BUY_ROBUX = 8,
 	PROMPT_PURCHASE_ON_GUEST = 9,
+	THIRD_PARTY_DISABLED = 10,
 }
 local BC_LVL_TO_STRING = {
 	"Builders Club",
@@ -413,7 +415,53 @@ local function setCurrencyData(playerBalance)
 	end
 end
 
+local function setPreviewImageXbox(productInfo, assetId)
+	-- get the asset id we want
+	local id = nil
+	if IsPurchasingConsumable and productInfo and productInfo["IconImageAssetId"] then
+		id = productInfo["IconImageAssetId"]
+	elseif assetId then
+		id = assetId
+	else
+		ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+		return
+	end
+
+	local path = 'asset-thumbnail/json?assetId=%d&width=100&height=100&format=png'
+	path = BASE_URL..string.format(path, id)
+	spawn(function()
+		-- check if thumb has been generated, if not generated or if anything fails
+		-- set to the default image
+		local success, result = pcall(function()
+			return game:HttpGetAsync(path)
+		end)
+		if not success then
+			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+			return
+		end
+
+		local decodeSuccess, decodeResult = pcall(function()
+			return HttpService:JSONDecode(result)
+		end)
+		if not decodeSuccess then
+			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+			return
+		end
+
+		if decodeResult["Final"] == true then
+			ItemPreviewImage.Image = THUMBNAIL_URL..tostring(id).."&x=100&y=100&format=png"
+		else
+			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+		end
+	end)
+end
+
 local function setPreviewImage(productInfo, assetId)
+	-- For now let's only run this logic on Xbox
+	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		setPreviewImageXbox(productInfo, assetId)
+		return
+	end
 	if IsPurchasingConsumable then
 		if productInfo then
 			ItemPreviewImage.Image = THUMBNAIL_URL..tostring(productInfo["IconImageAssetId"].."&x=100&y=100&format=png")
@@ -568,19 +616,15 @@ local function getRobuxProduct(amountNeeded, isBCMember)
 		productArray = isBCMember and BC_ROBUX_PRODUCTS or NON_BC_ROBUX_PRODUCTS
 	end
 
-	local closestProduct = productArray[1]
-	local closestIndex = 1
+	table.sort(productArray, function(a,b) return a < b end)
 
 	for i = 1, #productArray do
-		if (math.abs(productArray[i] - amountNeeded) < math.abs(closestProduct - amountNeeded)) then
-			closestProduct = productArray[i]
-			closestIndex = i
+		if productArray[i] >= amountNeeded then
+			return productArray[i]
 		end
 	end
-	if closestProduct < amountNeeded then
-		closestProduct = productArray[1 + closestIndex]
-	end
-	return closestProduct
+
+	return productArray[1]
 end
 
 local function getRobuxProductToBuyItem(amountNeeded)
@@ -698,7 +742,14 @@ local function onPurchaseFailed(failType)
 		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.INVALID_FUNDS)
 	elseif failType == PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST then
 		failedText = "You need to create a ROBLOX account to buy items, visit www.roblox.com for more info."
+	elseif failType == PURCHASE_FAILED.THIRD_PARTY_DISABLED then
+		failedText = "Third-party item sales have been disabled for this place. Your account has not been charged."
+		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 	end
+
+	RobuxIcon.Visible = false
+	TixIcon.Visible = false
+	CostText.Visible = false
 
 	ItemDescriptionText.Text = failedText
 	showPurchasePrompt()
@@ -749,6 +800,17 @@ local function checkMarketplaceAvailable() 	-- FFlag
 
 	return result
 end
+
+local function areThirdPartySalesRestricted() 	-- FFlag
+	local success, result = pcall(function() return settings():GetFFlag("RestrictSales") end)
+	if not success then
+		print("PurchasePromptScript: areThirdPartySalesRestricted failed because", result)
+		return false
+	end
+
+	return result
+end
+
 
 -- return success and isAvailable
 local function isMarketplaceAvailable()
@@ -822,8 +884,10 @@ local function isFreeItem()
 end
 
 local function getPlayerBalance()
+	local platform = UserInputService:GetPlatform()
+	local apiPath = platform == Enum.Platform.XBoxOne and 'my/platform-currency-budget' or 'currency/balance'
+
 	local success, result = pcall(function()
-		local apiPath = "currency/balance"
 		return HttpRbxApiService:GetAsync(apiPath, true)
 	end)
 
@@ -834,7 +898,13 @@ local function getPlayerBalance()
 
 	if result == '' then return end
 
-	return HttpService:JSONDecode(result)
+	result = HttpService:JSONDecode(result)
+	if platform == Enum.Platform.XBoxOne then
+		result["robux"] = result["Robux"]
+		result["tickets"] = "0"
+	end
+
+	return result
 end
 
 local function isNotForSale()
@@ -949,6 +1019,16 @@ local function canPurchase()
 			setButtonsVisible(OkButton)
 			return true
 		end
+		
+		-- most places will not need to sell third party assets.
+		if areThirdPartySalesRestricted() and not game:GetService("Workspace").AllowThirdPartySales then
+			local ProductCreator = tonumber(PurchaseData.ProductInfo["Creator"]["Id"])
+			local RobloxCreator = 1
+			if ProductCreator ~= game.CreatorId and ProductCreator ~= RobloxCreator then
+				onPurchaseFailed(PURCHASE_FAILED.THIRD_PARTY_DISABLED)
+				return false    
+			end
+		end
 	end
 
 	local isFree = isFreeItem()
@@ -1053,6 +1133,7 @@ end
 local function onAcceptPurchase()
 	if IsCurrentlyPurchasing then return end
 	--
+	disableControllerInput()
 	IsCurrentlyPurchasing = true
 	startPurchaseAnimation()
 	local startTime = tick()
@@ -1099,6 +1180,8 @@ local function onAcceptPurchase()
 	end
 
 	if tick() - startTime < 1 then wait(1) end 		-- artifical delay to show spinner for at least 1 second
+
+	enableControllerInput()
 
 	if not success then
 		print("PurchasePromptScript: onAcceptPurchase() failed because", result)
@@ -1202,10 +1285,15 @@ local function onBuyRobuxPrompt()
 				local PlatformService = nil
 				pcall(function() PlatformService = Game:GetService('PlatformService') end)
 				if PlatformService then
+					local platformPurchaseReturnInt = -1
 					local purchaseCallSuccess, purchaseErrorMsg = pcall(function()
-						PlatformService:BeginPlatformStorePurchase(ThirdPartyProductName)
+						platformPurchaseReturnInt = PlatformService:BeginPlatformStorePurchase(ThirdPartyProductName)
 					end)
-					nativePurchaseFinished(purchaseCallSuccess)
+					if purchaseCallSuccess then
+						nativePurchaseFinished(platformPurchaseReturnInt == 0)
+					else
+						nativePurchaseFinished(purchaseCallSuccess)
+					end
 				end
 			end)
 		else

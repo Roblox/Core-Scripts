@@ -44,6 +44,7 @@ local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
 local isTenFootInterface = false 
 pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
+local platform = UIS:GetPlatform()
 
 --
 -- Utility functions
@@ -153,36 +154,42 @@ function MainGui:GenerateMain()
 		Size = UDim2.new(1, 0, 1, 0),
 		Position = UDim2.new(0, 0, 0, 0),
 		Active = true,
+		Parent = screenGui,
+	}
 
-		create 'ImageButton' {
-				Name = 'CloseButton',
-				Image = 'rbxasset://textures/loading/cancelButton.png',
-				ImageTransparency = 1,
-				BackgroundTransparency = 1,
-				Position = UDim2.new(1, -37, 0, 5),
-				Size = UDim2.new(0, 32, 0, 32),
-				Active = false,
-				ZIndex = 10
-		},
+		local closeButton =	create 'ImageButton' {
+			Name = 'CloseButton',
+			Image = 'rbxasset://textures/loading/cancelButton.png',
+			ImageTransparency = 1,
+			BackgroundTransparency = 1,
+			Position = UDim2.new(1, -37, 0, 5),
+			Size = UDim2.new(0, 32, 0, 32),
+			Active = false,
+			ZIndex = 10,
+			Parent = mainBackgroundContainer,
+		}
 		
-		create 'Frame' {
+		local graphicsFrame = create 'Frame' {
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
 			BackgroundTransparency = 1,
 			Position = UDim2.new(1, (isMobile == true and -75 or (isTenFootInterface and -245 or -225)), 1, (isMobile == true and -75 or (isTenFootInterface and -185 or -165))),
 			Size = UDim2.new(0, (isMobile == true and 70 or (isTenFootInterface and 140 or 120)), 0, (isMobile == true and 70 or (isTenFootInterface and 140 or 120))),
 			ZIndex = 2,
+			Parent = mainBackgroundContainer,
+		}
 
-			create 'ImageLabel' {
+			local loadingImage = create 'ImageLabel' {
 				Name = 'LoadingImage',
 				BackgroundTransparency = 1,
 				Image = 'rbxasset://textures/loading/loadingCircle.png',
 				Position = UDim2.new(0, 0, 0, 0),
 				Size = UDim2.new(1, 0, 1, 0),
-				ZIndex = 2
-			},
+				ZIndex = 2,
+				Parent = graphicsFrame,
+			}
 
-			create 'TextLabel' {
+			local loadingText = create 'TextLabel' {
 				Name = 'LoadingText',
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, (isMobile == true and -14 or -56), 1, 0),
@@ -194,18 +201,20 @@ function MainGui:GenerateMain()
 				TextXAlignment = Enum.TextXAlignment.Left,
 				Visible = not isTenFootInterface,
 				Text = "Loading...",
-				ZIndex = 2
-			},
-		},
+				ZIndex = 2,
+				Parent = graphicsFrame,
+			}
 		
-		create 'Frame' {
+		local uiMessageFrame = create 'Frame' {
 			Name = 'UiMessageFrame',
 			BackgroundTransparency = 1,
 			Position = UDim2.new(0.25, 0, 1, -120),
 			Size = UDim2.new(0.5, 0, 0, 80),
 			ZIndex = 2,
+			Parent = mainBackgroundContainer,
+		}
 
-			create 'TextLabel' {
+			local uiMessage = create 'TextLabel' {
 				Name = 'UiMessage',
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 1, 0),
@@ -214,18 +223,20 @@ function MainGui:GenerateMain()
 				TextWrapped = true,
 				TextColor3 = COLORS.WHITE,
 				Text = "",
-				ZIndex = 2
-			},
-		},
+				ZIndex = 2,
+				Parent = uiMessageFrame,
+			}
 		
-		create 'Frame' {
+		local infoFrame = create 'Frame' {
 			Name = 'InfoFrame',
 			BackgroundTransparency = 1,
 			Position = UDim2.new(0, (isMobile == true and 20 or 100), 1, (isMobile == true and -120 or -150)),
 			Size = UDim2.new(0.4, 0, 0, 110),
 			ZIndex = 2,
+			Parent = mainBackgroundContainer,
+		}
 
-			create 'TextLabel' {
+			local placeLabel = create 'TextLabel' {
 				Name = 'PlaceLabel',
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 80),
@@ -239,14 +250,46 @@ function MainGui:GenerateMain()
 				Text = "",
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Bottom,
-				ZIndex = 2
-			},
+				ZIndex = 2,
+				Parent = infoFrame,
+			}
 
-			create 'TextLabel' {
+			if isTenFootInterface then
+				local byLabel = create'TextLabel' {
+					Name = "ByLabel",
+					BackgroundTransparency = 1,
+					Size = UDim2.new(0, 36, 0, 30),
+					Position = UDim2.new(0, 0, 0, 80),
+					Font = Enum.Font.SourceSans,
+					FontSize = Enum.FontSize.Size36,
+					TextScaled = true,
+					TextColor3 = COLORS.WHITE,
+					TextStrokeTransparency = 0,
+					Text = "By",
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextYAlignment = Enum.TextYAlignment.Top,
+					ZIndex = 2,
+					Visible = false,
+					Parent = infoFrame,
+				}
+				local creatorIcon = create'ImageLabel' {
+					Name = "CreatorIcon",
+					BackgroundTransparency = 1,
+					Size = UDim2.new(0, 30, 0, 30),
+					Position = UDim2.new(0, 38, 0, 80),
+					ImageTransparency = 0,
+					Image = 'rbxasset://textures/ui/Shell/Icons/RobloxIcon32.png',
+					ZIndex = 2,
+					Visible = false,
+					Parent = infoFrame,
+				}
+			end
+
+			local creatorLabel = create 'TextLabel' {
 				Name = 'CreatorLabel',
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 30),
-				Position = UDim2.new(0, 0, 0, 80),
+				Position = UDim2.new(0, isTenFootInterface and 72 or 0, 0, 80),
 				Font = Enum.Font.SourceSans,
 				FontSize = (isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size18),
 				TextWrapped = true,
@@ -256,11 +299,11 @@ function MainGui:GenerateMain()
 				Text = "",
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Top,
-				ZIndex = 2
-			},
-		},
+				ZIndex = 2,
+				Parent = infoFrame,
+			}
 		
-		create 'Frame' {
+		local backgroundTextureFrame = create 'Frame' {
 			Name = 'BackgroundTextureFrame',
 			BorderSizePixel = 0,
 			Size = UDim2.new(1, 0, 1, 0), 
@@ -268,34 +311,32 @@ function MainGui:GenerateMain()
 			ClipsDescendants = true,
 			ZIndex = 1,
 			BackgroundTransparency = 1,
-		},
-		
-		Parent = screenGui
+			Parent = mainBackgroundContainer,
+		}
+
+	local errorFrame = create 'Frame' {
+		Name = 'ErrorFrame',
+		BackgroundColor3 = COLORS.ERROR,
+		BorderSizePixel = 0,
+		Position = UDim2.new(0.25,0,0,0),
+		Size = UDim2.new(0.5, 0, 0, 80),
+		ZIndex = 8,
+		Visible = false,
+		Parent = screenGui,
 	}
 
-	create 'Frame' {
-			Name = 'ErrorFrame',
-			BackgroundColor3 = COLORS.ERROR,
-			BorderSizePixel = 0,
-			Position = UDim2.new(0.25,0,0,0),
-			Size = UDim2.new(0.5, 0, 0, 80),
+		local errorText = create 'TextLabel' {
+			Name = "ErrorText",
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 1, 0),
+			Font = Enum.Font.SourceSansBold,
+			FontSize = Enum.FontSize.Size14,
+			TextWrapped = true,
+			TextColor3 = COLORS.WHITE,
+			Text = "",
 			ZIndex = 8,
-			Visible = false,
-
-			create 'TextLabel' {
-				Name = "ErrorText",
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 1, 0),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size14,
-				TextWrapped = true,
-				TextColor3 = COLORS.WHITE,
-				Text = "",
-				ZIndex = 8
-			},
-
-		Parent = screenGui
-	}
+			Parent = errorFrame,
+		}
 
 	while not Game:GetService("CoreGui") do
 		wait()
@@ -342,14 +383,38 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 		MainGui:tileBackgroundTexture(currScreenGui.BlackFrame.BackgroundTextureFrame)
 	end 
 
-	if currScreenGui.BlackFrame.InfoFrame.PlaceLabel.Text == "" then
-		currScreenGui.BlackFrame.InfoFrame.PlaceLabel.Text = InfoProvider:GetGameName()
-	end
+	local infoFrame = currScreenGui.BlackFrame:FindFirstChild('InfoFrame')
+	if infoFrame then
+		-- set place name
+		local placeLabel = infoFrame:FindFirstChild('PlaceLabel')
+		if placeLabel and placeLabel.Text == "" then
+			placeLabel.Text = InfoProvider:GetGameName()
+		end
 
-	if currScreenGui.BlackFrame.InfoFrame.CreatorLabel.Text == "" then
-		local creatorName = InfoProvider:GetCreatorName()
-		if creatorName ~= "" then
-			currScreenGui.BlackFrame.InfoFrame.CreatorLabel.Text = "By " .. creatorName
+		-- set creator name
+		local creatorLabel = infoFrame:FindFirstChild('CreatorLabel')
+		if creatorLabel and creatorLabel.Text == "" then
+			local creatorName = InfoProvider:GetCreatorName()
+			if creatorName ~= "" then
+				if isTenFootInterface then
+					local showDevName = true
+					if platform == Enum.Platform.XBoxOne then
+						local success, result = pcall(function()
+							return settings():GetFFlag("ShowDevNameInXboxApp")
+						end)
+						if success then
+							showDevName = result
+						end
+					end
+					creatorLabel.Text = showDevName and creatorName or ""
+					local creatorIcon = infoFrame:FindFirstChild('CreatorIcon')
+					local byLabel = infoFrame:FindFirstChild('ByLabel')
+					if creatorIcon then creatorIcon.Visible = showDevName end
+					if byLabel then byLabel.Visible = showDevName end
+				else
+					creatorLabel.Text = "By "..creatorName
+				end
+			end
 		end
 	end
 
@@ -501,7 +566,7 @@ function fadeAndDestroyBlackFrame(blackFrame)
 		local infoFrame = blackFrame:FindFirstChild("InfoFrame")
 		local graphicsFrame = blackFrame:FindFirstChild("GraphicsFrame")
 
-		local textChildren = infoFrame:GetChildren()
+		local infoFrameChildren = infoFrame:GetChildren()
 		local transparency = 0
 		local rateChange = 1.8
 		local lastUpdateTime = nil
@@ -512,9 +577,14 @@ function fadeAndDestroyBlackFrame(blackFrame)
 			else
 				local newTime = tick()
 				transparency = transparency + rateChange * (newTime - lastUpdateTime)
-				for i =1, #textChildren do
-					textChildren[i].TextTransparency = transparency
-					textChildren[i].TextStrokeTransparency = transparency
+				for i = 1, #infoFrameChildren do
+					local child = infoFrameChildren[i]
+					if child:IsA('TextLabel') then
+						child.TextTransparency = transparency
+						child.TextStrokeTransparency = transparency
+					elseif child:IsA('ImageLabel') then
+						child.ImageTransparency = transparency
+					end
 				end
 				graphicsFrame.LoadingImage.ImageTransparency = transparency
 				blackFrame.BackgroundTransparency = transparency

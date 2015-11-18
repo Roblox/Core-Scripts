@@ -249,7 +249,7 @@ local function createGamepadMenuGui()
 	---------------------------------
 	-------- Player List ------------
 	local playerListFunc = function() 
-		toggleCoreGuiRadial()
+		toggleCoreGuiRadial(true)
 		local PlayerListModule = require(GuiRoot.Modules.PlayerlistModule)
 		if not PlayerListModule:IsOpen() then
 			PlayerListModule:ToggleVisibility()
@@ -276,7 +276,7 @@ local function createGamepadMenuGui()
 	---------------------------------
 	---------- Leave Game -----------
 	local leaveGameFunc = function()
-		toggleCoreGuiRadial()
+		toggleCoreGuiRadial(true)
 		local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
 		MenuModule:SetVisibility(true, false, require(GuiRoot.Modules.Settings.Pages.LeaveGame), true)
 	end
@@ -286,7 +286,7 @@ local function createGamepadMenuGui()
 	---------------------------------
 	---------- Backpack -------------
 	local backpackFunc = function()
-		toggleCoreGuiRadial()
+		toggleCoreGuiRadial(true)
 		local BackpackModule = require(GuiRoot.Modules.BackpackScript)
 		BackpackModule:OpenClose() 
 	end
@@ -567,6 +567,7 @@ local function setupGamepadControls()
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,102,0,102), UDim2.new(0.5,-51,0.5,-51),
 														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, 
 				function()
+					if not goingToSettings and not isVisible then pcall(function() GuiService:SetMenuIsOpen(false) end) end
 					gamepadSettingsFrame.Visible = isVisible
 			end)
 		end
@@ -584,9 +585,6 @@ local function setupGamepadControls()
 			ContextActionService:BindCoreAction(thumbstick2RadialActionName, noOpFunc, false, Enum.KeyCode.Thumbstick2)
 			ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
 		else
-			if not goingToSettings then
-				pcall(function() GuiService:SetMenuIsOpen(false) end)
-			end
 			unbindAllRadialActions()
 		end
 

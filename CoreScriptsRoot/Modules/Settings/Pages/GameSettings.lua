@@ -56,8 +56,6 @@ local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled
 local PageInstance = nil
 local LocalPlayer = game.Players.LocalPlayer
 local platform = UserInputService:GetPlatform()
-local nextRowPositionY = 0
-local rowHeight = 50
 local overscanScreen = nil
 
 ----------- CLASS DECLARATION --------------
@@ -477,9 +475,9 @@ local function Initialize()
 
 		this.VolumeSlider.ValueChanged:connect(function(newValue)
 			local soundPercent = newValue/10
-			GameSettings.MasterVolume = soundPercent
 			volumeSound.Volume = soundPercent
 			volumeSound:Play()
+			GameSettings.MasterVolume = soundPercent
 		end)
 	end
 

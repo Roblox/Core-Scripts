@@ -26,17 +26,13 @@ local MAX_FRIEND_COUNT = 200
 local FRIEND_IMAGE = 'http://www.roblox.com/thumbs/avatar.ashx?userId='
 
 --[[ Fast Flags ]]--
-local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
-local useNewMenuReport = controllerMenuSuccess and controllerMenuFlagValue
 
 --[[ Modules ]]--
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 local settingsHub = nil
 
 spawn(function()
-	if useNewMenuReport then
-		settingsHub = require(RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub"))
-	end
+	settingsHub = require(RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub"))
 end)
 
 --[[ Bindables ]]--
@@ -83,6 +79,9 @@ local function createSignal()
 
 	return sig
 end
+
+--[[ Events ]]--
+local BlockStatusChanged = createSignal()
 
 --[[ Personal Server Stuff ]]--
 local IsPersonalServer = false
@@ -377,9 +376,7 @@ function createPlayerDropDown()
 	
 	local function onReportButtonPressed()
 		if playerDropDown.Player then
-			if useNewMenuReport then
-				settingsHub:ReportPlayer(playerDropDown.Player)
-			end
+			settingsHub:ReportPlayer(playerDropDown.Player)
 			playerDropDown:Hide()
 		end
 	end
@@ -520,12 +517,17 @@ function createPlayerDropDown()
 			canDeclineFriend = true
 		end
 
-		table.insert(buttons, {
-			Name = "FriendButton",
-			Text = friendText,
-			OnPress = onFriendButtonPressed,
-			})
-		if canDeclineFriend then
+		local blocked = isBlocked(playerDropDown.Player.userId)
+
+		if not blocked then
+			table.insert(buttons, {
+				Name = "FriendButton",
+				Text = friendText,
+				OnPress = onFriendButtonPressed,
+				})
+		end
+
+		if canDeclineFriend and not blocked then
 			table.insert(buttons, {
 				Name = "DeclineFriend",
 				Text = "Decline Friend Request",
@@ -535,25 +537,26 @@ function createPlayerDropDown()
 		-- following status
 		local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
 		local followerText = following and "Unfollow Player" or "Follow Player"
-		table.insert(buttons, {
-			Name = "FollowerButton",
-			Text = followerText,
-			OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
-			})
-		local blocked = isBlocked(playerDropDown.Player.userId)
+		
+		if not blocked then
+			table.insert(buttons, {
+				Name = "FollowerButton",
+				Text = followerText,
+				OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
+				})
+		end
+
 		local blockedText = blocked and "Unblock Player" or "Block Player"
 		table.insert(buttons, {
 			Name = "BlockButton",
 			Text = blockedText,
 			OnPress = blocked and onUnblockButtonPressed or onBlockButtonPressed,
 			})
-		if useNewMenuReport then
-			table.insert(buttons, {
-				Name = "ReportButton",
-				Text = "Report Abuse",
-				OnPress = onReportButtonPressed,
-				})
-		end
+		table.insert(buttons, {
+			Name = "ReportButton",
+			Text = "Report Abuse",
+			OnPress = onReportButtonPressed,
+			})
 
 		createPersonalServerDialog(buttons, playerDropDown.Player)
 		if playerDropDown.PopupFrame then
@@ -602,6 +605,10 @@ do
 		
 		function blockingUtility:IsPlayerBlockedByUserId(userId)
 			return isBlocked(userId)
+		end
+
+		function blockingUtility:GetBlockedStatusChangedEvent()
+			return BlockStatusChanged
 		end
 		
 		function blockingUtility:IsPlayerMutedByUserId(userId)

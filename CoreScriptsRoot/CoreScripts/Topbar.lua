@@ -31,9 +31,6 @@ local DEBOUNCE_TIME = 0.25
 --[[ END OF CONSTANTS ]]
 
 --[[ FFLAG VALUES ]]
-local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
-local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
-
 
 local function GetChatVisibleIconFlag()
 	local chatVisibleIconSuccess, chatVisibleIconFlagValue = pcall(function() return settings():GetFFlag("MobileToggleChatVisibleIcon") end)
@@ -465,7 +462,7 @@ local function CreateUsernameHealthMenuItem()
 				local healthColor = HealthbarColorTransferFunction(healthPercent)
 				local thresholdForHurtOverlay = humanoid.MaxHealth * HEALTH_PERCANTAGE_FOR_OVERLAY
 
-				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth then
+				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth and game.StarterGui:GetCoreGuiEnabled("Health") == true then
 					AnimateHurtOverlay()
 				end
 				
@@ -644,13 +641,9 @@ end
 --- SETTINGS ---
 local function CreateSettingsIcon(topBarInstance)
 	local MenuModule = nil
-	if useNewControllerMenu then
-		game.CoreGui.RobloxGui.Modules:WaitForChild("Settings")
-		game.CoreGui.RobloxGui.Modules.Settings:WaitForChild("SettingsHub")
-		MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings.SettingsHub)
-	else
-		MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings2)
-	end
+	game.CoreGui.RobloxGui.Modules:WaitForChild("Settings")
+	game.CoreGui.RobloxGui.Modules.Settings:WaitForChild("SettingsHub")
+	MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings.SettingsHub)
 
 	local settingsIconButton = Util.Create'ImageButton'
 	{

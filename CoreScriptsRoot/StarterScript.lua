@@ -18,15 +18,8 @@ if useTopBar then
 	scriptContext:AddCoreScriptLocal("CoreScripts/Topbar", RobloxGui)
 end
 
-local controllerMenuSuccess,controllerMenuFlagValue = pcall(function() return settings():GetFFlag("ControllerMenu") end)
-local useNewControllerMenu = (controllerMenuSuccess and controllerMenuFlagValue)
-
 -- SettingsScript
 local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
-
-if not useNewControllerMenu then
-	spawn(function() require(RobloxGui.Modules.Settings2) end)
-end
 
 -- MainBotChatScript (the Lua part of Dialogs)
 scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", RobloxGui)
@@ -41,6 +34,11 @@ scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", RobloxGui)
 if useTopBar then
 	spawn(function() require(RobloxGui.Modules.Chat) end)
 	spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
+end
+
+local luaBubbleChatSuccess, luaBubbleChatFlagValue = pcall(function() return settings():GetFFlag("LuaBasedBubbleChat") end)
+if luaBubbleChatSuccess and luaBubbleChatFlagValue then
+	scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)
 end
 
 -- Purchase Prompt Script
@@ -59,9 +57,7 @@ if useTopBar then
 	scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", RobloxGui)
 end
 
-if useNewControllerMenu then
-	scriptContext:AddCoreScriptLocal("CoreScripts/GamepadMenu", RobloxGui)
-end
+scriptContext:AddCoreScriptLocal("CoreScripts/GamepadMenu", RobloxGui)
 
 if touchEnabled then -- touch devices don't use same control frame
 	-- only used for touch device button generation
