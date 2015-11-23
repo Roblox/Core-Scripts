@@ -967,6 +967,7 @@ local function CreateSettingsHub()
 			pcall(function() PlatformService.BlurIntensity = 10 end)
 
 			if customStartPage then
+				removeBottomBarBindings()
 				this:SwitchToPage(customStartPage, nil, 1, true)
 			else
 				if this.HomePage then
