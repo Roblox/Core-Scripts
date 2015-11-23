@@ -402,10 +402,8 @@ local function setupGamepadControls()
 
 	local noOpFunc = function() end
 	local doGamepadMenuButton = nil
-	local previousGuiNavigationEnabledValue = true
 	
 	function unbindAllRadialActions()
-		GuiService.GuiNavigationEnabled = previousGuiNavigationEnabledValue
 		ContextActionService:UnbindCoreAction(radialSelectActionName)
 		ContextActionService:UnbindCoreAction(radialCancelActionName)
 		ContextActionService:UnbindCoreAction(radialAcceptActionName)
@@ -575,8 +573,6 @@ local function setupGamepadControls()
 
 		if isVisible then
 			setSelectedRadialButton(nil)
-			previousGuiNavigationEnabledValue = GuiService.GuiNavigationEnabled
-			GuiService.GuiNavigationEnabled = false
 
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
 
