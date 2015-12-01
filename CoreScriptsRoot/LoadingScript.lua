@@ -630,13 +630,20 @@ function handleFinishedReplicating()
 	hasReplicatedFirstElements = (#Game:GetService("ReplicatedFirst"):GetChildren() > 0)
 
 	if not hasReplicatedFirstElements then
-		while game:GetService("ContentProvider").RequestQueueSize > 0 do
-			wait()
+		if game:IsLoaded() then
+			handleRemoveDefaultLoadingGui()
+		else
+			local gameLoadedCon = nil
+			gameLoadedCon = game.Loaded:connect(function()
+				gameLoadedCon:disconnect()
+				gameLoadedCon = nil
+				handleRemoveDefaultLoadingGui()
+			end)
 		end
 	else
 		wait(5) -- make sure after 5 seconds we remove the default gui, even if the user doesn't
+		handleRemoveDefaultLoadingGui()
 	end
-	handleRemoveDefaultLoadingGui()
 end
 
 function handleRemoveDefaultLoadingGui()
