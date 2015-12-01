@@ -551,10 +551,7 @@ local function Initialize()
 								(UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
 
 	if UserInputService.MouseEnabled then
-		local mouseSensSuccess, mouseSensFlagValue = pcall(function() return settings():GetFFlag("MouseSensitivity") end)
-		if mouseSensSuccess and mouseSensFlagValue then
-			createMouseOptions()
-		end
+		createMouseOptions()
 	end
 
 	createVolumeOptions()
