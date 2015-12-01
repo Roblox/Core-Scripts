@@ -46,6 +46,9 @@ local isTenFootInterface = false
 pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
 local platform = UIS:GetPlatform()
 
+local useGameLoadedSuccess, useGameLoadedFlagValue = pcall(function() return settings():GetFFlag("UseGameLoadedInLoadingScript") end)
+local useGameLoadedToWait = (useGameLoadedSuccess and useGameLoadedFlagValue == true)
+
 --
 -- Utility functions
 local create = function(className, defaultParent)
@@ -630,15 +633,22 @@ function handleFinishedReplicating()
 	hasReplicatedFirstElements = (#Game:GetService("ReplicatedFirst"):GetChildren() > 0)
 
 	if not hasReplicatedFirstElements then
-		if game:IsLoaded() then
-			handleRemoveDefaultLoadingGui()
-		else
-			local gameLoadedCon = nil
-			gameLoadedCon = game.Loaded:connect(function()
-				gameLoadedCon:disconnect()
-				gameLoadedCon = nil
+		if useGameLoadedToWait then
+			if game:IsLoaded() then
 				handleRemoveDefaultLoadingGui()
-			end)
+			else
+				local gameLoadedCon = nil
+				gameLoadedCon = game.Loaded:connect(function()
+					gameLoadedCon:disconnect()
+					gameLoadedCon = nil
+					handleRemoveDefaultLoadingGui()
+				end)
+			end
+		else
+			while game:GetService("ContentProvider").RequestQueueSize > 0 do
+				wait()
+			end
+			handleRemoveDefaultLoadingGui()
 		end
 	else
 		wait(5) -- make sure after 5 seconds we remove the default gui, even if the user doesn't
