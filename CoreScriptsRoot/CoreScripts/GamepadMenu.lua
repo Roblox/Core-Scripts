@@ -28,6 +28,10 @@ local isTenFootInterface = tenFootInterface:IsEnabled()
 local radialButtons = {}
 local lastInputChangedCon = nil
 
+--[[ FLAGS ]]
+local coreGuiNavigationSuccess, coreGuiNavigationFlagValue = pcall(function() return settings():GetFFlag("CoreGuiDescendantsAlwaysSelectable") end)
+local coreGuiNavigationAlwaysEnabled = coreGuiNavigationSuccess and coreGuiNavigationFlagValue
+
 local function getButtonForCoreGuiType(coreGuiType)
 	if coreGuiType == Enum.CoreGuiType.All then
 		return radialButtons
@@ -402,8 +406,11 @@ local function setupGamepadControls()
 
 	local noOpFunc = function() end
 	local doGamepadMenuButton = nil
-	
+
 	function unbindAllRadialActions()
+		if not coreGuiNavigationAlwaysEnabled then
+			GuiService.GuiNavigationEnabled = true
+		end
 		ContextActionService:UnbindCoreAction(radialSelectActionName)
 		ContextActionService:UnbindCoreAction(radialCancelActionName)
 		ContextActionService:UnbindCoreAction(radialAcceptActionName)
@@ -573,6 +580,9 @@ local function setupGamepadControls()
 
 		if isVisible then
 			setSelectedRadialButton(nil)
+			if not coreGuiNavigationAlwaysEnabled then
+				GuiService.GuiNavigationEnabled = false
+			end
 
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
 
