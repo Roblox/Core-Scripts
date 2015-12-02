@@ -1249,10 +1249,13 @@ function hasEnoughMoneyForPurchase()
 	return false
 end
 
-function retryPurchase()
+function retryPurchase(overrideRetries)
 	local canMakePurchase = canPurchase() and hasEnoughMoneyForPurchase()
 	if not canMakePurchase then
 		local retries = 40
+		if overrideRetries then
+			retries = overrideRetries
+		end
 		while retries > 0 and not canMakePurchase do
 			wait(0.5)
 			canMakePurchase = canPurchase() and hasEnoughMoneyForPurchase()
@@ -1430,8 +1433,9 @@ end)
 
 GuiService.BrowserWindowClosed:connect(function()
 	if IsCheckingPlayerFunds then
-		retryPurchase()
+		retryPurchase(4)
 	end
+
 	onPurchaseFailed(PURCHASE_FAILED.DID_NOT_BUY_ROBUX)
 	stopPurchaseAnimation()
 end)
