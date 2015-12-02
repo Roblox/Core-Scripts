@@ -1432,6 +1432,7 @@ GuiService.BrowserWindowClosed:connect(function()
 	if IsCheckingPlayerFunds then
 		retryPurchase()
 	end
+	onPurchaseFailed(PURCHASE_FAILED.DID_NOT_BUY_ROBUX)
 	stopPurchaseAnimation()
 end)
 
