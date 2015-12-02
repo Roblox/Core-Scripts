@@ -311,7 +311,7 @@ function selectChoice(choice)
 	--First hide the Gui
 	mainFrame.Visible = false
 	if choice == lastChoice then
-		game:GetService("Chat"):Chat(game:GetService("Players").LocalPlayer.Character, "Goodbye!", getChatColor(currentTone()))
+		game:GetService("Chat"):Chat(game:GetService("Players").LocalPlayer.Character, lastChoice.UserPrompt.Text, getChatColor(currentTone()))
 
 		normalEndDialog()
 	else
@@ -323,7 +323,7 @@ function selectChoice(choice)
 		game:GetService("Chat"):Chat(currentConversationPartner, sanitizeMessage(dialogChoice.ResponseDialog), getChatColor(currentTone()))
 
 		variableDelay(dialogChoice.ResponseDialog)
-		presentDialogChoices(currentConversationPartner, dialogChoice:GetChildren())
+		presentDialogChoices(currentConversationPartner, dialogChoice:GetChildren(), dialogChoice)
 	end
 end
 
@@ -395,7 +395,7 @@ function initialize(parent)
 	mainFrame.Parent = parent
 end
 
-function presentDialogChoices(talkingPart, dialogChoices)
+function presentDialogChoices(talkingPart, dialogChoices, parentDialog)
 	if not currentConversationDialog then
 		return
 	end
@@ -439,6 +439,10 @@ function presentDialogChoices(talkingPart, dialogChoices)
 		end
 	end
 
+	lastChoice.Size = UDim2.new(1, WIDTH_BONUS, 0, TEXT_HEIGHT * 3)
+	lastChoice.UserPrompt.Text = parentDialog.GoodbyeDialog == "" and "Goodbye!" or parentDialog.GoodbyeDialog
+	local height = (math.ceil(lastChoice.UserPrompt.TextBounds.Y / TEXT_HEIGHT) * TEXT_HEIGHT) + CHOICE_PADDING
+	lastChoice.Size = UDim2.new(1, WIDTH_BONUS, 0, height)
 	lastChoice.Position = UDim2.new(0, XPOS_OFFSET, 0, YPOS_OFFSET + yPosition)
 
 	mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
@@ -475,7 +479,7 @@ function doDialog(dialog)
 	game:GetService("Chat"):Chat(dialog.Parent, dialog.InitialPrompt, getChatColor(dialog.Tone))
 	variableDelay(dialog.InitialPrompt)
 
-	presentDialogChoices(dialog.Parent, dialog:GetChildren())
+	presentDialogChoices(dialog.Parent, dialog:GetChildren(), dialog)
 end
 
 function renewKillswitch(dialog)
