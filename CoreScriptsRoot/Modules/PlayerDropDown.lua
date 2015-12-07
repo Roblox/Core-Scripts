@@ -26,6 +26,8 @@ local MAX_FRIEND_COUNT = 200
 local FRIEND_IMAGE = 'http://www.roblox.com/thumbs/avatar.ashx?userId='
 
 --[[ Fast Flags ]]--
+local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
+local IsFollowersEnabled = followerSuccess and isFollowersEnabled
 
 --[[ Modules ]]--
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
@@ -535,15 +537,17 @@ function createPlayerDropDown()
 				})
 		end
 		-- following status
-		local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
-		local followerText = following and "Unfollow Player" or "Follow Player"
-		
-		if not blocked then
-			table.insert(buttons, {
-				Name = "FollowerButton",
-				Text = followerText,
-				OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
-				})
+		if IsFollowersEnabled then
+			local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
+			local followerText = following and "Unfollow Player" or "Follow Player"
+			
+			if not blocked then
+				table.insert(buttons, {
+					Name = "FollowerButton",
+					Text = followerText,
+					OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
+					})
+			end
 		end
 
 		local blockedText = blocked and "Unblock Player" or "Block Player"

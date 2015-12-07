@@ -34,6 +34,8 @@ local blockingUtility = playerDropDownModule:CreateBlockingUtility()
 local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 
 --[[ Fast Flags ]]--
+local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
+local IsFollowersEnabled = followerSuccess and isFollowersEnabled
 
 --[[ Start Module ]]--
 local Playerlist = {}
@@ -193,6 +195,10 @@ local function isFollowing(userId, followerUserId)
 end
 
 local function getFollowerStatus(selectedPlayer)
+	if not IsFollowersEnabled then
+		return nil
+	end
+
 	if selectedPlayer == Player then
 		return nil
 	end
@@ -718,7 +724,7 @@ local function getFriendStatus(selectedPlayer)
 end
 
 local function onFollowerStatusChanged()
-	if not LastSelectedFrame or not LastSelectedPlayer then
+	if not IsFollowersEnabled and not LastSelectedFrame or not LastSelectedPlayer then
 		return
 	end
 
@@ -799,7 +805,7 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 	local bgFrame = frame:FindFirstChild('BGFrame')
 	if bgFrame then
 		-- no longer friends, but might still be following
-		if not newIcon then
+		if IsFollowersEnabled and not newIcon then
 			local followerStatus = getFollowerStatus(otherPlayer)
 			newIcon = getFollowerStatusIcon(followerStatus)
 		end
