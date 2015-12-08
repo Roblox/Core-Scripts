@@ -37,6 +37,13 @@ local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
 local IsFollowersEnabled = followerSuccess and isFollowersEnabled
 
+local serverFollowersSuccess, serverFollowersEnabled = pcall(function() return settings():GetFFlag("UserServerFollowers") end)
+local IsServerFollowers = serverFollowersSuccess and serverFollowersEnabled
+
+--[[ Remotes ]]--
+local RemoveEvent_OnFollowRelationshipChanged = nil
+local RemoteFunc_GetFollowRelationships = nil
+
 --[[ Start Module ]]--
 local Playerlist = {}
 
@@ -194,7 +201,10 @@ local function isFollowing(userId, followerUserId)
 	return result["success"] and result["isFollowing"]
 end
 
+-- TODO: Once server followers is good to go, remove this function and all code paths
 local function getFollowerStatus(selectedPlayer)
+	-- we're going to check this flag first in case of a condition were the two flags are not set in sync
+	-- in that case, followers will be disabled
 	if not IsFollowersEnabled then
 		return nil
 	end
@@ -724,6 +734,7 @@ local function getFriendStatus(selectedPlayer)
 end
 
 local function onFollowerStatusChanged()
+	-- TODO: Remove this event completely when server version is stable
 	if not IsFollowersEnabled and not LastSelectedFrame or not LastSelectedPlayer then
 		return
 	end
@@ -804,18 +815,62 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 	local frame = entryToUpdate.Frame
 	local bgFrame = frame:FindFirstChild('BGFrame')
 	if bgFrame then
-		-- no longer friends, but might still be following
-		if IsFollowersEnabled and not newIcon then
+		--no longer friends, but might still be following
+		if not IsServerFollowers and IsFollowersEnabled and not newIcon then
 			local followerStatus = getFollowerStatus(otherPlayer)
 			newIcon = getFollowerStatusIcon(followerStatus)
 		end
 
-		updateSocialIcon(newIcon, bgFrame)
+		if newIcon then
+			updateSocialIcon(newIcon, bgFrame)
+		end
 	end
 end
 
 -- NOTE: Core script only. This fires when a layer joins the game.
 Player.FriendStatusChanged:connect(onFriendshipChanged)
+
+--[[ Begin New Server Followers ]]--
+local function setFollowRelationshipsView(relationshipTable)
+	if not relationshipTable then
+		return
+	end
+
+	for i = 1, #PlayerEntries do
+		local entry = PlayerEntries[i]
+		local player = entry.Player
+		local userId = tostring(player.userId)
+
+		if relationshipTable[userId] then
+			local relationship = relationshipTable[userId]
+			local icon = nil
+
+			if relationship.IsMutual == true then
+				icon = MUTUAL_FOLLOWING_ICON
+			elseif relationship.IsFollowing == true then
+				icon = FOLLOWING_ICON
+			elseif relationship.IsFollower == true then
+				icon = FOLLOWER_ICON
+			end
+
+			local frame = entry.Frame
+			local bgFrame = frame:FindFirstChild('BGFrame')
+			if icon and bgFrame then
+				updateSocialIcon(icon, bgFrame)
+			end
+		end
+	end
+end
+
+local function getFollowRelationships()
+	local result = nil
+	if RemoteFunc_GetFollowRelationships then
+		result = RemoteFunc_GetFollowRelationships:InvokeServer()
+	end
+	return result
+end
+
+--[[ End New Server Followers ]]--
 
 local function updateAllTeamScores()
 	local teamScores = {}
@@ -1463,6 +1518,23 @@ Players.ChildAdded:connect(function(child)
 end)
 for _,player in pairs(Players:GetPlayers()) do
 	insertPlayerEntry(player)
+end
+
+--[[ Begin new Server Followers ]]--
+if IsServerFollowers then
+	-- spawn so we don't block script
+	spawn(function()
+		local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
+		RemoveEvent_OnFollowRelationshipChanged = RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged')
+		RemoteFunc_GetFollowRelationships = RobloxReplicatedStorage:WaitForChild('GetFollowRelationships')
+
+		RemoveEvent_OnFollowRelationshipChanged.OnClientEvent:connect(function(result)
+			setFollowRelationshipsView(result)
+		end)
+
+		local result = getFollowRelationships()
+		setFollowRelationshipsView(result)
+	end)
 end
 
 Players.ChildRemoved:connect(function(child)

@@ -13,12 +13,26 @@ end
 
 --[[ Services ]]--
 local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
+local ScriptContext = game:GetService('ScriptContext')
+
+--[[ Fast Flags ]]--
+local serverFollowersSuccess, serverFollowersEnabled = pcall(function() return settings():GetFFlag("UserServerFollowers") end)
+local IsServerFollowers = serverFollowersSuccess and serverFollowersEnabled
+
+local RemoteEvent_NewFollower = nil
+
+--[[ Add Server CoreScript ]]--
+-- TODO: FFlag check
+if IsServerFollowers then
+	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerSocialScript", script.Parent)
+else
+	-- above script will create this now
+	RemoteEvent_NewFollower = Instance.new('RemoteEvent')
+	RemoteEvent_NewFollower.Name = "NewFollower"
+	RemoteEvent_NewFollower.Parent = RobloxReplicatedStorage
+end
 
 --[[ Remote Events ]]--
-local RemoteEvent_OnNewFollower = Instance.new('RemoteEvent')
-RemoteEvent_OnNewFollower.Name = "OnNewFollower"
-RemoteEvent_OnNewFollower.Parent = RobloxReplicatedStorage
-
 local RemoteEvent_SetDialogInUse = Instance.new("RemoteEvent")
 RemoteEvent_SetDialogInUse.Name = "SetDialogInUse"
 RemoteEvent_SetDialogInUse.Parent = RobloxReplicatedStorage 
@@ -28,9 +42,11 @@ RemoteEvent_SetDialogInUse.Parent = RobloxReplicatedStorage
 	-- followerRbxPlayer: player object of the new follower, this is the client who wants to follow another
 	-- followedRbxPlayer: player object of the person being followed
 local function onNewFollower(followerRbxPlayer, followedRbxPlayer)
-	RemoteEvent_OnNewFollower:FireClient(followedRbxPlayer, followerRbxPlayer)
+	RemoteEvent_NewFollower:FireClient(followedRbxPlayer, followerRbxPlayer)
 end
-RemoteEvent_OnNewFollower.OnServerEvent:connect(onNewFollower)
+if RemoteEvent_NewFollower then
+	RemoteEvent_NewFollower.OnServerEvent:connect(onNewFollower)
+end
 
 local function setDialogInUse(player, dialog, value)
 	if dialog ~= nil then
