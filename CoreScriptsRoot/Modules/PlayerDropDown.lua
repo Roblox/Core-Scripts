@@ -29,6 +29,9 @@ local FRIEND_IMAGE = 'http://www.roblox.com/thumbs/avatar.ashx?userId='
 local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
 local IsFollowersEnabled = followerSuccess and isFollowersEnabled
 
+local serverFollowersSuccess, serverFollowersEnabled = pcall(function() return settings():GetFFlag("UserServerFollowers") end)
+local IsServerFollowers = serverFollowersSuccess and serverFollowersEnabled
+
 --[[ Modules ]]--
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 local settingsHub = nil
@@ -540,7 +543,7 @@ function createPlayerDropDown()
 				})
 		end
 		-- following status
-		if IsFollowersEnabled then
+		if IsServerFollowers or IsFollowersEnabled then
 			local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
 			local followerText = following and "Unfollow Player" or "Follow Player"
 			
