@@ -57,9 +57,6 @@ function KeyboardMovement:Enable()
 		return
 	end
 	
-	local ZMovement = 0
-	local XMovement = 0
-	
 	local forwardValue  = 0
 	local backwardValue = 0
 	local leftValue = 0
@@ -67,7 +64,7 @@ function KeyboardMovement:Enable()
 	
 	local updateMovement = function()
 		MasterControl:AddToPlayerMovement(-currentMoveVector)
-		currentMoveVector = Vector3.new(XMovement,0,ZMovement)
+		currentMoveVector = Vector3.new(leftValue + rightValue,0,forwardValue + backwardValue)
 		MasterControl:AddToPlayerMovement(currentMoveVector)
 	end
 	
@@ -82,14 +79,8 @@ function KeyboardMovement:Enable()
 	local moveForwardFunc = function(actionName, inputState, inputObject)
 		if inputState == Enum.UserInputState.Begin then
 			forwardValue = -1
-			ZMovement = -1
 		elseif inputState == Enum.UserInputState.End then
 			forwardValue = 0
-			if backwardValue ~= 0 then
-				ZMovement = 1
-			else
-				ZMovement = 0
-			end
 		end
 		updateMovement()
 	end
@@ -97,14 +88,8 @@ function KeyboardMovement:Enable()
 	local moveBackwardFunc = function(actionName, inputState, inputObject)	
 		if inputState == Enum.UserInputState.Begin then
 			backwardValue = 1
-			ZMovement = 1
 		elseif inputState == Enum.UserInputState.End then
 			backwardValue = 0
-			if forwardValue ~= 0 then
-				ZMovement = -1
-			else
-				ZMovement = 0
-			end
 		end
 		updateMovement()
 	end
@@ -112,14 +97,8 @@ function KeyboardMovement:Enable()
 	local moveLeftFunc = function(actionName, inputState, inputObject)	
 		if inputState == Enum.UserInputState.Begin then
 			leftValue = -1
-			XMovement = -1
 		elseif inputState == Enum.UserInputState.End then
 			leftValue = 0
-			if rightValue ~= 0 then
-				XMovement = 1
-			else
-				XMovement = 0
-			end
 		end
 		updateMovement()
 	end
@@ -127,14 +106,8 @@ function KeyboardMovement:Enable()
 	local moveRightFunc = function(actionName, inputState, inputObject)	
 		if inputState == Enum.UserInputState.Begin then
 			rightValue = 1
-			XMovement = 1
 		elseif inputState == Enum.UserInputState.End then
 			rightValue = 0
-			if leftValue ~= 0 then
-				XMovement = -1
-			else
-				XMovement = 0
-			end
 		end
 		updateMovement()
 	end
