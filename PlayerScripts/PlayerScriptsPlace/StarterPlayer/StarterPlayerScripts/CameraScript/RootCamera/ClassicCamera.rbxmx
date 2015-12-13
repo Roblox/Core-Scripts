@@ -1,10 +1,10 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX5744EB97A6D34E5AA94E31CE07E5D09D">
+	<Item class="ModuleScript" referent="RBX100DF6F24BA54212B68F05C9E17C8284">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
-			<string name="Name">ClassicCamera</string>
+			<string name="Name">Classic2Camera</string>
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
 local RootCameraCreator = require(script.Parent)
 
@@ -104,8 +104,8 @@ local function CreateClassicCamera()
 						if IsFinite(y) then
 							self.RotateInput = self.RotateInput + Vector2.new(y, 0)
 						end
-					else
-						print("no LastSubjectCFrame")
+					elseif self.LastCameraTransform then
+						--this is so that the camera retains its heading when sitting in a vehicle seat
 						local y = findAngleBetweenXZVectors(self.LastCameraTransform.lookVector, Vector3.new(0,0,-1))
 						if IsFinite(y) then
 							self.RotateInput = self.RotateInput + Vector2.new(y, 0)
