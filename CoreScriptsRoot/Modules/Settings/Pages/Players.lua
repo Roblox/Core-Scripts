@@ -1,5 +1,5 @@
 --[[r
-		Filename: Record.lua
+		Filename: Players.lua
 		Written by: Stickmasterluke
 		Version 1.0
 		Description: Player list inside escape menu, with friend adding functionality.
