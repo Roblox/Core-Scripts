@@ -27,7 +27,6 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 
 --[[ VARIABLES ]]
 local isTouchDevice = UserInputService.TouchEnabled
-local isSmallTouchScreen = utility:IsSmallTouchScreen()
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local platform = UserInputService:GetPlatform()
@@ -42,7 +41,7 @@ local playerList = require(RobloxGui.Modules.PlayerlistModule)
 local chat = require(RobloxGui.Modules.Chat)
 local backpack = require(RobloxGui.Modules.BackpackScript)
 
-if isSmallTouchScreen or isTenFootInterface then
+if utility:IsSmallTouchScreen() or isTenFootInterface then
 	SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0,0,0,0)
 	SETTINGS_SHIELD_SIZE = UDim2.new(1,0,1,0)
 end
@@ -118,7 +117,7 @@ local function CreateSettingsHub()
 		this[textName].FontSize = Enum.FontSize.Size24
 		local hintLabel = nil
 
-		if not isTouchDevice then
+		if not UserInputService.TouchEnabled then
 			this[textName].Size = UDim2.new(1,0,1,0)
 			if isTenFootInterface then
 				this[textName].Position = UDim2.new(0,60,0,-4)
@@ -148,10 +147,6 @@ local function CreateSettingsHub()
 			if isTenFootInterface then
 				hintLabel.Size = UDim2.new(0,90,0,90)
 				hintLabel.Position = UDim2.new(0,10,0.5,-45)
-			elseif UserInputService.MouseEnabled then
-				hintLabel.Image = keyboardImage
-				hintLabel.Size = UDim2.new(0,48,0,48)
-				hintLabel.Position = UDim2.new(0,10,0,8)
 			end
 		end
 
@@ -193,7 +188,7 @@ local function CreateSettingsHub()
 
 	local function createGui()
 		local PageViewSizeReducer = 0
-		if isSmallTouchScreen then
+		if utility:IsSmallTouchScreen() then
 			PageViewSizeReducer = 5
 		end
 
@@ -249,7 +244,7 @@ local function CreateSettingsHub()
 		};
 
 		local barHeight = 60
-		if isSmallTouchScreen then
+		if utility:IsSmallTouchScreen() then
 			barHeight = 40
 			this.HubBar.Size = UDim2.new(1,-10,0,40)
 			this.HubBar.Position = UDim2.new(0,5,0,6)
@@ -336,11 +331,11 @@ local function CreateSettingsHub()
 				 							0.5, -(this.HubBar.Position.Y.Offset - this.HubBar.Size.Y.Offset))
 		end
 
-		if isSmallTouchScreen then
+		if utility:IsSmallTouchScreen() then
 			this.PageView.CanvasSize = this.PageViewClipper.Size
 		else
 			local bottomOffset = 0
-			if isTouchDevice and not UserInputService.MouseEnabled then
+			if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
 				bottomOffset = 80
 			end
 			this.BottomButtonFrame = utility:Create'Frame'
@@ -411,15 +406,14 @@ local function CreateSettingsHub()
 			if isTenFootInterface then
 				largestPageSize = 800
 				bufferSize = 0.07 * fullScreenSize
-			elseif isSmallTouchScreen then
+			elseif utility:IsSmallTouchScreen() then
 				bufferSize = (1-0.99) * fullScreenSize
 			end
 			local barSize = this.HubBar.Size.Y.Offset
 			local extraSpace = bufferSize*2+barSize*2
 
-
 			local usableScreenHeight = fullScreenSize - extraSpace
-			local minimumPageSize = 120--150
+			local minimumPageSize = 150
 			local usePageSize = nil
 
 			if largestPageSize < usableScreenHeight then
@@ -472,21 +466,12 @@ local function CreateSettingsHub()
 				end
 			end
 
-			if isSmallTouchScreen then
-				this.PageViewClipper.Size = UDim2.new(
-					this.PageViewClipper.Size.X.Scale,
-					this.PageViewClipper.Size.X.Offset,
-					0,
-					usePageSize + 44
-				)
-			else
-				this.PageViewClipper.Size = UDim2.new(
-					this.PageViewClipper.Size.X.Scale,
-					this.PageViewClipper.Size.X.Offset,
-					0,
-					usePageSize
-				)
-			end
+			this.PageViewClipper.Size = UDim2.new(
+				this.PageViewClipper.Size.X.Scale,
+				this.PageViewClipper.Size.X.Offset,
+				0,
+				usePageSize
+			)
 			this.PageViewClipper.Position = UDim2.new(
 				this.PageViewClipper.Position.X.Scale,
 				this.PageViewClipper.Position.X.Offset,
@@ -589,7 +574,7 @@ local function CreateSettingsHub()
 
 		-- touch drag scrolling
 		local pcTestTouchControls = false
-		if isTouchDevice or pcTestTouchControls then
+		if UserInputService.TouchEnabled or pcTestTouchControls then
 			local isDraggingTouch = false
 			local touchHandleOffset = 0
 			local touchPosition = 0
@@ -887,12 +872,6 @@ local function CreateSettingsHub()
 		this.Pages.CurrentPage:Display(this.PageView, skipAnimation)
 		this.Pages.CurrentPage.Active = true
 
-		if this.Pages.CurrentPage.Opening then
-			pcall(function()
-				this.Pages.CurrentPage.Opening()
-			end)
-		end
-
 		local pageSize = this.Pages.CurrentPage:GetSize()
 		this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
 
@@ -994,7 +973,7 @@ local function CreateSettingsHub()
 				if this.HomePage then
 					this:SwitchToPage(this.HomePage, nil, 1, true)
 				else
-					this:SwitchToPage(this.PlayersPage, nil, 1, true)
+					this:SwitchToPage(this.GameSettingsPage, nil, 1, true)
 				end
 			end
 
@@ -1107,6 +1086,10 @@ local function CreateSettingsHub()
 	this.LeaveGamePage:SetHub(this)
 
 	-- full page initialization
+	if utility:IsSmallTouchScreen() then
+		this.HomePage = require(RobloxGui.Modules.Settings.Pages.Home)
+		this.HomePage:SetHub(this)
+	end
 
 	this.GameSettingsPage = require(RobloxGui.Modules.Settings.Pages.GameSettings)
 	this.GameSettingsPage:SetHub(this)
@@ -1124,14 +1107,7 @@ local function CreateSettingsHub()
 		this.RecordPage:SetHub(this)
 	end
 
-	this.PlayersPage = require(RobloxGui.Modules.Settings.Pages.Players)
-	this.PlayersPage:SetHub(this)
-
 	-- page registration
-	if this.PlayersPage then
-		this:AddPage(this.PlayersPage)
-	end
-
 	this:AddPage(this.ResetCharacterPage)
 	this:AddPage(this.LeaveGamePage)
 	if this.HomePage then
@@ -1149,7 +1125,7 @@ local function CreateSettingsHub()
 	if this.HomePage then
 		this:SwitchToPage(this.HomePage, true, 1)
 	else
-		this:SwitchToPage(this.PlayerPage, true, 1)
+		this:SwitchToPage(this.GameSettingsPage, true, 1)
 	end
 	-- hook up to necessary signals
 
@@ -1157,6 +1133,7 @@ local function CreateSettingsHub()
 	GuiService.ShowLeaveConfirmation:connect(function()
 		if #this.MenuStack == 0 then
 			this:SwitchToPage(this.LeaveGamePage, nil, 1)
+			this:SetVisibility(true)
 		else
 			this:SetVisibility(false)
 			this:PopMenu()
