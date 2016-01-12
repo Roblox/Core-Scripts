@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBX0E57AF80ED7545DFBCB707D35FD97C0A">
+	<Item class="LocalScript" referent="RBX5EC99B272D694BC28CC6300840764427">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -44,20 +44,18 @@ end
 while not Players.LocalPlayer do
 	wait()
 end
+
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild('PlayerGui')
 local IsTouchDevice = UserInputService.TouchEnabled
-local IsKeyboardDevice = UserInputService.KeyboardEnabled
 local UserMovementMode = IsTouchDevice and GameSettings.TouchMovementMode or GameSettings.ComputerMovementMode
 local DevMovementMode = IsTouchDevice and LocalPlayer.DevTouchMovementMode or LocalPlayer.DevComputerMovementMode
-local IsUserChoice = (IsTouchDevice and DevMovementMode == Enum.DevTouchMovementMode.UserChoice) or
-	DevMovementMode == Enum.DevComputerMovementMode.UserChoice
+local IsUserChoice = (IsTouchDevice and DevMovementMode == Enum.DevTouchMovementMode.UserChoice) or (DevMovementMode == Enum.DevComputerMovementMode.UserChoice)
 local TouchGui = nil
 local TouchControlFrame = nil
 local TouchJumpModule = nil
 local IsModalEnabled = UserInputService.ModalEnabled
 local BindableEvent_OnFailStateChanged = nil
-local BindableEvent_EnableTouchJump = nil
 local isJumpEnabled = false
 
 
@@ -75,10 +73,12 @@ if IsTouchDevice then
 	ControlModules.Default = ControlModules.Thumbstick
 	TouchJumpModule = require(script.MasterControl:WaitForChild('TouchJump'))
 	BindableEvent_OnFailStateChanged = script.Parent:WaitForChild('OnClickToMoveFailStateChange')
-	BindableEvent_EnableTouchJump = script.Parent:WaitForChild('EnableTouchJump')
-elseif IsKeyboardDevice then
+end
+
+if UserInputService.KeyboardEnabled then
 	ControlModules.Keyboard = require(script.MasterControl:WaitForChild('KeyboardMovement'))
 end
+
 ControlModules.Gamepad = require(script.MasterControl:WaitForChild('Gamepad'))
 local success, value = pcall(function() return UserSettings():IsUserFeatureEnabled("UserUseLuaVehicleController") end)
 if success and value then
@@ -134,10 +134,13 @@ local function setClickToMove()
 end
 
 --[[ Controls State Management ]]--
-local onControlsChanged = nil
+local onControlsChangedKeyboard = nil
+local onControlsChangedTouch = nil
+local onControlsChangedGamepad = nil
+
 if IsTouchDevice then
 	createTouchGuiContainer()
-	onControlsChanged = function()
+	onControlsChangedTouch = function()
 		local newModuleToEnable = nil
 		if not IsUserChoice then
 			if DevMovementMode == Enum.DevTouchMovementMode.Thumbstick then
@@ -183,8 +186,9 @@ if IsTouchDevice then
 			end
 		end
 	end
-elseif UserInputService.KeyboardEnabled then
-	onControlsChanged = function()
+end
+if UserInputService.KeyboardEnabled then
+	onControlsChangedKeyboard = function()
 		-- NOTE: Click to move still uses keyboard. Leaving cases in case this ever changes.
 		local newModuleToEnable = nil
 		if not IsUserChoice then
@@ -212,8 +216,9 @@ elseif UserInputService.KeyboardEnabled then
 			end
 		end
 	end
-elseif UserInputService.GamepadEnabled then
-	onControlsChanged = function()
+end
+if UserInputService.GamepadEnabled then
+	onControlsChangedGamepad = function()
 		-- nil for now, probably needs some stuff later
 	end
 end
@@ -226,14 +231,16 @@ LocalPlayer.Changed:connect(function(property)
 		if IsUserChoice then
 			UserMovementMode = GameSettings.TouchMovementMode
 		end
-		onControlsChanged()
-	elseif not IsTouchDevice and property == 'DevComputerMovementMode' then
+		onControlsChangedTouch()
+	end
+	
+	if UserInputService.KeyboardEnabled and property == 'DevComputerMovementMode' then
 		DevMovementMode = LocalPlayer.DevComputerMovementMode
 		IsUserChoice = DevMovementMode == Enum.DevComputerMovementMode.UserChoice
 		if IsUserChoice then
 			UserMovementMode = GameSettings.ComputerMovementMode
 		end
-		onControlsChanged()
+		onControlsChangedKeyboard()
 	end
 end)
 
@@ -241,7 +248,11 @@ GameSettings.Changed:connect(function(property)
 	if not IsUserChoice then return end
 	if property == 'TouchMovementMode' or property == 'ComputerMovementMode' then
 		UserMovementMode = GameSettings[property]
-		onControlsChanged()
+		if property == 'TouchMovementMode' then
+			onControlsChangedTouch()
+		elseif property == 'ComputerMovementMode' then
+			onControlsChangedKeyboard()
+		end
 	end
 end)
 
@@ -254,7 +265,7 @@ if IsTouchDevice then
 			CurrentControlModule:Disable()
 			CurrentControlModule = nil
 		end
-		onControlsChanged()
+		onControlsChangedTouch()
 	end)
 	
 	UserInputService.Changed:connect(function(property)
@@ -291,21 +302,48 @@ if IsTouchDevice then
 			end
 		end
 	end)
-	BindableEvent_EnableTouchJump.Event:connect(function(enable)
-		if enable then
-			TouchJumpModule:Enable()
-		else
-			TouchJumpModule:Disable()
-		end
-	end)
 end
 
 MasterControl:Init()
-onControlsChanged()
 
--- why do I need a wait here?!?!?!? Sometimes touch controls don't disappear without this
-wait()
-if UserInputService.GamepadEnabled then
+local switchToInputType = function(lastInputType)
+	if lastInputType == Enum.UserInputType.Touch then
+		if onControlsChangedTouch then onControlsChangedTouch() end
+	elseif lastInputType == Enum.UserInputType.Keyboard or
+			lastInputType == Enum.UserInputType.MouseButton1 or
+			lastInputType == Enum.UserInputType.MouseButton2 or
+			lastInputType == Enum.UserInputType.MouseButton3 or
+			lastInputType == Enum.UserInputType.MouseWheel or
+			lastInputType == Enum.UserInputType.MouseMovement  then
+			
+		if onControlsChangedKeyboard then onControlsChangedKeyboard() end
+	elseif lastInputType == Enum.UserInputType.Gamepad1 or
+			lastInputType == Enum.UserInputType.Gamepad2 or
+			lastInputType == Enum.UserInputType.Gamepad3 or
+			lastInputType == Enum.UserInputType.Gamepad4 then
+				
+		if onControlsChangedGamepad then onControlsChangedGamepad() end
+	else
+		if onControlsChangedKeyboard then onControlsChangedKeyboard() end
+	end
+end
+
+local hasLastInput = pcall(function()
+	switchToInputType(UserInputService:GetLastInputType())
+	UserInputService.LastInputTypeChanged:connect(switchToInputType)
+end)
+
+if not hasLastInput then
+	if IsTouchDevice then
+		if onControlsChangedTouch then onControlsChangedTouch() end
+	elseif UserInputService.GamepadEnabled then
+		if onControlsChangedGamepad then onControlsChangedGamepad() end
+	else
+		if onControlsChangedKeyboard then onControlsChangedKeyboard() end
+	end
+end
+
+if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
 	if CurrentControlModule and IsTouchDevice then
 		CurrentControlModule:Disable()
 	end
@@ -315,10 +353,10 @@ if UserInputService.GamepadEnabled then
 end
 
 UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
-	if UserInputService.GamepadEnabled then return end
+	if gamepadEnum ~= Enum.UserInputType.Gamepad1 then return end
 	
 	if CurrentControlModule and IsTouchDevice then
-			CurrentControlModule:Enable()
+		CurrentControlModule:Enable()
 	end
 	if isJumpEnabled and IsTouchDevice then TouchJumpModule:Enable() end
 	
