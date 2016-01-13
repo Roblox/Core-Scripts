@@ -1,4 +1,4 @@
---[[r
+ --[[
 		Filename: Players.lua
 		Written by: Stickmasterluke
 		Version 1.0
@@ -41,36 +41,6 @@ local function Initialize()
 		end
 	end
 
-	-- Alphabetical sorting
-	local alphabet = {' ','.','0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'}
-	local alphabetPositions = {}
-	for index, character in ipairs(alphabet) do
-		alphabetPositions[character] = index
-	end
-	alphabet = nil
-	local function alphanumericCompare(string1, string2)
-		if string1 == string2 then
-			return string1
-		end
-		local index = 1
-		while true do
-			local string1CharacterPos = alphabetPositions[string.sub(string1, index, index)]
-			local string2CharacterPos = alphabetPositions[string.sub(string2, index, index)]
-			if string1CharacterPos == nil then
-				return string1
-			elseif string2CharacterPos == nil then
-				return string2
-			end
-			if string1CharacterPos < string2CharacterPos then
-				return string1
-			elseif string1CharacterPos > string2CharacterPos then
-				return string2
-			end
-			index = index + 1
-		end
-	end
-
-
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "PlayersTab"
 
@@ -87,16 +57,13 @@ local function Initialize()
 	else
 		this.TabHeader.Icon.Size = UDim2.new(0,44,0,37)
 		this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-18)	-- -22
-		print(this.TabHeader.Size)
 		this.TabHeader.Size = UDim2.new(0,150,1,0)
 	end
-
 
 	this.TabHeader.Icon.Title.Text = "Players"
 
 
 	----- FRIENDSHIP FUNCTIONS ------
-
 	local function getFriendStatus(selectedPlayer)
 		if selectedPlayer == localPlayer then
 			return Enum.FriendStatus.NotFriend
@@ -156,15 +123,8 @@ local function Initialize()
 						if addButton then
 							addButton:Destroy()
 						end
-						wait(.5)	-- without this wait, it will still think that a friend request has not been sent
-						friendStatusCreate(playerLabel, player)
 					end)
 					addButton.Parent = playerLabel
-					--[[local addButton = utility:MakeStyledButton("FriendStatus", "Add Friend", UDim2.new(0,182,0,46), function()
-						--add friend
-					end)
-					addButton.Position = UDim2.new(1,-198,0,7)
-					addButton.Parent = frame]]
 				elseif status == Enum.FriendStatus.FriendRequestSent then
 					local friendLabel = Instance.new('TextLabel')
 					friendLabel.Name = 'FriendStatus'
@@ -174,7 +134,7 @@ local function Initialize()
 					friendLabel.FontSize = 'Size24'
 					friendLabel.TextColor3 = Color3.new(1,1,1)
 					friendLabel.Size = UDim2.new(0,182,0,46)
-					friendLabel.Position = UDim2.new(1,-198,0,7)	-- -194
+					friendLabel.Position = UDim2.new(1,-198,0,7)
 					friendLabel.ZIndex = 3
 					friendLabel.Parent = playerLabel
 				end
@@ -182,15 +142,17 @@ local function Initialize()
 		end
 	end
 
-	if utility:IsSmallTouchScreen() then
-		--[[local resumeGameFunc = function()		--Not sure if there is enough space for another horizontal button, and resume button is not included in the mockup.
-			this.HubRef:SetVisibility(false)
+	localPlayer.FriendStatusChanged:connect(function(player, friendStatus)
+		if player then
+			local playerLabel = this.Page:FindFirstChild('PlayerLabel'..player.Name)
+			if playerLabel then
+				friendStatusCreate(playerLabel, player)
+			end
 		end
-		resumeButton, resumeLabel = utility:MakeStyledButton("ResumeButton", "Resume Game", UDim2.new(0, 200, 0, 50), resumeGameFunc)
-		resumeLabel.Size = UDim2.new(1, 0, 1, -6)
-		resumeLabel.FontSize = Enum.FontSize.Size24
-		resumeButton.Position = UDim2.new(0.5,-100,0,BUTTON_OFFSET)
-		resumeButton.Parent = this.Page]]
+	end)
+
+	if utility:IsSmallTouchScreen() then
+		local spaceFor3Buttons = RobloxGui.AbsoluteSize.x >= 720	-- else there is only space for 2
 
 		local resetFunc = function()
 			this.HubRef:SwitchToPage(this.HubRef.ResetCharacterPage, false, 1)
@@ -198,7 +160,7 @@ local function Initialize()
 		local resetButton, resetLabel = utility:MakeStyledButton("ResetButton", "Reset Character", UDim2.new(0, 200, 0, 62), resetFunc)
 		resetLabel.Size = UDim2.new(1, 0, 1, -6)
 		resetLabel.FontSize = Enum.FontSize.Size24
-		resetButton.Position = UDim2.new(0.5,20,0,14)
+		resetButton.Position = UDim2.new(0.5,spaceFor3Buttons and -340 or -220,0,14)
 		resetButton.Parent = this.Page
 
 		local leaveGameFunc = function()
@@ -207,87 +169,91 @@ local function Initialize()
 		local leaveButton, leaveLabel = utility:MakeStyledButton("LeaveButton", "Leave Game", UDim2.new(0, 200, 0, 62), leaveGameFunc)
 		leaveLabel.Size = UDim2.new(1, 0, 1, -6)
 		leaveLabel.FontSize = Enum.FontSize.Size24
-		leaveButton.Position = UDim2.new(0.5,-220,0,14)
+		leaveButton.Position = UDim2.new(0.5,spaceFor3Buttons and -100 or 20,0,14)
 		leaveButton.Parent = this.Page
+
+		if spaceFor3Buttons then
+			local resumeGameFunc = function()
+				this.HubRef:SetVisibility(false)
+			end
+			resumeButton, resumeLabel = utility:MakeStyledButton("ResumeButton", "Resume Game", UDim2.new(0, 200, 0, 62), resumeGameFunc)
+			resumeLabel.Size = UDim2.new(1, 0, 1, -6)
+			resumeLabel.FontSize = Enum.FontSize.Size24
+			resumeButton.Position = UDim2.new(0.5,140,0,14)
+			resumeButton.Parent = this.Page
+		end
 	end
 
+	local existingPlayerLabels = {}
 	local Opening = function()
-		for _, item in pairs(this.Page:GetChildren()) do
-			if item and string.sub(item.Name,1,11) == 'PlayerLabel' then
-				item:Destroy()
-			end
-		end
-		local sortedPlayers = {}
-		for _, player in pairs(PlayersService:GetPlayers()) do
-			--if player and player ~= localPlayer then
-				local lowerPlayerName = string.lower(player.Name)
-				local spotFound = false
-				for i, sortedPlayer in ipairs(sortedPlayers) do
-					local lowerSortedPlayerName = string.lower(sortedPlayer.Name)
-					local sortedChampion = alphanumericCompare(lowerPlayerName, lowerSortedPlayerName)
-					if sortedChampion == lowerPlayerName then
-						spotFound = true
-						table.insert(sortedPlayers, i, player)
-						break
-					end
-				end
-				if not spotFound then
-					table.insert(sortedPlayers, #sortedPlayers+1, player)
-				end
-			--end
-		end
+		local sortedPlayers = game.Players:GetPlayers()
+		table.sort(sortedPlayers,function(item1,item2)
+			return item1.Name < item2.Name
+		end)
 
 		local extraOffset = 20
 		if utility:IsSmallTouchScreen() then
 			extraOffset = 85
 		end
 
-		for index, player in ipairs(sortedPlayers) do
-			local frame = Instance.new('ImageLabel')
-			frame.Name = 'PlayerLabel'..player.Name
-			frame.Image = "rbxasset://textures/ui/dialog_white.png"
-			frame.ScaleType = 'Slice'
-			frame.SliceCenter = Rect.new(10,10,10,10)
-			frame.Size = UDim2.new(1,0,0,60)
-			frame.Position = UDim2.new(0,0,0,(index-1)*80 + extraOffset)
-			frame.BackgroundTransparency = 1
-			frame.ImageTransparency = .85
-			frame.ZIndex = 2
+		local framesToDestroy = {}
+		for index=1, math.max(#sortedPlayers,#existingPlayerLabels) do
+			local player = sortedPlayers[index]
+			local frame = existingPlayerLabels[index]
+			if player then
+				if not frame then
+					frame = Instance.new('ImageLabel')
+					frame.Image = "rbxasset://textures/ui/dialog_white.png"
+					frame.ScaleType = 'Slice'
+					frame.SliceCenter = Rect.new(10,10,10,10)
+					frame.Size = UDim2.new(1,0,0,60)
+					frame.Position = UDim2.new(0,0,0,(index-1)*80 + extraOffset)
+					frame.BackgroundTransparency = 1
+					frame.ImageTransparency = .85
+					frame.ZIndex = 2
 
-			local icon = Instance.new('ImageLabel')
-			icon.Name = 'Icon'
-			icon.Image = 'http://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId='..math.max(1, player.userId)
-			icon.BackgroundTransparency = 1
-			icon.Size = UDim2.new(0,36,0,36)
-			icon.Position = UDim2.new(0,12,0,12)
-			icon.ZIndex = 3
-			icon.Parent = frame
+					local icon = Instance.new('ImageLabel')
+					icon.Name = 'Icon'
+					icon.BackgroundTransparency = 1
+					icon.Size = UDim2.new(0,36,0,36)
+					icon.Position = UDim2.new(0,12,0,12)
+					icon.ZIndex = 3
+					icon.Parent = frame
 
-			local nameLabel = Instance.new('TextLabel')
-			nameLabel.Text = player.Name
-			nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-			nameLabel.Font = 'SourceSans'	--player == localPlayer and 'SourceSansBold' or 'SourceSans'	--bolded nametag if self
-			nameLabel.FontSize = 'Size24'
-			nameLabel.TextColor3 = Color3.new(1,1,1)
-			nameLabel.BackgroundTransparency = 1
-			nameLabel.Position = UDim2.new(0,60,.5,0)
-			nameLabel.Size = UDim2.new(0,0,0,0)
-			nameLabel.ZIndex = 3
-			nameLabel.Parent = frame
+					local nameLabel = Instance.new('TextLabel')
+					nameLabel.Name = 'NameLabel'
+					nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+					nameLabel.Font = 'SourceSans'
+					nameLabel.FontSize = 'Size24'
+					nameLabel.TextColor3 = Color3.new(1,1,1)
+					nameLabel.BackgroundTransparency = 1
+					nameLabel.Position = UDim2.new(0,60,.5,0)
+					nameLabel.Size = UDim2.new(0,0,0,0)
+					nameLabel.ZIndex = 3
+					nameLabel.Parent = frame
 
-			friendStatusCreate(frame, player)
-			
-			frame.Parent = this.Page
+					frame.Parent = this.Page
+					table.insert(existingPlayerLabels, index, frame)
+				end
+				frame.Name = 'PlayerLabel'..player.Name
+				frame.Icon.Image = 'http://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId='..math.max(1, player.userId)
+				frame.NameLabel.Text = player.Name
+
+				friendStatusCreate(frame, player)
+			elseif frame then
+				table.insert(framesToDestroy,frame)
+			end
+		end
+		for i=#framesToDestroy, 1, -1 do
+			local frame = framesToDestroy[i]
+			if frame then
+				frame:Destroy()
+			end
 		end
 
 		this.Page.Size = UDim2.new(1,0,0, extraOffset + 80 * #sortedPlayers - 5)
 	end
 	this.Opening = Opening
-
-	-- need to override this function from SettingsPageFactory
-	function this:SetHub(newHubRef)
-		this.HubRef = newHubRef
-	end
 
 	return this
 end
@@ -297,12 +263,7 @@ end
 PageInstance = Initialize()
 
 
-PageInstance.Displayed.Event:connect(function(switchedFromGamepadInput)
-	if switchedFromGamepadInput then
-		--GuiService.SelectedCoreObject = PageInstance.ScreenshotButton
-	end
-end)
-
-
-
 return PageInstance
+
+
+

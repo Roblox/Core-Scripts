@@ -419,7 +419,7 @@ local function CreateSettingsHub()
 
 
 			local usableScreenHeight = fullScreenSize - extraSpace
-			local minimumPageSize = 120--150
+			local minimumPageSize = 150
 			local usePageSize = nil
 
 			if largestPageSize < usableScreenHeight then
@@ -991,11 +991,7 @@ local function CreateSettingsHub()
 				removeBottomBarBindings()
 				this:SwitchToPage(customStartPage, nil, 1, true)
 			else
-				if this.HomePage then
-					this:SwitchToPage(this.HomePage, nil, 1, true)
-				else
-					this:SwitchToPage(this.PlayersPage, nil, 1, true)
-				end
+				this:SwitchToPage(this.PlayersPage, nil, 1, true)
 			end
 
 			playerList:HideTemp('SettingsMenu', true)
@@ -1128,15 +1124,10 @@ local function CreateSettingsHub()
 	this.PlayersPage:SetHub(this)
 
 	-- page registration
-	if this.PlayersPage then
-		this:AddPage(this.PlayersPage)
-	end
+	this:AddPage(this.PlayersPage)
 
 	this:AddPage(this.ResetCharacterPage)
 	this:AddPage(this.LeaveGamePage)
-	if this.HomePage then
-		this:AddPage(this.HomePage)
-	end
 	this:AddPage(this.GameSettingsPage)
 	if this.ReportAbusePage then
 		this:AddPage(this.ReportAbusePage)
@@ -1146,17 +1137,14 @@ local function CreateSettingsHub()
 		this:AddPage(this.RecordPage)
 	end
 
-	if this.HomePage then
-		this:SwitchToPage(this.HomePage, true, 1)
-	else
-		this:SwitchToPage(this.PlayerPage, true, 1)
-	end
+	this:SwitchToPage(this.PlayerPage, true, 1)
 	-- hook up to necessary signals
 
 	-- connect back button on android
 	GuiService.ShowLeaveConfirmation:connect(function()
 		if #this.MenuStack == 0 then
 			this:SwitchToPage(this.LeaveGamePage, nil, 1)
+			this:SetVisibility(true)
 		else
 			this:SetVisibility(false)
 			this:PopMenu()
