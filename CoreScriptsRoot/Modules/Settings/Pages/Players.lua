@@ -24,7 +24,6 @@ local PageInstance = nil
 local localPlayer = PlayersService.LocalPlayer
 
 ----------- CLASS DECLARATION --------------
-
 local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()

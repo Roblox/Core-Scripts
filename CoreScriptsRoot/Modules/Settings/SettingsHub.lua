@@ -36,6 +36,8 @@ local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
 local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
 local lastInputChangedCon = nil
 local chatWasVisible = false 
+local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
+local useUserList = (userlistSuccess and userlistFlagValue == true)
 
 --[[ CORE MODULES ]]
 local playerList = require(RobloxGui.Modules.PlayerlistModule)
@@ -472,13 +474,22 @@ local function CreateSettingsHub()
 				end
 			end
 
-			if isSmallTouchScreen then
-				this.PageViewClipper.Size = UDim2.new(
-					this.PageViewClipper.Size.X.Scale,
-					this.PageViewClipper.Size.X.Offset,
-					0,
-					usePageSize + 44
-				)
+			if useUserList then
+				if isSmallTouchScreen then
+					this.PageViewClipper.Size = UDim2.new(
+						this.PageViewClipper.Size.X.Scale,
+						this.PageViewClipper.Size.X.Offset,
+						0,
+						usePageSize + 44
+					)
+				else
+					this.PageViewClipper.Size = UDim2.new(
+						this.PageViewClipper.Size.X.Scale,
+						this.PageViewClipper.Size.X.Offset,
+						0,
+						usePageSize
+					)
+				end
 			else
 				this.PageViewClipper.Size = UDim2.new(
 					this.PageViewClipper.Size.X.Scale,
@@ -887,10 +898,12 @@ local function CreateSettingsHub()
 		this.Pages.CurrentPage:Display(this.PageView, skipAnimation)
 		this.Pages.CurrentPage.Active = true
 
-		if this.Pages.CurrentPage.Opening then
-			pcall(function()
-				this.Pages.CurrentPage.Opening()
-			end)
+		if useUserList then
+			if this.Pages.CurrentPage.Opening then
+				pcall(function()
+					this.Pages.CurrentPage.Opening()
+				end)
+			end
 		end
 
 		local pageSize = this.Pages.CurrentPage:GetSize()
@@ -991,7 +1004,15 @@ local function CreateSettingsHub()
 				removeBottomBarBindings()
 				this:SwitchToPage(customStartPage, nil, 1, true)
 			else
-				this:SwitchToPage(this.PlayersPage, nil, 1, true)
+				if useUserList then
+					this:SwitchToPage(this.PlayersPage, nil, 1, true)
+				else
+					if this.HomePage then
+						this:SwitchToPage(this.HomePage, nil, 1, true)
+					else
+						this:SwitchToPage(this.GameSettingsPage, nil, 1, true)
+					end
+				end
 			end
 
 			playerList:HideTemp('SettingsMenu', true)
@@ -1103,6 +1124,12 @@ local function CreateSettingsHub()
 	this.LeaveGamePage:SetHub(this)
 
 	-- full page initialization
+	if not useUserList then
+		if utility:IsSmallTouchScreen() then
+			this.HomePage = require(RobloxGui.Modules.Settings.Pages.Home)
+			this.HomePage:SetHub(this)
+		end
+	end
 
 	this.GameSettingsPage = require(RobloxGui.Modules.Settings.Pages.GameSettings)
 	this.GameSettingsPage:SetHub(this)
@@ -1120,14 +1147,22 @@ local function CreateSettingsHub()
 		this.RecordPage:SetHub(this)
 	end
 
-	this.PlayersPage = require(RobloxGui.Modules.Settings.Pages.Players)
-	this.PlayersPage:SetHub(this)
+	if useUserList then
+		this.PlayersPage = require(RobloxGui.Modules.Settings.Pages.Players)
+		this.PlayersPage:SetHub(this)
+	end
 
 	-- page registration
-	this:AddPage(this.PlayersPage)
-
+	if useUserList then
+		this:AddPage(this.PlayersPage)
+	end
 	this:AddPage(this.ResetCharacterPage)
 	this:AddPage(this.LeaveGamePage)
+	if not useUserList then
+		if this.HomePage then
+			this:AddPage(this.HomePage)
+		end
+	end
 	this:AddPage(this.GameSettingsPage)
 	if this.ReportAbusePage then
 		this:AddPage(this.ReportAbusePage)
@@ -1137,7 +1172,15 @@ local function CreateSettingsHub()
 		this:AddPage(this.RecordPage)
 	end
 
-	this:SwitchToPage(this.PlayerPage, true, 1)
+	if useUserList then
+		this:SwitchToPage(this.PlayerPage, true, 1)
+	else
+		if this.HomePage then
+			this:SwitchToPage(this.HomePage, true, 1)
+		else
+			this:SwitchToPage(this.GameSettingsPage, true, 1)
+		end
+	end
 	-- hook up to necessary signals
 
 	-- connect back button on android
