@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBX19d54c212fd1424ab4aed39398914980">
+	<Item class="LocalScript" referent="RBX3C5D0BEBF6ED413EA31B5A5E9C0B72A7">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -29,6 +29,8 @@ local EnabledOcclusion = nil
 local currentCameraConn = nil
 local renderSteppedConn = nil
 
+local lastInputType = nil
+local hasLastInput = false
 
 local function IsTouch()
 	return UserInputService.TouchEnabled
@@ -48,7 +50,7 @@ end
 local function isClickToMoveOn()
 	local customModeOn, player, currentCamera = shouldUseCustomCamera()
 	if customModeOn then
-		if IsTouch() then -- Touch
+		if (hasLastInput and lastInputType == Enum.UserInputType.Touch) or IsTouch() then -- Touch
 			if player.DevTouchMovementMode == Enum.DevTouchMovementMode.ClickToMove or
 					(player.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice and GameSettings.TouchMovementMode == Enum.TouchMovementMode.ClickToMove) then
 				return true
@@ -66,7 +68,7 @@ end
 local function getCurrentCameraMode()
 	local customModeOn, player, currentCamera = shouldUseCustomCamera()
 	if customModeOn then
-		if IsTouch() then -- Touch (iPad, etc...)
+		if (hasLastInput and lastInputType == Enum.UserInputType.Touch) or IsTouch() then -- Touch (iPad, etc...)
 			if isClickToMoveOn() then
 				return Enum.DevTouchMovementMode.ClickToMove.Name
 			elseif player.DevTouchCameraMode == Enum.DevTouchCameraMovementMode.UserChoice then
@@ -230,6 +232,12 @@ end
 
 do
 	while PlayersService.LocalPlayer == nil do wait() end
+	hasLastInput = pcall(function()
+		lastInputType = UserInputService:GetLastInputType()
+		UserInputService.LastInputTypeChanged:connect(function(newLastInputType) 
+			lastInputType = newLastInputType
+		end)
+	end)
 	OnPlayerAdded(PlayersService.LocalPlayer)
 end
 ]]></ProtectedString>
