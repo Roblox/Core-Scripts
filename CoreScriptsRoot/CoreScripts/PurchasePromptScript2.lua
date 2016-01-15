@@ -1322,8 +1322,10 @@ function enableControllerInput()
 		function(actionName, inputState, inputObject)
 			if inputState ~= Enum.UserInputState.Begin then return end
 
-			if OkPurchasedButton.Visible or OkButton.Visible then
+			if OkPurchasedButton.Visible then
 				onPromptEnded(true)
+			elseif OkButton.Visible then
+				onPromptEnded(false)
 			elseif BuyButton.Visible then
 				onAcceptPurchase()
 			elseif BuyRobuxButton.Visible then
