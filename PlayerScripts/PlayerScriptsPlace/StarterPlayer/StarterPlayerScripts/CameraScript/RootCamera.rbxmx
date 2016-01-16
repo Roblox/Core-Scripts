@@ -7,6 +7,7 @@
 			<string name="Name">RootCamera</string>
 			<ProtectedString name="Source"><![CDATA[local UserInputService = game:GetService('UserInputService')
 local PlayersService = game:GetService('Players')
+local TeleportService = game:GetService("TeleportService")
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
@@ -744,9 +745,25 @@ local function CreateCamera()
 				end
 			end
 		end)
+
+		player.OnTeleport:connect(function(teleportState)
+			if teleportState ~= Enum.TeleportState.Failed then
+				TeleportService:SetTeleportSetting("StartInFirstPerson", this:IsInFirstPerson())
+			end
+		end)
+		
+		local firstRun = true
 		
 		local function OnCharacterAdded(newCharacter)
-			this:ZoomCamera(12.5)
+			if firstRun and UserSettings():IsUserFeatureEnabled("UserCameraZoomPersistThroughTeleport") then
+				firstRun = false
+				if TeleportService:GetTeleportSetting("StartInFirstPerson") == true then
+					this:ZoomCamera(0)
+				end
+			else
+				this:ZoomCamera(12.5)
+			end
+			
 			local humanoid = findPlayerHumanoid(player)
 			local start = tick()
 			while tick() - start < 0.3 and (humanoid == nil or humanoid.Torso == nil) do
