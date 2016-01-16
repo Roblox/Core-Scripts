@@ -898,14 +898,6 @@ local function CreateSettingsHub()
 		this.Pages.CurrentPage:Display(this.PageView, skipAnimation)
 		this.Pages.CurrentPage.Active = true
 
-		if useUserList then
-			if this.Pages.CurrentPage.Opening then
-				pcall(function()
-					this.Pages.CurrentPage.Opening()
-				end)
-			end
-		end
-
 		local pageSize = this.Pages.CurrentPage:GetSize()
 		this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
 

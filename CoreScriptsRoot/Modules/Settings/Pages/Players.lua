@@ -11,6 +11,7 @@ local GuiService = game:GetService("GuiService")
 local PlayersService = game:GetService('Players')
 local HttpService = game:GetService('HttpService')
 local HttpRbxApiService = game:GetService('HttpRbxApiService')
+local UserInputService = game:GetService('UserInputService')
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
@@ -28,17 +29,13 @@ local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
-	local BinbableFunction_SendNotification = nil
-	spawn(function()
-		BinbableFunction_SendNotification = RobloxGui:WaitForChild("SendNotification")
-	end)
-
-	--[[ Follower Notifications ]]--
-	local function sendNotification(title, text, image, duration, callback)
-		if BinbableFunction_SendNotification then
-			BinbableFunction_SendNotification:Invoke(title, text, image, duration, callback)
-		end
-	end
+	local playerLabelFakeSelection = Instance.new('ImageLabel')
+	playerLabelFakeSelection.BackgroundTransparency = 1
+	--[[playerLabelFakeSelection.Image = 'rbxasset://textures/ui/SelectionBox.png'
+	playerLabelFakeSelection.ScaleType = 'Slice'
+	playerLabelFakeSelection.SliceCenter = Rect.new(31,31,31,31)]]
+	playerLabelFakeSelection.Image = ''
+	playerLabelFakeSelection.Size = UDim2.new(0,0,0,0)
 
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "PlayersTab"
@@ -61,7 +58,6 @@ local function Initialize()
 
 	this.TabHeader.Icon.Title.Text = "Players"
 
-
 	----- FRIENDSHIP FUNCTIONS ------
 	local function getFriendStatus(selectedPlayer)
 		if selectedPlayer == localPlayer then
@@ -82,62 +78,92 @@ local function Initialize()
 	------ PAGE CUSTOMIZATION -------
 	this.Page.Name = "Players"
 
+	local selectionFound = nil
 	local function friendStatusCreate(playerLabel, player)
 		if playerLabel then
 			-- remove any previous friend status labels
 			for _, item in pairs(playerLabel:GetChildren()) do
 				if item and item.Name == 'FriendStatus' then
+					if GuiService.SelectedCoreObject == item then
+						selectionFound = nil
+						GuiService.SelectedCoreObject = nil
+					end
 					item:Destroy()
 				end
 			end
 
 			-- create new friend status label
+			local status = nil
 			if player and player ~= localPlayer and player.userId > 1 then
-				local status = getFriendStatus(player)
-				if status == Enum.FriendStatus.Friend then 
-					local friendLabel = Instance.new('TextLabel')
-					friendLabel.Name = 'FriendStatus'
-					friendLabel.Text = 'Friend'
-					friendLabel.BackgroundTransparency = 1
-					friendLabel.Font = 'SourceSans'
-					friendLabel.FontSize = 'Size24'
-					friendLabel.TextColor3 = Color3.new(1,1,1)
-					friendLabel.Size = UDim2.new(0,182,0,46)
-					friendLabel.Position = UDim2.new(1,-198,0,7)
-					friendLabel.ZIndex = 3
-					friendLabel.Parent = playerLabel
-				elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend or status == Enum.FriendStatus.FriendRequestReceived then
-					local addButton = Instance.new('TextButton')
-					addButton.Name = 'FriendStatus'
-					addButton.Text = 'Add Friend'
-					addButton.Style = 'RobloxRoundButton'
-					addButton.Font = 'SourceSansBold'
-					addButton.FontSize = 'Size24'
-					addButton.TextColor3 = Color3.new(1,1,1)
-					addButton.Size = UDim2.new(0,182,0,46)
-					addButton.Position = UDim2.new(1,-198,0,7)
-					addButton.ZIndex = 3
-					addButton.MouseButton1Down:connect(function()
-						localPlayer:RequestFriendship(player)
-						if addButton then
-							addButton:Destroy()
+				status = getFriendStatus(player)
+			end
+
+			local friendLabel = nil
+			local friendLabelText = nil
+			if not status then
+				friendLabel = Instance.new('TextButton')
+				friendLabel.Name = 'FriendStatus'
+				friendLabel.Text = ''
+				friendLabel.BackgroundTransparency = 1
+				friendLabel.Position = UDim2.new(1,-198,0,7)
+			elseif status == Enum.FriendStatus.Friend then 
+				friendLabel = Instance.new('TextButton')
+				friendLabel.Text = 'Friend'
+				friendLabel.BackgroundTransparency = 1
+				friendLabel.FontSize = 'Size24'
+				friendLabel.Font = 'SourceSans'
+				friendLabel.TextColor3 = Color3.new(1,1,1)
+				friendLabel.Position = UDim2.new(1,-198,0,7)
+			elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend or status == Enum.FriendStatus.FriendRequestReceived then
+				local addFriendFunc = function()
+					if friendLabel and friendLabelText and friendLabelText.Text ~= '' then
+						friendLabel.ImageTransparency = 1
+						friendLabelText.Text = ''
+						if localPlayer and player then
+							localPlayer:RequestFriendship(player)
 						end
-					end)
-					addButton.Parent = playerLabel
-				elseif status == Enum.FriendStatus.FriendRequestSent then
-					local friendLabel = Instance.new('TextLabel')
-					friendLabel.Name = 'FriendStatus'
-					friendLabel.Text = 'Request Sent'
-					friendLabel.BackgroundTransparency = 1
-					friendLabel.Font = 'SourceSans'
-					friendLabel.FontSize = 'Size24'
-					friendLabel.TextColor3 = Color3.new(1,1,1)
-					friendLabel.Size = UDim2.new(0,182,0,46)
-					friendLabel.Position = UDim2.new(1,-198,0,7)
-					friendLabel.ZIndex = 3
-					friendLabel.Parent = playerLabel
+					end
+				end
+				local friendLabel2, friendLabelText2 = utility:MakeStyledButton("FriendStatus", "Add Friend", UDim2.new(0, 182, 0, 46), addFriendFunc)
+				friendLabel = friendLabel2
+				friendLabelText = friendLabelText2
+				friendLabelText.ZIndex = 3
+				friendLabelText.Position = friendLabelText.Position + UDim2.new(0,0,0,1)
+				friendLabel.Position = UDim2.new(1,-198,0,7)
+			elseif status == Enum.FriendStatus.FriendRequestSent then
+				friendLabel = Instance.new('TextButton')
+				friendLabel.Text = 'Request Sent'
+				friendLabel.BackgroundTransparency = 1
+				friendLabel.FontSize = 'Size24'
+				friendLabel.Font = 'SourceSans'
+				friendLabel.TextColor3 = Color3.new(1,1,1)
+				friendLabel.Position = UDim2.new(1,-198,0,7)
+			end
+
+			if friendLabel then
+				friendLabel.Name = 'FriendStatus'
+				friendLabel.Size = UDim2.new(0,182,0,46)
+				friendLabel.ZIndex = 3
+				friendLabel.Parent = playerLabel
+				friendLabel.SelectionImageObject = playerLabelFakeSelection
+
+				local updateHighlight = function()
+					if playerLabel then
+						playerLabel.ImageTransparency = friendLabel and GuiService.SelectedCoreObject == friendLabel and .65 or .85
+					end
+				end
+				friendLabel.SelectionGained:connect(updateHighlight)
+				friendLabel.SelectionLost:connect(updateHighlight)
+
+				if UserInputService.GamepadEnabled and not selectionFound then
+					selectionFound = true
+					local fakeSize = 20
+					playerLabelFakeSelection.Size = UDim2.new(0,playerLabel.AbsoluteSize.X+fakeSize,0,playerLabel.AbsoluteSize.Y+fakeSize)
+					playerLabelFakeSelection.Position = UDim2.new(0, -(playerLabel.AbsoluteSize.X-198)-fakeSize*.5, 0, -8-fakeSize*.5)
+					GuiService.SelectedCoreObject = friendLabel
 				end
 			end
+
 		end
 	end
 
@@ -184,7 +210,7 @@ local function Initialize()
 	end
 
 	local existingPlayerLabels = {}
-	local Opening = function()
+	this.Displayed.Event:connect(function(switchedFromGamepadInput)
 		local sortedPlayers = game.Players:GetPlayers()
 		table.sort(sortedPlayers,function(item1,item2)
 			return item1.Name < item2.Name
@@ -195,6 +221,7 @@ local function Initialize()
 			extraOffset = 85
 		end
 
+		selectionFound = nil
 		local framesToDestroy = {}
 		for index=1, math.max(#sortedPlayers,#existingPlayerLabels) do
 			local player = sortedPlayers[index]
@@ -208,7 +235,6 @@ local function Initialize()
 					frame.Size = UDim2.new(1,0,0,60)
 					frame.Position = UDim2.new(0,0,0,(index-1)*80 + extraOffset)
 					frame.BackgroundTransparency = 1
-					frame.ImageTransparency = .85
 					frame.ZIndex = 2
 
 					local icon = Instance.new('ImageLabel')
@@ -237,6 +263,7 @@ local function Initialize()
 				frame.Name = 'PlayerLabel'..player.Name
 				frame.Icon.Image = 'http://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId='..math.max(1, player.userId)
 				frame.NameLabel.Text = player.Name
+				frame.ImageTransparency = .85
 
 				friendStatusCreate(frame, player)
 			elseif frame then
@@ -251,8 +278,8 @@ local function Initialize()
 		end
 
 		this.Page.Size = UDim2.new(1,0,0, extraOffset + 80 * #sortedPlayers - 5)
-	end
-	this.Opening = Opening
+	end)
+
 
 	return this
 end
@@ -261,8 +288,6 @@ end
 ----------- Public Facing API Additions --------------
 PageInstance = Initialize()
 
-
 return PageInstance
-
 
 
