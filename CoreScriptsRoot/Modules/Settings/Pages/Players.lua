@@ -20,6 +20,10 @@ RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local utility = require(RobloxGui.Modules.Settings.Utility)
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
+------------ Constants -------------------
+local frameDefaultTransparency = .85
+local frameSelectedTransparency = .65
+
 ------------ Variables -------------------
 local PageInstance = nil
 local localPlayer = PlayersService.LocalPlayer
@@ -149,7 +153,7 @@ local function Initialize()
 
 				local updateHighlight = function()
 					if playerLabel then
-						playerLabel.ImageTransparency = friendLabel and GuiService.SelectedCoreObject == friendLabel and .65 or .85
+						playerLabel.ImageTransparency = friendLabel and GuiService.SelectedCoreObject == friendLabel and frameSelectedTransparency or frameDefaultTransparency
 					end
 				end
 				friendLabel.SelectionGained:connect(updateHighlight)
@@ -257,13 +261,20 @@ local function Initialize()
 					nameLabel.ZIndex = 3
 					nameLabel.Parent = frame
 
+					frame.MouseEnter:connect(function()
+						frame.ImageTransparency = frameSelectedTransparency
+					end)
+					frame.MouseLeave:connect(function()
+						frame.ImageTransparency = frameDefaultTransparency
+					end)
+
 					frame.Parent = this.Page
 					table.insert(existingPlayerLabels, index, frame)
 				end
 				frame.Name = 'PlayerLabel'..player.Name
 				frame.Icon.Image = 'http://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId='..math.max(1, player.userId)
 				frame.NameLabel.Text = player.Name
-				frame.ImageTransparency = .85
+				frame.ImageTransparency = frameDefaultTransparency
 
 				friendStatusCreate(frame, player)
 			elseif frame then
