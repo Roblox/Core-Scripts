@@ -33,6 +33,9 @@ local freezeThumbstick2Name = "doNothingThumbstickPrompt"
 local _,largeFont = pcall(function() return Enum.FontSize.Size42 end)
 largeFont = largeFont or Enum.FontSize.Size36
 local scaleFactor = 3
+local purchaseState = nil
+local success, flagValue = pcall(function() return settings():GetFFlag('UseNewPromptEndHandling') end)
+local useNewPromptEndHandling = success and flagValue
 
 --[[ Purchase Data ]]--
 local PurchaseData = {
@@ -97,6 +100,14 @@ local PURCHASE_FAILED = {
 	DID_NOT_BUY_ROBUX = 8,
 	PROMPT_PURCHASE_ON_GUEST = 9,
 	THIRD_PARTY_DISABLED = 10,
+}
+local PURCHASE_STATE = {
+	DEFAULT = 1,
+	FAILED = 2,
+	SUCCEEDED = 3,
+	BUYITEM = 4,
+	BUYROBUX = 5,
+	BUYBC = 6
 }
 local BC_LVL_TO_STRING = {
 	"Builders Club",
@@ -587,12 +598,14 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 	end
 
 	setPreviewImage(productInfo, PurchaseData.AssetId)
+	purchaseState = PURCHASE_STATE.BUYITEM
 	setButtonsVisible(isFree and FreeButton or BuyButton, CancelButton)
 	PostBalanceText.Visible = true
 
 	if invalidBC then
 		local neededBcLevel = PurchaseData.ProductInfo["MinimumMembershipLevel"]
 		PostBalanceText.Text = "This item requires "..BC_LVL_TO_STRING[neededBcLevel]..".\nClick 'Upgrade' to upgrade your Builders Club!"
+		purchaseState = PURCHASE_STATE.BUYBC
 		setButtonsVisible(BuyBCButton, CancelButton)
 	end
 	return true
@@ -675,6 +688,7 @@ local function setBuyMoreRobuxDialog(playerBalance)
 
 	local descriptionText = "You need "..formatNumber(neededRobux).." more ROBUX to buy the "..productInfo["Name"].." "..
 		ASSET_TO_STRING[productInfo["AssetTypeId"]]
+	purchaseState = PURCHASE_STATE.BUYROBUX
 	setButtonsVisible(BuyRobuxButton, CancelButton)
 
 	if IsNativePurchasing then
@@ -751,6 +765,8 @@ local function onPurchaseFailed(failType)
 	TixIcon.Visible = false
 	CostText.Visible = false
 
+	purchaseState = PURCHASE_STATE.FAILED
+
 	ItemDescriptionText.Text = failedText
 	showPurchasePrompt()
 end
@@ -761,6 +777,7 @@ local function closePurchaseDialog()
 			IsCurrentlyPrompting = false
 			IsCurrentlyPurchasing = false
 			IsCheckingPlayerFunds = false
+			purchaseState = PURCHASE_STATE.DEFAULT
 			if isTenFootInterface then
 				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 			end
@@ -1126,12 +1143,19 @@ local function onPurchaseSuccess()
 
 	if isFreeItem() then PostBalanceText.Visible = false end
 
+	purchaseState = PURCHASE_STATE.SUCCEEDED
+
 	setButtonsVisible(OkPurchasedButton)
 	stopPurchaseAnimation()
 end
 
 local function onAcceptPurchase()
 	if IsCurrentlyPurchasing then return end
+
+	if useNewPromptEndHandling and purchaseState ~= PURCHASE_STATE.BUYITEM then
+		return
+	end
+
 	--
 	disableControllerInput()
 	IsCurrentlyPurchasing = true
@@ -1281,6 +1305,10 @@ function nativePurchaseFinished(wasPurchased)
 end
 
 local function onBuyRobuxPrompt()
+	if useNewPromptEndHandling and purchaseState ~= PURCHASE_STATE.BUYROBUX then
+		return
+	end
+
 	startPurchaseAnimation()
 	if IsNativePurchasing then
 		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
@@ -1309,6 +1337,10 @@ local function onBuyRobuxPrompt()
 end
 
 local function onUpgradeBCPrompt()
+	if useNewPromptEndHandling and purchaseState ~= PURCHASE_STATE.BUYBC then
+		return
+	end
+
 	IsCheckingPlayerFunds = true
 	GuiService:OpenBrowserWindow(BASE_URL.."Upgrades/BuildersClubMemberships.aspx")
 end
@@ -1321,17 +1353,35 @@ function enableControllerInput()
 		CONTROLLER_CONFIRM_ACTION_NAME,
 		function(actionName, inputState, inputObject)
 			if inputState ~= Enum.UserInputState.Begin then return end
+			
+			if useNewPromptEndHandling then
 
-			if OkPurchasedButton.Visible then
-				onPromptEnded(true)
-			elseif OkButton.Visible then
-				onPromptEnded(false)
-			elseif BuyButton.Visible then
-				onAcceptPurchase()
-			elseif BuyRobuxButton.Visible then
-				onBuyRobuxPrompt()
-			elseif BuyBCButton.Visible then
-				onUpgradeBCPrompt()
+				if purchaseState == PURCHASE_STATE.SUCCEEDED then
+					onPromptEnded(true)
+				elseif purchaseState == PURCHASE_STATE.FAILED then
+					onPromptEnded(false)
+				elseif purchaseState == PURCHASE_STATE.BUYITEM then
+					onAcceptPurchase()
+				elseif purchaseState == PURCHASE_STATE.BUYROBUX then
+					onBuyRobuxPrompt()
+				elseif  purchaseState == PURCHASE_STATE.BUYBC then
+					onUpgradeBCPrompt()
+				end
+
+			else
+
+				if OkPurchasedButton.Visible then
+					onPromptEnded(true)
+				elseif OkButton.Visible then
+					onPromptEnded(false)
+				elseif BuyButton.Visible then
+					onAcceptPurchase()
+				elseif BuyRobuxButton.Visible then
+					onBuyRobuxPrompt()
+				elseif BuyBCButton.Visible then
+					onUpgradeBCPrompt()
+				end
+
 			end
 		end,
 		false,
@@ -1407,10 +1457,22 @@ end)
 BuyButton.MouseButton1Click:connect(onAcceptPurchase)
 FreeButton.MouseButton1Click:connect(onAcceptPurchase)
 OkButton.MouseButton1Click:connect(function()
-	onPromptEnded(false)
+	if useNewPromptEndHandling then
+		if purchaseState == PURCHASE_STATE.FAILED then
+			onPromptEnded(false)
+		end
+	else
+		onPromptEnded(false)
+	end
 end)
 OkPurchasedButton.MouseButton1Click:connect(function()
-	onPromptEnded(true)
+	if useNewPromptEndHandling then
+		if purchaseState == PURCHASE_STATE.SUCCEEDED then
+			onPromptEnded(true)
+		end
+	else
+		onPromptEnded(true)
+	end
 end)
 BuyRobuxButton.MouseButton1Click:connect(onBuyRobuxPrompt)
 BuyBCButton.MouseButton1Click:connect(onUpgradeBCPrompt)
