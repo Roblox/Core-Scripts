@@ -69,8 +69,8 @@ local function CreateClassicCamera()
 		end	
 		
 		if lastUpdate then
-			-- Cap out the delta to 0.5 so we don't get some crazy things when we re-resume from
-			local delta = math.min(0.5, now - lastUpdate)
+			-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
+			local delta = math.min(0.1, now - lastUpdate)
 			local angle = 0
 			if not (isInVehicle or isOnASkateboard) then
 				angle = angle + (self.TurningLeft and -120 or 0)
@@ -80,7 +80,7 @@ local function CreateClassicCamera()
 			local gamepadRotation = self:UpdateGamepad()
 			if gamepadRotation ~= Vector2.new(0,0) then
 				userPanningTheCamera = true
-				self.RotateInput = self.RotateInput + gamepadRotation
+				self.RotateInput = self.RotateInput + (gamepadRotation * delta)
 			end
 					
 			if angle ~= 0 then
