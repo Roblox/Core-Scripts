@@ -921,15 +921,15 @@ local function CreateSelector(selectionStringTable, startPosition)
 			ZIndex = 2
 		}
 		autoSelectButton.MouseButton1Click:connect(function()
-			if interactable then
-				local newIndex = this.CurrentIndex + 1
-				if newIndex > #this.Selections then
-					newIndex = 1
-				end
-				this:SetSelectionIndex(newIndex)
-				if usesSelectedObject() then
-					GuiService.SelectedCoreObject = this.SelectorFrame
-				end
+			if not interactable then return end
+
+			local newIndex = this.CurrentIndex + 1
+			if newIndex > #this.Selections then
+				newIndex = 1
+			end
+			this:SetSelectionIndex(newIndex)
+			if usesSelectedObject() then
+				GuiService.SelectedCoreObject = this.SelectorFrame
 			end
 		end)
 		isAutoSelectButton[autoSelectButton] = true

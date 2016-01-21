@@ -165,7 +165,7 @@ local function Initialize()
 			submitText.ZIndex = 1
 		end
 
-		local function areFieldsCompleted()
+		local function fieldsCompleted()
 			-- Returns: Bool completed
 			-- Tells you if the fields required for submission have been filled out
 
@@ -193,7 +193,7 @@ local function Initialize()
 			-- Returns: Bool active
 			-- Activates/deactivates the submit button based on current state
 
-			local active = areFieldsCompleted()
+			local active = fieldsCompleted()
 
 			if active then
 				makeSubmitButtonActive()
@@ -229,41 +229,41 @@ local function Initialize()
 		end
 
 		local function onReportSubmitted()
-			if areFieldsCompleted() then
-				local abuseReason = nil
-				if this.GameOrPlayerMode.CurrentIndex == 2 then
-					abuseReason = ABUSE_TYPES_PLAYER[this.TypeOfAbuseMode.CurrentIndex]
+			if not fieldsCompleted() then return end
+			
+			local abuseReason = nil
+			if this.GameOrPlayerMode.CurrentIndex == 2 then
+				abuseReason = ABUSE_TYPES_PLAYER[this.TypeOfAbuseMode.CurrentIndex]
 
-					local currentAbusingPlayer = this:GetPlayerFromIndex(this.WhichPlayerMode.CurrentIndex)
-					if currentAbusingPlayer and abuseReason then
-						spawn(function()
-							game.Players:ReportAbuse(currentAbusingPlayer, abuseReason, this.AbuseDescription.Selection.Text)
-						end)
-					end
-				else
-					abuseReason = ABUSE_TYPES_GAME[this.TypeOfAbuseMode.CurrentIndex]
-					if abuseReason then
-						spawn(function()
-							game.Players:ReportAbuse(nil, abuseReason, this.AbuseDescription.Selection.Text)
-						end)
-					end
+				local currentAbusingPlayer = this:GetPlayerFromIndex(this.WhichPlayerMode.CurrentIndex)
+				if currentAbusingPlayer and abuseReason then
+					spawn(function()
+						game.Players:ReportAbuse(currentAbusingPlayer, abuseReason, this.AbuseDescription.Selection.Text)
+					end)
 				end
-
+			else
+				abuseReason = ABUSE_TYPES_GAME[this.TypeOfAbuseMode.CurrentIndex]
 				if abuseReason then
-					local alertText = "Thanks for your report! Our moderators will review the chat logs and evaluate what happened."
-
-					if abuseReason == 'Cheating/Exploiting' then
-						alertText = "Thanks for your report! We've recorded your report for evaluation."
-					elseif abuseReason == 'Inappropriate Username' then
-						alertText = "Thanks for your report! Our moderators will evaluate the username."
-					elseif abuseReason == "Bad Model or Script" or  abuseReason == "Inappropriate Content" or abuseReason == "Offsite Link" or abuseReason == "Offsite Links" then
-						alertText = "Thanks for your report! Our moderators will review the place and make a determination."
-					end
-
-					utility:ShowAlert(alertText, "Ok", this.HubRef, cleanupReportAbuseMenu)
-
-					this.LastSelectedObject = nil
+					spawn(function()
+						game.Players:ReportAbuse(nil, abuseReason, this.AbuseDescription.Selection.Text)
+					end)
 				end
+			end
+
+			if abuseReason then
+				local alertText = "Thanks for your report! Our moderators will review the chat logs and evaluate what happened."
+
+				if abuseReason == 'Cheating/Exploiting' then
+					alertText = "Thanks for your report! We've recorded your report for evaluation."
+				elseif abuseReason == 'Inappropriate Username' then
+					alertText = "Thanks for your report! Our moderators will evaluate the username."
+				elseif abuseReason == "Bad Model or Script" or  abuseReason == "Inappropriate Content" or abuseReason == "Offsite Link" or abuseReason == "Offsite Links" then
+					alertText = "Thanks for your report! Our moderators will review the place and make a determination."
+				end
+
+				utility:ShowAlert(alertText, "Ok", this.HubRef, cleanupReportAbuseMenu)
+
+				this.LastSelectedObject = nil
 			end
 		end
 

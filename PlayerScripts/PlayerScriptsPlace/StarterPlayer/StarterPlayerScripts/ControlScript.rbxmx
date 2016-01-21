@@ -124,6 +124,12 @@ local function setJumpModule(isEnabled)
 	end
 end
 
+local function evaluateShowJumpModule()
+	local show = IsTouchDevice and isJumpEnabled and MasterControl:IsHumanoidJumpEnabled()
+	
+	setJumpModule(show)
+end
+
 local function setClickToMove()
 	if DevMovementMode == Enum.DevTouchMovementMode.ClickToMove or DevMovementMode == Enum.DevComputerMovementMode.ClickToMove or
 		UserMovementMode == Enum.ComputerMovementMode.ClickToMove or UserMovementMode == Enum.TouchMovementMode.ClickToMove then
@@ -289,11 +295,7 @@ if IsTouchDevice then
 			if ClickToMoveTouchControls == ControlModules.Thumbpad or ClickToMoveTouchControls == ControlModules.Thumbstick or
 				ClickToMoveTouchControls == ControlModules.Default then
 				--
-				if isOn then
-					TouchJumpModule:Enable()
-				else
-					TouchJumpModule:Disable()
-				end
+				evaluateShowJumpModule()
 			end
 		end
 	end)
@@ -315,7 +317,7 @@ if UserInputService.GamepadEnabled then
 	if CurrentControlModule and IsTouchDevice then
 		CurrentControlModule:Disable()
 	end
-	if isJumpEnabled and IsTouchDevice then TouchJumpModule:Disable() end
+	evaluateShowJumpModule()
 
 	ControlModules.Gamepad:Enable()
 end
@@ -326,7 +328,7 @@ UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
 	if CurrentControlModule and IsTouchDevice then
 			CurrentControlModule:Enable()
 	end
-	if isJumpEnabled and IsTouchDevice then TouchJumpModule:Enable() end
+	evaluateShowJumpModule()
 	
 	ControlModules.Gamepad:Disable()
 end)
@@ -337,10 +339,14 @@ UserInputService.GamepadConnected:connect(function(gamepadEnum)
 	if CurrentControlModule and IsTouchDevice then
 		CurrentControlModule:Disable()
 	end
-	if isJumpEnabled and IsTouchDevice then TouchJumpModule:Disable() end
+	evaluateShowJumpModule()
 	
 	ControlModules.Gamepad:Enable()
 end)
+MasterControl.ControlStepped:connect(function() -- Must be done constantly because there is no Humanoid.StateEnabledChanged event
+	evaluateShowJumpModule()
+end)
+
 
 
 
@@ -454,10 +460,13 @@ function getTouchModule()
 end
 
 function setJumpModule(isEnabled)
-	if not isEnabled then
-		TouchJumpModule:Disable()
-	elseif ControlState.Current == ControlModules.Touch then
-		TouchJumpModule:Enable()
+	if isEnabled ~= TouchJumpModule.Enabled then
+		if not isEnabled then
+			TouchJumpModule:Disable()
+		elseif CurrentControlModule == ControlModules.Thumbpad or CurrentControlModule == ControlModules.Thumbstick or CurrentControlModule == ControlModules.Default then
+			--
+			TouchJumpModule:Enable()
+		end
 	end
 end
 
@@ -472,6 +481,12 @@ function setClickToMove()
 		ClickToMoveTouchControls:Disable()
 		ClickToMoveTouchControls = nil
 	end
+end
+
+local function evaluateShowJumpModule()
+	local show = IsTouchDevice and isJumpEnabled and MasterControl:IsHumanoidJumpEnabled()
+	
+	setJumpModule(show)
 end
 
 ControlModules.Touch = {}
@@ -490,7 +505,7 @@ function ControlModules.Touch:Enable()
 		
 		newModuleToEnable:Enable()
 		
-		if isJumpEnabled then TouchJumpModule:Enable() end
+		ControlModules.Touch:EvaluateJumpButton()
 	end
 end
 function ControlModules.Touch:Disable()
@@ -501,10 +516,24 @@ function ControlModules.Touch:Disable()
 		newModuleToDisable == ThumbpadModule then
 			newModuleToDisable:Disable()
 			setJumpModule(false)
-			TouchJumpModule:Disable()
+			ControlModules.Touch:EvaluateJumpButton()
 	end
 end
+function ControlModules.Touch:ShowJumpButton(doShow)
+	if doShow ~= TouchJumpModule.Enabled then
+		if doShow == true then
+			TouchJumpModule:Enable()
+		elseif doShow == false then
+			TouchJumpModule:Disable()
+		end
+	end
+end
+function ControlModules.Touch:EvaluateJumpButton()
+	local doesCurrentControlModuleUseJumpButton = currentModule == ThumbstickModule or currentModule == ThumbpadModule
+	local doShow = IsTouchDevice and isJumpEnabled and isModalEnabled and doesCurrentControlModuleUseJumpButton and MasterControl:IsHumanoidJumpEnabled()
 
+	ControlModules.Touch:ShowJumpButton(doShow)
+end
 
 local function getKeyboardModule()
 	-- NOTE: Click to move still uses keyboard. Leaving cases in case this ever changes.
@@ -684,6 +713,10 @@ UserInputService.GamepadConnected:connect(function(gamepadEnum)
 	if gamepadEnum ~= Enum.UserInputType.Gamepad1 then return end
 	
 	ControlState:SwitchTo(ControlModules.Gamepad)
+end)
+
+MasterControl.ControlStepped:connect(function() -- Must be done constantly because there is no Humanoid.StateEnabledChanged event
+	ControlModules.Touch:EvaluateJumpButton()
 end)
 
 end -- end of control script flag switch]]></ProtectedString>

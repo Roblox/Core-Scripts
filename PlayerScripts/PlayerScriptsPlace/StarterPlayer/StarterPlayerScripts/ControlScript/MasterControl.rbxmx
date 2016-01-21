@@ -51,6 +51,9 @@ local function getHumanoid()
 end
 
 --[[ Public API ]]--
+local ControlStepped = Instance.new'BindableEvent'
+MasterControl.ControlStepped = ControlStepped.Event
+
 function MasterControl:Init()
 	
 	local renderStepFunc = function()
@@ -62,8 +65,10 @@ function MasterControl:Init()
 				humanoid.Jump = isJumping
 			end
 			
-			moveFunc(LocalPlayer, moveValue, true)	
+			moveFunc(LocalPlayer, moveValue, true)
 		end
+		
+		ControlStepped:Fire()
 	end
 	
 	local success = pcall(function() RunService:BindToRenderStep("MasterControlStep", Enum.RenderPriority.Input.Value, renderStepFunc) end)
@@ -105,6 +110,21 @@ function MasterControl:DoJump()
 		humanoid.Jump = true
 	end
 end
+
+function MasterControl:IsHumanoidJumpEnabled()
+	local humanoid = getHumanoid()
+	local enabled = true
+	
+	if humanoid then
+		if humanoid.JumpPower == 0 then
+			enabled = false
+		elseif humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping) == false then
+			enabled = false
+		end
+	end
+	
+	return enabled
+end	
 
 return MasterControl
 ]]></ProtectedString>

@@ -13,7 +13,9 @@
 
 local Players = game:GetService('Players')
 
-local TouchJump = {}
+local TouchJump = {
+	Enabled = false
+}
 
 local MasterControl = require(script.Parent)
 
@@ -31,11 +33,13 @@ local TOUCH_CONTROL_SHEET = "rbxasset://textures/ui/TouchControlsSheet.png"
 --[[ Public API ]]--
 function TouchJump:Enable()
 	JumpButton.Visible = true
+	TouchJump.Enabled = true
 end
 
 function TouchJump:Disable()
 	JumpButton.Visible = false
 	OnInputEnded()
+	TouchJump.Enabled = false
 end
 
 function TouchJump:Create(parentFrame)
