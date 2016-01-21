@@ -545,11 +545,9 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		active = true
 
 		DropDownFullscreenFrame.Visible = true
-		if not this.CurrentIndex then this.CurrentIndex = 1 end
-		if this.CurrentIndex <= 0 then this.CurrentIndex = 1 end
 
 		lastSelectedCoreObject = this.DropDownFrame
-		GuiService.SelectedCoreObject = this.Selections[this.CurrentIndex]
+		GuiService.SelectedCoreObject = this.Selections[math.max(this.CurrentIndex or 1, 1)]
 
 		guiServiceChangeCon = GuiService.Changed:connect(function(prop)
 			if not prop == "SelectedCoreObject" then return end
@@ -574,7 +572,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	if isSmallTouchScreen() then
 		dropDownFrameSize = UDim2.new(0,300,0,44)
 	end
-	this.DropDownFrame = MakeButton("DropDownFrame", DEFAULT_DROPDOWN_TEXT, dropDownFrameSize, DropDownFrameClicked)
+	this.DropDownFrame = MakeButton("DropDownFrame", DEFAULT_DROPDOWN_TEXT, dropDownFrameSize, DropDownFrameClicked, nil, settingsHub)
 	dropDownButtonEnabled = this.DropDownFrame.Enabled
 	local selectedTextLabel = this.DropDownFrame.DropDownFrameTextLabel
 	local dropDownImage = Util.Create'ImageLabel'
@@ -923,13 +921,15 @@ local function CreateSelector(selectionStringTable, startPosition)
 			ZIndex = 2
 		}
 		autoSelectButton.MouseButton1Click:connect(function()
-			local newIndex = this.CurrentIndex + 1
-			if newIndex > #this.Selections then
-				newIndex = 1
-			end
-			this:SetSelectionIndex(newIndex)
-			if usesSelectedObject() then
-				GuiService.SelectedCoreObject = this.SelectorFrame
+			if interactable then
+				local newIndex = this.CurrentIndex + 1
+				if newIndex > #this.Selections then
+					newIndex = 1
+				end
+				this:SetSelectionIndex(newIndex)
+				if usesSelectedObject() then
+					GuiService.SelectedCoreObject = this.SelectorFrame
+				end
 			end
 		end)
 		isAutoSelectButton[autoSelectButton] = true
@@ -939,7 +939,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 
 	---------------------- FUNCTIONS -----------------------------------
-	local function setSelection(index, direction)
+	local function setSelection(index, direction, instant)
 		for i, selectionLabel in pairs(this.Selections) do
 			local isSelected = (i == index)
 
@@ -958,18 +958,23 @@ local function CreateSelector(selectionStringTable, startPosition)
 				tweenPos = UDim2.new(0,tweenPos.X.Offset + (selectionLabel.AbsoluteSize.X/4),0,0)
 			end
 
+			local thisTweenTime = TweenTime
+			if instant then
+				thisTweenTime = 0
+			end
+
 			if isSelected then
 				isSelectionLabelVisible[selectionLabel] = true
 				selectionLabel.Position = tweenPos
 				selectionLabel.Visible = true
-				PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
-				selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true)
+				PropertyTweener(selectionLabel, "TextTransparency", 1, 0, thisTweenTime * 1.1, EaseOutQuad)
+				selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, thisTweenTime, true)
 				this.CurrentIndex = i
 				indexChangedEvent:Fire(index)
 			elseif isSelectionLabelVisible[selectionLabel] then
 				isSelectionLabelVisible[selectionLabel] = false
-				PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
-				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, true)
+				PropertyTweener(selectionLabel, "TextTransparency", 0, 1, thisTweenTime * 1.1, EaseOutQuad)
+				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, thisTweenTime * 0.9, true)
 			end
 		end
 	end
@@ -1024,8 +1029,8 @@ local function CreateSelector(selectionStringTable, startPosition)
 	--------------------- PUBLIC FACING FUNCTIONS -----------------------
 	this.IndexChanged = indexChangedEvent.Event
 
-	function this:SetSelectionIndex(newIndex)
-		setSelection(newIndex, 1)
+	function this:SetSelectionIndex(newIndex, instant)
+		setSelection(newIndex, 1, instant)
 	end
 
 	function this:GetSelectedIndex()
@@ -1048,6 +1053,15 @@ local function CreateSelector(selectionStringTable, startPosition)
 		this.SelectorFrame.Selectable = interactable
 	end
 
+	function this:GetInteractable()
+		return interactable
+	end
+
+	function this:SetArrowsVisible(visible)
+		leftButtonImage.Visible = visible
+		rightButtonImage.Visible = visible
+	end
+
 	--------------------- SETUP -----------------------
 	leftButton.InputBegan:connect(function(inputObject)
 		if inputObject.UserInputType == Enum.UserInputType.Touch then
@@ -1059,7 +1073,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 			stepFunc(nil, -1) 
 		end
 	end)
-	rightButton.InputBegan:connect(function(inputObject) 
+	rightButton.InputBegan:connect(function(inputObject)
 		if inputObject.UserInputType == Enum.UserInputType.Touch then
 			stepFunc(nil, 1)
 		end
