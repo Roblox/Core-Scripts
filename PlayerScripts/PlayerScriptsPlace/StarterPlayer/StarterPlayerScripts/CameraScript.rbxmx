@@ -149,11 +149,21 @@ end
 
 local function SetEnabledCamera(newCamera)
 	if EnabledCamera ~= newCamera then
+		local zoomLevel = nil
+
 		if EnabledCamera then
+			zoomLevel = EnabledCamera:GetCameraZoom()
+
 			EnabledCamera:SetEnabled(false)
 		end
+
 		EnabledCamera = newCamera
+
 		if EnabledCamera then
+			if zoomLevel then
+				EnabledCamera:ZoomCamera(zoomLevel)
+			end
+			
 			EnabledCamera:SetEnabled(true)
 		end
 	end

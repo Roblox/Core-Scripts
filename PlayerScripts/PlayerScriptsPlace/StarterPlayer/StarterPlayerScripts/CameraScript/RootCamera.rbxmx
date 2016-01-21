@@ -209,7 +209,7 @@ local function CreateCamera()
 				UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
 			else
 				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-			end	
+			end
 		end
 	end
 
@@ -225,9 +225,12 @@ local function CreateCamera()
 
 		isFirstPerson = self:GetCameraZoom() < 2
 
-		ShiftLockController:SetIsInFirstPerson(isFirstPerson)
-		-- set mouse behavior
-		self:UpdateMouseBehavior()
+		if this.Enabled then
+			ShiftLockController:SetIsInFirstPerson(isFirstPerson)
+			-- set mouse behavior
+			self:UpdateMouseBehavior()
+		end
+
 		return self:GetCameraZoom()
 	end
 
@@ -738,10 +741,8 @@ local function CreateCamera()
 
 	local function OnPlayerAdded(player)
 		player.Changed:connect(function(prop)
-			if this.Enabled then
-				if prop == "CameraMode" or prop == "CameraMaxZoomDistance" or prop == "CameraMinZoomDistance" then
-					 this:ZoomCameraFixedBy(0)
-				end
+			if prop == "CameraMode" or prop == "CameraMaxZoomDistance" or prop == "CameraMinZoomDistance" then
+				 this:ZoomCameraFixedBy(0)
 			end
 		end)
 		
