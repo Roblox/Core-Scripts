@@ -786,11 +786,16 @@ end
 
 -- Main exit point
 local function onPromptEnded(isSuccess)
+	local didPurchase = isSuccess
+	if useNewPromptEndHandling then
+		didPurchase = (purchaseState == PURCHASE_STATE.SUCCEEDED)
+	end
+
 	closePurchaseDialog()
 	if IsPurchasingConsumable then
-		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.userId, PurchaseData.ProductId, isSuccess)
+		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.userId, PurchaseData.ProductId, didPurchase)
 	else
-		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, isSuccess)
+		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, didPurchase)
 	end
 	clearPurchaseData()
 	enableControllerMovement()
@@ -1357,9 +1362,9 @@ function enableControllerInput()
 			if useNewPromptEndHandling then
 
 				if purchaseState == PURCHASE_STATE.SUCCEEDED then
-					onPromptEnded(true)
+					onPromptEnded()
 				elseif purchaseState == PURCHASE_STATE.FAILED then
-					onPromptEnded(false)
+					onPromptEnded()
 				elseif purchaseState == PURCHASE_STATE.BUYITEM then
 					onAcceptPurchase()
 				elseif purchaseState == PURCHASE_STATE.BUYROBUX then
