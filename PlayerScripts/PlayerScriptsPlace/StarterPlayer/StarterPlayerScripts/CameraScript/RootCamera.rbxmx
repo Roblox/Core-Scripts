@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX111DCB5EDF814D0CB25DC3588133363A">
+	<Item class="ModuleScript" referent="RBXA74A5A1BA29543E288C039551D27D876">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">RootCamera</string>
@@ -598,7 +598,7 @@ local function CreateCamera()
 		return Vector2.new(0,0)
 	end
 
-	local InputBeganConn, InputChangedConn, InputEndedConn, ShiftLockToggleConn = nil, nil, nil, nil
+	local InputBeganConn, InputChangedConn, InputEndedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn = nil, nil, nil, nil, nil, nil
 
 	function this:DisconnectInputEvents()
 		if InputBeganConn then
@@ -616,6 +616,14 @@ local function CreateCamera()
 		if ShiftLockToggleConn then
 			ShiftLockToggleConn:disconnect()
 			ShiftLockToggleConn = nil
+		end
+		if GamepadConnectedConn then
+			GamepadConnectedConn:disconnect()
+			GamepadConnectedConn = nil
+		end
+		if GamepadDisconnectedConn then
+			GamepadDisconnectedConn:disconnect()
+			GamepadDisconnectedConn = nil
 		end
 		this.TurningLeft = false
 		this.TurningRight = false
@@ -688,9 +696,39 @@ local function CreateCamera()
 		end)
 
 		this.RotateInput = Vector2.new()
+		
+		local activateGamepad = nil
+		local function assignActivateGamepad()
+			local connectedGamepads = UserInputService:GetConnectedGamepads()
+			if #connectedGamepads > 0 then
+				for i = 1, #connectedGamepads do
+					if activateGamepad == nil then
+						activateGamepad = connectedGamepads[i]
+					elseif connectedGamepads[i].Value < activateGamepad.Value then
+						activateGamepad = connectedGamepads[i]
+					end
+				end
+			end
+			
+			if activateGamepad == nil then -- nothing is connected, at least set up for gamepad1
+				activateGamepad = Enum.UserInputType.Gamepad1
+			end
+		end
+		
+		GamepadConnectedConn = UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
+			if activateGamepad ~= gamepadEnum then return end
+			activateGamepad = nil
+			assignActivateGamepad()
+		end)
+	
+		GamepadDisconnectedConn = UserInputService.GamepadConnected:connect(function(gamepadEnum)
+			if activateGamepad == nil then 
+				assignActivateGamepad()
+			end
+		end)
 
 		local getGamepadPan = function(name, state, input)
-			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
+			if input.UserInputType == activateGamepad and input.KeyCode == Enum.KeyCode.Thumbstick2 then
 
 				if state == Enum.UserInputState.Cancel then
 					this.GamepadPanningCamera = Vector2.new(0,0)
@@ -707,7 +745,7 @@ local function CreateCamera()
 		end
 
 		local doGamepadZoom = function(name, state, input)
-			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.ButtonR3 and state == Enum.UserInputState.Begin then
+			if input.UserInputType == activateGamepad and input.KeyCode == Enum.KeyCode.ButtonR3 and state == Enum.UserInputState.Begin then
 				if this.ZoomEnabled then
 					if this.currentZoom > 0.5 then
 						this:ZoomCamera(0)
