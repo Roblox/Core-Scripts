@@ -759,6 +759,8 @@ local function CreateCamera()
 		game.ContextActionService:BindAction("RootCamGamepadPan", getGamepadPan, false, Enum.KeyCode.Thumbstick2)
 		game.ContextActionService:BindAction("RootCamGamepadZoom", doGamepadZoom, false, Enum.KeyCode.ButtonR3)
 
+		assignActivateGamepad()
+
 		-- set mouse behavior
 		self:UpdateMouseBehavior()
 	end
