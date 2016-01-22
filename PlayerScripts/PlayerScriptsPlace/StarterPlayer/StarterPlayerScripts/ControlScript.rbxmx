@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBXB658E22AE73B4D909EEDFF7DC6F2245C">
+	<Item class="LocalScript" referent="RBXF68B99ABBDA3407FA14C55F8580F3BB5">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -671,7 +671,8 @@ if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
 end
 
 UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
-	if gamepadEnum ~= Enum.UserInputType.Gamepad1 then return end
+	local connectedGamepads = UserInputService:GetConnectedGamepads()
+	if #connectedGamepads > 0 then return end
 	
 	if UserInputService.KeyboardEnabled then
 		ControlState:SwitchTo(ControlModules.Keyboard)
@@ -681,7 +682,7 @@ UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
 end)
 
 UserInputService.GamepadConnected:connect(function(gamepadEnum)
-	if gamepadEnum ~= Enum.UserInputType.Gamepad1 then return end
+	if ControlState.Current == ControlModules.Gamepad then return end	
 	
 	ControlState:SwitchTo(ControlModules.Gamepad)
 end)
