@@ -1,7 +1,7 @@
 #! /usr/bin/python
 ## Kip Turner 2014
 
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 
 import os, getopt
 import fnmatch
@@ -9,6 +9,12 @@ import sys
 import subprocess
 import re
 import uuid
+
+import urllib
+import zipfile
+import tempfile
+import stat
+import filecmp
 
 # if os.name == 'nt':
 # 	import ctypes
@@ -31,7 +37,7 @@ if os.name == 'nt':
 
 from shutil import *
 
-def copytree(src, dst, symlinks=False, ignore=None):
+def copytree(src, dst, symlinks=False, ignore=None, writeToReadOnly=False):
     names = os.listdir(src)
     if ignore is not None:
         ignored_names = ignore(src, names)
@@ -51,11 +57,14 @@ def copytree(src, dst, symlinks=False, ignore=None):
                 linkto = os.readlink(srcname)
                 os.symlink(linkto, dstname)
             elif os.path.isdir(srcname):
-                copytree(srcname, dstname, symlinks, ignore)
+                copytree(srcname, dstname, symlinks, ignore, writeToReadOnly)
             else:
                 # Will raise a SpecialFileError for unsupported file types
-                copy2(srcname, dstname)
-        # catch the Error from the recursive copytree so that we can
+                if os.path.isfile(dstname) and not filecmp.cmp(srcname, dstname):
+                    if not os.access(dstname, os.W_OK) and writeToReadOnly:
+                        os.chmod(dstname, stat.S_IWRITE)
+                    copy2(srcname, dstname)
+        # catch the Error from the recursive copytree so thta we can
         # continue with other files
         except Error, err:
             errors.extend(err.args[0])
@@ -105,15 +114,20 @@ def findRbxmsInDir(dir):
 	return matchedFiles
 
 #  This func could be faster, I think
+def getElementName(ele):
+	props = ele.find('Properties')
+	if props is not None:
+		strings = props.findall('string')
+		for string in strings:
+			if string.get('name') and string.get('name') == 'Name':
+				return string.text
+
 def findChildByName(ele, searchName):
 	children = ele.findall('Item')
 	for child in children:
-		props = child.find('Properties')
-		if props is not None:
-			strings = props.findall('string')
-			for string in strings:
-				if string.get('name') and string.get('name') == 'Name' and string.text == searchName:
-					return child
+		childName = getElementName(child)
+		if childName is not None and childName == searchName:
+			return child
 
 def findIndexForElement(ele):
 	children = ele.findall('Item')
@@ -208,6 +222,14 @@ def parseRBXRefToNumber(rbxRefString):
 		result = int(matchResult.group(1))
 	return result
 
+def createEmptyRobloxEtree():
+	root = etree.XML('''\
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+</roblox>
+	''')
+	return etree.ElementTree(root)
 
 
 def findAllReferentItems(tree):
@@ -283,44 +305,58 @@ def replaceOldReferents(tree, refMap):
 		if rbxRefString in refMap:
 			refTag.text = refMap[rbxRefString]
 
+def openFileInRobloxStudio(filePath):
+	if os.name == 'posix':  # OSX
+		print("Opening: " + filePath)
+		subprocess.call(["open", "-a" , "RobloxStudio" , filePath])
+	elif os.name == 'nt':
+		print("Opening: " + filePath)
+		try:
+			os.startfile(filePath)
+		except WindowsError, why:
+			try:
+				subprocess.Popen([RobloxExePath , os.path.abspath(filePath)])
+			except WindowsError, why:
+				print("Error: Unable to find Roblox EXE at: %s , cuz %s" % (RobloxExePath, why))
 
-def run():
-	global VERSION
-	print(("Merger: version %s created by %s") % (VERSION, "Kip Turner"))
+
+def createOutputTestPlace(baseFileDir, destinationFolder):
 	outputedFiles = []
-	baseFileDir = '.'
 	rbxlxFiles = findRbxlxInDir(baseFileDir)
-	for rbxlxFile in rbxlxFiles:
-		print("Found and using base roblox file: " + rbxlxFile)
-
-		# Open our template file
-		datasource = open(os.path.join(baseFileDir, rbxlxFile), 'r')
-		tree = etree.parse(datasource)
-		datasource.close()
-
-		root, ext = os.path.splitext(rbxlxFile)
-		allPath = os.path.join(baseFileDir, "all")
-		rootPath = os.path.join(baseFileDir, root)
-		if os.path.exists(allPath):
-			print(allPath)
-			addRbxmsFromFolder(allPath, tree)
-		if os.path.exists(rootPath):
-			print(rootPath)
-			addRbxmsFromFolder(rootPath, tree)
-
-		outFileName = root + "_output.rbxlx"
-
-		# write out the modified tree
-		outFile = open(outFileName, "w")
-		outputedFiles.append(outFileName)
-		#  I've set method to be html rather than the default xml, this seems weird, but is necassary for
-		#  elimating the self-closing tags
-		outFile.write(etree.tostring(tree.getroot(),encoding=None, method="html", xml_declaration=None, pretty_print=False, with_tail=True, standalone=None, doctype=None, exclusive=False, with_comments=True, inclusive_ns_prefixes=None))
-		outFile.close()
 
 	if len(rbxlxFiles) == 0:
 		print "No base rbxlx file found!"
+	else:
+		for rbxlxFile in rbxlxFiles:
+			print("Found and using base roblox file: " + rbxlxFile)
 
+			# Open our template file
+			datasource = open(os.path.join(baseFileDir, rbxlxFile), 'r')
+			tree = etree.parse(datasource)
+			datasource.close()
+
+			root, ext = os.path.splitext(rbxlxFile)
+			allPath = os.path.join(baseFileDir, "all")
+			rootPath = os.path.join(baseFileDir, root)
+			if os.path.exists(allPath):
+				print(allPath)
+				addRbxmsFromFolder(allPath, tree)
+			if os.path.exists(rootPath):
+				print(rootPath)
+				addRbxmsFromFolder(rootPath, tree)
+
+			outFileName = os.path.join(destinationFolder, root + "_output.rbxlx")
+
+			# write out the modified tree
+			outFile = open(outFileName, "w")
+			outputedFiles.append(outFileName)
+			#  I've set method to be html rather than the default xml, this seems weird, but is necassary for
+			#  elimating the self-closing tags
+			outFile.write(etree.tostring(tree.getroot(),encoding=None, method="html", xml_declaration=None, pretty_print=False, with_tail=True, standalone=None, doctype=None, exclusive=False, with_comments=True, inclusive_ns_prefixes=None))
+			outFile.close()
+	return outputedFiles
+
+def copyPlaceContentToStudioContent(baseFileDir):
 	SourceContent = os.path.join(baseFileDir, os.path.pardir , r"Content")
 	ContentFolder = findContentFolder()
 	if ContentFolder is not None and os.path.isdir(SourceContent):
@@ -331,41 +367,126 @@ def run():
 	if ContentFolder is not None:
 		RobloxExePath = os.path.abspath(os.path.join(ContentFolder, os.path.pardir, r"RobloxStudioBeta.exe"))
 
+def downloadCoreScriptRepo(destinationFolder, scriptMode, forceWrite):
+	tempDownloadDir = tempfile.mkdtemp()
+
+	print(("Temporary download and unzipping directory: %s") % (tempDownloadDir))
+	response = urllib.urlretrieve('https://github.com/ROBLOX/Core-Scripts/archive/master.zip', os.path.join(tempDownloadDir , "github.zip"))
+	zipFilePointer = open(response[0], 'rb')
+	zipData = zipfile.ZipFile(zipFilePointer)
+	extractPath = os.path.join(tempDownloadDir, 'extract')
+	for name in zipData.namelist():
+		zipData.extract(name, extractPath)
+	zipFilePointer.close()
+
+	if scriptMode == "PlayerScripts":
+		playerScriptsPath = os.path.join(extractPath , 'Core-Scripts-master' , 'PlayerScripts' , 'PlayerScriptsPlace' , 'StarterPlayer' , 'StarterPlayerScripts')
+		if os.path.lexists(playerScriptsPath):
+			tree = createEmptyRobloxEtree()
+			addRbxmsFromFolder(playerScriptsPath, tree)
+
+			for element in tree.getroot().findall("Item"):
+				itemName = getElementName(element)
+				if itemName is not None:
+					itemTree = createEmptyRobloxEtree()
+					itemTree.getroot().append(element)
+
+					outFilePath = os.path.join(destinationFolder, ("character%s.rbxmx") % (itemName))
+					alreadyExists = os.path.isfile(outFilePath)
+					if forceWrite and alreadyExists and not os.access(outFilePath, os.W_OK):
+						print("Removing Read-Only from %s" % outFilePath)
+						os.chmod(outFilePath, stat.S_IWRITE)
+					if not alreadyExists or os.access(outFilePath, os.W_OK):
+						outFilePointer = open(outFilePath, "w")
+						outFilePointer.write(etree.tostring(itemTree.getroot(), encoding=None, method="html", xml_declaration=None, pretty_print=False, with_tail=True, standalone=None, doctype=None, exclusive=False, with_comments=True, inclusive_ns_prefixes=None))
+						outFilePointer.close()
+					else:
+						print(("ERROR: Please checkout %s before trying to write to it.") % (outFilePath))
+		else:
+			print("Couldn't find the PlayerScripts directory in github repo")
+	elif scriptMode == "CoreScripts":
+		coreScriptsPath = os.path.join(extractPath , 'Core-Scripts-master' , 'CoreScriptsRoot')
+		if os.path.lexists(coreScriptsPath):
+			# actually copy all the files over
+			copytree(coreScriptsPath, destinationFolder, symlinks=False, ignore=None, writeToReadOnly=forceWrite)
+		else:
+			print("Couldn't find the Core-Scripts directory in github repo")
+
+	rmtree(tempDownloadDir)
+	print("Removed Temporary file directory")
+
+def usage():
+	print '''
+Proper usage:
+	To make playerscripts use tool:
+		merger.py --playerscripts
+	To fetch core-scripts use tool:
+		merger.py --corescripts
+	To make PlayerScripts test place:
+		merger.py --testplace
+	To modify the destination of the output (PlayerScripts or CoreScripts or TestPlace):
+		merger.py --destination <filepath>
+	To overwrite files that are read-only use the forcewrite argument:
+		merger.py --forcewrite
+	To make and run your test place:
+		merger.py --testplace -a
+	For help:
+		merger.py -h
+	'''
+
+def run():
+	global VERSION
+	print(("Merger: version %s created by %s") % (VERSION, "Kip Turner"))
+
+	baseFileDir = '.'
+	runAllPlaces = None
+	runPlace = None
+	scriptMode = None
+	forceWrite = False
+	destinationFolder = '.'
+
 	try:
-		opts, args = getopt.getopt(sys.argv[1:],"ar:", ["runall"])
-	except getopt.GetoptError:
-		print 'Proper usage: merger.py -r <file>'
+		opts, args = getopt.getopt(sys.argv[1:],"fhar:d:", ["help", "runall", "playerscripts", "corescripts", "testplace", "forcewrite", "destination="])
+	except getopt.GetoptError as err:
+		print str(err)
+		usage()
 		sys.exit(2)
 	for opt, arg in opts:
 		if opt == '-r':
-			for outFile in outputedFiles:
-				if arg + "_output.rbxlx" == outFile:
-					if os.name == 'posix':  # OSX
-						print("Opening: " + outFile)
-						subprocess.call(["open", "-a" , "RobloxStudio" , outFile])
-					elif os.name == 'nt':
-						print("Opening: " + outFile)
-						try:
-							os.startfile(outFile)
-						except WindowsError, why:
-							try:
-								subprocess.Popen([RobloxExePath , os.path.abspath(outFile)])
-							except WindowsError, why:
-								print("Error: Unable to find Roblox EXE at: %s , cuz %s" % (RobloxExePath, why))
-		elif opt == '--runall' or opt == '-a':
-			for outFile in outputedFiles:
-				if os.name == 'posix':  # OSX
-					print("Opening: " + outFile)
-					subprocess.call(["open", "-a" , "RobloxStudio" , outFile])
-				elif os.name == 'nt':
-					print("Opening: " + outFile)
-					try:
-						os.startfile(outFile)
-					except WindowsError, why:
-						try:
-							subprocess.Popen([RobloxExePath , os.path.abspath(outFile)])
-						except WindowsError, why:
-							print("Error: Unable to find Roblox EXE at: %s , cuz %s" % (RobloxExePath, why))
+			runPlace = arg
+		elif opt in ('--runall', '-a'):
+			runAllPlaces = True
+		elif opt in ("--playerscripts"):
+			scriptMode = "PlayerScripts"
+		elif opt in ("--corescripts"):
+			scriptMode = "CoreScripts"
+		elif opt in ("--testplace"):
+			scriptMode = "TestPlace"
+		elif opt in ("-f" , "--forcewrite"):
+			forceWrite = True
+		elif opt in ("-d" , "--destination"):
+			destinationFolder = arg
+		elif opt in ("-h", "--help"):
+			usage()
+			sys.exit()
+
+	if scriptMode == "PlayerScripts" or scriptMode == "CoreScripts":
+		downloadCoreScriptRepo(destinationFolder, scriptMode, forceWrite)
+	elif scriptMode == "TestPlace":
+		outputedFiles = createOutputTestPlace(baseFileDir, destinationFolder)
+		copyPlaceContentToStudioContent(baseFileDir)
+
+		runPlaceName = None
+		if runPlace is not None:
+			runPlaceName = ("%s_output.rbxlx") % (runPlace)
+		for outFile in outputedFiles:
+			if runAllPlaces is not None or runPlace == outFile:
+				openFileInRobloxStudio(outFile)
+	else:
+		print("You must either run playerscripts or testplace")
+		usage()
+		sys.exit(3)
+
 
 if __name__ == "__main__":
 	run()
