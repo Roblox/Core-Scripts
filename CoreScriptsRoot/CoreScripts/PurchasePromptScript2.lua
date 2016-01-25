@@ -107,7 +107,8 @@ local PURCHASE_STATE = {
 	SUCCEEDED = 3,
 	BUYITEM = 4,
 	BUYROBUX = 5,
-	BUYBC = 6
+	BUYINGROBUX = 6,
+	BUYBC = 7
 }
 local BC_LVL_TO_STRING = {
 	"Builders Club",
@@ -688,6 +689,7 @@ local function setBuyMoreRobuxDialog(playerBalance)
 
 	local descriptionText = "You need "..formatNumber(neededRobux).." more ROBUX to buy the "..productInfo["Name"].." "..
 		ASSET_TO_STRING[productInfo["AssetTypeId"]]
+
 	purchaseState = PURCHASE_STATE.BUYROBUX
 	setButtonsVisible(BuyRobuxButton, CancelButton)
 
@@ -989,7 +991,7 @@ local function isLimitedUnique()
 end
 
 -- main validation function
-local function canPurchase()
+local function canPurchase(disableUpsell)
 	if game.Players.LocalPlayer.userId < 0 then
 		onPurchaseFailed(PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST)
 		return false
@@ -1078,7 +1080,7 @@ local function canPurchase()
 				if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
 					onPurchaseFailed(PURCHASE_FAILED.NOT_ENOUGH_TIX)
 					return false
-				else
+				elseif not disableUpsell then
 					setBuyMoreRobuxDialog(playerBalance)
 				end
 			end
@@ -1279,7 +1281,7 @@ function hasEnoughMoneyForPurchase()
 end
 
 function retryPurchase(overrideRetries)
-	local canMakePurchase = canPurchase() and hasEnoughMoneyForPurchase()
+	local canMakePurchase = canPurchase(true) and hasEnoughMoneyForPurchase()
 	if not canMakePurchase then
 		local retries = 40
 		if overrideRetries then
@@ -1287,7 +1289,7 @@ function retryPurchase(overrideRetries)
 		end
 		while retries > 0 and not canMakePurchase do
 			wait(0.5)
-			canMakePurchase = canPurchase() and hasEnoughMoneyForPurchase()
+			canMakePurchase = canPurchase(true) and hasEnoughMoneyForPurchase()
 			retries = retries - 1
 		end
 	end
@@ -1313,6 +1315,8 @@ local function onBuyRobuxPrompt()
 	if useNewPromptEndHandling and purchaseState ~= PURCHASE_STATE.BUYROBUX then
 		return
 	end
+
+	purchaseState = PURCHASE_STATE.BUYINGROBUX
 
 	startPurchaseAnimation()
 	if IsNativePurchasing then
