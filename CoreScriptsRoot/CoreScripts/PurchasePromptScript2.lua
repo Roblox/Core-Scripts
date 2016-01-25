@@ -1039,7 +1039,7 @@ local function canPurchase()
 			ItemDescriptionText.Text = PURCHASE_MSG.ALREADY_OWN
 			PostBalanceText.Visible = false
 			setButtonsVisible(OkButton)
-			return false
+			return true
 		end
 		
 		-- most places will not need to sell third party assets.
