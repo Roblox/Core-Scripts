@@ -12,21 +12,65 @@ local buttonVector = {}
 local buttonScreenGui = nil
 local buttonFrame = nil
 
+local isSmallScreen = Game:GetService("GuiService"):GetScreenResolution().y <= 500
+
 local ContextDownImage = "http://www.roblox.com/asset/?id=97166756"
 local ContextUpImage = "http://www.roblox.com/asset/?id=97166444"
 
 local oldTouches = {}
 
-local buttonPositionTable = {	
-								[1] = UDim2.new(0,123,0,70), 
-								[2] = UDim2.new(0,30,0,60),
-								[3] = UDim2.new(0,180,0,160),
-								[4] = UDim2.new(0,85,0,-25),
-								[5] = UDim2.new(0,185,0,-25),
-								[6] = UDim2.new(0,185,0,260),
-								[7] = UDim2.new(0,216,0,65)
+local buttonPositionTable = isSmallScreen and {
+								[1] = {80, 1},
+								[2] = {135, 1},
+								[3] = {190, 1}
+							} or {	
+--								[index] = {degrees, distanceScale}
+--								degrees starts at right and goes counter clockwise
+--								buttons after this will be auto positioned
+								[1] = {60, 1},
+								[2] = {0, 1},
+								[3] = {120, 1},
+								[4] = {180, 1},
+								[5] = {-60, 1},
+								[6] = {-120, 1},
+								[7] = {90, 1.7},
+								[8] = {120, 2},
+								[9] = {150, 1.7},
+								[10] = {180, 2},
+								[11] = {210, 1.7}
 							}
 local maxButtons = #buttonPositionTable
+
+local firstArcDistance = isSmallScreen and 2 or 3
+local buttonArcs = {
+	[1] = 6,
+	[2] = 8,
+	[3] = 9,
+	[4] = 11,
+	[5] = 13,
+	[6] = 15,
+	[7] = 17,
+	[8] = 19,
+	[9] = 21
+}
+if isSmallScreen then
+	table.insert(buttonArcs, 1, 4)
+end
+
+
+local buttonPositionsOccupied = {}
+
+ -- following block is mirrored from ControlScript.MasterControl.TouchJump
+local jumpButtonSize = isSmallScreen and 56 or 72
+local thumbstickSize = isSmallScreen and 70 or 120
+local thumbstickPosition = isSmallScreen and UDim2.new(0, thumbstickSize/2 - 10, 1, -thumbstickSize - 20) or
+	UDim2.new(0, thumbstickSize/2, 1, -thumbstickSize * 1.75)
+local jumpButtonPosition = UDim2.new(
+	1 - thumbstickPosition.X.Scale,
+	-thumbstickPosition.X.Offset - thumbstickSize + thumbstickSize/2 - jumpButtonSize/2,
+	thumbstickPosition.Y.Scale,
+	thumbstickPosition.Y.Offset + thumbstickSize/2 - jumpButtonSize/2
+)
 
 -- Preload images
 Game:GetService("ContentProvider"):Preload(ContextDownImage)
@@ -98,20 +142,13 @@ function contextButtonUp(button, inputObject, actionName)
 	end
 end
 
-function isSmallScreenDevice()
-	return Game:GetService("GuiService"):GetScreenResolution().y <= 320
-end
-
 
 function createNewButton(actionName, functionInfoTable)
 	local contextButton = Instance.new("ImageButton")
 	contextButton.Name = "ContextActionButton"
 	contextButton.BackgroundTransparency = 1
-	contextButton.Size = UDim2.new(0,90,0,90)
+	contextButton.Size = UDim2.new(0,jumpButtonSize,0,jumpButtonSize)
 	contextButton.Active = true
-	if isSmallScreenDevice() then 
-		contextButton.Size = UDim2.new(0,70,0,70)
-	end
 	contextButton.Image = ContextUpImage
 	contextButton.Parent = buttonFrame
 
@@ -171,6 +208,65 @@ function createNewButton(actionName, functionInfoTable)
 	return contextButton
 end
 
+function getButtonPosition(index, buttonSize)
+	local complete = false
+	local position, occupyingPosition
+
+	while not complete do
+		if buttonPositionsOccupied[index] then
+			index = index + 1
+		else
+			local info = buttonPositionTable[index]
+
+			-- Find the rotation and distance relative to jump button
+			local rotation, distance
+
+			if info ~= nil then
+				-- Use preset position
+				rotation, distance = unpack(info)
+			else
+				-- Auto generate position based on preset arcs
+				local arc = 0
+				local positionOnArc = 0
+				local totalInArc = 0
+				local indexOnArcs = index - #buttonPositionTable - 1
+				
+				local total = 0
+				for arcIndex=1, #buttonArcs do
+					local numInArc = buttonArcs[arcIndex]
+					local prevTotal = total
+					total = total + numInArc
+
+					if total > indexOnArcs then
+						arc = arcIndex
+						positionOnArc = indexOnArcs - prevTotal
+						totalInArc = numInArc
+						break
+					end
+				end
+
+				rotation = 90 + 90 * ((positionOnArc)/(totalInArc-1))
+				distance = firstArcDistance + arc-1
+			end
+
+			-- Calculate position
+			local buttonBuffer = jumpButtonSize * 1.2
+
+			local pos = jumpButtonPosition + UDim2.new(
+				0,
+				jumpButtonSize/2 + math.cos(math.rad(-rotation)) * buttonBuffer * distance - buttonSize.X.Offset/2,
+				0,
+				jumpButtonSize/2 + math.sin(math.rad(-rotation)) * buttonBuffer * distance - buttonSize.Y.Offset/2
+			)
+
+			position, occupyingPosition = pos, index
+			complete = true
+		end
+	end
+
+	return position, occupyingPosition
+end
+
 function createButton( actionName, functionInfoTable )
 	local button = createNewButton(actionName, functionInfoTable)
 
@@ -186,14 +282,13 @@ function createButton( actionName, functionInfoTable )
 		position = #buttonVector + 1
 	end
 
-	if position > maxButtons then
-		return -- todo: let user know we have too many buttons already?
-	end
+	local buttonPosition, occupyingPosition = getButtonPosition(position, button.Size)
 
+	buttonPositionsOccupied[occupyingPosition] = button
 	buttonVector[position] = button
 	functionTable[actionName]["button"] = button
 
-	button.Position = buttonPositionTable[position]
+	button.Position = buttonPosition
 	button.Parent = buttonFrame
 
 	if buttonScreenGui and buttonScreenGui.Parent == nil then
@@ -213,6 +308,12 @@ function removeAction(actionName)
 			if buttonVector[i] == actionButton then
 				buttonVector[i] = "empty"
 				break
+			end
+		end
+
+		for index, otherButton in pairs(buttonPositionsOccupied) do
+			if otherButton == actionButton then
+				buttonPositionsOccupied[index] = nil
 			end
 		end
 

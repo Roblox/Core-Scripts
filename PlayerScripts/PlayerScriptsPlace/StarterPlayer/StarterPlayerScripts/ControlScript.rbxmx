@@ -115,12 +115,14 @@ end
 
 --[[ Local Functions ]]--
 local function setJumpModule(isEnabled)
-	if not isEnabled then
-		TouchJumpModule:Disable()
-	elseif CurrentControlModule == ControlModules.Thumbpad or CurrentControlModule == ControlModules.Thumbstick or
-		CurrentControlModule == ControlModules.Default then
-		--
-		TouchJumpModule:Enable()
+	if TouchJumpModule ~= nil then
+		if not isEnabled then
+			TouchJumpModule:Disable()
+		elseif CurrentControlModule == ControlModules.Thumbpad or CurrentControlModule == ControlModules.Thumbstick or
+			CurrentControlModule == ControlModules.Default then
+			--
+			TouchJumpModule:Enable()
+		end
 	end
 end
 
