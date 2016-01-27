@@ -186,7 +186,8 @@ def addRbxmsFromFolder(baseFileDir, tree):
 			base, _ = os.path.splitext(filename)
 
 			if base is not None and componentFp is not None:
-				componentTree = etree.parse(componentFp)
+				parser = etree.XMLParser(strip_cdata=False)
+				componentTree = etree.parse(componentFp, parser)
 
 				# OLD REF COUNTING APPROACH TO REFS
 				#offsetAllReferents(componentTree, seenReferents)
@@ -213,6 +214,14 @@ def addRbxmsFromFolder(baseFileDir, tree):
 		# print("Sorting xml elements %s" % (parentElement.xpath("Properties/string[@name='Name'][1]")[0].text))
 	if oldDir is not None:
 		os.chdir(oldDir) #  Pop the previous directory
+
+# Tags with null text will self-close, so we will
+# add an empty text field to this so they close html-style
+def fixNullTags(tree):
+	nullTags = tree.xpath(r".//*[not(text())]")
+	for tag in nullTags:
+		tag.text = ''
+
 
 def parseRBXRefToNumber(rbxRefString):
 	result = None
@@ -332,7 +341,8 @@ def createOutputTestPlace(baseFileDir, destinationFolder):
 
 			# Open our template file
 			datasource = open(os.path.join(baseFileDir, rbxlxFile), 'r')
-			tree = etree.parse(datasource)
+			parser = etree.XMLParser(strip_cdata=False)
+			tree = etree.parse(datasource, parser)
 			datasource.close()
 
 			root, ext = os.path.splitext(rbxlxFile)
@@ -350,9 +360,9 @@ def createOutputTestPlace(baseFileDir, destinationFolder):
 			# write out the modified tree
 			outFile = open(outFileName, "w")
 			outputedFiles.append(outFileName)
-			#  I've set method to be html rather than the default xml, this seems weird, but is necassary for
-			#  elimating the self-closing tags
-			outFile.write(etree.tostring(tree.getroot(),encoding=None, method="html", xml_declaration=None, pretty_print=False, with_tail=True, standalone=None, doctype=None, exclusive=False, with_comments=True, inclusive_ns_prefixes=None))
+			#  This is necassary for elimating the self-closing tags
+			fixNullTags(tree)
+			outFile.write(etree.tostring(tree.getroot(), encoding=None, method="xml", xml_declaration=None, pretty_print=True, with_tail=True, standalone=None, doctype=None, exclusive=False, with_comments=True, inclusive_ns_prefixes=None))
 			outFile.close()
 	return outputedFiles
 
@@ -390,6 +400,7 @@ def downloadCoreScriptRepo(destinationFolder, scriptMode, forceWrite):
 				if itemName is not None:
 					itemTree = createEmptyRobloxEtree()
 					itemTree.getroot().append(element)
+					fixNullTags(itemTree)
 
 					outFilePath = os.path.join(destinationFolder, ("character%s.rbxmx") % (itemName))
 					alreadyExists = os.path.isfile(outFilePath)
@@ -398,7 +409,7 @@ def downloadCoreScriptRepo(destinationFolder, scriptMode, forceWrite):
 						os.chmod(outFilePath, stat.S_IWRITE)
 					if not alreadyExists or os.access(outFilePath, os.W_OK):
 						outFilePointer = open(outFilePath, "w")
-						outFilePointer.write(etree.tostring(itemTree.getroot(), encoding=None, method="html", xml_declaration=None, pretty_print=False, with_tail=True, standalone=None, doctype=None, exclusive=False, with_comments=True, inclusive_ns_prefixes=None))
+						outFilePointer.write(etree.tostring(itemTree.getroot(), encoding=None, method="xml", xml_declaration=None, pretty_print=False, with_tail=True, standalone=None, doctype=None, exclusive=False, with_comments=True, inclusive_ns_prefixes=None))
 						outFilePointer.close()
 					else:
 						print(("ERROR: Please checkout %s before trying to write to it.") % (outFilePath))
