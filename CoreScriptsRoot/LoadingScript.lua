@@ -47,6 +47,9 @@ local isTenFootInterface = false
 pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
 local platform = UIS:GetPlatform()
 
+local useGameLoadedSuccess, useGameLoadedFlagValue = pcall(function() return settings():GetFFlag("UseGameLoadedInLoadingScript") end)
+local useGameLoadedToWait = (useGameLoadedSuccess and useGameLoadedFlagValue == true)
+
 --
 -- Utility functions
 local create = function(className, defaultParent)
@@ -140,7 +143,7 @@ function MainGui:tileBackgroundTexture(frameToFill)
 end
 
 -- create a cancel binding for console to be able to cancel anytime while loading
-local function createTenfootCancelGui(parent)
+local function createTenfootCancelGui()
 	local cancelLabel = create'ImageLabel'
 	{
 		Name = "CancelLabel";
@@ -148,7 +151,6 @@ local function createTenfootCancelGui(parent)
 		Position = UDim2.new(1, -32 - 83, 0, 32);
 		BackgroundTransparency = 1;
 		Image = 'rbxasset://textures/ui/Shell/ButtonIcons/BButton.png';
-		Parent = parent;
 	}
 	local cancelText = create'TextLabel'
 	{
@@ -160,7 +162,6 @@ local function createTenfootCancelGui(parent)
 		TextXAlignment = Enum.TextXAlignment.Right;
 		TextColor3 = COLORS.WHITE;
 		Text = "Cancel";
-		Parent = parent;
 	}
 
 	-- bind cancel action
@@ -170,21 +171,35 @@ local function createTenfootCancelGui(parent)
 	end)
 
 	if platformService then
-		local seenBButtonBegin = false
-		ContextActionService:BindCoreAction("CancelGameLoad",
-			function(actionName, inputState, inputObject)
-				if inputState == Enum.UserInputState.Begin then
-					seenBButtonBegin = true
-				elseif inputState == Enum.UserInputState.End and seenBButtonBegin then
-					cancelLabel:Destroy()
-					cancelText.Text = "Canceling..."
-					cancelText.Position = UDim2.new(1, -32, 0, 64)
-					ContextActionService:UnbindCoreAction('CancelGameLoad')
-					platformService:RequestGameShutdown()
-				end
-			end,
-			false,
-			Enum.KeyCode.ButtonB)
+		if not Game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
+			local seenBButtonBegin = false
+			ContextActionService:BindCoreAction("CancelGameLoad",
+				function(actionName, inputState, inputObject)
+					if inputState == Enum.UserInputState.Begin then
+						seenBButtonBegin = true
+					elseif inputState == Enum.UserInputState.End and seenBButtonBegin then
+						cancelLabel:Destroy()
+						cancelText.Text = "Canceling..."
+						cancelText.Position = UDim2.new(1, -32, 0, 64)
+						ContextActionService:UnbindCoreAction('CancelGameLoad')
+						platformService:RequestGameShutdown()
+					end
+				end,
+				false,
+				Enum.KeyCode.ButtonB)
+		end
+	end
+
+	while cancelLabel.Parent == nil do
+		if currScreenGui then
+			local blackFrame = currScreenGui:FindFirstChild('BlackFrame')
+			if blackFrame then
+				cancelLabel.Parent = blackFrame
+				cancelText.Parent = blackFrame
+				break
+			end
+		end
+		wait()
 	end
 end
 
@@ -406,6 +421,9 @@ end
 -- start loading assets asap
 InfoProvider:LoadAssets()
 MainGui:GenerateMain()
+if isTenFootInterface then
+	createTenfootCancelGui()
+end
 
 local removedLoadingScreen = false
 local setVerb = true
@@ -418,7 +436,6 @@ local lastDotUpdateTime = nil
 local dotChangeTime = .2
 local brickCountChange = nil
 local lastBrickCount = 0
-local tenfootCancelGuiLoaded = false
 
 renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(function()
 	if not currScreenGui then return end
@@ -504,14 +521,8 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 			end
 		end
 	end
-	
-	-- fade in close button after 5 seconds unless we are running on a console
-	if isTenFootInterface then
-		if tenfootCancelGuiLoaded == false and currentTime - startTime > 3 then
-			tenfootCancelGuiLoaded = true
-			createTenfootCancelGui(currScreenGui.BlackFrame)
-		end
-	else
+
+	if not isTenFootInterface then
 		if currentTime - startTime > 5 and currScreenGui.BlackFrame.CloseButton.ImageTransparency > 0 then
 			currScreenGui.BlackFrame.CloseButton.ImageTransparency = currScreenGui.BlackFrame.CloseButton.ImageTransparency - fadeAmount
 
@@ -689,20 +700,34 @@ function handleFinishedReplicating()
 	hasReplicatedFirstElements = (#Game:GetService("ReplicatedFirst"):GetChildren() > 0)
 
 	if not hasReplicatedFirstElements then
-		while game:GetService("ContentProvider").RequestQueueSize > 0 do
-			wait()
+		if useGameLoadedToWait then
+			if game:IsLoaded() then
+				handleRemoveDefaultLoadingGui()
+			else
+				local gameLoadedCon = nil
+				gameLoadedCon = game.Loaded:connect(function()
+					gameLoadedCon:disconnect()
+					gameLoadedCon = nil
+					handleRemoveDefaultLoadingGui()
+				end)
+			end
+		else
+			while game:GetService("ContentProvider").RequestQueueSize > 0 do
+				wait()
+			end
+			handleRemoveDefaultLoadingGui()
 		end
 	else
 		wait(5) -- make sure after 5 seconds we remove the default gui, even if the user doesn't
+		handleRemoveDefaultLoadingGui()
 	end
-	handleRemoveDefaultLoadingGui()
 end
 
 function handleRemoveDefaultLoadingGui()
-	destroyLoadingElements()
 	if isTenFootInterface then
 		ContextActionService:UnbindCoreAction('CancelGameLoad')
 	end
+	destroyLoadingElements()
 end
 
 Game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
@@ -713,5 +738,4 @@ end
 Game:GetService("ReplicatedFirst").RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
 if Game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
 	handleRemoveDefaultLoadingGui()
-	return
 end
