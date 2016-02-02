@@ -98,7 +98,7 @@ local function Initialize()
 
 			-- create new friend status label
 			local status = nil
-			if player and player ~= localPlayer and player.userId > 1 then
+			if player and player ~= localPlayer and player.userId > 1 and localPlayer.userId > 1 then
 				status = getFriendStatus(player)
 			end
 
