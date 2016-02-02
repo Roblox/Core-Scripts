@@ -25,6 +25,15 @@ local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:FindFirstChild("RobloxGui")
 local ContextActionService = game:GetService("ContextActionService")
+local PlayersService = game:GetService("Players")
+
+local LocalPlayer, Mouse
+spawn(function()
+	while PlayersService.LocalPlayer == nil do PlayersService.Changed:wait() end
+
+	LocalPlayer = PlayersService.LocalPlayer
+	Mouse = LocalPlayer:GetMouse()
+end)
 
 ------------------ VARIABLES --------------------
 local tenFootInterfaceEnabled = false
@@ -32,6 +41,8 @@ do
 	RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 	tenFootInterfaceEnabled = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 end
+
+local CustomButtons = {}
 
 
 
@@ -216,7 +227,7 @@ local function usesSelectedObject()
 	return true
 end
 
-local function isPosOverGui(pos, gui, debug) -- does not account for rotation
+local function isPosOverGui(pos, gui) -- does not account for rotation
 	local ax, ay = gui.AbsolutePosition.x, gui.AbsolutePosition.y
 	local sx, sy = gui.AbsoluteSize.x, gui.AbsoluteSize.y
 	local bx, by = ax+sx, ay+sy
@@ -280,7 +291,7 @@ local function areGuisIntersecting(a, b) -- does not account for rotation
 	return intersecting
 end
 
-local function isGuiVisible(gui, debug) -- true if any part of the gui is visible on the screen, considers clipping, does not account for rotation
+local function isGuiVisible(gui) -- true if any part of the gui is visible on the screen, considers clipping, does not account for rotation
 	local clipping = false
 	local check = gui
 	while true do
@@ -313,6 +324,89 @@ local function isGuiVisible(gui, debug) -- true if any part of the gui is visibl
 	end
 end
 
+local function MakeCustomButton(type)
+	-- Enables us to invoke a hover enter / leave event
+	-- NOTE: Hover detection does not respect rotation
+
+	return function(properties)
+		local info = {}
+
+		-- Create
+		local button = Util.Create(type)(properties)
+
+		local hoverEnter = Util.Create'BindableEvent'{}
+		local hoverLeave = Util.Create'BindableEvent'{}
+		local hoverState = Util.Create'BoolValue'{Value = false}
+
+		-- Internal
+		hoverState.Changed:connect(function(state)
+			if state == true then
+				hoverEnter:Fire()
+			elseif state == false then
+				hoverLeave:Fire()
+			end
+		end)
+
+		-- Utility
+		local function detectHoverState()
+			-- Basic detection to see if the button is even being pressed
+			local isHovering = false
+			if isPosOverGuiWithClipping(Vector2.new(Mouse.X, Mouse.Y), button) then
+				isHovering = true
+			end
+			if GuiService.SelectedCoreObject == button then
+				isHovering = true
+			end
+
+			if isHovering ~= hoverState.Value then
+				hoverState.Value = isHovering
+			end
+		end
+
+		local function refreshHoverState()
+			hoverState.Value = false
+			detectHoverState()
+		end
+
+		local function evaluateStorage()
+			if button:IsDescendantOf(RobloxGui) then
+				CustomButtons[button] = info
+			else
+				CustomButtons[button] = nil
+			end
+		end
+
+		-- Info
+		info.DetectHoverState = detectHoverState
+		info.RefreshHoverState = refreshHoverState
+		info.HoverEnter = hoverEnter.Event
+		info.HoverLeave = hoverLeave.Event
+		info.HoverState = hoverState
+
+		-- Connections
+		button.AncestryChanged:connect(evaluateStorage)
+
+		-- Init
+		detectHoverState()
+		evaluateStorage()
+
+		-- Return
+		return button, info
+	end
+end
+
+local function DetectCustomButtonHoverStates()
+	for button, info in pairs(CustomButtons) do
+		info.DetectHoverState()
+	end
+end
+
+local function RefreshCustomButtonHoverStates()
+	for button, info in pairs(CustomButtons) do
+		info.RefreshHoverState()
+	end
+end
+
 local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 	local SelectionOverrideObject = Util.Create'ImageLabel'
 	{
@@ -320,7 +414,7 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		BackgroundTransparency = 1,
 	};
 
-	local button = Util.Create'ImageButton'
+	local button, buttonInfo = MakeCustomButton'ImageButton'
 	{
 		Name = name .. "Button",
 		Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png",
@@ -384,14 +478,13 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
 	end
 
-	button.InputBegan:connect(function(inputObject)
-		if button.Selectable and isPointerInput(inputObject) then
-			selectButton()
-		end
-	end)
-	button.InputEnded:connect(function(inputObject)
-		if button.Selectable and GuiService.SelectedCoreObject ~= button and isPointerInput(inputObject) then
-			deselectButton()
+	buttonInfo.HoverState.Changed:connect(function(state)
+		if button.Selectable then
+			if state then
+				selectButton()
+			else
+				deselectButton()
+			end
 		end
 	end)
 
@@ -478,7 +571,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	this.CurrentIndex = 0
 
 	----------------- GUI SETUP ------------------------
-	local DropDownFullscreenFrame = Util.Create'ImageButton'
+	local DropDownFullscreenFrame = MakeCustomButton'ImageButton'
 	{
 		Name = "DropDownFullscreenFrame",
 		BackgroundTransparency = 0.2,
@@ -535,6 +628,8 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 		dropDownButtonEnabled.Value = interactable
 		active = false
+
+		RefreshCustomButtonHoverStates()
 	end
 	local noOpFunc = function() end
 
@@ -703,7 +798,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				Size = UDim2.new(1, 0, 1, 0)
 			};
 
-			local nextSelection = Util.Create'TextButton'
+			local nextSelection = MakeCustomButton'TextButton'
 			{
 				Name = "Selection" .. tostring(i),
 				BackgroundTransparency = 1,
@@ -813,7 +908,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 	this.CurrentIndex = 0
 
 	----------------- GUI SETUP ------------------------
-	this.SelectorFrame = Util.Create'ImageButton'
+	this.SelectorFrame = MakeCustomButton'ImageButton'
 	{
 		Name = "Selector",
 		Image = "",
@@ -829,7 +924,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 		this.SelectorFrame.Size = UDim2.new(0,400,0,30)
 	end
 
-	local leftButton = Util.Create'ImageButton'
+	local leftButton = MakeCustomButton'ImageButton'
 	{
 		Name = "LeftButton",
 		BackgroundTransparency = 1,
@@ -841,7 +936,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 		Active = true,
 		Parent = this.SelectorFrame
 	};
-	local rightButton = Util.Create'ImageButton'
+	local rightButton = MakeCustomButton'ImageButton'
 	{
 		Name = "RightButton",
 		BackgroundTransparency = 1,
@@ -912,7 +1007,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 			isSelectionLabelVisible[nextSelection] = false
 		end
 
-		local autoSelectButton = Util.Create'ImageButton'{
+		local autoSelectButton = MakeCustomButton'ImageButton'{
 			Name = 'AutoSelectButton',
 			BackgroundTransparency = 1,
 			Image = '',
@@ -1259,7 +1354,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	valueChangedEvent.Name = "ValueChanged"
 
 	----------------- GUI SETUP ------------------------
-	this.SliderFrame = Util.Create'ImageButton'
+	this.SliderFrame = MakeCustomButton'ImageButton'
 	{
 		Name = "Slider",
 		Image = "",
@@ -1275,7 +1370,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		this.SliderFrame.Size = UDim2.new(0,400,0,30)
 	end
 
-	local leftButton = Util.Create'ImageButton'
+	local leftButton = MakeCustomButton'ImageButton'
 	{
 		Name = "LeftButton",
 		BackgroundTransparency = 1,
@@ -1287,7 +1382,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		Active = true,
 		Parent = this.SliderFrame
 	};
-	local rightButton = Util.Create'ImageButton'
+	local rightButton = MakeCustomButton'ImageButton'
 	{
 		Name = "RightButton",
 		BackgroundTransparency = 1,
@@ -1329,7 +1424,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	end
 
 	for i = 1, steps do
-		local nextStep = Util.Create'ImageButton'
+		local nextStep = MakeCustomButton'ImageButton'
 		{
 			Name = "Step" .. tostring(i),
 			BackgroundColor3 = SELECTED_COLOR,
@@ -1669,7 +1764,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 	end
 
 	local RowFrame = nil
-	RowFrame = Util.Create'ImageButton'
+	RowFrame, RowFrameInfo = MakeCustomButton'ImageButton'
 	{
 		Name = rowDisplayName .. "Frame",
 		BackgroundTransparency = 1,
@@ -1819,7 +1914,8 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				end
 			end
 		end
-		RowFrame.MouseEnter:connect(setRowSelection)
+		RowFrameInfo.HoverEnter:connect(setRowSelection)
+
 		RowFrame.Size = UDim2.new(1, 0, 0, 100)
 
 		UserInputService.InputBegan:connect(processInput)
@@ -1854,7 +1950,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				GuiService.SelectedCoreObject = valueFrame
 			end
 		end
-		RowFrame.MouseEnter:connect(setRowSelection)
+		RowFrameInfo.HoverEnter:connect(setRowSelection)
 
 		ValueChangerSelection.SelectionGained:connect(function()
 			if usesSelectedObject() then
@@ -1886,7 +1982,7 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 		nextRowPositionY = nextPosTable[pageToAddTo]
 	end
 
-	local RowFrame = Util.Create'ImageButton'
+	local RowFrame = MakeCustomButton'ImageButton'
 	{
 		Name = rowDisplayName .. "Frame",
 		BackgroundTransparency = 1,
@@ -2030,5 +2126,8 @@ end
 function moduleApiTable:TweenProperty(instance, prop, start, final, duration, easingFunc, cbFunc)
 	return PropertyTweener(instance, prop, start, final, duration, easingFunc, cbFunc)
 end
+
+---------------------- Main code -----------------------
+RunService.RenderStepped:connect(DetectCustomButtonHoverStates)
 
 return moduleApiTable
