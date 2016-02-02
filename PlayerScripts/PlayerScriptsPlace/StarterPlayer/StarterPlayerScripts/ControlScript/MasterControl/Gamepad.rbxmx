@@ -24,6 +24,9 @@ local GameSettings = Settings.GameSettings
 local currentMoveVector = Vector3.new(0,0,0)
 local activateGamepad = nil
 
+local gamepadConnectedCon = nil
+local gamepadDisconnectedCon = nil
+
 while not Players.LocalPlayer do
 	wait()
 end
@@ -32,35 +35,20 @@ local LocalPlayer = Players.LocalPlayer
 --[[ Constants ]]--
 local thumbstickDeadzone = 0.14
 
-local hasCancelType = pcall(function() local test = Enum.UserInputState.Cancel end)
-
 function assignActivateGamepad()
-	local navigationGamepads = {}
-	pcall(function() navigationGamepads = UserInputService:GetNavigationGamepads() end)
-	if #navigationGamepads > 1 then
-		for i = 1, #navigationGamepads do
-			if activateGamepad == nil then 
-				activateGamepad = navigationGamepads[i]
-			elseif navigationGamepads[i].Value < activateGamepad.Value then
-				activateGamepad = navigationGamepads[i]
+	local connectedGamepads = UserInputService:GetConnectedGamepads()
+	if #connectedGamepads > 0 then
+		for i = 1, #connectedGamepads do
+			if activateGamepad == nil then
+				activateGamepad = connectedGamepads[i]
+			elseif connectedGamepads[i].Value < activateGamepad.Value then
+				activateGamepad = connectedGamepads[i]
 			end
 		end
-	else
-		local connectedGamepads = {}
-		pcall(function() connectedGamepads = UserInputService:GetConnectedGamepads() end)
-		if #connectedGamepads > 0 then
-			for i = 1, #connectedGamepads do
-				if activateGamepad == nil then
-					activateGamepad = connectedGamepads[i]
-				elseif connectedGamepads[i].Value < activateGamepad.Value then
-					activateGamepad = connectedGamepads[i]
-				end
-			end
-		end
-		
-		if activateGamepad == nil then -- nothing is connected, at least set up for gamepad1
-			activateGamepad = Enum.UserInputType.Gamepad1
-		end
+	end
+	
+	if activateGamepad == nil then -- nothing is connected, at least set up for gamepad1
+		activateGamepad = Enum.UserInputType.Gamepad1
 	end
 end
 
@@ -75,10 +63,10 @@ function Gamepad:Enable()
 	local gamepadSupports = UserInputService.GamepadSupports
 	
 	local controlCharacterGamepad = function(actionName, inputState, inputObject)
-		if not UserInputService:IsNavigationGamepad(inputObject.UserInputType) then return end
+		if activateGamepad ~= inputObject.UserInputType then return end
 		if inputObject.KeyCode ~= Enum.KeyCode.Thumbstick1 then return end
 		
-		if hasCancelType and inputState == Enum.UserInputState.Cancel then
+		if inputState == Enum.UserInputState.Cancel then
 			MasterControl:AddToPlayerMovement(-currentMoveVector)
 			currentMoveVector =  Vector3.new(0,0,0)
 			return
@@ -95,10 +83,10 @@ function Gamepad:Enable()
 	end
 	
 	local jumpCharacterGamepad = function(actionName, inputState, inputObject)
-		if not UserInputService:IsNavigationGamepad(inputObject.UserInputType) then return end
+		if activateGamepad ~= inputObject.UserInputType then return end
 		if inputObject.KeyCode ~= Enum.KeyCode.ButtonA then return end
 		
-		if hasCancelType and inputState == Enum.UserInputState.Cancel then
+		if inputState == Enum.UserInputState.Cancel then
 			MasterControl:SetIsJumping(false)
 			return
 		end
@@ -119,7 +107,7 @@ function Gamepad:Enable()
 	local moveForwardFunc = function(actionName, inputState, inputObject)
 		if inputState == Enum.UserInputState.End then
 			forwardValue = -1
-		elseif inputState == Enum.UserInputState.Begin or (hasCancelType and inputState == Enum.UserInputState.Cancel) then
+		elseif inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Cancel then
 			forwardValue = 0
 		end
 		
@@ -129,7 +117,7 @@ function Gamepad:Enable()
 	local moveBackwardFunc = function(actionName, inputState, inputObject)	
 		if inputState == Enum.UserInputState.End then
 			backwardValue = 1
-		elseif inputState == Enum.UserInputState.Begin or (hasCancelType and inputState == Enum.UserInputState.Cancel) then
+		elseif inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Cancel then
 			backwardValue = 0
 		end
 		
@@ -139,7 +127,7 @@ function Gamepad:Enable()
 	local moveLeftFunc = function(actionName, inputState, inputObject)	
 		if inputState == Enum.UserInputState.End then
 			leftValue = -1
-		elseif inputState == Enum.UserInputState.Begin or (hasCancelType and inputState == Enum.UserInputState.Cancel) then
+		elseif inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Cancel then
 			leftValue = 0
 		end
 		
@@ -149,11 +137,21 @@ function Gamepad:Enable()
 	local moveRightFunc = function(actionName, inputState, inputObject)	
 		if inputState == Enum.UserInputState.End then
 			rightValue = 1
-		elseif inputState == Enum.UserInputState.Begin or (hasCancelType and inputState == Enum.UserInputState.Cancel) then
+		elseif inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Cancel then
 			rightValue = 0
 		end
 		
 		doDpadMoveUpdate(inputObject.UserInputType)
+	end
+	
+	local function setActivateGamepad()
+		if activateGamepad then
+			ContextActionService:UnbindActivate(activateGamepad, Enum.KeyCode.ButtonR2)
+		end
+		assignActivateGamepad()
+		if activateGamepad then
+			ContextActionService:BindActivate(activateGamepad, Enum.KeyCode.ButtonR2)
+		end
 	end
 	
 	ContextActionService:BindAction("JumpButton",jumpCharacterGamepad, false, Enum.KeyCode.ButtonA)
@@ -164,21 +162,22 @@ function Gamepad:Enable()
 	ContextActionService:BindAction("leftDpad", moveLeftFunc, false, Enum.KeyCode.DPadLeft)
 	ContextActionService:BindAction("rightDpad", moveRightFunc, false, Enum.KeyCode.DPadRight)
 	
-	assignActivateGamepad()
-	ContextActionService:BindActivate(activateGamepad, Enum.KeyCode.ButtonR2)
+	setActivateGamepad()
 	
-	UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
-		if not UserInputService:IsNavigationGamepad(gamepadEnum) then return end
+	gamepadConnectedCon = UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
+		if activateGamepad ~= gamepadEnum then return end
 		
 		MasterControl:AddToPlayerMovement(-currentMoveVector)
 		currentMoveVector = Vector3.new(0,0,0)
+		
+		activateGamepad = nil
+		setActivateGamepad()
 	end)
 
-	UserInputService.GamepadConnected:connect(function(gamepadEnum)
-		if not UserInputService:IsNavigationGamepad(gamepadEnum) then return end
-		
-		MasterControl:AddToPlayerMovement(-currentMoveVector)
-		currentMoveVector = Vector3.new(0,0,0)
+	gamepadDisconnectedCon = UserInputService.GamepadConnected:connect(function(gamepadEnum)
+		if activateGamepad == nil then 
+			setActivateGamepad()
+		end
 	end)
 end
 
@@ -192,6 +191,9 @@ function Gamepad:Disable()
 	ContextActionService:UnbindAction("MoveThumbstick")
 	ContextActionService:UnbindAction("JumpButton")
 	ContextActionService:UnbindActivate(activateGamepad, Enum.KeyCode.ButtonR2)
+	
+	if gamepadConnectedCon then gamepadConnectedCon:disconnect() end
+	if gamepadDisconnectedCon then gamepadDisconnectedCon:disconnect() end
 	
 	activateGamepad = nil
 	MasterControl:AddToPlayerMovement(-currentMoveVector)

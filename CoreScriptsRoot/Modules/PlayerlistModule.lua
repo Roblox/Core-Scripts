@@ -13,6 +13,7 @@ local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local Players = game:GetService('Players')
 local TeamsService = game:FindService('Teams')
 local ContextActionService = game:GetService('ContextActionService')
+local StarterGui = game:GetService('StarterGui')
 
 local RbxGuiLibrary = nil
 if LoadLibrary then
@@ -66,6 +67,8 @@ local GameStats = {}
 -- They can be un-supported at anytime. You should prefer using child add order to order your stats in the leader board.
 
 --[[ Script Variables ]]--
+local topbarEnabled = true
+local playerlistCoreGuiEnabled = true
 local MyPlayerEntryTopFrame = nil
 local PlayerEntries = {}
 local StatAddId = 0
@@ -1645,7 +1648,7 @@ end
 Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 	if inputState and inputState ~= Enum.UserInputState.Begin then return end
 	if IsSmallScreenDevice then return end
-	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
+	if not playerlistCoreGuiEnabled then return end
 
 	isOpen = not isOpen
 
@@ -1659,7 +1662,7 @@ Playerlist.IsOpen = function()
 end
 
 Playerlist.HideTemp = function(self, key, hidden)
-	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
+	if not playerlistCoreGuiEnabled then return end
 	if IsSmallScreenDevice then return end
 	
 	TempHideKeys[key] = hidden and true or nil
@@ -1683,19 +1686,21 @@ end
 -- NOTE: Core script only
 local function onCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
+		playerlistCoreGuiEnabled = enabled and topbarEnabled
+
 		-- not visible on small screen devices
 		if IsSmallScreenDevice then
 			Container.Visible = false
 			return
 		end
 		
-		setVisible(enabled and isOpen and next(TempHideKeys) == nil, true)
+		setVisible(playerlistCoreGuiEnabled and isOpen and next(TempHideKeys) == nil, true)
 		
 		if isTenFootInterface and topStat then
-			topStat:SetTopStatEnabled(enabled)
+			topStat:SetTopStatEnabled(playerlistCoreGuiEnabled)
 		end
 		
-		if enabled then
+		if playerlistCoreGuiEnabled then
 			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
 		else
 			ContextActionService:UnbindCoreAction("RbxPlayerListToggle")
@@ -1703,8 +1708,14 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 	end
 end
 
-onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
-game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
+Playerlist.TopbarEnabledChanged = function(enabled)
+	topbarEnabled = enabled
+	-- Update coregui to reflect new topbar status
+	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+end
+
+onCoreGuiChanged(Enum.CoreGuiType.PlayerList, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+StarterGui.CoreGuiChangedSignal:connect(onCoreGuiChanged)
 
 resizePlayerList()
 

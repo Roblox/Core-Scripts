@@ -17,7 +17,6 @@ local ScriptContext = game:GetService('ScriptContext')
 
 local GET_MULTI_FOLLOW = "user/multi-following-exists"
 
-local CurrentPlayers = {}
 local PlayerToRelationshipMap = {}
 
 --[[ Remotes ]]--
@@ -52,7 +51,9 @@ local function rbxApiPostAsync(path, params, useHttps, throttlePriority, content
 	end)
 	--
 	if not success then
-		print(path, params, "rbxApiPostAsync() failed because", result)
+		local label = string.format("%s: - path: %s, \njson: %s", tostring(result), tostring(path), tostring(params))
+		game:ReportInGoogleAnalytics("CoreScripts", "Http Post Fail", label, 1)
+		print(label)
 		return nil
 	end
 
@@ -73,19 +74,23 @@ end
 					Value: boolean
 ]]
 local function getFollowRelationshipsAsync(uid)
-	local otherUserIdTables = {}
-	for userId, player in pairs(CurrentPlayers) do
-		table.insert(otherUserIdTables, userId)
+	local otherUserIdTable = {}
+	for _,player in pairs(Players:GetPlayers()) do
+		if player.UserId > 0 then
+			table.insert(otherUserIdTable, player.UserId)
+		end
 	end
 
-	local jsonPostBody = {
-		userId = uid;
-		otherUserIds = otherUserIdTables;
-	}
-	jsonPostBody = HttpService:JSONEncode(jsonPostBody)
-	
-	if jsonPostBody then
-		return rbxApiPostAsync(GET_MULTI_FOLLOW, jsonPostBody, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationJson)
+	if #otherUserIdTable > 0 and uid and uid > 0 then
+		local jsonPostBody = {
+			userId = uid;
+			otherUserIds = otherUserIdTable;
+		}
+		jsonPostBody = HttpService:JSONEncode(jsonPostBody)
+		
+		if jsonPostBody then
+			return rbxApiPostAsync(GET_MULTI_FOLLOW, jsonPostBody, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationJson)
+		end
 	end
 end
 
@@ -105,20 +110,21 @@ local function updateAndNotifyClients(resultTable, newUserIdStr, newPlayer)
 
 		for i = 1, #followingDetails do
 			local detail = followingDetails[i]
-			local otherUserId = tostring(detail["UserId2"])
+			local otherUserId = detail["UserId2"]
+			local otherUserIdStr = tostring(otherUserId)
 
 			local followsOther = detail["User1FollowsUser2"]
 			local followsNewPlayer = detail["User2FollowsUser1"]
 
-			relationshipTable[otherUserId] = createRelationshipObject(followsOther, followsNewPlayer)
+			relationshipTable[otherUserIdStr] = createRelationshipObject(followsOther, followsNewPlayer)
 
 			-- update other use
-			local otherRelationshipTable = PlayerToRelationshipMap[otherUserId]
+			local otherRelationshipTable = PlayerToRelationshipMap[otherUserIdStr]
 			if otherRelationshipTable then
 				local newRelationship = createRelationshipObject(followsNewPlayer, followsOther)
 				otherRelationshipTable[newUserIdStr] = newRelationship
 
-				local otherPlayer = CurrentPlayers[otherUserId]
+				local otherPlayer = Players:GetPlayerByUserId(otherUserId)
 				if otherPlayer then
 					-- create single entry table (keep format same) and send to other client
 					local deltaTable = {}
@@ -184,23 +190,26 @@ RemoteEvent_NewFollower.OnServerEvent:connect(function(player1, player2, player1
 	end
 end)
 
-Players.PlayerAdded:connect(function(newPlayer)
-	local uid = newPlayer.userId
+local function onPlayerAdded(newPlayer)
+	local uid = newPlayer.UserId
 	if uid > 0 then
 		local uidStr = tostring(uid)
-		CurrentPlayers[uidStr] = newPlayer
 		local result = getFollowRelationshipsAsync(uid)
-		updateAndNotifyClients(result, uidStr, newPlayer)
+		if result then
+			updateAndNotifyClients(result, uidStr, newPlayer)
+		end
 	end
-end)
+end
+
+Players.PlayerAdded:connect(onPlayerAdded)
+for _,player in pairs(Players:GetPlayers()) do
+	onPlayerAdded(player)
+end
 
 Players.PlayerRemoving:connect(function(prevPlayer)
-	local uid = tostring(prevPlayer.userId)
+	local uid = tostring(prevPlayer.UserId)
 	if PlayerToRelationshipMap[uid] then
 		PlayerToRelationshipMap[uid] = nil
-	end
-	if CurrentPlayers[uid] then
-		CurrentPlayers[uid] = nil
 	end
 end)
 

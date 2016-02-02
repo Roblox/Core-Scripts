@@ -46,6 +46,9 @@ end
 local filteringEnabledFixFlagSuccess, filteringEnabledFixFlagValue = pcall(function() return settings():GetFFlag("FilteringEnabledDialogFix") end)
 local filterEnabledFixActive = (filteringEnabledFixFlagSuccess and filteringEnabledFixFlagValue)
 
+local goodbyeChoiceActiveFlagSuccess, goodbyeChoiceActiveFlagValue = pcall(function() return settings():GetFFlag("GoodbyeChoiceActiveProperty") end)
+local goodbyeChoiceActiveFlag = (goodbyeChoiceActiveFlagSuccess and goodbyeChoiceActiveFlagValue)
+
 local mainFrame
 local choices = {}
 local lastChoice
@@ -385,10 +388,11 @@ function initialize(parent)
       obj.RobloxLocked = true
 		obj.Parent = mainFrame
 	end
-   lastChoice.RobloxLocked = true
+	
+	lastChoice.RobloxLocked = true
 	lastChoice.Parent = mainFrame
 
-   mainFrame.RobloxLocked = true
+	mainFrame.RobloxLocked = true
 	mainFrame.Parent = parent
 end
 
@@ -441,8 +445,15 @@ function presentDialogChoices(talkingPart, dialogChoices, parentDialog)
 	local height = (math.ceil(lastChoice.UserPrompt.TextBounds.Y / TEXT_HEIGHT) * TEXT_HEIGHT) + CHOICE_PADDING
 	lastChoice.Size = UDim2.new(1, WIDTH_BONUS, 0, height)
 	lastChoice.Position = UDim2.new(0, XPOS_OFFSET, 0, YPOS_OFFSET + yPosition)
-
-	mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
+	lastChoice.Visible = true
+	
+	if goodbyeChoiceActiveFlag and not parentDialog.GoodbyeChoiceActive then
+		lastChoice.Visible = false
+		mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
+	else
+		mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
+	end
+	
 	mainFrame.Position = UDim2.new(0,20,1.0, -mainFrame.Size.Y.Offset-20)
 	if isSmallTouchScreen then
 		local touchScreenGui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("TouchGui")
