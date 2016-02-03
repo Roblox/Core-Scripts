@@ -793,7 +793,7 @@ local function CreateCamera()
 				wait()
 				humanoid = findPlayerHumanoid(player)
 			end
-			local function setLookBehindChatacter()
+			local function setLookBehindCharacter()
 				if humanoid and humanoid.Torso and player.Character == newCharacter then
 					local newDesiredLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.23,0)).unit
 					local horizontalShift = findAngleBetweenXZVectors(newDesiredLook, this:GetCameraLook())
@@ -811,7 +811,7 @@ local function CreateCamera()
 				end
 			end
 			wait()
-			setLookBehindChatacter()
+			setLookBehindCharacter()
 		end
 
 		player.CharacterAdded:connect(function(character)
