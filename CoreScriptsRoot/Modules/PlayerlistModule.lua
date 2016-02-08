@@ -13,6 +13,7 @@ local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local Players = game:GetService('Players')
 local TeamsService = game:FindService('Teams')
 local ContextActionService = game:GetService('ContextActionService')
+local StarterGui = game:GetService('StarterGui')
 
 local RbxGuiLibrary = nil
 if LoadLibrary then
@@ -34,6 +35,15 @@ local blockingUtility = playerDropDownModule:CreateBlockingUtility()
 local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 
 --[[ Fast Flags ]]--
+local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
+local IsFollowersEnabled = followerSuccess and isFollowersEnabled
+
+local serverFollowersSuccess, serverFollowersEnabled = pcall(function() return settings():GetFFlag("UserServerFollowers") end)
+local IsServerFollowers = serverFollowersSuccess and serverFollowersEnabled
+
+--[[ Remotes ]]--
+local RemoveEvent_OnFollowRelationshipChanged = nil
+local RemoteFunc_GetFollowRelationships = nil
 
 --[[ Start Module ]]--
 local Playerlist = {}
@@ -57,6 +67,8 @@ local GameStats = {}
 -- They can be un-supported at anytime. You should prefer using child add order to order your stats in the leader board.
 
 --[[ Script Variables ]]--
+local topbarEnabled = true
+local playerlistCoreGuiEnabled = true
 local MyPlayerEntryTopFrame = nil
 local PlayerEntries = {}
 local StatAddId = 0
@@ -192,7 +204,14 @@ local function isFollowing(userId, followerUserId)
 	return result["success"] and result["isFollowing"]
 end
 
+-- TODO: Once server followers is good to go, remove this function and all code paths
 local function getFollowerStatus(selectedPlayer)
+	-- we're going to check this flag first in case of a condition were the two flags are not set in sync
+	-- in that case, followers will be disabled
+	if not IsFollowersEnabled then
+		return nil
+	end
+
 	if selectedPlayer == Player then
 		return nil
 	end
@@ -718,7 +737,8 @@ local function getFriendStatus(selectedPlayer)
 end
 
 local function onFollowerStatusChanged()
-	if not LastSelectedFrame or not LastSelectedPlayer then
+	-- TODO: Remove this event completely when server version is stable
+	if not IsFollowersEnabled and not LastSelectedFrame or not LastSelectedPlayer then
 		return
 	end
 
@@ -735,7 +755,10 @@ local function onFollowerStatusChanged()
 		updateSocialIcon(newIcon, bgFrame)
 	end
 end
-playerDropDownModule.FollowerStatusChanged:connect(onFollowerStatusChanged)
+-- Don't listen/show rbx follower status on xbox
+if not isTenFootInterface then
+	playerDropDownModule.FollowerStatusChanged:connect(onFollowerStatusChanged)
+end
 
 function popupHidden()
 	if LastSelectedFrame then
@@ -798,18 +821,70 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 	local frame = entryToUpdate.Frame
 	local bgFrame = frame:FindFirstChild('BGFrame')
 	if bgFrame then
-		-- no longer friends, but might still be following
-		if not newIcon then
+		--no longer friends, but might still be following
+		if not IsServerFollowers and IsFollowersEnabled and not newIcon then
 			local followerStatus = getFollowerStatus(otherPlayer)
 			newIcon = getFollowerStatusIcon(followerStatus)
 		end
 
-		updateSocialIcon(newIcon, bgFrame)
+		if newIcon then
+			updateSocialIcon(newIcon, bgFrame)
+		end
 	end
 end
 
--- NOTE: Core script only. This fires when a layer joins the game.
-Player.FriendStatusChanged:connect(onFriendshipChanged)
+-- NOTE: Core script only. This fires when a player joins the game.
+-- Don't listen/show rbx friends status on xbox
+if not isTenFootInterface then
+	Player.FriendStatusChanged:connect(onFriendshipChanged)
+end
+
+--[[ Begin New Server Followers ]]--
+local function setFollowRelationshipsView(relationshipTable)
+	if not relationshipTable then
+		return
+	end
+
+	for i = 1, #PlayerEntries do
+		local entry = PlayerEntries[i]
+		local player = entry.Player
+		local userId = tostring(player.userId)
+
+		-- don't update icon if already friends
+		local friendStatus = getFriendStatus(player)
+		if friendStatus == Enum.FriendStatus.Friend then
+			return
+		end
+
+		local icon = nil
+		if relationshipTable[userId] then
+			local relationship = relationshipTable[userId]
+			if relationship.IsMutual == true then
+				icon = MUTUAL_FOLLOWING_ICON
+			elseif relationship.IsFollowing == true then
+				icon = FOLLOWING_ICON
+			elseif relationship.IsFollower == true then
+				icon = FOLLOWER_ICON
+			end
+		end
+
+		local frame = entry.Frame
+		local bgFrame = frame:FindFirstChild('BGFrame')
+		if bgFrame then
+			updateSocialIcon(icon, bgFrame)
+		end
+	end
+end
+
+local function getFollowRelationships()
+	local result = nil
+	if RemoteFunc_GetFollowRelationships then
+		result = RemoteFunc_GetFollowRelationships:InvokeServer()
+	end
+	return result
+end
+
+--[[ End New Server Followers ]]--
 
 local function updateAllTeamScores()
 	local teamScores = {}
@@ -1459,6 +1534,24 @@ for _,player in pairs(Players:GetPlayers()) do
 	insertPlayerEntry(player)
 end
 
+--[[ Begin new Server Followers ]]--
+-- Don't listen/show rbx followers status on console
+if IsServerFollowers and not isTenFootInterface then
+	-- spawn so we don't block script
+	spawn(function()
+		local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
+		RemoveEvent_OnFollowRelationshipChanged = RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged')
+		RemoteFunc_GetFollowRelationships = RobloxReplicatedStorage:WaitForChild('GetFollowRelationships')
+
+		RemoveEvent_OnFollowRelationshipChanged.OnClientEvent:connect(function(result)
+			setFollowRelationshipsView(result)
+		end)
+
+		local result = getFollowRelationships()
+		setFollowRelationshipsView(result)
+	end)
+end
+
 Players.ChildRemoved:connect(function(child)
 	if child:IsA('Player') then
 		if LastSelectedPlayer and child == LastSelectedPlayer then
@@ -1567,7 +1660,7 @@ end
 Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 	if inputState and inputState ~= Enum.UserInputState.Begin then return end
 	if IsSmallScreenDevice then return end
-	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
+	if not playerlistCoreGuiEnabled then return end
 
 	isOpen = not isOpen
 
@@ -1581,7 +1674,7 @@ Playerlist.IsOpen = function()
 end
 
 Playerlist.HideTemp = function(self, key, hidden)
-	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
+	if not playerlistCoreGuiEnabled then return end
 	if IsSmallScreenDevice then return end
 	
 	TempHideKeys[key] = hidden and true or nil
@@ -1605,19 +1698,21 @@ end
 -- NOTE: Core script only
 local function onCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
+		playerlistCoreGuiEnabled = enabled and topbarEnabled
+
 		-- not visible on small screen devices
 		if IsSmallScreenDevice then
 			Container.Visible = false
 			return
 		end
 		
-		setVisible(enabled and isOpen and next(TempHideKeys) == nil, true)
+		setVisible(playerlistCoreGuiEnabled and isOpen and next(TempHideKeys) == nil, true)
 		
 		if isTenFootInterface and topStat then
-			topStat:SetTopStatEnabled(enabled)
+			topStat:SetTopStatEnabled(playerlistCoreGuiEnabled)
 		end
 		
-		if enabled then
+		if playerlistCoreGuiEnabled then
 			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
 		else
 			ContextActionService:UnbindCoreAction("RbxPlayerListToggle")
@@ -1625,8 +1720,14 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 	end
 end
 
-onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
-game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
+Playerlist.TopbarEnabledChanged = function(enabled)
+	topbarEnabled = enabled
+	-- Update coregui to reflect new topbar status
+	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+end
+
+onCoreGuiChanged(Enum.CoreGuiType.PlayerList, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+StarterGui.CoreGuiChangedSignal:connect(onCoreGuiChanged)
 
 resizePlayerList()
 
