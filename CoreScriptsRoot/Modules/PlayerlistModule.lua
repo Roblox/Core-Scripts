@@ -755,7 +755,10 @@ local function onFollowerStatusChanged()
 		updateSocialIcon(newIcon, bgFrame)
 	end
 end
-playerDropDownModule.FollowerStatusChanged:connect(onFollowerStatusChanged)
+-- Don't listen/show rbx follower status on xbox
+if not isTenFootInterface then
+	playerDropDownModule.FollowerStatusChanged:connect(onFollowerStatusChanged)
+end
 
 function popupHidden()
 	if LastSelectedFrame then
@@ -830,8 +833,11 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 	end
 end
 
--- NOTE: Core script only. This fires when a layer joins the game.
-Player.FriendStatusChanged:connect(onFriendshipChanged)
+-- NOTE: Core script only. This fires when a player joins the game.
+-- Don't listen/show rbx friends status on xbox
+if not isTenFootInterface then
+	Player.FriendStatusChanged:connect(onFriendshipChanged)
+end
 
 --[[ Begin New Server Followers ]]--
 local function setFollowRelationshipsView(relationshipTable)
@@ -1529,7 +1535,8 @@ for _,player in pairs(Players:GetPlayers()) do
 end
 
 --[[ Begin new Server Followers ]]--
-if IsServerFollowers then
+-- Don't listen/show rbx followers status on console
+if IsServerFollowers and not isTenFootInterface then
 	-- spawn so we don't block script
 	spawn(function()
 		local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
