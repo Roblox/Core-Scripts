@@ -22,10 +22,8 @@ local ThirdPartyProductName = nil
 local platform = UserInputService:GetPlatform()
 local IsNativePurchasing = platform == Enum.Platform.XBoxOne or 
 							platform == Enum.Platform.IOS or 
-							platform == Enum.Platform.Android
-if not IsNativePurchasing then
-	pcall(function() IsNativePurchasing = (platform == Enum.Platform.UWP) end)
-end
+							platform == Enum.Platform.Android or
+							platform == Enum.Platform.UWP
 
 local IsCurrentlyPrompting = false
 local IsCurrentlyPurchasing = false
@@ -655,13 +653,14 @@ local function getRobuxProductToBuyItem(amountNeeded)
 	if not productCost then
 		return nil
 	end
-	local isAndroid = (platform == Enum.Platform.Android)
-	if not success then
-		print("PurchasePromptScript: getRobuxProductToBuyItem() failed because", isAndroid)
-	end
+
+	--todo: we should clean all this up at some point so all the platforms have the
+	-- same product names, or at least names that are very similar
+	
+	local isUsingNewProductId = (platform == Enum.Platform.Android) or (platform == Enum.Platform.UWP)
 
 	local prependStr, appendStr, appPrefix = "", "", ""
-	if isAndroid then
+	if isUsingNewProductId then
 		prependStr = "robux"
 		if isBCMember then
 			appendStr = "bc"
@@ -678,7 +677,7 @@ local function getRobuxProductToBuyItem(amountNeeded)
 				end
 			end
 		end
-	else
+	else -- used by iOS
 		appendStr = isBCMember and "RobuxBC" or "RobuxNonBC"
 		appPrefix = "com.roblox.robloxmobile."
 	end
