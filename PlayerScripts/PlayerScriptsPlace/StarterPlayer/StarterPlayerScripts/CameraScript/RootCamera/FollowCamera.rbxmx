@@ -6,6 +6,7 @@
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">FollowCamera</string>
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
+local UserInputService = game:GetService('UserInputService')
 local RootCameraCreator = require(script.Parent)
 
 local UP_VECTOR = Vector3.new(0, 1, 0)
@@ -138,7 +139,7 @@ local function CreateFollowCamera()
 						local lastVec = -(self.LastCameraTransform.p - subjectPosition)
 						local y = findAngleBetweenXZVectors(lastVec, self:GetCameraLook())
 						-- Check for NaNs
-						if IsFinite(y) and math.abs(y) > 0.0001 then
+						if IsFinite(y) and math.abs(y) > 0.0001 and not UserInputService.IsVREnabled then
 							self.RotateInput = self.RotateInput + Vector2.new(y, 0)
 						end
 					end
