@@ -138,6 +138,8 @@ end
 local function Update()
 	if EnabledCamera then
 		EnabledCamera:Update()
+		EnabledCamera:ApplyCameraCFrame()
+		EnabledCamera:ApplyVROffset()
 	end
 	if EnabledOcclusion then
 		EnabledOcclusion:Update()

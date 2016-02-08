@@ -58,7 +58,7 @@ local function CreateWatchCamera()
 			local newCamCFrame = CFrame.new(newFocus.p - (zoom * newLookVector), newFocus.p)
 
 			camera.Focus = newFocus
-			camera.CoordinateFrame = newCamCFrame
+			module.cframe = newCamCFrame
 			self.LastCameraTransform = newCamCFrame
 			self.LastZoom = zoom
 		end

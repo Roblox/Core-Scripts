@@ -7,6 +7,7 @@
 			<string name="Name">RootCamera</string>
 			<ProtectedString name="Source"><![CDATA[local UserInputService = game:GetService('UserInputService')
 local PlayersService = game:GetService('Players')
+local UserInputService = game:GetService('UserInputService')
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
@@ -72,6 +73,8 @@ end
 local function CreateCamera()
 	local this = {}
 
+	this.cframe = workspace.CurrentCamera and workspace.CurrentCamera.CoordinateFrame or CFrame.new()
+
 	this.ShiftLock = false
 	this.Enabled = false
 	local isFirstPerson = false
@@ -129,7 +132,7 @@ local function CreateCamera()
 	end
 
 	function this:GetCameraLook()
-		return workspace.CurrentCamera and workspace.CurrentCamera.CoordinateFrame.lookVector or Vector3.new(0,0,1)
+		return workspace.CurrentCamera and this.cframe.lookVector or Vector3.new(0,0,1)
 	end
 
 	function this:GetCameraZoom()
@@ -143,7 +146,7 @@ local function CreateCamera()
 	function this:GetCameraActualZoom()
 		local camera = workspace.CurrentCamera
 		if camera then
-			return (camera.CoordinateFrame.p - camera.Focus.p).magnitude
+			return (this.cframe.p - camera.Focus.p).magnitude
 		end
 	end
 
@@ -275,6 +278,18 @@ local function CreateCamera()
 	end
 
 	function this:Update()
+	end
+
+	function this:ApplyCameraCFrame()
+		if workspace.CurrentCamera then
+			workspace.CurrentCamera.CoordinateFrame = this.cframe
+		end
+	end
+
+	function this:ApplyVROffset()
+		if UserInputService.IsVREnabled and workspace.CurrentCamera then
+			--workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * UserInputService.UserHeadCFrame
+		end
 	end
 
 	---- Input Events ----
@@ -770,6 +785,7 @@ local function CreateCamera()
 			self.Enabled = newState
 			if self.Enabled then
 				self:ConnectInputEvents()
+				self.cframe = workspace.CurrentCamera.CoordinateFrame
 			else
 				self:DisconnectInputEvents()
 			end
@@ -793,7 +809,7 @@ local function CreateCamera()
 				wait()
 				humanoid = findPlayerHumanoid(player)
 			end
-			local function setLookBehindChatacter()
+			local function setLookBehindCharacter()
 				if humanoid and humanoid.Torso and player.Character == newCharacter then
 					local newDesiredLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.23,0)).unit
 					local horizontalShift = findAngleBetweenXZVectors(newDesiredLook, this:GetCameraLook())
@@ -811,7 +827,7 @@ local function CreateCamera()
 				end
 			end
 			wait()
-			setLookBehindChatacter()
+			setLookBehindCharacter()
 		end
 
 		player.CharacterAdded:connect(function(character)

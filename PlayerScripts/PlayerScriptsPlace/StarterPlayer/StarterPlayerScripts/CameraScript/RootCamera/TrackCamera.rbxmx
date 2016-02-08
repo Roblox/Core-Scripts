@@ -44,8 +44,8 @@ local function CreateTrackCamera()
 			self.RotateInput = Vector2.new()
 			
 			camera.Focus = CFrame.new(subjectPosition)
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
-			self.LastCameraTransform = camera.CoordinateFrame
+			module.cframe = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
+			self.LastCameraTransform = module.cframe
 		end
 		lastUpdate = now
 	end
