@@ -288,7 +288,7 @@ local function CreateCamera()
 
 	function this:ApplyVROffset()
 		if UserInputService.IsVREnabled and workspace.CurrentCamera then
-			--workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * UserInputService.UserHeadCFrame
+			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * UserInputService.UserHeadCFrame
 		end
 	end
 
