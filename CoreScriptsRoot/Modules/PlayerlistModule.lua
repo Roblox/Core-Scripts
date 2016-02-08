@@ -5,7 +5,7 @@
 		// Description: Implementation of in game player list and leaderboard
 ]]
 
-local CoreGui = game:GetService'CoreGui'
+local CoreGui = game:GetService('CoreGui')
 local GuiService = game:GetService('GuiService')	-- NOTE: Can only use in core scripts
 local UserInputService = game:GetService('UserInputService')
 local HttpService = game:GetService('HttpService')
