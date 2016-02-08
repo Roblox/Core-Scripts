@@ -281,7 +281,7 @@ local function CreateCamera()
 	end
 
 	function this:ApplyCameraCFrame()
-		if workspace.CurrentCamera then
+		if workspace.CurrentCamera and workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable then
 			workspace.CurrentCamera.CoordinateFrame = this.cframe
 		end
 	end
