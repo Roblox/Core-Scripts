@@ -13,7 +13,7 @@ local HttpService = game:GetService('HttpService')
 local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local Players = game:GetService('Players')
 local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-local ScriptContext = game:GetService('ScriptContext')
+local RunService = game:GetService('RunService')
 
 local GET_MULTI_FOLLOW = "user/multi-following-exists"
 
@@ -52,7 +52,6 @@ local function rbxApiPostAsync(path, params, useHttps, throttlePriority, content
 	--
 	if not success then
 		local label = string.format("%s: - path: %s, \njson: %s", tostring(result), tostring(path), tostring(params))
-		game:ReportInGoogleAnalytics("CoreScripts", "Http Post Fail", label, 1)
 		print(label)
 		return nil
 	end
@@ -74,6 +73,10 @@ end
 					Value: boolean
 ]]
 local function getFollowRelationshipsAsync(uid)
+	if RunService:IsStudio() then
+		return
+	end
+
 	local otherUserIdTable = {}
 	for _,player in pairs(Players:GetPlayers()) do
 		if player.UserId > 0 then
