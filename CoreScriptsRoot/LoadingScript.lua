@@ -3,12 +3,12 @@
 --
 
 -- Constants
-local PLACEID = Game.PlaceId
+local PLACEID = game.PlaceId
 
-local MPS = Game:GetService 'MarketplaceService'
-local UIS = Game:GetService 'UserInputService'
-local CP = Game:GetService 'ContentProvider'
-local guiService = Game:GetService("GuiService")
+local MPS = game:GetService('MarketplaceService')
+local UIS = game:GetService('UserInputService')
+local CP = game:GetService('ContentProvider')
+local guiService = game:GetService("GuiService")
 local ContextActionService = game:GetService('ContextActionService')
 
 local startTime = tick()
@@ -100,12 +100,12 @@ function InfoProvider:GetCreatorName()
 end
 
 function InfoProvider:LoadAssets()
-	Spawn(function() 
+	spawn(function() 
 		if PLACEID <= 0 then
-			while Game.PlaceId <= 0 do
+			while game.PlaceId <= 0 do
 				wait()
 			end
-			PLACEID = Game.PlaceId
+			PLACEID = game.PlaceId
 		end
 
 		-- load game asset info
@@ -171,7 +171,7 @@ local function createTenfootCancelGui()
 	end)
 
 	if platformService then
-		if not Game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
+		if not game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
 			local seenBButtonBegin = false
 			ContextActionService:BindCoreAction("CancelGameLoad",
 				function(actionName, inputState, inputObject)
@@ -403,10 +403,10 @@ function MainGui:GenerateMain()
 			Parent = errorFrame,
 		}
 
-	while not Game:GetService("CoreGui") do
+	while not game:GetService("CoreGui") do
 		wait()
 	end
-	screenGui.Parent = Game:GetService("CoreGui")
+	screenGui.Parent = game:GetService("CoreGui")
 	currScreenGui = screenGui
 end
 
@@ -437,7 +437,7 @@ local dotChangeTime = .2
 local brickCountChange = nil
 local lastBrickCount = 0
 
-renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(function()
+renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(function()
 	if not currScreenGui then return end
 	if not currScreenGui:FindFirstChild("BlackFrame") then return end
 
@@ -534,7 +534,7 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 end)
 
 spawn(function() 
-	local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+	local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 	local guiInsetChangedEvent = Instance.new("BindableEvent")
 	guiInsetChangedEvent.Name = "GuiInsetChanged"
 	guiInsetChangedEvent.Parent = RobloxGui
@@ -570,7 +570,7 @@ guiService.ErrorMessageChanged:connect(function()
 			-- we show a B button to kill game data model on console
 			if not isTenFootInterface then
 				if leaveGameButton == nil then
-					local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+					local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 					local utility = require(RobloxGui.Modules.Settings.Utility)
 					local textLabel = nil
 					leaveGameButton, leaveGameTextLabel = utility:MakeStyledButton("LeaveGame", "Leave", UDim2.new(0, 288, 0, 78))
@@ -697,7 +697,7 @@ function destroyLoadingElements()
 end
 
 function handleFinishedReplicating()
-	hasReplicatedFirstElements = (#Game:GetService("ReplicatedFirst"):GetChildren() > 0)
+	hasReplicatedFirstElements = (#game:GetService("ReplicatedFirst"):GetChildren() > 0)
 
 	if not hasReplicatedFirstElements then
 		if useGameLoadedToWait then
@@ -730,12 +730,12 @@ function handleRemoveDefaultLoadingGui()
 	destroyLoadingElements()
 end
 
-Game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
-if Game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
+game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
+if game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
 	handleFinishedReplicating()
 end
 
-Game:GetService("ReplicatedFirst").RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
-if Game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
+game:GetService("ReplicatedFirst").RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
+if game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
 	handleRemoveDefaultLoadingGui()
 end
