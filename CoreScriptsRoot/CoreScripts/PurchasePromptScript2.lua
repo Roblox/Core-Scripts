@@ -19,7 +19,14 @@ local RobloxGui = script.Parent
 local ThirdPartyProductName = nil
 
 --[[ Flags ]]--
-local IsNativePurchasing = UserInputService.TouchEnabled or UserInputService:GetPlatform() == Enum.Platform.XBoxOne
+local platform = UserInputService:GetPlatform()
+local IsNativePurchasing = platform == Enum.Platform.XBoxOne or 
+							platform == Enum.Platform.IOS or 
+							platform == Enum.Platform.Android
+if not IsNativePurchasing then
+	pcall(function() IsNativePurchasing = (platform == Enum.Platform.UWP) end)
+end
+
 local IsCurrentlyPrompting = false
 local IsCurrentlyPurchasing = false
 local IsPurchasingConsumable = false
@@ -470,7 +477,7 @@ end
 
 local function setPreviewImage(productInfo, assetId)
 	-- For now let's only run this logic on Xbox
-	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+	if platform == Enum.Platform.XBoxOne then
 		setPreviewImageXbox(productInfo, assetId)
 		return
 	end
@@ -615,7 +622,7 @@ end
 local function getRobuxProduct(amountNeeded, isBCMember)
 	local productArray = nil
 
-	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+	if platform == Enum.Platform.XBoxOne then
 		productArray = {}
 		local platformCatalogData = require(RobloxGui.Modules.PlatformCatalogData)
 
@@ -648,9 +655,7 @@ local function getRobuxProductToBuyItem(amountNeeded)
 	if not productCost then
 		return nil
 	end
-	local success, isAndroid = pcall(function()
-		return UserInputService:GetPlatform() == Enum.Platform.Android
-	end)
+	local isAndroid = (platform == Enum.Platform.Android)
 	if not success then
 		print("PurchasePromptScript: getRobuxProductToBuyItem() failed because", isAndroid)
 	end
@@ -662,7 +667,7 @@ local function getRobuxProductToBuyItem(amountNeeded)
 			appendStr = "bc"
 		end
 		appPrefix = "com.roblox.client."
-	elseif UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+	elseif platform == Enum.Platform.XBoxOne then
 		local platformCatalogData = require(RobloxGui.Modules.PlatformCatalogData)
 
 		local catalogInfo = platformCatalogData:GetCatalogInfoAsync()
@@ -908,7 +913,6 @@ local function isFreeItem()
 end
 
 local function getPlayerBalance()
-	local platform = UserInputService:GetPlatform()
 	local apiPath = platform == Enum.Platform.XBoxOne and 'my/platform-currency-budget' or 'currency/balance'
 
 	local success, result = pcall(function()
@@ -1320,7 +1324,7 @@ local function onBuyRobuxPrompt()
 
 	startPurchaseAnimation()
 	if IsNativePurchasing then
-		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		if platform == Enum.Platform.XBoxOne then
 			spawn(function()
 				local PlatformService = nil
 				pcall(function() PlatformService = Game:GetService('PlatformService') end)
