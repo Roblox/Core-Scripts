@@ -841,10 +841,15 @@ local function setFollowRelationshipsView(relationshipTable)
 		local player = entry.Player
 		local userId = tostring(player.userId)
 
+		-- don't update icon if already friends
+		local friendStatus = getFriendStatus(player)
+		if friendStatus == Enum.FriendStatus.Friend then
+			return
+		end
+
+		local icon = nil
 		if relationshipTable[userId] then
 			local relationship = relationshipTable[userId]
-			local icon = nil
-
 			if relationship.IsMutual == true then
 				icon = MUTUAL_FOLLOWING_ICON
 			elseif relationship.IsFollowing == true then
@@ -852,12 +857,12 @@ local function setFollowRelationshipsView(relationshipTable)
 			elseif relationship.IsFollower == true then
 				icon = FOLLOWER_ICON
 			end
+		end
 
-			local frame = entry.Frame
-			local bgFrame = frame:FindFirstChild('BGFrame')
-			if icon and bgFrame then
-				updateSocialIcon(icon, bgFrame)
-			end
+		local frame = entry.Frame
+		local bgFrame = frame:FindFirstChild('BGFrame')
+		if bgFrame then
+			updateSocialIcon(icon, bgFrame)
 		end
 	end
 end
