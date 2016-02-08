@@ -38,7 +38,6 @@ local function decodeJSON(json)
 		return HttpService:JSONDecode(json)
 	end)
 	if not success then
-		print("decodeJSON() failed because", result, "Input:", json)
 		return nil
 	end
 
@@ -52,7 +51,6 @@ local function rbxApiPostAsync(path, params, useHttps, throttlePriority, content
 	--
 	if not success then
 		local label = string.format("%s: - path: %s, \njson: %s", tostring(result), tostring(path), tostring(params))
-		print(label)
 		return nil
 	end
 
@@ -215,5 +213,3 @@ Players.PlayerRemoving:connect(function(prevPlayer)
 		PlayerToRelationshipMap[uid] = nil
 	end
 end)
-
-print("ServerSocialScript Loaded")
