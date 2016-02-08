@@ -75,7 +75,7 @@ local function CreateCamera()
 
 	this.cframe = CFrame.new()
 	if workspace.CurrentCamera then
-		this.cframe = workspace.CurrentCamera and workspace.CurrentCamera.CoordinateFrame
+		this.cframe = workspace.CurrentCamera.CoordinateFrame
 	end
 
 	this.ShiftLock = false
