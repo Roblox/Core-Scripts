@@ -6,12 +6,9 @@
 
 ---------------------------------------------------------------------
 -- Initialize/Variables
-while not game do
-	wait(1/60)
-end
-while not game:GetService("Players") do
-	wait(1/60)
-end
+
+repeat wait() until game
+repeat wait() until game:GetService("Players").LocalPlayer
 
 local useCoreHealthBar = false
 local success = pcall(function() useCoreHealthBar = game:GetService("Players"):GetUseCoreScriptHealthBar() end)
@@ -41,10 +38,6 @@ local hurtOverlayImage = "http://www.roblox.com/asset/?id=34854607"
 
 game:GetService("ContentProvider"):Preload(greenBarImage)
 game:GetService("ContentProvider"):Preload(hurtOverlayImage)
-
-while not game:GetService("Players").LocalPlayer do
-	wait(1/60)
-end
 
 ---------------------------------------------------------------------
 -- Functions
