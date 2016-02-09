@@ -52,7 +52,6 @@ local function rbxApiPostAsync(path, params, useHttps, throttlePriority, content
 	--
 	if not success then
 		local label = string.format("%s: - path: %s, \njson: %s", tostring(result), tostring(path), tostring(params))
-		print(label)
 		return nil
 	end
 
@@ -215,5 +214,3 @@ Players.PlayerRemoving:connect(function(prevPlayer)
 		PlayerToRelationshipMap[uid] = nil
 	end
 end)
-
-print("ServerSocialScript Loaded")
