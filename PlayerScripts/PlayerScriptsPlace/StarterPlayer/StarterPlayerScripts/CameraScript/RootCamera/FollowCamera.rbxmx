@@ -135,7 +135,7 @@ local function CreateFollowCamera()
 								self.RotateInput = self.RotateInput + Vector2.new(y * percent, 0)
 							end
 						end
-					elseif not (isInFirstPerson or userRecentlyPannedCamera) and UserInputService.IsVREnabled then
+					elseif not (isInFirstPerson or userRecentlyPannedCamera) and not UserInputService.IsVREnabled then
 						local lastVec = -(self.LastCameraTransform.p - subjectPosition)
 						local y = findAngleBetweenXZVectors(lastVec, self:GetCameraLook())
 						-- Check for NaNs
