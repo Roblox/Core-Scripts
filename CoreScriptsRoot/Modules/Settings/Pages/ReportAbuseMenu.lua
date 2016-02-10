@@ -73,12 +73,12 @@ local function Initialize()
 		this.WhichPlayerMode:UpdateDropDownList(playerNames)
 		
 		if index == 1 then
-			this.GameOrPlayerMode:SetSelectionIndex(1)
+			this.GameOrPlayerMode:SetSelectionIndex(1, true)
 			this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
 		end
 
-		this.WhichPlayerMode:SetInteractable(index > 1 and this.GameOrPlayerMode.CurrentIndex ~= 1)
-		this.GameOrPlayerMode:SetInteractable(index > 1)
+		this.WhichPlayerMode:SetInteractable(index >= 1 and this.GameOrPlayerMode.CurrentIndex ~= 1)
+		this.GameOrPlayerMode:SetInteractable(index >= 1)
 	end
 
 	------ TAB CUSTOMIZATION -------
@@ -165,6 +165,45 @@ local function Initialize()
 			submitText.ZIndex = 1
 		end
 
+		local function fieldsCompleted()
+			-- Returns: Bool completed
+			-- Tells you if the fields required for submission have been filled out
+
+			local completed = false
+
+			local gameOrPlayerIndex = this.GameOrPlayerMode.CurrentIndex
+			local selectedPlayerIndex = this.WhichPlayerMode:GetSelectedIndex()
+			local selectedAbuseTypeIndex = this.TypeOfAbuseMode:GetSelectedIndex()
+			
+			if gameOrPlayerIndex == 1 then -- Game type abuse
+				local abuseTypeIsSelected = selectedAbuseTypeIndex ~= nil and selectedAbuseTypeIndex > 0
+
+				completed = abuseTypeIsSelected
+			elseif gameOrPlayerIndex == 2 then -- Player type abuse
+				local playerIsSelected = selectedPlayerIndex ~= nil and selectedPlayerIndex > 0
+				local abuseTypeIsSelected = selectedAbuseTypeIndex ~= nil and selectedAbuseTypeIndex > 0
+
+				completed = playerIsSelected and abuseTypeIsSelected
+			end
+
+			return completed
+		end
+
+		local function updateSubmitButtonState()
+			-- Returns: Bool active
+			-- Activates/deactivates the submit button based on current state
+
+			local active = fieldsCompleted()
+
+			if active then
+				makeSubmitButtonActive()
+			else
+				makeSubmitButtonInactive()
+			end
+
+			return active
+		end
+
 		local function updateAbuseDropDown()
 			this.WhichPlayerMode:ResetSelectionIndex()
 			this.TypeOfAbuseMode:ResetSelectionIndex()
@@ -190,6 +229,8 @@ local function Initialize()
 		end
 
 		local function onReportSubmitted()
+			if not fieldsCompleted() then return end
+			
 			local abuseReason = nil
 			if this.GameOrPlayerMode.CurrentIndex == 2 then
 				abuseReason = ABUSE_TYPES_PLAYER[this.TypeOfAbuseMode.CurrentIndex]
@@ -232,32 +273,12 @@ local function Initialize()
 		else
 			submitButton.Position = UDim2.new(1,-194,1,5)
 		end
-		submitButton.Selectable = false
-		submitButton.ZIndex = 1
-		submitText.ZIndex = 1
 		submitButton.Parent = this.AbuseDescription.Selection
+		updateSubmitButtonState()
 
-		local function playerSelectionChanged(newIndex)
-			if newIndex ~= nil and this.TypeOfAbuseMode:GetSelectedIndex() ~= nil then
-				makeSubmitButtonActive()
-			else
-				makeSubmitButtonInactive()
-			end
-		end
-		this.WhichPlayerMode.IndexChanged:connect(playerSelectionChanged)
+		this.WhichPlayerMode.IndexChanged:connect(updateSubmitButtonState)
 
-		local function typeOfAbuseChanged(newIndex)
-			if newIndex ~= nil then
-				if this.GameOrPlayerMode.CurrentIndex == 1 or this.WhichPlayerMode:GetSelectedIndex() ~= nil then
-					makeSubmitButtonActive()
-				else
-					makeSubmitButtonInactive()
-				end
-			else
-				makeSubmitButtonInactive()
-			end
-		end
-		this.TypeOfAbuseMode.IndexChanged:connect(typeOfAbuseChanged)
+		this.TypeOfAbuseMode.IndexChanged:connect(updateSubmitButtonState)
 
 		this.GameOrPlayerMode.IndexChanged:connect(updateAbuseDropDown)
 

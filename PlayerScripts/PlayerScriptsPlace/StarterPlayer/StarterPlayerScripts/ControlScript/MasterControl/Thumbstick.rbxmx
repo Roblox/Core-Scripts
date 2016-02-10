@@ -123,7 +123,9 @@ function Thumbstick:Create(parentFrame)
 				0, pos.y - ThumbstickFrame.AbsoluteSize.y/2 - offset.y)
 		else
 			length = math.min(length, maxLength)
-			relativePosition = relativePosition.unit * length
+			if relativePosition.magnitude > 0 then
+				relativePosition = relativePosition.unit * length
+			end
 		end
 		StickImage.Position = UDim2.new(0, relativePosition.x + StickImage.AbsoluteSize.x/2, 0, relativePosition.y + StickImage.AbsoluteSize.y/2)
 	end

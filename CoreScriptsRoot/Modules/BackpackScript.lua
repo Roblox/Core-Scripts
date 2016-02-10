@@ -58,6 +58,8 @@ local SEARCH_BACKGROUND_FADE = 0.15
 
 local DOUBLE_CLICK_TIME = 0.5
 
+local CONFIGURED_LOADOUT_GRACE_PERIOD = 0.5
+
 -----------------
 --| Variables |--
 -----------------
@@ -115,12 +117,27 @@ local HotkeyStrings = {} -- Used for eating/releasing hotkeys
 local CharConns = {} -- Holds character connections to be cleared later
 local TopBarEnabled = false
 local GamepadEnabled = false -- determines if our gui needs to be gamepad friendly
+local GridIsOpen = false
 
 local lastEquippedSlot = nil
+
+local UserConfiguration = {}
+
+local CharacterSpawnedAtTime = tick()
 
 -----------------
 --| Functions |--
 -----------------
+
+local function RefreshUserConfiguration()
+	UserConfiguration = {}
+
+	for i, slot in pairs(Slots) do
+		if slot.Tool then
+			UserConfiguration[slot.Tool.Name] = slot.Index
+		end
+	end
+end
 
 local function NewGui(className, objectName)
 	local newGui = Instance.new(className)
@@ -142,6 +159,10 @@ local function NewGui(className, objectName)
 		end
 	end
 	return newGui
+end
+
+local function IsSlotOnHotbar(index)
+	return index <= HOTBAR_SLOTS
 end
 
 local function FindLowestEmpty()
@@ -209,7 +230,7 @@ local function EquipNewTool(tool) --NOTE: HopperBin
 end
 
 local function IsEquipped(tool)
-	return tool and ((tool:IsA('HopperBin') and tool.Active) or tool.Parent == Character) --NOTE: HopperBin
+	return not not (tool and ((tool:IsA('HopperBin') and tool.Active) or tool.Parent == Character)) --NOTE: HopperBin
 end
 
 local function MakeSlot(parent, index)
@@ -391,7 +412,7 @@ local function MakeSlot(parent, index)
 		end
 	end
 
-	function slot:Swap(targetSlot) --NOTE: This slot (self) must not be empty!
+	function slot:Swap(targetSlot)
 		local myTool, otherTool = self.Tool, targetSlot.Tool
 		self:Clear()
 		if otherTool then -- (Target slot might be empty)
@@ -402,6 +423,10 @@ local function MakeSlot(parent, index)
 			targetSlot:Fill(myTool)
 		else
 			targetSlot:Clear()
+		end
+
+		if targetSlot.Tool ~= nil and targetSlot:IsOnHotBar() and targetSlot:IsEquipped() == false then
+			targetSlot:Select()
 		end
 	end
 
@@ -440,6 +465,21 @@ local function MakeSlot(parent, index)
 		return hits
 	end
 
+	function slot:IsOnHotBar()
+		return IsSlotOnHotbar(slot.Index)
+	end
+
+	function slot:Select()
+		local tool = slot.Tool
+		if tool then
+			if slot:IsEquipped() then --NOTE: HopperBin
+				UnequipAllTools()
+			elseif tool.Parent == Backpack then
+				EquipNewTool(tool)
+			end
+		end
+	end
+
 	-- Slot Init Logic --
 
 	SlotFrame = NewGui('TextButton', index)
@@ -467,7 +507,7 @@ local function MakeSlot(parent, index)
 
 	slot:Reposition()
 
-	if index <= HOTBAR_SLOTS then -- Hotbar-Specific Slot Stuff
+	if slot:IsOnHotBar() then -- Hotbar-Specific Slot Stuff
 		-- ToolTip stuff
 		ToolTip = NewGui('TextLabel', 'ToolTip')
 		ToolTip.TextWrapped = false
@@ -483,20 +523,8 @@ local function MakeSlot(parent, index)
 		end)
 		SlotFrame.MouseLeave:connect(function() ToolTip.Visible = false end)
 
-		-- Slot select logic, activated by clicking or pressing hotkey
-		function slot:Select()
-			local tool = slot.Tool
-			if tool then
-				if IsEquipped(tool) then --NOTE: HopperBin
-					UnequipAllTools()
-				elseif tool.Parent == Backpack then
-					EquipNewTool(tool)
-				end
-			end
-		end
-
 		function slot:MoveToInventory()
-			if slot.Index <= HOTBAR_SLOTS then -- From a Hotbar slot
+			if slot:IsOnHotBar() then -- From a Hotbar slot
 				local tool = slot.Tool
 				self:Clear() --NOTE: Order matters here
 				local newSlot = MakeSlot(ScrollingFrame)
@@ -508,6 +536,8 @@ local function MakeSlot(parent, index)
 				if ResultsIndices then
 					newSlot.Frame.Visible = false
 				end
+
+				RefreshUserConfiguration()
 			end
 		end
 
@@ -603,16 +633,40 @@ local function MakeSlot(parent, index)
 
 			-- Check where we were dropped
 			if CheckBounds(InventoryFrame, x, y) then
-				if slot.Index <= HOTBAR_SLOTS then
+				if slot:IsOnHotBar() then
 					slot:MoveToInventory()
+				else
+					local closest, closestDistance
+
+					for i = HOTBAR_SLOTS+1, #Slots do
+						local otherSlot = Slots[i]
+						local distance = GetOffset(otherSlot.Frame, Vector2.new(x, y))
+						if closest == nil or distance < closestDistance then
+							closest, closestDistance = otherSlot, distance
+						end
+					end
+
+					if closest ~= nil and closest ~= slot then
+						slot:Swap(closest)
+
+						RefreshUserConfiguration()
+					end
 				end
 				-- Check for double clicking on an inventory slot, to move into empty hotbar slot
 				if slot.Index > HOTBAR_SLOTS and now - lastUpTime < DOUBLE_CLICK_TIME then
-					if LowestEmptySlot then
+					local targetSlot = LowestEmptySlot
+
+					if targetSlot then
 						local myTool = slot.Tool
 						slot:Clear()
-						LowestEmptySlot:Fill(myTool)
+						targetSlot:Fill(myTool)
 						slot:Delete()
+
+						if targetSlot:IsEquipped() == false then
+							targetSlot:Select()
+						end
+
+						RefreshUserConfiguration()
 					end
 					now = 0 -- Resets the timer
 				end
@@ -628,7 +682,7 @@ local function MakeSlot(parent, index)
 				local closestSlot = closest[2]
 				if closestSlot ~= slot then
 					slot:Swap(closestSlot)
-					if slot.Index > HOTBAR_SLOTS then
+					if not slot:IsOnHotBar() then
 						local tool = slot.Tool
 						if not tool then -- Clean up after ourselves if we're an inventory slot that's now empty
 							slot:Delete()
@@ -642,6 +696,8 @@ local function MakeSlot(parent, index)
 							end
 						end
 					end
+
+					RefreshUserConfiguration()
 				end
 			else
 				-- local tool = slot.Tool
@@ -664,6 +720,150 @@ local function MakeSlot(parent, index)
 	return slot
 end
 
+local function AppendNewSlot()
+	local index = #Slots + 1
+
+	local slot = MakeSlot(ScrollingFrame, index)
+
+	return slot, index
+end
+
+local function GetFirstEmptySlot()
+	-- Always returns Slot, SlotIndex
+
+	if LowestEmptySlot ~= nil then
+		return LowestEmptySlot, LowestEmptySlot.Index
+	else
+		return AppendNewSlot()
+	end
+end
+
+local function InsertNewSlot(index)
+	-- Not actually inserting a slot since slots can't move.
+	-- Actually appending a slot and then shifting every relevant tool one slot to the right (up in the array)
+
+	-- Append the new slot
+	local newSlot, newIndex = GetFirstEmptySlot()
+
+	-- Make sure we aren't trying to insert past the length of the backpack
+	if index > newIndex then
+		index = newIndex
+	end
+
+	-- Perform the right-shift.  This is technically a swap operation but since our appended slot is empty it will behave like a shift.
+	for checkIndex = newIndex, index, -1 do
+		local thisSlot = Slots[checkIndex]
+		local nextSlot = Slots[checkIndex+1]
+
+		if nextSlot ~= nil then
+			thisSlot:Swap(nextSlot)
+		end
+	end
+
+	-- Return the "inserted" slot, which is now empty because the appended slot's emptiness was handed down the chain
+	return Slots[index]
+end
+
+local function GetConfiguredToolSlotIndex(toolName)
+	-- Returns the slot index that the user has placed the tool
+	-- If too much time has passed since the player spawned, return nil
+
+	if tick() - CharacterSpawnedAtTime > CONFIGURED_LOADOUT_GRACE_PERIOD then
+		return nil
+	end
+
+	local savedIndex = UserConfiguration[toolName]
+
+	-- Quick check for first tool
+	if next(Slots) == nil then
+		return 1
+	end
+
+	-- Return the last position if it doesn't exist in configuration
+	if savedIndex == nil then
+		if LowestEmptySlot == nil then
+			return #Slots + 1
+		else
+			return LowestEmptySlot.Index
+		end
+	end
+
+	-- Find currently loaded slots
+	local slotIndexes = {}
+
+	for i, slot in pairs(Slots) do
+		if slot.Tool then
+			slotIndexes[slot.Tool.Name] = slot.Index
+		end
+	end
+
+	-- Find closest currently-loaded tools that are below amd above the saved configuration
+	local closestBelow, closestBelowIndex, closestAbove, closestAboveIndex
+
+	for i, otherSlot in pairs(Slots) do
+		local otherTool = otherSlot.Tool
+
+		if otherTool ~= nil then
+			local otherName = otherTool.Name
+			local otherSavedIndex = UserConfiguration[otherName]
+
+			if otherSavedIndex ~= nil then
+				if otherSavedIndex < savedIndex then -- Other tool was saved below this tool
+					if closestBelow == nil or savedIndex - closestBelowIndex > savedIndex - otherSavedIndex then
+						closestBelow, closestBelowIndex = otherSlot, otherSavedIndex
+
+						if closestBelowIndex == savedIndex - 1 then
+							break
+						end
+					end
+				elseif otherSavedIndex > savedIndex then -- Other tool was saved above this tool
+					if closestAbove == nil or closestAboveIndex - savedIndex > otherSavedIndex - savedIndex then
+						closestAbove, closestAboveIndex = otherSlot, otherSavedIndex
+
+						if closestAboveIndex == savedIndex + 1 then
+							closestBelow = nil -- Could get the wrong idea if we break the loop and closestBelow is set to something that is not the correct value.
+							break
+						end
+					end
+				end
+			end
+		end
+	end
+
+	-- Return the closestIndex + 1 to put it on top
+	if closestBelow ~= nil then
+		return closestBelow.Index + 1
+	elseif closestAbove ~= nil then
+		return closestAbove.Index
+	else
+		return nil
+	end
+end
+
+local function AddToolSlot(tool)
+	-- Finds or creates a slot for a tool then adds the tool to it.
+
+	local slot
+	local slotIndex = GetConfiguredToolSlotIndex(tool.Name)
+
+	-- Get the slot
+	if slotIndex == nil then
+		slot, slotIndex = GetFirstEmptySlot()
+	else
+		if Slots[slotIndex] == nil then
+			slot, slotIndex = AppendNewSlot()
+		else
+			slot = InsertNewSlot(slotIndex)
+		end
+	end
+
+	-- Add the tool
+	slot:Fill(tool)
+
+	-- Return
+	return slot
+end
+
 local function OnChildAdded(child) -- To Character or Backpack
 	if not child:IsA('Tool') and not child:IsA('HopperBin') then --NOTE: HopperBin
 		if child:IsA('Humanoid') and child.Parent == Character then
@@ -683,24 +883,18 @@ local function OnChildAdded(child) -- To Character or Backpack
 		if starterGear then
 			if starterGear:FindFirstChild(tool.Name) then
 				StarterToolFound = true
-				local slot = LowestEmptySlot or MakeSlot(ScrollingFrame)
-				for i = slot.Index, 1, -1 do
-					local curr = Slots[i] -- An empty slot, because above
-					local pIndex = i - 1
-					if pIndex > 0 then
-						local prev = Slots[pIndex] -- Guaranteed to be full, because above
-						prev:Swap(curr)
-					else
-						curr:Fill(tool)
-					end
-				end
+
+				local slot = AddToolSlot(tool)
+
 				-- Have to manually unequip a possibly equipped tool
 				for _, child in pairs(Character:GetChildren()) do
 					if child:IsA('Tool') and child ~= tool then
 						child.Parent = Backpack
 					end
 				end
+
 				AdjustHotbarFrames()
+
 				return -- We're done here
 			end
 		end
@@ -711,8 +905,8 @@ local function OnChildAdded(child) -- To Character or Backpack
 	if slot then
 		slot:UpdateEquipView()
 	else -- New! Put into lowest hotbar slot or new inventory slot
-		slot = LowestEmptySlot or MakeSlot(ScrollingFrame)
-		slot:Fill(tool)
+		local slot = AddToolSlot(tool)
+
 		if slot.Index <= HOTBAR_SLOTS and not InventoryFrame.Visible then
 			AdjustHotbarFrames()
 		end
@@ -753,6 +947,8 @@ local function OnChildRemoved(child) -- From Character or Backpack
 end
 
 local function OnCharacterAdded(character)
+	CharacterSpawnedAtTime = tick()
+
 	-- First, clean up any old slots
 	for i = #Slots, 1, -1 do
 		local slot = Slots[i]
@@ -1009,7 +1205,11 @@ function changeSlot(slot)
 			slot.Frame.BorderSizePixel = 3
 		end
 	else
-		slot:Select()
+		if slot:IsOnHotBar() then
+			if slot:IsEquipped() == false or GridIsOpen == false then
+				slot:Select()
+			end
+		end
 	end
 end
 
@@ -1440,6 +1640,8 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 		if SettingsHub.Instance.Visible then
 			SettingsHub:SetVisibility(false)
 		end
+
+		GridIsOpen = InventoryFrame.Visible
 	end
 	HotkeyFns[ARROW_HOTKEY] = openClose
 	BackpackScript.OpenClose = openClose -- Exposed

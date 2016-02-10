@@ -963,10 +963,6 @@ local function CreateSettingsHub()
 
 			local noOpFunc = function() end
 			ContextActionService:BindCoreAction("RbxSettingsHubStopCharacter", noOpFunc, false,
-												 Enum.PlayerActions.CharacterForward, 
-												 Enum.PlayerActions.CharacterBackward, 
-												 Enum.PlayerActions.CharacterLeft,
-												 Enum.PlayerActions.CharacterRight,
 												 Enum.PlayerActions.CharacterJump, 
 												 Enum.KeyCode.LeftShift,
 												 Enum.KeyCode.RightShift,
