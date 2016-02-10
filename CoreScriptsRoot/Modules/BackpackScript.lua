@@ -1009,7 +1009,11 @@ function changeSlot(slot)
 			slot.Frame.BorderSizePixel = 3
 		end
 	else
-		slot:Select()
+		if slot:Select() ~= nil then --Attempt to fix a issue with Select being a nil value. Issue: 163
+			slot:Select()
+		else
+			return nil
+		end
 	end
 end
 
