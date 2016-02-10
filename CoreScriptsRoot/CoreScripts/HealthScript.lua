@@ -17,9 +17,8 @@ local Player = game:GetService("Players").LocalPlayer
 -- 2) Create a localscript and parent it to StarterGui.
 -- 3) In the localscript require() the chat module you made in step 1.
 -- 4) Set the following variable to true.
--- 5) OPTIONAL- Create a localscript and have it disable the default health gui.
 
-local useDefault = true
+local useDefault = false
 
 local currentHumanoid = nil
 
@@ -291,7 +290,7 @@ end
 
 function begin()
 	if StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) == true or StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) == true then
-		if useDefault == true then
+		if useDefault == false then
 			guiEnabled = true
 			HealthGui = Instance.new("ScreenGui")
 			HealthGui.Name = "HealthGui"
@@ -305,7 +304,7 @@ function begin()
 			startGui()
 		end
 	elseif StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) == false or StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) == false then
-		if useDefault == true then
+		if useDefault == false then
 			guiEnabled = true
 			HealthGui = Instance.new("ScreenGui")
 			HealthGui.Name = "HealthGui"
