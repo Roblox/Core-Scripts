@@ -283,45 +283,6 @@ local function CreateSettingsHub()
 			}
 		}
 
-		this.PageViewScrollBar = utility:Create'Frame'{
-			Name = 'ScrollBar',
-			Parent = this.PageViewClipper,
-			BackgroundTransparency = 1,
-			Position = UDim2.new(1, -12, 0, 0),
-			Size = UDim2.new(0, 12, 1, 0),
-
-			utility:Create'ImageLabel'{
-				Name = 'Top',
-				BackgroundTransparency = 1,
-				Image = 'rbxasset://textures/ui/Scroll/scroll-top.png',
-				Position = UDim2.new(0, 0, 0, -6),
-				Size = UDim2.new(1, 0, 0, 12),
-				ZIndex = 3
-			},
-			utility:Create'ImageLabel'{
-				Name = 'Middle',
-				BackgroundTransparency = 1,
-				Image = 'rbxasset://textures/ui/Scroll/scroll-middle.png',
-				Position = UDim2.new(0, 0, 0, 6),
-				Size = UDim2.new(1, 0, 1, -6*2),
-				ZIndex = 3
-			},
-			utility:Create'ImageLabel'{
-				Name = 'Bottom',
-				BackgroundTransparency = 1,
-				Image = 'rbxasset://textures/ui/Scroll/scroll-bottom.png',
-				Position = UDim2.new(0, 0, 1, -6),
-				Size = UDim2.new(1, 0, 0, 12),
-				ZIndex = 3
-			},
-			utility:Create'ImageButton'{
-				Name = 'InputCapture',
-				BackgroundTransparency = 1,
-				Image = '',
-				Size = UDim2.new(1, 0, 1, 0)
-			}
-		}
-
 		this.PageView = utility:Create'ScrollingFrame'
 		{
 			Name = "PageView",
@@ -331,11 +292,10 @@ local function CreateSettingsHub()
 			BorderSizePixel = 0,
 			Selectable = false,
 			Parent = this.PageViewClipper,
-			ScrollingEnabled = false
 		};
 		if UserInputService.MouseEnabled then
 			this.PageViewClipper.Size = UDim2.new(this.HubBar.Size.X.Scale,this.HubBar.Size.X.Offset,
-				 							0.5, -(this.HubBar.Position.Y.Offset - this.HubBar.Size.Y.Offset))
+											0.5, -(this.HubBar.Position.Y.Offset - this.HubBar.Size.Y.Offset))
 		end
 
 		if isSmallTouchScreen then
@@ -511,133 +471,6 @@ local function CreateSettingsHub()
 			end
 		end)
 		onScreenSizeChanged()
-
-		-- Resize the scroll bar whenever content or size changes
-		local function resizePageViewScrollBar()
-			local space = this.PageView.AbsoluteSize.y
-			local size = this.PageView.CanvasSize.Y.Offset
-			local progress = this.PageView.CanvasPosition.Y
-
-			if size > space then
-				this.PageViewScrollBar.Visible = true
-
-				this.PageViewScrollBar.Size = UDim2.new(0, 12, space/size, 0)
-				this.PageViewScrollBar.Position = UDim2.new(1, -12, progress/size, 1)
-			else
-				this.PageViewScrollBar.Visible = false
-			end
-		end
-		local onPageViewChangedCon = this.PageView.Changed:connect(function(prop)
-			if prop == 'CanvasSize' or prop == 'CanvasPosition' or prop == 'AbsoluteSize' or prop == 'AbsolutePosition' then
-				resizePageViewScrollBar()
-			end
-		end)
-
-		-- Mouse wheel scrolling
-		this.PageViewClipper.InputCapture.InputChanged:connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseWheel then
-				local dir = input.Position.z
-				local power = 20
-				local pixels = -dir*power
-
-				this:ScrollPixels(pixels)
-			end
-		end)
-
-		-- Scroll bar drag scrolling
-		-- Note: At the time of writing there is a bug where mouse movement position will not account for the top bar so the scroll movement will be offset by 36 pixels.  Should be fixed soon.
-		local isDraggingScrollbar = false
-		local scrollBarHandleOffset = 0
-		this.PageViewScrollBar.InputCapture.InputBegan:connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				scrollBarHandleOffset = input.Position.y - this.PageViewScrollBar.AbsolutePosition.y
-				isDraggingScrollbar = true
-			end
-		end)
-		UserInputService.InputChanged:connect(function(input)
-			if isDraggingScrollbar and input.UserInputType == Enum.UserInputType.MouseMovement then
-				local mouseYRelative = input.Position.Y - scrollBarHandleOffset - this.PageViewClipper.AbsolutePosition.y
-				local totalSpace = this.PageViewClipper.AbsoluteSize.y - this.PageViewScrollBar.AbsoluteSize.y
-				local progress = math.max(0, math.min(mouseYRelative/totalSpace, 1))
-				this:ScrollToProgress(progress)
-			end
-		end)
-		UserInputService.InputEnded:connect(function(input)
-			if isDraggingScrollbar and input.UserInputType == Enum.UserInputType.MouseButton1 then
-				isDraggingScrollbar = false
-			end
-		end)
-
-		-- Thumbstick scrolling
-		local deadzone = 0.25
-		local scrolling = false
-		local scrollingPixels = 0
-		UserInputService.InputChanged:connect(function(input)
-			if this.Visible then
-				if input.KeyCode == Enum.KeyCode.Thumbstick2 then
-					if math.abs(input.Position.y) > deadzone then
-						local dir = input.Position.y > 0 and 1 or -1
-						local power = 3 * (math.abs(input.Position.y)-deadzone)/(1-deadzone)
-						scrollingPixels = -dir*power
-
-						this:ScrollPixels(scrollingPixels)
-
-						if not scrolling then
-							scrolling = true
-							while scrolling do
-								this:ScrollPixels(scrollingPixels)
-								RunService.RenderStepped:wait()
-							end
-						end
-					else
-						if scrolling then
-							scrolling = false
-						end
-					end
-				end
-			end
-		end)
-
-		-- touch drag scrolling
-		local pcTestTouchControls = false
-		if isTouchDevice or pcTestTouchControls then
-			local isDraggingTouch = false
-			local touchHandleOffset = 0
-			local touchPosition = 0
-			local lastPosition = 0
-			local listenForActiveInput = pcTestTouchControls and Enum.UserInputType.MouseButton1 or Enum.UserInputType.Touch
-			local listenForPassiveInput = pcTestTouchControls and Enum.UserInputType.MouseMovement or Enum.UserInputType.Touch
-			UserInputService.InputBegan:connect(function(input)
-				if input.UserInputType == listenForActiveInput then
-					local ax, ay = this.PageViewClipper.InputCapture.AbsolutePosition.x, this.PageViewClipper.InputCapture.AbsolutePosition.y
-					local sx, sy = this.PageViewClipper.InputCapture.AbsoluteSize.x, this.PageViewClipper.InputCapture.AbsoluteSize.y
-					local bx, by = ax+sx, ay+sy
-					local px, py = input.Position.x, input.Position.y
-
-					if px > ax and px < bx and py > ay and py < by then
-						touchHandleOffset = input.Position.y - this.PageViewScrollBar.AbsolutePosition.y
-						touchPosition = input.Position.Y - touchHandleOffset - this.PageViewClipper.AbsolutePosition.y
-						lastPosition = input.Position.Y
-						isDraggingTouch = true
-					end
-				end
-			end)
-			UserInputService.InputChanged:connect(function(input)
-				if isDraggingTouch and input.UserInputType == listenForPassiveInput then
-					local delta = input.Position.y - lastPosition
-					touchPosition = touchPosition + -delta
-					lastPosition = input.Position.y
-					local totalSpace = this.PageViewClipper.AbsoluteSize.y - this.PageViewScrollBar.AbsoluteSize.y
-					local progress = math.max(0, math.min(touchPosition/totalSpace, 1))
-					this:ScrollToProgress(progress)
-				end
-			end)
-			UserInputService.InputEnded:connect(function(input)
-				if isDraggingTouch and input.UserInputType == listenForActiveInput then
-					isDraggingTouch = false
-				end
-			end)
-		end
 	end
 
 	local function toggleDevConsole(actionName, inputState, inputObject)
@@ -828,15 +661,6 @@ local function CreateSettingsHub()
 		end
 	end
 
-	function this:GetScrollProgress()
-		return this.PageView.CanvasPosition.y / (this.PageView.CanvasSize.Y.Offset - this.PageViewClipper.AbsoluteSize.y)
-	end
-
-	function this:ScrollToProgress(progress)
-		local pixels = (this.PageView.CanvasSize.Y.Offset - this.PageViewClipper.AbsoluteSize.y) * progress
-		this.PageView.CanvasPosition = Vector2.new(0, pixels)
-	end
-
 	function this:ScrollPixels(pixels)
 		-- Only Y
 		local oldY = this.PageView.CanvasPosition.Y
@@ -870,9 +694,6 @@ local function CreateSettingsHub()
 		if direction == nil then
 			direction = 1
 		end
-
-		-- scroll back up
-		this:ScrollToProgress(0)
 
 		-- if we have a page we need to let it know to go away
 		if this.Pages.CurrentPage then
