@@ -6,6 +6,7 @@
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">FollowCamera</string>
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
+local UserInputService = game:GetService('UserInputService')
 local RootCameraCreator = require(script.Parent)
 
 local UP_VECTOR = Vector3.new(0, 1, 0)
@@ -61,9 +62,10 @@ local function CreateFollowCamera()
 		end
 		
 		if lastUpdate then
-			-- Cap out the delta to 0.5 so we don't get some crazy things when we re-resume from
-			local delta = math.min(0.5, now - lastUpdate)
+			-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
+			local delta = math.min(0.1, now - lastUpdate)
 			local angle = 0
+			-- NOTE: Traditional follow camera does not rotate with arrow keys
 			if not (isInVehicle or isOnASkateboard) then
 				angle = angle + (self.TurningLeft and -120 or 0)
 				angle = angle + (self.TurningRight and 120 or 0)
@@ -72,7 +74,7 @@ local function CreateFollowCamera()
 			local gamepadRotation = self:UpdateGamepad()
 			if gamepadRotation ~= Vector2.new(0,0) then
 				userPanningTheCamera = true				
-				self.RotateInput = self.RotateInput + gamepadRotation
+				self.RotateInput = self.RotateInput + (gamepadRotation * delta)
 			end
 			
 			if angle ~= 0 then
@@ -133,7 +135,7 @@ local function CreateFollowCamera()
 								self.RotateInput = self.RotateInput + Vector2.new(y * percent, 0)
 							end
 						end
-					elseif not (isInFirstPerson or userRecentlyPannedCamera) then
+					elseif not (isInFirstPerson or userRecentlyPannedCamera) and not UserInputService.IsVREnabled then
 						local lastVec = -(self.LastCameraTransform.p - subjectPosition)
 						local y = findAngleBetweenXZVectors(lastVec, self:GetCameraLook())
 						-- Check for NaNs
@@ -147,8 +149,8 @@ local function CreateFollowCamera()
 			self.RotateInput = Vector2.new()
 			
 			camera.Focus = CFrame.new(subjectPosition)
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
-			self.LastCameraTransform = camera.CoordinateFrame
+			module.cframe = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
+			self.LastCameraTransform = module.cframe
 			if isInVehicle or isOnASkateboard and cameraSubject:IsA('BasePart') then
 				self.LastSubjectCFrame = cameraSubject.CFrame
 			else

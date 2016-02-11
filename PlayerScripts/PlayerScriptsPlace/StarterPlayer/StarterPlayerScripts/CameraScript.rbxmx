@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBX19d54c212fd1424ab4aed39398914980">
+	<Item class="LocalScript" referent="RBX3C5D0BEBF6ED413EA31B5A5E9C0B72A7">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -9,19 +9,44 @@
 			<ProtectedString name="Source"><![CDATA[local RunService = game:GetService('RunService')
 local UserInputService = game:GetService('UserInputService')
 local PlayersService = game:GetService('Players')
+local StarterPlayer = game:GetService('StarterPlayer')
 
 
 local RootCamera = script:WaitForChild('RootCamera')
+
+local AttachCamera = require(RootCamera:WaitForChild('AttachCamera'))()
+local FixedCamera = require(RootCamera:WaitForChild('FixedCamera'))()
+local ScriptableCamera = require(RootCamera:WaitForChild('ScriptableCamera'))()
+local TrackCamera = require(RootCamera:WaitForChild('TrackCamera'))()
+local WatchCamera = require(RootCamera:WaitForChild('WatchCamera'))()
+
 local ClassicCamera = require(RootCamera:WaitForChild('ClassicCamera'))()
 local FollowCamera = require(RootCamera:WaitForChild('FollowCamera'))()
 local PopperCam = require(script:WaitForChild('PopperCam'))
 local Invisicam = require(script:WaitForChild('Invisicam'))
 local ClickToMove = require(script:WaitForChild('ClickToMove'))()
 local TransparencyController = require(script:WaitForChild('TransparencyController'))()
-local StarterPlayer = game:GetService('StarterPlayer')
 
 local GameSettings = UserSettings().GameSettings
 
+local AllCamerasInLua = false
+local success, msg = pcall(function()
+	AllCamerasInLua = UserSettings():IsUserFeatureEnabled("UserAllCamerasInLua")
+end)
+if not success then
+	print("Couldn't get feature UserAllCamerasInLua because:" , msg) 
+end
+
+
+local CameraTypeEnumMap = 
+{
+	[Enum.CameraType.Attach] = AttachCamera;
+	[Enum.CameraType.Fixed] = FixedCamera;
+	[Enum.CameraType.Scriptable] = ScriptableCamera;
+	[Enum.CameraType.Track] = TrackCamera;
+	[Enum.CameraType.Watch] = WatchCamera;
+	[Enum.CameraType.Follow] = FollowCamera;
+}
 
 local EnabledCamera = nil
 local EnabledOcclusion = nil
@@ -29,26 +54,33 @@ local EnabledOcclusion = nil
 local currentCameraConn = nil
 local renderSteppedConn = nil
 
+local lastInputType = nil
+local hasLastInput = false
 
 local function IsTouch()
 	return UserInputService.TouchEnabled
 end
 
-local function shouldUseCustomCamera()
+local function shouldUsePlayerScriptsCamera()
 	local player = PlayersService.LocalPlayer
 	local currentCamera = workspace.CurrentCamera
-	if player then
-		if currentCamera == nil or (currentCamera and currentCamera.CameraType == Enum.CameraType.Custom) then
-			return true, player, currentCamera
+	if AllCamerasInLua then
+		return true
+	else
+		if player then
+			if currentCamera == nil or (currentCamera and currentCamera.CameraType == Enum.CameraType.Custom) then
+				return true
+			end
 		end
 	end
-	return false, player, currentCamera
+	return false
 end
 
 local function isClickToMoveOn()
-	local customModeOn, player, currentCamera = shouldUseCustomCamera()
-	if customModeOn then
-		if IsTouch() then -- Touch
+	local usePlayerScripts = shouldUsePlayerScriptsCamera()
+	local player = PlayersService.LocalPlayer
+	if usePlayerScripts and player then
+		if (hasLastInput and lastInputType == Enum.UserInputType.Touch) or IsTouch() then -- Touch
 			if player.DevTouchMovementMode == Enum.DevTouchMovementMode.ClickToMove or
 					(player.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice and GameSettings.TouchMovementMode == Enum.TouchMovementMode.ClickToMove) then
 				return true
@@ -64,9 +96,10 @@ local function isClickToMoveOn()
 end
 
 local function getCurrentCameraMode()
-	local customModeOn, player, currentCamera = shouldUseCustomCamera()
-	if customModeOn then
-		if IsTouch() then -- Touch (iPad, etc...)
+	local usePlayerScripts = shouldUsePlayerScriptsCamera()
+	local player = PlayersService.LocalPlayer
+	if usePlayerScripts and player then
+		if (hasLastInput and lastInputType == Enum.UserInputType.Touch) or IsTouch() then -- Touch (iPad, etc...)
 			if isClickToMoveOn() then
 				return Enum.DevTouchMovementMode.ClickToMove.Name
 			elseif player.DevTouchCameraMode == Enum.DevTouchCameraMovementMode.UserChoice then
@@ -95,8 +128,9 @@ local function getCurrentCameraMode()
 end
 
 local function getCameraOcclusionMode()
-	local customModeOn, player, currentCamera = shouldUseCustomCamera()
-	if customModeOn then
+	local usePlayerScripts = shouldUsePlayerScriptsCamera()
+	local player = PlayersService.LocalPlayer
+	if usePlayerScripts and player then
 		return player.DevCameraOcclusionMode
 	end
 end
@@ -104,11 +138,13 @@ end
 local function Update()
 	if EnabledCamera then
 		EnabledCamera:Update()
+		EnabledCamera:ApplyCameraCFrame()
+		EnabledCamera:ApplyVROffset()
 	end
 	if EnabledOcclusion then
 		EnabledOcclusion:Update()
 	end
-	if shouldUseCustomCamera() then
+	if shouldUsePlayerScriptsCamera() then
 		TransparencyController:Update()
 	end
 end
@@ -131,12 +167,19 @@ local function OnCameraMovementModeChange(newCameraMode)
 		SetEnabledCamera(nil)
 		TransparencyController:SetEnabled(true)
 	else
-		if newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
+		local currentCameraType = workspace.CurrentCamera and workspace.CurrentCamera.CameraType
+		
+		if (currentCameraType == Enum.CameraType.Custom or not AllCamerasInLua) and newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
 			SetEnabledCamera(ClassicCamera)
 			TransparencyController:SetEnabled(true)
-		elseif newCameraMode == Enum.ComputerCameraMovementMode.Follow.Name then
+		elseif (currentCameraType == Enum.CameraType.Custom or not AllCamerasInLua) and newCameraMode == Enum.ComputerCameraMovementMode.Follow.Name then
 			SetEnabledCamera(FollowCamera)
 			TransparencyController:SetEnabled(true)
+
+		elseif AllCamerasInLua and CameraTypeEnumMap[currentCameraType] then
+			SetEnabledCamera(CameraTypeEnumMap[currentCameraType])
+			TransparencyController:SetEnabled(false)
+
 		else -- Our camera movement code was disabled by the developer
 			SetEnabledCamera(nil)
 			TransparencyController:SetEnabled(false)
@@ -154,14 +197,6 @@ local function OnCameraMovementModeChange(newCameraMode)
 		EnabledOcclusion = Invisicam
 	else
 		EnabledOcclusion = false
-	end
-
-	local success = pcall(function() local isAThing = RunService.BindToRenderStep end)
-	if not success then
-		if renderSteppedConn then
-			renderSteppedConn:disconnect()
-		end
-		renderSteppedConn = RunService.RenderStepped:connect(Update)
 	end
 end
 
@@ -216,13 +251,7 @@ local function OnPlayerAdded(player)
 		OnCameraMovementModeChange(getCurrentCameraMode())
 	end)
 
-	local success = pcall(function() RunService:BindToRenderStep("cameraRenderUpdate",Enum.RenderPriority.Camera.Value,Update) end)
-	if not success then
-		if renderSteppedConn then
-			renderSteppedConn:disconnect()
-		end
-		renderSteppedConn = RunService.RenderStepped:connect(Update)
-	end
+	RunService:BindToRenderStep("cameraRenderUpdate", Enum.RenderPriority.Camera.Value, Update)
 
 	OnNewCamera()
 	OnCameraMovementModeChange(getCurrentCameraMode())
@@ -230,6 +259,12 @@ end
 
 do
 	while PlayersService.LocalPlayer == nil do wait() end
+	hasLastInput = pcall(function()
+		lastInputType = UserInputService:GetLastInputType()
+		UserInputService.LastInputTypeChanged:connect(function(newLastInputType) 
+			lastInputType = newLastInputType
+		end)
+	end)
 	OnPlayerAdded(PlayersService.LocalPlayer)
 end
 ]]></ProtectedString>

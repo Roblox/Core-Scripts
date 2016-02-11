@@ -12,9 +12,9 @@ local MIN_SAVE_TIME = 900 -- At least this many seconds will pass before saving 
 --| Variables |--
 -----------------
 
-local ContentProviderService = Game:GetService('ContentProvider')
-local PlayersService = Game:GetService('Players')
-local RunService = Game:GetService("RunService")
+local ContentProviderService = game:GetService('ContentProvider')
+local PlayersService = game:GetService('Players')
+local RunService = game:GetService("RunService")
 
 local StartingPlayerRanks = {}
 local RbxUtil = nil
@@ -26,7 +26,7 @@ local NumberOfChangesBeforeSaveAbsolute = CHANGES_PER_PLAYER
 local GameRunning = true
 local WaitingToSave = false
 
-local PlaceId = Game.PlaceId
+local PlaceId = game.PlaceId
 local Url = ContentProviderService.BaseUrl
 local UrlBase = Url:match('^http://www\.(.-)/?$') -- Turns "http://www.gametest1.robloxlabs.com/" into "gametest1.robloxlabs.com"
 local ApiProxyUrl = 'https://api.' ..  UrlBase
@@ -50,7 +50,7 @@ end
 
 -- Checks the full hierarchy of an instance for archivability
 local function IsArchivable(instance)
-	if instance == Workspace then
+	if instance == workspace then
 		return true
 	elseif not instance.Archivable then
 		return false
@@ -70,7 +70,7 @@ local function OnPlayerAdded(player)
 		local getRankUrl = ApiProxyUrl .. '/RoleSets/GetRoleSetForUser?placeId=' .. tostring(PlaceId) .. '&userId=' .. tostring(player.userId)
 		local serverRankTable = nil
 		pcall(function()
-			serverRankTable = GetRbxUtil().DecodeJSON(Game:HttpGetAsync(getRankUrl))
+			serverRankTable = GetRbxUtil().DecodeJSON(game:HttpGetAsync(getRankUrl))
 		end)
 
 		local playerRank = 0
@@ -99,7 +99,7 @@ local function OnPlayerRemoved(player)
 			local playerRank = player.PersonalServerRank
 			if StartingPlayerRanks[player] ~= playerRank then -- Don't need to make web call if rank is the same
 				local setRankUrl = ApiProxyUrl .. '/RoleSets/PrivilegedSetUserRoleSetRank?placeId=' .. tostring(PlaceId) .. '&userId=' .. tostring(player.userId) .. '&newRank=' .. tostring(playerRank)
-				ypcall(function() Game:HttpPostAsync(setRankUrl, 'SetPersonalServerRank') end)
+				ypcall(function() game:HttpPostAsync(setRankUrl, 'SetPersonalServerRank') end)
 			end
 			StartingPlayerRanks[player] = nil
 		end
@@ -110,7 +110,7 @@ local function DoSave()
 	if GameRunning then
 		ChangeCount = 0
 		LastSaveTime = tick()
-		Game:ServerSave()
+		game:ServerSave()
 	end
 end
 
@@ -124,7 +124,7 @@ local function TrySave()
 			DoSave()
 		elseif not WaitingToSave then -- Save after cooldown
 			WaitingToSave = true
-			Delay(LastSaveTime + MIN_SAVE_TIME - now, function()
+			delay(LastSaveTime + MIN_SAVE_TIME - now, function()
 				DoSave()
 				WaitingToSave = false
 			end)
@@ -159,16 +159,16 @@ end
 --| Script Logic |--
 --------------------
 
-Game:WaitForChild('Workspace')
+game:WaitForChild('Workspace')
 
 pcall(function()
-	Game.IsPersonalServer = true
+	game.IsPersonalServer = true
 
-	if not Workspace:FindFirstChild("PSVariable") then
+	if not workspace:FindFirstChild("PSVariable") then
 		local psVar = Instance.new("BoolValue")
 		psVar.Name = "PSVariable"
 		psVar.Archivable = false
-		psVar.Parent = Workspace
+		psVar.Parent = workspace
 	end
 end)
 
@@ -185,14 +185,14 @@ if(useSubdomainsFlagExists and useSubdomainsFlagValue and DataFarmUrl~=nil) then
 end
 
 if saveUrlBase~=nil then
-	Game:SetServerSaveUrl(saveUrlBase .. "/Data/AutoSave.ashx?assetId=" .. PlaceId)
+	game:SetServerSaveUrl(saveUrlBase .. "/Data/AutoSave.ashx?assetId=" .. PlaceId)
 end
 
 if pcall(function()
-	Game.Close:connect(
+	game.Close:connect(
 		function()
 			GameRunning = false
-			Game:ServerSave()
+			game:ServerSave()
 		end)
 	end) == false then
 	print("!Error in Game.Close:connect")
@@ -200,7 +200,7 @@ end
 
 RunService:Run()
 
-Game:GetService("Workspace").DescendantAdded:connect(OnEdit)
-Game:GetService("Workspace").DescendantRemoving:connect(OnEdit)
+game:GetService("Workspace").DescendantAdded:connect(OnEdit)
+game:GetService("Workspace").DescendantRemoving:connect(OnEdit)
 
-Spawn(CheckForSaveOnInterval)
+spawn(CheckForSaveOnInterval)

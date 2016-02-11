@@ -4,8 +4,8 @@
 -- Essentially a user can bind a lua function to a key code, input type (mousebutton1 etc.) and this
 
 -- Variables
-local contextActionService = Game:GetService("ContextActionService")
-local userInputService = Game:GetService("UserInputService")
+local contextActionService = game:GetService("ContextActionService")
+local userInputService = game:GetService("UserInputService")
 local isTouchDevice = userInputService.TouchEnabled
 local functionTable = {}
 local buttonVector = {}
@@ -29,16 +29,12 @@ local buttonPositionTable = {
 local maxButtons = #buttonPositionTable
 
 -- Preload images
-Game:GetService("ContentProvider"):Preload(ContextDownImage)
-Game:GetService("ContentProvider"):Preload(ContextUpImage)
+game:GetService("ContentProvider"):Preload(ContextDownImage)
+game:GetService("ContentProvider"):Preload(ContextUpImage)
 
-while not Game:GetService("Players") do
-	wait()
-end
+repeat wait() until game:GetService("Players").LocalPlayer
 
-while not Game:GetService("Players").LocalPlayer do
-	wait()
-end
+local localPlayer = game:GetService("Players").LocalPlayer
 
 function createContextActionGui()
 	if not buttonScreenGui and isTouchDevice then
@@ -99,7 +95,7 @@ function contextButtonUp(button, inputObject, actionName)
 end
 
 function isSmallScreenDevice()
-	return Game:GetService("GuiService"):GetScreenResolution().y <= 320
+	return game:GetService("GuiService"):GetScreenResolution().y <= 320
 end
 
 
@@ -197,7 +193,7 @@ function createButton( actionName, functionInfoTable )
 	button.Parent = buttonFrame
 
 	if buttonScreenGui and buttonScreenGui.Parent == nil then
-		buttonScreenGui.Parent = Game:GetService("Players").LocalPlayer.PlayerGui
+		buttonScreenGui.Parent = localPlayer.PlayerGui
 	end
 end
 
