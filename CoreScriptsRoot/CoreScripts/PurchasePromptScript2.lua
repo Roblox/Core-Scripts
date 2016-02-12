@@ -22,8 +22,8 @@ local ThirdPartyProductName = nil
 local platform = UserInputService:GetPlatform()
 local IsNativePurchasing = platform == Enum.Platform.XBoxOne or 
 							platform == Enum.Platform.IOS or 
-							platform == Enum.Platform.Android or
-							platform == Enum.Platform.UWP
+							platform == Enum.Platform.Android --or
+							--platform == Enum.Platform.UWP
 
 local IsCurrentlyPrompting = false
 local IsCurrentlyPurchasing = false
@@ -1227,7 +1227,10 @@ local function onAcceptPurchase()
 	result = HttpService:JSONDecode(result)
 	if result then
 		if result["success"] == false then
-			if result["status"] ~= "AlreadyOwned" then
+			if result["status"] == "AlreadyOwned" then
+				onPurchaseFailed(PURCHASE_FAILED.ALREADY_OWN)
+				return
+			else
 				print("PurchasePromptScript: onAcceptPurchase() response failed because", tostring(result["status"]))
 				if result["status"] == "EconomyDisabled" then
 					onPurchaseFailed(PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED)
