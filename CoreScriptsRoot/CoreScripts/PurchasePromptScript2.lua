@@ -13,6 +13,7 @@ local InsertService = game:GetService('InsertService')
 local MarketplaceService = game:GetService('MarketplaceService')
 local Players = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
+local RunService = game:GetService("RunService")
 
 --[[ Script Variables ]]--
 local RobloxGui = script.Parent
@@ -1316,6 +1317,9 @@ end
 
 local function onBuyRobuxPrompt()
 	if useNewPromptEndHandling and purchaseState ~= PURCHASE_STATE.BUYROBUX then
+		return
+	end
+	if RunService:IsStudio() then
 		return
 	end
 
