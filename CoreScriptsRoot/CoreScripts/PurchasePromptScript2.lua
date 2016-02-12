@@ -643,7 +643,7 @@ local function getRobuxProduct(amountNeeded, isBCMember)
 		end
 	end
 
-	return productArray[1]
+	return nil
 end
 
 local function getRobuxProductToBuyItem(amountNeeded)
