@@ -22,8 +22,8 @@ local ThirdPartyProductName = nil
 local platform = UserInputService:GetPlatform()
 local IsNativePurchasing = platform == Enum.Platform.XBoxOne or 
 							platform == Enum.Platform.IOS or 
-							platform == Enum.Platform.Android --or
-							--platform == Enum.Platform.UWP
+							platform == Enum.Platform.Android or
+							platform == Enum.Platform.UWP
 
 local IsCurrentlyPrompting = false
 local IsCurrentlyPurchasing = false
