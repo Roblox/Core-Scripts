@@ -497,6 +497,7 @@ local function clearPurchaseData()
 	RobuxIcon.Visible = false
 	TixIcon.Visible = false
 	CostText.Visible = false
+	purchaseState = PURCHASE_STATE.DEFAULT
 end
 
 --[[ Show Functions ]]--
@@ -783,7 +784,6 @@ local function closePurchaseDialog()
 			IsCurrentlyPrompting = false
 			IsCurrentlyPurchasing = false
 			IsCheckingPlayerFunds = false
-			purchaseState = PURCHASE_STATE.DEFAULT
 			if isTenFootInterface then
 				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 			end
