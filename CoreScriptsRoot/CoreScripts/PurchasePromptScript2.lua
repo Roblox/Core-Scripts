@@ -105,6 +105,7 @@ local PURCHASE_FAILED = {
 	DID_NOT_BUY_ROBUX = 8,
 	PROMPT_PURCHASE_ON_GUEST = 9,
 	THIRD_PARTY_DISABLED = 10,
+	ALREADY_OWN = 11,
 }
 local PURCHASE_STATE = {
 	DEFAULT = 1,
@@ -765,6 +766,9 @@ local function onPurchaseFailed(failType)
 	elseif failType == PURCHASE_FAILED.THIRD_PARTY_DISABLED then
 		failedText = "Third-party item sales have been disabled for this place. Your account has not been charged."
 		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
+	elseif failType == PURCHASE_FAILED.ALREADY_OWN then
+		failedText = PURCHASE_MSG.ALREADY_OWN
+		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 	end
 
 	RobuxIcon.Visible = false
@@ -1040,11 +1044,8 @@ local function canPurchase(disableUpsell)
 				onPurchaseFailed(PURCHASE_FAILED.DEFAULT_ERROR)
 				return false
 			end
-			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
-			ItemDescriptionText.Text = PURCHASE_MSG.ALREADY_OWN
-			PostBalanceText.Visible = false
-			setButtonsVisible(OkButton)
-			return true
+			onPurchaseFailed(PURCHASE_FAILED.ALREADY_OWN)
+			return false
 		end
 		
 		-- most places will not need to sell third party assets.
