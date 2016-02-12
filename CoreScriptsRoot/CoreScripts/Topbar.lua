@@ -180,6 +180,10 @@ local function CreateTopBar()
 		end
 	end
 
+	function this:SetActive(active)
+		topbarContainer.Active = active	
+	end
+
 	function this:GetInstance()
 		return topbarContainer
 	end
@@ -1234,6 +1238,7 @@ function topBarEnabledChanged()
 	topbarEnabledChangedEvent:Fire(topbarEnabled)
 	TopBar:UpdateBackgroundTransparency()
 	CheckShiftLockMode()
+	TopBar:SetActive(topbarEnabled)
 	for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do
 		-- The All enum will be false if any of the coreguis are false
 		-- therefore by force updating it we are clobbering the previous sets
