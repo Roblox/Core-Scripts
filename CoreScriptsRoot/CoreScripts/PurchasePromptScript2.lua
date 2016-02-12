@@ -736,12 +736,14 @@ local function onPurchaseFailed(failType)
 
 	local itemName = PurchaseData.ProductInfo and PurchaseData.ProductInfo["Name"] or ""
 	local failedText = string.gsub(PURCHASE_MSG.FAILED, "itemName", string.sub(itemName, 1, 20))
+	
+	if itemName == "" then
+		failedText = string.gsub(failedText, " of ", "")
+	end
+		
 	if failType == PURCHASE_FAILED.DEFAULT_ERROR then
 		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.UNKNWON_FAILURE)
 	elseif failType == PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED then
-		if itemName == "" then
-			failedText = string.gsub(failedText, " of ", "")
-		end
 		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.PURCHASE_DISABLED)
 	elseif failType == PURCHASE_FAILED.CANNOT_GET_BALANCE then
 		failedText = "Cannot retrieve your balance at this time. Your account has not been charged. Please try again later."
