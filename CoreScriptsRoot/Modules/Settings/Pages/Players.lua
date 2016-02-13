@@ -12,6 +12,7 @@ local PlayersService = game:GetService('Players')
 local HttpService = game:GetService('HttpService')
 local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local UserInputService = game:GetService('UserInputService')
+local Players = game:GetService("Players")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
@@ -215,7 +216,7 @@ local function Initialize()
 
 	local existingPlayerLabels = {}
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
-		local sortedPlayers = game.Players:GetPlayers()
+		local sortedPlayers = Players:GetPlayers()
 		table.sort(sortedPlayers,function(item1,item2)
 			return item1.Name < item2.Name
 		end)
