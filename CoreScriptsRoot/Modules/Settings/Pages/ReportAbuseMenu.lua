@@ -9,7 +9,7 @@
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
-local Players = game:GetService("Players")
+local PlayersService = game:GetService("Players")
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
@@ -60,7 +60,7 @@ local function Initialize()
 		playerNames = {}
 	    	nameToRbxPlayer = {}
 
-		local players = Players:GetPlayers()
+		local players = PlayersService:GetPlayers()
 		local index = 1
 		for i = 1, #players do
 			local player = players[i]
