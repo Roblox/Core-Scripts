@@ -1503,6 +1503,14 @@ local function resizePlayerList()
 	clampCanvasPosition()
 end
 
+function isControlKeyDown()
+	return UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt) 
+		or UserInputService:IsKeyDown(Enum.KeyCode.RightAlt)
+		or UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)
+		or UserInputService:IsKeyDown(Enum.KeyCode.RightAlt)
+		or UserInputService:IsKeyDown(Enum.KeyCode.LeftMeta)
+end
+
 RobloxGui.Changed:connect(function(property)
 	if property == 'AbsoluteSize' then
 		spawn(function()	-- must spawn because F11 delays when abs size is set
@@ -1661,6 +1669,7 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 	if inputState and inputState ~= Enum.UserInputState.Begin then return end
 	if IsSmallScreenDevice then return end
 	if not playerlistCoreGuiEnabled then return end
+	if isControlKeyDown() then return end
 
 	isOpen = not isOpen
 
