@@ -703,7 +703,7 @@ local function updateSocialIcon(newIcon, bgFrame)
 			socialIcon.Image = newIcon
 		else
 			if nameFrame then
-				newSize = nameFrame.Size.X.Offset + socialIcon.Size.X.Offset + 2
+				local newSize = nameFrame.Size.X.Offset + socialIcon.Size.X.Offset + 2
 				nameFrame.Size = UDim2.new(-0.01, newSize, 0.5, 0)
 				nameFrame.Position = UDim2.new(0.01, offset, 0.245, 0)
 			end
@@ -827,9 +827,7 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 			newIcon = getFollowerStatusIcon(followerStatus)
 		end
 
-		if newIcon then
-			updateSocialIcon(newIcon, bgFrame)
-		end
+		updateSocialIcon(newIcon, bgFrame)
 	end
 end
 
