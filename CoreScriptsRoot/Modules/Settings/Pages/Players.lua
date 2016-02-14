@@ -214,7 +214,11 @@ local function Initialize()
 	end
 
 	local existingPlayerLabels = {}
+	local debounce = false
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
+		if debounce then return end
+		debounce = true
+		
 		local sortedPlayers = game.Players:GetPlayers()
 		table.sort(sortedPlayers,function(item1,item2)
 			return item1.Name < item2.Name
@@ -289,6 +293,7 @@ local function Initialize()
 		end
 
 		this.Page.Size = UDim2.new(1,0,0, extraOffset + 80 * #sortedPlayers - 5)
+		debounce = false
 	end)
 
 
