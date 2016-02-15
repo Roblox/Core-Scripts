@@ -64,7 +64,7 @@ local function Initialize()
 		local index = 1
 		for i = 1, #players do
 			local player = players[i]
-			if player ~= Players.LocalPlayer and player.UserId > 0 then
+			if player ~= PlayersService.LocalPlayer and player.UserId > 0 then
 				playerNames[index] = player.Name
 				nameToRbxPlayer[player.Name] = player
 				index = index + 1
