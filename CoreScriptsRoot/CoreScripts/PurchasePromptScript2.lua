@@ -491,13 +491,13 @@ local function setPreviewImage(productInfo, assetId)
 end
 
 local function clearPurchaseData()
+	purchaseState = PURCHASE_STATE.DEFAULT
 	for k,v in pairs(PurchaseData) do
 		PurchaseData[k] = nil
 	end
 	RobuxIcon.Visible = false
 	TixIcon.Visible = false
 	CostText.Visible = false
-	purchaseState = PURCHASE_STATE.DEFAULT
 end
 
 --[[ Show Functions ]]--
@@ -796,6 +796,7 @@ local function onPromptEnded(isSuccess)
 	if useNewPromptEndHandling then
 		didPurchase = (purchaseState == PURCHASE_STATE.SUCCEEDED)
 	end
+	clearPurchaseData()
 
 	closePurchaseDialog()
 	if IsPurchasingConsumable then
@@ -803,7 +804,6 @@ local function onPromptEnded(isSuccess)
 	else
 		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, didPurchase)
 	end
-	clearPurchaseData()
 	enableControllerMovement()
 	disableControllerInput()
 end
