@@ -1599,6 +1599,14 @@ end
 
 local isOpen = not isTenFootInterface
 
+local function isShortcutKeyDown()
+	return UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)
+		or UserInputService:IsKeyDown(Enum.KeyCode.RightControl)
+		or UserInputService:IsKeyDown(Enum.KeyCode.LeftAlt)
+		or UserInputService:IsKeyDown(Enum.KeyCode.RightAlt)
+		or UserInputService:IsKeyDown(Enum.KeyCode.LeftMeta)
+end
+
 local closeListFunc = function(name, state, input)
 	if state ~= Enum.UserInputState.Begin then return end
 
@@ -1659,6 +1667,7 @@ Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 	if inputState and inputState ~= Enum.UserInputState.Begin then return end
 	if IsSmallScreenDevice then return end
 	if not playerlistCoreGuiEnabled then return end
+	if isShortcutKeyDown() then return end
 
 	isOpen = not isOpen
 
