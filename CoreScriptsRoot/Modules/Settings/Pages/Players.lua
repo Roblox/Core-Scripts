@@ -214,7 +214,11 @@ local function Initialize()
 	end
 
 	local existingPlayerLabels = {}
+	local debounce = false
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
+		if debounce then return end
+		debounce = true
+		
 		local sortedPlayers = game.Players:GetPlayers()
 		table.sort(sortedPlayers,function(item1,item2)
 			return item1.Name < item2.Name
@@ -278,17 +282,20 @@ local function Initialize()
 
 				friendStatusCreate(frame, player)
 			elseif frame then
-				table.insert(framesToDestroy,frame)
+				table.insert(framesToDestroy,{frame, index})
 			end
 		end
 		for i=#framesToDestroy, 1, -1 do
-			local frame = framesToDestroy[i]
+			local frame = framesToDestroy[i][1]
+			local index = framesToDestroy[i][2]
 			if frame then
 				frame:Destroy()
 			end
+			table.remove(existingPlayerLabels,index)
 		end
 
 		this.Page.Size = UDim2.new(1,0,0, extraOffset + 80 * #sortedPlayers - 5)
+		debounce = false
 	end)
 
 
