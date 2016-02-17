@@ -282,14 +282,16 @@ local function Initialize()
 
 				friendStatusCreate(frame, player)
 			elseif frame then
-				table.insert(framesToDestroy,frame)
+				table.insert(framesToDestroy,{frame, index})
 			end
 		end
 		for i=#framesToDestroy, 1, -1 do
-			local frame = framesToDestroy[i]
+			local frame = framesToDestroy[i][1]
+			local index = framesToDestroy[i][2]
 			if frame then
 				frame:Destroy()
 			end
+			table.remove(existingPlayerLabels,index)
 		end
 
 		this.Page.Size = UDim2.new(1,0,0, extraOffset + 80 * #sortedPlayers - 5)
