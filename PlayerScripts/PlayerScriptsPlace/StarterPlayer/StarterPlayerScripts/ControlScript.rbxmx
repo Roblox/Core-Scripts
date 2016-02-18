@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBXF68B99ABBDA3407FA14C55F8580F3BB5">
+	<Item class="LocalScript" referent="RBX42ccac9280864855b585aef6889819fb">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -388,8 +388,6 @@ local isJumpEnabled = false
 local ControlState = {}
 ControlState.Current = nil
 function ControlState:SwitchTo(newControl)
-	if newControl == ControlState.Current then return end
-	
 	if ControlState.Current then
 		ControlState.Current:Disable()
 	end
