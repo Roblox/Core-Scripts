@@ -29,15 +29,17 @@ local BILLBOARD_MAX_HEIGHT = 500
 local ELIPSES = "..."
 local CchMaxChatMessageLength = 128 -- max chat message length, including null terminator and elipses.
 local CchMaxChatMessageLengthExclusive = CchMaxChatMessageLength - string.len(ELIPSES) - 1
+
+local NON_CORESCRIPT_MODE = false
 --[[ END OF SCRIPT VARIABLES ]]
 
 
 -- [[ SCRIPT ENUMS ]]
-local ChatType = {	PLAYER_CHAT = "pChat", 
-					PLAYER_TEAM_CHAT = "pChatTeam", 
+local ChatType = {	PLAYER_CHAT = "pChat",
+					PLAYER_TEAM_CHAT = "pChatTeam",
 					PLAYER_WHISPER_CHAT = "pChatWhisper",
-					GAME_MESSAGE= "gMessage", 
-					PLAYER_GAME_CHAT = "pGame", 
+					GAME_MESSAGE= "gMessage",
+					PLAYER_GAME_CHAT = "pGame",
 					BOT_CHAT = "bChat" }
 
 local BubbleColor = {	WHITE = "dub", 
@@ -47,6 +49,13 @@ local BubbleColor = {	WHITE = "dub",
 
 --[[ END OF SCRIPT ENUMS ]]
 
+
+if not NON_CORESCRIPT_MODE then
+	while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end		--eww
+	local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
+	playerDropDownModule = require(GuiRoot.Modules:WaitForChild("PlayerDropDown"))
+	blockingUtility = playerDropDownModule:CreateBlockingUtility()
+end
 
 
 --[[ FUNCTIONS ]]
@@ -73,7 +82,7 @@ local function createFifo()
 	function this:PopFront()
 		table.remove(this.data, 1)
 		if this:Empty() then emptyEvent:Fire() end
-	end 
+	end
 
 	function this:Front()
 		return this.data[1]
@@ -116,7 +125,7 @@ local function createMap()
 		if this.data[key] then count = count - 1 end
 		this.data[key] = nil
 	end
-	
+
 	function this:Set(key, value)
 		this.data[key] = value
 		if value then count = count + 1 end
@@ -552,11 +561,16 @@ local function createChatOutput()
 	function this:OnPlayerChatMessage(chatType, sourcePlayer, message, targetPlayer)
 		if not this:BubbleChatEnabled() then return end
 
-		-- eliminate display of emotes
-		if string.find(message, "/e ") == 1 or string.find(message, "/emote ") == 1 then return end
+		-- eliminate display of commands
+		if string.sub(message, 1, 1) == '/' then return end
 
 		local localPlayer = PlayersService.LocalPlayer
 		local fromOthers = localPlayer ~= nil and sourcePlayer ~= localPlayer
+
+		-- annihilate chats made by blocked or muted players
+		if blockingUtility then
+			if blockingUtility:IsPlayerBlockedByUserId(sourcePlayer.userId) or blockingUtility:IsPlayerMutedByUserId(sourcePlayer.userId) then return end
+		end
 
 		local luaChatType = ChatType.PLAYER_CHAT
 		if chatType == Enum.PlayerChatType.Team then
