@@ -643,7 +643,7 @@ local function getRobuxProduct(amountNeeded, isBCMember)
 		end
 	end
 
-	return productArray[1]
+	return nil
 end
 
 local function getRobuxProductToBuyItem(amountNeeded)
@@ -703,6 +703,7 @@ local function setBuyMoreRobuxDialog(playerBalance)
 		--
 		if not ThirdPartyProductName then
 			descriptionText = "This item cost more ROBUX than you can purchase. Please visit www.roblox.com to purchase more ROBUX."
+			purchaseState = PURCHASE_STATE.FAILED
 			setButtonsVisible(OkButton)
 		else
 			local remainder = playerBalanceInt + productCost - PurchaseData.CurrencyAmount
