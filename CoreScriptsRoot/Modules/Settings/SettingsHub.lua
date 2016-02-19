@@ -434,7 +434,7 @@ local function CreateSettingsHub()
 				end
 			end
 
-			if useUserList then
+			if useUserList and not isTenFootInterface then
 				if isSmallTouchScreen then
 					this.PageViewClipper.Size = UDim2.new(
 						this.PageViewClipper.Size.X.Scale,
@@ -817,7 +817,7 @@ local function CreateSettingsHub()
 				removeBottomBarBindings()
 				this:SwitchToPage(customStartPage, nil, 1, true)
 			else
-				if useUserList then
+				if useUserList and not isTenFootInterface then
 					this:SwitchToPage(this.PlayersPage, nil, 1, true)
 				else
 					if this.HomePage then
@@ -960,13 +960,13 @@ local function CreateSettingsHub()
 		this.RecordPage:SetHub(this)
 	end
 
-	if useUserList then
+	if useUserList and not isTenFootInterface then
 		this.PlayersPage = require(RobloxGui.Modules.Settings.Pages.Players)
 		this.PlayersPage:SetHub(this)
 	end
 
 	-- page registration
-	if useUserList then
+	if useUserList and not isTenFootInterface then
 		this:AddPage(this.PlayersPage)
 	end
 	this:AddPage(this.ResetCharacterPage)
@@ -985,7 +985,7 @@ local function CreateSettingsHub()
 		this:AddPage(this.RecordPage)
 	end
 
-	if useUserList then
+	if useUserList and not isTenFootInterface then
 		this:SwitchToPage(this.PlayerPage, true, 1)
 	else
 		if this.HomePage then
