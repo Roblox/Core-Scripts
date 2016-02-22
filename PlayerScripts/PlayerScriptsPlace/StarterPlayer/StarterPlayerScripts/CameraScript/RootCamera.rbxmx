@@ -9,9 +9,9 @@
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 
---NoVR will be false if the platform does not have the IsVREnabled property, because indexing it will throw an error.
-local success = pcall(function() local _ = UserInputService.IsVREnabled end)
-local NoVR = not success
+--NoVRAPI will be false if the platform does not have the VREnabled property, because indexing it will throw an error.
+local success = pcall(function() local _ = UserInputService.VREnabled end)
+local NoVRAPI = not success
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
@@ -19,6 +19,7 @@ local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockControll
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
+local VR_PITCH_FRACTION = 0.5
 
 local function clamp(low, high, num)
 	if low <= high then
@@ -58,6 +59,9 @@ end
 
 local MIN_Y = math.rad(-80)
 local MAX_Y = math.rad(80)
+
+local VR_MIN_Y = math.rad(-30)
+local VR_MAX_Y = math.rad(30)
 
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
 local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
@@ -196,8 +200,15 @@ local function CreateCamera()
 	end
 
 	function this:RotateCamera(startLook, xyRotateVector)
+		local maxY = MAX_Y
+		local minY = MIN_Y
+		if UserInputService.VREnabled then
+			maxY = VR_MAX_Y
+			minY = VR_MIN_Y
+		end
+
 		local startVertical = math.asin(startLook.y)
-		local yTheta = clamp(-MAX_Y + startVertical, -MIN_Y + startVertical, xyRotateVector.y)
+		local yTheta = clamp(-maxY + startVertical, -minY + startVertical, xyRotateVector.y)
 		return self:RotateVector(startLook, Vector2.new(xyRotateVector.x, yTheta))
 	end
 
@@ -294,9 +305,12 @@ local function CreateCamera()
 	end
 
 	function this:ApplyVROffset()
-		if NoVR then return end
-		if UserInputService.IsVREnabled and workspace.CurrentCamera and workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable then
+		if NoVRAPI then return end
+		if UserInputService.VREnabled and workspace.CurrentCamera and workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable then
 			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * UserInputService.UserHeadCFrame
+		
+			local inclination = math.asin(module.cframe.lookVector.y)
+			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-inclination * (1 - VR_PITCH_FRACTION), 0, 0)
 		end
 	end
 
