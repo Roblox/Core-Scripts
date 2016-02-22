@@ -85,7 +85,6 @@ local function EvaluatePitchLimits()
 		PitchMax = VR_MAX_Y
 	end
 end
-UserInputService.Changed:connect(EvaluatePitchLimits)
 
 local function GetRenderCFrame(part)
 	return part:GetRenderCFrame()
@@ -641,7 +640,7 @@ local function CreateCamera()
 		return Vector2.new(0,0)
 	end
 
-	local InputBeganConn, InputChangedConn, InputEndedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn = nil, nil, nil, nil, nil, nil
+	local InputBeganConn, InputChangedConn, InputEndedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn, UISChangedConn = nil, nil, nil, nil, nil, nil, nil
 
 	function this:DisconnectInputEvents()
 		if InputBeganConn then
@@ -667,6 +666,10 @@ local function CreateCamera()
 		if GamepadDisconnectedConn then
 			GamepadDisconnectedConn:disconnect()
 			GamepadDisconnectedConn = nil
+		end
+		if UISChangedConn then
+			UISChangedConn:disconnect()
+			UISChangedConn = nil
 		end
 		this.TurningLeft = false
 		this.TurningRight = false
@@ -770,6 +773,12 @@ local function CreateCamera()
 			end
 		end)
 
+		UISChangedConn = UserInputService.Changed:connect(function(prop)
+			if prop == "VREnabled" then
+				EvaluatePitchLimits()
+			end
+		end)
+
 		local getGamepadPan = function(name, state, input)
 			if input.UserInputType == activateGamepad and input.KeyCode == Enum.KeyCode.Thumbstick2 then
 
@@ -803,6 +812,7 @@ local function CreateCamera()
 		game.ContextActionService:BindAction("RootCamGamepadZoom", doGamepadZoom, false, Enum.KeyCode.ButtonR3)
 
 		assignActivateGamepad()
+		EvaluatePitchLimits()
 
 		-- set mouse behavior
 		self:UpdateMouseBehavior()
