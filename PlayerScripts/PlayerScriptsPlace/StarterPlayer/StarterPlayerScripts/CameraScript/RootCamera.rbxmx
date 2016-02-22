@@ -63,6 +63,9 @@ local MAX_Y = math.rad(80)
 local VR_MIN_Y = math.rad(-30)
 local VR_MAX_Y = math.rad(30)
 
+local PitchMin = MIN_Y
+local PitchMax = MAX_Y
+
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
 local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
 
@@ -72,7 +75,17 @@ local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
 -- Reset the camera look vector when the camera is enabled for the first time
 local SetCameraOnSpawn = true
 
-
+local function EvaluatePitchLimits()
+	if not VRAPIExists then return end
+	if UserInputService.VREnabled then 
+		PitchMin = MIN_Y
+		PitchMax = MAX_Y
+	else
+		PitchMin = VR_MIN_Y
+		PitchMax = VR_MAX_Y
+	end
+end
+UserInputService.Changed:connect(EvaluatePitchLimits)
 
 local function GetRenderCFrame(part)
 	return part:GetRenderCFrame()
@@ -200,15 +213,8 @@ local function CreateCamera()
 	end
 
 	function this:RotateCamera(startLook, xyRotateVector)
-		local maxY = MAX_Y
-		local minY = MIN_Y
-		if UserInputService.VREnabled then
-			maxY = VR_MAX_Y
-			minY = VR_MIN_Y
-		end
-
 		local startVertical = math.asin(startLook.y)
-		local yTheta = clamp(-maxY + startVertical, -minY + startVertical, xyRotateVector.y)
+		local yTheta = clamp(-PitchMax + startVertical, -PitchMin + startVertical, xyRotateVector.y)
 		return self:RotateVector(startLook, Vector2.new(xyRotateVector.x, yTheta))
 	end
 
