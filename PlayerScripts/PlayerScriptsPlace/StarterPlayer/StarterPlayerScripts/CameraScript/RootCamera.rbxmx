@@ -9,9 +9,9 @@
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 
---NoVR will be false if the platform does not have the VREnabled property, because indexing it will throw an error.
+--NoVRAPI will be false if the platform does not have the VREnabled property, because indexing it will throw an error.
 local success = pcall(function() local _ = UserInputService.VREnabled end)
-local NoVR = not success
+local NoVRAPI = not success
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
@@ -305,7 +305,7 @@ local function CreateCamera()
 	end
 
 	function this:ApplyVROffset()
-		if NoVR then return end
+		if NoVRAPI then return end
 		if UserInputService.VREnabled and workspace.CurrentCamera and workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable then
 			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * UserInputService.UserHeadCFrame
 		
