@@ -19,8 +19,6 @@ local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockControll
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
-local VR_PITCH_FRACTION = 0.5
-
 local function clamp(low, high, num)
 	if low <= high then
 		return math.min(high, math.max(low, num))
@@ -312,10 +310,10 @@ local function CreateCamera()
 	function this:ApplyVROffset()
 		if not VRAPIExists then return end
 		if UserInputService.VREnabled and workspace.CurrentCamera and workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable then
-			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * UserInputService.UserHeadCFrame
-		
 			local inclination = math.asin(module.cframe.lookVector.y)
-			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-inclination * (1 - VR_PITCH_FRACTION), 0, 0)
+			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-inclination, 0, 0)
+
+			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * UserInputService.UserHeadCFrame
 		end
 	end
 
