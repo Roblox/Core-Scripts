@@ -9,9 +9,9 @@
 local UserInputService = game:GetService('UserInputService')
 local RootCameraCreator = require(script.Parent)
 
---NoVR will be false if the platform does not have the IsVREnabled property, because indexing it will throw an error.
-local success = pcall(function() local _ = UserInputService.IsVREnabled end)
-local NoVR = not success
+--NoVRAPI will be false if the platform does not have the VREnabled property, because indexing it will throw an error.
+local success = pcall(function() local _ = UserInputService.VREnabled end)
+local NoVRAPI = not success
 
 local UP_VECTOR = Vector3.new(0, 1, 0)
 local XZ_VECTOR = Vector3.new(1,0,1)
@@ -139,7 +139,7 @@ local function CreateFollowCamera()
 								self.RotateInput = self.RotateInput + Vector2.new(y * percent, 0)
 							end
 						end
-					elseif not (isInFirstPerson or userRecentlyPannedCamera) and not NoVR and not UserInputService.IsVREnabled then
+					elseif not (isInFirstPerson or userRecentlyPannedCamera) and not NoVRAPI and not UserInputService.VREnabled then
 						local lastVec = -(self.LastCameraTransform.p - subjectPosition)
 						local y = findAngleBetweenXZVectors(lastVec, self:GetCameraLook())
 						-- Check for NaNs
