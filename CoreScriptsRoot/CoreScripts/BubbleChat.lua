@@ -14,7 +14,7 @@ local GameOptions = settings()["Game Options"]
 --[[ END OF SERVICES ]]
 
 
-while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end		--eww
+while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 local playerDropDownModule = require(GuiRoot.Modules:WaitForChild("PlayerDropDown"))
 local blockingUtility = playerDropDownModule:CreateBlockingUtility()
@@ -559,16 +559,12 @@ local function createChatOutput()
 		end)
 	end
 
+	local testLabel = Instance.new('TextLabel')
 	function isLabelTextAllowed(message)
 		--There exists an internal filter that filters out some profanity. It does this silently if you try to set text of an object.
-		--Here we check if the message is going to be filtered
-		local testLabel = Instance.new('TextLabel')
+		--Here we check if the message is going to be filtered by applying it and comparing it.
 		testLabel.Text = message
-
-		local checkResult = (testLabel.Text == message)
-
-		testLabel:Destroy()	--testLabel should get garbage collected otherwise, but destroying it just to be safe.
-		return checkResult
+		return (testLabel.Text == message)
 	end
 
 	function this:OnPlayerChatMessage(chatType, sourcePlayer, message, targetPlayer)
