@@ -9,16 +9,15 @@
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 
---NoVR will be false if the platform does not have the IsVREnabled property, because indexing it will throw an error.
-local success = pcall(function() local _ = UserInputService.IsVREnabled end)
-local NoVR = not success
+--VRAPIExists will be false if the platform does not have the VREnabled property, because indexing it will throw an error.
+local success = pcall(function() local _ = UserInputService.VREnabled end)
+local VRAPIExists = success
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
 
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
-
 
 local function clamp(low, high, num)
 	if low <= high then
@@ -59,6 +58,12 @@ end
 local MIN_Y = math.rad(-80)
 local MAX_Y = math.rad(80)
 
+local VR_MIN_Y = math.rad(-30)
+local VR_MAX_Y = math.rad(30)
+
+local PitchMin = MIN_Y
+local PitchMax = MAX_Y
+
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
 local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
 
@@ -68,7 +73,16 @@ local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
 -- Reset the camera look vector when the camera is enabled for the first time
 local SetCameraOnSpawn = true
 
-
+local function EvaluatePitchLimits()
+	if not VRAPIExists then return end
+	if UserInputService.VREnabled then 
+		PitchMin = MIN_Y
+		PitchMax = MAX_Y
+	else
+		PitchMin = VR_MIN_Y
+		PitchMax = VR_MAX_Y
+	end
+end
 
 local function GetRenderCFrame(part)
 	return part:GetRenderCFrame()
@@ -197,7 +211,7 @@ local function CreateCamera()
 
 	function this:RotateCamera(startLook, xyRotateVector)
 		local startVertical = math.asin(startLook.y)
-		local yTheta = clamp(-MAX_Y + startVertical, -MIN_Y + startVertical, xyRotateVector.y)
+		local yTheta = clamp(-PitchMax + startVertical, -PitchMin + startVertical, xyRotateVector.y)
 		return self:RotateVector(startLook, Vector2.new(xyRotateVector.x, yTheta))
 	end
 
@@ -294,8 +308,11 @@ local function CreateCamera()
 	end
 
 	function this:ApplyVROffset()
-		if NoVR then return end
-		if UserInputService.IsVREnabled and workspace.CurrentCamera and workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable then
+		if not VRAPIExists then return end
+		if UserInputService.VREnabled and workspace.CurrentCamera and workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable then
+			local inclination = math.asin(module.cframe.lookVector.y)
+			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * CFrame.Angles(-inclination, 0, 0)
+
 			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * UserInputService.UserHeadCFrame
 		end
 	end
@@ -621,7 +638,7 @@ local function CreateCamera()
 		return Vector2.new(0,0)
 	end
 
-	local InputBeganConn, InputChangedConn, InputEndedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn = nil, nil, nil, nil, nil, nil
+	local InputBeganConn, InputChangedConn, InputEndedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn, UISChangedConn = nil, nil, nil, nil, nil, nil, nil
 
 	function this:DisconnectInputEvents()
 		if InputBeganConn then
@@ -647,6 +664,10 @@ local function CreateCamera()
 		if GamepadDisconnectedConn then
 			GamepadDisconnectedConn:disconnect()
 			GamepadDisconnectedConn = nil
+		end
+		if UISChangedConn then
+			UISChangedConn:disconnect()
+			UISChangedConn = nil
 		end
 		this.TurningLeft = false
 		this.TurningRight = false
@@ -750,6 +771,12 @@ local function CreateCamera()
 			end
 		end)
 
+		UISChangedConn = UserInputService.Changed:connect(function(prop)
+			if prop == "VREnabled" then
+				EvaluatePitchLimits()
+			end
+		end)
+
 		local getGamepadPan = function(name, state, input)
 			if input.UserInputType == activateGamepad and input.KeyCode == Enum.KeyCode.Thumbstick2 then
 
@@ -783,6 +810,7 @@ local function CreateCamera()
 		game.ContextActionService:BindAction("RootCamGamepadZoom", doGamepadZoom, false, Enum.KeyCode.ButtonR3)
 
 		assignActivateGamepad()
+		EvaluatePitchLimits()
 
 		-- set mouse behavior
 		self:UpdateMouseBehavior()

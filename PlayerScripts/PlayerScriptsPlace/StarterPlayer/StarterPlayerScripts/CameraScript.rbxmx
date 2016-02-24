@@ -139,13 +139,16 @@ local function Update()
 	if EnabledCamera then
 		EnabledCamera:Update()
 		EnabledCamera:ApplyCameraCFrame()
-		EnabledCamera:ApplyVROffset()
 	end
 	if EnabledOcclusion then
 		EnabledOcclusion:Update()
 	end
 	if shouldUsePlayerScriptsCamera() then
 		TransparencyController:Update()
+	end
+
+	if EnabledCamera then
+		EnabledCamera:ApplyVROffset()
 	end
 end
 
