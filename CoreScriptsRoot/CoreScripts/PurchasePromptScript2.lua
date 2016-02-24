@@ -151,7 +151,8 @@ local ASSET_TO_STRING = {
 	[31] = "Right Leg";
 	[32] = "Package";
 	[33] = "YouTube Video";
-	[34] = "Game Pass";
+	-- NOTE: GamePass and Plugin AssetTypeIds are different on ST1, ST2 and ST3
+	[34] = "Game Pass";	
 	[38] = "Plugin";
 	[0]  = "Product";
 }
@@ -692,8 +693,8 @@ local function setBuyMoreRobuxDialog(playerBalance)
 	local neededRobux = PurchaseData.CurrencyAmount - playerBalanceInt
 	local productInfo = PurchaseData.ProductInfo
 
-	local descriptionText = "You need "..formatNumber(neededRobux).." more ROBUX to buy the "..productInfo["Name"].." "..
-		ASSET_TO_STRING[productInfo["AssetTypeId"]]
+	local descriptionText = "You need %s more ROBUX to buy the %s %s"
+	descriptionText = string.format(descriptionText, formatNumber(neededRobux), productInfo["Name"], ASSET_TO_STRING[productInfo["AssetTypeId"]] or "")
 
 	purchaseState = PURCHASE_STATE.BUYROBUX
 	setButtonsVisible(BuyRobuxButton, CancelButton)
