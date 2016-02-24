@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBX42ccac9280864855b585aef6889819fb">
+	<Item class="LocalScript" referent="RBXA981BEDA28BE40B782B640E1B52E9AC2">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -388,6 +388,8 @@ local isJumpEnabled = false
 local ControlState = {}
 ControlState.Current = nil
 function ControlState:SwitchTo(newControl)
+	if ControlState.Current == newControl then return end
+	
 	if ControlState.Current then
 		ControlState.Current:Disable()
 	end
@@ -481,7 +483,6 @@ function ControlModules.Touch:Enable()
 	end
 		
 	local newModuleToEnable = getTouchModule()
-			
 	if newModuleToEnable then
 		setClickToMove()
 		setJumpModule(isJumpEnabled)
@@ -600,11 +601,20 @@ end)
 
 --[[ Touch Events ]]--
 -- On touch devices we need to recreate the guis on character load.
+local lastControlState = nil
 LocalPlayer.CharacterAdded:connect(function(character)
-	if lastInputType == Enum.UserInputType.Touch then
+	if UserInputService.TouchEnabled then
 		createTouchGuiContainer()
-		ControlState:SwitchTo(ControlModules.Touch)
 	end
+	
+	if ControlState.Current == nil then
+		ControlState:SwitchTo(lastControlState)
+	end
+end)
+
+LocalPlayer.CharacterRemoving:connect(function(character)
+	lastControlState = ControlState.Current
+	ControlState:SwitchTo(nil)
 end)
 	
 UserInputService.Changed:connect(function(property)
@@ -650,8 +660,6 @@ local switchToInputType = function(newLastInputType)
 			lastInputType == Enum.UserInputType.Gamepad3 or
 			lastInputType == Enum.UserInputType.Gamepad4 then
 				ControlState:SwitchTo(ControlModules.Gamepad)
-	else
-				ControlState:SwitchTo(ControlModules.Keyboard)
 	end
 end
 
@@ -660,13 +668,6 @@ if IsTouchDevice then
 end
 
 MasterControl:Init()
-
-switchToInputType(UserInputService:GetLastInputType())
-UserInputService.LastInputTypeChanged:connect(switchToInputType)
-
-if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
-	ControlState:SwitchTo(ControlModules.Gamepad)
-end
 
 UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
 	local connectedGamepads = UserInputService:GetConnectedGamepads()
@@ -680,10 +681,11 @@ UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
 end)
 
 UserInputService.GamepadConnected:connect(function(gamepadEnum)
-	if ControlState.Current == ControlModules.Gamepad then return end	
-	
 	ControlState:SwitchTo(ControlModules.Gamepad)
 end)
+
+switchToInputType(UserInputService:GetLastInputType())
+UserInputService.LastInputTypeChanged:connect(switchToInputType)
 
 end -- end of control script flag switch]]></ProtectedString>
 		</Properties>
