@@ -26,16 +26,19 @@ local function CreateWatchCamera()
 			self.LastZoom = nil
 		end	
 		
+
 		local subjectPosition = self:GetSubjectPosition()
-		if subjectPosition and player and camera then		
+		if subjectPosition and player and camera then
+			local cameraLook = nil
+
 			if self.LastCameraTransform then
 				local humanoid = self:GetHumanoid()
 				if humanoid and humanoid.Torso then
 					-- TODO: let the paging buttons move the camera but not the mouse/touch
 					-- currently neither do
 					local diffVector = subjectPosition - self.LastCameraTransform.p
-					self.cameraLook = diffVector.unit
-					
+					cameraLook = diffVector.unit
+
 					if self.LastZoom and self.LastZoom == self:GetCameraZoom() then
 						-- Don't clobber the zoom if they zoomed the camera
 						local zoom = diffVector.magnitude
@@ -49,12 +52,14 @@ local function CreateWatchCamera()
 				zoom = 0.1
 			end
 			
-			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
+			local newLookVector = self:RotateVector(cameraLook or self:GetCameraLook(), self.RotateInput)
 			self.RotateInput = Vector2.new()
-			
-			camera.Focus = CFrame.new(subjectPosition)
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
-			self.LastCameraTransform = camera.CoordinateFrame
+			local newFocus = CFrame.new(subjectPosition)
+			local newCamCFrame = CFrame.new(newFocus.p - (zoom * newLookVector), newFocus.p)
+
+			camera.Focus = newFocus
+			module.cframe = newCamCFrame
+			self.LastCameraTransform = newCamCFrame
 			self.LastZoom = zoom
 		end
 		lastUpdate = now

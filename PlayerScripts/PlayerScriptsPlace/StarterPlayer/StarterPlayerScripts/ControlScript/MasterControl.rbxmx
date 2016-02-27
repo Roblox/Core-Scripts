@@ -17,6 +17,11 @@ local MasterControl = {}
 
 local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
+local UserInputService = game:GetService('UserInputService')
+
+--NoVR will be false if the platform does not have the IsVREnabled property, because indexing it will throw an error.
+local success = pcall(function() local _ = UserInputService.IsVREnabled end)
+local NoVR = not success
 
 while not Players.LocalPlayer do
 	wait()
@@ -62,7 +67,15 @@ function MasterControl:Init()
 				humanoid.Jump = isJumping
 			end
 			
-			moveFunc(LocalPlayer, moveValue, true)	
+			local adjustedMoveValue = moveValue
+			if not NoVR and UserInputService.IsVREnabled then
+				local inverseHeadCFrame = UserInputService.UserHeadCFrame:inverse()
+				local yawOnlyLookVector = Vector3.new(inverseHeadCFrame.lookVector.X, 0, inverseHeadCFrame.lookVector.Z).unit
+				local yawOnlyCFrame = CFrame.new(Vector3.new(0,0,0), yawOnlyLookVector)
+				adjustedMoveValue = yawOnlyCFrame * adjustedMoveValue
+			end
+			
+			moveFunc(LocalPlayer, adjustedMoveValue, true)	
 		end
 	end
 	
@@ -107,6 +120,7 @@ function MasterControl:DoJump()
 end
 
 return MasterControl
+
 ]]></ProtectedString>
 		</Properties>
 	</Item>

@@ -5,7 +5,7 @@
 		// Description: Implementation of in game player list and leaderboard
 ]]
 
-local CoreGui = game:GetService'CoreGui'
+local CoreGui = game:GetService('CoreGui')
 local GuiService = game:GetService('GuiService')	-- NOTE: Can only use in core scripts
 local UserInputService = game:GetService('UserInputService')
 local HttpService = game:GetService('HttpService')
@@ -703,7 +703,7 @@ local function updateSocialIcon(newIcon, bgFrame)
 			socialIcon.Image = newIcon
 		else
 			if nameFrame then
-				newSize = nameFrame.Size.X.Offset + socialIcon.Size.X.Offset + 2
+				local newSize = nameFrame.Size.X.Offset + socialIcon.Size.X.Offset + 2
 				nameFrame.Size = UDim2.new(-0.01, newSize, 0.5, 0)
 				nameFrame.Position = UDim2.new(0.01, offset, 0.245, 0)
 			end
@@ -755,7 +755,10 @@ local function onFollowerStatusChanged()
 		updateSocialIcon(newIcon, bgFrame)
 	end
 end
-playerDropDownModule.FollowerStatusChanged:connect(onFollowerStatusChanged)
+-- Don't listen/show rbx follower status on xbox
+if not isTenFootInterface then
+	playerDropDownModule.FollowerStatusChanged:connect(onFollowerStatusChanged)
+end
 
 function popupHidden()
 	if LastSelectedFrame then
@@ -824,14 +827,15 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 			newIcon = getFollowerStatusIcon(followerStatus)
 		end
 
-		if newIcon then
-			updateSocialIcon(newIcon, bgFrame)
-		end
+		updateSocialIcon(newIcon, bgFrame)
 	end
 end
 
--- NOTE: Core script only. This fires when a layer joins the game.
-Player.FriendStatusChanged:connect(onFriendshipChanged)
+-- NOTE: Core script only. This fires when a player joins the game.
+-- Don't listen/show rbx friends status on xbox
+if not isTenFootInterface then
+	Player.FriendStatusChanged:connect(onFriendshipChanged)
+end
 
 --[[ Begin New Server Followers ]]--
 local function setFollowRelationshipsView(relationshipTable)
@@ -844,10 +848,15 @@ local function setFollowRelationshipsView(relationshipTable)
 		local player = entry.Player
 		local userId = tostring(player.userId)
 
+		-- don't update icon if already friends
+		local friendStatus = getFriendStatus(player)
+		if friendStatus == Enum.FriendStatus.Friend then
+			return
+		end
+
+		local icon = nil
 		if relationshipTable[userId] then
 			local relationship = relationshipTable[userId]
-			local icon = nil
-
 			if relationship.IsMutual == true then
 				icon = MUTUAL_FOLLOWING_ICON
 			elseif relationship.IsFollowing == true then
@@ -855,12 +864,12 @@ local function setFollowRelationshipsView(relationshipTable)
 			elseif relationship.IsFollower == true then
 				icon = FOLLOWER_ICON
 			end
+		end
 
-			local frame = entry.Frame
-			local bgFrame = frame:FindFirstChild('BGFrame')
-			if icon and bgFrame then
-				updateSocialIcon(icon, bgFrame)
-			end
+		local frame = entry.Frame
+		local bgFrame = frame:FindFirstChild('BGFrame')
+		if bgFrame then
+			updateSocialIcon(icon, bgFrame)
 		end
 	end
 end
@@ -1524,7 +1533,8 @@ for _,player in pairs(Players:GetPlayers()) do
 end
 
 --[[ Begin new Server Followers ]]--
-if IsServerFollowers then
+-- Don't listen/show rbx followers status on console
+if IsServerFollowers and not isTenFootInterface then
 	-- spawn so we don't block script
 	spawn(function()
 		local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')

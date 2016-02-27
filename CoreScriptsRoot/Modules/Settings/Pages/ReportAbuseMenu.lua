@@ -9,6 +9,7 @@
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
+local PlayersService = game:GetService("Players")
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
@@ -57,13 +58,13 @@ local function Initialize()
 
 	function this:UpdatePlayerDropDown()
 		playerNames = {}
-	    nameToRbxPlayer = {}
+	    	nameToRbxPlayer = {}
 
-		local players = game.Players:GetChildren()
+		local players = PlayersService:GetPlayers()
 		local index = 1
 		for i = 1, #players do
 			local player = players[i]
-			if player:IsA('Player') and player ~= game:GetService("Players").LocalPlayer and player.UserId > 0 then
+			if player ~= PlayersService.LocalPlayer and player.UserId > 0 then
 				playerNames[index] = player.Name
 				nameToRbxPlayer[player.Name] = player
 				index = index + 1

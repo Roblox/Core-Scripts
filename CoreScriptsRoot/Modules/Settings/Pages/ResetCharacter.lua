@@ -13,6 +13,7 @@ local CoreGui = game:GetService("CoreGui")
 local ContextActionService = game:GetService("ContextActionService")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
+local PlayersService = game:GetService("Players")
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
@@ -73,7 +74,7 @@ local function Initialize()
 
 	------ Init -------
 	local resetCharFunc = function()
-		local player = game.Players.LocalPlayer
+		local player = PlayersService.LocalPlayer
 		if player then
 			local character = player.Character
 			if character then
