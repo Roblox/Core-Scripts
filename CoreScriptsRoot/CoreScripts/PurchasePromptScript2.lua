@@ -1035,6 +1035,7 @@ local function canPurchase(disableUpsell)
 	end
 
 	-- check if owned by player; dev products are not owned
+	local isRestrictedThirdParty = false
 	if not IsPurchasingConsumable then
 		local success, doesOwnItem = doesPlayerOwnItem()
 		if not success then
@@ -1057,13 +1058,17 @@ local function canPurchase(disableUpsell)
 			local ProductCreator = tonumber(PurchaseData.ProductInfo["Creator"]["Id"])
 			local RobloxCreator = 1
 			if ProductCreator ~= game.CreatorId and ProductCreator ~= RobloxCreator then
-				onPurchaseFailed(PURCHASE_FAILED.THIRD_PARTY_DISABLED)
-				return false    
+				isRestrictedThirdParty = true
 			end
 		end
 	end
 
 	local isFree = isFreeItem()
+
+	if not isFree and isRestrictedThirdParty then
+		onPurchaseFailed(PURCHASE_FAILED.THIRD_PARTY_DISABLED)
+		return false    
+	end
 
 	local playerBalance = getPlayerBalance()
 	if not playerBalance then
