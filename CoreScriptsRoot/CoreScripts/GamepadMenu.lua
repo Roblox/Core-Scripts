@@ -28,10 +28,6 @@ local isTenFootInterface = tenFootInterface:IsEnabled()
 local radialButtons = {}
 local lastInputChangedCon = nil
 
---[[ FLAGS ]]
-local coreGuiNavigationSuccess, coreGuiNavigationFlagValue = pcall(function() return settings():GetFFlag("CoreGuiDescendantsAlwaysSelectable") end)
-local coreGuiNavigationAlwaysEnabled = coreGuiNavigationSuccess and coreGuiNavigationFlagValue
-
 local function getButtonForCoreGuiType(coreGuiType)
 	if coreGuiType == Enum.CoreGuiType.All then
 		return radialButtons
@@ -408,9 +404,11 @@ local function setupGamepadControls()
 	local doGamepadMenuButton = nil
 
 	function unbindAllRadialActions()
-		if not coreGuiNavigationAlwaysEnabled then
+		local success = pcall(function() GuiService.CoreGuiNavigationEnabled = true end)
+		if not success then
 			GuiService.GuiNavigationEnabled = true
 		end
+
 		ContextActionService:UnbindCoreAction(radialSelectActionName)
 		ContextActionService:UnbindCoreAction(radialCancelActionName)
 		ContextActionService:UnbindCoreAction(radialAcceptActionName)
@@ -573,18 +571,20 @@ local function setupGamepadControls()
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,102,0,102), UDim2.new(0.5,-51,0.5,-51),
 														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, 
 				function()
-					if not goingToSettings and not isVisible then pcall(function() GuiService:SetMenuIsOpen(false) end) end
+					if not goingToSettings and not isVisible then GuiService:SetMenuIsOpen(false) end
 					gamepadSettingsFrame.Visible = isVisible
 			end)
 		end
 
 		if isVisible then
 			setSelectedRadialButton(nil)
-			if not coreGuiNavigationAlwaysEnabled then
+
+			local success = pcall(function() GuiService.CoreGuiNavigationEnabled = false end)
+			if not success then
 				GuiService.GuiNavigationEnabled = false
 			end
 
-			pcall(function() GuiService:SetMenuIsOpen(true) end)
+			GuiService:SetMenuIsOpen(true)
 
 			ContextActionService:BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
 			ContextActionService:BindCoreAction(radialAcceptActionName, radialSelectAccept, false, Enum.KeyCode.ButtonA)
