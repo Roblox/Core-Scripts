@@ -153,7 +153,7 @@ local function CreateCamera()
 	end
 
 	function this:GetCameraHeight()
-		if not this:IsInFirstPerson() then
+		if not this:IsInFirstPerson() and HasVRAPI and UserInputService.VREnabled then
 			local zoom = this:GetCameraZoom()
 			return math.sin(VR_ANGLE) * zoom
 		end
