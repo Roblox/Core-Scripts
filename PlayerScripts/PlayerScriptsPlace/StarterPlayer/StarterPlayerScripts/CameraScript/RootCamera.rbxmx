@@ -57,9 +57,7 @@ end
 local MIN_Y = math.rad(-80)
 local MAX_Y = math.rad(80)
 
-local MIN_HEIGHT = -2.5
-local MAX_HEIGHT = 7.5
-local HEIGHT_RATE = (math.pi * 1.9)
+local VR_ANGLE = math.rad(15)
 
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
 local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
@@ -155,11 +153,9 @@ local function CreateCamera()
 	end
 
 	function this:GetCameraHeight()
-		if this.currentHeight == nil then
-			this.currentHeight = clamp(MIN_HEIGHT, MAX_HEIGHT, 0)
-		end
 		if not this:IsInFirstPerson() then
-			return this.currentHeight
+			local zoom = this:GetCameraZoom()
+			return math.sin(VR_ANGLE) * zoom
 		end
 		return 0
 	end
@@ -204,7 +200,6 @@ local function CreateCamera()
 
 	function this:RotateCamera(startLook, xyRotateVector)
 		if HasVRAPI and UserInputService.VREnabled then
-			this.currentHeight = clamp(MIN_HEIGHT, MAX_HEIGHT, this.currentHeight + xyRotateVector.y * HEIGHT_RATE)
 			local yawRotatedVector, xyRotateVector = self:RotateVector(startLook, Vector2.new(xyRotateVector.x, 0))
 			return Vector3.new(yawRotatedVector.x, 0, yawRotatedVector.z).unit, xyRotateVector
 		else
