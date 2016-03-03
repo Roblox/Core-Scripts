@@ -214,7 +214,7 @@ local function Initialize()
 
 	local existingPlayerLabels = {}
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
-		local sortedPlayers = game.Players:GetPlayers()
+		local sortedPlayers = PlayersService:GetPlayers()
 		table.sort(sortedPlayers,function(item1,item2)
 			return item1.Name < item2.Name
 		end)
