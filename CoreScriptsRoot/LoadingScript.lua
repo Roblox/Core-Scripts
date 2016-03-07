@@ -43,12 +43,18 @@ local destroyedLoadingGui = false
 local hasReplicatedFirstElements = false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
-local isTenFootInterface = false 
+local isTenFootInterface = false
 pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
 local platform = UIS:GetPlatform()
 
 local useGameLoadedSuccess, useGameLoadedFlagValue = pcall(function() return settings():GetFFlag("UseGameLoadedInLoadingScript") end)
 local useGameLoadedToWait = (useGameLoadedSuccess and useGameLoadedFlagValue == true)
+
+local ConvertMyPlaceNameInXboxAppFlag = false
+do
+	local success, flagValue = pcall(function() return settings():GetFFlag("ConvertMyPlaceNameInXboxApp") end)
+	ConvertMyPlaceNameInXboxAppFlag = (success and flagValue == true)
+end
 
 --
 -- Utility functions
@@ -83,9 +89,35 @@ local MainGui = {}
 local InfoProvider = {}
 
 
+function ExtractGeneratedUsername(gameName)
+	local tempUsername = string.match(gameName, "^([0-9a-fA-F]+)'s Place$")
+	if tempUsername and #tempUsername == 32 then
+		return tempUsername
+	end
+end
+
+-- Fix places that have been made with incorrect temporary usernames
+function GetFilteredGameName(gameName, creatorName)
+	if gameName and type(gameName) == 'string' then
+		local tempUsername = ExtractGeneratedUsername(gameName)
+		if tempUsername then
+			local newGameName = string.gsub(gameName, tempUsername, creatorName, 1)
+			if newGameName then
+				return newGameName
+			end
+		end
+	end
+	return gameName
+end
+
+
 function InfoProvider:GetGameName()
 	if GameAssetInfo ~= nil then
-		return GameAssetInfo.Name
+		if ConvertMyPlaceNameInXboxAppFlag then
+			return GetFilteredGameName(GameAssetInfo.Name, self:GetCreatorName())
+		else
+			return GameAssetInfo.Name
+		end
 	else
 		return ''
 	end
@@ -100,7 +132,7 @@ function InfoProvider:GetCreatorName()
 end
 
 function InfoProvider:LoadAssets()
-	spawn(function() 
+	spawn(function()
 		if PLACEID <= 0 then
 			while game.PlaceId <= 0 do
 				wait()
@@ -209,7 +241,7 @@ function MainGui:GenerateMain()
 	local screenGui = create 'ScreenGui' {
 		Name = 'RobloxLoadingGui'
 	}
-	
+
 	--
 	-- create descendant frames
 	local mainBackgroundContainer = create 'Frame' {
@@ -233,7 +265,7 @@ function MainGui:GenerateMain()
 			ZIndex = 10,
 			Parent = mainBackgroundContainer,
 		}
-		
+
 		local graphicsFrame = create 'Frame' {
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
@@ -269,7 +301,7 @@ function MainGui:GenerateMain()
 				ZIndex = 2,
 				Parent = graphicsFrame,
 			}
-		
+
 		local uiMessageFrame = create 'Frame' {
 			Name = 'UiMessageFrame',
 			BackgroundTransparency = 1,
@@ -291,7 +323,7 @@ function MainGui:GenerateMain()
 				ZIndex = 2,
 				Parent = uiMessageFrame,
 			}
-		
+
 		local infoFrame = create 'Frame' {
 			Name = 'InfoFrame',
 			BackgroundTransparency = 1,
@@ -367,11 +399,11 @@ function MainGui:GenerateMain()
 				ZIndex = 2,
 				Parent = infoFrame,
 			}
-		
+
 		local backgroundTextureFrame = create 'Frame' {
 			Name = 'BackgroundTextureFrame',
 			BorderSizePixel = 0,
-			Size = UDim2.new(1, 0, 1, 0), 
+			Size = UDim2.new(1, 0, 1, 0),
 			Position = UDim2.new(0, 0, 0, 0),
 			ClipsDescendants = true,
 			ZIndex = 1,
@@ -445,11 +477,11 @@ renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(fu
 		currScreenGui.BlackFrame.CloseButton:SetVerb("Exit")
 		setVerb = false
 	end
-	
+
 	if currScreenGui.BlackFrame:FindFirstChild("BackgroundTextureFrame") and currScreenGui.BlackFrame.BackgroundTextureFrame.AbsoluteSize ~= lastAbsoluteSize then
 		lastAbsoluteSize = currScreenGui.BlackFrame.BackgroundTextureFrame.AbsoluteSize
 		MainGui:tileBackgroundTexture(currScreenGui.BlackFrame.BackgroundTextureFrame)
-	end 
+	end
 
 	local infoFrame = currScreenGui.BlackFrame:FindFirstChild('InfoFrame')
 	if infoFrame then
@@ -498,7 +530,7 @@ renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(fu
 	lastRenderTime = currentTime
 
 	currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.Rotation = currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.Rotation + turnAmount
-	
+
 	local updateLoadingDots =  function()
 		loadingDots = loadingDots.. "."
 		if loadingDots == "...." then
@@ -506,12 +538,12 @@ renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(fu
 		end
 		currScreenGui.BlackFrame.GraphicsFrame.LoadingText.Text = "Loading" ..loadingDots
 	end
-	
+
 	if currentTime - lastDotUpdateTime >= dotChangeTime and InfoProvider:GetCreatorName() == "" then
 		lastDotUpdateTime = currentTime
 		updateLoadingDots()
 	else
-		if guiService:GetBrickCount() > 0 then  
+		if guiService:GetBrickCount() > 0 then
 			if brickCountChange == nil then
 				brickCountChange = guiService:GetBrickCount()
 			end
@@ -533,7 +565,7 @@ renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(fu
 	end
 end)
 
-spawn(function() 
+spawn(function()
 	local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 	local guiInsetChangedEvent = Instance.new("BindableEvent")
 	guiInsetChangedEvent.Name = "GuiInsetChanged"
@@ -550,13 +582,13 @@ local leaveGameButton, leaveGameTextLabel, errorImage = nil
 
 guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
-		if isTenFootInterface then 
+		if isTenFootInterface then
 			currScreenGui.ErrorFrame.Size = UDim2.new(1, 0, 0, 144)
 			currScreenGui.ErrorFrame.Position = UDim2.new(0, 0, 0, 0)
 			currScreenGui.ErrorFrame.BackgroundColor3 = COLORS.BLACK
 			currScreenGui.ErrorFrame.BackgroundTransparency = 0.5
-			currScreenGui.ErrorFrame.ErrorText.FontSize = Enum.FontSize.Size36 
-			currScreenGui.ErrorFrame.ErrorText.Position = UDim2.new(.3, 0, 0, 0) 
+			currScreenGui.ErrorFrame.ErrorText.FontSize = Enum.FontSize.Size36
+			currScreenGui.ErrorFrame.ErrorText.Position = UDim2.new(.3, 0, 0, 0)
 			currScreenGui.ErrorFrame.ErrorText.Size = UDim2.new(.4, 0, 0, 144)
 			if errorImage == nil then
 				errorImage = Instance.new("ImageLabel")
@@ -577,19 +609,19 @@ guiService.ErrorMessageChanged:connect(function()
 					leaveGameButton:SetVerb("Exit")
 					leaveGameButton.NextSelectionDown = leaveGameButton
 					leaveGameButton.NextSelectionLeft = leaveGameButton
-					leaveGameButton.NextSelectionRight = leaveGameButton 
+					leaveGameButton.NextSelectionRight = leaveGameButton
 					leaveGameButton.NextSelectionUp = leaveGameButton
 					leaveGameButton.ZIndex = 9
 					leaveGameButton.Position = UDim2.new(0.771875, 0, 0, 37)
 					leaveGameButton.Parent = currScreenGui.ErrorFrame
-					leaveGameTextLabel.FontSize = Enum.FontSize.Size36 
+					leaveGameTextLabel.FontSize = Enum.FontSize.Size36
 					leaveGameTextLabel.ZIndex = 10
 					game:GetService("GuiService").SelectedCoreObject = leaveGameButton
 				else
 					game:GetService("GuiService").SelectedCoreObject = leaveGameButton
 				end
 			end
-		end 
+		end
 		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
 		currScreenGui.ErrorFrame.Visible = true
 		local blackFrame = currScreenGui:FindFirstChild('BlackFrame')
@@ -658,7 +690,7 @@ function fadeAndDestroyBlackFrame(blackFrame)
 				end
 				graphicsFrame.LoadingImage.ImageTransparency = transparency
 				blackFrame.BackgroundTransparency = transparency
-				
+
 				if backgroundImageTransparency < 1 then
 					backgroundImageTransparency = transparency
 					local backgroundImages = blackFrame.BackgroundTextureFrame:GetChildren()
