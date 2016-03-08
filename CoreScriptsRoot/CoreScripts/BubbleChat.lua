@@ -606,8 +606,6 @@ local function createChatOutput()
 		local localPlayer = PlayersService.LocalPlayer
 		local fromOthers = localPlayer ~= nil and (localPlayer.Character ~= origin)
 
-		message = ChatService:FilterStringForPlayerAsync(message, localPlayer)
-
 		local bubbleColor = BubbleColor.WHITE
 
 		if color == Enum.ChatColor.Blue then bubbleColor = BubbleColor.BLUE
