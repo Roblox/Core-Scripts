@@ -30,7 +30,7 @@ local CHAT_BUBBLE_WIDTH_PADDING = 30
 local CHAT_BUBBLE_FADE_SPEED = 1.5
 
 local BILLBOARD_MAX_WIDTH = 400
-local BILLBOARD_MAX_HEIGHT = 500
+local BILLBOARD_MAX_HEIGHT = 250	--This limits the number of bubble chats that you see above characters
 
 local ELIPSES = "..."
 local CchMaxChatMessageLength = 128 -- max chat message length, including null terminator and elipses.
@@ -193,8 +193,6 @@ local function createPlayerChatLine(chatType, player, message, isLocalPlayer)
 		this.Origin = player.Character
 	end
 
-	this.HistoryDieDelay = 60
-
 	return this
 end
 
@@ -280,8 +278,6 @@ end
 
 
 local function createChatOutput()
-	local MaxChatBubblesPerPlayer = 10
-	local MaxChatLinesPerBubble = 5
 
 	local this = {}
 	this.ChatBubble = {}
@@ -610,8 +606,7 @@ local function createChatOutput()
 		local localPlayer = PlayersService.LocalPlayer
 		local fromOthers = localPlayer ~= nil and (localPlayer.Character ~= origin)
 
-		-- todo: filter?
-		--message = ChatService:FilterStringForPlayerAsync(message, localPlayer)
+		message = ChatService:FilterStringForPlayerAsync(message, localPlayer)
 
 		local bubbleColor = BubbleColor.WHITE
 
