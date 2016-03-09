@@ -138,6 +138,7 @@ end
 local function Update()
 	if EnabledCamera then
 		EnabledCamera:Update()
+		EnabledCamera:ApplyVRPosition()
 	end
 	if EnabledOcclusion then
 		EnabledOcclusion:Update()
