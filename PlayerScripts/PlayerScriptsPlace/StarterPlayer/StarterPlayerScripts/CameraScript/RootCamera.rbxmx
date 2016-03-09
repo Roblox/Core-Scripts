@@ -294,6 +294,27 @@ local function CreateCamera()
 
 	function this:Update()
 	end
+	
+	function this:ApplyVRPosition()
+		--we only want this to happen in first person VR
+		local player = game.Players.LocalPlayer
+		if not player or not player.Character 
+				or not player.Character:FindFirstChild("HumanoidRootPart") 
+				or not player.Character.HumanoidRootPart:FindFirstChild("RootJoint") then
+			return
+		end
+		
+		if not this:IsInFirstPerson() then
+			local rootJoint = player.Character.HumanoidRootPart.RootJoint 
+			rootJoint.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
+			return 
+		end
+		
+		local vrFrame = UserInputService.UserHeadCFrame
+		local vrRotation = vrFrame - vrFrame.p
+		local rootJoint = player.Character.HumanoidRootPart.RootJoint 
+		rootJoint.C0 = CFrame.new(vrRotation:vectorToObjectSpace(vrFrame.p)) * CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
+	end
 
 	---- Input Events ----
 	local startPos = nil
