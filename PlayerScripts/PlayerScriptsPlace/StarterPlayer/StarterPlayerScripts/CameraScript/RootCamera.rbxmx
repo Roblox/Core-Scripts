@@ -304,7 +304,7 @@ local function CreateCamera()
 			return
 		end
 		
-		if not UserInputService.VREnabled or not this:IsInFirstPerson() then
+		if not this:IsInFirstPerson() then
 			local rootJoint = player.Character.HumanoidRootPart.RootJoint 
 			rootJoint.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
 			return 
