@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBXA981BEDA28BE40B782B640E1B52E9AC2">
+	<Item class="LocalScript" referent="RBX21ca15e10e5346c4b32a903128772b98">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -388,7 +388,9 @@ local isJumpEnabled = false
 local ControlState = {}
 ControlState.Current = nil
 function ControlState:SwitchTo(newControl)
-	if ControlState.Current == newControl then return end
+	if ControlState.Current == newControl then
+		return
+	end
 	
 	if ControlState.Current then
 		ControlState.Current:Disable()
@@ -475,6 +477,7 @@ function setClickToMove()
 end
 
 ControlModules.Touch = {}
+ControlModules.Touch.Current = nil
 function ControlModules.Touch:Enable()
 	DevMovementMode = LocalPlayer.DevTouchMovementMode
 	IsUserChoice = DevMovementMode == Enum.DevTouchMovementMode.UserChoice
@@ -488,6 +491,7 @@ function ControlModules.Touch:Enable()
 		setJumpModule(isJumpEnabled)
 		
 		newModuleToEnable:Enable()
+		ControlModules.Touch.Current = newModuleToEnable
 		
 		if isJumpEnabled then TouchJumpModule:Enable() end
 	end
@@ -501,6 +505,16 @@ function ControlModules.Touch:Disable()
 			newModuleToDisable:Disable()
 			setJumpModule(false)
 			TouchJumpModule:Disable()
+	end
+end
+function ControlModules.Touch:UpdateControlStyle()
+	local newModuleToEnable = getTouchModule()
+	if newModuleToEnable ~= ControlModules.Touch.Current then
+		ControlModules.Touch.Current:Disable()
+		setJumpModule(false)
+		TouchJumpModule:Disable()
+		
+		ControlModules.Touch:Enable()
 	end
 end
 
@@ -581,7 +595,11 @@ end
 --[[ Settings Changed Connections ]]--
 LocalPlayer.Changed:connect(function(property)
 	if lastInputType == Enum.UserInputType.Touch and property == 'DevTouchMovementMode' then
-		ControlState:SwitchTo(ControlModules.Touch)
+		if ControlModules.Touch == ControlState.Current then
+			ControlState.Current:UpdateControlStyle()
+		else
+			ControlState:SwitchTo(ControlModules.Touch)
+		end
 	elseif UserInputService.KeyboardEnabled and property == 'DevComputerMovementMode' then
 		ControlState:SwitchTo(ControlModules.Keyboard)
 	end
@@ -592,7 +610,11 @@ GameSettings.Changed:connect(function(property)
 	if property == 'TouchMovementMode' or property == 'ComputerMovementMode' then
 		UserMovementMode = GameSettings[property]
 		if property == 'TouchMovementMode' then
-			ControlState:SwitchTo(ControlModules.Touch)
+			if ControlModules.Touch == ControlState.Current then
+				ControlState.Current:UpdateControlStyle()
+			else
+				ControlState:SwitchTo(ControlModules.Touch)
+			end
 		elseif property == 'ComputerMovementMode' then
 			ControlState:SwitchTo(ControlModules.Keyboard)
 		end
