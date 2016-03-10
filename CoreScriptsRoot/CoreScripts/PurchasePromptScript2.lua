@@ -40,8 +40,6 @@ local _,largeFont = pcall(function() return Enum.FontSize.Size42 end)
 largeFont = largeFont or Enum.FontSize.Size36
 local scaleFactor = 3
 local purchaseState = nil
-local success, flagValue = pcall(function() return settings():GetFFlag('UseNewPromptEndHandling') end)
-local useNewPromptEndHandling = success and flagValue
 
 --[[ Purchase Data ]]--
 local PurchaseData = {
@@ -797,10 +795,7 @@ end
 
 -- Main exit point
 local function onPromptEnded(isSuccess)
-	local didPurchase = isSuccess
-	if useNewPromptEndHandling then
-		didPurchase = (purchaseState == PURCHASE_STATE.SUCCEEDED)
-	end
+	local didPurchase = (purchaseState == PURCHASE_STATE.SUCCEEDED)
 
 	closePurchaseDialog()
 	if IsPurchasingConsumable then
@@ -1046,6 +1041,7 @@ local function canPurchase(disableUpsell)
 				onPurchaseFailed(PURCHASE_FAILED.DEFAULT_ERROR)
 				return false
 			end
+			purchaseState = PURCHASE_STATE.FAILED
 			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 			ItemDescriptionText.Text = PURCHASE_MSG.ALREADY_OWN
 			PostBalanceText.Visible = false
@@ -1172,7 +1168,7 @@ end
 local function onAcceptPurchase()
 	if IsCurrentlyPurchasing then return end
 
-	if useNewPromptEndHandling and purchaseState ~= PURCHASE_STATE.BUYITEM then
+	if purchaseState ~= PURCHASE_STATE.BUYITEM then
 		return
 	end
 
@@ -1325,7 +1321,7 @@ function nativePurchaseFinished(wasPurchased)
 end
 
 local function onBuyRobuxPrompt()
-	if useNewPromptEndHandling and purchaseState ~= PURCHASE_STATE.BUYROBUX then
+	if purchaseState ~= PURCHASE_STATE.BUYROBUX then
 		return
 	end
 	if RunService:IsStudio() then
@@ -1362,7 +1358,7 @@ local function onBuyRobuxPrompt()
 end
 
 local function onUpgradeBCPrompt()
-	if useNewPromptEndHandling and purchaseState ~= PURCHASE_STATE.BUYBC then
+	if purchaseState ~= PURCHASE_STATE.BUYBC then
 		return
 	end
 
@@ -1379,34 +1375,16 @@ function enableControllerInput()
 		function(actionName, inputState, inputObject)
 			if inputState ~= Enum.UserInputState.Begin then return end
 			
-			if useNewPromptEndHandling then
-
-				if purchaseState == PURCHASE_STATE.SUCCEEDED then
-					onPromptEnded()
-				elseif purchaseState == PURCHASE_STATE.FAILED then
-					onPromptEnded()
-				elseif purchaseState == PURCHASE_STATE.BUYITEM then
-					onAcceptPurchase()
-				elseif purchaseState == PURCHASE_STATE.BUYROBUX then
-					onBuyRobuxPrompt()
-				elseif  purchaseState == PURCHASE_STATE.BUYBC then
-					onUpgradeBCPrompt()
-				end
-
-			else
-
-				if OkPurchasedButton.Visible then
-					onPromptEnded(true)
-				elseif OkButton.Visible then
-					onPromptEnded(false)
-				elseif BuyButton.Visible then
-					onAcceptPurchase()
-				elseif BuyRobuxButton.Visible then
-					onBuyRobuxPrompt()
-				elseif BuyBCButton.Visible then
-					onUpgradeBCPrompt()
-				end
-
+			if purchaseState == PURCHASE_STATE.SUCCEEDED then
+				onPromptEnded()
+			elseif purchaseState == PURCHASE_STATE.FAILED then
+				onPromptEnded()
+			elseif purchaseState == PURCHASE_STATE.BUYITEM then
+				onAcceptPurchase()
+			elseif purchaseState == PURCHASE_STATE.BUYROBUX then
+				onBuyRobuxPrompt()
+			elseif  purchaseState == PURCHASE_STATE.BUYBC then
+				onUpgradeBCPrompt()
 			end
 		end,
 		false,
@@ -1482,20 +1460,12 @@ end)
 BuyButton.MouseButton1Click:connect(onAcceptPurchase)
 FreeButton.MouseButton1Click:connect(onAcceptPurchase)
 OkButton.MouseButton1Click:connect(function()
-	if useNewPromptEndHandling then
-		if purchaseState == PURCHASE_STATE.FAILED then
-			onPromptEnded(false)
-		end
-	else
+	if purchaseState == PURCHASE_STATE.FAILED then
 		onPromptEnded(false)
 	end
 end)
 OkPurchasedButton.MouseButton1Click:connect(function()
-	if useNewPromptEndHandling then
-		if purchaseState == PURCHASE_STATE.SUCCEEDED then
-			onPromptEnded(true)
-		end
-	else
+	if purchaseState == PURCHASE_STATE.SUCCEEDED then
 		onPromptEnded(true)
 	end
 end)
