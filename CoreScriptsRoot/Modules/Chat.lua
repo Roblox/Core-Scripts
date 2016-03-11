@@ -933,8 +933,8 @@ local function CreateChatBarWidget(settings)
 
 	this.ChatMatchingRegex =
 	{
-		[function(chatBarText) return string.find(chatBarText, nocase("^/w ") .. "(%w+)") end] = "Whisper";
-		[function(chatBarText) return string.find(chatBarText, nocase("^/whisper ") .. "(%w+)") end] = "Whisper";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/w ") .. "(%S+)") end] = "Whisper";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/whisper ") .. "(%S+)") end] = "Whisper";
 
 		[function(chatBarText) return string.find(chatBarText, "^%%") end] = "Team";
 		[function(chatBarText) return string.find(chatBarText, "^%(TEAM%)") end] = "Team";
@@ -952,13 +952,13 @@ local function CreateChatBarWidget(settings)
 		[function(chatBarText) return string.find(chatBarText, "^/%?") end] = "Help";
 		[function(chatBarText) return string.find(chatBarText, nocase("^/help")) end] = "Help";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/block ") .. "(%w+)") end] = "Block";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/block ") .. "(%S+)") end] = "Block";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/unblock ") .. "(%w+)") end] = "Unblock";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/unblock ") .. "(%S+)") end] = "Unblock";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/mute ") .. "(%w+)") end] = "Mute";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/mute ") .. "(%S+)") end] = "Mute";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/unmute ") .. "(%w+)") end] = "Unmute";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/unmute ") .. "(%S+)") end] = "Unmute";
 	}
 
 	local ChatModesDict =
