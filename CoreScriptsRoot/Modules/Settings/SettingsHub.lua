@@ -35,9 +35,13 @@ local platform = UserInputService:GetPlatform()
 local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
 local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
 local lastInputChangedCon = nil
-local chatWasVisible = false 
+local chatWasVisible = false
 local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
 local useUserList = (userlistSuccess and userlistFlagValue == true)
+
+local playMyPlaceSuccess, playMyPlaceFlagValue = pcall(function() return settings():GetFFlag("XboxPlayMyPlace") end)
+local myPlayMyPlaceEnabled = (playMyPlaceSuccess and playMyPlaceFlagValue == true)
+
 
 --[[ CORE MODULES ]]
 local playerList = require(RobloxGui.Modules.PlayerlistModule)
@@ -348,20 +352,35 @@ local function CreateSettingsHub()
 			end
 
 			if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
-				addBottomBarButton("InviteToGame", "Send Game Invites", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
-					"", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
-					inviteToGameFunc, {Enum.KeyCode.ButtonX})
+				local function createInviteButton()
+					addBottomBarButton("InviteToGame", "Send Game Invites", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
+						"", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
+						inviteToGameFunc, {Enum.KeyCode.ButtonX})
+				end
+
+				if myPlayMyPlaceEnabled then
+					spawn(function()
+						local PlatformService = nil
+						pcall(function() PlatformService = game:GetService('PlatformService') end)
+						local pmpCreatorId = PlatformService and PlatformService:BeginGetPMPCreatorId()
+						if pmpCreatorId == 0 then
+							createInviteButton()
+						end
+					end)
+				else
+					createInviteButton()
+				end
 			else
-				addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
-					"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
+				addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
+					"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
 					leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
 			end
 
-			addBottomBarButton("ResetCharacter", "    Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png", 
-				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25), 
+			addBottomBarButton("ResetCharacter", "    Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png",
+				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25),
 				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY})
 			addBottomBarButton("Resume", "Resume Game", "rbxasset://textures/ui/Settings/Help/BButtonLight" .. buttonImageAppend .. ".png",
-				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25), 
+				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25),
 				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart})
 		end
 
@@ -529,9 +548,9 @@ local function CreateSettingsHub()
 		if inputState ~= Enum.UserInputState.Begin then return end
 
 		local direction = 0
-		if inputObject.KeyCode == Enum.KeyCode.ButtonR1 then 
+		if inputObject.KeyCode == Enum.KeyCode.ButtonR1 then
 			direction = 1
-		elseif inputObject.KeyCode == Enum.KeyCode.ButtonL1 then 
+		elseif inputObject.KeyCode == Enum.KeyCode.ButtonL1 then
 			direction = -1
 		end
 
@@ -614,7 +633,7 @@ local function CreateSettingsHub()
 	local function RemoveHeader(oldHeader)
 		local removedPos = nil
 
-		for i = 1, #this.TabHeaders do 
+		for i = 1, #this.TabHeaders do
 			if this.TabHeaders[i] == oldHeader then
 				removedPos = i
 				table.remove(this.TabHeaders, i)
@@ -639,7 +658,7 @@ local function CreateSettingsHub()
 		AddHeader(pageToAdd:GetTabHeader(), pageToAdd)
 		pageToAdd.Page.Position = UDim2.new(pageToAdd.TabPosition - 1,0,0,0)
 	end
-	
+
 	function this:RemovePage(pageToRemove)
 		this.Pages.PageTable[pageToRemove] = nil
 		RemoveHeader(pageToRemove:GetTabHeader())
@@ -784,11 +803,11 @@ local function CreateSettingsHub()
 
 			local noOpFunc = function() end
 			ContextActionService:BindCoreAction("RbxSettingsHubStopCharacter", noOpFunc, false,
-												 Enum.PlayerActions.CharacterForward, 
-												 Enum.PlayerActions.CharacterBackward, 
+												 Enum.PlayerActions.CharacterForward,
+												 Enum.PlayerActions.CharacterBackward,
 												 Enum.PlayerActions.CharacterLeft,
 												 Enum.PlayerActions.CharacterRight,
-												 Enum.PlayerActions.CharacterJump, 
+												 Enum.PlayerActions.CharacterJump,
 												 Enum.KeyCode.LeftShift,
 												 Enum.KeyCode.RightShift,
 												 Enum.KeyCode.Tab,
@@ -801,13 +820,11 @@ local function CreateSettingsHub()
 			this.TabConnection = UserInputService.InputBegan:connect(switchTabFromKeyboard)
 
 
-			pcall(function() UserInputService.OverrideMouseIconEnabled = true end)
 			setOverrideMouseIconBehavior()
 			pcall(function() lastInputChangedCon = UserInputService.LastInputTypeChanged:connect(setOverrideMouseIconBehavior) end)
 			if UserInputService.MouseEnabled then
-				pcall(function() 
-					UserInputService.OverrideMouseIconEnabled = true
-					UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow 
+				pcall(function()
+					UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
 				end)
 			end
 
@@ -839,8 +856,6 @@ local function CreateSettingsHub()
 				backpack:OpenClose()
 			end
 		else
-			pcall(function() UserInputService.OverrideMouseIconEnabled = false end)
-
 			if noAnimation then
 				this.Shield.Position = SETTINGS_SHIELD_INACTIVE_POSITION
 				this.Shield.Visible = this.Visible
@@ -869,7 +884,7 @@ local function CreateSettingsHub()
 			pcall(function() PlatformService.BlurIntensity = 0 end)
 
 			clearMenuStack()
-			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab") 
+			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab")
 			ContextActionService:UnbindCoreAction("RbxSettingsHubStopCharacter")
 			ContextActionService:UnbindCoreAction("RbxSettingsScrollHotkey")
 			removeBottomBarBindings(0.4)
@@ -932,7 +947,7 @@ local function CreateSettingsHub()
 		this:PopMenu(false, true)
 	end
 	ContextActionService:BindCoreAction("RBXEscapeMainMenu", closeMenuFunc, false, Enum.KeyCode.Escape)
-	
+
 	this.ResetCharacterPage:SetHub(this)
 	this.LeaveGamePage:SetHub(this)
 
@@ -1044,7 +1059,7 @@ local moduleApiTable = {}
 	function moduleApiTable:SwitchToPage(pageToSwitchTo, ignoreStack)
 		SettingsHubInstance:SwitchToPage(pageToSwitchTo, ignoreStack, 1)
 	end
-	
+
 	function moduleApiTable:ReportPlayer(player)
 		if SettingsHubInstance.ReportAbusePage and player then
 			local setReportPlayerConnection = nil
@@ -1060,7 +1075,7 @@ local moduleApiTable = {}
 						indexChangedConnection = nil
 					end
 					wait() -- We need to wait a frame to set the value of WhichPlayerMode as it is being updated by another script listening to the IndexChanged signal
-					SettingsHubInstance.ReportAbusePage.WhichPlayerMode:SetSelectionByValue(player.Name)				
+					SettingsHubInstance.ReportAbusePage.WhichPlayerMode:SetSelectionByValue(player.Name)
 				end)
 				SettingsHubInstance.ReportAbusePage.GameOrPlayerMode:SetSelectionIndex(2)
 

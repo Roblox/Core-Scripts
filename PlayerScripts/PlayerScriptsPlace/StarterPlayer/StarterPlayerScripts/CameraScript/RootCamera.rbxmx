@@ -9,9 +9,7 @@
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 
---NoVR will be false if the platform does not have the IsVREnabled property, because indexing it will throw an error.
-local success = pcall(function() local _ = UserInputService.IsVREnabled end)
-local NoVR = not success
+local HasVRAPI = pcall(function() local _ = UserInputService.VREnabled end)
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
@@ -59,6 +57,8 @@ end
 local MIN_Y = math.rad(-80)
 local MAX_Y = math.rad(80)
 
+local VR_ANGLE = math.rad(15)
+
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
 local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
 
@@ -68,8 +68,6 @@ local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
 -- Reset the camera look vector when the camera is enabled for the first time
 local SetCameraOnSpawn = true
 
-
-
 local function GetRenderCFrame(part)
 	return part:GetRenderCFrame()
 end
@@ -77,17 +75,14 @@ end
 local function CreateCamera()
 	local this = {}
 
-	this.cframe = CFrame.new()
-	if workspace.CurrentCamera then
-		this.cframe = workspace.CurrentCamera.CoordinateFrame
-	end
-
 	this.ShiftLock = false
 	this.Enabled = false
 	local isFirstPerson = false
 	local isRightMouseDown = false
 	local isMiddleMouseDown = false
 	this.RotateInput = Vector2.new()
+
+	this.currentHeight = 0
 
 	function this:GetShiftLock()
 		return ShiftLockController:IsShiftLocked()
@@ -139,7 +134,7 @@ local function CreateCamera()
 	end
 
 	function this:GetCameraLook()
-		return workspace.CurrentCamera and this.cframe.lookVector or Vector3.new(0,0,1)
+		return workspace.CurrentCamera and workspace.CurrentCamera.CoordinateFrame.lookVector or Vector3.new(0,0,1)
 	end
 
 	function this:GetCameraZoom()
@@ -153,8 +148,16 @@ local function CreateCamera()
 	function this:GetCameraActualZoom()
 		local camera = workspace.CurrentCamera
 		if camera then
-			return (this.cframe.p - camera.Focus.p).magnitude
+			return (camera.CoordinateFrame.p - camera.Focus.p).magnitude
 		end
+	end
+
+	function this:GetCameraHeight()
+		if not this:IsInFirstPerson() and HasVRAPI and UserInputService.VREnabled then
+			local zoom = this:GetCameraZoom()
+			return math.sin(VR_ANGLE) * zoom
+		end
+		return 0
 	end
 
 	function this:ViewSizeX()
@@ -196,9 +199,14 @@ local function CreateCamera()
 	end
 
 	function this:RotateCamera(startLook, xyRotateVector)
-		local startVertical = math.asin(startLook.y)
-		local yTheta = clamp(-MAX_Y + startVertical, -MIN_Y + startVertical, xyRotateVector.y)
-		return self:RotateVector(startLook, Vector2.new(xyRotateVector.x, yTheta))
+		if HasVRAPI and UserInputService.VREnabled then
+			local yawRotatedVector, xyRotateVector = self:RotateVector(startLook, Vector2.new(xyRotateVector.x, 0))
+			return Vector3.new(yawRotatedVector.x, 0, yawRotatedVector.z).unit, xyRotateVector
+		else
+			local startVertical = math.asin(startLook.y)
+			local yTheta = clamp(-MAX_Y + startVertical, -MIN_Y + startVertical, xyRotateVector.y)
+			return self:RotateVector(startLook, Vector2.new(xyRotateVector.x, yTheta))
+		end
 	end
 
 	function this:IsInFirstPerson()
@@ -286,18 +294,26 @@ local function CreateCamera()
 
 	function this:Update()
 	end
-
-	function this:ApplyCameraCFrame()
-		if workspace.CurrentCamera and workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable then
-			workspace.CurrentCamera.CoordinateFrame = this.cframe
+	
+	function this:ApplyVRPosition()
+		--we only want this to happen in first person VR
+		local player = game.Players.LocalPlayer
+		if not player or not player.Character 
+				or not player.Character:FindFirstChild("HumanoidRootPart") 
+				or not player.Character.HumanoidRootPart:FindFirstChild("RootJoint") then
+			return
 		end
-	end
-
-	function this:ApplyVROffset()
-		if NoVR then return end
-		if UserInputService.IsVREnabled and workspace.CurrentCamera and workspace.CurrentCamera.CameraType ~= Enum.CameraType.Scriptable then
-			workspace.CurrentCamera.CoordinateFrame = workspace.CurrentCamera.CoordinateFrame * UserInputService.UserHeadCFrame
+		
+		if not this:IsInFirstPerson() then
+			local rootJoint = player.Character.HumanoidRootPart.RootJoint 
+			rootJoint.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
+			return 
 		end
+		
+		local vrFrame = UserInputService.UserHeadCFrame
+		local vrRotation = vrFrame - vrFrame.p
+		local rootJoint = player.Character.HumanoidRootPart.RootJoint 
+		rootJoint.C0 = CFrame.new(vrRotation:vectorToObjectSpace(vrFrame.p)) * CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
 	end
 
 	---- Input Events ----

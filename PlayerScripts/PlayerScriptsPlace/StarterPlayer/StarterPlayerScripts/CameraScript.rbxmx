@@ -138,8 +138,9 @@ end
 local function Update()
 	if EnabledCamera then
 		EnabledCamera:Update()
-		EnabledCamera:ApplyCameraCFrame()
-		EnabledCamera:ApplyVROffset()
+		if UserInputService.VREnabled then
+			EnabledCamera:ApplyVRPosition()
+		end
 	end
 	if EnabledOcclusion then
 		EnabledOcclusion:Update()

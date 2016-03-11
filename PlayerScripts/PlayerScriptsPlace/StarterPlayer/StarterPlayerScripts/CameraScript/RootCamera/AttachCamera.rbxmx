@@ -66,8 +66,8 @@ local function CreateAttachCamera()
 
 
 			camera.Focus = CFrame.new(subjectPosition)
-			module.cframe = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
-			self.LastCameraTransform = module.cframe
+			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
+			self.LastCameraTransform = camera.CoordinateFrame
 		end
 		lastUpdate = now
 	end

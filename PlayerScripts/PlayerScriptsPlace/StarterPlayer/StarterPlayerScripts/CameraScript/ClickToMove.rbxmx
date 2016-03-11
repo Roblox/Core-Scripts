@@ -1465,8 +1465,6 @@ local function CreateClickToMoveModule()
 					end
 				end
 				CameraModule:Update()
-				CameraModule:ApplyCameraCFrame()
-				CameraModule:ApplyVROffset()
 			end
 			if CurrentSeatPart then
 				if DrivingTo then

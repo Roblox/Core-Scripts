@@ -33,7 +33,7 @@ end
 local LocalPlayer = Players.LocalPlayer
 
 --[[ Constants ]]--
-local thumbstickDeadzone = 0.14
+local thumbstickDeadzone = 0.22 --raised from 14% on 3/1/16 to accommodate looser XB360 controllers
 
 function assignActivateGamepad()
 	local connectedGamepads = UserInputService:GetConnectedGamepads()
