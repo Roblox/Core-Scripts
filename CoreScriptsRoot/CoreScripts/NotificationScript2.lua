@@ -346,9 +346,9 @@ end
 -- New follower notification
 spawn(function()
 	local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-	local RemoteEvent_OnNewFollower = RobloxReplicatedStorage:WaitForChild('OnNewFollower')
+	local RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower')
 	--
-	RemoteEvent_OnNewFollower.OnClientEvent:connect(function(followerRbxPlayer)
+	RemoteEvent_NewFollower.OnClientEvent:connect(function(followerRbxPlayer)
 		sendNotifcation("New Follower", followerRbxPlayer.Name.." is now following you!",
 			FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
 	end)

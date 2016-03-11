@@ -13,13 +13,19 @@ local InsertService = game:GetService('InsertService')
 local MarketplaceService = game:GetService('MarketplaceService')
 local Players = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
+local RunService = game:GetService("RunService")
 
 --[[ Script Variables ]]--
 local RobloxGui = script.Parent
 local ThirdPartyProductName = nil
 
 --[[ Flags ]]--
-local IsNativePurchasing = UserInputService.TouchEnabled or UserInputService:GetPlatform() == Enum.Platform.XBoxOne
+local platform = UserInputService:GetPlatform()
+local IsNativePurchasing = platform == Enum.Platform.XBoxOne or 
+							platform == Enum.Platform.IOS or 
+							platform == Enum.Platform.Android or
+							platform == Enum.Platform.UWP
+
 local IsCurrentlyPrompting = false
 local IsCurrentlyPurchasing = false
 local IsPurchasingConsumable = false
@@ -33,6 +39,7 @@ local freezeThumbstick2Name = "doNothingThumbstickPrompt"
 local _,largeFont = pcall(function() return Enum.FontSize.Size42 end)
 largeFont = largeFont or Enum.FontSize.Size36
 local scaleFactor = 3
+local purchaseState = nil
 
 --[[ Purchase Data ]]--
 local PurchaseData = {
@@ -98,6 +105,15 @@ local PURCHASE_FAILED = {
 	PROMPT_PURCHASE_ON_GUEST = 9,
 	THIRD_PARTY_DISABLED = 10,
 }
+local PURCHASE_STATE = {
+	DEFAULT = 1,
+	FAILED = 2,
+	SUCCEEDED = 3,
+	BUYITEM = 4,
+	BUYROBUX = 5,
+	BUYINGROBUX = 6,
+	BUYBC = 7
+}
 local BC_LVL_TO_STRING = {
 	"Builders Club",
 	"Turbo Builders Club",
@@ -133,7 +149,8 @@ local ASSET_TO_STRING = {
 	[31] = "Right Leg";
 	[32] = "Package";
 	[33] = "YouTube Video";
-	[34] = "Game Pass";
+	-- NOTE: GamePass and Plugin AssetTypeIds are different on ST1, ST2 and ST3
+	[34] = "Game Pass";	
 	[38] = "Plugin";
 	[0]  = "Product";
 }
@@ -458,7 +475,7 @@ end
 
 local function setPreviewImage(productInfo, assetId)
 	-- For now let's only run this logic on Xbox
-	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+	if platform == Enum.Platform.XBoxOne then
 		setPreviewImageXbox(productInfo, assetId)
 		return
 	end
@@ -587,12 +604,14 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 	end
 
 	setPreviewImage(productInfo, PurchaseData.AssetId)
+	purchaseState = PURCHASE_STATE.BUYITEM
 	setButtonsVisible(isFree and FreeButton or BuyButton, CancelButton)
 	PostBalanceText.Visible = true
 
 	if invalidBC then
 		local neededBcLevel = PurchaseData.ProductInfo["MinimumMembershipLevel"]
 		PostBalanceText.Text = "This item requires "..BC_LVL_TO_STRING[neededBcLevel]..".\nClick 'Upgrade' to upgrade your Builders Club!"
+		purchaseState = PURCHASE_STATE.BUYBC
 		setButtonsVisible(BuyBCButton, CancelButton)
 	end
 	return true
@@ -601,7 +620,7 @@ end
 local function getRobuxProduct(amountNeeded, isBCMember)
 	local productArray = nil
 
-	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+	if platform == Enum.Platform.XBoxOne then
 		productArray = {}
 		local platformCatalogData = require(RobloxGui.Modules.PlatformCatalogData)
 
@@ -624,7 +643,7 @@ local function getRobuxProduct(amountNeeded, isBCMember)
 		end
 	end
 
-	return productArray[1]
+	return nil
 end
 
 local function getRobuxProductToBuyItem(amountNeeded)
@@ -634,21 +653,20 @@ local function getRobuxProductToBuyItem(amountNeeded)
 	if not productCost then
 		return nil
 	end
-	local success, isAndroid = pcall(function()
-		return UserInputService:GetPlatform() == Enum.Platform.Android
-	end)
-	if not success then
-		print("PurchasePromptScript: getRobuxProductToBuyItem() failed because", isAndroid)
-	end
+
+	--todo: we should clean all this up at some point so all the platforms have the
+	-- same product names, or at least names that are very similar
+	
+	local isUsingNewProductId = (platform == Enum.Platform.Android) or (platform == Enum.Platform.UWP)
 
 	local prependStr, appendStr, appPrefix = "", "", ""
-	if isAndroid then
+	if isUsingNewProductId then
 		prependStr = "robux"
 		if isBCMember then
 			appendStr = "bc"
 		end
 		appPrefix = "com.roblox.client."
-	elseif UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+	elseif platform == Enum.Platform.XBoxOne then
 		local platformCatalogData = require(RobloxGui.Modules.PlatformCatalogData)
 
 		local catalogInfo = platformCatalogData:GetCatalogInfoAsync()
@@ -659,7 +677,7 @@ local function getRobuxProductToBuyItem(amountNeeded)
 				end
 			end
 		end
-	else
+	else -- used by iOS
 		appendStr = isBCMember and "RobuxBC" or "RobuxNonBC"
 		appPrefix = "com.roblox.robloxmobile."
 	end
@@ -673,8 +691,10 @@ local function setBuyMoreRobuxDialog(playerBalance)
 	local neededRobux = PurchaseData.CurrencyAmount - playerBalanceInt
 	local productInfo = PurchaseData.ProductInfo
 
-	local descriptionText = "You need "..formatNumber(neededRobux).." more ROBUX to buy the "..productInfo["Name"].." "..
-		ASSET_TO_STRING[productInfo["AssetTypeId"]]
+	local descriptionText = "You need %s more ROBUX to buy the %s %s"
+	descriptionText = string.format(descriptionText, formatNumber(neededRobux), productInfo["Name"], ASSET_TO_STRING[productInfo["AssetTypeId"]] or "")
+
+	purchaseState = PURCHASE_STATE.BUYROBUX
 	setButtonsVisible(BuyRobuxButton, CancelButton)
 
 	if IsNativePurchasing then
@@ -683,6 +703,7 @@ local function setBuyMoreRobuxDialog(playerBalance)
 		--
 		if not ThirdPartyProductName then
 			descriptionText = "This item cost more ROBUX than you can purchase. Please visit www.roblox.com to purchase more ROBUX."
+			purchaseState = PURCHASE_STATE.FAILED
 			setButtonsVisible(OkButton)
 		else
 			local remainder = playerBalanceInt + productCost - PurchaseData.CurrencyAmount
@@ -716,12 +737,14 @@ local function onPurchaseFailed(failType)
 
 	local itemName = PurchaseData.ProductInfo and PurchaseData.ProductInfo["Name"] or ""
 	local failedText = string.gsub(PURCHASE_MSG.FAILED, "itemName", string.sub(itemName, 1, 20))
+	
+	if itemName == "" then
+		failedText = string.gsub(failedText, " of ", "")
+	end
+		
 	if failType == PURCHASE_FAILED.DEFAULT_ERROR then
 		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.UNKNWON_FAILURE)
 	elseif failType == PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED then
-		if itemName == "" then
-			failedText = string.gsub(failedText, " of ", "")
-		end
 		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.PURCHASE_DISABLED)
 	elseif failType == PURCHASE_FAILED.CANNOT_GET_BALANCE then
 		failedText = "Cannot retrieve your balance at this time. Your account has not been charged. Please try again later."
@@ -751,6 +774,8 @@ local function onPurchaseFailed(failType)
 	TixIcon.Visible = false
 	CostText.Visible = false
 
+	purchaseState = PURCHASE_STATE.FAILED
+
 	ItemDescriptionText.Text = failedText
 	showPurchasePrompt()
 end
@@ -761,6 +786,7 @@ local function closePurchaseDialog()
 			IsCurrentlyPrompting = false
 			IsCurrentlyPurchasing = false
 			IsCheckingPlayerFunds = false
+			purchaseState = PURCHASE_STATE.DEFAULT
 			if isTenFootInterface then
 				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 			end
@@ -769,11 +795,13 @@ end
 
 -- Main exit point
 local function onPromptEnded(isSuccess)
+	local didPurchase = (purchaseState == PURCHASE_STATE.SUCCEEDED)
+
 	closePurchaseDialog()
 	if IsPurchasingConsumable then
-		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.userId, PurchaseData.ProductId, isSuccess)
+		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.userId, PurchaseData.ProductId, didPurchase)
 	else
-		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, isSuccess)
+		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, didPurchase)
 	end
 	clearPurchaseData()
 	enableControllerMovement()
@@ -884,7 +912,6 @@ local function isFreeItem()
 end
 
 local function getPlayerBalance()
-	local platform = UserInputService:GetPlatform()
 	local apiPath = platform == Enum.Platform.XBoxOne and 'my/platform-currency-budget' or 'currency/balance'
 
 	local success, result = pcall(function()
@@ -967,7 +994,7 @@ local function isLimitedUnique()
 end
 
 -- main validation function
-local function canPurchase()
+local function canPurchase(disableUpsell)
 	if game.Players.LocalPlayer.userId < 0 then
 		onPurchaseFailed(PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST)
 		return false
@@ -1003,6 +1030,7 @@ local function canPurchase()
 	end
 
 	-- check if owned by player; dev products are not owned
+	local isRestrictedThirdParty = false
 	if not IsPurchasingConsumable then
 		local success, doesOwnItem = doesPlayerOwnItem()
 		if not success then
@@ -1013,6 +1041,7 @@ local function canPurchase()
 				onPurchaseFailed(PURCHASE_FAILED.DEFAULT_ERROR)
 				return false
 			end
+			purchaseState = PURCHASE_STATE.FAILED
 			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 			ItemDescriptionText.Text = PURCHASE_MSG.ALREADY_OWN
 			PostBalanceText.Visible = false
@@ -1025,13 +1054,17 @@ local function canPurchase()
 			local ProductCreator = tonumber(PurchaseData.ProductInfo["Creator"]["Id"])
 			local RobloxCreator = 1
 			if ProductCreator ~= game.CreatorId and ProductCreator ~= RobloxCreator then
-				onPurchaseFailed(PURCHASE_FAILED.THIRD_PARTY_DISABLED)
-				return false    
+				isRestrictedThirdParty = true
 			end
 		end
 	end
 
 	local isFree = isFreeItem()
+
+	if not isFree and isRestrictedThirdParty then
+		onPurchaseFailed(PURCHASE_FAILED.THIRD_PARTY_DISABLED)
+		return false    
+	end
 
 	local playerBalance = getPlayerBalance()
 	if not playerBalance then
@@ -1056,7 +1089,7 @@ local function canPurchase()
 				if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
 					onPurchaseFailed(PURCHASE_FAILED.NOT_ENOUGH_TIX)
 					return false
-				else
+				elseif not disableUpsell then
 					setBuyMoreRobuxDialog(playerBalance)
 				end
 			end
@@ -1126,12 +1159,19 @@ local function onPurchaseSuccess()
 
 	if isFreeItem() then PostBalanceText.Visible = false end
 
+	purchaseState = PURCHASE_STATE.SUCCEEDED
+
 	setButtonsVisible(OkPurchasedButton)
 	stopPurchaseAnimation()
 end
 
 local function onAcceptPurchase()
 	if IsCurrentlyPurchasing then return end
+
+	if purchaseState ~= PURCHASE_STATE.BUYITEM then
+		return
+	end
+
 	--
 	disableControllerInput()
 	IsCurrentlyPurchasing = true
@@ -1249,13 +1289,16 @@ function hasEnoughMoneyForPurchase()
 	return false
 end
 
-function retryPurchase()
-	local canMakePurchase = canPurchase() and hasEnoughMoneyForPurchase()
+function retryPurchase(overrideRetries)
+	local canMakePurchase = canPurchase(true) and hasEnoughMoneyForPurchase()
 	if not canMakePurchase then
 		local retries = 40
+		if overrideRetries then
+			retries = overrideRetries
+		end
 		while retries > 0 and not canMakePurchase do
 			wait(0.5)
-			canMakePurchase = canPurchase() and hasEnoughMoneyForPurchase()
+			canMakePurchase = canPurchase(true) and hasEnoughMoneyForPurchase()
 			retries = retries - 1
 		end
 	end
@@ -1278,9 +1321,18 @@ function nativePurchaseFinished(wasPurchased)
 end
 
 local function onBuyRobuxPrompt()
+	if purchaseState ~= PURCHASE_STATE.BUYROBUX then
+		return
+	end
+	if RunService:IsStudio() then
+		return
+	end
+
+	purchaseState = PURCHASE_STATE.BUYINGROBUX
+
 	startPurchaseAnimation()
 	if IsNativePurchasing then
-		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		if platform == Enum.Platform.XBoxOne then
 			spawn(function()
 				local PlatformService = nil
 				pcall(function() PlatformService = Game:GetService('PlatformService') end)
@@ -1306,6 +1358,10 @@ local function onBuyRobuxPrompt()
 end
 
 local function onUpgradeBCPrompt()
+	if purchaseState ~= PURCHASE_STATE.BUYBC then
+		return
+	end
+
 	IsCheckingPlayerFunds = true
 	GuiService:OpenBrowserWindow(BASE_URL.."Upgrades/BuildersClubMemberships.aspx")
 end
@@ -1318,14 +1374,16 @@ function enableControllerInput()
 		CONTROLLER_CONFIRM_ACTION_NAME,
 		function(actionName, inputState, inputObject)
 			if inputState ~= Enum.UserInputState.Begin then return end
-
-			if OkPurchasedButton.Visible or OkButton.Visible then
-				onPromptEnded(true)
-			elseif BuyButton.Visible then
+			
+			if purchaseState == PURCHASE_STATE.SUCCEEDED then
+				onPromptEnded()
+			elseif purchaseState == PURCHASE_STATE.FAILED then
+				onPromptEnded()
+			elseif purchaseState == PURCHASE_STATE.BUYITEM then
 				onAcceptPurchase()
-			elseif BuyRobuxButton.Visible then
+			elseif purchaseState == PURCHASE_STATE.BUYROBUX then
 				onBuyRobuxPrompt()
-			elseif BuyBCButton.Visible then
+			elseif  purchaseState == PURCHASE_STATE.BUYBC then
 				onUpgradeBCPrompt()
 			end
 		end,
@@ -1402,10 +1460,14 @@ end)
 BuyButton.MouseButton1Click:connect(onAcceptPurchase)
 FreeButton.MouseButton1Click:connect(onAcceptPurchase)
 OkButton.MouseButton1Click:connect(function()
-	onPromptEnded(false)
+	if purchaseState == PURCHASE_STATE.FAILED then
+		onPromptEnded(false)
+	end
 end)
 OkPurchasedButton.MouseButton1Click:connect(function()
-	onPromptEnded(true)
+	if purchaseState == PURCHASE_STATE.SUCCEEDED then
+		onPromptEnded(true)
+	end
 end)
 BuyRobuxButton.MouseButton1Click:connect(onBuyRobuxPrompt)
 BuyBCButton.MouseButton1Click:connect(onUpgradeBCPrompt)
@@ -1430,8 +1492,10 @@ end)
 
 GuiService.BrowserWindowClosed:connect(function()
 	if IsCheckingPlayerFunds then
-		retryPurchase()
+		retryPurchase(4)
 	end
+
+	onPurchaseFailed(PURCHASE_FAILED.DID_NOT_BUY_ROBUX)
 	stopPurchaseAnimation()
 end)
 

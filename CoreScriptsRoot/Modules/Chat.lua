@@ -7,12 +7,14 @@
 --[[ CONSTANTS ]]
 
 -- NOTE: IF YOU WANT TO USE THIS CHAT SCRIPT IN YOUR OWN GAME:
--- 1) COPY THE CONTENTS OF THIS FILE INTO A LOCALSCRIPT THAT YOU MADE IN STARTERGUI
--- 2) SET THE FOLLOWING TWO VARIABLES TO TRUE
--- 3) CONFIGURE YOUR PLACE ON THE WEBSITE TO USE BUBBLE-CHAT
+-- 1) COPY THE CONTENTS OF THIS FILE INTO A MODULE
+-- 2) CREATE A LOCALSCRIPT AND PARENT IT TO StarterGui
+-- 3) IN THE LOCALSCRIPT require() THE CHAT MODULE YOU MADE IN STEP 1
+-- 4) CONFIGURE YOUR PLACE ON THE WEBSITE TO USE BUBBLE-CHAT
+-- 5) SET THE FOLLOWING TWO VARIABLES TO TRUE
 local FORCE_CHAT_GUI = false
 local NON_CORESCRIPT_MODE = false
--- 4) (OPTIONAL) PUT THE FOLLOWING LINE IN A SERVER SCRIPT TO MAKE CHAT PERSIST THROUGH RESPAWNING
+-- 6) (OPTIONAL) PUT THE FOLLOWING LINE IN A SERVER SCRIPT TO MAKE CHAT PERSIST THROUGH RESPAWNING
 --  game:GetService('StarterGui').ResetPlayerGuiOnSpawn = false
 ---------------------------------
 
@@ -53,7 +55,7 @@ local playerDropDownEnabledSuccess, playerDropDownEnabledFlagValue = pcall(funct
 local IsPlayerDropDownEnabled = playerDropDownEnabledSuccess and playerDropDownEnabledFlagValue
 
 local getMoveChatSuccess, moveChatActiveValue = pcall(function() return settings():GetFFlag("SetCoreMoveChat") end)
-local allowMoveChat = getNotificationDisableSuccess and notificationsDisableActiveValue
+local allowMoveChat = getMoveChatSuccess and moveChatActiveValue
 
 local getDisableChatBarSuccess, disableChatBarValue = pcall(function() return settings():GetFFlag("SetCoreDisableChatBar") end)
 local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
@@ -82,6 +84,8 @@ local lastSelectedButton = nil
 local playerDropDownModule = nil
 local playerDropDown = nil
 local blockingUtility = nil
+
+local topbarEnabled = true
 
 
 
@@ -522,16 +526,16 @@ function createPopupFrame(selectedPlayer, selectedButton)
 			lastSelectedButton = selectedButton
 			lastSelectedPlayer = selectedPlayer
 			selectedButton.BackgroundTransparency = 0.5
-			
+
 			if IsPlayerDropDownEnabled then
 				playerDropDown.HidePopupImmediately = true
-				local PopupFrame = playerDropDown:CreatePopup(selectedPlayer)		
+				local PopupFrame = playerDropDown:CreatePopup(selectedPlayer)
 				PopupFrame.Position = UDim2.new(0, selectedButton.AbsolutePosition.X + selectedButton.AbsoluteSize.X + 2, 0, selectedButton.AbsolutePosition.Y)
 				PopupFrame.Size = UDim2.new(0, 150, PopupFrame.Size.Y.Scale, PopupFrame.Size.Y.Offset)
 				PopupFrame.ZIndex = 5
 				PopupFrame.Parent = GuiRoot
 			end
-			
+
 			for _, button in pairs(PopupFrame:GetChildren()) do
 				button.BackgroundTransparency = 0
 				button.ZIndex = 6
@@ -916,6 +920,8 @@ local function CreateChatBarWidget(settings)
 	this.ChatErrorEvent = Util.Signal() -- Signal Signatue: success, actionType, [captures]
 	this.ChatBarFloodEvent = Util.Signal()
 
+	local chatCoreGuiEnabled = true
+
 	-- This function while lets string.find work case-insensitively without clobbering the case of the captures
 	local function nocase(s)
       s = string.gsub(s, "%a", function (c)
@@ -949,7 +955,7 @@ local function CreateChatBarWidget(settings)
 		[function(chatBarText) return string.find(chatBarText, nocase("^/block ") .. "(%w+)") end] = "Block";
 
 		[function(chatBarText) return string.find(chatBarText, nocase("^/unblock ") .. "(%w+)") end] = "Unblock";
-		
+
 		[function(chatBarText) return string.find(chatBarText, nocase("^/mute ") .. "(%w+)") end] = "Mute";
 
 		[function(chatBarText) return string.find(chatBarText, nocase("^/unmute ") .. "(%w+)") end] = "Unmute";
@@ -1053,8 +1059,7 @@ local function CreateChatBarWidget(settings)
 
 	function this:CalculateVisibility()
 		if this.ChatBarContainer then
-			local chatEnabled = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat)
-			local enabled = self.WidgetVisible and chatEnabled and not NON_CORESCRIPT_MODE
+			local enabled = self.WidgetVisible and chatCoreGuiEnabled and not NON_CORESCRIPT_MODE
 			if enabled then
 				HookUpEvents()
 			else
@@ -1085,7 +1090,10 @@ local function CreateChatBarWidget(settings)
 	end
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
-		self:CalculateVisibility()
+		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+			chatCoreGuiEnabled = enabled
+			self:CalculateVisibility()
+		end
 	end
 
 	function this:IsAChatMode(mode)
@@ -1544,6 +1552,8 @@ local function CreateChatWindowWidget(settings)
 
 	local FadeLock = false
 
+	local chatCoreGuiEnabled = true
+
 	local function PointInChatWindow(pt)
 		local point0 = this.ChatContainer.AbsolutePosition
 		local point1 = point0 + this.ChatContainer.AbsoluteSize
@@ -1765,7 +1775,7 @@ local function CreateChatWindowWidget(settings)
 		local chatMessage = CreateSystemChatMessage(this.Settings, chattedMessage)
 		this:PushMessageIntoQueue(chatMessage, silently)
 	end
-	
+
 	local function checkEnum(enumItems, value)
 		for _, enum in pairs(enumItems) do
 			if enum.Value == value then
@@ -1774,7 +1784,7 @@ local function CreateChatWindowWidget(settings)
 		end
 		return nil
 	end
-	
+
 	-- We only need to copy the top level for the settings table
 	local function shallowCopy(tableToCopy)
 		local newTable = {}
@@ -1783,7 +1793,7 @@ local function CreateChatWindowWidget(settings)
 		end
 		return newTable
 	end
-	
+
 	function this:AddDeveloperSystemChatMessage(informationTable)
 		local settings = shallowCopy(this.Settings)
 
@@ -1859,8 +1869,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:CalculateVisibility()
-		local chatEnabled = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat)
-		return this.WidgetVisible and ((chatEnabled and PlayersService.ClassicChat) or NON_CORESCRIPT_MODE)
+		return this.WidgetVisible and ((chatCoreGuiEnabled and PlayersService.ClassicChat) or NON_CORESCRIPT_MODE)
 	end
 
 	function this:ToggleVisibility(visible)
@@ -1876,8 +1885,11 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
-		if this.ChatContainer then
-			this.ChatContainer.Visible = self:CalculateVisibility()
+		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+			chatCoreGuiEnabled = enabled
+			if this.ChatContainer then
+				this.ChatContainer.Visible = self:CalculateVisibility()
+			end
 		end
 	end
 
@@ -1967,6 +1979,13 @@ local function CreateChatWindowWidget(settings)
 		this.ScrollingFrame = scrollingFrame
 		this.MessageContainer = messageContainer
 		this.ChatContainer.Parent = GuiRoot
+
+
+		-- It is important to set this to true in NON_CORESCRIPT_MODE because normally the topbar sets
+		-- the chat window to visible
+		if NON_CORESCRIPT_MODE then
+			this:ToggleVisibility(true)
+		end
 
 		--- BACKGROUND FADING CODE ---
 			-- This is so we don't accidentally fade out when we are scrolling and mess with the scrollbar.
@@ -2120,6 +2139,7 @@ local function CreateChat()
 	this.Visible = false
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
+		enabled = enabled and topbarEnabled
 		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
 			if not GetTopBarFlag() then
 				if Util:IsTouchDevice() then
@@ -2134,7 +2154,7 @@ local function CreateChat()
 				end
 			end
 			if GetTopBarFlag() then
-				if StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat) then
+				if enabled then
 					pcall(function()
 						self.SpecialKeyPressedConn = Util.DisconnectEvent(self.SpecialKeyPressedConn)
 						GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
@@ -2249,7 +2269,7 @@ local function CreateChat()
 			end
 		end
 	end
-	
+
 	function this:IsPlayerMuted(player)
 		if blockingUtility then
 			return player and blockingUtility:IsPlayerMutedByUserId(player.userId)
@@ -2257,7 +2277,7 @@ local function CreateChat()
 			return false
 		end
 	end
-	
+
 	function this:MutePlayer(playerToMute)
 		if playerToMute and playerToMute ~= Player then
 			if playerToMute.UserId > 0 then
@@ -2276,7 +2296,7 @@ local function CreateChat()
 			this.ChatWindowWidget:AddSystemChatMessage("You cannot mute yourself.")
 		end
 	end
-	
+
 	function this:UnmutePlayer(playerToUnmute)
 		if playerToUnmute then
 			if this:IsPlayerMuted(playerToUnmute) then
@@ -2499,59 +2519,65 @@ local function CreateChat()
 		return 0
 	end
 
+	function this:TopbarEnabledChanged(enabled)
+		topbarEnabled = enabled
+		-- Update coregui to reflect new topbar status
+		self:CoreGuiChanged(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
+	end
+
 	function this:Initialize()
 		--[[ Developer Customization API ]]--
 		if not NON_CORESCRIPT_MODE then
-			game:WaitForChild("StarterGui"):RegisterSetCore("ChatMakeSystemMessage", 	function(informationTable) 
-																							if this.ChatWindowWidget then 
-																								this.ChatWindowWidget:AddDeveloperSystemChatMessage(informationTable) 
-																							end 
+			game:WaitForChild("StarterGui"):RegisterSetCore("ChatMakeSystemMessage", 	function(informationTable)
+																							if this.ChatWindowWidget then
+																								this.ChatWindowWidget:AddDeveloperSystemChatMessage(informationTable)
+																							end
 																						end)
 			local function isUDim2Value(value)
 				local success, value = pcall(function() return UDim2.new(value.X.Scale, value.X.Offset, value.Y.Scale, value.Y.Offset) end)
 				return success and value or nil
 			end
-			
+
 			local function isBubbleChatOn()
 				return not PlayersService.ClassicChat and PlayersService.BubbleChat
 			end
-			
+
 			if allowMoveChat then
-				game.StarterGui:RegisterSetCore("ChatWindowPosition", 	function(value) 
+				game.StarterGui:RegisterSetCore("ChatWindowPosition", 	function(value)
 																			if this.ChatWindowWidget and this.ChatBarWidget then
 																				value = isUDim2Value(value)
 																				if value ~= nil and not isBubbleChatOn() then
 																					chatRepositioned = true -- Prevent chat from moving back to the original position on screen resolution change
-																					this.ChatWindowWidget.ChatContainer.Position = value 
+																					this.ChatWindowWidget.ChatContainer.Position = value
 																					this.ChatBarWidget.ChatBarContainer.Position = value + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
-																				end 
+																				end
 																			end
 																		end)
-																				
+
 				game.StarterGui:RegisterSetCore("ChatWindowSize", 	function(value)
  																		if this.ChatWindowWidget and this.ChatBarWidget then
  																			value = isUDim2Value(value)
-																			if value ~= nil and not isBubbleChatOn() then 
+																			if value ~= nil and not isBubbleChatOn() then
 																				chatRepositioned = true
-																				this.ChatWindowWidget.ChatContainer.Size = value 
+																				this.ChatWindowWidget.ChatContainer.Size = value
 																				this.ChatBarWidget.ChatBarContainer.Size = UDim2.new(this.ChatWindowWidget.ChatContainer.Size.X.Scale, this.ChatWindowWidget.ChatContainer.Size.X.Offset, this.ChatBarWidget.ChatBarContainer.Size.Y.Scale, this.ChatBarWidget.ChatBarContainer.Size.Y.Offset)
 																				this.ChatBarWidget.ChatBarContainer.Position = this.ChatWindowWidget.ChatContainer.Position + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
- 																			end 
+ 																			end
  																		end
- 																	end)														
-																	
+ 																	end)
+
 			else
 				game.StarterGui:RegisterSetCore("ChatWindowPosition", 	function() end)
 				game.StarterGui:RegisterSetCore("ChatWindowSize",		function() end)
 			end
 
- 			game.StarterGui:RegisterGetCore("ChatWindowPosition", 	function() 
- 																		if this.ChatWindowWidget then 
+ 			game.StarterGui:RegisterGetCore("ChatWindowPosition", 	function()
+ 																		if this.ChatWindowWidget then
  																			return this.ChatWindowWidget.ChatContainer.Position
  																		else
  																			return nil
- 																		end													
-																	end)			
+ 																		end
+																	end)
 
  			game.StarterGui:RegisterGetCore("ChatWindowSize", 	function()
 																	if this.ChatWindowWidget then
@@ -2560,25 +2586,25 @@ local function CreateChat()
 																		return nil
 																	end
 																end)
-			
+
 			if allowDisableChatBar then
 				game.StarterGui:RegisterSetCore("ChatBarDisabled", 	function(value)
 																		if this.ChatBarWidget then
-																			if type(value) == "boolean" then 
-																				chatBarDisabled = value 
+																			if type(value) == "boolean" then
+																				chatBarDisabled = value
 																				if value == true then
 																					this.ChatBarWidget:ToggleVisibility(false)
 																				end
-																			end 
+																			end
 																		end
 																	end)
 			else
 				game.StarterGui:RegisterSetCore("ChatBarDisabled", 	function() end)
 			end
- 			
+
  			game.StarterGui:RegisterGetCore("ChatBarDisabled", function() return chatBarDisabled end)
 		end
-		
+
 		this:OnPlayerAdded(Player)
 		-- Upsettingly, it seems everytime a player is added, you have to redo the connection
 		-- NOTE: PlayerAdded only fires on the server, hence ChildAdded is used here
@@ -2611,30 +2637,34 @@ end
 
 local moduleApiTable = {}
 -- Main Entry Point
-do	
+do
 	local ChatInstance = CreateChat()
 	ChatInstance:Initialize()
 
-	function moduleApiTable:ToggleVisibility()		
+	function moduleApiTable:ToggleVisibility()
 		ChatInstance:ToggleVisibility()
 	end
 
-	function moduleApiTable:FocusChatBar()		
+	function moduleApiTable:FocusChatBar()
 		ChatInstance:FocusChatBar()
 	end
 
-	function moduleApiTable:GetVisibility()		
+	function moduleApiTable:GetVisibility()
 		return ChatInstance.Visible
 	end
 
-	function moduleApiTable:GetMessageCount()		
+	function moduleApiTable:GetMessageCount()
 		return ChatInstance:GetCurrentWindowMessageCount()
 	end
-	
+
+	function moduleApiTable:TopbarEnabledChanged(...)
+		return ChatInstance:TopbarEnabledChanged(...)
+	end
+
 	moduleApiTable.ChatBarFocusChanged = ChatInstance.ChatBarFocusChanged
 	moduleApiTable.VisibilityStateChanged = ChatInstance.VisibilityStateChanged
 	moduleApiTable.MessagesChanged = ChatInstance.CurrentWindowMessageCountChanged
-	
+
 end
 
 return moduleApiTable

@@ -1,15 +1,18 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX87EB83BDA3824A0F92607F9EC4CC1B68">
+	<Item class="ModuleScript" referent="RBXA71F9A81166C415FBA35E635CAA022E8">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ClassicCamera</string>
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
+local UserInputService = game:GetService('UserInputService')
 local RootCameraCreator = require(script.Parent)
 
 local UP_VECTOR = Vector3.new(0, 1, 0)
 local XZ_VECTOR = Vector3.new(1,0,1)
+
+local VR_PITCH_FRACTION = 0.25
 
 local function clamp(low, high, num)
 	if low <= high then
@@ -69,8 +72,8 @@ local function CreateClassicCamera()
 		end	
 		
 		if lastUpdate then
-			-- Cap out the delta to 0.5 so we don't get some crazy things when we re-resume from
-			local delta = math.min(0.5, now - lastUpdate)
+			-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
+			local delta = math.min(0.1, now - lastUpdate)
 			local angle = 0
 			if not (isInVehicle or isOnASkateboard) then
 				angle = angle + (self.TurningLeft and -120 or 0)
@@ -80,7 +83,7 @@ local function CreateClassicCamera()
 			local gamepadRotation = self:UpdateGamepad()
 			if gamepadRotation ~= Vector2.new(0,0) then
 				userPanningTheCamera = true
-				self.RotateInput = self.RotateInput + gamepadRotation
+				self.RotateInput = self.RotateInput + (gamepadRotation * delta)
 			end
 					
 			if angle ~= 0 then
@@ -149,9 +152,10 @@ local function CreateClassicCamera()
 			
 			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
 			self.RotateInput = Vector2.new()
-			
+
 			camera.Focus = CFrame.new(subjectPosition)
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
+			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p) + Vector3.new(0, self:GetCameraHeight(), 0)
+			
 			self.LastCameraTransform = camera.CoordinateFrame
 			if isInVehicle or isOnASkateboard and cameraSubject:IsA('BasePart') then
 				self.LastSubjectCFrame = cameraSubject.CFrame
@@ -166,8 +170,7 @@ local function CreateClassicCamera()
 	return module
 end
 
-return CreateClassicCamera
-]]></ProtectedString>
+return CreateClassicCamera]]></ProtectedString>
 		</Properties>
 	</Item>
 </roblox>

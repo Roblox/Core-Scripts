@@ -26,6 +26,11 @@ local MAX_FRIEND_COUNT = 200
 local FRIEND_IMAGE = 'http://www.roblox.com/thumbs/avatar.ashx?userId='
 
 --[[ Fast Flags ]]--
+local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
+local IsFollowersEnabled = followerSuccess and isFollowersEnabled
+
+local serverFollowersSuccess, serverFollowersEnabled = pcall(function() return settings():GetFFlag("UserServerFollowers") end)
+local IsServerFollowers = serverFollowersSuccess and serverFollowersEnabled
 
 --[[ Modules ]]--
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
@@ -42,11 +47,11 @@ spawn(function()
 end)
 
 --[[ Remotes ]]--
-local RemoteEvent_OnNewFollower = nil
+local RemoteEvent_NewFollower = nil
 
 spawn(function()
 	local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-	RemoteEvent_OnNewFollower = RobloxReplicatedStorage:WaitForChild('OnNewFollower')
+	RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower')
 end)
 
 --[[ Utility Functions ]]--
@@ -347,6 +352,9 @@ function createPlayerDropDown()
 
 		result = HttpService:JSONDecode(result)
 		if result["success"] then
+			if RemoteEvent_NewFollower then
+				RemoteEvent_NewFollower:FireServer(playerDropDown.Player, false)
+			end
 			moduleApiTable.FollowerStatusChanged:fire()
 		end
 
@@ -400,8 +408,8 @@ function createPlayerDropDown()
 		result = HttpService:JSONDecode(result)
 		if result["success"] then
 			sendNotification("You are", "now following "..playerDropDown.Player.Name, FRIEND_IMAGE..followedUserId.."&x=48&y=48", 5, function() end)
-			if RemoteEvent_OnNewFollower then
-				RemoteEvent_OnNewFollower:FireServer(playerDropDown.Player)
+			if RemoteEvent_NewFollower then
+				RemoteEvent_NewFollower:FireServer(playerDropDown.Player, true)
 			end
 			moduleApiTable.FollowerStatusChanged:fire()
 		end
@@ -535,15 +543,17 @@ function createPlayerDropDown()
 				})
 		end
 		-- following status
-		local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
-		local followerText = following and "Unfollow Player" or "Follow Player"
-		
-		if not blocked then
-			table.insert(buttons, {
-				Name = "FollowerButton",
-				Text = followerText,
-				OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
-				})
+		if IsServerFollowers or IsFollowersEnabled then
+			local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
+			local followerText = following and "Unfollow Player" or "Follow Player"
+			
+			if not blocked then
+				table.insert(buttons, {
+					Name = "FollowerButton",
+					Text = followerText,
+					OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
+					})
+			end
 		end
 
 		local blockedText = blocked and "Unblock Player" or "Block Player"

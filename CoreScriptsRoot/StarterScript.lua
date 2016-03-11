@@ -5,7 +5,7 @@
 local scriptContext = game:GetService("ScriptContext")
 local touchEnabled = game:GetService("UserInputService").TouchEnabled
 
-local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 
 local soundFolder = Instance.new("Folder")
 soundFolder.Name = "Sounds"

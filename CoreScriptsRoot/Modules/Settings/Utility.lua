@@ -823,12 +823,12 @@ local function CreateSelector(selectionStringTable, startPosition)
 		NextSelectionLeft = this.SelectorFrame,
 		NextSelectionRight = this.SelectorFrame,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0,502,0,30),
+		Size = UDim2.new(0,502,0,50),
 		ZIndex = 2,
 		SelectionImageObject = noSelectionObject
 	};
 	if isSmallTouchScreen() then
-		this.SelectorFrame.Size = UDim2.new(0,400,0,30)
+		this.SelectorFrame.Size = UDim2.new(0,400,0,50)
 	end
 
 	local leftButton = Util.Create'ImageButton'
@@ -1179,10 +1179,14 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 
 	local destroyAlert = function()
 		AlertViewBacking:Destroy()
-		if okPressedFunc then okPressedFunc() end
+		if okPressedFunc then
+			okPressedFunc()
+		end
 		ContextActionService:UnbindCoreAction(removeId)
 		Game.GuiService.SelectedCoreObject = nil
-		if settingsHub then settingsHub:ShowBar() end
+		if settingsHub then
+			settingsHub:ShowBar()
+		end
 	end
 
 	local AlertViewButtonSize = UDim2.new(1, -20, 0, 60)
@@ -1253,7 +1257,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		NextSelectionLeft = this.SliderFrame,
 		NextSelectionRight = this.SliderFrame,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0,502,0,30),
+		Size = UDim2.new(0,502,0,50),
 		SelectionImageObject = noSelectionObject,
 		ZIndex = 2
 	};
