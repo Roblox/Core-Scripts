@@ -24,6 +24,8 @@ local MAX_UDIM_SIZE = 2^15 - 1
 local PHONE_SCREEN_WIDTH = 640
 local TABLET_SCREEN_WIDTH = 1024
 
+local FLOOD_CHECK_MESSAGE_COUNT = 7
+local FLOOD_CHECK_MESSAGE_INTERVAL = 15 -- This is in seconds
 
 local SCROLLBAR_THICKNESS = 7
 
@@ -102,23 +104,8 @@ local function GetTopBarFlag()
 	return topbarSuccess and topbarFlagValue == true
 end
 
-local function GetChatFloodCheckMessagesFlag()
-	local flagSuccess, flagValue = pcall(function() return settings():GetFVariable("LuaChatFloodCheckMessages") end)
-	return flagSuccess and tonumber(flagValue) or 7
-end
-
-local function GetChatFloodCheckIntervalFlag()
-	local flagSuccess, flagValue = pcall(function() return settings():GetFVariable("LuaChatFloodCheckInterval") end)
-	return flagSuccess and tonumber(flagValue) or 15
-end
-
 local function GetLuaChatFilteringFlag()
 	local flagSuccess, flagValue = pcall(function() return settings():GetFFlag("LuaChatFiltering") end)
-	return flagSuccess and flagValue == true
-end
-
-local function GetLuaChatPhoneFontSizeFlag()
-	local flagSuccess, flagValue = pcall(function() return settings():GetFFlag("LuaChatPhoneFontSize") end)
 	return flagSuccess and flagValue == true
 end
 
@@ -375,11 +362,7 @@ local function CreateChatMessage()
 	this.FadeRoutines = {}
 
 	function this:GetMessageFontSize(settings)
-		if GetLuaChatPhoneFontSizeFlag() then
-			return Util.IsSmallScreenSize() and settings.SmallScreenFontSize or settings.FontSize
-		else
-			return settings.FontSize
-		end
+		return Util.IsSmallScreenSize() and settings.SmallScreenFontSize or settings.FontSize
 	end
 
 	function this:OnResize()
@@ -1290,10 +1273,10 @@ local function CreateChatBarWidget(settings)
 			return false
 		end
 
-		while sentMessageTimeQueue[1] and tick() - sentMessageTimeQueue[1] > GetChatFloodCheckIntervalFlag() do
+		while sentMessageTimeQueue[1] and tick() - sentMessageTimeQueue[1] > FLOOD_CHECK_MESSAGE_INTERVAL do
 			table.remove(sentMessageTimeQueue, 1)
 		end
-		if #sentMessageTimeQueue > GetChatFloodCheckMessagesFlag() then
+		if #sentMessageTimeQueue > FLOOD_CHECK_MESSAGE_COUNT then
 			return true
 		end
 		return false
