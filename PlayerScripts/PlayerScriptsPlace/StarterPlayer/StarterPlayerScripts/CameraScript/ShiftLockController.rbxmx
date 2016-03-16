@@ -17,9 +17,8 @@
 	// Note: ContextActionService sinks keys, so until we allow binding to ContextActionService without sinking
 	// keys, this module will use UserInputService.
 --]]
-local ContextActionService = game:GetService('ContextActionService')
+
 local Players = game:GetService('Players')
-local StarterPlayer = game:GetService('StarterPlayer')
 local UserInputService = game:GetService('UserInputService')
 -- Settings and GameSettings are read only
 local Settings = UserSettings()	-- ignore warning
