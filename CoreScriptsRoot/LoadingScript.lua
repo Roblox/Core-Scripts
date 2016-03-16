@@ -50,10 +50,12 @@ local platform = UIS:GetPlatform()
 local useGameLoadedSuccess, useGameLoadedFlagValue = pcall(function() return settings():GetFFlag("UseGameLoadedInLoadingScript") end)
 local useGameLoadedToWait = (useGameLoadedSuccess and useGameLoadedFlagValue == true)
 
-local ConvertMyPlaceNameInXboxAppFlag = false
-do
-	local success, flagValue = pcall(function() return settings():GetFFlag("ConvertMyPlaceNameInXboxApp") end)
-	ConvertMyPlaceNameInXboxAppFlag = (success and flagValue == true)
+local function IsConvertMyPlaceNameInXboxAppEnabled()
+	if UIS:GetPlatform() == Enum.Platform.XBoxOne then
+		local success, flagValue = pcall(function() return settings():GetFFlag("ConvertMyPlaceNameInXboxApp") end)
+		return (success and flagValue == true)
+	end
+	return false
 end
 
 --
@@ -113,7 +115,7 @@ end
 
 function InfoProvider:GetGameName()
 	if GameAssetInfo ~= nil then
-		if ConvertMyPlaceNameInXboxAppFlag then
+		if IsConvertMyPlaceNameInXboxAppEnabled() then
 			return GetFilteredGameName(GameAssetInfo.Name, self:GetCreatorName())
 		else
 			return GameAssetInfo.Name

@@ -39,8 +39,14 @@ local chatWasVisible = false
 local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
 local useUserList = (userlistSuccess and userlistFlagValue == true)
 
-local playMyPlaceSuccess, playMyPlaceFlagValue = pcall(function() return settings():GetFFlag("XboxPlayMyPlace") end)
-local myPlayMyPlaceEnabled = (playMyPlaceSuccess and playMyPlaceFlagValue == true)
+
+local function IsPlayMyPlaceEnabled()
+	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		local playMyPlaceSuccess, playMyPlaceFlagValue = pcall(function() return settings():GetFFlag("XboxPlayMyPlace") end)
+		return (playMyPlaceSuccess and playMyPlaceFlagValue == true)
+	end
+	return false
+end
 
 
 --[[ CORE MODULES ]]
@@ -358,7 +364,7 @@ local function CreateSettingsHub()
 						inviteToGameFunc, {Enum.KeyCode.ButtonX})
 				end
 
-				if myPlayMyPlaceEnabled then
+				if IsPlayMyPlaceEnabled() then
 					spawn(function()
 						local PlatformService = nil
 						pcall(function() PlatformService = game:GetService('PlatformService') end)
@@ -484,7 +490,8 @@ local function CreateSettingsHub()
 				-usePageSize/2
 			)
 		end
-		screenSizeChangedCon = RobloxGui.Changed:connect(function(prop)
+		-- TODO: disconnect this event?
+		RobloxGui.Changed:connect(function(prop)
 			if prop == "AbsoluteSize" then
 				onScreenSizeChanged()
 			end
@@ -828,8 +835,6 @@ local function CreateSettingsHub()
 				end)
 			end
 
-			pcall(function() PlatformService.BlurIntensity = 10 end)
-
 			if customStartPage then
 				removeBottomBarBindings()
 				this:SwitchToPage(customStartPage, nil, 1, true)
@@ -881,7 +886,6 @@ local function CreateSettingsHub()
 			end
 
 			pcall(function() UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
-			pcall(function() PlatformService.BlurIntensity = 0 end)
 
 			clearMenuStack()
 			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab")
