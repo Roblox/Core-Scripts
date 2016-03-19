@@ -217,8 +217,8 @@ local function CreateCamera()
 	function this:UpdateMouseBehavior()
 		-- first time transition to first person mode or shiftlock
 		if isFirstPerson or self:GetShiftLock() then
+			pcall(function() GameSettings.RotationType = Enum.RotationType.CameraRelative end)
 			if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
-				pcall(function() GameSettings.RotationType = Enum.RotationType.CameraRelative end)
 				UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 			end
 		else
@@ -227,7 +227,7 @@ local function CreateCamera()
 				UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
 			else
 				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-			end	
+			end
 		end
 	end
 
@@ -294,25 +294,25 @@ local function CreateCamera()
 
 	function this:Update()
 	end
-	
+
 	function this:ApplyVRPosition()
 		--we only want this to happen in first person VR
 		local player = game.Players.LocalPlayer
-		if not player or not player.Character 
-				or not player.Character:FindFirstChild("HumanoidRootPart") 
+		if not player or not player.Character
+				or not player.Character:FindFirstChild("HumanoidRootPart")
 				or not player.Character.HumanoidRootPart:FindFirstChild("RootJoint") then
 			return
 		end
-		
+
 		if not this:IsInFirstPerson() then
-			local rootJoint = player.Character.HumanoidRootPart.RootJoint 
+			local rootJoint = player.Character.HumanoidRootPart.RootJoint
 			rootJoint.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
-			return 
+			return
 		end
-		
+
 		local vrFrame = UserInputService.UserHeadCFrame
 		local vrRotation = vrFrame - vrFrame.p
-		local rootJoint = player.Character.HumanoidRootPart.RootJoint 
+		local rootJoint = player.Character.HumanoidRootPart.RootJoint
 		rootJoint.C0 = CFrame.new(vrRotation:vectorToObjectSpace(vrFrame.p)) * CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
 	end
 
@@ -420,7 +420,7 @@ local function CreateCamera()
 		lastPos = lastPos or startPos
 		this.UserPanningTheCamera = true
 	end
-	
+
 	local function OnMousePanButtonReleased(input, processed)
 		this:UpdateMouseBehavior()
 		if not (isRightMouseDown or isMiddleMouseDown) then
@@ -433,7 +433,7 @@ local function CreateCamera()
 
 	local function OnMouse2Down(input, processed)
 		if processed then return end
-		
+
 		isRightMouseDown = true
 		OnMousePanButtonPressed(input, processed)
 	end
@@ -442,14 +442,14 @@ local function CreateCamera()
 		isRightMouseDown = false
 		OnMousePanButtonReleased(input, processed)
 	end
-	
+
 	local function OnMouse3Down(input, processed)
 		if processed then return end
-		
+
 		isMiddleMouseDown = true
 		OnMousePanButtonPressed(input, processed)
 	end
-	
+
 	local function OnMouse3Up(input, processed)
 		isMiddleMouseDown = false
 		OnMousePanButtonReleased(input, processed)
@@ -729,13 +729,13 @@ local function CreateCamera()
 				OnKeyUp(input, processed)
 			end
 		end)
-		
+
 		ShiftLockToggleConn = ShiftLockController.OnShiftLockToggled.Event:connect(function()
 			this:UpdateMouseBehavior()
 		end)
 
 		this.RotateInput = Vector2.new()
-		
+
 		local activateGamepad = nil
 		local function assignActivateGamepad()
 			local connectedGamepads = UserInputService:GetConnectedGamepads()
@@ -748,20 +748,20 @@ local function CreateCamera()
 					end
 				end
 			end
-			
+
 			if activateGamepad == nil then -- nothing is connected, at least set up for gamepad1
 				activateGamepad = Enum.UserInputType.Gamepad1
 			end
 		end
-		
+
 		GamepadConnectedConn = UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
 			if activateGamepad ~= gamepadEnum then return end
 			activateGamepad = nil
 			assignActivateGamepad()
 		end)
-	
+
 		GamepadDisconnectedConn = UserInputService.GamepadConnected:connect(function(gamepadEnum)
-			if activateGamepad == nil then 
+			if activateGamepad == nil then
 				assignActivateGamepad()
 			end
 		end)
@@ -824,7 +824,7 @@ local function CreateCamera()
 				end
 			end
 		end)
-		
+
 		local function OnCharacterAdded(newCharacter)
 			this:ZoomCamera(12.5)
 			local humanoid = findPlayerHumanoid(player)
