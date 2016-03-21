@@ -137,7 +137,10 @@ local function CreateTransparencyController()
 	end
 
 	function module:SetSubject(subject)
-		local character = subject and subject:IsA('Humanoid') and subject.Parent
+		local character = subject and subject.Parent
+		if subject and subject:IsA("VehicleSeat") then
+			character = subject.Occupant.Parent
+		end
 		if character then
 			SetupTransparency(character)
 		else
