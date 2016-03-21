@@ -9,7 +9,7 @@
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 
-local HasVRAPI = pcall(function() local _ = UserInputService.VREnabled end)
+local HasVRAPI = pcall(function() return UserInputService.VREnabled and UserInputService.UserHeadCFrame end)
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
@@ -301,6 +301,9 @@ local function CreateCamera()
 	end
 
 	function this:ApplyVRPosition()
+		if not HasVRAPI then
+			return
+		end
 		--we only want this to happen in first person VR
 		local player = game.Players.LocalPlayer
 		if not player or not player.Character 
