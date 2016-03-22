@@ -9,7 +9,7 @@
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 
-local HasVRAPI = pcall(function() local _ = UserInputService.VREnabled end)
+local HasVRAPI = pcall(function() return UserInputService.VREnabled and UserInputService.GetUserCFrame end)
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
@@ -63,6 +63,7 @@ local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
 local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
 
 local SEAT_OFFSET = Vector3.new(0,5,0)
+local VR_SEAT_OFFSET = Vector3.new(0, 4, 0)
 local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
 
 -- Reset the camera look vector when the camera is enabled for the first time
@@ -109,7 +110,11 @@ local function CreateCamera()
 		if cameraSubject then
 			if cameraSubject:IsA('VehicleSeat') then
 				local subjectCFrame = GetRenderCFrame(cameraSubject)
-				result = subjectCFrame.p + subjectCFrame:vectorToWorldSpace(SEAT_OFFSET)
+				local offset = SEAT_OFFSET
+				if HasVRAPI and UserInputService.VREnabled then
+					offset = VR_SEAT_OFFSET
+				end
+				result = subjectCFrame.p + subjectCFrame:vectorToWorldSpace(offset)
 			elseif cameraSubject:IsA('SkateboardPlatform') then
 				local subjectCFrame = GetRenderCFrame(cameraSubject)
 				result = subjectCFrame.p + SEAT_OFFSET
@@ -295,25 +300,31 @@ local function CreateCamera()
 	function this:Update()
 	end
 
-	function this:ApplyVRPosition()
+	function this:ApplyVRTransform()
+		if not (HasVRAPI and UserInputService.VREnabled) then
+			return
+		end
 		--we only want this to happen in first person VR
 		local player = game.Players.LocalPlayer
-		if not player or not player.Character
-				or not player.Character:FindFirstChild("HumanoidRootPart")
-				or not player.Character.HumanoidRootPart:FindFirstChild("RootJoint") then
+		if not (player and player.Character 
+				and player.Character:FindFirstChild("HumanoidRootPart") 
+				and player.Character.HumanoidRootPart:FindFirstChild("RootJoint")) then
 			return
 		end
-
-		if not this:IsInFirstPerson() then
-			local rootJoint = player.Character.HumanoidRootPart.RootJoint
+		
+		local camera = workspace.CurrentCamera
+		local cameraSubject = camera.CameraSubject
+		local isInVehicle = cameraSubject and cameraSubject:IsA('VehicleSeat')		
+		
+		if this:IsInFirstPerson() and not isInVehicle then
+			local vrFrame = UserInputService.UserHeadCFrame
+			local vrRotation = vrFrame - vrFrame.p
+			local rootJoint = player.Character.HumanoidRootPart.RootJoint 
+			rootJoint.C0 = CFrame.new(vrRotation:vectorToObjectSpace(vrFrame.p)) * CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
+		else
+			local rootJoint = player.Character.HumanoidRootPart.RootJoint 
 			rootJoint.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
-			return
 		end
-
-		local vrFrame = UserInputService.UserHeadCFrame
-		local vrRotation = vrFrame - vrFrame.p
-		local rootJoint = player.Character.HumanoidRootPart.RootJoint
-		rootJoint.C0 = CFrame.new(vrRotation:vectorToObjectSpace(vrFrame.p)) * CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
 	end
 
 	---- Input Events ----
