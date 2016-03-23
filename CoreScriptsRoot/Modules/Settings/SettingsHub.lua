@@ -1014,11 +1014,10 @@ local function CreateSettingsHub()
 	-- connect back button on android
 	GuiService.ShowLeaveConfirmation:connect(function()
 		if #this.MenuStack == 0 then
-			this:SwitchToPage(this.LeaveGamePage, nil, 1)
 			this:SetVisibility(true)
+			this:SwitchToPage(this.LeaveGamePage, nil, 1)
 		else
-			this:SetVisibility(false)
-			this:PopMenu()
+			this:PopMenu(false, true)
 		end
 	end)
 
