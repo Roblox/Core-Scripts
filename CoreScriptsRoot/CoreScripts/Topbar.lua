@@ -66,8 +66,19 @@ while Player == nil do
 	Player = PlayersService.LocalPlayer
 end
 
-local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
+local UserInputService = game:GetService("UserInputService")
+local UISChanged
+local function OnVREnabled(prop)
+	if prop == "VREnabled" and UserInputService.VREnabled then
+		topbarEnabled = false	
+		topbarEnabledChangedEvent:Fire(false)
+		UISChanged:disconnect()
+	end
+end
+UISChanged = UserInputService.Changed:connect(OnVREnabled)
+OnVREnabled("VREnabled")
 
+local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 

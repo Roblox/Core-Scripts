@@ -1079,7 +1079,7 @@ end
 local function OnCoreGuiChanged(coreGuiType, enabled)
 	-- Check for enabling/disabling the whole thing
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
-		enabled = enabled and topbarEnabled
+		enabled = enabled and topbarEnabled and not UserInputService.VREnabled
 		WholeThingEnabled = enabled
 		MainFrame.Visible = enabled
 
@@ -1539,5 +1539,18 @@ StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
 local backpackType, healthType = Enum.CoreGuiType.Backpack, Enum.CoreGuiType.Health
 OnCoreGuiChanged(backpackType, StarterGui:GetCoreGuiEnabled(backpackType))
 OnCoreGuiChanged(healthType, StarterGui:GetCoreGuiEnabled(healthType))
+
+local UISChanged
+local function OnVREnabled(prop)
+	if prop == "VREnabled" and UserInputService.VREnabled then
+		OnCoreGuiChanged(backpackType, StarterGui:GetCoreGuiEnabled(backpackType))
+		OnCoreGuiChanged(healthType, StarterGui:GetCoreGuiEnabled(healthType))
+		spawn(function() require(RobloxGui.Modules.BackpackScript3D) end)
+		UISChanged:disconnect()
+		UISChanged = nil
+	end
+end
+UISChanged = UserInputService.Changed:connect(OnVREnabled)
+OnVREnabled("VREnabled")
 
 return BackpackScript
