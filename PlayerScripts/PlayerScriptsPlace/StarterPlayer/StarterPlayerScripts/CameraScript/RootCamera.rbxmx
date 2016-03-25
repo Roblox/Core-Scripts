@@ -83,7 +83,8 @@ local function CreateCamera()
 	local isMiddleMouseDown = false
 	this.RotateInput = Vector2.new()
 
-	this.currentHeight = 0
+	this.lastSubject = nil
+	this.lastSubjectPosition = Vector3.new(0, 0, 0)
 
 	function this:GetShiftLock()
 		return ShiftLockController:IsShiftLocked()
@@ -124,14 +125,20 @@ local function CreateCamera()
 			elseif cameraSubject:IsA('Model') then
 				result = cameraSubject:GetModelCFrame().p
 			elseif cameraSubject:IsA('Humanoid') then
-				local humanoidRootPart = cameraSubject.Torso
-				if humanoidRootPart and humanoidRootPart:IsA('BasePart') then
-					local subjectCFrame = GetRenderCFrame(humanoidRootPart)
-					result = subjectCFrame.p +
-						subjectCFrame:vectorToWorldSpace(HEAD_OFFSET + cameraSubject.CameraOffset)
+				if cameraSubject:GetState() == Enum.HumanoidStateType.Dead and cameraSubject == this.lastSubject and HasVRAPI and UserInputService.VREnabled then
+					result = this.lastSubjectPosition
+				else
+					local humanoidRootPart = cameraSubject.Torso
+					if humanoidRootPart and humanoidRootPart:IsA('BasePart') then
+						local subjectCFrame = GetRenderCFrame(humanoidRootPart)
+						result = subjectCFrame.p +
+							subjectCFrame:vectorToWorldSpace(HEAD_OFFSET + cameraSubject.CameraOffset)
+					end
 				end
 			end
 		end
+		this.lastSubject = cameraSubject
+		this.lastSubjectPosition = result
 		return result
 	end
 
