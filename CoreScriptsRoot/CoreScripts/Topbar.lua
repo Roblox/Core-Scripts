@@ -66,10 +66,12 @@ while Player == nil do
 	Player = PlayersService.LocalPlayer
 end
 
+local VREnabled = false
 local UserInputService = game:GetService("UserInputService")
 local UISChanged
 local function OnVREnabled(prop)
 	if prop == "VREnabled" and UserInputService.VREnabled then
+		VREnabled = true
 		topbarEnabled = false	
 		topbarEnabledChangedEvent:Fire(false)
 		UISChanged:disconnect()
@@ -410,7 +412,7 @@ local function CreateUsernameHealthMenuItem()
 	--------------
 
 	local function AnimateHurtOverlay()
-		if hurtOverlay then
+		if hurtOverlay and not VREnabled then
 			local newSize = UDim2.new(20, 0, 20, 0)
 			local newPos = UDim2.new(-10, 0, -10, 0)
 
