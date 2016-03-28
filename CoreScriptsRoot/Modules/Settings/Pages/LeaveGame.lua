@@ -88,6 +88,16 @@ local function Initialize()
 	else
 		this.LeaveGameButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, -30)
 	end
+	this.LeaveGameButton.InputBegan:connect(function(inputObject)
+		if inputObject.UserInputType == Enum.UserInputType.Touch then
+			this.LeaveGameButton.ImageColor3 = Color3.new(0.6,0.6,0.6)
+		end
+	end)
+	this.LeaveGameButton.InputEnded:connect(function(inputObject)
+		if inputObject.UserInputType == Enum.UserInputType.Touch then
+			this.LeaveGameButton.ImageColor3 = Color3.new(1,1,1)
+		end
+	end)
 	this.LeaveGameButton.Parent = leaveGameText
 
 
