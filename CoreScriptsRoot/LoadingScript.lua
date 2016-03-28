@@ -43,12 +43,8 @@ local destroyedLoadingGui = false
 local hasReplicatedFirstElements = false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
-local isTenFootInterface = false
-pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
+local isTenFootInterface = guiService:IsTenFootInterface()
 local platform = UIS:GetPlatform()
-
-local useGameLoadedSuccess, useGameLoadedFlagValue = pcall(function() return settings():GetFFlag("UseGameLoadedInLoadingScript") end)
-local useGameLoadedToWait = (useGameLoadedSuccess and useGameLoadedFlagValue == true)
 
 local function IsConvertMyPlaceNameInXboxAppEnabled()
 	if UIS:GetPlatform() == Enum.Platform.XBoxOne then
@@ -734,22 +730,15 @@ function handleFinishedReplicating()
 	hasReplicatedFirstElements = (#game:GetService("ReplicatedFirst"):GetChildren() > 0)
 
 	if not hasReplicatedFirstElements then
-		if useGameLoadedToWait then
-			if game:IsLoaded() then
-				handleRemoveDefaultLoadingGui()
-			else
-				local gameLoadedCon = nil
-				gameLoadedCon = game.Loaded:connect(function()
-					gameLoadedCon:disconnect()
-					gameLoadedCon = nil
-					handleRemoveDefaultLoadingGui()
-				end)
-			end
-		else
-			while game:GetService("ContentProvider").RequestQueueSize > 0 do
-				wait()
-			end
+		if game:IsLoaded() then
 			handleRemoveDefaultLoadingGui()
+		else
+			local gameLoadedCon = nil
+			gameLoadedCon = game.Loaded:connect(function()
+				gameLoadedCon:disconnect()
+				gameLoadedCon = nil
+				handleRemoveDefaultLoadingGui()
+			end)
 		end
 	else
 		wait(5) -- make sure after 5 seconds we remove the default gui, even if the user doesn't
