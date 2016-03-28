@@ -36,10 +36,7 @@ if useTopBar then
 	spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
 end
 
-local luaBubbleChatSuccess, luaBubbleChatFlagValue = pcall(function() return settings():GetFFlag("LuaBasedBubbleChat") end)
-if luaBubbleChatSuccess and luaBubbleChatFlagValue then
-	scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)
-end
+scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)
 
 -- Purchase Prompt Script
 scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", RobloxGui)
