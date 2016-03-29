@@ -55,8 +55,6 @@ local function CreateClassicCamera()
 	local ySensitivity = 0.8
 	local lastVelocity = nil
 	
-	local lastVRRotation = 0
-	local vrRotateKeyCooldown = {}
 	
 	local lastUpdate = tick()
 	module.LastUserPanCamera = tick()

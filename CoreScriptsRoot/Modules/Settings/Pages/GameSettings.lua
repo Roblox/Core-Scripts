@@ -54,7 +54,8 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
-local HasVRAPI = pcall(function() return UserInputService.VREnabled and UserInputService.GetUserCFrame end)
+local HasVRAPI = false
+pcall(function() HasVRAPI = UserInputService.GetUserCFrame ~= nil end)
 local PageInstance = nil
 local LocalPlayer = game.Players.LocalPlayer
 local platform = UserInputService:GetPlatform()
@@ -296,7 +297,7 @@ local function Initialize()
 		------------------
 		------------------ VR Camera Mode -----------------------
 
-		if HasVRAPI then
+		if HasVRAPI and UserInputService.VREnabled then
 			local VR_ROTATION_INTENSITY_OPTIONS = {"High", "Low", "Smooth"}
 			local VRRotationIntensity = VR_ROTATION_INTENSITY_OPTIONS[1]
 

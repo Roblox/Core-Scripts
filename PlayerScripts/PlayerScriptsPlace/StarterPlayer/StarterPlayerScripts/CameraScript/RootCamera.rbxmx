@@ -10,7 +10,8 @@ local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 
-local HasVRAPI = pcall(function() return UserInputService.VREnabled and UserInputService.GetUserCFrame end)
+local HasVRAPI = false
+pcall(function() HasVRAPI = UserInputService.GetUserCFrame ~= nil end)
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
@@ -60,6 +61,11 @@ local MAX_Y = math.rad(80)
 
 local VR_ANGLE = math.rad(15)
 
+local VR_LOW_INTENSITY_ROTATION = Vector2.new(math.rad(15),0)
+local VR_HIGH_INTENSITY_ROTATION = Vector2.new(math.rad(45),0)
+local VR_LOW_INTENSITY_REPEAT = 0.1
+local VR_HIGH_INTENSITY_REPEAT = 0.4
+
 local ZERO_VECTOR2 = Vector2.new(0,0)
 
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
@@ -76,39 +82,33 @@ local function GetRenderCFrame(part)
 	return part:GetRenderCFrame()
 end
 
-
-
 local function CreateCamera()
 	local this = {}
 
 
 	function this:GetActivateValue()
-		return 0.7 
+		return 0.7
 	end
 
-	function this:GetRotateAmountValue()		
-		if self:ShouldUseVRRotation() then
-			local vrRotationIntensity = StarterGui:GetCore("VRRotationIntensity")
-			if vrRotationIntensity then
-				if vrRotationIntensity == "Low" then
-					return Vector2.new(math.rad(15),0)
-				elseif vrRotationIntensity == "High" then
-					return Vector2.new(math.rad(45),0)
-				end
+	function this:GetRotateAmountValue(vrRotationIntensity)
+		vrRotationIntensity = vrRotationIntensity or StarterGui:GetCore("VRRotationIntensity")
+		if vrRotationIntensity then
+			if vrRotationIntensity == "Low" then
+				return VR_LOW_INTENSITY_ROTATION
+			elseif vrRotationIntensity == "High" then
+				return VR_HIGH_INTENSITY_ROTATION
 			end
 		end
 		return ZERO_VECTOR2
 	end
 
-	function this:GetRepeatDelayValue()
-		if self:ShouldUseVRRotation() then
-			local vrRotationIntensity = StarterGui:GetCore("VRRotationIntensity")
-			if vrRotationIntensity then
-				if vrRotationIntensity == "Low" then
-					return 0.1
-				elseif vrRotationIntensity == "High" then
-					return 0.4
-				end
+	function this:GetRepeatDelayValue(vrRotationIntensity)
+		vrRotationIntensity = vrRotationIntensity or StarterGui:GetCore("VRRotationIntensity")
+		if vrRotationIntensity then
+			if vrRotationIntensity == "Low" then
+				return VR_LOW_INTENSITY_REPEAT
+			elseif vrRotationIntensity == "High" then
+				return VR_HIGH_INTENSITY_REPEAT
 			end
 		end
 		return 0
@@ -375,59 +375,58 @@ local function CreateCamera()
 		end
 	end
 
-	local functionExists = true
+	local vrRotationIntensityExists = true
 	function this:ShouldUseVRRotation()
-		if not functionExists then return false end
+		if not vrRotationIntensityExists then return false end
 		
 		local success, vrRotationIntensity = pcall(function() return StarterGui:GetCore("VRRotationIntensity") end)
-		if vrRotationIntensity == nil then
-			functionExists = false
+		if not success or vrRotationIntensity == nil then
+			vrRotationIntensityExists = false
+			return false
 		end
+		
 		return HasVRAPI and UserInputService.VREnabled and success and vrRotationIntensity ~= nil and vrRotationIntensity ~= "Smooth"	
 	end
 
 	function this:GetVRRotationInput()
 		local vrRotateSum = ZERO_VECTOR2
 		
-
-		if self:ShouldUseVRRotation() then
-			local vrRotationIntensity = StarterGui:GetCore("VRRotationIntensity")
-		
-			local vrGamepadRotation = self.GamepadPanningCamera or ZERO_VECTOR2
-			local delayExpired = (tick() - lastVRRotation) >= self:GetRepeatDelayValue()
-			
-			if math.abs(vrGamepadRotation.x) >= self:GetActivateValue() then
-				if (delayExpired or not vrRotateKeyCooldown[Enum.KeyCode.Thumbstick2]) then
-					local sign = 1
-					if vrGamepadRotation.x < 0 then
-						sign = -1
-					end
-					vrRotateSum = vrRotateSum + self:GetRotateAmountValue() * sign
-					vrRotateKeyCooldown[Enum.KeyCode.Thumbstick2] = true
-				end
-			elseif math.abs(vrGamepadRotation.x) < self:GetActivateValue() - 0.1 then
-				vrRotateKeyCooldown[Enum.KeyCode.Thumbstick2] = nil
-			end
-			if self.TurningLeft then
-				if delayExpired or not vrRotateKeyCooldown[Enum.KeyCode.Left] then 
-					vrRotateSum = vrRotateSum - self:GetRotateAmountValue()
-					vrRotateKeyCooldown[Enum.KeyCode.Left] = true
-				end
-			else
-				vrRotateKeyCooldown[Enum.KeyCode.Left] = nil
-			end
-			if self.TurningRight then
-				if (delayExpired or not vrRotateKeyCooldown[Enum.KeyCode.Right]) then
-					vrRotateSum = vrRotateSum + self:GetRotateAmountValue()
-					vrRotateKeyCooldown[Enum.KeyCode.Right] = true
-				end
-			else
-				vrRotateKeyCooldown[Enum.KeyCode.Right] = nil
-			end
+		local vrRotationIntensity = StarterGui:GetCore("VRRotationIntensity")
 	
-			if vrRotateSum ~= ZERO_VECTOR2 then
-				lastVRRotation = tick()
+		local vrGamepadRotation = self.GamepadPanningCamera or ZERO_VECTOR2
+		local delayExpired = (tick() - lastVRRotation) >= self:GetRepeatDelayValue(vrRotationIntensity)
+		
+		if math.abs(vrGamepadRotation.x) >= self:GetActivateValue() then
+			if (delayExpired or not vrRotateKeyCooldown[Enum.KeyCode.Thumbstick2]) then
+				local sign = 1
+				if vrGamepadRotation.x < 0 then
+					sign = -1
+				end
+				vrRotateSum = vrRotateSum + self:GetRotateAmountValue(vrRotationIntensity) * sign
+				vrRotateKeyCooldown[Enum.KeyCode.Thumbstick2] = true
 			end
+		elseif math.abs(vrGamepadRotation.x) < self:GetActivateValue() - 0.1 then
+			vrRotateKeyCooldown[Enum.KeyCode.Thumbstick2] = nil
+		end
+		if self.TurningLeft then
+			if delayExpired or not vrRotateKeyCooldown[Enum.KeyCode.Left] then 
+				vrRotateSum = vrRotateSum - self:GetRotateAmountValue(vrRotationIntensity)
+				vrRotateKeyCooldown[Enum.KeyCode.Left] = true
+			end
+		else
+			vrRotateKeyCooldown[Enum.KeyCode.Left] = nil
+		end
+		if self.TurningRight then
+			if (delayExpired or not vrRotateKeyCooldown[Enum.KeyCode.Right]) then
+				vrRotateSum = vrRotateSum + self:GetRotateAmountValue(vrRotationIntensity)
+				vrRotateKeyCooldown[Enum.KeyCode.Right] = true
+			end
+		else
+			vrRotateKeyCooldown[Enum.KeyCode.Right] = nil
+		end
+
+		if vrRotateSum ~= ZERO_VECTOR2 then
+			lastVRRotation = tick()
 		end
 		
 		return vrRotateSum
