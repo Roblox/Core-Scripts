@@ -1,7 +1,7 @@
 --[[
 		Filename: GameSettings.lua
 		Written by: jeditkacheff
-		Version 1.0
+		Version 1.1
 		Description: Takes care of the Game Settings Tab in Settings Menu
 --]]
 
@@ -13,6 +13,7 @@ local UserInputService = game:GetService("UserInputService")
 local PlatformService = nil 
 pcall(function() PlatformService = game:GetService("PlatformService") end)
 local ContextActionService = game:GetService("ContextActionService")
+local StarterGui = game:GetService("StarterGui")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
@@ -53,6 +54,7 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+local HasVRAPI = pcall(function() return UserInputService.VREnabled and UserInputService.GetUserCFrame end)
 local PageInstance = nil
 local LocalPlayer = game.Players.LocalPlayer
 local platform = UserInputService:GetPlatform()
@@ -287,6 +289,31 @@ local function Initialize()
 					GameSettings.ComputerCameraMovementMode = newEnumSetting
 				end
 			end)
+		end
+
+
+		------------------------------------------------------
+		------------------
+		------------------ VR Camera Mode -----------------------
+
+		if HasVRAPI then
+			local VR_ROTATION_INTENSITY_OPTIONS = {"High", "Low", "Smooth"}
+			local VRRotationIntensity = VR_ROTATION_INTENSITY_OPTIONS[1]
+
+			if utility:IsSmallTouchScreen() then
+				this.VRRotationFrame, 
+				this.VRRotationLabel,
+				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, 1)
+			else
+				this.VRRotationFrame, 
+				this.VRRotationLabel,
+				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, 1, 3)
+			end
+
+			StarterGui:RegisterGetCore("VRRotationIntensity",
+				function()
+					return VR_ROTATION_INTENSITY_OPTIONS[this.VRRotationMode.CurrentIndex] or VR_ROTATION_INTENSITY_OPTIONS[1]
+				end)
 		end
 
 		------------------------------------------------------

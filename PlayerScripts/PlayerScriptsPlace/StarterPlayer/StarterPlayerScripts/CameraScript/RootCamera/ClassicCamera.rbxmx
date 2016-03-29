@@ -9,8 +9,10 @@
 local UserInputService = game:GetService('UserInputService')
 local RootCameraCreator = require(script.Parent)
 
+
 local UP_VECTOR = Vector3.new(0, 1, 0)
 local XZ_VECTOR = Vector3.new(1,0,1)
+local ZERO_VECTOR2 = Vector2.new(0,0)
 
 local VR_PITCH_FRACTION = 0.25
 
@@ -49,9 +51,12 @@ local function CreateClassicCamera()
 	local currentSpeed = 0
 	local maxSpeed = 0.1
 	local thumbstickSensitivity = 1
-	local lastThumbstickPos = Vector2.new(0,0)
+	local lastThumbstickPos = ZERO_VECTOR2
 	local ySensitivity = 0.8
 	local lastVelocity = nil
+	
+	local lastVRRotation = 0
+	local vrRotateKeyCooldown = {}
 	
 	local lastUpdate = tick()
 	module.LastUserPanCamera = tick()
@@ -72,23 +77,29 @@ local function CreateClassicCamera()
 		end	
 		
 		if lastUpdate then
-			-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
-			local delta = math.min(0.1, now - lastUpdate)
-			local angle = 0
-			if not (isInVehicle or isOnASkateboard) then
-				angle = angle + (self.TurningLeft and -120 or 0)
-				angle = angle + (self.TurningRight and 120 or 0)
-			end
-			
 			local gamepadRotation = self:UpdateGamepad()
-			if gamepadRotation ~= Vector2.new(0,0) then
-				userPanningTheCamera = true
-				self.RotateInput = self.RotateInput + (gamepadRotation * delta)
-			end
-					
-			if angle ~= 0 then
-				userPanningTheCamera = true
-				self.RotateInput = self.RotateInput + Vector2.new(math.rad(angle * delta), 0)
+			
+			if self:ShouldUseVRRotation() then				
+				self.RotateInput = self.RotateInput + self:GetVRRotationInput()
+			else
+				-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
+				local delta = math.min(0.1, now - lastUpdate)
+				
+				if gamepadRotation ~= ZERO_VECTOR2 then
+					userPanningTheCamera = true
+					self.RotateInput = self.RotateInput + (gamepadRotation * delta)
+				end
+
+				local angle = 0
+				if not (isInVehicle or isOnASkateboard) then
+					angle = angle + (self.TurningLeft and -120 or 0)
+					angle = angle + (self.TurningRight and 120 or 0)
+				end
+				
+				if angle ~= 0 then
+					self.RotateInput = self.RotateInput +  Vector2.new(math.rad(angle * delta), 0)
+					userPanningTheCamera = true
+				end
 			end
 		end
 
@@ -151,7 +162,7 @@ local function CreateClassicCamera()
 			end
 			
 			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
-			self.RotateInput = Vector2.new()
+			self.RotateInput = ZERO_VECTOR2
 
 			camera.Focus = CFrame.new(subjectPosition)
 			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p) + Vector3.new(0, self:GetCameraHeight(), 0)

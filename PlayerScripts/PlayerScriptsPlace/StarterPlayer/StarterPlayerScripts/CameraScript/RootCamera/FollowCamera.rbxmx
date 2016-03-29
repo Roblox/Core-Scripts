@@ -64,24 +64,29 @@ local function CreateFollowCamera()
 		end
 		
 		if lastUpdate then
-			-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
-			local delta = math.min(0.1, now - lastUpdate)
-			local angle = 0
-			-- NOTE: Traditional follow camera does not rotate with arrow keys
-			if not (isInVehicle or isOnASkateboard) then
-				angle = angle + (self.TurningLeft and -120 or 0)
-				angle = angle + (self.TurningRight and 120 or 0)
-			end
-
-			local gamepadRotation = self:UpdateGamepad()
-			if gamepadRotation ~= Vector2.new(0,0) then
-				userPanningTheCamera = true				
-				self.RotateInput = self.RotateInput + (gamepadRotation * delta)
-			end
 			
-			if angle ~= 0 then
-				userPanningTheCamera = true
-				self.RotateInput = self.RotateInput + Vector2.new(math.rad(angle * delta), 0)
+			if self:ShouldUseVRRotation() then				
+				self.RotateInput = self.RotateInput + self:GetVRRotationInput()
+			else
+				-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
+				local delta = math.min(0.1, now - lastUpdate)
+				local angle = 0
+				-- NOTE: Traditional follow camera does not rotate with arrow keys
+				if not (isInVehicle or isOnASkateboard) then
+					angle = angle + (self.TurningLeft and -120 or 0)
+					angle = angle + (self.TurningRight and 120 or 0)
+				end
+	
+				local gamepadRotation = self:UpdateGamepad()
+				if gamepadRotation ~= Vector2.new(0,0) then
+					userPanningTheCamera = true				
+					self.RotateInput = self.RotateInput + (gamepadRotation * delta)
+				end
+				
+				if angle ~= 0 then
+					userPanningTheCamera = true
+					self.RotateInput = self.RotateInput + Vector2.new(math.rad(angle * delta), 0)
+				end
 			end
 		end
 		
