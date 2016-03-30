@@ -23,6 +23,7 @@ local topbarEnabled = false
 local player = game.Players.LocalPlayer
 local currentHumanoid = nil
 local CoreGui = game:GetService('CoreGui')
+local ContextActionService = game:GetService("ContextActionService")
 
 local hopperbinPart = Instance.new("Part", workspace.CurrentCamera)
 hopperbinPart.Transparency = 1
@@ -109,6 +110,33 @@ local function SetTransparency(transparency)
 	healthbarFront.BackgroundTransparency = transparency
 end
 
+local function OnHotbarEquipPrimary(actionName, state, obj)
+	if state ~= Enum.UserInputState.Begin then
+		return
+	end
+	for tool, slot in pairs(Tools) do
+		if slot.hovered then
+			slot.OnClick()
+		end
+	end
+end
+
+local jumpActionSelectEnabled = false
+local function EnableJumpActionSelect(enable)
+	if enable == jumpActionSelectEnabled then
+		return
+	end
+	if not backpackEnabled then
+		enable = false
+	end
+	jumpActionSelectEnabled = enable
+	if enable then
+		ContextActionService:BindAction("HotbarEquipPrimary", OnHotbarEquipPrimary, false, Enum.PlayerActions.CharacterJump, Enum.KeyCode.ButtonA)
+	else
+		ContextActionService:UnbindAction("HotbarEquipPrimary")
+	end
+end
+
 local function AddTool(tool)
 	if Tools[tool] then
 		return
@@ -117,7 +145,8 @@ local function AddTool(tool)
 	local slot = {}
 	Tools[tool] = slot
 	table.insert(ToolsList, tool)
-	
+
+	slot.hovered = false
 	slot.tool = tool
 	slot.icon = Instance.new("ImageButton", toolsFrame)
 	slot.icon.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
@@ -125,8 +154,8 @@ local function AddTool(tool)
 	slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
 	slot.icon.BorderColor3 = SLOT_BORDER_COLOR
 	slot.icon.Image = tool.TextureId
-	
-	slot.icon.MouseButton1Click:connect(function()
+
+	slot.OnClick = function()
 		if not player.Character then return end
 		local humanoid = player.Character:FindFirstChild("Humanoid")
 		if not humanoid then return end
@@ -136,12 +165,18 @@ local function AddTool(tool)
 		if in_backpack then
 			humanoid:EquipTool(tool)
 		end
-	end)
+	end
+	
+	slot.icon.MouseButton1Click:connect(slot.OnClick)
 	slot.OnEnter = function()
 		slot.icon.BorderSizePixel = SLOT_BORDER_HOVER_SIZE
+		slot.hovered = true
+		EnableJumpActionSelect(true)
 	end
 	slot.OnLeave = function()
 		slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
+		slot.hovered = false
+		EnableJumpActionSelect(false)
 	end
 --	slot.icon.MouseEnter:connect(slot.OnEnter)
 --	slot.icon.MouseLeave:connect(slot.OnLeave)
@@ -305,11 +340,16 @@ game:GetService("RunService"):BindToRenderStep("Cursor3D", Enum.RenderPriority.L
 	local px = cursor.AbsolutePosition.X + cursor.AbsoluteSize.X * 0.5
 	local py = cursor.AbsolutePosition.Y + cursor.AbsoluteSize.Y * 0.5
 	for i, v in pairs(Tools) do
-		v.OnLeave()
 		local ix = px - v.icon.AbsolutePosition.X
 		local iy = py - v.icon.AbsolutePosition.Y
 		if ix > 0 and ix < v.icon.AbsoluteSize.X and iy > 0 and iy < v.icon.AbsoluteSize.Y then
-			v.OnEnter()
+			if not v.hovered then
+				v.OnEnter()
+			end
+		else
+			if v.hovered then
+				v.OnLeave()
+			end
 		end
 	end
 	------------------------------------------------------
@@ -361,10 +401,10 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
 		backpackEnabled = enabled
 		if enabled then
-			game:GetService("ContextActionService"):BindCoreAction("HotbarEquip2", OnHotbarEquip, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
+			ContextActionService:BindCoreAction("HotbarEquip2", OnHotbarEquip, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
 			toolsFrame.Parent = hopperbinGUI --TODO: UPDATE TO NEW PARENT WHEN AVAILABLE
 		else
-			game:GetService("ContextActionService"):UnbindCoreAction("HotbarEquip2")
+			ContextActionService:UnbindCoreAction("HotbarEquip2")
 			toolsFrame.Parent = nil
 		end
 	end
