@@ -10,6 +10,10 @@ local HOPPERBIN_ANGLE = math.rad(-45)
 local HOPPERBIN_ROTATION = CFrame.Angles(HOPPERBIN_ANGLE, 0, 0)
 local HOPPERBIN_OFFSET = Vector3.new(0, 0, -5)
 
+local HEALTHBAR_SPACE = 10
+local HEALTHBAR_WIDTH = 80
+local HEALTHBAR_HEIGHT = 3
+
 local Tools = {}
 local ToolsList = {}
 
@@ -17,6 +21,7 @@ local BackpackScript = {}
 local topbarEnabled = false
 
 local player = game.Players.LocalPlayer
+local currentHumanoid = nil
 local CoreGui = game:GetService('CoreGui')
 
 local hopperbinPart = Instance.new("Part", workspace.CurrentCamera)
@@ -28,33 +33,70 @@ local hopperbinGUI = Instance.new("SurfaceGui", CoreGui)
 hopperbinGUI.Adornee = hopperbinPart
 hopperbinGUI.ToolPunchThroughDistance = 1000
 hopperbinGUI.Name = "HopperBinGUI"
+local toolsFrame = Instance.new("Frame", hopperbinGUI)
+toolsFrame.Size = UDim2.new(1, 0, 0, ICON_SIZE)
+toolsFrame.Position = UDim2.new(0, 0, 0, HEALTHBAR_SPACE)
+toolsFrame.BackgroundTransparency = 1
+
+local healthbarBack = Instance.new("Frame", hopperbinGUI)
+healthbarBack.BackgroundColor3 = Color3.new(1, 1, 1)
+healthbarBack.BorderSizePixel = 0
+healthbarBack.Name = "HealthbarBack"
+local healthbarFront = Instance.new("Frame", healthbarBack)
+healthbarFront.BorderSizePixel = 0
+healthbarFront.Size = UDim2.new(1, 0, 1, 0)
+healthbarFront.Position = UDim2.new(0, 0, 0, 0)
+healthbarFront.BackgroundColor3 = Color3.new(0, 1, 0)
+healthbarFront.Name = "HealthbarFront"
+
+local GREEN_COLOR = Color3.new(0.2, 1, 0.2)
+local RED_COLOR = Color3.new(1, 0.2, 0.2)
+local YELLOW_COLOR = Color3.new(1, 1, 0.2)
 
 local verticalRange = math.rad(0)
 local horizontalRange = math.rad(0)
 
 local backpackEnabled = true
+local healthbarEnabled = true
 
 local function UpdateLayout()
 	local width, height = 100, 100
 	local borderSize = (ICON_SPACING - ICON_SIZE) / 2	
 	
 	local x = borderSize
+	local y = 0
 	for _, tool in ipairs(ToolsList) do
 		local slot = Tools[tool]
 		if slot then
-			slot.icon.Position = UDim2.new(0, x, 0, 0)
+			slot.icon.Position = UDim2.new(0, x, 0, y)
 			x = x + ICON_SPACING
 		end
 	end
 	
 	width = #ToolsList * ICON_SPACING
-	height = ICON_SIZE
+	height = ICON_SIZE + HEALTHBAR_SPACE
 	
 	hopperbinGUI.CanvasSize = Vector2.new(width, height)
 	hopperbinPart.Size = Vector3.new(width / PIXELS_PER_STUD, height / PIXELS_PER_STUD, 1)	
+
+	healthbarBack.Position = UDim2.new(0.5, -HEALTHBAR_WIDTH / 2, 0, (HEALTHBAR_SPACE - HEALTHBAR_HEIGHT) / 2)
+	healthbarBack.Size = UDim2.new(0, HEALTHBAR_WIDTH, 0, HEALTHBAR_HEIGHT)
 	
 	verticalRange = math.atan(hopperbinPart.Size.Y / (2 * HOPPERBIN_OFFSET.Z)) + math.rad(30) * 2
 	horizontalRange = math.atan(hopperbinPart.Size.X / (2 * HOPPERBIN_OFFSET.Z)) - math.rad(20) * 2
+end
+
+local function UpdateHealth(humanoid)
+	local percentHealth = humanoid.Health / humanoid.MaxHealth
+	if percentHealth ~= percentHealth then
+		percentHealth = 1
+		healthbarFront.BackgroundColor3 = YELLOW_COLOR
+	elseif percentHealth > 0.25  then		
+		healthbarFront.BackgroundColor3 = GREEN_COLOR
+	else
+		healthbarFront.BackgroundColor3 = RED_COLOR
+	end
+	healthbarFront.Size = UDim2.new(percentHealth, 0, 1, 0)
 end
 
 local function SetTransparency(transparency)
@@ -62,6 +104,9 @@ local function SetTransparency(transparency)
 		v.icon.BackgroundTransparency = transparency + 0.5
 		v.icon.ImageTransparency = transparency
 	end
+
+	healthbarBack.BackgroundTransparency = transparency
+	healthbarFront.BackgroundTransparency = transparency
 end
 
 local function AddTool(tool)
@@ -74,7 +119,7 @@ local function AddTool(tool)
 	table.insert(ToolsList, tool)
 	
 	slot.tool = tool
-	slot.icon = Instance.new("ImageButton", hopperbinGUI)
+	slot.icon = Instance.new("ImageButton", toolsFrame)
 	slot.icon.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
 	slot.icon.BackgroundColor3 = Color3.new(0, 0, 0)
 	slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
@@ -104,9 +149,35 @@ local function AddTool(tool)
 	UpdateLayout()
 end
 
+local humanoidChangedEvent = nil
+local humanoidAncestryChangedEvent = nil
+local function RegisterHumanoid(humanoid)
+	currentHumanoid = humanoid
+	if humanoidChangedEvent then
+		humanoidChangedEvent:disconnect()
+		humanoidChangedEvent = nil
+	end
+	if humanoidAncestryChangedEvent then
+		humanoidAncestryChangedEvent:disconnect()
+		humanoidAncestryChangedEvent = nil
+	end
+	if humanoid then
+		humanoidChangedEvent = humanoid.HealthChanged:connect(function() UpdateHealth(humanoid) end)
+		humanoidAncestryChangedEvent = humanoid.AncestryChanged:connect(function(child, parent) 
+			if child == humanoid and parent ~= player.Character then
+				RegisterHumanoid(nil)
+			end
+		end)
+		UpdateHealth(humanoid)
+	end
+end
+
 local function OnChildAdded(child)
 	if child:IsA("Tool") or child:IsA("HopperBin") then
 		AddTool(child)
+	end
+	if child:IsA("Humanoid") and child.Parent == player.Character then
+		RegisterHumanoid(child)
 	end
 end
 
@@ -137,6 +208,14 @@ end
 
 local function OnCharacterAdded(character)
 	local backpack = player:WaitForChild("Backpack")
+
+	for i, v in ipairs(character:GetChildren()) do
+		if v:IsA("Humanoid") then
+			RegisterHumanoid(v)
+			break
+		end
+	end
+
 	for tool, v in pairs(Tools) do
 		RemoveTool(tool)
 	end
@@ -163,7 +242,7 @@ end
 local zeroVector = Vector3.new(0, 0, 0)
 local horizontalRotation = CFrame.new()
 game:GetService("RunService"):BindToRenderStep("HopperBin3D", Enum.RenderPriority.Last.Value, function()
-	if not backpackEnabled then
+	if not (backpackEnabled or healthbarEnabled) then
 		return
 	end
 	local cameraCFrame = workspace.CurrentCamera:GetRenderCFrame()
@@ -247,20 +326,22 @@ local function OnHotbarEquip(actionName, state, obj)
 	if not character then
 		return
 	end
-	local humanoid = character:FindFirstChild("Humanoid")
-	if not humanoid then
+	if not currentHumanoid then
 		return
 	end
 	if state ~= Enum.UserInputState.Begin then
 		return
 	end
+	if #ToolsList == 0 then
+		return
+	end
 	local current = 0
-	for i, v in pairs(Tools) do
-		if v.tool.Parent == character then
+	for i, v in pairs(ToolsList) do
+		if v.Parent == character then
 			current = i
 		end
 	end
-	humanoid:UnequipTools()
+	currentHumanoid:UnequipTools()
 	if obj.KeyCode == Enum.KeyCode.ButtonR1 then
 		current = current + 1
 		if current > #ToolsList then
@@ -272,7 +353,7 @@ local function OnHotbarEquip(actionName, state, obj)
 			current = #ToolsList
 		end
 	end
-	humanoid:EquipTool(Tools[current].tool)
+	currentHumanoid:EquipTool(ToolsList[current])
 end
 
 local function OnCoreGuiChanged(coreGuiType, enabled)
@@ -281,10 +362,19 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 		backpackEnabled = enabled
 		if enabled then
 			game:GetService("ContextActionService"):BindCoreAction("HotbarEquip2", OnHotbarEquip, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
-			hopperbinPart.Parent = workspace.CurrentCamera --TODO: UPDATE TO NEW PARENT WHEN AVAILABLE
+			toolsFrame.Parent = hopperbinGUI --TODO: UPDATE TO NEW PARENT WHEN AVAILABLE
 		else
 			game:GetService("ContextActionService"):UnbindCoreAction("HotbarEquip2")
-			hopperbinPart.Parent = nil
+			toolsFrame.Parent = nil
+		end
+	end
+
+	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
+		healthbarEnabled = enabled
+		if enabled then
+			healthbarBack.Parent = hopperbinGUI
+		else
+			healthbarBack.Parent = nil
 		end
 	end
 end
@@ -293,5 +383,8 @@ local StarterGui = game:GetService("StarterGui")
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
 OnCoreGuiChanged(Enum.CoreGuiType.Backpack, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack))
 OnCoreGuiChanged(Enum.CoreGuiType.Backpack, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.All))
+
+OnCoreGuiChanged(Enum.CoreGuiType.Health, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health))
+OnCoreGuiChanged(Enum.CoreGuiType.Health, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.All))
 
 return BackpackScript
