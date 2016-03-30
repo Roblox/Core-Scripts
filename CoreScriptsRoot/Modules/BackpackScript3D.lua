@@ -1,3 +1,5 @@
+--BackpackScript3D: VR port of backpack interface using a 3D panel
+--written by 0xBAADF00D
 local ICON_SIZE = 48
 local ICON_SPACING = 52
 local PIXELS_PER_STUD = 64
@@ -23,6 +25,7 @@ local topbarEnabled = false
 local player = game.Players.LocalPlayer
 local currentHumanoid = nil
 local CoreGui = game:GetService('CoreGui')
+local ContextActionService = game:GetService("ContextActionService")
 
 local hopperbinPart = Instance.new("Part", workspace.CurrentCamera)
 hopperbinPart.Transparency = 1
@@ -38,20 +41,60 @@ toolsFrame.Size = UDim2.new(1, 0, 0, ICON_SIZE)
 toolsFrame.Position = UDim2.new(0, 0, 0, HEALTHBAR_SPACE)
 toolsFrame.BackgroundTransparency = 1
 
+
+
+--Healthbar color function stolen from Topbar.lua
+local HEALTH_BACKGROUND_COLOR = Color3.new(228/255, 236/255, 246/255)
+local HEALTH_RED_COLOR = Color3.new(255/255, 28/255, 0/255)
+local HEALTH_YELLOW_COLOR = Color3.new(250/255, 235/255, 0)
+local HEALTH_GREEN_COLOR = Color3.new(27/255, 252/255, 107/255)
+
 local healthbarBack = Instance.new("Frame", hopperbinGUI)
-healthbarBack.BackgroundColor3 = Color3.new(1, 1, 1)
+healthbarBack.BackgroundColor3 = HEALTH_BACKGROUND_COLOR
 healthbarBack.BorderSizePixel = 0
-healthbarBack.Name = "HealthbarBack"
+healthbarBack.Name = "HealthbarContainer"
 local healthbarFront = Instance.new("Frame", healthbarBack)
 healthbarFront.BorderSizePixel = 0
 healthbarFront.Size = UDim2.new(1, 0, 1, 0)
 healthbarFront.Position = UDim2.new(0, 0, 0, 0)
-healthbarFront.BackgroundColor3 = Color3.new(0, 1, 0)
-healthbarFront.Name = "HealthbarFront"
+healthbarFront.BackgroundColor3 = HEALTH_GREEN_COLOR
+healthbarFront.Name = "HealthbarFill"
 
-local GREEN_COLOR = Color3.new(0.2, 1, 0.2)
-local RED_COLOR = Color3.new(1, 0.2, 0.2)
-local YELLOW_COLOR = Color3.new(1, 1, 0.2)
+local healthColorToPosition = {
+	[Vector3.new(HEALTH_RED_COLOR.r, HEALTH_RED_COLOR.g, HEALTH_RED_COLOR.b)] = 0.1;
+	[Vector3.new(HEALTH_YELLOW_COLOR.r, HEALTH_YELLOW_COLOR.g, HEALTH_YELLOW_COLOR.b)] = 0.5;
+	[Vector3.new(HEALTH_GREEN_COLOR.r, HEALTH_GREEN_COLOR.g, HEALTH_GREEN_COLOR.b)] = 0.8;
+}
+local min = 0.1
+local minColor = HEALTH_RED_COLOR
+local max = 0.8
+local maxColor = HEALTH_GREEN_COLOR
+
+local function HealthbarColorTransferFunction(healthPercent)
+	if healthPercent < min then
+		return minColor
+	elseif healthPercent > max then
+		return maxColor
+	end
+
+	-- Shepard's Interpolation
+	local numeratorSum = Vector3.new(0,0,0)
+	local denominatorSum = 0
+	for colorSampleValue, samplePoint in pairs(healthColorToPosition) do
+		local distance = healthPercent - samplePoint
+		if distance == 0 then
+			-- If we are exactly on an existing sample value then we don't need to interpolate
+			return Color3.new(colorSampleValue.x, colorSampleValue.y, colorSampleValue.z)
+		else
+			local wi = 1 / (distance*distance)
+			numeratorSum = numeratorSum + wi * colorSampleValue
+			denominatorSum = denominatorSum + wi
+		end
+	end
+	local result = numeratorSum / denominatorSum
+	return Color3.new(result.x, result.y, result.z)
+end
+---
 
 local verticalRange = math.rad(0)
 local horizontalRange = math.rad(0)
@@ -90,12 +133,8 @@ local function UpdateHealth(humanoid)
 	local percentHealth = humanoid.Health / humanoid.MaxHealth
 	if percentHealth ~= percentHealth then
 		percentHealth = 1
-		healthbarFront.BackgroundColor3 = YELLOW_COLOR
-	elseif percentHealth > 0.25  then		
-		healthbarFront.BackgroundColor3 = GREEN_COLOR
-	else
-		healthbarFront.BackgroundColor3 = RED_COLOR
 	end
+	healthbarFront.BackgroundColor3 = HealthbarColorTransferFunction(percentHealth)
 	healthbarFront.Size = UDim2.new(percentHealth, 0, 1, 0)
 end
 
@@ -109,6 +148,38 @@ local function SetTransparency(transparency)
 	healthbarFront.BackgroundTransparency = transparency
 end
 
+local function OnHotbarEquipPrimary(actionName, state, obj)
+	if state ~= Enum.UserInputState.Begin then
+		return
+	end
+	for tool, slot in pairs(Tools) do
+		if slot.hovered then
+			slot.OnClick()
+		end
+	end
+end
+
+local jumpActionSelectEnabled = false
+local function EnableJumpActionSelect(enable)
+	if enable == jumpActionSelectEnabled then
+		return
+	end
+	if not backpackEnabled then
+		enable = false
+	end
+	if not currentHumanoid then
+		return
+	end
+	jumpActionSelectEnabled = enable
+	if enable then
+		currentHumanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+		ContextActionService:BindCoreAction("HotbarEquipPrimary", OnHotbarEquipPrimary, false, Enum.PlayerActions.CharacterJump, Enum.KeyCode.ButtonA)
+	else
+		currentHumanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+		ContextActionService:UnbindCoreAction("HotbarEquipPrimary")
+	end
+end
+
 local function AddTool(tool)
 	if Tools[tool] then
 		return
@@ -117,7 +188,8 @@ local function AddTool(tool)
 	local slot = {}
 	Tools[tool] = slot
 	table.insert(ToolsList, tool)
-	
+
+	slot.hovered = false
 	slot.tool = tool
 	slot.icon = Instance.new("ImageButton", toolsFrame)
 	slot.icon.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
@@ -125,8 +197,8 @@ local function AddTool(tool)
 	slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
 	slot.icon.BorderColor3 = SLOT_BORDER_COLOR
 	slot.icon.Image = tool.TextureId
-	
-	slot.icon.MouseButton1Click:connect(function()
+
+	slot.OnClick = function()
 		if not player.Character then return end
 		local humanoid = player.Character:FindFirstChild("Humanoid")
 		if not humanoid then return end
@@ -136,12 +208,18 @@ local function AddTool(tool)
 		if in_backpack then
 			humanoid:EquipTool(tool)
 		end
-	end)
+	end
+	
+	slot.icon.MouseButton1Click:connect(slot.OnClick)
 	slot.OnEnter = function()
 		slot.icon.BorderSizePixel = SLOT_BORDER_HOVER_SIZE
+		slot.hovered = true
+		EnableJumpActionSelect(true)
 	end
 	slot.OnLeave = function()
 		slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
+		slot.hovered = false
+		EnableJumpActionSelect(false)
 	end
 --	slot.icon.MouseEnter:connect(slot.OnEnter)
 --	slot.icon.MouseLeave:connect(slot.OnLeave)
@@ -305,11 +383,16 @@ game:GetService("RunService"):BindToRenderStep("Cursor3D", Enum.RenderPriority.L
 	local px = cursor.AbsolutePosition.X + cursor.AbsoluteSize.X * 0.5
 	local py = cursor.AbsolutePosition.Y + cursor.AbsoluteSize.Y * 0.5
 	for i, v in pairs(Tools) do
-		v.OnLeave()
 		local ix = px - v.icon.AbsolutePosition.X
 		local iy = py - v.icon.AbsolutePosition.Y
 		if ix > 0 and ix < v.icon.AbsoluteSize.X and iy > 0 and iy < v.icon.AbsoluteSize.Y then
-			v.OnEnter()
+			if not v.hovered then
+				v.OnEnter()
+			end
+		else
+			if v.hovered then
+				v.OnLeave()
+			end
 		end
 	end
 	------------------------------------------------------
@@ -361,10 +444,10 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
 		backpackEnabled = enabled
 		if enabled then
-			game:GetService("ContextActionService"):BindCoreAction("HotbarEquip2", OnHotbarEquip, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
+			ContextActionService:BindCoreAction("HotbarEquip2", OnHotbarEquip, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
 			toolsFrame.Parent = hopperbinGUI --TODO: UPDATE TO NEW PARENT WHEN AVAILABLE
 		else
-			game:GetService("ContextActionService"):UnbindCoreAction("HotbarEquip2")
+			ContextActionService:UnbindCoreAction("HotbarEquip2")
 			toolsFrame.Parent = nil
 		end
 	end
