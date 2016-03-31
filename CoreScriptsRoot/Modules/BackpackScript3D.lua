@@ -25,23 +25,18 @@ local topbarEnabled = false
 local player = game.Players.LocalPlayer
 local currentHumanoid = nil
 local CoreGui = game:GetService('CoreGui')
+local RobloxGui = CoreGui:WaitForChild("RobloxGui")
+local Panel3D = require(RobloxGui.Modules.Panel3D)
+
 local ContextActionService = game:GetService("ContextActionService")
 
-local hopperbinPart = Instance.new("Part", workspace.CurrentCamera)
-hopperbinPart.Transparency = 1
-hopperbinPart.CanCollide = false
-hopperbinPart.Anchored = true
-hopperbinPart.Name = "GUI"
-local hopperbinGUI = Instance.new("SurfaceGui", CoreGui)
-hopperbinGUI.Adornee = hopperbinPart
-hopperbinGUI.ToolPunchThroughDistance = 1000
-hopperbinGUI.Name = "HopperBinGUI"
-local toolsFrame = Instance.new("Frame", hopperbinGUI)
+local panel = Panel3D.Get(Panel3D.Panels.Lower)
+local toolsFrame = Instance.new("TextButton", panel.gui) --prevent clicks falling through in case you have a rocket launcher and blow yourself up
+toolsFrame.Text = ""
 toolsFrame.Size = UDim2.new(1, 0, 0, ICON_SIZE)
-toolsFrame.Position = UDim2.new(0, 0, 0, HEALTHBAR_SPACE)
 toolsFrame.BackgroundTransparency = 1
-
-
+local insetAdjustY = toolsFrame.AbsolutePosition.Y
+toolsFrame.Position = UDim2.new(0, 0, 0, HEALTHBAR_SPACE)
 
 --Healthbar color function stolen from Topbar.lua
 local HEALTH_BACKGROUND_COLOR = Color3.new(228/255, 236/255, 246/255)
@@ -49,7 +44,7 @@ local HEALTH_RED_COLOR = Color3.new(255/255, 28/255, 0/255)
 local HEALTH_YELLOW_COLOR = Color3.new(250/255, 235/255, 0)
 local HEALTH_GREEN_COLOR = Color3.new(27/255, 252/255, 107/255)
 
-local healthbarBack = Instance.new("Frame", hopperbinGUI)
+local healthbarBack = Instance.new("Frame", panel.gui)
 healthbarBack.BackgroundColor3 = HEALTH_BACKGROUND_COLOR
 healthbarBack.BorderSizePixel = 0
 healthbarBack.Name = "HealthbarContainer"
@@ -119,14 +114,13 @@ local function UpdateLayout()
 	width = #ToolsList * ICON_SPACING
 	height = ICON_SIZE + HEALTHBAR_SPACE
 	
-	hopperbinGUI.CanvasSize = Vector2.new(width, height)
-	hopperbinPart.Size = Vector3.new(width / PIXELS_PER_STUD, height / PIXELS_PER_STUD, 1)	
+--	hopperbinGUI.CanvasSize = Vector2.new(width, height)
+--	hopperbinPart.Size = Vector3.new(width / PIXELS_PER_STUD, height / PIXELS_PER_STUD, 1)	
+
+	panel:ResizePixels(width, height)
 
 	healthbarBack.Position = UDim2.new(0.5, -HEALTHBAR_WIDTH / 2, 0, (HEALTHBAR_SPACE - HEALTHBAR_HEIGHT) / 2)
 	healthbarBack.Size = UDim2.new(0, HEALTHBAR_WIDTH, 0, HEALTHBAR_HEIGHT)
-	
-	verticalRange = math.atan(hopperbinPart.Size.Y / (2 * HOPPERBIN_OFFSET.Z)) + math.rad(30) * 2
-	horizontalRange = math.atan(hopperbinPart.Size.X / (2 * HOPPERBIN_OFFSET.Z)) - math.rad(20) * 2
 end
 
 local function UpdateHealth(humanoid)
@@ -147,6 +141,7 @@ local function SetTransparency(transparency)
 	healthbarBack.BackgroundTransparency = transparency
 	healthbarFront.BackgroundTransparency = transparency
 end
+panel:AddTransparencyCallback(SetTransparency)
 
 local function OnHotbarEquipPrimary(actionName, state, obj)
 	if state ~= Enum.UserInputState.Begin then
@@ -159,24 +154,20 @@ local function OnHotbarEquipPrimary(actionName, state, obj)
 	end
 end
 
-local jumpActionSelectEnabled = false
-local function EnableJumpActionSelect(enable)
-	if enable == jumpActionSelectEnabled then
-		return
-	end
+local eaterAction = game:GetService("HttpService"):GenerateGUID()
+local function EnableHotbarInput(enable)
 	if not backpackEnabled then
 		enable = false
 	end
 	if not currentHumanoid then
 		return
 	end
-	jumpActionSelectEnabled = enable
 	if enable then
-		currentHumanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
-		ContextActionService:BindCoreAction("HotbarEquipPrimary", OnHotbarEquipPrimary, false, Enum.PlayerActions.CharacterJump, Enum.KeyCode.ButtonA)
+		ContextActionService:BindCoreAction("HotbarEquipPrimary", OnHotbarEquipPrimary, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
+		ContextActionService:BindAction(eaterAction, function() end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
 	else
-		currentHumanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
 		ContextActionService:UnbindCoreAction("HotbarEquipPrimary")
+		ContextActionService:UnbindAction(eaterAction)
 	end
 end
 
@@ -214,12 +205,12 @@ local function AddTool(tool)
 	slot.OnEnter = function()
 		slot.icon.BorderSizePixel = SLOT_BORDER_HOVER_SIZE
 		slot.hovered = true
-		EnableJumpActionSelect(true)
+		EnableHotbarInput(true)
 	end
 	slot.OnLeave = function()
 		slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
 		slot.hovered = false
-		EnableJumpActionSelect(false)
+		EnableHotbarInput(false)
 	end
 --	slot.icon.MouseEnter:connect(slot.OnEnter)
 --	slot.icon.MouseLeave:connect(slot.OnLeave)
@@ -302,7 +293,6 @@ local function OnCharacterAdded(character)
 	
 	character.ChildAdded:connect(OnChildAdded)
 	character.ChildRemoved:connect(OnChildRemoved)
-	hopperbinGUI.Parent = CoreGui
 	
 	for i, v in ipairs(backpack:GetChildren()) do
 		OnChildAdded(v)
@@ -317,42 +307,6 @@ if player.Character then
 	spawn(function() OnCharacterAdded(player.Character) end)
 end
 
-local zeroVector = Vector3.new(0, 0, 0)
-local horizontalRotation = CFrame.new()
-game:GetService("RunService"):BindToRenderStep("HopperBin3D", Enum.RenderPriority.Last.Value, function()
-	if not (backpackEnabled or healthbarEnabled) then
-		return
-	end
-	local cameraCFrame = workspace.CurrentCamera:GetRenderCFrame()
-	local cameraLook = cameraCFrame.lookVector
-	local cameraHorizontalVector = Vector3.new(cameraLook.X, 0, cameraLook.Z).unit
-
-	local cameraPitchAngle = math.asin(cameraLook.Y)
-	if cameraPitchAngle > math.rad(-25) then
-		local cameraHorizontalRotation = CFrame.new(zeroVector, cameraHorizontalVector)
-		horizontalRotation = cameraHorizontalRotation
-	end
-	
-	local position = workspace.CurrentCamera.CFrame.p	
-
-	local verticalError = math.abs((cameraPitchAngle - HOPPERBIN_ANGLE) / verticalRange)
-	local horizontalError = math.acos(cameraHorizontalVector:Dot(horizontalRotation.lookVector)) / horizontalRange
-	
-	SetTransparency(math.max(verticalError, horizontalError))
-	
-	local hopperbinVector = HOPPERBIN_ROTATION:vectorToWorldSpace(HOPPERBIN_OFFSET)
-	hopperbinVector = horizontalRotation:vectorToWorldSpace(hopperbinVector)
-	hopperbinPart.CFrame = CFrame.new(position + hopperbinVector, position)
-end)
-
-local cursor = Instance.new("ImageLabel", hopperbinGUI)
-cursor.Image = "rbxasset://textures/Cursors/Gamepad/Pointer.png"
-cursor.Size = UDim2.new(0, 8, 0, 8)
-cursor.BackgroundTransparency = 1
-cursor.ZIndex = 2
-
-local uis = game:GetService("UserInputService")
-
 game:GetService("RunService"):BindToRenderStep("Cursor3D", Enum.RenderPriority.Last.Value, function()
 	if not backpackEnabled then
 		return
@@ -366,22 +320,22 @@ game:GetService("RunService"):BindToRenderStep("Cursor3D", Enum.RenderPriority.L
 	local ignoreList = { player.Character }
 	local part, endpoint = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
 
-	cursor.Visible = false
-	if part ~= hopperbinPart then
+	if part ~= panel.part then
+		for i, v in pairs(Tools) do
+			if v.hovered then
+				v.OnLeave()
+			end
+		end
 		return
 	end
-	cursor.Visible = true
 	
 	local localEndpoint = part:GetRenderCFrame():pointToObjectSpace(endpoint)
-	local x = ((localEndpoint.X / part.Size.X) * 1) + 0.5
-	local y = ((localEndpoint.Y / part.Size.Y) * 1) + 0.5
-	x = 1 - x
-	y = 1 - y
-	cursor.Position = UDim2.new(x, -cursor.AbsoluteSize.x * 0.5, y, -cursor.AbsoluteSize.y * 0.5)
+	local x = 1 - ((localEndpoint.X / part.Size.X) + 0.5)
+	local y = 1 - ((localEndpoint.Y / part.Size.Y) + 0.5)
 	
 	--REMOVE THIS WHEN GUI MOUSELEAVE/MOUSEENTER ARE FIXED
-	local px = cursor.AbsolutePosition.X + cursor.AbsoluteSize.X * 0.5
-	local py = cursor.AbsolutePosition.Y + cursor.AbsoluteSize.Y * 0.5
+	local px = x * panel.gui.AbsoluteSize.X
+	local py = y * panel.gui.AbsoluteSize.Y + insetAdjustY --this can go once AbsolutePosition is fixed for sure
 	for i, v in pairs(Tools) do
 		local ix = px - v.icon.AbsolutePosition.X
 		local iy = py - v.icon.AbsolutePosition.Y
@@ -396,9 +350,6 @@ game:GetService("RunService"):BindToRenderStep("Cursor3D", Enum.RenderPriority.L
 		end
 	end
 	------------------------------------------------------
-
-	uis.MouseBehavior = Enum.MouseBehavior.LockCenter
-	uis.MouseIconEnabled = false
 end)
 
 local function OnHotbarEquip(actionName, state, obj)
@@ -445,7 +396,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 		backpackEnabled = enabled
 		if enabled then
 			ContextActionService:BindCoreAction("HotbarEquip2", OnHotbarEquip, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
-			toolsFrame.Parent = hopperbinGUI --TODO: UPDATE TO NEW PARENT WHEN AVAILABLE
+			toolsFrame.Parent = panel.gui
 		else
 			ContextActionService:UnbindCoreAction("HotbarEquip2")
 			toolsFrame.Parent = nil
@@ -455,7 +406,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
 		healthbarEnabled = enabled
 		if enabled then
-			healthbarBack.Parent = hopperbinGUI
+			healthbarBack.Parent = panel.gui
 		else
 			healthbarBack.Parent = nil
 		end
