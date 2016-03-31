@@ -10,6 +10,7 @@ local UIS = game:GetService('UserInputService')
 local CP = game:GetService('ContentProvider')
 local guiService = game:GetService("GuiService")
 local ContextActionService = game:GetService('ContextActionService')
+local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 
 local startTime = tick()
 
@@ -708,7 +709,7 @@ function fadeAndDestroyBlackFrame(blackFrame)
 	end)
 end
 
-function destroyLoadingElements()
+function destroyLoadingElements(instant)
 	if not currScreenGui then return end
 	if destroyedLoadingGui then return end
 	destroyedLoadingGui = true
@@ -717,7 +718,7 @@ function destroyLoadingElements()
 	for i=1, #guiChildren do
 		-- need to keep this around in case we get a connection error later
 		if guiChildren[i].Name ~= "ErrorFrame" then
-			if guiChildren[i].Name == "BlackFrame" then
+			if guiChildren[i].Name == "BlackFrame" and not instant then
 				fadeAndDestroyBlackFrame(guiChildren[i])
 			else
 				guiChildren[i]:Destroy()
@@ -746,11 +747,11 @@ function handleFinishedReplicating()
 	end
 end
 
-function handleRemoveDefaultLoadingGui()
+function handleRemoveDefaultLoadingGui(instant)
 	if isTenFootInterface then
 		ContextActionService:UnbindCoreAction('CancelGameLoad')
 	end
-	destroyLoadingElements()
+	destroyLoadingElements(instant)
 end
 
 game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
@@ -762,3 +763,24 @@ game:GetService("ReplicatedFirst").RemoveDefaultLoadingGuiSignal:connect(handleR
 if game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
 	handleRemoveDefaultLoadingGui()
 end
+
+local UserInputServiceChangedConn;
+local function onUserInputServiceChanged(prop)
+	if prop == 'VREnabled' then
+		local UseVr = false
+		pcall(function() UseVr = UIS.VREnabled end)
+
+		if UseVr then
+			require(RobloxGui.Modules.LoadingScreen3D)
+			handleRemoveDefaultLoadingGui(true)
+			if UserInputServiceChangedConn then
+				UserInputServiceChangedConn:disconnect()
+				UserInputServiceChangedConn = nil
+			end
+		end
+	end
+end
+
+
+UserInputServiceChangedConn = UIS.Changed:connect(onUserInputServiceChanged)
+onUserInputServiceChanged('VREnabled')
