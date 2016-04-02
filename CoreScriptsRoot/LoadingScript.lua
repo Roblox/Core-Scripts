@@ -771,12 +771,12 @@ local function onUserInputServiceChanged(prop)
 		pcall(function() UseVr = UIS.VREnabled end)
 
 		if UseVr then
-			require(RobloxGui.Modules.LoadingScreen3D)
-			handleRemoveDefaultLoadingGui(true)
 			if UserInputServiceChangedConn then
 				UserInputServiceChangedConn:disconnect()
 				UserInputServiceChangedConn = nil
 			end
+			handleRemoveDefaultLoadingGui(true)
+			require(RobloxGui.Modules.LoadingScreen3D)
 		end
 	end
 end

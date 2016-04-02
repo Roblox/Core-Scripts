@@ -19,20 +19,20 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Util = require(RobloxGui.Modules.Settings.Utility)
 
 
-local function FadeElements(element, newValue, tweeners, duration)
+local function FadeElements(element, newValue, duration)
 	duration = duration or 0.5
 	if element == nil then return end
 	if element:IsA('ImageLabel') or element:IsA('ImageButton') then
-		table.insert(tweeners, Util:TweenProperty(element, 'ImageTransparency', element.ImageTransparency, newValue, duration, Util:GetEaseInOutQuad()))
+		Util:TweenProperty(element, 'ImageTransparency', element.ImageTransparency, newValue, duration, Util:GetEaseInOutQuad())
 	end
 	if element:IsA('GuiObject') then
-		table.insert(tweeners, Util:TweenProperty(element, 'BackgroundTransparency', element.BackgroundTransparency, newValue, duration, Util:GetEaseInOutQuad()))
+		Util:TweenProperty(element, 'BackgroundTransparency', element.BackgroundTransparency, newValue, duration, Util:GetEaseInOutQuad())
 	end
 	if element:IsA('TextLabel') or element:IsA('TextBox') or element:IsA('TextButton') then
-		table.insert(tweeners, Util:TweenProperty(element, 'TextTransparency', element.TextTransparency, newValue, duration, Util:GetEaseInOutQuad()))
+		Util:TweenProperty(element, 'TextTransparency', element.TextTransparency, newValue, duration, Util:GetEaseInOutQuad())
 	end
 	for _, child in pairs(element:GetChildren()) do
-		FadeElements(child, newValue, tweeners, duration)
+		FadeElements(child, newValue, duration)
 	end
 end
 
@@ -108,7 +108,6 @@ local loadingSurfaceGui = Util:Create'SurfaceGui'
 	ToolPunchThroughDistance = 1000;
 	CanvasSize = Vector2.new(500, 500);
 	Archivable = false;
-	-- Parent = surfaceGuiAdorn;
 	Parent = CoreGui;
 }
 
@@ -149,7 +148,6 @@ local loadingText = Util:Create'TextLabel'
 local gameNameText = Util:Create'TextLabel'
 {
 	Name = 'GameNameText';
-	-- Text = 'Name of the Game';
 	Text = '';
 	BackgroundTransparency = 1;
 	Font = Enum.Font.SourceSans;
@@ -175,7 +173,6 @@ local creatorTextPosition = 0
 local creatorText = Util:Create'TextLabel'
 {
 	Name = 'CreatorText';
-	-- Text = 'By AlsoTwentyCharacters';
 	Text = '';
 	BackgroundTransparency = 1;
 	Font = Enum.Font.SourceSans;
@@ -237,15 +234,6 @@ local function UpdateLayout(delta)
 		creatorText.Position = UDim2.new(0, creatorTextPosition, 0, 0)
 	end
 
-	-- if gameNameText.TextFits then
-	-- 	gameNameText.Size = UDim2.new(0.9, 0, 0.1, 0)
-	-- 	gameNameText.Position = UDim2.new(0.05,0,0.65,0)
-	-- 	gameNameText.TextScaled = false
-	-- 	gameNameText.TextWrapped = false
-
-	-- 	spinnerImage.Position = UDim2.new(0.5 - (0.25/2), 0, 0.45 - (0.25/2), 0)
-	-- 	loadingText.Position = UDim2.new(0.5,0,0.2,0)
-	-- else
 	if not gameNameText.TextFits then
 		gameNameText.Size = UDim2.new(0.9, 0, 0.3, 0)
 		gameNameText.Position = UDim2.new(0.05,0,0.5,0)
@@ -278,7 +266,7 @@ end
 local function OnReplicatingFinished()
 	if game:IsLoaded() or game.Loaded:wait() then
 		if not CleanedUp then
-			FadeElements(loadingSurfaceGui, 1, {}, SECOND_TO_FADE)
+			FadeElements(loadingSurfaceGui, 1, SECOND_TO_FADE)
 			wait(SECOND_TO_FADE)
 			CleanUp()
 		end
@@ -287,7 +275,7 @@ end
 
 local function OnDefaultLoadingGuiRemoved()
 	if not CleanedUp then
-		FadeElements(loadingSurfaceGui, 1, {}, SECOND_TO_FADE)
+		FadeElements(loadingSurfaceGui, 1, SECOND_TO_FADE)
 		wait(SECOND_TO_FADE)
 		CleanUp()
 	end
@@ -329,18 +317,19 @@ GameInfoProvider:LoadAssetsAsync()
 if GameInfoProvider:IsReady() then
 	OnGameInfoLoaded()
 end
--- Disco the following events?
 GameInfoProvider.LoadingFinishedEvent:connect(OnGameInfoLoaded)
 
 
-ReplicatedFirst.FinishedReplicating:connect(OnReplicatingFinished)
 if ReplicatedFirst:IsFinishedReplicating() then
 	OnReplicatingFinished()
+else
+	ReplicatedFirst.FinishedReplicating:connect(OnReplicatingFinished)
 end
 
-ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(OnDefaultLoadingGuiRemoved)
 if ReplicatedFirst:IsDefaultLoadingGuiRemoved() then
 	OnDefaultLoadingGuiRemoved()
+else
+	ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(OnDefaultLoadingGuiRemoved)
 end
 
 GuiService.ErrorMessageChanged:connect(function()
