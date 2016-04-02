@@ -66,20 +66,6 @@ while Player == nil do
 	Player = PlayersService.LocalPlayer
 end
 
-local VREnabled = false
-local UserInputService = game:GetService("UserInputService")
-local UISChanged
-local function OnVREnabled(prop)
-	if prop == "VREnabled" and UserInputService.VREnabled then
-		VREnabled = true
-		topbarEnabled = false	
-		topbarEnabledChangedEvent:Fire(false)
-		UISChanged:disconnect()
-	end
-end
-UISChanged = UserInputService.Changed:connect(OnVREnabled)
-OnVREnabled("VREnabled")
-
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
@@ -184,7 +170,7 @@ local function CreateTopBar()
 	end
 
 	function this:UpdateBackgroundTransparency()
-		if settingsActive then
+		if settingsActive and not VREnabled then
 			topbarContainer.BackgroundTransparency = TOPBAR_OPAQUE_TRANSPARENCY
 			topbarShadow.Visible = false
 		else
@@ -727,7 +713,18 @@ local function CreateSettingsIcon(topBarInstance)
 		UpdateHamburgerIcon()
 	end)
 
-	return CreateMenuItem(settingsIconButton)
+	local menuItem = CreateMenuItem(settingsIconButton)
+
+	rawset(menuItem, "SetTransparency", function(self, transparency)
+		settingsIconImage.ImageTransparency = transparency
+	end)
+
+	return menuItem
+end
+
+local function Create3DSettingsIcon(topBarInstance)
+	local menuItem = CreateSettingsIcon(topBarInstance)
+	return menuItem
 end
 ------------
 
@@ -1228,7 +1225,18 @@ if nameAndHealthMenuItem and topbarEnabled and not isTenFootInterface then
 	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
 end
 
+local Panel3D = require(GuiRoot.Modules.Panel3D)
+local function MoveHamburgerTo3D()
+	LeftMenubar:RemoveItem(settingsIcon)
 
+	local settingsIcon3D = Create3DSettingsIcon(TopBar)
+
+	local panel = Panel3D.Get(Panel3D.Panels.Hamburger)
+	panel:ResizePixels(50, TOPBAR_THICKNESS)
+	panel:AddTransparencyCallback(function(transparency) settingsIcon3D:SetTransparency(transparency) end)
+	
+	settingsIcon3D.Parent = panel.gui
+end
 
 local gameOptions = settings():FindFirstChild("Game Options")
 if gameOptions and not isTenFootInterface then
@@ -1255,6 +1263,22 @@ function topBarEnabledChanged()
 		end
 	end
 end
+
+local UISChanged;
+local function OnVREnabled(prop)
+	if prop == "VREnabled" and InputService.VREnabled then
+		VREnabled = true
+		topbarEnabled = false	
+		topBarEnabledChanged()
+		MoveHamburgerTo3D()
+		if UISChanged then
+			UISChanged:disconnect()
+			UISChanged = nil
+		end
+	end
+end
+UISChanged = InputService.Changed:connect(OnVREnabled)
+OnVREnabled("VREnabled")
 
 if defeatableTopbar then
 	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
