@@ -341,15 +341,15 @@ do
 		return TextSizeCache[text][font][sizeBounds][fontSize]
 	end
 
-	local PRINTABLE_CHARS = '[^' .. string.char(32) .. '-' ..  string.char(126) .. ']'
-	local WHITESPACE_CHARS = '(' .. string.rep('%s', 7) .. ')%s+'
+	local UNPRINTABLE_CHARS = '[^' .. string.char(32) .. '-' ..  string.char(126) .. ']'
+	local WHITESPACE_CHARS = '%s+'
 	function Util.FilterUnprintableCharacters(str)
 		if not GetLuaChatFilteringFlag() then
 			return str
 		end
 
-		local result = str:gsub(PRINTABLE_CHARS, '');
-		result = str:gsub(WHITESPACE_CHARS, '%1');
+		local result = str:gsub(UNPRINTABLE_CHARS, '');
+		result = str:gsub(WHITESPACE_CHARS, string.char(32));
 		return result
 	end
 end
