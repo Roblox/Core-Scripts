@@ -44,6 +44,7 @@ local function createPanel()
 	panelPart.Transparency = 1
 	panelPart.CanCollide = false
 	panelPart.Anchored = true
+	panelPart.Archivable = false
 	panelPart.FormFactor = Enum.FormFactor.Custom
 	panelPart.Size = Vector3.new(1.5, 1.5, 1)
 	panelPart.Parent = workspace.CurrentCamera
