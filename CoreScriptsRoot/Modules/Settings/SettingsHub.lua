@@ -947,7 +947,11 @@ local function CreateSettingsHub()
 		this.Shield.BackgroundTransparency = 1
 	end
 
+	local Panel3D = require(RobloxGui.Modules.Panel3D)
 	local function enableVR()
+		local panel = Panel3D.Get(Panel3D.Panels.Settings)
+		panel:Resize(3, 3, 256)
+		this.Shield.Parent.Parent = panel.gui
 		this.Shield.Parent.ClipsDescendants = false
 		this:HideShield()
 	end
