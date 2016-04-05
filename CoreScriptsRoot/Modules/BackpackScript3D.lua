@@ -5,8 +5,10 @@ local ICON_SPACING = 52
 local PIXELS_PER_STUD = 64
 
 local SLOT_BORDER_SIZE = 0
-local SLOT_BORDER_HOVER_SIZE = 4
+local SLOT_BORDER_SELECTED_SIZE = 4
 local SLOT_BORDER_COLOR = Color3.new(90/255, 142/255, 233/255)
+local SLOT_BACKGROUND_COLOR = Color3.new(31/255, 31/255, 31/255)
+local SLOT_HOVER_BACKGROUND_COLOR = Color3.new(90/255, 90/255, 90/255)
 
 local HOPPERBIN_ANGLE = math.rad(-45)
 local HOPPERBIN_ROTATION = CFrame.Angles(HOPPERBIN_ANGLE, 0, 0)
@@ -203,17 +205,25 @@ local function AddTool(tool)
 	
 	slot.icon.MouseButton1Click:connect(slot.OnClick)
 	slot.OnEnter = function()
-		slot.icon.BorderSizePixel = SLOT_BORDER_HOVER_SIZE
+		slot.icon.BackgroundColor3 = SLOT_HOVER_BACKGROUND_COLOR
 		slot.hovered = true
 		EnableHotbarInput(true)
 	end
 	slot.OnLeave = function()
-		slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
+		slot.icon.BackgroundColor3 = SLOT_BACKGROUND_COLOR
 		slot.hovered = false
 		EnableHotbarInput(false)
 	end
 --	slot.icon.MouseEnter:connect(slot.OnEnter)
 --	slot.icon.MouseLeave:connect(slot.OnLeave)
+
+	tool.Changed:connect(function(prop)
+		if tool.Parent == player:FindFirstChild("Backpack") then
+			slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
+		elseif tool.Parent == player.Character then
+			slot.icon.BorderSizePixel = SLOT_BORDER_SELECTED_SIZE
+		end
+	end)
 	
 	UpdateLayout()
 end

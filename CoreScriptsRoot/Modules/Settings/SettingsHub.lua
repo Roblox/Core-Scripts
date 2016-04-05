@@ -211,7 +211,7 @@ local function CreateSettingsHub()
 			PageViewSizeReducer = 5
 		end
 
-		local clippingShield = utility:Create'Frame'
+		this.ClippingShield = utility:Create'Frame'
 		{
 			Name = "SettingsShield",
 			Size = SETTINGS_SHIELD_SIZE,
@@ -235,7 +235,7 @@ local function CreateSettingsHub()
 			Visible = false,
 			Active = true,
 			ZIndex = SETTINGS_BASE_ZINDEX,
-			Parent = clippingShield
+			Parent = this.ClippingShield
 		};
 
 		this.Modal = utility:Create'TextButton' -- Force unlocks the mouse, really need a way to do this via UIS
@@ -948,8 +948,22 @@ local function CreateSettingsHub()
 	end
 
 	local function enableVR()
+		local Panel3D = require(RobloxGui.Modules.Panel3D)
+		local panel = Panel3D.Get(Panel3D.Panels.Settings)
+		panel:SetModal()
+		panel.orientationMode = Panel3D.Orientation.Fixed
+		panel:Resize(3, 3, 256)
+		this.ClippingShield.Parent = panel.gui
 		this.Shield.Parent.ClipsDescendants = false
 		this:HideShield()
+
+		GuiService.MenuOpened:connect(function()
+			panel:SetVisible(true)
+		end)
+		GuiService.MenuClosed:connect(function()
+			panel:SetVisible(false)
+			Panel3D.ResetOrientation()
+		end)
 	end
 
 	local UISChanged;
