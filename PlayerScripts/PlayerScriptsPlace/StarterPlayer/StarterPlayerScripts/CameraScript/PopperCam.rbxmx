@@ -151,6 +151,15 @@ function PopperCam:Update()
 		local cameraFrontPoint = cameraCFrame.p + (cameraCFrame.lookVector * NEAR_CLIP_PLANE_OFFSET)
 		local screenSize = Camera.ViewportSize
 		local ignoreList = {}
+		
+		local cameraSubject = Camera.CameraSubject
+		if cameraSubject and cameraSubject:IsA("Humanoid") then
+			local character = cameraSubject.Parent
+			if character and character:IsA("Model") then
+				table.insert(ignoreList,character)
+			end
+		end
+		
 		for _, character in pairs(PlayerCharacters) do
 			table.insert(ignoreList, character)
 		end
