@@ -49,6 +49,7 @@ local function CreateFollowCamera()
 	module.LastUserPanCamera = tick()
 	function module:Update()
 		local now = tick()
+		local timeDelta = (now - lastUpdate)
 		
 		local userPanningTheCamera = (self.UserPanningTheCamera == true)
 		local camera = 	workspace.CurrentCamera
@@ -129,7 +130,6 @@ local function CreateFollowCamera()
 							if isOnASkateboard then
 								forwardVector = cameraSubject.CFrame.lookVector
 							end
-							local timeDelta = (now - lastUpdate)
 
 							tweenSpeed = clamp(0, tweenMaxSpeed, tweenSpeed + tweenAcceleration * timeDelta)
 
@@ -156,10 +156,11 @@ local function CreateFollowCamera()
 			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
 			self.RotateInput = Vector2.new()
 			
-			camera.Focus = CFrame.new(subjectPosition)
+			camera.Focus = UserInputService.VREnabled and self:GetVRFocus(subjectPosition, timeDelta) or CFrame.new(subjectPosition)
 			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p) + Vector3.new(0, self:GetCameraHeight(), 0)
 
 			self.LastCameraTransform = camera.CoordinateFrame
+			self.LastCameraFocus = camera.Focus
 			if isInVehicle or isOnASkateboard and cameraSubject:IsA('BasePart') then
 				self.LastSubjectCFrame = cameraSubject.CFrame
 			else
