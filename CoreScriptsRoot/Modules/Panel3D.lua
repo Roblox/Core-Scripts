@@ -3,6 +3,9 @@
 local PIXELS_PER_STUD = 64
 local SETTINGS_DISTANCE = 3.5
 
+local CURSOR_HIDE_TIME = 2
+local CURSOR_FADE_TIME = 0.125
+
 local CoreGui = game:GetService('CoreGui')
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 
@@ -39,6 +42,43 @@ local menuOpened = false
 local menuWasClosed = false
 
 local UserInputService = game:GetService("UserInputService")
+
+local cursorHidden = false
+local function autoHideCursor(hide)
+	if not UserInputService.VREnabled then
+		cursorHidden = false
+		UserInputService.MouseIconTransparency = 0
+		return
+	end
+	if hide then
+		cursorHidden = true
+		spawn(function()
+			while UserInputService.MouseIconTransparency < 1 and cursorHidden do
+				local dt = game:GetService("RunService").RenderStepped:wait()
+				UserInputService.MouseIconTransparency = UserInputService.MouseIconTransparency + dt / CURSOR_FADE_TIME
+			end
+			UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+		end)
+	else
+		cursorHidden = false
+		UserInputService.MouseIconTransparency = 0
+		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+	end
+end
+
+local lastMouseMove = tick()
+UserInputService.InputChanged:connect(function(inputObj, processed)
+	if inputObj.UserInputType == Enum.UserInputType.MouseMovement then
+		lastMouseMove = tick()
+		autoHideCursor(false)
+	end
+end)
+game:GetService("RunService").Heartbeat:connect(function()
+	if lastMouseMove + CURSOR_HIDE_TIME < tick() and not menuOpened and not cursorHidden then
+		autoHideCursor(true)
+	end
+end)
+
 
 local function createPanel()
 	local panelPart = Instance.new("Part")
@@ -270,6 +310,8 @@ game:GetService("GuiService").MenuClosed:connect(function()
 	cursor.Visible = true
 	menuOpened = false
 	menuWasClosed = true
+
+	autoHideCursor(true)
 end)
 
 return Panel3D
