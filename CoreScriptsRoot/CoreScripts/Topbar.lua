@@ -718,12 +718,27 @@ local function CreateSettingsIcon(topBarInstance)
 	rawset(menuItem, "SetTransparency", function(self, transparency)
 		settingsIconImage.ImageTransparency = transparency
 	end)
+	rawset(menuItem, "SetImage", function(self, image)
+		settingsIconImage.Image = image
+	end)
+	rawset(menuItem, "Toggle", function(self)
+		toggleSettings()
+	end)
 
 	return menuItem
 end
 
 local function Create3DSettingsIcon(topBarInstance)
 	local menuItem = CreateSettingsIcon(topBarInstance)
+
+	rawset(menuItem, "Hover", function(self, hovering)
+		if hovering then
+			self:SetImage("rbxasset://textures/ui/Menu/HamburgerDown.png")
+		else
+			self:SetImage("rbxasset://textures/ui/Menu/Hamburger.png")
+		end
+	end)
+
 	return menuItem
 end
 ------------
@@ -1226,14 +1241,42 @@ if nameAndHealthMenuItem and topbarEnabled and not isTenFootInterface then
 end
 
 local Panel3D = require(GuiRoot.Modules.Panel3D)
+
 local function MoveHamburgerTo3D()
 	LeftMenubar:RemoveItem(settingsIcon)
 
 	local settingsIcon3D = Create3DSettingsIcon(TopBar)
 
+	local function OnHamburger3DInput(actionName, state, inputObj)
+		if state ~= Enum.UserInputState.Begin then
+			return
+		end
+		settingsIcon3D:Toggle()
+	end
+
+	local eaterAction = game:GetService("HttpService"):GenerateGUID()
+	local ContextActionService = game:GetService("ContextActionService")
+	local function EnableHamburger3DInput(enable)
+		if enable then
+			ContextActionService:BindCoreAction("Hamburger3DInput", OnHamburger3DInput, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
+			ContextActionService:BindAction(eaterAction, function() end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
+		else
+			ContextActionService:UnbindCoreAction("Hamburger3DInput")
+			ContextActionService:UnbindAction(eaterAction)
+		end
+	end
+
 	local panel = Panel3D.Get(Panel3D.Panels.Hamburger)
 	panel:ResizePixels(50, TOPBAR_THICKNESS)
 	panel:AddTransparencyCallback(function(transparency) settingsIcon3D:SetTransparency(transparency) end)
+	panel.OnMouseEnter = function() 
+		EnableHamburger3DInput(true) 
+		settingsIcon3D:Hover(true)
+	end
+	panel.OnMouseLeave = function() 
+		EnableHamburger3DInput(false) 
+		settingsIcon3D:Hover(false)
+	end
 	
 	settingsIcon3D.Parent = panel.gui
 end
