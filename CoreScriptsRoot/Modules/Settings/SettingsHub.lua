@@ -8,6 +8,7 @@
 --[[ CONSTANTS ]]
 local SETTINGS_SHIELD_COLOR = Color3.new(41/255,41/255,41/255)
 local SETTINGS_SHIELD_TRANSPARENCY = 0.2
+local SETTINGS_SHIELD_VR_TRANSPARENCY = 1
 local SETTINGS_SHIELD_SIZE = UDim2.new(1, 0, 1, 0)
 local SETTINGS_SHIELD_INACTIVE_POSITION = UDim2.new(0,0,-1,-36)
 local SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0, 0, 0, 0)
@@ -39,6 +40,7 @@ local chatWasVisible = false
 local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
 local useUserList = (userlistSuccess and userlistFlagValue == true)
 
+local VREnabled = false
 
 local function IsPlayMyPlaceEnabled()
 	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
@@ -389,7 +391,6 @@ local function CreateSettingsHub()
 				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25),
 				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart})
 		end
-
 
 		local function onScreenSizeChanged()
 			local largestPageSize = 600
@@ -940,11 +941,31 @@ local function CreateSettingsHub()
 	end
 
 	function this:ShowShield()
-		this.Shield.BackgroundTransparency = SETTINGS_SHIELD_TRANSPARENCY
+		this.Shield.BackgroundTransparency = VREnabled and SETTINGS_SHIELD_VR_TRANSPARENCY or SETTINGS_SHIELD_TRANSPARENCY
 	end
 	function this:HideShield()
 		this.Shield.BackgroundTransparency = 1
 	end
+
+	local function enableVR()
+		this.Shield.Parent.ClipsDescendants = false
+		this:HideShield()
+	end
+
+	local UISChanged;
+	local function OnVREnabled(prop)
+		if prop == "VREnabled" and UserInputService.VREnabled then
+			VREnabled = true
+			enableVR()
+			if UISChanged then
+				UISChanged:disconnect()
+				UISChanged = nil
+			end
+		end
+	end
+	UISChanged = UserInputService.Changed:connect(OnVREnabled)
+	OnVREnabled("VREnabled")
+
 
 	local closeMenuFunc = function(name, inputState, input)
 		if inputState ~= Enum.UserInputState.Begin then return end
