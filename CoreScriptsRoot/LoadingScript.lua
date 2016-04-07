@@ -7,7 +7,6 @@ local PLACEID = game.PlaceId
 
 local MPS = game:GetService('MarketplaceService')
 local UIS = game:GetService('UserInputService')
-local CP = game:GetService('ContentProvider')
 local guiService = game:GetService("GuiService")
 local ContextActionService = game:GetService('ContextActionService')
 local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
@@ -36,12 +35,8 @@ end
 --
 -- Variables
 local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
-local currScreenGui = nil
-local renderSteppedConnection = nil
-local fadingBackground = false
-local destroyingBackground = false
-local destroyedLoadingGui = false
-local hasReplicatedFirstElements = false
+local currScreenGui, renderSteppedConnection = nil
+local destroyingBackground, destroyedLoadingGui, hasReplicatedFirstElements = false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
 local isTenFootInterface = guiService:IsTenFootInterface()
@@ -456,16 +451,13 @@ if isTenFootInterface then
 	createTenfootCancelGui()
 end
 
-local removedLoadingScreen = false
 local setVerb = true
-local lastRenderTime = nil
+local lastRenderTime, lastDotUpdateTime, brickCountChange = nil
 local fadeCycleTime = 1.7
 local turnCycleTime = 2
 local lastAbsoluteSize = Vector2.new(0, 0)
 local loadingDots = "..."
-local lastDotUpdateTime = nil
 local dotChangeTime = .2
-local brickCountChange = nil
 local lastBrickCount = 0
 
 renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(function()
@@ -780,7 +772,6 @@ local function onUserInputServiceChanged(prop)
 		end
 	end
 end
-
 
 UserInputServiceChangedConn = UIS.Changed:connect(onUserInputServiceChanged)
 onUserInputServiceChanged('VREnabled')
