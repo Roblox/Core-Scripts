@@ -348,6 +348,8 @@ local function CreateCamera()
 	function this:Update()
 	end
 
+	----- VR STUFF ------
+
 	function this:ApplyVRTransform()
 		if not (HasVRAPI and UserInputService.VREnabled) then
 			return
@@ -376,14 +378,13 @@ local function CreateCamera()
 	end
 
 	local vrRotationIntensityExists = true
+	local lastVrRotationCheck = 0
 	function this:ShouldUseVRRotation()
-		if not vrRotationIntensityExists then return false end
+		if not vrRotationIntensityExists and tick() - lastVrRotationCheck < 1 then return false end
 		
 		local success, vrRotationIntensity = pcall(function() return StarterGui:GetCore("VRRotationIntensity") end)
-		if not success or vrRotationIntensity == nil then
-			vrRotationIntensityExists = false
-			return false
-		end
+		vrRotationIntensityExists = success and vrRotationIntensity ~= nil
+		lastVrRotationCheck = tick()
 		
 		return HasVRAPI and UserInputService.VREnabled and success and vrRotationIntensity ~= nil and vrRotationIntensity ~= "Smooth"	
 	end
@@ -431,6 +432,102 @@ local function CreateCamera()
 		
 		return vrRotateSum
 	end
+
+	local cameraTranslationConstraints = Vector3.new(1,1,1)
+	local humanoidJumpOrigin = nil
+	local trackingHumanoid = nil
+	local cameraFrozen = false
+	local subjectStateChangedConn = nil
+	local cameraChangedConn = nil
+	local workspaceChangedConn = nil
+
+	local function cancelCameraFreeze(keepConstraints)
+		if not keepConstraints then
+			cameraTranslationConstraints = Vector3.new(cameraTranslationConstraints.x, 1, cameraTranslationConstraints.z)
+		end
+		if cameraFrozen then
+			trackingHumanoid = nil
+			cameraFrozen = false
+		end
+	end
+
+	local function startCameraFreeze(subjectPosition, humanoidToTrack)
+		if not cameraFrozen then
+			humanoidJumpOrigin = subjectPosition
+			trackingHumanoid = humanoidToTrack
+			cameraTranslationConstraints = Vector3.new(cameraTranslationConstraints.x, 0, cameraTranslationConstraints.z)
+			cameraFrozen = true
+		end
+	end
+
+	local function onNewCameraSubject()
+		if subjectStateChangedConn then
+			subjectStateChangedConn:disconnect()
+			subjectStateChangedConn = nil
+		end
+		local humanoid = workspace.CurrentCamera and workspace.CurrentCamera.CameraSubject
+		if trackingHumanoid ~= humanoid then
+			cancelCameraFreeze()
+		end
+		if humanoid and humanoid:IsA('Humanoid') then
+			subjectStateChangedConn = humanoid.StateChanged:connect(function(oldState, newState)
+				if newState == Enum.HumanoidStateType.Jumping and not this:IsInFirstPerson() and UserInputService.VREnabled then
+					startCameraFreeze(this:GetSubjectPosition(), humanoid)
+				elseif newState ~= Enum.HumanoidStateType.Jumping and newState ~= Enum.HumanoidStateType.Freefall then
+					cancelCameraFreeze(true)
+				end
+			end)
+		end
+	end
+
+	local function onCameraChanged(prop)
+		if prop == 'CameraSubject' then
+			onNewCameraSubject()
+		end
+	end
+
+	local function onCurrentCameraChanged()
+		if cameraChangedConn then
+			cameraChangedConn:disconnect()
+			cameraChangedConn = nil
+		end
+		local camera = workspace.CurrentCamera
+		if camera then
+			camera.Changed:connect(onCameraChanged)
+			onCameraChanged('CameraSubject')
+		end
+	end
+
+	function this:GetVRFocus(subjectPosition, timeDelta)
+		local newFocus = nil
+		
+		local camera = workspace.CurrentCamera
+		local lastFocus = self.LastCameraFocus or subjectPosition
+		if not cameraFrozen then
+			cameraTranslationConstraints = Vector3.new(cameraTranslationConstraints.x, math.min(1, cameraTranslationConstraints.y + 0.42 * timeDelta), cameraTranslationConstraints.z)
+		end
+		if cameraFrozen and humanoidJumpOrigin and humanoidJumpOrigin.y > lastFocus.y then
+			newFocus = CFrame.new(Vector3.new(subjectPosition.x, math.min(humanoidJumpOrigin.y, lastFocus.y + 5 * timeDelta), subjectPosition.z))
+		else
+			newFocus = CFrame.new(Vector3.new(subjectPosition.x, lastFocus.y, subjectPosition.z):lerp(subjectPosition, cameraTranslationConstraints.y))
+		end
+
+		if cameraFrozen then
+			-- No longer in 3rd person
+			if self:IsInFirstPerson() then -- not UserInputService.VREnabled
+				cancelCameraFreeze()
+			end
+			-- This case you jumped off a cliff and want to keep your character in view
+			-- 0.5 is to fix floating point error when not jumping off cliffs
+			if humanoidJumpOrigin and subjectPosition.y < (humanoidJumpOrigin.y - 0.5) then
+				cancelCameraFreeze()
+			end
+		end
+		
+		return newFocus
+	end
+
+	------------------------
 
 	---- Input Events ----
 	local startPos = nil
@@ -780,6 +877,19 @@ local function CreateCamera()
 			GamepadDisconnectedConn:disconnect()
 			GamepadDisconnectedConn = nil
 		end
+		if subjectStateChangedConn then
+			subjectStateChangedConn:disconnect()
+			subjectStateChangedConn = nil
+		end
+		if cameraChangedConn then
+			cameraChangedConn:disconnect()
+			cameraChangedConn = nil
+		end
+		if workspaceChangedConn then
+			workspaceChangedConn:disconnect()
+			workspaceChangedConn = nil
+		end	
+		
 		this.TurningLeft = false
 		this.TurningRight = false
 		this.LastCameraTransform = nil
@@ -845,6 +955,13 @@ local function CreateCamera()
 				OnKeyUp(input, processed)
 			end
 		end)
+
+		workspaceChangedConn = workspace.Changed:connect(function(prop)
+			if prop == "CurrentCamera" then
+				onCurrentCameraChanged()
+			end
+		end)
+		onCurrentCameraChanged()
 
 		ShiftLockToggleConn = ShiftLockController.OnShiftLockToggled.Event:connect(function()
 			this:UpdateMouseBehavior()
