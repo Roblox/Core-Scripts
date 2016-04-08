@@ -952,6 +952,7 @@ local function CreateSettingsHub()
 		local panel = Panel3D.Get(Panel3D.Panels.Settings)
 		panel:SetModal()
 		panel.orientationMode = Panel3D.Orientation.Fixed
+		panel.cursorEnabled = false
 		panel:Resize(3, 3, 256)
 		this.ClippingShield.Parent = panel.gui
 		this.Shield.Parent.ClipsDescendants = false

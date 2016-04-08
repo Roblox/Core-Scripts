@@ -113,12 +113,16 @@ local function UpdateLayout()
 		end
 	end
 	
-	width = #ToolsList * ICON_SPACING
-	height = ICON_SIZE + HEALTHBAR_SPACE
+	if #ToolsList == 0 then
+		width = HEALTHBAR_WIDTH
+		height = HEALTHBAR_SPACE
+		panel.cursorEnabled = false
+	else
+		width = #ToolsList * ICON_SPACING
+		height = ICON_SIZE + HEALTHBAR_SPACE
+		panel.cursorEnabled = true
+	end
 	
---	hopperbinGUI.CanvasSize = Vector2.new(width, height)
---	hopperbinPart.Size = Vector3.new(width / PIXELS_PER_STUD, height / PIXELS_PER_STUD, 1)	
-
 	panel:ResizePixels(width, height)
 
 	healthbarBack.Position = UDim2.new(0.5, -HEALTHBAR_WIDTH / 2, 0, (HEALTHBAR_SPACE - HEALTHBAR_HEIGHT) / 2)
@@ -404,6 +408,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 	-- Check for enabling/disabling the whole thing
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
 		backpackEnabled = enabled
+		UpdateLayout()
 		if enabled then
 			ContextActionService:BindCoreAction("HotbarEquip2", OnHotbarEquip, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
 			toolsFrame.Parent = panel.gui
@@ -415,6 +420,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 
 	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
 		healthbarEnabled = enabled
+		UpdateLayout()
 		if enabled then
 			healthbarBack.Parent = panel.gui
 		else

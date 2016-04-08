@@ -187,6 +187,8 @@ function Panel3D.Get(panelId)
 		panel.orientationMode = Panel3D.Orientation.Horizontal
 		panel.orientation = nil
 
+		panel.cursorEnabled = true
+
 		function panel:AddTransparencyCallback(callback)
 			table.insert(panel.transparencyCallbacks, callback)
 		end
@@ -334,7 +336,7 @@ function Panel3D.OnRenderStep()
 		currentHoverPanel = hitPanel
 
 		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
-		if hitPanelId ~= Panel3D.Panels.Settings then
+		if hitPanel.cursorEnabled then
 			cursor.Parent = hitPanel.gui
 		else
 			cursor.Parent = nil
@@ -357,7 +359,6 @@ function Panel3D.OnRenderStep()
 	else
 		if currentHoverPanel then
 			UserInputService.MouseBehavior = savedMouseBehavior
-			UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 
 			if currentHoverPanel.OnMouseLeave then
 				currentHoverPanel:OnMouseLeave()
