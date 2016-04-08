@@ -35,8 +35,8 @@ end
 --
 -- Variables
 local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
-local currScreenGui, renderSteppedConnection = nil
-local destroyingBackground, destroyedLoadingGui, hasReplicatedFirstElements = false
+local currScreenGui, renderSteppedConnection = nil, nil
+local destroyingBackground, destroyedLoadingGui, hasReplicatedFirstElements = false, false, false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
 local isTenFootInterface = guiService:IsTenFootInterface()
@@ -452,7 +452,7 @@ if isTenFootInterface then
 end
 
 local setVerb = true
-local lastRenderTime, lastDotUpdateTime, brickCountChange = nil
+local lastRenderTime, lastDotUpdateTime, brickCountChange = nil, nil, nil
 local fadeCycleTime = 1.7
 local turnCycleTime = 2
 local lastAbsoluteSize = Vector2.new(0, 0)
