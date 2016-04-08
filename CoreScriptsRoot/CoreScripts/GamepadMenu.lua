@@ -111,6 +111,26 @@ local function setButtonEnabled(button, enabled)
 	radialButtons[button]["Disabled"] = not enabled
 end
 
+local function setButtonVisible(button, visible)
+	button.Visible = visible
+	if not visible then
+		setButtonEnabled(button, false)
+	end
+end
+
+local function enableVR()
+	local visibleButtons = {
+		Settings = true, LeaveGame = true,
+		PlayerList = false, Notifications = false,
+		Backpack = false, Chat = false
+	}
+	for button, _ in pairs(radialButtons) do
+		if visibleButtons[button.Name] ~= nil then
+			setButtonVisible(button, visibleButtons[button.Name])
+		end
+	end
+end
+
 local emptySelectedImageObject = utility:Create'ImageLabel'
 {
 	BackgroundTransparency = 1,
@@ -380,6 +400,10 @@ local function createGamepadMenuGui()
 			end
 		end
 	end)
+
+	if InputService.VREnabled then
+		enableVR()
+	end
 end
 
 local function isCoreGuiDisabled()
