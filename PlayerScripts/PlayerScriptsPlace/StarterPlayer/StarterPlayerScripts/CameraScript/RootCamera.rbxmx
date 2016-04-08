@@ -380,13 +380,16 @@ local function CreateCamera()
 	local vrRotationIntensityExists = true
 	local lastVrRotationCheck = 0
 	function this:ShouldUseVRRotation()
+		if not (HasVRAPI and UserInputService.VREnabled) then
+			return false
+		end
 		if not vrRotationIntensityExists and tick() - lastVrRotationCheck < 1 then return false end
 		
 		local success, vrRotationIntensity = pcall(function() return StarterGui:GetCore("VRRotationIntensity") end)
 		vrRotationIntensityExists = success and vrRotationIntensity ~= nil
 		lastVrRotationCheck = tick()
-		
-		return HasVRAPI and UserInputService.VREnabled and success and vrRotationIntensity ~= nil and vrRotationIntensity ~= "Smooth"	
+
+		return success and vrRotationIntensity ~= nil and vrRotationIntensity ~= "Smooth"
 	end
 
 	function this:GetVRRotationInput()
