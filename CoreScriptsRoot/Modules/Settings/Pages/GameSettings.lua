@@ -298,23 +298,25 @@ local function Initialize()
 		------------------ VR Camera Mode -----------------------
 
 		if HasVRAPI and UserInputService.VREnabled then
-			local VR_ROTATION_INTENSITY_OPTIONS = {"High", "Low", "Smooth"}
-			local VRRotationIntensity = VR_ROTATION_INTENSITY_OPTIONS[1]
+			local VR_ROTATION_INTENSITY_OPTIONS = {"Low", "High", "Smooth"}
 
 			if utility:IsSmallTouchScreen() then
 				this.VRRotationFrame, 
 				this.VRRotationLabel,
-				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, 1)
+				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity)
 			else
 				this.VRRotationFrame, 
 				this.VRRotationLabel,
-				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, 1, 3)
+				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity, 3)
 			end
 
 			StarterGui:RegisterGetCore("VRRotationIntensity",
 				function()
-					return VR_ROTATION_INTENSITY_OPTIONS[this.VRRotationMode.CurrentIndex] or VR_ROTATION_INTENSITY_OPTIONS[1]
+					return VR_ROTATION_INTENSITY_OPTIONS[GameSettings.VRRotationIntensity] or VR_ROTATION_INTENSITY_OPTIONS[1]
 				end)
+			this.VRRotationMode.IndexChanged:connect(function(newIndex)
+				GameSettings.VRRotationIntensity = newIndex
+			end)
 		end
 
 		------------------------------------------------------
