@@ -141,7 +141,8 @@ end
 local function SetTransparency(transparency)
 	for i, v in pairs(Tools) do
 		v.icon.BackgroundTransparency = transparency + 0.5
-		v.icon.ImageTransparency = transparency
+		v.image.ImageTransparency = transparency
+		v.text.TextTransparency = transparency
 	end
 
 	healthbarBack.BackgroundTransparency = transparency
@@ -188,12 +189,33 @@ local function AddTool(tool)
 
 	slot.hovered = false
 	slot.tool = tool
-	slot.icon = Instance.new("ImageButton", toolsFrame)
+
+	slot.icon = Instance.new("TextButton", toolsFrame)
+	slot.icon.Text = ""
 	slot.icon.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
 	slot.icon.BackgroundColor3 = Color3.new(0, 0, 0)
 	slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
 	slot.icon.BorderColor3 = SLOT_BORDER_COLOR
-	slot.icon.Image = tool.TextureId
+
+	slot.image = Instance.new("ImageLabel", slot.icon)
+	slot.image.Position = UDim2.new(0, 1, 0, 1)
+	slot.image.Size = UDim2.new(1, -2, 1, -2)
+	slot.image.BackgroundTransparency = 1
+
+	slot.text = Instance.new("TextLabel", slot.icon)
+	slot.text.Position = UDim2.new(0, 1, 0, 1)
+	slot.text.Size = UDim2.new(1, -2, 1, -2)
+	slot.text.BackgroundTransparency = 1
+	slot.text.TextColor3 = Color3.new(1, 1, 1)
+	slot.text.Font = Enum.Font.SourceSans
+	slot.text.FontSize = Enum.FontSize.Size12
+	slot.text.ClipsDescendants = true
+
+	local function updateToolData()
+		slot.image.Image = tool.TextureId
+		slot.text.Text = tool.TextureId == "" and tool.Name or ""
+	end
+	updateToolData()
 
 	slot.OnClick = function()
 		if not player.Character then return end
@@ -222,10 +244,14 @@ local function AddTool(tool)
 --	slot.icon.MouseLeave:connect(slot.OnLeave)
 
 	tool.Changed:connect(function(prop)
-		if tool.Parent == player:FindFirstChild("Backpack") then
-			slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
-		elseif tool.Parent == player.Character then
-			slot.icon.BorderSizePixel = SLOT_BORDER_SELECTED_SIZE
+		if prop == "Parent" then
+			if tool.Parent == player:FindFirstChild("Backpack") then
+				slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
+			elseif tool.Parent == player.Character then
+				slot.icon.BorderSizePixel = SLOT_BORDER_SELECTED_SIZE
+			end
+		elseif prop == "TextureId" or prop == "Name" then
+			updateToolData()
 		end
 	end)
 	
