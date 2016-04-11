@@ -42,7 +42,6 @@ local defeatableTopbar = (defeatableTopbarSuccess and defeatableTopbarFlagValue 
 
 --[[ END OF FFLAG VALUES ]]
 
-
 --[[ SERVICES ]]
 
 local CoreGuiService = game:GetService('CoreGui')
@@ -53,18 +52,15 @@ local StarterGui = game:GetService('StarterGui')
 
 --[[ END OF SERVICES ]]
 
-
 local topbarEnabled = true
 local topbarEnabledChangedEvent = Instance.new('BindableEvent')
 
 local settingsActive = false
 
 local GameSettings = UserSettings().GameSettings
+
+while not PlayersService.LocalPlayer do wait() end
 local Player = PlayersService.LocalPlayer
-while Player == nil do
-	wait()
-	Player = PlayersService.LocalPlayer
-end
 
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
@@ -283,7 +279,6 @@ local function CreateMenuBar(barAlignment)
 		end
 	end
 
-
 	return this
 end
 
@@ -372,7 +367,7 @@ end
 ----- HEALTH -----
 local function CreateUsernameHealthMenuItem()
 
-	local container, username, healthContainer, healthFill = nil
+	local container, username, healthContainer, healthFill = nil, nil, nil, nil
 
 	if isTenFootInterface then
 		container, username, healthContainer, healthFill = TenFootInterface:CreateHealthBar()
@@ -531,14 +526,14 @@ local function CreateUsernameHealthMenuItem()
 
 	-- Don't need to disconnect this one because we never reconnect it.
 	Player.CharacterAdded:connect(OnCharacterAdded)
-	if Player.Character then
-		OnCharacterAdded(Player.Character)
-	end
+	    if Player.Character then
+		    OnCharacterAdded(Player.Character)
+	    end
 
-	local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
-	container.MouseButton1Click:connect(function()
+	    local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
+	    container.MouseButton1Click:connect(function()
 		if topbarEnabled then
-			PlayerlistModule.ToggleVisibility()
+	        PlayerlistModule.ToggleVisibility()
 		end
 	end)
 
@@ -804,7 +799,6 @@ local function CreateUnreadMessagesNotifier(ChatModule)
 		end
 	end
 
-
 	if ChatModule then
 		if ChatModule.VisibilityStateChanged then
 			ChatModule.VisibilityStateChanged:connect(onChatStateChanged)
@@ -821,7 +815,7 @@ local function CreateUnreadMessagesNotifier(ChatModule)
 end
 
 local function CreateChatIcon()
-	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
+	local chatEnabled = InputService:GetPlatform() ~= Enum.Platform.XBoxOne
 	if not chatEnabled then return end
 	
 	local ChatModule = require(GuiRoot.Modules.Chat)
@@ -1075,38 +1069,23 @@ local function CreateShiftLockIcon()
 end
 ----------------------
 
-local TopBar = nil
-local LeftMenubar = nil
-local RightMenubar = nil
+local TopBar = CreateTopBar()
+local LeftMenubar = CreateMenuBar('Left')
+local RightMenubar = CreateMenuBar('Right')
 
-local settingsIcon = nil
-local chatIcon = nil
-local mobileShowChatIcon = nil
-local backpackIcon = nil
+local settingsIcon = CreateSettingsIcon(TopBar)
+local chatIcon = CreateChatIcon()
+local mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
+local backpackIcon = CreateBackpackIcon()
 local shiftlockIcon = nil
-local nameAndHealthMenuItem = nil
-local leaderstatsMenuItem = nil
-local stopRecordingIcon = nil
+local nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
+local leaderstatsMenuItem = CreateLeaderstatsMenuItem()
+local stopRecordingIcon = CreateStopRecordIcon()
 
-local LEFT_ITEM_ORDER = nil
-local RIGHT_ITEM_ORDER = nil
-
-TopBar = CreateTopBar()
-
-settingsIcon = CreateSettingsIcon(TopBar)
-chatIcon = CreateChatIcon()
-mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
-backpackIcon = CreateBackpackIcon()
-shiftlockIcon = nil --CreateShiftLockIcon()
-nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
-leaderstatsMenuItem = CreateLeaderstatsMenuItem()
-stopRecordingIcon = CreateStopRecordIcon()
-
-LeftMenubar = CreateMenuBar('Left')
-RightMenubar = CreateMenuBar('Right')
+local LEFT_ITEM_ORDER = {}
+local RIGHT_ITEM_ORDER = {}
 
 -- Set Item Orders
-LEFT_ITEM_ORDER = {}
 if settingsIcon then
 	LEFT_ITEM_ORDER[settingsIcon] = 1
 end
@@ -1125,8 +1104,6 @@ if shiftlockIcon then
 	LEFT_ITEM_ORDER[shiftlockIcon] = 5
 end
 LEFT_ITEM_ORDER[stopRecordingIcon] = 6
-
-RIGHT_ITEM_ORDER = {}
 if leaderstatsMenuItem then
 	RIGHT_ITEM_ORDER[leaderstatsMenuItem] = 1
 end
@@ -1134,7 +1111,6 @@ if nameAndHealthMenuItem and not isTenFootInterface then
 	RIGHT_ITEM_ORDER[nameAndHealthMenuItem] = 2
 end
 -------------------------
-
 
 local function AddItemInOrder(Bar, Item, ItemOrder)
 	local index = 1
@@ -1214,18 +1190,10 @@ local function CheckShiftLockMode()
 	end
 end
 
-
-
-local function OnGameSettingsChanged(property)
-	if property == 'ControlMode' or property == 'ComputerMovementMode' then
-		CheckShiftLockMode()
-	end
-end
-
-local function OnPlayerChanged(property)
-	if property == 'DevEnableMouseLock' or property == 'DevComputerMovementMode' then
-		CheckShiftLockMode()
-	end
+local function settingsChanged(prop)
+    if prop == 'ControlMode' or prop == 'ComputerMovementMode' or prop == 'DevEnableMouseLock' or prop == 'DevComputerMovementMode' then
+        CheckShiftLockMode()
+    end
 end
 
 TopBar:UpdateBackgroundTransparency()
@@ -1340,8 +1308,5 @@ end
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
 topBarEnabledChanged()
 -- Hook up Shiftlock detection
-GameSettings.Changed:connect(OnGameSettingsChanged)
-Player.Changed:connect(OnPlayerChanged)
-
-
-
+GameSettings.Changed:connect(settingsChanged)
+Player.Changed:connect(settingsChanged)
