@@ -1212,7 +1212,7 @@ if nameAndHealthMenuItem and topbarEnabled and not isTenFootInterface then
 	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
 end
 
---local Panel3D = require(GuiRoot.Modules.Panel3D)
+local Panel3D = require(GuiRoot.Modules.Panel3D)
 
 local function MoveHamburgerTo3D()
 	LeftMenubar:RemoveItem(settingsIcon)
