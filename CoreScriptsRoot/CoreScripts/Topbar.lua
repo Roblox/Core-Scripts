@@ -1191,7 +1191,7 @@ local function CheckShiftLockMode()
 end
 
 local function settingsChanged(prop)
-    if prop == 'ControlMode' or prop == 'ComputerMovementMode' or prop == 'DevEnableMouseLock' then
+    if prop == 'ControlMode' or prop == 'ComputerMovementMode' or prop == 'DevEnableMouseLock' or prop == 'DevComputerMovementMode' then
         CheckShiftLockMode()
     end
 end
