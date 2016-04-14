@@ -133,7 +133,8 @@ local function createMap()
 	end
 
 	function this:Get(key)
-		if key and not this.data[key] then
+		if not key then return end
+		if not this.data[key] then
 			this.data[key] = createCharacterChats()
 			local emptiedCon = nil
 			emptiedCon = this.data[key].Fifo.Emptied:connect(function()
@@ -141,7 +142,7 @@ local function createMap()
 				this:Erase(key)
 			end)
 		end
-		return key and this.data[key]
+		return this.data[key]
 	end
 
 	function this:GetData()
