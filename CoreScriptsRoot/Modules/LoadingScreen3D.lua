@@ -250,8 +250,8 @@ end
 local function CleanUp()
 	if CleanedUp then return end
 	CleanedUp = true
-	surfaceGuiAdorn.Parent = nil
 	RunService:UnbindFromRenderStep("LoadingGui3D")
+	surfaceGuiAdorn.Parent = nil
 end
 
 local function OnGameInfoLoaded()
@@ -263,13 +263,20 @@ local function OnGameInfoLoaded()
 	creatorText.Text = creatorName
 end
 
-local function OnReplicatingFinished()
-	if game:IsLoaded() or game.Loaded:wait() then
+local function OnReplicatingFinishedAsync()
+	local function OnGameLoaded()
 		if not CleanedUp then
 			FadeElements(loadingSurfaceGui, 1, SECOND_TO_FADE)
 			wait(SECOND_TO_FADE)
 			CleanUp()
 		end
+	end
+
+	if game:IsLoaded() then
+		OnGameLoaded()
+	else
+		game.Loaded:wait()
+		OnGameLoaded()
 	end
 end
 
@@ -321,9 +328,9 @@ GameInfoProvider.LoadingFinishedEvent:connect(OnGameInfoLoaded)
 
 
 if ReplicatedFirst:IsFinishedReplicating() then
-	OnReplicatingFinished()
+	spawn(OnReplicatingFinishedAsync)
 else
-	ReplicatedFirst.FinishedReplicating:connect(OnReplicatingFinished)
+	ReplicatedFirst.FinishedReplicating:connect(OnReplicatingFinishedAsync)
 end
 
 if ReplicatedFirst:IsDefaultLoadingGuiRemoved() then
