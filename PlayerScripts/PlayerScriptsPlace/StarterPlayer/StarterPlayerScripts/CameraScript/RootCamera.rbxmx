@@ -768,6 +768,7 @@ local function CreateCamera()
 	local numOfSeconds = 0.7
 	local currentSpeed = 0
 	local maxSpeed = 6
+	local vrMaxSpeed = 4
 	local thumbstickSensitivity = 1.0
 	local lastThumbstickPos = Vector2.new(0,0)
 	local ySensitivity = 0.65
@@ -825,18 +826,22 @@ local function CreateCamera()
 			local finalConstant = 0
 
 			if lastThumbstickRotate then
-				local elapsedTime = (currentTime - lastThumbstickRotate) * 10
-				currentSpeed = currentSpeed + (maxSpeed * ((elapsedTime*elapsedTime)/numOfSeconds))
+				if UserInputService.VREnabled then
+					currentSpeed = vrMaxSpeed
+				else
+					local elapsedTime = (currentTime - lastThumbstickRotate) * 10
+					currentSpeed = currentSpeed + (maxSpeed * ((elapsedTime*elapsedTime)/numOfSeconds))
 
-				if currentSpeed > maxSpeed then currentSpeed = maxSpeed end
+					if currentSpeed > maxSpeed then currentSpeed = maxSpeed end
 
-				if lastVelocity then
-					local velocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
-					local velocityDeltaMag = (velocity - lastVelocity).magnitude
+					if lastVelocity then
+						local velocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
+						local velocityDeltaMag = (velocity - lastVelocity).magnitude
 
-					if velocityDeltaMag > 12 then
-						currentSpeed = currentSpeed * (20/velocityDeltaMag)
-						if currentSpeed > maxSpeed then currentSpeed = maxSpeed end
+						if velocityDeltaMag > 12 then
+							currentSpeed = currentSpeed * (20/velocityDeltaMag)
+							if currentSpeed > maxSpeed then currentSpeed = maxSpeed end
+						end
 					end
 				end
 
