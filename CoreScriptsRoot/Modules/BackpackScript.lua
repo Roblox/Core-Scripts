@@ -439,6 +439,18 @@ local function MakeSlot(parent, index)
 		end
 		return hits
 	end
+	
+	-- Slot select logic, activated by clicking or pressing hotkey
+		function slot:Select()
+			local tool = slot.Tool
+			if tool then
+				if IsEquipped(tool) then --NOTE: HopperBin
+					UnequipAllTools()
+				elseif tool.Parent == Backpack then
+					EquipNewTool(tool)
+				end
+			end
+		end
 
 	-- Slot Init Logic --
 
@@ -482,18 +494,6 @@ local function MakeSlot(parent, index)
 			end
 		end)
 		SlotFrame.MouseLeave:connect(function() ToolTip.Visible = false end)
-
-		-- Slot select logic, activated by clicking or pressing hotkey
-		function slot:Select()
-			local tool = slot.Tool
-			if tool then
-				if IsEquipped(tool) then --NOTE: HopperBin
-					UnequipAllTools()
-				elseif tool.Parent == Backpack then
-					EquipNewTool(tool)
-				end
-			end
-		end
 
 		function slot:MoveToInventory()
 			if slot.Index <= HOTBAR_SLOTS then -- From a Hotbar slot
@@ -810,8 +810,6 @@ local function OnUISChanged(property)
 	end
 end
 
-
-
 -------------------------
 --| Gamepad Functions |--
 -------------------------
@@ -977,7 +975,6 @@ function getGamepadSwapSlot()
 		end
 	end
 end
-
 
 function changeSlot(slot)
 	if slot.Frame == GuiService.SelectedCoreObject then
