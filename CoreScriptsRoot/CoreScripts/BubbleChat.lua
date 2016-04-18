@@ -133,6 +133,7 @@ local function createMap()
 	end
 
 	function this:Get(key)
+		if not key then return end
 		if not this.data[key] then
 			this.data[key] = createCharacterChats()
 			local emptiedCon = nil
@@ -334,7 +335,7 @@ local function createChatOutput()
 	end
 
 	function this:CreateBillboardGuiHelper(instance, onlyCharacter)
-		if not this.CharacterSortedMsg:Get(instance)["BillboardGui"] then
+		if instance and not this.CharacterSortedMsg:Get(instance)["BillboardGui"] then
 			if not onlyCharacter then
 				if instance:IsA("Part") then
 					-- Create a new billboardGui object attached to this player
@@ -521,38 +522,40 @@ local function createChatOutput()
 		end
 
 		local billboardGui = this.CharacterSortedMsg:Get(instance)["BillboardGui"]
-		local chatBubbleRender = this.ChatBubbleWithTail[line.BubbleColor]:Clone()
-		chatBubbleRender.Visible = false
-		local bubbleText = this:CreateBubbleText(line.Message)
+		if billboardGui then
+			local chatBubbleRender = this.ChatBubbleWithTail[line.BubbleColor]:Clone()
+			chatBubbleRender.Visible = false
+			local bubbleText = this:CreateBubbleText(line.Message)
 
-		bubbleText.Parent = chatBubbleRender
-		chatBubbleRender.Parent = billboardGui.BillboardFrame
+			bubbleText.Parent = chatBubbleRender
+			chatBubbleRender.Parent = billboardGui.BillboardFrame
 
-		line.RenderBubble = chatBubbleRender
+			line.RenderBubble = chatBubbleRender
 
-		local currentTextBounds = TextService:GetTextSize(bubbleText.Text, CHAT_BUBBLE_FONT_SIZE_INT, CHAT_BUBBLE_FONT, 
-															Vector2.new(BILLBOARD_MAX_WIDTH, BILLBOARD_MAX_HEIGHT))
-		local bubbleWidthScale = math.max((currentTextBounds.x + CHAT_BUBBLE_WIDTH_PADDING)/BILLBOARD_MAX_WIDTH, 0.1)
-		local numOflines = (currentTextBounds.y/CHAT_BUBBLE_FONT_SIZE_INT)
+			local currentTextBounds = TextService:GetTextSize(bubbleText.Text, CHAT_BUBBLE_FONT_SIZE_INT, CHAT_BUBBLE_FONT, 
+																Vector2.new(BILLBOARD_MAX_WIDTH, BILLBOARD_MAX_HEIGHT))
+			local bubbleWidthScale = math.max((currentTextBounds.x + CHAT_BUBBLE_WIDTH_PADDING)/BILLBOARD_MAX_WIDTH, 0.1)
+			local numOflines = (currentTextBounds.y/CHAT_BUBBLE_FONT_SIZE_INT)
 
-		-- prep chat bubble for tween
-		chatBubbleRender.Size = UDim2.new(0,0,0,0)
-		chatBubbleRender.Position = UDim2.new(0.5,0,1,0)
+			-- prep chat bubble for tween
+			chatBubbleRender.Size = UDim2.new(0,0,0,0)
+			chatBubbleRender.Position = UDim2.new(0.5,0,1,0)
 
-		local newChatBubbleOffsetSizeY = numOflines * CHAT_BUBBLE_LINE_HEIGHT
+			local newChatBubbleOffsetSizeY = numOflines * CHAT_BUBBLE_LINE_HEIGHT
 
-		chatBubbleRender:TweenSizeAndPosition(UDim2.new(bubbleWidthScale, 0, 0, newChatBubbleOffsetSizeY),
-											 	UDim2.new( (1-bubbleWidthScale)/2, 0, 1, -newChatBubbleOffsetSizeY),
-											 	Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.1, true,
-											 	function() bubbleText.Visible = true end)
+			chatBubbleRender:TweenSizeAndPosition(UDim2.new(bubbleWidthScale, 0, 0, newChatBubbleOffsetSizeY),
+												 	UDim2.new( (1-bubbleWidthScale)/2, 0, 1, -newChatBubbleOffsetSizeY),
+												 	Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.1, true,
+												 	function() bubbleText.Visible = true end)
 
-		-- todo: remove when over max bubbles
-		this:SetBillboardGuiLOD(billboardGui, line.Origin)
-		this:UpdateChatLinesForOrigin(line.Origin, -newChatBubbleOffsetSizeY)
+			-- todo: remove when over max bubbles
+			this:SetBillboardGuiLOD(billboardGui, line.Origin)
+			this:UpdateChatLinesForOrigin(line.Origin, -newChatBubbleOffsetSizeY)
 
-		delay(line.BubbleDieDelay, function()
-			this:DestroyBubble(fifo, chatBubbleRender)
-		end)
+			delay(line.BubbleDieDelay, function()
+				this:DestroyBubble(fifo, chatBubbleRender)
+			end)
+		end
 	end
 
 	local testLabel = Instance.new('TextLabel')
