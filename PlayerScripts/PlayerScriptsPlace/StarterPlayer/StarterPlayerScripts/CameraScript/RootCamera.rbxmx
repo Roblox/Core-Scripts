@@ -78,6 +78,8 @@ local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
 -- Reset the camera look vector when the camera is enabled for the first time
 local SetCameraOnSpawn = true
 
+local hasGameLoaded = false
+
 local function GetRenderCFrame(part)
 	return part:GetRenderCFrame()
 end
@@ -672,6 +674,9 @@ local function CreateCamera()
 	end
 
 	local function OnMouseMoved(input, processed)
+		if not hasGameLoaded and UserInputService.VREnabled then
+			return
+		end
 		if startPos and lastPos and panBeginLook then
 			local currPos = lastPos + input.Delta
 			local totalTrans = currPos - startPos
@@ -689,6 +694,9 @@ local function CreateCamera()
 	end
 
 	local function OnMouseWheel(input, processed)
+		if not hasGameLoaded and UserInputService.VREnabled then
+			return
+		end
 		if not processed then
 			if this.ZoomEnabled then
 				if UserSettings():IsUserFeatureEnabled("UserBetterInertialScrolling") then
@@ -717,6 +725,9 @@ local function CreateCamera()
 	end
 
 	local function OnKeyDown(input, processed)
+		if not hasGameLoaded and UserInputService.VREnabled then
+			return
+		end
 		if processed then return end
 		if this.ZoomEnabled then
 			if input.KeyCode == Enum.KeyCode.I then
@@ -810,6 +821,9 @@ local function CreateCamera()
 	end
 
 	function this:UpdateGamepad()
+		if not hasGameLoaded and UserInputService.VREnabled then
+			return
+		end
 		local gamepadPan = this.GamepadPanningCamera
 		if gamepadPan then
 			gamepadPan = gamepadLinearToCurve(gamepadPan)
@@ -1113,6 +1127,20 @@ local function CreateCamera()
 			OnPlayerAdded(PlayersService.LocalPlayer)
 		end
 	end)
+
+	local function OnGameLoaded()
+		hasGameLoaded = true
+	end
+
+	spawn(function()
+		if game:IsLoaded() then
+			OnGameLoaded()
+		else
+			game.Loaded:wait()
+			OnGameLoaded()
+		end
+	end)
+
 
 	return this
 end
