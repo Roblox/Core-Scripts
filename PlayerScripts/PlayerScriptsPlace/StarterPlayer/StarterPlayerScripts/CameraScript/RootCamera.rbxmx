@@ -821,11 +821,8 @@ local function CreateCamera()
 	end
 
 	function this:UpdateGamepad()
-		if not hasGameLoaded and UserInputService.VREnabled then
-			return
-		end
 		local gamepadPan = this.GamepadPanningCamera
-		if gamepadPan then
+		if gamepadPan and (hasGameLoaded or not UserInputService.VREnabled) then
 			gamepadPan = gamepadLinearToCurve(gamepadPan)
 			local currentTime = tick()
 			if gamepadPan.X ~= 0 or gamepadPan.Y ~= 0 then
