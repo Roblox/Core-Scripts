@@ -5,7 +5,6 @@
 		Description: Takes care of the leave game in Settings Menu
 --]]
 
-
 -------------- CONSTANTS -------------
 local LEAVE_GAME_ACTION = "LeaveGameCancelAction"
 
@@ -14,6 +13,7 @@ local CoreGui = game:GetService("CoreGui")
 local ContextActionService = game:GetService("ContextActionService")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
@@ -22,7 +22,6 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 local PageInstance = nil
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
-
 
 ----------- CLASS DECLARATION --------------
 
@@ -90,7 +89,6 @@ local function Initialize()
 	end
 	this.LeaveGameButton.Parent = leaveGameText
 
-
 	------------- Init ----------------------------------
 	
 	local dontleaveGameButton = utility:MakeStyledButton("DontLeaveGame", "Don't Leave", buttonSize, this.DontLeaveFromButton)
@@ -103,15 +101,16 @@ local function Initialize()
 	dontleaveGameButton.Parent = leaveGameText
 
 	this.Page.Size = UDim2.new(1,0,0,dontleaveGameButton.AbsolutePosition.Y + dontleaveGameButton.AbsoluteSize.Y)
-
 	return this
 end
-
 
 ----------- Public Facing API Additions --------------
 PageInstance = Initialize()
 
 PageInstance.Displayed.Event:connect(function()
+	if RunService:IsStudio() then
+		warn('Pressing the leave button will exit you out of studio.')
+	end
 	GuiService.SelectedCoreObject = PageInstance.LeaveGameButton
 	ContextActionService:BindCoreAction(LEAVE_GAME_ACTION, PageInstance.DontLeaveFromHotkey, false, Enum.KeyCode.ButtonB)
 end)
@@ -119,6 +118,5 @@ end)
 PageInstance.Hidden.Event:connect(function()
 	ContextActionService:UnbindCoreAction(LEAVE_GAME_ACTION)
 end)
-
 
 return PageInstance
