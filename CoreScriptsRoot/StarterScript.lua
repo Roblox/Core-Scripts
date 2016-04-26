@@ -21,6 +21,9 @@ end
 -- SettingsScript
 local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
 
+local vrKeyboardSuccess, vrKeyboardFlagValue = pcall(function() return settings():GetFFlag("UseVRKeyboardInLua") end)
+local useVRKeyboard = (vrKeyboardSuccess and vrKeyboardFlagValue == true)
+
 -- MainBotChatScript (the Lua part of Dialogs)
 scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", RobloxGui)
 
@@ -63,4 +66,8 @@ if touchEnabled then -- touch devices don't use same control frame
 	RobloxGui:WaitForChild("ControlFrame")
 	RobloxGui.ControlFrame:WaitForChild("BottomLeftControl")
 	RobloxGui.ControlFrame.BottomLeftControl.Visible = false
+end
+
+if useVRKeyboard then
+	require(RobloxGui.Modules.VR.VirtualKeyboard)
 end

@@ -28,7 +28,6 @@ local FLOOD_CHECK_MESSAGE_COUNT = 7
 local FLOOD_CHECK_MESSAGE_INTERVAL = 15 -- This is in seconds
 
 local SCROLLBAR_THICKNESS = 7
-
 local CHAT_COLORS =
 {
 	Color3.new(253/255, 41/255, 67/255), -- BrickColor.new("Bright red").Color,
@@ -50,6 +49,7 @@ local DebrisService = game:GetService('Debris')
 local GuiService = game:GetService('GuiService')
 local InputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
+local ContextActionService = game:GetService('ContextActionService')
 --[[ END OF SERVICES ]]
 
 --[[ Fast Flags ]]--
@@ -68,14 +68,12 @@ local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
 local Player = PlayersService.LocalPlayer
 -- GuiRoot will act as the top-node for parenting GUIs
-local GuiRoot = nil
-if NON_CORESCRIPT_MODE then
-	GuiRoot = Instance.new("ScreenGui")
-	GuiRoot.Name = "RobloxGui"
-	GuiRoot.Parent = Player:WaitForChild('PlayerGui')
-else
-	GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
-end
+local GuiRoot = Instance.new('Frame')
+GuiRoot.Name = 'GuiRoot';
+GuiRoot.Size = UDim2.new(1,0,1,0);
+GuiRoot.BackgroundTransparency = 1;
+
+
 
 local chatRepositioned = false
 local chatBarDisabled = false
@@ -91,8 +89,8 @@ local topbarEnabled = true
 
 
 
-if not NON_CORESCRIPT_MODE then
-	playerDropDownModule = require(GuiRoot.Modules:WaitForChild("PlayerDropDown"))
+if not NON_CORESCRIPT_MODE and not InputService.VREnabled then
+	playerDropDownModule = require(CoreGuiService:WaitForChild('RobloxGui').Modules:WaitForChild("PlayerDropDown"))
 	playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 	blockingUtility = playerDropDownModule:CreateBlockingUtility()
 end
@@ -1285,7 +1283,8 @@ local function CreateChatBarWidget(settings)
 	function this:OnChatBarFocusLost(enterPressed)
 		if self.ChatBar then
 			self.ChatBar.Visible = false
-			if enterPressed then
+			-- TODO: remove this when API for VR to set enterPressed is released
+			if enterPressed or InputService.VREnabled then
 				local didMatchSlashCommand = self:ProcessChatBarModes(false)
 				local cText = self:SanitizeInput(self:GetChatBarText())
 				if cText ~= "" then
@@ -1492,8 +1491,8 @@ local function CreateChatBarWidget(settings)
 						end
 					end
 
-					if Util.IsTouchDevice() then
-						-- Hide the chatbar on mobile so they can't see it.
+					if Util.IsTouchDevice() or InputService.VREnabled then
+						-- Hide the chatbar on mobile and in VR so they can't see it.
 						chatBarContainer.Position = UDim2.new(0,0,1,20);
 					end
 				end
@@ -1641,6 +1640,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:FadeOutChats()
+		if InputService.VREnabled then return end
 		if this.ChatsVisible == false then return end
 		this.ChatsVisible = false
 		if IsPlayerDropDownEnabled and playerDropDown then
@@ -1939,8 +1939,10 @@ local function CreateChatWindowWidget(settings)
 				if GetTopBarFlag() then
 					container.Position = UDim2.new(0,0,0,2);
 				end
+				if InputService.VREnabled then
+					container.Size = UDim2.new(1,0,1,0)
 				-- Phone
-				if newSize.X <= 640 then
+				elseif newSize.X <= 640 then
 					container.Size = UDim2.new(0.5,0,0.5,0) - container.Position
 				-- Tablet
 				elseif newSize.X <= 1024 then
@@ -2122,7 +2124,7 @@ local function CreateChat()
 	this.Visible = false
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
-		enabled = enabled and topbarEnabled
+		enabled = enabled and (topbarEnabled or InputService.VREnabled)
 		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
 			if not GetTopBarFlag() then
 				if Util:IsTouchDevice() then
@@ -2333,6 +2335,47 @@ local function CreateChat()
 		if	FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu and
 			game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 		then
+
+
+
+			if NON_CORESCRIPT_MODE then
+				local chatGui = Instance.new("ScreenGui")
+				chatGui.Name = "RobloxGui"
+				chatGui.Parent = Player:WaitForChild('PlayerGui')
+				GuiRoot.Parent = chatGui
+			else
+				local function onVREnabled()
+					if InputService.VREnabled then
+						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.Panel3D)
+						local panel = Panel3D.Get(Panel3D.Panels.Chat)
+						GuiRoot.Parent = panel.gui
+						panel:ResizePixels(300, 125)
+						panel.cursorEnabled = true
+						local function ClickedInVrfunction(actionName, inputState, inputObject)
+							if inputState == Enum.UserInputState.Begin then
+								self:FocusChatBar()
+							end
+						end
+
+						panel.OnMouseEnter = function()
+							ContextActionService:BindCoreAction("VRChatKeyboardFocus", ClickedInVrfunction, false, Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonR2, Enum.UserInputType.MouseButton1)
+						end
+						panel.OnMouseLeave = function()
+							ContextActionService:UnbindCoreAction("VRChatKeyboardFocus")
+						end
+					else
+						GuiRoot.Parent = CoreGuiService:WaitForChild('RobloxGui')
+					end
+				end
+				onVREnabled()
+				InputService.Changed:connect(function(prop)
+					if prop == 'VREnabled' then
+						onVREnabled()
+					end
+				end)
+			end
+
+
 			-- NOTE: eventually we will make multiple chat window frames
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
 			this.ChatBarWidget = CreateChatBarWidget(this.Settings)
