@@ -604,8 +604,6 @@ local function createChatOutput()
 	end
 
 	function this:OnGameChatMessage(origin, message, color)
-		if not this:BubbleChatEnabled() then return end
-
 		local localPlayer = PlayersService.LocalPlayer
 		local fromOthers = localPlayer ~= nil and (localPlayer.Character ~= origin)
 
