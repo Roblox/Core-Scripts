@@ -9,11 +9,7 @@ local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
 local PlayersService = game:GetService('Players')
-local HttpService = game:GetService('HttpService')
-local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local UserInputService = game:GetService('UserInputService')
-local Settings = UserSettings()
-local GameSettings = Settings.GameSettings
 
 ----------- UTILITIES --------------
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
@@ -26,6 +22,7 @@ local frameSelectedTransparency = .65
 
 ------------ Variables -------------------
 local PageInstance = nil
+repeat wait() until PlayersService.LocalPlayer
 local localPlayer = PlayersService.LocalPlayer
 
 ----------- CLASS DECLARATION --------------
@@ -64,18 +61,14 @@ local function Initialize()
 
 	----- FRIENDSHIP FUNCTIONS ------
 	local function getFriendStatus(selectedPlayer)
-		if selectedPlayer == localPlayer then
-			return Enum.FriendStatus.NotFriend
+		local success, result = pcall(function()
+			-- NOTE: Core script only
+			return localPlayer:GetFriendStatus(selectedPlayer)
+		end)
+		if success then
+			return result
 		else
-			local success, result = pcall(function()
-				-- NOTE: Core script only
-				return localPlayer:GetFriendStatus(selectedPlayer)
-			end)
-			if success then
-				return result
-			else
-				return Enum.FriendStatus.NotFriend
-			end
+			return Enum.FriendStatus.NotFriend
 		end
 	end
 
@@ -102,8 +95,7 @@ local function Initialize()
 				status = getFriendStatus(player)
 			end
 
-			local friendLabel = nil
-			local friendLabelText = nil
+			local friendLabel, friendLabelText = nil, nil
 			if not status then
 				friendLabel = Instance.new('TextButton')
 				friendLabel.Text = ''
@@ -226,7 +218,6 @@ local function Initialize()
 
 		selectionFound = nil
 
-
 		-- iterate through players to reuse or create labels for players
 		for index=1, #sortedPlayers do
 			local player = sortedPlayers[index]
@@ -298,10 +289,7 @@ local function Initialize()
 	return this
 end
 
-
 ----------- Public Facing API Additions --------------
 PageInstance = Initialize()
 
 return PageInstance
-
-
