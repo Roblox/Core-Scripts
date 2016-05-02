@@ -517,6 +517,8 @@ local function createChatOutput()
 	end
 
 	function this:CreateChatLineRender(instance, line, onlyCharacter, fifo)
+		if not instance then return end
+
 		if not this.CharacterSortedMsg:Get(instance)["BillboardGui"] then
 			this:CreateBillboardGuiHelper(instance, onlyCharacter)
 		end
@@ -594,10 +596,9 @@ local function createChatOutput()
 
 		local line = createPlayerChatLine(chatType, sourcePlayer, safeMessage, not fromOthers)
 		
-		local fifo = this.CharacterSortedMsg:Get(line.Origin).Fifo
-		fifo:PushBack(line)
-
-		if sourcePlayer then
+		if sourcePlayer and line.Origin then
+			local fifo = this.CharacterSortedMsg:Get(line.Origin).Fifo
+			fifo:PushBack(line)
 			--Game chat (badges) won't show up here
 			this:CreateChatLineRender(sourcePlayer.Character, line, true, fifo)
 		end
