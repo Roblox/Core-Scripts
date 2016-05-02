@@ -7,9 +7,9 @@ local PLACEID = game.PlaceId
 
 local MPS = game:GetService('MarketplaceService')
 local UIS = game:GetService('UserInputService')
-local CP = game:GetService('ContentProvider')
 local guiService = game:GetService("GuiService")
 local ContextActionService = game:GetService('ContextActionService')
+local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 
 local startTime = tick()
 
@@ -35,20 +35,12 @@ end
 --
 -- Variables
 local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
-local currScreenGui = nil
-local renderSteppedConnection = nil
-local fadingBackground = false
-local destroyingBackground = false
-local destroyedLoadingGui = false
-local hasReplicatedFirstElements = false
+local currScreenGui, renderSteppedConnection = nil, nil
+local destroyingBackground, destroyedLoadingGui, hasReplicatedFirstElements = false, false, false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
-local isTenFootInterface = false
-pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
+local isTenFootInterface = guiService:IsTenFootInterface()
 local platform = UIS:GetPlatform()
-
-local useGameLoadedSuccess, useGameLoadedFlagValue = pcall(function() return settings():GetFFlag("UseGameLoadedInLoadingScript") end)
-local useGameLoadedToWait = (useGameLoadedSuccess and useGameLoadedFlagValue == true)
 
 local function IsConvertMyPlaceNameInXboxAppEnabled()
 	if UIS:GetPlatform() == Enum.Platform.XBoxOne then
@@ -459,16 +451,13 @@ if isTenFootInterface then
 	createTenfootCancelGui()
 end
 
-local removedLoadingScreen = false
 local setVerb = true
-local lastRenderTime = nil
+local lastRenderTime, lastDotUpdateTime, brickCountChange = nil, nil, nil
 local fadeCycleTime = 1.7
 local turnCycleTime = 2
 local lastAbsoluteSize = Vector2.new(0, 0)
 local loadingDots = "..."
-local lastDotUpdateTime = nil
 local dotChangeTime = .2
-local brickCountChange = nil
 local lastBrickCount = 0
 
 renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(function()
@@ -712,7 +701,7 @@ function fadeAndDestroyBlackFrame(blackFrame)
 	end)
 end
 
-function destroyLoadingElements()
+function destroyLoadingElements(instant)
 	if not currScreenGui then return end
 	if destroyedLoadingGui then return end
 	destroyedLoadingGui = true
@@ -721,7 +710,7 @@ function destroyLoadingElements()
 	for i=1, #guiChildren do
 		-- need to keep this around in case we get a connection error later
 		if guiChildren[i].Name ~= "ErrorFrame" then
-			if guiChildren[i].Name == "BlackFrame" then
+			if guiChildren[i].Name == "BlackFrame" and not instant then
 				fadeAndDestroyBlackFrame(guiChildren[i])
 			else
 				guiChildren[i]:Destroy()
@@ -734,22 +723,15 @@ function handleFinishedReplicating()
 	hasReplicatedFirstElements = (#game:GetService("ReplicatedFirst"):GetChildren() > 0)
 
 	if not hasReplicatedFirstElements then
-		if useGameLoadedToWait then
-			if game:IsLoaded() then
-				handleRemoveDefaultLoadingGui()
-			else
-				local gameLoadedCon = nil
-				gameLoadedCon = game.Loaded:connect(function()
-					gameLoadedCon:disconnect()
-					gameLoadedCon = nil
-					handleRemoveDefaultLoadingGui()
-				end)
-			end
-		else
-			while game:GetService("ContentProvider").RequestQueueSize > 0 do
-				wait()
-			end
+		if game:IsLoaded() then
 			handleRemoveDefaultLoadingGui()
+		else
+			local gameLoadedCon = nil
+			gameLoadedCon = game.Loaded:connect(function()
+				gameLoadedCon:disconnect()
+				gameLoadedCon = nil
+				handleRemoveDefaultLoadingGui()
+			end)
 		end
 	else
 		wait(5) -- make sure after 5 seconds we remove the default gui, even if the user doesn't
@@ -757,11 +739,11 @@ function handleFinishedReplicating()
 	end
 end
 
-function handleRemoveDefaultLoadingGui()
+function handleRemoveDefaultLoadingGui(instant)
 	if isTenFootInterface then
 		ContextActionService:UnbindCoreAction('CancelGameLoad')
 	end
-	destroyLoadingElements()
+	destroyLoadingElements(instant)
 end
 
 game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
@@ -773,3 +755,23 @@ game:GetService("ReplicatedFirst").RemoveDefaultLoadingGuiSignal:connect(handleR
 if game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
 	handleRemoveDefaultLoadingGui()
 end
+
+local UserInputServiceChangedConn;
+local function onUserInputServiceChanged(prop)
+	if prop == 'VREnabled' then
+		local UseVr = false
+		pcall(function() UseVr = UIS.VREnabled end)
+
+		if UseVr then
+			if UserInputServiceChangedConn then
+				UserInputServiceChangedConn:disconnect()
+				UserInputServiceChangedConn = nil
+			end
+			handleRemoveDefaultLoadingGui(true)
+			require(RobloxGui.Modules.LoadingScreen3D)
+		end
+	end
+end
+
+UserInputServiceChangedConn = UIS.Changed:connect(onUserInputServiceChanged)
+onUserInputServiceChanged('VREnabled')

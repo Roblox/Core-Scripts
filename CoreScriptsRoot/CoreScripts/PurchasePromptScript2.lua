@@ -1264,6 +1264,9 @@ local function onAcceptPurchase()
 		MarketplaceService:SignalClientPurchaseSuccess(tostring(result["receipt"]), Players.LocalPlayer.userId, productId)
 	else
 		onPurchaseSuccess()
+		if PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
+			MarketplaceService:ReportAssetSale(PurchaseData.AssetId, PurchaseData.CurrencyAmount)
+		end
 	end
 end
 
@@ -1355,6 +1358,7 @@ local function onBuyRobuxPrompt()
 		IsCheckingPlayerFunds = true
 		GuiService:OpenBrowserWindow(BASE_URL.."Upgrades/Robux.aspx")
 	end
+	MarketplaceService:ReportRobuxUpsellStarted()
 end
 
 local function onUpgradeBCPrompt()

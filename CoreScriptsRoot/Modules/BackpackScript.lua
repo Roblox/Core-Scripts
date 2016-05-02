@@ -439,6 +439,18 @@ local function MakeSlot(parent, index)
 		end
 		return hits
 	end
+	
+	-- Slot select logic, activated by clicking or pressing hotkey
+		function slot:Select()
+			local tool = slot.Tool
+			if tool then
+				if IsEquipped(tool) then --NOTE: HopperBin
+					UnequipAllTools()
+				elseif tool.Parent == Backpack then
+					EquipNewTool(tool)
+				end
+			end
+		end
 
 	-- Slot Init Logic --
 
@@ -482,18 +494,6 @@ local function MakeSlot(parent, index)
 			end
 		end)
 		SlotFrame.MouseLeave:connect(function() ToolTip.Visible = false end)
-
-		-- Slot select logic, activated by clicking or pressing hotkey
-		function slot:Select()
-			local tool = slot.Tool
-			if tool then
-				if IsEquipped(tool) then --NOTE: HopperBin
-					UnequipAllTools()
-				elseif tool.Parent == Backpack then
-					EquipNewTool(tool)
-				end
-			end
-		end
 
 		function slot:MoveToInventory()
 			if slot.Index <= HOTBAR_SLOTS then -- From a Hotbar slot
@@ -810,8 +810,6 @@ local function OnUISChanged(property)
 	end
 end
 
-
-
 -------------------------
 --| Gamepad Functions |--
 -------------------------
@@ -978,7 +976,6 @@ function getGamepadSwapSlot()
 	end
 end
 
-
 function changeSlot(slot)
 	if slot.Frame == GuiService.SelectedCoreObject then
 		local currentlySelectedSlot = getGamepadSwapSlot()
@@ -1079,7 +1076,7 @@ end
 local function OnCoreGuiChanged(coreGuiType, enabled)
 	-- Check for enabling/disabling the whole thing
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
-		enabled = enabled and topbarEnabled
+		enabled = enabled and topbarEnabled and not UserInputService.VREnabled
 		WholeThingEnabled = enabled
 		MainFrame.Visible = enabled
 
@@ -1539,5 +1536,18 @@ StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
 local backpackType, healthType = Enum.CoreGuiType.Backpack, Enum.CoreGuiType.Health
 OnCoreGuiChanged(backpackType, StarterGui:GetCoreGuiEnabled(backpackType))
 OnCoreGuiChanged(healthType, StarterGui:GetCoreGuiEnabled(healthType))
+
+local UISChanged
+local function OnVREnabled(prop)
+	if prop == "VREnabled" and UserInputService.VREnabled then
+		OnCoreGuiChanged(backpackType, StarterGui:GetCoreGuiEnabled(backpackType))
+		OnCoreGuiChanged(healthType, StarterGui:GetCoreGuiEnabled(healthType))
+		spawn(function() require(RobloxGui.Modules.BackpackScript3D) end)
+		UISChanged:disconnect()
+		UISChanged = nil
+	end
+end
+UISChanged = UserInputService.Changed:connect(OnVREnabled)
+OnVREnabled("VREnabled")
 
 return BackpackScript

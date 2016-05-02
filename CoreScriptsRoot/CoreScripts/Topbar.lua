@@ -67,7 +67,6 @@ while Player == nil do
 end
 
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
-
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 
@@ -171,7 +170,7 @@ local function CreateTopBar()
 	end
 
 	function this:UpdateBackgroundTransparency()
-		if settingsActive then
+		if settingsActive and not VREnabled then
 			topbarContainer.BackgroundTransparency = TOPBAR_OPAQUE_TRANSPARENCY
 			topbarShadow.Visible = false
 		else
@@ -399,7 +398,7 @@ local function CreateUsernameHealthMenuItem()
 	--------------
 
 	local function AnimateHurtOverlay()
-		if hurtOverlay then
+		if hurtOverlay and not VREnabled then
 			local newSize = UDim2.new(20, 0, 20, 0)
 			local newPos = UDim2.new(-10, 0, -10, 0)
 
@@ -714,7 +713,37 @@ local function CreateSettingsIcon(topBarInstance)
 		UpdateHamburgerIcon()
 	end)
 
-	return CreateMenuItem(settingsIconButton)
+	local menuItem = CreateMenuItem(settingsIconButton)
+
+	rawset(menuItem, "SetTransparency", function(self, transparency)
+		settingsIconImage.ImageTransparency = transparency
+	end)
+	rawset(menuItem, "SetImage", function(self, image)
+		settingsIconImage.Image = image
+	end)
+	rawset(menuItem, "SetSettingsActive", function(self, active)
+		settingsActive = active
+		MenuModule:ToggleVisibility(settingsActive)
+		UpdateHamburgerIcon()
+
+		return settingsActive
+	end)
+
+	return menuItem
+end
+
+local function Create3DSettingsIcon(topBarInstance)
+	local menuItem = CreateSettingsIcon(topBarInstance)
+
+	rawset(menuItem, "Hover", function(self, hovering)
+		if hovering then
+			self:SetImage("rbxasset://textures/ui/Menu/HamburgerDown.png")
+		else
+			self:SetImage("rbxasset://textures/ui/Menu/Hamburger.png")
+		end
+	end)
+
+	return menuItem
 end
 ------------
 
@@ -1215,7 +1244,46 @@ if nameAndHealthMenuItem and topbarEnabled and not isTenFootInterface then
 	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
 end
 
+local Panel3D = require(GuiRoot.Modules.Panel3D)
 
+local function MoveHamburgerTo3D()
+	LeftMenubar:RemoveItem(settingsIcon)
+
+	local settingsIcon3D = Create3DSettingsIcon(TopBar)
+
+	local function OnHamburger3DInput(actionName, state, inputObj)
+		if state ~= Enum.UserInputState.Begin then
+			return
+		end
+		settingsIcon3D:SetSettingsActive(true) --this button is only ever shown if the settings menu isn't already open, so it can only be true.
+	end
+
+	local eaterAction = game:GetService("HttpService"):GenerateGUID()
+	local ContextActionService = game:GetService("ContextActionService")
+	local function EnableHamburger3DInput(enable)
+		if enable then
+			ContextActionService:BindCoreAction("Hamburger3DInput", OnHamburger3DInput, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
+			ContextActionService:BindAction(eaterAction, function() end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
+		else
+			ContextActionService:UnbindCoreAction("Hamburger3DInput")
+			ContextActionService:UnbindAction(eaterAction)
+		end
+	end
+
+	local panel = Panel3D.Get(Panel3D.Panels.Hamburger)
+	panel:ResizePixels(50, TOPBAR_THICKNESS)
+	panel:AddTransparencyCallback(function(transparency) settingsIcon3D:SetTransparency(transparency) end)
+	panel.OnMouseEnter = function() 
+		EnableHamburger3DInput(true) 
+		settingsIcon3D:Hover(true)
+	end
+	panel.OnMouseLeave = function() 
+		EnableHamburger3DInput(false) 
+		settingsIcon3D:Hover(false)
+	end
+	
+	settingsIcon3D.Parent = panel.gui
+end
 
 local gameOptions = settings():FindFirstChild("Game Options")
 if gameOptions and not isTenFootInterface then
@@ -1242,6 +1310,22 @@ function topBarEnabledChanged()
 		end
 	end
 end
+
+local UISChanged;
+local function OnVREnabled(prop)
+	if prop == "VREnabled" and InputService.VREnabled then
+		VREnabled = true
+		topbarEnabled = false	
+		topBarEnabledChanged()
+		MoveHamburgerTo3D()
+		if UISChanged then
+			UISChanged:disconnect()
+			UISChanged = nil
+		end
+	end
+end
+UISChanged = InputService.Changed:connect(OnVREnabled)
+OnVREnabled("VREnabled")
 
 if defeatableTopbar then
 	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
