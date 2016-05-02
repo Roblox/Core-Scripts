@@ -143,6 +143,9 @@ local function createPanel()
 	panelGUI.Adornee = panelPart
 	panelGUI.ToolPunchThroughDistance = 1000
 	panelGUI.Active = true
+	pcall(function() --todo: remove this when api is live
+		panelGUI.AlwaysOnTop = true
+	end)
 	return panelPart, panelGUI
 end
 
@@ -250,31 +253,31 @@ function Panel3D.GetGUI(panel)
 end
 
 local zeroVector = Vector3.new(0, 0, 0)
-local baseHorizontal = CFrame.new()
-local basePosition = Vector3.new()
+local headXZ = CFrame.new()
+local headOffset = Vector3.new()
 local currentHoverPanel = nil
 local savedMouseBehavior = Enum.MouseBehavior.Default
 function Panel3D.OnRenderStep()
 	if not UserInputService.VREnabled then
 		return
 	end
+	local cameraCFrame = workspace.CurrentCamera.CFrame
 	local cameraRenderCFrame = workspace.CurrentCamera:GetRenderCFrame()
 	local userHeadCFrame = UserInputService:GetUserCFrame(Enum.UserCFrame.Head)
-	local cameraLook = cameraRenderCFrame.lookVector
-	local cameraHorizontalVector = Vector3.new(cameraLook.X, 0, cameraLook.Z).unit
-	local cameraPitchAngle = math.asin(cameraLook.Y)
 
-	local position = workspace.CurrentCamera.CFrame.p
-	local panelsOrigin = CFrame.new(position) * baseHorizontal * CFrame.new(basePosition)
+	local userHeadLook = userHeadCFrame.lookVector
+	local userHeadHorizontalVector = Vector3.new(userHeadLook.X, 0, userHeadLook.Z).unit
+	local userHeadPitch = math.asin(userHeadLook.Y)
 
 	local isAboveThreshold = false
-	if cameraPitchAngle > panelLockThreshold or resetOrientationFlag then
+	if userHeadPitch > panelLockThreshold or resetOrientationFlag then
 		isAboveThreshold = true
-		baseHorizontal = CFrame.new(zeroVector, cameraHorizontalVector)
-		basePosition = userHeadCFrame.p
+		headXZ = CFrame.new(zeroVector, userHeadHorizontalVector)
+		headOffset = userHeadCFrame.p
 		resetOrientationFlag = false
 	end
 
+	local panelsOrigin = cameraCFrame * headXZ * CFrame.new(headOffset)
 	for panelId, panel in pairs(panels) do
 		if panel.visibilityBehavior == Panel3D.Visibility.BelowAngleThreshold then
 			panel.visible = not isAboveThreshold and not currentModalPanel
@@ -282,8 +285,10 @@ function Panel3D.OnRenderStep()
 
 		if not panel.visible then
 			panel.part.Parent = nil
+			panel.gui.Adornee = nil
 		else
 			panel.part.Parent = workspace.CurrentCamera --TODO: move to new 3D gui space
+			panel.gui.Adornee = panel.part
 
 			local panelCFrame;
 			if panel.orientationMode == Panel3D.Orientation.Fixed and panel.orientation then
@@ -297,7 +302,7 @@ function Panel3D.OnRenderStep()
 
 			local toPanel = (panelCFrame.p - cameraRenderCFrame.p).unit
 
-			local transparency = panel.visible and 1 - (math.max(0, cameraLook:Dot(toPanel)) ^ panelTransparencyBias[panelId]) or 1
+			local transparency = panel.visible and 1 - (math.max(0, cameraRenderCFrame.lookVector:Dot(toPanel)) ^ panelTransparencyBias[panelId]) or 1
 			for _, callback in pairs(panel.transparencyCallbacks) do
 				callback(transparency)
 			end
