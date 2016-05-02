@@ -14,7 +14,9 @@ local Panel3D = {}
 Panel3D.Panels = {
 	Lower = 1,
 	Hamburger = 2,
-	Settings = 3
+	Settings = 3,
+	Keyboard = 4,
+	Chat = 5
 }
 
 Panel3D.Orientation = {
@@ -24,19 +26,24 @@ Panel3D.Orientation = {
 
 Panel3D.Visibility = {
 	BelowAngleThreshold = 1,
-	Modal = 2
+	Modal = 2,
+	Normal = 3
 }
 
 local panelDefaultVectors = {
 	[Panel3D.Panels.Lower] = CFrame.Angles(math.rad(-45), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5)),
 	[Panel3D.Panels.Hamburger] = CFrame.Angles(math.rad(-55), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5)),
-	[Panel3D.Panels.Settings] = Vector3.new(0, 0, -SETTINGS_DISTANCE)
+	[Panel3D.Panels.Settings] = Vector3.new(0, 0, -SETTINGS_DISTANCE),
+	[Panel3D.Panels.Keyboard] = CFrame.Angles(math.rad(-20), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5)),
+	[Panel3D.Panels.Chat] = CFrame.Angles(math.rad(-70), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5))
 }
-local panelLockThreshold = math.rad(-25)
+local DEFAULT_PANEL_LOCK_THRESHOLD = math.rad(-25)
 local panelTransparencyBias = { --tuned values; raise the opacity value to this power
 	[Panel3D.Panels.Lower] = 6.5,
 	[Panel3D.Panels.Hamburger] = 8,
-	[Panel3D.Panels.Settings] = 0
+	[Panel3D.Panels.Settings] = 0,
+	[Panel3D.Panels.Keyboard] = 1.5,
+	[Panel3D.Panels.Chat] = 1.5
 }
 local panels = {}
 
@@ -77,9 +84,11 @@ local function OnCharacterAdded(character)
 		end
 	end)
 end
-game.Players.LocalPlayer.CharacterAdded:connect(OnCharacterAdded)
-if game.Players.LocalPlayer.Character then OnCharacterAdded(game.Players.LocalPlayer.Character) end
-
+spawn(function()
+	while not game.Players.LocalPlayer do wait() end
+	game.Players.LocalPlayer.CharacterAdded:connect(OnCharacterAdded)
+	if game.Players.LocalPlayer.Character then OnCharacterAdded(game.Players.LocalPlayer.Character) end
+end)
 local function autoHideCursor(hide)
 	if not UserInputService.VREnabled then
 		cursorHidden = false
@@ -216,6 +225,14 @@ function Panel3D.Get(panelId)
 		function panel:SetModal()
 			panel.visible = false
 			panel.visibilityBehavior = Panel3D.Visibility.Modal
+
+			if panel.visible then
+				currentModalPanel = panel
+				if panel.orientationMode == Panel3D.Orientation.Fixed then
+					local userHeadCFrame = UserInputService:GetUserCFrame(Enum.UserCFrame.Head)
+					panel.orientation = userHeadCFrame * CFrame.new(0, 0, -panel.vector.magnitude) * CFrame.Angles(0, math.pi, 0)
+				end
+			end
 		end
 
 		function panel:SetVisible(visible)
@@ -269,6 +286,14 @@ function Panel3D.OnRenderStep()
 	local userHeadHorizontalVector = Vector3.new(userHeadLook.X, 0, userHeadLook.Z).unit
 	local userHeadPitch = math.asin(userHeadLook.Y)
 
+	local panelLockThreshold = DEFAULT_PANEL_LOCK_THRESHOLD
+
+	for panelId, panel in pairs(panels) do
+		if panel.pitchLockThreshold and panel.visible then
+			panelLockThreshold = math.max(panelLockThreshold, panel.pitchLockThreshold)
+		end
+	end
+
 	local isAboveThreshold = false
 	if userHeadPitch > panelLockThreshold or resetOrientationFlag then
 		isAboveThreshold = true
@@ -280,7 +305,7 @@ function Panel3D.OnRenderStep()
 	local panelsOrigin = cameraCFrame * headXZ * CFrame.new(headOffset)
 	for panelId, panel in pairs(panels) do
 		if panel.visibilityBehavior == Panel3D.Visibility.BelowAngleThreshold then
-			panel.visible = not isAboveThreshold and not currentModalPanel
+			panel.visible = not (isAboveThreshold or currentModalPanel)
 		end
 
 		if not panel.visible then
@@ -314,7 +339,6 @@ function Panel3D.OnRenderStep()
 	local ray = Ray.new(cframe.p, cframe.lookVector * 999)
 	local ignoreList = { game.Players.LocalPlayer.Character }
 	local part, endpoint = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
-
 	local hitPanel = nil
 	local hitPanelId = nil
 	for panelId, panel in pairs(panels) do
