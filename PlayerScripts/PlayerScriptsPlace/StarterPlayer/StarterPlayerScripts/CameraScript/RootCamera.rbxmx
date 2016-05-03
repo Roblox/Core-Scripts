@@ -19,7 +19,6 @@ local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockControll
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
-
 local function clamp(low, high, num)
 	if low <= high then
 		return math.min(high, math.max(low, num))
@@ -87,7 +86,6 @@ end
 local function CreateCamera()
 	local this = {}
 
-
 	function this:GetActivateValue()
 		return 0.7
 	end
@@ -121,6 +119,7 @@ local function CreateCamera()
 	local isFirstPerson = false
 	local isRightMouseDown = false
 	local isMiddleMouseDown = false
+	local isCenterLocked = false
 	this.RotateInput = Vector2.new()
 
 	this.lastSubject = nil
@@ -281,7 +280,12 @@ local function CreateCamera()
 			if isRightMouseDown or isMiddleMouseDown then
 				UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
 			else
-				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+				if not isCenterLocked then
+					UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+				else
+					UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
+				end
+				isCenterLocked = false
 			end
 		end
 	end
@@ -941,6 +945,9 @@ local function CreateCamera()
 			if input.UserInputType == Enum.UserInputType.Touch then
 				OnTouchBegan(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.MouseButton2 then
+				if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then 
+					isCenterLocked = true 
+				end
 				OnMouse2Down(input, processed)
 			elseif input.UserInputType == Enum.UserInputType.MouseButton3 then
 				OnMouse3Down(input, processed)
@@ -1137,7 +1144,6 @@ local function CreateCamera()
 			OnGameLoaded()
 		end
 	end)
-
 
 	return this
 end
