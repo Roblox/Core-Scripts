@@ -40,6 +40,8 @@ local panelTransparencyBias = { --tuned values; raise the opacity value to this 
 }
 local panels = {}
 
+local headScale = 1
+
 local renderStepName = "Panel3D"
 
 local cursor = Instance.new("ImageLabel")
@@ -192,15 +194,25 @@ function Panel3D.Get(panelId)
 
 		panel.cursorEnabled = true
 
+		panel.width = 1
+		panel.height = 1
+
 		function panel:AddTransparencyCallback(callback)
 			table.insert(panel.transparencyCallbacks, callback)
 		end
 
 		function panel:Resize(width, height, pixelsPerStud)
+			local headScale = 1
+			pcall(function()
+				headScale = workspace.CurrentCamera.HeadScale
+			end)
+			panel.width = width
+			panel.height = height
+
 			pixelsPerStud = pixelsPerStud or PIXELS_PER_STUD
 			panel.pixelScale = pixelsPerStud / PIXELS_PER_STUD
-			panel.part.Size = Vector3.new(width, height, 1)
-			panel.gui.CanvasSize = Vector2.new(pixelsPerStud * width, pixelsPerStud * height)
+			panel.part.Size = Vector3.new(panel.width * headScale, panel.height * headScale, 1)
+			panel.gui.CanvasSize = Vector2.new(pixelsPerStud * panel.width, pixelsPerStud * panel.height)
 
 			local distance = panel.vector.magnitude
 			panel.verticalRange = math.atan(panel.part.Size.Y / (2 * distance)) * 2
@@ -292,10 +304,13 @@ function Panel3D.OnRenderStep()
 
 			local panelCFrame;
 			if panel.orientationMode == Panel3D.Orientation.Fixed and panel.orientation then
-				panel.part.CFrame = workspace.CurrentCamera.CFrame * panel.orientation
+				--not working yet
+				local pos = panel.orientation.p * headScale
+				panel.part.CFrame = workspace.CurrentCamera.CFrame * ((panel.orientation - panel.orientation.p) + pos)
 				panelCFrame = panel.part.CFrame
 			else
-				local panelPosition = panelsOrigin:pointToWorldSpace(panel.vector)
+				--working
+				local panelPosition = panelsOrigin:pointToWorldSpace(panel.vector * headScale)
 				panelCFrame = CFrame.new(panelPosition, panelsOrigin.p)
 				panel.part.CFrame = panelCFrame
 			end
@@ -348,8 +363,8 @@ function Panel3D.OnRenderStep()
 		end
 
 		local localEndpoint = part:GetRenderCFrame():pointToObjectSpace(endpoint)
-		local x = ((localEndpoint.X / part.Size.X) * 1) + 0.5
-		local y = ((localEndpoint.Y / part.Size.Y) * 1) + 0.5
+		local x = (localEndpoint.X / part.Size.X) + 0.5
+		local y = (localEndpoint.Y / part.Size.Y) + 0.5
 		x = 1 - x
 		y = 1 - y
 		cursor.Size = UDim2.new(0, 8 * hitPanel.pixelScale, 0, 8 * hitPanel.pixelScale)
@@ -375,5 +390,29 @@ function Panel3D.OnRenderStep()
 end
 
 game:GetService("RunService"):BindToRenderStep(renderStepName, Enum.RenderPriority.Last.Value, Panel3D.OnRenderStep)
+
+local function OnCameraChanged(prop)
+	if prop == "HeadScale" then
+		for i, v in pairs(panels) do
+			v:Resize(v.width, v.height)
+		end
+		pcall(function()
+			headScale = workspace.CurrentCamera.HeadScale
+		end)
+	end
+end
+local cameraChangedConn = nil
+workspace.Changed:connect(function(prop)
+	if prop == "CurrentCamera" then
+		OnCameraChanged("HeadScale")
+		if cameraChangedConn then
+			cameraChangedConn:disconnect()
+		end
+		cameraChangedConn = workspace.CurrentCamera.Changed:connect(OnCameraChanged)
+	end
+end)
+if workspace.CurrentCamera then
+	OnCameraChanged("HeadScale")
+end
 
 return Panel3D
