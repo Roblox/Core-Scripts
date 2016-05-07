@@ -42,7 +42,6 @@ local defeatableTopbar = (defeatableTopbarSuccess and defeatableTopbarFlagValue 
 
 --[[ END OF FFLAG VALUES ]]
 
-
 --[[ SERVICES ]]
 
 local CoreGuiService = game:GetService('CoreGui')
@@ -60,11 +59,9 @@ local topbarEnabledChangedEvent = Instance.new('BindableEvent')
 local settingsActive = false
 
 local GameSettings = UserSettings().GameSettings
+
+while PlayersService.LocalPlayer == nil do wait() end
 local Player = PlayersService.LocalPlayer
-while Player == nil do
-	wait()
-	Player = PlayersService.LocalPlayer
-end
 
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
@@ -282,8 +279,6 @@ local function CreateMenuBar(barAlignment)
 			return removedItem, index
 		end
 	end
-
-
 	return this
 end
 
@@ -804,7 +799,6 @@ local function CreateUnreadMessagesNotifier(ChatModule)
 		end
 	end
 
-
 	if ChatModule then
 		if ChatModule.VisibilityStateChanged then
 			ChatModule.VisibilityStateChanged:connect(onChatStateChanged)
@@ -821,7 +815,7 @@ local function CreateUnreadMessagesNotifier(ChatModule)
 end
 
 local function CreateChatIcon()
-	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
+	local chatEnabled = InputService:GetPlatform() ~= Enum.Platform.XBoxOne
 	if not chatEnabled then return end
 	
 	local ChatModule = require(GuiRoot.Modules.Chat)
@@ -1039,74 +1033,20 @@ local function CreateStopRecordIcon()
 end
 -----------------------
 
------ Shift Lock ------
-local function CreateShiftLockIcon()
-	local shiftlockIconButton = Util.Create'ImageButton'
-	{
-		Name = "ShiftLock";
-		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
-		AutoButtonColor = false;
-		Image = "";
-		BackgroundTransparency = 1;
-	};
-
-	local shiftlockIconLabel = Util.Create'ImageLabel'
-	{
-		Name = "ShiftlockIcon";
-		Size = UDim2.new(0, 31, 0, 31);
-		Position = UDim2.new(0.5, -15, 0.5, -15);
-		BackgroundTransparency = 1;
-		Image = "rbxasset://textures/ui/ShiftLock/ShiftLock.png";
-		Parent = shiftlockIconButton;
-	};
-
-	local shiftlockActive = false
-	shiftlockIconButton.MouseButton1Click:connect(function()
-		if shiftlockActive == false then
-			shiftlockActive = true
-			shiftlockIconLabel.Image = "rbxasset://textures/ui/ShiftLock/ShiftLockDown.png";
-		else
-			shiftlockActive = false
-			shiftlockIconLabel.Image = "rbxasset://textures/ui/ShiftLock/ShiftLock.png";
-		end
-	end)
-
-	return CreateMenuItem(shiftlockIconButton)
-end
-----------------------
-
-local TopBar = nil
-local LeftMenubar = nil
-local RightMenubar = nil
-
-local settingsIcon = nil
-local chatIcon = nil
-local mobileShowChatIcon = nil
-local backpackIcon = nil
-local shiftlockIcon = nil
-local nameAndHealthMenuItem = nil
-local leaderstatsMenuItem = nil
-local stopRecordingIcon = nil
-
-local LEFT_ITEM_ORDER = nil
-local RIGHT_ITEM_ORDER = nil
-
-TopBar = CreateTopBar()
-
-settingsIcon = CreateSettingsIcon(TopBar)
-chatIcon = CreateChatIcon()
-mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
-backpackIcon = CreateBackpackIcon()
-shiftlockIcon = nil --CreateShiftLockIcon()
-nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
-leaderstatsMenuItem = CreateLeaderstatsMenuItem()
-stopRecordingIcon = CreateStopRecordIcon()
-
-LeftMenubar = CreateMenuBar('Left')
-RightMenubar = CreateMenuBar('Right')
+local TopBar = CreateTopBar()
+local LeftMenubar = CreateMenuBar('Left')
+local RightMenubar = CreateMenuBar('Right')
+local settingsIcon = CreateSettingsIcon(TopBar)
+local chatIcon = CreateChatIcon()
+local mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon()
+local backpackIcon = CreateBackpackIcon()
+local nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
+local leaderstatsMenuItem = CreateLeaderstatsMenuItem()
+local stopRecordingIcon = CreateStopRecordIcon()
+local LEFT_ITEM_ORDER = {}
+local RIGHT_ITEM_ORDER = {}
 
 -- Set Item Orders
-LEFT_ITEM_ORDER = {}
 if settingsIcon then
 	LEFT_ITEM_ORDER[settingsIcon] = 1
 end
@@ -1121,12 +1061,7 @@ end
 if backpackIcon then
 	LEFT_ITEM_ORDER[backpackIcon] = 4
 end
-if shiftlockIcon then
-	LEFT_ITEM_ORDER[shiftlockIcon] = 5
-end
-LEFT_ITEM_ORDER[stopRecordingIcon] = 6
-
-RIGHT_ITEM_ORDER = {}
+LEFT_ITEM_ORDER[stopRecordingIcon] = 5
 if leaderstatsMenuItem then
 	RIGHT_ITEM_ORDER[leaderstatsMenuItem] = 1
 end
@@ -1134,7 +1069,6 @@ if nameAndHealthMenuItem and not isTenFootInterface then
 	RIGHT_ITEM_ORDER[nameAndHealthMenuItem] = 2
 end
 -------------------------
-
 
 local function AddItemInOrder(Bar, Item, ItemOrder)
 	local index = 1
@@ -1213,8 +1147,6 @@ local function CheckShiftLockMode()
 		end
 	end
 end
-
-
 
 local function OnGameSettingsChanged(property)
 	if property == 'ControlMode' or property == 'ComputerMovementMode' then
@@ -1342,6 +1274,3 @@ topBarEnabledChanged()
 -- Hook up Shiftlock detection
 GameSettings.Changed:connect(OnGameSettingsChanged)
 Player.Changed:connect(OnPlayerChanged)
-
-
-
