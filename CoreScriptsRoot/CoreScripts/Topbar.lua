@@ -195,7 +195,7 @@ local function CreateTopBar()
 end
 
 
-local BarAlignmentEnum = 
+local BarAlignmentEnum =
 {
 	Right = 0;
 	Left = 1;
@@ -349,7 +349,7 @@ local function Create3DMenuBar(barAlignment, threeDPanel)
 			RunService:UnbindFromRenderStep(RENDER_STEP_NAME)
 			RunService:BindToRenderStep(RENDER_STEP_NAME, Enum.RenderPriority.Last.Value, OnRenderStep)
 		end
-		threeDPanel.OnMouseLeave = function() 
+		threeDPanel.OnMouseLeave = function()
 			RunService:UnbindFromRenderStep(RENDER_STEP_NAME)
 			if lastHoveredItem then
 				lastHoveredItem:OnMouseLeave()
@@ -552,7 +552,7 @@ local function CreateUsernameHealthMenuItem()
 				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth and game.StarterGui:GetCoreGuiEnabled("Health") == true then
 					AnimateHurtOverlay()
 				end
-				
+
 				healthFill.Size = UDim2.new(healthPercent, 0, 1, 0)
 				healthFill.BackgroundColor3 = healthColor
 
@@ -821,26 +821,23 @@ local function Create3DSettingsIcon(topBarInstance, panel)
 		menuItem:SetSettingsActive(true) --this button is only ever shown if the settings menu isn't already open, so it can only be true.
 	end
 
-	local eaterAction = game:GetService("HttpService"):GenerateGUID()
 	local function EnableHamburger3DInput(enable)
 		if enable then
 			ContextActionService:BindCoreAction("Hamburger3DInput", OnHamburger3DInput, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
-			ContextActionService:BindAction(eaterAction, function() end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
 		else
 			ContextActionService:UnbindCoreAction("Hamburger3DInput")
-			ContextActionService:UnbindAction(eaterAction)
 		end
 	end
 
 	rawset(menuItem, "OnMouseEnter",
 		function(self)
-			EnableHamburger3DInput(true) 
+			EnableHamburger3DInput(true)
 			menuItem:Hover(true)
 		end)
 
 	rawset(menuItem, "OnMouseLeave",
 		function(self)
-			EnableHamburger3DInput(false) 
+			EnableHamburger3DInput(false)
 			menuItem:Hover(false)
 		end)
 
@@ -925,7 +922,7 @@ end
 local function CreateChatIcon()
 	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 	if not chatEnabled then return end
-	
+
 	local ChatModule = require(GuiRoot.Modules.Chat)
 
 	local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
@@ -1097,26 +1094,23 @@ local function Create3DChatIcon(topBarInstance, panel)
 		end
 	end
 
-	local eaterAction = game:GetService("HttpService"):GenerateGUID()
 	local function EnableChat3DInput(enable)
 		if enable then
 			ContextActionService:BindCoreAction("ChatIcon3DInput", On3DInput, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
-			ContextActionService:BindAction(eaterAction, function() end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
 		else
 			ContextActionService:UnbindCoreAction("ChatIcon3DInput")
-			ContextActionService:UnbindAction(eaterAction)
 		end
 	end
 
 	rawset(menuItem, "OnMouseEnter",
 		function(self)
-			EnableChat3DInput(true) 
+			EnableChat3DInput(true)
 			menuItem:Hover(true)
 		end)
 
 	rawset(menuItem, "OnMouseLeave",
 		function(self)
-			EnableChat3DInput(false) 
+			EnableChat3DInput(false)
 			menuItem:Hover(false)
 		end)
 
@@ -1398,7 +1392,7 @@ OnVREnabled("VREnabled")
 
 if defeatableTopbar then
 	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
-		if type(enabled) == "boolean" then 
+		if type(enabled) == "boolean" then
 			topbarEnabled = enabled
 			topBarEnabledChanged()
 		end
