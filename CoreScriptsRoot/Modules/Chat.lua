@@ -1254,6 +1254,16 @@ local function CreateChatBarWidget(settings)
 		end
 	end
 
+	function this:RemoveFocus()
+		if self:IsFocused() then
+			self.ChatBar:ReleaseFocus()
+		end
+	end
+
+	function this:IsFocused()
+		return self.ChatBar and self.ChatBar == InputService:GetFocusedTextBox()
+	end
+
 	function this:SanitizeInput(input)
 		local sanitizedInput = input
 		-- Chomp the whitespace at the front and end of the string
@@ -2315,6 +2325,16 @@ local function CreateChat()
 		end
 	end
 
+	local doOnceVRWelcome = false
+	function this:PrintVRWelcome()
+		if this.ChatWindowWidget and not doOnceVRWelcome then
+			if InputService.VREnabled then
+				this.ChatWindowWidget:AddSystemChatMessage("Press here to chat", true)
+				doOnceVRWelcome = true
+			end
+		end
+	end
+
 	function this:PrintHelp()
 		if this.ChatWindowWidget then
 			this.ChatWindowWidget:AddSystemChatMessage("Help Menu")
@@ -2335,9 +2355,6 @@ local function CreateChat()
 		if	FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu and
 			game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 		then
-
-
-
 			if NON_CORESCRIPT_MODE then
 				local chatGui = Instance.new("ScreenGui")
 				chatGui.Name = "RobloxGui"
@@ -2346,14 +2363,24 @@ local function CreateChat()
 			else
 				local function onVREnabled()
 					if InputService.VREnabled then
+
+						self:PrintVRWelcome()
 						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.Panel3D)
 						local panel = Panel3D.Get(Panel3D.Panels.Chat)
 						GuiRoot.Parent = panel.gui
 						panel:ResizePixels(300, 125)
 						panel.cursorEnabled = true
+						panel.pitchLockThreshold = math.rad(65)
+						panel.visibilityBehavior = Panel3D.Visibility.Normal
 						local function ClickedInVrfunction(actionName, inputState, inputObject)
 							if inputState == Enum.UserInputState.Begin then
-								self:FocusChatBar()
+								if this.ChatBarWidget then
+									if this.ChatBarWidget:IsFocused() then
+										this.ChatBarWidget:RemoveFocus()
+									else
+										self:FocusChatBar()
+									end
+								end
 							end
 						end
 
@@ -2519,11 +2546,19 @@ local function CreateChat()
 			if this.Visible then
 				this.ChatBarWidget:FadeIn()
 			end
+			if InputService.VREnabled and not this.Visible then
+				this.ChatBarWidget:RemoveFocus()
+			end
 		end
 		if IsPlayerDropDownEnabled and playerDropDown then
 			if not this.Visible then
 				playerDropDown:Hide()
 			end
+		end
+		if InputService.VREnabled then
+			local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.Panel3D)
+			local panel = Panel3D.Get(Panel3D.Panels.Chat)
+			panel:SetVisible(this.Visible)
 		end
 		this.VisibilityStateChanged:fire(this.Visible)
 	end

@@ -34,8 +34,8 @@ local panelDefaultVectors = {
 	[Panel3D.Panels.Lower] = CFrame.Angles(math.rad(-45), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5)),
 	[Panel3D.Panels.Hamburger] = CFrame.Angles(math.rad(-55), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5)),
 	[Panel3D.Panels.Settings] = Vector3.new(0, 0, -SETTINGS_DISTANCE),
-	[Panel3D.Panels.Keyboard] = CFrame.Angles(math.rad(-20), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5)),
-	[Panel3D.Panels.Chat] = CFrame.Angles(math.rad(-70), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5))
+	[Panel3D.Panels.Keyboard] = CFrame.Angles(math.rad(-22.5), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5)),
+	[Panel3D.Panels.Chat] = CFrame.Angles(math.rad(5), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5))
 }
 local DEFAULT_PANEL_LOCK_THRESHOLD = math.rad(-25)
 local panelTransparencyBias = { --tuned values; raise the opacity value to this power
@@ -406,6 +406,60 @@ function Panel3D.OnRenderStep()
 		cursor.Parent = nil
 	end
 end
+
+
+
+-- RayPlaneIntersection
+
+-- http://www.siggraph.org/education/materials/HyperGraph/raytrace/rayplane_intersection.htm
+local function RayPlaneIntersection(ray, planeNormal, pointOnPlane)
+	planeNormal = planeNormal.unit
+	ray = ray.Unit
+	-- compute Pn (dot) Rd = Vd and check if Vd == 0 then we know ray is parallel to plane
+	local Vd = planeNormal:Dot(ray.Direction)
+	
+	-- could fuzzy equals this a little bit to account for imprecision or very close angles to zero
+	if Vd == 0 then -- parallel, no intersection
+		return nil
+	end
+
+	local V0 = planeNormal:Dot(pointOnPlane - ray.Origin)
+	local t = V0 / Vd
+
+	if t < 0 then --plane is behind ray origin, and thus there is no intersection
+		return nil
+	end
+	
+	return ray.Origin + ray.Direction * t
+end
+
+function Panel3D.FindHoveredGuiElement(panel, elements)
+	local cameraRenderCFrame = workspace.CurrentCamera and workspace.CurrentCamera:GetRenderCFrame()
+	local panelPart = panel.part
+	if cameraRenderCFrame and panelPart then
+		local panelPartSize = panelPart.Size
+		local panelSurfaceCFrame = panelPart.CFrame + panelPart.CFrame.lookVector * (panelPartSize.Z * 0.5)
+		local intersectionPt = RayPlaneIntersection(Ray.new(cameraRenderCFrame.p, cameraRenderCFrame.lookVector), panelSurfaceCFrame.lookVector, panelSurfaceCFrame.p)
+		if intersectionPt then
+			local localPoint = panelSurfaceCFrame:pointToObjectSpace(intersectionPt) * Vector3.new(-1, 1, 1) + Vector3.new(panelPartSize.X/2, -panelPartSize.Y/2, 0)
+			local guiPoint = Vector2.new((localPoint.X / panelPartSize.X) *  panel.gui.AbsoluteSize.X, (localPoint.Y / panelPartSize.Y) * -panel.gui.AbsoluteSize.Y)
+			
+			local x = guiPoint.x
+			local y = guiPoint.y
+			for _, item in pairs(elements) do
+				local minPt = item.AbsolutePosition
+				local maxPt = item.AbsolutePosition + item.AbsoluteSize
+				if minPt.X <= x and maxPt.X >= x and minPt.Y <= y and maxPt.Y >= y then
+					return item
+				end
+			end
+		end
+	end
+end
+
+
+
+
 
 game:GetService("RunService"):BindToRenderStep(renderStepName, Enum.RenderPriority.Last.Value, Panel3D.OnRenderStep)
 

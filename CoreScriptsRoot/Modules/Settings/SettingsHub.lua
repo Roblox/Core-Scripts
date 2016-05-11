@@ -803,7 +803,7 @@ local function CreateSettingsHub()
 
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
 			this.Shield.Visible = this.Visible
-			if noAnimation then
+			if noAnimation or not this.Shield:IsDescendantOf(game) then
 				this.Shield.Position = SETTINGS_SHIELD_ACTIVE_POSITION
 			else
 				this.Shield:TweenPosition(SETTINGS_SHIELD_ACTIVE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quart, 0.5, true)
