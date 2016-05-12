@@ -494,9 +494,6 @@ local function CreateUsernameHealthMenuItem()
 						hurtOverlay.Position = newPos
 					end
 				end)
-			else
-				hurtOverlay.Size = newSize
-				hurtOverlay.Position = newPos
 			end
 		end
 	end
