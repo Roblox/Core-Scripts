@@ -1046,6 +1046,15 @@ local function CreateSelector(selectionStringTable, startPosition)
 	function this:SetInteractable(value)
 		interactable = value
 		this.SelectorFrame.Selectable = interactable
+		if not interactable then
+			for i, selectionLabel in pairs(this.Selections) do
+				selectionLabel.TextColor3 = Color3.new(49/255, 49/255, 49/255)
+			end
+		else
+			for i, selectionLabel in pairs(this.Selections) do
+				selectionLabel.TextColor3 = Color3.new(1, 1, 1)
+			end
+		end
 	end
 
 	--------------------- SETUP -----------------------
@@ -1813,6 +1822,127 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		RowFrame.Size = UDim2.new(1, 0, 0, 100)
 
 		UserInputService.InputBegan:connect(processInput)
+
+	elseif selectionType == "TextEntry" then
+		local isMouseOverRow = false
+		local forceReturnSelectionOnFocusLost = false
+		local SelectionOverrideObject = Util.Create'ImageLabel'
+		{
+			Image = "",
+			BackgroundTransparency = 1,
+		};
+
+		ValueChangerInstance = {}
+		ValueChangerInstance.HubRef = nil
+
+		local box = Util.Create'TextBox'
+		{
+			Size = UDim2.new(0.4,-10,0,40),
+			Position = UDim2.new(0.5,5,0,nextRowPositionY+5),
+			Text = rowDisplayName,
+			TextColor3 = Color3.new(0.7, 0.7, 0.7),
+			BackgroundTransparency = 1.0,
+			BorderSizePixel = 0,
+			TextYAlignment = Enum.TextYAlignment.Center,
+			TextXAlignment = Enum.TextXAlignment.Center,
+			TextWrapped = false,
+			Font = Enum.Font.SourceSans,
+			FontSize = Enum.FontSize.Size24,
+			ZIndex = 2,
+			SelectionImageObject = SelectionOverrideObject,
+			ClearTextOnFocus = false,
+			Parent = pageToAddTo.Page
+		};
+		ValueChangerSelection = box
+
+		box.Focused:connect(function()
+			if usesSelectedObject() then
+				GuiService.SelectedCoreObject = box
+			end
+
+			if box.Text == rowDisplayName then
+				box.Text = ""
+			end
+		end)
+		box.FocusLost:connect(function(enterPressed, inputObject)
+			if GuiService.SelectedCoreObject == box and (not isMouseOverRow or forceReturnSelectionOnFocusLost) then
+				GuiService.SelectedCoreObject = nil
+			end
+			forceReturnSelectionOnFocusLost = false
+		end)
+		if extraSpacing then
+			box.Position = UDim2.new(box.Position.X.Scale,box.Position.X.Offset,
+										box.Position.Y.Scale,box.Position.Y.Offset + extraSpacing)
+		end
+
+		ValueChangerSelection.SelectionGained:connect(function()
+			if usesSelectedObject() then
+				box.BackgroundTransparency = 0.8
+
+				if ValueChangerInstance.HubRef then
+					ValueChangerInstance.HubRef:ScrollToFrame(ValueChangerSelection)
+				end
+			end
+		end)
+		ValueChangerSelection.SelectionLost:connect(function()
+			if usesSelectedObject() then
+				box.BackgroundTransparency = 1.0
+			end
+		end)
+
+		local setRowSelection = function()
+			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
+			if fullscreenDropDown and fullscreenDropDown.Visible then return end
+
+			local valueFrame = ValueChangerSelection
+
+			if valueFrame and valueFrame.Visible and valueFrame.ZIndex > 1 and usesSelectedObject() and pageToAddTo.Active then
+				GuiService.SelectedCoreObject = valueFrame
+				isMouseOverRow = true
+			end
+		end
+		local function processInput(input)
+			if input.UserInputState == Enum.UserInputState.Begin then
+				if input.KeyCode == Enum.KeyCode.Return then
+					if GuiService.SelectedCoreObject == ValueChangerSelection then
+						forceReturnSelectionOnFocusLost = true
+						box:CaptureFocus()
+					end
+				end
+			end
+		end
+		RowFrame.MouseEnter:connect(setRowSelection)
+
+		function ValueChangerInstance:SetZIndex(newZIndex)
+			box.ZIndex = newZIndex
+		end
+
+		function ValueChangerInstance:SetInteractable(value)
+			interactable = value
+			box.Selectable = interactable
+			if not interactable then
+				box.TextColor3 = Color3.new(49/255, 49/255, 49/255)
+				box.ZIndex = 1
+			else
+				box.TextColor3 = Color3.new(0.7, 0.7, 0.7)
+				box.ZIndex = 2
+			end
+		end
+
+		function ValueChangerInstance:SetValue(value) -- should this do more?
+			box.Text = value
+		end
+
+		local valueChangedEvent = Instance.new("BindableEvent")
+		valueChangedEvent.Name = "ValueChanged"
+
+		box.FocusLost:connect(function() 
+			valueChangedEvent:Fire(box.Text)
+		end)
+
+		ValueChangerInstance.ValueChanged = valueChangedEvent.Event
+
+		UserInputService.InputBegan:connect(processInput)
 	end
 
 	ValueChangerInstance.Name = rowDisplayName .. "ValueChanger"
@@ -2022,3 +2152,4 @@ function moduleApiTable:TweenProperty(instance, prop, start, final, duration, ea
 end
 
 return moduleApiTable
+
