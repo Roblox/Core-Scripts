@@ -12,6 +12,9 @@ local USERNAME_CONTAINER_WIDTH = 170
 local COLUMN_WIDTH = 75
 local NAME_LEADERBOARD_SEP_WIDTH = 2
 
+local ITEM_SPACING = 0
+local VR_ITEM_SPACING = 3
+
 local FONT_COLOR = Color3.new(1,1,1)
 local TOPBAR_BACKGROUND_COLOR = Color3.new(31/255,31/255,31/255)
 local TOPBAR_OPAQUE_TRANSPARENCY = 0
@@ -67,7 +70,8 @@ local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 
-local Panel3D = require(GuiRoot.Modules.Panel3D)
+local Panel3D = require(GuiRoot.Modules.VR.Panel3D)
+local Topbar3DPanel = Panel3D.Get("Topbar3D")
 
 local Util = {}
 do
@@ -127,6 +131,14 @@ do
 		end
 	end
 end
+
+local selectionRing = Util.Create "ImageLabel" {
+	Name = "SelectionRing",
+	Position = UDim2.new(0.5, -22, 0.5, -22),
+	Size = UDim2.new(0, 44, 0, 44),
+	BackgroundTransparency = 1,
+	Image = "rbxasset://textures/ui/menu/buttonHover.png"
+}
 
 local function CreateTopBar()
 	local this = {}
@@ -213,7 +225,12 @@ local function CreateMenuBar(barAlignment)
 	function this:ArrangeItems()
 		local totalWidth = 0
 
-		for _, item in pairs(items) do
+		local spacing = ITEM_SPACING
+		if InputService.VREnabled then
+			spacing = VR_ITEM_SPACING
+		end
+
+		for i, item in ipairs(items) do
 			local width = item:GetWidth()
 
 			if alignment == BarAlignmentEnum.Left then
@@ -222,15 +239,19 @@ local function CreateMenuBar(barAlignment)
 				item.Position = UDim2.new(1, -totalWidth - width, 0, 0)
 			end
 
+			if i ~= #items then
+				width = width + spacing
+			end
+
 			totalWidth = totalWidth + width
 		end
 
 		if alignment == BarAlignmentEnum.Middle then
 			local currentX = -totalWidth / 2
-			for _, item in pairs(items) do
+			for _, item in ipairs(items) do
 				item.Position = UDim2.new(0, currentX, 0, 0)
 
-				currentX = currentX + item:GetWidth()
+				currentX = currentX + item:GetWidth() + spacing
 			end
 		end
 
@@ -318,42 +339,15 @@ local function Create3DMenuBar(barAlignment, threeDPanel)
 	function this:ArrangeItems()
 		local totalWidth = superArrangeItems(self)
 		if threeDPanel then
-			threeDPanel:ResizePixels(totalWidth, TOPBAR_THICKNESS)
+			threeDPanel:ResizePixels(totalWidth, 50)
 		end
 		return totalWidth
 	end
 
-	if threeDPanel then
-		local RENDER_STEP_NAME = game:GetService("HttpService"):GenerateGUID() .. "Create3DMenuBar"
-		threeDPanel:AddTransparencyCallback(function(transparency)
-			for _, item in pairs(this:GetItems()) do
-				item:SetTransparency(transparency)
-			end
-		end)
-
-		local lastHoveredItem = nil
-		local function OnRenderStep()
-			local hoveredItem = Panel3D.FindHoveredGuiElement(threeDPanel, this:GetItems())
-			if hoveredItem ~= lastHoveredItem then
-				if lastHoveredItem then
-					lastHoveredItem:OnMouseLeave()
-				end
-				if hoveredItem then
-					hoveredItem:OnMouseEnter()
-				end
-				lastHoveredItem = hoveredItem
-			end
-		end
-
-		threeDPanel.OnMouseEnter = function()
-			RunService:UnbindFromRenderStep(RENDER_STEP_NAME)
-			RunService:BindToRenderStep(RENDER_STEP_NAME, Enum.RenderPriority.Last.Value, OnRenderStep)
-		end
-		threeDPanel.OnMouseLeave = function()
-			RunService:UnbindFromRenderStep(RENDER_STEP_NAME)
-			if lastHoveredItem then
-				lastHoveredItem:OnMouseLeave()
-				lastHoveredItem = nil
+	function this:CloseAllExcept(item)
+		for i, v in pairs(this:GetItems()) do
+			if v ~= item then
+				v:SetActive(false)
 			end
 		end
 	end
@@ -398,6 +392,67 @@ local function CreateMenuItem(origInstance)
 	end
 
 	return this
+end
+
+local function Create3DMenuItem()
+	local menuItem = {}
+
+	local backgroundButton = Util.Create 'ImageButton' {
+		Name = "ButtonBackground",
+		Size = UDim2.new(0, 50, 0, 50),
+
+		BackgroundTransparency = 1,
+		SelectionImageObject = selectionRing:Clone()
+	}
+
+	local isActive = false
+
+	function menuItem:SetActive(active)
+		isActive = active
+		if active then
+			backgroundButton.Image = "rbxasset://textures/ui/menu/buttonActive.png"
+		else
+			backgroundButton.Image = "rbxasset://textures/ui/menu/buttonBackground.png"
+		end
+		backgroundButton.SelectionImageObject.Visible = not active
+	end
+
+	function menuItem:GetWidth()
+		return backgroundButton.AbsoluteSize.X
+	end
+
+	function menuItem:GetInstance()
+		return backgroundButton
+	end
+
+	local function setTransparency(parent, transparency)
+		if parent:IsA("ImageLabel") or parent:IsA("ImageButton") then
+			parent.ImageTransparency = transparency
+		elseif parent:IsA("TextLabel") or parent:IsA("TextButton") then
+			parent.TextTransparency = transparency
+		end
+		for i, v in pairs(parent:GetChildren()) do
+			if v:IsA("GuiObject") then
+				setTransparency(v, transparency)
+			end
+		end
+	end
+	function menuItem:SetTransparency(transparency)
+		setTransparency(backgroundButton, transparency)
+	end
+
+	menuItem:SetActive(false)
+
+	setmetatable(menuItem, {
+		__index = function(t, k)
+			return backgroundButton[k]
+		end,
+		__newindex = function(t, k, v)
+			backgroundButton[k] = v
+		end
+	})
+
+	return menuItem
 end
 
 local function createNormalHealthBar()
@@ -730,10 +785,7 @@ end
 
 --- SETTINGS ---
 local function CreateSettingsIcon(topBarInstance)
-	local MenuModule = nil
-	game.CoreGui.RobloxGui.Modules:WaitForChild("Settings")
-	game.CoreGui.RobloxGui.Modules.Settings:WaitForChild("SettingsHub")
-	MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings.SettingsHub)
+	local MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings.SettingsHub)
 
 	local settingsIconButton = Util.Create'ImageButton'
 	{
@@ -769,7 +821,7 @@ local function CreateSettingsIcon(topBarInstance)
 			settingsActive = false
 		end
 
-		MenuModule:ToggleVisibility(settingsActive)
+		MenuModule:ToggleVisibility()
 		UpdateHamburgerIcon()
 
 		return settingsActive
@@ -802,44 +854,30 @@ local function CreateSettingsIcon(topBarInstance)
 	return menuItem
 end
 
-local function Create3DSettingsIcon(topBarInstance, panel)
-	local menuItem = CreateSettingsIcon(topBarInstance)
+local function Create3DSettingsIcon(topBarInstance, panel, menubar)
+	local MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings.SettingsHub)
+	local menuItem = Create3DMenuItem()
 
-	rawset(menuItem, "Hover", function(self, hovering)
-		if hovering then
-			self:SetImage("rbxasset://textures/ui/Menu/HamburgerDown.png")
-		else
-			self:SetImage("rbxasset://textures/ui/Menu/Hamburger.png")
-		end
+	local icon = Util.Create "ImageLabel" {
+		Parent = menuItem:GetInstance(),
+
+		Position = UDim2.new(0.5, -14, 0.5, -10),
+		Size = UDim2.new(0, 28, 0, 20),
+
+		BackgroundTransparency = 1,
+
+		Image = "rbxasset://textures/ui/Menu/hamburger3D.png"
+	}
+
+	menuItem.MouseButton1Click:connect(function()
+		MenuModule:SetVisibility(true)
+		menubar:CloseAllExcept(menuItem)
 	end)
-
-
-	local function OnHamburger3DInput(actionName, state, inputObj)
-		if state ~= Enum.UserInputState.Begin then
-			return
-		end
-		menuItem:SetSettingsActive(true) --this button is only ever shown if the settings menu isn't already open, so it can only be true.
+	
+	local settingsPanel = Panel3D.Get("SettingsMenu")
+	function settingsPanel:OnVisibilityChanged(visible)
+		menuItem:SetActive(visible)
 	end
-
-	local function EnableHamburger3DInput(enable)
-		if enable then
-			ContextActionService:BindCoreAction("Hamburger3DInput", OnHamburger3DInput, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
-		else
-			ContextActionService:UnbindCoreAction("Hamburger3DInput")
-		end
-	end
-
-	rawset(menuItem, "OnMouseEnter",
-		function(self)
-			EnableHamburger3DInput(true)
-			menuItem:Hover(true)
-		end)
-
-	rawset(menuItem, "OnMouseLeave",
-		function(self)
-			EnableHamburger3DInput(false)
-			menuItem:Hover(false)
-		end)
 
 	return menuItem
 end
@@ -1003,7 +1041,7 @@ local function CreateChatIcon()
 	end
 	onChatStateChanged(ChatModule:GetVisibility())
 
-	if not Util.IsTouchDevice() then
+	if not Util.IsTouchDevice() and not InputService.VREnabled then
 		ChatModule:ToggleVisibility(true)
 	end
 
@@ -1076,43 +1114,34 @@ local function CreateMobileHideChatIcon()
 end
 
 
-local function Create3DChatIcon(topBarInstance, panel)
-	local menuItem = CreateChatIcon(topBarInstance)
+local function Create3DChatIcon(topBarInstance, panel, menubar)
+	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
+	if not chatEnabled then return end
 
+	local ChatModule = require(GuiRoot.Modules.Chat)
 
-	rawset(menuItem, "Hover", function(self, hovering)
-		if hovering then
-			self:SetImage("rbxasset://textures/ui/Chat/ChatDown.png")
-		else
-			self:SetImage("rbxasset://textures/ui/Chat/Chat.png")
-		end
+	local menuItem = Create3DMenuItem()
+
+	local icon = Util.Create "ImageLabel" {
+		Parent = menuItem:GetInstance(),
+
+		Position = UDim2.new(0.5, -14, 0.5, -12),
+		Size = UDim2.new(0, 28, 0, 28),
+
+		BackgroundTransparency = 1,
+
+		Image = "rbxasset://textures/ui/Chat/Chat.png"
+	}
+
+	menuItem.MouseButton1Click:connect(function()
+		ChatModule:SetVisible(not ChatModule:GetVisibility())
+		menubar:CloseAllExcept(menuItem)
 	end)
 
-	local function On3DInput(actionName, state, inputObj)
-		if state == Enum.UserInputState.Begin then
-			menuItem:ToggleChat()
-		end
+	local chatPanel = Panel3D.Get("Chat")
+	function chatPanel:OnVisibilityChanged(visible)
+		menuItem:SetActive(visible)
 	end
-
-	local function EnableChat3DInput(enable)
-		if enable then
-			ContextActionService:BindCoreAction("ChatIcon3DInput", On3DInput, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
-		else
-			ContextActionService:UnbindCoreAction("ChatIcon3DInput")
-		end
-	end
-
-	rawset(menuItem, "OnMouseEnter",
-		function(self)
-			EnableChat3DInput(true)
-			menuItem:Hover(true)
-		end)
-
-	rawset(menuItem, "OnMouseLeave",
-		function(self)
-			EnableChat3DInput(false)
-			menuItem:Hover(false)
-		end)
 
 	return menuItem
 end
@@ -1194,12 +1223,10 @@ local function CreateStopRecordIcon()
 end
 -----------------------
 
-local Hamburger3DPanel = Panel3D.Get(Panel3D.Panels.Hamburger)
-
 local TopBar = CreateTopBar()
 local LeftMenubar = CreateMenuBar(BarAlignmentEnum.Left)
 local RightMenubar = CreateMenuBar(BarAlignmentEnum.Right)
-local ThreeDMenubar = Create3DMenuBar(BarAlignmentEnum.Left, Hamburger3DPanel)
+local ThreeDMenubar = Create3DMenuBar(BarAlignmentEnum.Left, Topbar3DPanel)
 
 local settingsIcon = CreateSettingsIcon(TopBar)
 local mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon() or nil
@@ -1210,8 +1237,8 @@ local stopRecordingIcon = CreateStopRecordIcon()
 local leaderstatsMenuItem = CreateLeaderstatsMenuItem()
 local nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
 
-local settingsIcon3D = Create3DSettingsIcon(TopBar, Hamburger3DPanel)
-local chatIcon3D = Create3DChatIcon(TopBar, Hamburger3DPanel)
+local settingsIcon3D = Create3DSettingsIcon(TopBar, Topbar3DPanel, ThreeDMenubar)
+local chatIcon3D = Create3DChatIcon(TopBar, Topbar3DPanel, ThreeDMenubar)
 
 local LEFT_ITEM_ORDER = {}
 local RIGHT_ITEM_ORDER = {}
@@ -1328,7 +1355,7 @@ TopBar:UpdateBackgroundTransparency()
 
 LeftMenubar:SetDock(TopBar:GetInstance())
 RightMenubar:SetDock(TopBar:GetInstance())
-ThreeDMenubar:SetDock(Hamburger3DPanel.gui)
+ThreeDMenubar:SetDock(Topbar3DPanel:GetGUI())
 
 
 if not isTenFootInterface then
@@ -1345,6 +1372,23 @@ end
 
 
 local function MoveHamburgerTo3D()
+	Topbar3DPanel:SetType(Panel3D.Type.Fixed)
+	Topbar3DPanel:LinkTo("Backpack")
+	Topbar3DPanel:SetVisible(true)
+
+	local backpackPanel = Panel3D.Get("Backpack")
+	local panelLocalCF = CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, -1, 0) * CFrame.Angles(math.rad(5), 0, 0)
+	function Topbar3DPanel:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
+		local panelOriginCF = backpackPanel.localCF or CFrame.new()
+		self.localCF = panelOriginCF * panelLocalCF
+	end
+
+	function Topbar3DPanel:OnUpdate()
+		for _, item in pairs(ThreeDMenubar:GetItems()) do
+			item:SetTransparency(self.transparency)
+		end
+	end
+
 	LeftMenubar:RemoveItem(settingsIcon)
 	AddItemInOrder(ThreeDMenubar, settingsIcon3D, THREE_D_ITEM_ORDER)
 end
