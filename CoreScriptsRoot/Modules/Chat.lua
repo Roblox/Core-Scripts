@@ -27,6 +27,8 @@ local TABLET_SCREEN_WIDTH = 1024
 local FLOOD_CHECK_MESSAGE_COUNT = 7
 local FLOOD_CHECK_MESSAGE_INTERVAL = 15 -- This is in seconds
 
+local VR_CHAT_CLICK_DEBOUNCE = 0.25
+
 local SCROLLBAR_THICKNESS = 7
 local CHAT_COLORS =
 {
@@ -39,6 +41,11 @@ local CHAT_COLORS =
 	BrickColor.new("Light reddish violet").Color,
 	BrickColor.new("Brick yellow").Color,
 }
+
+local emptySelectionImage = Instance.new("ImageLabel")
+emptySelectionImage.ImageTransparency = 1
+emptySelectionImage.BackgroundTransparency = 1
+
 --[[ END OF CONSTANTS ]]
 
 --[[ SERVICES ]]
@@ -454,8 +461,8 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 	local function CreateMessageGuiElement()
 		local fontSize = this:GetMessageFontSize(this.Settings)
 
-		local systemMesasgeDisplayText = this.chatMessage or ""
-		local systemMessageSize = Util.GetStringTextBounds(systemMesasgeDisplayText, this.Settings.Font, fontSize, UDim2.new(0, 400, 0, 1000))
+		local systemMessageDisplayText = this.chatMessage or ""
+		local systemMessageSize = Util.GetStringTextBounds(systemMessageDisplayText, this.Settings.Font, fontSize, UDim2.new(0, 400, 0, 1000))
 
 		local container = Util.Create'Frame'
 		{
@@ -471,7 +478,7 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 				Name = 'SystemChatMessage';
 				Position = UDim2.new(0, 0, 0, 0);
 				Size = UDim2.new(1, 0, 1, 0);
-				Text = systemMesasgeDisplayText;
+				Text = systemMessageDisplayText;
 				ZIndex = 1;
 				BackgroundColor3 = Color3.new(0, 0, 0);
 				BackgroundTransparency = 1;
@@ -901,6 +908,8 @@ local function CreateChatBarWidget(settings)
 	this.ChatErrorEvent = Util.Signal() -- Signal Signatue: success, actionType, [captures]
 	this.ChatBarFloodEvent = Util.Signal()
 
+	this.unfocusedAt = 0
+
 	local chatCoreGuiEnabled = true
 
 	-- This function while lets string.find work case-insensitively without clobbering the case of the captures
@@ -1006,6 +1015,7 @@ local function CreateChatBarWidget(settings)
 
 			this.ChatBarFocusLostConn = this.ChatBar.FocusLost:connect(function(...)
 				count = 0
+				this.unfocusedAt = tick()
 				this.ChatBarLostFocusEvent:fire(...)
 			end)
 			this.ChatBarChangedConn = this.ChatBar.Changed:connect(function(prop)
@@ -1240,8 +1250,8 @@ local function CreateChatBarWidget(settings)
 			if this.ChatModeText then
 				this.ChatModeText.Visible = true
 			end
-			if Util.IsTouchDevice() then
-				this:SetMessageMode('All') -- Don't remember message mode on mobile devices
+			if Util.IsTouchDevice() or InputService.VREnabled then
+				this:SetMessageMode('All') -- Don't remember message mode on mobile devices or VR
 			end
 			-- Update chatbar properties when chatbar is focused
 			this:OnChatBarBoundsChanged()
@@ -1262,6 +1272,10 @@ local function CreateChatBarWidget(settings)
 
 	function this:IsFocused()
 		return self.ChatBar and self.ChatBar == InputService:GetFocusedTextBox()
+	end
+
+	function this:WasFocused()
+		return (tick() - this.unfocusedAt) < VR_CHAT_CLICK_DEBOUNCE
 	end
 
 	function this:SanitizeInput(input)
@@ -1425,6 +1439,7 @@ local function CreateChatBarWidget(settings)
 				ClearTextOnFocus = false;
 				Visible = not Util.IsTouchDevice();
 				Parent = chatBarContainer;
+				SelectionImageObject = emptySelectionImage;
 			}
 			if GetTopBarFlag() then
 				chatBar.TextWrapped = true;
@@ -1887,7 +1902,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	local function CreateChatWindow()
-		local container = Util.Create'Frame'
+		local container = Util.Create'TextButton'
 		{
 			Name = 'ChatWindowContainer';
 			Size = UDim2.new(0.3, 0, 0.25, 0);
@@ -1896,6 +1911,8 @@ local function CreateChatWindowWidget(settings)
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 			BorderSizePixel = 0;
+			Text = "";
+			SelectionImageObject = emptySelectionImage;
 		};
 		if GetTopBarFlag() then
 			container.Position = UDim2.new(0,0,0,37);
@@ -2365,30 +2382,25 @@ local function CreateChat()
 					if InputService.VREnabled then
 
 						self:PrintVRWelcome()
-						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.Panel3D)
-						local panel = Panel3D.Get(Panel3D.Panels.Chat)
-						GuiRoot.Parent = panel.gui
+						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.VR.Panel3D)
+						local panel = Panel3D.Get("Chat")
+						panel:LinkTo("Keyboard")
+						panel:SetType(Panel3D.Type.Fixed)
 						panel:ResizePixels(300, 125)
-						panel.cursorEnabled = true
-						panel.pitchLockThreshold = math.rad(65)
-						panel.visibilityBehavior = Panel3D.Visibility.Normal
-						local function ClickedInVrfunction(actionName, inputState, inputObject)
-							if inputState == Enum.UserInputState.Begin then
-								if this.ChatBarWidget then
-									if this.ChatBarWidget:IsFocused() then
-										this.ChatBarWidget:RemoveFocus()
-									else
-										self:FocusChatBar()
-									end
+						GuiRoot.Parent = panel:GetGUI()
+
+						this.ChatWindowWidget.ChatContainer.MouseButton1Click:connect(function()
+							if this.ChatBarWidget then
+								if this.ChatBarWidget:WasFocused() then
+									this.ChatBarWidget:RemoveFocus()
+								else
+									self:FocusChatBar()
 								end
 							end
-						end
+						end)
 
-						panel.OnMouseEnter = function()
-							ContextActionService:BindCoreAction("VRChatKeyboardFocus", ClickedInVrfunction, false, Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonR2, Enum.UserInputType.MouseButton1)
-						end
-						panel.OnMouseLeave = function()
-							ContextActionService:UnbindCoreAction("VRChatKeyboardFocus")
+						function panel:CalculateTransparency()
+							return 0
 						end
 					else
 						GuiRoot.Parent = CoreGuiService:WaitForChild('RobloxGui')
@@ -2556,15 +2568,25 @@ local function CreateChat()
 			end
 		end
 		if InputService.VREnabled then
-			local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.Panel3D)
-			local panel = Panel3D.Get(Panel3D.Panels.Chat)
-			panel:SetVisible(this.Visible)
+			local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.VR.Panel3D)
+			local panel = Panel3D.Get("Chat")
+			if this.Visible then
+				local headLook = Panel3D.GetHeadLookXZ(true)
+				panel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 5)
+				panel:ForceShowUntilLookedAt()
+			else
+				panel:SetVisible(this.Visible)
+			end			
 		end
 		this.VisibilityStateChanged:fire(this.Visible)
 	end
 
 	function this:ToggleVisibility()
 		SetVisbility(not self.Visible)
+	end
+
+	function this:SetVisible(visible)
+		SetVisbility(visible)
 	end
 
 	function this:FocusChatBar()
@@ -2704,6 +2726,10 @@ do
 
 	function moduleApiTable:ToggleVisibility()
 		ChatInstance:ToggleVisibility()
+	end
+
+	function moduleApiTable:SetVisible(visible)
+		ChatInstance:SetVisible(visible)
 	end
 
 	function moduleApiTable:FocusChatBar()

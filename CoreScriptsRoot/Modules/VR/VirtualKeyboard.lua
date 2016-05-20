@@ -17,7 +17,6 @@ local vrKeyboardSuccess, vrKeyboardFlagValue = pcall(function() return settings(
 local useVRKeyboard = (vrKeyboardSuccess and vrKeyboardFlagValue == true)
 
 
-local RENDER_STEP_NAME = game:GetService("HttpService"):GenerateGUID() .. "VirtualKeyboard"
 
 local NORMAL_KEY_COLOR = Color3.new(1,1,1)
 local HOVER_KEY_COLOR = Color3.new(178/255,178/255,178/255)
@@ -174,7 +173,16 @@ end
 
 
 
-
+local selectionRing = Util:Create'ImageLabel'
+{
+	Name = 'SelectionRing';
+	Size = UDim2.new(1, -6, 1, -6);
+	Position = UDim2.new(0, 4, 0, 3);
+	Image = 'rbxasset://textures/ui/menu/buttonHover.png';
+	ScaleType = Enum.ScaleType.Slice;
+	SliceCenter = Rect.new(94/2, 94/2, 94/2, 94/2);
+	BackgroundTransparency = 1;
+}
 
 
 local function CreateKeyboardKey(keyboard, layoutData, keyData)
@@ -189,6 +197,7 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 		Font = Enum.Font.Arial;
 		FontSize = Enum.FontSize.Size12;
 		BackgroundTransparency = 1;
+		Selectable = true;
 		ZIndex = 2;
 	}
 	local backgroundImage = Util:Create'ImageLabel'
@@ -202,6 +211,8 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 		BackgroundTransparency = 1;
 		Parent = newKeyElement
 	}
+	
+	newKeyElement.SelectionImageObject = selectionRing
 
 	local newKey = ExtendedInstance(newKeyElement)
 
@@ -264,9 +275,6 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 		update()		
 	end)
 	rawset(newKey, "OnUp", function()
-		if pressed then
-			onClicked()
-		end
 		pressed = false
 		update()
 	end)
@@ -293,6 +301,13 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 	rawset(newKey, "Update", function(self)
 		update()
 	end)
+	rawset(newKey, "GetInstance", function(self)
+		return newKeyElement
+	end)
+
+	newKeyElement.MouseButton1Down:connect(function() newKey:OnDown() end)
+	newKeyElement.MouseButton1Up:connect(function() newKey:OnUp() end)
+	newKeyElement.MouseButton1Click:connect(function() onClicked() end)
 
 	update()
 
@@ -302,8 +317,9 @@ end
 
 
 local function ConstructKeyboardUI(keyboardLayoutDefinition)
-	local Panel3D = require(RobloxGui.Modules.Panel3D)
-	local panel = Panel3D.Get(Panel3D.Panels.Keyboard)
+	local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+	local panel = Panel3D.Get("Keyboard")
+	panel:SetVisible(false)
 
 	local keyboardContainer = Util:Create'Frame'
 	{
@@ -356,7 +372,9 @@ local function ConstructKeyboardUI(keyboardLayoutDefinition)
 
 	local keyboardOptions = nil
 	local keys = {}
+	local keysByElement = {}
 	local lastHoveredKey = nil
+	local lastSelectedKey = nil
 
 	local capsLockEnabled = false
 	local shiftEnabled = false
@@ -388,6 +406,12 @@ local function ConstructKeyboardUI(keyboardLayoutDefinition)
 			end
 		end
 	end)
+	rawset(newKeyboard, "GetSelectedKey", function(self)
+		local selected = GuiService.SelectedCoreObject
+		if selected then
+			return keysByElement[selected]
+		end
+	end)
 
 	rawset(newKeyboard, "GetKeyboardAbsoluteSize", function(self)
 		return keyboardContainer.AbsoluteSize
@@ -407,12 +431,12 @@ local function ConstructKeyboardUI(keyboardLayoutDefinition)
 	end)
 
 	rawset(newKeyboard, "SetClickState", function(self, state)
-		local hoveredKey = lastHoveredKey
-		if hoveredKey then
+		local selectedKey = self:GetSelectedKey()
+		if selectedKey then
 			if state then
-				hoveredKey:OnDown()
+				selectedKey:OnDown()
 			else
-				hoveredKey:OnUp()
+				selectedKey:OnUp()
 			end
 		end
 	end)
@@ -444,44 +468,6 @@ local function ConstructKeyboardUI(keyboardLayoutDefinition)
 		keyboardOptions = options
 		keyboardContainer.Visible = true
 
-
-		local function OnRenderStep()
-			if PlayersService.LocalPlayer then
-				local cameraRenderCFrame = workspace.CurrentCamera and workspace.CurrentCamera:GetRenderCFrame()
-				if cameraRenderCFrame and panel.part then
-					local panelPartSize = panel.part.Size
-					local panelSurfaceCFrame = panel.part.CFrame + panel.part.CFrame.lookVector * (panelPartSize.Z * 0.5)
-					local intersectionPt = RayPlaneIntersection(Ray.new(cameraRenderCFrame.p, cameraRenderCFrame.lookVector), panelSurfaceCFrame.lookVector, panelSurfaceCFrame.p)
-					if intersectionPt then
-						local localPoint = panelSurfaceCFrame:pointToObjectSpace(intersectionPt) * Vector3.new(-1, 1, 1) + Vector3.new(panelPartSize.X/2, -panelPartSize.Y/2, 0)
-						local guiPoint = Vector2.new((localPoint.X / panelPartSize.X) *  self:GetKeyboardAbsoluteSize().X, (localPoint.Y / panelPartSize.Y) * -self:GetKeyboardAbsoluteSize().Y)
-						self:SetCursorPosition(guiPoint.x, guiPoint.y)
-					end
-				end
-			end
-		end
-
-		local aDown = false
-		local r2Down = false
-		local mb1Down = false
-		local function ClickedInVrfunction(actionName, inputState, inputObject)
-			if inputObject.KeyCode == Enum.KeyCode.ButtonA then
-				aDown = inputState == Enum.UserInputState.Begin
-				self:SetClickState(aDown)
-			elseif inputObject.KeyCode == Enum.KeyCode.ButtonR2 then
-				if inputState == Enum.UserInputState.Begin then
-					r2Down = true
-					self:SetClickState(r2Down)
-				elseif inputState == Enum.UserInputState.End then
-					r2Down = false
-					self:SetClickState(r2Down)
-				end
-			elseif inputObject.UserInputType == Enum.UserInputType.MouseButton1 then
-				mb1Down = inputState == Enum.UserInputState.Begin
-				self:SetClickState(mb1Down)
-			end
-		end
-
 		if textChangedConn then textChangedConn:disconnect() end
 		textChangedConn = nil	
 		if options.TextBox then
@@ -499,31 +485,49 @@ local function ConstructKeyboardUI(keyboardLayoutDefinition)
 			setBufferText("")
 		end
 
-		panel.OnMouseEnter = function()
-			RunService:UnbindFromRenderStep(RENDER_STEP_NAME)
-			RunService:BindToRenderStep(RENDER_STEP_NAME, Enum.RenderPriority.Last.Value, OnRenderStep)
-			ContextActionService:BindCoreAction("VirtualKeyboardSelectKey", ClickedInVrfunction, false, Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonR2, Enum.UserInputType.MouseButton1)
-		end
-		panel.OnMouseLeave = function()
-			RunService:UnbindFromRenderStep(RENDER_STEP_NAME)
-			ContextActionService:UnbindCoreAction("VirtualKeyboardSelectKey")
-		end
-
-		keyboardContainer.Visible = true
-
-		self.Parent = panel.gui
 		-- NOTE: we could dynamically fill in this
 		panel:ResizePixels(3 * 125, 1 * 125 + 20)
-		panel.pitchLockThreshold = math.rad(0)
-		panel.visibilityBehavior = Panel3D.Visibility.Normal
-		panel:SetVisible(true)
+		
+		--If the TextBox exists on another panel (it most likely does)
+		local textboxPanel = Panel3D.FindContainerOf(options.TextBox)
+		local localCF = CFrame.new()
+		--Attach to it if it's in the same space
+		if textboxPanel and textboxPanel.panelType == Panel3D.Type.Fixed then
+			local panelCF = textboxPanel.localCF
+			localCF = panelCF * CFrame.new(0, (-textboxPanel.height / 2) - 0.5, 0) * 
+								CFrame.Angles(math.rad(30), 0, 0) * 
+								CFrame.new(0, (-panel.height / 2) - 0.5, 0)
+		else
+			--Otherwise, best-guess where it should go based on the user's head.
+			local headForwardCF = Panel3D.GetHeadLookXZ(true)
+			localCF = headForwardCF * CFrame.Angles(math.rad(22.5), 0, 0) * CFrame.new(0, -1, 5)
+		end
+
+		self.Parent = panel:GetGUI()
+
+
+		panel:SetType(Panel3D.Type.Fixed, { CFrame = localCF })
+		panel:SetVisible(true, true)
+		panel:ForceShowUntilLookedAt()
+
+		local upperSelf = self
+		function panel:OnUpdate()
+			upperSelf:SetCursorPosition(panel.lookAtPixel.X, panel.lookAtPixel.Y)
+		end
+
+		function panel:OnMouseEnter()
+			UserInputService.UsingVirtualKeyboard = true
+		end
+		function panel:OnMouseLeave()
+			UserInputService.UsingVirtualKeyboard = false
+		end
 	end)
 
 	rawset(newKeyboard, "Close", function(self, submit)
 		if textChangedConn then textChangedConn:disconnect() end
 		textChangedConn = nil
 		-- Clean-up
-		panel.OnMouseLeave()
+		panel:OnMouseLeave()
 
 		if submit and keyboardOptions and keyboardOptions.TextBox then
 			keyboardOptions.TextBox.Text = getBufferText()
@@ -578,7 +582,9 @@ local function ConstructKeyboardUI(keyboardLayoutDefinition)
 						columnData = " "
 					end
 					-- put key
-					table.insert(keys, CreateKeyboardKey(newKeyboard, {x = x, y = y, width = width, height = height}, tokenizeString(columnData, '\n')))
+					local key = CreateKeyboardKey(newKeyboard, {x = x, y = y, width = width, height = height}, tokenizeString(columnData, '\n'))
+					table.insert(keys, key)
+					keysByElement[key:GetInstance()] = key
 
 					x = x + width
 					maxWidth = math.max(maxWidth, x)

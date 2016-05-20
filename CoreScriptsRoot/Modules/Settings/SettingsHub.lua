@@ -246,7 +246,8 @@ local function CreateSettingsHub()
 			Size = UDim2.new(1, 0, 1, 0),
 			Modal = true,
 			Text = '',
-			Parent = this.Shield
+			Parent = this.Shield,
+			Selectable = false
 		}
 
 		this.HubBar = utility:Create'ImageLabel'
@@ -948,22 +949,22 @@ local function CreateSettingsHub()
 	end
 
 	local function enableVR()
-		local Panel3D = require(RobloxGui.Modules.Panel3D)
-		local panel = Panel3D.Get(Panel3D.Panels.Settings)
-		panel:SetModal()
-		panel.orientationMode = Panel3D.Orientation.Fixed
-		panel.cursorEnabled = false
-		panel:Resize(3, 3, 256)
-		this.ClippingShield.Parent = panel.gui
+		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+		local panel = Panel3D.Get("SettingsMenu")
+		panel:ResizeStuds(3, 3, 256)
+		panel:SetType(Panel3D.Type.Fixed)
+		panel:SetVisible(false)
+		
+		this.ClippingShield.Parent = panel:GetGUI()
 		this.Shield.Parent.ClipsDescendants = false
 		this:HideShield()
 
 		GuiService.MenuOpened:connect(function()
-			panel:SetVisible(true)
+			panel.localCF = UserInputService:GetUserCFrame(Enum.UserCFrame.Head) * CFrame.new(0, 0, -5) * CFrame.Angles(0, math.rad(180), 0)
+			panel:SetVisible(true, true)
 		end)
 		GuiService.MenuClosed:connect(function()
-			panel:SetVisible(false)
-			Panel3D.ResetOrientation()
+			panel:SetVisible(false, false)
 		end)
 	end
 
