@@ -20,6 +20,7 @@ local HEALTHBAR_HEIGHT = 3
 
 local Tools = {}
 local ToolsList = {}
+local slotIcons = {}
 
 local BackpackScript = {}
 local topbarEnabled = false
@@ -28,15 +29,20 @@ local player = game.Players.LocalPlayer
 local currentHumanoid = nil
 local CoreGui = game:GetService('CoreGui')
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
-local Panel3D = require(RobloxGui.Modules.Panel3D)
+local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 
 local ContextActionService = game:GetService("ContextActionService")
 
-local panel = Panel3D.Get(Panel3D.Panels.Lower)
-local toolsFrame = Instance.new("TextButton", panel.gui) --prevent clicks falling through in case you have a rocket launcher and blow yourself up
+local BackpackPanel = Panel3D.Get("Backpack")
+BackpackPanel:ResizeStuds(5, 2)
+BackpackPanel:SetType(Panel3D.Type.Fixed, { CFrame = CFrame.new(0, 0, -5) })
+BackpackPanel:SetVisible(true)
+
+local toolsFrame = Instance.new("TextButton", BackpackPanel:GetGUI()) --prevent clicks falling through in case you have a rocket launcher and blow yourself up
 toolsFrame.Text = ""
 toolsFrame.Size = UDim2.new(1, 0, 0, ICON_SIZE)
 toolsFrame.BackgroundTransparency = 1
+toolsFrame.Selectable = false
 local insetAdjustY = toolsFrame.AbsolutePosition.Y
 toolsFrame.Position = UDim2.new(0, 0, 0, HEALTHBAR_SPACE)
 
@@ -46,7 +52,7 @@ local HEALTH_RED_COLOR = Color3.new(255/255, 28/255, 0/255)
 local HEALTH_YELLOW_COLOR = Color3.new(250/255, 235/255, 0)
 local HEALTH_GREEN_COLOR = Color3.new(27/255, 252/255, 107/255)
 
-local healthbarBack = Instance.new("Frame", panel.gui)
+local healthbarBack = Instance.new("Frame", BackpackPanel:GetGUI())
 healthbarBack.BackgroundColor3 = HEALTH_BACKGROUND_COLOR
 healthbarBack.BorderSizePixel = 0
 healthbarBack.Name = "HealthbarContainer"
@@ -56,6 +62,7 @@ healthbarFront.Size = UDim2.new(1, 0, 1, 0)
 healthbarFront.Position = UDim2.new(0, 0, 0, 0)
 healthbarFront.BackgroundColor3 = HEALTH_GREEN_COLOR
 healthbarFront.Name = "HealthbarFill"
+
 
 local healthColorToPosition = {
 	[Vector3.new(HEALTH_RED_COLOR.r, HEALTH_RED_COLOR.g, HEALTH_RED_COLOR.b)] = 0.1;
@@ -116,14 +123,14 @@ local function UpdateLayout()
 	if #ToolsList == 0 then
 		width = HEALTHBAR_WIDTH
 		height = HEALTHBAR_SPACE
-		panel.cursorEnabled = false
+		BackpackPanel.showCursor = false
 	else
 		width = #ToolsList * ICON_SPACING
 		height = ICON_SIZE + HEALTHBAR_SPACE
-		panel.cursorEnabled = true
+		BackpackPanel.showCursor = true
 	end
 	
-	panel:ResizePixels(width, height)
+	BackpackPanel:ResizePixels(width, height)
 
 	healthbarBack.Position = UDim2.new(0.5, -HEALTHBAR_WIDTH / 2, 0, (HEALTHBAR_SPACE - HEALTHBAR_HEIGHT) / 2)
 	healthbarBack.Size = UDim2.new(0, HEALTHBAR_WIDTH, 0, HEALTHBAR_HEIGHT)
@@ -148,7 +155,6 @@ local function SetTransparency(transparency)
 	healthbarBack.BackgroundTransparency = transparency
 	healthbarFront.BackgroundTransparency = transparency
 end
-panel:AddTransparencyCallback(SetTransparency)
 
 local function OnHotbarEquipPrimary(actionName, state, obj)
 	if state ~= Enum.UserInputState.Begin then
@@ -157,11 +163,11 @@ local function OnHotbarEquipPrimary(actionName, state, obj)
 	for tool, slot in pairs(Tools) do
 		if slot.hovered then
 			slot.OnClick()
+			return
 		end
 	end
 end
 
-local eaterAction = game:GetService("HttpService"):GenerateGUID()
 local function EnableHotbarInput(enable)
 	if not backpackEnabled then
 		enable = false
@@ -170,11 +176,9 @@ local function EnableHotbarInput(enable)
 		return
 	end
 	if enable then
-		ContextActionService:BindCoreAction("HotbarEquipPrimary", OnHotbarEquipPrimary, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
-		ContextActionService:BindAction(eaterAction, function() end, false, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
+		ContextActionService:BindCoreAction("HotbarEquipPrimary", OnHotbarEquipPrimary, false, Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonR2, Enum.UserInputType.MouseButton1)
 	else
 		ContextActionService:UnbindCoreAction("HotbarEquipPrimary")
-		ContextActionService:UnbindAction(eaterAction)
 	end
 end
 
@@ -196,11 +200,14 @@ local function AddTool(tool)
 	slot.icon.BackgroundColor3 = Color3.new(0, 0, 0)
 	slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
 	slot.icon.BorderColor3 = SLOT_BORDER_COLOR
+	slot.icon.Selectable = true
+	slotIcons[tool] = slot.icon
 
 	slot.image = Instance.new("ImageLabel", slot.icon)
 	slot.image.Position = UDim2.new(0, 1, 0, 1)
 	slot.image.Size = UDim2.new(1, -2, 1, -2)
 	slot.image.BackgroundTransparency = 1
+	slot.image.Selectable = false
 
 	slot.text = Instance.new("TextLabel", slot.icon)
 	slot.text.Position = UDim2.new(0, 1, 0, 1)
@@ -210,6 +217,7 @@ local function AddTool(tool)
 	slot.text.Font = Enum.Font.SourceSans
 	slot.text.FontSize = Enum.FontSize.Size12
 	slot.text.ClipsDescendants = true
+	slot.text.Selectable = false
 
 	local function updateToolData()
 		slot.image.Image = tool.TextureId
@@ -233,12 +241,10 @@ local function AddTool(tool)
 	slot.OnEnter = function()
 		slot.icon.BackgroundColor3 = SLOT_HOVER_BACKGROUND_COLOR
 		slot.hovered = true
-		EnableHotbarInput(true)
 	end
 	slot.OnLeave = function()
 		slot.icon.BackgroundColor3 = SLOT_BACKGROUND_COLOR
 		slot.hovered = false
-		EnableHotbarInput(false)
 	end
 --	slot.icon.MouseEnter:connect(slot.OnEnter)
 --	slot.icon.MouseLeave:connect(slot.OnLeave)
@@ -302,6 +308,7 @@ local function RemoveTool(tool)
 		end
 	end
 	Tools[tool] = nil
+	slotIcons[tool] = nil
 	UpdateLayout()
 end
 
@@ -346,51 +353,6 @@ player.CharacterAdded:connect(OnCharacterAdded)
 if player.Character then
 	spawn(function() OnCharacterAdded(player.Character) end)
 end
-
-game:GetService("RunService"):BindToRenderStep("Cursor3D", Enum.RenderPriority.Last.Value, function()
-	if not backpackEnabled then
-		return
-	end
-	if not player.Character then
-		return
-	end
-
-	local cframe = workspace.CurrentCamera:GetRenderCFrame()
-	local ray = Ray.new(cframe.p, cframe.lookVector * 999)
-	local ignoreList = { player.Character }
-	local part, endpoint = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
-
-	if part ~= panel.part then
-		for i, v in pairs(Tools) do
-			if v.hovered then
-				v.OnLeave()
-			end
-		end
-		return
-	end
-	
-	local localEndpoint = part:GetRenderCFrame():pointToObjectSpace(endpoint)
-	local x = 1 - ((localEndpoint.X / part.Size.X) + 0.5)
-	local y = 1 - ((localEndpoint.Y / part.Size.Y) + 0.5)
-	
-	--REMOVE THIS WHEN GUI MOUSELEAVE/MOUSEENTER ARE FIXED
-	local px = x * panel.gui.AbsoluteSize.X
-	local py = y * panel.gui.AbsoluteSize.Y + insetAdjustY --this can go once AbsolutePosition is fixed for sure
-	for i, v in pairs(Tools) do
-		local ix = px - v.icon.AbsolutePosition.X
-		local iy = py - v.icon.AbsolutePosition.Y
-		if ix > 0 and ix < v.icon.AbsoluteSize.X and iy > 0 and iy < v.icon.AbsoluteSize.Y then
-			if not v.hovered then
-				v.OnEnter()
-			end
-		else
-			if v.hovered then
-				v.OnLeave()
-			end
-		end
-	end
-	------------------------------------------------------
-end)
 
 local function OnHotbarEquip(actionName, state, obj)
 	if not backpackEnabled then
@@ -437,7 +399,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 		UpdateLayout()
 		if enabled then
 			ContextActionService:BindCoreAction("HotbarEquip2", OnHotbarEquip, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
-			toolsFrame.Parent = panel.gui
+			toolsFrame.Parent = BackpackPanel:GetGUI()
 		else
 			ContextActionService:UnbindCoreAction("HotbarEquip2")
 			toolsFrame.Parent = nil
@@ -448,7 +410,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 		healthbarEnabled = enabled
 		UpdateLayout()
 		if enabled then
-			healthbarBack.Parent = panel.gui
+			healthbarBack.Parent = BackpackPanel:GetGUI()
 		else
 			healthbarBack.Parent = nil
 		end
@@ -462,5 +424,41 @@ OnCoreGuiChanged(Enum.CoreGuiType.Backpack, StarterGui:GetCoreGuiEnabled(Enum.Co
 
 OnCoreGuiChanged(Enum.CoreGuiType.Health, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health))
 OnCoreGuiChanged(Enum.CoreGuiType.Health, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.All))
+
+local panelLocalCF = CFrame.new(0, -3.5, 5) * CFrame.Angles(math.rad(20), 0, 0)
+
+function BackpackPanel:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
+	--the backpack panel needs to go in front of the user when they look at it.
+	--if they aren't looking, we should be updating self.localCF
+	if self.transparency == 1 then
+		local headForwardCF = Panel3D.GetHeadLookXZ()
+		local panelOriginCF = CFrame.new(userHeadCF.p) * headForwardCF
+		self.localCF = panelOriginCF * panelLocalCF
+	end
+end
+
+function BackpackPanel:OnUpdate()
+	SetTransparency(self.transparency)
+
+	local hovered, tool = BackpackPanel:FindHoveredGuiElement(slotIcons)
+	if hovered and tool then
+		local slot = Tools[tool]
+		if not slot.hovered then
+			slot.OnEnter()
+		end
+		for i, v in pairs(Tools) do
+			if v.hovered and v ~= slot then
+				v.OnLeave()
+			end
+		end
+	end
+end
+
+function BackpackPanel:OnMouseEnter(x, y)
+	EnableHotbarInput(true)
+end
+function BackpackPanel:OnMouseLeave(x, y)
+	EnableHotbarInput(false)
+end
 
 return BackpackScript
