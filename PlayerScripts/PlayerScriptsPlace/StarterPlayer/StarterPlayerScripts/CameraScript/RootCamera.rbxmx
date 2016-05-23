@@ -78,6 +78,8 @@ local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
 -- Reset the camera look vector when the camera is enabled for the first time
 local SetCameraOnSpawn = true
 
+local hasGameLoaded = false
+
 local function GetRenderCFrame(part)
 	return part:GetRenderCFrame()
 end
@@ -380,13 +382,16 @@ local function CreateCamera()
 	local vrRotationIntensityExists = true
 	local lastVrRotationCheck = 0
 	function this:ShouldUseVRRotation()
+		if not (HasVRAPI and UserInputService.VREnabled) then
+			return false
+		end
 		if not vrRotationIntensityExists and tick() - lastVrRotationCheck < 1 then return false end
 		
 		local success, vrRotationIntensity = pcall(function() return StarterGui:GetCore("VRRotationIntensity") end)
 		vrRotationIntensityExists = success and vrRotationIntensity ~= nil
 		lastVrRotationCheck = tick()
-		
-		return HasVRAPI and UserInputService.VREnabled and success and vrRotationIntensity ~= nil and vrRotationIntensity ~= "Smooth"	
+
+		return success and vrRotationIntensity ~= nil and vrRotationIntensity ~= "Smooth"
 	end
 
 	function this:GetVRRotationInput()
@@ -669,6 +674,9 @@ local function CreateCamera()
 	end
 
 	local function OnMouseMoved(input, processed)
+		if not hasGameLoaded and UserInputService.VREnabled then
+			return
+		end
 		if startPos and lastPos and panBeginLook then
 			local currPos = lastPos + input.Delta
 			local totalTrans = currPos - startPos
@@ -686,6 +694,9 @@ local function CreateCamera()
 	end
 
 	local function OnMouseWheel(input, processed)
+		if not hasGameLoaded and UserInputService.VREnabled then
+			return
+		end
 		if not processed then
 			if this.ZoomEnabled then
 				if UserSettings():IsUserFeatureEnabled("UserBetterInertialScrolling") then
@@ -714,6 +725,9 @@ local function CreateCamera()
 	end
 
 	local function OnKeyDown(input, processed)
+		if not hasGameLoaded and UserInputService.VREnabled then
+			return
+		end
 		if processed then return end
 		if this.ZoomEnabled then
 			if input.KeyCode == Enum.KeyCode.I then
@@ -765,6 +779,7 @@ local function CreateCamera()
 	local numOfSeconds = 0.7
 	local currentSpeed = 0
 	local maxSpeed = 6
+	local vrMaxSpeed = 4
 	local thumbstickSensitivity = 1.0
 	local lastThumbstickPos = Vector2.new(0,0)
 	local ySensitivity = 0.65
@@ -807,7 +822,7 @@ local function CreateCamera()
 
 	function this:UpdateGamepad()
 		local gamepadPan = this.GamepadPanningCamera
-		if gamepadPan then
+		if gamepadPan and (hasGameLoaded or not UserInputService.VREnabled) then
 			gamepadPan = gamepadLinearToCurve(gamepadPan)
 			local currentTime = tick()
 			if gamepadPan.X ~= 0 or gamepadPan.Y ~= 0 then
@@ -822,18 +837,22 @@ local function CreateCamera()
 			local finalConstant = 0
 
 			if lastThumbstickRotate then
-				local elapsedTime = (currentTime - lastThumbstickRotate) * 10
-				currentSpeed = currentSpeed + (maxSpeed * ((elapsedTime*elapsedTime)/numOfSeconds))
+				if UserInputService.VREnabled then
+					currentSpeed = vrMaxSpeed
+				else
+					local elapsedTime = (currentTime - lastThumbstickRotate) * 10
+					currentSpeed = currentSpeed + (maxSpeed * ((elapsedTime*elapsedTime)/numOfSeconds))
 
-				if currentSpeed > maxSpeed then currentSpeed = maxSpeed end
+					if currentSpeed > maxSpeed then currentSpeed = maxSpeed end
 
-				if lastVelocity then
-					local velocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
-					local velocityDeltaMag = (velocity - lastVelocity).magnitude
+					if lastVelocity then
+						local velocity = (gamepadPan - lastThumbstickPos)/(currentTime - lastThumbstickRotate)
+						local velocityDeltaMag = (velocity - lastVelocity).magnitude
 
-					if velocityDeltaMag > 12 then
-						currentSpeed = currentSpeed * (20/velocityDeltaMag)
-						if currentSpeed > maxSpeed then currentSpeed = maxSpeed end
+						if velocityDeltaMag > 12 then
+							currentSpeed = currentSpeed * (20/velocityDeltaMag)
+							if currentSpeed > maxSpeed then currentSpeed = maxSpeed end
+						end
 					end
 				end
 
@@ -1105,6 +1124,20 @@ local function CreateCamera()
 			OnPlayerAdded(PlayersService.LocalPlayer)
 		end
 	end)
+
+	local function OnGameLoaded()
+		hasGameLoaded = true
+	end
+
+	spawn(function()
+		if game:IsLoaded() then
+			OnGameLoaded()
+		else
+			game.Loaded:wait()
+			OnGameLoaded()
+		end
+	end)
+
 
 	return this
 end

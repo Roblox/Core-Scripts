@@ -105,7 +105,6 @@ local SlotsByTool = {} -- Map of Tools to their assigned Slots
 local HotkeyFns = {} -- Map of KeyCode values to their assigned behaviors
 local Dragging = {} -- Only used to check if anything is being dragged, to disable other input
 local FullHotbarSlots = 0
-local UpdateArrowFrame = nil -- Function defined in arrow init logic at bottom
 local ActiveHopper = nil --NOTE: HopperBin
 local StarterToolFound = false -- Special handling is required for the gear currently equipped on the site
 local WholeThingEnabled = false
@@ -113,7 +112,6 @@ local TextBoxFocused = false -- ANY TextBox, not just the search box
 local ResultsIndices = nil -- Results of a search, or nil
 local HotkeyStrings = {} -- Used for eating/releasing hotkeys
 local CharConns = {} -- Holds character connections to be cleared later
-local TopBarEnabled = false
 local GamepadEnabled = false -- determines if our gui needs to be gamepad friendly
 
 local lastEquippedSlot = nil
@@ -247,7 +245,7 @@ local function MakeSlot(parent, index)
 		local modSlots = 0
 		modSlots = ((index - 1) % HOTBAR_SLOTS) + 1
 
-		local row = 0 
+		local row = 0
 		row = (index > HOTBAR_SLOTS) and (math.floor((index - 1) / HOTBAR_SLOTS)) - 1 or 0
 
 		SlotFrame.Position = UDim2.new(0, ICON_BUFFER + ((modSlots - 1) * sizePlus), 0, ICON_BUFFER + (sizePlus * row))
@@ -281,7 +279,7 @@ local function MakeSlot(parent, index)
 		end
 		assignToolData()
 
-		if ToolChangeConn then 
+		if ToolChangeConn then
 			ToolChangeConn:disconnect()
 			ToolChangeConn = nil
 		end
@@ -307,13 +305,12 @@ local function MakeSlot(parent, index)
 
 		SlotsByTool[tool] = self
 		LowestEmptySlot = FindLowestEmpty()
-		UpdateArrowFrame()
 	end
 
 	function slot:Clear()
 		if not self.Tool then return end
 
-		if ToolChangeConn then 
+		if ToolChangeConn then
 			ToolChangeConn:disconnect()
 			ToolChangeConn = nil
 		end
@@ -335,7 +332,6 @@ local function MakeSlot(parent, index)
 		SlotsByTool[self.Tool] = nil
 		self.Tool = nil
 		LowestEmptySlot = FindLowestEmpty()
-		UpdateArrowFrame()
 	end
 
 	function slot:UpdateEquipView(unequippedOverride)
@@ -440,6 +436,18 @@ local function MakeSlot(parent, index)
 		return hits
 	end
 
+	-- Slot select logic, activated by clicking or pressing hotkey
+		function slot:Select()
+			local tool = slot.Tool
+			if tool then
+				if IsEquipped(tool) then --NOTE: HopperBin
+					UnequipAllTools()
+				elseif tool.Parent == Backpack then
+					EquipNewTool(tool)
+				end
+			end
+		end
+
 	-- Slot Init Logic --
 
 	SlotFrame = NewGui('TextButton', index)
@@ -483,18 +491,6 @@ local function MakeSlot(parent, index)
 		end)
 		SlotFrame.MouseLeave:connect(function() ToolTip.Visible = false end)
 
-		-- Slot select logic, activated by clicking or pressing hotkey
-		function slot:Select()
-			local tool = slot.Tool
-			if tool then
-				if IsEquipped(tool) then --NOTE: HopperBin
-					UnequipAllTools()
-				elseif tool.Parent == Backpack then
-					EquipNewTool(tool)
-				end
-			end
-		end
-
 		function slot:MoveToInventory()
 			if slot.Index <= HOTBAR_SLOTS then -- From a Hotbar slot
 				local tool = slot.Tool
@@ -530,7 +526,7 @@ local function MakeSlot(parent, index)
 			local lowestPoint = SlotFrame.Position.Y.Offset + SlotFrame.Size.Y.Offset
 			ScrollingFrame.CanvasSize = UDim2.new(0, 0, 0, lowestPoint + ICON_BUFFER)
 		end
-		
+
 		-- Scroll to new inventory slot, if we're open and not viewing search results
 		if InventoryFrame.Visible and not ResultsIndices then
 			local offset = ScrollingFrame.CanvasSize.Y.Offset - ScrollingFrame.AbsoluteSize.Y
@@ -810,8 +806,6 @@ local function OnUISChanged(property)
 	end
 end
 
-
-
 -------------------------
 --| Gamepad Functions |--
 -------------------------
@@ -902,9 +896,9 @@ local changeToolFunc = function(actionName, inputState, inputObject)
 	if inputState ~= Enum.UserInputState.Begin then return end
 
 	if lastChangeToolInputObject then
-		if (lastChangeToolInputObject.KeyCode == Enum.KeyCode.ButtonR1 and 
+		if (lastChangeToolInputObject.KeyCode == Enum.KeyCode.ButtonR1 and
 			inputObject.KeyCode == Enum.KeyCode.ButtonL1) or
-			(lastChangeToolInputObject.KeyCode == Enum.KeyCode.ButtonL1 and 
+			(lastChangeToolInputObject.KeyCode == Enum.KeyCode.ButtonL1 and
 			inputObject.KeyCode == Enum.KeyCode.ButtonR1) then
 				if (tick() - lastChangeToolInputTime) <= maxEquipDeltaTime then
 					UnequipAllTools()
@@ -950,17 +944,17 @@ local changeToolFunc = function(actionName, inputState, inputObject)
 						newSlotPosition = HOTBAR_SLOTS
 					end
 				end
-				
+
 				Slots[newSlotPosition]:Select()
 				return
 			end
 		end
-		
+
 		if lastEquippedSlot and lastEquippedSlot.Tool then
 			lastEquippedSlot:Select()
 			return
 		end
-		
+
 		for i = 1, HOTBAR_SLOTS do
 			if Slots[i].Tool then
 				Slots[i]:Select()
@@ -978,7 +972,6 @@ function getGamepadSwapSlot()
 	end
 end
 
-
 function changeSlot(slot)
 	if slot.Frame == GuiService.SelectedCoreObject then
 		local currentlySelectedSlot = getGamepadSwapSlot()
@@ -987,7 +980,7 @@ function changeSlot(slot)
 			currentlySelectedSlot.Frame.BorderSizePixel = 0
 			if currentlySelectedSlot ~= slot then
 				slot:Swap(currentlySelectedSlot)
-				
+
 				if slot.Index > HOTBAR_SLOTS and not slot.Tool then
 					if GuiService.SelectedCoreObject == slot.Frame then
 						GuiService.SelectedCoreObject = currentlySelectedSlot.Frame
@@ -1103,11 +1096,6 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 			end
 		end
 	end
-
-	-- Also check if the Health GUI is showing, and shift everything down (or back up) accordingly
-	if not TopBarEnabled and (coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All) then
-		MainFrame.Position = UDim2.new(0, 0, 0, enabled and HOTBAR_OFFSET_FROMBOTTOM or 0)
-	end
 end
 
 
@@ -1115,9 +1103,6 @@ end
 --------------------
 --| Script Logic |--
 --------------------
-
--- First check if the TopBar is enabled. This affects the ArrowFrame existence and MainFrame position
-pcall(function() TopBarEnabled = settings():GetFFlag('UseInGameTopBar') end)
 
 -- Make the main frame, which (mostly) covers the screen
 MainFrame = NewGui('Frame', 'Backpack')
@@ -1218,9 +1203,9 @@ end
 local function resizeGamepadHintsFrame()
 	gamepadHintsFrame.Size = UDim2.new(HotbarFrame.Size.X.Scale, HotbarFrame.Size.X.Offset, 0, (isTenFootInterface and 95 or 60))
 	gamepadHintsFrame.Position = UDim2.new(HotbarFrame.Position.X.Scale, HotbarFrame.Position.X.Offset, InventoryFrame.Position.Y.Scale, InventoryFrame.Position.Y.Offset - gamepadHintsFrame.Size.Y.Offset)
-	
+
 	local spaceTaken = 0
-	
+
 	local gamepadHints = gamepadHintsFrame:GetChildren()
 	--First get the total space taken by all the hints
 	for i = 1, #gamepadHints do
@@ -1228,7 +1213,7 @@ local function resizeGamepadHintsFrame()
 		gamepadHints[i].Position = UDim2.new(0, 0, 0, 0)
 		spaceTaken = spaceTaken + (gamepadHints[i].HintText.Position.X.Offset + gamepadHints[i].HintText.TextBounds.X)
 	end
-	
+
 	--The space between all the frames should be equal
 	local spaceBetweenElements = (gamepadHintsFrame.AbsoluteSize.X - spaceTaken)/(#gamepadHints - 1)
 	for i = 1, #gamepadHints do
@@ -1299,7 +1284,7 @@ do -- Search stuff
 				slot.Frame.Visible = true
 			end
 		end
-		
+
 		ScrollingFrame.CanvasPosition = Vector2.new(0, 0)
 
 		xButton.ZIndex = 3
@@ -1367,7 +1352,7 @@ do -- Search stuff
 			BackpackScript.OpenClose()
 		end
 	end
-	
+
 	local function detectGamepad(input, processed)
 		if input.UserInputType == Enum.UserInputType.Gamepad1 then
 			searchFrame.Visible = false
@@ -1381,9 +1366,6 @@ do -- Search stuff
 end
 
 do -- Make the Inventory expand/collapse arrow (unless TopBar)
-	local arrowFrame, arrowIcon = nil, nil, nil
-	local collapsed, closed, opened = nil, nil, nil
-
 	local removeHotBarSlot = function(name, state, input)
 		if state ~= Enum.UserInputState.Begin then return end
 		if not GuiService.SelectedCoreObject then return end
@@ -1400,11 +1382,7 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 		if not next(Dragging) then -- Only continue if nothing is being dragged
 			InventoryFrame.Visible = not InventoryFrame.Visible
 			local nowOpen = InventoryFrame.Visible
-			if arrowIcon then
-				arrowIcon.Image = (nowOpen) and ARROW_IMAGE_CLOSE or ARROW_IMAGE_OPEN
-			end
 			AdjustHotbarFrames()
-			UpdateArrowFrame()
 			HotbarFrame.Active = not HotbarFrame.Active
 			for i = 1, HOTBAR_SLOTS do
 				Slots[i]:SetClickability(not nowOpen)
@@ -1412,14 +1390,14 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 		end
 
 		if GamepadEnabled then
-			if InventoryFrame.Visible then 
+			if InventoryFrame.Visible then
 				local lastInputType = UserInputService:GetLastInputType()
             			local currentlyUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
                                                 lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
     				if currentlyUsingGamepad then
 					resizeGamepadHintsFrame()
 					gamepadHintsFrame.Visible = true
-				end    
+				end
 				enableGamepadInventoryControl()
 			else
 				gamepadHintsFrame.Visible = false
@@ -1443,34 +1421,6 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 	end
 	HotkeyFns[ARROW_HOTKEY] = openClose
 	BackpackScript.OpenClose = openClose -- Exposed
-
-	if not TopBarEnabled then
-		arrowFrame = NewGui('Frame', 'Arrow')
-		arrowFrame.BackgroundTransparency = BACKGROUND_FADE
-		arrowFrame.BackgroundColor3 = BACKGROUND_COLOR
-		arrowFrame.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE / 2)
-		local hotbarBottom = HotbarFrame.Position.Y.Offset + HotbarFrame.Size.Y.Offset
-		arrowFrame.Position = UDim2.new(0.5, -arrowFrame.Size.X.Offset / 2, 1, hotbarBottom - arrowFrame.Size.Y.Offset)
-
-		arrowIcon = NewGui('ImageLabel', 'Icon')
-		arrowIcon.Image = ARROW_IMAGE_OPEN
-		arrowIcon.Size = ARROW_SIZE
-		arrowIcon.Position = UDim2.new(0.5, -arrowIcon.Size.X.Offset / 2, 0.5, -arrowIcon.Size.Y.Offset / 2)
-		arrowIcon.Parent = arrowFrame
-
-		collapsed = arrowFrame.Position
-		closed = collapsed + UDim2.new(0, 0, 0, -HotbarFrame.Size.Y.Offset)
-		opened = closed + UDim2.new(0, 0, 0, -InventoryFrame.Size.Y.Offset)
-
-		arrowFrame.Parent = MainFrame
-	end
-
-	-- Define global function
-	UpdateArrowFrame = function()
-		if arrowFrame then
-			arrowFrame.Position = (InventoryFrame.Visible) and opened or ((FullHotbarSlots == 0) and collapsed or closed)
-		end
-	end
 end
 
 -- Now that we're done building the GUI, we connect to all the major events
@@ -1516,12 +1466,12 @@ do -- Hotkey stuff
 	if UserInputService:GetGamepadConnected(Enum.UserInputType.Gamepad1) then
 		gamepadConnected()
 	end
-	UserInputService.GamepadConnected:connect(function(gamepadEnum) 
+	UserInputService.GamepadConnected:connect(function(gamepadEnum)
 		if gamepadEnum == Enum.UserInputType.Gamepad1 then
 			gamepadConnected()
 		end
 	end)
-	UserInputService.GamepadDisconnected:connect(function(gamepadEnum) 
+	UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
 		if gamepadEnum == Enum.UserInputType.Gamepad1 then
 			gamepadDisconnected()
 		end

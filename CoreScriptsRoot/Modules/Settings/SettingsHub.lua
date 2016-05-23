@@ -803,7 +803,7 @@ local function CreateSettingsHub()
 
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
 			this.Shield.Visible = this.Visible
-			if noAnimation then
+			if noAnimation or not this.Shield:IsDescendantOf(game) then
 				this.Shield.Position = SETTINGS_SHIELD_ACTIVE_POSITION
 			else
 				this.Shield:TweenPosition(SETTINGS_SHIELD_ACTIVE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quart, 0.5, true)
@@ -952,6 +952,7 @@ local function CreateSettingsHub()
 		local panel = Panel3D.Get(Panel3D.Panels.Settings)
 		panel:SetModal()
 		panel.orientationMode = Panel3D.Orientation.Fixed
+		panel.cursorEnabled = false
 		panel:Resize(3, 3, 256)
 		this.ClippingShield.Parent = panel.gui
 		this.Shield.Parent.ClipsDescendants = false

@@ -14,7 +14,9 @@ local Panel3D = {}
 Panel3D.Panels = {
 	Lower = 1,
 	Hamburger = 2,
-	Settings = 3
+	Settings = 3,
+	Keyboard = 4,
+	Chat = 5
 }
 
 Panel3D.Orientation = {
@@ -24,21 +26,28 @@ Panel3D.Orientation = {
 
 Panel3D.Visibility = {
 	BelowAngleThreshold = 1,
-	Modal = 2
+	Modal = 2,
+	Normal = 3
 }
 
 local panelDefaultVectors = {
 	[Panel3D.Panels.Lower] = CFrame.Angles(math.rad(-45), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5)),
 	[Panel3D.Panels.Hamburger] = CFrame.Angles(math.rad(-55), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5)),
-	[Panel3D.Panels.Settings] = Vector3.new(0, 0, -SETTINGS_DISTANCE)
+	[Panel3D.Panels.Settings] = Vector3.new(0, 0, -SETTINGS_DISTANCE),
+	[Panel3D.Panels.Keyboard] = CFrame.Angles(math.rad(-22.5), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5)),
+	[Panel3D.Panels.Chat] = CFrame.Angles(math.rad(5), 0, 0):vectorToWorldSpace(Vector3.new(0, 0, -5))
 }
-local panelLockThreshold = math.rad(-25)
+local DEFAULT_PANEL_LOCK_THRESHOLD = math.rad(-25)
 local panelTransparencyBias = { --tuned values; raise the opacity value to this power
 	[Panel3D.Panels.Lower] = 6.5,
 	[Panel3D.Panels.Hamburger] = 8,
-	[Panel3D.Panels.Settings] = 0
+	[Panel3D.Panels.Settings] = 0,
+	[Panel3D.Panels.Keyboard] = 1.5,
+	[Panel3D.Panels.Chat] = 1.5
 }
 local panels = {}
+
+local headScale = 1
 
 local renderStepName = "Panel3D"
 
@@ -77,9 +86,11 @@ local function OnCharacterAdded(character)
 		end
 	end)
 end
-game.Players.LocalPlayer.CharacterAdded:connect(OnCharacterAdded)
-if game.Players.LocalPlayer.Character then OnCharacterAdded(game.Players.LocalPlayer.Character) end
-
+spawn(function()
+	while not game.Players.LocalPlayer do wait() end
+	game.Players.LocalPlayer.CharacterAdded:connect(OnCharacterAdded)
+	if game.Players.LocalPlayer.Character then OnCharacterAdded(game.Players.LocalPlayer.Character) end
+end)
 local function autoHideCursor(hide)
 	if not UserInputService.VREnabled then
 		cursorHidden = false
@@ -143,6 +154,9 @@ local function createPanel()
 	panelGUI.Adornee = panelPart
 	panelGUI.ToolPunchThroughDistance = 1000
 	panelGUI.Active = true
+	pcall(function() --todo: remove this when api is live
+		panelGUI.AlwaysOnTop = true
+	end)
 	return panelPart, panelGUI
 end
 
@@ -187,15 +201,23 @@ function Panel3D.Get(panelId)
 		panel.orientationMode = Panel3D.Orientation.Horizontal
 		panel.orientation = nil
 
+		panel.cursorEnabled = true
+
+		panel.width = 1
+		panel.height = 1
+
 		function panel:AddTransparencyCallback(callback)
 			table.insert(panel.transparencyCallbacks, callback)
 		end
 
 		function panel:Resize(width, height, pixelsPerStud)
+			panel.width = width
+			panel.height = height
+
 			pixelsPerStud = pixelsPerStud or PIXELS_PER_STUD
 			panel.pixelScale = pixelsPerStud / PIXELS_PER_STUD
-			panel.part.Size = Vector3.new(width, height, 1)
-			panel.gui.CanvasSize = Vector2.new(pixelsPerStud * width, pixelsPerStud * height)
+			panel.part.Size = Vector3.new(panel.width * headScale, panel.height * headScale, 1)
+			panel.gui.CanvasSize = Vector2.new(pixelsPerStud * panel.width, pixelsPerStud * panel.height)
 
 			local distance = panel.vector.magnitude
 			panel.verticalRange = math.atan(panel.part.Size.Y / (2 * distance)) * 2
@@ -211,6 +233,14 @@ function Panel3D.Get(panelId)
 		function panel:SetModal()
 			panel.visible = false
 			panel.visibilityBehavior = Panel3D.Visibility.Modal
+
+			if panel.visible then
+				currentModalPanel = panel
+				if panel.orientationMode == Panel3D.Orientation.Fixed then
+					local userHeadCFrame = UserInputService:GetUserCFrame(Enum.UserCFrame.Head)
+					panel.orientation = userHeadCFrame * CFrame.new(0, 0, -panel.vector.magnitude) * CFrame.Angles(0, math.pi, 0)
+				end
+			end
 		end
 
 		function panel:SetVisible(visible)
@@ -248,54 +278,65 @@ function Panel3D.GetGUI(panel)
 end
 
 local zeroVector = Vector3.new(0, 0, 0)
-local baseHorizontal = CFrame.new()
-local basePosition = Vector3.new()
+local headXZ = CFrame.new()
+local headOffset = Vector3.new()
 local currentHoverPanel = nil
 local savedMouseBehavior = Enum.MouseBehavior.Default
 function Panel3D.OnRenderStep()
 	if not UserInputService.VREnabled then
 		return
 	end
+	local cameraCFrame = workspace.CurrentCamera.CFrame
 	local cameraRenderCFrame = workspace.CurrentCamera:GetRenderCFrame()
 	local userHeadCFrame = UserInputService:GetUserCFrame(Enum.UserCFrame.Head)
-	local cameraLook = cameraRenderCFrame.lookVector
-	local cameraHorizontalVector = Vector3.new(cameraLook.X, 0, cameraLook.Z).unit
-	local cameraPitchAngle = math.asin(cameraLook.Y)
 
-	local position = workspace.CurrentCamera.CFrame.p
-	local panelsOrigin = CFrame.new(position) * baseHorizontal * CFrame.new(basePosition)
+	local userHeadLook = userHeadCFrame.lookVector
+	local userHeadHorizontalVector = Vector3.new(userHeadLook.X, 0, userHeadLook.Z).unit
+	local userHeadPitch = math.asin(userHeadLook.Y)
+
+	local panelLockThreshold = DEFAULT_PANEL_LOCK_THRESHOLD
+
+	for panelId, panel in pairs(panels) do
+		if panel.pitchLockThreshold and panel.visible then
+			panelLockThreshold = math.max(panelLockThreshold, panel.pitchLockThreshold)
+		end
+	end
 
 	local isAboveThreshold = false
-	if cameraPitchAngle > panelLockThreshold or resetOrientationFlag then
+	if userHeadPitch > panelLockThreshold or resetOrientationFlag then
 		isAboveThreshold = true
-		baseHorizontal = CFrame.new(zeroVector, cameraHorizontalVector)
-		basePosition = userHeadCFrame.p
+		headXZ = CFrame.new(zeroVector, userHeadHorizontalVector)
+		headOffset = userHeadCFrame.p
 		resetOrientationFlag = false
 	end
 
+	local panelsOrigin = cameraCFrame * CFrame.new(headOffset) * headXZ
 	for panelId, panel in pairs(panels) do
 		if panel.visibilityBehavior == Panel3D.Visibility.BelowAngleThreshold then
-			panel.visible = not isAboveThreshold and not currentModalPanel
+			panel.visible = not (isAboveThreshold or currentModalPanel)
 		end
 
 		if not panel.visible then
 			panel.part.Parent = nil
+			panel.gui.Adornee = nil
 		else
 			panel.part.Parent = workspace.CurrentCamera --TODO: move to new 3D gui space
+			panel.gui.Adornee = panel.part
 
 			local panelCFrame;
 			if panel.orientationMode == Panel3D.Orientation.Fixed and panel.orientation then
-				panel.part.CFrame = workspace.CurrentCamera.CFrame * panel.orientation
+				local pos = panel.orientation.p * headScale
+				panel.part.CFrame = workspace.CurrentCamera.CFrame * ((panel.orientation - panel.orientation.p) + pos)
 				panelCFrame = panel.part.CFrame
 			else
-				local panelPosition = panelsOrigin:pointToWorldSpace(panel.vector)
+				local panelPosition = panelsOrigin:pointToWorldSpace(panel.vector * headScale)
 				panelCFrame = CFrame.new(panelPosition, panelsOrigin.p)
 				panel.part.CFrame = panelCFrame
 			end
 
 			local toPanel = (panelCFrame.p - cameraRenderCFrame.p).unit
 
-			local transparency = panel.visible and 1 - (math.max(0, cameraLook:Dot(toPanel)) ^ panelTransparencyBias[panelId]) or 1
+			local transparency = panel.visible and 1 - (math.max(0, cameraRenderCFrame.lookVector:Dot(toPanel)) ^ panelTransparencyBias[panelId]) or 1
 			for _, callback in pairs(panel.transparencyCallbacks) do
 				callback(transparency)
 			end
@@ -307,7 +348,6 @@ function Panel3D.OnRenderStep()
 	local ray = Ray.new(cframe.p, cframe.lookVector * 999)
 	local ignoreList = { game.Players.LocalPlayer.Character }
 	local part, endpoint = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList)
-
 	local hitPanel = nil
 	local hitPanelId = nil
 	for panelId, panel in pairs(panels) do
@@ -334,15 +374,15 @@ function Panel3D.OnRenderStep()
 		currentHoverPanel = hitPanel
 
 		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
-		if hitPanelId ~= Panel3D.Panels.Settings then
+		if hitPanel.cursorEnabled then
 			cursor.Parent = hitPanel.gui
 		else
 			cursor.Parent = nil
 		end
 
 		local localEndpoint = part:GetRenderCFrame():pointToObjectSpace(endpoint)
-		local x = ((localEndpoint.X / part.Size.X) * 1) + 0.5
-		local y = ((localEndpoint.Y / part.Size.Y) * 1) + 0.5
+		local x = (localEndpoint.X / part.Size.X) + 0.5
+		local y = (localEndpoint.Y / part.Size.Y) + 0.5
 		x = 1 - x
 		y = 1 - y
 		cursor.Size = UDim2.new(0, 8 * hitPanel.pixelScale, 0, 8 * hitPanel.pixelScale)
@@ -357,7 +397,6 @@ function Panel3D.OnRenderStep()
 	else
 		if currentHoverPanel then
 			UserInputService.MouseBehavior = savedMouseBehavior
-			UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 
 			if currentHoverPanel.OnMouseLeave then
 				currentHoverPanel:OnMouseLeave()
@@ -368,6 +407,85 @@ function Panel3D.OnRenderStep()
 	end
 end
 
+
+
+-- RayPlaneIntersection
+
+-- http://www.siggraph.org/education/materials/HyperGraph/raytrace/rayplane_intersection.htm
+local function RayPlaneIntersection(ray, planeNormal, pointOnPlane)
+	planeNormal = planeNormal.unit
+	ray = ray.Unit
+	-- compute Pn (dot) Rd = Vd and check if Vd == 0 then we know ray is parallel to plane
+	local Vd = planeNormal:Dot(ray.Direction)
+	
+	-- could fuzzy equals this a little bit to account for imprecision or very close angles to zero
+	if Vd == 0 then -- parallel, no intersection
+		return nil
+	end
+
+	local V0 = planeNormal:Dot(pointOnPlane - ray.Origin)
+	local t = V0 / Vd
+
+	if t < 0 then --plane is behind ray origin, and thus there is no intersection
+		return nil
+	end
+	
+	return ray.Origin + ray.Direction * t
+end
+
+function Panel3D.FindHoveredGuiElement(panel, elements)
+	local cameraRenderCFrame = workspace.CurrentCamera and workspace.CurrentCamera:GetRenderCFrame()
+	local panelPart = panel.part
+	if cameraRenderCFrame and panelPart then
+		local panelPartSize = panelPart.Size
+		local panelSurfaceCFrame = panelPart.CFrame + panelPart.CFrame.lookVector * (panelPartSize.Z * 0.5)
+		local intersectionPt = RayPlaneIntersection(Ray.new(cameraRenderCFrame.p, cameraRenderCFrame.lookVector), panelSurfaceCFrame.lookVector, panelSurfaceCFrame.p)
+		if intersectionPt then
+			local localPoint = panelSurfaceCFrame:pointToObjectSpace(intersectionPt) * Vector3.new(-1, 1, 1) + Vector3.new(panelPartSize.X/2, -panelPartSize.Y/2, 0)
+			local guiPoint = Vector2.new((localPoint.X / panelPartSize.X) *  panel.gui.AbsoluteSize.X, (localPoint.Y / panelPartSize.Y) * -panel.gui.AbsoluteSize.Y)
+			
+			local x = guiPoint.x
+			local y = guiPoint.y
+			for _, item in pairs(elements) do
+				local minPt = item.AbsolutePosition
+				local maxPt = item.AbsolutePosition + item.AbsoluteSize
+				if minPt.X <= x and maxPt.X >= x and minPt.Y <= y and maxPt.Y >= y then
+					return item
+				end
+			end
+		end
+	end
+end
+
+
+
+
+
 game:GetService("RunService"):BindToRenderStep(renderStepName, Enum.RenderPriority.Last.Value, Panel3D.OnRenderStep)
+
+local function OnCameraChanged(prop)
+	if prop == "HeadScale" then
+		pcall(function()
+			headScale = workspace.CurrentCamera.HeadScale
+		end)
+		for i, v in pairs(panels) do
+			v:Resize(v.width, v.height, v.pixelScale * PIXELS_PER_STUD)
+		end
+	end
+end
+local cameraChangedConn = nil
+workspace.Changed:connect(function(prop)
+	if prop == "CurrentCamera" then
+		OnCameraChanged("HeadScale")
+		if cameraChangedConn then
+			cameraChangedConn:disconnect()
+		end
+		cameraChangedConn = workspace.CurrentCamera.Changed:connect(OnCameraChanged)
+	end
+end)
+if workspace.CurrentCamera then
+	OnCameraChanged("HeadScale")
+	cameraChangedConn = workspace.CurrentCamera.Changed:connect(OnCameraChanged)
+end
 
 return Panel3D
