@@ -967,7 +967,7 @@ local function CreateChatIcon()
 			ChatModule:ToggleVisibility()
 		elseif Util.IsTouchDevice() or bubbleChatIsOn then
 			if debounce + DEBOUNCE_TIME < tick() then
-				if Util.IsTouchDevice() and ChatModule:GetVisibility() then
+				if Util.IsTouchDevice() and not ChatModule:GetVisibility() then
 					ChatModule:ToggleVisibility()
 				end
 				ChatModule:FocusChatBar()
