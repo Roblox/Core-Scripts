@@ -586,7 +586,7 @@ local function Initialize()
 
 	createVolumeOptions()
 
-	if platform == Enum.Platform.Windows or platform == Enum.Platform.OSX then
+	if platform == Enum.Platform.Windows or platform == Enum.Platform.UWP or platform == Enum.Platform.OSX then
 		createGraphicsOptions()
 	end
 
