@@ -20,110 +20,11 @@ local useVRKeyboard = (vrKeyboardSuccess and vrKeyboardFlagValue == true)
 local BACKGROUND_OPACITY = 0.3
 local NORMAL_KEY_COLOR = Color3.new(49/255,49/255,49/255)
 local HOVER_KEY_COLOR = Color3.new(49/255,49/255,49/255)
-local PRESSED_KEY_COLOR = Color3.new(49/255,49/255,49/255) --Color3.new(0,162/255,1)
+local PRESSED_KEY_COLOR = Color3.new(0,162/255,1)
 local SET_KEY_COLOR = Color3.new(0,162/255,1)
 
 local KEY_TEXT_COLOR = Color3.new(1,1,1)
 ---------------------------------------- KEYBOARD LAYOUT --------------------------------------
-local KEYBOARD_LAYOUT = HttpService:JSONDecode([==[
-[
-  [
-    "~\n`",
-    "!\n1",
-    "@\n2",
-    "#\n3",
-    "$\n4",
-    "%\n5",
-    "^\n6",
-    "&\n7",
-    "*\n8",
-    "(\n9",
-    ")\n0",
-    "_\n-",
-    "+\n=",
-    {
-      "w": 2
-    },
-    "Delete"
-  ],
-  [
-    {
-      "w": 1.5
-    },
-    "Tab",
-    "Q",
-    "W",
-    "E",
-    "R",
-    "T",
-    "Y",
-    "U",
-    "I",
-    "O",
-    "P",
-    "{\n[",
-    "}\n]",
-    {
-      "w": 1.5
-    },
-    "|\n\\"
-  ],
-  [
-    {
-      "w": 1.75
-    },
-    "Caps",
-    "A",
-    "S",
-    "D",
-    "F",
-    "G",
-    "H",
-    "J",
-    "K",
-    "L",
-    ":\n;",
-    "\"\n'",
-    {
-      "w": 2.25
-    },
-    "Enter"
-  ],
-  [
-    {
-      "w": 2.25
-    },
-    "Shift",
-    "Z",
-    "X",
-    "C",
-    "V",
-    "B",
-    "N",
-    "M",
-    "<\n,",
-    ">\n.",
-    "?\n/",
-    {
-      "w": 2.75
-    },
-    "Shift"
-  ],
-  [
-    {
-      "x": 3.75,
-      "a": 7,
-      "w": 6.25
-    },
-    ""
-  ]
-]
-]==])
-
-
-
-
-
 local MINIMAL_KEYBOARD_LAYOUT = HttpService:JSONDecode([==[
 [
   [
@@ -363,13 +264,13 @@ end
 local function CreateVRButton(instance)
 	local newButton = ExtendedInstance(instance)
 
-	rawset(newButton, "OnEnter", function()
+	rawset(newButton, "OnEnter", function(self)
 	end)
-	rawset(newButton, "OnLeave", function()
+	rawset(newButton, "OnLeave", function(self)
 	end)
-	rawset(newButton, "OnDown", function()	
+	rawset(newButton, "OnDown", function(self)
 	end)
-	rawset(newButton, "OnUp", function()
+	rawset(newButton, "OnUp", function(self)
 	end)
 	rawset(newButton, "ContainsPoint", function(self, x, y)
 		return PointInGuiObject(instance, x, y)
@@ -437,8 +338,7 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 	local selectionObject = Util:Create'ImageLabel'
 	{
 		Name = 'SelectionObject';
-		Size = backgroundImage.Size;
-		Position = backgroundImage.Position;
+		Size = UDim2.new(1,0,1,0);
 		BackgroundTransparency = 1;
 		Image = "rbxasset://textures/ui/Keyboard/key_selection_9slice.png";
 		ImageTransparency = 0;
@@ -447,7 +347,10 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 		BorderSizePixel = 0;
 	}
 
-	newKeyElement.SelectionImageObject = selectionObject
+	newKeyElement.SelectionImageObject = Util:Create'ImageLabel'
+	{
+		Visible = false;
+	}
 
  	-- Special silly enter key nonsense
 	local secondBackgroundImage = nil
@@ -574,6 +477,8 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 			specialSelectionObject.Parent = hovering and backgroundImage or nil
 			specialSelectionObject2.Parent = hovering and backgroundImage or nil
 			specialSelectionObject3.Parent = hovering and secondBackgroundImage or nil
+		else
+			selectionObject.Parent = hovering and backgroundImage or nil
 		end
 	end
 
@@ -601,20 +506,24 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 		keyText.Text = newKey:GetCurrentKeyValue()
 	end
 
-	rawset(newKey, "OnEnter", function()
+	local hoveringGuiElements = {}
+
+	rawset(newKey, "OnEnter", function(self)
 		hovering = true
 		update()
 	end)
-	rawset(newKey, "OnLeave", function()
-		hovering = false
-		pressed = false
-		update()
+	rawset(newKey, "OnLeave", function(self)
+		if not next(hoveringGuiElements) then
+			hovering = false
+			pressed = false
+			update()
+		end
 	end)
-	rawset(newKey, "OnDown", function()
+	rawset(newKey, "OnDown", function(self)
 		pressed = true
 		update()
 	end)
-	rawset(newKey, "OnUp", function()
+	rawset(newKey, "OnUp", function(self)
 		pressed = false
 		update()
 	end)
@@ -651,11 +560,21 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 
 	newKeyElement.MouseButton1Down:connect(function() newKey:OnDown() end)
 	newKeyElement.MouseButton1Up:connect(function() newKey:OnUp() end)
-	newKeyElement.SelectionGained:connect(function() print("SelectionGained" , newKey , selectionObject , selectionObject and selectionObject.Visible) newKey:OnEnter() end)
-	newKeyElement.SelectionLost:connect(function() newKey:OnLeave() end)
+	newKeyElement.SelectionGained:connect(function() hoveringGuiElements[newKeyElement] = true newKey:OnEnter() end)
+	newKeyElement.SelectionLost:connect(function() hoveringGuiElements[newKeyElement] = nil newKey:OnLeave() end)
 	newKeyElement.MouseButton1Click:connect(function() onClicked() end)
 	if secondBackgroundImage then
 		secondBackgroundImage.MouseButton1Click:connect(onClicked)
+		secondBackgroundImage.MouseButton1Down:connect(function() newKey:OnDown() end)
+		secondBackgroundImage.MouseButton1Up:connect(function() newKey:OnUp() end)
+		secondBackgroundImage.SelectionGained:connect(function()
+			hoveringGuiElements[secondBackgroundImage] = true
+			newKey:OnEnter()
+		end)
+		secondBackgroundImage.SelectionLost:connect(function()
+			hoveringGuiElements[secondBackgroundImage] = nil
+			newKey:OnLeave()
+		end)
 	end
 
 	update()
@@ -709,7 +628,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 			Visible = true;
 			Parent = textEntryBackground;
 		};
-			local textEntryField = Util:Create'TextLabel'
+			local textEntryField = Util:Create'TextButton'
 			{
 				Name = "TextEntryField";
 				Text = "";
@@ -746,7 +665,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		Parent = keyboardContainer;
 	}
 	do
-		local closeButtonSelection = Util:Create'ImageLabel'
+		closeButtonElement.SelectionImageObject = Util:Create'ImageLabel'
 		{
 			Name = 'Selection';
 			Size = UDim2.new(0.9,0,0.9,0);
@@ -754,7 +673,6 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 			Image = "rbxasset://textures/ui/Keyboard/close_button_selection.png";
 			BackgroundTransparency = 1;
 		}
-		closeButtonElement.SelectionImageObject = closeButtonSelection
 		Util:Create'ImageLabel'
 		{
 			Name = 'Icon';
@@ -813,10 +731,6 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	local keyboardOptions = nil
 	local keysets = {}
-	local keys = {}
-	local keysByElement = {}
-	local lastHoveredItem = nil
-	local lastSelectedKey = nil
 
 	local capsLockEnabled = false
 	local shiftEnabled = false
@@ -835,7 +749,6 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 			ConvertFontSizeEnumToInt(textEntryField.FontSize),
 			textEntryField.Font,
 			textEntryField.AbsoluteSize)
-		-- TODO: fix text overflow
 		textfieldCursor.Position = UDim2.new(0, textSize.x, textfieldCursor.Position.Y.Scale, textfieldCursor.Position.Y.Offset)
 	end
 
@@ -880,10 +793,6 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	local currentKeyset = nil
 
-	local newCursorPos = nil
-	local myCursorX = nil
-	local myCursorY = nil
-
 	rawset(newKeyboard, "GetCurrentKeyset", function(self)
 		return keysets[currentKeyset]
 	end)
@@ -912,50 +821,6 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 		voiceRecognitionContainer.Visible = inVoiceMode
 	end)
-
-	rawset(newKeyboard, "GetKeyByPosition", function(self, x, y)
-		-- There are a lot of keys, we could optimize this by caching some sort of lookup
-		local currentKeysetObject = self:GetCurrentKeyset()
-		if currentKeysetObject and currentKeysetObject.keys and currentKeysetObject.container and currentKeysetObject.container.Visible then
-			for _, element in pairs(self:GetCurrentKeyset().keys) do
-				if element:ContainsPoint(x, y) then return element end
-			end
-		end
-		for _, element in pairs(buttons) do
-			if element.Visible and element:ContainsPoint(x, y) then return element end
-		end
-	end)
-	rawset(newKeyboard, "GetSelectedKey", function(self)
-		local selected = GuiService.SelectedCoreObject
-		if selected then
-			return keysByElement[selected]
-		end
-	end)
-
-	rawset(newKeyboard, "GetKeyboardAbsoluteSize", function(self)
-		return keyboardContainer.AbsoluteSize
-	end)
-
-	rawset(newKeyboard, "SetCursorPosition", function(self, x, y)
-		myCursorX = x
-		myCursorY = y
-		local hoveredKey = self:GetKeyByPosition(x, y)
-		if hoveredKey ~= lastHoveredItem then
-			if lastHoveredItem then
-				lastHoveredItem:OnLeave()
-			end
-			if hoveredKey then
-				hoveredKey:OnEnter()
-			end
-			lastHoveredItem = hoveredKey
-		end
-	end)
-
-	-- rawset(newKeyboard, "SetClickState", function(self, state)
-	-- 	if myCursorX and myCursorY and textEntryField and PointInGuiObject(textEntryField, myCursorX, myCursorY) then
-	-- 		SetTextFieldCursorPosition(calculateTextCursorPosition(myCursorX, myCursorY))
-	-- 	end
-	-- end)
 
 	rawset(newKeyboard, "GetCaps", function(self)
 		return capsLockEnabled
@@ -1037,9 +902,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		panel:SetVisible(true, true)
 		panel:ForceShowUntilLookedAt()
 
-		local upperSelf = self
 		function panel:OnUpdate()
-			upperSelf:SetCursorPosition(panel.lookAtPixel.X, panel.lookAtPixel.Y)
 		end
 	end)
 
@@ -1073,7 +936,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	rawset(newKeyboard, "SubmitCharacter", function(self, character, isAnAlphaKey)
 		setBufferText(getBufferText() .. character)
-		SetTextFieldCursorPosition(textfieldCursorPosition + 1)
+		SetTextFieldCursorPosition(textfieldCursorPosition + #character)
 
 		if isAnAlphaKey and self:GetShift() then
 			self:SetShift(false)
@@ -1120,7 +983,6 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 							{x = x, y = y, width = width, height = height, x2 = x2, y2 = y2, width2 = width2, height2 = height2},
 							tokenizeString(columnData, '\n'))
 						table.insert(keys, key)
-						keysByElement[key:GetInstance()] = key
 
 						x = x + width
 						maxWidth = math.max(maxWidth, x)
@@ -1150,6 +1012,10 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		end
 		newKeyboard:SetCurrentKeyset(1)
 	end
+
+	textEntryField.MouseButton1Click:connect(function()
+		SetTextFieldCursorPosition(calculateTextCursorPosition(panel.lookAtPixel.X, panel.lookAtPixel.Y))
+	end)
 
 	closeButton.MouseButton1Click:connect(function()
 		newKeyboard:Close(false)
@@ -1213,19 +1079,6 @@ if VirtualKeyboardPlatform and useVRKeyboard then
 	UserInputService.TextBoxFocusReleased:connect(function(textbox)
 		VirtualKeyboardClass:CloseVirtualKeyboard()
 	end)
-
-
-	-- Check with product if we should dismiss the keyboard if you navigate away from the textbox?
-	-- Before hooking up check on keyboard open if the selectedobject property is the keyboard
-	-- GuiService.Changed:connect(function(prop)
-	-- 	if prop == 'SelectedObject' then
-	-- 		-- we can close keyboard
-
-	-- 	elseif prop == 'SelectedCoreObject' then
-	-- 		-- we can close keyboard
-
-	-- 	end
-	-- end)
 end
 
 
