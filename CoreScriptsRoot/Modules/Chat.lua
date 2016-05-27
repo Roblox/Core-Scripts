@@ -2358,44 +2358,7 @@ local function CreateChat()
 				chatGui.Name = "RobloxGui"
 				chatGui.Parent = Player:WaitForChild('PlayerGui')
 				GuiRoot.Parent = chatGui
-			else
-				local function onVREnabled()
-					if InputService.VREnabled then
-						self.Settings.TextStrokeTransparency = 1
-						self:PrintVRWelcome()
-						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.VR.Panel3D)
-						local panel = Panel3D.Get("Chat")
-						panel:LinkTo("Keyboard")
-						panel:SetType(Panel3D.Type.Fixed)
-						panel:ResizePixels(300, 125)
-						GuiRoot.Parent = panel:GetGUI()
-
-						this.ChatWindowWidget.ChatContainer.MouseButton1Click:connect(function()
-							if this.ChatBarWidget then
-								if this.ChatBarWidget:WasFocused() then
-									this.ChatBarWidget:RemoveFocus()
-								else
-									self:FocusChatBar()
-								end
-							end
-						end)
-
-						function panel:CalculateTransparency()
-							return 0
-						end
-					else
-						self.Settings.TextStrokeTransparency = 0.75
-						GuiRoot.Parent = CoreGuiService:WaitForChild('RobloxGui')
-					end
-				end
-				onVREnabled()
-				InputService.Changed:connect(function(prop)
-					if prop == 'VREnabled' then
-						onVREnabled()
-					end
-				end)
 			end
-
 
 			-- NOTE: eventually we will make multiple chat window frames
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
@@ -2488,6 +2451,46 @@ local function CreateChat()
 					end
 				end
 			end)
+
+			if not NON_CORESCRIPT_MODE then
+				local function onVREnabled()
+					if InputService.VREnabled then
+						self.Settings.TextStrokeTransparency = 1
+						self:PrintVRWelcome()
+						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.VR.Panel3D)
+						local panel = Panel3D.Get("Chat")
+						panel:LinkTo("Keyboard")
+						panel:SetType(Panel3D.Type.Fixed)
+						panel:ResizePixels(300, 125)
+						GuiRoot.Parent = panel:GetGUI()
+
+						if this.ChatWindowWidget and this.ChatWindowWidget.ChatContainer then
+							this.ChatWindowWidget.ChatContainer.MouseButton1Click:connect(function()
+								if this.ChatBarWidget then
+									if this.ChatBarWidget:WasFocused() then
+										this.ChatBarWidget:RemoveFocus()
+									else
+										self:FocusChatBar()
+									end
+								end
+							end)
+						end
+
+						function panel:CalculateTransparency()
+							return 0
+						end
+					else
+						self.Settings.TextStrokeTransparency = 0.75
+						GuiRoot.Parent = CoreGuiService:WaitForChild('RobloxGui')
+					end
+				end
+				onVREnabled()
+				InputService.Changed:connect(function(prop)
+					if prop == 'VREnabled' then
+						onVREnabled()
+					end
+				end)
+			end
 		end
 	end
 
