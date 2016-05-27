@@ -1005,8 +1005,8 @@ local function CreateChatIcon()
 			ChatModule:ToggleVisibility()
 		elseif Util.IsTouchDevice() or bubbleChatIsOn then
 			if debounce + DEBOUNCE_TIME < tick() then
-				if Util.IsTouchDevice() and not ChatModule:GetVisibility() then
-					ChatModule:ToggleVisibility()
+				if Util.IsTouchDevice() then
+					ChatModule:SetVisible(true)
 				end
 				ChatModule:FocusChatBar()
 			end
@@ -1038,8 +1038,8 @@ local function CreateChatIcon()
 	end
 	onChatStateChanged(ChatModule:GetVisibility())
 
-	if not Util.IsTouchDevice() and not InputService.VREnabled then
-		ChatModule:ToggleVisibility(true)
+	if not (Util.IsTouchDevice() or InputService.VREnabled) then
+		ChatModule:SetVisible(true)
 	end
 
 	local menuItem = CreateMenuItem(chatIconButton)
@@ -1403,7 +1403,7 @@ if gameOptions and not isTenFootInterface then
 	end)
 end
 
-function topBarEnabledChanged()
+local function topBarEnabledChanged()
 	topbarEnabledChangedEvent:Fire(topbarEnabled)
 	TopBar:UpdateBackgroundTransparency()
 	for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do
