@@ -65,7 +65,6 @@ local BUTTON_RIGHT_DOWN = 'rbxasset://textures/ui/ButtonRightDown.png'
 local BUTTON = 'rbxasset://textures/ui/SingleButton.png'
 local BUTTON_DOWN = 'rbxasset://textures/ui/SingleButtonDown.png'
 local ROBUX_ICON = 'rbxasset://textures/ui/RobuxIcon.png'
-local TIX_ICON = 'rbxasset://textures/ui/TixIcon.png'
 local ERROR_ICON = 'rbxasset://textures/ui/ErrorIcon.png'
 local A_BUTTON = "rbxasset://textures/ui/Settings/Help/AButtonDark.png"
 local B_BUTTON = "rbxasset://textures/ui/Settings/Help/BButtonDark.png"
@@ -85,7 +84,6 @@ local PURCHASE_MSG = {
 	SUCCEEDED = "Your purchase of itemName succeeded!",
 	FAILED = "Your purchase of itemName failed because errorReason. Your account has not been charged. Please try again later.",
 	PURCHASE = "Want to buy the assetType\nitemName for",
-	PURCHASE_TIX = "Want to buy the assetType\nitemName for",
 	FREE = "Would you like to take the assetType itemName for FREE?",
 	FREE_BALANCE = "Your account balance will not be affected by this transaction.",
 	BALANCE_FUTURE = "Your balance after this transaction will be ",
@@ -98,12 +96,11 @@ local PURCHASE_FAILED = {
 	CANNOT_GET_BALANCE = 2,
 	CANNOT_GET_ITEM_PRICE = 3,
 	NOT_FOR_SALE = 4,
-	NOT_ENOUGH_TIX = 5,
-	UNDER_13 = 6,
-	LIMITED = 7,
-	DID_NOT_BUY_ROBUX = 8,
-	PROMPT_PURCHASE_ON_GUEST = 9,
-	THIRD_PARTY_DISABLED = 10,
+	UNDER_13 = 5,
+	LIMITED = 6,
+	DID_NOT_BUY_ROBUX = 7,
+	PROMPT_PURCHASE_ON_GUEST = 8,
+	THIRD_PARTY_DISABLED = 9,
 }
 local PURCHASE_STATE = {
 	DEFAULT = 1,
@@ -279,11 +276,6 @@ PurchaseDialog.Parent = RobloxGui
 		RobuxIcon.Visible = false
 		RobuxIcon.Parent = ContainerFrame
 
-		local TixIcon = createImageLabel("TixIcon", isTenFootInterface and UDim2.new(0, 20*scaleFactor, 0, 20*scaleFactor) or UDim2.new(0, 20, 0, 20), UDim2.new(0, 0, 0, 0), TIX_ICON)
-		TixIcon.ZIndex = 9
-		TixIcon.Visible = false
-		TixIcon.Parent = ContainerFrame
-
 		local CostText = createTextLabel("CostText", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0),
 			Enum.Font.SourceSansBold, isTenFootInterface and largeFont or Enum.FontSize.Size18, "")
 		CostText.TextXAlignment = Enum.TextXAlignment.Left
@@ -398,7 +390,7 @@ end
 
 --[[ Purchase Data Functions ]]--
 local function getCurrencyString(currencyType)
-	return currencyType == Enum.CurrencyType.Tix and "Tix" or "R$"
+	return currencyType == Enum.CurrencyType.Robux and "R$"
 end
 
 local function setInitialPurchaseData(assetId, productId, currencyType, equipOnPurchase)
@@ -412,20 +404,9 @@ end
 
 local function setCurrencyData(playerBalance)
 	local priceInRobux = tonumber(PurchaseData.ProductInfo['PriceInRobux'])
-	local priceInTickets = tonumber(PurchaseData.ProductInfo['PriceInTickets'])
 	--
 	if PurchaseData.CurrencyType == Enum.CurrencyType.Default or PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
 		if priceInRobux and priceInRobux ~= 0 then
-			PurchaseData.CurrencyAmount = priceInRobux
-			PurchaseData.CurrencyType = Enum.CurrencyType.Robux
-		else
-			PurchaseData.CurrencyAmount = priceInTickets
-			PurchaseData.CurrencyType = Enum.CurrencyType.Tix
-		end
-	elseif PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-		if priceInTickets and priceInTickets ~= 0 then
-			PurchaseData.CurrencyAmount = priceInTickets
-		else
 			PurchaseData.CurrencyAmount = priceInRobux
 			PurchaseData.CurrencyType = Enum.CurrencyType.Robux
 		end
@@ -494,8 +475,6 @@ local function clearPurchaseData()
 	for k,v in pairs(PurchaseData) do
 		PurchaseData[k] = nil
 	end
-	RobuxIcon.Visible = false
-	TixIcon.Visible = false
 	CostText.Visible = false
 end
 
@@ -574,7 +553,7 @@ local function stopPurchaseAnimation()
 end
 
 local function setPurchaseDataInGui(isFree, invalidBC)
-	local  descriptionText = PurchaseData.CurrencyType == Enum.CurrencyType.Tix and PURCHASE_MSG.PURCHASE_TIX or PURCHASE_MSG.PURCHASE
+	local  descriptionText = PurchaseData.CurrencyType == Enum.CurrencyType.Robux and PURCHASE_MSG.PURCHASE
 	if isFree then
 		descriptionText = PURCHASE_MSG.FREE
 		PostBalanceText.Text = PURCHASE_MSG.FREE_BALANCE
@@ -589,11 +568,7 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 	ItemDescriptionText.Text = itemDescription
 
 	if not isFree then
-		if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-			TixIcon.Visible = true
-			TixIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + (isTenFootInterface and 6*scaleFactor or 6))
-			CostText.TextColor3 = Color3.new(204/255, 158/255, 113/255)
-		else
+		if PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
 			RobuxIcon.Visible = true
 			RobuxIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + (isTenFootInterface and 6*scaleFactor or 6))
 			CostText.TextColor3 = Color3.new(2/255, 183/255, 87/255)
@@ -753,9 +728,6 @@ local function onPurchaseFailed(failType)
 	elseif failType == PURCHASE_FAILED.NOT_FOR_SALE then
 		failedText = "This item is not currently for sale. Your account has not been charged."
 		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
-	elseif failType == PURCHASE_FAILED.NOT_ENOUGH_TIX then
-		failedText = "This item cost more tickets than you currently have. Try trading currency on www.roblox.com to get more tickets."
-		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 	elseif failType == PURCHASE_FAILED.UNDER_13 then
 		failedText = "Your account is under 13. Purchase of this item is not allowed. Your account has not been charged."
 	elseif failType == PURCHASE_FAILED.LIMITED then
@@ -771,7 +743,6 @@ local function onPurchaseFailed(failType)
 	end
 
 	RobuxIcon.Visible = false
-	TixIcon.Visible = false
 	CostText.Visible = false
 
 	purchaseState = PURCHASE_STATE.FAILED
@@ -942,8 +913,6 @@ local function playerHasFundsForPurchase(playerBalance)
 	local currencyTypeStr = nil
 	if PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
 		currencyTypeStr = "robux"
-	elseif PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-		currencyTypeStr = "tickets"
 	else
 		return false
 	end
@@ -958,15 +927,9 @@ local function playerHasFundsForPurchase(playerBalance)
 	if afterBalanceAmount < 0 and PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
 		PostBalanceText.Visible = false
 		return true, false
-	elseif afterBalanceAmount < 0 and PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-		PostBalanceText.Visible = true
-		PostBalanceText.Text = "You need "..formatNumber(-afterBalanceAmount).." more "..currencyStr.." to buy this item."
-		return true, false
 	end
 
-	if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-		PostBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..formatNumber(afterBalanceAmount).." "..currencyStr.."."
-	else
+	if PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
 		PostBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..currencyStr..formatNumber(afterBalanceAmount).."."
 	end
 
@@ -1086,10 +1049,7 @@ local function canPurchase(disableUpsell)
 		success, hasFunds = playerHasFundsForPurchase(playerBalance)
 		if success then
 			if not hasFunds then
-				if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-					onPurchaseFailed(PURCHASE_FAILED.NOT_ENOUGH_TIX)
-					return false
-				elseif not disableUpsell then
+				if not disableUpsell then
 					setBuyMoreRobuxDialog(playerBalance)
 				end
 			end
@@ -1148,7 +1108,7 @@ local function onPurchaseSuccess()
 	ItemDescriptionText.Text = descriptionText
 
 	local playerBalance = getPlayerBalance()
-	local currencyType = PurchaseData.CurrencyType == Enum.CurrencyType.Tix and "tickets" or "robux"
+	local currencyType = PurchaseData.CurrencyType == Enum.CurrencyType.Robux and "robux"
 	local newBalance = playerBalance[currencyType]
 
 	if currencyType == "robux" then
@@ -1182,8 +1142,6 @@ local function onAcceptPurchase()
 	local currencyTypeInt = nil
 	if PurchaseData.CurrencyType == Enum.CurrencyType.Robux or PurchaseData.CurrencyType == Enum.CurrencyType.Default then
 		currencyTypeInt = 1
-	elseif PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-		currencyTypeInt = 2
 	end
 
 	local productId = PurchaseData.ProductInfo["ProductId"]
