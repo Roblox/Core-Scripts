@@ -407,7 +407,7 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 	local this = CreateChatMessage()
 
 	this.Settings = settings
-	this.chatMessage = chattedMessage
+	this.rawChatString = chattedMessage
 
 	function this:OnResize(containerSize)
 		if this.Container and this.ChatMessage then
@@ -471,7 +471,7 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 	local function CreateMessageGuiElement()
 		local fontSize = this:GetMessageFontSize(this.Settings)
 
-		local systemMessageDisplayText = this.chatMessage or ""
+		local systemMessageDisplayText = this.rawChatString or ""
 		local systemMessageSize = Util.GetStringTextBounds(systemMessageDisplayText, this.Settings.Font, fontSize, UDim2.new(0, 400, 0, 1000))
 
 		local container = Util.Create'Frame'
