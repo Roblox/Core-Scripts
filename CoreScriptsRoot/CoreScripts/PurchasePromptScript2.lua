@@ -411,25 +411,11 @@ local function setInitialPurchaseData(assetId, productId, currencyType, equipOnP
 end
 
 local function setCurrencyData(playerBalance)
+	PurchaseData.CurrencyType = Enum.CurrencyType.Robux
+	PurchaseData.CurrencyAmount = 0
+
 	local priceInRobux = tonumber(PurchaseData.ProductInfo['PriceInRobux'])
-	local priceInTickets = tonumber(PurchaseData.ProductInfo['PriceInTickets'])
-	--
-	if PurchaseData.CurrencyType == Enum.CurrencyType.Default or PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
-		if priceInRobux and priceInRobux ~= 0 then
-			PurchaseData.CurrencyAmount = priceInRobux
-			PurchaseData.CurrencyType = Enum.CurrencyType.Robux
-		else
-			PurchaseData.CurrencyAmount = priceInTickets
-			PurchaseData.CurrencyType = Enum.CurrencyType.Tix
-		end
-	elseif PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-		if priceInTickets and priceInTickets ~= 0 then
-			PurchaseData.CurrencyAmount = priceInTickets
-		else
-			PurchaseData.CurrencyAmount = priceInRobux
-			PurchaseData.CurrencyType = Enum.CurrencyType.Robux
-		end
-	end
+	PurchaseData.CurrencyAmount = priceInRobux
 end
 
 local function setPreviewImageXbox(productInfo, assetId)
