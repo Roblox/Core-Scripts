@@ -1218,8 +1218,32 @@ local function Create3DChatIcon(topBarInstance, panel, menubar)
 
 	menuItem.MouseButton1Click:connect(function()
 		ChatModule:SetVisible(not ChatModule:GetVisibility())
+		if ChatModule:GetVisibility() then
+			ChatModule:FocusChatBar()
+		end
 		menubar:CloseAllExcept(menuItem)
 	end)
+
+	local closedEventConn = nil
+	local function OnVREnabled(prop)
+		if prop == 'VREnabled' then
+			if closedEventConn then
+				closedEventConn:disconnect()
+				closedEventConn = nil
+			end
+			if InputService.VREnabled then
+				local VirtualKeyboardModule = require(GuiRoot.Modules.VR.VirtualKeyboard)
+				closedEventConn = VirtualKeyboardModule.ClosedEvent:connect(function()
+					if ChatModule:IsFocused(true) then
+						ChatModule:SetVisible(false)
+					end
+				end)
+			end
+		end
+	end
+	InputService.Changed:connect(OnVREnabled)
+	spawn(function() OnVREnabled("VREnabled") end)
+
 
 	local chatPanel = Panel3D.Get("Chat")
 	function chatPanel:OnVisibilityChanged(visible)

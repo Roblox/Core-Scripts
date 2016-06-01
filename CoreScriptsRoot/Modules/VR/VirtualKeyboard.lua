@@ -427,9 +427,14 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 			Image = KEY_ICONS[keyData[1]].Asset;
 			Parent = backgroundImage;
 		}
-		spawn(function()
-			icon.Position = UDim2.new(0.5,-icon.AbsoluteSize.X/2,0.5,-icon.AbsoluteSize.Y/2);
-		end)
+
+		local function onChanged(prop)
+			if prop == 'AbsoluteSize' then
+				icon.Position = UDim2.new(0.5,-icon.AbsoluteSize.X/2,0.5,-icon.AbsoluteSize.Y/2);
+			end
+		end
+		icon.Changed:connect(onChanged)
+		onChanged('AbsoluteSize')
 	end
 
 	local function isEnabled()
@@ -448,7 +453,7 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 		elseif currentKeySetting == 'Caps' then
 			keyboard:SetCaps(not keyboard:GetCaps())
 		elseif currentKeySetting == 'Enter' then
-			keyboard:Close(true)
+			keyboard:SubmitText(true, true)
 		elseif currentKeySetting == 'Delete' then
 			keyboard:BackspaceAtCursor()
 		elseif currentKeySetting == "123/sym" then
@@ -737,6 +742,9 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	local textfieldCursorPosition = 0
 
+	local closedEvent = Instance.new('BindableEvent')
+	local opened = false
+	local closed = false
 
 	local function SetTextFieldCursorPosition(newPosition)
 		textfieldCursorPosition = Clamp(0, #textEntryField.Text, newPosition)
@@ -793,6 +801,8 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	local currentKeyset = nil
 
+	rawset(newKeyboard, "ClosedEvent",  closedEvent.Event)
+
 	rawset(newKeyboard, "GetCurrentKeyset", function(self)
 		return keysets[currentKeyset]
 	end)
@@ -847,6 +857,10 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	local textChangedConn = nil
 	local panelClosedConn = nil
 	rawset(newKeyboard, "Open", function(self, options)
+		if opened then return end
+		opened = true
+		closed = false
+
 		keyboardOptions = options
 
 		self:SetCurrentKeyset(1)
@@ -865,6 +879,9 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 					UpdateTextEntryFieldText(options.TextBox.Text)
 				end
 			end)
+			options.TextBox.FocusLost:connect(function(submitted)
+				self:Close(submitted)
+			end)
 			if options.TextBox.ClearTextOnFocus then
 				setBufferText("")
 			else
@@ -875,7 +892,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 			if textboxPanel then
 				panelClosedConn = Panel3D.OnPanelClosed.Event:connect(function(closedPanelName)
 					if closedPanelName == textboxPanel.name then
-						self:Close()
+						self:Close(false)
 					end
 				end)
 
@@ -907,21 +924,39 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	end)
 
 	rawset(newKeyboard, "Close", function(self, submit)
+		if closed then return end
+		opened = false
+		closed = true
+
+		submit = (submit == true)
+
 		if textChangedConn then textChangedConn:disconnect() end
 		textChangedConn = nil
 		if panelClosedConn then panelClosedConn:disconnect() end
 		panelClosedConn = nil
 		-- Clean-up
 		panel:OnMouseLeave()
-
-		if submit and keyboardOptions and keyboardOptions.TextBox then
-			keyboardOptions.TextBox.Text = getBufferText()
-		end
 		panel:SetVisible(false, true)
 		keyboardContainer.Visible = false
-		if keyboardOptions and keyboardOptions.TextBox then
-			keyboardOptions.TextBox:ReleaseFocus()
+
+		self:SubmitText(submit, false)
+	end)
+
+	rawset(newKeyboard, "SubmitText", function(self, submit, keepKeyboardOpen)
+		local keyboardTextbox = keyboardOptions and keyboardOptions.TextBox
+		if keyboardTextbox then
+			if submit then
+				keyboardTextbox.Text = getBufferText()
+			end
+			keyboardTextbox:ReleaseFocus(submit)
+			if keepKeyboardOpen then
+				keyboardTextbox:CaptureFocus()
+			end
 		end
+	end)
+
+	rawset(newKeyboard, "GetCurrentOptions", function(self)
+		return keyboardOptions
 	end)
 
 	rawset(newKeyboard, "BackspaceAtCursor", function(self)
@@ -1019,6 +1054,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	closeButton.MouseButton1Click:connect(function()
 		newKeyboard:Close(false)
+		closedEvent:Fire()
 	end)
 
 	voiceDoneButton.MouseButton1Click:connect(function()
@@ -1067,9 +1103,13 @@ end
 
 function VirtualKeyboardClass:CloseVirtualKeyboard()
 	if VirtualKeyboardPlatform and UserInputService.VREnabled then
-		GetKeyboard():Close()
+		local currentKeyboard = GetKeyboard()
+		currentKeyboard:Close(false)
 	end
 end
+
+VirtualKeyboardClass.ClosedEvent = GetKeyboard().ClosedEvent
+
 
 if VirtualKeyboardPlatform and useVRKeyboard then
 	UserInputService.TextBoxFocused:connect(function(textbox)
