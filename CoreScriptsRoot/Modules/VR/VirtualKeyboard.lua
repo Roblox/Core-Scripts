@@ -744,7 +744,6 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	local closedEvent = Instance.new('BindableEvent')
 	local opened = false
-	local closed = false
 
 	local function SetTextFieldCursorPosition(newPosition)
 		textfieldCursorPosition = Clamp(0, #textEntryField.Text, newPosition)
@@ -859,7 +858,6 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	rawset(newKeyboard, "Open", function(self, options)
 		if opened then return end
 		opened = true
-		closed = false
 
 		keyboardOptions = options
 
@@ -924,11 +922,11 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	end)
 
 	rawset(newKeyboard, "Close", function(self, submit)
-		if closed then return end
-		opened = false
-		closed = true
-
 		submit = (submit == true)
+
+		if not opened then return end
+		opened = false
+
 
 		if textChangedConn then textChangedConn:disconnect() end
 		textChangedConn = nil

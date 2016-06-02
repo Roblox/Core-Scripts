@@ -786,9 +786,7 @@ local function onCameraChanged(prop)
 			currentHeadScale = workspace.CurrentCamera.HeadScale
 		end)
 		for i, v in pairs(panels) do
-			if v.OnHeadScaleChanged ~= nil then
-				v:OnHeadScaleChanged(currentHeadScale)
-			end
+			v:OnHeadScaleChanged(currentHeadScale)
 		end
 	end
 end
