@@ -1,7 +1,4 @@
-
-
 -- Made by Tomarty (talk to me if you have questions)
-
 
 -- Quick optimizations
 local Instance_new = Instance.new
@@ -48,7 +45,6 @@ local Style; do
 	Style = {
 		Font = Enum.Font.SourceSans;
 		FontBold = Enum.Font.SourceSansBold;
-		
 		
 		HandleHeight = 24; -- How tall the top window handle is, as well as the width of the scroll bar
 		TabHeight = 28;
@@ -235,7 +231,6 @@ local CreateDisconnectSignal; do
 	end
 end
 
-
 -- Services
 local UserInputService = game:GetService('UserInputService')
 local RunService = game:GetService('RunService')
@@ -263,7 +258,6 @@ function Methods.ConnectObjectSetVisible(devConsole, object, func)
 		func(object, visible)
 	end)
 end
-
 
 -----------------------------
 -- Frame/Window Dimensions --
@@ -298,8 +292,6 @@ function Methods.SetFramePosition(devConsole, x, y)
 	devConsole.Frame.Position = UDim2_new(0, x, 0, y)
 end
 
-
-
 -- Open/Close the console
 function Methods.SetVisible(devConsole, visible, animate)
 	if devConsole.Visible == visible then
@@ -314,8 +306,6 @@ function Methods.SetVisible(devConsole, visible, animate)
 		devConsole:ResetFrameDimensions()
 	end
 end
-
-
 
 -----------------
 -- Constructor --
@@ -382,7 +372,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	end
 	
 	do -- Create top right exit button
-		local exitButton, exitButtonImage = createCornerButton('Exit', 1, 0, 'http://www.roblox.com/asset/?id=261878266', 2/3)
+		local exitButton, exitButtonImage = createCornerButton('Exit', 1, 0, 'https://www.roblox.com/asset/?id=261878266', 2/3)
 		exitButton.AutoButtonColor = false
 		
 		local buttonEffectFunction = devConsole:CreateButtonEffectFunction(exitButton)
@@ -412,7 +402,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	do -- Repositioning and Resizing
 		
 		do -- Create bottom right window resize button and activate resize dragging
-			local resizeButton, resizeButtonImage = createCornerButton('Resize', 1, 1, 'http://www.roblox.com/asset/?id=261880743', 1)
+			local resizeButton, resizeButtonImage = createCornerButton('Resize', 1, 1, 'https://www.roblox.com/asset/?id=261880743', 1)
 			resizeButtonImage.Position = UDim2_new(0, 0, 0, 0)
 			resizeButtonImage.Size = UDim2_new(1, 0, 1, 0)
 
@@ -500,7 +490,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		local offset = (tabHeight - gearSize) / 2
 		optionsButton.Size = UDim2_new(0, Style.GearSize, 0, Style.GearSize)
 		optionsButton.Position = UDim2_new(1, -(Style.GearSize + offset + Style.HandleHeight), 0, Style.HandleHeight + offset)
-		local gear = Primitives.InvisibleImageLabel(optionsButton, 'Image', 'http://www.roblox.com/asset/?id=261882463')
+		local gear = Primitives.InvisibleImageLabel(optionsButton, 'Image', 'https://www.roblox.com/asset/?id=261882463')
 		--gear.ZIndex = ZINDEX + 1
 		local animationToggle = devConsole:GenerateOptionButtonAnimationToggle(interiorFrame, optionsButton, gear, tabContainer, optionsClippingFrame, optionsFrame)
 		local open = false
@@ -510,7 +500,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		end)
 		
 	end
-	
 	
 	-- Console/Log and Stats options
 	local setShownOptionTypes; -- Toggles what options to show: setOptionType({Log = true})
@@ -580,7 +569,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			return this
 		end
 		
-		
 		local string_find = string.find
 		local containsString; -- the text typed into the search textBox, nil if equal to ""
 		
@@ -599,9 +587,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		
 		messageFilterChanged = CreateSignal()
 		messageTextWrappedChanged = CreateSignal()
-		
-		
-		
 		
 		local optionTypeContainers = {
 			--[OptionType] = Frame
@@ -665,7 +650,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			container.Visible = false
 			optionTypeContainers.Scripts = container
 
-	
 			do
 				local x = 0
 				
@@ -724,8 +708,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			end
 		end
 		
-
-		
 		do -- Search/filter/contains textbox
 			
 			local label = Primitives.InvisibleTextLabel(optionsFrame, 'FilterLabel', "Contains:")
@@ -763,10 +745,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				textBox.Size = UDim2_new(0, math.max(textBounds.X, 150), 0, Style.CheckboxSize)
 			end)
 		end
-		
-		
 	end
-	
 	
 	----------
 	-- Tabs --
@@ -847,7 +826,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			return tab
 		end
 		
-		
 		-- Local Log tab --
 		if permissions.MayViewClientLog then
 			local tab = createConsoleTab(
@@ -858,7 +836,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			tab:SetVisible(true)
 			tab:SetOpen(true)
 		end
-		
 		
 		-- Server Log tab --
 		if permissions.MayViewServerLog then
@@ -879,9 +856,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			)
 			tab:SetVisible(true)
 		end
-		
 	end
-	
 	
 	do -- Stats tabs
 		
@@ -1031,8 +1006,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			tab:SetVisible(true)
 		end
 		
-		
-		
 		-- Server Stats --
 		if permissions.MayViewServerStats then
 
@@ -1091,9 +1064,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 						
 			tab:SetVisible(true)
 		end	
-		
-		
-		
+
 		-- Server Jobs --
 		if permissions.MayViewServerJobs then
 
@@ -1168,7 +1139,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		end
 	end
 	
-	
 	--[[
 	do -- Sample tab
 		local tabBody = Primitives.FolderFrame(body, 'TabName')
@@ -1183,9 +1153,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	return devConsole
 	
 end
-
-
-
 
 ----------------------
 -- Backup GUI Mouse --
@@ -1534,16 +1501,9 @@ do -- Script performance/Chart list
 			end
 		end
 		
-		
 		return this
-		
 	end
-
 end
-
-
-
-
 
 do -- Chart
 	
@@ -1660,7 +1620,6 @@ do -- Chart
 				end
 			end
 			
-			
 			--local scale = 1 / heightMax * 0.95
 			--scaleFrame:TweenSizeAndPosition(UDim2_new(1, 0, scale, 0), UDim2_new(0, 0, 1 - scale, 0), 'Out', 'Sine', 0.25, true)
 
@@ -1704,9 +1663,7 @@ do -- Chart
 			
 			RefreshScale(true)
 		end
-		
-		
-		
+
 		function this.SetVisible(this, visibleNew)
 
 			body.Position = UDim2_new(1 - (direction * 0.5 + 0.5), 0, 0, 0)
@@ -1749,7 +1706,6 @@ do -- Chart
 		end
 		
 		return this
-		
 	end
 	
 	local function createLabel(...)
@@ -1824,14 +1780,7 @@ do -- Chart
 		
 		return chart
 	end
-	
-
 end
-
-
-
-
-
 
 --------------------
 -- Output console --
@@ -1886,9 +1835,7 @@ do
 					end
 				end
 			end)
-
 		end
-		
 		
 		local disconnector = CreateDisconnectSignal()
 		
@@ -1963,7 +1910,7 @@ do
 				addInputtedText(textBox.Text, true)
 			end
 		end)
-		
+
 		return this
 	end
 end
@@ -1977,11 +1924,9 @@ do
 	local function isHidden(message)
 		return false
 	end
-	
-	
+
 	function Methods.CreateOutput(devConsole, messages, messageFilter)
-		
-		
+
 		-- AKA 'Log'
 		local heightChanged = CreateSignal()
 		local output = {
@@ -1995,14 +1940,14 @@ do
 			output.Height = height
 			heightChanged:fire(height)
 		end
-		
+
 		-- The label container
 		local frame = Primitives.FolderFrame(nil, 'Output')
 		frame.ClipsDescendants = true
 		output.Frame = frame
-		
+
 		local textWrappedEnabled = false
-		
+
 		do
 			local lastX = 0
 			connectPropertyChanged(frame, 'AbsoluteSize', function(size)
@@ -2017,9 +1962,7 @@ do
 
 		local labels = {}
 		local labelPositions = {}
-		
-		
-		
+
 		local function RefreshTextWrapped()
 			if not output.Visible then
 				return
@@ -2039,15 +1982,15 @@ do
 			setHeight(y)
 		end
 		local MAX_LINES = 2048
-		
+
 		local function RefreshMessagesForReal(messageStartPosition)
 			if not output.Visible then
 				return
 			end
-			
+
 			local y = 1
 			local labelPosition = 0 -- position of last used label
-			
+
 			-- Failed optimization:
 			messageStartPosition = nil
 			if messageStartPosition then
@@ -2066,7 +2009,7 @@ do
 					messageStartPosition = nil
 				end
 			end
-			
+
 			for i = messageStartPosition or math_max(1, #messages - MAX_LINES), #messages do
 				local message = messages[i]
 				if messageFilter(message) then
@@ -2101,7 +2044,7 @@ do
 					labelPositions[i] = false
 				end
 			end
-			
+
 			-- Destroy extra labels
 			for i = #labels, labelPosition + 1, -1 do
 				labels[i]:Destroy()
@@ -2148,14 +2091,10 @@ do
 				end
 			end
 		end
-		
+
 		return output
-		
 	end
 end
-
-
-
 
 ----------
 -- Tabs --
@@ -2223,7 +2162,6 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 		end
 	end
 
-	
 	function tab.SetOpen(tab, open)
 		if open == tab.Open then
 			return
@@ -2280,8 +2218,6 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 	
 end
 
-
-
 ----------------
 -- Scroll bar --
 ----------------
@@ -2308,7 +2244,6 @@ function Methods.ApplyScrollbarToFrame(devConsole, scrollbar, window, body, fram
 
 	end
 	
-	
 	local function setValue(valueNew)
 		value = valueNew
 		refreshDimension()
@@ -2319,16 +2254,16 @@ function Methods.ApplyScrollbarToFrame(devConsole, scrollbar, window, body, fram
 	end
 	scrollbar.ValueChanged:connect(setValue)
 	setValue(scrollbar:GetValue())
-	
+
 	local scrollDistance = 120
-	
+
 	scrollbar.ButtonUp.MouseButton1Click:connect(function()
 		scrollbar:Scroll(-scrollDistance, getHeights())
 	end)
 	scrollbar.ButtonDown.MouseButton1Click:connect(function()
 		scrollbar:Scroll(scrollDistance, getHeights())
 	end)
-	
+
 	connectPropertyChanged(window, 'AbsoluteSize', refreshDimension)
 	connectPropertyChanged(body, 'AbsoluteSize', function()
 		local windowHeight, bodyHeight = getHeights()
@@ -2339,7 +2274,7 @@ function Methods.ApplyScrollbarToFrame(devConsole, scrollbar, window, body, fram
 		end
 		refreshDimension()
 	end)
-	
+
 	window.MouseWheelForward:connect(function()
 		scrollbar:Scroll(-scrollDistance, getHeights())
 	end)
@@ -2351,10 +2286,10 @@ end
 
 function Methods.CreateScrollbar(devConsole, rotation)
 	local scrollbar = {}
-	
+
 	local main = Primitives.FolderFrame(main, 'Scrollbar')
 	scrollbar.Frame = main
-	
+
 	local frame = Primitives.Button(main, 'Frame')
 	frame.AutoButtonColor = false
 	frame.Size = UDim2_new(1, 0, 1, -(Style.HandleHeight) * 2 - 2)
@@ -2371,14 +2306,14 @@ function Methods.CreateScrollbar(devConsole, rotation)
 		frame2.Visible = not visible
 	end
 	
-	local buttonUp = Primitives.ImageButton(frame, 'Up', 'http://www.roblox.com/asset/?id=261880783')
+	local buttonUp = Primitives.ImageButton(frame, 'Up', 'https://www.roblox.com/asset/?id=261880783')
 	scrollbar.ButtonUp = buttonUp
 	buttonUp.Size = UDim2_new(1, 0, 0, Style.HandleHeight)
 	buttonUp.Position = UDim2_new(0, 0, 0, -Style.HandleHeight - 1)
 	buttonUp.AutoButtonColor = false
 	devConsole:ConnectButtonHover(buttonUp, devConsole:CreateButtonEffectFunction(buttonUp))
-	
-	local buttonDown = Primitives.ImageButton(frame, 'Down', 'http://www.roblox.com/asset/?id=261880783')
+
+	local buttonDown = Primitives.ImageButton(frame, 'Down', 'https://www.roblox.com/asset/?id=261880783')
 	scrollbar.ButtonDown = buttonDown
 	buttonDown.Size = UDim2_new(1, 0, 0, Style.HandleHeight)
 	buttonDown.Position = UDim2_new(0, 0, 1, 1)
@@ -2386,14 +2321,13 @@ function Methods.CreateScrollbar(devConsole, rotation)
 	buttonDown.AutoButtonColor = false
 	devConsole:ConnectButtonHover(buttonDown, devConsole:CreateButtonEffectFunction(buttonDown))
 
-
 	local bar = Primitives.Button(frame, 'Bar')
 	bar.Size = UDim2_new(1, 0, 0.5, 0)
 	bar.Position = UDim2_new(0, 0, 0.25, 0)
 	
 	bar.AutoButtonColor = false
 	
-	local grip = Primitives.InvisibleImageLabel(bar, 'Image', 'http://www.roblox.com/asset/?id=261904959')
+	local grip = Primitives.InvisibleImageLabel(bar, 'Image', 'https://www.roblox.com/asset/?id=261904959')
 	grip.Size = UDim2_new(0, 16, 0, 16)
 	grip.Position = UDim2_new(0.5, -8, 0.5, -8)
 
@@ -2474,7 +2408,6 @@ function Methods.CreateScrollbar(devConsole, rotation)
 	
 	return scrollbar
 end
-
 
 ----------------------
 -- Fancy color lerp --
@@ -2579,12 +2512,9 @@ function Methods.GenerateOptionButtonAnimationToggle(devConsole, interior, butto
 			RenderLerpAnimation(disconnector, length, function(t)
 				gear.Rotation = gearRotation0 * t + gearRotation * (1 - t)
 			end)
-		end
-		
+		end	
 	end
-	
 end
-
 
 ------------------------------
 -- Events for color effects --
@@ -2632,8 +2562,6 @@ do
 		--]]
 	end
 end
-
-
 
 -------------------------
 -- Events for draggers -- (for the window's top handle, the resize button, and scrollbars)
@@ -2730,9 +2658,6 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 	devConsole.VisibleChanged:connect(stopDragging)
 end
 
-
-
-
 -----------------
 -- Permissions --
 -----------------
@@ -2777,7 +2702,6 @@ do
 			permissions.ServerCodeExecutionEnabled = permissions.IsCreator and settings():GetFFlag("ConsoleCodeExecutionEnabled")
 		end)
 		
-		
 		if DEBUG then
 			permissions.IsCreator = true
 			permissions.ServerCodeExecutionEnabled = true
@@ -2794,7 +2718,6 @@ do
 		
 	end
 end
-
 
 ----------------------
 -- Output interface --
@@ -2831,7 +2754,6 @@ do
 			return this
 		end
 		
-		
 		local ConvertTimeStamp; do
 			-- Easy, fast, and working nicely
 			local function numberWithZero(num)
@@ -2849,7 +2771,7 @@ do
 				
 				dayTime = dayTime - (minute * 60)
 				local second = dayTime
-				
+	
 				local h = numberWithZero(hour)
 				local m = numberWithZero(minute)
 				local s = numberWithZero(dayTime)
@@ -2963,7 +2885,6 @@ do
 			
 		end
 		--]]
-		
 		
 		messagesAndStats = {
 			OutputMessageSyncLocal = outputMessageSyncLocal;

@@ -134,8 +134,8 @@ end
 
 local selectionRing = Util.Create "ImageLabel" {
 	Name = "SelectionRing",
-	Position = UDim2.new(0.5, -22, 0.5, -22),
-	Size = UDim2.new(0, 44, 0, 44),
+	Position = UDim2.new(0.5, -23, 0.5, -23),
+	Size = UDim2.new(0, 46, 0, 46),
 	BackgroundTransparency = 1,
 	Image = "rbxasset://textures/ui/menu/buttonHover.png"
 }
@@ -339,13 +339,16 @@ local function Create3DMenuBar(barAlignment, threeDPanel)
 	function this:ArrangeItems()
 		local totalWidth = superArrangeItems(self)
 		if threeDPanel then
-			threeDPanel:ResizePixels(totalWidth, 50)
+			threeDPanel:ResizePixels(totalWidth, 120)
+		end
+		for _, v in pairs(this:GetItems()) do
+			v:UpdateHoverText()
 		end
 		return totalWidth
 	end
 
 	function this:CloseAllExcept(item)
-		for i, v in pairs(this:GetItems()) do
+		for _, v in pairs(this:GetItems()) do
 			if v ~= item then
 				v:SetActive(false)
 			end
@@ -399,10 +402,12 @@ local function Create3DMenuItem()
 
 	local backgroundButton = Util.Create 'ImageButton' {
 		Name = "ButtonBackground",
-		Size = UDim2.new(0, 50, 0, 50),
+		Size = UDim2.new(0, 52, 0, 52),
 
 		BackgroundTransparency = 1,
-		SelectionImageObject = selectionRing:Clone()
+		SelectionImageObject = selectionRing:Clone(),
+
+		ClipsDescendants = false
 	}
 
 	local isActive = false
@@ -431,7 +436,7 @@ local function Create3DMenuItem()
 		elseif parent:IsA("TextLabel") or parent:IsA("TextButton") then
 			parent.TextTransparency = transparency
 		end
-		for i, v in pairs(parent:GetChildren()) do
+		for _, v in pairs(parent:GetChildren()) do
 			if v:IsA("GuiObject") then
 				setTransparency(v, transparency)
 			end
@@ -442,6 +447,85 @@ local function Create3DMenuItem()
 	end
 
 	menuItem:SetActive(false)
+
+	local hoverTextFrame = Util.Create 'Frame' {
+		Name = "ButtonHoverText",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+
+		Position = UDim2.new(0.5, -45, 0, 55),
+		Size = UDim2.new(0, 90, 0, 60),
+
+		Visible = false,
+		Parent = backgroundButton
+	}
+	local hoverMid = Util.Create 'ImageLabel' {
+		Name = "HoverMid",
+		BackgroundTransparency = 1,
+
+		Image = "rbxasset://textures/ui/Menu/hoverPopupMid.png",
+
+		Position = UDim2.new(0.5, -12, 0, 0),
+		Size = UDim2.new(0, 24, 1, 0),
+		Parent = hoverTextFrame
+	}
+	local hoverLeft = Util.Create 'ImageLabel' {
+		Name = "HoverLeft",
+		BackgroundTransparency = 1,
+
+		Image = "rbxasset://textures/ui/Menu/hoverPopupLeft.png",
+
+		Position = UDim2.new(0, 0, 0, 0),
+		Size = UDim2.new(0.5, -12, 1, 0),
+		ScaleType = Enum.ScaleType.Slice,
+		SliceCenter = Rect.new(1, 1, 33, 59),
+		Parent = hoverTextFrame
+	}
+	local hoverRight = Util.Create 'ImageLabel' {
+		Name = "HoverRight",
+		BackgroundTransparency = 1,
+
+		Image = "rbxasset://textures/ui/Menu/hoverPopupRight.png",
+
+		Position = UDim2.new(0.5, 12, 0, 0),
+		Size = UDim2.new(0.5, -12, 1, 0),
+		ScaleType = Enum.ScaleType.Slice,
+		SliceCenter = Rect.new(0, 1, 32, 59),
+		Parent = hoverTextFrame
+	}
+
+	local hoverTextLabel = Util.Create 'TextLabel' {
+		Name = "ButtonHoverTextLabel",
+		BackgroundTransparency = 1,
+
+		Font = Enum.Font.SourceSansBold,
+		FontSize = Enum.FontSize.Size24,
+		Text = "",
+		TextColor3 = Color3.new(1, 1, 1),
+
+		Position = UDim2.new(0, 0, 0, 8),
+		Size = UDim2.new(1, 0, 1, -5),
+
+		Parent = hoverTextFrame
+	}
+
+	function menuItem:SetHoverText(text)
+		hoverTextLabel.Text = text
+		local frameWidth = hoverTextLabel.TextBounds.X + 20
+		hoverTextFrame.Position = UDim2.new(0.5, -frameWidth / 2, 0, 55)
+		hoverTextFrame.Size = UDim2.new(0, frameWidth, 0, 60)
+	end
+
+	backgroundButton.SelectionGained:connect(function()
+		hoverTextFrame.Visible = true
+	end)
+	backgroundButton.SelectionLost:connect(function()
+		hoverTextFrame.Visible = false
+	end)
+
+	function menuItem:UpdateHoverText()
+		self:SetHoverText(hoverTextLabel.Text)
+	end
 
 	setmetatable(menuItem, {
 		__index = function(t, k)
@@ -854,12 +938,13 @@ end
 local function Create3DSettingsIcon(topBarInstance, panel, menubar)
 	local MenuModule = require(game.CoreGui.RobloxGui.Modules.Settings.SettingsHub)
 	local menuItem = Create3DMenuItem()
+	menuItem:SetHoverText("Settings")
 
 	local icon = Util.Create "ImageLabel" {
 		Parent = menuItem:GetInstance(),
 
-		Position = UDim2.new(0.5, -14, 0.5, -10),
-		Size = UDim2.new(0, 28, 0, 20),
+		Position = UDim2.new(0.5, -15, 0.5, -11),
+		Size = UDim2.new(0, 30, 0, 22),
 
 		BackgroundTransparency = 1,
 
@@ -1005,8 +1090,8 @@ local function CreateChatIcon()
 			ChatModule:ToggleVisibility()
 		elseif Util.IsTouchDevice() or bubbleChatIsOn then
 			if debounce + DEBOUNCE_TIME < tick() then
-				if Util.IsTouchDevice() and not ChatModule:GetVisibility() then
-					ChatModule:ToggleVisibility()
+				if Util.IsTouchDevice() then
+					ChatModule:SetVisible(true)
 				end
 				ChatModule:FocusChatBar()
 			end
@@ -1038,8 +1123,8 @@ local function CreateChatIcon()
 	end
 	onChatStateChanged(ChatModule:GetVisibility())
 
-	if not Util.IsTouchDevice() and not InputService.VREnabled then
-		ChatModule:ToggleVisibility(true)
+	if not (Util.IsTouchDevice() or InputService.VREnabled) then
+		ChatModule:SetVisible(true)
 	end
 
 	local menuItem = CreateMenuItem(chatIconButton)
@@ -1118,6 +1203,7 @@ local function Create3DChatIcon(topBarInstance, panel, menubar)
 	local ChatModule = require(GuiRoot.Modules.Chat)
 
 	local menuItem = Create3DMenuItem()
+	menuItem:SetHoverText("Chat")
 
 	local icon = Util.Create "ImageLabel" {
 		Parent = menuItem:GetInstance(),
@@ -1132,8 +1218,32 @@ local function Create3DChatIcon(topBarInstance, panel, menubar)
 
 	menuItem.MouseButton1Click:connect(function()
 		ChatModule:SetVisible(not ChatModule:GetVisibility())
+		if ChatModule:GetVisibility() then
+			ChatModule:FocusChatBar()
+		end
 		menubar:CloseAllExcept(menuItem)
 	end)
+
+	local closedEventConn = nil
+	local function OnVREnabled(prop)
+		if prop == 'VREnabled' then
+			if closedEventConn then
+				closedEventConn:disconnect()
+				closedEventConn = nil
+			end
+			if InputService.VREnabled then
+				local VirtualKeyboardModule = require(GuiRoot.Modules.VR.VirtualKeyboard)
+				closedEventConn = VirtualKeyboardModule.ClosedEvent:connect(function()
+					if ChatModule:IsFocused(true) then
+						ChatModule:SetVisible(false)
+					end
+				end)
+			end
+		end
+	end
+	InputService.Changed:connect(OnVREnabled)
+	spawn(function() OnVREnabled("VREnabled") end)
+
 
 	local chatPanel = Panel3D.Get("Chat")
 	function chatPanel:OnVisibilityChanged(visible)
@@ -1374,7 +1484,7 @@ local function MoveHamburgerTo3D()
 	Topbar3DPanel:SetVisible(true)
 
 	local backpackPanel = Panel3D.Get("Backpack")
-	local panelLocalCF = CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, -1, 0) * CFrame.Angles(math.rad(5), 0, 0)
+	local panelLocalCF = CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, -1.625, 0) * CFrame.Angles(math.rad(5), 0, 0)
 	function Topbar3DPanel:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 		local panelOriginCF = backpackPanel.localCF or CFrame.new()
 		self.localCF = panelOriginCF * panelLocalCF
@@ -1403,7 +1513,7 @@ if gameOptions and not isTenFootInterface then
 	end)
 end
 
-function topBarEnabledChanged()
+local function topBarEnabledChanged()
 	topbarEnabledChangedEvent:Fire(topbarEnabled)
 	TopBar:UpdateBackgroundTransparency()
 	for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do

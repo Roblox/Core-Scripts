@@ -407,14 +407,22 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 	local this = CreateChatMessage()
 
 	this.Settings = settings
-	this.chatMessage = chattedMessage
+	this.rawChatString = chattedMessage
 
 	function this:OnResize(containerSize)
 		if this.Container and this.ChatMessage then
+
+			if InputService.VREnabled then
+				this.ChatMessage.Position = UDim2.new(0, 4, 0, 0)
+				this.ChatMessage.Size = UDim2.new(1, 0, 1, 0)
+			end
+
 			this.Container.Size = UDim2.new(1,0,0,1000)
 			local textHeight = this.ChatMessage.TextBounds.Y
-			this.Container.Size = UDim2.new(1,0,0,textHeight + 1)
-			return textHeight
+		
+			local newContainerHeight = textHeight + 5
+			this.Container.Size = UDim2.new(1,0,0,newContainerHeight)
+			return newContainerHeight
 		end
 	end
 
@@ -433,6 +441,10 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 				object.TextTransparency = 0;
 				object.TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 			end
+
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = InputService.VREnabled
+			end
 		end
 	end
 
@@ -450,13 +462,16 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 					table.insert(this.FadeRoutines, Util.PropertyTweener(object, 'TextStrokeTransparency', object.TextStrokeTransparency, 1, 0.85, Util.Linear))
 				end
 			end
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = false
+			end
 		end
 	end
 
 	local function CreateMessageGuiElement()
 		local fontSize = this:GetMessageFontSize(this.Settings)
 
-		local systemMessageDisplayText = this.chatMessage or ""
+		local systemMessageDisplayText = this.rawChatString or ""
 		local systemMessageSize = Util.GetStringTextBounds(systemMessageDisplayText, this.Settings.Font, fontSize, UDim2.new(0, 400, 0, 1000))
 
 		local container = Util.Create'Frame'
@@ -467,6 +482,21 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 		};
+			this.MessageBackgroundImage = Util.Create'ImageLabel'
+			{
+				Name = 'TextEntryBackground';
+				Size = UDim2.new(1,0,1,-2);
+				Position = UDim2.new(0,0,0,1);
+				Image = 'rbxasset://textures/ui/Chat/VRChatBackground.png';
+				ScaleType = Enum.ScaleType.Slice;
+				SliceCenter = Rect.new(8,8,56,56);
+				BackgroundTransparency = 1;
+				ImageTransparency = 0.3;
+				BorderSizePixel = 0;
+				ZIndex = 1;
+				Visible = InputService.VREnabled;
+				Parent = container;
+			}
 
 			local chatMessage = Util.Create'TextLabel'
 			{
@@ -487,6 +517,10 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 				Parent = container;
 			};
+			if InputService.VREnabled then
+				chatMessage.Position = UDim2.new(0, 4, 0, 0)
+				chatMessage.Size = UDim2.new(1, 0, 1, 0)
+			end
 
 		container.Size = UDim2.new(1, 0, 0, systemMessageSize.Y + 1);
 		this.Container = container
@@ -574,8 +608,9 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		if this.Container and this.ChatMessage then
 			this.Container.Size = UDim2.new(1,0,0,1000)
 			local textHeight = this.ChatMessage.TextBounds.Y
-			this.Container.Size = UDim2.new(1,0,0,textHeight + 1)
-			return textHeight
+			local newContainerHeight = textHeight + 5
+			this.Container.Size = UDim2.new(1,0,0,newContainerHeight)
+			return newContainerHeight
 		end
 	end
 
@@ -634,6 +669,10 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			if this.UserNameDot then
 				this.UserNameDot.ImageTransparency = 0
 			end
+
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = InputService.VREnabled
+			end
 		end
 	end
 
@@ -658,6 +697,9 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				if this.UserNameDot then
 					table.insert(this.FadeRoutines, Util.PropertyTweener(this.UserNameDot, 'ImageTransparency', this.UserNameDot.ImageTransparency, 1, 1, Util.Linear))
 				end
+			end
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = false
 			end
 		end
 	end
@@ -715,7 +757,23 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 		};
-			local xOffset = 0
+			this.MessageBackgroundImage = Util.Create'ImageLabel'
+			{
+				Name = 'TextEntryBackground';
+				Size = UDim2.new(1,0,1,-2);
+				Position = UDim2.new(0,0,0,1);
+				Image = 'rbxasset://textures/ui/Chat/VRChatBackground.png';
+				ScaleType = Enum.ScaleType.Slice;
+				SliceCenter = Rect.new(8,8,56,56);
+				BackgroundTransparency = 1;
+				ImageTransparency = 0.3;
+				BorderSizePixel = 0;
+				ZIndex = 1;
+				Visible = InputService.VREnabled;
+				Parent = container;
+			}
+
+			local xOffset = InputService.VREnabled and 4 or 0
 
 			if this.SendingPlayer and this.SendingPlayer == Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
 				local whisperToText = Util.Create'TextLabel'
@@ -852,6 +910,9 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 				Parent = container;
 			};
+			if InputService.VREnabled then
+				chatMessage.Size = chatMessage.Size - UDim2.new(0,4,0,0)
+			end
 			-- Check if they got moderated and put up a real message instead of Label
 			if chatMessage.Text == 'Label' and chatMessageDisplayText ~= 'Label' then
 				chatMessage.Text = string.rep(" ", numNeededSpaces) .. '[Content Deleted]'
@@ -1547,7 +1608,7 @@ local function CreateChatWindowWidget(settings)
 	function this:FadeIn(duration, lockFade)
 		if not FadeLock then
 			duration = duration or 0.75
-			local backgroundTransparency = 0.5
+			local backgroundTransparency = InputService.VREnabled and 1 or 0.5
 			-- fade in
 			if this.BackgroundTweener then
 				this.BackgroundTweener:Cancel()
@@ -1643,7 +1704,7 @@ local function CreateChatWindowWidget(settings)
 				local ySize = 0
 
 				if this.ScrollingFrame then
-					for index, message in pairs(this.Chats) do
+					for _, message in pairs(this.Chats) do
 						local newHeight = message:OnResize(scrollingFrameAbsoluteSize)
 						if newHeight then
 							local chatMessageElement = message:GetGui()
@@ -1684,9 +1745,9 @@ local function CreateChatWindowWidget(settings)
 		local chatMessageElement = chatMessage:GetGui()
 
 		chatMessageElement.Parent = this.MessageContainer
-		chatMessage:OnResize()
+		local chatMessageHeight = chatMessage:OnResize() or 10
 		local ySize = this.MessageContainer.Size.Y.Offset
-		local chatMessageElementYSize = UDim2.new(0, 0, 0, chatMessageElement.Size.Y.Offset)
+		local chatMessageElementYSize = UDim2.new(0, 0, 0, chatMessageHeight)
 
 		if not silently then
 			this.MessageCount = this.MessageCount + 1
@@ -2297,43 +2358,7 @@ local function CreateChat()
 				chatGui.Name = "RobloxGui"
 				chatGui.Parent = Player:WaitForChild('PlayerGui')
 				GuiRoot.Parent = chatGui
-			else
-				local function onVREnabled()
-					if InputService.VREnabled then
-
-						self:PrintVRWelcome()
-						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.VR.Panel3D)
-						local panel = Panel3D.Get("Chat")
-						panel:LinkTo("Keyboard")
-						panel:SetType(Panel3D.Type.Fixed)
-						panel:ResizePixels(300, 125)
-						GuiRoot.Parent = panel:GetGUI()
-
-						this.ChatWindowWidget.ChatContainer.MouseButton1Click:connect(function()
-							if this.ChatBarWidget then
-								if this.ChatBarWidget:WasFocused() then
-									this.ChatBarWidget:RemoveFocus()
-								else
-									self:FocusChatBar()
-								end
-							end
-						end)
-
-						function panel:CalculateTransparency()
-							return 0
-						end
-					else
-						GuiRoot.Parent = CoreGuiService:WaitForChild('RobloxGui')
-					end
-				end
-				onVREnabled()
-				InputService.Changed:connect(function(prop)
-					if prop == 'VREnabled' then
-						onVREnabled()
-					end
-				end)
 			end
-
 
 			-- NOTE: eventually we will make multiple chat window frames
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
@@ -2426,6 +2451,46 @@ local function CreateChat()
 					end
 				end
 			end)
+
+			if not NON_CORESCRIPT_MODE then
+				local function onVREnabled()
+					if InputService.VREnabled then
+						self.Settings.TextStrokeTransparency = 1
+						self:PrintVRWelcome()
+						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.VR.Panel3D)
+						local panel = Panel3D.Get("Chat")
+						panel:LinkTo("Keyboard")
+						panel:SetType(Panel3D.Type.Fixed)
+						panel:ResizePixels(300, 125)
+						GuiRoot.Parent = panel:GetGUI()
+
+						if this.ChatWindowWidget and this.ChatWindowWidget.ChatContainer then
+							this.ChatWindowWidget.ChatContainer.MouseButton1Click:connect(function()
+								if this.ChatBarWidget then
+									if this.ChatBarWidget:WasFocused() then
+										this.ChatBarWidget:RemoveFocus()
+									else
+										self:FocusChatBar()
+									end
+								end
+							end)
+						end
+
+						function panel:CalculateTransparency()
+							return 0
+						end
+					else
+						self.Settings.TextStrokeTransparency = 0.75
+						GuiRoot.Parent = CoreGuiService:WaitForChild('RobloxGui')
+					end
+				end
+				onVREnabled()
+				InputService.Changed:connect(function(prop)
+					if prop == 'VREnabled' then
+						onVREnabled()
+					end
+				end)
+			end
 		end
 	end
 
@@ -2466,7 +2531,7 @@ local function CreateChat()
 			local panel = Panel3D.Get("Chat")
 			if this.Visible then
 				local headLook = Panel3D.GetHeadLookXZ(true)
-				panel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 5)
+				panel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 6.5)
 				panel:ForceShowUntilLookedAt()
 			else
 				panel:SetVisible(this.Visible)
@@ -2487,6 +2552,11 @@ local function CreateChat()
 		if self.ChatBarWidget and this.Visible then
 			self.ChatBarWidget:FocusChatBar()
 		end
+	end
+
+	function this:IsFocused(useWasFocused)
+		if not self.ChatBarWidget then return false end
+		return self.ChatBarWidget:IsFocused() or (useWasFocused and self.ChatBarWidget:WasFocused())
 	end
 
 	function this:GetCurrentWindowMessageCount()
@@ -2640,6 +2710,10 @@ do
 
 	function moduleApiTable:TopbarEnabledChanged(...)
 		return ChatInstance:TopbarEnabledChanged(...)
+	end
+
+	function moduleApiTable:IsFocused(useWasFocused)
+		return ChatInstance:IsFocused(useWasFocused)
 	end
 
 	moduleApiTable.ChatBarFocusChanged = ChatInstance.ChatBarFocusChanged
