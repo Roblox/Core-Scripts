@@ -52,9 +52,7 @@ end
 
 
 --[[ CORE MODULES ]]
-local playerList = require(RobloxGui.Modules.PlayerlistModule)
 local chat = require(RobloxGui.Modules.Chat)
-local backpack = require(RobloxGui.Modules.BackpackScript)
 
 if isSmallTouchScreen or isTenFootInterface then
 	SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0,0,0,0)
@@ -799,6 +797,8 @@ local function CreateSettingsHub()
 			this.TabConnection = nil
 		end
 
+		local playerList = require(RobloxGui.Modules.PlayerlistModule)
+
 		if this.Visible then
 			this.SettingsShowSignal:fire(this.Visible)
 
@@ -859,6 +859,7 @@ local function CreateSettingsHub()
 				chat:ToggleVisibility()
 			end
 
+			local backpack = require(RobloxGui.Modules.BackpackScript)
 			if backpack.IsOpen then
 				backpack:OpenClose()
 			end
@@ -1100,34 +1101,6 @@ local moduleApiTable = {}
 
 	function moduleApiTable:SwitchToPage(pageToSwitchTo, ignoreStack)
 		SettingsHubInstance:SwitchToPage(pageToSwitchTo, ignoreStack, 1)
-	end
-
-	function moduleApiTable:ReportPlayer(player)
-		if SettingsHubInstance.ReportAbusePage and player then
-			local setReportPlayerConnection = nil
-			setReportPlayerConnection = SettingsHubInstance.ReportAbusePage.Displayed.Event:connect(function()
-				-- When we change the SelectionIndex of GameOrPlayerMode it waits until the tween is done
-				-- before it fires the IndexChanged signal. The WhichPlayerMode dropdown listens to this signal
-				-- and resets when it is fired. Therefore we need to listen to this signal and set the player we want
-				-- to report the frame after the dropdown is reset
-				local indexChangedConnection = nil
-				indexChangedConnection = SettingsHubInstance.ReportAbusePage.GameOrPlayerMode.IndexChanged:connect(function()
-					if indexChangedConnection then
-						indexChangedConnection:disconnect()
-						indexChangedConnection = nil
-					end
-					wait() -- We need to wait a frame to set the value of WhichPlayerMode as it is being updated by another script listening to the IndexChanged signal
-					SettingsHubInstance.ReportAbusePage.WhichPlayerMode:SetSelectionByValue(player.Name)
-				end)
-				SettingsHubInstance.ReportAbusePage.GameOrPlayerMode:SetSelectionIndex(2)
-
-				if setReportPlayerConnection then
-					setReportPlayerConnection:disconnect()
-					setReportPlayerConnection = nil
-				end
-			end)
-			SettingsHubInstance:SetVisibility(true, false, SettingsHubInstance.ReportAbusePage)
-		end
 	end
 
 	function moduleApiTable:GetVisibility()
