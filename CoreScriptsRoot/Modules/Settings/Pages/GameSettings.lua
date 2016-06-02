@@ -518,7 +518,8 @@ local function Initialize()
 	local function createMouseOptions()
 		local MouseSteps = 10
 		local MinMouseSensitivity = 0.2
-		local AdvancedEnabled = true -- settings():GetFFlag('AdvancedMouseSensitivityEnabled')
+		local AdvancedSuccess, AdvancedValue = pcall(function() return settings():GetFFlag("AdvancedMouseSensitivityEnabled") end)
+		local AdvancedEnabled = AdvancedSuccess and AdvancedValue 
 
 		-- equations below map a function to include points (0, 0.2) (5, 1) (10, 4)
 		-- where x is the slider position, y is the mouse sensitivity
