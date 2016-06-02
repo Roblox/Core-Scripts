@@ -2531,7 +2531,7 @@ local function CreateChat()
 			local panel = Panel3D.Get("Chat")
 			if this.Visible then
 				local headLook = Panel3D.GetHeadLookXZ(true)
-				panel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 5)
+				panel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 6.5)
 				panel:ForceShowUntilLookedAt()
 			else
 				panel:SetVisible(this.Visible)
@@ -2552,6 +2552,11 @@ local function CreateChat()
 		if self.ChatBarWidget and this.Visible then
 			self.ChatBarWidget:FocusChatBar()
 		end
+	end
+
+	function this:IsFocused(useWasFocused)
+		if not self.ChatBarWidget then return false end
+		return self.ChatBarWidget:IsFocused() or (useWasFocused and self.ChatBarWidget:WasFocused())
 	end
 
 	function this:GetCurrentWindowMessageCount()
@@ -2705,6 +2710,10 @@ do
 
 	function moduleApiTable:TopbarEnabledChanged(...)
 		return ChatInstance:TopbarEnabledChanged(...)
+	end
+
+	function moduleApiTable:IsFocused(useWasFocused)
+		return ChatInstance:IsFocused(useWasFocused)
 	end
 
 	moduleApiTable.ChatBarFocusChanged = ChatInstance.ChatBarFocusChanged
