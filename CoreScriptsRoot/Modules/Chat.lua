@@ -27,6 +27,8 @@ local TABLET_SCREEN_WIDTH = 1024
 local FLOOD_CHECK_MESSAGE_COUNT = 7
 local FLOOD_CHECK_MESSAGE_INTERVAL = 15 -- This is in seconds
 
+local VR_CHAT_CLICK_DEBOUNCE = 0.25
+
 local SCROLLBAR_THICKNESS = 7
 local CHAT_COLORS =
 {
@@ -39,6 +41,11 @@ local CHAT_COLORS =
 	BrickColor.new("Light reddish violet").Color,
 	BrickColor.new("Brick yellow").Color,
 }
+
+local emptySelectionImage = Instance.new("ImageLabel")
+emptySelectionImage.ImageTransparency = 1
+emptySelectionImage.BackgroundTransparency = 1
+
 --[[ END OF CONSTANTS ]]
 
 --[[ SERVICES ]]
@@ -400,14 +407,22 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 	local this = CreateChatMessage()
 
 	this.Settings = settings
-	this.chatMessage = chattedMessage
+	this.rawChatString = chattedMessage
 
 	function this:OnResize(containerSize)
 		if this.Container and this.ChatMessage then
+
+			if InputService.VREnabled then
+				this.ChatMessage.Position = UDim2.new(0, 4, 0, 0)
+				this.ChatMessage.Size = UDim2.new(1, 0, 1, 0)
+			end
+
 			this.Container.Size = UDim2.new(1,0,0,1000)
 			local textHeight = this.ChatMessage.TextBounds.Y
-			this.Container.Size = UDim2.new(1,0,0,textHeight + 1)
-			return textHeight
+		
+			local newContainerHeight = textHeight + 5
+			this.Container.Size = UDim2.new(1,0,0,newContainerHeight)
+			return newContainerHeight
 		end
 	end
 
@@ -426,6 +441,10 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 				object.TextTransparency = 0;
 				object.TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 			end
+
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = InputService.VREnabled
+			end
 		end
 	end
 
@@ -443,14 +462,17 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 					table.insert(this.FadeRoutines, Util.PropertyTweener(object, 'TextStrokeTransparency', object.TextStrokeTransparency, 1, 0.85, Util.Linear))
 				end
 			end
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = false
+			end
 		end
 	end
 
 	local function CreateMessageGuiElement()
 		local fontSize = this:GetMessageFontSize(this.Settings)
 
-		local systemMesasgeDisplayText = this.chatMessage or ""
-		local systemMessageSize = Util.GetStringTextBounds(systemMesasgeDisplayText, this.Settings.Font, fontSize, UDim2.new(0, 400, 0, 1000))
+		local systemMessageDisplayText = this.rawChatString or ""
+		local systemMessageSize = Util.GetStringTextBounds(systemMessageDisplayText, this.Settings.Font, fontSize, UDim2.new(0, 400, 0, 1000))
 
 		local container = Util.Create'Frame'
 		{
@@ -460,13 +482,28 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 		};
+			this.MessageBackgroundImage = Util.Create'ImageLabel'
+			{
+				Name = 'TextEntryBackground';
+				Size = UDim2.new(1,0,1,-2);
+				Position = UDim2.new(0,0,0,1);
+				Image = 'rbxasset://textures/ui/Chat/VRChatBackground.png';
+				ScaleType = Enum.ScaleType.Slice;
+				SliceCenter = Rect.new(8,8,56,56);
+				BackgroundTransparency = 1;
+				ImageTransparency = 0.3;
+				BorderSizePixel = 0;
+				ZIndex = 1;
+				Visible = InputService.VREnabled;
+				Parent = container;
+			}
 
 			local chatMessage = Util.Create'TextLabel'
 			{
 				Name = 'SystemChatMessage';
 				Position = UDim2.new(0, 0, 0, 0);
 				Size = UDim2.new(1, 0, 1, 0);
-				Text = systemMesasgeDisplayText;
+				Text = systemMessageDisplayText;
 				ZIndex = 1;
 				BackgroundColor3 = Color3.new(0, 0, 0);
 				BackgroundTransparency = 1;
@@ -480,6 +517,10 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 				Parent = container;
 			};
+			if InputService.VREnabled then
+				chatMessage.Position = UDim2.new(0, 4, 0, 0)
+				chatMessage.Size = UDim2.new(1, 0, 1, 0)
+			end
 
 		container.Size = UDim2.new(1, 0, 0, systemMessageSize.Y + 1);
 		this.Container = container
@@ -567,8 +608,9 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		if this.Container and this.ChatMessage then
 			this.Container.Size = UDim2.new(1,0,0,1000)
 			local textHeight = this.ChatMessage.TextBounds.Y
-			this.Container.Size = UDim2.new(1,0,0,textHeight + 1)
-			return textHeight
+			local newContainerHeight = textHeight + 5
+			this.Container.Size = UDim2.new(1,0,0,newContainerHeight)
+			return newContainerHeight
 		end
 	end
 
@@ -627,6 +669,10 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			if this.UserNameDot then
 				this.UserNameDot.ImageTransparency = 0
 			end
+
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = InputService.VREnabled
+			end
 		end
 	end
 
@@ -651,6 +697,9 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				if this.UserNameDot then
 					table.insert(this.FadeRoutines, Util.PropertyTweener(this.UserNameDot, 'ImageTransparency', this.UserNameDot.ImageTransparency, 1, 1, Util.Linear))
 				end
+			end
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = false
 			end
 		end
 	end
@@ -708,7 +757,23 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 		};
-			local xOffset = 0
+			this.MessageBackgroundImage = Util.Create'ImageLabel'
+			{
+				Name = 'TextEntryBackground';
+				Size = UDim2.new(1,0,1,-2);
+				Position = UDim2.new(0,0,0,1);
+				Image = 'rbxasset://textures/ui/Chat/VRChatBackground.png';
+				ScaleType = Enum.ScaleType.Slice;
+				SliceCenter = Rect.new(8,8,56,56);
+				BackgroundTransparency = 1;
+				ImageTransparency = 0.3;
+				BorderSizePixel = 0;
+				ZIndex = 1;
+				Visible = InputService.VREnabled;
+				Parent = container;
+			}
+
+			local xOffset = InputService.VREnabled and 4 or 0
 
 			if this.SendingPlayer and this.SendingPlayer == Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
 				local whisperToText = Util.Create'TextLabel'
@@ -845,6 +910,9 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 				Parent = container;
 			};
+			if InputService.VREnabled then
+				chatMessage.Size = chatMessage.Size - UDim2.new(0,4,0,0)
+			end
 			-- Check if they got moderated and put up a real message instead of Label
 			if chatMessage.Text == 'Label' and chatMessageDisplayText ~= 'Label' then
 				chatMessage.Text = string.rep(" ", numNeededSpaces) .. '[Content Deleted]'
@@ -881,6 +949,8 @@ local function CreateChatBarWidget(settings)
 	this.ChatCommandEvent = Util.Signal() -- Signal Signatue: success, actionType, [captures]
 	this.ChatErrorEvent = Util.Signal() -- Signal Signatue: success, actionType, [captures]
 	this.ChatBarFloodEvent = Util.Signal()
+
+	this.unfocusedAt = 0
 
 	local chatCoreGuiEnabled = true
 
@@ -969,6 +1039,7 @@ local function CreateChatBarWidget(settings)
 
 			this.ChatBarFocusLostConn = this.ChatBar.FocusLost:connect(function(...)
 				count = 0
+				this.unfocusedAt = tick()
 				this.ChatBarLostFocusEvent:fire(...)
 			end)
 			this.ChatBarChangedConn = this.ChatBar.Changed:connect(function(prop)
@@ -1196,8 +1267,8 @@ local function CreateChatBarWidget(settings)
 			if this.ChatModeText then
 				this.ChatModeText.Visible = true
 			end
-			if Util.IsTouchDevice() then
-				this:SetMessageMode('All') -- Don't remember message mode on mobile devices
+			if Util.IsTouchDevice() or InputService.VREnabled then
+				this:SetMessageMode('All') -- Don't remember message mode on mobile devices or VR
 			end
 			-- Update chatbar properties when chatbar is focused
 			this:OnChatBarBoundsChanged()
@@ -1218,6 +1289,10 @@ local function CreateChatBarWidget(settings)
 
 	function this:IsFocused()
 		return self.ChatBar and self.ChatBar == InputService:GetFocusedTextBox()
+	end
+
+	function this:WasFocused()
+		return (tick() - this.unfocusedAt) < VR_CHAT_CLICK_DEBOUNCE
 	end
 
 	function this:SanitizeInput(input)
@@ -1377,6 +1452,7 @@ local function CreateChatBarWidget(settings)
 				ClearTextOnFocus = false;
 				Visible = not Util.IsTouchDevice();
 				Parent = chatBarContainer;
+				SelectionImageObject = emptySelectionImage;
 			}
 			chatBar.TextWrapped = true;
 			chatBar.Position = UDim2.new(0, 7, 0, 0);
@@ -1532,7 +1608,7 @@ local function CreateChatWindowWidget(settings)
 	function this:FadeIn(duration, lockFade)
 		if not FadeLock then
 			duration = duration or 0.75
-			local backgroundTransparency = 0.5
+			local backgroundTransparency = InputService.VREnabled and 1 or 0.5
 			-- fade in
 			if this.BackgroundTweener then
 				this.BackgroundTweener:Cancel()
@@ -1628,7 +1704,7 @@ local function CreateChatWindowWidget(settings)
 				local ySize = 0
 
 				if this.ScrollingFrame then
-					for index, message in pairs(this.Chats) do
+					for _, message in pairs(this.Chats) do
 						local newHeight = message:OnResize(scrollingFrameAbsoluteSize)
 						if newHeight then
 							local chatMessageElement = message:GetGui()
@@ -1669,9 +1745,9 @@ local function CreateChatWindowWidget(settings)
 		local chatMessageElement = chatMessage:GetGui()
 
 		chatMessageElement.Parent = this.MessageContainer
-		chatMessage:OnResize()
+		local chatMessageHeight = chatMessage:OnResize() or 10
 		local ySize = this.MessageContainer.Size.Y.Offset
-		local chatMessageElementYSize = UDim2.new(0, 0, 0, chatMessageElement.Size.Y.Offset)
+		local chatMessageElementYSize = UDim2.new(0, 0, 0, chatMessageHeight)
 
 		if not silently then
 			this.MessageCount = this.MessageCount + 1
@@ -1831,7 +1907,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	local function CreateChatWindow()
-		local container = Util.Create'Frame'
+		local container = Util.Create'TextButton'
 		{
 			Name = 'ChatWindowContainer';
 			Size = UDim2.new(0.3, 0, 0.25, 0);
@@ -1840,6 +1916,8 @@ local function CreateChatWindowWidget(settings)
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 			BorderSizePixel = 0;
+			Text = "";
+			SelectionImageObject = emptySelectionImage;
 		};
 		container.Position = UDim2.new(0,0,0,37);
 		container.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255);
@@ -2280,48 +2358,7 @@ local function CreateChat()
 				chatGui.Name = "RobloxGui"
 				chatGui.Parent = Player:WaitForChild('PlayerGui')
 				GuiRoot.Parent = chatGui
-			else
-				local function onVREnabled()
-					if InputService.VREnabled then
-
-						self:PrintVRWelcome()
-						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.Panel3D)
-						local panel = Panel3D.Get(Panel3D.Panels.Chat)
-						GuiRoot.Parent = panel.gui
-						panel:ResizePixels(300, 125)
-						panel.cursorEnabled = true
-						panel.pitchLockThreshold = math.rad(65)
-						panel.visibilityBehavior = Panel3D.Visibility.Normal
-						local function ClickedInVrfunction(actionName, inputState, inputObject)
-							if inputState == Enum.UserInputState.Begin then
-								if this.ChatBarWidget then
-									if this.ChatBarWidget:IsFocused() then
-										this.ChatBarWidget:RemoveFocus()
-									else
-										self:FocusChatBar()
-									end
-								end
-							end
-						end
-
-						panel.OnMouseEnter = function()
-							ContextActionService:BindCoreAction("VRChatKeyboardFocus", ClickedInVrfunction, false, Enum.KeyCode.ButtonA, Enum.KeyCode.ButtonR2, Enum.UserInputType.MouseButton1)
-						end
-						panel.OnMouseLeave = function()
-							ContextActionService:UnbindCoreAction("VRChatKeyboardFocus")
-						end
-					else
-						GuiRoot.Parent = CoreGuiService:WaitForChild('RobloxGui')
-					end
-				end
-				onVREnabled()
-				InputService.Changed:connect(function(prop)
-					if prop == 'VREnabled' then
-						onVREnabled()
-					end
-				end)
 			end
-
 
 			-- NOTE: eventually we will make multiple chat window frames
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
@@ -2414,6 +2451,46 @@ local function CreateChat()
 					end
 				end
 			end)
+
+			if not NON_CORESCRIPT_MODE then
+				local function onVREnabled()
+					if InputService.VREnabled then
+						self.Settings.TextStrokeTransparency = 1
+						self:PrintVRWelcome()
+						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.VR.Panel3D)
+						local panel = Panel3D.Get("Chat")
+						panel:LinkTo("Keyboard")
+						panel:SetType(Panel3D.Type.Fixed)
+						panel:ResizePixels(300, 125)
+						GuiRoot.Parent = panel:GetGUI()
+
+						if this.ChatWindowWidget and this.ChatWindowWidget.ChatContainer then
+							this.ChatWindowWidget.ChatContainer.MouseButton1Click:connect(function()
+								if this.ChatBarWidget then
+									if this.ChatBarWidget:WasFocused() then
+										this.ChatBarWidget:RemoveFocus()
+									else
+										self:FocusChatBar()
+									end
+								end
+							end)
+						end
+
+						function panel:CalculateTransparency()
+							return 0
+						end
+					else
+						self.Settings.TextStrokeTransparency = 0.75
+						GuiRoot.Parent = CoreGuiService:WaitForChild('RobloxGui')
+					end
+				end
+				onVREnabled()
+				InputService.Changed:connect(function(prop)
+					if prop == 'VREnabled' then
+						onVREnabled()
+					end
+				end)
+			end
 		end
 	end
 
@@ -2450,15 +2527,25 @@ local function CreateChat()
 			end
 		end
 		if InputService.VREnabled then
-			local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.Panel3D)
-			local panel = Panel3D.Get(Panel3D.Panels.Chat)
-			panel:SetVisible(this.Visible)
+			local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.VR.Panel3D)
+			local panel = Panel3D.Get("Chat")
+			if this.Visible then
+				local headLook = Panel3D.GetHeadLookXZ(true)
+				panel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 5)
+				panel:ForceShowUntilLookedAt()
+			else
+				panel:SetVisible(this.Visible)
+			end			
 		end
 		this.VisibilityStateChanged:fire(this.Visible)
 	end
 
 	function this:ToggleVisibility()
 		SetVisbility(not self.Visible)
+	end
+
+	function this:SetVisible(visible)
+		SetVisbility(visible)
 	end
 
 	function this:FocusChatBar()
@@ -2598,6 +2685,10 @@ do
 
 	function moduleApiTable:ToggleVisibility()
 		ChatInstance:ToggleVisibility()
+	end
+
+	function moduleApiTable:SetVisible(visible)
+		ChatInstance:SetVisible(visible)
 	end
 
 	function moduleApiTable:FocusChatBar()
