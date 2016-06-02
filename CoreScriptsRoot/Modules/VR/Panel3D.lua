@@ -370,7 +370,7 @@ function Panel:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 		--transform worldIntersectPoint to gui space
 		local gui = self:GetGUI()
 		local guiWidth, guiHeight = gui.AbsoluteSize.X, gui.AbsoluteSize.Y
-		local localIntersectPoint = planeCF:pointToObjectSpace(worldIntersectPoint) * Vector3.new(-1, 1, 1) + Vector3.new(self.width / 2, -self.height / 2, 0)
+		local localIntersectPoint = (planeCF:pointToObjectSpace(worldIntersectPoint) / currentHeadScale) * Vector3.new(-1, 1, 1) + Vector3.new(self.width / 2, -self.height / 2, 0)
 		self.lookAtPixel = Vector2.new((localIntersectPoint.X / self.width) * gui.AbsoluteSize.X, (localIntersectPoint.Y / self.height) * -gui.AbsoluteSize.Y)
 		
 		--fire mouse enter/leave events if necessary
@@ -530,6 +530,11 @@ function Panel:ResizePixels(width, height, pixelsPerStud)
 	local widthInStuds = width / pixelsPerStud
 	local heightInStuds = height / pixelsPerStud
 	self:ResizeStuds(widthInStuds, heightInStuds, pixelsPerStud)
+end
+
+function Panel:OnHeadScaleChanged(newHeadScale)
+	local pixelsPerStud = self.pixelScale * defaultPixelsPerStud
+	self:ResizeStuds(self.width, self.height, pixelsPerStud)
 end
 
 function Panel:SetType(panelType, config)
