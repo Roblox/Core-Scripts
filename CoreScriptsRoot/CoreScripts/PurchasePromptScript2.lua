@@ -415,7 +415,9 @@ local function setCurrencyData(playerBalance)
 	PurchaseData.CurrencyAmount = 0
 
 	local priceInRobux = tonumber(PurchaseData.ProductInfo['PriceInRobux'])
-	PurchaseData.CurrencyAmount = priceInRobux
+	if priceInRobux then
+		PurchaseData.CurrencyAmount = priceInRobux
+	end
 end
 
 local function setPreviewImageXbox(productInfo, assetId)
