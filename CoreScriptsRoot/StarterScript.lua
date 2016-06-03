@@ -12,14 +12,13 @@ soundFolder.Name = "Sounds"
 soundFolder.Parent = RobloxGui
 
 -- TopBar
-local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
-local useTopBar = (topbarSuccess and topbarFlagValue == true)
-if useTopBar then
-	scriptContext:AddCoreScriptLocal("CoreScripts/Topbar", RobloxGui)
-end
+scriptContext:AddCoreScriptLocal("CoreScripts/Topbar", RobloxGui)
 
 -- SettingsScript
 local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
+
+local vrKeyboardSuccess, vrKeyboardFlagValue = pcall(function() return settings():GetFFlag("UseVRKeyboardInLua") end)
+local useVRKeyboard = (vrKeyboardSuccess and vrKeyboardFlagValue == true)
 
 -- MainBotChatScript (the Lua part of Dialogs)
 scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", RobloxGui)
@@ -31,31 +30,18 @@ scriptContext:AddCoreScriptLocal("CoreScripts/DeveloperConsole", RobloxGui)
 scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", RobloxGui)
 
 -- Chat script
-if useTopBar then
-	spawn(function() require(RobloxGui.Modules.Chat) end)
-	spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
-end
+spawn(function() require(RobloxGui.Modules.Chat) end)
+spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
 
-local luaBubbleChatSuccess, luaBubbleChatFlagValue = pcall(function() return settings():GetFFlag("LuaBasedBubbleChat") end)
-if luaBubbleChatSuccess and luaBubbleChatFlagValue then
-	scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)
-end
+scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)
 
 -- Purchase Prompt Script
 scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", RobloxGui)
 
--- Health Script
-if not useTopBar then
-	scriptContext:AddCoreScriptLocal("CoreScripts/HealthScript", RobloxGui)
-end
+-- Backpack!
+spawn(function() require(RobloxGui.Modules.BackpackScript) end)
 
-do -- Backpack!
-	spawn(function() require(RobloxGui.Modules.BackpackScript) end)
-end
-
-if useTopBar then
-	scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", RobloxGui)
-end
+scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", RobloxGui)
 
 scriptContext:AddCoreScriptLocal("CoreScripts/GamepadMenu", RobloxGui)
 
@@ -66,4 +52,8 @@ if touchEnabled then -- touch devices don't use same control frame
 	RobloxGui:WaitForChild("ControlFrame")
 	RobloxGui.ControlFrame:WaitForChild("BottomLeftControl")
 	RobloxGui.ControlFrame.BottomLeftControl.Visible = false
+end
+
+if useVRKeyboard then
+	require(RobloxGui.Modules.VR.VirtualKeyboard)
 end

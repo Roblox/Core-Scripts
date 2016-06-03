@@ -1,7 +1,7 @@
 --[[
 		Filename: GameSettings.lua
 		Written by: jeditkacheff
-		Version 1.0
+		Version 1.1
 		Description: Takes care of the Game Settings Tab in Settings Menu
 --]]
 
@@ -13,6 +13,7 @@ local UserInputService = game:GetService("UserInputService")
 local PlatformService = nil 
 pcall(function() PlatformService = game:GetService("PlatformService") end)
 local ContextActionService = game:GetService("ContextActionService")
+local StarterGui = game:GetService("StarterGui")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
@@ -53,6 +54,8 @@ local utility = require(RobloxGui.Modules.Settings.Utility)
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+local HasVRAPI = false
+pcall(function() HasVRAPI = UserInputService.GetUserCFrame ~= nil end)
 local PageInstance = nil
 local LocalPlayer = game.Players.LocalPlayer
 local platform = UserInputService:GetPlatform()
@@ -84,9 +87,14 @@ local function Initialize()
 		end)
 		
 		------------------ Gfx Enabler Selection GUI Setup ------------------
+		local graphicsEnablerStart = 1
+		if GameSettings.SavedQualityLevel ~= Enum.SavedQualitySetting.Automatic then
+		    graphicsEnablerStart = 2
+        end
+
 		this.GraphicsEnablerFrame, 
 		this.GraphicsEnablerLabel,
-		this.GraphicsQualityEnabler = utility:AddNewRow(this, "Graphics Mode", "Selector", {"Automatic", "Manual"}, 1)
+		this.GraphicsQualityEnabler = utility:AddNewRow(this, "Graphics Mode", "Selector", {"Automatic", "Manual"}, graphicsEnablerStart)
 
 		------------------ Gfx Slider GUI Setup  ------------------
 		this.GraphicsQualityFrame, 
@@ -163,7 +171,7 @@ local function Initialize()
 		-- initialize the slider position
 		if GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic then
 			this.GraphicsQualitySlider:SetValue(5)
-			this.GraphicsQualityEnabler:SetSelectionIndex(1)
+			setGraphicsToAuto()
 		else
 			local graphicsLevel = tostring(GameSettings.SavedQualityLevel)
 			if GRAPHICS_QUALITY_TO_INT[graphicsLevel] then
@@ -174,7 +182,6 @@ local function Initialize()
 
 			spawn(function()
 				this.GraphicsQualitySlider:SetValue(graphicsLevel)
-				this.GraphicsQualityEnabler:SetSelectionIndex(2)
 			end)
 		end
 	end
@@ -286,6 +293,33 @@ local function Initialize()
 				else
 					GameSettings.ComputerCameraMovementMode = newEnumSetting
 				end
+			end)
+		end
+
+
+		------------------------------------------------------
+		------------------
+		------------------ VR Camera Mode -----------------------
+
+		if HasVRAPI and UserInputService.VREnabled then
+			local VR_ROTATION_INTENSITY_OPTIONS = {"Low", "High", "Smooth"}
+
+			if utility:IsSmallTouchScreen() then
+				this.VRRotationFrame, 
+				this.VRRotationLabel,
+				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity)
+			else
+				this.VRRotationFrame, 
+				this.VRRotationLabel,
+				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity, 3)
+			end
+
+			StarterGui:RegisterGetCore("VRRotationIntensity",
+				function()
+					return VR_ROTATION_INTENSITY_OPTIONS[GameSettings.VRRotationIntensity] or VR_ROTATION_INTENSITY_OPTIONS[1]
+				end)
+			this.VRRotationMode.IndexChanged:connect(function(newIndex)
+				GameSettings.VRRotationIntensity = newIndex
 			end)
 		end
 
@@ -484,6 +518,8 @@ local function Initialize()
 	local function createMouseOptions()
 		local MouseSteps = 10
 		local MinMouseSensitivity = 0.2
+		local AdvancedSuccess, AdvancedValue = pcall(function() return settings():GetFFlag("AdvancedMouseSensitivityEnabled") end)
+		local AdvancedEnabled = AdvancedSuccess and AdvancedValue 
 
 		-- equations below map a function to include points (0, 0.2) (5, 1) (10, 4)
 		-- where x is the slider position, y is the mouse sensitivity
@@ -496,15 +532,170 @@ local function Initialize()
 		end
 
 		local startMouseLevel = translateEngineMouseSensitivityToGui(GameSettings.MouseSensitivity)
+
+		------------------ Mouse Selection GUI Setup ------------------
+		-- switch between basic mode and advanced mode.
+		local MouseModeEnablerStart = 2
+		if GameSettings.UseBasicMouseSensitivity or not AdvancedEnabled then
+		    MouseModeEnablerStart = 1
+		end
+
+        -- auto-detect mouse invert
+		local MouseInvertStart = 1
+		if GameSettings.MouseSensitivityFirstPerson.y < 0 then
+			MouseInvertStart = 2
+		end
+
+		if AdvancedEnabled then
+			this.MouseModeFrame, 
+			this.MouseModeLabel,
+			this.MouseModeEnabler = utility:AddNewRow(this, "Mouse Sensitivity Mode", "Selector", {"Basic", "Advanced"}, MouseModeEnablerStart)
+        end
 		
+		------------------ Basic Mouse Sensitivity Slider ------------------
+		-- basic quantized sensitivity with a weird number of settings.
+		local SliderLabel = "Basic Mouse Sensitivity"
+		if not AdvancedEnabled then
+			SliderLabel = "Mouse Sensitivity"
+		end
 		this.MouseSensitivityFrame, 
 		this.MouseSensitivityLabel,
-		this.MouseSensitivitySlider = utility:AddNewRow(this, "Mouse Sensitivity", "Slider", MouseSteps, startMouseLevel)
+		this.MouseSensitivitySlider = utility:AddNewRow(this, SliderLabel, "Slider", MouseSteps, startMouseLevel)
 		this.MouseSensitivitySlider:SetMinStep(1)
 
 		this.MouseSensitivitySlider.ValueChanged:connect(function(newValue)
 			GameSettings.MouseSensitivity = translateGuiMouseSensitivityToEngine(newValue)
 		end)
+
+		------------------ 3D Sensitivity ------------------
+		-- affects both first and third person.
+		if AdvancedEnabled then
+			local MouseAdvancedStart = tostring(GameSettings.MouseSensitivityFirstPerson.y)
+			this.MouseAdvancedFrame, 
+			this.MouseAdvancedLabel,
+			this.MouseAdvancedEntry = utility:AddNewRow(this, "Advanced Mouse Sensitivity", "TextEntry", 1.0, 1.0, MouseAdvancedStart)
+
+			this.MouseAdvancedEntry.ValueChanged:connect(function(newValueText)
+				local currentFirstSensitivity = GameSettings.MouseSensitivityFirstPerson
+				local currentThirdSensitivity = GameSettings.MouseSensitivityThirdPerson
+
+				local newValue = tonumber(newValueText)
+				if not newValue then
+					this.MouseAdvancedEntry:SetValue(string.format("%.3f",currentFirstSensitivity.x))
+					return
+				end
+
+				-- inverted mouse will be handled later
+				if newValue < 0.0 then
+					newValue = -newValue
+				end
+
+				-- * assume a minimum that allows a 16000 dpi mouse a full 800mm travel for 360deg 
+				--   ~0.0029: min of 0.001 seems ok.
+				-- * assume a max that allows a 400 dpi mouse a 360deg travel in 10mm
+				--   ~9.2: max of 10 seems ok, but users will want to have a bit of fun with crazy settings.
+				if newValue > 100.0 then
+					newValue = 100.0
+				elseif newValue < 0.001 then
+					newValue = 0.001
+				end
+
+				-- try to keep ratios the same, even though they aren't exposed to the GUI
+				local firstPersonX = newValue
+				local firstPersonY = newValue * (currentFirstSensitivity.y / currentFirstSensitivity.x)
+				local thirdPersonX = newValue * (currentFirstSensitivity.x / currentThirdSensitivity.x)
+				local thirdPersonY = thirdPersonX * (currentThirdSensitivity.y / currentThirdSensitivity.x)
+
+				-- handle invert
+				if currentFirstSensitivity.y < 0.0 then
+				firstPersonY = -firstPersonY
+				end
+				if currentThirdSensitivity.y < 0.0 then
+					thirdPersonY = -thirdPersonY
+				end
+
+				GameSettings.MouseSensitivityFirstPerson = Vector2.new(firstPersonX, firstPersonY)
+				GameSettings.MouseSensitivityThirdPerson = Vector2.new(thirdPersonX, thirdPersonY)
+				this.MouseAdvancedEntry:SetValue(string.format("%.3f",firstPersonX))
+
+			end)
+		end
+
+		------------------ Mouse Invert ------------------
+        -- This is a common setting in games, even if it is rare
+		if AdvancedEnabled then
+			this.MouseInvertFrame, 
+			this.MouseInvertLabel,
+			this.MouseInvertEnabler = utility:AddNewRow(this, "Advanced Mouse Invert", "Selector", {"Normal", "Inverted"}, MouseInvertStart)
+
+			this.MouseInvertEnabler.IndexChanged:connect(function(newIndex)
+			local currentFirstSensitivity = GameSettings.MouseSensitivityFirstPerson
+			local currentThirdSensitivity = GameSettings.MouseSensitivityThirdPerson
+
+				if newIndex == 1 then
+					if currentFirstSensitivity.y < 0.0 then
+						currentFirstSensitivity = Vector2.new(currentFirstSensitivity.x, -currentFirstSensitivity.y)
+						currentThirdSensitivity = Vector2.new(currentThirdSensitivity.x, -currentThirdSensitivity.y)
+				end
+				elseif newIndex == 2 then
+					if currentFirstSensitivity.y > 0.0 then
+						currentFirstSensitivity = Vector2.new(currentFirstSensitivity.x, -currentFirstSensitivity.y)
+						currentThirdSensitivity = Vector2.new(currentThirdSensitivity.x, -currentThirdSensitivity.y)
+					end
+				end
+				GameSettings.MouseSensitivityFirstPerson = currentFirstSensitivity
+				GameSettings.MouseSensitivityThirdPerson = currentThirdSensitivity
+			end)
+		end
+
+		------------------ Init ------------------
+        if AdvancedEnabled then
+			local function setMouseModeToBasic()
+				this.MouseSensitivitySlider:SetZIndex(2)
+				this.MouseSensitivityLabel.ZIndex = 2
+				this.MouseSensitivitySlider:SetInteractable(true)
+				this.MouseSensitivitySlider:SetValue(translateEngineMouseSensitivityToGui(GameSettings.MouseSensitivity))
+
+				this.MouseAdvancedLabel.ZIndex = 1
+				this.MouseAdvancedEntry:SetInteractable(false)
+
+				this.MouseInvertLabel.ZIndex = 1
+				this.MouseInvertEnabler:SetInteractable(false)
+
+			end
+			local function setMouseModeToAdvanced()
+				this.MouseSensitivitySlider:SetZIndex(1)
+				this.MouseSensitivityLabel.ZIndex = 1
+				this.MouseSensitivitySlider:SetInteractable(false)
+
+				this.MouseAdvancedLabel.ZIndex = 2
+				this.MouseAdvancedEntry:SetInteractable(true)
+				local MouseSensitivity3d = GameSettings.MouseSensitivityFirstPerson
+				this.MouseAdvancedEntry:SetValue(tostring(MouseSensitivity3d.x));
+
+				this.MouseInvertLabel.ZIndex = 2
+				this.MouseInvertEnabler:SetInteractable(true)
+
+			end
+
+			this.MouseModeEnabler.IndexChanged:connect(function(newIndex)
+				if newIndex == 1 then
+					GameSettings.UseBasicMouseSensitivity = true
+					setMouseModeToBasic()
+				elseif newIndex == 2 then
+					GameSettings.UseBasicMouseSensitivity = false
+					setMouseModeToAdvanced()
+				end
+			end)
+
+			if GameSettings.UseBasicMouseSensitivity then
+				setMouseModeToBasic()
+				this.MouseAdvancedEntry:SetValue(tostring(MouseAdvancedStart))
+			else
+				setMouseModeToAdvanced()
+			end
+		end
+
 	end
 
 	local function createOverscanOption()
@@ -556,7 +747,7 @@ local function Initialize()
 
 	createVolumeOptions()
 
-	if platform == Enum.Platform.Windows or platform == Enum.Platform.OSX then
+	if platform == Enum.Platform.Windows or platform == Enum.Platform.UWP or platform == Enum.Platform.OSX then
 		createGraphicsOptions()
 	end
 

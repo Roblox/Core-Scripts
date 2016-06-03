@@ -8,6 +8,7 @@
 --[[ CONSTANTS ]]
 local SETTINGS_SHIELD_COLOR = Color3.new(41/255,41/255,41/255)
 local SETTINGS_SHIELD_TRANSPARENCY = 0.2
+local SETTINGS_SHIELD_VR_TRANSPARENCY = 1
 local SETTINGS_SHIELD_SIZE = UDim2.new(1, 0, 1, 0)
 local SETTINGS_SHIELD_INACTIVE_POSITION = UDim2.new(0,0,-1,-36)
 local SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0, 0, 0, 0)
@@ -39,8 +40,15 @@ local chatWasVisible = false
 local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
 local useUserList = (userlistSuccess and userlistFlagValue == true)
 
-local playMyPlaceSuccess, playMyPlaceFlagValue = pcall(function() return settings():GetFFlag("XboxPlayMyPlace") end)
-local myPlayMyPlaceEnabled = (playMyPlaceSuccess and playMyPlaceFlagValue == true)
+local VREnabled = false
+
+local function IsPlayMyPlaceEnabled()
+	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		local playMyPlaceSuccess, playMyPlaceFlagValue = pcall(function() return settings():GetFFlag("XboxPlayMyPlace") end)
+		return (playMyPlaceSuccess and playMyPlaceFlagValue == true)
+	end
+	return false
+end
 
 
 --[[ CORE MODULES ]]
@@ -203,7 +211,7 @@ local function CreateSettingsHub()
 			PageViewSizeReducer = 5
 		end
 
-		local clippingShield = utility:Create'Frame'
+		this.ClippingShield = utility:Create'Frame'
 		{
 			Name = "SettingsShield",
 			Size = SETTINGS_SHIELD_SIZE,
@@ -227,7 +235,7 @@ local function CreateSettingsHub()
 			Visible = false,
 			Active = true,
 			ZIndex = SETTINGS_BASE_ZINDEX,
-			Parent = clippingShield
+			Parent = this.ClippingShield
 		};
 
 		this.Modal = utility:Create'TextButton' -- Force unlocks the mouse, really need a way to do this via UIS
@@ -238,7 +246,8 @@ local function CreateSettingsHub()
 			Size = UDim2.new(1, 0, 1, 0),
 			Modal = true,
 			Text = '',
-			Parent = this.Shield
+			Parent = this.Shield,
+			Selectable = false
 		}
 
 		this.HubBar = utility:Create'ImageLabel'
@@ -358,7 +367,7 @@ local function CreateSettingsHub()
 						inviteToGameFunc, {Enum.KeyCode.ButtonX})
 				end
 
-				if myPlayMyPlaceEnabled then
+				if IsPlayMyPlaceEnabled() then
 					spawn(function()
 						local PlatformService = nil
 						pcall(function() PlatformService = game:GetService('PlatformService') end)
@@ -383,7 +392,6 @@ local function CreateSettingsHub()
 				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25),
 				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart})
 		end
-
 
 		local function onScreenSizeChanged()
 			local largestPageSize = 600
@@ -484,7 +492,8 @@ local function CreateSettingsHub()
 				-usePageSize/2
 			)
 		end
-		screenSizeChangedCon = RobloxGui.Changed:connect(function(prop)
+		-- TODO: disconnect this event?
+		RobloxGui.Changed:connect(function(prop)
 			if prop == "AbsoluteSize" then
 				onScreenSizeChanged()
 			end
@@ -795,7 +804,7 @@ local function CreateSettingsHub()
 
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
 			this.Shield.Visible = this.Visible
-			if noAnimation then
+			if noAnimation or not this.Shield:IsDescendantOf(game) then
 				this.Shield.Position = SETTINGS_SHIELD_ACTIVE_POSITION
 			else
 				this.Shield:TweenPosition(SETTINGS_SHIELD_ACTIVE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quart, 0.5, true)
@@ -827,8 +836,6 @@ local function CreateSettingsHub()
 					UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
 				end)
 			end
-
-			pcall(function() PlatformService.BlurIntensity = 10 end)
 
 			if customStartPage then
 				removeBottomBarBindings()
@@ -881,7 +888,6 @@ local function CreateSettingsHub()
 			end
 
 			pcall(function() UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
-			pcall(function() PlatformService.BlurIntensity = 0 end)
 
 			clearMenuStack()
 			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab")
@@ -936,11 +942,48 @@ local function CreateSettingsHub()
 	end
 
 	function this:ShowShield()
-		this.Shield.BackgroundTransparency = SETTINGS_SHIELD_TRANSPARENCY
+		this.Shield.BackgroundTransparency = VREnabled and SETTINGS_SHIELD_VR_TRANSPARENCY or SETTINGS_SHIELD_TRANSPARENCY
 	end
 	function this:HideShield()
 		this.Shield.BackgroundTransparency = 1
 	end
+
+	local function enableVR()
+		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+		local panel = Panel3D.Get("SettingsMenu")
+		panel:ResizeStuds(3, 3, 256)
+		panel:SetType(Panel3D.Type.Fixed)
+		panel:SetVisible(false)
+		panel:SetCanFade(false)
+		
+		this.ClippingShield.Parent = panel:GetGUI()
+		this.Shield.Parent.ClipsDescendants = false
+		this:HideShield()
+
+		GuiService.MenuOpened:connect(function()
+			local headLook = Panel3D.GetHeadLookXZ(true)
+			panel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 5)
+			panel:SetVisible(true, true)
+		end)
+		GuiService.MenuClosed:connect(function()
+			panel:SetVisible(false, false)
+		end)
+	end
+
+	local UISChanged;
+	local function OnVREnabled(prop)
+		if prop == "VREnabled" and UserInputService.VREnabled then
+			VREnabled = true
+			enableVR()
+			if UISChanged then
+				UISChanged:disconnect()
+				UISChanged = nil
+			end
+		end
+	end
+	UISChanged = UserInputService.Changed:connect(OnVREnabled)
+	OnVREnabled("VREnabled")
+
 
 	local closeMenuFunc = function(name, inputState, input)
 		if inputState ~= Enum.UserInputState.Begin then return end
@@ -1014,11 +1057,10 @@ local function CreateSettingsHub()
 	-- connect back button on android
 	GuiService.ShowLeaveConfirmation:connect(function()
 		if #this.MenuStack == 0 then
-			this:SwitchToPage(this.LeaveGamePage, nil, 1)
 			this:SetVisibility(true)
+			this:SwitchToPage(this.LeaveGamePage, nil, 1)
 		else
-			this:SetVisibility(false)
-			this:PopMenu()
+			this:PopMenu(false, true)
 		end
 	end)
 
