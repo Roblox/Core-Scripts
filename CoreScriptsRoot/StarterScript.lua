@@ -57,3 +57,4 @@ end
 if useVRKeyboard then
 	require(RobloxGui.Modules.VR.VirtualKeyboard)
 end
+
