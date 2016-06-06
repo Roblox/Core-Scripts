@@ -412,11 +412,10 @@ end
 
 local function setCurrencyData(playerBalance)
 	PurchaseData.CurrencyType = Enum.CurrencyType.Robux
-	PurchaseData.CurrencyAmount = 0
+	PurchaseData.CurrencyAmount = tonumber(PurchaseData.ProductInfo['PriceInRobux'])
 
-	local priceInRobux = tonumber(PurchaseData.ProductInfo['PriceInRobux'])
-	if priceInRobux then
-		PurchaseData.CurrencyAmount = priceInRobux
+	if PurchaseData.CurrencyAmount == nil then
+		PurchaseData.CurrencyAmount = 0
 	end
 end
 
