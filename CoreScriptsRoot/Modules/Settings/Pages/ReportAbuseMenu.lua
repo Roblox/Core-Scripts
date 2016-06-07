@@ -293,7 +293,6 @@ do
 						indexChangedConnection:disconnect()
 						indexChangedConnection = nil
 					end
-					wait() -- We need to wait a frame to set the value of WhichPlayerMode as it is being updated by another script listening to the IndexChanged signal
 					PageInstance.WhichPlayerMode:SetSelectionByValue(player.Name)
 				end)
 				PageInstance.GameOrPlayerMode:SetSelectionIndex(2)
