@@ -26,11 +26,10 @@ end
 local Player = Players.LocalPlayer
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 
-RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 
-local playerDropDownModule = require(RobloxGui.Modules:WaitForChild("PlayerDropDown"))
+local playerDropDownModule = require(RobloxGui.Modules.PlayerDropDown)
 local blockingUtility = playerDropDownModule:CreateBlockingUtility()
 local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 

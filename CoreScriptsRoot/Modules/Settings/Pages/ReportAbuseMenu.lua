@@ -278,6 +278,33 @@ do
 	PageInstance.Displayed.Event:connect(function()
 		PageInstance:UpdatePlayerDropDown()
 	end)
+
+	function PageInstance:ReportPlayer(player)
+		if player then
+			local setReportPlayerConnection = nil
+			setReportPlayerConnection = PageInstance.Displayed.Event:connect(function()
+				-- When we change the SelectionIndex of GameOrPlayerMode it waits until the tween is done
+				-- before it fires the IndexChanged signal. The WhichPlayerMode dropdown listens to this signal
+				-- and resets when it is fired. Therefore we need to listen to this signal and set the player we want
+				-- to report the frame after the dropdown is reset
+				local indexChangedConnection = nil
+				indexChangedConnection = PageInstance.GameOrPlayerMode.IndexChanged:connect(function()
+					if indexChangedConnection then
+						indexChangedConnection:disconnect()
+						indexChangedConnection = nil
+					end
+					PageInstance.WhichPlayerMode:SetSelectionByValue(player.Name)
+				end)
+				PageInstance.GameOrPlayerMode:SetSelectionIndex(2)
+
+				if setReportPlayerConnection then
+					setReportPlayerConnection:disconnect()
+					setReportPlayerConnection = nil
+				end
+			end)
+			PageInstance.HubRef:SetVisibility(true, false, PageInstance)
+		end
+	end
 end
 
 

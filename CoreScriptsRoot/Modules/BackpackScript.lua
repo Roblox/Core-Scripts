@@ -1413,11 +1413,6 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 
 		BackpackScript.IsOpen = InventoryFrame.Visible
 		BackpackScript.StateChanged:Fire(InventoryFrame.Visible)
-
-		local SettingsHub = require(RobloxGui.Modules.Settings:WaitForChild("SettingsHub"))
-		if SettingsHub.Instance.Visible then
-			SettingsHub:SetVisibility(false)
-		end
 	end
 	HotkeyFns[ARROW_HOTKEY] = openClose
 	BackpackScript.OpenClose = openClose -- Exposed
