@@ -34,11 +34,7 @@ local IsServerFollowers = serverFollowersSuccess and serverFollowersEnabled
 
 --[[ Modules ]]--
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
-local settingsHub = nil
-
-spawn(function()
-	settingsHub = require(RobloxGui:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("SettingsHub"))
-end)
+local reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
 
 --[[ Bindables ]]--
 local BinbableFunction_SendNotification = nil
@@ -384,7 +380,7 @@ function createPlayerDropDown()
 	
 	local function onReportButtonPressed()
 		if playerDropDown.Player then
-			settingsHub:ReportPlayer(playerDropDown.Player)
+			reportAbuseMenu:ReportPlayer(playerDropDown.Player)
 			playerDropDown:Hide()
 		end
 	end
