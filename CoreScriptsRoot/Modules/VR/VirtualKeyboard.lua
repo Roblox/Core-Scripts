@@ -910,6 +910,30 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 			setBufferText("")
 		end
 
+		ContextActionService:BindCoreAction("VirtualKeyboardControllerInput",
+			function(actionName, inputState, inputObject)
+				if inputState == Enum.UserInputState.End then
+					if inputObject.KeyCode == Enum.KeyCode.ButtonL1 then
+						SetTextFieldCursorPosition(textfieldCursorPosition - 1)
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonR1 then
+						SetTextFieldCursorPosition(textfieldCursorPosition + 1)
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonX then
+						self:BackspaceAtCursor()
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonY then
+						self:SubmitCharacter(" ", false)
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonL2 then
+						if currentKeyset then
+							-- Go to the next keyset
+							self:SetCurrentKeyset((currentKeyset % #keysets) + 1)
+						end
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonL3 then
+						self:SetCaps(not self:GetCaps())
+					end
+				end
+			end,
+			false,
+			Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY)
+
 		self.Parent = panel:GetGUI()
 
 		panel:SetType(Panel3D.Type.Fixed, { CFrame = localCF })
@@ -934,6 +958,8 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		textChangedConn = nil
 		if panelClosedConn then panelClosedConn:disconnect() end
 		panelClosedConn = nil
+
+		ContextActionService:UnbindCoreAction("VirtualKeyboardControllerInput")
 		-- Clean-up
 		panel:OnMouseLeave()
 		panel:SetVisible(false, true)
@@ -972,7 +998,9 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	end)
 
 	rawset(newKeyboard, "SubmitCharacter", function(self, character, isAnAlphaKey)
-		setBufferText(getBufferText() .. character)
+		local bufferText = getBufferText()
+		local newBufferText = string.sub(bufferText, 1, textfieldCursorPosition) .. character .. string.sub(bufferText, textfieldCursorPosition + 1, #bufferText)
+		setBufferText(newBufferText)
 		SetTextFieldCursorPosition(textfieldCursorPosition + #character)
 
 		if isAnAlphaKey and self:GetShift() then
