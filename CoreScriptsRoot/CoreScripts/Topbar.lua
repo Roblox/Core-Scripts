@@ -38,6 +38,9 @@ local DEBOUNCE_TIME = 0.25
 local defeatableTopbarSuccess, defeatableTopbarFlagValue = pcall(function() return settings():GetFFlag("EnableSetCoreTopbarEnabled") end)
 local defeatableTopbar = (defeatableTopbarSuccess and defeatableTopbarFlagValue == true)
 
+local vr3dGuisSuccess, vr3dGuisFlagValue = pcall(function() return settings():GetFFlag("RenderUserGuiIn3DSpace") end)
+local vr3dGuis = (vr3dGuisSuccess and vr3dGuisFlagValue == true)
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -50,6 +53,7 @@ local InputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 local ContextActionService = game:GetService("ContextActionService")
 local RunService = game:GetService('RunService')
+local TextService = game:GetService('TextService')
 
 --[[ END OF SERVICES ]]
 
@@ -511,7 +515,12 @@ local function Create3DMenuItem()
 
 	function menuItem:SetHoverText(text)
 		hoverTextLabel.Text = text
-		local frameWidth = hoverTextLabel.TextBounds.X + 20
+		local textSize = TextService:GetTextSize(
+			hoverTextLabel.Text,
+			24,
+			hoverTextLabel.Font,
+			Vector2.new(1000, 10000))
+		local frameWidth = textSize.x + 20
 		hoverTextFrame.Position = UDim2.new(0.5, -frameWidth / 2, 0, 55)
 		hoverTextFrame.Size = UDim2.new(0, frameWidth, 0, 60)
 	end
@@ -1253,6 +1262,70 @@ local function Create3DChatIcon(topBarInstance, panel, menubar)
 	return menuItem
 end
 
+local function Create3DUserGuiToggleIcon(topBarInstance, panel, menubar)
+	local menuItem = Create3DMenuItem()
+	menuItem:SetHoverText("2D UI")
+
+	local icon = Util.Create "ImageLabel" {
+		Parent = menuItem:GetInstance(),
+
+		Position = UDim2.new(0.5, -14, 0.5, -14),
+		Size = UDim2.new(0, 28, 0, 28),
+
+		BackgroundTransparency = 1,
+
+		Image = "rbxasset://textures/ui/VR/toggle2D.png"
+	}
+
+	local userGuiPanel = Panel3D.Get("UserGui")
+	userGuiPanel:SetType(Panel3D.Type.Fixed)
+	userGuiPanel:ResizePixels(300, 125)
+	userGuiPanel:SetVisible(false, false)
+
+	menuItem.MouseButton1Click:connect(function()
+		if InputService.VREnabled then
+			userGuiPanel:SetVisible(not userGuiPanel.isVisible, false)
+		end
+	end)
+
+	function userGuiPanel:OnVisibilityChanged(visible)
+		if visible then
+			local headLook = Panel3D.GetHeadLookXZ(true)
+			userGuiPanel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 5)
+		end
+		menuItem:SetActive(visible)
+		local success, msg = pcall(function()
+			CoreGuiService:SetUserGuiRendering(true, visible and userGuiPanel:GetPart() or nil, Enum.NormalId.Front)
+		end)
+		if not success then
+			print("Topbar - userGuiPanel:OnVisibilityChanged:" , msg)
+		end
+	end
+
+	local function OnVREnabled(prop)
+		if prop == 'VREnabled' then
+			local guiPart = nil
+			if InputService.VREnabled then
+				if userGuiPanel.isVisible then
+					guiPart = userGuiPanel:GetPart()
+				end
+			else
+				userGuiPanel:SetVisible(false, false)
+			end
+			local success, msg = pcall(function()
+				CoreGuiService:SetUserGuiRendering(InputService.VREnabled, guiPart, Enum.NormalId.Front)
+			end)
+			if not success then
+				print("Topbar - OnVREnabled:" , msg)
+			end
+		end
+	end
+	InputService.Changed:connect(OnVREnabled)
+	spawn(function() OnVREnabled("VREnabled") end)
+
+	return menuItem
+end
+
 -----------
 
 --- Backpack ---
@@ -1346,6 +1419,7 @@ local nameAndHealthMenuItem = CreateUsernameHealthMenuItem()
 
 local settingsIcon3D = Create3DSettingsIcon(TopBar, Topbar3DPanel, ThreeDMenubar)
 local chatIcon3D = Create3DChatIcon(TopBar, Topbar3DPanel, ThreeDMenubar)
+local userGuiIcon3D = Create3DUserGuiToggleIcon(TopBar, Topbar3DPanel, ThreeDMenubar)
 
 local LEFT_ITEM_ORDER = {}
 local RIGHT_ITEM_ORDER = {}
@@ -1381,6 +1455,9 @@ if settingsIcon3D then
 end
 if chatIcon3D then
 	THREE_D_ITEM_ORDER[chatIcon3D] = 2
+end
+if userGuiIcon3D then
+	THREE_D_ITEM_ORDER[userGuiIcon3D] = 3
 end
 
 -------------------------
@@ -1476,6 +1553,39 @@ if nameAndHealthMenuItem and topbarEnabled and not isTenFootInterface then
 	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
 end
 
+if userGuiIcon3D and vr3dGuis then
+	local function FindScreenGuiChild(object)
+		for _, child in pairs(object:GetChildren()) do
+			if child:IsA('ScreenGui') then
+				return child
+			end
+		end
+	end
+
+	local function onPlayerGuiAdded(playerGui)
+		playerGui.ChildAdded:connect(function(child)
+			if FindScreenGuiChild(playerGui) then
+				AddItemInOrder(ThreeDMenubar, userGuiIcon3D, THREE_D_ITEM_ORDER)
+			end
+		end)
+		playerGui.ChildRemoved:connect(function(child)
+			if child:IsA('ScreenGui') and not FindScreenGuiChild(playerGui) then
+				ThreeDMenubar:RemoveItem(userGuiIcon3D)
+			end
+		end)
+		if FindScreenGuiChild(playerGui) then
+			AddItemInOrder(ThreeDMenubar, userGuiIcon3D, THREE_D_ITEM_ORDER)
+		end
+	end
+	Player.ChildAdded:connect(function(child)
+		if child:IsA('PlayerGui') then
+			onPlayerGuiAdded(child)
+		end
+	end)
+	if Player:FindFirstChild('PlayerGui') then
+		onPlayerGuiAdded(Player:FindFirstChild('PlayerGui'))
+	end
+end
 
 
 local function MoveHamburgerTo3D()
