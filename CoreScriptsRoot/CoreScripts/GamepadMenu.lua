@@ -625,9 +625,11 @@ local function setupGamepadControls()
 
 	doGamepadMenuButton = function(name, state, input)
 		if state ~= Enum.UserInputState.Begin then return end
-
-		if not toggleCoreGuiRadial() then
-			unbindAllRadialActions()
+		
+		if game.IsLoaded then
+			if not toggleCoreGuiRadial() then
+				unbindAllRadialActions()
+			end
 		end
 	end
 
@@ -667,9 +669,15 @@ local function setupGamepadControls()
 			setButtonEnabled(button, enabled)
 		end
 	end
+	
+	local loadedConnection
+	local function enableRadialMenu()
+		ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
+		loadedConnection:disconnect()
+	end
+	
+	loadedConnection = game.Loaded:connect(enableRadialMenu)
 	StarterGui.CoreGuiChangedSignal:connect(setRadialButtonEnabled)
-
-	ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
 end
 
 -- hook up gamepad stuff
