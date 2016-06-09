@@ -676,7 +676,16 @@ local function setupGamepadControls()
 		loadedConnection:disconnect()
 	end
 	
-	loadedConnection = game.Loaded:connect(enableRadialMenu)
+	loadedConnection = game.Players.PlayerAdded:connect(function(plr) 
+		if game.Players.LocalPlayer and plr == game.Players.LocalPlayer then
+			enableRadialMenu()
+		end
+	end)
+	
+	if game.Players.LocalPlayer then
+		enableRadialMenu()
+	end
+	
 	StarterGui.CoreGuiChangedSignal:connect(setRadialButtonEnabled)
 end
 
