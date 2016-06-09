@@ -1297,9 +1297,6 @@ local function Create3DUserGuiToggleIcon(topBarInstance, panel, menubar)
 		local success, msg = pcall(function()
 			CoreGuiService:SetUserGuiRendering(true, visible and userGuiPanel:GetPart() or nil, Enum.NormalId.Front)
 		end)
-		if not success then
-			print("Topbar - userGuiPanel:OnVisibilityChanged:" , msg)
-		end
 	end
 
 	local function OnVREnabled(prop)
@@ -1315,9 +1312,6 @@ local function Create3DUserGuiToggleIcon(topBarInstance, panel, menubar)
 			local success, msg = pcall(function()
 				CoreGuiService:SetUserGuiRendering(InputService.VREnabled, guiPart, Enum.NormalId.Front)
 			end)
-			if not success then
-				print("Topbar - OnVREnabled:" , msg)
-			end
 		end
 	end
 	InputService.Changed:connect(OnVREnabled)
