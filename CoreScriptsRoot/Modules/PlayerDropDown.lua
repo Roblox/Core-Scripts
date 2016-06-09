@@ -215,15 +215,12 @@ local function GetBlockedPlayersAsync()
 			local request = HttpRbxApiService:GetAsync(apiPath)
 			blockList = request and game:GetService('HttpService'):JSONDecode(request)
 		end)
-		if success then
-			if blockList and blockList['success'] == true and blockList['userList'] then
-				local returnList = {}
-				for i, v in pairs(blockList['userList']) do
-					returnList[v] = true
-				end
-				return returnList
-			else
+		if blockList and blockList['success'] == true and blockList['userList'] then
+			local returnList = {}
+			for i, v in pairs(blockList['userList']) do
+				returnList[v] = true
 			end
+			return returnList
 		end
 	end
 	return {}
