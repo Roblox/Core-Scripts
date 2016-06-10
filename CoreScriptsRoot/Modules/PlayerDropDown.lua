@@ -216,7 +216,11 @@ local function GetBlockedPlayersAsync()
 			blockList = request and game:GetService('HttpService'):JSONDecode(request)
 		end)
 		if blockList and blockList['success'] == true and blockList['userList'] then
-			return blockList['userList']
+			local returnList = {}
+			for i, v in pairs(blockList['userList']) do
+				returnList[v] = true
+			end
+			return returnList
 		end
 	end
 	return {}
@@ -227,7 +231,7 @@ spawn(function()
 end)
 
 local function isBlocked(userId)
-	if (BlockedList[userId] ~= nil and BlockedList[userId] == true) then
+	if (BlockedList[userId]) then
 		return true
 	end
 	return false

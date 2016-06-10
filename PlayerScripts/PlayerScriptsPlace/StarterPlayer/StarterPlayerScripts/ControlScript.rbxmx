@@ -312,6 +312,11 @@ end)
 -- On touch devices we need to recreate the guis on character load.
 local lastControlState = nil
 LocalPlayer.CharacterAdded:connect(function(character)
+	if ControlState.Current then -- only do this if it wasn't done through CharacterRemoving
+		lastControlState = ControlState.Current
+		ControlState:SwitchTo(nil)
+	end
+	
 	if UserInputService.TouchEnabled then
 		createTouchGuiContainer()
 	end
@@ -321,7 +326,7 @@ LocalPlayer.CharacterAdded:connect(function(character)
 	end
 end)
 
-LocalPlayer.CharacterRemoving:connect(function(character)
+LocalPlayer.CharacterRemoving:connect(function()
 	lastControlState = ControlState.Current
 	ControlState:SwitchTo(nil)
 end)
