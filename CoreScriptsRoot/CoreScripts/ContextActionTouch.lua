@@ -103,10 +103,10 @@ function createNewButton(actionName, functionInfoTable)
 	local contextButton = Instance.new("ImageButton")
 	contextButton.Name = "ContextActionButton"
 	contextButton.BackgroundTransparency = 1
-	contextButton.Size = UDim2.new(0,45,0,45)
+	contextButton.Size = UDim2.new(0,90,0,90)
 	contextButton.Active = true
 	if isSmallScreenDevice() then 
-		contextButton.Size = UDim2.new(0,35,0,35)
+		contextButton.Size = UDim2.new(0,70,0,70)
 	end
 	contextButton.Image = ContextUpImage
 	contextButton.Parent = buttonFrame

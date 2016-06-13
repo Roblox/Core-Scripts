@@ -104,7 +104,7 @@ local LowestEmptySlot = nil
 local SlotsByTool = {} -- Map of Tools to their assigned Slots
 local HotkeyFns = {} -- Map of KeyCode values to their assigned behaviors
 local Dragging = {} -- Only used to check if anything is being dragged, to disable other input
-local FullHotbarSlots = 0 -- Now being used to also determine whether or not LB and RB on the gamepad are enabled.
+local FullHotbarSlots = 0
 local ActiveHopper = nil --NOTE: HopperBin
 local StarterToolFound = false -- Special handling is required for the gear currently equipped on the site
 local WholeThingEnabled = false
@@ -301,14 +301,6 @@ local function MakeSlot(parent, index)
 
 		if hotbarSlot then
 			FullHotbarSlots = FullHotbarSlots + 1
-			-- If using a controller, determine whether or not we can enable BindCoreAction("RBXHotbarEquip", etc)
-			if GamepadEnabled then
-				if FullHotbarSlots >= 1 and not gamepadActionsBound then
-					-- Player added first item to a hotbar slot, enable BindCoreAction
-					gamepadActionsBound = true
-					ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
-				end
-			end
 		end
 
 		SlotsByTool[tool] = self
@@ -335,11 +327,6 @@ local function MakeSlot(parent, index)
 
 		if self.Index <= HOTBAR_SLOTS then
 			FullHotbarSlots = FullHotbarSlots - 1
-			if FullHotbarSlots < 1 then
-				-- Player removed last item from hotbar; UnbindCoreAction("RBXHotbarEquip"), allowing the developer to use LB and RB.
-				gamepadActionsBound = false
-				ContextActionService:UnbindCoreAction("RBXHotbarEquip")
-			end
 		end
 
 		SlotsByTool[self.Tool] = nil
@@ -905,7 +892,7 @@ local selectToolExperiment = function(actionName, inputState, inputObject)
 	end
 end
 
-changeToolFunc = function(actionName, inputState, inputObject)
+local changeToolFunc = function(actionName, inputState, inputObject)
 	if inputState ~= Enum.UserInputState.Begin then return end
 
 	if lastChangeToolInputObject then
@@ -1067,13 +1054,11 @@ function gamepadConnected()
 	GamepadEnabled = true
 	GuiService:AddSelectionParent("RBXBackpackSelection", MainFrame)
 
-	if FullHotbarSlots >= 1 then
-		if not gamepadActionsBound then
-			gamepadActionsBound = true
-			ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
-		end
+	if not gamepadActionsBound then
+		gamepadActionsBound = true
+		ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
 	end
-	
+
 	if InventoryFrame.Visible then
 		enableGamepadInventoryControl()
 	end
@@ -1102,10 +1087,8 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 
 		if GamepadEnabled then
 			if enabled then
-				if FullHotbarSlots >=1 then
-					gamepadActionsBound = true
-					ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
-				end
+				gamepadActionsBound = true
+				ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
 			else
 				disableGamepadInventoryControl()
 				gamepadActionsBound = false
