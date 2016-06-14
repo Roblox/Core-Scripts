@@ -194,6 +194,9 @@ function createButton( actionName, functionInfoTable )
 
 	if buttonScreenGui and buttonScreenGui.Parent == nil then
 		buttonScreenGui.Parent = localPlayer.PlayerGui
+		if not buttonFrame.Parent then
+			buttonFrame.Parent = buttonScreenGui
+		end
 	end
 end
 
