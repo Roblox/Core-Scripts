@@ -227,7 +227,12 @@ local function updateNotifications()
 			if frame and frame.Parent then
 				local thisOffset = currentNotification.IsFriend and (NOTIFICATION_Y_OFFSET + 2) * 1.5 or NOTIFICATION_Y_OFFSET
 				yOffset = yOffset + thisOffset
-				frame:TweenPosition(UDim2.new(0, 0, 1, -yOffset - (pos * 4)), EASE_DIR, EASE_STYLE, TWEEN_TIME, true)
+				frame:TweenPosition(UDim2.new(0, 0, 1, -yOffset - (pos * 4)), EASE_DIR, EASE_STYLE, TWEEN_TIME, true,
+					function()
+						if currentNotification.TweenOutCallback then
+							currentNotification.TweenOutCallback()
+						end
+					end)
 				pos = pos + 1
 			end
 		end
@@ -241,15 +246,32 @@ insertNotifcation = function(notification)
 		notification.IsActive = true
 		local size = #NotificationQueue
 		if size == MAX_NOTIFICATIONS then
+			NotificationQueue[1].Duration = 0
 			OverflowQueue[#OverflowQueue + 1] = notification
 			return
 		end
-		--
+		
 		NotificationQueue[size + 1] = notification
 		notification.Frame.Parent = NotificationFrame
+
+		spawn(function()
+			wait(TWEEN_TIME * 2)
+			-- Wait for it to tween in, and then wait that same amount of time before calculating lifetime.
+			-- This is to have it not zoom out while half tweened in when the OverflowQueue forcibly
+			-- makes room for itself.
+
+			while(notification.Duration > 0) do
+				wait(0.2)
+				notification.Duration = notification.Duration - 0.2
+			end
+
+			removeNotification(notification)
+		end)
+--[[
 		delay(notification.Duration, function()
 			removeNotification(notification)
 		end)
+]]
 		while tick() - lastTimeInserted < TWEEN_TIME do
 			wait()
 		end
@@ -270,17 +292,29 @@ removeNotification = function(notification)
 		spawn(function() 
 			while isPaused do wait() end
 
-			frame:TweenPosition(UDim2.new(1, 0, 1, frame.Position.Y.Offset), EASE_DIR, EASE_STYLE, TWEEN_TIME, true,
+			-- Tween out now, or set up to tween out immediately after current tween is finished, but don't interrupt.
+			local function doTweenOut()
+				return frame:TweenPosition(UDim2.new(1, 0, 1, frame.Position.Y.Offset), EASE_DIR, EASE_STYLE, TWEEN_TIME, false,
 				function()
 					frame:Destroy()
 					notification = nil
 				end)
+			end
+
+			if (not doTweenOut()) then
+				notification.TweenOutCallback = doTweenOut
+			end
+
 		end)
 	end
 	if #OverflowQueue > 0 then
 		local nextNofication = OverflowQueue[1]
 		table.remove(OverflowQueue, 1)
 		insertNotifcation(nextNofication)
+
+		if (#OverflowQueue > 0) then
+			NotificationQueue[1].Duration = 0
+		end
 	else
 		updateNotifications()
 	end
@@ -439,7 +473,7 @@ function onGameSettingsChanged(property, amount)
 			level = 1
 		end
 		-- value of 0 is automatic, we do not want to send a notification in that case
-		if level > 0 and level ~= CurrentGraphicsQualityLevel then
+		if level > 0 and level ~= CurrentGraphicsQualityLevel and GameSettings.SavedQualityLevel ~= Enum.SavedQualitySetting.Automatic then
 			if level > CurrentGraphicsQualityLevel then
 				sendNotifcation("Graphics Quality", "Increased to ("..tostring(level)..")", "", 2, nil)
 			else
