@@ -825,57 +825,13 @@ t.GetFontHeight = function(font, fontSize)
 	if font == nil or fontSize == nil then
 		error("Font and FontSize must be non-nil")
 	end
+	
+	local fontSizeInt = tonumber(fontSize.Name:match("%d+")) -- Clever hack to extract the size from the enum itself.
 
-	if font == Enum.Font.Legacy then
-		if fontSize == Enum.FontSize.Size8 then
-			return 12
-		elseif fontSize == Enum.FontSize.Size9 then
-			return 14
-		elseif fontSize == Enum.FontSize.Size10 then
-			return 15
-		elseif fontSize == Enum.FontSize.Size11 then
-			return 17
-		elseif fontSize == Enum.FontSize.Size12 then
-			return 18
-		elseif fontSize == Enum.FontSize.Size14 then
-			return 21
-		elseif fontSize == Enum.FontSize.Size18 then
-			return 27
-		elseif fontSize == Enum.FontSize.Size24 then
-			return 36
-		elseif fontSize == Enum.FontSize.Size36 then
-			return 54
-		elseif fontSize == Enum.FontSize.Size48 then
-			return 72
-		else
-			error("Unknown FontSize")
-		end
-	elseif font == Enum.Font.Arial or font == Enum.Font.ArialBold then
-		if fontSize == Enum.FontSize.Size8 then
-			return 8
-		elseif fontSize == Enum.FontSize.Size9 then
-			return 9
-		elseif fontSize == Enum.FontSize.Size10 then
-			return 10
-		elseif fontSize == Enum.FontSize.Size11 then
-			return 11
-		elseif fontSize == Enum.FontSize.Size12 then
-			return 12
-		elseif fontSize == Enum.FontSize.Size14 then
-			return 14
-		elseif fontSize == Enum.FontSize.Size18 then
-			return 18
-		elseif fontSize == Enum.FontSize.Size24 then
-			return 24
-		elseif fontSize == Enum.FontSize.Size36 then
-			return 36
-		elseif fontSize == Enum.FontSize.Size48 then
-			return 48
-		else
-			error("Unknown FontSize")
-		end
-	else
-		error("Unknown Font " .. font)
+	if font == Enum.Font.Legacy then -- Legacy has a 50% bigger size.
+		return math.ceil(fontSizeInt*1.5)
+	else -- Size is literally just the fontSizeInt
+		return fontSizeInt
 	end
 end
 
