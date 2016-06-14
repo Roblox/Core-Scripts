@@ -56,9 +56,9 @@ function TouchJump:Create(parentFrame)
 	JumpButton.ImageRectOffset = Vector2.new(176, 222)
 	JumpButton.ImageRectSize = Vector2.new(174, 174)
 	JumpButton.Size = UDim2.new(0, jumpButtonSize, 0, jumpButtonSize)
-	JumpButton.Position = isSmallScreen and UDim2.new(1, -origJumpButtonSize - 10, 1, -origJumpButtonSize) or
-		UDim2.new(1, -origJumpButtonSize, 1, -origJumpButtonSize * 1.75)
-	
+	JumpButton.Position = isSmallScreen and UDim2.new(1, -(origJumpButtonSize) + 10, 1, -(origJumpButtonSize-(jumpButtonSize/2)) - 20) or
+		UDim2.new(1, -origJumpButtonSize, 1, -origJumpButtonSize * 1.5)
+		
 	local touchObject = nil	
 	JumpButton.InputBegan:connect(function(inputObject)
 		if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
