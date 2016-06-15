@@ -1415,7 +1415,7 @@ local function CreateRecenterIcon3D(topBarInstance, panel, menubar)
 		Image = "rbxasset://textures/ui/VR/recenter.png"
 	}
 
-	VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive, shouldKeepTopbarOpen)
+	VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive)
 		if moduleName == RecenterModule.ModuleName then
 			menuItem:SetActive(true)
 		end
@@ -1427,7 +1427,6 @@ local function CreateRecenterIcon3D(topBarInstance, panel, menubar)
 	end)
 
 	function menuItem:OnClicked(wasActive)
-		menuItem:SetActive(not wasActive)
 		RecenterModule:SetVisible(not wasActive)
 	end
 
