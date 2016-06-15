@@ -42,6 +42,8 @@ local CHAT_COLORS =
 	BrickColor.new("Brick yellow").Color,
 }
 
+local thisModuleName = "Chat"
+
 local emptySelectionImage = Instance.new("ImageLabel")
 emptySelectionImage.ImageTransparency = 1
 emptySelectionImage.BackgroundTransparency = 1
@@ -2457,8 +2459,11 @@ local function CreateChat()
 					if InputService.VREnabled then
 						self.Settings.TextStrokeTransparency = 1
 						self:PrintVRWelcome()
-						local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.VR.Panel3D)
-						local panel = Panel3D.Get("Chat")
+						local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
+						local VRHub = require(RobloxGui.Modules.VR.VRHub)
+						local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+
+						local panel = Panel3D.Get(thisModuleName)
 						panel:LinkTo("Keyboard")
 						panel:SetType(Panel3D.Type.Fixed)
 						panel:ResizePixels(300, 125)
@@ -2479,6 +2484,13 @@ local function CreateChat()
 						function panel:CalculateTransparency()
 							return 0
 						end
+
+						VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive, shouldKeepTopbarOpen)
+							if moduleName ~= thisModuleName and isExclusive then
+								this:SetVisible(false)
+								VRHub:FireModuleClosed(thisModuleName)
+							end
+						end)
 					else
 						self.Settings.TextStrokeTransparency = 0.75
 						GuiRoot.Parent = CoreGuiService:WaitForChild('RobloxGui')
@@ -2527,14 +2539,22 @@ local function CreateChat()
 			end
 		end
 		if InputService.VREnabled then
-			local Panel3D = require(CoreGuiService:WaitForChild('RobloxGui').Modules.VR.Panel3D)
-			local panel = Panel3D.Get("Chat")
+			local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
+			local VRHub = require(RobloxGui.Modules.VR.VRHub)
+			local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+			
+			local panel = Panel3D.Get(thisModuleName)
 			if this.Visible then
-				local headLook = Panel3D.GetHeadLookXZ(true)
-				panel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 6.5)
+				local topbarPanel = Panel3D.Get("Topbar3D")
+				panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
+				panel:SetVisible(true)
 				panel:ForceShowUntilLookedAt()
+
+				VRHub:FireModuleOpened(thisModuleName, true, false, true)
 			else
 				panel:SetVisible(this.Visible)
+
+				VRHub:FireModuleClosed(thisModuleName)
 			end			
 		end
 		this.VisibilityStateChanged:fire(this.Visible)

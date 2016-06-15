@@ -941,6 +941,8 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		panel:SetVisible(true, true)
 		panel:ForceShowUntilLookedAt()
 
+		Panel3D.Get("Topbar3D"):SetVisible(false)
+
 		function panel:OnUpdate()
 		end
 	end)
@@ -963,6 +965,8 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		panel:SetVisible(false, true)
 		keyboardContainer.Visible = false
 
+		Panel3D.Get("Topbar3D"):SetVisible(true)
+		
 		self:SubmitText(submit, false)
 	end)
 
