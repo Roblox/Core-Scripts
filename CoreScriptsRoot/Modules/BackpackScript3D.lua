@@ -501,8 +501,9 @@ function BackpackPanel:OnMouseLeave(x, y)
 end
 
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
-VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive, shouldKeepTopbarOpen)
-	if isExclusive then
+VRHub.ModuleOpened.Event:connect(function(moduleName)
+	local module = VRHub:GetModule(moduleName)
+	if module.VRIsExclusive then
 		BackpackPanel:SetVisible(false)
 	end
 end)

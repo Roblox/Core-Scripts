@@ -72,6 +72,8 @@ local getDisableChatBarSuccess, disableChatBarValue = pcall(function() return se
 local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 
 --[[ SCRIPT VARIABLES ]]
+local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
 
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
@@ -99,7 +101,7 @@ local topbarEnabled = true
 
 
 if not NON_CORESCRIPT_MODE and not InputService.VREnabled then
-	playerDropDownModule = require(CoreGuiService:WaitForChild('RobloxGui').Modules:WaitForChild("PlayerDropDown"))
+	playerDropDownModule = require(RobloxGui.Modules:WaitForChild("PlayerDropDown"))
 	playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 	blockingUtility = playerDropDownModule:CreateBlockingUtility()
 end
@@ -2459,8 +2461,6 @@ local function CreateChat()
 					if InputService.VREnabled then
 						self.Settings.TextStrokeTransparency = 1
 						self:PrintVRWelcome()
-						local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
-						local VRHub = require(RobloxGui.Modules.VR.VRHub)
 						local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 
 						local panel = Panel3D.Get(thisModuleName)
@@ -2485,15 +2485,15 @@ local function CreateChat()
 							return 0
 						end
 
-						VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive, shouldKeepTopbarOpen)
-							if moduleName ~= thisModuleName and isExclusive then
+						VRHub.ModuleOpened.Event:connect(function(moduleName)
+							local module = VRHub:GetModule(moduleName)
+							if moduleName ~= thisModuleName and module.VRIsExclusive then
 								this:SetVisible(false)
-								VRHub:FireModuleClosed(thisModuleName)
 							end
 						end)
 					else
 						self.Settings.TextStrokeTransparency = 0.75
-						GuiRoot.Parent = CoreGuiService:WaitForChild('RobloxGui')
+						GuiRoot.Parent = RobloxGui
 					end
 				end
 				onVREnabled()
@@ -2539,8 +2539,6 @@ local function CreateChat()
 			end
 		end
 		if InputService.VREnabled then
-			local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
-			local VRHub = require(RobloxGui.Modules.VR.VRHub)
 			local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 			
 			local panel = Panel3D.Get(thisModuleName)
@@ -2550,7 +2548,7 @@ local function CreateChat()
 				panel:SetVisible(true)
 				panel:ForceShowUntilLookedAt()
 
-				VRHub:FireModuleOpened(thisModuleName, true, false, true)
+				VRHub:FireModuleOpened(thisModuleName)
 			else
 				panel:SetVisible(this.Visible)
 
@@ -2705,6 +2703,21 @@ end
 local moduleApiTable = {}
 -- Main Entry Point
 do
+	moduleApiTable.ModuleName = thisModuleName
+	moduleApiTable.KeepVRTopbarOpen = true 
+	moduleApiTable.VRIsExclusive = true
+	moduleApiTable.VRClosesNonExclusive = false
+	VRHub:RegisterModule(moduleApiTable)
+
+	VRHub.ModuleOpened.Event:connect(function(moduleName)
+		if moduleName ~= thisModuleName then
+			local module = VRHub:GetModule(moduleName)
+			if module.VRIsExclusive then
+				moduleApiTable:SetVisible(false)
+			end
+		end
+	end)
+
 	local ChatInstance = CreateChat()
 	ChatInstance:Initialize()
 

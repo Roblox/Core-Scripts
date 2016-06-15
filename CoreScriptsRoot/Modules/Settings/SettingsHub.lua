@@ -25,6 +25,7 @@ local RunService = game:GetService("RunService")
 
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
 
 --[[ VARIABLES ]]
 local isTouchDevice = UserInputService.TouchEnabled
@@ -968,7 +969,7 @@ local function CreateSettingsHub()
 			panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
 			panel:SetVisible(true)
 
-			VRHub:FireModuleOpened(thisModuleName, true, true, true)
+			VRHub:FireModuleOpened(thisModuleName)
 		end)
 		GuiService.MenuClosed:connect(function()
 			panel:SetVisible(false)
@@ -976,8 +977,8 @@ local function CreateSettingsHub()
 			VRHub:FireModuleClosed(thisModuleName)
 		end)
 
-		VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive, shouldKeepTopbarOpen)
-			if moduleName ~= thisModuleName then --no check for isExclusive intentional, the settings menu is super-exclusive so it doesn't coexist with ANYTHING
+		VRHub.ModuleOpened.Event:connect(function(moduleName)
+			if moduleName ~= thisModuleName then
 				this:SetVisibility(false)
 			end
 		end)
@@ -1100,6 +1101,21 @@ end
 -- Main Entry Point
 
 local moduleApiTable = {}
+
+	moduleApiTable.ModuleName = "SettingsMenu"
+	moduleApiTable.KeepVRTopbarOpen = true
+	moduleApiTable.VRIsExclusive = true
+	moduleApiTable.VRClosesNonExclusive = true
+	VRHub:RegisterModule(moduleApiTable)
+
+	VRHub.ModuleOpened.Event:connect(function(moduleName)
+		if moduleName ~= moduleApiTable.ModuleName then
+			local module = VRHub:GetModule(moduleName)
+			if module.VRIsExclusive then
+				moduleApiTable:SetVisibility(false)
+			end
+		end
+	end)
 
 	local SettingsHubInstance = CreateSettingsHub()
 
