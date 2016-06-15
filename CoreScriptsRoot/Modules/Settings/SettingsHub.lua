@@ -25,6 +25,7 @@ local RunService = game:GetService("RunService")
 
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
 
 --[[ VARIABLES ]]
 local isTouchDevice = UserInputService.TouchEnabled
@@ -1100,6 +1101,10 @@ end
 -- Main Entry Point
 
 local moduleApiTable = {}
+
+	moduleApiTable.ModuleName = "SettingsMenu"
+	moduleApiTable.KeepVRTopbarOpen = true
+	VRHub:RegisterModule(moduleApiTable)
 
 	local SettingsHubInstance = CreateSettingsHub()
 

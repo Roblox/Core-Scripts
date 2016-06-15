@@ -72,6 +72,8 @@ local getDisableChatBarSuccess, disableChatBarValue = pcall(function() return se
 local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 
 --[[ SCRIPT VARIABLES ]]
+local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
 
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
@@ -2705,6 +2707,10 @@ end
 local moduleApiTable = {}
 -- Main Entry Point
 do
+	moduleApiTable.ModuleName = thisModuleName
+	moduleApiTable.KeepVRTopbarOpen = true 
+	VRHub:RegisterModule(moduleApiTable)
+
 	local ChatInstance = CreateChat()
 	ChatInstance:Initialize()
 

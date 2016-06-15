@@ -171,7 +171,7 @@ function Panel3D.RaycastOntoPanel(part, parentGui, gui, ray)
 
 		return worldIntersectPoint, localIntersectPoint, lookAtPixel, isOnGui
 	else
-		return nil, nil, false
+		return nil, nil, nil, false
 	end
 end
 
@@ -723,7 +723,7 @@ function Subpanel.new(parentPanel, guiElement)
 	self.changedConn = nil
 
 	self.lookAtPixel = Vector2.new(0,0)
-	self.lookedAt = fals
+	self.lookedAt = false
 
 	self.part = nil
 	self.gui = nil

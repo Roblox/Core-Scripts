@@ -75,6 +75,7 @@ local isTenFootInterface = TenFootInterface:IsEnabled()
 
 local Panel3D = require(GuiRoot.Modules.VR.Panel3D)
 local TopbarPanel3D = Panel3D.Get("Topbar3D")
+local VRHub = require(GuiRoot.Modules.VR.VRHub)
 
 local Util = {}
 do
@@ -948,7 +949,6 @@ end
 
 local function CreateSettingsIcon3D(topBarInstance, panel, menubar)
 	local VRHub = require(GuiRoot.Modules.VR.VRHub)
-	local thisModuleName = "SettingsMenu"
 
 	local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
 	local menuItem = CreateMenuItem3D(thisModuleName)
@@ -966,12 +966,16 @@ local function CreateSettingsIcon3D(topBarInstance, panel, menubar)
 	}
 
 	function menuItem:OnClicked(wasActive)
-		menuItem:SetActive(not wasActive)
 		MenuModule:SetVisibility(not wasActive)
 	end
 
+	VRHub.ModuleOpened.Event:connect(function(moduleName)
+		if moduleName == MenuModule.ModuleName then
+			menuItem:SetActive(true)
+		end
+	end)
 	VRHub.ModuleClosed.Event:connect(function(moduleName)
-		if moduleName == thisModuleName then
+		if moduleName == MenuModule.ModuleName then
 			menuItem:SetActive(false)
 		end
 	end)
@@ -1216,9 +1220,9 @@ local function CreateChatIcon3D(topBarInstance, panel, menubar)
 	if not chatEnabled then return end
 
 	local VRHub = require(GuiRoot.Modules.VR.VRHub)
-	local thisModuleName = "Chat"
 
 	local ChatModule = require(GuiRoot.Modules.Chat)
+	local thisModuleName = ChatModule.ModuleName
 
 	local menuItem = CreateMenuItem3D(thisModuleName)
 	menuItem:SetHoverText("Chat")
@@ -1272,6 +1276,8 @@ local function CreateChatIcon3D(topBarInstance, panel, menubar)
 end
 
 local function CreateUserGuiToggleIcon3D(topBarInstance, panel, menubar)
+	local UserGuiModule = require(GuiRoot.Modules.VR.UserGui)
+
 	local menuItem = CreateMenuItem3D()
 	menuItem:SetHoverText("2D UI")
 
@@ -1286,69 +1292,29 @@ local function CreateUserGuiToggleIcon3D(topBarInstance, panel, menubar)
 		Image = "rbxasset://textures/ui/VR/toggle2D.png"
 	}
 
-	local thisModuleName = "UserGui"
+	local thisModuleName = UserGuiModule.ModuleName
 
-	local userGuiPanel = Panel3D.Get(thisModuleName)
-	userGuiPanel:SetType(Panel3D.Type.Fixed)
-	userGuiPanel:ResizeStuds(4, 4, 128)
-	userGuiPanel:SetVisible(false, false)
+	VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive)
+		if moduleName == thisModuleName then
+			menuItem:SetActive(true)
+		else
+			if shouldCloseNonExclusive and menuItem:IsActive() then
+				menuItem:SetActive(false)
+				userGuiPanel:SetVisible(false)
 
-	local VRHub = require(GuiRoot.Modules.VR.VRHub)
-
-	VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive, shouldKeepTopbarOpen)
-		if shouldCloseNonExclusive and menuItem:IsActive() then
+				VRHub:FireModuleClosed(thisModuleName)
+			end
+		end
+	end)
+	VRHub.ModuleClosed.Event:connect(function(moduleName)
+		if moduleName == thisModuleName then
 			menuItem:SetActive(false)
-			userGuiPanel:SetVisible(false)
-
-			VRHub:FireModuleClosed(thisModuleName)
 		end
 	end)
 
 	function menuItem:OnClicked(wasActive)
-		menuItem:SetActive(not wasActive)
-		userGuiPanel:SetVisible(not wasActive)
-	
-		if not wasActive then
-			VRHub:FireModuleOpened(thisModuleName, false, false, false)
-		else
-			VRHub:FireModuleClosed(thisModuleName)
-		end
-	end
-
-	function userGuiPanel:OnVisibilityChanged(visible)
-		if visible then
-			local headLook = Panel3D.GetHeadLookXZ(true)
-			userGuiPanel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 5)
-		end
-		menuItem:SetActive(visible, true)
-		local success, msg = pcall(function()
-			CoreGuiService:SetUserGuiRendering(true, visible and userGuiPanel:GetPart() or nil, Enum.NormalId.Front)
-		end)
-		if not success then
-			print("Topbar - userGuiPanel:OnVisibilityChanged:" , msg)
-		end
-	end
-
-	local function OnVREnabled(prop)
-		if prop == 'VREnabled' then
-			local guiPart = nil
-			if InputService.VREnabled then
-				if userGuiPanel.isVisible then
-					guiPart = userGuiPanel:GetPart()
-				end
-			else
-				userGuiPanel:SetVisible(false, false)
-			end
-			local success, msg = pcall(function()
-				CoreGuiService:SetUserGuiRendering(InputService.VREnabled, guiPart, Enum.NormalId.Front)
-			end)
-			if not success then
-				print("Topbar - OnVREnabled:" , msg)
-			end
-		end
-	end
-	InputService.Changed:connect(OnVREnabled)
-	spawn(function() OnVREnabled("VREnabled") end)
+		UserGuiModule:SetVisible(not wasActive)
+	end	
 
 	return menuItem
 end
@@ -1433,8 +1399,7 @@ end
 ---- Recenter VR --
 
 local function CreateRecenterIcon3D(topBarInstance, panel, menubar)
-	local thisModuleName = "Recenter"
-	local VRHub = require(GuiRoot.Modules.VR.VRHub)
+	local RecenterModule = require(GuiRoot.Modules.VR.Recenter)
 
 	local menuItem = CreateMenuItem3D(thisModuleName)
 	menuItem:SetHoverText("Recenter")
@@ -1450,71 +1415,20 @@ local function CreateRecenterIcon3D(topBarInstance, panel, menubar)
 		Image = "rbxasset://textures/ui/VR/recenter.png"
 	}
 
-	--this countdown timer is awaiting design work
-	local countdownPanel = Panel3D.Get("RecenterCountdown")
-	countdownPanel:SetType(Panel3D.Type.HorizontalFollow)
-	countdownPanel:ResizeStuds(1, 1, 128)
-	countdownPanel:SetCanFade(false)
-
-	local countdown = Util.Create "TextLabel" {
-		Parent = countdownPanel:GetGUI(),
-
-		Position = UDim2.new(0, 0, 0, 0),
-		Size = UDim2.new(1, 0, 1, 0),
-
-		BackgroundTransparency = 0.9,
-		BackgroundColor3 = Color3.new(0.2, 0.2, 0.2),
-
-		TextColor3 = Color3.new(1, 1, 1),
-		Text = "",
-		TextScaled = true,
-		Font = Enum.Font.SourceSansBold,
-
-		Visible = true
-	}
-
-	countdownPanel:SetVisible(false)
-
 	VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive, shouldKeepTopbarOpen)
-		if moduleName ~= thisModuleName then
-			menuItem:SetActive(false)
-			countdownPanel:SetVisible(false)
+		if moduleName == RecenterModule.ModuleName then
+			menuItem:SetActive(true)
 		end
 	end)
 	VRHub.ModuleClosed.Event:connect(function(moduleName)
-		if moduleName == thisModuleName then
+		if moduleName == RecenterModule.ModuleName then
 			menuItem:SetActive(false)
-			countdownPanel:SetVisible(false)
 		end
 	end)
 
 	function menuItem:OnClicked(wasActive)
-		if wasActive then
-			VRHub:FireModuleClosed(thisModuleName)
-			return
-		else
-			VRHub:FireModuleOpened(thisModuleName, true, true, true)
-		end
-
-		spawn(function()
-			menuItem:SetActive(true)
-		
-			countdownPanel:SetVisible(true)
-
-			for i = 3, 1, -1 do
-				if menuItem:IsActive() then
-					countdown.Text = tostring(i)
-					wait(1)
-				end
-			end
-
-			countdownPanel:SetVisible(false)			
-
-			if menuItem:IsActive() then
-				InputService:RecenterUserHeadCFrame() 
-			end
-			VRHub:FireModuleClosed(thisModuleName)
-		end)
+		menuItem:SetActive(not wasActive)
+		RecenterModule:SetVisible(not wasActive)
 	end
 
 	return menuItem
@@ -1655,17 +1569,17 @@ end
 if settingsIcon3D then
 	ITEM_ORDER_3D[settingsIcon3D] = 1
 end
-if chatIcon3D then
-	ITEM_ORDER_3D[chatIcon3D] = 4
+if userGuiIcon3D then
+	ITEM_ORDER_3D[userGuiIcon3D] = 2
 end
 if recenterIcon3D then
 	ITEM_ORDER_3D[recenterIcon3D] = 3
 end
+if chatIcon3D then
+	ITEM_ORDER_3D[chatIcon3D] = 4
+end
 if notificationsIcon3D then
 	ITEM_ORDER_3D[notificationsIcon3D] = 5 
-end
-if userGuiIcon3D then
-	ITEM_ORDER_3D[userGuiIcon3D] = 2
 end
 
 -------------------------
@@ -1816,24 +1730,14 @@ local function EnableVR()
 		end
 	end
 
-	local modulesKeepingTopbarOpen = {}
-	local numModulesKeepingTopbarOpen = 0
-
-	VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive, shouldKeepTopbarOpen)
-		if shouldKeepTopbarOpen then
+	VRHub.ModuleOpened.Event:connect(function(moduleName, isExclusive, shouldCloseNonExclusive)
+		if VRHub:KeepVRTopbarOpen() then
 			TopbarPanel3D:SetCanFade(false)
 			TopbarPanel3D:SetVisible(true)
-
-			modulesKeepingTopbarOpen[moduleName] = true
-			numModulesKeepingTopbarOpen = numModulesKeepingTopbarOpen + 1
 		end
 	end)
 	VRHub.ModuleClosed.Event:connect(function(moduleName)
-		if modulesKeepingTopbarOpen[moduleName] then
-			modulesKeepingTopbarOpen[moduleName] = nil
-			numModulesKeepingTopbarOpen = math.max(0, numModulesKeepingTopbarOpen - 1)
-		end
-		if numModulesKeepingTopbarOpen == 0 then
+		if not VRHub:KeepVRTopbarOpen() then
 			TopbarPanel3D:SetCanFade(true)
 		end
 	end)
