@@ -17,6 +17,10 @@ function VRHub:GetModule(moduleName)
 	return RegisteredModules[moduleName]
 end
 
+function VRHub:IsModuleOpened(moduleName)
+	return OpenModules[moduleName] ~= nil
+end
+
 VRHub.ModuleOpened = Util:Create "BindableEvent" {
 	Name = "VRModuleOpened"
 }

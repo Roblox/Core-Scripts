@@ -354,6 +354,64 @@ local function CreateMenuBar3D(barAlignment, threeDPanel)
 	return this
 end
 
+local function CreateMenuChangedNotifier()
+	local this = {}
+	local notifier3D = require(GuiRoot.Modules.VR.NotifierHint3D)
+
+	function this:PromptNotification()
+		-- Don't show the notification if we are looking down at the menubar already
+		if not (TopbarPanel3D:IsVisible() and TopbarPanel3D.isEnabled) then
+			notifier3D:BeginNotification(notifier3D.DEFAULT_DURATION)
+		end
+	end
+
+	spawn(function()
+		-- Spawn this because we don't want circular requires
+		local backpack3D = require(GuiRoot.Modules.BackpackScript3D)
+		backpack3D.ToolAddedEvent.Event:connect(function() this:PromptNotification() end)
+
+		Player.FriendStatusChanged:connect(function(fromPlayer, friendStatus)
+			if friendStatus == Enum.FriendStatus.FriendRequestReceived then
+				this:PromptNotification()
+			end
+		end)
+	end)
+
+	local function findScreenGuiAncestor(object)
+		if not object then
+			return nil
+		end
+		local parent = object.Parent
+		if parent and parent:IsA('ScreenGui') then
+			return parent
+		end
+		return findScreenGuiAncestor(parent)
+	end
+
+	
+	local userGuiModuleName = require(GuiRoot.Modules.VR.UserGui).ModuleName
+	GuiService.Changed:connect(function(prop)
+		-- Notify if the selected object has changed and we are not observing it
+		if prop == 'SelectedObject' and GuiService.SelectedObject then
+			if findScreenGuiAncestor(GuiService.SelectedObject) then
+				if not VRHub:IsModuleOpened(userGuiModuleName) then
+					this:PromptNotification()
+				end
+			end
+		end
+	end)
+
+	InputService.TextBoxFocused:connect(function(textbox)
+		local myScreenGui = findScreenGuiAncestor(textbox)
+		local myScreenGuiParent = myScreenGui and myScreenGui.Parent
+		if myScreenGuiParent and myScreenGuiParent:IsA('PlayerGui') then
+			this:PromptNotification()
+		end
+	end)
+
+	return this
+end
+
 
 local function CreateMenuItem(origInstance)
 	local this = {}
@@ -1531,6 +1589,7 @@ local chatIcon3D = CreateChatIcon3D(TopBar, TopbarPanel3D, Menubar3D)
 local recenterIcon3D = CreateRecenterIcon3D(TopBar, TopbarPanel3D, Menubar3D)
 local notificationsIcon3D = CreateNotificationsIcon3D(TopBar, TopbarPanel3D, Menubar3D)
 local userGuiIcon3D = CreateUserGuiToggleIcon3D(TopBar, TopbarPanel3D, Menubar3D)
+local menuChangedNotifier3D = nil
 
 local LEFT_ITEM_ORDER = {}
 local RIGHT_ITEM_ORDER = {}
@@ -1681,7 +1740,7 @@ if userGuiIcon3D and vr3dGuis then
 
 	local function onPlayerGuiAdded(playerGui)
 		playerGui.ChildAdded:connect(function(child)
-			if FindScreenGuiChild(playerGui) then
+			if child:IsA('ScreenGui') and FindScreenGuiChild(playerGui) then
 				AddItemInOrder(Menubar3D, userGuiIcon3D, ITEM_ORDER_3D)
 			end
 		end)
@@ -1736,6 +1795,9 @@ local function EnableVR()
 			TopbarPanel3D:SetCanFade(true)
 		end
 	end)
+
+
+	menuChangedNotifier3D = menuChangedNotifier3D or CreateMenuChangedNotifier()
 
 	LeftMenubar:RemoveItem(settingsIcon)
 	AddItemInOrder(Menubar3D, settingsIcon3D, ITEM_ORDER_3D)

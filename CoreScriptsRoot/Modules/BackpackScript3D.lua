@@ -83,6 +83,9 @@ playerName.TextXAlignment = Enum.TextXAlignment.Left
 playerName.Size = UDim2.new(1, 0, 0, NAME_SPACE)
 
 
+BackpackScript.ToolAddedEvent = Instance.new("BindableEvent")
+
+
 local healthColorToPosition = {
 	[Vector3.new(HEALTH_RED_COLOR.r, HEALTH_RED_COLOR.g, HEALTH_RED_COLOR.b)] = 0.1;
 	[Vector3.new(HEALTH_YELLOW_COLOR.r, HEALTH_YELLOW_COLOR.g, HEALTH_YELLOW_COLOR.b)] = 0.5;
@@ -301,6 +304,8 @@ local function AddTool(tool)
 	end)
 	
 	UpdateLayout()
+
+	BackpackScript.ToolAddedEvent:Fire(tool)
 end
 
 local humanoidChangedEvent = nil
