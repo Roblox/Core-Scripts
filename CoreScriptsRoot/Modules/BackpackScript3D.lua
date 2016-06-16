@@ -61,7 +61,7 @@ healthbarBack.BackgroundTransparency = 1
 healthbarBack.ScaleType = Enum.ScaleType.Slice
 healthbarBack.SliceCenter = Rect.new(10, 10, 10, 10)
 healthbarBack.Name = "HealthbarContainer"
-healthbarBack.Image = "rbxasset://textures/ui/Menu/rectBackgroundWhite.png"
+healthbarBack.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
 local healthbarFront = Instance.new("ImageLabel", healthbarBack)
 healthbarFront.ImageColor3 = HEALTH_GREEN_COLOR
 healthbarFront.BackgroundTransparency = 1
@@ -70,7 +70,7 @@ healthbarFront.SliceCenter = Rect.new(10, 10, 10, 10)
 healthbarFront.Size = UDim2.new(1, 0, 1, 0)
 healthbarFront.Position = UDim2.new(0, 0, 0, 0)
 healthbarFront.Name = "HealthbarFill"
-healthbarFront.Image = "rbxasset://textures/ui/Menu/rectBackgroundWhite.png"
+healthbarFront.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
 
 local playerName = Instance.new("TextLabel", BackpackPanel:GetGUI())
 playerName.Name = "PlayerName"
@@ -170,6 +170,7 @@ local function SetTransparency(transparency)
 		v.text.TextTransparency = transparency
 	end
 
+	playerName.TextTransparency = transparency
 	healthbarBack.ImageTransparency = transparency
 	healthbarFront.ImageTransparency = transparency
 end
@@ -223,7 +224,7 @@ local function AddTool(tool)
 	slot.bg = Instance.new("ImageLabel", slot.icon)
 	slot.bg.Position = UDim2.new(0, -1, 0, -1)
 	slot.bg.Size = UDim2.new(1, 2, 1, 2)
-	slot.bg.Image = "rbxasset://textures/ui/Menu/rectBackground.png"
+	slot.bg.Image = "rbxasset://textures/ui/VR/rectBackground.png"
 	slot.bg.ScaleType = Enum.ScaleType.Slice
 	slot.bg.SliceCenter = Rect.new(10, 10, 10, 10)
 	slot.bg.BackgroundTransparency = 1
@@ -268,9 +269,9 @@ local function AddTool(tool)
 		local humanoid = player.Character:FindFirstChild("Humanoid")
 		if not humanoid then return end
 		
-		local in_backpack = tool.Parent == player.Backpack
+		local inBackpack = tool.Parent == player.Backpack
 		humanoid:UnequipTools()
-		if in_backpack then
+		if inBackpack then
 			humanoid:EquipTool(tool)
 		end
 	end
@@ -498,5 +499,16 @@ end
 function BackpackPanel:OnMouseLeave(x, y)
 	EnableHotbarInput(false)
 end
+
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
+VRHub.ModuleOpened.Event:connect(function(moduleName)
+	local module = VRHub:GetModule(moduleName)
+	if module.VRIsExclusive then
+		BackpackPanel:SetVisible(false)
+	end
+end)
+VRHub.ModuleClosed.Event:connect(function(moduleName)
+	BackpackPanel:SetVisible(true)
+end)
 
 return BackpackScript

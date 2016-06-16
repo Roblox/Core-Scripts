@@ -9,7 +9,6 @@ local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local PlayersService = game.Players
 
-
 --Util
 local Util = {}
 do
@@ -46,6 +45,12 @@ do
 		
 		return ray.Origin + ray.Direction * t
 	end
+
+	function Util.ConvertUDim2(parentAbsolute, childUDim2)
+		local x = (parentAbsolute.X * childUDim2.X.Scale) + childUDim2.X.Offset
+		local y = (parentAbsolute.Y * childUDim2.Y.Scale) + childUDim2.Y.Offset
+		return Vector2.new(x, y)
+	end
 end
 --End of Util
 
@@ -68,6 +73,8 @@ local currentModal = nil
 local lastModal = nil
 local currentMaxDist = math.huge
 local currentClosest = nil
+local currentCursorParent = nil
+local currentCursorPos = zeroVector2
 local lastClosest = nil
 local currentHeadScale = 1
 local panels = {}
@@ -108,9 +115,14 @@ function Panel3D.GetHeadLookXZ(withTranslation)
 end
 
 function Panel3D.FindContainerOf(element)
-	for i, v in pairs(panels) do
-		if v.gui and v.gui:IsAncestorOf(element) then
-			return v
+	for _, panel in pairs(panels) do
+		if panel.gui and panel.gui:IsAncestorOf(element) then
+			return panel
+		end
+		for _, subpanel in pairs(panel.subpanels) do
+			if subpanel.gui and subpanel.gui:IsAncestorOf(element) then
+				return panel
+			end
 		end
 	end
 	return nil
@@ -129,6 +141,40 @@ function Panel3D.SetModalPanel(panel)
 	lastModal = currentModal
 	currentModal = panel
 end
+
+function Panel3D.RaycastOntoPanel(part, parentGui, gui, ray)
+	local partSize = part.Size
+	local partThickness = partSize.Z
+	local partWidth = partSize.X
+	local partHeight = partSize.Y
+
+	local planeCF = part:GetRenderCFrame()
+	local planeNormal = planeCF.lookVector
+	local pointOnPlane = planeCF.p + (planeNormal * partThickness * 0.5)
+
+	local worldIntersectPoint = Util.RayPlaneIntersection(ray, planeNormal, pointOnPlane)
+	if worldIntersectPoint then
+		local parentGuiWidth, parentGuiHeight = parentGui.AbsoluteSize.X, parentGui.AbsoluteSize.Y
+		local localIntersectPoint = (planeCF:pointToObjectSpace(worldIntersectPoint) / currentHeadScale) * Vector3.new(-1, 1, 1) + Vector3.new(partWidth / 2, -partHeight / 2, 0)
+		local lookAtPixel = Vector2.new((localIntersectPoint.X / partWidth) * parentGuiWidth, (localIntersectPoint.Y / partHeight) * -parentGuiHeight)
+		
+		--fire mouse enter/leave events if necessary
+		local lookX, lookY = lookAtPixel.X, lookAtPixel.Y
+		local guiX, guiY = gui.AbsolutePosition.X, gui.AbsolutePosition.Y
+		local guiWidth, guiHeight = gui.AbsoluteSize.X, gui.AbsoluteSize.Y
+		local isOnGui = false
+
+		if lookX >= guiX and lookX <= guiX + guiWidth and
+		   lookY >= guiY and lookY <= guiY + guiHeight then
+		   	isOnGui = true
+		end
+
+		return worldIntersectPoint, localIntersectPoint, lookAtPixel, isOnGui
+	else
+		return nil, nil, nil, false
+	end
+end
+
 --End of Panel3D Declaration and enumerations
 
 
@@ -254,7 +300,6 @@ function Panel:GetPart()
 
 			CanCollide = false,
 			Anchored = true,
-			Archivable = false,
 
 			Size = Vector3.new(1, 1, partThickness)
 		}
@@ -341,8 +386,8 @@ function Panel:EvaluatePositioning(cameraCF, cameraRenderCF, userHeadCF)
 		local headForwardCF = CFrame.Angles(0, headYaw, 0) + userHeadCF.p
 		local localCF = (headForwardCF * self.angleFromForward) * --Rotate about Y (left-right)
 						self.angleFromHorizon * --Rotate about X (up-down)
-						(currentHeadScale * self.distance) * --Move into scene
-						turnAroundCF --Turn around to face character
+						CFrame.new(0, 0, currentHeadScale * self.distance)-- * --Move into scene
+						--turnAroundCF --Turn around to face character
 		self:SetPartCFrame(cameraCF * localCF)
 	elseif self.panelType == Panel3D.Type.FixedToHead then
 		--Places the panel in the user's head local space. localCF can be updated in PreUpdate for animation.
@@ -352,50 +397,78 @@ function Panel:EvaluatePositioning(cameraCF, cameraRenderCF, userHeadCF)
 	end
 end
 
+function Panel:SetLookedAt(lookedAt)
+	if not self.isLookedAt and lookedAt then
+		self.isLookedAt = true
+		self:OnMouseEnter(self.lookAtPixel.X, self.lookAtPixel.Y)
+		if self.forceShowUntilLookedAt then
+			self.forceShowUntilLookedAt = false
+		end
+	elseif self.isLookedAt and not lookedAt then
+		self.isLookedAt = false
+		self:OnMouseLeave(self.lookAtPixel.X, self.lookAtPixel.Y)
+	end
+end
+
 function Panel:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 	--reset distance data
 	self.isClosest = false
 	self.lookAtPixel = zeroVector2
 	self.lookAtDistance = math.huge
 
-	--Evaluate the lookRay versus this panel
-	local planeCF = self:GetPart().CFrame
-	local planeNormal = planeCF.lookVector
-	local pointOnPlane = planeCF.p + (planeNormal * partThickness * 0.5) --Move the point out by half the thickness of the part
+	--check all subpanels first, they're usually in front of the panel.
+	local highestSubpanel = nil
+	local highestSubpanelDepth = 0
+	for guiElement, subpanel in pairs(self.subpanels) do
+		if subpanel.part and subpanel.guiElement then
+			--note that we're passing subpanel.guiElement and not subpanel.gui
+			--this is on purpose so we can fall through to the panels underneath since subpanels will rarely take up the whole 
+			--panel size.
+			local worldIntersectPoint, localIntersectPoint, guiPixelHit, isOnGui = Panel3D.RaycastOntoPanel(subpanel.part, subpanel.gui, subpanel.guiElement, lookRay)
+			if worldIntersectPoint then
+				subpanel.lookAtPixel = guiPixelHit
 
-	local worldIntersectPoint = Util.RayPlaneIntersection(lookRay, planeNormal, pointOnPlane)
+				if isOnGui and subpanel.depthOffset > highestSubpanelDepth then
+					highestSubpanel = subpanel
+					highestSubpanelDepth = subpanel.depthOffset
+				end
+			end
+		end
+	end
+
+	if highestSubpanel and highestSubpanel.depthOffset > 0 then
+		currentCursorParent = highestSubpanel.gui
+		currentCursorPos = highestSubpanel.lookAtPixel
+		currentClosest = highestSubpanel
+
+		for _, subpanel in pairs(self.subpanels) do
+			if subpanel ~= highestSubpanel then
+				subpanel:SetLookedAt(false)
+			end
+		end
+		highestSubpanel:SetLookedAt(true)
+	end
+
+	local gui = self:GetGUI()
+	local worldIntersectPoint, localIntersectPoint, guiPixelHit, isOnGui = Panel3D.RaycastOntoPanel(self:GetPart(), gui, gui, lookRay)
 	if worldIntersectPoint then
 		self.isOffscreen = false
 
 		--transform worldIntersectPoint to gui space
-		local gui = self:GetGUI()
-		local guiWidth, guiHeight = gui.AbsoluteSize.X, gui.AbsoluteSize.Y
-		local localIntersectPoint = (planeCF:pointToObjectSpace(worldIntersectPoint) / currentHeadScale) * Vector3.new(-1, 1, 1) + Vector3.new(self.width / 2, -self.height / 2, 0)
-		self.lookAtPixel = Vector2.new((localIntersectPoint.X / self.width) * gui.AbsoluteSize.X, (localIntersectPoint.Y / self.height) * -gui.AbsoluteSize.Y)
-		
+		self.lookAtPixel = guiPixelHit
+
 		--fire mouse enter/leave events if necessary
-		local guiX, guiY = self.lookAtPixel.X, self.lookAtPixel.Y
-		if guiX >= 0 and guiX <= guiWidth and
-		   guiY >= 0 and guiY <= guiHeight then
-		   	if not self.isLookedAt then
-				self.isLookedAt = true
-				self:OnMouseEnter(guiX, guiY)
-				if self.forceShowUntilLookedAt then
-					self.forceShowUntilLookedAt = false
-				end
-			end
-		else
-			if self.isLookedAt then
-				self.isLookedAt = false
-				self:OnMouseLeave(guiX, guiY)
-			end
-		end
+		self:SetLookedAt(isOnGui)
 
 		--evaluate distance
 		self.lookAtDistance = (worldIntersectPoint - cameraRenderCF.p).magnitude
 		if self.isLookedAt and self.lookAtDistance < currentMaxDist and self.showCursor then
 			currentMaxDist = self.lookAtDistance
 			currentClosest = self
+			if not highestSubpanel then
+				currentCursorParent = self.gui
+				currentCursorPos = self.lookAtPixel
+			end
 		end
 	else
 		self.isOffscreen = true
@@ -410,7 +483,7 @@ end
 
 function Panel:EvaluateTransparency()
 	--Early exit if force shown
-	if self.forceShowUntilLookedAt then
+	if self.forceShowUntilLookedAt or not self.canFade then
 		self.transparency = 0
 		return
 	end
@@ -428,7 +501,7 @@ function Panel:EvaluateTransparency()
 	self.transparency = self:CalculateTransparency()
 end
 
-function Panel:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay)
+function Panel:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay, dt)
 	if self.forceShowUntilLookedAt and not self.part then
 		self:GetPart()
 		self:GetGUI()
@@ -446,21 +519,25 @@ function Panel:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 		return
 	end
 
-	self:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
+	self:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay, dt)
 	if self.isVisible then
 		self:EvaluatePositioning(cameraCF, cameraRenderCF, userHeadCF)
 		self:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 
 		self:EvaluateTransparency(cameraCF, cameraRenderCF)
+
+		for i, v in pairs(self.subpanels) do
+			v:Update()
+		end
 	end
 end
 --End of Panel update methods
 
 --Panel virtual methods
-function Panel:PreUpdate() --virtual: handle positioning here
+function Panel:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay, dt) --virtual: handle positioning here
 end
 
-function Panel:OnUpdate() --virtual: handle transparency here
+function Panel:OnUpdate(dt) --virtual: handle transparency here
 end
 
 function Panel:OnMouseEnter(x, y) --virtual
@@ -519,9 +596,17 @@ function Panel:ResizeStuds(width, height, pixelsPerStud)
 
 	local part = self:GetPart()
 	part.Size = Vector3.new(self.width * currentHeadScale, self.height * currentHeadScale, partThickness)
-
 	local gui = self:GetGUI()
 	gui.CanvasSize = Vector2.new(pixelsPerStud * self.width, pixelsPerStud * self.height)
+
+	for i, v in pairs(self.subpanels) do
+		if v.part then
+			v.part.Size = part.Size
+		end
+		if v.gui then
+			v.gui.CanvasSize = gui.CanvasSize
+		end
+	end
 end
 
 function Panel:ResizePixels(width, height, pixelsPerStud)
@@ -563,7 +648,7 @@ function Panel:SetType(panelType, config)
 	elseif panelType == Panel3D.Type.HorizontalFollow then
 		self.angleFromHorizon = CFrame.Angles(config.angleFromHorizon or 0, 0, 0)
 		self.angleFromForward = CFrame.Angles(0, config.angleFromForward or 0, 0)
-		self.distance = CFrame.new(0, 0, config.distance or 5)
+		self.distance = config.distance or 5
 	elseif panelType == Panel3D.Type.FixedToHead then
 		self.localCF = config.CFrame or CFrame.new()
 	else
@@ -605,6 +690,10 @@ function Panel:SetVisible(visible, modal)
 	end
 end
 
+function Panel:IsVisible()
+	return self.isVisible
+end
+
 function Panel:LinkTo(panelName)
 	if type(panelName) == "string" then
 		self.linkedTo = Panel3D.Get(panelName)
@@ -628,32 +717,194 @@ end
 
 --Child class, Subpanel
 local Subpanel = {}
-local Subpanel_mt = {}
-function Subpanel.new(guiElement)
-	local instance = {
-		guiElement = guiElement
-	}
-	return setmetatable(instance, Subpanel_mt)
+local Subpanel_mt = { __index = Subpanel }
+function Subpanel.new(parentPanel, guiElement)
+	local self = setmetatable({}, Subpanel_mt)
+	self.parentPanel = parentPanel
+	self.guiElement = guiElement
+	self.lastParent = guiElement.Parent
+	self.ancestryConn = nil
+	self.changedConn = nil
+
+	self.lookAtPixel = Vector2.new(0,0)
+	self.lookedAt = false
+
+	self.part = nil
+	self.gui = nil
+	self.guiSurrogate = nil
+
+	self.depthOffset = 0
+
+
+	self:GetGUI()
+	self:UpdateSurrogate()
+	self:WatchParent(self.lastParent)
+
+	guiElement.Parent = self.guiSurrogate
+	
+	local function ancestryCallback(parent, child)
+		self:GetGUI().Enabled = self.parentPanel:GetGUI():IsAncestorOf(self.lastParent)
+		if not self:GetGUI().Enabled then
+			self:GetPart().Parent = nil
+		else
+			self:GetPart().Parent = workspace.CurrentCamera
+		end
+		if child == guiElement then
+			--disconnect the event because we're going to move this element
+			self.ancestryConn:disconnect()
+
+			self.lastParent = guiElement.Parent
+			guiElement.Parent = self.guiSurrogate
+			self:WatchParent(self.lastParent)
+
+			--reconnect it
+			self.ancestryConn = guiElement.AncestryChanged:connect(ancestryCallback)
+		end
+	end
+	self.ancestryConn = guiElement.AncestryChanged:connect(ancestryCallback)
+
+	return self
+end
+
+function Subpanel:Cleanup()
+	self.guiElement.Parent = self.lastParent
+	if self.part then
+		self.part:Destroy()
+		self.part = nil
+	end
+	spawn(function()
+		wait() --wait so anything that's in the gui that doesn't want to be has time to get out (panel cursor for example)
+		if self.gui then
+			self.gui:Destroy()
+			self.gui = nil
+		end
+	end)
+	if self.ancestryConn then
+		self.ancestryConn:disconnect()
+		self.ancestryConn = nil
+	end
+	if self.changedConn then
+		self.changedConn:disconnect()
+		self.changedConn = nil
+	end
+	self.lastParent = nil
+	self.parentPanel = nil
+	self.guiElement = nil
+	self.guiSurrogate = nil
+end
+
+function Subpanel:OnMouseEnter(x, y)
+end
+function Subpanel:OnMouseLeave(x, y)
+end
+
+function Subpanel:SetLookedAt(lookedAt)
+	if lookedAt and not self.lookedAt then
+		self:OnMouseEnter(self.lookAtPixel.X, self.lookAtPixel.Y)
+	elseif not lookedAt and self.lookedAt then
+		self:OnMouseLeave(self.lookAtPixel.X, self.lookAtPixel.Y)
+	end
+	self.lookedAt = lookedAt
+end
+
+function Subpanel:WatchParent(parent)
+	if self.changedConn then
+		self.changedConn:disconnect()
+	end
+	self.changedConn = parent.Changed:connect(function(prop)
+		if prop == "AbsolutePosition" or prop == "AbsoluteSize" or prop == "Parent" then
+			self:UpdateSurrogate()
+		end
+	end)
+end
+
+function Subpanel:UpdateSurrogate()
+	self.guiSurrogate.Position = UDim2.new(0, self.lastParent.AbsolutePosition.X, 0, self.lastParent.AbsolutePosition.Y)
+	self.guiSurrogate.Size = UDim2.new(0, self.lastParent.AbsoluteSize.X, 0, self.lastParent.AbsoluteSize.Y)
 end
 
 function Subpanel:GetPart()
-	warn("Subpanel:GetPart() not yet implemented")
-	return nil
+	if self.part then
+		return self.part
+	end
+
+	self.part = self.parentPanel:GetPart():Clone()
+	self.part.Parent = workspace.CurrentCamera
+	return self.part
 end
 
 function Subpanel:GetGUI()
-	warn("Subpanel:GetGUI() not yet implemented")
-	return nil
+	if self.gui then
+		return self.gui
+	end
+
+	self.gui = Util.Create "SurfaceGui" {
+		Parent = CoreGui,
+		Adornee = self:GetPart(),
+		Active = true,
+		ToolPunchThroughDistance = 1000,
+		CanvasSize = self.parentPanel:GetGUI().CanvasSize,
+		Enabled = self.parentPanel.isEnabled,
+		AlwaysOnTop = true
+	}
+	self.guiSurrogate = Util.Create "Frame" {
+		Parent = self.gui,
+
+		Active = false,
+
+		Position = UDim2.new(0, 0, 0, 0),
+		Size = UDim2.new(1, 0, 1, 0),
+
+		BackgroundTransparency = 1
+	}
+	return self.gui
+end
+
+function Subpanel:SetDepthOffset(offset)
+	self.depthOffset = offset
+end
+
+function Subpanel:Update()
+	local part = self:GetPart()
+	local parentPart = self.parentPanel:GetPart()
+
+	if part and parentPart then
+		part.CFrame = parentPart.CFrame * CFrame.new(0, 0, -self.depthOffset)
+	end
 end
 
 function Panel:AddSubpanel(guiElement)
-	local subpanel = Subpanel.new(guiElement)
+	local subpanel = Subpanel.new(self, guiElement)
 	self.subpanels[guiElement] = subpanel
+	return subpanel
 end
 
 function Panel:RemoveSubpanel(guiElement)
+	local subpanel = self.subpanels[guiElement]
+	if subpanel then
+		subpanel:Cleanup()
+	end
 	self.subpanels[guiElement] = nil
 end
+
+function Panel:SetSubpanelDepth(guiElement, depth)
+	local subpanel = self.subpanels[guiElement]
+
+	if depth == 0 then
+		if subpanel then
+			self:RemoveSubpanel(guiElement)
+		end
+		return nil
+	end
+
+	if not subpanel then
+		subpanel = self:AddSubpanel(guiElement)
+	end
+	subpanel:SetDepthOffset(depth)
+
+	return subpanel
+end
+
 --End of Panel configuration methods
 --End of Panel class implementation
 
@@ -671,10 +922,15 @@ end
 
 
 --Panel3D Setup
+local frameStart = tick()
 local function onRenderStep()
 	if not UserInputService.VREnabled then
 		return
 	end
+
+	local now = tick()
+	local dt = now - frameStart
+	frameStart = now
 	
 
 	--reset distance info
@@ -690,7 +946,7 @@ local function onRenderStep()
 
 	--allow all panels to run their own update code
 	for i, v in pairs(panels) do
-		v:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay)
+		v:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay, dt)
 	end
 
 	--evaluate linked panels
@@ -736,7 +992,7 @@ local function onRenderStep()
 			v:SetEnabled(show)
 		end
 
-		v:OnUpdate()
+		v:OnUpdate(dt)
 	end
 
 	--place the cursor on the closest panel (for now)
@@ -749,9 +1005,9 @@ local function onRenderStep()
 	if currentClosest then
 		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
-		cursor.Parent = currentClosest:GetGUI()
+		cursor.Parent = currentCursorParent
 
-		local x, y = currentClosest.lookAtPixel.X, currentClosest.lookAtPixel.Y
+		local x, y = currentCursorPos.X, currentCursorPos.Y
 		cursor.Size = UDim2.new(0, 8 * currentClosest.pixelScale, 0, 8 * currentClosest.pixelScale)
 		cursor.Position = UDim2.new(0, x - cursor.AbsoluteSize.x * 0.5, 0, y - cursor.AbsoluteSize.y * 0.5)
 	else
