@@ -124,13 +124,13 @@ t.CreateStyledMessageDialog = function(title, message, style, buttons)
 	styleImage.Position = UDim2.new(0,5,0,15)
 	if style == "error" or style == "Error" then
 		styleImage.Size = UDim2.new(0, 71, 0, 71)
-		styleImage.Image = "http://www.roblox.com/asset/?id=42565285"
+		styleImage.Image = "https://www.roblox.com/asset/?id=42565285"
 	elseif style == "notify" or style == "Notify" then
 		styleImage.Size = UDim2.new(0, 71, 0, 71)
-		styleImage.Image = "http://www.roblox.com/asset/?id=42604978"
+		styleImage.Image = "https://www.roblox.com/asset/?id=42604978"
 	elseif style == "confirm" or style == "Confirm" then
 		styleImage.Size = UDim2.new(0, 74, 0, 76)
-		styleImage.Image = "http://www.roblox.com/asset/?id=42557901"
+		styleImage.Image = "https://www.roblox.com/asset/?id=42557901"
 	else
 		return t.CreateMessageDialog(title,message,buttons)
 	end
@@ -475,7 +475,7 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox, whiteSkin, baseZ)
 		dropDownIcon.Size = UDim2.new(0,16,0,12)
 		dropDownIcon.Position = UDim2.new(1,-17,0.5, -6)
 	else
-		dropDownIcon.Image = "http://www.roblox.com/asset/?id=45732894"
+		dropDownIcon.Image = "https://www.roblox.com/asset/?id=45732894"
 		dropDownIcon.Size = UDim2.new(0,11,0,6)
 		dropDownIcon.Position = UDim2.new(1,-11,0.5, -2)
 	end
@@ -1693,7 +1693,7 @@ t.CreateScrollingFrame = function(orderList,scrollStyle)
 	local scrollStamp = 0
 		
 	local scrollDrag = Instance.new("ImageButton")
-	scrollDrag.Image = "http://www.roblox.com/asset/?id=61367186"
+	scrollDrag.Image = "https://www.roblox.com/asset/?id=61367186"
 	scrollDrag.Size = UDim2.new(1, 0, 0, 16)
 	scrollDrag.BackgroundTransparency = 1
 	scrollDrag.Name = "ScrollDrag"
@@ -2973,7 +2973,7 @@ t.CreateSetPanel = function(userIdsForSets, objectSelected, dialogClosed, size, 
 				local cancelImage = Instance.new("ImageLabel")
 				cancelImage.Name = "CancelImage"
 				cancelImage.BackgroundTransparency = 1
-				cancelImage.Image = "http://www.roblox.com/asset/?id=54135717"
+				cancelImage.Image = "https://www.roblox.com/asset/?id=54135717"
 				cancelImage.Position = UDim2.new(0,-2,0,-2)
 				cancelImage.Size = UDim2.new(0,16,0,16)
 				cancelImage.ZIndex = 6
@@ -3175,7 +3175,7 @@ t.CreateSetPanel = function(userIdsForSets, objectSelected, dialogClosed, size, 
 	local function createDropDownMenuButton(parent)
 		local dropDownButton = Instance.new("ImageButton")
 		dropDownButton.Name = "DropDownButton"
-		dropDownButton.Image = "http://www.roblox.com/asset/?id=67581509"
+		dropDownButton.Image = "https://www.roblox.com/asset/?id=67581509"
 		dropDownButton.BackgroundTransparency = 1
 		dropDownButton.Size = UDim2.new(0,16,0,16)
 		dropDownButton.Position = UDim2.new(1,-24,0,6)
@@ -3607,24 +3607,24 @@ t.CreateTerrainMaterialSelector = function(size,position)
 	-- we so need a better way to do this
 	for i,v in pairs(materialNames) do
 		materialToImageMap[v] = {}
-		if v == "Grass" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=56563112"
-		elseif v == "Sand" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=62356652"
-		elseif v == "Brick" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=65961537"
-		elseif v == "Granite" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67532153"
-		elseif v == "Asphalt" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67532038"
-		elseif v == "Iron" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67532093"
-		elseif v == "Aluminum" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67531995"
-		elseif v == "Gold" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67532118"
-		elseif v == "Plastic (red)" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67531848"
-		elseif v == "Plastic (blue)" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67531924"
-		elseif v == "Plank" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67532015"
-		elseif v == "Log" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67532051"
-		elseif v == "Gravel" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67532206"
-		elseif v == "Cinder Block" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67532103"
-		elseif v == "Stone Wall" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67531804"
-		elseif v == "Concrete" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=67532059"
-		elseif v == "Water" then materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=81407474"
-		else materialToImageMap[v].Regular = "http://www.roblox.com/asset/?id=66887593" -- fill in the rest here!!
+		if v == "Grass" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=56563112"
+		elseif v == "Sand" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=62356652"
+		elseif v == "Brick" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=65961537"
+		elseif v == "Granite" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67532153"
+		elseif v == "Asphalt" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67532038"
+		elseif v == "Iron" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67532093"
+		elseif v == "Aluminum" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67531995"
+		elseif v == "Gold" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67532118"
+		elseif v == "Plastic (red)" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67531848"
+		elseif v == "Plastic (blue)" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67531924"
+		elseif v == "Plank" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67532015"
+		elseif v == "Log" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67532051"
+		elseif v == "Gravel" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67532206"
+		elseif v == "Cinder Block" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67532103"
+		elseif v == "Stone Wall" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67531804"
+		elseif v == "Concrete" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=67532059"
+		elseif v == "Water" then materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=81407474"
+		else materialToImageMap[v].Regular = "https://www.roblox.com/asset/?id=66887593" -- fill in the rest here!!
 		end
 	end
 
@@ -3727,7 +3727,7 @@ t.CreateTerrainMaterialSelector = function(size,position)
 end
 
 t.CreateLoadingFrame = function(name,size,position)
-	game:GetService("ContentProvider"):Preload("http://www.roblox.com/asset/?id=35238053")
+	game:GetService("ContentProvider"):Preload("https://www.roblox.com/asset/?id=35238053")
 
 	local loadingFrame = Instance.new("Frame")
 	loadingFrame.Name = "LoadingFrame"
@@ -3748,7 +3748,7 @@ t.CreateLoadingFrame = function(name,size,position)
 
 		local loadingGreenBar = Instance.new("ImageLabel")
 		loadingGreenBar.Name = "LoadingGreenBar"
-		loadingGreenBar.Image = "http://www.roblox.com/asset/?id=35238053"
+		loadingGreenBar.Image = "https://www.roblox.com/asset/?id=35238053"
 		loadingGreenBar.Position = UDim2.new(0,0,0,0)
 		loadingGreenBar.Size = UDim2.new(0,0,1,0)
 		loadingGreenBar.Visible = false
