@@ -1492,16 +1492,10 @@ end
 ---- Notifications VR -- 
 
 local function CreateNotificationsIcon3D(topBarInstance, panel, menubar)
---Awaiting commit of NotificationHub.lua
-	local VRHub = require(GuiRoot.Modules.VR.VRHub)
-	local thisModuleName = "Notifications"
-
-	local menuItem = CreateMenuItem3D(thisModuleName)
-	menuItem:SetHoverText("Notifications")
-
---[[	local NotificationHubModule = require(GuiRoot.Modules.VR.NotificationHub)
-
+	local NotificationHubModule = require(GuiRoot.Modules.VR.NotificationHub)
 	
+	local menuItem = CreateMenuItem3D(NotificationHubModule.ModuleName)
+	menuItem:SetHoverText("Notifications")
 
 	local icon = Util.Create "ImageLabel" {
 		Parent = menuItem:GetInstance(),
@@ -1555,17 +1549,20 @@ local function CreateNotificationsIcon3D(topBarInstance, panel, menubar)
 	NotificationHubModule.UnreadCountChanged = setCounter
 
 	function menuItem:OnClicked(wasActive)
-		menuItem:SetActive(not wasActive)
 		NotificationHubModule:SetVisible(not wasActive)
 	end
 
+	VRHub.ModuleOpened.Event:connect(function(moduleName)
+		if moduleName == NotificationHubModule.ModuleName then
+			menuItem:SetActive(true)
+		end
+	end)
 	VRHub.ModuleClosed.Event:connect(function(moduleName)
-		if moduleName == thisModuleName then
+		if moduleName == NotificationHubModule.ModuleName then
 			menuItem:SetActive(false)
 		end
 	end)
-	]]
-
+	
 	return menuItem
 end
 ------------------------
@@ -1802,8 +1799,7 @@ local function EnableVR()
 	LeftMenubar:RemoveItem(settingsIcon)
 	AddItemInOrder(Menubar3D, settingsIcon3D, ITEM_ORDER_3D)
 	AddItemInOrder(Menubar3D, recenterIcon3D, ITEM_ORDER_3D)
--- notifications still WIP, will be enabled when finished
---	AddItemInOrder(Menubar3D, notificationsIcon3D, ITEM_ORDER_3D)
+	AddItemInOrder(Menubar3D, notificationsIcon3D, ITEM_ORDER_3D)
 end
 
 local gameOptions = settings():FindFirstChild("Game Options")
