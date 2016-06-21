@@ -155,9 +155,9 @@ ControlModules.Touch.GameSettingsChangedCon = nil
 function ControlModules.Touch:RefreshControlStyle()
 	if ControlModules.Touch.Current then
 		ControlModules.Touch.Current:Disable()
-		setJumpModule(false)
-		TouchJumpModule:Disable()
 	end
+	setJumpModule(false)
+	TouchJumpModule:Disable()
 	ControlModules.Touch:Enable()
 end
 function ControlModules.Touch:DisconnectEvents()
