@@ -153,10 +153,11 @@ ControlModules.Touch.LocalPlayerChangedCon = nil
 ControlModules.Touch.GameSettingsChangedCon = nil
 
 function ControlModules.Touch:RefreshControlStyle()
-	ControlModules.Touch.Current:Disable()
+	if ControlModules.Touch.Current then
+		ControlModules.Touch.Current:Disable()
+	end
 	setJumpModule(false)
 	TouchJumpModule:Disable()
-	
 	ControlModules.Touch:Enable()
 end
 function ControlModules.Touch:DisconnectEvents()
@@ -183,22 +184,23 @@ function ControlModules.Touch:Enable()
 		
 		newModuleToEnable:Enable()
 		ControlModules.Touch.Current = newModuleToEnable
-
-		ControlModules.Touch:DisconnectEvents()
-		ControlModules.Touch.LocalPlayerChangedCon = LocalPlayer.Changed:connect(function(property)
-			if property == 'DevTouchMovementMode' then
-				ControlModules.Touch:RefreshControlStyle()
-			end
-		end)		
-		
-		ControlModules.Touch.GameSettingsChangedCon = GameSettings.Changed:connect(function(property)
-			if property == 'TouchMovementMode' then
-				ControlModules.Touch:RefreshControlStyle()
-			end
-		end)
-		
+				
 		if isJumpEnabled then TouchJumpModule:Enable() end
 	end
+	
+	-- This being within the above if statement was causing issues with ClickToMove, which isn't a module within this script.
+	ControlModules.Touch:DisconnectEvents()
+	ControlModules.Touch.LocalPlayerChangedCon = LocalPlayer.Changed:connect(function(property)
+		if property == 'DevTouchMovementMode' then
+			ControlModules.Touch:RefreshControlStyle()
+		end
+	end)
+	
+	ControlModules.Touch.GameSettingsChangedCon = GameSettings.Changed:connect(function(property)
+		if property == 'TouchMovementMode' then
+			ControlModules.Touch:RefreshControlStyle()
+		end
+	end)
 end
 function ControlModules.Touch:Disable()
 	ControlModules.Touch:DisconnectEvents()
