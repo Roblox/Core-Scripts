@@ -19,6 +19,7 @@ local PointsService = game:GetService('PointsService')
 local MarketplaceService = game:GetService('MarketplaceService')
 local TeleportService = game:GetService('TeleportService')
 local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
@@ -32,6 +33,9 @@ local allowDisableNotifications = getNotificationDisableSuccess and notification
 local getSendNotificationSuccess, sendNotificationActiveValue = pcall(function() return settings():GetFFlag("SetCoreSendNotifications") end)
 local allowSendNotifications = getSendNotificationSuccess and sendNotificationActiveValue
 
+local getNewNotificationPathSuccess, newNotificationPathValue = pcall(function() return settings():GetFFlag("UseNewNotificationPathLua") end)
+local newNotificationPath = getNewNotificationPathSuccess and newNotificationPathValue
+
 --[[ Script Variables ]]--
 local LocalPlayer = nil
 while not Players.LocalPlayer do
@@ -43,9 +47,12 @@ local NotificationQueue = {}
 local OverflowQueue = {}
 local FriendRequestBlacklist = {}
 local CurrentGraphicsQualityLevel = GameSettings.SavedQualityLevel.Value
-local BindableEvent_SendNotification = Instance.new('BindableFunction')
+local BindableEvent_SendNotification = Instance.new('BindableEvent')
 BindableEvent_SendNotification.Name = "SendNotification"
-BindableEvent_SendNotification.Parent = RbxGui
+BindableEvent_SendNotification.Parent = RobloxGui
+local BindableEvent_SendNotificationInfo = Instance.new('BindableEvent')
+BindableEvent_SendNotificationInfo.Name = "SendNotificationInfo"
+BindableEvent_SendNotificationInfo.Parent = RobloxGui
 local isPaused = false
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
@@ -97,9 +104,9 @@ end
 local NotificationFrame = createFrame("NotificationFrame", UDim2.new(0, 200, 0.42, 0), UDim2.new(1, -204, 0.50, 0), 1)
 NotificationFrame.Parent = RbxGui
 
-local DefaultNotifcation = createFrame("Notifcation", UDim2.new(1, 0, 0, NOTIFICATION_Y_OFFSET), UDim2.new(0, 0, 0, 0), BG_TRANSPARENCY)
-DefaultNotifcation.BackgroundColor3 = Color3.new(0, 0, 0)
-DefaultNotifcation.BorderSizePixel = 0
+local DefaultNotification = createFrame("Notification", UDim2.new(1, 0, 0, NOTIFICATION_Y_OFFSET), UDim2.new(0, 0, 0, 0), BG_TRANSPARENCY)
+DefaultNotification.BackgroundColor3 = Color3.new(0, 0, 0)
+DefaultNotification.BorderSizePixel = 0
 
 local NotificationTitle = Instance.new('TextLabel')
 NotificationTitle.Name = "NotificationTitle"
@@ -175,11 +182,17 @@ PopupText.Text = "This is a popup"
 PopupText.Parent = PopupFrame
 
 --[[ Helper Functions ]]--
-local insertNotifcation = nil
+local insertNotification = nil
 local removeNotification = nil
+
+local function getFriendImage(playerId, size)
+	size = size or 48
+	return ("http://www.roblox.com/thumbs/avatar.ashx?userId=%d&x=%d&y=%d"):format(playerId, size, size)
+end
+
 --
 local function createNotification(title, text, image)
-	local notificationFrame = DefaultNotifcation:Clone()
+	local notificationFrame = DefaultNotification:Clone()
 	notificationFrame.Position = UDim2.new(1, 4, 1, -NOTIFICATION_Y_OFFSET - 4)
 	--
 	local notificationTitle = NotificationTitle:Clone()
@@ -240,7 +253,7 @@ local function updateNotifications()
 end
 
 local lastTimeInserted = 0
-insertNotifcation = function(notification)
+insertNotification = function(notification)
 	spawn(function() 
 		while isPaused do wait() end
 		notification.IsActive = true
@@ -308,9 +321,10 @@ removeNotification = function(notification)
 		end)
 	end
 	if #OverflowQueue > 0 then
-		local nextNofication = OverflowQueue[1]
+		local nextNotification = OverflowQueue[1]
 		table.remove(OverflowQueue, 1)
-		insertNotifcation(nextNofication)
+
+		insertNotification(nextNotification)
 
 		if (#OverflowQueue > 0) then
 			NotificationQueue[1].Duration = 0
@@ -320,7 +334,36 @@ removeNotification = function(notification)
 	end
 end
 
-local function sendNotifcation(title, text, image, duration, callback, button1Text, button2Text)
+local function sendNotificationInfo(notificationInfo)
+	BindableEvent_SendNotificationInfo:Fire(notificationInfo)
+end
+local function sendNotification(title, text, image, duration, callback, button1Text, button2Text, groupName)
+	--TODO: remove this flag check when stable
+	if newNotificationPath then
+		--translate to the new method of sending a notification
+		local notificationInfo = {
+			GroupName = groupName,
+			Title = title,
+			Text = text,
+			Image = image,
+			Duration = duration,
+			Callback = callback,
+			Button1Text = button1Text,
+			Button2Text = button2Text
+		}
+		sendNotificationInfo(notificationInfo)
+	else
+		BindableEvent_SendNotification:Fire(title, text, image, duration, callback, button1Text, button2Text, groupName)
+	end
+
+	
+end
+local function onSendNotification(title, text, image, duration, callback, button1Text, button2Text)
+	if UserInputService.VREnabled then
+		--If VR is enabled, notifications will be handled by Modules.VR.NotificationHub
+		return
+	end
+
 	local notification = {}
 	local notificationFrame = createNotification(title, text, image)
 	--
@@ -371,11 +414,23 @@ local function sendNotifcation(title, text, image, duration, callback, button1Te
 	
 	notification.Frame = notificationFrame
 	notification.Duration = duration
-	insertNotifcation(notification)
+	insertNotification(notification)
 end
-BindableEvent_SendNotification.OnInvoke = function(title, text, image, duration, callback)
-	sendNotifcation(title, text, image, duration, callback)
+BindableEvent_SendNotification.Event:connect(onSendNotification)
+
+local function onSendNotificationInfo(notificationInfo)
+	if UserInputService.VREnabled then
+		--If VR is enabled, notifications will be handled by Modules.VR.NotificationHub
+		return
+	end
+
+	--If we hit this, it means that the newNotificationPath flag is on and still exists.
+	--When the flag is removed, we should also merge its contents into this one.
+	--Right now, calling sendNotification(...) will essentially translate into a sendNotificationInfo(table), which will then be translated back
+	--into a parameter list here. One option in the future is to update the code that produces the notification in non-VR to use notificationInfo table.
+	onSendNotification(notificationInfo.Title, notificationInfo.Text, notificationInfo.Image, notificationInfo.Duration, notificationInfo.Callback, notificationInfo.Button1Text, notificationInfo.Button2Text)
 end
+BindableEvent_SendNotificationInfo.Event:connect(onSendNotificationInfo)
 
 -- New follower notification
 spawn(function()
@@ -383,44 +438,81 @@ spawn(function()
 	local RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower')
 	--
 	RemoteEvent_NewFollower.OnClientEvent:connect(function(followerRbxPlayer)
-		sendNotifcation("New Follower", followerRbxPlayer.Name.." is now following you!",
-			FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
+		if newNotificationPath then
+			local message = ("%s is now following you"):format(followerRbxPlayer.Name)
+			local image = getFriendImage(followerRbxPlayer.userId)
+			sendNotificationInfo {
+				GroupName = "Friends",
+				Title = "New Follower",
+				Text = message,
+				DetailText = message,
+				Image = image,
+				Duration = 5
+			}
+		else
+			sendNotification("New Follower", followerRbxPlayer.Name.." is now following you!",
+				FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
+		end
 	end)
 end)
 
 local function sendFriendNotification(fromPlayer)
-	local notification = {}
-	local notificationFrame = createNotification(fromPlayer.Name, "Sent you a friend request!",
-		FRIEND_IMAGE..tostring(fromPlayer.userId).."&x=48&y=48")
-	notificationFrame.Position = UDim2.new(1, 4, 1, -(NOTIFICATION_Y_OFFSET + 2) * 1.5 - 4)
-	--
-	local acceptButton = createTextButton("AcceptButton", "Accept", UDim2.new(0, 0, 1, 2))
-	acceptButton.Parent = notificationFrame
+	--TODO: remove this flag check when stable
+	if newNotificationPath then
+		local acceptText = "Accept"
+		local declineText = "Decline"
+		sendNotificationInfo {
+			GroupName = "Friends",
+			Title = fromPlayer.Name,
+			Text = "Sent you a friend request!",
+			DetailText = fromPlayer.Name,
+			Image = getFriendImage(fromPlayer.userId),
 
-	local declineButton = createTextButton("DeclineButton", "Decline", UDim2.new(0.5, 2, 1, 2))
-	declineButton.Parent = notificationFrame
+			Callback = function(buttonChosen)
+				if buttonChosen == acceptText then
+					LocalPlayer:RequestFriendship(fromPlayer)
+				else
+					LocalPlayer:RevokeFriendship(fromPlayer)
+					FriendRequestBlacklist[fromPlayer] = true
+				end
+			end,
+			Button1Text = acceptText,
+			Button2Text = declineText
+		}
+	else
+		local notification = {}
+		local notificationFrame = createNotification(fromPlayer.Name, "Sent you a friend request!",
+			FRIEND_IMAGE..tostring(fromPlayer.userId).."&x=48&y=48")
+		notificationFrame.Position = UDim2.new(1, 4, 1, -(NOTIFICATION_Y_OFFSET + 2) * 1.5 - 4)
+		--
+		local acceptButton = createTextButton("AcceptButton", "Accept", UDim2.new(0, 0, 1, 2))
+		acceptButton.Parent = notificationFrame
 
-	acceptButton.MouseButton1Click:connect(function()
-		if not notification.IsActive then return end
-		if notification then
-			removeNotification(notification)
-		end
-		LocalPlayer:RequestFriendship(fromPlayer)
-	end)
+		local declineButton = createTextButton("DeclineButton", "Decline", UDim2.new(0.5, 2, 1, 2))
+		declineButton.Parent = notificationFrame
 
-	declineButton.MouseButton1Click:connect(function()
-		if not notification.IsActive then return end
-		if notification then
-			removeNotification(notification)
-		end
-		LocalPlayer:RevokeFriendship(fromPlayer)
-		FriendRequestBlacklist[fromPlayer] = true
-	end)
+		acceptButton.MouseButton1Click:connect(function()
+			if not notification.IsActive then return end
+			if notification then
+				removeNotification(notification)
+			end
+			LocalPlayer:RequestFriendship(fromPlayer)
+		end)
 
-	notification.Frame = notificationFrame
-	notification.Duration = 8
-	notification.IsFriend = true
-	insertNotifcation(notification)
+		declineButton.MouseButton1Click:connect(function()
+			if not notification.IsActive then return end
+			if notification then
+				removeNotification(notification)
+			end
+			LocalPlayer:RevokeFriendship(fromPlayer)
+			FriendRequestBlacklist[fromPlayer] = true
+		end)
+
+		notification.Frame = notificationFrame
+		notification.Duration = 8
+		notification.IsFriend = true
+		insertNotification(notification)
+	end
 end
 
 --[[ Friend Notifications ]]--
@@ -429,29 +521,83 @@ local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 	--
 	if fromPlayer == LocalPlayer then
 		if event == Enum.FriendRequestEvent.Accept then
-			sendNotifcation("New Friend", "You are now friends with "..toPlayer.Name.."!",
-				FRIEND_IMAGE..tostring(toPlayer.userId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil)
+			if newNotificationPath then
+				sendNotificationInfo {
+					GroupName = "Friends",
+					Title = "New Friend",
+					Text = toPlayer.Name,
+					DetailText = "You are now friends with " .. toPlayer.Name .. "!",
+					
+
+					Image = getFriendImage(toPlayer.userId),
+					Duration = DEFAULT_NOTIFICATION_DURATION
+				}
+			else
+				sendNotification("New Friend", "You are now friends with "..toPlayer.Name.."!",
+					FRIEND_IMAGE..tostring(toPlayer.userId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "Friends")
+			end
 		end
 	elseif toPlayer == LocalPlayer then
 		if event == Enum.FriendRequestEvent.Issue then
 			if FriendRequestBlacklist[fromPlayer] then return end
 			sendFriendNotification(fromPlayer)
 		elseif event == Enum.FriendRequestEvent.Accept then
-			sendNotifcation("New Friend", "You are now friends with "..fromPlayer.Name.."!", 
-				FRIEND_IMAGE..tostring(fromPlayer.userId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil)
+			if newNotificationPath then
+				sendNotificationInfo {
+					GroupName = "Friends",
+					Title = "New Friend",
+					Text = fromPlayer.Name,
+					DetailText = "You are now friends with " .. fromPlayer.Name .. "!",
+
+					Image = getFriendImage(fromPlayer.userId),
+					Duration = DEFAULT_NOTIFICATION_DURATION
+				}
+			else
+				sendNotification("New Friend", "You are now friends with "..fromPlayer.Name.."!", 
+					FRIEND_IMAGE..tostring(fromPlayer.userId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "Friends")
+			end
 		end
 	end
 end
 
 --[[ Player Points Notifications ]]--
 local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
-	if pointsNotificationsActive and userId == LocalPlayer.userId then
-		if pointsAwarded == 1 then
-			sendNotifcation("Point Awarded", "You received "..tostring(pointsAwarded).." point!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
-		elseif pointsAwarded > 0 then
-			sendNotifcation("Points Awarded", "You received "..tostring(pointsAwarded).." points!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
-		elseif pointsAwarded < 0 then
-			sendNotifcation("Points Lost", "You lost "..tostring(-pointsAwarded).." points!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
+	if newNotificationPath then
+		if pointsNotificationsActive and userId == LocalPlayer.userId then
+			local title, text, detailText
+			if pointsAwarded == 1 then
+				title = "Point Awarded"
+				text = "You received 1 point!"
+			elseif pointsAwarded > 0 then
+				title = "Points Awarded"
+				text = ("You received %d points!"):format(pointsAwarded)
+			elseif pointsAwarded < 0 then
+				title = "Points Lost"
+				text = ("You lost %d points!"):format(math.abs(pointsAwarded))
+			else
+				--don't notify for 0 points, shouldn't even happen
+				return
+			end
+			detailText = text
+
+			sendNotificationInfo {
+				GroupName = "PlayerPoints",
+				Title = title,
+				Text = text,
+				DetailText = detailText,
+				Image = PLAYER_POINTS_IMG,
+				Duration = DEFAULT_NOTIFICATION_DURATION
+			}
+		end
+	else
+		if pointsNotificationsActive and userId == LocalPlayer.userId then
+			if pointsAwarded == 1 then
+				sendNotification("Point Awarded", "You received "..tostring(pointsAwarded).." point!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "PlayerPoints")
+			elseif pointsAwarded > 0 then
+				sendNotification("Points Awarded", "You received "..tostring(pointsAwarded).." points!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "PlayerPoints")
+			elseif pointsAwarded < 0 then
+				sendNotification("Points Lost", "You lost "..tostring(-pointsAwarded).." points!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "PlayerPoints")
+			end
 		end
 	end
 end
@@ -459,7 +605,18 @@ end
 --[[ Badge Notification ]]--
 local function onBadgeAwarded(message, userId, badgeId)
 	if badgesNotificationsActive and userId == LocalPlayer.userId then
-		sendNotifcation("Badge Awarded", message, BADGE_IMG, DEFAULT_NOTIFICATION_DURATION, nil)
+		if newNotificationPath then
+			sendNotificationInfo {
+				GroupName = "BadgeAwards",
+				Title = "Badge Awarded",
+				Text = message,
+				DetailText = message,
+				Image = BADGE_IMG,
+				Duration = DEFAULT_NOTIFICATION_DURATION
+			}				
+		else
+			sendNotification("Badge Awarded", message, BADGE_IMG, DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "BadgeAwards")
+		end
 	end
 end
 
@@ -474,10 +631,19 @@ function onGameSettingsChanged(property, amount)
 		end
 		-- value of 0 is automatic, we do not want to send a notification in that case
 		if level > 0 and level ~= CurrentGraphicsQualityLevel and GameSettings.SavedQualityLevel ~= Enum.SavedQualitySetting.Automatic then
-			if level > CurrentGraphicsQualityLevel then
-				sendNotifcation("Graphics Quality", "Increased to ("..tostring(level)..")", "", 2, nil)
+			local action = (level > CurrentGraphicsQualityLevel) and "Increased" or "Decreased"
+			local message = ("%s to (%d)"):format(action, level)
+			if newNotificationPath then
+				sendNotificationInfo {
+					GroupName = "Graphics",
+					Title = "Graphics Quality",
+					Text = message,
+					DetailText = message,
+					Image = "",
+					Duration = 2
+				}
 			else
-				sendNotifcation("Graphics Quality", "Decreased to ("..tostring(level)..")", "", 2, nil)
+				sendNotification("Graphics Quality", message, "", 2, nil)
 			end
 			CurrentGraphicsQualityLevel = level
 		end
@@ -568,7 +734,20 @@ local function createDeveloperNotification(notificationTable)
 			local success, bindable = pcall(function() return (notificationTable.Callback:IsA("BindableFunction") and notificationTable.Callback or nil) end)
 			local button1Text = (type(notificationTable.Button1) == "string" and notificationTable.Button1 or "")
 			local button2Text = (type(notificationTable.Button2) == "string" and notificationTable.Button2 or "")
-			sendNotifcation(notificationTable.Title, notificationTable.Text, iconImage, duration, bindable, button1Text, button2Text)
+			if newNotificationPath then
+				sendNotificationInfo {
+					GroupName = "Developer",
+					Title = notificationTable.Title,
+					Text = notificationTable.Text,
+					Image = iconImage,
+					Duration = duration,
+					Callback = bindable,
+					Button1Text = button1Text,
+					Button2Text = button2Text
+				}
+			else
+				sendNotification(notificationTable.Title, notificationTable.Text, iconImage, duration, bindable, button1Text, button2Text, "Developer")
+			end
 		end
 	end 
 end

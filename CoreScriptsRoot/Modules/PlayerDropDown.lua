@@ -37,9 +37,9 @@ local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 local reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
 
 --[[ Bindables ]]--
-local BinbableFunction_SendNotification = nil
+local BindableEvent_SendNotification = nil
 spawn(function()
-	BinbableFunction_SendNotification = RobloxGui:WaitForChild("SendNotification")
+	BindableEvent_SendNotification = RobloxGui:WaitForChild("SendNotification")
 end)
 
 --[[ Remotes ]]--
@@ -117,8 +117,8 @@ end
 
 --[[ Follower Notifications ]]--
 local function sendNotification(title, text, image, duration, callback)
-	if BinbableFunction_SendNotification then
-		BinbableFunction_SendNotification:Invoke(title, text, image, duration, callback)
+	if BindableEvent_SendNotification then
+		BindableEvent_SendNotification:Fire(title, text, image, duration, callback)
 	end
 end
 

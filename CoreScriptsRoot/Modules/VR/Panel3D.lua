@@ -522,13 +522,12 @@ function Panel:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay, dt)
 	self:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay, dt)
 	if self.isVisible then
 		self:EvaluatePositioning(cameraCF, cameraRenderCF, userHeadCF)
-		self:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
-
-		self:EvaluateTransparency(cameraCF, cameraRenderCF)
-
 		for i, v in pairs(self.subpanels) do
 			v:Update()
 		end
+		self:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
+
+		self:EvaluateTransparency(cameraCF, cameraRenderCF)
 	end
 end
 --End of Panel update methods
@@ -873,6 +872,13 @@ function Subpanel:Update()
 	end
 end
 
+function Subpanel:GetPixelScale()
+	return self.panel:GetPixelScale()
+end
+function Panel:GetPixelScale()
+	return self.pixelScale
+end
+
 function Panel:AddSubpanel(guiElement)
 	local subpanel = Subpanel.new(self, guiElement)
 	self.subpanels[guiElement] = subpanel
@@ -1008,7 +1014,8 @@ local function onRenderStep()
 		cursor.Parent = currentCursorParent
 
 		local x, y = currentCursorPos.X, currentCursorPos.Y
-		cursor.Size = UDim2.new(0, 8 * currentClosest.pixelScale, 0, 8 * currentClosest.pixelScale)
+		local pixelScale = currentClosest:GetPixelScale()
+		cursor.Size = UDim2.new(0, 8 * pixelScale, 0, 8 * pixelScale)
 		cursor.Position = UDim2.new(0, x - cursor.AbsoluteSize.x * 0.5, 0, y - cursor.AbsoluteSize.y * 0.5)
 	else
 		cursor.Parent = nil
