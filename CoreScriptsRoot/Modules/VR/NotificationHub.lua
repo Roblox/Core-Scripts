@@ -4,6 +4,8 @@ local Util = require(RobloxGui.Modules.Settings.Utility)
 local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
 
+local PANEL_OFFSET_CFRAME = CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
+
 local NO_TRANSITION_ANIMATIONS = false
 local ANIMATE_OUT_DISTANCE = -100
 local ANIMATE_OUT_DURATION = 0.25
@@ -21,9 +23,19 @@ local NOTIFICATION_HEIGHT_OFFSET = 80
 local NOTIFICATION_PADDING_Y = 20
 local NOTIFICATION_PADDING_X_SCALE = (1 - NOTIFICATION_WIDTH_SCALE) / 2
 local NOTIFICATION_DEPTH_OFFSET = 0.25
+local NOTIFICATION_BG_COLOR = Color3.new(0.2, 0.2, 0.2)
+local NOTIFICATION_BG_TRANSPARENCY = 0.1
 local MAX_NOTIFICATIONS_SHOWN = 3
 local MAX_DETAILS_SHOWN = 2
 local DETAILS_PADDING = 20
+
+local BUTTON_1_POS = 0.07
+local BUTTON_2_POS = 0.511
+local BUTTON_SINGLE_SIZE = 0.86
+local BUTTON_DOUBLE_SIZE = 0.415
+
+local BUTTON_Y_POS = 0.55
+local BUTTON_Y_SIZE = 0.29
 
 local BUTTON_NORMAL_IMG = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
 local BUTTON_SELECTED_IMG = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButtonSelected.png"
@@ -367,12 +379,13 @@ do
 			self:SwitchTo()
 		end
 
+		if #self.notifications ~= 0 and notification == self.notifications[#self.notifications] then
+			layoutNotificationsGroups()
+			return --already on top, no point
+		end
+
 		for i, v in ipairs(self.notifications) do
 			if v == notification then
-				if i == #self.notifications then
-					layoutNotificationsGroups()
-					return --already on top, no point
-				end
 				--take it out
 				table.remove(self.notifications, i)
 				break
@@ -409,10 +422,10 @@ do
 	end
 end
 
-NotificationGroup.new("Friends", 		"Friends",	1)
-NotificationGroup.new("BadgeAwards", 	"Badges", 	2)
-NotificationGroup.new("PlayerPoints",	"Points", 	3)
-NotificationGroup.new("Developer", 		"Other", 	4)
+NotificationGroup.new("Friends",        "Friends",  1)
+NotificationGroup.new("BadgeAwards",    "Badges",   2)
+NotificationGroup.new("PlayerPoints",   "Points",   3)
+NotificationGroup.new("Developer",      "Other",    4)
 table.sort(notificationsGroupsList, groupSort)
 
 local function doCallback(callback, ...)
@@ -458,8 +471,8 @@ do
 
 			BackgroundTransparency = 1,
 			Image = "rbxasset://textures/ui/vr/rectBackgroundWhite.png",
-			ImageColor3 = Color3.new(0.2, 0.2, 0.2), --constant me
-			ImageTransparency = 0.1, --constant me
+			ImageColor3 = NOTIFICATION_BG_COLOR,
+			ImageTransparency = NOTIFICATION_BG_TRANSPARENCY,
 
 			ScaleType = Enum.ScaleType.Slice,
 			SliceCenter = Rect.new(10, 10, 10, 10)
@@ -486,7 +499,7 @@ do
 
 		local text = notificationInfo.Text
 		if notificationInfo.Title and notificationInfo.Text then
-			text = notificationInfo.Title .. "\n" .. notificationInfo.Text
+			text = ("%s\n%s"):format(notificationInfo.Title, notificationInfo.Text)
 		end
 		self.text = Util:Create "TextLabel" {
 			Parent = self.frame,
@@ -565,8 +578,8 @@ do
 		local function createButton(xPosScale, xSizeScale, text)
 			local button, text = Util:Create "ImageButton" {
 				Parent = self.detailsFrame,
-				Position = UDim2.new(xPosScale, 0, 0.55, 0),
-				Size = UDim2.new(xSizeScale, 0, 0.29, 0),
+				Position = UDim2.new(xPosScale, 0, BUTTON_Y_POS, 0),
+				Size = UDim2.new(xSizeScale, 0, BUTTON_Y_SIZE, 0),
 
 				BackgroundTransparency = 1,
 
@@ -598,8 +611,8 @@ do
 		end
 
 		if notificationInfo.Button1Text and notificationInfo.Button2Text then
-			self.detailsButton1, self.detailsButton1Text = createButton(0.07, 0.415, notificationInfo.Button1Text)
-			self.detailsButton2, self.detailsButton2Text = createButton(0.511, 0.415, notificationInfo.Button2Text)
+			self.detailsButton1, self.detailsButton1Text = createButton(BUTTON_1_POS, BUTTON_DOUBLE_SIZE, notificationInfo.Button1Text)
+			self.detailsButton2, self.detailsButton2Text = createButton(BUTTON_2_POS, BUTTON_DOUBLE_SIZE, notificationInfo.Button2Text)
 
 			self.detailsButton1.MouseButton1Click:connect(function() 
 				doCallback(notificationInfo.Callback, notificationInfo.Button1Text)
@@ -611,7 +624,7 @@ do
 			end)
 		elseif not notificationInfo.button2Text then
 			local text = notificationInfo.Button1Text or "Dismiss"
-			self.detailsButton1, self.detailsButton1Text = createButton(0.07, 0.86, text)
+			self.detailsButton1, self.detailsButton1Text = createButton(BUTTON_1_POS, BUTTON_SINGLE_SIZE, text)
 			self.detailsButton1.MouseButton1Click:connect(function() 
 				doCallback(notificationInfo.Callback, notificationInfo.Button1Text)
 				self:Dismiss() 
@@ -679,7 +692,7 @@ do
 			unreadCount = 0
 			NotificationHubModule.UnreadCountChanged(unreadCount)
 
-			local hubSpace = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
+			local hubSpace = topbarPanel.localCF * PANEL_OFFSET_CFRAME
 
 			notificationsPanel.localCF = hubSpace * CFrame.new(leftOffset, 0, 0)
 			notificationsWindow.zeroCF = notificationsPanel.localCF
