@@ -707,7 +707,12 @@ local function setBuyMoreRobuxDialog(playerBalance)
 		ThirdPartyProductName, productCost = getRobuxProductToBuyItem(neededRobux)
 		--
 		if not ThirdPartyProductName then
-			descriptionText = "This item cost more ROBUX than you can purchase. Please visit www.roblox.com to purchase more ROBUX."
+			if isTenFootInterface then
+				-- don't direct them to roblox.com on consoles.
+				descriptionText = "This item cost more ROBUX than you have available. Please leave this game and go to the ROBUX screen to purchase more."
+			else
+				descriptionText = "This item cost more ROBUX than you can purchase. Please visit www.roblox.com to purchase more ROBUX."
+			end
 			purchaseState = PURCHASE_STATE.FAILED
 			setButtonsVisible(OkButton)
 		else
