@@ -278,7 +278,7 @@ do
 				local isAdmin = false
 				-- Many things can error is the IsInGroup check
 				pcall(function()
-					isAdmin = player:IsInGroup(1200769)
+					isAdmin = player:IsInGroup(1200769) or player:IsInGroup(2868472)
 				end)
 				adminCache[userId] = isAdmin
 			end
