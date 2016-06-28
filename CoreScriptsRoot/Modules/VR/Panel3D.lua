@@ -81,9 +81,16 @@ local panels = {}
 local floorRotation = CFrame.new()
 
 local currentCursorImage = nil
-local hideCursorContainer = Instance.new("Folder")
+local hideCursorContainer = Instance.new("Folder") 
+--If the cursor is not in this folder or a SurfaceGui, then it has
+--been destroyed and cannot be reused. It will need to be remade.
+--This can be tested for by checking if currentCursorImage.Parent is nil.
 local function getCursor()
+	--Check if the currentCursorImage is valid
 	if not currentCursorImage or not currentCursorImage.Parent then
+		--If not, create a new one because using the old one would
+		--cause an error; a destroyed Instance is invalidated and all
+		--properties are locked.
 		currentCursorImage = Util.Create "ImageLabel" {
 			Parent = hideCursorContainer,
 			Image = "rbxasset://textures/Cursors/Gamepad/Pointer.png",
