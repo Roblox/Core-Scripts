@@ -41,6 +41,9 @@ local defeatableTopbar = (defeatableTopbarSuccess and defeatableTopbarFlagValue 
 local vr3dGuisSuccess, vr3dGuisFlagValue = pcall(function() return settings():GetFFlag("RenderUserGuiIn3DSpace") end)
 local vr3dGuis = (vr3dGuisSuccess and vr3dGuisFlagValue == true)
 
+local getNewNotificationPathSuccess, newNotificationPathValue = pcall(function() return settings():GetFFlag("UseNewNotificationPathLua") end)
+local newNotificationPath = getNewNotificationPathSuccess and newNotificationPathValue
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -1799,7 +1802,9 @@ local function EnableVR()
 	LeftMenubar:RemoveItem(settingsIcon)
 	AddItemInOrder(Menubar3D, settingsIcon3D, ITEM_ORDER_3D)
 	AddItemInOrder(Menubar3D, recenterIcon3D, ITEM_ORDER_3D)
-	AddItemInOrder(Menubar3D, notificationsIcon3D, ITEM_ORDER_3D)
+	if newNotificationPath then
+		AddItemInOrder(Menubar3D, notificationsIcon3D, ITEM_ORDER_3D)
+	end
 end
 
 local gameOptions = settings():FindFirstChild("Game Options")
