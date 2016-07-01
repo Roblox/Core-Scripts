@@ -469,16 +469,15 @@ OnCoreGuiChanged(Enum.CoreGuiType.Backpack, StarterGui:GetCoreGuiEnabled(Enum.Co
 OnCoreGuiChanged(Enum.CoreGuiType.Health, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health))
 OnCoreGuiChanged(Enum.CoreGuiType.Health, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.All))
 
-local panelLocalCF = CFrame.new(0, -3.5, 5) * CFrame.Angles(math.rad(20), 0, 0)
+local panelLocalCF = CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 1.75, 0) * CFrame.Angles(math.rad(-5), 0, 0)
 
 function BackpackPanel:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 	--the backpack panel needs to go in front of the user when they look at it.
 	--if they aren't looking, we should be updating self.localCF
-	if self.transparency == 1 then
-		local headForwardCF = Panel3D.GetHeadLookXZ()
-		local panelOriginCF = CFrame.new(userHeadCF.p) * headForwardCF
-		self.localCF = panelOriginCF * panelLocalCF
-	end
+
+	local topbarPanel = Panel3D.Get("Topbar3D")
+	local panelOriginCF = topbarPanel.localCF or CFrame.new()
+	self.localCF = panelOriginCF * panelLocalCF
 end
 
 function BackpackPanel:OnUpdate()
@@ -515,5 +514,8 @@ end)
 VRHub.ModuleClosed.Event:connect(function(moduleName)
 	BackpackPanel:SetVisible(true)
 end)
+
+
+BackpackPanel:LinkTo("Topbar3D")
 
 return BackpackScript

@@ -4,6 +4,8 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
 
+local PANEL_OFFSET_CFRAME = CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 5, 0) * CFrame.Angles(math.rad(-15), 0, 0)
+
 local UserGuiModule = {}
 UserGuiModule.ModuleName = "UserGui"
 UserGuiModule.KeepVRTopbarOpen = false
@@ -28,8 +30,10 @@ end)
 function UserGuiModule:SetVisible(visible)
 	userGuiPanel:SetVisible(visible)
 	if visible then
-		local headLook = Panel3D.GetHeadLookXZ(true)
-		userGuiPanel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 5)
+		local topbarPanel = Panel3D.Get("Topbar3D")
+		local userGuiModuleCFrame = topbarPanel.localCF * PANEL_OFFSET_CFRAME
+
+		userGuiPanel.localCF = userGuiModuleCFrame
 		VRHub:FireModuleOpened(UserGuiModule.ModuleName)
 	else
 		VRHub:FireModuleClosed(UserGuiModule.ModuleName)
