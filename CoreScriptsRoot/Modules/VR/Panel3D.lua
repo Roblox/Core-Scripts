@@ -79,12 +79,28 @@ local lastClosest = nil
 local currentHeadScale = 1
 local panels = {}
 local floorRotation = CFrame.new()
-local cursor = Util.Create "ImageLabel" {
-	Image = "rbxasset://textures/Cursors/Gamepad/Pointer.png",
-	Size = UDim2.new(0, 8, 0, 8),
-	BackgroundTransparency = 1,
-	ZIndex = 10
-}
+
+local currentCursorImage = nil
+local hideCursorContainer = Instance.new("Folder") 
+--If the cursor is not in this folder or a SurfaceGui, then it has
+--been destroyed and cannot be reused. It will need to be remade.
+--This can be tested for by checking if currentCursorImage.Parent is nil.
+local function getCursor()
+	--Check if the currentCursorImage is valid
+	if not currentCursorImage or not currentCursorImage.Parent then
+		--If not, create a new one because using the old one would
+		--cause an error; a destroyed Instance is invalidated and all
+		--properties are locked.
+		currentCursorImage = Util.Create "ImageLabel" {
+			Parent = hideCursorContainer,
+			Image = "rbxasset://textures/Cursors/Gamepad/Pointer.png",
+			Size = UDim2.new(0, 8, 0, 8),
+			BackgroundTransparency = 1,
+			ZIndex = 10
+		}
+	end
+	return currentCursorImage
+end
 --End of Panel3D State variables
 
 
@@ -1008,6 +1024,7 @@ local function onRenderStep()
 		lastMouseBehavior = UserInputService.MouseBehavior
 	end
 
+	local cursor = getCursor()
 	if currentClosest then
 		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
@@ -1018,7 +1035,7 @@ local function onRenderStep()
 		cursor.Size = UDim2.new(0, 8 * pixelScale, 0, 8 * pixelScale)
 		cursor.Position = UDim2.new(0, x - cursor.AbsoluteSize.x * 0.5, 0, y - cursor.AbsoluteSize.y * 0.5)
 	else
-		cursor.Parent = nil
+		cursor.Parent = hideCursorContainer
 	end
 	lastClosest = currentClosest
 end
