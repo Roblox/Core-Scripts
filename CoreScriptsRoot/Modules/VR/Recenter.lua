@@ -14,14 +14,14 @@ VRHub:RegisterModule(RecenterModule)
 
 local countdownPanel = Panel3D.Get("RecenterCountdown")
 countdownPanel:SetType(Panel3D.Type.HorizontalFollow)
-countdownPanel:ResizeStuds(1, 1, 128)
+countdownPanel:ResizeStuds(5, 3, 128)
 countdownPanel:SetCanFade(false)
 
 local countdown = Util:Create "TextLabel" {
 	Parent = countdownPanel:GetGUI(),
 
-	Position = UDim2.new(0, 0, 0, 0),
-	Size = UDim2.new(1, 0, 1, 0),
+	Position = UDim2.new(0.5, -64, 0.5, -64),
+	Size = UDim2.new(0, 128, 0, 128),
 
 	BackgroundTransparency = 0.9,
 	BackgroundColor3 = Color3.new(0.2, 0.2, 0.2),
@@ -32,6 +32,16 @@ local countdown = Util:Create "TextLabel" {
 	Font = Enum.Font.SourceSansBold,
 
 	Visible = true
+}
+local recenterFrame = Util:Create "ImageLabel" {
+	Parent = countdownPanel:GetGUI(),
+
+	Position = UDim2.new(0, 0, 0, 0),
+	Size = UDim2.new(1, 0, 1, 0),
+
+	BackgroundTransparency = 1,
+
+	Image = "rbxasset://textures/ui/VR/recenterFrame.png"
 }
 
 countdownPanel:SetVisible(false)

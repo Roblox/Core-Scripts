@@ -335,6 +335,7 @@ removeNotification = function(notification)
 end
 
 local function sendNotificationInfo(notificationInfo)
+	notificationInfo.Duration = notificationInfo.Duration or DEFAULT_NOTIFICATION_DURATION
 	BindableEvent_SendNotificationInfo:Fire(notificationInfo)
 end
 local function sendNotification(title, text, image, duration, callback, button1Text, button2Text, groupName)
@@ -467,7 +468,7 @@ local function sendFriendNotification(fromPlayer)
 			Text = "Sent you a friend request!",
 			DetailText = fromPlayer.Name,
 			Image = getFriendImage(fromPlayer.userId),
-
+			Duration = 8,
 			Callback = function(buttonChosen)
 				if buttonChosen == acceptText then
 					LocalPlayer:RequestFriendship(fromPlayer)
