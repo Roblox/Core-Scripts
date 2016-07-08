@@ -268,7 +268,7 @@ local function getAdminIcon(player)
 	if ADMINS[userIdStr] then return nil end
 	--
 	local success, result = pcall(function()
-		return player:IsInGroup(1200769) or (player:IsInGroup(2868472) and player:GetRankInGroup(2868472) > 100)	-- yields
+		return player:IsInGroup(1200769) -- yields
 	end)
 	if not success then
 		print("PlayerListScript2: getAdminIcon() failed because", result)
