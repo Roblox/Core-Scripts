@@ -239,6 +239,10 @@ local function getKeyboardModule()
 end
 
 ControlModules.Keyboard = {}
+function ControlModules.Keyboard:RefreshControlStyle()
+	ControlModules.Keyboard:Disable()
+	ControlModules.Keyboard:Enable()
+end
 function ControlModules.Keyboard:Enable()
 	DevMovementMode = LocalPlayer.DevComputerMovementMode
 	IsUserChoice = DevMovementMode == Enum.DevComputerMovementMode.UserChoice
@@ -247,13 +251,35 @@ function ControlModules.Keyboard:Enable()
 	end
 		
 	local newModuleToEnable = getKeyboardModule()
-	if newModuleToEnable then	
-		if newModuleToEnable then
-			newModuleToEnable:Enable()
+	if newModuleToEnable then
+		newModuleToEnable:Enable()
+	end
+	
+	ControlModules.Keyboard:DisconnectEvents()
+	ControlModules.Keyboard.LocalPlayerChangedCon = LocalPlayer.Changed:connect(function(property)
+		if property == 'DevComputerMovementMode' then
+			ControlModules.Keyboard:RefreshControlStyle()
 		end
+	end)
+	
+	ControlModules.Keyboard.GameSettingsChangedCon = GameSettings.Changed:connect(function(property)
+		if property == 'ComputerMovementMode' then
+			ControlModules.Keyboard:RefreshControlStyle()
+		end
+	end)
+end
+function ControlModules.Keyboard:DisconnectEvents()
+	if ControlModules.Keyboard.LocalPlayerChangedCon then
+		ControlModules.Keyboard.LocalPlayerChangedCon:disconnect()
+		ControlModules.Keyboard.LocalPlayerChangedCon = nil
+	end
+	if ControlModules.Keyboard.GameSettingsChangedCon then
+		ControlModules.Keyboard.GameSettingsChangedCon:disconnect()
+		ControlModules.Keyboard.GameSettingsChangedCon = nil
 	end
 end
 function ControlModules.Keyboard:Disable()
+	ControlModules.Keyboard:DisconnectEvents()
 	local newModuleToDisable = getKeyboardModule()
 	if newModuleToDisable then
 		newModuleToDisable:Disable()
