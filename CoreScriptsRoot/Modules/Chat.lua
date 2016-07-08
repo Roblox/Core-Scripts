@@ -271,11 +271,14 @@ do
 	end
 
 	local function MakeIsInGroup(groupId, requiredRank)
+		assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
+		
 		local inGroupCache = {}
-		function Util.IsPlayerAdminAsync(player)
-			local userId = player and player.userId
-			if userId then
-				if inGroupCache[userId] == nil then
+		return function(player)
+			if player and player.userId then
+				local userId = player.userId
+
+				if inGroupCache[userId] then
 					local inGroup = false
 					-- Many things can error is the IsInGroup check
 					pcall(function()
@@ -285,6 +288,7 @@ do
 				end
 				return inGroupCache[userId]
 			end
+
 			return false
 		end
 	end
