@@ -302,7 +302,7 @@ local function MakeSlot(parent, index)
 		if hotbarSlot then
 			FullHotbarSlots = FullHotbarSlots + 1
 			-- If using a controller, determine whether or not we can enable BindCoreAction("RBXHotbarEquip", etc)
-			if GamepadEnabled then
+			if GamepadEnabled and WholeThingEnabled then
 				if FullHotbarSlots >= 1 and not gamepadActionsBound then
 					-- Player added first item to a hotbar slot, enable BindCoreAction
 					gamepadActionsBound = true
@@ -1068,9 +1068,11 @@ function gamepadConnected()
 	GuiService:AddSelectionParent("RBXBackpackSelection", MainFrame)
 
 	if FullHotbarSlots >= 1 then
-		if not gamepadActionsBound then
-			gamepadActionsBound = true
-			ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
+		if WholeThingEnabled then
+			if not gamepadActionsBound then
+				gamepadActionsBound = true
+				ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
+			end
 		end
 	end
 	
