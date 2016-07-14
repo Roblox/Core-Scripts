@@ -31,6 +31,8 @@ local HURT_OVERLAY_IMAGE = "https://www.roblox.com/asset/?id=34854607"
 
 local DEBOUNCE_TIME = 0.25
 
+local TOPBAR_LOCAL_CFRAME_3D = CFrame.new(0, -5, 5) * CFrame.Angles(math.rad(25), 0, 0)
+
 --[[ END OF CONSTANTS ]]
 
 --[[ FFLAG VALUES ]]
@@ -368,16 +370,10 @@ local function CreateMenuChangedNotifier()
 		end
 	end
 
-	spawn(function()
-		-- Spawn this because we don't want circular requires
-		local backpack3D = require(GuiRoot.Modules.BackpackScript3D)
-		backpack3D.ToolAddedEvent.Event:connect(function() this:PromptNotification() end)
-
-		Player.FriendStatusChanged:connect(function(fromPlayer, friendStatus)
-			if friendStatus == Enum.FriendStatus.FriendRequestReceived then
-				this:PromptNotification()
-			end
-		end)
+	Player.FriendStatusChanged:connect(function(fromPlayer, friendStatus)
+		if friendStatus == Enum.FriendStatus.FriendRequestReceived then
+			this:PromptNotification()
+		end
 	end)
 
 	local function findScreenGuiAncestor(object)
@@ -1768,14 +1764,14 @@ local function EnableVR()
 	local VRHub = require(GuiRoot.Modules.VR.VRHub)
 
 	TopbarPanel3D:SetType(Panel3D.Type.Fixed)
-	TopbarPanel3D:LinkTo("Backpack")
 	TopbarPanel3D:SetVisible(true)
 
-	local backpackPanel = Panel3D.Get("Backpack")
-	local panelLocalCF = CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, -1.625, 0) * CFrame.Angles(math.rad(5), 0, 0)
 	function TopbarPanel3D:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
-		local panelOriginCF = backpackPanel.localCF or CFrame.new()
-		self.localCF = panelOriginCF * panelLocalCF
+		if self.transparency == 1 then
+			local headForwardCF = Panel3D.GetHeadLookXZ()
+			local panelOriginCF = CFrame.new(userHeadCF.p) * headForwardCF
+			self.localCF = panelOriginCF * TOPBAR_LOCAL_CFRAME_3D
+		end
 	end
 
 	function TopbarPanel3D:OnUpdate()

@@ -315,7 +315,7 @@ function Panel:GetGUI()
 			Adornee = part,
 			Active = true,
 			ToolPunchThroughDistance = 1000,
-			CanvasSize = Vector2.new(0, 0),
+			CanvasSize = self.CanvasSize or Vector2.new(0, 0),
 			Enabled = self.isEnabled,
 			AlwaysOnTop = true
 		}

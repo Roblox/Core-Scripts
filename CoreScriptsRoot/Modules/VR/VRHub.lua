@@ -30,8 +30,10 @@ function VRHub:FireModuleOpened(moduleName)
 		error("Tried to open module that is not registered: " .. moduleName)
 	end
 
-	OpenModules[moduleName] = RegisteredModules[moduleName]
-	VRHub.ModuleOpened:Fire(moduleName)
+	if OpenModules[moduleName] ~= RegisteredModules[moduleName] then
+		OpenModules[moduleName] = RegisteredModules[moduleName]
+		VRHub.ModuleOpened:Fire(moduleName)
+	end
 end
 
 VRHub.ModuleClosed = Util:Create "BindableEvent" {
@@ -43,13 +45,15 @@ function VRHub:FireModuleClosed(moduleName)
 		error("Tried to close module that is not registered: " .. moduleName)
 	end
 
-	OpenModules[moduleName] = nil
-	VRHub.ModuleClosed:Fire(moduleName)
+	if OpenModules[moduleName] ~= nil then
+		OpenModules[moduleName] = nil
+		VRHub.ModuleClosed:Fire(moduleName)
+	end
 end
 
 function VRHub:KeepVRTopbarOpen()
-	for moduleName, module in pairs(OpenModules) do
-		if module.KeepVRTopbarOpen then
+	for moduleName, openModule in pairs(OpenModules) do
+		if openModule.KeepVRTopbarOpen then
 			return true
 		end
 	end
