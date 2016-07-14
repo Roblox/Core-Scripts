@@ -145,7 +145,7 @@ local function updatePanel()
 			BackgroundTransparency = 1,
 			Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png",
 			ScaleType = Enum.ScaleType.Slice,
-			SliceCenter = Rect.new(10, 10, 10, 10),
+			SliceCenter = Rect.new(9, 9, 11, 11),
 
 			ImageColor3 = currentDialog.color,
 		}
