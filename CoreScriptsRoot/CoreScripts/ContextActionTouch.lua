@@ -6,6 +6,7 @@
 -- Variables
 local contextActionService = game:GetService("ContextActionService")
 local userInputService = game:GetService("UserInputService")
+local playersService = game:GetService("Players")
 local isTouchDevice = userInputService.TouchEnabled
 local functionTable = {}
 local buttonVector = {}
@@ -32,9 +33,11 @@ local maxButtons = #buttonPositionTable
 game:GetService("ContentProvider"):Preload(ContextDownImage)
 game:GetService("ContentProvider"):Preload(ContextUpImage)
 
-repeat wait() until game:GetService("Players").LocalPlayer
-
-local localPlayer = game:GetService("Players").LocalPlayer
+local localPlayer = playersService.LocalPlayer
+while not localPlayer do
+	playersService.ChildAdded:wait()
+	localPlayer = playersService.LocalPlayer
+end
 
 function createContextActionGui()
 	if not buttonScreenGui and isTouchDevice then

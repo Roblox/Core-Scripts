@@ -22,8 +22,11 @@ local frameSelectedTransparency = .65
 
 ------------ Variables -------------------
 local PageInstance = nil
-repeat wait() until PlayersService.LocalPlayer
 local localPlayer = PlayersService.LocalPlayer
+while not localPlayer do
+	PlayersService.ChildAdded:wait()
+	localPlayer = PlayersService.LocalPlayer
+end
 
 ----------- CLASS DECLARATION --------------
 local function Initialize()
