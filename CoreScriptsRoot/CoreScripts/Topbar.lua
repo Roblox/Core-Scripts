@@ -70,7 +70,7 @@ local settingsActive = false
 local GameSettings = UserSettings().GameSettings
 local Player = PlayersService.LocalPlayer
 while Player == nil do
-	wait()
+	PlayersService.ChildAdded:wait()
 	Player = PlayersService.LocalPlayer
 end
 
