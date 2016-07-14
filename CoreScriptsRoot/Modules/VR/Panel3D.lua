@@ -273,6 +273,7 @@ function Panel:GetGUI()
 		local part = self:GetPart()
 		self.gui = Utility:Create "SurfaceGui" {
 			Parent = CoreGui,
+			Name = self.name,
 			Archivable = false,
 			Adornee = part,
 			Active = true,

@@ -10,18 +10,20 @@ local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 
 local DIALOG_BG_COLOR = Color3.new(0.2, 0.2, 0.2)
 local DIALOG_BG_TRANSPARENCY = 0.3
-
-local TITLE_COLOR = Color3.new(1, 1, 1)
-
 local DIALOG_TITLE_HEIGHT = 66
 local DIALOG_COLOR_HEIGHT = 8
 local DIALOG_TITLE_TEXT_SIZE = Enum.FontSize.Size36
-
 local DIALOG_CONTENT_PADDING = 48
+local TITLE_COLOR = Color3.new(1, 1, 1)
 
-local emptySelectionImage = Utility:Create "ImageLabel" { Image = "", BackgroundTransparency = 1, ImageTransparency = 1 }
+local PANEL_OFFSET_CF = CFrame.new(0, 0, -7) * CFrame.Angles(0, math.pi, 0)
 
-local PANEL_OFFSET_CF = CFrame.new(0, 0, -7)* CFrame.Angles(0, math.pi, 0)
+local emptySelectionImage = Utility:Create "ImageLabel" { 
+	Name = "EmptySelectionImage", 
+	Image = "", 
+	BackgroundTransparency = 1, 
+	ImageTransparency = 1 
+}
 
 local DialogPanel = Panel3D.Get("Dialog")
 DialogPanel:SetType(Panel3D.Type.Fixed)
@@ -29,6 +31,7 @@ DialogPanel.localCF = PANEL_OFFSET_CF
 DialogPanel:SetCanFade(true)
 local dialogContentFrame = Utility:Create "Frame" {
 	Parent = DialogPanel:GetGUI(),
+	Name = "DialogContent",
 	BackgroundTransparency = 1,
 	Position = UDim2.new(0, 0, 0, 0),
 	Size = UDim2.new(1, 0, 1, 0)
@@ -99,6 +102,7 @@ local function updatePanel()
 
 		local frame = Utility:Create "Frame" {
 			Parent = dialogContentFrame,
+			Name = "DialogFrame",
 			Position = UDim2.new(0, 0, 0, 0),
 			Size = UDim2.new(1, 0, 1, 0),
 
@@ -122,6 +126,7 @@ local function updatePanel()
 		}
 		local dialogTitle = Utility:Create "TextLabel" {
 			Parent = frame,
+			Name = "DialogTitle",
 			Position = UDim2.new(0, 0, 0, 0),
 			Size = UDim2.new(1, 0, 0, DIALOG_TITLE_HEIGHT),
 
@@ -133,6 +138,7 @@ local function updatePanel()
 		}
 		local dialogColor = Utility:Create "ImageLabel" {
 			Parent = frame,
+			Name = "DialogColorAccent",
 			Position = UDim2.new(0, -1, 0, -1 + DIALOG_TITLE_HEIGHT),
 			Size = UDim2.new(1, 2, 0, 2 + DIALOG_COLOR_HEIGHT),
 
@@ -146,6 +152,7 @@ local function updatePanel()
 
 		local content = Utility:Create "Frame" {
 			Parent = frame,
+			Name = "DialogContent",
 			Position = UDim2.new(0, DIALOG_CONTENT_PADDING, 0, DIALOG_TITLE_HEIGHT + DIALOG_COLOR_HEIGHT + DIALOG_CONTENT_PADDING),
 			Size = UDim2.new(1, -DIALOG_CONTENT_PADDING * 2, 1, -DIALOG_TITLE_HEIGHT - DIALOG_COLOR_HEIGHT - (DIALOG_CONTENT_PADDING * 2)),
 
