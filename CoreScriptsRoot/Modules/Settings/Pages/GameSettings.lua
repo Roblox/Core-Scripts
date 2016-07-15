@@ -738,6 +738,41 @@ local function Initialize()
 		setButtonRowRef(row)
 	end
 
+	local function createDeveloperConsoleOption()
+		-- makes button in settings menu to open dev console
+		local function makeDevConsoleOption()
+			local devConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
+			local function onOpenDevConsole()
+				if devConsoleModule then
+					devConsoleModule:ToggleVisibility()
+				end
+			end
+
+			local devConsoleButton, devConsoleText, setButtonRowRef = utility:MakeStyledButton("DevConsoleButton", "Open", UDim2.new(0, 300, 1, -20), onOpenDevConsole, this)
+			devConsoleText.Font = Enum.Font.SourceSans
+			devConsoleButton.Position = UDim2.new(1, -400, 0, 12)
+			local row = utility:AddNewRowObject(this, "Developer Console", devConsoleButton)
+			setButtonRowRef(row)
+		end
+
+		-- Only show option if we are place/group owner
+		if game.CreatorType == Enum.CreatorType.Group then
+			spawn(function()
+				-- spawn since GetRankInGroup is async
+				local success, result = pcall(function()
+					return LocalPlayer:GetRankInGroup(game.CreatorId) == 255
+				end)
+				if success and result == true then
+					makeDevConsoleOption()
+				else
+					print("DeveloperConsoleModule: GetRankInGroup failed because", result)
+				end
+			end)
+		elseif LocalPlayer.UserId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
+			makeDevConsoleOption()
+		end
+	end
+
 	createCameraModeOptions(not isTenFootInterface and 
 								(UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
 
@@ -753,6 +788,14 @@ local function Initialize()
 
 	if isTenFootInterface then
 		createOverscanOption()
+
+		-- enable dev console for xbox
+		local success, result = pcall(function()
+			return settings():GetFFlag("EnableDevConsoleOnXbox")
+		end)
+		if success and result == true then
+			createDeveloperConsoleOption()
+		end
 	end
 
 	------ TAB CUSTOMIZATION -------

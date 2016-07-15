@@ -11,7 +11,13 @@ local os_time = os.time
 
 local DEBUG = false
 
+local CoreGui = game:GetService('CoreGui')
+local RobloxGui = CoreGui:FindFirstChild('RobloxGui')
+local Modules = RobloxGui:FindFirstChild('Modules')
+
 local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService('GuiService')
+local isTenFootInterface = GuiService:IsTenFootInterface()
 
 -- Eye candy uses RenderStepped
 local EYECANDY_ENABLED = true
@@ -325,6 +331,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		Initialized = false;
 		Visible = false;
 		Tabs = {};
+		CurrentOpenedTab = nil;	-- save last tab opened to set SelectedCoreObject for TenFootInterfaces
 		VisibleChanged = visibleChanged; -- Created by :Initialize(); It's used to stop and disconnect things when the window is hidden
 	}
 	
@@ -337,12 +344,14 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	frame.AutoButtonColor = false
 	--frame.ClipsDescendants = true
 	frame.Visible = devConsole.Visible
+	frame.Selectable = not isTenFootInterface
 	devConsole.Frame = frame
 	devConsole:ResetFrameDimensions()
 	
 	-- The bar at the top that you can drag around
 	local handle = Primitives.Button(frame, 'Handle')
 	handle.Size = UDim2_new(1, -(Style.HandleHeight + Style.BorderSize), 0, Style.HandleHeight)
+	handle.Selectable = not isTenFootInterface
 	handle.Modal = true -- Unlocks mouse
 	handle.AutoButtonColor = false
 	
@@ -378,6 +387,8 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	do -- Create top right exit button
 		local exitButton, exitButtonImage = createCornerButton('Exit', 1, 0, 'https://www.roblox.com/asset/?id=261878266', 2/3)
 		exitButton.AutoButtonColor = false
+		exitButton.Visible = not isTenFootInterface
+		exitButton.Selectable = not isTenFootInterface
 		
 		local buttonEffectFunction = devConsole:CreateButtonEffectFunction(exitButton)
 		
@@ -393,14 +404,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		exitButton.MouseButton1Click:connect(function()
 			devConsole:SetVisible(false, true)
 		end)
-
-		local closeDevConsole = function(name, inputState, input)
-			ContextActionService:UnbindCoreAction("RBXDevConsoleCloseAction")
-			devConsole:SetVisible(false, true)
-		end
-
-		ContextActionService:BindCoreAction("RBXDevConsoleCloseAction", closeDevConsole, false, Enum.KeyCode.ButtonB)
-
 	end
 	
 	do -- Repositioning and Resizing
@@ -409,6 +412,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			local resizeButton, resizeButtonImage = createCornerButton('Resize', 1, 1, 'https://www.roblox.com/asset/?id=261880743', 1)
 			resizeButtonImage.Position = UDim2_new(0, 0, 0, 0)
 			resizeButtonImage.Size = UDim2_new(1, 0, 1, 0)
+			resizeButton.Selectable = not isTenFootInterface
 
 			local dragging = false
 			
@@ -1370,6 +1374,7 @@ do -- Script performance/Chart list
 		scrollingFrame.BorderSizePixel = 0
 		scrollingFrame.ZIndex = ZINDEX
 		scrollingFrame.ScrollBarThickness = 12
+		scrollingFrame.Selectable = false
 		this.ScrollingFrame = scrollingFrame
 		do
 			local y = 1 -- if we want to add a label above it later
@@ -1823,6 +1828,19 @@ do
 		textBox.TextYAlignment = 'Top'
 		textBox.FontSize = 'Size18'
 		textBox.TextWrapped = true
+
+		-- override SelectionImageObject to better fit
+		if isTenFootInterface then
+			local selectionImage = Instance.new('ImageLabel')
+			selectionImage.Size = UDim2.new(1, textBoxFrame.AbsoluteSize.x + 36, 0, Style.CommandLineHeight + 24)
+			selectionImage.Position = UDim2.new(0, -18, 0, -12)
+			selectionImage.Image = 'rbxasset://textures/ui/SelectionBox.png'
+			selectionImage.ScaleType = Enum.ScaleType.Slice
+			selectionImage.SliceCenter = Rect.new(21,21,41,41)
+			selectionImage.BackgroundTransparency = 1
+
+			textBox.SelectionImageObject = selectionImage
+		end
 		
 		do
 			local defaultSize = UDim2_new(1, 0, 0, Style.CommandLineHeight)
@@ -1913,7 +1931,11 @@ do
 				addInputtedText(text, false)
 				this.CommandInputted:fire(text)
 				textBox.Text = ""
-				textBox:CaptureFocus()
+
+				-- let's not spam the popup keyboard after text is entered
+				if not isTenFootInterface then
+					textBox:CaptureFocus()
+				end
 			else
 				backtrackPosition = 0
 				focusLostWithoutEnter = true
@@ -2198,6 +2220,7 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 			-- Set dimensions for folder effect
 			textLabel.Size = size1
 			textLabel.Position = position1
+			devConsole.CurrentOpenedTab = buttonFrame
 		else
 			tab.SavedScrollbarValue = devConsole.WindowScrollbar:GetValue() -- This doesn't save correctly
 
@@ -2929,4 +2952,61 @@ do
 	end
 end
 
-return DeveloperConsole
+--[[ Module Table ]]--
+-- We only create the dev console if we need it; user toggles visibility.
+
+local DevConsoleModuleTable = {}
+local myDeveloperConsole = nil
+
+-- Tenfoot Interface set up
+local function onDevConsoleVisibilityChanged(isVisible)
+	local blockMenuActionName = "blockMenuAction"
+	local closeDevConsoleActionName = "closeDevConsoleAction"
+	local selectionParentName = "devConsoleSelectionGroup"
+
+	local function closeDevConsole(actionName, inputState, inputObject)
+		if inputState == Enum.UserInputState.End then
+			myDeveloperConsole:SetVisible(false)
+		end
+	end
+
+	if isVisible then
+		-- block menu open input while dev console is open
+		ContextActionService:BindCoreAction(blockMenuActionName, function() end, false, Enum.KeyCode.ButtonStart)
+
+		local menuModule = require(Modules.Settings.SettingsHub)
+		menuModule:SetVisibility(false, true)
+		ContextActionService:BindCoreAction(closeDevConsoleActionName, closeDevConsole, false, Enum.KeyCode.ButtonB)
+
+		GuiService:AddSelectionParent(selectionParentName, myDeveloperConsole.Frame)
+		GuiService.SelectedCoreObject = myDeveloperConsole.CurrentOpenedTab
+	else
+		ContextActionService:UnbindCoreAction(closeDevConsoleActionName)
+		ContextActionService:UnbindCoreAction(blockMenuActionName)
+
+		GuiService:RemoveSelectionGroup(selectionParentName)
+		GuiService.SelectedCoreObject = nil
+	end
+end
+
+local function getDeveloperConsole()
+	if not myDeveloperConsole then
+		local permissions = DeveloperConsole.GetPermissions()
+		local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
+
+		myDeveloperConsole = DeveloperConsole.new(RobloxGui, permissions, messagesAndStats)
+
+		if isTenFootInterface then
+			myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
+		end
+	end
+
+	return myDeveloperConsole
+end
+
+function DevConsoleModuleTable:ToggleVisibility()
+	local devConsole = getDeveloperConsole()
+	devConsole:SetVisible(not devConsole.Visible)
+end
+
+return DevConsoleModuleTable

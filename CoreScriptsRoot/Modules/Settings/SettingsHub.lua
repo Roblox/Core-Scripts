@@ -33,9 +33,9 @@ local isSmallTouchScreen = utility:IsSmallTouchScreen()
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local platform = UserInputService:GetPlatform()
--- TODO: Change dev console script to parent this to somewhere other than an engine created gui
-local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
-local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
+
+local DeveloperConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
+
 local lastInputChangedCon = nil
 local chatWasVisible = false
 local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
@@ -502,8 +502,8 @@ local function CreateSettingsHub()
 
 	local function toggleDevConsole(actionName, inputState, inputObject)
 		if actionName == DEV_CONSOLE_ACTION_NAME then 	-- ContextActionService->F9
-			if inputState and inputState == Enum.UserInputState.Begin and ToggleDevConsoleBindableFunc then
-				ToggleDevConsoleBindableFunc:Invoke()
+			if inputState and inputState == Enum.UserInputState.Begin then
+				DeveloperConsoleModule:ToggleVisibility()
 			end
 		end
 	end
