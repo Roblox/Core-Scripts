@@ -281,7 +281,11 @@ do
 				if inGroupCache[userId] == nil then
 					local inGroup = false
 					pcall(function() -- Many things can error is the IsInGroup check
-						inGroup = (not requiredRank) and player:IsInGroup(groupId) or (player:GetRankInGroup(groupId) > requiredRank)
+						if requiredRank then
+							inGroup = player:GetRankInGroup(groupId) > requiredRank
+						else
+							inGroup = player:IsInGroup(groupId)
+						end
 					end)
 					inGroupCache[userId] = inGroup
 				end
