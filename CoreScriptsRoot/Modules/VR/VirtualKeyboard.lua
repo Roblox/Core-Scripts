@@ -273,6 +273,16 @@ local function PointInGuiObject(object, x, y)
 	return false
 end
 
+local function FindAncestorOfType(object, ancestorType)
+	if not object then return nil end
+
+	local parent = object.Parent
+	if parent and  parent:IsA(ancestorType) then
+		return parent
+	end
+
+	return FindAncestorOfType(parent, ancestorType)
+end
 
 local function ExtendedInstance(instance)
 	local this = {}
@@ -942,6 +952,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	local textfieldCursorPosition = 0
 
+	local openedEvent = Instance.new('BindableEvent')
 	local closedEvent = Instance.new('BindableEvent')
 	local opened = false
 
@@ -1000,6 +1011,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	local currentKeyset = nil
 
+	rawset(newKeyboard, "OpenedEvent",  openedEvent.Event)
 	rawset(newKeyboard, "ClosedEvent",  closedEvent.Event)
 
 	rawset(newKeyboard, "GetCurrentKeyset", function(self)
@@ -1057,8 +1069,21 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		end
 	end)
 
+	local ignoreFocusedLost = false
+
 	local textChangedConn = nil
+	local textBoxFocusLostConn = nil
 	local panelClosedConn = nil
+
+	local function disconnectKeyboardEvents()
+		if textChangedConn then textChangedConn:disconnect() end
+		textChangedConn = nil
+		if textBoxFocusLostConn then textBoxFocusLostConn:disconnect() end
+		textBoxFocusLostConn = nil
+		if panelClosedConn then panelClosedConn:disconnect() end
+		panelClosedConn = nil
+	end
+
 	rawset(newKeyboard, "Open", function(self, options)
 		if opened then return end
 		opened = true
@@ -1073,16 +1098,17 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 		local localCF = CFrame.new()
 
-		if textChangedConn then textChangedConn:disconnect() end
-		textChangedConn = nil	
+		disconnectKeyboardEvents()
 		if options.TextBox then
 			textChangedConn = options.TextBox.Changed:connect(function(prop)
 				if prop == 'Text' then
 					UpdateTextEntryFieldText(options.TextBox.Text)
 				end
 			end)
-			options.TextBox.FocusLost:connect(function(submitted)
-				self:Close(submitted)
+			textBoxFocusLostConn = options.TextBox.FocusLost:connect(function(submitted)
+				if not ignoreFocusedLost then
+					self:Close(submitted)
+				end
 			end)
 			if options.TextBox.ClearTextOnFocus then
 				setBufferText("")
@@ -1090,6 +1116,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 				UpdateTextEntryFieldText(options.TextBox.Text)
 			end
 
+			-- Find panel for 2d ui?
 			local textboxPanel = Panel3D.FindContainerOf(options.TextBox)
 			if textboxPanel then
 				panelClosedConn = Panel3D.OnPanelClosed.Event:connect(function(closedPanelName)
@@ -1109,6 +1136,9 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 					local headForwardCF = Panel3D.GetHeadLookXZ(true)
 					localCF = headForwardCF * CFrame.Angles(math.rad(22.5), 0, 0) * CFrame.new(0, -1, 5)
 				end
+			else -- no panel!
+				local headForwardCF = Panel3D.GetHeadLookXZ(true)
+				localCF = headForwardCF * CFrame.Angles(math.rad(22.5), 0, 0) * CFrame.new(0, -1, 5)
 			end
 		else
 			setBufferText("")
@@ -1136,7 +1166,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 				end
 			end,
 			false,
-			Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY)
+			Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonR2)
 
 		self.Parent = panel:GetGUI()
 
@@ -1149,6 +1179,8 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 		function panel:OnUpdate()
 		end
+
+		openedEvent:Fire()
 	end)
 
 	rawset(newKeyboard, "Close", function(self, submit)
@@ -1157,11 +1189,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		if not opened then return end
 		opened = false
 
-
-		if textChangedConn then textChangedConn:disconnect() end
-		textChangedConn = nil
-		if panelClosedConn then panelClosedConn:disconnect() end
-		panelClosedConn = nil
+		disconnectKeyboardEvents()
 
 		ContextActionService:UnbindCoreAction("VirtualKeyboardControllerInput")
 		-- Clean-up
@@ -1172,6 +1200,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		Panel3D.Get("Topbar3D"):SetVisible(true)
 		
 		self:SubmitText(submit, false)
+		closedEvent:Fire()
 	end)
 
 	rawset(newKeyboard, "SubmitText", function(self, submit, keepKeyboardOpen)
@@ -1180,9 +1209,18 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 			if submit then
 				keyboardTextbox.Text = getBufferText()
 			end
+			-- Only keep text boxes open for coreguis, such as chat
+			local reopenKeyboard = keepKeyboardOpen and keyboardTextbox and FindAncestorOfType(keyboardTextbox, "CoreGui")
+
+			if reopenKeyboard then
+				ignoreFocusedLost = true
+			end
+
 			keyboardTextbox:ReleaseFocus(submit)
-			if keepKeyboardOpen then
+
+			if reopenKeyboard then
 				keyboardTextbox:CaptureFocus()
+				ignoreFocusedLost = false
 			end
 		end
 	end)
@@ -1288,7 +1326,6 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	closeButton.MouseButton1Click:connect(function()
 		newKeyboard:Close(false)
-		closedEvent:Fire()
 	end)
 
 	voiceDoneButton.MouseButton1Click:connect(function()
@@ -1345,7 +1382,6 @@ end
 
 local VirtualKeyboardClass = {}
 
-
 function VirtualKeyboardClass:CreateVirtualKeyboardOptions(textbox)
 	local keyboardOptions = {}
 
@@ -1376,6 +1412,7 @@ function VirtualKeyboardClass:CloseVirtualKeyboard()
 	end
 end
 
+VirtualKeyboardClass.OpenedEvent = GetKeyboard().OpenedEvent
 VirtualKeyboardClass.ClosedEvent = GetKeyboard().ClosedEvent
 
 
@@ -1383,10 +1420,7 @@ if VirtualKeyboardPlatform and useVRKeyboard then
 	UserInputService.TextBoxFocused:connect(function(textbox)
 		VirtualKeyboardClass:ShowVirtualKeyboard(VirtualKeyboardClass:CreateVirtualKeyboardOptions(textbox))
 	end)
-
-	UserInputService.TextBoxFocusReleased:connect(function(textbox)
-		VirtualKeyboardClass:CloseVirtualKeyboard()
-	end)
+	-- Don't have to hook up to TextBoxFocusReleased because we are already listening to that in keyboard
 end
 
 
