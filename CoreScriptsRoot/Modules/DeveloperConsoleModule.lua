@@ -1809,10 +1809,13 @@ do
 		label.Size = UDim2_new(0, 12, 1, -1)
 		label.FontSize = 'Size14'
 		
+		local DEFAULT_COMMAND_BAR_TEXT = "Type command here"
+		
 		local textBox = Primitives.TextBox(textBoxFrame, 'TextBox')
 		--textBox.TextWrapped = true -- This needs to auto-resize
 		textBox.BackgroundTransparency = 1
-		textBox.Text = "Type command here"
+		textBox.Text = DEFAULT_COMMAND_BAR_TEXT
+		textBox.ClearTextOnFocus = false
 		local padding = 2
 		textBox.Size = UDim2_new(1, -(padding * 2) - 4 - 12, 0, 500)
 		textBox.Position = UDim2_new(0, 4 + 12 + padding, 0, 0)
@@ -1881,6 +1884,9 @@ do
 		local focusLostWithoutEnter = false
 		
 		textBox.Focused:connect(function()
+			if textBox.Text == DEFAULT_COMMAND_BAR_TEXT then
+				textBox.Text = ""
+			end
 			disconnector:fire()
 			backtrackPosition = 0
 			disconnector:connect(UserInputService.InputBegan:connect(function(input)
@@ -1912,6 +1918,9 @@ do
 				backtrackPosition = 0
 				focusLostWithoutEnter = true
 				addInputtedText(textBox.Text, true)
+				if textBox.Text == "" then
+					textBox.Text = DEFAULT_COMMAND_BAR_TEXT
+				end
 			end
 		end)
 
