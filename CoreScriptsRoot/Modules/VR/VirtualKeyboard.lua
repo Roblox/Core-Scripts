@@ -563,6 +563,10 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 	rawset(newKey, "OnDown", function(self)
 		pressed = true
 		update()
+		-- Fire the onclick when pressing down on the button;
+		-- pressing down and up on the same button is difficult
+		-- in VR because your head is constantly moving around
+		onClicked()
 	end)
 	rawset(newKey, "OnUp", function(self)
 		pressed = false
@@ -603,9 +607,11 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 	newKeyElement.MouseButton1Up:connect(function() newKey:OnUp() end)
 	newKeyElement.SelectionGained:connect(function() hoveringGuiElements[newKeyElement] = true newKey:OnEnter() end)
 	newKeyElement.SelectionLost:connect(function() hoveringGuiElements[newKeyElement] = nil newKey:OnLeave() end)
-	newKeyElement.MouseButton1Click:connect(function() onClicked() end)
+	-- For the time being, we will simulate onClick events in the OnDown() event
+	-- newKeyElement.MouseButton1Click:connect(function() onClicked() end)
 	if secondBackgroundImage then
-		secondBackgroundImage.MouseButton1Click:connect(onClicked)
+		-- For the time being, we will simulate onClick events in the OnDown() event
+		-- secondBackgroundImage.MouseButton1Click:connect(onClicked)
 		secondBackgroundImage.MouseButton1Down:connect(function() newKey:OnDown() end)
 		secondBackgroundImage.MouseButton1Up:connect(function() newKey:OnUp() end)
 		secondBackgroundImage.SelectionGained:connect(function()
