@@ -271,7 +271,7 @@ do
 	end
 
 	local function MakeIsInGroup(groupId, requiredRank)
-		assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
+		requiredRank = requiredRank or 1
 		
 		local inGroupCache = {}
 		return function(player)
@@ -281,7 +281,7 @@ do
 				if inGroupCache[userId] == nil then
 					local inGroup = false
 					pcall(function() -- Many things can error is the IsInGroup check
-						inGroup = player:IsInGroup(groupId) and (not requiredRank or (player:GetRankInGroup(groupId) > requiredRank))
+						inGroup = player:GetRankInGroup(groupId) > requiredRank
 					end)
 					inGroupCache[userId] = inGroup
 				end
