@@ -9,6 +9,7 @@ local GuiService = game:GetService('GuiService')
 local HttpService = game:GetService('HttpService')
 local ContextActionService = game:GetService('ContextActionService')
 local PlayersService = game:GetService('Players')
+local SoundService = game:GetService('SoundService')
 local TextService = game:GetService('TextService')
 
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
@@ -186,6 +187,40 @@ local MINIMAL_KEYBOARD_LAYOUT_SYMBOLS = HttpService:JSONDecode([==[
 ---------------------------------------- END KEYBOARD LAYOUT --------------------------------------
 
 
+local VOICE_STATUS_CODE_ENUM = {}
+do
+	local STATUS_CODES =
+	{
+	    'ASR_STATUS_OK',
+	    'ASR_STATUS_CANCELLED',
+	    'ASR_STATUS_UNKNOWN',
+	    'ASR_STATUS_INVALID_ARGUMENTS',
+	    'ASR_STATUS_DEADLINE_EXCEEDED',
+	    'ASR_STATUS_NOT_FOUND',
+	    'ASR_STATUS_ALREADY_EXISTS',
+	    'ASR_STATUS_PERMISSION_DENIED',
+	    'ASR_STATUS_UNAUTHENTICATED',
+	    'ASR_STATUS_RESOURCE_EXHAUSTED',
+	    'ASR_STATUS_FAILED_PRECONDITION',
+	    'ASR_STATUS_ABORTED',
+	    'ASR_STATUS_OUT_OF_RANGE',
+	    'ASR_STATUS_UNIMPLEMENTED',
+	    'ASR_STATUS_INTERNAL',
+	    'ASR_STATUS_UNAVAILABLE',
+	    'ASR_STATUS_DATA_LOSS',
+	    -- last official google response
+
+	    -- Roblox statuses
+	    'ASR_STATUS_NOT_ENABLED',
+	    'ASR_STATUS_LOW_CONFIDENCE',
+	    'ASR_STATUS_INVALID_JSON'
+	};
+
+	for i, code in pairs(STATUS_CODES) do
+		VOICE_STATUS_CODE_ENUM[code] = i-1
+	end
+end
+
 local function tokenizeString(str, tokenChar)
 	local words = {}
 	for word in string.gmatch(str, '([^' .. tokenChar .. ']+)') do
@@ -258,7 +293,8 @@ local function ExtendedInstance(instance)
 end
 
 local function IsVoiceToTextEnabled()
-	return false
+	local success, flagValue = pcall(function() return settings():GetFFlag("EnableVoiceRecording") end)
+	return success and flagValue == true
 end
 
 local function CreateVRButton(instance)
@@ -587,6 +623,90 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 	return newKey
 end
 
+local function CreateBaseVoiceState()
+	local this = {}
+	this.Name = "Base"
+
+	function this:TransitionFrom()
+	end
+	function this:TransitionTo()
+	end
+
+	return this
+end
+
+local function CreateListeningVoiceState()
+	local this = CreateBaseVoiceState()
+
+	this.Name = "Listening"
+
+	function this:TransitionTo()
+		pcall(function() SoundService:BeginRecording() end)
+	end
+
+	return this
+end
+
+local function CreateProcessingVoiceState()
+	local this = CreateBaseVoiceState()
+
+	this.Name = "Processing"
+
+	local finished = false
+	local result = nil
+
+	function this:TransitionTo()
+		coroutine.wrap(function()
+			pcall(function() result = SoundService:EndRecording() end)
+			finished = true
+		end)()
+	end
+
+	function this:GetResultAsync()
+		while not finished do
+			wait()
+		end
+		return result
+	end
+
+	return this
+end
+
+local function CreateWaitingVoiceState()
+	local this = CreateBaseVoiceState()
+
+	this.Name = "Waiting"
+
+	return this
+end
+
+local VoiceTransitions = {Listening = {Processing = true}, Processing = {Waiting = true}, Waiting = {Listening = true}}
+
+local VoiceToTextFSM = {}
+do
+	VoiceToTextFSM.CurrentState = CreateWaitingVoiceState()
+
+	local stateTransitionedSignal = Instance.new('BindableEvent')
+
+	function VoiceToTextFSM:TransitionState(newState)
+		-- If it is a new state then lets cleanup and activate it
+		if VoiceTransitions[self.CurrentState.Name][newState.Name] then
+			self.CurrentState:TransitionFrom()
+			self.CurrentState = newState
+			self.CurrentState:TransitionTo()
+			stateTransitionedSignal:Fire(self.CurrentState)
+			return true
+		end
+		return false
+	end
+
+	function VoiceToTextFSM:GetCurrentState()
+		return self.CurrentState
+	end
+
+	VoiceToTextFSM.StateTransitionedEvent = stateTransitionedSignal.Event
+end
+
 
 
 local function ConstructKeyboardUI(keyboardLayoutDefinitions)
@@ -707,30 +827,104 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 			Name = 'voiceRecognitionBackground1';
 			Size = UDim2.new(1, 0, 0.75, 0);
 			Position = UDim2.new(0, 0, 0, 0);
-			BackgroundColor3 = Color3.new(0,0,0);
-			BackgroundTransparency = 0.5;
+			BackgroundColor3 = NORMAL_KEY_COLOR;
+			BackgroundTransparency = BACKGROUND_OPACITY;
 			BorderSizePixel = 0;
 			Active = true;
 			Parent = voiceRecognitionContainer;
 		};
 		local voiceRecognitionBackground2 = voiceRecognitionBackground1:Clone()
-		voiceRecognitionBackground2.Size = UDim2.new(0.75, 0, 0.25, 0)
+		voiceRecognitionBackground2.Size = UDim2.new(1 - 0.2, 0, 0.25, 0)
 		voiceRecognitionBackground2.Position = UDim2.new(0, 0, 0.75, 0)
 		voiceRecognitionBackground2.Parent = voiceRecognitionContainer
 	end
 
-	local voiceDoneButton = CreateVRButton(Util:Create'ImageButton'
+	local voiceDoneButton = CreateVRButton(Util:Create'TextButton'
 	{
 		Name = 'DoneButton';
-		Size = UDim2.new(0.25,-5,0.25,-5);
-		Position = UDim2.new(0.75,5,0.75,5);
-		Image = "";
+		Size = UDim2.new(0.2, -5, 0.25, -5);
+		Position = UDim2.new(1 - 0.2, 5, 0.75, 5);
+		Text = "Done";
+		BackgroundColor3 = SET_KEY_COLOR;
+		Font = Enum.Font.SourceSansBold;
+		FontSize = Enum.FontSize.Size96;
+		TextColor3 = KEY_TEXT_COLOR;
 		BackgroundTransparency = 0;
 		AutoButtonColor = false;
 		BorderSizePixel = 0;
 		Parent = voiceRecognitionContainer;
 	})
 	table.insert(buttons, voiceDoneButton)
+
+	local voiceProcessingStatus = Util:Create'TextLabel'
+	{
+		Name = 'VoiceProcessingStatus';
+		Size = UDim2.new(0, 0, 0, 0);
+		Position = UDim2.new(0.5, 0, 0.33, 0);
+		Text = "";
+		Font = Enum.Font.SourceSansBold;
+		FontSize = Enum.FontSize.Size96;
+		TextColor3 = KEY_TEXT_COLOR;
+		BackgroundTransparency = 1;
+		BorderSizePixel = 0;
+		Parent = voiceRecognitionContainer;
+	}
+
+	local function CreateVoiceVisualizerWidget()
+		local this = {}
+
+		local bars = {}
+
+		local numOfBars = 50
+		local numOfWaves = 4
+		local waveSpeed = 2.5
+
+		local container = Util:Create'Frame'
+		{
+			Name = 'VoiceVisualizerContainer';
+			Size = UDim2.new(1, 0, 1, 0);
+			BackgroundTransparency = 1;
+		}
+		this.Container = container
+
+		for i = 1, numOfBars do
+			local bar = Util:Create'Frame'
+			{
+				Name = 'Bar';
+				Size = UDim2.new(1/numOfBars, -4, 1, 0);
+				Position = UDim2.new(i/numOfBars, 0, 0, 0);
+				BackgroundTransparency = 0;
+				BackgroundColor3 = KEY_TEXT_COLOR;
+				Parent = container;
+			}
+			table.insert(bars, bar)
+		end
+
+		function this:StartAnimation()
+			RunService:UnbindFromRenderStep("VoiceVisualizerWidget")
+			RunService:BindToRenderStep("VoiceVisualizerWidget", Enum.RenderPriority.First.Value,
+				function()
+					local movementPerBar = (numOfWaves*2*math.pi) / numOfBars
+					for i, bar in pairs(bars) do
+						local height = math.abs(math.sin(tick() * waveSpeed + i * movementPerBar)) + math.abs(math.cos(tick() * waveSpeed + i * movementPerBar))
+						height = ((height / 2) - 0.3) * (1/(1-0.3))
+						bar.Size = UDim2.new(1/numOfBars, -4, height, 0)
+						bar.Position = UDim2.new(i/numOfBars, 0, (1-height) / 2, 0)
+					end
+				end)
+		end
+
+		function this:StopAnimation()
+			RunService:UnbindFromRenderStep("VoiceVisualizerWidget")
+		end
+
+		return this
+	end
+
+	local voiceVisualizer = CreateVoiceVisualizerWidget()
+	voiceVisualizer.Container.Parent = voiceRecognitionContainer
+	voiceVisualizer.Container.Size = UDim2.new(0.5,0,0.4,0)
+	voiceVisualizer.Container.Position = UDim2.new(0.25,0,0.4,0)
 
 	local newKeyboard = ExtendedInstance(keyboardContainer)
 
@@ -829,6 +1023,10 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		end
 
 		voiceRecognitionContainer.Visible = inVoiceMode
+
+		if inVoiceMode then
+			VoiceToTextFSM:TransitionState(CreateListeningVoiceState())
+		end
 	end)
 
 	rawset(newKeyboard, "GetCaps", function(self)
@@ -941,6 +1139,8 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		panel:SetVisible(true, true)
 		panel:ForceShowUntilLookedAt()
 
+		Panel3D.Get("Topbar3D"):SetVisible(false)
+
 		function panel:OnUpdate()
 		end
 	end)
@@ -963,6 +1163,8 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		panel:SetVisible(false, true)
 		keyboardContainer.Visible = false
 
+		Panel3D.Get("Topbar3D"):SetVisible(true)
+		
 		self:SubmitText(submit, false)
 	end)
 
@@ -1084,8 +1286,42 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	end)
 
 	voiceDoneButton.MouseButton1Click:connect(function()
-		newKeyboard:SetVoiceMode(false)
+		if VoiceToTextFSM:GetCurrentState().Name == "Listening" then
+			VoiceToTextFSM:TransitionState(CreateProcessingVoiceState())
+		end
 	end)
+
+	local function onVoiceProcessingStateChanged(newState)
+		if newState.Name == "Listening" then
+			voiceProcessingStatus.Text = "Listening..."
+		elseif newState.Name == "Processing" then
+			voiceProcessingStatus.Text = "Processing..."
+		elseif newState.Name == "Waiting" then
+			voiceProcessingStatus.Text = "Done"
+		end
+
+		-- Get the result and put it into the textfield
+		if newState.Name == "Processing" then
+			coroutine.wrap(function()
+				voiceVisualizer:StopAnimation()
+				local result = newState:GetResultAsync()
+				if result and result["Status"] == VOICE_STATUS_CODE_ENUM.ASR_STATUS_OK  then
+					setBufferText(result["Response"])
+				else
+					voiceProcessingStatus.Text = "An error occured, please try again."
+					wait(2)
+				end
+				VoiceToTextFSM:TransitionState(CreateWaitingVoiceState())
+			end)()
+		elseif newState.Name == "Listening" then
+			voiceVisualizer:StartAnimation()
+		elseif newState.Name == "Waiting" then
+			newKeyboard:SetVoiceMode(false)
+		end
+	end
+	VoiceToTextFSM.StateTransitionedEvent:connect(onVoiceProcessingStateChanged)
+	onVoiceProcessingStateChanged(VoiceToTextFSM:GetCurrentState())
+
 
 	return newKeyboard
 end

@@ -1,4 +1,4 @@
--- Backpack Version 4.21
+-- Backpack Version 5.00
 -- OnlyTwentyCharacters
 
 -------------------
@@ -71,6 +71,7 @@ local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local utility = require(RobloxGui.Modules.Settings.Utility)
+local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 local topbarEnabled = true
 
 if isTenFootInterface then
@@ -92,6 +93,8 @@ local Player = PlayersService.LocalPlayer
 
 local MainFrame = nil
 local HotbarFrame = nil
+local OpenInventoryButton = nil
+local CloseInventoryButton = nil
 local InventoryFrame = nil
 local ScrollingFrame = nil
 
@@ -166,6 +169,8 @@ local function AdjustHotbarFrames()
 			slot.Frame.Visible = false
 		end
 	end
+
+	OpenInventoryButton.Visible = not inventoryOpen and visualTotal >= 1
 end
 
 local function CheckBounds(guiObject, x, y)
@@ -233,7 +238,26 @@ local function MakeSlot(parent, index)
 	-- Slot Functions --
 
 	local function UpdateSlotFading()
-		SlotFrame.BackgroundTransparency = (SlotFrame.Draggable) and 0 or SLOT_FADE_LOCKED
+		if UserInputService.VREnabled then
+			local BackpackPanel = Panel3D.Get("Backpack")
+
+			local panelTransparency = BackpackPanel.transparency
+			local slotTransparency = SLOT_FADE_LOCKED
+
+			-- This equation multiplies the two transparencies together.
+			local finalTransparency = panelTransparency + slotTransparency - panelTransparency * slotTransparency
+			if SlotFrame.Draggable then
+				finalTransparency = 0
+			end
+
+			SlotFrame.BackgroundTransparency = finalTransparency
+			SlotFrame.TextTransparency = finalTransparency
+			if ToolIcon then
+				ToolIcon.ImageTransparency = SlotFrame.Draggable and 0 or panelTransparency
+			end
+		else
+			SlotFrame.BackgroundTransparency = (SlotFrame.Draggable) and 0 or SLOT_FADE_LOCKED
+		end
 		SlotFrame.BackgroundColor3 = (SlotFrame.Draggable) and SLOT_DRAGGABLE_COLOR or BACKGROUND_COLOR
 	end
 
@@ -302,7 +326,7 @@ local function MakeSlot(parent, index)
 		if hotbarSlot then
 			FullHotbarSlots = FullHotbarSlots + 1
 			-- If using a controller, determine whether or not we can enable BindCoreAction("RBXHotbarEquip", etc)
-			if GamepadEnabled then
+			if GamepadEnabled and WholeThingEnabled then
 				if FullHotbarSlots >= 1 and not gamepadActionsBound then
 					-- Player added first item to a hotbar slot, enable BindCoreAction
 					gamepadActionsBound = true
@@ -811,8 +835,8 @@ local function OnInputBegan(input, isProcessed)
 end
 
 local function OnUISChanged(property)
-	if property == 'KeyboardEnabled' then
-		local on = UserInputService.KeyboardEnabled
+	if property == 'KeyboardEnabled' or property == "VREnabled" then
+		local on = UserInputService.KeyboardEnabled and not UserInputService.VREnabled
 		for i = 1, HOTBAR_SLOTS do
 			Slots[i]:TurnNumber(on)
 		end
@@ -986,7 +1010,9 @@ function getGamepadSwapSlot()
 end
 
 function changeSlot(slot)
-	if slot.Frame == GuiService.SelectedCoreObject then
+	local swapInVr = not UserInputService.VREnabled or InventoryFrame.Visible
+
+	if slot.Frame == GuiService.SelectedCoreObject and swapInVr then
 		local currentlySelectedSlot = getGamepadSwapSlot()
 
 		if currentlySelectedSlot then
@@ -1068,9 +1094,11 @@ function gamepadConnected()
 	GuiService:AddSelectionParent("RBXBackpackSelection", MainFrame)
 
 	if FullHotbarSlots >= 1 then
-		if not gamepadActionsBound then
-			gamepadActionsBound = true
-			ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
+		if WholeThingEnabled then
+			if not gamepadActionsBound then
+				gamepadActionsBound = true
+				ContextActionService:BindCoreAction("RBXHotbarEquip", changeToolFunc, false, Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1)
+			end
 		end
 	end
 	
@@ -1087,7 +1115,7 @@ end
 local function OnCoreGuiChanged(coreGuiType, enabled)
 	-- Check for enabling/disabling the whole thing
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
-		enabled = enabled and topbarEnabled and not UserInputService.VREnabled
+		enabled = enabled and (topbarEnabled or UserInputService.VREnabled)
 		WholeThingEnabled = enabled
 		MainFrame.Visible = enabled
 
@@ -1141,6 +1169,49 @@ for i = 1, HOTBAR_SLOTS do
 		LowestEmptySlot = slot
 	end
 end
+
+-- Up arrow to open the inventory
+OpenInventoryButton = NewGui('ImageButton', 'OpenInventory')
+OpenInventoryButton.Size = UDim2.new(0, 44, 0, 40)
+OpenInventoryButton.Position = UDim2.new(0.5, -22, 1, -120)
+OpenInventoryButton.Image = "rbxasset://textures/ui/Backpack/ScrollUpArrow.png";
+OpenInventoryButton.MouseButton1Click:connect(function()
+	BackpackScript.OpenClose()
+end)
+
+CloseInventoryButton = NewGui('ImageButton', 'CloseInventory')
+CloseInventoryButton.Size = UDim2.new(0, 40, 0, 40)
+CloseInventoryButton.Position = UDim2.new(0, 0, 0, -50)
+CloseInventoryButton.Image = "rbxasset://textures/ui/Keyboard/close_button_background.png";
+CloseInventoryButton.Visible = true
+CloseInventoryButton.MouseButton1Click:connect(function()
+	if InventoryFrame.Visible then
+		BackpackScript.OpenClose()
+	end
+end)
+do
+	CloseInventoryButtonSelectionObject = NewGui('ImageLabel', 'Selection')
+	CloseInventoryButtonSelectionObject.Size = UDim2.new(0.9,0,0.9,0);
+	CloseInventoryButtonSelectionObject.Position = UDim2.new(0.05,0,0.05,0);
+	CloseInventoryButtonSelectionObject.Image = "rbxasset://textures/ui/Keyboard/close_button_selection.png";
+	CloseInventoryButton.SelectionImageObject = CloseInventoryButtonSelectionObject
+
+	CloseInventoryButtonIcon = NewGui('ImageLabel', 'Icon')
+	CloseInventoryButtonIcon.Size = UDim2.new(0.5,0,0.5,0);
+	CloseInventoryButtonIcon.Position = UDim2.new(0.25,0,0.25,0);
+	CloseInventoryButtonIcon.Image = "rbxasset://textures/ui/Keyboard/close_button_icon.png";
+	CloseInventoryButtonIcon.Parent = CloseInventoryButton;
+end
+
+LeftBumperButton = NewGui('ImageLabel', 'LeftBumper')
+LeftBumperButton.Size = UDim2.new(0, 40, 0, 40)
+LeftBumperButton.Position = UDim2.new(0, -LeftBumperButton.Size.X.Offset, 0.5, -LeftBumperButton.Size.Y.Offset/2)
+-- LeftBumperButton.Image = 'rbxasset://Textures/Sword128.png'
+
+RightBumperButton = NewGui('ImageLabel', 'RightBumper')
+RightBumperButton.Size = UDim2.new(0, 40, 0, 40)
+RightBumperButton.Position = UDim2.new(1, 0, 0.5, -RightBumperButton.Size.Y.Offset/2)
+-- RightBumperButton.Image = 'rbxasset://Textures/Sword128.png'
 
 -- Make the Inventory, which holds the ScrollingFrame, the header, and the search box
 InventoryFrame = NewGui('Frame', 'Inventory')
@@ -1507,7 +1578,84 @@ local function OnVREnabled(prop)
 	if prop == "VREnabled" and UserInputService.VREnabled then
 		OnCoreGuiChanged(backpackType, StarterGui:GetCoreGuiEnabled(backpackType))
 		OnCoreGuiChanged(healthType, StarterGui:GetCoreGuiEnabled(healthType))
-		spawn(function() require(RobloxGui.Modules.BackpackScript3D) end)
+
+		local inventoryOpenStudSize = Vector2.new(11, 6.5)
+		local inventoryClosedStudSize = Vector2.new(11, 2)
+		local inventoryOpenPanelCF = CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-10), 0, 0)
+		local inventoryClosedPanelCF = CFrame.new(0, 2, 0) * CFrame.Angles(math.rad(-10), 0, 0)
+
+		local VRHub = require(RobloxGui.Modules.VR.VRHub)
+
+		BackpackScript.ModuleName = "Backpack"
+		BackpackScript.KeepVRTopbarOpen = true
+		BackpackScript.VRIsExclusive = true
+		BackpackScript.VRClosesNonExclusive = true
+		VRHub:RegisterModule(BackpackScript)
+
+		local BackpackPanel = Panel3D.Get(BackpackScript.ModuleName)
+		BackpackPanel:ResizeStuds(inventoryClosedStudSize.x, inventoryClosedStudSize.y)
+		BackpackPanel:SetType(Panel3D.Type.Fixed)
+		BackpackPanel:SetVisible(true)
+		MainFrame.Parent = BackpackPanel:GetGUI()
+
+
+		local panelLocalCF = inventoryClosedPanelCF
+		function BackpackPanel:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
+			--the backpack panel needs to go in front of the user when they look at it.
+			--if they aren't looking, we should be updating self.localCF
+
+			local topbarPanel = Panel3D.Get("Topbar3D")
+			local panelOriginCF = topbarPanel.localCF or CFrame.new()
+			self.localCF = panelOriginCF * panelLocalCF
+		end
+
+		function BackpackPanel:OnUpdate()
+			-- Update transparency
+			for i = 1, HOTBAR_SLOTS do
+				local slot = Slots[i]
+				if slot then
+					slot:UpdateEquipView()
+				end
+			end
+			OpenInventoryButton.ImageTransparency = BackpackPanel.transparency
+			CloseInventoryButton.ImageTransparency = BackpackPanel.transparency
+			LeftBumperButton.ImageTransparency = BackpackPanel.transparency
+			RightBumperButton.ImageTransparency = BackpackPanel.transparency
+		end
+
+		OpenInventoryButton.Parent = MainFrame
+		CloseInventoryButton.Parent = InventoryFrame
+		-- LeftBumperButton.Parent = HotbarFrame
+		-- RightBumperButton.Parent = HotbarFrame
+
+		BackpackScript.StateChanged.Event:connect(function(isNowOpen)
+			if isNowOpen then
+				VRHub:FireModuleOpened(BackpackScript.ModuleName)
+				BackpackPanel:ResizeStuds(inventoryOpenStudSize.x, inventoryOpenStudSize.y)
+				panelLocalCF = inventoryOpenPanelCF
+			else
+				VRHub:FireModuleClosed(BackpackScript.ModuleName)
+				BackpackPanel:ResizeStuds(inventoryClosedStudSize.x, inventoryClosedStudSize.y)
+				panelLocalCF = inventoryClosedPanelCF
+			end
+		end)
+
+		VRHub.ModuleOpened.Event:connect(function(moduleName)
+			local openedModule = VRHub:GetModule(moduleName)
+			if openedModule ~= BackpackScript and openedModule.VRIsExclusive then
+				BackpackPanel:SetVisible(false)
+				if InventoryFrame.Visible then
+					BackpackScript.OpenClose()
+				end
+			end
+		end)
+		VRHub.ModuleClosed.Event:connect(function(moduleName)
+			local openedModule = VRHub:GetModule(moduleName)
+			if openedModule ~= BackpackScript then
+				BackpackPanel:SetVisible(true)
+			end
+		end)
+
 		UISChanged:disconnect()
 		UISChanged = nil
 	end

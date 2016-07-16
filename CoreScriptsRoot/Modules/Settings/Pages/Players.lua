@@ -22,8 +22,11 @@ local frameSelectedTransparency = .65
 
 ------------ Variables -------------------
 local PageInstance = nil
-repeat wait() until PlayersService.LocalPlayer
 local localPlayer = PlayersService.LocalPlayer
+while not localPlayer do
+	PlayersService.ChildAdded:wait()
+	localPlayer = PlayersService.LocalPlayer
+end
 
 ----------- CLASS DECLARATION --------------
 local function Initialize()
@@ -265,7 +268,7 @@ local function Initialize()
 					table.insert(existingPlayerLabels, index, frame)
 				end
 				frame.Name = 'PlayerLabel'..player.Name
-				frame.Icon.Image = 'http://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId='..math.max(1, player.userId)
+				frame.Icon.Image = 'https://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId='..math.max(1, player.userId)
 				frame.NameLabel.Text = player.Name
 				frame.ImageTransparency = frameDefaultTransparency
 
