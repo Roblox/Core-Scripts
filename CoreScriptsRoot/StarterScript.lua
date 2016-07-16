@@ -30,7 +30,7 @@ scriptContext:AddCoreScriptLocal("CoreScripts/DeveloperConsole", RobloxGui)
 scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", RobloxGui)
 
 -- Chat script
-spawn(function() require(RobloxGui.Modules.Chat) end)
+spawn(function() require(RobloxGui.Modules.ChatSelector) end)
 spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
 
 scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)
