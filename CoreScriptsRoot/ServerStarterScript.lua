@@ -54,3 +54,10 @@ local function setDialogInUse(player, dialog, value)
 	end
 end
 RemoteEvent_SetDialogInUse.OnServerEvent:connect(setDialogInUse)
+
+
+local USE_NEW_CHAT = false --settings():GetFFlag("UseNewChat")
+if (USE_NEW_CHAT) then
+	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerChat/ChatServiceInstaller", script.Parent)
+	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ClientChat/ChatWindowInstaller", script.Parent)
+end
