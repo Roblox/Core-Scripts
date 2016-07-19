@@ -744,7 +744,7 @@ local function Initialize()
 			local devConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
 			local function onOpenDevConsole()
 				if devConsoleModule then
-					devConsoleModule:ToggleVisibility()
+					devConsoleModule:SetVisibility(true)
 				end
 			end
 
@@ -762,8 +762,10 @@ local function Initialize()
 				local success, result = pcall(function()
 					return LocalPlayer:GetRankInGroup(game.CreatorId) == 255
 				end)
-				if success and result == true then
-					makeDevConsoleOption()
+				if success then
+					if result == true then
+						makeDevConsoleOption()
+					end
 				else
 					print("DeveloperConsoleModule: GetRankInGroup failed because", result)
 				end

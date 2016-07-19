@@ -1832,6 +1832,7 @@ do
 		-- override SelectionImageObject to better fit
 		if isTenFootInterface then
 			local selectionImage = Instance.new('ImageLabel')
+			selectionImage.Name = "SelectionImage"
 			selectionImage.Size = UDim2.new(1, textBoxFrame.AbsoluteSize.x + 36, 0, Style.CommandLineHeight + 24)
 			selectionImage.Position = UDim2.new(0, -18, 0, -12)
 			selectionImage.Image = 'rbxasset://textures/ui/SelectionBox.png'
@@ -3004,9 +3005,14 @@ local function getDeveloperConsole()
 	return myDeveloperConsole
 end
 
-function DevConsoleModuleTable:ToggleVisibility()
+function DevConsoleModuleTable:GetVisibility()
 	local devConsole = getDeveloperConsole()
-	devConsole:SetVisible(not devConsole.Visible)
+	return devConsole.Visible
+end
+
+function DevConsoleModuleTable:SetVisibility(value)
+	local devConsole = getDeveloperConsole()
+	devConsole:SetVisible(value)
 end
 
 return DevConsoleModuleTable

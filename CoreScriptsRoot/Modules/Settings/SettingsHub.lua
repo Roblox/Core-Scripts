@@ -503,7 +503,8 @@ local function CreateSettingsHub()
 	local function toggleDevConsole(actionName, inputState, inputObject)
 		if actionName == DEV_CONSOLE_ACTION_NAME then 	-- ContextActionService->F9
 			if inputState and inputState == Enum.UserInputState.Begin then
-				DeveloperConsoleModule:ToggleVisibility()
+				local devConsoleVisible = DeveloperConsoleModule:GetVisibility()
+				DeveloperConsoleModule:SetVisibility(not devConsoleVisible)
 			end
 		end
 	end
