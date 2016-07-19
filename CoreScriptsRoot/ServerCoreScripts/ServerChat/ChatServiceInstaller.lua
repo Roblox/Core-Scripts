@@ -41,6 +41,7 @@ local function Install()
 		LoadModuleData("PrivateMessaging", ModulesFolder, newPath)
 		LoadModuleData("TeamChat", ModulesFolder, newPath)
 		LoadModuleData("ExtraDataInitializer", ModulesFolder, newPath)
+		LoadModuleData("ChatCommandsTeller", ModulesFolder, newPath)
 
 		ModulesFolder.Parent = ServerStorage
 		ModulesFolder.Archivable = false

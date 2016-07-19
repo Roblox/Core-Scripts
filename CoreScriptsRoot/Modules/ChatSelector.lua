@@ -1,7 +1,10 @@
-local USE_NEW_CHAT = false --and settings():GetFFlag("UseNewChat")
+local FORCE_USE_NEW_CHAT = true
+
 
 local CoreGuiService = game:GetService("CoreGui")
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
+
+local StarterGui = game:GetService("StarterGui")
 
 local Util = {}
 do
@@ -39,8 +42,9 @@ end
 
 local moduleApiTable = {}
 do
-	if (USE_NEW_CHAT) then
-		local StarterGui = game:GetService("StarterGui")
+	local pcallSuccess, flagEnabled = pcall(function() return settings():GetFFlag("UseNewChat") end)
+	local useNewChat = pcallSuccess and flagEnabled
+	if (useNewChat or FORCE_USE_NEW_CHAT) then
 		local CommunicationsFolderParent = game:GetService("ReplicatedStorage")
 
 		local CoreGuiCommunicationsFolder = Instance.new("Folder")
@@ -190,7 +194,7 @@ do
 
 
 		ChatWindowFolder.MessagePosted.Event:connect(function(message) game:GetService("Players"):Chat(message) end)
-		game:GetService("StarterGui").CoreGuiChangedSignal:connect(function(coreGuiType, enabled)
+		StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType, enabled)
 			pcall(function() ChatWindowFolder.CoreGuiChanged:Fire(coreGuiType, enabled) end)
 		end)
 

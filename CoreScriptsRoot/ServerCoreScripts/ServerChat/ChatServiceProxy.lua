@@ -114,18 +114,7 @@ function module.CreateProxy(ChatService)
 		if (funcId == "default_filter") then
 			error("You cannot register this filter!")
 		end
-		
-		local allow = false
-		pcall(function()
-			local ret = func("Player1", "test message")
-			AssertParameterTypeEquals(ret, "string")
-			allow = true
-		end)
-		
-		if (not allow) then
-			error("Function must return a string!")
-		end
-		
+
 		obj.Target:RegisterFilterMessageFunction(funcId, func)
 	end
 
@@ -164,20 +153,27 @@ function module.CreateProxy(ChatService)
 	metatable.__metatable = "The metatable is locked"
 	metatable.__tostring = function () return tostring(obj.Target) end
 	
+	local readIndexTarget = {
+		ChatLogLength = true,
+		OnChannelAdded = true, OnChannelRemoved = true,
+		OnSpeakerAdded = true, OnSpeakerRemoved = true
+	}
+	local readIndexProxy = {
+		AddChannel = true, RemoveChannel = true, GetChannel = true,
+		AddSpeaker = true, RemoveSpeaker = true, GetSpeaker = true,
+		GetAutoJoinChannelList = true,
+		AddWordFilter = true, RemoveWordFilter = true,
+		AddWordAlias = true, RemoveWordAlias = true,
+		GetChannelList = true,
+		RegisterFilterMessageFunction = true, UnregisterFilterMessageFunction = true,
+		RegisterProcessCommandsFunction = true, UnregisterProcessCommandsFunction = true,
+	}
+
 	metatable.__index = function(tbl, index)
-		if (index == "ChatLogLength" or
-			index == "OnChannelAdded" or index == "OnChannelRemoved" or
-			index == "OnSpeakerAdded" or index == "OnSpeakerRemoved") then
+		if (readIndexTarget[index]) then
 			return obj.Target[index]
 			
-		elseif (index == "AddChannel" or index == "RemoveChannel" or index == "GetChannel" or
-				index == "AddSpeaker" or index == "RemoveSpeaker" or index == "GetSpeaker" or
-				index == "GetAutoJoinChannelList" or
-				index == "AddWordFilter" or index == "RemoveWordFilter" or
-				index == "AddWordAlias" or index == "RemoveWordAlias" or
-				index == "GetChannelList" or
-				index == "RegisterFilterMessageFunction" or index == "UnregisterFilterMessageFunction" or
-				index == "RegisterProcessCommandsFunction" or index == "UnregisterProcessCommandsFunction") then
+		elseif (readIndexProxy[index]) then
 			return obj[index]
 			
 		else

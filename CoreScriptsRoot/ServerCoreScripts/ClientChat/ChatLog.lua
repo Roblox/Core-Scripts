@@ -34,7 +34,7 @@ function module:JoinedChannel(channelName)
 end
 
 function module:LeftChannel(channelName)
-	if (ClearLogOnleftChannel) then
+	if (self.ClearLogOnleftChannel) then
 		logs[channelName:lower()] = nil
 	end
 end

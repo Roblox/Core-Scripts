@@ -68,7 +68,7 @@ con = ChatBar.FocusLost:connect(function(enterPressed)
 				if (ChatWindow.CurrentChatChannel) then
 					EventFolder.SayMessageRequest:FireServer(ChatBar.Text, ChatWindow.CurrentChatChannel.Name)
 				else
-					EventFolder.SayMessageRequest:FireServer(ChatBar.Text, "__none__") -- this channel name means nothing
+					EventFolder.SayMessageRequest:FireServer(ChatBar.Text, nil)
 				end
 			end
 			
@@ -345,12 +345,12 @@ do
 	moduleApiTable.MessagePosted = Util.Signal()
 	moduleApiTable.CoreGuiChanged = Util.Signal()
 	
+	moduleApiTable.ChatMakeSystemMessageEvent = Util.Signal()
+	moduleApiTable.ChatWindowPositionEvent = Util.Signal()
+	moduleApiTable.ChatWindowSizeEvent = Util.Signal()
+	moduleApiTable.ChatBarDisabledEvent = Util.Signal()
 	
-	moduleApiTable.eChatMakeSystemMessage = Util.Signal()
-	moduleApiTable.eChatWindowPosition = Util.Signal()
-	moduleApiTable.eChatWindowSize = Util.Signal()
-	moduleApiTable.eChatBarDisabled = Util.Signal()
-	
+
 	function moduleApiTable:fChatWindowPosition()
 		return ChatWindow.Frame.Dragger.Position
 	end
@@ -364,7 +364,7 @@ do
 	end
 end
 
---spawn(function() wait() moduleApiTable:SetVisible(true) end)
+spawn(function() wait() moduleApiTable:SetVisible(true) end)
 
 moduleApiTable.CoreGuiChanged:connect(function(coreGuiType, enabled)
 	enabled = enabled and moduleApiTable.TopbarEnabled
@@ -378,7 +378,7 @@ moduleApiTable.CoreGuiChanged:connect(function(coreGuiType, enabled)
 end)
 
 
-moduleApiTable.eChatMakeSystemMessage:connect(function(valueTable)
+moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 	if (valueTable["Text"] and type(valueTable["Text"]) == "string") then
 		local channel = "system"
 		local channelObj = ChatWindow:GetChatChannel(channel)
@@ -398,7 +398,7 @@ moduleApiTable.eChatMakeSystemMessage:connect(function(valueTable)
 	end
 end)
 
-moduleApiTable.eChatBarDisabled:connect(function(disabled)
+moduleApiTable.ChatBarDisabledEvent:connect(function(disabled)
 	ChatBar.Enabled = not disabled
 	if (disabled) then
 		ChatBar:ReleaseFocus()

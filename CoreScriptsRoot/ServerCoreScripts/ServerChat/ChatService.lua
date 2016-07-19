@@ -35,7 +35,7 @@ function metatable:Dump()
 end
 
 function metatable:DoMessageFilter(speakerName, message)
-	for i, func in pairs(self.FilterMessageFunctions) do
+	for _, func in pairs(self.FilterMessageFunctions) do
 		pcall(function()
 			local ret = func(speakerName, message)
 			assert(type(ret) == "string")
@@ -64,7 +64,7 @@ function metatable:DoProcessCommands(speakerName, message, channel)
 	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message)
 	if (processed) then return processed end
 	
-	for i, func in pairs(self.ProcessCommandsFunctions) do
+	for _, func in pairs(self.ProcessCommandsFunctions) do
 		processed = pcall(function()
 			local ret = func(speakerName, message, channel)
 			if (type(ret) ~= "boolean" or ret ~= true) then
@@ -80,7 +80,7 @@ end
 
 function metatable:AddChannel(channelName)
 	if (self.ChatChannels[channelName:lower()]) then
-		error("Channel \"" .. channelName .. "\" already exists!")
+		error(string.format("Channel %q alrady exists.", channelName))
 	end
 	
 	local channel = ChatChannel.new(self, channelName)
@@ -128,7 +128,7 @@ function metatable:RemoveChannel(channelName)
 
 		spawn(function() self.eOnChannelRemoved:Fire(n) end)
 	else
-		warn("Channel \"" .. channelName .. "\" does not exist!")
+		warn(string.format("Channel %q does not exist.", channelName))
 	end
 end
 

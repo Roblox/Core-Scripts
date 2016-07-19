@@ -41,7 +41,8 @@ end
 
 function metatable:SayMessage(message, channelName)
 	if (self.ChatService:DoProcessCommands(self.Name, message, channelName)) then return end
-	
+	if (not channelName) then return end
+
 	if (not self.Channels[channelName:lower()]) then
 		error("Speaker is not in channel \"" .. channelName .. "\"")
 	end
@@ -116,7 +117,7 @@ function metatable:IsInChannel(channelName)
 end
 
 function metatable:GetPlayerObject()
-	return self.PlayerObj ~= "__NONE__" and self.PlayerObj or nil
+	return rawget(self, "PlayerObj")
 end
 
 function metatable:SetExtraData(key, value)
@@ -137,7 +138,7 @@ function module.new(vChatService, name)
 	obj.ChatService = newproxy(true)
 	getmetatable(obj.ChatService).__index = vChatService
 	
-	obj.PlayerObj = "__NONE__"
+	obj.PlayerObj = nil
 	
 	obj.Name = name
 	obj.ExtraData = {}

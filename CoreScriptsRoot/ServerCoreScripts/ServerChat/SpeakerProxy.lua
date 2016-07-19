@@ -102,20 +102,27 @@ function module.CreateProxy(Speaker)
 	metatable.__metatable = "The metatable is locked"
 	metatable.__tostring = obj.Target.__tostring
 	
+	local readIndexTarget = {
+		Name = true,
+		OnSaidMessage = true, OnReceivedMessage = true, OnReceivedSystemMessage = true, 
+		OnChannelJoined = true, OnChannelLeft = true,
+		OnMuted = true, OnUnmuted = true,
+		OnExtraDataUpdated = true,
+	}
+	local readIndexProxy = {
+		SayMessage = true, 
+		JoinChannel = true, LeaveChannel = true, IsInChannel = true, 
+		SendMessage = true, SendSystemMessage = true, 
+		GetPlayerObject = true, 
+		SetExtraData = true, GetExtraData = true, 
+		GetChannelList = true,
+	}
+
 	metatable.__index = function(tbl, index)
-		if (index == "Name" or 
-			index == "OnSaidMessage" or index == "OnReceivedMessage" or index == "OnReceivedSystemMessage" or 
-			index == "OnChannelJoined" or index == "OnChannelLeft" or
-			index == "OnMuted" or index == "OnUnmuted" or
-			index == "OnExtraDataUpdated" or 
-			index == "GetChannelList") then
+		if (readIndexTarget[index]) then
 			return obj.Target[index]
 			
-		elseif (index == "SayMessage" or 
-			index == "JoinChannel" or index == "LeaveChannel" or index == "IsInChannel" or 
-			index == "SendMessage" or index == "SendSystemMessage" or 
-			index == "GetPlayerObject" or 
-			index == "SetExtraData" or index == "GetExtraData") then
+		elseif (readIndexProxy[index]) then
 			return obj[index]
 			
 		else
@@ -123,7 +130,7 @@ function module.CreateProxy(Speaker)
 			
 		end
 	end
-	
+
 	metatable.__newindex = function(tbl, index, value)
 		if (false) then
 			--// Not really any properties to let users set, 

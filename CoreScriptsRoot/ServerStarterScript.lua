@@ -56,8 +56,11 @@ end
 RemoteEvent_SetDialogInUse.OnServerEvent:connect(setDialogInUse)
 
 
-local USE_NEW_CHAT = false --settings():GetFFlag("UseNewChat")
-if (USE_NEW_CHAT) then
+local FORCE_USE_NEW_CHAT = true
+
+local pcallSuccess, flagEnabled = pcall(function() return settings():GetFFlag("UseNewChat") end)
+local useNewChat = pcallSuccess and flagEnabled
+if (useNewChat or FORCE_USE_NEW_CHAT) then
 	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerChat/ChatServiceInstaller", script.Parent)
 	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ClientChat/ChatWindowInstaller", script.Parent)
 end

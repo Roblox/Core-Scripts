@@ -59,7 +59,7 @@ local function ConnectSetCore(name)
 		local find = SetCoreFolder:FindFirstChild(name)
 		if (find and find:IsA("BindableEvent")) then
 			find.Event:connect(function(...)
-				Chat["e"..name]:fire(...)
+				Chat[name.."Event"]:fire(...)
 			end)
 		end
 	end

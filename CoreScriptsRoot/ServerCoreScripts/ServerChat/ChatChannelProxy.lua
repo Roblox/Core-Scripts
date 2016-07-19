@@ -105,17 +105,6 @@ function module.CreateProxy(ChatChannel)
 			error("You cannot register this filter!")
 		end
 		
-		local allow = false
-		pcall(function()
-			local ret = func("Player1", "test message")
-			AssertParameterTypeEquals(ret, "string")
-			allow = true
-		end)
-		
-		if (not allow) then
-			error("Function must return a string!")
-		end
-		
 		obj.Target:RegisterFilterMessageFunction(funcId, func)
 	end
 
@@ -159,20 +148,27 @@ function module.CreateProxy(ChatChannel)
 	metatable.__metatable = "The metatable is locked"
 	metatable.__tostring = function () return tostring(obj.Target) end
 	
+	local readIndexTarget = {
+		Joinable = true, Leavable = true,
+		AutoJoin = true, Private = true,
+		Name = true, WelcomeMessage = true,
+		OnNewMessage = true, OnSpeakerJoined = true, OnSpeakerLeft = true,
+		OnSpeakerMuted = true, onSpeakerUnmuted = true
+	}
+	local readIndexProxy = {
+		AddWordFilter = true, RemoveWordFilter = true,
+		AddWordAlias = true, RemoveWordAlias = true,
+		KickSpeaker = true, MuteSpeaker = true, UnmuteSpeaker = true, IsSpeakerMuted = true,
+		GetSpeakerList = true, SendSystemMessage = true,
+		RegisterFilterMessageFunction = true, UnregisterFilterMessageFunction = true,
+		RegisterProcessCommandsFunction = true, UnregisterProcessCommandsFunction = true
+	}
+
 	metatable.__index = function(tbl, index)
-		if (index == "Joinable" or index == "Leavable" or
-			index == "AutoJoin" or index == "Private" or
-			index == "Name" or index == "WelcomeMessage" or
-			index == "OnNewMessage" or index == "OnSpeakerJoined" or index == "OnSpeakerLeft" or 
-			index == "OnSpeakerMuted" or index == "OnSpeakerUnmuted") then
+		if (readIndexTarget[index]) then
 			return obj.Target[index]
 			
-		elseif (index == "AddWordFilter" or index == "RemoveWordFilter" or
-				index == "AddWordAlias" or index == "RemoveWordAlias" or
-				index == "KickSpeaker" or index == "MuteSpeaker" or index == "UnmuteSpeaker" or index == "IsSpeakerMuted" or
-				index == "GetSpeakerList" or index == "SendSystemMessage" or 
-				index == "RegisterFilterMessageFunction" or index == "UnregisterFilterMessageFunction" or
-				index == "RegisterProcessCommandsFunction" or index == "UnregisterProcessCommandsFunction") then
+		elseif (readIndexProxy[index]) then
 			return obj[index]
 			
 		else
