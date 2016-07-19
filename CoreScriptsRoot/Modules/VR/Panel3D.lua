@@ -108,10 +108,15 @@ function Panel3D.RaycastOntoPanel(part, parentGui, gui, ray)
 	local planeNormal = planeCF.lookVector
 	local pointOnPlane = planeCF.p + (planeNormal * partThickness * 0.5)
 
+	--Find where the view ray intersects with the plane in world space
 	local worldIntersectPoint = Utility:RayPlaneIntersection(ray, planeNormal, pointOnPlane)
 	if worldIntersectPoint then
 		local parentGuiWidth, parentGuiHeight = parentGui.AbsoluteSize.X, parentGui.AbsoluteSize.Y
+		--now figure out where that intersection point was in the panel's local space
+		--and then flip the X axis because the plane is looking back at you (panel's local +X is to the left of the camera)
+		--and then offset it by half of the panel's size in X and -Y to move 0,0 to the upper-left of the panel.
 		local localIntersectPoint = planeCF:pointToObjectSpace(worldIntersectPoint) * Vector3.new(-1, 1, 1) + Vector3.new(partWidth / 2, -partHeight / 2, 0)
+		--now scale it into the gui space on the panel's surface
 		local lookAtPixel = Vector2.new((localIntersectPoint.X / partWidth) * parentGuiWidth, (localIntersectPoint.Y / partHeight) * -parentGuiHeight)
 		
 		--fire mouse enter/leave events if necessary
