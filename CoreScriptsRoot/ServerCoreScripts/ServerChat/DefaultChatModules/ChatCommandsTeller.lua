@@ -18,6 +18,10 @@ local function Run(ChatService)
 	
 	ChatService:RegisterProcessCommandsFunction("chat_commands_inquiry", ProcessCommandsFunction)
 	
+	local allChannel = ChatService:GetChannel("All")
+	if (allChannel) then
+		allChannel.WelcomeMessage = "Chat '/?' for a list of chat commands."
+	end
 end
 
 return Run

@@ -3,14 +3,14 @@ local function Run(ChatService)
 	
 	local function DoWhisperCommand(fromSpeaker, message, channel)
 		local speaker = ChatService:GetSpeaker(fromSpeaker)
-		local channelObj = ChatService:GetChannel(message)
-		if (channelObj and ChatService:GetSpeaker(channelObj.Name)) then
+		local channelObj = ChatService:GetChannel("To " .. message)
+		if (channelObj and ChatService:GetSpeaker(message)) then
 			
-			if (channelObj.Name == speaker.Name) then
+			if (channelObj.Name == "To " .. speaker.Name) then
 				speaker:SendSystemMessage("You cannot whisper to yourself.", nil)
 			else
-				if (not speaker:IsInChannel(message)) then
-					speaker:JoinChannel(message)
+				if (not speaker:IsInChannel(channelObj.Name)) then
+					speaker:JoinChannel(channelObj.Name)
 				end
 			end
 			
@@ -37,12 +37,12 @@ local function Run(ChatService)
 	local function PrivateMessageReplicationFunction(fromSpeaker, message, channel)
 		ChatService:GetSpeaker(fromSpeaker):SendMessage(fromSpeaker, channel, message)
 
-		local toSpeaker = ChatService:GetSpeaker(channel)
+		local toSpeaker = ChatService:GetSpeaker(string.sub(channel, 4))
 		if (toSpeaker) then
-			if (not toSpeaker:IsInChannel(fromSpeaker)) then
-				toSpeaker:JoinChannel(fromSpeaker)
+			if (not toSpeaker:IsInChannel("To " .. fromSpeaker)) then
+				toSpeaker:JoinChannel("To " .. fromSpeaker)
 			end
-			toSpeaker:SendMessage(fromSpeaker, fromSpeaker, message)
+			toSpeaker:SendMessage(fromSpeaker, "To " .. fromSpeaker, message)
 		end
 		
 		return true
@@ -51,11 +51,11 @@ local function Run(ChatService)
 	ChatService:RegisterProcessCommandsFunction("whisper_commands", WhisperCommandsFunction)
 	
 	ChatService.OnSpeakerAdded:connect(function(speakerName)
-		if (ChatService:GetChannel(speakerName)) then
-			ChatService:RemoveChannel(speakerName)
+		if (ChatService:GetChannel("To " .. speakerName)) then
+			ChatService:RemoveChannel("To " .. speakerName)
 		end
 		
-		local channel = ChatService:AddChannel(speakerName)
+		local channel = ChatService:AddChannel("To " .. speakerName)
 		channel.Joinable = false
 		channel.Private = true
 		channel.Leavable = true

@@ -37,11 +37,15 @@ end
 
 function metatable:DoMessageFilter(speakerName, message)
 	for i, func in pairs(self.FilterMessageFunctions) do
-		pcall(function()
+		local s, m = pcall(function()
 			local ret = func(speakerName, message)
 			assert(type(ret) == "string")
 			message = ret
 		end)
+
+		if (not s) then
+			warn("DoMessageFilter Function '" .. funcId .. "'' failed for reason: " .. m)
+		end
 	end
 	
 	message = self.FilterMessageFunctions["default_filter"](speakerName, message)
@@ -63,7 +67,9 @@ function metatable:DoProcessCommands(speakerName, message)
 			end
 		end)
 		
-		if not s then print(m) end
+		if (not s) then
+			warn("DoProcessCommands Function '" .. funcId .. "'' failed for reason: " .. m)
+		end
 		
 		if (processed) then break end
 	end

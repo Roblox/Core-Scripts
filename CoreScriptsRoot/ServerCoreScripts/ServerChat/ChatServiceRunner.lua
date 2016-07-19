@@ -195,7 +195,6 @@ local systemChannel = ChatService:AddChannel("System")
 
 allChannel.Leavable = false
 allChannel.AutoJoin = true
-allChannel.WelcomeMessage = "Chat '/?' for a list of chat commands."
 
 systemChannel.Leavable = false
 systemChannel.AutoJoin = true
