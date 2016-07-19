@@ -56,7 +56,7 @@ end
 RemoteEvent_SetDialogInUse.OnServerEvent:connect(setDialogInUse)
 
 
-local FORCE_USE_NEW_CHAT = true
+local FORCE_USE_NEW_CHAT = false
 
 local pcallSuccess, flagEnabled = pcall(function() return settings():GetFFlag("UseNewChat") end)
 local useNewChat = pcallSuccess and flagEnabled

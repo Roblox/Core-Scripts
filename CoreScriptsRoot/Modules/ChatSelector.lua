@@ -1,4 +1,4 @@
-local FORCE_USE_NEW_CHAT = true
+local FORCE_USE_NEW_CHAT = false
 
 
 local CoreGuiService = game:GetService("CoreGui")
