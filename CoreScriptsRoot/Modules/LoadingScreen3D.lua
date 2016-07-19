@@ -339,12 +339,38 @@ else
 	ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(OnDefaultLoadingGuiRemoved)
 end
 
+local Dialog = require(RobloxGui.Modules.VR.Dialog)
+
+local function updateUiMessage(title, message)
+	local message = message or GuiService:GetErrorMessage()
+	if message ~= "" then
+		local messageDialog = Dialog.new(title, Color3.new(0.99, 0.27, 0.28))
+		local messageText = Util:Create "TextLabel" {
+			Position = UDim2.new(0, 10, 0, 10),
+			Size = UDim2.new(1, -20, 1, -20),
+
+			Text = message,
+			Font = Enum.Font.SourceSans,
+			FontSize = Enum.FontSize.Size24,
+			TextColor3 = Color3.new(1, 1, 1),
+
+			BackgroundTransparency = 1
+		}
+		messageDialog:SetContent(messageText)
+		messageDialog:Show(true)
+	end
+end
+
 GuiService.ErrorMessageChanged:connect(function()
-	-- TODO
+	updateUiMessage("Error")
 end)
 
 GuiService.UiMessageChanged:connect(function(type, newMessage)
-	-- TODO
+	if type == Enum.UiMessageType.UiMessageError then
+		updateUiMessage("Error", newMessage)
+	elseif type == Enum.UiMessageType.UiMessageInfo then
+		updateUiMessage("Info", newMessage)
+	end
 end)
 
 return LoadingScreen

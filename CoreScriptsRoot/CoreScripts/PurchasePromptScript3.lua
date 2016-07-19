@@ -1,14 +1,16 @@
 --[[
-		// Filename: PurchasePromptScript2.lua
-		// Version 1.0
-		// Release 186
-		// Written by: jeditkacheff/jmargh
+		// Filename: PurchasePromptScript3.lua
+		// Version 2.0
+		// Release 253
+		// Written by: jeditkacheff/jmargh/0xBAADF00D
 		// Description: Handles in game purchases
+
+		// Note: Converted for VR by 0xBAADF00D 6/30/16
 ]]--
---Enable this script only if FFlagVRPurchasePromptsEnabled = False
+--Enable this script only if FFlagVRPurchasePromptsEnabled = True
 local vrPurchasePromptsEnabledSuccess, vrPurchasePromptsEnabled = pcall(function() return settings():GetFFlag("VRPurchasePromptsEnabled") end)
 vrPurchasePromptsEnabled = vrPurchasePromptsEnabled and vrPurchasePromptsEnabledSuccess
-if vrPurchasePromptsEnabled then
+if not vrPurchasePromptsEnabled then
 	return
 end
 
@@ -40,6 +42,7 @@ local IsCheckingPlayerFunds = false
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
+local IsVRMode = false
 local freezeControllerActionName = "doNothingActionPrompt"
 local freezeThumbstick1Name = "doNothingThumbstickPrompt"
 local freezeThumbstick2Name = "doNothingThumbstickPrompt"
@@ -77,6 +80,11 @@ local ERROR_ICON = 'rbxasset://textures/ui/ErrorIcon.png'
 local A_BUTTON = "rbxasset://textures/ui/Settings/Help/AButtonDark.png"
 local B_BUTTON = "rbxasset://textures/ui/Settings/Help/BButtonDark.png"
 local DEFAULT_XBOX_IMAGE = 'rbxasset://textures/ui/Shell/Icons/ROBUXIcon@1080.png'
+local VR_BUTTON = 'rbxasset://textures/ui/VR/button.png'
+local VR_BUTTON_DOWN = 'rbxasset://textures/ui/VR/buttonSelected.png'
+local emptySelectionImage = Instance.new("ImageLabel")
+emptySelectionImage.Name = "EmptySelectionImage"
+emptySelectionImage.Visible = false
 --Context Actions
 local CONTROLLER_CONFIRM_ACTION_NAME = "CoreScriptPurchasePromptControllerConfirm"
 local CONTROLLER_CANCEL_ACTION_NAME = "CoreScriptPurchasePromptControllerCancel"
@@ -190,14 +198,18 @@ local HIDE_POSITION = UDim2.new(0.5, -162, 0, -181)
 local HIDE_POSITION_TENFOOT = UDim2.new(0.5, -162*scaleFactor, 0, -180*scaleFactor - 1)
 local BTN_SIZE = UDim2.new(0, 162, 0, 44)
 local BTN_SIZE_TENFOOT = UDim2.new(0, 162*scaleFactor, 0, 44*scaleFactor)
+local BTN_SIZE_VR = UDim2.new(0.5, -20, 0, 75)
 local BODY_SIZE = UDim2.new(0, 324, 0, 136)
 local BODY_SIZE_TENFOOT = UDim2.new(0, 324*scaleFactor, 0, 136*scaleFactor)
 local TWEEN_TIME = 0.3
 
 local BTN_L_POS = UDim2.new(0, 0, 0, 136)
 local BTN_L_POS_TENFOOT = UDim2.new(0, 0, 0, 136*scaleFactor)
+local BTN_L_POS_VR = UDim2.new(0, 10, 0, 225)
 local BTN_R_POS = UDim2.new(0.5, 0, 0, 136)
 local BTN_R_POS_TENFOOT = UDim2.new(0.5, 0, 0, 136*scaleFactor)
+local BTN_R_POS_VR = UDim2.new(0.5, 10, 0, 225)
+local BTN_M_POS_VR = UDim2.new(0.25, 0, 0, 225)
 
 --[[ Utility Functions ]]--
 local function lerp( start, finish, t)
@@ -217,6 +229,22 @@ local function createFrame(name, size, position, bgTransparency, bgColor)
 	frame.BackgroundTransparency = bgTransparency
 	frame.BackgroundColor3 = bgColor or Color3.new()
 	frame.BorderSizePixel = 0
+	frame.ZIndex = 8
+
+	return frame
+end
+
+local function createFrame3D(name, size, position, bgTransparency, bgColor)
+	local frame = Instance.new("ImageLabel")
+	frame.Name = name
+	frame.Size = size + UDim2.new(0, 2, 0, 2)
+	frame.Position = (position + UDim2.new(0, -1, 0, -1)) or UDim2.new(0, -1, 0, -1)
+	frame.BackgroundTransparency = 1
+	frame.ImageColor3 = bgColor or Color3.new()
+	frame.ImageTransparency = bgTransparency
+	frame.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
+	frame.ScaleType = Enum.ScaleType.Slice
+	frame.SliceCenter = Rect.new(9, 9, 11, 11)
 	frame.ZIndex = 8
 
 	return frame
@@ -248,7 +276,7 @@ local function createImageLabel(name, size, position, image)
 	return imageLabel
 end
 
-local function createImageButtonWithText(name, position, image, imageDown, text, font)
+local function createImageButtonWithText(name, position, image, imageDown, text, font, fontSize)
 	local imageButton = Instance.new('ImageButton')
 	imageButton.Name = name
 	imageButton.Size = isTenFootInterface and BTN_SIZE_TENFOOT or BTN_SIZE
@@ -259,7 +287,10 @@ local function createImageButtonWithText(name, position, image, imageDown, text,
 	imageButton.ZIndex = 8
 	imageButton.Modal = true
 
-	local textLabel = createTextLabel(name.."Text", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), font, isTenFootInterface and largeFont or Enum.FontSize.Size24, text)
+	if not fontSize then
+		fontSize = isTenFootInterface and largeFont or Enum.FontSize.Size24
+	end
+	local textLabel = createTextLabel(name.."Text", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), font, fontSize, text)
 	textLabel.ZIndex = 9
 	textLabel.Parent = imageButton
 
@@ -276,136 +307,268 @@ local function createImageButtonWithText(name, position, image, imageDown, text,
 	return imageButton
 end
 
+local function createImageButtonWithText3D(name, position, image, imageDown, text, font, fontSize)
+	local imageButton = createImageButtonWithText(name, position, image, imageDown, text, font, fontSize)
+	imageButton.Size = BTN_SIZE_VR
+	imageButton.SelectionGained:connect(function()
+		imageButton.Image = imageDown
+	end)
+	imageButton.SelectionLost:connect(function()
+		imageButton.Image = image
+	end)
+	imageButton.SelectionImageObject = emptySelectionImage
+	return imageButton
+end
+
 --[[ Begin Gui Creation ]]--
-local PurchaseDialog = isTenFootInterface and createFrame("PurchaseDialog", DIALOG_SIZE_TENFOOT, HIDE_POSITION_TENFOOT, 1, nil) or createFrame("PurchaseDialog", DIALOG_SIZE, HIDE_POSITION, 1, nil)
-PurchaseDialog.Visible = false
-PurchaseDialog.Parent = RobloxGui
+local function create2DGui()
+	local Gui = {}
+	Gui.PurchaseDialog = isTenFootInterface and createFrame("PurchaseDialog", DIALOG_SIZE_TENFOOT, HIDE_POSITION_TENFOOT, 1, nil) or createFrame("PurchaseDialog", DIALOG_SIZE, HIDE_POSITION, 1, nil)
+	Gui.PurchaseDialog.Visible = false
+	Gui.PurchaseDialog.Parent = RobloxGui
 
-	local ContainerFrame = createFrame("ContainerFrame", UDim2.new(1, 0, 1, 0), nil, 1, nil)
-	ContainerFrame.Parent = PurchaseDialog
+		Gui.ContainerFrame = createFrame("ContainerFrame", UDim2.new(1, 0, 1, 0), nil, 1, nil)
+		Gui.ContainerFrame.Parent = Gui.PurchaseDialog
 
-		local ContainerImage = createImageLabel("ContainerImage", isTenFootInterface and BODY_SIZE_TENFOOT or BODY_SIZE, UDim2.new(0, 0, 0, 0), BG_IMAGE)
-		ContainerImage.ZIndex = 8
-		ContainerImage.Parent = ContainerFrame
+			Gui.ContainerImage = createImageLabel("ContainerImage", isTenFootInterface and BODY_SIZE_TENFOOT or BODY_SIZE, UDim2.new(0, 0, 0, 0), BG_IMAGE)
+			Gui.ContainerImage.ZIndex = 8
+			Gui.ContainerImage.Parent = Gui.ContainerFrame
 
-		local ItemPreviewImage = isTenFootInterface and createImageLabel("ItemPreviewImage", UDim2.new(0, 64*scaleFactor, 0, 64*scaleFactor), UDim2.new(0, 27*scaleFactor, 0, 20*scaleFactor), "") or createImageLabel("ItemPreviewImage", UDim2.new(0, 64, 0, 64), UDim2.new(0, 27, 0, 20), "")
-		ItemPreviewImage.ZIndex = 9
-		ItemPreviewImage.Parent = ContainerFrame
+			Gui.ItemPreviewImage = isTenFootInterface and createImageLabel("ItemPreviewImage", UDim2.new(0, 64*scaleFactor, 0, 64*scaleFactor), UDim2.new(0, 27*scaleFactor, 0, 20*scaleFactor), "") or createImageLabel("ItemPreviewImage", UDim2.new(0, 64, 0, 64), UDim2.new(0, 27, 0, 20), "")
+			Gui.ItemPreviewImage.ZIndex = 9
+			Gui.ItemPreviewImage.Parent = Gui.ContainerFrame
 
-		local ItemDescriptionText = createTextLabel("ItemDescriptionText", isTenFootInterface and UDim2.new(0, 210*scaleFactor - 20, 0, 96*scaleFactor) or UDim2.new(0, 210, 0, 96), isTenFootInterface and UDim2.new(0, 110*scaleFactor, 0, 18*scaleFactor) or UDim2.new(0, 110, 0, 18),
-			Enum.Font.SourceSans, isTenFootInterface and Enum.FontSize.Size48 or Enum.FontSize.Size18, PURCHASE_MSG.PURCHASE)
-		ItemDescriptionText.TextXAlignment = Enum.TextXAlignment.Left
-		ItemDescriptionText.TextYAlignment = Enum.TextYAlignment.Top
-		ItemDescriptionText.TextWrapped = true
-		ItemDescriptionText.Parent = ContainerFrame
+			Gui.ItemDescriptionText = createTextLabel("ItemDescriptionText", isTenFootInterface and UDim2.new(0, 210*scaleFactor - 20, 0, 96*scaleFactor) or UDim2.new(0, 210, 0, 96), isTenFootInterface and UDim2.new(0, 110*scaleFactor, 0, 18*scaleFactor) or UDim2.new(0, 110, 0, 18),
+				Enum.Font.SourceSans, isTenFootInterface and Enum.FontSize.Size48 or Enum.FontSize.Size18, PURCHASE_MSG.PURCHASE)
+			Gui.ItemDescriptionText.TextXAlignment = Enum.TextXAlignment.Left
+			Gui.ItemDescriptionText.TextYAlignment = Enum.TextYAlignment.Top
+			Gui.ItemDescriptionText.TextWrapped = true
+			Gui.ItemDescriptionText.Parent = Gui.ContainerFrame
 
-		local RobuxIcon = createImageLabel("RobuxIcon", isTenFootInterface and UDim2.new(0, 20*scaleFactor, 0, 20*scaleFactor) or UDim2.new(0, 20, 0, 20), UDim2.new(0, 0, 0, 0), ROBUX_ICON)
-		RobuxIcon.ZIndex = 9
-		RobuxIcon.Visible = false
-		RobuxIcon.Parent = ContainerFrame
+			Gui.RobuxIcon = createImageLabel("RobuxIcon", isTenFootInterface and UDim2.new(0, 20*scaleFactor, 0, 20*scaleFactor) or UDim2.new(0, 20, 0, 20), UDim2.new(0, 0, 0, 0), ROBUX_ICON)
+			Gui.RobuxIcon.ZIndex = 9
+			Gui.RobuxIcon.Visible = false
+			Gui.RobuxIcon.Parent = Gui.ContainerFrame
 
-		local TixIcon = createImageLabel("TixIcon", isTenFootInterface and UDim2.new(0, 20*scaleFactor, 0, 20*scaleFactor) or UDim2.new(0, 20, 0, 20), UDim2.new(0, 0, 0, 0), TIX_ICON)
-		TixIcon.ZIndex = 9
-		TixIcon.Visible = false
-		TixIcon.Parent = ContainerFrame
+			Gui.TixIcon = createImageLabel("TixIcon", isTenFootInterface and UDim2.new(0, 20*scaleFactor, 0, 20*scaleFactor) or UDim2.new(0, 20, 0, 20), UDim2.new(0, 0, 0, 0), TIX_ICON)
+			Gui.TixIcon.ZIndex = 9
+			Gui.TixIcon.Visible = false
+			Gui.TixIcon.Parent = Gui.ContainerFrame
 
-		local CostText = createTextLabel("CostText", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0),
-			Enum.Font.SourceSansBold, isTenFootInterface and largeFont or Enum.FontSize.Size18, "")
-		CostText.TextXAlignment = Enum.TextXAlignment.Left
-		CostText.Visible = false
-		CostText.Parent = ContainerFrame
+			Gui.CostText = createTextLabel("CostText", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0),
+				Enum.Font.SourceSansBold, isTenFootInterface and largeFont or Enum.FontSize.Size18, "")
+			Gui.CostText.TextXAlignment = Enum.TextXAlignment.Left
+			Gui.CostText.Visible = false
+			Gui.CostText.Parent = Gui.ContainerFrame
 
-		local PostBalanceText = createTextLabel("PostBalanceText", UDim2.new(1, -20, 0, 30), isTenFootInterface and UDim2.new(0, 10, 0, 100*scaleFactor) or UDim2.new(0, 10, 0, 100), Enum.Font.SourceSans,
-			isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size14, "")
-		PostBalanceText.TextWrapped = true
-		PostBalanceText.Parent = ContainerFrame
+			Gui.PostBalanceText = createTextLabel("PostBalanceText", UDim2.new(1, -20, 0, 30), isTenFootInterface and UDim2.new(0, 10, 0, 100*scaleFactor) or UDim2.new(0, 10, 0, 100), Enum.Font.SourceSans,
+				isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size14, "")
+			Gui.PostBalanceText.TextWrapped = true
+			Gui.PostBalanceText.Parent = Gui.ContainerFrame
 
-		local BuyButton = createImageButtonWithText("BuyButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Buy Now", Enum.Font.SourceSansBold)
-		BuyButton.Parent = ContainerFrame
-		local BuyButtonText = BuyButton:FindFirstChild("BuyButtonText")
+			Gui.BuyButton = createImageButtonWithText("BuyButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Buy Now", Enum.Font.SourceSansBold)
+			Gui.BuyButton.Parent = Gui.ContainerFrame
+			Gui.BuyButtonText = Gui.BuyButton:FindFirstChild("BuyButtonText")
 
-		local gamepadButtonXLocation = (BuyButton.AbsoluteSize.X/2 - BuyButtonText.TextBounds.X/2)/2
-		local buyButtonGamepadImage = Instance.new("ImageLabel")
-		buyButtonGamepadImage.BackgroundTransparency = 1
-		buyButtonGamepadImage.Image = A_BUTTON
-		buyButtonGamepadImage.Size = UDim2.new(1, -8, 1, -8)
-		buyButtonGamepadImage.SizeConstraint = Enum.SizeConstraint.RelativeYY
-		buyButtonGamepadImage.Parent = BuyButton
-		buyButtonGamepadImage.Position = UDim2.new(0, gamepadButtonXLocation - buyButtonGamepadImage.AbsoluteSize.X/2, 0, 5)
-		buyButtonGamepadImage.Visible = false
-		buyButtonGamepadImage.ZIndex = BuyButton.ZIndex
-		table.insert(GAMEPAD_BUTTONS, buyButtonGamepadImage)
+			local gamepadButtonXLocation = (Gui.BuyButton.AbsoluteSize.X/2 - Gui.BuyButtonText.TextBounds.X/2)/2
+			local buyButtonGamepadImage = Instance.new("ImageLabel")
+			buyButtonGamepadImage.BackgroundTransparency = 1
+			buyButtonGamepadImage.Image = A_BUTTON
+			buyButtonGamepadImage.Size = UDim2.new(1, -8, 1, -8)
+			buyButtonGamepadImage.SizeConstraint = Enum.SizeConstraint.RelativeYY
+			buyButtonGamepadImage.Parent = Gui.BuyButton
+			buyButtonGamepadImage.Position = UDim2.new(0, gamepadButtonXLocation - buyButtonGamepadImage.AbsoluteSize.X/2, 0, 5)
+			buyButtonGamepadImage.Visible = false
+			buyButtonGamepadImage.ZIndex = Gui.BuyButton.ZIndex
+			table.insert(GAMEPAD_BUTTONS, buyButtonGamepadImage)
 
-		local CancelButton = createImageButtonWithText("CancelButton", isTenFootInterface and BTN_R_POS_TENFOOT or BTN_R_POS, BUTTON_RIGHT, BUTTON_RIGHT_DOWN, "Cancel", Enum.Font.SourceSans)
-		CancelButton.Parent = ContainerFrame
+			Gui.CancelButton = createImageButtonWithText("CancelButton", isTenFootInterface and BTN_R_POS_TENFOOT or BTN_R_POS, BUTTON_RIGHT, BUTTON_RIGHT_DOWN, "Cancel", Enum.Font.SourceSans)
+			Gui.CancelButton.Parent = Gui.ContainerFrame
 
-		local cancelButtonGamepadImage = buyButtonGamepadImage:Clone()
-		cancelButtonGamepadImage.Image = B_BUTTON
-		cancelButtonGamepadImage.ZIndex = CancelButton.ZIndex
-		cancelButtonGamepadImage.Parent = CancelButton
-		table.insert(GAMEPAD_BUTTONS, cancelButtonGamepadImage)
+			local cancelButtonGamepadImage = buyButtonGamepadImage:Clone()
+			cancelButtonGamepadImage.Image = B_BUTTON
+			cancelButtonGamepadImage.ZIndex = Gui.CancelButton.ZIndex
+			cancelButtonGamepadImage.Parent = Gui.CancelButton
+			table.insert(GAMEPAD_BUTTONS, cancelButtonGamepadImage)
 
-		local BuyRobuxButton = createImageButtonWithText("BuyRobuxButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, IsNativePurchasing and "Buy" or "Buy R$",
-			Enum.Font.SourceSansBold)
-		BuyRobuxButton.Visible = false
-		BuyRobuxButton.Parent = ContainerFrame
+			Gui.BuyRobuxButton = createImageButtonWithText("BuyRobuxButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, IsNativePurchasing and "Buy" or "Buy R$",
+				Enum.Font.SourceSansBold)
+			Gui.BuyRobuxButton.Visible = false
+			Gui.BuyRobuxButton.Parent = Gui.ContainerFrame
 
-		local buyRobuxGamepadImage = buyButtonGamepadImage:Clone()
-		buyRobuxGamepadImage.ZIndex = BuyRobuxButton.ZIndex
-		buyRobuxGamepadImage.Parent = BuyRobuxButton
-		table.insert(GAMEPAD_BUTTONS, buyRobuxGamepadImage)
+			local buyRobuxGamepadImage = buyButtonGamepadImage:Clone()
+			buyRobuxGamepadImage.ZIndex = Gui.BuyRobuxButton.ZIndex
+			buyRobuxGamepadImage.Parent = Gui.BuyRobuxButton
+			table.insert(GAMEPAD_BUTTONS, buyRobuxGamepadImage)
 
-		local BuyBCButton = createImageButtonWithText("BuyBCButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Upgrade", Enum.Font.SourceSansBold)
-		BuyBCButton.Visible = false
-		BuyBCButton.Parent = ContainerFrame
+			Gui.BuyBCButton = createImageButtonWithText("BuyBCButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Upgrade", Enum.Font.SourceSansBold)
+			Gui.BuyBCButton.Visible = false
+			Gui.BuyBCButton.Parent = Gui.ContainerFrame
 
-		local buyBCGamepadImage = buyButtonGamepadImage:Clone()
-		buyBCGamepadImage.ZIndex = BuyBCButton.ZIndex
-		buyBCGamepadImage.Parent = BuyBCButton
-		table.insert(GAMEPAD_BUTTONS, buyBCGamepadImage)
+			local buyBCGamepadImage = buyButtonGamepadImage:Clone()
+			buyBCGamepadImage.ZIndex = Gui.BuyBCButton.ZIndex
+			buyBCGamepadImage.Parent = Gui.BuyBCButton
+			table.insert(GAMEPAD_BUTTONS, buyBCGamepadImage)
 
-		local FreeButton = createImageButtonWithText("FreeButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Take Free", Enum.Font.SourceSansBold)
-		FreeButton.Visible = false
-		FreeButton.Parent = ContainerFrame
+			Gui.FreeButton = createImageButtonWithText("FreeButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Take Free", Enum.Font.SourceSansBold)
+			Gui.FreeButton.Visible = false
+			Gui.FreeButton.Parent = Gui.ContainerFrame
 
-		local OkButton = createImageButtonWithText("OkButton", isTenFootInterface and UDim2.new(0, 2, 0, 136*scaleFactor) or UDim2.new(0, 2, 0, 136), BUTTON, BUTTON_DOWN, "OK", Enum.Font.SourceSans)
-		OkButton.Size = isTenFootInterface and UDim2.new(0, 320*scaleFactor, 0, 44*scaleFactor) or UDim2.new(0, 320, 0, 44)
-		OkButton.Visible = false
-		OkButton.Parent = ContainerFrame
+			Gui.OkButton = createImageButtonWithText("OkButton", isTenFootInterface and UDim2.new(0, 2, 0, 136*scaleFactor) or UDim2.new(0, 2, 0, 136), BUTTON, BUTTON_DOWN, "OK", Enum.Font.SourceSans)
+			Gui.OkButton.Size = isTenFootInterface and UDim2.new(0, 320*scaleFactor, 0, 44*scaleFactor) or UDim2.new(0, 320, 0, 44)
+			Gui.OkButton.Visible = false
+			Gui.OkButton.Parent = Gui.ContainerFrame
 
-		local okButtonGamepadImage = buyButtonGamepadImage:Clone()
-		okButtonGamepadImage.ZIndex = OkButton.ZIndex
-		okButtonGamepadImage.Parent = OkButton
-		table.insert(GAMEPAD_BUTTONS, okButtonGamepadImage)
+			local okButtonGamepadImage = buyButtonGamepadImage:Clone()
+			okButtonGamepadImage.ZIndex = Gui.OkButton.ZIndex
+			okButtonGamepadImage.Parent = Gui.OkButton
+			table.insert(GAMEPAD_BUTTONS, okButtonGamepadImage)
 
-		local OkPurchasedButton = createImageButtonWithText("OkPurchasedButton", isTenFootInterface and UDim2.new(0, 2, 0, 136*scaleFactor) or UDim2.new(0, 2, 0, 136), BUTTON, BUTTON_DOWN, "OK", Enum.Font.SourceSans)
-		OkPurchasedButton.Size = isTenFootInterface and UDim2.new(0, 320*scaleFactor, 0, 44*scaleFactor) or UDim2.new(0, 320, 0, 44)
-		OkPurchasedButton.Visible = false
-		OkPurchasedButton.Parent = ContainerFrame
+			Gui.OkPurchasedButton = createImageButtonWithText("OkPurchasedButton", isTenFootInterface and UDim2.new(0, 2, 0, 136*scaleFactor) or UDim2.new(0, 2, 0, 136), BUTTON, BUTTON_DOWN, "OK", Enum.Font.SourceSans)
+			Gui.OkPurchasedButton.Size = isTenFootInterface and UDim2.new(0, 320*scaleFactor, 0, 44*scaleFactor) or UDim2.new(0, 320, 0, 44)
+			Gui.OkPurchasedButton.Visible = false
+			Gui.OkPurchasedButton.Parent = Gui.ContainerFrame
 
-		local okPurchasedGamepadImage = buyButtonGamepadImage:Clone()
-		okPurchasedGamepadImage.ZIndex = OkPurchasedButton.ZIndex
-		okPurchasedGamepadImage.Parent = OkPurchasedButton
-		table.insert(GAMEPAD_BUTTONS, okPurchasedGamepadImage)
+			local okPurchasedGamepadImage = buyButtonGamepadImage:Clone()
+			okPurchasedGamepadImage.ZIndex = Gui.OkPurchasedButton.ZIndex
+			okPurchasedGamepadImage.Parent = Gui.OkPurchasedButton
+			table.insert(GAMEPAD_BUTTONS, okPurchasedGamepadImage)
 
-	local PurchaseFrame = createImageLabel("PurchaseFrame", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), PURCHASE_BG)
-	PurchaseFrame.ZIndex = 8
-	PurchaseFrame.Visible = false
-	PurchaseFrame.Parent = PurchaseDialog
+		Gui.PurchaseFrame = createImageLabel("PurchaseFrame", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), PURCHASE_BG)
+		Gui.PurchaseFrame.ZIndex = 8
+		Gui.PurchaseFrame.Visible = false
+		Gui.PurchaseFrame.Parent = Gui.PurchaseDialog
 
-		local PurchaseText = createTextLabel("PurchaseText", nil, UDim2.new(0.5, 0, 0.5, -36), Enum.Font.SourceSans,
-			isTenFootInterface and largeFont or Enum.FontSize.Size36, "Purchasing")
-		PurchaseText.Parent = PurchaseFrame
+			Gui.PurchaseText = createTextLabel("PurchaseText", nil, UDim2.new(0.5, 0, 0.5, -36), Enum.Font.SourceSans,
+				isTenFootInterface and largeFont or Enum.FontSize.Size36, "Purchasing")
+			Gui.PurchaseText.Parent = Gui.PurchaseFrame
 
-		local LoadingFrames = {}
-		local xOffset = -40
-		for i = 1, 3 do
-			local frame = createFrame("Loading", UDim2.new(0, 16, 0, 16), UDim2.new(0.5, xOffset, 0.5, 0), 0, Color3.new(132/255, 132/255, 132/255))
-			table.insert(LoadingFrames, frame)
-			frame.Parent = PurchaseFrame
-			xOffset = xOffset + 32
-		end
+			Gui.LoadingFrames = {}
+			local xOffset = -40
+			for i = 1, 3 do
+				local frame = createFrame("Loading", UDim2.new(0, 16, 0, 16), UDim2.new(0.5, xOffset, 0.5, 0), 0, Color3.new(132/255, 132/255, 132/255))
+				table.insert(Gui.LoadingFrames, frame)
+				frame.Parent = Gui.PurchaseFrame
+				xOffset = xOffset + 32
+			end
 
+	return Gui
+end
+local function create3DGui()
+	local Gui = {}
+
+	local Dialog = require(RobloxGui.Modules.VR.Dialog)
+	Gui.Dialog = Dialog.new("Confirm Purchase", Color3.new(0.01, 0.72, 0.34))
+
+	Gui.PurchaseDialog = createFrame("PurchaseDialog", UDim2.new(1, 0, 0, 396), nil, 1, nil)
+	Gui.Dialog:SetContent(Gui.PurchaseDialog)
+
+		Gui.ContainerFrame = createFrame("ContainerFrame", UDim2.new(1, 0, 1, 0), nil, 1, nil)
+		Gui.ContainerFrame.Parent = Gui.PurchaseDialog
+
+			Gui.ItemPreviewImageFrame = createFrame("ItemPreviewImageFrame", UDim2.new(0, 150, 0, 150), UDim2.new(0, 0, 0, 0), 1, nil)
+			Gui.ItemPreviewImageFrame.Parent = Gui.ContainerFrame
+			Gui.ItemPreviewImage = createImageLabel("ItemPreviewImage", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), "")
+			Gui.ItemPreviewImage.ZIndex = 9
+			Gui.ItemPreviewImage.Parent = Gui.ItemPreviewImageFrame
+
+			Gui.ItemDescriptionText = createTextLabel("ItemDescriptionText", UDim2.new(1, -170, 0, 200), UDim2.new(0, 170, 0, 0), Enum.Font.SourceSansBold, Enum.FontSize.Size36, "")
+			Gui.ItemDescriptionText.TextWrapped = true
+			Gui.ItemDescriptionText.TextXAlignment = Enum.TextXAlignment.Left
+			Gui.ItemDescriptionText.TextYAlignment = Enum.TextYAlignment.Top
+			Gui.ItemDescriptionText.Parent = Gui.ContainerFrame
+
+			Gui.PriceFrame = createFrame("PriceFrame", UDim2.new(1, -150, 0, 75), UDim2.new(0, 170, 0, 75), 1)
+			Gui.PriceFrame.Parent = Gui.ContainerFrame
+
+			Gui.RobuxIcon = createImageLabel("RobuxIcon", UDim2.new(0, 46, 0, 46), UDim2.new(0, 29 * 0.5, 0, 29 * 0.5), ROBUX_ICON)
+			Gui.RobuxIcon.Visible = false
+			Gui.RobuxIcon.Parent = Gui.PriceFrame
+			Gui.TixIcon = createImageLabel("TixIcon", UDim2.new(0, 0, 0, 0), UDim2.new(0, 0, 0, 0), "")
+
+			Gui.CostText = createTextLabel("CostText", UDim2.new(1, -70, 1, -2), UDim2.new(0, 70, 0, 0), Enum.Font.SourceSansBold, Enum.FontSize.Size48, "")
+			Gui.CostText.TextXAlignment = Enum.TextXAlignment.Left
+			Gui.CostText.Parent = Gui.PriceFrame
+
+			Gui.PostBalanceText = createTextLabel("PostBalanceText", UDim2.new(1, 0, 0, 75), UDim2.new(0, 0, 0, 150), Enum.Font.SourceSansBold, Enum.FontSize.Size24, "")
+			Gui.PostBalanceText.Parent = Gui.ContainerFrame
+
+			local scaleType = Enum.ScaleType.Slice
+			local sliceCenter = Rect.new(10, 10, 54, 54)
+
+			Gui.BuyButton = createImageButtonWithText3D("BuyButton", BTN_L_POS_VR, VR_BUTTON, VR_BUTTON_DOWN, "Buy", Enum.Font.SourceSansBold, Enum.FontSize.Size36)
+			Gui.BuyButton.ScaleType = scaleType
+			Gui.BuyButton.SliceCenter = sliceCenter
+			Gui.BuyButton.Visible = false
+			Gui.BuyButton.Parent = Gui.ContainerFrame
+
+			Gui.CancelButton = createImageButtonWithText3D("CancelButton", BTN_R_POS_VR, VR_BUTTON, VR_BUTTON_DOWN, "Cancel", Enum.Font.SourceSansBold, Enum.FontSize.Size36)
+			Gui.CancelButton.ScaleType = scaleType
+			Gui.CancelButton.SliceCenter = sliceCenter
+			Gui.CancelButton.Visible = false
+			Gui.CancelButton.Parent = Gui.ContainerFrame
+
+			Gui.BuyRobuxButton = createImageButtonWithText3D("BuyRobuxButton", UDim2.new(0, 10, 0, 225), VR_BUTTON, VR_BUTTON_DOWN, "Buy", Enum.Font.SourceSansBold, Enum.FontSize.Size36)
+			Gui.BuyRobuxButton.ScaleType = scaleType
+			Gui.BuyRobuxButton.SliceCenter = sliceCenter
+			Gui.BuyRobuxButton.Visible = false
+			Gui.BuyRobuxButton.Parent = Gui.ContainerFrame
+
+			Gui.BuyBCButton = createImageButtonWithText3D("BuyBCButton", UDim2.new(0, 10, 0, 225), VR_BUTTON, VR_BUTTON_DOWN, "Upgrade", Enum.Font.SourceSansBold, Enum.FontSize.Size36)
+			Gui.BuyBCButton.ScaleType = scaleType
+			Gui.BuyBCButton.SliceCenter = sliceCenter
+			Gui.BuyBCButton.Visible = false
+			Gui.BuyBCButton.Parent = Gui.ContainerFrame
+
+			Gui.FreeButton = createImageButtonWithText3D("FreeButton", UDim2.new(0, 10, 0, 225), VR_BUTTON, VR_BUTTON_DOWN, "Take Free", Enum.Font.SourceSansBold, Enum.FontSize.Size36)
+			Gui.FreeButton.ScaleType = scaleType
+			Gui.FreeButton.SliceCenter = sliceCenter
+			Gui.FreeButton.Visible = false
+			Gui.FreeButton.Parent = Gui.ContainerFrame
+
+			Gui.OkButton = createImageButtonWithText3D("OkButton", UDim2.new(0.25, 0, 0, 225), VR_BUTTON, VR_BUTTON_DOWN, "Ok", Enum.Font.SourceSansBold, Enum.FontSize.Size36)
+			Gui.OkButton.ScaleType = scaleType
+			Gui.OkButton.SliceCenter = sliceCenter
+			Gui.OkButton.Size = UDim2.new(0.5, 0, 0, Gui.OkButton.Size.Y.Offset)
+			Gui.OkButton.Visible = false
+			Gui.OkButton.Parent = Gui.ContainerFrame
+
+			Gui.OkPurchasedButton = createImageButtonWithText3D("OkPurchasedButton", BTN_M_POS_VR, VR_BUTTON, VR_BUTTON_DOWN, "Ok", Enum.Font.SourceSansBold, Enum.FontSize.Size36)
+			Gui.OkPurchasedButton.ScaleType = scaleType
+			Gui.OkPurchasedButton.SliceCenter = sliceCenter
+			Gui.OkPurchasedButton.Size = UDim2.new(0.5, 0, 0, Gui.OkPurchasedButton.Size.Y.Offset)
+			Gui.OkPurchasedButton.Visible = false
+			Gui.OkPurchasedButton.Parent = Gui.ContainerFrame
+
+		Gui.PurchaseFrame = createFrame("PurchaseFrame", UDim2.new(1, 0, 1, 0), nil, 1, nil)
+		Gui.PurchaseFrame.Visible = false
+		Gui.PurchaseFrame.Parent = Gui.PurchaseDialog
+
+			Gui.PurchaseText = createTextLabel("PurchaseText", nil, UDim2.new(0.5, 0, 0.5, -100), Enum.Font.SourceSans, Enum.FontSize.Size60, "Purchasing")
+			Gui.PurchaseText.Parent = Gui.PurchaseFrame
+
+			Gui.LoadingFrames = {}
+			local scaleFactor = 3
+			local xOffset = -40 * scaleFactor
+			for i = 1, 3 do
+				local frame = createFrame3D("Loading", UDim2.new(0, 16 * scaleFactor, 0, 16 * scaleFactor), UDim2.new(0.5, xOffset, 0.5, -50), 0, Color3.new(132/255, 132/255, 132/255))
+				table.insert(Gui.LoadingFrames, frame)
+				frame.Parent = Gui.PurchaseFrame
+				xOffset = xOffset + (32 * scaleFactor)
+			end
+
+	return Gui
+end
+
+local Gui2D = create2DGui()
+local Gui3D = nil
+
+local function getCurrentGui()
+	if IsVRMode and vrPurchasePromptsEnabled then
+		return Gui3D
+	end
+	return Gui2D
+end
 
 local function noOpFunc() end
 
@@ -444,6 +607,10 @@ local function setCurrencyData(playerBalance)
 	end
 end
 
+local function setPreviewImageInternal(image)
+	getCurrentGui().ItemPreviewImage.Image = image
+end
+
 local function setPreviewImageXbox(productInfo, assetId)
 	-- get the asset id we want
 	local id = nil
@@ -452,7 +619,7 @@ local function setPreviewImageXbox(productInfo, assetId)
 	elseif assetId then
 		id = assetId
 	else
-		ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+		setPreviewImageInternal(DEFAULT_XBOX_IMAGE)
 		return
 	end
 
@@ -465,7 +632,7 @@ local function setPreviewImageXbox(productInfo, assetId)
 			return game:HttpGetAsync(path)
 		end)
 		if not success then
-			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+			setPreviewImageInternal(DEFAULT_XBOX_IMAGE)
 			return
 		end
 
@@ -473,14 +640,14 @@ local function setPreviewImageXbox(productInfo, assetId)
 			return HttpService:JSONDecode(result)
 		end)
 		if not decodeSuccess then
-			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+			setPreviewImageInternal(DEFAULT_XBOX_IMAGE)
 			return
 		end
 
 		if decodeResult["Final"] == true then
-			ItemPreviewImage.Image = THUMBNAIL_URL..tostring(id).."&x=100&y=100&format=png"
+			setPreviewImageInternal(THUMBNAIL_URL..tostring(id).."&x=100&y=100&format=png")
 		else
-			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
+			setPreviewImageInternal(DEFAULT_XBOX_IMAGE)
 		end
 	end)
 end
@@ -493,30 +660,45 @@ local function setPreviewImage(productInfo, assetId)
 	end
 	if IsPurchasingConsumable then
 		if productInfo then
-			ItemPreviewImage.Image = THUMBNAIL_URL..tostring(productInfo["IconImageAssetId"].."&x=100&y=100&format=png")
+			setPreviewImageInternal(THUMBNAIL_URL..tostring(productInfo["IconImageAssetId"]).."&x=100&y=100&format=png")
 		end
 	else
 		if assetId then
-			ItemPreviewImage.Image = THUMBNAIL_URL..tostring(assetId).."&x=100&y=100&format=png"
+			setPreviewImageInternal(THUMBNAIL_URL..tostring(assetId).."&x=100&y=100&format=png")
 		end
 	end
 end
 
+local function setVisible(...)
+	local icons = { ... }
+	for i, v in pairs(icons) do
+		v.Visible = true
+	end
+end
+
+local function setNotVisible(...)
+	local icons = { ... }
+	for i, v in pairs(icons) do
+		v.Visible = false
+	end
+end
+
 local function clearPurchaseData()
+	local currentGui = getCurrentGui()
 	for k,v in pairs(PurchaseData) do
 		PurchaseData[k] = nil
 	end
-	RobuxIcon.Visible = false
-	TixIcon.Visible = false
-	CostText.Visible = false
+	--Gui3D doesn't have TixIcon, but this will be fine since setNotVisible loops and therefore will skip a nil.
+	setNotVisible(currentGui.RobuxIcon, currentGui.TixIcon, currentGui.CostText)
 end
 
 --[[ Show Functions ]]--
 local function setButtonsVisible(...)
 	local args = {...}
 	local argCount = select('#', ...)
+	local currentGui = getCurrentGui()
 
-	for _,child in pairs(ContainerFrame:GetChildren()) do
+	for _,child in pairs(currentGui.ContainerFrame:GetChildren()) do
 		if child:IsA('ImageButton') then
 			child.Visible = false
 			for i = 1, argCount do
@@ -528,47 +710,66 @@ local function setButtonsVisible(...)
 	end
 end
 
-local function tweenBackgroundColor(frame, endColor, duration)
+local function tweenColorProperty(frame, endColor, duration, colorProp)
 	local t = 0
 	local prevTime = tick()
-	local startColor = frame.BackgroundColor3
+	colorProp = colorProp or "BackgroundColor3"
+	local startColor = frame[colorProp]
 	while t < duration do
 		local s = t / duration
 		local r = lerp(startColor.r, endColor.r, s)
 		local g = lerp(startColor.g, endColor.g, s)
 		local b = lerp(startColor.b, endColor.b, s)
-		frame.BackgroundColor3 = Color3.new(r, g, b)
+		frame[colorProp] = Color3.new(r, g, b)
 		--
 		t = t + (tick() - prevTime)
 		prevTime = tick()
 		wait()
 	end
-	frame.BackgroundColor3 = endColor
+	frame[colorProp] = endColor
 end
 
 local isPurchaseAnimating = false
 local function startPurchaseAnimation()
-	if PurchaseFrame.Visible then return end
-	--
-	ContainerFrame.Visible = false
-	PurchaseFrame.Visible = true
-	--
+	local currentGui = getCurrentGui()
+	local scaleFactor = 1
+	if IsVRMode and vrPurchasePromptsEnabled then
+		scaleFactor = 3
+	end
+
+	if currentGui.PurchaseFrame.Visible then return end
+
+	currentGui.ContainerFrame.Visible = false
+	currentGui.PurchaseFrame.Visible = true
+	currentGui.PurchaseText.Text = "Purchasing"
+
+ 
 	spawn(function()
 		isPurchaseAnimating = true
 		local i = 1
 		while isPurchaseAnimating do
-			local frame = LoadingFrames[i]
+			local frame = currentGui.LoadingFrames[i]
+
 			local prevPosition = frame.Position
-			local newPosition = UDim2.new(prevPosition.X.Scale, prevPosition.X.Offset, prevPosition.Y.Scale, prevPosition.Y.Offset - 2)
+			local newPosition = UDim2.new(prevPosition.X.Scale, prevPosition.X.Offset, prevPosition.Y.Scale, prevPosition.Y.Offset - (2 * scaleFactor))
+			local prevWidth, prevHeight = frame.Size.X.Offset, frame.Size.Y.Offset
+			local expandedHeight = prevHeight + (4 * scaleFactor)
+
+			local propertyName = "BackgroundColor3"
+			if IsVRMode and vrPurchasePromptsEnabled then
+				propertyName = "ImageColor3"
+			end
+
 			spawn(function()
-				tweenBackgroundColor(frame, Color3.new(0, 162/255, 1), 0.25)
+				tweenColorProperty(frame, Color3.new(0, 162/255, 1), 0.25, propertyName)
 			end)
-			frame:TweenSizeAndPosition(UDim2.new(0, 16, 0, 20), newPosition, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.25, true, function()
+			frame:TweenSizeAndPosition(UDim2.new(0, prevWidth, 0, expandedHeight), newPosition, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.25, true, function()
 				spawn(function()
-					tweenBackgroundColor(frame, Color3.new(132/255, 132/255, 132/255), 0.25)
+					tweenColorProperty(frame, Color3.new(132/255, 132/255, 132/255), 0.25, propertyName)
 				end)
-				frame:TweenSizeAndPosition(UDim2.new(0, 16, 0, 16), prevPosition, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.25, true)
+				frame:TweenSizeAndPosition(UDim2.new(0, prevWidth, 0, prevHeight), prevPosition, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, 0.25, true)
 			end)
+
 			i = i + 1
 			if i > 3 then
 				i = 1
@@ -579,17 +780,25 @@ local function startPurchaseAnimation()
 	end)
 end
 
+local function showRemoveVRHeadsetNotice()
+	startPurchaseAnimation()
+	getCurrentGui().PurchaseText.Text = "Remove your headset"
+	--this is a placeholder; we'll get a design in a future iteration
+end
+
 local function stopPurchaseAnimation()
 	isPurchaseAnimating = false
-	PurchaseFrame.Visible = false
-	ContainerFrame.Visible = true
+	local currentGui = getCurrentGui()
+	currentGui.PurchaseFrame.Visible = false
+	currentGui.ContainerFrame.Visible = true
 end
 
 local function setPurchaseDataInGui(isFree, invalidBC)
+	local currentGui = getCurrentGui()
 	local  descriptionText = PurchaseData.CurrencyType == Enum.CurrencyType.Tix and PURCHASE_MSG.PURCHASE_TIX or PURCHASE_MSG.PURCHASE
 	if isFree then
 		descriptionText = PURCHASE_MSG.FREE
-		PostBalanceText.Text = PURCHASE_MSG.FREE_BALANCE
+		currentGui.PurchaseText.Text = PURCHASE_MSG.FREE_BALANCE
 	end
 
 	local productInfo = PurchaseData.ProductInfo
@@ -598,33 +807,44 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 	end
 	local itemDescription = string.gsub(descriptionText, "itemName", string.sub(productInfo["Name"], 1, 20))
 	itemDescription = string.gsub(itemDescription, "assetType", ASSET_TO_STRING[productInfo["AssetTypeId"]] or "Unknown")
-	ItemDescriptionText.Text = itemDescription
+	local itemDescriptionText = currentGui.ItemDescriptionText
+	if IsVRMode and vrPurchasePromptsEnabled then
+		itemDescriptionText.Font = Enum.Font.SourceSansBold
+		itemDescriptionText.FontSize = Enum.FontSize.Size36
+	end
+	itemDescriptionText.Text = itemDescription
 
 	if not isFree then
 		if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-			TixIcon.Visible = true
-			TixIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + (isTenFootInterface and 6*scaleFactor or 6))
-			CostText.TextColor3 = Color3.new(204/255, 158/255, 113/255)
+			if not IsVRMode then
+				currentGui.TixIcon.Visible = true
+				currentGui.TixIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, itemDescriptionText.Position.Y.Offset + itemDescriptionText.TextBounds.y + (isTenFootInterface and 6*scaleFactor or 6))
+			end
+			currentGui.CostText.TextColor3 = Color3.new(204/255, 158/255, 113/255)
 		else
-			RobuxIcon.Visible = true
-			RobuxIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + (isTenFootInterface and 6*scaleFactor or 6))
-			CostText.TextColor3 = Color3.new(2/255, 183/255, 87/255)
+			currentGui.RobuxIcon.Visible = true
+			if not IsVRMode or not vrPurchasePromptsEnabled then
+				currentGui.RobuxIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, itemDescriptionText.Position.Y.Offset + itemDescriptionText.TextBounds.y + (isTenFootInterface and 6*scaleFactor or 6))
+			end
+			currentGui.CostText.TextColor3 = Color3.new(2/255, 183/255, 87/255)
 		end
-		CostText.Text = formatNumber(PurchaseData.CurrencyAmount)
-		CostText.Position = UDim2.new(0, isTenFootInterface and 134*scaleFactor or 134, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + (isTenFootInterface and 15*scaleFactor or 15))
-		CostText.Visible = true
+		currentGui.CostText.Text = formatNumber(PurchaseData.CurrencyAmount)
+		if not IsVRMode or not vrPurchasePromptsEnabled then
+			currentGui.CostText.Position = UDim2.new(0, isTenFootInterface and 134*scaleFactor or 134, 0, itemDescriptionText.Position.Y.Offset + itemDescriptionText.TextBounds.y + (isTenFootInterface and 15*scaleFactor or 15))
+		end
+		currentGui.CostText.Visible = true
 	end
 
 	setPreviewImage(productInfo, PurchaseData.AssetId)
 	purchaseState = PURCHASE_STATE.BUYITEM
-	setButtonsVisible(isFree and FreeButton or BuyButton, CancelButton)
-	PostBalanceText.Visible = true
+	setButtonsVisible(isFree and currentGui.FreeButton or currentGui.BuyButton, currentGui.CancelButton)
+	currentGui.PostBalanceText.Visible = true
 
 	if invalidBC then
 		local neededBcLevel = PurchaseData.ProductInfo["MinimumMembershipLevel"]
-		PostBalanceText.Text = "This item requires "..BC_LVL_TO_STRING[neededBcLevel]..".\nClick 'Upgrade' to upgrade your Builders Club!"
+		currentGui.PurchaseText.Text = "This item requires "..BC_LVL_TO_STRING[neededBcLevel]..".\nClick 'Upgrade' to upgrade your Builders Club!"
 		purchaseState = PURCHASE_STATE.BUYBC
-		setButtonsVisible(BuyBCButton, CancelButton)
+		setButtonsVisible(currentGui.BuyBCButton, currentGui.CancelButton)
 	end
 	return true
 end
@@ -699,6 +919,8 @@ local function getRobuxProductToBuyItem(amountNeeded)
 end
 
 local function setBuyMoreRobuxDialog(playerBalance)
+	local currentGui = getCurrentGui()
+
 	local playerBalanceInt = tonumber(playerBalance["robux"])
 	local neededRobux = PurchaseData.CurrencyAmount - playerBalanceInt
 	local productInfo = PurchaseData.ProductInfo
@@ -707,50 +929,64 @@ local function setBuyMoreRobuxDialog(playerBalance)
 	descriptionText = string.format(descriptionText, formatNumber(neededRobux), productInfo["Name"], ASSET_TO_STRING[productInfo["AssetTypeId"]] or "")
 
 	purchaseState = PURCHASE_STATE.BUYROBUX
-	setButtonsVisible(BuyRobuxButton, CancelButton)
+	setButtonsVisible(currentGui.BuyRobuxButton, currentGui.CancelButton)
 
 	if IsNativePurchasing then
 		local productCost = nil
 		ThirdPartyProductName, productCost = getRobuxProductToBuyItem(neededRobux)
 		--
 		if not ThirdPartyProductName then
-			if isTenFootInterface then
-				-- don't direct them to roblox.com on consoles.
-				descriptionText = "This item cost more ROBUX than you have available. Please leave this game and go to the ROBUX screen to purchase more."
-			else
-				descriptionText = "This item cost more ROBUX than you can purchase. Please visit www.roblox.com to purchase more ROBUX."
-			end
+			descriptionText = "This item cost more ROBUX than you can purchase. Please visit www.roblox.com to purchase more ROBUX."
 			purchaseState = PURCHASE_STATE.FAILED
-			setButtonsVisible(OkButton)
+			setButtonsVisible(currentGui.OkButton)
 		else
 			local remainder = playerBalanceInt + productCost - PurchaseData.CurrencyAmount
 			descriptionText = descriptionText..". Would you like to buy "..formatNumber(productCost).." ROBUX?"
-			PostBalanceText.Text = "The remaining "..formatNumber(remainder).." ROBUX will be credited to your balance."
-			PostBalanceText.Visible = true
+			
+			local postBalanceText = currentGui.PostBalanceText
+			postBalanceText.Text = "The remaining "..formatNumber(remainder).." ROBUX will be credited to your balance."
+			postBalanceText.Visible = true
 		end
 	else
 		descriptionText = descriptionText..". Would you like to buy more ROBUX?"
 	end
-	ItemDescriptionText.Text = descriptionText
+
+	local itemDescriptionText = currentGui.ItemDescriptionText
+	if IsVRMode and vrPurchasePromptsEnabled then
+		itemDescriptionText.Font = Enum.Font.SourceSans
+		itemDescriptionText.FontSize = Enum.FontSize.Size36
+	end
+	itemDescriptionText.Text = descriptionText
 	setPreviewImage(productInfo, PurchaseData.AssetId)
 end
 
 local function showPurchasePrompt()
+	local currentGui = getCurrentGui()
+
 	stopPurchaseAnimation()
-	PurchaseDialog.Visible = true
+	currentGui.PurchaseDialog.Visible = true
+
 	if isTenFootInterface then
 		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 	end
-	PurchaseDialog:TweenPosition(isTenFootInterface and SHOW_POSITION_TENFOOT or SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
+	if not IsVRMode or not vrPurchasePromptsEnabled then
+		currentGui.PurchaseDialog:TweenPosition(isTenFootInterface and SHOW_POSITION_TENFOOT or SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
+	else
+		currentGui.Dialog:SetContent(Gui3D.PurchaseDialog)
+		currentGui.Dialog:Show(true)
+	end
 	disableControllerMovement()
-	enableControllerInput()
+	if not IsVRMode or not vrPurchasePromptsEnabled then
+		enableControllerInput()
+	end
 end
 
 --[[ Close and Cancel Functions ]]--
 local function onPurchaseFailed(failType)
-	setButtonsVisible(OkButton)
-	ItemPreviewImage.Image = ERROR_ICON
-	PostBalanceText.Text = ""
+	local currentGui = getCurrentGui()
+	setButtonsVisible(currentGui.OkButton)
+	setPreviewImageInternal(ERROR_ICON)
+	currentGui.PostBalanceText.Text = ""
 
 	local itemName = PurchaseData.ProductInfo and PurchaseData.ProductInfo["Name"] or ""
 	local failedText = string.gsub(PURCHASE_MSG.FAILED, "itemName", string.sub(itemName, 1, 20))
@@ -787,19 +1023,27 @@ local function onPurchaseFailed(failType)
 		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 	end
 
-	RobuxIcon.Visible = false
-	TixIcon.Visible = false
-	CostText.Visible = false
+	if IsVRMode and vrPurchasePromptsEnabled then
+		setNotVisible(currentGui.RobuxIcon, currentGui.CostText)
+	else
+		setNotVisible(currentGui.RobuxIcon, currentGui.TixIcon, currentGui.CostText)
+	end
 
 	purchaseState = PURCHASE_STATE.FAILED
 
-	ItemDescriptionText.Text = failedText
+	if IsVRMode and vrPurchasePromptsEnabled then
+		currentGui.ItemDescriptionText.Font = Enum.Font.SourceSans
+		currentGui.ItemDescriptionText.FontSize = Enum.FontSize.Size36
+	end
+	currentGui.ItemDescriptionText.Text = failedText
 	showPurchasePrompt()
 end
 
 local function closePurchaseDialog()
-	PurchaseDialog:TweenPosition(isTenFootInterface and HIDE_POSITION_TENFOOT or HIDE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true, function()
-			PurchaseDialog.Visible = false
+	local currentGui = getCurrentGui()
+	if not IsVRMode or not vrPurchasePromptsEnabled then
+		currentGui.PurchaseDialog:TweenPosition(isTenFootInterface and HIDE_POSITION_TENFOOT or HIDE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true, function()
+			currentGui.PurchaseDialog.Visible = false
 			IsCurrentlyPrompting = false
 			IsCurrentlyPurchasing = false
 			IsCheckingPlayerFunds = false
@@ -808,6 +1052,14 @@ local function closePurchaseDialog()
 				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 			end
 		end)
+	else
+		IsCurrentlyPrompting = false
+		IsCurrentlyPurchasing = false
+		IsCheckingPlayerFunds = false
+		purchaseState = PURCHASE_STATE.DEFAULT
+		currentGui.Dialog:SetContent(nil)
+		currentGui.Dialog:Close()
+	end
 end
 
 -- Main exit point
@@ -983,24 +1235,27 @@ local function playerHasFundsForPurchase(playerBalance)
 		return false
 	end
 
+	local postBalanceText = getCurrentGui().PostBalanceText
+
 	local afterBalanceAmount = playerBalanceInt - PurchaseData.CurrencyAmount
 	local currencyStr = getCurrencyString(PurchaseData.CurrencyType)
 	if afterBalanceAmount < 0 and PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
-		PostBalanceText.Visible = false
+		postBalanceText.Visible = false
 		return true, false
 	elseif afterBalanceAmount < 0 and PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-		PostBalanceText.Visible = true
-		PostBalanceText.Text = "You need "..formatNumber(-afterBalanceAmount).." more "..currencyStr.." to buy this item."
+		postBalanceText.Visible = true
+		postBalanceText.Text = "You need "..formatNumber(-afterBalanceAmount).." more "..currencyStr.." to buy this item."
 		return true, false
 	end
 
+
 	if PurchaseData.CurrencyType == Enum.CurrencyType.Tix then
-		PostBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..formatNumber(afterBalanceAmount).." "..currencyStr.."."
+		postBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..formatNumber(afterBalanceAmount).." "..currencyStr.."."
 	else
-		PostBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..currencyStr..formatNumber(afterBalanceAmount).."."
+		postBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..currencyStr..formatNumber(afterBalanceAmount).."."
 	end
 	if studioMockPurchasesEnabled() then
-		PostBalanceText.Text = PURCHASE_MSG.MOCK_PURCHASE
+		postBalanceText.Text = PURCHASE_MSG.MOCK_PURCHASE
 	end
 
 	return true, true
@@ -1028,6 +1283,11 @@ end
 
 -- main validation function
 local function canPurchase(disableUpsell)
+	local currentGui = getCurrentGui()
+
+	if not Players.LocalPlayer then
+		return false
+	end
 	if useNewMarketplaceMethods() then
 		if not MarketplaceService:PlayerCanMakePurchases(Players.LocalPlayer) then
 			onPurchaseFailed(PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST)
@@ -1069,8 +1329,7 @@ local function canPurchase(disableUpsell)
 		return false
 	end
 
-	-- check if owned by player; dev products are not owned
-	local isRestrictedThirdParty = false
+	-- check if owned by player; dev products are not owned	local isRestrictedThirdParty = false
 	if not IsPurchasingConsumable then
 		local success, doesOwnItem = doesPlayerOwnItem()
 		if not success then
@@ -1083,9 +1342,13 @@ local function canPurchase(disableUpsell)
 			end
 			purchaseState = PURCHASE_STATE.FAILED
 			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
-			ItemDescriptionText.Text = PURCHASE_MSG.ALREADY_OWN
-			PostBalanceText.Visible = false
-			setButtonsVisible(OkButton)
+			if IsVRMode then
+				currentGui.ItemDescriptionText.Font = Enum.Font.SourceSans
+				currentGui.ItemDescriptionText.FontSize = Enum.FontSize.Size36
+			end
+			currentGui.ItemDescriptionText.Text = PURCHASE_MSG.ALREADY_OWN
+			currentGui.PostBalanceText.Visible = false
+			setButtonsVisible(currentGui.OkButton)
 			return true
 		end
 		
@@ -1181,31 +1444,37 @@ local function getToolAsset(assetId)
 end
 
 local function onPurchaseSuccess()
+	local currentGui = getCurrentGui()
+
 	IsCheckingPlayerFunds = false
 	local descriptionText = PURCHASE_MSG.SUCCEEDED
 
 	descriptionText = string.gsub(descriptionText, "itemName", string.sub(PurchaseData.ProductInfo["Name"], 1, 20))
-	ItemDescriptionText.Text = descriptionText
+	if IsVRMode then
+		currentGui.ItemDescriptionText.Font = Enum.Font.SourceSans
+		currentGui.ItemDescriptionText.FontSize = Enum.FontSize.Size36
+	end
+	currentGui.ItemDescriptionText.Text = descriptionText
 
 	local playerBalance = getPlayerBalance()
 	local currencyType = PurchaseData.CurrencyType == Enum.CurrencyType.Tix and "tickets" or "robux"
 	local newBalance = playerBalance[currencyType]
 
 	if currencyType == "robux" then
-		PostBalanceText.Text = PURCHASE_MSG.BALANCE_NOW..getCurrencyString(PurchaseData.CurrencyType)..formatNumber(newBalance).."."
+		currentGui.PostBalanceText.Text = PURCHASE_MSG.BALANCE_NOW..getCurrencyString(PurchaseData.CurrencyType)..formatNumber(newBalance).."."
 	else
-		PostBalanceText.Text = PURCHASE_MSG.BALANCE_NOW..formatNumber(newBalance).." "..getCurrencyString(PurchaseData.CurrencyType).."."
+		currentGui.PostBalanceText.Text = PURCHASE_MSG.BALANCE_NOW..formatNumber(newBalance).." "..getCurrencyString(PurchaseData.CurrencyType).."."
 	end
 
 	if studioMockPurchasesEnabled() then
-		PostBalanceText.Text = PURCHASE_MSG.MOCK_PURCHASE_SUCCESS
+		currentGui.PostBalanceText.Text = PURCHASE_MSG.MOCK_PURCHASE_SUCCESS
 	elseif isFreeItem() then
-		PostBalanceText.Visible = false
+		currentGui.PostBalanceText.Visible = false
 	end
 
 	purchaseState = PURCHASE_STATE.SUCCEEDED
 
-	setButtonsVisible(OkPurchasedButton)
+	setButtonsVisible(currentGui.OkPurchasedButton)
 	stopPurchaseAnimation()
 end
 
@@ -1272,7 +1541,9 @@ local function onAcceptPurchase()
 
 	if tick() - startTime < 1 then wait(1) end 		-- artifical delay to show spinner for at least 1 second
 
-	enableControllerInput()
+	if not IsVRMode then
+		enableControllerInput()
+	end
 
 	if not success then
 		print("PurchasePromptScript: onAcceptPurchase() failed because", result)
@@ -1381,17 +1652,22 @@ local function onBuyRobuxPrompt()
 		return
 	end
 	if RunService:IsStudio() then
+		warn("Can't buy R$ in Studio.")
 		return
 	end
 
 	purchaseState = PURCHASE_STATE.BUYINGROBUX
 
-	startPurchaseAnimation()
+	if IsVRMode then
+		showRemoveVRHeadsetNotice()
+	else
+		startPurchaseAnimation()
+	end
 	if IsNativePurchasing then
 		if platform == Enum.Platform.XBoxOne then
 			spawn(function()
 				local PlatformService = nil
-				pcall(function() PlatformService = Game:GetService('PlatformService') end)
+				pcall(function() PlatformService = game:GetService('PlatformService') end)
 				if PlatformService then
 					local platformPurchaseReturnInt = -1
 					local purchaseCallSuccess, purchaseErrorMsg = pcall(function()
@@ -1510,24 +1786,41 @@ UserInputService.InputBegan:connect(onInputChanged)
 hideGamepadButtons()
 
 --[[ Event Connections ]]--
-CancelButton.MouseButton1Click:connect(function()
-	if IsCurrentlyPurchasing then return end
-	onPromptEnded(false)
-end)
-BuyButton.MouseButton1Click:connect(onAcceptPurchase)
-FreeButton.MouseButton1Click:connect(onAcceptPurchase)
-OkButton.MouseButton1Click:connect(function()
-	if purchaseState == PURCHASE_STATE.FAILED then
+local buttonEvents = {}
+
+local function disconnectButtonEvents()
+	for key, conn in pairs(buttonEvents) do
+		conn:disconnect()
+	end
+	buttonEvents = {}
+end
+
+local function connectButtonEvents()
+	disconnectButtonEvents()
+
+	local currentGui = getCurrentGui()
+
+	buttonEvents.Cancel = currentGui.CancelButton.MouseButton1Click:connect(function()
+		if IsCurrentlyPurchasing then return end
 		onPromptEnded(false)
-	end
-end)
-OkPurchasedButton.MouseButton1Click:connect(function()
-	if purchaseState == PURCHASE_STATE.SUCCEEDED then
-		onPromptEnded(true)
-	end
-end)
-BuyRobuxButton.MouseButton1Click:connect(onBuyRobuxPrompt)
-BuyBCButton.MouseButton1Click:connect(onUpgradeBCPrompt)
+	end)
+	buttonEvents.Buy = currentGui.BuyButton.MouseButton1Click:connect(onAcceptPurchase)
+	buttonEvents.Free = currentGui.FreeButton.MouseButton1Click:connect(onAcceptPurchase)
+	buttonEvents.Ok = currentGui.OkButton.MouseButton1Click:connect(function()
+		if purchaseState == PURCHASE_STATE.FAILED then
+			onPromptEnded(false)
+		end
+	end)
+	buttonEvents.OkPurchased = currentGui.OkPurchasedButton.MouseButton1Click:connect(function()
+		if purchaseState == PURCHASE_STATE.SUCCEEDED then
+			onPromptEnded(true)
+		end
+	end)
+	buttonEvents.BuyRobux = currentGui.BuyRobuxButton.MouseButton1Click:connect(onBuyRobuxPrompt)
+	buttonEvents.BuyBC = currentGui.BuyBCButton.MouseButton1Click:connect(onUpgradeBCPrompt)
+end
+
+connectButtonEvents() --Connect the 2D button events.
 
 MarketplaceService.PromptProductPurchaseRequested:connect(function(player, productId, equipIfPurchased, currencyType)
 	onPurchasePrompt(player, nil, equipIfPurchased, currencyType, productId)
@@ -1546,7 +1839,6 @@ MarketplaceService.ServerPurchaseVerification:connect(function(serverResponseTab
 	end
 end)
 
-
 GuiService.BrowserWindowClosed:connect(function()
 	if IsCheckingPlayerFunds then
 		retryPurchase(4)
@@ -1559,5 +1851,59 @@ end)
 if IsNativePurchasing then
 	MarketplaceService.NativePurchaseFinished:connect(function(player, productId, wasPurchased)
 		nativePurchaseFinished(wasPurchased)
+	end)
+end
+
+local function switchGui(activeGui, newVRMode)
+	if getCurrentGui() == activeGui then
+		return
+	end
+
+	local assetId, productId, currencyType, equipOnPurchase = PurchaseData.AssetId, PurchaseData.ProductId, PurchaseData.CurrencyType, PurchaseData.EquipOnPurchase
+
+	closePurchaseDialog()
+
+	IsVRMode = newVRMode
+	
+	if activeGui then
+		--Restart the state in case we changed in the middle of a purchase or dialog.
+		if IsCurrentlyPrompting then
+			setInitialPurchaseData(assetId, productId, currencyType, equipOnPurchase)
+			showPurchasePrompt()
+		end
+		if IsCurrentlyPurchasing then
+			setInitialPurchaseData(assetId, productId, currencyType, equipOnPurchase)
+			startPurchaseAnimation()
+		end
+		connectButtonEvents()
+	else
+		error("Argument 1 to switchGui(activeGui) should be a valid Gui table.")
+	end
+end
+
+if vrPurchasePromptsEnabled then
+	local function onVREnabled(vrEnabled) 
+		if vrEnabled == IsVRMode then
+			return
+		end
+		if vrEnabled then
+			if not Gui3D then
+				Gui3D = create3DGui()
+			end
+			switchGui(Gui3D, true)
+		else
+			switchGui(Gui2D, false)
+		end
+	end
+
+	spawn(function()
+		repeat wait() until Players.LocalPlayer ~= nil
+		onVREnabled(UserInputService.VREnabled)
+	end)
+
+	UserInputService.Changed:connect(function(prop)
+		if prop == "VREnabled" then
+			onVREnabled(UserInputService.VREnabled)
+		end
 	end)
 end
