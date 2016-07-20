@@ -273,11 +273,15 @@ end
 
 function Methods.ResetFrameDimensions(devConsole)
 	devConsole.Frame.Size = UDim2_new(0.5, 20, 0.5, 20);
-	devConsole.Frame.Position = UDim2_new(0.25, -10, 0.125, -10)
+	
+	local abSize = devConsole.Frame.AbsoluteSize
+	devConsole:SetFrameSize(abSize.x, abSize.y)
+	local newSize = devConsole.Frame.Size
+	devConsole.Frame.Position = UDim2_new(0.5, -newSize.X.Offset/2, 0.5, -newSize.Y.Offset/2)
 end
 function Methods.BoundFrameSize(devConsole, x, y)
 	-- Minimum frame size
-	return math_max(x, 300), math_max(y, 200)
+	return math_max(x, 400), math_max(y, 200)
 end
 function Methods.SetFrameSize(devConsole, x, y)
 	x, y = devConsole:BoundFrameSize(x, y)
@@ -1805,10 +1809,13 @@ do
 		label.Size = UDim2_new(0, 12, 1, -1)
 		label.FontSize = 'Size14'
 		
+		local DEFAULT_COMMAND_BAR_TEXT = "Type command here"
+		
 		local textBox = Primitives.TextBox(textBoxFrame, 'TextBox')
 		--textBox.TextWrapped = true -- This needs to auto-resize
 		textBox.BackgroundTransparency = 1
-		textBox.Text = "Type command here"
+		textBox.Text = DEFAULT_COMMAND_BAR_TEXT
+		textBox.ClearTextOnFocus = false
 		local padding = 2
 		textBox.Size = UDim2_new(1, -(padding * 2) - 4 - 12, 0, 500)
 		textBox.Position = UDim2_new(0, 4 + 12 + padding, 0, 0)
@@ -1877,6 +1884,9 @@ do
 		local focusLostWithoutEnter = false
 		
 		textBox.Focused:connect(function()
+			if textBox.Text == DEFAULT_COMMAND_BAR_TEXT then
+				textBox.Text = ""
+			end
 			disconnector:fire()
 			backtrackPosition = 0
 			disconnector:connect(UserInputService.InputBegan:connect(function(input)
@@ -1908,6 +1918,9 @@ do
 				backtrackPosition = 0
 				focusLostWithoutEnter = true
 				addInputtedText(textBox.Text, true)
+				if textBox.Text == "" then
+					textBox.Text = DEFAULT_COMMAND_BAR_TEXT
+				end
 			end
 		end)
 
@@ -2256,6 +2269,8 @@ function Methods.ApplyScrollbarToFrame(devConsole, scrollbar, window, body, fram
 	setValue(scrollbar:GetValue())
 
 	local scrollDistance = 120
+	
+	window.Active = true
 
 	scrollbar.ButtonUp.MouseButton1Click:connect(function()
 		scrollbar:Scroll(-scrollDistance, getHeights())
@@ -2281,7 +2296,9 @@ function Methods.ApplyScrollbarToFrame(devConsole, scrollbar, window, body, fram
 	window.MouseWheelBackward:connect(function()
 		scrollbar:Scroll(scrollDistance, getHeights())
 	end)
-
+	window.TouchPan:connect(function(positions, delta, velocity, userInputState)
+		scrollbar:Scroll(-delta.y, getHeights())
+	end)
 end
 
 function Methods.CreateScrollbar(devConsole, rotation)
@@ -2597,7 +2614,7 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 	
 	local mouse = game:GetService("Players").LocalPlayer:GetMouse()
 
-	local function startDragging()
+	local function startDragging(startP)
 		if dragging then
 			return
 		end
@@ -2606,7 +2623,7 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 		mouseInteractCallback(dragging, hovering)
 		local deltaCallback;
 		
-		local x0, y0 = mouse.X, mouse.Y
+		local x0, y0 = startP.X, startP.Y
 		--[[
 		listeners[#listeners + 1] = UserInputService.InputBegan:connect(function(input)
 			if ButtonUserInputTypes[input.UserInputType] then
@@ -2623,14 +2640,17 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 			end
 		end)
 		listeners[#listeners + 1] = UserInputService.InputChanged:connect(function(input)
-			if input.UserInputType ~= Enum.UserInputType.MouseMovement then
+		
+			if not (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch)then -- added in a touch check
 				return
 			end
+			
 			local p1 = input.Position
+
 			if not p1 then
 				return
 			end
-			local x1, y1 = mouse.X, mouse.Y --p1.X, p1.Y
+			local x1, y1 = p1.X, p1.Y
 			if not deltaCallback then
 				deltaCallback, disconnectCallback = dragCallback(x0 or x1, y0 or y1)
 			end
@@ -2640,8 +2660,21 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 		end)
 	end
 	
-	button.MouseButton1Down:connect(startDragging)
-	button.MouseButton1Up:connect(stopDragging)
+	--button.MouseButton1Down:connect(startDragging)
+	--button.MouseButton1Up:connect(stopDragging)
+	
+	button.InputBegan:connect(function(iobj)
+		if iobj.UserInputType == Enum.UserInputType.Touch or iobj.UserInputType == Enum.UserInputType.MouseButton1 then
+			startDragging(iobj.Position)
+		end
+	end)
+	
+	button.InputEnded:connect(function(iobj)
+		if iobj.UserInputType == Enum.UserInputType.Touch or iobj.UserInputType == Enum.UserInputType.MouseButton1 then
+			stopDragging()
+		end
+	end)	
+	
 	button.MouseEnter:connect(function()
 		if not hovering then
 			hovering = true

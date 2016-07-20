@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX7441C7686732497F97F2119BEAB662F5">
+	<Item class="ModuleScript" referent="RBX2C86BBBF120542588339BAC4360424A7">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ShiftLockController</string>
@@ -95,12 +95,12 @@ local function initialize()
 	ShiftLockIcon.Position = UDim2.new(0, 12, 0, 2)
 	ShiftLockIcon.BackgroundTransparency = 1
 	ShiftLockIcon.Image = IsShiftLocked and SHIFT_LOCK_ON or SHIFT_LOCK_OFF
-	ShiftLockIcon.Visible = IsShiftLockMode
+	ShiftLockIcon.Visible = true
 	ShiftLockIcon.Parent = frame
 	
 	ShiftLockIcon.MouseButton1Click:connect(onShiftLockToggled)
 	
-	ScreenGui.Parent = PlayerGui
+	ScreenGui.Parent = IsShiftLockMode and PlayerGui or nil
 end
 
 --[[ Public API ]]--
@@ -120,7 +120,7 @@ local mouseLockSwitchFunc = function(actionName, inputState, inputObject)
 end
 
 local function disableShiftLock()
-	if ShiftLockIcon then ShiftLockIcon.Visible = false end
+	if ScreenGui then ScreenGui.Parent = nil end
 	IsShiftLockMode = false
 	Mouse.Icon = ""
 	if InputCn then
@@ -144,8 +144,8 @@ end
 local function enableShiftLock()
 	IsShiftLockMode = isShiftLockMode()
 	if IsShiftLockMode then
-		if ShiftLockIcon then
-			ShiftLockIcon.Visible = true
+		if ScreenGui then
+			ScreenGui.Parent = PlayerGui
 		end
 		if IsShiftLocked then
 			Mouse.Icon = SHIFT_LOCK_CURSOR

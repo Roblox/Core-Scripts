@@ -660,7 +660,7 @@ t.GetStampModel = function(assetId, terrainShape, useAssetVersionId)
 		if cellType == 3 then
 			local inverseCornerWedgeMesh = Instance.new("SpecialMesh")
 			inverseCornerWedgeMesh.MeshType = "FileMesh"
-			inverseCornerWedgeMesh.MeshId = "http://www.roblox.com/asset/?id=66832495"
+			inverseCornerWedgeMesh.MeshId = "https://www.roblox.com/asset/?id=66832495"
 			inverseCornerWedgeMesh.Scale = Vector3.new(2, 2, 2)
 			inverseCornerWedgeMesh.Parent = newTerrainPiece
 		end
