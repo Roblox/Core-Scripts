@@ -290,27 +290,6 @@ local function createImageButtonWithText(name, position, image, imageDown, text,
 	return imageButton
 end
 
-local function makeSmoothFor3D(frame)
-	--ugly workaround alert
-	--remove this function when antialiasing for SurfaceGui.AlwaysOnTop is added
-	if frame:FindFirstChild("Smooth3D") then
-		return
-	end
-
-	local smooth = Instance.new("ImageLabel", frame)
-	smooth.Name = "Smooth3D"
-	smooth.Position = UDim2.new(0, -1, 0, -1)
-	smooth.Size = UDim2.new(1, 2, 1, 2)
-	smooth.Image = "rbxasset://ui/textures/VR/rectBackgroundWhite.png"
-	smooth.ScaleType = Enum.ScaleType.Slice
-	smooth.SliceCenter = Rect.new(9, 9, 11, 11)
-	smooth.BackgroundTransparency = 1
-	smooth.ImageColor3 = frame.BackgroundColor3
-	smooth.ImageTransparency = frame.BackgroundTransparency
-	frame.BackgroundTransparency = 1
-	return smooth
-end
-
 local function setFrameBackground(frame, backgroundColor3, backgroundTransparency)
 	--ugly workaround alert
 	--remove this check when antialiasing for SurfaceGui.AlwaysOnTop is added
