@@ -2196,8 +2196,18 @@ local function CreateChat()
 			-- Don't add messages from blocked players, don't show message if is a debug command
 			local isDebugCommand = false
 			pcall(function()
-				if sendingPlayer == PlayersService.LocalPlayer then
+				if not NON_CORESCRIPT_MODE and sendingPlayer == PlayersService.LocalPlayer then
 					isDebugCommand = game:GetService("GuiService"):ShowStatsBasedOnInputString(chattedMessage)
+					
+					-- allows dev console to be opened on mobile
+					-- NOTE: Removed ToggleDevConsole bindable event, so engine no longer handles this
+					if string.lower(chattedMessage) == "/console" then
+						local devConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
+						if devConsoleModule then
+							local devConsoleVisible = devConsoleModule:GetVisibility()
+							devConsoleModule:SetVisibility(not devConsoleVisible)
+						end
+					end
 				end
 			end)
 			if not (this:IsPlayerBlocked(sendingPlayer) or this:IsPlayerMuted(sendingPlayer) or isDebugCommand) then
