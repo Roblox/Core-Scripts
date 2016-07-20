@@ -35,10 +35,10 @@ function metatable:Destroy()
 	self.eOnDestroyed:Fire()
 end
 
-function metatable:DoMessageFilter(speakerName, message)
+function metatable:DoMessageFilter(speakerName, message, channel)
 	for i, func in pairs(self.FilterMessageFunctions) do
 		local s, m = pcall(function()
-			local ret = func(speakerName, message)
+			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "string")
 			message = ret
 		end)
@@ -48,23 +48,22 @@ function metatable:DoMessageFilter(speakerName, message)
 		end
 	end
 	
-	message = self.FilterMessageFunctions["default_filter"](speakerName, message)
+	message = self.FilterMessageFunctions["default_filter"](speakerName, message, channel)
 	
 	return message
 end
 
-function metatable:DoProcessCommands(speakerName, message)
+function metatable:DoProcessCommands(speakerName, message, channel)
 	local processed = false
 	
-	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, self.Name)
+	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
 	if (processed) then return processed end
 	
 	for i, func in pairs(self.ProcessCommandsFunctions) do
 		local s, m = pcall(function()
-			local ret = func(speakerName, message, self.Name)
-			if type(ret) == "boolean" then
-				processed = ret
-			end
+			local ret = func(speakerName, message, channel)
+			assert(type(ret) == "boolean")
+			processed = ret
 		end)
 		
 		if (not s) then
@@ -78,7 +77,7 @@ function metatable:DoProcessCommands(speakerName, message)
 end
 
 function metatable:PostMessage(fromSpeaker, message)
-	if (self:DoProcessCommands(fromSpeaker.Name, message)) then return false end
+	if (self:DoProcessCommands(fromSpeaker.Name, message, self.Name)) then return false end
 
 	if (self.Mutes[fromSpeaker.Name:lower()] ~= nil) then
 		local t = self.Mutes[fromSpeaker.Name:lower()]
@@ -91,8 +90,8 @@ function metatable:PostMessage(fromSpeaker, message)
 		
 	end
 	
-	message = self:DoMessageFilter(fromSpeaker.Name, message)
-	message = self.ChatService:DoMessageFilter(fromSpeaker.Name, message)
+	message = self:DoMessageFilter(fromSpeaker.Name, message, self.Name)
+	message = self.ChatService:DoMessageFilter(fromSpeaker.Name, message, self.Name)
 	
 	spawn(function() self.eOnNewMessage:Fire(fromSpeaker.Name, message) end)
 	
@@ -102,6 +101,7 @@ function metatable:PostMessage(fromSpeaker, message)
 		end
 	end
 	
+	return message
 end
 
 function metatable:InternalAddSpeaker(speaker)

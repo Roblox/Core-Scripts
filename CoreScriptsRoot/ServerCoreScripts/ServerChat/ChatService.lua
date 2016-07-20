@@ -2,6 +2,7 @@ local source = [[
 local module = {}
 
 local modulesFolder = script.Parent
+local RunService = game:GetService("RunService")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -34,10 +35,10 @@ function metatable:Dump()
 	return tostring(self)
 end
 
-function metatable:DoMessageFilter(speakerName, message)
+function metatable:DoMessageFilter(speakerName, message, channel)
 	for funcId, func in pairs(self.FilterMessageFunctions) do
 		local s, m = pcall(function()
-			local ret = func(speakerName, message)
+			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "string")
 			message = ret
 		end)
@@ -47,9 +48,9 @@ function metatable:DoMessageFilter(speakerName, message)
 		end
 	end
 	
-	message = self.FilterMessageFunctions["default_filter"](speakerName, message)
+	message = self.FilterMessageFunctions["default_filter"](speakerName, message, channel)
 	
-	if (game:GetService("RunService"):IsServer() and not game:GetService("RunService"):IsStudio()) then
+	if (RunService:IsServer() and not RunService:IsStudio()) then
 		local fromSpeaker = self:GetSpeaker(speakerName)
 		if (fromSpeaker) then
 			local playerObj = fromSpeaker:GetPlayerObject()
@@ -65,15 +66,14 @@ end
 function metatable:DoProcessCommands(speakerName, message, channel)
 	local processed = false
 	
-	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message)
+	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
 	if (processed) then return processed end
 	
 	for _, func in pairs(self.ProcessCommandsFunctions) do
 		local s, m = pcall(function()
 			local ret = func(speakerName, message, channel)
-			if type(ret) == "boolean" then
-				processed = ret
-			end
+			assert(type(ret) == "boolean")
+			processed = ret
 		end)
 		
 		if (not s) then

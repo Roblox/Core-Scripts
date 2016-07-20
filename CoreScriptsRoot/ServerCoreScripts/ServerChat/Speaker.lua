@@ -43,11 +43,11 @@ function metatable:SayMessage(message, channelName)
 	if (self.ChatService:DoProcessCommands(self.Name, message, channelName)) then return end
 	if (not channelName) then return end
 
-	if (not self.Channels[channelName:lower()]) then
+	local channel = self.Channels[channelName:lower()]
+	if (not channel) then
 		error("Speaker is not in channel \"" .. channelName .. "\"")
 	end
-	
-	local channel = self.Channels[channelName:lower()]
+
 	local msg = channel:PostMessage(self, message)
 	if (msg) then
 		self.eOnSaidMessage:Fire(msg, channelName)
