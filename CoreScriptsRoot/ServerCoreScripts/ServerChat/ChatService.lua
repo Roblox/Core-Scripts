@@ -69,7 +69,7 @@ function metatable:DoProcessCommands(speakerName, message, channel)
 	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
 	if (processed) then return processed end
 	
-	for _, func in pairs(self.ProcessCommandsFunctions) do
+	for funcId, func in pairs(self.ProcessCommandsFunctions) do
 		local s, m = pcall(function()
 			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "boolean")
@@ -122,7 +122,7 @@ function metatable:AddChannel(channelName)
 		return false
 	end)
 	
-	spawn(function() self.eOnChannelAdded:Fire(channelName) end)
+	spawn(function() self.eChannelAdded:Fire(channelName) end)
 
 	return channel
 end
@@ -134,7 +134,7 @@ function metatable:RemoveChannel(channelName)
 		self.ChatChannels[channelName:lower()]:Destroy()
 		self.ChatChannels[channelName:lower()] = nil
 
-		spawn(function() self.eOnChannelRemoved:Fire(n) end)
+		spawn(function() self.eChannelRemoved:Fire(n) end)
 	else
 		warn(string.format("Channel %q does not exist.", channelName))
 	end
@@ -153,7 +153,7 @@ function metatable:AddSpeaker(speakerName)
 	local speaker = Speaker.new(self, speakerName)
 	self.Speakers[speakerName:lower()] = speaker
 	
-	spawn(function() self.eOnSpeakerAdded:Fire(speakerName) end)
+	spawn(function() self.eSpeakerAdded:Fire(speakerName) end)
 
 	return speaker
 end
@@ -165,7 +165,7 @@ function metatable:RemoveSpeaker(speakerName)
 		self.Speakers[speakerName:lower()]:Destroy()
 		self.Speakers[speakerName:lower()] = nil
 		
-		spawn(function() self.eOnSpeakerRemoved:Fire(n) end)
+		spawn(function() self.eSpeakerRemoved:Fire(n) end)
 		
 	else
 		warn("Speaker \"" .. speakerName .. "\" does not exist!")
@@ -256,8 +256,6 @@ function module.new()
 	local obj = {}
 	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
 	
-	obj.ChatLogLength = 30
-	
 	obj.ChatChannels = {}
 	obj.Speakers = {}
 	
@@ -267,15 +265,15 @@ function module.new()
 	obj.FilterMessageFunctions = {}
 	obj.ProcessCommandsFunctions = {}
 	
-	obj.eOnChannelAdded  = Instance.new("BindableEvent")
-	obj.eOnChannelRemoved = Instance.new("BindableEvent")
-	obj.eOnSpeakerAdded = Instance.new("BindableEvent")
-	obj.eOnSpeakerRemoved = Instance.new("BindableEvent")
+	obj.eChannelAdded  = Instance.new("BindableEvent")
+	obj.eChannelRemoved = Instance.new("BindableEvent")
+	obj.eSpeakerAdded = Instance.new("BindableEvent")
+	obj.eSpeakerRemoved = Instance.new("BindableEvent")
 
-	obj.OnChannelAdded = obj.eOnChannelAdded.Event
-	obj.OnChannelRemoved = obj.eOnChannelRemoved.Event
-	obj.OnSpeakerAdded = obj.eOnSpeakerAdded.Event
-	obj.OnSpeakerRemoved = obj.eOnSpeakerRemoved.Event
+	obj.ChannelAdded = obj.eChannelAdded.Event
+	obj.ChannelRemoved = obj.eChannelRemoved.Event
+	obj.SpeakerAdded = obj.eSpeakerAdded.Event
+	obj.SpeakerRemoved = obj.eSpeakerRemoved.Event
 
 
 	obj = setmetatable(obj, metatable)

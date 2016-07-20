@@ -40,27 +40,27 @@ local function HandlePlayerJoining(playerObj)
 	speaker = ChatService:AddSpeaker(playerObj.Name)
 	speaker:AssignPlayerObject(playerObj)
 
-	speaker.OnReceivedMessage:connect(function(fromSpeaker, channel, message)
+	speaker.ReceivedMessage:connect(function(fromSpeaker, channel, message)
 		EventFolder.OnNewMessage:FireClient(playerObj, fromSpeaker, channel, message)
 	end)
 
-	speaker.OnReceivedSystemMessage:connect(function(message, channel)
+	speaker.ReceivedSystemMessage:connect(function(message, channel)
 		EventFolder.OnNewSystemMessage:FireClient(playerObj, message, channel)
 	end)
 
-	speaker.OnChannelJoined:connect(function(channel, welcomeMessage)
+	speaker.ChannelJoined:connect(function(channel, welcomeMessage)
 		EventFolder.OnChannelJoined:FireClient(playerObj, channel, welcomeMessage)
 	end)
 
-	speaker.OnChannelLeft:connect(function(channel)
+	speaker.ChannelLeft:connect(function(channel)
 		EventFolder.OnChannelLeft:FireClient(playerObj, channel)
 	end)
 
-	speaker.OnMuted:connect(function(channel, reason, length)
+	speaker.Muted:connect(function(channel, reason, length)
 		EventFolder.OnMuted:FireClient(playerObj, channel, reason, length)
 	end)
 
-	speaker.OnUnmuted:connect(function(channel)
+	speaker.Unmuted:connect(function(channel)
 		EventFolder.OnUnmuted:FireClient(playerObj, channel)
 	end)
 
@@ -105,12 +105,12 @@ EventFolder.GetInitDataRequest.OnServerEvent:connect(function(playerObj)
 	end
 end)
 
-ChatService.OnSpeakerAdded:connect(function(speakerName)
+ChatService.SpeakerAdded:connect(function(speakerName)
 	local speaker = ChatService:GetSpeaker(speakerName)
 	
 	EventFolder.OnSpeakerExtraDataUpdated:FireAllClients(speakerName, speaker.ExtraData)
 	
-	speaker.OnExtraDataUpdated:connect(function(key, value)
+	speaker.ExtraDataUpdated:connect(function(key, value)
 		local data = {}
 		data[key] = value
 		EventFolder.OnSpeakerExtraDataUpdated:FireAllClients(speakerName, data)
@@ -200,7 +200,7 @@ systemChannel.Leavable = false
 systemChannel.AutoJoin = true
 systemChannel.WelcomeMessage = "This channel is for system and game notifications."
 
-systemChannel.OnSpeakerJoined:connect(function(speakerName)
+systemChannel.SpeakerJoined:connect(function(speakerName)
 	systemChannel:MuteSpeaker(speakerName)
 end)
 

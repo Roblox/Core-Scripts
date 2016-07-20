@@ -65,13 +65,13 @@ function module:CreateMessageLabel(fromSpeaker, message)
 
 	end
 	
-	nameLabel.Text = nameLabel.Text .. "["..fromSpeaker.."] "
+	nameLabel.Text = nameLabel.Text .. "["..fromSpeaker.."]: "
 	label.Text = nameLabel.Text .. message
 	
 	if (string.sub(message, 1, 1) == ">") then
 		label.TextColor3 = Color3.new(120/255, 153/255, 34/255)
 	end
-	
+
 	return label	
 end
 

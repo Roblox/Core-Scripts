@@ -28,7 +28,7 @@ function module.CreateProxy(Speaker)
 	local obj = {}
 	obj.Target = Speaker
 	
-	obj.Target.OnDestroyed:connect(function()
+	obj.Target.Destroyed:connect(function()
 		obj.Target = nil
 		
 		metatable.__tostring = function() return "" end
@@ -104,10 +104,10 @@ function module.CreateProxy(Speaker)
 	
 	local readIndexTarget = {
 		Name = true,
-		OnSaidMessage = true, OnReceivedMessage = true, OnReceivedSystemMessage = true, 
-		OnChannelJoined = true, OnChannelLeft = true,
-		OnMuted = true, OnUnmuted = true,
-		OnExtraDataUpdated = true,
+		SaidMessage = true, ReceivedMessage = true, ReceivedSystemMessage = true, 
+		ChannelJoined = true, ChannelLeft = true,
+		Muted = true, Unmuted = true,
+		ExtraDataUpdated = true,
 	}
 	local readIndexProxy = {
 		SayMessage = true, 

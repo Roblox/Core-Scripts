@@ -13,25 +13,27 @@ local function Run(ChatService)
 					speaker:JoinChannel(channelObj.Name)
 				end
 			end
-			
-			
+
 		else
 			speaker:SendSystemMessage("Speaker '" .. message .. "' does not exist.", nil)
+
 		end
 	end
 	
 	local function WhisperCommandsFunction(fromSpeaker, message, channel)
+		local processedCommand = false
+
 		if (string.sub(message, 1, 3):lower() == "/w ") then
 			DoWhisperCommand(fromSpeaker, string.sub(message, 4), channel)
-			return true
+			processedCommand = true
 			
 		elseif (string.sub(message, 1, 9):lower() == "/whisper ") then
 			DoWhisperCommand(fromSpeaker, string.sub(message, 10), channel)
-			return true
+			processedCommand = true
 			
 		end
 		
-		return false
+		return processedCommand
 	end
 	
 	local function PrivateMessageReplicationFunction(fromSpeaker, message, channel)
@@ -50,25 +52,25 @@ local function Run(ChatService)
 	
 	ChatService:RegisterProcessCommandsFunction("whisper_commands", WhisperCommandsFunction)
 	
-	ChatService.OnSpeakerAdded:connect(function(speakerName)
+	ChatService.SpeakerAdded:connect(function(speakerName)
 		if (ChatService:GetChannel("To " .. speakerName)) then
 			ChatService:RemoveChannel("To " .. speakerName)
 		end
 		
 		local channel = ChatService:AddChannel("To " .. speakerName)
 		channel.Joinable = false
-		channel.Private = true
 		channel.Leavable = true
 		channel.AutoJoin = false
-		
+		channel.Private = true
+
 		channel.WelcomeMessage = "You are now privately chatting with " .. speakerName .. "."
 		
 		channel:RegisterProcessCommandsFunction("replication_function", PrivateMessageReplicationFunction)
 	end)
 	
-	ChatService.OnSpeakerRemoved:connect(function(speakerName)
-		if (ChatService:GetChannel(speakerName)) then
-			ChatService:RemoveChannel(speakerName)
+	ChatService.SpeakerRemoved:connect(function(speakerName)
+		if (ChatService:GetChannel("To " .. speakerName)) then
+			ChatService:RemoveChannel("To " .. speakerName)
 		end
 	end)
 end

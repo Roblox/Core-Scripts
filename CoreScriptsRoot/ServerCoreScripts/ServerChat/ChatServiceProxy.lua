@@ -154,9 +154,8 @@ function module.CreateProxy(ChatService)
 	metatable.__tostring = function () return tostring(obj.Target) end
 	
 	local readIndexTarget = {
-		ChatLogLength = true,
-		OnChannelAdded = true, OnChannelRemoved = true,
-		OnSpeakerAdded = true, OnSpeakerRemoved = true
+		ChannelAdded = true, ChannelRemoved = true,
+		SpeakerAdded = true, SpeakerRemoved = true
 	}
 	local readIndexProxy = {
 		AddChannel = true, RemoveChannel = true, GetChannel = true,
@@ -183,11 +182,9 @@ function module.CreateProxy(ChatService)
 	end
 	
 	metatable.__newindex = function(tbl, index, value)
-		if (index == "ChatLogLength") then
-			AssertAssignmentTypeEquals(index, value, "number")
-			
-			obj.Target.ChatLogLength = math.floor(math.min(50, math.max(1, value)))
-			
+		if (false) then
+			--// Not really any properties to let users set, 
+			--// but the same style of flow control should be kept
 		else
 			NotAValidMemberError(index, obj)
 			

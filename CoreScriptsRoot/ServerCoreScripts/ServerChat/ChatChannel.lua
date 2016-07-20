@@ -32,11 +32,11 @@ function metatable:Destroy()
 		speaker:LeaveChannel(self.Name)
 	end
 	
-	self.eOnDestroyed:Fire()
+	self.eDestroyed:Fire()
 end
 
 function metatable:DoMessageFilter(speakerName, message, channel)
-	for i, func in pairs(self.FilterMessageFunctions) do
+	for funcId, func in pairs(self.FilterMessageFunctions) do
 		local s, m = pcall(function()
 			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "string")
@@ -59,7 +59,7 @@ function metatable:DoProcessCommands(speakerName, message, channel)
 	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
 	if (processed) then return processed end
 	
-	for i, func in pairs(self.ProcessCommandsFunctions) do
+	for funcId, func in pairs(self.ProcessCommandsFunctions) do
 		local s, m = pcall(function()
 			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "boolean")
@@ -93,7 +93,7 @@ function metatable:PostMessage(fromSpeaker, message)
 	message = self:DoMessageFilter(fromSpeaker.Name, message, self.Name)
 	message = self.ChatService:DoMessageFilter(fromSpeaker.Name, message, self.Name)
 	
-	spawn(function() self.eOnNewMessage:Fire(fromSpeaker.Name, message) end)
+	spawn(function() self.eMessagePosted:Fire(fromSpeaker.Name, message) end)
 	
 	for i, speaker in pairs(self.Speakers) do
 		if (true or speaker ~= fromSpeaker) then
@@ -111,7 +111,7 @@ function metatable:InternalAddSpeaker(speaker)
 	end
 	
 	self.Speakers[speaker.Name] = speaker
-	spawn(function() self.eOnSpeakerJoined:Fire(speaker.Name) end)
+	spawn(function() self.eSpeakerJoined:Fire(speaker.Name) end)
 end
 
 function metatable:InternalRemoveSpeaker(speaker)
@@ -121,7 +121,7 @@ function metatable:InternalRemoveSpeaker(speaker)
 	end
 	
 	self.Speakers[speaker.Name] = nil
-	spawn(function() self.eOnSpeakerLeft:Fire(speaker.Name) end)
+	spawn(function() self.eSpeakerLeft:Fire(speaker.Name) end)
 end
 
 function metatable:AddWordFilter(expression)
@@ -170,10 +170,10 @@ function metatable:MuteSpeaker(speakerName, reason, length)
 		self:SendSystemMessage(speakerName .. " was muted for the following reason(s): " .. reason)
 	end
 
-	spawn(function() self.eOnSpeakerMuted:Fire(speakerName, reason, length) end)
+	spawn(function() self.eSpeakerMuted:Fire(speakerName, reason, length) end)
 	local spkr = self.ChatService:GetSpeaker(speakerName)
 	if (spkr) then
-		spawn(function() spkr.eOnMuted:Fire(self.Name, reason, length) end)
+		spawn(function() spkr.eMuted:Fire(self.Name, reason, length) end)
 	end
 
 end
@@ -186,10 +186,10 @@ function metatable:UnmuteSpeaker(speakerName)
 	
 	self.Mutes[speakerName:lower()] = nil
 
-	spawn(function() self.eOnSpeakerUnmuted:Fire(speakerName) end)
+	spawn(function() self.eSpeakerUnmuted:Fire(speakerName) end)
 	local spkr = self.ChatService:GetSpeaker(speakerName)
 	if (spkr) then
-		spawn(function() spkr.eOnUnmuted:Fire(self.Name) end)
+		spawn(function() spkr.eUnmuted:Fire(self.Name) end)
 	end
 end
 
@@ -261,20 +261,20 @@ function module.new(vChatService, name, welcomeMessage)
 	obj.FilterMessageFunctions = {}
 	obj.ProcessCommandsFunctions = {}
 	
-	obj.eOnDestroyed = Instance.new("BindableEvent")
-	obj.OnDestroyed = obj.eOnDestroyed.Event
+	obj.eDestroyed = Instance.new("BindableEvent")
+	obj.Destroyed = obj.eDestroyed.Event
 	
-	obj.eOnNewMessage = Instance.new("BindableEvent")
-	obj.eOnSpeakerJoined = Instance.new("BindableEvent")
-	obj.eOnSpeakerLeft = Instance.new("BindableEvent")
-	obj.eOnSpeakerMuted = Instance.new("BindableEvent")
-	obj.eOnSpeakerUnmuted = Instance.new("BindableEvent")
+	obj.eMessagePosted = Instance.new("BindableEvent")
+	obj.eSpeakerJoined = Instance.new("BindableEvent")
+	obj.eSpeakerLeft = Instance.new("BindableEvent")
+	obj.eSpeakerMuted = Instance.new("BindableEvent")
+	obj.eSpeakerUnmuted = Instance.new("BindableEvent")
 
-	obj.OnNewMessage = obj.eOnNewMessage.Event
-	obj.OnSpeakerJoined = obj.eOnSpeakerJoined.Event
-	obj.OnSpeakerLeft = obj.eOnSpeakerLeft.Event
-	obj.OnSpeakerMuted = obj.eOnSpeakerMuted.Event
-	obj.OnSpeakerUnmuted = obj.eOnSpeakerUnmuted.Event
+	obj.MessagePosted = obj.eMessagePosted.Event
+	obj.SpeakerJoined = obj.eSpeakerJoined.Event
+	obj.SpeakerLeft = obj.eSpeakerLeft.Event
+	obj.SpeakerMuted = obj.eSpeakerMuted.Event
+	obj.SpeakerUnmuted = obj.eSpeakerUnmuted.Event
 	
 	obj = setmetatable(obj, metatable)
 	

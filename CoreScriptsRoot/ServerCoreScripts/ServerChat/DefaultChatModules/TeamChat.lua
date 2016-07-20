@@ -4,12 +4,12 @@ local function Run(ChatService)
 	local Players = game:GetService("Players")
 	
 	local channel = ChatService:AddChannel("Team")
-	channel.Private = true
+	channel.WelcomeMessage = "This is a private channel between you and your team members."
 	channel.Joinable = false
 	channel.Leavable = false
 	channel.AutoJoin = false
-	channel.WelcomeMessage = "This is a private channel between you and your team members."
-	
+	channel.Private = true
+
 	local function TeamChatReplicationFunction(fromSpeaker, message, channel)
 		local speakerObj = ChatService:GetSpeaker(fromSpeaker)
 		local channelObj = ChatService:GetChannel(channel)
@@ -52,7 +52,7 @@ local function Run(ChatService)
 		end
 	end
 	
-	ChatService.OnSpeakerAdded:connect(function(speakerName)
+	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speakerObj = ChatService:GetSpeaker(speakerName)
 		if (speakerObj) then
 			local player = speakerObj:GetPlayerObject()

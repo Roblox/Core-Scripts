@@ -28,7 +28,7 @@ function module.CreateProxy(ChatChannel)
 	local obj = {}
 	obj.Target = ChatChannel
 	
-	obj.Target.OnDestroyed:connect(function()
+	obj.Target.Destroyed:connect(function()
 		obj.Target = nil
 		
 		metatable.__tostring = function() return "" end
@@ -152,8 +152,8 @@ function module.CreateProxy(ChatChannel)
 		Joinable = true, Leavable = true,
 		AutoJoin = true, Private = true,
 		Name = true, WelcomeMessage = true,
-		OnNewMessage = true, OnSpeakerJoined = true, OnSpeakerLeft = true,
-		OnSpeakerMuted = true, onSpeakerUnmuted = true
+		MessagePosted = true, SpeakerJoined = true, SpeakerLeft = true,
+		SpeakerMuted = true, SpeakerUnmuted = true
 	}
 	local readIndexProxy = {
 		AddWordFilter = true, RemoveWordFilter = true,

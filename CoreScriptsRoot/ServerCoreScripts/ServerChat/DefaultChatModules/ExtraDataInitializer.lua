@@ -33,7 +33,7 @@ local function Run(ChatService)
 		return NAME_COLORS[((GetNameValue(pName) + color_offset) % #NAME_COLORS) + 1]
 	end
 	
-	ChatService.OnSpeakerAdded:connect(function(speakerName)
+	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speaker = ChatService:GetSpeaker(speakerName)
 		
 		if (not speaker:GetExtraData("NameColor")) then

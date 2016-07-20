@@ -32,7 +32,7 @@ function metatable:Destroy()
 		channel:InternalRemoveSpeaker(self)
 	end
 	
-	self.eOnDestroyed:Fire()
+	self.eDestroyed:Fire()
 end
 
 function metatable:AssignPlayerObject(playerObj)
@@ -50,7 +50,7 @@ function metatable:SayMessage(message, channelName)
 
 	local msg = channel:PostMessage(self, message)
 	if (msg) then
-		self.eOnSaidMessage:Fire(msg, channelName)
+		self.eSaidMessage:Fire(msg, channelName)
 	end
 	
 end
@@ -73,7 +73,7 @@ function metatable:JoinChannel(channelName)
 	self.Channels[channelName:lower()] = proxy
 	channel:InternalAddSpeaker(self)
 	spawn(function()
-		self.eOnChannelJoined:Fire(channel.Name, channel.WelcomeMessage)
+		self.eChannelJoined:Fire(channel.Name, channel.WelcomeMessage)
 	end)
 end
 
@@ -88,7 +88,7 @@ function metatable:LeaveChannel(channelName)
 	self.Channels[channelName:lower()] = nil
 	channel:InternalRemoveSpeaker(self)
 	spawn(function()
-		self.eOnChannelLeft:Fire(channel.Name)
+		self.eChannelLeft:Fire(channel.Name)
 	end)
 end
 
@@ -102,13 +102,13 @@ end
 
 function metatable:SendMessage(fromSpeaker, channel, message)
 	spawn(function()
-		self.eOnReceivedMessage:Fire(fromSpeaker, channel, message)
+		self.eReceivedMessage:Fire(fromSpeaker, channel, message)
 	end)
 end
 
 function metatable:SendSystemMessage(message, channel)
 	spawn(function()
-		self.eOnReceivedSystemMessage:Fire(message, channel)
+		self.eReceivedSystemMessage:Fire(message, channel)
 	end)
 end
 
@@ -122,7 +122,7 @@ end
 
 function metatable:SetExtraData(key, value)
 	self.ExtraData[key] = value
-	spawn(function() self.eOnExtraDataUpdated:Fire(key, value) end) 
+	spawn(function() self.eExtraDataUpdated:Fire(key, value) end) 
 end
 
 function metatable:GetExtraData(key)
@@ -145,28 +145,26 @@ function module.new(vChatService, name)
 	
 	obj.Channels = {}
 	
-	obj.eOnDestroyed = Instance.new("BindableEvent")
-	obj.OnDestroyed = obj.eOnDestroyed.Event
+	obj.eDestroyed = Instance.new("BindableEvent")
+	obj.Destroyed = obj.eDestroyed.Event
 	
-	obj.eOnSaidMessage = Instance.new("BindableEvent")
-	obj.eOnReceivedMessage = Instance.new("BindableEvent")
-	obj.eOnReceivedSystemMessage = Instance.new("BindableEvent")
-	obj.eOnChannelJoined = Instance.new("BindableEvent")
-	obj.eOnChannelLeft = Instance.new("BindableEvent")
-	obj.eOnMuted = Instance.new("BindableEvent")
-	obj.eOnUnmuted = Instance.new("BindableEvent")
+	obj.eSaidMessage = Instance.new("BindableEvent")
+	obj.eReceivedMessage = Instance.new("BindableEvent")
+	obj.eReceivedSystemMessage = Instance.new("BindableEvent")
+	obj.eChannelJoined = Instance.new("BindableEvent")
+	obj.eChannelLeft = Instance.new("BindableEvent")
+	obj.eMuted = Instance.new("BindableEvent")
+	obj.eUnmuted = Instance.new("BindableEvent")
+	obj.eExtraDataUpdated = Instance.new("BindableEvent")
 	
-	obj.eOnExtraDataUpdated = Instance.new("BindableEvent")
-	
-	obj.OnSaidMessage = obj.eOnSaidMessage.Event
-	obj.OnReceivedMessage = obj.eOnReceivedMessage.Event
-	obj.OnReceivedSystemMessage = obj.eOnReceivedSystemMessage.Event
-	obj.OnChannelJoined = obj.eOnChannelJoined.Event
-	obj.OnChannelLeft = obj.eOnChannelLeft.Event
-	obj.OnMuted = obj.eOnMuted.Event
-	obj.OnUnmuted = obj.eOnUnmuted.Event
-	
-	obj.OnExtraDataUpdated = obj.eOnExtraDataUpdated.Event
+	obj.SaidMessage = obj.eSaidMessage.Event
+	obj.ReceivedMessage = obj.eReceivedMessage.Event
+	obj.ReceivedSystemMessage = obj.eReceivedSystemMessage.Event
+	obj.ChannelJoined = obj.eChannelJoined.Event
+	obj.ChannelLeft = obj.eChannelLeft.Event
+	obj.Muted = obj.eMuted.Event
+	obj.Unmuted = obj.eUnmuted.Event
+	obj.ExtraDataUpdated = obj.eExtraDataUpdated.Event
 
 	obj = setmetatable(obj, metatable)
 	
