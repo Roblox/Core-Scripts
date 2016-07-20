@@ -23,8 +23,7 @@ local RunService = game:GetService("RunService")
 local RobloxGui = script.Parent
 local ThirdPartyProductName = nil
 
-local Dialog = require(RobloxGui.Modules.VR.Dialog)
-local purchaseDialogVR = Dialog.new()
+local purchaseDialogVR = nil
 
 --[[ Flags ]]--
 local platform = UserInputService:GetPlatform()
@@ -119,7 +118,7 @@ local PURCHASE_STATE = {
 
 local function studioMockPurchasesEnabled()
 	local result = false
-	--pcall(function() result = settings():GetFFlag("StudioMockPurchasesEnabled") and settings():GetFFlag("StudioUseMarketplaceApiClient") and game:GetService("RunService"):IsStudio() end)
+	pcall(function() result = settings():GetFFlag("StudioMockPurchasesEnabled") and settings():GetFFlag("StudioUseMarketplaceApiClient") and game:GetService("RunService"):IsStudio() end)
 	return result
 end
 
@@ -263,6 +262,7 @@ local function createImageButtonWithText(name, position, image, imageDown, text,
 	imageButton.ZIndex = 8
 	imageButton.Modal = true
 	imageButton.SelectionImageObject = Instance.new("ImageLabel")
+	imageButton.SelectionImageObject.Name = "EmptySelectionImage"
 	imageButton.SelectionImageObject.BackgroundTransparency = 1
 	imageButton.SelectionImageObject.Image = ""
 
@@ -817,7 +817,7 @@ local function setBuyMoreRobuxDialog(playerBalance)
 			setButtonsVisible(OkButton)
 		else
 			local remainder = playerBalanceInt + productCost - PurchaseData.CurrencyAmount
-			descriptionText = descriptionText .. (". Would you like to buy %s ROBUX?"):format(formatNumber(productCost))
+			descriptionText = ("%s. Would you like to buy %s ROBUX?"):format(descriptionText, formatNumber(productCost))
 			setPostBalanceText(("The remaining %s ROBUX will be credited to your balance."):format(formatNumber(remainder)))
 		end
 	else
@@ -1024,7 +1024,7 @@ local function isFreeItem()
 end
 
 local getPlayerBalance
-if false then --useNewMarketplaceMethods() then
+if useNewMarketplaceMethods() then
 	getPlayerBalance = function()
 		local success, result = pcall(function()
 			return MarketplaceService:GetRobuxBalance()
@@ -1271,7 +1271,7 @@ local function onPurchaseSuccess()
 	local playerBalance = getPlayerBalance()
 	local newBalance = playerBalance.robux
 
-	setPostBalanceText(PURCHASE_MSG.BALANCE_NOW..getCurrencyString(PurchaseData.CurrencyType)..formatNumber(newBalance)..".")
+	setPostBalanceText(("%s%s%s."):format(PURCHASE_MSG.BALANCE_NOW, getCurrencyString(PurchaseData.CurrencyType), formatNumber(newBalance)))
 
 	if studioMockPurchasesEnabled() then
 		setPostBalanceText(PURCHASE_MSG.MOCK_PURCHASE_SUCCESS)
@@ -1645,16 +1645,21 @@ end
 local function onVREnabled(vrEnabled) 
 	if vrEnabled then
 		IsVRMode = true
+		local Dialog = require(RobloxGui.Modules.VR.Dialog)
+		if not purchaseDialogVR then
+			purchaseDialogVR = Dialog.new()
+		end
 		purchaseDialogVR:SetContent(PurchaseDialog)
 	else
 		IsVRMode = false
-		purchaseDialogVR:SetContent(nil)
+		if purchaseDialogVR then
+			purchaseDialogVR:SetContent(nil)
+		end
 		PurchaseDialog.Parent = RobloxGui
 	end
 end
 
 spawn(function()
-	repeat wait() until Players.LocalPlayer ~= nil
 	onVREnabled(UserInputService.VREnabled)
 end)
 
