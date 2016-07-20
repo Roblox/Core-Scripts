@@ -835,6 +835,8 @@ if Platform == Enum.Platform.XBoxOne then
 		if controllerStateManager then
 			controllerStateManager:Initialize()
 
+			game.Loaded:wait()
+
 			-- retro check in case of controller disconnect while loading
 			-- for now, gamepad1 is always mapped to the active user
 			controllerStateManager:CheckUserConnected()
