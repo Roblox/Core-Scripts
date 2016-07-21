@@ -60,7 +60,7 @@ function module.CreateProxy(ChatService)
 		AssertParameterTypeEquals(speakerName, "string")
 		
 		local spkr = obj.Target:GetSpeaker(speakerName)
-		if (spkr and (spkr.PlayerObj ~= "__NONE__")) then
+		if (spkr and spkr:GetPlayerObject()) then
 			error("Cannot remove Speaker object in use by Player!")
 		end
 		
@@ -77,7 +77,7 @@ function module.CreateProxy(ChatService)
 		local list = obj.Target:GetAutoJoinChannelList()
 		local proxyList = {}
 		for i, channel in pairs(list) do
-			table.insert(proxyList, ChatChannelProxy.CreateProxy(channel))
+			table.insert(proxyList, channel.Name)
 		end
 		return proxyList
 	end
