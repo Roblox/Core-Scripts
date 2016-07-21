@@ -126,8 +126,16 @@ do
 
 
 
-		CoreGuiCommunicationsFolder.Parent = CommunicationsFolderParent
+		local Players = game:GetService("Players")
+		Players.PlayerAdded:connect(function(player)
+			if (player == Players.LocalPlayer) then
+				CoreGuiCommunicationsFolder.Parent =  Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("ChatScript")
+			end
+		end)
 
+		if (Players.LocalPlayer) then
+			CoreGuiCommunicationsFolder.Parent =  Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("ChatScript")
+		end
 
 		function moduleApiTable:ToggleVisibility()
 			pcall(function()
@@ -193,7 +201,7 @@ do
 		ChatWindowFolder.MessagesChanged.Event:connect(function(...) moduleApiTable.MessagesChanged:fire(...) end)
 
 
-		ChatWindowFolder.MessagePosted.Event:connect(function(message) game:GetService("Players"):Chat(message) end)
+		ChatWindowFolder.MessagePosted.Event:connect(function(message) Players:Chat(message) end)
 		StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType, enabled)
 			pcall(function() ChatWindowFolder.CoreGuiChanged:Fire(coreGuiType, enabled) end)
 		end)

@@ -1,8 +1,7 @@
 local source = [[
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Chat = require(script:WaitForChild("NewChat"))
 
-local CoreGuiCommunicationsFolder = ReplicatedStorage:WaitForChild("CoreGuiCommunications")
+local CoreGuiCommunicationsFolder = script:WaitForChild("CoreGuiCommunications")
 local ChatWindowFolder = CoreGuiCommunicationsFolder:WaitForChild("ChatWindow")
 local SetCoreFolder = CoreGuiCommunicationsFolder:WaitForChild("SetCore")
 local GetCoreFolder = CoreGuiCommunicationsFolder:WaitForChild("GetCore")
