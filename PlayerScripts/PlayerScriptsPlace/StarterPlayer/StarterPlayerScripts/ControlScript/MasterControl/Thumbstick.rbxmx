@@ -13,6 +13,8 @@
 --]]
 local Players = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
+local GUIS = game:GetService('GuiService')
+
 local MasterControl = require(script.Parent)
 
 local Thumbstick = {}
@@ -162,11 +164,25 @@ function Thumbstick:Create(parentFrame)
 		MasterControl:SetIsJumping(false)
 	end
 	
+	local OnTouchEndedCnie = nil
+	OnTouchEndedCnie = UserInputService.InputEnded:connect(function(inputObject, isProcessed)
+		if inputObject.UserInputType == Enum.UserInputType.Touch then
+			print("input touch ended")
+		end
+	end)
 	OnTouchEndedCn = UserInputService.TouchEnded:connect(function(inputObject, isProcessed)
+		print("touch was ended")
 		if inputObject == MoveTouchObject then
+			print("touch was movetouchobj")
 			OnTouchEnded()
 		end
 	end)
+	
+	GUIS.MenuOpened:connect(function()
+		if MoveTouchObject then
+			OnTouchEnded()
+		end
+	end)	
 	
 	ThumbstickFrame.Parent = parentFrame
 end
