@@ -7,7 +7,7 @@
 ]]--
 local vrPurchasePromptsEnabledSuccess, vrPurchasePromptsEnabled = pcall(function() return settings():GetFFlag("VRPurchasePromptsEnabled") end)
 vrPurchasePromptsEnabled = vrPurchasePromptsEnabled and vrPurchasePromptsEnabledSuccess
-if vrPurchasePromptsEnabled then
+if true then--vrPurchasePromptsEnabled then
 
 --[[ Services ]]--
 local GuiService = game:GetService('GuiService')
@@ -18,6 +18,7 @@ local MarketplaceService = game:GetService('MarketplaceService')
 local Players = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 local RunService = game:GetService("RunService")
+local TextService = game:GetService("TextService")
 
 --[[ Script Variables ]]--
 local RobloxGui = script.Parent
@@ -316,7 +317,6 @@ end
 local PurchaseDialog = isTenFootInterface and createFrame("PurchaseDialog", DIALOG_SIZE_TENFOOT, HIDE_POSITION_TENFOOT, 1, nil) or createFrame("PurchaseDialog", DIALOG_SIZE, HIDE_POSITION, 1, nil)
 PurchaseDialog.Visible = false
 PurchaseDialog.Parent = RobloxGui
-purchaseDialogVR:SetContent(PurchaseDialog)
 
 	local ContainerFrame = createFrame("ContainerFrame", UDim2.new(1, 0, 1, 0), nil, 0.5, Color3.new(31/255,31/255,31/255))
 	ContainerFrame.ZIndex = 8
@@ -463,14 +463,6 @@ purchaseDialogVR:SetContent(PurchaseDialog)
 		end
 
 --Gui State Control
-local function setPurchaseDialogOpen(isOpen)
-	if isOpen then
-		PurchaseDialog.Visible = true
-	else
-		PurchaseDialog.Visible = false
-	end
-end
-
 local function setItemDescriptionText(text)
 	if not text or type(text) ~= "string" then
 		ItemDescriptionText.Visible = false
@@ -502,14 +494,17 @@ local function setCostText(amount)
 		CostText.Visible = false
 		CostText.Text = ""
 	else
-		--Spawn so this happens after the ItemDescriptionText is setup.
-		spawn(function()
-			RobuxIcon.Visible = true
-			RobuxIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + (isTenFootInterface and 6*scaleFactor or 6))
+		local textSize = TextService:GetTextSize(
+			ItemDescriptionText.Text,
+			isTenFootInterface and 48 or 18,
+			ItemDescriptionText.Font,
+			ItemDescriptionText.AbsoluteSize)
 
-			CostText.Visible = true
-			CostText.Position = UDim2.new(0, isTenFootInterface and 134*scaleFactor or 134, 0, ItemDescriptionText.Position.Y.Offset + ItemDescriptionText.TextBounds.y + (isTenFootInterface and 15*scaleFactor or 15))
-		end)
+		RobuxIcon.Visible = true
+		RobuxIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, ItemDescriptionText.Position.Y.Offset + textSize.y + (isTenFootInterface and 6*scaleFactor or 6))
+
+		CostText.Visible = true
+		CostText.Position = UDim2.new(0, isTenFootInterface and 134*scaleFactor or 134, 0, ItemDescriptionText.Position.Y.Offset + textSize.y + (isTenFootInterface and 15*scaleFactor or 15))
 		CostText.TextColor3 = Color3.new(2/255, 183/255, 87/255)
 		CostText.Text = formatNumber(amount)
 	end
