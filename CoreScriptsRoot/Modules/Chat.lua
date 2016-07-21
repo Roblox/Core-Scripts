@@ -1911,7 +1911,7 @@ local function CreateChatWindowWidget(settings)
 
 	local function CreateChatWindow()
 		-- This really shouldn't be a button, but it is currently needed for VR.
-		local container = Util.Create (true and 'TextButton' or 'Frame')
+		local container = Util.Create (InputService.VREnabled and 'TextButton' or 'Frame')
 		{
 			Name = 'ChatWindowContainer';
 			Size = UDim2.new(0.3, 0, 0.25, 0);
