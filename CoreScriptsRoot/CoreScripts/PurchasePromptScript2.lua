@@ -1,13 +1,13 @@
 --[[
 	// Filename: PurchasePromptScript2.lua
 	// Version 1.1
-	// Release 254
+	// Release 255
 	// Written by: jeditkacheff/jmargh/0xBAADF00D
 	// Description: Handles in game purchases
 ]]--
 local vrPurchasePromptsEnabledSuccess, vrPurchasePromptsEnabled = pcall(function() return settings():GetFFlag("VRPurchasePromptsEnabled") end)
 vrPurchasePromptsEnabled = vrPurchasePromptsEnabled and vrPurchasePromptsEnabledSuccess
-if true then--vrPurchasePromptsEnabled then
+if vrPurchasePromptsEnabled then
 
 --[[ Services ]]--
 local GuiService = game:GetService('GuiService')
@@ -46,7 +46,7 @@ local freezeThumbstick1Name = "doNothingThumbstickPrompt"
 local freezeThumbstick2Name = "doNothingThumbstickPrompt"
 local _,largeFont = pcall(function() return Enum.FontSize.Size42 end)
 largeFont = largeFont or Enum.FontSize.Size36
-local scaleFactor = 3
+local scaleFactor = isTenFootInterface and 2 or 1
 local purchaseState = nil
 
 --[[ Purchase Data ]]--
@@ -75,7 +75,7 @@ local DEFAULT_XBOX_IMAGE = 'rbxasset://textures/ui/Shell/Icons/ROBUXIcon@1080.pn
 local CONTROLLER_CONFIRM_ACTION_NAME = "CoreScriptPurchasePromptControllerConfirm"
 local CONTROLLER_CANCEL_ACTION_NAME = "CoreScriptPurchasePromptControllerCancel"
 local GAMEPAD_BUTTONS = {}
-local BUTTON_TEXT = {}
+local BUTTON_TEXT_OBJECTS = {}
 
 local ERROR_MSG = {
 	PURCHASE_DISABLED = "In-game purchases are temporarily disabled",
@@ -176,15 +176,20 @@ local BC_ROBUX_PRODUCTS = { 90, 180, 270, 360, 450, 1000, 2750 }
 local NON_BC_ROBUX_PRODUCTS = { 80, 160, 240, 320, 400, 800, 2000 }
 
 local DIALOG_SIZE = UDim2.new(0, 324, 0, 240)
-local DIALOG_SIZE_TENFOOT = UDim2.new(0, 324*scaleFactor, 0, 220*scaleFactor)
-local SHOW_POSITION = UDim2.new(0.5, -162, 0.5, -90)
-local SHOW_POSITION_TENFOOT = UDim2.new(0.5, -162*scaleFactor, 0.5, -90*scaleFactor)
+local DIALOG_SIZE_TENFOOT = UDim2.new(0, 324*scaleFactor, 0, 240*scaleFactor)
+local SHOW_POSITION = UDim2.new(0.5, -162, 0.5, -120)
+local SHOW_POSITION_TENFOOT = UDim2.new(0.5, -162*scaleFactor, 0.5, -120*scaleFactor)
 local HIDE_POSITION = UDim2.new(0.5, -162, 0, -181)
 local HIDE_POSITION_TENFOOT = UDim2.new(0.5, -162*scaleFactor, 0, -180*scaleFactor - 1)
 
 local BODY_SIZE = UDim2.new(0, 324, 0, 136)
 local BODY_SIZE_TENFOOT = UDim2.new(0, 324*scaleFactor, 0, 136*scaleFactor)
 local TWEEN_TIME = 0.3
+
+local TITLE_HEIGHT = 40
+local TITLE_FONTSIZE = Enum.FontSize.Size24
+local TITLE_HEIGHT_TENFOOT = 80
+local TITLE_FONTSIZE_TENFOOT = Enum.FontSize.Size48
 
 local BTN_WIDTH, BTN_HEIGHT = 0.5, 0.225
 local BTN_MARGIN = 20
@@ -199,9 +204,10 @@ local BTN_1_SIZE_TENFOOT = BTN_1_SIZE
 local BTN_L_POS = UDim2.new(0, BTN_MARGIN, 1 - BTN_HEIGHT, -BTN_MARGIN)
 local BTN_R_POS = UDim2.new(0.5, BTN_MARGIN * 0.25, 1 - BTN_HEIGHT, -BTN_MARGIN)
 
-local BTN_SIZE_TENFOOT = UDim2.new(0, 162*scaleFactor, 0, 44*scaleFactor)
-local BTN_L_POS_TENFOOT = UDim2.new(0, 0, 0, 136*scaleFactor)
-local BTN_R_POS_TENFOOT = UDim2.new(0.5, 0, 0, 136*scaleFactor)
+local BTN_MARGIN_TENFOOT = 20 * scaleFactor
+local BTN_SIZE_TENFOOT = UDim2.new(BTN_WIDTH, -BTN_MARGIN_TENFOOT * 1.25, BTN_HEIGHT, 0)
+local BTN_L_POS_TENFOOT = UDim2.new(0, BTN_MARGIN_TENFOOT, 1 - BTN_HEIGHT, -BTN_MARGIN_TENFOOT)
+local BTN_R_POS_TENFOOT = UDim2.new(0.5, BTN_MARGIN_TENFOOT * 0.25, 1 - BTN_HEIGHT, -BTN_MARGIN_TENFOOT)
 
 --[[ Utility Functions ]]--
 local function lerp( start, finish, t)
@@ -270,7 +276,7 @@ local function createImageButtonWithText(name, position, image, imageDown, text,
 	local textLabel = createTextLabel(name.."Text", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), font, isTenFootInterface and largeFont or Enum.FontSize.Size24, text)
 	textLabel.ZIndex = 9
 	textLabel.Parent = imageButton
-	table.insert(BUTTON_TEXT, textLabel)
+	table.insert(BUTTON_TEXT_OBJECTS, textLabel)
 
 	imageButton.MouseEnter:connect(function()
 		imageButton.Image = imageDown
@@ -322,21 +328,21 @@ PurchaseDialog.Parent = RobloxGui
 	ContainerFrame.ZIndex = 8
 	ContainerFrame.Parent = PurchaseDialog
 
-		local WindowTitle = createTextLabel("WindowTitle", UDim2.new(1, 0, 0, 40), UDim2.new(0, 0, 0, 0), Enum.Font.SourceSansBold, Enum.FontSize.Size24, "Confirm Purchase")
+		local WindowTitle = createTextLabel("WindowTitle", UDim2.new(1, 0, 0, isTenFootInterface and TITLE_HEIGHT_TENFOOT or TITLE_HEIGHT), UDim2.new(0, 0, 0, 0), Enum.Font.SourceSansBold, isTenFootInterface and TITLE_FONTSIZE_TENFOOT or TITLE_FONTSIZE, "Confirm Purchase")
 		WindowTitle.Parent = ContainerFrame
 		WindowTitle.ZIndex = 9
 
 		local ColorStripe = createFrame("ColorStripe", UDim2.new(1, 0, 0, 2), nil, 0, Color3.new(0.01, 0.72, 0.34))
-		ColorStripe.Position = UDim2.new(0, 0, 0, 40)
+		ColorStripe.Position = UDim2.new(0, 0, 0, isTenFootInterface and TITLE_HEIGHT_TENFOOT or TITLE_HEIGHT)
 		ColorStripe.ZIndex = 9
 		ColorStripe.Parent = ContainerFrame
 
-		local ItemPreviewImage = isTenFootInterface and createImageLabel("ItemPreviewImage", UDim2.new(0, 64*scaleFactor, 0, 64*scaleFactor), UDim2.new(0, 27*scaleFactor, 0, 60*scaleFactor), "") or createImageLabel("ItemPreviewImage", UDim2.new(0, 64, 0, 64), UDim2.new(0, 27, 0, 60), "")
+		local ItemPreviewImage = createImageLabel("ItemPreviewImage", UDim2.new(0, 64*scaleFactor, 0, 64*scaleFactor), UDim2.new(0, 27*scaleFactor, 0, 60*scaleFactor), "")
 		ItemPreviewImage.ZIndex = 9
 		ItemPreviewImage.Parent = ContainerFrame
 
-		local ItemDescriptionText = createTextLabel("ItemDescriptionText", isTenFootInterface and UDim2.new(0, 210*scaleFactor - 20, 0, 96*scaleFactor) or UDim2.new(0, 210, 0, 96), isTenFootInterface and UDim2.new(0, 110*scaleFactor, 0, 58*scaleFactor) or UDim2.new(0, 110, 0, 58),
-			Enum.Font.SourceSansBold, isTenFootInterface and Enum.FontSize.Size48 or Enum.FontSize.Size18, PURCHASE_MSG.PURCHASE)
+		local ItemDescriptionText = createTextLabel("ItemDescriptionText", UDim2.new(0, 210*scaleFactor - 20, 0, 96*scaleFactor), UDim2.new(0, 110*scaleFactor, 0, 58*scaleFactor),
+			Enum.Font.SourceSansBold, isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size18, PURCHASE_MSG.PURCHASE)
 		ItemDescriptionText.TextXAlignment = Enum.TextXAlignment.Left
 		ItemDescriptionText.TextYAlignment = Enum.TextYAlignment.Top
 		ItemDescriptionText.TextWrapped = true
@@ -354,7 +360,7 @@ PurchaseDialog.Parent = RobloxGui
 		CostText.Parent = ContainerFrame
 
 		local PostBalanceText = createTextLabel("PostBalanceText", UDim2.new(1, -20, 0, 50), isTenFootInterface and UDim2.new(0, 10, 0, 140*scaleFactor) or UDim2.new(0, 10, 0, 140), Enum.Font.SourceSans,
-			isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size14, "")
+			isTenFootInterface and Enum.FontSize.Size24 or Enum.FontSize.Size14, "")
 		PostBalanceText.TextYAlignment = Enum.TextYAlignment.Top
 		PostBalanceText.TextWrapped = true
 		PostBalanceText.ZIndex = 9
@@ -478,12 +484,12 @@ local function setPostBalanceText(text)
 		PostBalanceText.Visible = false
 		PostBalanceText.Text = ""
 	else
-		local y = 140
+		local y = 140*scaleFactor
 		if CostText.Visible then
-			y = CostText.Position.Y.Offset + CostText.TextBounds.y + 6
+			y = CostText.Position.Y.Offset + CostText.TextBounds.y + 6*scaleFactor
 		end
 		PostBalanceText.Visible = true
-		PostBalanceText.Position = UDim2.new(0, 10, 0, y)
+		PostBalanceText.Position = UDim2.new(0, 10*scaleFactor, 0, y)
 		PostBalanceText.Text = text
 	end
 end
@@ -496,15 +502,15 @@ local function setCostText(amount)
 	else
 		local textSize = TextService:GetTextSize(
 			ItemDescriptionText.Text,
-			isTenFootInterface and 48 or 18,
+			isTenFootInterface and 36 or 18,
 			ItemDescriptionText.Font,
 			ItemDescriptionText.AbsoluteSize)
 
 		RobuxIcon.Visible = true
-		RobuxIcon.Position = UDim2.new(0, isTenFootInterface and 110*scaleFactor or 110, 0, ItemDescriptionText.Position.Y.Offset + textSize.y + (isTenFootInterface and 6*scaleFactor or 6))
+		RobuxIcon.Position = UDim2.new(0, 110*scaleFactor, 0, ItemDescriptionText.Position.Y.Offset + textSize.y + 6*scaleFactor)
 
 		CostText.Visible = true
-		CostText.Position = UDim2.new(0, isTenFootInterface and 134*scaleFactor or 134, 0, ItemDescriptionText.Position.Y.Offset + textSize.y + (isTenFootInterface and 15*scaleFactor or 15))
+		CostText.Position = UDim2.new(0, 134*scaleFactor, 0, ItemDescriptionText.Position.Y.Offset + textSize.y + 15*scaleFactor)
 		CostText.TextColor3 = Color3.new(2/255, 183/255, 87/255)
 		CostText.Text = formatNumber(amount)
 	end
@@ -834,9 +840,9 @@ local function showPurchasePrompt()
 		purchaseDialogVR:Show(true)
 	else
 		PurchaseDialog:TweenPosition(isTenFootInterface and SHOW_POSITION_TENFOOT or SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
+		enableControllerInput()
 	end
 	disableControllerMovement()
-	enableControllerInput()
 end
 
 --[[ Close and Cancel Functions ]]--
@@ -1540,7 +1546,7 @@ function showGamepadButtons()
 		button.Visible = true
 	end
 
-	for _,buttonText in pairs(BUTTON_TEXT) do
+	for _,buttonText in pairs(BUTTON_TEXT_OBJECTS) do
 		local inset = buttonText.AbsoluteSize.Y - 8
 		buttonText.Position = UDim2.new(0, inset, 0, 0)
 		buttonText.Size = UDim2.new(1, -inset, 1, 0)
@@ -1551,7 +1557,7 @@ function hideGamepadButtons()
 	for _, button in pairs(GAMEPAD_BUTTONS) do
 		button.Visible = false
 	end
-	for _,buttonText in pairs(BUTTON_TEXT) do
+	for _,buttonText in pairs(BUTTON_TEXT_OBJECTS) do
 		buttonText.Position = UDim2.new(0, 0, 0, 0)
 		buttonText.Size = UDim2.new(1, 0, 1, 0)
 	end
