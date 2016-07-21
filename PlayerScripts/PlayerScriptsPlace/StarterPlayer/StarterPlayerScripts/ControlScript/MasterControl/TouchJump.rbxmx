@@ -45,8 +45,7 @@ function TouchJump:Create(parentFrame)
 	end
 	
 	local isSmallScreen = parentFrame.AbsoluteSize.y <= 500
-	local origJumpButtonSize = (isSmallScreen and 70 or 120)
-	local jumpButtonSize = origJumpButtonSize/2
+	local jumpButtonSize = isSmallScreen and 70 or 120
 	
 	JumpButton = Instance.new('ImageButton')
 	JumpButton.Name = "JumpButton"
@@ -56,8 +55,8 @@ function TouchJump:Create(parentFrame)
 	JumpButton.ImageRectOffset = Vector2.new(176, 222)
 	JumpButton.ImageRectSize = Vector2.new(174, 174)
 	JumpButton.Size = UDim2.new(0, jumpButtonSize, 0, jumpButtonSize)
-	JumpButton.Position = isSmallScreen and UDim2.new(1, -(origJumpButtonSize) + 10, 1, -(origJumpButtonSize-(jumpButtonSize/2)) - 20) or
-		UDim2.new(1, -origJumpButtonSize, 1, -origJumpButtonSize * 1.5)
+	JumpButton.Position = isSmallScreen and UDim2.new(1, jumpButtonSize * -2.25, 1, -jumpButtonSize - 20) or
+ -		UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
 		
 	local touchObject = nil	
 	JumpButton.InputBegan:connect(function(inputObject)

@@ -3,6 +3,7 @@ local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
+local VRKeyboard = require(RobloxGui.Modules.VR.VirtualKeyboard)
 
 local PANEL_OFFSET_CFRAME = CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 5, 0) * CFrame.Angles(math.rad(-15), 0, 0)
 
@@ -27,9 +28,13 @@ VRHub.ModuleOpened.Event:connect(function(moduleName)
 	end
 end)
 
+local KeyboardOpen = false
+local GuiVisible = false
+
 function UserGuiModule:SetVisible(visible)
-	userGuiPanel:SetVisible(visible)
-	if visible then
+	GuiVisible = visible
+	userGuiPanel:SetVisible(GuiVisible)
+	if GuiVisible then
 		local topbarPanel = Panel3D.Get("Topbar3D")
 		local userGuiModuleCFrame = topbarPanel.localCF * PANEL_OFFSET_CFRAME
 
@@ -40,8 +45,14 @@ function UserGuiModule:SetVisible(visible)
 	end
 
 	local success, msg = pcall(function()
-		CoreGui:SetUserGuiRendering(true, visible and userGuiPanel:GetPart() or nil, Enum.NormalId.Front)
+		-- We need to hide the UserGui when typing on the keyboard so that the textbox doesn't sink events from the keyboard
+		local showGui = GuiVisible and not KeyboardOpen
+		CoreGui:SetUserGuiRendering(true, showGui and userGuiPanel:GetPart() or nil, Enum.NormalId.Front)
 	end)
+end
+
+function UserGuiModule:Update()
+	self:SetVisible(GuiVisible)
 end
 
 local function OnVREnabled(prop)
@@ -57,6 +68,17 @@ local function OnVREnabled(prop)
 		local success, msg = pcall(function()
 			CoreGui:SetUserGuiRendering(InputService.VREnabled, guiPart, Enum.NormalId.Front)
 		end)
+
+		VRKeyboard.OpenedEvent:connect(function()
+			KeyboardOpen = true
+			UserGuiModule:Update()
+		end)
+
+		VRKeyboard.ClosedEvent:connect(function()
+			KeyboardOpen = false
+			UserGuiModule:Update()
+		end)
+
 	end
 end
 InputService.Changed:connect(OnVREnabled)

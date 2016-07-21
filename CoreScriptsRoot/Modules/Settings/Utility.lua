@@ -2097,6 +2097,26 @@ function moduleApiTable:Create(instanceType)
 	end
 end
 
+-- RayPlaneIntersection (shortened)
+-- http://www.siggraph.org/education/materials/HyperGraph/raytrace/rayplane_intersection.htm
+function moduleApiTable:RayPlaneIntersection(ray, planeNormal, pointOnPlane)
+	planeNormal = planeNormal.unit
+	ray = ray.Unit
+
+	local Vd = planeNormal:Dot(ray.Direction)
+	if Vd == 0 then -- parallel, no intersection
+		return nil
+	end
+
+	local V0 = planeNormal:Dot(pointOnPlane - ray.Origin)
+	local t = V0 / Vd
+	if t < 0 then --plane is behind ray origin, and thus there is no intersection
+		return nil
+	end
+	
+	return ray.Origin + ray.Direction * t
+end
+
 function moduleApiTable:GetEaseLinear()
 	return Linear
 end

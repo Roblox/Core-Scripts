@@ -23,9 +23,6 @@ local useVRKeyboard = (vrKeyboardSuccess and vrKeyboardFlagValue == true)
 -- MainBotChatScript (the Lua part of Dialogs)
 scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", RobloxGui)
 
--- Developer Console Script
-scriptContext:AddCoreScriptLocal("CoreScripts/DeveloperConsole", RobloxGui)
-
 -- In-game notifications script
 scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", RobloxGui)
 
