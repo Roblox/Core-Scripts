@@ -12,7 +12,7 @@
 --]]
 
 local Players = game:GetService('Players')
-local GUIS = game:GetService('GuiService')
+local GuiService = game:GetService('GuiService')
 
 local DPad = {}
 
@@ -164,7 +164,7 @@ function DPad:Create(parentFrame)
 		end
 	end)
 	
-	GUIS.MenuOpened:connect(function()
+	GuiService.MenuOpened:connect(function()
 		if TouchObject then
 			OnInputEnded()
 		end
