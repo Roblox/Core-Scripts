@@ -13,7 +13,7 @@
 --]]
 local Players = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
-local GUIS = game:GetService('GuiService')
+local GuiService = game:GetService('GuiService')
 
 local MasterControl = require(script.Parent)
 
@@ -170,7 +170,7 @@ function Thumbstick:Create(parentFrame)
 		end
 	end)
 	
-	GUIS.MenuOpened:connect(function()
+	GuiService.MenuOpened:connect(function()
 		if MoveTouchObject then
 			OnTouchEnded()
 		end
