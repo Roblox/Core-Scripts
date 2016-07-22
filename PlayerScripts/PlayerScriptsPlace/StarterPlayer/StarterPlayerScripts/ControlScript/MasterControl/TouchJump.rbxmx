@@ -12,7 +12,7 @@
 --]]
 
 local Players = game:GetService('Players')
-local GUIS = game:GetService('GuiService')
+local GuiService = game:GetService('GuiService')
 
 local TouchJump = {}
 
@@ -82,7 +82,7 @@ function TouchJump:Create(parentFrame)
 		end
 	end)
 	
-	GUIS.MenuOpened:connect(function()
+	GuiService.MenuOpened:connect(function()
 		if touchObject then
 			OnInputEnded()
 		end
