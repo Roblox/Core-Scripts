@@ -13,7 +13,7 @@
 
 local Players = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
-local GUIS = game:GetService('GuiService')
+local GuiService = game:GetService('GuiService')
 
 local Thumbpad = {}
 
@@ -218,7 +218,7 @@ function Thumbpad:Create(parentFrame)
 		end
 	end)
 	
-	GUIS.MenuOpened:connect(function()
+	GuiService.MenuOpened:connect(function()
 		if TouchObject then
 			OnInputEnded()
 		end
