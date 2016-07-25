@@ -171,15 +171,15 @@ local ASSET_TO_STRING = {
 	[33] = "YouTube Video";
 	[34] = "Game Pass";	
 	[38] = "Plugin";
-	[39] = "SolidModel",
-	[40] = "MeshPart",
-	[41] = "Hair Accessory",
-	[42] = "Face Accessory",
-	[43] = "Neck Accessory",
-	[44] = "Shoulder Accessory",
-	[45] = "Front Accessory",
-	[46] = "Back Accessory",
-	[47] = "Waist Accessory",
+	[39] = "SolidModel";
+	[40] = "MeshPart";
+	[41] = "Hair Accessory";
+	[42] = "Face Accessory";
+	[43] = "Neck Accessory";
+	[44] = "Shoulder Accessory";
+	[45] = "Front Accessory";
+	[46] = "Back Accessory";
+	[47] = "Waist Accessory";
 	[0]  = "Product";
 	-- NOTE: GamePass and Plugin AssetTypeIds are now in sync on ST1, ST2 and ST3
 }
