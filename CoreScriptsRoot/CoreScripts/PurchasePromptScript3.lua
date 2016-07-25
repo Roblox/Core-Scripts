@@ -1,5 +1,5 @@
 --[[
-	// Filename: PurchasePromptScript2.lua
+	// Filename: PurchasePromptScript3.lua
 	// Version 1.1
 	// Release 255
 	// Written by: jeditkacheff/jmargh/0xBAADF00D
@@ -840,11 +840,13 @@ local function showPurchasePrompt()
 		PurchaseDialog.Position = SHOW_POSITION
 		purchaseDialogVR:SetContent(PurchaseDialog)
 		purchaseDialogVR:Show(true)
+		disableControllerMovement()
 	else
 		PurchaseDialog:TweenPosition(isTenFootInterface and SHOW_POSITION_TENFOOT or SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
+		disableControllerMovement()
 		enableControllerInput()
 	end
-	disableControllerMovement()
+	
 end
 
 --[[ Close and Cancel Functions ]]--
@@ -1270,6 +1272,7 @@ local function onPurchaseSuccess()
 
 	descriptionText = string.gsub(descriptionText, "itemName", string.sub(PurchaseData.ProductInfo["Name"], 1, 20))
 	setItemDescriptionText(descriptionText)
+	setCostText(PurchaseData.CurrencyAmount)
 
 	local playerBalance = getPlayerBalance()
 	local newBalance = playerBalance.robux
