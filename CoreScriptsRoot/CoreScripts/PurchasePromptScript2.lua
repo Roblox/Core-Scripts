@@ -173,10 +173,19 @@ local ASSET_TO_STRING = {
 	[31] = "Right Leg";
 	[32] = "Package";
 	[33] = "YouTube Video";
-	-- NOTE: GamePass and Plugin AssetTypeIds are different on ST1, ST2 and ST3
 	[34] = "Game Pass";	
 	[38] = "Plugin";
+	[39] = "SolidModel",
+	[40] = "MeshPart",
+	[41] = "Hair Accessory",
+	[42] = "Face Accessory",
+	[43] = "Neck Accessory",
+	[44] = "Shoulder Accessory",
+	[45] = "Front Accessory",
+	[46] = "Back Accessory",
+	[47] = "Waist Accessory",
 	[0]  = "Product";
+	-- NOTE: GamePass and Plugin AssetTypeIds are now in sync on ST1, ST2 and ST3
 }
 local BC_ROBUX_PRODUCTS = { 90, 180, 270, 360, 450, 1000, 2750 }
 local NON_BC_ROBUX_PRODUCTS = { 80, 160, 240, 320, 400, 800, 2000 }
