@@ -58,8 +58,7 @@ function DialogPanel:CalculateTransparency()
 	end
 
 	local angleToPanel = math.acos(headLook:Dot(vectorToPanel))
-
-	print(headLook:Dot(vectorToPanel))
+	
 	return math.min(math.max(0, (angleToPanel - PANEL_FADE_ANGLE_0) / PANEL_FADE_RANGE), 1)
 end
 
