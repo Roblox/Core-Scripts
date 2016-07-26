@@ -33,6 +33,8 @@ local playerDropDownModule = require(RobloxGui.Modules.PlayerDropDown)
 local blockingUtility = playerDropDownModule:CreateBlockingUtility()
 local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 
+local PlayerPermissionsModule = require(RobloxGui.Modules.PlayerPermissionsModule)
+
 --[[ Fast Flags ]]--
 local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
 local IsFollowersEnabled = followerSuccess and isFollowersEnabled
@@ -133,11 +135,11 @@ local SHADOW_IMAGE = 'rbxasset://textures/ui/PlayerList/TileShadowMissingTop.png
 local SHADOW_SLICE_SIZE = 5
 local SHADOW_SLICE_RECT = Rect.new(SHADOW_SLICE_SIZE+1, SHADOW_SLICE_SIZE+1, SHADOW_SLICE_SIZE*2-1, SHADOW_SLICE_SIZE*2-1)
 
-local ADMINS = {	-- Admins with special icons
-    ['7210880'] = 'http://www.roblox.com/asset/?id=134032333', -- Jeditkacheff
-    ['13268404'] = 'http://www.roblox.com/asset/?id=113059239', -- Sorcus
-    ['261'] = 'http://www.roblox.com/asset/?id=105897927', -- shedlestky
-    ['20396599'] = 'http://www.roblox.com/asset/?id=161078086', -- Robloxsai
+local CUSTOM_ICONS = {	-- Admins with special icons
+    ['7210880'] = 'rbxassetid://134032333', -- Jeditkacheff
+    ['13268404'] = 'rbxassetid://113059239', -- Sorcus
+    ['261'] = 'rbxassetid://105897927', -- shedlestky
+    ['20396599'] = 'rbxassetid://161078086', -- Robloxsai
 }
 
 local ABUSES = {
@@ -160,6 +162,7 @@ local FOLLOWER_STATUS = {
 --[[ Images ]]--
 local CHAT_ICON = 'rbxasset://textures/ui/chat_teamButton.png'
 local ADMIN_ICON = 'rbxasset://textures/ui/icon_admin-16.png'
+local INTERN_ICON = 'rbxasset://textures/ui/icon_intern-16.png'
 local PLACE_OWNER_ICON = 'rbxasset://textures/ui/icon_placeowner.png'
 local BC_ICON = 'rbxasset://textures/ui/icon_BC-16.png'
 local TBC_ICON = 'rbxasset://textures/ui/icon_TBC-16.png'
@@ -263,20 +266,15 @@ local function getFollowerStatusIcon(followerStatus)
 	end
 end
 
-local function getAdminIcon(player)
+local function getCustomPlayerIcon(player)
 	local userIdStr = tostring(player.userId)
-	if ADMINS[userIdStr] then return nil end
+	if CUSTOM_ICONS[userIdStr] then return nil end
 	--
-	local success, result = pcall(function()
-		return player:IsInGroup(1200769)	-- yields
-	end)
-	if not success then
-		print("PlayerListScript2: getAdminIcon() failed because", result)
-		return nil
-	end
-	--
-	if result then
+	
+	if PlayerPermissionsModule.IsPlayerAdminAsync(player) then
 		return ADMIN_ICON
+	elseif PlayerPermissionsModule.IsPlayerInternAsync(player) then
+		return INTERN_ICON
 	end
 end
 
@@ -316,8 +314,8 @@ local function getMembershipIcon(player)
 		else
 			local userIdStr = tostring(player.userId)
 			local membershipType = player.MembershipType
-			if ADMINS[userIdStr] then
-				return ADMINS[userIdStr]
+			if CUSTOM_ICONS[userIdStr] then
+				return CUSTOM_ICONS[userIdStr]
 			elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
 				return PLACE_OWNER_ICON
 			elseif membershipType == Enum.MembershipType.None then
@@ -1305,12 +1303,12 @@ local function createPlayerEntry(player, isTopStat)
 		else
 			print("PlayerList: GetRankInGroup failed because", result)
 		end
-		local adminIconImage = getAdminIcon(player)
-		if adminIconImage then
+		local iconImage = getCustomPlayerIcon(player)
+		if iconImage then
 			if not membershipIcon then
-				membershipIcon = createImageIcon(adminIconImage, "MembershipIcon", 1, entryFrame)
+				membershipIcon = createImageIcon(iconImage, "MembershipIcon", 1, entryFrame)
 			else
-				membershipIcon.Image = adminIconImage
+				membershipIcon.Image = iconImage
 			end
 		end
 		-- Friendship and Follower status is checked by onFriendshipChanged, which is called by the FriendStatusChanged

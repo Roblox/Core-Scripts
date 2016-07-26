@@ -74,6 +74,7 @@ local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 --[[ SCRIPT VARIABLES ]]
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
+local PlayerPermissionsModule = require(RobloxGui.Modules.PlayerPermissionsModule)
 
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
@@ -274,22 +275,34 @@ do
 		return nil -- Found no player
 	end
 
-	local adminCache = {}
-	function Util.IsPlayerAdminAsync(player)
-		local userId = player and player.userId
-		if userId then
-			if adminCache[userId] == nil then
-				local isAdmin = false
-				-- Many things can error is the IsInGroup check
-				pcall(function()
-					isAdmin = player:IsInGroup(1200769)
-				end)
-				adminCache[userId] = isAdmin
+	local function MakeIsInGroup(groupId, requiredRank)
+		assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
+		
+		local inGroupCache = {}
+		return function(player)
+			if player and player.userId then
+				local userId = player.userId
+
+				if inGroupCache[userId] == nil then
+					local inGroup = false
+					pcall(function() -- Many things can error is the IsInGroup check
+						if requiredRank then
+							inGroup = player:GetRankInGroup(groupId) > requiredRank
+						else
+							inGroup = player:IsInGroup(groupId)
+						end
+					end)
+					inGroupCache[userId] = inGroup
+				end
+
+				return inGroupCache[userId]
 			end
-			return adminCache[userId]
+
+			return false
 		end
-		return false
 	end
+	Util.IsPlayerAdminAsync = MakeIsInGroup(1200769)
+	Util.IsPlayerInternAsync = MakeIsInGroup(2868472, 100)
 
 	local function GetNameValue(pName)
 		local value = 0
@@ -921,8 +934,12 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			if chatMessage.Text == 'Label' and chatMessageDisplayText ~= 'Label' then
 				chatMessage.Text = string.rep(" ", numNeededSpaces) .. '[Content Deleted]'
 			end
-			if this.SendingPlayer and Util.IsPlayerAdminAsync(this.SendingPlayer) then
-				chatMessage.TextColor3 = this.Settings.AdminTextColor
+			if this.SendingPlayer then
+				if PlayerPermissionsModule.IsPlayerAdminAsync(this.SendingPlayer) then
+					chatMessage.TextColor3 = this.Settings.AdminTextColor
+				elseif PlayerPermissionsModule.IsPlayerInternAsync(this.SendingPlayer) then
+					chatMessage.TextColor3 = this.Settings.InternTextColor
+				end
 			end
 			chatMessage.Size = chatMessage.Size + UDim2.new(0, 0, 0, chatMessage.TextBounds.Y);
 
@@ -2132,6 +2149,7 @@ local function CreateChat()
 		TeamTextColor = Color3.new(230/255, 207/255, 0);
 		DefaultMessageTextColor = Color3.new(255/255, 255/255, 243/255);
 		AdminTextColor = Color3.new(1, 215/255, 0);
+		InternTextColor = Color3.new(175/255, 221/255, 1);
 		TextStrokeTransparency = 0.75;
 		TextStrokeColor = Color3.new(34/255,34/255,34/255);
 		Font = Enum.Font.SourceSansBold;
@@ -2215,7 +2233,7 @@ local function CreateChat()
 
 	function this:OnPlayerAdded(newPlayer)
 		if newPlayer then
-			spawn(function() Util.IsPlayerAdminAsync(newPlayer) end)
+			assert(coroutine.resume(coroutine.create(function() PlayerPermissionsModule.IsPlayerAdminAsync(newPlayer) end)))
 		end
 		if NON_CORESCRIPT_MODE then
 			newPlayer.Chatted:connect(function(msg, recipient)
