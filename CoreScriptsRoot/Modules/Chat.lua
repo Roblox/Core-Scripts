@@ -74,6 +74,7 @@ local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 --[[ SCRIPT VARIABLES ]]
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
+local PlayerPermissionsModule = require(RobloxGui.Modules.PlayerPermissionsModule)
 
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
@@ -934,9 +935,9 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				chatMessage.Text = string.rep(" ", numNeededSpaces) .. '[Content Deleted]'
 			end
 			if this.SendingPlayer then
-				if Util.IsPlayerAdminAsync(this.SendingPlayer) then
+				if PlayerPermissionsModule.IsPlayerAdminAsync(this.SendingPlayer) then
 					chatMessage.TextColor3 = this.Settings.AdminTextColor
-				elseif Util.IsPlayerInternAsync(this.SendingPlayer) then
+				elseif PlayerPermissionsModule.IsPlayerInternAsync(this.SendingPlayer) then
 					chatMessage.TextColor3 = this.Settings.InternTextColor
 				end
 			end
@@ -2232,7 +2233,7 @@ local function CreateChat()
 
 	function this:OnPlayerAdded(newPlayer)
 		if newPlayer then
-			spawn(function() Util.IsPlayerAdminAsync(newPlayer) end)
+			assert(coroutine.resume(coroutine.create(function() PlayerPermissionsModule.IsPlayerAdminAsync(newPlayer) end)))
 		end
 		if NON_CORESCRIPT_MODE then
 			newPlayer.Chatted:connect(function(msg, recipient)
