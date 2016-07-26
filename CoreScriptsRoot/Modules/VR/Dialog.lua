@@ -29,17 +29,14 @@ local DialogPanel = Panel3D.Get("Dialog")
 DialogPanel:SetType(Panel3D.Type.Fixed)
 DialogPanel.localCF = PANEL_OFFSET_CF
 DialogPanel:SetCanFade(true)
-local dialogContentFrame = Utility:Create "Frame" {
-	Parent = DialogPanel:GetGUI(),
-	Name = "DialogContent",
-	BackgroundTransparency = 1,
-	Position = UDim2.new(0, 0, 0, 0),
-	Size = UDim2.new(1, 0, 1, 0)
-}
 
 local dialogPanelAngle = 0
+local opacityLookup = {}
+local resetBaseAngle = false
+local baseAngle = 0
 
-local PANEL_FADE_ANGLE_0, PANEL_FADE_ANGLE_1 = math.rad(30), math.rad(40)
+
+local PANEL_FADE_ANGLE_0, PANEL_FADE_ANGLE_1 = math.rad(37.5), math.rad(44)
 local PANEL_FADE_RANGE = PANEL_FADE_ANGLE_1 - PANEL_FADE_ANGLE_0
 local PANEL_REAPPEAR_ANGLE = math.rad(90)
 
@@ -53,22 +50,37 @@ end
 function DialogPanel:CalculateTransparency()
 	local headCF = InputService:GetUserCFrame(Enum.UserCFrame.Head)
 	local headLook = headCF.lookVector * Vector3.new(1, 0, 1)
-	local vectorToPanel = Vector3.new(math.cos(dialogPanelAngle + math.rad(90)), 0, -math.sin(dialogPanelAngle + math.rad(90)))
+	local vertAngle = math.asin(headCF.lookVector.Y)
+	local vectorToPanel = Vector3.new(math.cos(baseAngle + dialogPanelAngle + math.rad(90)), 0, -math.sin(baseAngle + dialogPanelAngle + math.rad(90)))
+
+	if math.abs(vertAngle) > PANEL_FADE_ANGLE_1 then
+		resetBaseAngle = true
+	end
 
 	local angleToPanel = math.acos(headLook:Dot(vectorToPanel))
+	
 	return math.min(math.max(0, (angleToPanel - PANEL_FADE_ANGLE_0) / PANEL_FADE_RANGE), 1)
 end
 
 
-local opacityLookup = {}
+local function updatePanelPosition()
+	local headCF = InputService:GetUserCFrame(Enum.UserCFrame.Head)
+	local headLook = headCF.lookVector * Vector3.new(1, 0, 1)
+	local headAngle = (math.atan2(-headLook.Z, headLook.X) - math.rad(90)) % math.rad(360)
+	local newPanelAngle = baseAngle + math.floor((headAngle / PANEL_REAPPEAR_ANGLE) + 0.5) * PANEL_REAPPEAR_ANGLE
 
-game:GetService("RunService"):BindToRenderStep("DialogPanel", Enum.RenderPriority.Last.Value, function()
-	if DialogPanel.transparency == 1 then
-		local headCF = InputService:GetUserCFrame(Enum.UserCFrame.Head)
-		local headLook = headCF.lookVector * Vector3.new(1, 0, 1)
-		local headAngle = (math.atan2(-headLook.Z, headLook.X) - math.rad(90)) % math.rad(360)
-		local newPanelAngle = math.floor((headAngle / PANEL_REAPPEAR_ANGLE) + 0.5) * PANEL_REAPPEAR_ANGLE
-		positionDialogPanel(newPanelAngle)
+	if resetBaseAngle then
+		resetBaseAngle = false
+		baseAngle = headAngle
+	end
+
+	positionDialogPanel(newPanelAngle)
+end
+
+
+game:GetService("RunService"):BindToRenderStep("DialogPanel", Enum.RenderPriority.First.Value, function()
+	if DialogPanel.transparency == 1 or resetBaseAngle then
+		updatePanelPosition()
 	end
 
 	--update the transparency of gui elements
@@ -79,6 +91,8 @@ game:GetService("RunService"):BindToRenderStep("DialogPanel", Enum.RenderPriorit
 			guiElement.TextTransparency = transparency
 		elseif guiElement:IsA("ImageLabel") or guiElement:IsA("ImageButton") then
 			guiElement.ImageTransparency = transparency
+		elseif guiElement:IsA("Frame") then
+			guiElement.BackgroundTransparency = transparency
 		end
 	end
 end)
@@ -105,6 +119,9 @@ local function updatePanel()
 
 		local contentSize = currentDialog.content.AbsoluteSize
 		DialogPanel:ResizePixels(contentSize.X, contentSize.Y, 100)
+		
+		resetBaseAngle = true
+		updatePanelPosition()
 		DialogPanel:SetVisible(true)
 
 		opacityLookup = {}
@@ -113,19 +130,23 @@ local function updatePanel()
 				opacityLookup[parent] = 1 - parent.ImageTransparency
 			elseif parent:IsA("TextLabel") or parent:IsA("TextButton") then
 				opacityLookup[parent] = 1 - parent.TextTransparency
+			elseif parent:IsA("Frame") then
+				opacityLookup[parent] = 1 - parent.BackgroundTransparency
 			end
 			for i, v in pairs(parent:GetChildren()) do
 				search(v)
 			end
 		end
-		search(dialogContentFrame)
+		search(DialogPanel:GetGUI())
 		if currentDescendantConn then
 			currentDescendantConn:disconnect()
 			currentDescendantConn = nil
 		end
-		currentDescendantConn = dialogContentFrame.DescendantAdded:connect(function(descendant)
+		currentDescendantConn = DialogPanel:GetGUI().DescendantAdded:connect(function(descendant)
 			search(descendant)
 		end)
+
+
 	end
 end
 

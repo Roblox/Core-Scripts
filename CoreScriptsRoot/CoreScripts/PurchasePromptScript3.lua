@@ -390,10 +390,10 @@ PurchaseDialog.Parent = RobloxGui
 		local buyButtonGamepadImage = Instance.new("ImageLabel")
 		buyButtonGamepadImage.BackgroundTransparency = 1
 		buyButtonGamepadImage.Image = A_BUTTON
-		buyButtonGamepadImage.Size = UDim2.new(1, -8, 1, -8)
+		buyButtonGamepadImage.Size = UDim2.new(1, -16, 1, -16)
 		buyButtonGamepadImage.SizeConstraint = Enum.SizeConstraint.RelativeYY
 		buyButtonGamepadImage.Parent = BuyButton
-		buyButtonGamepadImage.Position = UDim2.new(0, 4, 0, 5)
+		buyButtonGamepadImage.Position = UDim2.new(0, 8, 0, 8)
 		buyButtonGamepadImage.Visible = false
 		buyButtonGamepadImage.ZIndex = BuyButton.ZIndex
 		table.insert(GAMEPAD_BUTTONS, buyButtonGamepadImage)
@@ -1562,7 +1562,7 @@ function showGamepadButtons()
 	end
 
 	for _,buttonText in pairs(BUTTON_TEXT_OBJECTS) do
-		local inset = buttonText.AbsoluteSize.Y - 8
+		local inset = buttonText.AbsoluteSize.Y - 15
 		buttonText.Position = UDim2.new(0, inset, 0, 0)
 		buttonText.Size = UDim2.new(1, -inset, 1, 0)
 	end
@@ -1590,7 +1590,7 @@ end
 function onInputChanged(inputObject)
 	local input = inputObject.UserInputType
 	local inputs = Enum.UserInputType
-	if valueInTable(input, {inputs.Gamepad1, inputs.Gamepad2, inputs.Gamepad3, inputs.Gamepad4}) then
+	if not IsVRMode and valueInTable(input, {inputs.Gamepad1, inputs.Gamepad2, inputs.Gamepad3, inputs.Gamepad4}) then
 		if inputObject.KeyCode == Enum.KeyCode.Thumbstick1 or inputObject.KeyCode == Enum.KeyCode.Thumbstick2 then
 			if math.abs(inputObject.Position.X) > 0.1 or math.abs(inputObject.Position.Z) > 0.1 or math.abs(inputObject.Position.Y) > 0.1 then
 				showGamepadButtons()
@@ -1660,12 +1660,12 @@ end
 
 local function onVREnabled(vrEnabled) 
 	if vrEnabled then
-		IsVRMode = true
 		local Dialog = require(RobloxGui.Modules.VR.Dialog)
 		if not purchaseDialogVR then
 			purchaseDialogVR = Dialog.new()
 		end
 		purchaseDialogVR:SetContent(PurchaseDialog)
+		IsVRMode = true
 	else
 		IsVRMode = false
 		if purchaseDialogVR then
