@@ -72,8 +72,13 @@ local getDisableChatBarSuccess, disableChatBarValue = pcall(function() return se
 local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 
 --[[ SCRIPT VARIABLES ]]
-local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
-local VRHub = require(RobloxGui.Modules.VR.VRHub)
+local RobloxGui = nil
+local VRHub = nil
+
+if not NON_CORESCRIPT_MODE then
+	RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
+	VRHub = require(RobloxGui.Modules.VR.VRHub)
+end
 
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
@@ -2714,16 +2719,18 @@ do
 	moduleApiTable.KeepVRTopbarOpen = true 
 	moduleApiTable.VRIsExclusive = true
 	moduleApiTable.VRClosesNonExclusive = false
-	VRHub:RegisterModule(moduleApiTable)
-
-	VRHub.ModuleOpened.Event:connect(function(moduleName)
-		if moduleName ~= thisModuleName then
-			local module = VRHub:GetModule(moduleName)
-			if module.VRIsExclusive then
-				moduleApiTable:SetVisible(false)
+	if not NON_CORESCRIPT_MODE then
+		VRHub:RegisterModule(moduleApiTable)
+		
+		VRHub.ModuleOpened.Event:connect(function(moduleName)
+			if moduleName ~= thisModuleName then
+				local module = VRHub:GetModule(moduleName)
+				if module.VRIsExclusive then
+					moduleApiTable:SetVisible(false)
+				end
 			end
-		end
-	end)
+		end)
+	end
 
 	local ChatInstance = CreateChat()
 	ChatInstance:Initialize()
@@ -2763,4 +2770,3 @@ do
 end
 
 return moduleApiTable
-
