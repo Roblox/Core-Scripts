@@ -348,7 +348,15 @@ local function sortPlayerEntries(a, b)
 	end
 	if not a.PrimaryStat then return false end
 	if not b.PrimaryStat then return true end
-	return a.PrimaryStat > b.PrimaryStat
+	local statA = a.PrimaryStat
+	local statB = b.PrimaryStat
+	statA = tonumber(statA) or statA
+	statB = tonumber(statB) or statB
+	if type(statA) ~= type(statB) then
+		statA = tostring(statA)
+		statB = tostring(statB)
+	end
+	return statA > statB
 end
 
 local function sortLeaderStats(a, b)

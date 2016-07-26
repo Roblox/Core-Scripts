@@ -11,7 +11,13 @@ local os_time = os.time
 
 local DEBUG = false
 
+local CoreGui = game:GetService('CoreGui')
+local RobloxGui = CoreGui:FindFirstChild('RobloxGui')
+local Modules = RobloxGui:FindFirstChild('Modules')
+
 local ContextActionService = game:GetService("ContextActionService")
+local GuiService = game:GetService('GuiService')
+local isTenFootInterface = GuiService:IsTenFootInterface()
 
 -- Eye candy uses RenderStepped
 local EYECANDY_ENABLED = true
@@ -273,11 +279,15 @@ end
 
 function Methods.ResetFrameDimensions(devConsole)
 	devConsole.Frame.Size = UDim2_new(0.5, 20, 0.5, 20);
-	devConsole.Frame.Position = UDim2_new(0.25, -10, 0.125, -10)
+	
+	local abSize = devConsole.Frame.AbsoluteSize
+	devConsole:SetFrameSize(abSize.x, abSize.y)
+	local newSize = devConsole.Frame.Size
+	devConsole.Frame.Position = UDim2_new(0.5, -newSize.X.Offset/2, 0.5, -newSize.Y.Offset/2)
 end
 function Methods.BoundFrameSize(devConsole, x, y)
 	-- Minimum frame size
-	return math_max(x, 300), math_max(y, 200)
+	return math_max(x, 400), math_max(y, 200)
 end
 function Methods.SetFrameSize(devConsole, x, y)
 	x, y = devConsole:BoundFrameSize(x, y)
@@ -321,6 +331,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		Initialized = false;
 		Visible = false;
 		Tabs = {};
+		CurrentOpenedTab = nil;	-- save last tab opened to set SelectedCoreObject for TenFootInterfaces
 		VisibleChanged = visibleChanged; -- Created by :Initialize(); It's used to stop and disconnect things when the window is hidden
 	}
 	
@@ -333,12 +344,14 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	frame.AutoButtonColor = false
 	--frame.ClipsDescendants = true
 	frame.Visible = devConsole.Visible
+	frame.Selectable = not isTenFootInterface
 	devConsole.Frame = frame
 	devConsole:ResetFrameDimensions()
 	
 	-- The bar at the top that you can drag around
 	local handle = Primitives.Button(frame, 'Handle')
 	handle.Size = UDim2_new(1, -(Style.HandleHeight + Style.BorderSize), 0, Style.HandleHeight)
+	handle.Selectable = not isTenFootInterface
 	handle.Modal = true -- Unlocks mouse
 	handle.AutoButtonColor = false
 	
@@ -374,6 +387,8 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	do -- Create top right exit button
 		local exitButton, exitButtonImage = createCornerButton('Exit', 1, 0, 'https://www.roblox.com/asset/?id=261878266', 2/3)
 		exitButton.AutoButtonColor = false
+		exitButton.Visible = not isTenFootInterface
+		exitButton.Selectable = not isTenFootInterface
 		
 		local buttonEffectFunction = devConsole:CreateButtonEffectFunction(exitButton)
 		
@@ -389,14 +404,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		exitButton.MouseButton1Click:connect(function()
 			devConsole:SetVisible(false, true)
 		end)
-
-		local closeDevConsole = function(name, inputState, input)
-			ContextActionService:UnbindCoreAction("RBXDevConsoleCloseAction")
-			devConsole:SetVisible(false, true)
-		end
-
-		ContextActionService:BindCoreAction("RBXDevConsoleCloseAction", closeDevConsole, false, Enum.KeyCode.ButtonB)
-
 	end
 	
 	do -- Repositioning and Resizing
@@ -405,6 +412,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			local resizeButton, resizeButtonImage = createCornerButton('Resize', 1, 1, 'https://www.roblox.com/asset/?id=261880743', 1)
 			resizeButtonImage.Position = UDim2_new(0, 0, 0, 0)
 			resizeButtonImage.Size = UDim2_new(1, 0, 1, 0)
+			resizeButton.Selectable = not isTenFootInterface
 
 			local dragging = false
 			
@@ -1366,6 +1374,7 @@ do -- Script performance/Chart list
 		scrollingFrame.BorderSizePixel = 0
 		scrollingFrame.ZIndex = ZINDEX
 		scrollingFrame.ScrollBarThickness = 12
+		scrollingFrame.Selectable = false
 		this.ScrollingFrame = scrollingFrame
 		do
 			local y = 1 -- if we want to add a label above it later
@@ -1805,10 +1814,13 @@ do
 		label.Size = UDim2_new(0, 12, 1, -1)
 		label.FontSize = 'Size14'
 		
+		local DEFAULT_COMMAND_BAR_TEXT = "Type command here"
+		
 		local textBox = Primitives.TextBox(textBoxFrame, 'TextBox')
 		--textBox.TextWrapped = true -- This needs to auto-resize
 		textBox.BackgroundTransparency = 1
-		textBox.Text = "Type command here"
+		textBox.Text = DEFAULT_COMMAND_BAR_TEXT
+		textBox.ClearTextOnFocus = false
 		local padding = 2
 		textBox.Size = UDim2_new(1, -(padding * 2) - 4 - 12, 0, 500)
 		textBox.Position = UDim2_new(0, 4 + 12 + padding, 0, 0)
@@ -1816,6 +1828,20 @@ do
 		textBox.TextYAlignment = 'Top'
 		textBox.FontSize = 'Size18'
 		textBox.TextWrapped = true
+
+		-- override SelectionImageObject to better fit
+		if isTenFootInterface then
+			local selectionImage = Instance.new('ImageLabel')
+			selectionImage.Name = "SelectionImage"
+			selectionImage.Size = UDim2.new(1, textBoxFrame.AbsoluteSize.x + 36, 0, Style.CommandLineHeight + 24)
+			selectionImage.Position = UDim2.new(0, -18, 0, -12)
+			selectionImage.Image = 'rbxasset://textures/ui/SelectionBox.png'
+			selectionImage.ScaleType = Enum.ScaleType.Slice
+			selectionImage.SliceCenter = Rect.new(21,21,41,41)
+			selectionImage.BackgroundTransparency = 1
+
+			textBox.SelectionImageObject = selectionImage
+		end
 		
 		do
 			local defaultSize = UDim2_new(1, 0, 0, Style.CommandLineHeight)
@@ -1877,6 +1903,9 @@ do
 		local focusLostWithoutEnter = false
 		
 		textBox.Focused:connect(function()
+			if textBox.Text == DEFAULT_COMMAND_BAR_TEXT then
+				textBox.Text = ""
+			end
 			disconnector:fire()
 			backtrackPosition = 0
 			disconnector:connect(UserInputService.InputBegan:connect(function(input)
@@ -1903,11 +1932,18 @@ do
 				addInputtedText(text, false)
 				this.CommandInputted:fire(text)
 				textBox.Text = ""
-				textBox:CaptureFocus()
+
+				-- let's not spam the popup keyboard after text is entered
+				if not isTenFootInterface then
+					textBox:CaptureFocus()
+				end
 			else
 				backtrackPosition = 0
 				focusLostWithoutEnter = true
 				addInputtedText(textBox.Text, true)
+				if textBox.Text == "" then
+					textBox.Text = DEFAULT_COMMAND_BAR_TEXT
+				end
 			end
 		end)
 
@@ -2185,6 +2221,7 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 			-- Set dimensions for folder effect
 			textLabel.Size = size1
 			textLabel.Position = position1
+			devConsole.CurrentOpenedTab = buttonFrame
 		else
 			tab.SavedScrollbarValue = devConsole.WindowScrollbar:GetValue() -- This doesn't save correctly
 
@@ -2256,6 +2293,8 @@ function Methods.ApplyScrollbarToFrame(devConsole, scrollbar, window, body, fram
 	setValue(scrollbar:GetValue())
 
 	local scrollDistance = 120
+	
+	window.Active = true
 
 	scrollbar.ButtonUp.MouseButton1Click:connect(function()
 		scrollbar:Scroll(-scrollDistance, getHeights())
@@ -2281,7 +2320,9 @@ function Methods.ApplyScrollbarToFrame(devConsole, scrollbar, window, body, fram
 	window.MouseWheelBackward:connect(function()
 		scrollbar:Scroll(scrollDistance, getHeights())
 	end)
-
+	window.TouchPan:connect(function(positions, delta, velocity, userInputState)
+		scrollbar:Scroll(-delta.y, getHeights())
+	end)
 end
 
 function Methods.CreateScrollbar(devConsole, rotation)
@@ -2597,7 +2638,7 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 	
 	local mouse = game:GetService("Players").LocalPlayer:GetMouse()
 
-	local function startDragging()
+	local function startDragging(startP)
 		if dragging then
 			return
 		end
@@ -2606,7 +2647,7 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 		mouseInteractCallback(dragging, hovering)
 		local deltaCallback;
 		
-		local x0, y0 = mouse.X, mouse.Y
+		local x0, y0 = startP.X, startP.Y
 		--[[
 		listeners[#listeners + 1] = UserInputService.InputBegan:connect(function(input)
 			if ButtonUserInputTypes[input.UserInputType] then
@@ -2623,14 +2664,17 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 			end
 		end)
 		listeners[#listeners + 1] = UserInputService.InputChanged:connect(function(input)
-			if input.UserInputType ~= Enum.UserInputType.MouseMovement then
+		
+			if not (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch)then -- added in a touch check
 				return
 			end
+			
 			local p1 = input.Position
+
 			if not p1 then
 				return
 			end
-			local x1, y1 = mouse.X, mouse.Y --p1.X, p1.Y
+			local x1, y1 = p1.X, p1.Y
 			if not deltaCallback then
 				deltaCallback, disconnectCallback = dragCallback(x0 or x1, y0 or y1)
 			end
@@ -2640,8 +2684,21 @@ function Methods.ConnectButtonDragging(devConsole, button, dragCallback, mouseIn
 		end)
 	end
 	
-	button.MouseButton1Down:connect(startDragging)
-	button.MouseButton1Up:connect(stopDragging)
+	--button.MouseButton1Down:connect(startDragging)
+	--button.MouseButton1Up:connect(stopDragging)
+	
+	button.InputBegan:connect(function(iobj)
+		if iobj.UserInputType == Enum.UserInputType.Touch or iobj.UserInputType == Enum.UserInputType.MouseButton1 then
+			startDragging(iobj.Position)
+		end
+	end)
+	
+	button.InputEnded:connect(function(iobj)
+		if iobj.UserInputType == Enum.UserInputType.Touch or iobj.UserInputType == Enum.UserInputType.MouseButton1 then
+			stopDragging()
+		end
+	end)	
+	
 	button.MouseEnter:connect(function()
 		if not hovering then
 			hovering = true
@@ -2896,4 +2953,66 @@ do
 	end
 end
 
-return DeveloperConsole
+--[[ Module Table ]]--
+-- We only create the dev console if we need it; user toggles visibility.
+
+local DevConsoleModuleTable = {}
+local myDeveloperConsole = nil
+
+-- Tenfoot Interface set up
+local function onDevConsoleVisibilityChanged(isVisible)
+	local blockMenuActionName = "blockMenuAction"
+	local closeDevConsoleActionName = "closeDevConsoleAction"
+	local selectionParentName = "devConsoleSelectionGroup"
+
+	local function closeDevConsole(actionName, inputState, inputObject)
+		if inputState == Enum.UserInputState.End then
+			myDeveloperConsole:SetVisible(false)
+		end
+	end
+
+	if isVisible then
+		-- block menu open input while dev console is open
+		ContextActionService:BindCoreAction(blockMenuActionName, function() end, false, Enum.KeyCode.ButtonStart)
+
+		local menuModule = require(Modules.Settings.SettingsHub)
+		menuModule:SetVisibility(false, true)
+		ContextActionService:BindCoreAction(closeDevConsoleActionName, closeDevConsole, false, Enum.KeyCode.ButtonB)
+
+		GuiService:AddSelectionParent(selectionParentName, myDeveloperConsole.Frame)
+		GuiService.SelectedCoreObject = myDeveloperConsole.CurrentOpenedTab
+	else
+		ContextActionService:UnbindCoreAction(closeDevConsoleActionName)
+		ContextActionService:UnbindCoreAction(blockMenuActionName)
+
+		GuiService:RemoveSelectionGroup(selectionParentName)
+		GuiService.SelectedCoreObject = nil
+	end
+end
+
+local function getDeveloperConsole()
+	if not myDeveloperConsole then
+		local permissions = DeveloperConsole.GetPermissions()
+		local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
+
+		myDeveloperConsole = DeveloperConsole.new(RobloxGui, permissions, messagesAndStats)
+
+		if isTenFootInterface then
+			myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
+		end
+	end
+
+	return myDeveloperConsole
+end
+
+function DevConsoleModuleTable:GetVisibility()
+	local devConsole = getDeveloperConsole()
+	return devConsole.Visible
+end
+
+function DevConsoleModuleTable:SetVisibility(value)
+	local devConsole = getDeveloperConsole()
+	devConsole:SetVisible(value)
+end
+
+return DevConsoleModuleTable

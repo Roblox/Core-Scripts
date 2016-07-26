@@ -61,7 +61,7 @@ healthbarBack.BackgroundTransparency = 1
 healthbarBack.ScaleType = Enum.ScaleType.Slice
 healthbarBack.SliceCenter = Rect.new(10, 10, 10, 10)
 healthbarBack.Name = "HealthbarContainer"
-healthbarBack.Image = "rbxasset://textures/ui/Menu/rectBackgroundWhite.png"
+healthbarBack.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
 local healthbarFront = Instance.new("ImageLabel", healthbarBack)
 healthbarFront.ImageColor3 = HEALTH_GREEN_COLOR
 healthbarFront.BackgroundTransparency = 1
@@ -70,7 +70,7 @@ healthbarFront.SliceCenter = Rect.new(10, 10, 10, 10)
 healthbarFront.Size = UDim2.new(1, 0, 1, 0)
 healthbarFront.Position = UDim2.new(0, 0, 0, 0)
 healthbarFront.Name = "HealthbarFill"
-healthbarFront.Image = "rbxasset://textures/ui/Menu/rectBackgroundWhite.png"
+healthbarFront.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
 
 local playerName = Instance.new("TextLabel", BackpackPanel:GetGUI())
 playerName.Name = "PlayerName"
@@ -81,6 +81,9 @@ playerName.Font = Enum.Font.SourceSansBold
 playerName.FontSize = Enum.FontSize.Size12
 playerName.TextXAlignment = Enum.TextXAlignment.Left
 playerName.Size = UDim2.new(1, 0, 0, NAME_SPACE)
+
+
+BackpackScript.ToolAddedEvent = Instance.new("BindableEvent")
 
 
 local healthColorToPosition = {
@@ -170,6 +173,7 @@ local function SetTransparency(transparency)
 		v.text.TextTransparency = transparency
 	end
 
+	playerName.TextTransparency = transparency
 	healthbarBack.ImageTransparency = transparency
 	healthbarFront.ImageTransparency = transparency
 end
@@ -223,7 +227,7 @@ local function AddTool(tool)
 	slot.bg = Instance.new("ImageLabel", slot.icon)
 	slot.bg.Position = UDim2.new(0, -1, 0, -1)
 	slot.bg.Size = UDim2.new(1, 2, 1, 2)
-	slot.bg.Image = "rbxasset://textures/ui/Menu/rectBackground.png"
+	slot.bg.Image = "rbxasset://textures/ui/VR/rectBackground.png"
 	slot.bg.ScaleType = Enum.ScaleType.Slice
 	slot.bg.SliceCenter = Rect.new(10, 10, 10, 10)
 	slot.bg.BackgroundTransparency = 1
@@ -268,9 +272,9 @@ local function AddTool(tool)
 		local humanoid = player.Character:FindFirstChild("Humanoid")
 		if not humanoid then return end
 		
-		local in_backpack = tool.Parent == player.Backpack
+		local inBackpack = tool.Parent == player.Backpack
 		humanoid:UnequipTools()
-		if in_backpack then
+		if inBackpack then
 			humanoid:EquipTool(tool)
 		end
 	end
@@ -300,6 +304,8 @@ local function AddTool(tool)
 	end)
 	
 	UpdateLayout()
+
+	BackpackScript.ToolAddedEvent:Fire(tool)
 end
 
 local humanoidChangedEvent = nil
@@ -463,16 +469,15 @@ OnCoreGuiChanged(Enum.CoreGuiType.Backpack, StarterGui:GetCoreGuiEnabled(Enum.Co
 OnCoreGuiChanged(Enum.CoreGuiType.Health, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health))
 OnCoreGuiChanged(Enum.CoreGuiType.Health, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.All))
 
-local panelLocalCF = CFrame.new(0, -3.5, 5) * CFrame.Angles(math.rad(20), 0, 0)
+local panelLocalCF = CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 1.75, 0) * CFrame.Angles(math.rad(-5), 0, 0)
 
 function BackpackPanel:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 	--the backpack panel needs to go in front of the user when they look at it.
 	--if they aren't looking, we should be updating self.localCF
-	if self.transparency == 1 then
-		local headForwardCF = Panel3D.GetHeadLookXZ()
-		local panelOriginCF = CFrame.new(userHeadCF.p) * headForwardCF
-		self.localCF = panelOriginCF * panelLocalCF
-	end
+
+	local topbarPanel = Panel3D.Get("Topbar3D")
+	local panelOriginCF = topbarPanel.localCF or CFrame.new()
+	self.localCF = panelOriginCF * panelLocalCF
 end
 
 function BackpackPanel:OnUpdate()
@@ -498,5 +503,19 @@ end
 function BackpackPanel:OnMouseLeave(x, y)
 	EnableHotbarInput(false)
 end
+
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
+VRHub.ModuleOpened.Event:connect(function(moduleName)
+	local module = VRHub:GetModule(moduleName)
+	if module.VRIsExclusive then
+		BackpackPanel:SetVisible(false)
+	end
+end)
+VRHub.ModuleClosed.Event:connect(function(moduleName)
+	BackpackPanel:SetVisible(true)
+end)
+
+
+BackpackPanel:LinkTo("Topbar3D")
 
 return BackpackScript

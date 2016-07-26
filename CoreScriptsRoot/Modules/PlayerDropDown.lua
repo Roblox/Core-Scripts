@@ -23,7 +23,7 @@ local TEXT_STROKE_TRANSPARENCY = 0.75
 local TEXT_COLOR = Color3.new(1, 1, 243/255)
 local TEXT_STROKE_COLOR = Color3.new(34/255, 34/255, 34/255)
 local MAX_FRIEND_COUNT = 200
-local FRIEND_IMAGE = 'http://www.roblox.com/thumbs/avatar.ashx?userId='
+local FRIEND_IMAGE = 'https://www.roblox.com/thumbs/avatar.ashx?userId='
 
 --[[ Fast Flags ]]--
 local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
@@ -37,9 +37,9 @@ local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 local reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
 
 --[[ Bindables ]]--
-local BinbableFunction_SendNotification = nil
+local BindableEvent_SendNotification = nil
 spawn(function()
-	BinbableFunction_SendNotification = RobloxGui:WaitForChild("SendNotification")
+	BindableEvent_SendNotification = RobloxGui:WaitForChild("SendNotification")
 end)
 
 --[[ Remotes ]]--
@@ -117,8 +117,8 @@ end
 
 --[[ Follower Notifications ]]--
 local function sendNotification(title, text, image, duration, callback)
-	if BinbableFunction_SendNotification then
-		BinbableFunction_SendNotification:Invoke(title, text, image, duration, callback)
+	if BindableEvent_SendNotification then
+		BindableEvent_SendNotification:Fire(title, text, image, duration, callback)
 	end
 end
 

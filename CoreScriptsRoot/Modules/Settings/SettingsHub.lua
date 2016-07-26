@@ -25,6 +25,7 @@ local RunService = game:GetService("RunService")
 
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
 
 --[[ VARIABLES ]]
 local isTouchDevice = UserInputService.TouchEnabled
@@ -32,9 +33,9 @@ local isSmallTouchScreen = utility:IsSmallTouchScreen()
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local platform = UserInputService:GetPlatform()
--- TODO: Change dev console script to parent this to somewhere other than an engine created gui
-local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
-local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
+
+local DeveloperConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
+
 local lastInputChangedCon = nil
 local chatWasVisible = false
 local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
@@ -501,8 +502,9 @@ local function CreateSettingsHub()
 
 	local function toggleDevConsole(actionName, inputState, inputObject)
 		if actionName == DEV_CONSOLE_ACTION_NAME then 	-- ContextActionService->F9
-			if inputState and inputState == Enum.UserInputState.Begin and ToggleDevConsoleBindableFunc then
-				ToggleDevConsoleBindableFunc:Invoke()
+			if inputState and inputState == Enum.UserInputState.Begin then
+				local devConsoleVisible = DeveloperConsoleModule:GetVisibility()
+				DeveloperConsoleModule:SetVisibility(not devConsoleVisible)
 			end
 		end
 	end
@@ -950,9 +952,11 @@ local function CreateSettingsHub()
 	end
 
 	local function enableVR()
+		local VRHub = require(RobloxGui.Modules.VR.VRHub)
+		local thisModuleName = "SettingsMenu"
 		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
-		local panel = Panel3D.Get("SettingsMenu")
-		panel:ResizeStuds(3, 3, 256)
+		local panel = Panel3D.Get(thisModuleName)
+		panel:ResizeStuds(4, 4, 200)
 		panel:SetType(Panel3D.Type.Fixed)
 		panel:SetVisible(false)
 		panel:SetCanFade(false)
@@ -962,12 +966,22 @@ local function CreateSettingsHub()
 		this:HideShield()
 
 		GuiService.MenuOpened:connect(function()
-			local headLook = Panel3D.GetHeadLookXZ(true)
-			panel.localCF = headLook * CFrame.Angles(math.rad(5), 0, 0) * CFrame.new(0, 0, 5)
-			panel:SetVisible(true, true)
+			local topbarPanel = Panel3D.Get("Topbar3D")
+			panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
+			panel:SetVisible(true)
+
+			VRHub:FireModuleOpened(thisModuleName)
 		end)
 		GuiService.MenuClosed:connect(function()
-			panel:SetVisible(false, false)
+			panel:SetVisible(false)
+
+			VRHub:FireModuleClosed(thisModuleName)
+		end)
+
+		VRHub.ModuleOpened.Event:connect(function(moduleName)
+			if moduleName ~= thisModuleName then
+				this:SetVisibility(false)
+			end
 		end)
 	end
 
@@ -1088,6 +1102,21 @@ end
 -- Main Entry Point
 
 local moduleApiTable = {}
+
+	moduleApiTable.ModuleName = "SettingsMenu"
+	moduleApiTable.KeepVRTopbarOpen = true
+	moduleApiTable.VRIsExclusive = true
+	moduleApiTable.VRClosesNonExclusive = true
+	VRHub:RegisterModule(moduleApiTable)
+
+	VRHub.ModuleOpened.Event:connect(function(moduleName)
+		if moduleName ~= moduleApiTable.ModuleName then
+			local module = VRHub:GetModule(moduleName)
+			if module.VRIsExclusive then
+				moduleApiTable:SetVisibility(false)
+			end
+		end
+	end)
 
 	local SettingsHubInstance = CreateSettingsHub()
 
