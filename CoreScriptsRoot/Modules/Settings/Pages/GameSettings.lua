@@ -144,8 +144,8 @@ local function Initialize()
 		end
 
 		game.GraphicsQualityChangeRequest:connect(function(isIncrease)
-			if settings().Rendering.QualityLevel == Enum.QualityLevel.Automatic then return end
-			--
+			--  was using settings().Rendering.Quality level, which was wrongly saying it was automatic.
+			if GameSettings.SavedQualityLevel == Enum.SavedQualitySetting.Automatic then return end
 			local currentGraphicsSliderValue = this.GraphicsQualitySlider:GetValue()
 			if isIncrease then
 				currentGraphicsSliderValue = currentGraphicsSliderValue + 1
