@@ -414,6 +414,7 @@ ScrollList.BottomImage = 'rbxasset://textures/ui/scroll-bottom.png'
 ScrollList.MidImage = 'rbxasset://textures/ui/scroll-middle.png'
 ScrollList.TopImage = 'rbxasset://textures/ui/scroll-top.png'
 ScrollList.SelectionImageObject = noSelectionObject
+ScrollList.Selectable = false
 ScrollList.Parent = Container
 
 -- PlayerDropDown clipping frame
@@ -781,7 +782,27 @@ function popupHidden()
 end
 playerDropDown.HiddenSignal:connect(popupHidden)
 
+local function openPlatformProfileUI(rbxUid)
+	if not rbxUid or rbxUid < 1 then return end
+	pcall(function()
+		local platformService = game:GetService('PlatformService')
+		if platformService then
+			local platformId = platformService:GetPlatformId(rbxUid)
+			if platformId and #platformId > 0 then
+				platformService:PopupProfileUI(Enum.UserInputType.Gamepad1, platformId)
+			end
+		end
+	end)
+end
+
 local function onEntryFrameSelected(selectedFrame, selectedPlayer)
+	if isTenFootInterface then
+		-- open the profile UI for the selected user. On console we allow user to select themselves
+		-- they may want quick access to platform profile features
+		openPlatformProfileUI(selectedPlayer.userId)
+		return
+	end
+
 	if selectedPlayer ~= Player and selectedPlayer.userId > 1 and Player.userId > 1 then
 		if LastSelectedFrame ~= selectedFrame then
 			if LastSelectedFrame then
@@ -1263,12 +1284,10 @@ local function createPlayerEntry(player, isTopStat)
 	local containerFrame, entryFrame = createEntryFrame(name, PlayerEntrySizeY, isTopStat)
 	entryFrame.Active = true
 
-	if not isTenFootInterface then
-		local function localEntrySelected()
-			onEntryFrameSelected(containerFrame, player)
-		end
-		entryFrame.MouseButton1Click:connect(localEntrySelected)
+	local function localEntrySelected()
+		onEntryFrameSelected(containerFrame, player)
 	end
+	entryFrame.MouseButton1Click:connect(localEntrySelected)
 
 	local currentXOffset = 1
 
@@ -1349,6 +1368,7 @@ local function createTeamEntry(team)
 	teamEntry.TeamScore = 0
 
 	local containerFrame, entryFrame = createEntryFrame(team.Name, TeamEntrySizeY)
+	entryFrame.Selectable = false	-- dont allow gamepad selection of team frames
 	entryFrame.BackgroundColor3 = team.TeamColor.Color
 
 	local teamName = createEntryNameText("TeamName", team.Name, entryFrame.AbsoluteSize.x, 1)
@@ -1614,6 +1634,7 @@ local closeListFunc = function(name, state, input)
 	spawn(function() GuiService:SetMenuIsOpen(false) end)
 	ContextActionService:UnbindCoreAction("CloseList")
 	ContextActionService:UnbindCoreAction("StopAction")
+	GuiService:RemoveSelectionGroup("PlayerlistGuiSelection")
 	GuiService.SelectedCoreObject = nil
 	UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 end
@@ -1631,15 +1652,10 @@ local setVisible = function(state, fromTemp)
 					local lastInputType = UserInputService:GetLastInputType()
 					local isUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
 												lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
-					if not isTenFootInterface then
-						if isUsingGamepad and not fromTemp then
-							GuiService.SelectedCoreObject = frameChildren[i]
-						end
-					elseif not fromTemp then
-						GuiService.SelectedCoreObject = ScrollList
-					end
-
+					
 					if isUsingGamepad and not fromTemp then
+						GuiService.SelectedCoreObject = frameChildren[i]
+						GuiService:AddSelectionParent("PlayerlistGuiSelection", ScrollList)
 						UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 						ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
 						ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
@@ -1658,6 +1674,7 @@ local setVisible = function(state, fromTemp)
 
 		if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(Container) then
 			GuiService.SelectedCoreObject = nil
+			GuiService:RemoveSelectionGroup("PlayerlistGuiSelection")
 		end
 	end
 end
@@ -1735,14 +1752,6 @@ onCoreGuiChanged(Enum.CoreGuiType.PlayerList, StarterGui:GetCoreGuiEnabled(Enum.
 StarterGui.CoreGuiChangedSignal:connect(onCoreGuiChanged)
 
 resizePlayerList()
-
-if GuiService then
-	if isTenFootInterface then
-		GuiService:AddSelectionTuple("PlayerListSelection", ScrollList)
-	else
-		GuiService:AddSelectionParent("PlayerListSelection", Container)
-	end
-end
 
 local blockStatusChanged = function(userId, isBlocked)
 	if userId < 0 then return end
