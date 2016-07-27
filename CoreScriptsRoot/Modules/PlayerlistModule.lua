@@ -786,11 +786,9 @@ local function openPlatformProfileUI(rbxUid)
 	if not rbxUid or rbxUid < 1 then return end
 	pcall(function()
 		local platformService = game:GetService('PlatformService')
-		if platformService then
-			local platformId = platformService:GetPlatformId(rbxUid)
-			if platformId and #platformId > 0 then
-				platformService:PopupProfileUI(Enum.UserInputType.Gamepad1, platformId)
-			end
+		local platformId = platformService:GetPlatformId(rbxUid)
+		if platformId and #platformId > 0 then
+			platformService:PopupProfileUI(Enum.UserInputType.Gamepad1, platformId)
 		end
 	end)
 end
@@ -1284,10 +1282,9 @@ local function createPlayerEntry(player, isTopStat)
 	local containerFrame, entryFrame = createEntryFrame(name, PlayerEntrySizeY, isTopStat)
 	entryFrame.Active = true
 
-	local function localEntrySelected()
+	entryFrame.MouseButton1Click:connect(function()
 		onEntryFrameSelected(containerFrame, player)
-	end
-	entryFrame.MouseButton1Click:connect(localEntrySelected)
+	end)
 
 	local currentXOffset = 1
 
