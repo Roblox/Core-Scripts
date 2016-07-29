@@ -1567,7 +1567,6 @@ do -- Search stuff
 		end
 	end
 	UserInputService.LastInputTypeChanged:connect(detectGamepad)
-	UserInputService.LastInputTypeChanged:connect(detectGamepad)
 end
 
 do -- Make the Inventory expand/collapse arrow (unless TopBar)
