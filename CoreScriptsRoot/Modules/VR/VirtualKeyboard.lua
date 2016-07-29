@@ -1125,8 +1125,8 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 					end
 				end)
 
-				--Attach to it if it's in the same space
-				if textboxPanel.panelType == Panel3D.Type.Fixed then
+				-- Attach to it if it's linked to our keyboard panel
+				if textboxPanel.linkedTo == panel then
 					local panelCF = textboxPanel.localCF
 					localCF = panelCF * CFrame.new(0, (-textboxPanel.height / 2) - 0.5, 0) * 
 										CFrame.Angles(math.rad(30), 0, 0) * 
@@ -1210,7 +1210,8 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 				keyboardTextbox.Text = getBufferText()
 			end
 			-- Only keep text boxes open for coreguis, such as chat
-			local reopenKeyboard = keepKeyboardOpen and keyboardTextbox and FindAncestorOfType(keyboardTextbox, "CoreGui")
+			local textboxPanel = Panel3D.FindContainerOf(keyboardTextbox)
+			local reopenKeyboard = keepKeyboardOpen and textboxPanel and textboxPanel.linkedTo == panel
 
 			if reopenKeyboard then
 				ignoreFocusedLost = true
