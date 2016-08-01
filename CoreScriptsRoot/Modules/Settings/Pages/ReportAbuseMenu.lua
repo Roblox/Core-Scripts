@@ -50,7 +50,7 @@ local function Initialize()
 	function this:GetPlayerFromIndex(index)
 		local playerName = playerNames[index]
 		if playerName then
-			return nameToRbxPlayer[nameToRbxPlayer]
+			return nameToRbxPlayer[playerName]
 		end
 
 		return nil
@@ -177,9 +177,15 @@ local function Initialize()
 				this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
 			else
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
-				this.WhichPlayerMode:SetInteractable(true)
-				this.WhichPlayerLabel.ZIndex = 2
-				this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.WhichPlayerMode.DropDownFrame
+				if #playerNames > 0 then
+					this.WhichPlayerMode:SetInteractable(true)
+					this.WhichPlayerLabel.ZIndex = 2
+					this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.WhichPlayerMode.DropDownFrame
+				else
+					this.WhichPlayerMode:SetInteractable(false)
+					this.WhichPlayerLabel.ZIndex = 1
+					this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
+				end
 			end
 			makeSubmitButtonInactive()
 		end
@@ -192,11 +198,13 @@ local function Initialize()
 
 		local function onReportSubmitted()
 			local abuseReason = nil
+			local reportSucceeded = false
 			if this.GameOrPlayerMode.CurrentIndex == 2 then
 				abuseReason = ABUSE_TYPES_PLAYER[this.TypeOfAbuseMode.CurrentIndex]
 
 				local currentAbusingPlayer = this:GetPlayerFromIndex(this.WhichPlayerMode.CurrentIndex)
 				if currentAbusingPlayer and abuseReason then
+					reportSucceeded = true
 					spawn(function()
 						game.Players:ReportAbuse(currentAbusingPlayer, abuseReason, this.AbuseDescription.Selection.Text)
 					end)
@@ -204,13 +212,14 @@ local function Initialize()
 			else
 				abuseReason = ABUSE_TYPES_GAME[this.TypeOfAbuseMode.CurrentIndex]
 				if abuseReason then
+					reportSucceeded = true
 					spawn(function()
 						game.Players:ReportAbuse(nil, abuseReason, this.AbuseDescription.Selection.Text)
 					end)
 				end
 			end
 
-			if abuseReason then
+			if reportSucceeded then
 				local alertText = "Thanks for your report! Our moderators will review the chat logs and evaluate what happened."
 
 				if abuseReason == 'Cheating/Exploiting' then
@@ -249,10 +258,14 @@ local function Initialize()
 
 		local function typeOfAbuseChanged(newIndex)
 			if newIndex ~= nil then
-				if this.GameOrPlayerMode.CurrentIndex == 1 or this.WhichPlayerMode:GetSelectedIndex() ~= nil then
+				if this.GameOrPlayerMode.CurrentIndex == 1 then -- 1 is Report Game
 					makeSubmitButtonActive()
-				else
-					makeSubmitButtonInactive()
+				else -- 2 is Report Player
+					if this.WhichPlayerMode:GetSelectedIndex() then
+						makeSubmitButtonActive()
+					else
+						makeSubmitButtonInactive()
+					end
 				end
 			else
 				makeSubmitButtonInactive()
