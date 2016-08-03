@@ -47,7 +47,7 @@ local RemoteEvent_NewFollower = nil
 
 spawn(function()
 	local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-	RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower')
+	RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower', 86400) or RobloxReplicatedStorage:WaitForChild('NewFollower')
 end)
 
 --[[ Utility Functions ]]--
