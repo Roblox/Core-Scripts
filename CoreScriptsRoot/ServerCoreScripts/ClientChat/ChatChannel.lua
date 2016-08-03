@@ -1,160 +1,153 @@
 local source = [[
-local function CreateGui()
-	local ChatWindow = Instance.new("Frame")
-	ChatWindow.BackgroundTransparency = 1
-	ChatWindow.Size = UDim2.new(1, 0, 1, 0)
-	ChatWindow.Visible = false
+local module = {}
+--////////////////////////////// Include
+--//////////////////////////////////////
+local modulesFolder = script.Parent
+local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 
-	local Scroller = Instance.new("ScrollingFrame", ChatWindow)
-	Scroller.Name = "Scroller"
-	Scroller.BackgroundTransparency = 1
-	Scroller.Position = UDim2.new(0, 0, 0, 0)
-	Scroller.Size = UDim2.new(1, -4, 1, -6)
-	Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
-	Scroller.ScrollBarThickness = 4
+--////////////////////////////// Details
+--//////////////////////////////////////
+local metatable = {}
+metatable.__ClassName = "ChatChannel"
 
-	return ChatWindow
+metatable.__tostring = function(tbl)
+	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
 end
 
-local module = {}
-module.MaximumMesageLength = 140
+metatable.__metatable = "The metatable is locked"
+metatable.__index = function(tbl, index, value)
+	if rawget(tbl, index) then return rawget(tbl, index) end
+	if rawget(metatable, index) then return rawget(metatable, index) end
+	error(index .. " is not a valid member of " .. tbl.__ClassName)
+end
+metatable.__newindex = function(tbl, index, value)
+	error(index .. " is not a valid member of " .. tbl.__ClassName)
+end
 
-local metatable = {
-	__index = function(tbl, index)
-		if (index == "Parent" or index == "Visible") then
-			return tbl.Frame[index]
-		else
-			return rawget(tbl, index)
-		end
-	end,
-	__newindex = function(tbl, index, value)
-		if (index == "Visible" or index == "Parent") then
-			tbl.Frame[index] = value
-			
-		else
-			rawset(tbl, index, value)
-		end
-	end,
-}
 
-function module.new(ChatWindow, channelName)
-	local obj = {}
-	obj.ChatWindow = ChatWindow
+--////////////////////////////// Methods
+--//////////////////////////////////////
+local function CreateGuiObject()
+	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
+	BaseFrame.BackgroundTransparency = 1
+
+	local Scroller = Instance.new("ScrollingFrame", BaseFrame)
+	Scroller.Name = "Scroller"
+	Scroller.BackgroundTransparency = 1
+	Scroller.Position = UDim2.new(0, 0, 0, 3)
+	Scroller.Size = UDim2.new(1, -4, 1, -6)
+	Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+	Scroller.ScrollBarThickness = module.ScrollBarThickness
+
+	return BaseFrame, Scroller
+end
+
+function metatable:Dump()
+	return tostring(self) .. "; " .. self.Name
+end
+
+function metatable:Destroy()
+	self.GuiObject:Destroy()
+end
+
+function metatable:SetActive(active)
+	self.GuiObject.Visible = active
+end
+
+function metatable:AddMessageLabelToLog(messageObject)
+	self.TextTweener:RegisterTweenObjectProperty(messageObject.Tweener, "Transparency")
+
+	table.insert(self.MessageObjectLog, messageObject)
+	self:PositionMessageLabelInWindow(messageObject)
+
+end
+
+function metatable:PositionMessageLabelInWindow(messageObject)
+	local baseFrame = messageObject.BaseFrame
+	local baseMessage = messageObject.BaseMessage
+
+	baseFrame.Parent = self.Scroller
+	baseFrame.Position = UDim2.new(0, 0, 0, self.Scroller.CanvasSize.Y.Offset)
 	
-	obj.Frame = CreateGui()
-	obj.Scroller = obj.Frame.Scroller
+	--// This looks stupid, but it's actually necessary.
+	--// TextBounds wont be calculated correctly unless it has enough space.
+	baseFrame.Size = UDim2.new(1, 0, 0, 1000)
+	baseFrame.Size = UDim2.new(1, 0, 0, baseMessage.TextBounds.Y)
+
+	local scrollBarBottomPosition = (self.Scroller.CanvasSize.Y.Offset - self.Scroller.AbsoluteSize.Y)
+	local reposition = (self.Scroller.CanvasPosition.Y >= scrollBarBottomPosition)
+
+	local add = UDim2.new(0, 0, 0, baseFrame.Size.Y.Offset)
+	self.Scroller.CanvasSize = self.Scroller.CanvasSize + add
+
+	if (reposition) then
+		self.Scroller.CanvasPosition = Vector2.new(0, math.max(0, self.Scroller.CanvasSize.Y.Offset - self.Scroller.AbsoluteSize.Y))
+	else
+		local displayNewMessagesIfNotFullyScrolledDown = false
+		self.ChannelTab:UpdateMessagePostedInChannel(displayNewMessagesIfNotFullyScrolledDown)
+	end
+end
+
+function metatable:ReorderAllMessages()
+	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+	for i, messageObject in pairs(self.MessageObjectLog) do
+		self:PositionMessageLabelInWindow(messageObject)
+	end
+end
+
+function metatable:RegisterChannelTab(tab)
+	rawset(self, "ChannelTab", tab)
+end
+
+function metatable:FadeOutBackground(duration)
+	--// Do nothing
+end
+
+function metatable:FadeInBackground(duration)
+	--// Do nothing
+end
+
+function metatable:FadeOutText(duration)
+	self.TextTweener:Tween(duration, 1)
+end
+
+function metatable:FadeInText(duration)
+	self.TextTweener:Tween(duration, 0)
+end
+
+--///////////////////////// Constructors
+--//////////////////////////////////////
+module.ScrollBarThickness = 4
+
+function module.new(channelName)
+	local obj = {}
+	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
+	
+	local BaseFrame, Scroller = CreateGuiObject()
+	obj.GuiObject = BaseFrame
+	obj.Scroller = Scroller
+
+	obj.MessageObjectLog = {}
+	obj.ChannelTab = nil
+
+	obj.TextTweener = moduleTransparencyTweener.new()
 
 	obj.Name = channelName
-	obj.Muted = false
-	
-	obj.FontSize = Enum.FontSize.Size18
-	
-	obj.ChatHistory = {}
-	
-	function obj:AddLabelToLog(label)
-		label.FontSize = self.FontSize
-		for i, v in pairs(label:GetChildren()) do
-			v.FontSize = label.FontSize
+	obj.GuiObject.Name = "Frame_" .. obj.Name
+
+	obj = setmetatable(obj, metatable)
+
+	obj.GuiObject.Changed:connect(function(prop)
+		if (prop == "AbsoluteSize") then
+			spawn(function() obj:ReorderAllMessages() end)
 		end
-		
-		local chatMessageSizeY = tonumber(self.FontSize.Name:match("%d+"))
-		
-		local Scroller = self.Scroller
-			
-		label.Parent = Scroller
-		label.Position = UDim2.new(0, 4, 0, Scroller.CanvasSize.Y.Offset)
-		
-		local lines = 0
-		while (not label.TextFits) do
-			lines = lines + 1
-			label.Size = label.Size + UDim2.new(0, 0, 0, chatMessageSizeY)
-			if (lines > 3) then break end
-		end
-		
-		local scrollBarBottomPosition = (Scroller.CanvasSize.Y.Offset - Scroller.AbsoluteSize.Y)
-		local reposition = (Scroller.CanvasPosition.Y >= scrollBarBottomPosition)
-		
-		local add = UDim2.new(0, 0, 0, label.Size.Y.Offset)
-		Scroller.CanvasSize = Scroller.CanvasSize + add
-		if (reposition) then
-			Scroller.CanvasPosition = Vector2.new(0, math.max(0, Scroller.CanvasSize.Y.Offset - Scroller.AbsoluteSize.Y))
-		end
-		
-		table.insert(self.ChatHistory, label)
-		
-		if (#self.ChatHistory > self.ChatWindow.ChatSettings.MaximumMessageLog) then
-			self:RemoveMessageFromLog()
-		end
-	end
-	
-	function obj:Destroy()
-		self.Frame:Destroy()
-		self.Frame = nil
-	end
-	
-	function obj:ReorderChatMessages()
-		local labels = self.ChatHistory
-		self.ChatHistory = {}
-		
-		for i, label in pairs(labels) do
-			label.Position = UDim2.new(0, 8, 0, 0)
-			label.Size = UDim2.new(1, -16, 0, 0)
-		end
-		
-		self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
-		self.Scroller.CanvasPosition = Vector2.new(0, 0)
-		
-		for i, label in pairs(labels) do
-			self:AddLabelToLog(label)
-		end
-		
-	end
-	
-	function obj:SetFontSize(fontSize)
-		self.FontSize = fontSize
-		self:ReorderChatMessages()
-	end
-	
-	function obj:RemoveMessageFromLog()
-		local messages = self.ChatHistory
-		local lastIndex = #messages
-		
-		local removing = table.remove(messages, 1)
-		local offset = removing.AbsoluteSize.Y
-		removing:Destroy()
-		
-		for i, message in pairs(messages) do
-			message.Position = message.Position - UDim2.new(0, 0, 0, offset)
-		end
-		
-		self.Scroller.CanvasSize = self.Scroller.CanvasSize - UDim2.new(0, 0, 0, offset)
-		
-	end
-	
-	
-	
-	local deb = false
-	local queued = false
-	obj.Scroller.Changed:connect(function(prop)
-		if (prop ~= "AbsoluteSize") then return end
-		if deb then queued = true return end
-		deb = true
-		obj:ReorderChatMessages()
-		wait(0.4)
-		if (queued) then
-			obj:ReorderChatMessages()
-			queued = false
-			wait(0.4)
-		end
-		deb = false
 	end)
-	
-	
-	return setmetatable(obj, metatable)
+
+	return obj
 end
 
 return module
-
 ]]
 
 local generated = Instance.new("ModuleScript")

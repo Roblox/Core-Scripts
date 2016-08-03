@@ -45,166 +45,157 @@ do
 	local pcallSuccess, flagEnabled = pcall(function() return settings():GetFFlag("UseNewChat") end)
 	local useNewChat = pcallSuccess and flagEnabled
 	if (useNewChat or FORCE_USE_NEW_CHAT) then
-		local CommunicationsFolderParent = game:GetService("ReplicatedStorage")
 
-		local CoreGuiCommunicationsFolder = Instance.new("Folder")
-		local SetCoreFolder = Instance.new("Folder", CoreGuiCommunicationsFolder)
-		local GetCoreFolder = Instance.new("Folder", CoreGuiCommunicationsFolder)
-		local ChatWindowFolder = Instance.new("Folder", CoreGuiCommunicationsFolder)
+		--// Need to cache data here since registration of the script that handles the real chat window could be slow
+		local ChatWindowState = 
+		{
+			Visible = true,
+			MessageCount = 0,
+			TopbarEnabled = true,
+			CoreGuiEnabled = true,
+		}
 
-		CoreGuiCommunicationsFolder.Name = "CoreGuiCommunications"
-		SetCoreFolder.Name = "SetCore"
-		GetCoreFolder.Name = "GetCore"
-		ChatWindowFolder.Name = "ChatWindow"
+		local communicationsConnections = {}
+		local eventConnections = {}
 
-		CoreGuiCommunicationsFolder.Archivable = false
-
-
-		local function RegisterSetCoreEvent(name)
-			Instance.new("BindableEvent", SetCoreFolder).Name = name
-			StarterGui:RegisterSetCore(name,
-				function(...)
-
-					if (SetCoreFolder) then
-						local find = SetCoreFolder:FindFirstChild(name)
-						if (find and find:IsA("BindableEvent")) then
-							find:Fire(...)
-						end
-					end
-
-				end)
-		end
-
-		local function RegisterGetCoreFunction(name)
-			Instance.new("BindableFunction", GetCoreFolder).Name = name
-			StarterGui:RegisterGetCore(name,
-				function(...)
-					local ret = nil
-
-					if (GetCoreFolder) then
-						local find = GetCoreFolder:FindFirstChild(name)
-						if (find and find:IsA("BindableFunction")) then
-							ret = find:Invoke(...)
-						end
-					end
-
-
-					return ret
-				end)
-		end
-
-		RegisterSetCoreEvent("ChatMakeSystemMessage")
-		RegisterSetCoreEvent("ChatWindowPosition")
-		RegisterSetCoreEvent("ChatWindowSize")
-
-		RegisterGetCoreFunction("ChatWindowPosition")
-		RegisterGetCoreFunction("ChatWindowSize")
-
-		RegisterSetCoreEvent("ChatBarDisabled")
-		RegisterGetCoreFunction("ChatBarDisabled")
-
-
-		Instance.new("BindableEvent", ChatWindowFolder).Name = "ToggleVisibility"
-		Instance.new("BindableEvent", ChatWindowFolder).Name = "SetVisible"
-		Instance.new("BindableEvent", ChatWindowFolder).Name = "FocusChatBar"
-		Instance.new("BindableFunction", ChatWindowFolder).Name = "GetVisibility"
-		Instance.new("BindableFunction", ChatWindowFolder).Name = "GetMessageCount"
-		Instance.new("BindableEvent", ChatWindowFolder).Name = "TopbarEnabledChanged"
-		Instance.new("BindableFunction", ChatWindowFolder).Name = "IsFocused"
-
-		Instance.new("BindableEvent", ChatWindowFolder).Name = "ChatBarFocusChanged"
-		Instance.new("BindableEvent", ChatWindowFolder).Name = "VisibilityStateChanged"
-		Instance.new("BindableEvent", ChatWindowFolder).Name = "MessagesChanged"
-
-		Instance.new("BindableEvent", ChatWindowFolder).Name = "MessagePosted"
-		Instance.new("BindableEvent", ChatWindowFolder).Name = "CoreGuiChanged"
-
-
-		ChatWindowFolder.GetVisibility.OnInvoke = function() return false end
-		ChatWindowFolder.GetMessageCount.OnInvoke = function() return 0 end
-		ChatWindowFolder.IsFocused.OnInvoke = function() return false end
-
-
-
-		local Players = game:GetService("Players")
-		Players.PlayerAdded:connect(function(player)
-			if (player == Players.LocalPlayer) then
-				CoreGuiCommunicationsFolder.Parent =  Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("ChatScript")
+		local function FindIndexInCollectionWithType(collection, indexName, type)
+			if (collection and collection[indexName] and collection[indexName]:IsA(type)) then
+				return collection[indexName]
 			end
-		end)
-
-		if (Players.LocalPlayer) then
-			CoreGuiCommunicationsFolder.Parent =  Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("ChatScript")
+			return nil
 		end
 
 		function moduleApiTable:ToggleVisibility()
-			pcall(function()
-				ChatWindowFolder.ToggleVisibility:Fire()
-			end)
+			ChatWindowState.Visible = not ChatWindowState.Visible
+			local event = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "ToggleVisibility", "BindableEvent")
+			if (event) then
+				event:Fire()
+			else
+				moduleApiTable.VisibilityStateChanged:fire(ChatWindowState.Visible)
+			end
 		end
 
 		function moduleApiTable:SetVisible(visible)
-			pcall(function()
-				ChatWindowFolder.SetVisible:Fire(visible)
-			end)
+			ChatWindowState.Visible = visible
+			local event = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "SetVisible", "BindableEvent")
+			if (event) then
+				event:Fire(ChatWindowState.Visible)
+			else
+				moduleApiTable.VisibilityStateChanged:fire(ChatWindowState.Visible)
+			end
 		end
 
 		function moduleApiTable:FocusChatBar()
-			pcall(function()
-				ChatWindowFolder.FocusChatBar:Fire()
-			end)
+			local event = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "FocusChatBar", "BindableEvent")
+			if (event) then
+				event:Fire()
+			end
 		end
 
 		function moduleApiTable:GetVisibility()
-			local ret = false
-
-			pcall(function()
-				ret = ChatWindowFolder.GetVisibility:Invoke()
-			end)
-
-			return ret
+			local func = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "GetVisibility", "BindableFunction")
+			if (func) then
+				return func:Invoke()
+			end
+			return ChatWindowState.Visible
 		end
 
 		function moduleApiTable:GetMessageCount()
-			local ret = 0
-
-			pcall(function()
-				ret = ChatWindowFolder.GetMessageCount:Invoke()
-			end)
-
-			return ret
+			local func = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "GetMessageCount", "BindableFunction")
+			if (func) then
+				return func:Invoke()
+			end
+			return ChatWindowState.MessageCount
 		end
 
 		function moduleApiTable:TopbarEnabledChanged(enabled)
-			pcall(function()
-				ChatWindowFolder.TopbarEnabledChanged:Fire(enabled)
-			end)
+			ChatWindowState.TopbarEnabled = enabled
+			local event = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "TopbarEnabledChanged", "BindableEvent")
+			if (event) then
+				event:Fire(ChatWindowState.TopbarEnabled)
+			end
 		end
 
 		function moduleApiTable:IsFocused(useWasFocused)
-			local ret = false
-
-			pcall(function()
-				ret = ChatWindowFolder.IsFocused:Invoke(useWasFocused)
-			end)
-
-			return ret
+			local func = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "IsFocused", "BindableFunction")
+			if (func) then
+				return func:Invoke(useWasFocused)
+			end
+			return false
 		end
 
 		moduleApiTable.ChatBarFocusChanged = Util.Signal()
 		moduleApiTable.VisibilityStateChanged = Util.Signal()
 		moduleApiTable.MessagesChanged = Util.Signal()
 
-
-		ChatWindowFolder.ChatBarFocusChanged.Event:connect(function(...) moduleApiTable.ChatBarFocusChanged:fire(...) end)
-		ChatWindowFolder.VisibilityStateChanged.Event:connect(function(...) moduleApiTable.VisibilityStateChanged:fire(...) end)
-		ChatWindowFolder.MessagesChanged.Event:connect(function(...) moduleApiTable.MessagesChanged:fire(...) end)
-
-
-		ChatWindowFolder.MessagePosted.Event:connect(function(message) Players:Chat(message) end)
 		StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType, enabled)
-			pcall(function() ChatWindowFolder.CoreGuiChanged:Fire(coreGuiType, enabled) end)
+			local event = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "CoreGuiEnabled", "BindableEvent")
+			if (event) then
+				if (coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.Chat) then
+					ChatWindowState.CoreGuiEnabled = enabled
+					event:Fire(enabled)
+				end
+			end
 		end)
+
+		local function RegisterCoreGuiConnections(containerTable)
+			if (type(containerTable) == "table") then
+				local chatWindowCollection = containerTable.ChatWindow
+				local setCoreCollection = containerTable.SetCore
+				local getCoreCollection = containerTable.GetCore
+
+				if (type(chatWindowCollection) == "table") then
+					for i, v in pairs(eventConnections) do
+						v:disconnect()
+					end
+
+					eventConnections = {}
+					communicationsConnections.ChatWindow = {}
+
+					communicationsConnections.ChatWindow.ToggleVisibility = FindIndexInCollectionWithType(chatWindowCollection, "ToggleVisibility", "BindableEvent")
+					communicationsConnections.ChatWindow.SetVisible = FindIndexInCollectionWithType(chatWindowCollection, "SetVisible", "BindableEvent")
+					communicationsConnections.ChatWindow.FocusChatBar = FindIndexInCollectionWithType(chatWindowCollection, "FocusChatBar", "BindableEvent")
+					communicationsConnections.ChatWindow.TopbarEnabledChanged = FindIndexInCollectionWithType(chatWindowCollection, "TopbarEnabledChanged", "BindableEvent")
+					communicationsConnections.ChatWindow.IsFocused = FindIndexInCollectionWithType(chatWindowCollection, "IsFocused", "BindableFunction")
+
+
+					local function DoConnect(index)
+						communicationsConnections.ChatWindow[index] = FindIndexInCollectionWithType(chatWindowCollection, index, "BindableEvent")
+						if (communicationsConnections.ChatWindow[index]) then
+							local con = communicationsConnections.ChatWindow[index].Event:connect(function(...) moduleApiTable[index]:fire(...) end)
+							table.insert(eventConnections, con)
+						end
+					end
+
+					DoConnect("ChatBarFocusChanged")
+					DoConnect("VisibilityStateChanged")
+
+					local index = "MessagePosted"
+					communicationsConnections.ChatWindow[index] = FindIndexInCollectionWithType(chatWindowCollection, index, "BindableEvent")
+					if (communicationsConnections.ChatWindow[index]) then
+						local con = communicationsConnections.ChatWindow[index].Event:connect(function(message) game:GetService("Players"):Chat(message) end)
+						table.insert(eventConnections, con)
+					end
+
+					moduleApiTable:SetVisible(ChatWindowState.Visible)
+					moduleApiTable:TopbarEnabledChanged(ChatWindowState.TopbarEnabled)
+
+					local event = FindIndexInCollectionWithType(chatWindowCollection, "CoreGuiEnabled", "BindableEvent")
+					if (event) then
+						communicationsConnections.ChatWindow.CoreGuiEnabled = event
+						event:Fire(ChatWindowState.CoreGuiEnabled)
+					end
+
+				end
+
+				if not (type(chatWindowCollection) == "table" and type(setCoreCollection) == "table" and type(getCoreCollection) == "table") then
+					error("chatWindowCollection, setCoreCollection, and getCoreCollection must be tables!")
+				end
+
+			end			
+		end
+
+		StarterGui:RegisterSetCore("CoreGuiChatConnections", RegisterCoreGuiConnections)
 
 	else
 		moduleApiTable = require(RobloxGui.Modules.Chat)

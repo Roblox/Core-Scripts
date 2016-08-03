@@ -1,4 +1,43 @@
 local source = [[
+local function MakeIsInGroup(groupId, requiredRank)
+	assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
+	
+	local inGroupCache = {}
+	return function(player)
+		if player and player.userId then
+			local userId = player.userId
+
+			if inGroupCache[userId] == nil then
+				local inGroup = false
+				pcall(function() -- Many things can error is the IsInGroup check
+					if requiredRank then
+						inGroup = player:GetRankInGroup(groupId) > requiredRank
+					else
+						inGroup = player:IsInGroup(groupId)
+					end
+				end)
+				inGroupCache[userId] = inGroup
+			end
+
+			return inGroupCache[userId]
+		end
+
+		return false
+	end
+end
+
+local IsInGroupAdmins = MakeIsInGroup(1200769)
+local IsInGroupInterns = MakeIsInGroup(2868472, 100) 
+
+local Players = game:GetService("Players")
+local function SpeakerNameIsAdmin(speakerName)
+	return IsInGroupAdmins(Players:FindFirstChild(speakerName))
+end
+
+local function SpeakerNameIsIntern(speakerName)
+	return IsInGroupInterns(Players:FindFirstChild(speakerName))
+end
+
 local function Run(ChatService)
 	local NAME_COLORS =
 	{
@@ -35,16 +74,24 @@ local function Run(ChatService)
 	
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speaker = ChatService:GetSpeaker(speakerName)
-		
+
 		if (not speaker:GetExtraData("NameColor")) then
 			speaker:SetExtraData("NameColor", ComputeNameColor(speaker.Name))
 		end
 		if (not speaker:GetExtraData("ChatColor")) then
-			speaker:SetExtraData("ChatColor", Color3.new(1, 1, 1))
+			if (SpeakerNameIsAdmin(speakerName)) then
+				speaker:SetExtraData("ChatColor", Color3.new(1, 215/255, 0))
+			elseif (SpeakerNameIsIntern(speakerName)) then
+				speaker:SetExtraData("ChatColor", Color3.new(175/255, 221/255, 1))
+			else
+				speaker:SetExtraData("ChatColor", Color3.new(255/255, 255/255, 243/255))
+			end
 		end
 		if (not speaker:GetExtraData("Tags")) then
 			speaker:SetExtraData("Tags", {})
 		end
+
+		
 	end)
 end
 

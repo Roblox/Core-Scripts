@@ -1,219 +1,329 @@
 local source = [[
-local function CreateGui()
-	local ChannelFrame = Instance.new("ScrollingFrame")
-	ChannelFrame.Name = "ChannelFrame"
-	ChannelFrame.BackgroundTransparency = 0.2
-	ChannelFrame.BackgroundColor3 = Color3.new(60/255, 60/255, 60/255)
-	--ChannelFrame.BorderSizePixel = 0
-	ChannelFrame.Position = UDim2.new(0, 0, 0, 1)
-	ChannelFrame.Size = UDim2.new(1, 0, 0, 30)
-	ChannelFrame.ScrollBarThickness = 2
-	
-	local PlacementFrame = Instance.new("Frame", ChannelFrame)
-	PlacementFrame.Name = "PlacementFrame"
-	PlacementFrame.BackgroundTransparency = 1
-	PlacementFrame.Size = UDim2.new(0, 0, 0.4, 0 - ChannelFrame.ScrollBarThickness - 2)
-	PlacementFrame.Position = UDim2.new(0, 0, 0.6, 0)
-	
-	return ChannelFrame
-end
-
-local function CreateChannelTab()
-	local Frame = Instance.new("ImageButton")
-	Frame.BackgroundTransparency = 1
-	Frame.Size = UDim2.new(0, 1000, 2.5, 0)
-	Frame.Position = UDim2.new(0, 0, -1.5, 0)
-	Frame.ClipsDescendants = true
-
-	local Button = Instance.new("TextLabel", Frame)
-	Button.Name = "ButtonObj"
-	Button.BackgroundTransparency = 0
-	Button.Position = UDim2.new(0, 0, 0.3, 0)
-	Button.Size = UDim2.new(1, 0, 0.7, 0)
-	Button.Font = Enum.Font.SourceSansBold
-	Button.FontSize = Enum.FontSize.Size18
-	Button.TextStrokeTransparency = 0.7
-	Button.TextColor3 = Color3.new(1, 1, 1)
-	Button.Text = ""
-	
-	return Frame
-end
-
 local module = {}
+--////////////////////////////// Include
+--//////////////////////////////////////
+local modulesFolder = script.Parent
+local moduleChannelsTab = require(modulesFolder:WaitForChild("ChannelsTab"))
+local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 
-local metatable = {
-	__index = function(tbl, index)
-		if (index == "Parent" or index == "Visible") then
-			return tbl.Frame[index]
-			
-		else
-			return rawget(tbl, index)
-		end
-	end,
-	__newindex = function(tbl, index, value)
-		if (index == "Visible" or index == "Parent") then
-			tbl.Frame[index] = value
-			
-		else
-			rawset(tbl, index, value)
-			
-		end
-	end,
-}
+--////////////////////////////// Details
+--//////////////////////////////////////
+local metatable = {}
+metatable.__ClassName = "ChannelsBar"
 
-function module.new(ChatWindow)
-	local obj = {}
-	obj.ChatWindow = ChatWindow
+metatable.__tostring = function(tbl)
+	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
+end
+
+metatable.__metatable = "The metatable is locked"
+metatable.__index = function(tbl, index, value)
+	if rawget(tbl, index) then return rawget(tbl, index) end
+	if rawget(metatable, index) then return rawget(metatable, index) end
+	error(index .. " is not a valid member of " .. tbl.__ClassName)
+end
+metatable.__newindex = function(tbl, index, value)
+	error(index .. " is not a valid member of " .. tbl.__ClassName)
+end
+
+
+--////////////////////////////// Methods
+--//////////////////////////////////////
+local function CreateGuiObject()
+	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
+	BaseFrame.BackgroundTransparency = 1
+
+	local ScrollingBase = Instance.new("Frame", BaseFrame)
+	ScrollingBase.Name = "ScrollingBase"
+	ScrollingBase.BackgroundTransparency = 1
+	ScrollingBase.ClipsDescendants = true
+	ScrollingBase.Size = UDim2.new(1, 0, 1, 0)
+	ScrollingBase.Position = UDim2.new(0, 0, 0, 0)
+
+	local ScrollerFrame = Instance.new("Frame", ScrollingBase)
+	ScrollerFrame.Name = "ScrollerFrame"
+	ScrollerFrame.BackgroundTransparency = 1
+	ScrollerFrame.Size = UDim2.new(1, 0, 1, 0)
+	ScrollerFrame.Position = UDim2.new(0, 0, 0, 0)
+
+
+	local LeaveConfirmationFrameBase = Instance.new("Frame", BaseFrame)
+	LeaveConfirmationFrameBase.Size = UDim2.new(1, 0, 1, 0)
+	LeaveConfirmationFrameBase.Position = UDim2.new(0, 0, 0, 0)
+	LeaveConfirmationFrameBase.ClipsDescendants = true
+	LeaveConfirmationFrameBase.BackgroundTransparency = 1
+
+	local LeaveConfirmationFrame = Instance.new("Frame", LeaveConfirmationFrameBase)
+	LeaveConfirmationFrame.Name = "LeaveConfirmationFrame"
+	LeaveConfirmationFrame.Size = UDim2.new(1, 0, 1, 0)
+	LeaveConfirmationFrame.Position = UDim2.new(0, 0, 1, 0)
+	LeaveConfirmationFrame.BackgroundTransparency = 0.6
+	LeaveConfirmationFrame.BorderSizePixel = 0
+	LeaveConfirmationFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+
+	local InputBlocker = Instance.new("TextButton", LeaveConfirmationFrame)
+	InputBlocker.Size = UDim2.new(1, 0, 1, 0)
+	InputBlocker.BackgroundTransparency = 1
+	InputBlocker.Text = ""
+
+	local LeaveConfirmationButtonYes = Instance.new("TextButton", LeaveConfirmationFrame)
+	LeaveConfirmationButtonYes.Size = UDim2.new(0.25, 0, 1, 0)
+	LeaveConfirmationButtonYes.BackgroundTransparency = 1
+	LeaveConfirmationButtonYes.Font = Enum.Font.SourceSansBold
+	LeaveConfirmationButtonYes.FontSize = Enum.FontSize.Size18
+	LeaveConfirmationButtonYes.TextStrokeTransparency = 0.75
+	LeaveConfirmationButtonYes.Position = UDim2.new(0, 0, 0, 0)
+	LeaveConfirmationButtonYes.TextColor3 = Color3.new(0, 1, 0)
+	LeaveConfirmationButtonYes.Text = "Confirm"
 	
-	obj.Frame = CreateGui()
-	obj.BaseChannelTab = CreateChannelTab()
+	local LeaveConfirmationButtonNo = LeaveConfirmationButtonYes:Clone()
+	LeaveConfirmationButtonNo.Parent = LeaveConfirmationFrame
+	LeaveConfirmationButtonNo.Position = UDim2.new(0.75, 0, 0, 0)
+	LeaveConfirmationButtonNo.TextColor3 = Color3.new(1, 0, 0)
+	LeaveConfirmationButtonNo.Text = "Cancel"
+
+	local LeaveConfirmationNotice = Instance.new("TextLabel", LeaveConfirmationFrame)
+	LeaveConfirmationNotice.Size = UDim2.new(0.5, 0, 1, 0)
+	LeaveConfirmationNotice.Position = UDim2.new(0.25, 0, 0, 0)
+	LeaveConfirmationNotice.BackgroundTransparency = 1
+	LeaveConfirmationNotice.TextColor3 = Color3.new(1, 1, 1)
+	LeaveConfirmationNotice.TextStrokeTransparency = 0.75
+	LeaveConfirmationNotice.Text = "Leave channel <XX>?"
+	LeaveConfirmationNotice.Font = Enum.Font.SourceSansBold
+	LeaveConfirmationNotice.FontSize = Enum.FontSize.Size18
+
+	local outPos = LeaveConfirmationFrame.Position
+	LeaveConfirmationButtonYes.MouseButton1Click:connect(function()
+		print("Leave channel")
+		LeaveConfirmationFrame:TweenPosition(outPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+	end)
+	LeaveConfirmationButtonNo.MouseButton1Click:connect(function()
+		print("Do not leave channel")
+		LeaveConfirmationFrame:TweenPosition(outPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
+	end)
+
+
+
+	local scale = 0.7
+	local scaleOther = (1 - scale) / 2
+
+	local PageLeftButton = Instance.new("ImageButton", BaseFrame)
+	PageLeftButton.Name = "PageLeftButton"
+	PageLeftButton.SizeConstraint = Enum.SizeConstraint.RelativeYY
+	PageLeftButton.Size = UDim2.new(scale, 0, scale, 0)
+	PageLeftButton.BackgroundTransparency = 1
+	PageLeftButton.Position = UDim2.new(0, 4, scaleOther, 0)
+	PageLeftButton.Visible = false
+	PageLeftButton.Image = "rbxasset://textures/ui/Chat/TabArrowBackground.png"
+	local ArrowLabel = Instance.new("ImageLabel", PageLeftButton)
+	ArrowLabel.Name = "ArrowLabel"
+	ArrowLabel.BackgroundTransparency = 1
+	ArrowLabel.Size = UDim2.new(0.4, 0, 0.4, 0)
+	ArrowLabel.Image = "rbxasset://textures/ui/Chat/TabArrow.png"
+
+	local PageRightButtonPositionalHelper = Instance.new("Frame", BaseFrame)
+	PageRightButtonPositionalHelper.BackgroundTransparency = 1
+	PageRightButtonPositionalHelper.Name = "PositionalHelper"
+	PageRightButtonPositionalHelper.Size = PageLeftButton.Size
+	PageRightButtonPositionalHelper.SizeConstraint = PageLeftButton.SizeConstraint
+	PageRightButtonPositionalHelper.Position = UDim2.new(1, 0, scaleOther, 0)
+
+	local PageRightButton = PageLeftButton:Clone()
+	PageRightButton.Parent = PageRightButtonPositionalHelper
+	PageRightButton.Name = "PageRightButton"
+	PageRightButton.Size = UDim2.new(1, 0, 1, 0)
+	PageRightButton.SizeConstraint = Enum.SizeConstraint.RelativeXY
+	PageRightButton.Position = UDim2.new(-1, -4, 0, 0)
+
+	local positionOffset = UDim2.new(0.05, 0, 0, 0)
+
+	PageRightButton.ArrowLabel.Position = UDim2.new(0.3, 0, 0.3, 0) + positionOffset
+	PageLeftButton.ArrowLabel.Position = UDim2.new(0.3, 0, 0.3, 0) - positionOffset
+	PageLeftButton.ArrowLabel.Rotation = 180
+
+
+	return BaseFrame, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice
+end
+
+function metatable:Dump()
+	return tostring(self)
+end
+
+function metatable:UpdateMessagePostedInChannel(channelName)
+	local tab = self:GetChannelTab(channelName)
+	if (tab) then
+		tab:UpdateMessagePostedInChannel()
+	else
+		warn("ChannelsTab '" .. channelName .. "' does not exist!")
+	end
+end
+		
+function metatable:AddChannelTab(channelName)
+	if (self:GetChannelTab(channelName)) then
+		error("Channel tab '" .. channelName .. "'already exists!")
+	end
+
+	local tab = moduleChannelsTab.new(channelName)
+	tab.GuiObject.Parent = self.ScrollerFrame
+	self.ChannelTabs[channelName:lower()] = tab
+
+	self.NumTabs = self.NumTabs + 1
+	self:OrganizeChannelTabs()
+
+	self.BackgroundTweener:RegisterTweenObjectProperty(tab.BackgroundTweener, "Transparency")
+	self.TextTweener:RegisterTweenObjectProperty(tab.TextTweener, "Transparency")
+
+	--tab.NameTag.MouseButton2Click:connect(function()
+	--	self.LeaveConfirmationNotice.Text = "Leave channel " .. tab.ChannelName .. "?"
+	--	self.LeaveConfirmationFrame:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.2, true)
+	--end)
+
+	return tab
+end
+
+function metatable:RemoveChannelTab(channelName)
+	if (not self:GetChannelTab(channelName)) then
+		error("Channel tab '" .. channelName .. "'does not exist!")
+	end
+
+	local indexName = channelName:lower() 
+	self.ChannelTabs[indexName]:Destroy()
+	self.ChannelTabs[indexName] = nil
+
+	self.NumTabs = self.NumTabs - 1
+	self:OrganizeChannelTabs()
+end
+
+function metatable:GetChannelTab(channelName)
+	return self.ChannelTabs[channelName:lower()]
+end
+
+function metatable:OrganizeChannelTabs()
+	local order = {}
+
+	table.insert(order, self:GetChannelTab("All"))
+	table.insert(order, self:GetChannelTab("System"))
+
+	for tabIndexName, tab in pairs(self.ChannelTabs) do
+		if (tab.ChannelName ~= "All" and tab.ChannelName ~= "System") then
+			table.insert(order, tab)
+		end
+	end
+
+	for index, tab in pairs(order) do
+		tab.GuiObject.Position = UDim2.new((index - 1) * 0.25, 0, 0, 0)
+	end
+
+	--// This does the effect of dynamic tab resizing when a player 
+	--// is in less than 4 channels. It was mathematically easier to
+	--// think about and do rather than resizing the actual tabs 
+	--// themselves.
+	local xSize = math.max(1, 4/self.NumTabs)
+	self.ScrollerFrame.Size = UDim2.new(xSize, 0, 1, 0)
+
+	self:ScrollChannelsFrame(0)
+end
+
+local lockScrollChannelsFrame = false
+function metatable:ScrollChannelsFrame(dir)
+	if (lockScrollChannelsFrame) then return end
+	lockScrollChannelsFrame = true
+
+	local newPageNum = self.CurPageNum + dir
+	if (newPageNum < 0) then
+		newPageNum = 0
+	elseif (newPageNum > 0 and newPageNum + 4 > self.NumTabs) then
+		newPageNum = self.NumTabs - 4
+	end
+
+	self.CurPageNum = newPageNum
+
+
+	local tweenTime = 0.15
+	local endPos = UDim2.new(-(self.CurPageNum * 0.25), 0, 0, 0)
+
+	self.PageLeftButton.Visible = (self.CurPageNum > 0)
+	self.PageRightButton.Visible = (self.CurPageNum + 4 < self.NumTabs)
+
+	local function UnlockFunc()
+		lockScrollChannelsFrame = false
+	end
+	self.ScrollerFrame:TweenPosition(endPos, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, tweenTime, true, UnlockFunc)
+end
+
+function metatable:FadeOutBackground(duration)
+	self.BackgroundTweener:Tween(duration, 1)
+end
+
+function metatable:FadeInBackground(duration)
+	self.BackgroundTweener:Tween(duration, 0)
+end
+
+function metatable:FadeOutText(duration)
+	self.TextTweener:Tween(duration, 1)
+end
+
+function metatable:FadeInText(duration)
+	self.TextTweener:Tween(duration, 0)
+end
+
+function metatable:CreateTweeners()
+	self.BackgroundTweener:CancelTween()
+	self.TextTweener:CancelTween()
+
+	self.BackgroundTweener = moduleTransparencyTweener.new()
+	self.TextTweener = moduleTransparencyTweener.new()
+
+	--// Register BackgroundTweener objects and properties
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageLeftButton, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageRightButton, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageLeftButtonArrow, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageRightButtonArrow, "ImageTransparency")
+
+	--// Register TextTweener objects and properties
+	
+end
+
+--///////////////////////// Constructors
+--//////////////////////////////////////
+function module.new()
+	local obj = {}
+	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
+
+	local BaseFrame, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice = CreateGuiObject()
+	obj.GuiObject = BaseFrame
+	obj.ScrollerFrame = ScrollerFrame
+	obj.PageLeftButton = PageLeftButton
+	obj.PageRightButton = PageRightButton
+	obj.LeaveConfirmationFrame = LeaveConfirmationFrame
+	obj.LeaveConfirmationNotice = LeaveConfirmationNotice
+
+	obj.PageLeftButtonArrow = obj.PageLeftButton.ArrowLabel
+	obj.PageRightButtonArrow = obj.PageRightButton.ArrowLabel
 
 	obj.ChannelTabs = {}
-	obj.CurrentChannelTab = nil
+	obj.NumTabs = 0
+	obj.CurPageNum = 0
 
-	obj.eOnChannelTabChanged = Instance.new("BindableEvent")
-	obj.OnChannelTabChanged = obj.eOnChannelTabChanged.Event
-	
-	obj.FontSize = Enum.FontSize.Size18
-	
-	function obj:GetChannelTab(channelName)
-		return self.ChannelTabs[channelName:lower()]
-	end
-	
-	function obj:AddChannelTab(channelName)
-		if (self:GetChannelTab(channelName)) then return end
-		
-		local tab = self.BaseChannelTab:Clone()
-		tab.ButtonObj.Text = channelName
-		tab.Parent = self.Frame.PlacementFrame
-		
-		local minWidth = 78
-		local width = math.max(minWidth, tab.ButtonObj.TextBounds.X + 8)
-		tab.Size = UDim2.new(0, width + (1 * 2), 1, 0)
-		
-		tab.MouseButton1Click:connect(function()
-			if (self.CurrentChannelTab ~= nil and self.CurrentChannelTab.ButtonObj.Text:lower() == channelName:lower()) then
-				self:SetActiveChannelTab(nil)				
-			else
-				self:SetActiveChannelTab(channelName)
-			end
-		end)
-		
-		tab.InputBegan:connect(function(input)
-			if (input.UserInputType == Enum.UserInputType.MouseButton2) then
-				print("close tab")
-			end
-		end)
+	obj.BackgroundTweener = moduleTransparencyTweener.new()
+	obj.TextTweener = moduleTransparencyTweener.new()
 
-		self.ChannelTabs[channelName:lower()] = tab
-		self:UpdateTabSizes()
-	end
+	obj = setmetatable(obj, metatable)
 
-	function obj:RemoveChannelTab(channelName)
-		if (self.CurrentChannelTab and self.CurrentChannelTab.Name:lower() == channelName:lower()) then
-			self:SetActiveChannelTab("")
-		end
+	obj:CreateTweeners()
 
-		self.ChannelTabs[channelName:lower()]:Destroy()
-		self.ChannelTabs[channelName:lower()] = nil
+	PageLeftButton.MouseButton1Click:connect(function() obj:ScrollChannelsFrame(-1) end)
+	PageRightButton.MouseButton1Click:connect(function() obj:ScrollChannelsFrame(1) end)
 
-		self:OrganizeChannelTabs()
-	end
-
-	function obj:SetActiveChannelTab(channelName)
-		if (self.CurrentChannelTab) then
-			self.CurrentChannelTab.ButtonObj.Position = self.BaseChannelTab.ButtonObj.Position
-			self.CurrentChannelTab.ButtonObj.Size = self.BaseChannelTab.ButtonObj.Size
-		end
-		
-		if (channelName) then
-			self.CurrentChannelTab = self.ChannelTabs[channelName:lower()]
-		else
-			self.CurrentChannelTab = nil
-		end
-		
-		if (self.CurrentChannelTab) then
-			self.CurrentChannelTab.ButtonObj.Position = UDim2.new(0, 0, 0, 0)
-			self.CurrentChannelTab.ButtonObj.Size = UDim2.new(1, 0, 1, 0)
-			
-			self.CurrentChannelTab.ButtonObj.TextColor3 = Color3.new(1, 1, 1)
-		end
-
-		self:OrganizeChannelTabs()
-		self.eOnChannelTabChanged:Fire(channelName)
-	end
-
-	function obj:OrganizeChannelTabs()
-		local tabOrder = {}
-		
-		for channelName, tab in pairs(self.ChannelTabs) do
-			local i = 1
-			while (i <= #tabOrder and tabOrder[i] < channelName) do
-				i = i + 1
-			end
-			table.insert(tabOrder, i, channelName)
-		end
-		
-		local posOffsetY = (self.Frame.PlacementFrame.AbsoluteSize.Y - self.Frame.AbsoluteSize.Y)
-		local currentPosition = 1
-		for i, channelName in pairs(tabOrder) do
-			local tab = self.ChannelTabs[channelName]
-			tab.Position = UDim2.new(0, currentPosition, 0, posOffsetY)
-			
-			currentPosition = currentPosition + tab.Size.X.Offset + (tab.BorderSizePixel * 2) + 1
-		end
-		
-		self.Frame.CanvasSize = UDim2.new(0, currentPosition, 0, 0)
-		
-		self:UpdateScrollingBar()
-	end
-
-	function obj:OnMessagePostedInChannel(channelName)
-		local tab = self:GetChannelTab(channelName)
-		if (tab) then
-			if (tab.ButtonObj.Size.Y.Scale ~= 1) then
-				tab.ButtonObj.TextColor3 = self.ChatWindow.ChatSettings.ChannelTabNotificationColor
-			end
-		end
-	end
-	
-	function obj:UpdateTabSizes()
-		local height = self.Frame.AbsoluteSize.Y
-		local minWidth = height * 2
-		
-		for channelName, tab in pairs(self.ChannelTabs) do
-			--tab.Size = UDim2.new(0, 100000, 1, 0)
-			local width = math.max(minWidth, tab.ButtonObj.TextBounds.X + 8)
-			tab.Size = UDim2.new(0, width + (1 * 2), 0, self.Frame.AbsoluteSize.Y)
-			tab.ButtonObj.FontSize = self.FontSize
-		end
-		
-		self:OrganizeChannelTabs()
-	end
-	
-	function obj:UpdateScrollingBar()
-		if (self.Frame.CanvasSize.X.Offset > self.Frame.AbsoluteSize.X) then
-			self.Frame.PlacementFrame.Size = UDim2.new(0, 0, 0.5, 0 - self.Frame.ScrollBarThickness - 2)
-		else
-			self.Frame.PlacementFrame.Size = UDim2.new(0, 0, 0.5, 0)
-		end
-		
-		self.Frame.PlacementFrame.Position = UDim2.new(0, 0, 0.5, 0)
-	end
-	
-	obj.Frame.Changed:connect(function(prop)
-		if (prop == "AbsoluteSize") then
-			obj:UpdateScrollingBar()
-		end
+	--// Have to wait to tween until it's properly parented to PlayerGui
+	spawn(function()
+		wait()
+		obj:ScrollChannelsFrame(0)
 	end)
-	
-	obj:UpdateScrollingBar()
-	
-	return setmetatable(obj, metatable)
+	return obj
 end
 
 return module
-
 ]]
 
 local generated = Instance.new("ModuleScript")

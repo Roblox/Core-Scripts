@@ -30,11 +30,11 @@ local function Install()
 	LoadModuleData("ChannelsBar", NewChat)
 	LoadModuleData("ChatBar", NewChat)
 	LoadModuleData("ChatChannel", NewChat)
-	LoadModuleData("ChatLog", NewChat)
-	LoadModuleData("ChatSettings", NewChat)
 	LoadModuleData("ChatWindow", NewChat)
 	LoadModuleData("SpeakerDatabase", NewChat)
 	LoadModuleData("MessageLabelCreator", NewChat)
+	LoadModuleData("ChannelsTab", NewChat)
+	LoadModuleData("TransparencyTweener", NewChat)
 
 	ChatScript.Parent = installDirectory
 	--ChatScript.Archivable = false

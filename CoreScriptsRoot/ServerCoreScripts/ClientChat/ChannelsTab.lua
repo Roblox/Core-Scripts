@@ -1,0 +1,271 @@
+local source = [[
+local module = {}
+--////////////////////////////// Include
+--//////////////////////////////////////
+local modulesFolder = script.Parent
+local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
+
+--////////////////////////////// Details
+--//////////////////////////////////////
+local metatable = {}
+metatable.__ClassName = "ChannelsTab"
+
+metatable.__tostring = function(tbl)
+	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
+end
+
+metatable.__metatable = "The metatable is locked"
+metatable.__index = function(tbl, index, value)
+	if rawget(tbl, index) then return rawget(tbl, index) end
+	if rawget(metatable, index) then return rawget(metatable, index) end
+	error(index .. " is not a valid member of " .. tbl.__ClassName)
+end
+metatable.__newindex = function(tbl, index, value)
+	error(index .. " is not a valid member of " .. tbl.__ClassName)
+end
+
+
+--////////////////////////////// Methods
+--//////////////////////////////////////
+local function CreateGuiObject()
+	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Size = UDim2.new(0.25, 0, 1, 0)
+	BaseFrame.BackgroundTransparency = 1
+
+	local gapOffsetX = 1
+	local gapOffsetY = 1
+
+	local BackgroundFrame = Instance.new("Frame", BaseFrame)
+	BackgroundFrame.Name = "BackgroundFrame"
+	BackgroundFrame.Size = UDim2.new(1, -gapOffsetX * 2, 1, -gapOffsetY * 2)
+	BackgroundFrame.Position = UDim2.new(0, gapOffsetX, 0, gapOffsetY)
+	BackgroundFrame.BackgroundTransparency = 1
+
+	local UnselectedFrame = Instance.new("Frame", BackgroundFrame)
+	UnselectedFrame.Name = "UnselectedFrame"
+	UnselectedFrame.Size = UDim2.new(1, 0, 1, 0)
+	UnselectedFrame.Position = UDim2.new(0, 0, 0, 0)
+	UnselectedFrame.BorderSizePixel = 0
+	UnselectedFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	UnselectedFrame.BackgroundTransparency = 0.6	
+
+	local SelectedFrame = Instance.new("Frame", BackgroundFrame)
+	SelectedFrame.Name = "SelectedFrame"
+	SelectedFrame.Size = UDim2.new(1, 0, 1, 0)
+	SelectedFrame.Position = UDim2.new(0, 0, 0, 0)
+	SelectedFrame.BorderSizePixel = 0
+	SelectedFrame.BackgroundColor3 = Color3.new(30/255, 30/255, 30/255)
+	SelectedFrame.BackgroundTransparency = 1
+
+	local SelectedFrameBackgroundImage = Instance.new("ImageLabel", SelectedFrame)
+	SelectedFrameBackgroundImage.Name = "BackgroundImage"
+	SelectedFrameBackgroundImage.BackgroundTransparency = 1
+	SelectedFrameBackgroundImage.BorderSizePixel = 0
+	SelectedFrameBackgroundImage.Size = UDim2.new(1, 0, 1, 0)
+	SelectedFrameBackgroundImage.Position = UDim2.new(0, 0, 0, 0)
+	SelectedFrameBackgroundImage.ScaleType = Enum.ScaleType.Slice
+
+	SelectedFrameBackgroundImage.BackgroundTransparency = 0.6 - 1
+	local rate = 1.2 * 1
+	SelectedFrameBackgroundImage.BackgroundColor3 = Color3.fromRGB(78 * rate, 84 * rate, 96 * rate)
+
+	--SelectedFrameBackgroundImage.SliceCenter = Rect.new(8,6,46,44)
+	--SelectedFrameBackgroundImage.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
+
+	--SelectedFrameBackgroundImage.SliceCenter = Rect.new(8, 8, 56, 56)
+	--SelectedFrameBackgroundImage.Image = "rbxasset://textures/ui/Chat/VRChatBackground.png"
+
+	local borderXOffset = 2
+	local blueBarYSize = 4 
+	local BlueBarLeft = Instance.new("ImageLabel", SelectedFrame)
+	BlueBarLeft.Size = UDim2.new(0.5, -borderXOffset, 0, blueBarYSize)
+	BlueBarLeft.BackgroundTransparency = 1
+	BlueBarLeft.ScaleType = Enum.ScaleType.Slice
+	BlueBarLeft.SliceCenter = Rect.new(3,3,32,21)
+
+	local BlueBarRight = BlueBarLeft:Clone()
+	BlueBarRight.Parent = SelectedFrame
+
+	BlueBarLeft.Position = UDim2.new(0, borderXOffset, 1, -blueBarYSize)
+	BlueBarRight.Position = UDim2.new(0.5, 0, 1, -blueBarYSize)
+	BlueBarLeft.Image = "rbxasset://textures/ui/Settings/Slider/SelectedBarLeft.png"
+	BlueBarRight.Image = "rbxasset://textures/ui/Settings/Slider/SelectedBarRight.png"
+
+	BlueBarLeft.Name = "BlueBarLeft"
+	BlueBarRight.Name = "BlueBarRight"
+
+	local NameTag = Instance.new("TextButton", BackgroundFrame)
+	NameTag.Size = UDim2.new(1, 0, 1, 0)
+	NameTag.Position = UDim2.new(0, 0, 0, 0)
+	NameTag.BackgroundTransparency = 1
+	NameTag.Font = Enum.Font.SourceSansBold
+	NameTag.FontSize = Enum.FontSize.Size18
+	NameTag.TextColor3 = Color3.new(1, 1, 1)
+	NameTag.TextStrokeTransparency = 0.75
+
+	local NewMessageIconFrame = Instance.new("Frame", BackgroundFrame)
+	NewMessageIconFrame.Size = UDim2.new(0, 18, 0, 18)
+	NewMessageIconFrame.Position = UDim2.new(0.8, -9, 0.5, -9)
+	NewMessageIconFrame.BackgroundTransparency = 1
+
+	local NewMessageIcon = Instance.new("ImageLabel", NewMessageIconFrame)
+	NewMessageIcon.Size = UDim2.new(1, 0, 1, 0)
+	NewMessageIcon.BackgroundTransparency = 1
+	NewMessageIcon.Image = "rbxasset://textures/ui/Chat/MessageCounter.png"
+	NewMessageIcon.Visible = false
+
+	local NewMessageIconText = Instance.new("TextLabel", NewMessageIcon)
+	NewMessageIconText.BackgroundTransparency = 1
+	NewMessageIconText.Size = UDim2.new(0, 13, 0, 9)
+	NewMessageIconText.Position = UDim2.new(0.5, -7, 0.5, -7)
+	NewMessageIconText.Font = Enum.Font.SourceSansBold
+	NewMessageIconText.FontSize = Enum.FontSize.Size14
+	NewMessageIconText.TextColor3 = Color3.new(1, 1, 1)
+	NewMessageIconText.Text = ""
+
+	return BaseFrame, NameTag, NewMessageIcon, UnselectedFrame, SelectedFrame
+end
+
+function metatable:Dump()
+	return tostring(self) .. " [" .. self.ChannelName .. "]"
+end
+
+function metatable:Destroy()
+	self.GuiObject:Destroy()
+end
+
+function metatable:UpdateMessagePostedInChannel(ignoreActive)
+	if (self.Active and (ignoreActive ~= true)) then return end
+
+	local count = self.UnreadMessageCount + 1
+	self.UnreadMessageCount = count
+
+	local label = self.NewMessageIcon
+	label.Visible = true
+	label.TextLabel.Text = (count < 100) and tostring(count) or "!"
+
+	local tweenTime = 0.15
+	local tweenPosOffset = UDim2.new(0, 0, -0.1, 0)
+
+	local curPos = label.Position
+	local outPos = curPos + tweenPosOffset
+	local easingDirection = Enum.EasingDirection.Out
+	local easingStyle = Enum.EasingStyle.Quad
+
+	label.Position = UDim2.new(0, 0, -0.15, 0)
+	label:TweenPosition(UDim2.new(0, 0, 0, 0), easingDirection, easingStyle, tweenTime, true)
+
+end
+
+function metatable:SetActive(active)
+	self.Active = active
+	self.UnselectedFrame.Visible = not active
+	self.SelectedFrame.Visible = active
+
+	if (active) then
+		self.UnreadMessageCount = 0
+		self.NewMessageIcon.Visible = false
+
+		self.NameTag.Font = Enum.Font.SourceSansBold
+	else
+		self.NameTag.Font = Enum.Font.SourceSans
+
+	end
+end
+
+function metatable:RenderDisplayText()
+	
+end
+
+function metatable:FadeOutBackground(duration)
+	self.BackgroundTweener:Tween(duration, 1)
+end
+
+function metatable:FadeInBackground(duration)
+	self.BackgroundTweener:Tween(duration, 0)
+end
+
+function metatable:FadeOutText(duration)
+	self.TextTweener:Tween(duration, 1)
+end
+
+function metatable:FadeInText(duration)
+	self.TextTweener:Tween(duration, 0)
+end
+
+function metatable:CreateTweeners()
+	self.BackgroundTweener:CancelTween()
+	self.TextTweener:CancelTween()
+
+	self.BackgroundTweener = moduleTransparencyTweener.new()
+	self.TextTweener = moduleTransparencyTweener.new()
+
+	--// Register BackgroundTweener objects and properties
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.UnselectedFrame, "BackgroundTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.SelectedFrame.BackgroundImage, "BackgroundTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.SelectedFrame.BlueBarLeft, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.SelectedFrame.BlueBarRight, "ImageTransparency")
+
+	--// Register TextTweener objects and properties
+	self.TextTweener:RegisterTweenObjectProperty(self.NameTag, "TextTransparency")
+	self.TextTweener:RegisterTweenObjectProperty(self.NameTag, "TextStrokeTransparency")
+	self.TextTweener:RegisterTweenObjectProperty(self.NewMessageIcon, "ImageTransparency")
+	self.TextTweener:RegisterTweenObjectProperty(self.WhiteTextNewMessageNotification, "TextTransparency")
+	self.TextTweener:RegisterTweenObjectProperty(self.WhiteTextNewMessageNotification, "TextStrokeTransparency")
+
+	--print("Dumping:", self:Dump(), "||", self.BackgroundTweener:Dump())
+	--print("Dumping:", self:Dump(), "||", self.TextTweener:Dump())
+end
+
+--///////////////////////// Constructors
+--//////////////////////////////////////
+function module.new(channelName)
+	local obj = {}
+	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
+
+	local BaseFrame, NameTag, NewMessageIcon, UnselectedFrame, SelectedFrame = CreateGuiObject()
+	obj.GuiObject = BaseFrame
+	obj.NameTag = NameTag
+	obj.NewMessageIcon = NewMessageIcon
+	obj.UnselectedFrame = UnselectedFrame
+	obj.SelectedFrame = SelectedFrame
+
+	--// These four aren't used, but need to be kept as 
+	--// references so they wont be garbage collected in 
+	--// the tweener objects until this Tab object is 
+	--// garbage collected when it is no longer in use.
+	obj.BlueBarLeft = SelectedFrame.BlueBarLeft
+	obj.BlueBarRight = SelectedFrame.BlueBarRight
+	obj.BackgroundImage = SelectedFrame.BackgroundImage
+	obj.WhiteTextNewMessageNotification = obj.NewMessageIcon.TextLabel
+
+	obj.ChannelName = channelName
+	obj.UnreadMessageCount = 0
+	obj.Active = false
+
+	obj.BackgroundTweener = moduleTransparencyTweener.new()
+	obj.TextTweener = moduleTransparencyTweener.new()
+
+	obj.GuiObject.Name = "Frame_" .. obj.ChannelName
+
+	local maxNameLenght = 12
+	if (string.len(channelName) > maxNameLenght) then
+		channelName = string.sub(channelName, 1, maxNameLenght - 3) .. "..."
+	end
+	obj.NameTag.Text = channelName
+
+	obj = setmetatable(obj, metatable)
+
+	obj:CreateTweeners()
+	obj:SetActive(false)	
+
+	return obj
+end
+
+return module
+]]
+
+local generated = Instance.new("ModuleScript")
+generated.Name = "Generated"
+generated.Source = source
+generated.Parent = script

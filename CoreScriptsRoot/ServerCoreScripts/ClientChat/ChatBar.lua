@@ -1,152 +1,260 @@
 local source = [[
-local function CreateGui()
-	local ChatBar = Instance.new("Frame")
-	ChatBar.Name = "ChatBar"
-	ChatBar.BackgroundTransparency = 0.2
-	ChatBar.BackgroundColor3 = Color3.new(60/255, 60/255, 60/255)
-	--ChatBar.BorderSizePixel = 0
-	ChatBar.Position = UDim2.new(0, 0, 1, -30)
-	ChatBar.Size = UDim2.new(1, -30, 0, 30)
-	
-	local EnabledFrame = Instance.new("Frame")
-	EnabledFrame.BackgroundTransparency = 1
-	EnabledFrame.Size = UDim2.new(1, 0, 1, 0)
-	
-	Instance.new("Frame", ChatBar)
-	ChatBar.Frame.Position = UDim2.new(0, 6, 0, 4)
-	ChatBar.Frame.Size = UDim2.new(1, -12, 1, -8)
-	ChatBar.Frame.BackgroundColor3 = Color3.new(220/255, 220/255, 220/255)
-	ChatBar.Frame.BorderSizePixel = 0
-	
-	local ChatBarBox = Instance.new("TextBox", ChatBar.Frame)
-	ChatBarBox.Position = UDim2.new(0, 6, 0, 0)
-	ChatBarBox.Size = UDim2.new(1, -12, 1, 0)
-	ChatBarBox.Font = Enum.Font.SourceSansBold
-	ChatBarBox.FontSize = Enum.FontSize.Size18
-	ChatBarBox.TextColor3 = Color3.new(120/255, 120/255, 120/255)
-	ChatBarBox.TextWrapped = true
-	ChatBarBox.TextXAlignment = "Left"
-	ChatBarBox.BackgroundTransparency = 1
-	ChatBarBox.TextWrapped = true
-	
-	ChatBar.Parent = EnabledFrame
-	
-	return ChatBar
+local module = {}
+--////////////////////////////// Include
+--//////////////////////////////////////
+local modulesFolder = script.Parent
+local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
+
+--////////////////////////////// Details
+--//////////////////////////////////////
+local metatable = {}
+metatable.__ClassName = "ChatBar"
+
+metatable.__tostring = function(tbl)
+	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
 end
 
-local module = {}
+metatable.__metatable = "The metatable is locked"
+metatable.__index = function(tbl, index, value)
+	if rawget(tbl, index) then return rawget(tbl, index) end
+	if rawget(metatable, index) then return rawget(metatable, index) end
+	error(index .. " is not a valid member of " .. tbl.__ClassName)
+end
+metatable.__newindex = function(tbl, index, value)
+	error(index .. " is not a valid member of " .. tbl.__ClassName)
+end
 
-local metatable = {
-	__index = function(tbl, index)
-		if (index == "Visible") then
-			return tbl.Frame[index]
-		elseif (index == "Parent") then
-			return tbl.Frame.Parent and tbl.Frame.Parent[index] or nil
-		elseif (index == "Text" or index == "ClearTextOnFocus" or index == "FocusLost") then
-			return tbl.TextBox[index]
-		elseif (index == "Enabled") then
-			return tbl.Frame.Parent and tbl.Frame.Parent.Visible or false
-		else
-			return rawget(tbl, index)
-		end
-	end,
-	__newindex = function(tbl, index, value)
-		if (index == "Visible") then
-			tbl.Frame[index] = value
-		elseif (index == "Parent") then
-			tbl.Frame.Parent[index] = value
-		elseif (index == "Text" or index == "ClearTextOnFocus") then
-			tbl.TextBox[index] = value
-			
-		elseif (index == "Enabled") then
-			tbl.Frame.Parent.Visible = value
-			
-		else
-			rawset(tbl, index, value)
-			
-		end
-	end,
-}
 
-function module.new(ChatWindow)
+--////////////////////////////// Methods
+--//////////////////////////////////////
+local function CreateGuiObject()
+	local backgroundImagePixelOffset = 8
+	local textBoxPixelOffset = 8
+
+	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
+	BaseFrame.BackgroundTransparency = 0.6
+	BaseFrame.BorderSizePixel = 0
+	BaseFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+
+	local BoxFrame = Instance.new("Frame", BaseFrame)
+	BoxFrame.Name = "BoxFrame"
+	BoxFrame.BackgroundTransparency = 0.6
+	BoxFrame.BorderSizePixel = 0
+	BoxFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+	BoxFrame.Size = UDim2.new(1, -backgroundImagePixelOffset * 2, 1, -backgroundImagePixelOffset * 2)
+	BoxFrame.Position = UDim2.new(0, backgroundImagePixelOffset, 0, backgroundImagePixelOffset)
+
+	local TextBox = Instance.new("TextBox", BoxFrame)
+	TextBox.BackgroundTransparency = 1
+	TextBox.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)
+	TextBox.Position = UDim2.new(0, textBoxPixelOffset, 0, textBoxPixelOffset)
+	TextBox.FontSize = Enum.FontSize.Size18
+	TextBox.Font = Enum.Font.SourceSansBold
+	TextBox.TextColor3 = Color3.new(1, 1, 1)
+	TextBox.TextStrokeTransparency = 0.75
+	TextBox.ClearTextOnFocus = false
+	TextBox.TextXAlignment = Enum.TextXAlignment.Left
+	TextBox.TextYAlignment = Enum.TextYAlignment.Top
+	TextBox.TextWrapped = true
+	TextBox.Text = ""
+
+	local TextLabel = Instance.new("TextLabel", BoxFrame)
+	TextLabel.BackgroundTransparency = 1
+	TextLabel.Size = TextBox.Size
+	TextLabel.Position = TextBox.Position
+	TextLabel.FontSize = TextBox.FontSize
+	TextLabel.Font = TextBox.Font
+	TextLabel.TextColor3 = TextBox.TextColor3
+	TextLabel.TextStrokeTransparency = TextBox.TextStrokeTransparency
+	TextLabel.TextXAlignment = TextBox.TextXAlignment
+	TextLabel.TextYAlignment = TextBox.TextYAlignment
+	TextLabel.Text = "This value was un-initialized lololololololololol"
+
+	TextLabel.TextColor3 = Color3.new(0, 0, 0)
+	TextLabel.TextStrokeTransparency = 1
+	TextLabel.TextTransparency = 0.4
+
+	TextBox.Focused:connect(function() TextLabel.Visible = false end)
+	TextBox.FocusLost:connect(function() TextLabel.Visible = (TextBox.Text == "") end)
+
+	return BaseFrame, BoxFrame, TextBox, TextLabel
+end
+
+function metatable:Dump()
+	return tostring(self)
+end
+
+function metatable:GetTextBox()
+	return self.TextBox
+end
+
+function metatable:IsFocused()
+	return self:GetTextBox():IsFocused()
+end
+
+function metatable:GetVisible()
+	return self.GuiObject.Visible
+end
+
+function metatable:CaptureFocus()
+	self:GetTextBox():CaptureFocus()
+end
+
+function metatable:ReleaseFocus(didRelease)
+	self:GetTextBox():ReleaseFocus(didRelease)
+end
+
+function metatable:ResetText()
+	self:GetTextBox().Text = ""
+end
+
+function metatable:GetEnabled()
+	return self.GuiObject.Visible
+end
+
+function metatable:SetEnabled(enabled)
+	self.GuiObject.Visible = false
+end
+
+function metatable:SetTextLabelText(text)
+	self.TextLabel.Text = text
+end
+
+function metatable:ResetSize()
+	self.TargetYSize = 0
+	self:TweenToTargetYSize()
+end
+
+function metatable:CalculateSize()
+	local lastPos = self.GuiObject.Size
+	self.GuiObject.Size = UDim2.new(1, 0, 0, 1000)
+
+	local fontSize = tonumber(self.TextBox.FontSize.Name:match("%d+"))
+	local bounds = self.TextBox.TextBounds.Y
+
+	self.GuiObject.Size = lastPos
+
+	local newTargetYSize = bounds - fontSize --+ 4
+	if (self.TargetYSize ~= newTargetYSize) then
+		self.TargetYSize = newTargetYSize
+		self:TweenToTargetYSize()
+	end
+
+end
+
+function metatable:TweenToTargetYSize()
+	local endSize = UDim2.new(1, 0, 1, self.TargetYSize)
+	local curSize = self.GuiObject.Size
+
+	local curAbsoluteSizeY = self.GuiObject.AbsoluteSize.Y
+	self.GuiObject.Size = endSize
+	local endAbsoluteSizeY = self.GuiObject.AbsoluteSize.Y
+	self.GuiObject.Size = curSize
+
+	local pixelDistance = math.abs(endAbsoluteSizeY - curAbsoluteSizeY)
+	local tweeningTime = math.min(1, (pixelDistance * (1 / self.TweenPixelsPerSecond))) -- pixelDistance * (seconds per pixels)
+
+	self.GuiObject:TweenSize(endSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, tweeningTime, true)
+end
+
+function metatable:FadeOutBackground(duration)
+	self.BackgroundTweener:Tween(duration, 1)
+	--self:FadeOutText(duration)
+end
+
+function metatable:FadeInBackground(duration)
+	self.BackgroundTweener:Tween(duration, 0)
+	--self:FadeInText(duration)
+end
+
+function metatable:FadeOutText(duration)
+	self.TextTweener:Tween(duration, 1)
+end
+
+function metatable:FadeInText(duration)
+	self.TextTweener:Tween(duration, 0)
+end
+
+function metatable:CreateTweeners()
+	self.BackgroundTweener:CancelTween()
+	self.TextTweener:CancelTween()
+
+	self.BackgroundTweener = moduleTransparencyTweener.new()
+	self.TextTweener = moduleTransparencyTweener.new()
+
+	--// Register BackgroundTweener objects and properties
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObject, "BackgroundTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBoxFrame, "BackgroundTransparency")
+
+	--// Register TextTweener objects and properties
+	--self.TextTweener:RegisterTweenObjectProperty(self.TextLabel, "TextTransparency")
+	--self.TextTweener:RegisterTweenObjectProperty(self.TextLabel, "TextStrokeTransparency")
+	--self.TextTweener:RegisterTweenObjectProperty(self.TextBox, "TextTransparency")
+	--self.TextTweener:RegisterTweenObjectProperty(self.TextBox, "TextStrokeTransparency")
+
+
+	--// Extra weirdness
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextLabel, "TextTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextLabel, "TextStrokeTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBox, "TextTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBox, "TextStrokeTransparency")
+
+end
+
+--///////////////////////// Constructors
+--//////////////////////////////////////
+function module.new()
 	local obj = {}
-	obj.ChatWindow = ChatWindow
-	
-	obj.Frame = CreateGui()
-	obj.TextBox = obj.Frame.Frame.TextBox
-	obj.SwapText = ""
-	
-	function obj:CaptureFocus()
-		self.TextBox:CaptureFocus()
-	end
+	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
 
-	function obj:ReleaseFocus(didRelease)
-		self.TextBox:ReleaseFocus(didRelease)
-	end
+	local BaseFrame, TextBoxFrame, TextBox, TextLabel = CreateGuiObject()
+	obj.GuiObject = BaseFrame
+	obj.TextBoxFrame = TextBoxFrame
+	obj.TextBox = TextBox
+	obj.TextLabel = TextLabel
 
-	function obj:IsFocused()
-		return self.TextBox:IsFocused()
-	end
+	obj.TweenPixelsPerSecond = 300 + 200
+	obj.TargetYSize = 0
 
-	function obj:ResetText()
-		self.TextBox.Text = "To chat click here or press the \"/\" key"
-	end
-	
-	function obj:ResetSize()
-		local fontSize = tonumber(self.TextBox.FontSize.Name:match("%d+"))
-		local baseSize = fontSize + 8 + 4
-		
-		self.Frame.Size = UDim2.new(1, 0 - baseSize - 4, 0, baseSize)
-		--self.SwapText = ""
-	end
-	
-	function obj:CalculateBoxSize()
-		local fontSize = tonumber(self.TextBox.FontSize.Name:match("%d+"))
-		local baseSize = fontSize + 8 + 4
-		local bounds = self.TextBox.TextBounds.Y
-		
-		self.Frame.Size = UDim2.new(1, 0 - baseSize - 4, 0, bounds + baseSize - 4)
-		if (string.len(self.TextBox.Text) > 140) then
-			self.TextBox.Text = string.sub(self.TextBox.Text, 1, 140)
-		end
-	end
-	
+	obj.BackgroundTweener = moduleTransparencyTweener.new()
+	obj.TextTweener = moduleTransparencyTweener.new()
+
+	obj = setmetatable(obj, metatable)
+
+	obj:SetTextLabelText("To chat click here or press \"/\" key")
+
+	obj:CreateTweeners()
+
+	local changedLock = false
 	obj.TextBox.Changed:connect(function(prop)
-		if (obj:IsFocused()) then
-			obj:CalculateBoxSize()
-		else
-			obj:ResetSize()
+		if (prop == "Text") then
+			if (changedLock) then return end
+			changedLock = true
+
+			obj:CalculateSize()
+
+			changedLock = false
+		end
+	end)
+
+	obj.TextBox.Focused:connect(function()
+		obj:CalculateSize()
+	end)
+
+	obj.TextBox.FocusLost:connect(function(enterPressed, inputObject)
+		obj:ResetSize()
+		if (inputObject.KeyCode == Enum.KeyCode.Escape) then
+			obj.TextBox.Text = ""
 		end
 		
 	end)
-	
-	obj.TextBox.FocusLost:connect(function(enterPressed, inputResponsible)
-		--print("Unfocusing:\t\t", obj.SwapText, "{SW || CT}", obj.TextBox.Text)
-		obj.SwapText = obj.TextBox.Text
-		obj:ResetText()
-		obj:ResetSize()
-		obj.TextBox.Parent.BackgroundTransparency = 0.4
 
-		if (inputResponsible and inputResponsible.KeyCode == Enum.KeyCode.Escape) then
-			obj.SwapText = ""
-		end
 
-		--print("Unfocused:\t\t", obj.SwapText, "{SW || CT}", obj.TextBox.Text)
-	end)
-	
-	obj.TextBox.Focused:connect(function()
-		--print("Focusing:\t\t", obj.SwapText, "{SW || CT}", obj.TextBox.Text)
-		obj:CalculateBoxSize()
-		obj.TextBox.Text = obj.SwapText
-		obj.TextBox.Parent.BackgroundTransparency = 0
-		--print("Focused:\t\t", obj.SwapText, "{SW || CT}", obj.TextBox.Text)
-	end)
-	
-	return setmetatable(obj, metatable)
+	return obj
 end
 
 return module
-
 ]]
 
 local generated = Instance.new("ModuleScript")

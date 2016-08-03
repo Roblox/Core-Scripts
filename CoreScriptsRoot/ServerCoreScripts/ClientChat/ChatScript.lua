@@ -1,78 +1,63 @@
 local source = [[
 local Chat = require(script:WaitForChild("NewChat"))
 
-local CoreGuiCommunicationsFolder = script:WaitForChild("CoreGuiCommunications")
-local ChatWindowFolder = CoreGuiCommunicationsFolder:WaitForChild("ChatWindow")
-local SetCoreFolder = CoreGuiCommunicationsFolder:WaitForChild("SetCore")
-local GetCoreFolder = CoreGuiCommunicationsFolder:WaitForChild("GetCore")
+local containerTable = {}
+local chatWindowConnections = {}
+local setCoreConnections = {}
+local getCoreConnections = {}
+
+containerTable.ChatWindow = chatWindowConnections
+containerTable.SetCore = setCoreConnections
+containerTable.GetCore = getCoreConnections
+
 
 --// Connection functions
 local function ConnectEvent(name)
-	if (ChatWindowFolder) then
-		local find = ChatWindowFolder:FindFirstChild(name)
-		if (find and find:IsA("BindableEvent")) then
-			find.Event:connect(function(...)
-				Chat[name](Chat, ...)
-			end)
-		end
-	end
+	local event = Instance.new("BindableEvent")
+	event.Name = name
+	containerTable.ChatWindow[name] = event
+
+	event.Event:connect(function(...) Chat[name](Chat, ...) end)
 end
 
 local function ConnectFunction(name)
-	if (ChatWindowFolder) then
-		local find = ChatWindowFolder:FindFirstChild(name)
-		if (find and find:IsA("BindableFunction")) then
-			find.OnInvoke = (function(...)
-				return Chat[name](Chat, ...)
-			end)
-		end
-	end
+	local func = Instance.new("BindableFunction")
+	func.Name = name
+	containerTable.ChatWindow[name] = func
+
+	func.OnInvoke = function(...) return Chat[name](Chat, ...) end
 end
 
 local function ReverseConnectEvent(name)
-	if (Chat[name]) then
-		Chat[name]:connect(function(...)
-			if (ChatWindowFolder) then
-				local find = ChatWindowFolder:FindFirstChild(name)
-				if (find and find:IsA("BindableEvent")) then
-					find:Fire(...)
-				end
-			end
-		end)
-	end
+	local event = Instance.new("BindableEvent")
+	event.Name = name
+	containerTable.ChatWindow[name] = event
+
+	Chat[name]:connect(function(...) event:Fire(...) end)
 end
 
 local function ConnectSignal(name)
-	if (ChatWindowFolder) then
-		local find = ChatWindowFolder:FindFirstChild(name)
-		if (find and find:IsA("BindableEvent")) then
-			find.Event:connect(function(...)
-				Chat[name]:fire(...)
-			end)
-		end
-	end
+	local event = Instance.new("BindableEvent")
+	event.Name = name
+	containerTable.ChatWindow[name] = event
+
+	event.Event:connect(function(...) Chat[name]:fire(...) end)
 end
 
 local function ConnectSetCore(name)
-	if (SetCoreFolder) then
-		local find = SetCoreFolder:FindFirstChild(name)
-		if (find and find:IsA("BindableEvent")) then
-			find.Event:connect(function(...)
-				Chat[name.."Event"]:fire(...)
-			end)
-		end
-	end
+	local event = Instance.new("BindableEvent")
+	event.Name = name
+	containerTable.SetCore[name] = event
+
+	event.Event:connect(function(...) Chat[name.."Event"]:fire(...) end)
 end
 
 local function ConnectGetCore(name)
-	if (GetCoreFolder) then
-		local find = GetCoreFolder:FindFirstChild(name)
-		if (find and find:IsA("BindableFunction")) then
-			find.OnInvoke = (function(...)
-				return Chat["f"..name](...)
-			end)
-		end
-	end
+	local func = Instance.new("BindableFunction")
+	func.Name = name
+	containerTable.GetCore[name] = func
+
+	func.OnInvoke = function(...) return Chat["f"..name](...) end
 end
 
 --// Do connections
@@ -89,7 +74,7 @@ ReverseConnectEvent("VisibilityStateChanged")
 ReverseConnectEvent("MessagesChanged")
 ReverseConnectEvent("MessagePosted")
 
-ConnectSignal("CoreGuiChanged")
+ConnectSignal("CoreGuiEnabled")
 
 ConnectSetCore("ChatMakeSystemMessage")
 ConnectSetCore("ChatWindowPosition")
@@ -99,6 +84,12 @@ ConnectGetCore("ChatWindowSize")
 ConnectSetCore("ChatBarDisabled")
 ConnectGetCore("ChatBarDisabled")
 
+
+
+pcall(function()
+	wait()
+	game:GetService("StarterGui"):SetCore("CoreGuiChatConnections", containerTable)
+end)
 ]]
 
 local generated = Instance.new("LocalScript")
