@@ -436,7 +436,7 @@ BindableEvent_SendNotificationInfo.Event:connect(onSendNotificationInfo)
 -- New follower notification
 spawn(function()
 	local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-	local RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower')
+	local RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower', 86400) or RobloxReplicatedStorage:WaitForChild('NewFollower')
 	--
 	RemoteEvent_NewFollower.OnClientEvent:connect(function(followerRbxPlayer)
 		if newNotificationPath then

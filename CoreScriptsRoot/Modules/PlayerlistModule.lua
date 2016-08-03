@@ -1560,7 +1560,7 @@ if IsServerFollowers and not isTenFootInterface then
 	-- spawn so we don't block script
 	spawn(function()
 		local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-		RemoveEvent_OnFollowRelationshipChanged = RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged')
+		RemoveEvent_OnFollowRelationshipChanged = RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged', 86400) or RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged')
 		RemoteFunc_GetFollowRelationships = RobloxReplicatedStorage:WaitForChild('GetFollowRelationships')
 
 		RemoveEvent_OnFollowRelationshipChanged.OnClientEvent:connect(function(result)
