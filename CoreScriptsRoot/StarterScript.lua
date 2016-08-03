@@ -32,8 +32,9 @@ spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
 
 scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)
 
--- Purchase Prompt Script
+-- Purchase Prompt Script (run both versions, they will check the relevant flag)
 scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", RobloxGui)
+scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript3", RobloxGui)
 
 -- Backpack!
 spawn(function() require(RobloxGui.Modules.BackpackScript) end)

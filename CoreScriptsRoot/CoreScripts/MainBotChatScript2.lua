@@ -478,6 +478,8 @@ function doDialog(dialog)
 		return
 	else
 		dialog.InUse = true
+		-- only bind if we actual enter the dialog
+		contextActionService:BindCoreAction("Nothing", function() end, false, Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
 		if filterEnabledFixActive then
 			setDialogInUseEvent:FireServer(dialog, true)
 		end
@@ -543,8 +545,6 @@ function startDialog(dialog)
 				gui.Enabled = false
 			end
 		end
-		
-		contextActionService:BindCoreAction("Nothing", function() end, false, Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
 
 		renewKillswitch(dialog)
 

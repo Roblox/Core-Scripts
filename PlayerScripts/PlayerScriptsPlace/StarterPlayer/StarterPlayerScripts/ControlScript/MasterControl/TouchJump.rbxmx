@@ -12,6 +12,7 @@
 --]]
 
 local Players = game:GetService('Players')
+local GuiService = game:GetService('GuiService')
 
 local TouchJump = {}
 
@@ -77,6 +78,12 @@ function TouchJump:Create(parentFrame)
 	
 	JumpButton.InputEnded:connect(function(inputObject)
 		if inputObject == touchObject then
+			OnInputEnded()
+		end
+	end)
+	
+	GuiService.MenuOpened:connect(function()
+		if touchObject then
 			OnInputEnded()
 		end
 	end)
