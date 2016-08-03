@@ -606,14 +606,6 @@ local function Initialize()
 				local thirdPersonX = newValue * (currentFirstSensitivity.x / currentThirdSensitivity.x)
 				local thirdPersonY = thirdPersonX * (currentThirdSensitivity.y / currentThirdSensitivity.x)
 
-				-- handle invert
-				if currentFirstSensitivity.y < 0.0 then
-				firstPersonY = -firstPersonY
-				end
-				if currentThirdSensitivity.y < 0.0 then
-					thirdPersonY = -thirdPersonY
-				end
-
 				GameSettings.MouseSensitivityFirstPerson = Vector2.new(firstPersonX, firstPersonY)
 				GameSettings.MouseSensitivityThirdPerson = Vector2.new(thirdPersonX, thirdPersonY)
 				this.MouseAdvancedEntry:SetValue(string.format("%.3f",firstPersonX))
