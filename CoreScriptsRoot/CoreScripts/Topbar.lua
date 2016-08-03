@@ -215,7 +215,7 @@ local function CreateTopBar()
 	end
 
 	spawn(function()
-		local playerGui = Player:WaitForChild('PlayerGui')
+		local playerGui = Player:WaitForChild('PlayerGui', 86400) or Player:WaitForChild('PlayerGui')
 		playerGuiChangedConn = Util.DisconnectEvent(playerGuiChangedConn)
 		pcall(function()
 			playerGuiChangedConn = playerGui.TopbarTransparencyChangedSignal:connect(this.UpdateBackgroundTransparency)
