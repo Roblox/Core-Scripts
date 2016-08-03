@@ -1715,6 +1715,12 @@ end
 -- NOTE: Core script only
 local function onCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
+		-- on console we can always toggle on/off, ignore change
+		if isTenFootInterface then
+			playerlistCoreGuiEnabled = true
+			return
+		end
+
 		playerlistCoreGuiEnabled = enabled and topbarEnabled
 
 		-- not visible on small screen devices
