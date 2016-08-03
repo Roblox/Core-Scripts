@@ -9,6 +9,7 @@ local GuiService = game:GetService('GuiService')
 local HttpService = game:GetService('HttpService')
 local ContextActionService = game:GetService('ContextActionService')
 local PlayersService = game:GetService('Players')
+local SoundService = game:GetService('SoundService')
 local TextService = game:GetService('TextService')
 
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
@@ -186,6 +187,40 @@ local MINIMAL_KEYBOARD_LAYOUT_SYMBOLS = HttpService:JSONDecode([==[
 ---------------------------------------- END KEYBOARD LAYOUT --------------------------------------
 
 
+local VOICE_STATUS_CODE_ENUM = {}
+do
+	local STATUS_CODES =
+	{
+	    'ASR_STATUS_OK',
+	    'ASR_STATUS_CANCELLED',
+	    'ASR_STATUS_UNKNOWN',
+	    'ASR_STATUS_INVALID_ARGUMENTS',
+	    'ASR_STATUS_DEADLINE_EXCEEDED',
+	    'ASR_STATUS_NOT_FOUND',
+	    'ASR_STATUS_ALREADY_EXISTS',
+	    'ASR_STATUS_PERMISSION_DENIED',
+	    'ASR_STATUS_UNAUTHENTICATED',
+	    'ASR_STATUS_RESOURCE_EXHAUSTED',
+	    'ASR_STATUS_FAILED_PRECONDITION',
+	    'ASR_STATUS_ABORTED',
+	    'ASR_STATUS_OUT_OF_RANGE',
+	    'ASR_STATUS_UNIMPLEMENTED',
+	    'ASR_STATUS_INTERNAL',
+	    'ASR_STATUS_UNAVAILABLE',
+	    'ASR_STATUS_DATA_LOSS',
+	    -- last official google response
+
+	    -- Roblox statuses
+	    'ASR_STATUS_NOT_ENABLED',
+	    'ASR_STATUS_LOW_CONFIDENCE',
+	    'ASR_STATUS_INVALID_JSON'
+	};
+
+	for i, code in pairs(STATUS_CODES) do
+		VOICE_STATUS_CODE_ENUM[code] = i-1
+	end
+end
+
 local function tokenizeString(str, tokenChar)
 	local words = {}
 	for word in string.gmatch(str, '([^' .. tokenChar .. ']+)') do
@@ -238,6 +273,16 @@ local function PointInGuiObject(object, x, y)
 	return false
 end
 
+local function FindAncestorOfType(object, ancestorType)
+	if not object then return nil end
+
+	local parent = object.Parent
+	if parent and  parent:IsA(ancestorType) then
+		return parent
+	end
+
+	return FindAncestorOfType(parent, ancestorType)
+end
 
 local function ExtendedInstance(instance)
 	local this = {}
@@ -258,7 +303,8 @@ local function ExtendedInstance(instance)
 end
 
 local function IsVoiceToTextEnabled()
-	return false
+	local success, flagValue = pcall(function() return settings():GetFFlag("EnableVoiceRecording") end)
+	return success and flagValue == true
 end
 
 local function CreateVRButton(instance)
@@ -427,9 +473,14 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 			Image = KEY_ICONS[keyData[1]].Asset;
 			Parent = backgroundImage;
 		}
-		spawn(function()
-			icon.Position = UDim2.new(0.5,-icon.AbsoluteSize.X/2,0.5,-icon.AbsoluteSize.Y/2);
-		end)
+
+		local function onChanged(prop)
+			if prop == 'AbsoluteSize' then
+				icon.Position = UDim2.new(0.5,-icon.AbsoluteSize.X/2,0.5,-icon.AbsoluteSize.Y/2);
+			end
+		end
+		icon.Changed:connect(onChanged)
+		onChanged('AbsoluteSize')
 	end
 
 	local function isEnabled()
@@ -448,7 +499,7 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 		elseif currentKeySetting == 'Caps' then
 			keyboard:SetCaps(not keyboard:GetCaps())
 		elseif currentKeySetting == 'Enter' then
-			keyboard:Close(true)
+			keyboard:SubmitText(true, true)
 		elseif currentKeySetting == 'Delete' then
 			keyboard:BackspaceAtCursor()
 		elseif currentKeySetting == "123/sym" then
@@ -522,6 +573,10 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 	rawset(newKey, "OnDown", function(self)
 		pressed = true
 		update()
+		-- Fire the onclick when pressing down on the button;
+		-- pressing down and up on the same button is difficult
+		-- in VR because your head is constantly moving around
+		onClicked()
 	end)
 	rawset(newKey, "OnUp", function(self)
 		pressed = false
@@ -562,9 +617,11 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 	newKeyElement.MouseButton1Up:connect(function() newKey:OnUp() end)
 	newKeyElement.SelectionGained:connect(function() hoveringGuiElements[newKeyElement] = true newKey:OnEnter() end)
 	newKeyElement.SelectionLost:connect(function() hoveringGuiElements[newKeyElement] = nil newKey:OnLeave() end)
-	newKeyElement.MouseButton1Click:connect(function() onClicked() end)
+	-- For the time being, we will simulate onClick events in the OnDown() event
+	-- newKeyElement.MouseButton1Click:connect(function() onClicked() end)
 	if secondBackgroundImage then
-		secondBackgroundImage.MouseButton1Click:connect(onClicked)
+		-- For the time being, we will simulate onClick events in the OnDown() event
+		-- secondBackgroundImage.MouseButton1Click:connect(onClicked)
 		secondBackgroundImage.MouseButton1Down:connect(function() newKey:OnDown() end)
 		secondBackgroundImage.MouseButton1Up:connect(function() newKey:OnUp() end)
 		secondBackgroundImage.SelectionGained:connect(function()
@@ -580,6 +637,90 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 	update()
 
 	return newKey
+end
+
+local function CreateBaseVoiceState()
+	local this = {}
+	this.Name = "Base"
+
+	function this:TransitionFrom()
+	end
+	function this:TransitionTo()
+	end
+
+	return this
+end
+
+local function CreateListeningVoiceState()
+	local this = CreateBaseVoiceState()
+
+	this.Name = "Listening"
+
+	function this:TransitionTo()
+		pcall(function() SoundService:BeginRecording() end)
+	end
+
+	return this
+end
+
+local function CreateProcessingVoiceState()
+	local this = CreateBaseVoiceState()
+
+	this.Name = "Processing"
+
+	local finished = false
+	local result = nil
+
+	function this:TransitionTo()
+		coroutine.wrap(function()
+			pcall(function() result = SoundService:EndRecording() end)
+			finished = true
+		end)()
+	end
+
+	function this:GetResultAsync()
+		while not finished do
+			wait()
+		end
+		return result
+	end
+
+	return this
+end
+
+local function CreateWaitingVoiceState()
+	local this = CreateBaseVoiceState()
+
+	this.Name = "Waiting"
+
+	return this
+end
+
+local VoiceTransitions = {Listening = {Processing = true}, Processing = {Waiting = true}, Waiting = {Listening = true}}
+
+local VoiceToTextFSM = {}
+do
+	VoiceToTextFSM.CurrentState = CreateWaitingVoiceState()
+
+	local stateTransitionedSignal = Instance.new('BindableEvent')
+
+	function VoiceToTextFSM:TransitionState(newState)
+		-- If it is a new state then lets cleanup and activate it
+		if VoiceTransitions[self.CurrentState.Name][newState.Name] then
+			self.CurrentState:TransitionFrom()
+			self.CurrentState = newState
+			self.CurrentState:TransitionTo()
+			stateTransitionedSignal:Fire(self.CurrentState)
+			return true
+		end
+		return false
+	end
+
+	function VoiceToTextFSM:GetCurrentState()
+		return self.CurrentState
+	end
+
+	VoiceToTextFSM.StateTransitionedEvent = stateTransitionedSignal.Event
 end
 
 
@@ -702,30 +843,104 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 			Name = 'voiceRecognitionBackground1';
 			Size = UDim2.new(1, 0, 0.75, 0);
 			Position = UDim2.new(0, 0, 0, 0);
-			BackgroundColor3 = Color3.new(0,0,0);
-			BackgroundTransparency = 0.5;
+			BackgroundColor3 = NORMAL_KEY_COLOR;
+			BackgroundTransparency = BACKGROUND_OPACITY;
 			BorderSizePixel = 0;
 			Active = true;
 			Parent = voiceRecognitionContainer;
 		};
 		local voiceRecognitionBackground2 = voiceRecognitionBackground1:Clone()
-		voiceRecognitionBackground2.Size = UDim2.new(0.75, 0, 0.25, 0)
+		voiceRecognitionBackground2.Size = UDim2.new(1 - 0.2, 0, 0.25, 0)
 		voiceRecognitionBackground2.Position = UDim2.new(0, 0, 0.75, 0)
 		voiceRecognitionBackground2.Parent = voiceRecognitionContainer
 	end
 
-	local voiceDoneButton = CreateVRButton(Util:Create'ImageButton'
+	local voiceDoneButton = CreateVRButton(Util:Create'TextButton'
 	{
 		Name = 'DoneButton';
-		Size = UDim2.new(0.25,-5,0.25,-5);
-		Position = UDim2.new(0.75,5,0.75,5);
-		Image = "";
+		Size = UDim2.new(0.2, -5, 0.25, -5);
+		Position = UDim2.new(1 - 0.2, 5, 0.75, 5);
+		Text = "Done";
+		BackgroundColor3 = SET_KEY_COLOR;
+		Font = Enum.Font.SourceSansBold;
+		FontSize = Enum.FontSize.Size96;
+		TextColor3 = KEY_TEXT_COLOR;
 		BackgroundTransparency = 0;
 		AutoButtonColor = false;
 		BorderSizePixel = 0;
 		Parent = voiceRecognitionContainer;
 	})
 	table.insert(buttons, voiceDoneButton)
+
+	local voiceProcessingStatus = Util:Create'TextLabel'
+	{
+		Name = 'VoiceProcessingStatus';
+		Size = UDim2.new(0, 0, 0, 0);
+		Position = UDim2.new(0.5, 0, 0.33, 0);
+		Text = "";
+		Font = Enum.Font.SourceSansBold;
+		FontSize = Enum.FontSize.Size96;
+		TextColor3 = KEY_TEXT_COLOR;
+		BackgroundTransparency = 1;
+		BorderSizePixel = 0;
+		Parent = voiceRecognitionContainer;
+	}
+
+	local function CreateVoiceVisualizerWidget()
+		local this = {}
+
+		local bars = {}
+
+		local numOfBars = 50
+		local numOfWaves = 4
+		local waveSpeed = 2.5
+
+		local container = Util:Create'Frame'
+		{
+			Name = 'VoiceVisualizerContainer';
+			Size = UDim2.new(1, 0, 1, 0);
+			BackgroundTransparency = 1;
+		}
+		this.Container = container
+
+		for i = 1, numOfBars do
+			local bar = Util:Create'Frame'
+			{
+				Name = 'Bar';
+				Size = UDim2.new(1/numOfBars, -4, 1, 0);
+				Position = UDim2.new(i/numOfBars, 0, 0, 0);
+				BackgroundTransparency = 0;
+				BackgroundColor3 = KEY_TEXT_COLOR;
+				Parent = container;
+			}
+			table.insert(bars, bar)
+		end
+
+		function this:StartAnimation()
+			RunService:UnbindFromRenderStep("VoiceVisualizerWidget")
+			RunService:BindToRenderStep("VoiceVisualizerWidget", Enum.RenderPriority.First.Value,
+				function()
+					local movementPerBar = (numOfWaves*2*math.pi) / numOfBars
+					for i, bar in pairs(bars) do
+						local height = math.abs(math.sin(tick() * waveSpeed + i * movementPerBar)) + math.abs(math.cos(tick() * waveSpeed + i * movementPerBar))
+						height = ((height / 2) - 0.3) * (1/(1-0.3))
+						bar.Size = UDim2.new(1/numOfBars, -4, height, 0)
+						bar.Position = UDim2.new(i/numOfBars, 0, (1-height) / 2, 0)
+					end
+				end)
+		end
+
+		function this:StopAnimation()
+			RunService:UnbindFromRenderStep("VoiceVisualizerWidget")
+		end
+
+		return this
+	end
+
+	local voiceVisualizer = CreateVoiceVisualizerWidget()
+	voiceVisualizer.Container.Parent = voiceRecognitionContainer
+	voiceVisualizer.Container.Size = UDim2.new(0.5,0,0.4,0)
+	voiceVisualizer.Container.Position = UDim2.new(0.25,0,0.4,0)
 
 	local newKeyboard = ExtendedInstance(keyboardContainer)
 
@@ -737,6 +952,9 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	local textfieldCursorPosition = 0
 
+	local openedEvent = Instance.new('BindableEvent')
+	local closedEvent = Instance.new('BindableEvent')
+	local opened = false
 
 	local function SetTextFieldCursorPosition(newPosition)
 		textfieldCursorPosition = Clamp(0, #textEntryField.Text, newPosition)
@@ -793,6 +1011,9 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 	local currentKeyset = nil
 
+	rawset(newKeyboard, "OpenedEvent",  openedEvent.Event)
+	rawset(newKeyboard, "ClosedEvent",  closedEvent.Event)
+
 	rawset(newKeyboard, "GetCurrentKeyset", function(self)
 		return keysets[currentKeyset]
 	end)
@@ -820,6 +1041,10 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		end
 
 		voiceRecognitionContainer.Visible = inVoiceMode
+
+		if inVoiceMode then
+			VoiceToTextFSM:TransitionState(CreateListeningVoiceState())
+		end
 	end)
 
 	rawset(newKeyboard, "GetCaps", function(self)
@@ -844,9 +1069,25 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		end
 	end)
 
+	local ignoreFocusedLost = false
+
 	local textChangedConn = nil
+	local textBoxFocusLostConn = nil
 	local panelClosedConn = nil
+
+	local function disconnectKeyboardEvents()
+		if textChangedConn then textChangedConn:disconnect() end
+		textChangedConn = nil
+		if textBoxFocusLostConn then textBoxFocusLostConn:disconnect() end
+		textBoxFocusLostConn = nil
+		if panelClosedConn then panelClosedConn:disconnect() end
+		panelClosedConn = nil
+	end
+
 	rawset(newKeyboard, "Open", function(self, options)
+		if opened then return end
+		opened = true
+
 		keyboardOptions = options
 
 		self:SetCurrentKeyset(1)
@@ -857,12 +1098,16 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 
 		local localCF = CFrame.new()
 
-		if textChangedConn then textChangedConn:disconnect() end
-		textChangedConn = nil	
+		disconnectKeyboardEvents()
 		if options.TextBox then
 			textChangedConn = options.TextBox.Changed:connect(function(prop)
 				if prop == 'Text' then
 					UpdateTextEntryFieldText(options.TextBox.Text)
+				end
+			end)
+			textBoxFocusLostConn = options.TextBox.FocusLost:connect(function(submitted)
+				if not ignoreFocusedLost then
+					self:Close(submitted)
 				end
 			end)
 			if options.TextBox.ClearTextOnFocus then
@@ -871,16 +1116,17 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 				UpdateTextEntryFieldText(options.TextBox.Text)
 			end
 
+			-- Find panel for 2d ui?
 			local textboxPanel = Panel3D.FindContainerOf(options.TextBox)
 			if textboxPanel then
 				panelClosedConn = Panel3D.OnPanelClosed.Event:connect(function(closedPanelName)
 					if closedPanelName == textboxPanel.name then
-						self:Close()
+						self:Close(false)
 					end
 				end)
 
-				--Attach to it if it's in the same space
-				if textboxPanel.panelType == Panel3D.Type.Fixed then
+				-- Attach to it if it's linked to our keyboard panel
+				if textboxPanel.linkedTo == panel then
 					local panelCF = textboxPanel.localCF
 					localCF = panelCF * CFrame.new(0, (-textboxPanel.height / 2) - 0.5, 0) * 
 										CFrame.Angles(math.rad(30), 0, 0) * 
@@ -890,10 +1136,37 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 					local headForwardCF = Panel3D.GetHeadLookXZ(true)
 					localCF = headForwardCF * CFrame.Angles(math.rad(22.5), 0, 0) * CFrame.new(0, -1, 5)
 				end
+			else -- no panel!
+				local headForwardCF = Panel3D.GetHeadLookXZ(true)
+				localCF = headForwardCF * CFrame.Angles(math.rad(22.5), 0, 0) * CFrame.new(0, -1, 5)
 			end
 		else
 			setBufferText("")
 		end
+
+		ContextActionService:BindCoreAction("VirtualKeyboardControllerInput",
+			function(actionName, inputState, inputObject)
+				if inputState == Enum.UserInputState.End then
+					if inputObject.KeyCode == Enum.KeyCode.ButtonL1 then
+						SetTextFieldCursorPosition(textfieldCursorPosition - 1)
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonR1 then
+						SetTextFieldCursorPosition(textfieldCursorPosition + 1)
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonX then
+						self:BackspaceAtCursor()
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonY then
+						self:SubmitCharacter(" ", false)
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonL2 then
+						if currentKeyset then
+							-- Go to the next keyset
+							self:SetCurrentKeyset((currentKeyset % #keysets) + 1)
+						end
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonL3 then
+						self:SetCaps(not self:GetCaps())
+					end
+				end
+			end,
+			false,
+			Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonR2)
 
 		self.Parent = panel:GetGUI()
 
@@ -902,26 +1175,59 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		panel:SetVisible(true, true)
 		panel:ForceShowUntilLookedAt()
 
+		Panel3D.Get("Topbar3D"):SetVisible(false)
+
 		function panel:OnUpdate()
 		end
+
+		openedEvent:Fire()
 	end)
 
 	rawset(newKeyboard, "Close", function(self, submit)
-		if textChangedConn then textChangedConn:disconnect() end
-		textChangedConn = nil
-		if panelClosedConn then panelClosedConn:disconnect() end
-		panelClosedConn = nil
+		submit = (submit == true)
+
+		if not opened then return end
+		opened = false
+
+		disconnectKeyboardEvents()
+
+		ContextActionService:UnbindCoreAction("VirtualKeyboardControllerInput")
 		-- Clean-up
 		panel:OnMouseLeave()
-
-		if submit and keyboardOptions and keyboardOptions.TextBox then
-			keyboardOptions.TextBox.Text = getBufferText()
-		end
 		panel:SetVisible(false, true)
 		keyboardContainer.Visible = false
-		if keyboardOptions and keyboardOptions.TextBox then
-			keyboardOptions.TextBox:ReleaseFocus()
+
+		Panel3D.Get("Topbar3D"):SetVisible(true)
+		
+		self:SubmitText(submit, false)
+		closedEvent:Fire()
+	end)
+
+	rawset(newKeyboard, "SubmitText", function(self, submit, keepKeyboardOpen)
+		local keyboardTextbox = keyboardOptions and keyboardOptions.TextBox
+		if keyboardTextbox then
+			if submit then
+				keyboardTextbox.Text = getBufferText()
+			end
+			-- Only keep text boxes open for coreguis, such as chat
+			local textboxPanel = Panel3D.FindContainerOf(keyboardTextbox)
+			local reopenKeyboard = keepKeyboardOpen and textboxPanel and textboxPanel.linkedTo == panel
+
+			if reopenKeyboard then
+				ignoreFocusedLost = true
+			end
+
+			keyboardTextbox:ReleaseFocus(submit)
+
+			if reopenKeyboard then
+				keyboardTextbox:CaptureFocus()
+				ignoreFocusedLost = false
+			end
 		end
+	end)
+
+	rawset(newKeyboard, "GetCurrentOptions", function(self)
+		return keyboardOptions
 	end)
 
 	rawset(newKeyboard, "BackspaceAtCursor", function(self)
@@ -935,7 +1241,9 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	end)
 
 	rawset(newKeyboard, "SubmitCharacter", function(self, character, isAnAlphaKey)
-		setBufferText(getBufferText() .. character)
+		local bufferText = getBufferText()
+		local newBufferText = string.sub(bufferText, 1, textfieldCursorPosition) .. character .. string.sub(bufferText, textfieldCursorPosition + 1, #bufferText)
+		setBufferText(newBufferText)
 		SetTextFieldCursorPosition(textfieldCursorPosition + #character)
 
 		if isAnAlphaKey and self:GetShift() then
@@ -1022,8 +1330,42 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	end)
 
 	voiceDoneButton.MouseButton1Click:connect(function()
-		newKeyboard:SetVoiceMode(false)
+		if VoiceToTextFSM:GetCurrentState().Name == "Listening" then
+			VoiceToTextFSM:TransitionState(CreateProcessingVoiceState())
+		end
 	end)
+
+	local function onVoiceProcessingStateChanged(newState)
+		if newState.Name == "Listening" then
+			voiceProcessingStatus.Text = "Listening..."
+		elseif newState.Name == "Processing" then
+			voiceProcessingStatus.Text = "Processing..."
+		elseif newState.Name == "Waiting" then
+			voiceProcessingStatus.Text = "Done"
+		end
+
+		-- Get the result and put it into the textfield
+		if newState.Name == "Processing" then
+			coroutine.wrap(function()
+				voiceVisualizer:StopAnimation()
+				local result = newState:GetResultAsync()
+				if result and result["Status"] == VOICE_STATUS_CODE_ENUM.ASR_STATUS_OK  then
+					setBufferText(result["Response"])
+				else
+					voiceProcessingStatus.Text = "An error occured, please try again."
+					wait(2)
+				end
+				VoiceToTextFSM:TransitionState(CreateWaitingVoiceState())
+			end)()
+		elseif newState.Name == "Listening" then
+			voiceVisualizer:StartAnimation()
+		elseif newState.Name == "Waiting" then
+			newKeyboard:SetVoiceMode(false)
+		end
+	end
+	VoiceToTextFSM.StateTransitionedEvent:connect(onVoiceProcessingStateChanged)
+	onVoiceProcessingStateChanged(VoiceToTextFSM:GetCurrentState())
+
 
 	return newKeyboard
 end
@@ -1040,7 +1382,6 @@ end
 
 
 local VirtualKeyboardClass = {}
-
 
 function VirtualKeyboardClass:CreateVirtualKeyboardOptions(textbox)
 	local keyboardOptions = {}
@@ -1067,18 +1408,20 @@ end
 
 function VirtualKeyboardClass:CloseVirtualKeyboard()
 	if VirtualKeyboardPlatform and UserInputService.VREnabled then
-		GetKeyboard():Close()
+		local currentKeyboard = GetKeyboard()
+		currentKeyboard:Close(false)
 	end
 end
+
+VirtualKeyboardClass.OpenedEvent = GetKeyboard().OpenedEvent
+VirtualKeyboardClass.ClosedEvent = GetKeyboard().ClosedEvent
+
 
 if VirtualKeyboardPlatform and useVRKeyboard then
 	UserInputService.TextBoxFocused:connect(function(textbox)
 		VirtualKeyboardClass:ShowVirtualKeyboard(VirtualKeyboardClass:CreateVirtualKeyboardOptions(textbox))
 	end)
-
-	UserInputService.TextBoxFocusReleased:connect(function(textbox)
-		VirtualKeyboardClass:CloseVirtualKeyboard()
-	end)
+	-- Don't have to hook up to TextBoxFocusReleased because we are already listening to that in keyboard
 end
 
 

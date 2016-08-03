@@ -31,9 +31,6 @@ local function Initialize()
 	local this = settingsPageFactory:CreateNewPage()
 	this.HelpPages = {}
 
-	-- TODO: Change dev console script to parent this to somewhere other than an engine created gui
-	local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
-	local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
 	local lastInputType = nil
 
 	function this:GetCurrentInputType()
@@ -272,30 +269,8 @@ local function Initialize()
 		end
 
 
-		-- todo: turn on dev console button when dev console is ready
-		--[[local openDevConsoleFunc = function()
-			this.HubRef:SetVisibility(false)
-			ToggleDevConsoleBindableFunc:Invoke()
-		end
-		local devConsoleButton = utility:MakeStyledButton("ConsoleButton", "      Toggle Dev Console", UDim2.new(0,300,0,44), openDevConsoleFunc)
-		devConsoleButton.Size = UDim2.new(devConsoleButton.Size.X.Scale, devConsoleButton.Size.X.Offset, 0, 60)
-		devConsoleButton.Position = UDim2.new(1,-300,1,30)
-		if UserInputService.GamepadEnabled and not UserInputService.TouchEnabled and not UserInputService.MouseEnabled and not UserInputService.KeyboardEnabled then
-			devConsoleButton.ImageTransparency = 1
-		end
-		devConsoleButton.Parent = gamepadImageLabel
-		local aButtonImage = utility:Create'ImageLabel'
-		{
-			Name = "AButtonImage",
-			Size = UDim2.new(0,55,0,55),
-			Position = UDim2.new(0,5,0.5,-28),
-			Image = "rbxasset://textures/ui/Settings/Help/AButtonDark.png",
-			BackgroundTransparency = 1,
-			ZIndex = 2,
-			Parent = devConsoleButton
-		};
-
-		this:AddRow(nil, nil, devConsoleButton, 340)]]
+		-- NOTE: On consoles we put the dev console in the settings menu. Only place
+		-- owners can see this for now.
 	end
 
 	local function createTouchHelp(parentFrame)

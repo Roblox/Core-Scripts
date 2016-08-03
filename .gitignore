@@ -30,3 +30,5 @@ Thumbs.db
 .yardoc
 _yardoc
 doc/
+*.sublime-project
+*.sublime-workspace

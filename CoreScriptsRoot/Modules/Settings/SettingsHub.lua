@@ -25,6 +25,7 @@ local RunService = game:GetService("RunService")
 
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
 
 --[[ VARIABLES ]]
 local isTouchDevice = UserInputService.TouchEnabled
@@ -32,9 +33,9 @@ local isSmallTouchScreen = utility:IsSmallTouchScreen()
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local platform = UserInputService:GetPlatform()
--- TODO: Change dev console script to parent this to somewhere other than an engine created gui
-local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
-local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
+
+local DeveloperConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
+
 local lastInputChangedCon = nil
 local chatWasVisible = false
 local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
@@ -52,9 +53,7 @@ end
 
 
 --[[ CORE MODULES ]]
-local playerList = require(RobloxGui.Modules.PlayerlistModule)
 local chat = require(RobloxGui.Modules.Chat)
-local backpack = require(RobloxGui.Modules.BackpackScript)
 
 if isSmallTouchScreen or isTenFootInterface then
 	SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0,0,0,0)
@@ -503,8 +502,9 @@ local function CreateSettingsHub()
 
 	local function toggleDevConsole(actionName, inputState, inputObject)
 		if actionName == DEV_CONSOLE_ACTION_NAME then 	-- ContextActionService->F9
-			if inputState and inputState == Enum.UserInputState.Begin and ToggleDevConsoleBindableFunc then
-				ToggleDevConsoleBindableFunc:Invoke()
+			if inputState and inputState == Enum.UserInputState.Begin then
+				local devConsoleVisible = DeveloperConsoleModule:GetVisibility()
+				DeveloperConsoleModule:SetVisibility(not devConsoleVisible)
 			end
 		end
 	end
@@ -799,6 +799,8 @@ local function CreateSettingsHub()
 			this.TabConnection = nil
 		end
 
+		local playerList = require(RobloxGui.Modules.PlayerlistModule)
+
 		if this.Visible then
 			this.SettingsShowSignal:fire(this.Visible)
 
@@ -859,6 +861,7 @@ local function CreateSettingsHub()
 				chat:ToggleVisibility()
 			end
 
+			local backpack = require(RobloxGui.Modules.BackpackScript)
 			if backpack.IsOpen then
 				backpack:OpenClose()
 			end
@@ -949,9 +952,11 @@ local function CreateSettingsHub()
 	end
 
 	local function enableVR()
+		local VRHub = require(RobloxGui.Modules.VR.VRHub)
+		local thisModuleName = "SettingsMenu"
 		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
-		local panel = Panel3D.Get("SettingsMenu")
-		panel:ResizeStuds(3, 3, 256)
+		local panel = Panel3D.Get(thisModuleName)
+		panel:ResizeStuds(4, 4, 200)
 		panel:SetType(Panel3D.Type.Fixed)
 		panel:SetVisible(false)
 		panel:SetCanFade(false)
@@ -961,11 +966,22 @@ local function CreateSettingsHub()
 		this:HideShield()
 
 		GuiService.MenuOpened:connect(function()
-			panel.localCF = UserInputService:GetUserCFrame(Enum.UserCFrame.Head) * CFrame.new(0, 0, -5) * CFrame.Angles(0, math.rad(180), 0)
-			panel:SetVisible(true, true)
+			local topbarPanel = Panel3D.Get("Topbar3D")
+			panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
+			panel:SetVisible(true)
+
+			VRHub:FireModuleOpened(thisModuleName)
 		end)
 		GuiService.MenuClosed:connect(function()
-			panel:SetVisible(false, false)
+			panel:SetVisible(false)
+
+			VRHub:FireModuleClosed(thisModuleName)
+		end)
+
+		VRHub.ModuleOpened.Event:connect(function(moduleName)
+			if moduleName ~= thisModuleName then
+				this:SetVisibility(false)
+			end
 		end)
 	end
 
@@ -1087,6 +1103,21 @@ end
 
 local moduleApiTable = {}
 
+	moduleApiTable.ModuleName = "SettingsMenu"
+	moduleApiTable.KeepVRTopbarOpen = true
+	moduleApiTable.VRIsExclusive = true
+	moduleApiTable.VRClosesNonExclusive = true
+	VRHub:RegisterModule(moduleApiTable)
+
+	VRHub.ModuleOpened.Event:connect(function(moduleName)
+		if moduleName ~= moduleApiTable.ModuleName then
+			local module = VRHub:GetModule(moduleName)
+			if module.VRIsExclusive then
+				moduleApiTable:SetVisibility(false)
+			end
+		end
+	end)
+
 	local SettingsHubInstance = CreateSettingsHub()
 
 	function moduleApiTable:SetVisibility(visible, noAnimation, customStartPage, switchedFromGamepadInput)
@@ -1099,34 +1130,6 @@ local moduleApiTable = {}
 
 	function moduleApiTable:SwitchToPage(pageToSwitchTo, ignoreStack)
 		SettingsHubInstance:SwitchToPage(pageToSwitchTo, ignoreStack, 1)
-	end
-
-	function moduleApiTable:ReportPlayer(player)
-		if SettingsHubInstance.ReportAbusePage and player then
-			local setReportPlayerConnection = nil
-			setReportPlayerConnection = SettingsHubInstance.ReportAbusePage.Displayed.Event:connect(function()
-				-- When we change the SelectionIndex of GameOrPlayerMode it waits until the tween is done
-				-- before it fires the IndexChanged signal. The WhichPlayerMode dropdown listens to this signal
-				-- and resets when it is fired. Therefore we need to listen to this signal and set the player we want
-				-- to report the frame after the dropdown is reset
-				local indexChangedConnection = nil
-				indexChangedConnection = SettingsHubInstance.ReportAbusePage.GameOrPlayerMode.IndexChanged:connect(function()
-					if indexChangedConnection then
-						indexChangedConnection:disconnect()
-						indexChangedConnection = nil
-					end
-					wait() -- We need to wait a frame to set the value of WhichPlayerMode as it is being updated by another script listening to the IndexChanged signal
-					SettingsHubInstance.ReportAbusePage.WhichPlayerMode:SetSelectionByValue(player.Name)
-				end)
-				SettingsHubInstance.ReportAbusePage.GameOrPlayerMode:SetSelectionIndex(2)
-
-				if setReportPlayerConnection then
-					setReportPlayerConnection:disconnect()
-					setReportPlayerConnection = nil
-				end
-			end)
-			SettingsHubInstance:SetVisibility(true, false, SettingsHubInstance.ReportAbusePage)
-		end
 	end
 
 	function moduleApiTable:GetVisibility()

@@ -7,16 +7,18 @@ local PIXELS_PER_STUD = 64
 local SLOT_BORDER_SIZE = 0
 local SLOT_BORDER_SELECTED_SIZE = 4
 local SLOT_BORDER_COLOR = Color3.new(90/255, 142/255, 233/255)
-local SLOT_BACKGROUND_COLOR = Color3.new(31/255, 31/255, 31/255)
+local SLOT_BACKGROUND_COLOR = Color3.new(0.2, 0.2, 0.2)
 local SLOT_HOVER_BACKGROUND_COLOR = Color3.new(90/255, 90/255, 90/255)
 
 local HOPPERBIN_ANGLE = math.rad(-45)
 local HOPPERBIN_ROTATION = CFrame.Angles(HOPPERBIN_ANGLE, 0, 0)
 local HOPPERBIN_OFFSET = Vector3.new(0, 0, -5)
 
-local HEALTHBAR_SPACE = 10
-local HEALTHBAR_WIDTH = 80
-local HEALTHBAR_HEIGHT = 3
+local HEALTHBAR_SPACE = 12
+local HEALTHBAR_WIDTH = 82
+local HEALTHBAR_HEIGHT = 5
+
+local NAME_SPACE = 14
 
 local Tools = {}
 local ToolsList = {}
@@ -30,6 +32,7 @@ local currentHumanoid = nil
 local CoreGui = game:GetService('CoreGui')
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+local Util = require(RobloxGui.Modules.Settings.Utility)
 
 local ContextActionService = game:GetService("ContextActionService")
 
@@ -44,7 +47,7 @@ toolsFrame.Size = UDim2.new(1, 0, 0, ICON_SIZE)
 toolsFrame.BackgroundTransparency = 1
 toolsFrame.Selectable = false
 local insetAdjustY = toolsFrame.AbsolutePosition.Y
-toolsFrame.Position = UDim2.new(0, 0, 0, HEALTHBAR_SPACE)
+toolsFrame.Position = UDim2.new(0, 0, 0, HEALTHBAR_SPACE + NAME_SPACE)
 
 --Healthbar color function stolen from Topbar.lua
 local HEALTH_BACKGROUND_COLOR = Color3.new(228/255, 236/255, 246/255)
@@ -52,16 +55,35 @@ local HEALTH_RED_COLOR = Color3.new(255/255, 28/255, 0/255)
 local HEALTH_YELLOW_COLOR = Color3.new(250/255, 235/255, 0)
 local HEALTH_GREEN_COLOR = Color3.new(27/255, 252/255, 107/255)
 
-local healthbarBack = Instance.new("Frame", BackpackPanel:GetGUI())
-healthbarBack.BackgroundColor3 = HEALTH_BACKGROUND_COLOR
-healthbarBack.BorderSizePixel = 0
+local healthbarBack = Instance.new("ImageLabel", BackpackPanel:GetGUI())
+healthbarBack.ImageColor3 = HEALTH_BACKGROUND_COLOR
+healthbarBack.BackgroundTransparency = 1
+healthbarBack.ScaleType = Enum.ScaleType.Slice
+healthbarBack.SliceCenter = Rect.new(10, 10, 10, 10)
 healthbarBack.Name = "HealthbarContainer"
-local healthbarFront = Instance.new("Frame", healthbarBack)
-healthbarFront.BorderSizePixel = 0
+healthbarBack.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
+local healthbarFront = Instance.new("ImageLabel", healthbarBack)
+healthbarFront.ImageColor3 = HEALTH_GREEN_COLOR
+healthbarFront.BackgroundTransparency = 1
+healthbarFront.ScaleType = Enum.ScaleType.Slice
+healthbarFront.SliceCenter = Rect.new(10, 10, 10, 10)
 healthbarFront.Size = UDim2.new(1, 0, 1, 0)
 healthbarFront.Position = UDim2.new(0, 0, 0, 0)
-healthbarFront.BackgroundColor3 = HEALTH_GREEN_COLOR
 healthbarFront.Name = "HealthbarFill"
+healthbarFront.Image = "rbxasset://textures/ui/VR/rectBackgroundWhite.png"
+
+local playerName = Instance.new("TextLabel", BackpackPanel:GetGUI())
+playerName.Name = "PlayerName"
+playerName.BackgroundTransparency = 1
+playerName.TextColor3 = Color3.new(1, 1, 1)
+playerName.Text = player.Name
+playerName.Font = Enum.Font.SourceSansBold
+playerName.FontSize = Enum.FontSize.Size12
+playerName.TextXAlignment = Enum.TextXAlignment.Left
+playerName.Size = UDim2.new(1, 0, 0, NAME_SPACE)
+
+
+BackpackScript.ToolAddedEvent = Instance.new("BindableEvent")
 
 
 local healthColorToPosition = {
@@ -100,9 +122,6 @@ local function HealthbarColorTransferFunction(healthPercent)
 end
 ---
 
-local verticalRange = math.rad(0)
-local horizontalRange = math.rad(0)
-
 local backpackEnabled = true
 local healthbarEnabled = true
 
@@ -122,17 +141,19 @@ local function UpdateLayout()
 	
 	if #ToolsList == 0 then
 		width = HEALTHBAR_WIDTH
-		height = HEALTHBAR_SPACE
+		height = HEALTHBAR_SPACE + NAME_SPACE
 		BackpackPanel.showCursor = false
 	else
 		width = #ToolsList * ICON_SPACING
-		height = ICON_SIZE + HEALTHBAR_SPACE
+		height = ICON_SIZE + HEALTHBAR_SPACE + NAME_SPACE
 		BackpackPanel.showCursor = true
 	end
 	
 	BackpackPanel:ResizePixels(width, height)
 
-	healthbarBack.Position = UDim2.new(0.5, -HEALTHBAR_WIDTH / 2, 0, (HEALTHBAR_SPACE - HEALTHBAR_HEIGHT) / 2)
+	playerName.Position = UDim2.new(0, borderSize, 0, 0)
+
+	healthbarBack.Position = UDim2.new(0, borderSize, 0, NAME_SPACE + (HEALTHBAR_SPACE - HEALTHBAR_HEIGHT) / 2)
 	healthbarBack.Size = UDim2.new(0, HEALTHBAR_WIDTH, 0, HEALTHBAR_HEIGHT)
 end
 
@@ -147,13 +168,14 @@ end
 
 local function SetTransparency(transparency)
 	for i, v in pairs(Tools) do
-		v.icon.BackgroundTransparency = transparency + 0.5
+		v.bg.ImageTransparency = transparency
 		v.image.ImageTransparency = transparency
 		v.text.TextTransparency = transparency
 	end
 
-	healthbarBack.BackgroundTransparency = transparency
-	healthbarFront.BackgroundTransparency = transparency
+	playerName.TextTransparency = transparency
+	healthbarBack.ImageTransparency = transparency
+	healthbarFront.ImageTransparency = transparency
 end
 
 local function OnHotbarEquipPrimary(actionName, state, obj)
@@ -198,10 +220,17 @@ local function AddTool(tool)
 	slot.icon.Text = ""
 	slot.icon.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE)
 	slot.icon.BackgroundColor3 = Color3.new(0, 0, 0)
-	slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
-	slot.icon.BorderColor3 = SLOT_BORDER_COLOR
 	slot.icon.Selectable = true
+	slot.icon.BackgroundTransparency = 1
 	slotIcons[tool] = slot.icon
+
+	slot.bg = Instance.new("ImageLabel", slot.icon)
+	slot.bg.Position = UDim2.new(0, -1, 0, -1)
+	slot.bg.Size = UDim2.new(1, 2, 1, 2)
+	slot.bg.Image = "rbxasset://textures/ui/VR/rectBackground.png"
+	slot.bg.ScaleType = Enum.ScaleType.Slice
+	slot.bg.SliceCenter = Rect.new(10, 10, 10, 10)
+	slot.bg.BackgroundTransparency = 1
 
 	slot.image = Instance.new("ImageLabel", slot.icon)
 	slot.image.Position = UDim2.new(0, 1, 0, 1)
@@ -219,6 +248,19 @@ local function AddTool(tool)
 	slot.text.ClipsDescendants = true
 	slot.text.Selectable = false
 
+	local selectionObject = Util:Create'ImageLabel'
+	{
+		Name = 'SelectionObject';
+		Size = UDim2.new(1,0,1,0);
+		BackgroundTransparency = 1;
+		Image = "rbxasset://textures/ui/Keyboard/key_selection_9slice.png";
+		ImageTransparency = 0;
+		ScaleType = Enum.ScaleType.Slice;
+		SliceCenter = Rect.new(12,12,52,52);
+		BorderSizePixel = 0;
+	}
+	slot.icon.SelectionImageObject = selectionObject
+
 	local function updateToolData()
 		slot.image.Image = tool.TextureId
 		slot.text.Text = tool.TextureId == "" and tool.Name or ""
@@ -230,20 +272,18 @@ local function AddTool(tool)
 		local humanoid = player.Character:FindFirstChild("Humanoid")
 		if not humanoid then return end
 		
-		local in_backpack = tool.Parent == player.Backpack
+		local inBackpack = tool.Parent == player.Backpack
 		humanoid:UnequipTools()
-		if in_backpack then
+		if inBackpack then
 			humanoid:EquipTool(tool)
 		end
 	end
 	
 	slot.icon.MouseButton1Click:connect(slot.OnClick)
 	slot.OnEnter = function()
-		slot.icon.BackgroundColor3 = SLOT_HOVER_BACKGROUND_COLOR
 		slot.hovered = true
 	end
 	slot.OnLeave = function()
-		slot.icon.BackgroundColor3 = SLOT_BACKGROUND_COLOR
 		slot.hovered = false
 	end
 --	slot.icon.MouseEnter:connect(slot.OnEnter)
@@ -252,9 +292,11 @@ local function AddTool(tool)
 	tool.Changed:connect(function(prop)
 		if prop == "Parent" then
 			if tool.Parent == player:FindFirstChild("Backpack") then
-				slot.icon.BorderSizePixel = SLOT_BORDER_SIZE
+				slot.bg.Size = UDim2.new(0, ICON_SIZE, 0, ICON_SIZE) --temporary hold-over until new backpack design comes along (can't use border with this antialiased frame stand-in)
+				slot.bg.Position = UDim2.new(0, 0, 0, 0)
 			elseif tool.Parent == player.Character then
-				slot.icon.BorderSizePixel = SLOT_BORDER_SELECTED_SIZE
+				slot.bg.Size = UDim2.new(0, ICON_SIZE + 8, 0, ICON_SIZE + 8)
+				slot.bg.Position = UDim2.new(0, -4, 0, -4)				
 			end
 		elseif prop == "TextureId" or prop == "Name" then
 			updateToolData()
@@ -262,6 +304,8 @@ local function AddTool(tool)
 	end)
 	
 	UpdateLayout()
+
+	BackpackScript.ToolAddedEvent:Fire(tool)
 end
 
 local humanoidChangedEvent = nil
@@ -425,16 +469,15 @@ OnCoreGuiChanged(Enum.CoreGuiType.Backpack, StarterGui:GetCoreGuiEnabled(Enum.Co
 OnCoreGuiChanged(Enum.CoreGuiType.Health, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health))
 OnCoreGuiChanged(Enum.CoreGuiType.Health, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.All))
 
-local panelLocalCF = CFrame.new(0, -3.5, 5) * CFrame.Angles(math.rad(20), 0, 0)
+local panelLocalCF = CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 1.75, 0) * CFrame.Angles(math.rad(-5), 0, 0)
 
 function BackpackPanel:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 	--the backpack panel needs to go in front of the user when they look at it.
 	--if they aren't looking, we should be updating self.localCF
-	if self.transparency == 1 then
-		local headForwardCF = Panel3D.GetHeadLookXZ()
-		local panelOriginCF = CFrame.new(userHeadCF.p) * headForwardCF
-		self.localCF = panelOriginCF * panelLocalCF
-	end
+
+	local topbarPanel = Panel3D.Get("Topbar3D")
+	local panelOriginCF = topbarPanel.localCF or CFrame.new()
+	self.localCF = panelOriginCF * panelLocalCF
 end
 
 function BackpackPanel:OnUpdate()
@@ -460,5 +503,19 @@ end
 function BackpackPanel:OnMouseLeave(x, y)
 	EnableHotbarInput(false)
 end
+
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
+VRHub.ModuleOpened.Event:connect(function(moduleName)
+	local module = VRHub:GetModule(moduleName)
+	if module.VRIsExclusive then
+		BackpackPanel:SetVisible(false)
+	end
+end)
+VRHub.ModuleClosed.Event:connect(function(moduleName)
+	BackpackPanel:SetVisible(true)
+end)
+
+
+BackpackPanel:LinkTo("Topbar3D")
 
 return BackpackScript
