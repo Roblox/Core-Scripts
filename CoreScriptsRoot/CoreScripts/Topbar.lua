@@ -68,6 +68,14 @@ local TextService = game:GetService('TextService')
 local topbarEnabled = true
 local topbarEnabledChangedEvent = Instance.new('BindableEvent')
 
+if defeatableTopbar then
+	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled) -- registers a placeholder setcore function that keeps track of players enabling/disabling the topbar before it's ready.
+		if type(enabled) == "boolean" then
+			topbarEnabled = enabled
+		end
+	end)
+end
+
 local settingsActive = false
 
 local GameSettings = UserSettings().GameSettings
@@ -1860,6 +1868,7 @@ UISChanged = InputService.Changed:connect(OnVREnabled)
 OnVREnabled("VREnabled")
 
 if defeatableTopbar then
+	topBarEnabledChanged() -- if it was set before this point, enable/disable it now
 	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
 		if type(enabled) == "boolean" then
 			topbarEnabled = enabled
