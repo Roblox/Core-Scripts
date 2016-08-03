@@ -179,7 +179,7 @@ local function createRadialButton(name, text, slot, disabled, coreGuiType, activ
 		TextColor3 = Color3.new(1,1,1),
 		Name = "RadialLabel",
 		Visible = false,
-		ZIndex = 2,
+		ZIndex = 3,
 		Parent = radialButton
 	};
 	if not smallScreen then
