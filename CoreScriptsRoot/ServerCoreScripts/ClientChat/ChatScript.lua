@@ -86,8 +86,8 @@ ConnectGetCore("ChatBarDisabled")
 
 
 
+wait()
 pcall(function()
-	wait()
 	game:GetService("StarterGui"):SetCore("CoreGuiChatConnections", containerTable)
 end)
 ]]
