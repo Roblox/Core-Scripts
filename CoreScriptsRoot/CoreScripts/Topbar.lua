@@ -46,6 +46,9 @@ local vr3dGuis = (vr3dGuisSuccess and vr3dGuisFlagValue == true)
 local getNewNotificationPathSuccess, newNotificationPathValue = pcall(function() return settings():GetFFlag("UseNewNotificationPathLua") end)
 local newNotificationPath = getNewNotificationPathSuccess and newNotificationPathValue
 
+local newChatVisiblePropSuccess, newChatVisiblePropValue =  pcall(function() return settings():GetFFlag("ChatVisiblePropertyEnabled") end)
+local newChatVisibleProp = (newChatVisiblePropSuccess and newChatVisiblePropValue)
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -64,6 +67,14 @@ local TextService = game:GetService('TextService')
 
 local topbarEnabled = true
 local topbarEnabledChangedEvent = Instance.new('BindableEvent')
+
+if defeatableTopbar then
+	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled) -- registers a placeholder setcore function that keeps track of players enabling/disabling the topbar before it's ready.
+		if type(enabled) == "boolean" then
+			topbarEnabled = enabled
+		end
+	end)
+end
 
 local settingsActive = false
 
@@ -204,7 +215,7 @@ local function CreateTopBar()
 	end
 
 	spawn(function()
-		local playerGui = Player:WaitForChild('PlayerGui')
+		local playerGui = Player:WaitForChild('PlayerGui', 86400) or Player:WaitForChild('PlayerGui')
 		playerGuiChangedConn = Util.DisconnectEvent(playerGuiChangedConn)
 		pcall(function()
 			playerGuiChangedConn = playerGui.TopbarTransparencyChangedSignal:connect(this.UpdateBackgroundTransparency)
@@ -1158,6 +1169,9 @@ local function CreateChatIcon()
 	local function onChatStateChanged(visible)
 		if not Util.IsTouchDevice() then
 			updateIcon(visible)
+			if newChatVisibleProp then
+				GameSettings.ChatVisible = visible
+			end
 		end
 	end
 
@@ -1197,10 +1211,16 @@ local function CreateChatIcon()
 	if ChatModule.VisibilityStateChanged then
 		ChatModule.VisibilityStateChanged:connect(onChatStateChanged)
 	end
-	onChatStateChanged(ChatModule:GetVisibility())
 
 	if not (Util.IsTouchDevice() or InputService.VREnabled) then
-		ChatModule:SetVisible(true)
+		-- check to see if the chat was disabled
+		local willEnableChat = true
+		if newChatVisibleProp then
+			willEnableChat = GameSettings.ChatVisible
+		end
+		if willEnableChat then
+			ChatModule:SetVisible(true)
+		end
 	end
 
 	local menuItem = CreateMenuItem(chatIconButton)
@@ -1257,6 +1277,9 @@ local function CreateMobileHideChatIcon()
 
 	local function onChatStateChanged(visible)
 		updateIcon(visible)
+		if newChatVisibleProp then
+			GameSettings.ChatVisible = visible
+		end
 	end
 
 	chatHideIconButton.MouseButton1Click:connect(function()
@@ -1845,6 +1868,7 @@ UISChanged = InputService.Changed:connect(OnVREnabled)
 OnVREnabled("VREnabled")
 
 if defeatableTopbar then
+	topBarEnabledChanged() -- if it was set before this point, enable/disable it now
 	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
 		if type(enabled) == "boolean" then
 			topbarEnabled = enabled

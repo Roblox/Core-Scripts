@@ -28,20 +28,6 @@ local isTenFootInterface = tenFootInterface:IsEnabled()
 local radialButtons = {}
 local lastInputChangedCon = nil
 
-local function getButtonForCoreGuiType(coreGuiType)
-	if coreGuiType == Enum.CoreGuiType.All then
-		return radialButtons
-	else
-		for button, table in pairs(radialButtons) do
-			if table["CoreGuiType"] == coreGuiType then
-				return button
-			end
-		end
-	end
-
-	return nil
-end
-
 local function getImagesForSlot(slot)
 	if slot == 1 then		return "rbxasset://textures/ui/Settings/Radial/Top.png", "rbxasset://textures/ui/Settings/Radial/TopSelected.png",
 									"rbxasset://textures/ui/Settings/Radial/Menu.png",
@@ -193,7 +179,7 @@ local function createRadialButton(name, text, slot, disabled, coreGuiType, activ
 		TextColor3 = Color3.new(1,1,1),
 		Name = "RadialLabel",
 		Visible = false,
-		ZIndex = 2,
+		ZIndex = 3,
 		Parent = radialButton
 	};
 	if not smallScreen then
@@ -643,30 +629,27 @@ local function setupGamepadControls()
 		end)
 	end
 
-	local function setRadialButtonEnabled(coreGuiType, enabled)
-		local returnValue = getButtonForCoreGuiType(coreGuiType)
-		if not returnValue then return end
-
-		local buttonsToDisable = {}
-		if type(returnValue) == "table" then
-			for button, buttonTable in pairs(returnValue) do
-				if buttonTable["CoreGuiType"] then
-					if isTenFootInterface and buttonTable["CoreGuiType"] == Enum.CoreGuiType.Chat then
-					else
-						buttonsToDisable[#buttonsToDisable + 1] = button
-					end
-				end
-			end
-		else
-			if isTenFootInterface and returnValue.Name == "Chat" then
-			else
-				buttonsToDisable[1] = returnValue
+	-- some buttons always show/hide depending on platform
+	local function canChangeButtonVisibleState(buttonType)
+		if isTenFootInterface then
+			if buttonType == Enum.CoreGuiType.Chat or buttonType == Enum.CoreGuiType.PlayerList then
+				return false
 			end
 		end
 
-		for i = 1, #buttonsToDisable do
-			local button = buttonsToDisable[i]
-			setButtonEnabled(button, enabled)
+		return true
+	end
+
+	local function setRadialButtonEnabled(coreGuiType, enabled)
+		for button, buttonTable in pairs(radialButtons) do
+			local buttonType = buttonTable["CoreGuiType"]
+			if buttonType then
+				if coreGuiType == buttonType or coreGuiType == Enum.CoreGuiType.All then
+					if canChangeButtonVisibleState(buttonType) then
+						setButtonEnabled(button, enabled)
+					end
+				end
+			end
 		end
 	end
 	

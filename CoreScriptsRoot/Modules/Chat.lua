@@ -74,6 +74,7 @@ local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 --[[ SCRIPT VARIABLES ]]
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
+local PlayerPermissionsModule = require(RobloxGui.Modules.PlayerPermissionsModule)
 
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
@@ -274,22 +275,34 @@ do
 		return nil -- Found no player
 	end
 
-	local adminCache = {}
-	function Util.IsPlayerAdminAsync(player)
-		local userId = player and player.userId
-		if userId then
-			if adminCache[userId] == nil then
-				local isAdmin = false
-				-- Many things can error is the IsInGroup check
-				pcall(function()
-					isAdmin = player:IsInGroup(1200769)
-				end)
-				adminCache[userId] = isAdmin
+	local function MakeIsInGroup(groupId, requiredRank)
+		assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
+		
+		local inGroupCache = {}
+		return function(player)
+			if player and player.userId then
+				local userId = player.userId
+
+				if inGroupCache[userId] == nil then
+					local inGroup = false
+					pcall(function() -- Many things can error is the IsInGroup check
+						if requiredRank then
+							inGroup = player:GetRankInGroup(groupId) > requiredRank
+						else
+							inGroup = player:IsInGroup(groupId)
+						end
+					end)
+					inGroupCache[userId] = inGroup
+				end
+
+				return inGroupCache[userId]
 			end
-			return adminCache[userId]
+
+			return false
 		end
-		return false
 	end
+	Util.IsPlayerAdminAsync = MakeIsInGroup(1200769)
+	Util.IsPlayerInternAsync = MakeIsInGroup(2868472, 100)
 
 	local function GetNameValue(pName)
 		local value = 0
@@ -921,8 +934,12 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			if chatMessage.Text == 'Label' and chatMessageDisplayText ~= 'Label' then
 				chatMessage.Text = string.rep(" ", numNeededSpaces) .. '[Content Deleted]'
 			end
-			if this.SendingPlayer and Util.IsPlayerAdminAsync(this.SendingPlayer) then
-				chatMessage.TextColor3 = this.Settings.AdminTextColor
+			if this.SendingPlayer then
+				if PlayerPermissionsModule.IsPlayerAdminAsync(this.SendingPlayer) then
+					chatMessage.TextColor3 = this.Settings.AdminTextColor
+				elseif PlayerPermissionsModule.IsPlayerInternAsync(this.SendingPlayer) then
+					chatMessage.TextColor3 = this.Settings.InternTextColor
+				end
 			end
 			chatMessage.Size = chatMessage.Size + UDim2.new(0, 0, 0, chatMessage.TextBounds.Y);
 
@@ -1726,7 +1743,6 @@ local function CreateChatWindowWidget(settings)
 							this.MessageContainer.Size.X.Offset,
 							0,
 							ySize)
-					this.MessageContainer.Position = UDim2.new(0, 0, 1, -this.MessageContainer.Size.Y.Offset)
 					this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
 				end
 			end
@@ -1911,7 +1927,8 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	local function CreateChatWindow()
-		local container = Util.Create'TextButton'
+		-- This really shouldn't be a button, but it is currently needed for VR.
+		local container = Util.Create 'TextButton'
 		{
 			Name = 'ChatWindowContainer';
 			Size = UDim2.new(0.3, 0, 0.25, 0);
@@ -1920,8 +1937,9 @@ local function CreateChatWindowWidget(settings)
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 			BorderSizePixel = 0;
-			Text = "";
 			SelectionImageObject = emptySelectionImage;
+			Active = false;
+			Text = ""
 		};
 		container.Position = UDim2.new(0,0,0,37);
 		container.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255);
@@ -1946,18 +1964,14 @@ local function CreateChatWindowWidget(settings)
 				{
 					Name = 'MessageContainer';
 					Size = UDim2.new(1, -SCROLLBAR_THICKNESS - 1, 0, 0);
-					Position = UDim2.new(0, 0, 1, 0);
+					Position = UDim2.new(0, 0, 0, 0);
 					ZIndex = 1;
 					BackgroundColor3 = Color3.new(0, 0, 0);
 					BackgroundTransparency = 1;
 					Parent = scrollingFrame
 				};
 
-		-- This is some trickery we are doing to make the first chat messages appear at the bottom and go towards the top.
 		local function OnChatWindowResize(prop)
-			if prop == 'AbsoluteSize' then
-				messageContainer.Position = UDim2.new(0, 0, 1, -messageContainer.Size.Y.Offset)
-			end
 			if prop == 'CanvasPosition' then
 				if this.ScrollingFrame then
 					if this:IsScrolledDown() then
@@ -2135,6 +2149,7 @@ local function CreateChat()
 		TeamTextColor = Color3.new(230/255, 207/255, 0);
 		DefaultMessageTextColor = Color3.new(255/255, 255/255, 243/255);
 		AdminTextColor = Color3.new(1, 215/255, 0);
+		InternTextColor = Color3.new(175/255, 221/255, 1);
 		TextStrokeTransparency = 0.75;
 		TextStrokeColor = Color3.new(34/255,34/255,34/255);
 		Font = Enum.Font.SourceSansBold;
@@ -2196,8 +2211,18 @@ local function CreateChat()
 			-- Don't add messages from blocked players, don't show message if is a debug command
 			local isDebugCommand = false
 			pcall(function()
-				if sendingPlayer == PlayersService.LocalPlayer then
+				if not NON_CORESCRIPT_MODE and sendingPlayer == PlayersService.LocalPlayer then
 					isDebugCommand = game:GetService("GuiService"):ShowStatsBasedOnInputString(chattedMessage)
+					
+					-- allows dev console to be opened on mobile
+					-- NOTE: Removed ToggleDevConsole bindable event, so engine no longer handles this
+					if string.lower(chattedMessage) == "/console" then
+						local devConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
+						if devConsoleModule then
+							local devConsoleVisible = devConsoleModule:GetVisibility()
+							devConsoleModule:SetVisibility(not devConsoleVisible)
+						end
+					end
 				end
 			end)
 			if not (this:IsPlayerBlocked(sendingPlayer) or this:IsPlayerMuted(sendingPlayer) or isDebugCommand) then
@@ -2208,7 +2233,7 @@ local function CreateChat()
 
 	function this:OnPlayerAdded(newPlayer)
 		if newPlayer then
-			spawn(function() Util.IsPlayerAdminAsync(newPlayer) end)
+			assert(coroutine.resume(coroutine.create(function() PlayerPermissionsModule.IsPlayerAdminAsync(newPlayer) end)))
 		end
 		if NON_CORESCRIPT_MODE then
 			newPlayer.Chatted:connect(function(msg, recipient)
@@ -2323,7 +2348,7 @@ local function CreateChat()
 			if Util.IsTouchDevice() then
 				this.ChatWindowWidget:AddSystemChatMessage("Please press the '...' icon to chat", true)
 			end
-			this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
+			--this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
 		end
 	end
 
