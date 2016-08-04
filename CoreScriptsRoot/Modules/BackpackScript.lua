@@ -1719,8 +1719,8 @@ local function OnVREnabled(prop)
 		if IsVR then
 			local inventoryOpenStudSize = Vector2.new(6.25, 7.2)
 			local inventoryClosedStudSize = Vector2.new(6.25, 2) -- Closed size is computed as numberOfHotbarSlots + 0.25
-			local inventoryOpenPanelCF = CFrame.new(0, 4.6, 0)
-			local inventoryClosedPanelCF = CFrame.new(0, 2, 0)
+			local inventoryOpenPanelCF = CFrame.new(0, 4.603, 0.5)
+			local inventoryClosedPanelCF = CFrame.new(0, 2, 0.5)
 			local currentPanelLocalCF = inventoryClosedPanelCF
 
 			local VRHub = require(RobloxGui.Modules.VR.VRHub)
@@ -1743,7 +1743,7 @@ local function OnVREnabled(prop)
 
 				local topbarPanel = Panel3D.Get("Topbar3D")
 				local panelOriginCF = topbarPanel.localCF or CFrame.new()
-				self.localCF = panelOriginCF * currentPanelLocalCF
+				self.localCF = panelOriginCF * CFrame.Angles(math.rad(-25), 0, 0) * currentPanelLocalCF
 			end
 
 			function BackpackPanel:OnUpdate()
