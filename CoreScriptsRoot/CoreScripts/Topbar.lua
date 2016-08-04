@@ -1166,6 +1166,9 @@ local function CreateChatIcon()
 	local function onChatStateChanged(visible)
 		if not Util.IsTouchDevice() then
 			updateIcon(visible)
+			if newChatVisibleProp then
+ 				GameSettings.ChatVisible = visible
+ 			end
 		end
 	end
 
@@ -1205,10 +1208,16 @@ local function CreateChatIcon()
 	if ChatModule.VisibilityStateChanged then
 		ChatModule.VisibilityStateChanged:connect(onChatStateChanged)
 	end
-	onChatStateChanged(ChatModule:GetVisibility())
 
 	if not (Util.IsTouchDevice() or InputService.VREnabled) then
-		ChatModule:SetVisible(true)
+		-- check to see if the chat was disabled
+		local willEnableChat = true
+		if newChatVisibleProp then
+			willEnableChat = GameSettings.ChatVisible
+		end
+		if willEnableChat then
+			ChatModule:SetVisible(true)
+		end
 	end
 
 	local menuItem = CreateMenuItem(chatIconButton)
@@ -1265,6 +1274,9 @@ local function CreateMobileHideChatIcon()
 
 	local function onChatStateChanged(visible)
 		updateIcon(visible)
+		if newChatVisibleProp then
+			GameSettings.ChatVisible = visible
+		end
 	end
 
 	chatHideIconButton.MouseButton1Click:connect(function()
