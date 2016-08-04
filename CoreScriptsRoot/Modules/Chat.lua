@@ -1743,6 +1743,7 @@ local function CreateChatWindowWidget(settings)
 							this.MessageContainer.Size.X.Offset,
 							0,
 							ySize)
+					this.MessageContainer.Position = UDim2.new(0, 0, 1, -this.MessageContainer.Size.Y.Offset)
 					this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
 				end
 			end
@@ -1927,8 +1928,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	local function CreateChatWindow()
-		-- This really shouldn't be a button, but it is currently needed for VR.
-		local container = Util.Create (InputService.VREnabled and 'TextButton' or 'Frame')
+		local container = Util.Create'TextButton'
 		{
 			Name = 'ChatWindowContainer';
 			Size = UDim2.new(0.3, 0, 0.25, 0);
@@ -1937,10 +1937,9 @@ local function CreateChatWindowWidget(settings)
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 			BorderSizePixel = 0;
+			Text = "";
 			SelectionImageObject = emptySelectionImage;
-			Active = false
 		};
-		if container:IsA("TextButton") then container.Text = "" end
 		container.Position = UDim2.new(0,0,0,37);
 		container.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255);
 			local scrollingFrame = Util.Create'ScrollingFrame'
@@ -1964,14 +1963,18 @@ local function CreateChatWindowWidget(settings)
 				{
 					Name = 'MessageContainer';
 					Size = UDim2.new(1, -SCROLLBAR_THICKNESS - 1, 0, 0);
-					Position = UDim2.new(0, 0, 0, 0);
+					Position = UDim2.new(0, 0, 1, 0);
 					ZIndex = 1;
 					BackgroundColor3 = Color3.new(0, 0, 0);
 					BackgroundTransparency = 1;
 					Parent = scrollingFrame
 				};
 
+		-- This is some trickery we are doing to make the first chat messages appear at the bottom and go towards the top.
 		local function OnChatWindowResize(prop)
+			if prop == 'AbsoluteSize' then
+				messageContainer.Position = UDim2.new(0, 0, 1, -messageContainer.Size.Y.Offset)
+			end
 			if prop == 'CanvasPosition' then
 				if this.ScrollingFrame then
 					if this:IsScrolledDown() then
@@ -2348,7 +2351,7 @@ local function CreateChat()
 			if Util.IsTouchDevice() then
 				this.ChatWindowWidget:AddSystemChatMessage("Please press the '...' icon to chat", true)
 			end
-			--this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
+			this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
 		end
 	end
 
