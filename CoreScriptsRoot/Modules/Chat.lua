@@ -1928,7 +1928,7 @@ local function CreateChatWindowWidget(settings)
 
 	local function CreateChatWindow()
 		-- This really shouldn't be a button, but it is currently needed for VR.
-		local container = Util.Create 'TextButton'
+		local container = Util.Create (InputService.VREnabled and 'TextButton' or 'Frame')
 		{
 			Name = 'ChatWindowContainer';
 			Size = UDim2.new(0.3, 0, 0.25, 0);
@@ -1938,9 +1938,9 @@ local function CreateChatWindowWidget(settings)
 			BackgroundTransparency = 1;
 			BorderSizePixel = 0;
 			SelectionImageObject = emptySelectionImage;
-			Active = false;
-			Text = ""
+			Active = false
 		};
+		if container:IsA("TextButton") then container.Text = "" end
 		container.Position = UDim2.new(0,0,0,37);
 		container.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255);
 			local scrollingFrame = Util.Create'ScrollingFrame'
