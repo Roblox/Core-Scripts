@@ -1779,7 +1779,6 @@ local function CreateChatWindowWidget(settings)
 
 		chatMessageElement.Position = chatMessageElement.Position + UDim2.new(0, 0, 0, ySize)
 		this.MessageContainer.Size = this.MessageContainer.Size + chatMessageElementYSize
-		
 		this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize + chatMessageElementYSize
 
 		if this.Settings.MaxWindowChatMessages < #this.Chats then
@@ -1883,7 +1882,7 @@ local function CreateChatWindowWidget(settings)
 							this.MessageContainer.Position = this.MessageContainer.Position - UDim2.new(0,0,0,ySize)
 						end
 						-- Clamp the canvasposition
-						this:SetCanvasPosition(this.ScrollingFrame.CanvasPosition- Vector2.new(0,ySize))
+						this:SetCanvasPosition(this.ScrollingFrame.CanvasPosition)
 						guiObj.Parent = nil
 					end
 					message:Destroy()
