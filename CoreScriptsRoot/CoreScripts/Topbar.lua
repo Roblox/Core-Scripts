@@ -46,6 +46,9 @@ local vr3dGuis = (vr3dGuisSuccess and vr3dGuisFlagValue == true)
 local getNewNotificationPathSuccess, newNotificationPathValue = pcall(function() return settings():GetFFlag("UseNewNotificationPathLua") end)
 local newNotificationPath = getNewNotificationPathSuccess and newNotificationPathValue
 
+local newChatVisiblePropSuccess, newChatVisiblePropValue =  pcall(function() return settings():GetFFlag("ChatVisiblePropertyEnabled") end)
+local newChatVisibleProp = (newChatVisiblePropSuccess and newChatVisiblePropValue)
+
 --[[ END OF FFLAG VALUES ]]
 
 
