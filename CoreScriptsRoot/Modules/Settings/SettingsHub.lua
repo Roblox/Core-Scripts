@@ -236,6 +236,18 @@ local function CreateSettingsHub()
 			ZIndex = SETTINGS_BASE_ZINDEX,
 			Parent = this.ClippingShield
 		};
+		this.VRShield = utility:Create("Frame") {
+			Name = "VRBackground",
+			Parent = this.Shield,
+
+			BackgroundColor3 = Color3.new(0.2, 0.2, 0.2),
+			BackgroundTransparency = 0.3,
+			Position = UDim2.new(0, -4, 0, 24),
+			Size = UDim2.new(1, 8, 1, -40),
+			BorderSizePixel = 0,
+
+			Visible = false
+		}
 
 		this.Modal = utility:Create'TextButton' -- Force unlocks the mouse, really need a way to do this via UIS
 		{
@@ -963,6 +975,7 @@ local function CreateSettingsHub()
 		
 		this.ClippingShield.Parent = panel:GetGUI()
 		this.Shield.Parent.ClipsDescendants = false
+		this.VRShield.Visible = true
 		this:HideShield()
 
 		GuiService.MenuOpened:connect(function()
