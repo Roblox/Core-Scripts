@@ -75,6 +75,7 @@ if defeatableTopbar then
 		end
 	end)
 end
+local lookMenuEnabled = true
 
 local settingsActive = false
 
@@ -201,7 +202,7 @@ local function CreateTopBar()
 	end
 
 	function this:UpdateBackgroundTransparency()
-		if settingsActive and not VREnabled then
+		if settingsActive and not InputService.VREnabled then
 			topbarContainer.BackgroundTransparency = TOPBAR_OPAQUE_TRANSPARENCY
 			topbarShadow.Visible = false
 		else
@@ -1782,12 +1783,24 @@ if userGuiIcon3D and vr3dGuis then
 	end
 end
 
+local function lookMenuEnabledChanged()
+	if InputService.VREnabled then
+		if lookMenuEnabled then
+			TopbarPanel3D:SetVisible(true)
+			--The look menu is very much tied to the backpack, so for now it will be responsible
+			--for showing/hiding it.
+			Panel3D.Get("Backpack"):SetVisible(StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack))
+		else
+			TopbarPanel3D:SetVisible(false)
+			Panel3D.Get("Backpack"):SetVisible(false)
+		end
+	end
+end
 
 local function EnableVR()
 	local VRHub = require(GuiRoot.Modules.VR.VRHub)
 
 	TopbarPanel3D:SetType(Panel3D.Type.Fixed)
-	TopbarPanel3D:SetVisible(true)
 
 	function TopbarPanel3D:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 		if self.transparency == 1 then
@@ -1812,6 +1825,7 @@ local function EnableVR()
 	VRHub.ModuleClosed.Event:connect(function(moduleName)
 		if not VRHub:KeepVRTopbarOpen() then
 			TopbarPanel3D:SetCanFade(true)
+			lookMenuEnabledChanged()		
 		end
 	end)
 
@@ -1840,6 +1854,12 @@ if gameOptions and not isTenFootInterface then
 end
 
 local function topBarEnabledChanged()
+	if InputService.VREnabled then
+		lookMenuEnabled = topbarEnabled
+		topbarEnabled = false
+		lookMenuEnabledChanged()
+	end
+
 	topbarEnabledChangedEvent:Fire(topbarEnabled)
 	TopBar:UpdateBackgroundTransparency()
 	for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do
@@ -1853,11 +1873,9 @@ end
 
 local UISChanged;
 local function OnVREnabled(prop)
-	if prop == "VREnabled" and InputService.VREnabled then
+	if prop == "VREnabled" and InputService.VREnabled and not VREnabled then
 		VREnabled = true
-		topbarEnabled = false
 		EnableVR()
-		topBarEnabledChanged()
 		if UISChanged then
 			UISChanged:disconnect()
 			UISChanged = nil
@@ -1865,7 +1883,6 @@ local function OnVREnabled(prop)
 	end
 end
 UISChanged = InputService.Changed:connect(OnVREnabled)
-OnVREnabled("VREnabled")
 
 if defeatableTopbar then
 	topBarEnabledChanged() -- if it was set before this point, enable/disable it now
@@ -1879,4 +1896,7 @@ end
 
 -- Hook-up coregui changing
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
-topBarEnabledChanged()
+if not defeatableTopbar then
+	topBarEnabledChanged()
+end
+OnVREnabled("VREnabled")
