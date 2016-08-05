@@ -693,7 +693,7 @@ local function CreateUsernameHealthMenuItem()
 	--------------
 
 	local function AnimateHurtOverlay()
-		if hurtOverlay and not VREnabled then
+		if hurtOverlay and not InputService.VREnabled then
 			local newSize = UDim2.new(20, 0, 20, 0)
 			local newPos = UDim2.new(-10, 0, -10, 0)
 
@@ -1873,9 +1873,9 @@ end
 
 local UISChanged;
 local function OnVREnabled(prop)
-	if prop == "VREnabled" and InputService.VREnabled and not VREnabled then
-		VREnabled = true
+	if prop == "VREnabled" and InputService.VREnabled then
 		EnableVR()
+		--TODO: make this work with toggling VR
 		if UISChanged then
 			UISChanged:disconnect()
 			UISChanged = nil
