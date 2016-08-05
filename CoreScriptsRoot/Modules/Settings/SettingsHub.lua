@@ -240,8 +240,8 @@ local function CreateSettingsHub()
 			Name = "VRBackground",
 			Parent = this.Shield,
 
-			BackgroundColor3 = Color3.new(0.2, 0.2, 0.2),
-			BackgroundTransparency = 0.3,
+			BackgroundColor3 = SETTINGS_SHIELD_COLOR,
+			BackgroundTransparency = SETTINGS_SHIELD_TRANSPARENCY,
 			Position = UDim2.new(0, -4, 0, 24),
 			Size = UDim2.new(1, 8, 1, -40),
 			BorderSizePixel = 0,
@@ -963,9 +963,10 @@ local function CreateSettingsHub()
 		this.Shield.BackgroundTransparency = 1
 	end
 
+	local thisModuleName = "SettingsMenu"
+	local vrMenuOpened, vrMenuClosed = nil, nil
 	local function enableVR()
 		local VRHub = require(RobloxGui.Modules.VR.VRHub)
-		local thisModuleName = "SettingsMenu"
 		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 		local panel = Panel3D.Get(thisModuleName)
 		panel:ResizeStuds(4, 4, 200)
@@ -978,14 +979,14 @@ local function CreateSettingsHub()
 		this.VRShield.Visible = true
 		this:HideShield()
 
-		GuiService.MenuOpened:connect(function()
+		vrMenuOpened = GuiService.MenuOpened:connect(function()
 			local topbarPanel = Panel3D.Get("Topbar3D")
 			panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
 			panel:SetVisible(true)
 
 			VRHub:FireModuleOpened(thisModuleName)
 		end)
-		GuiService.MenuClosed:connect(function()
+		vrMenuClosed = GuiService.MenuClosed:connect(function()
 			panel:SetVisible(false)
 
 			VRHub:FireModuleClosed(thisModuleName)
@@ -997,15 +998,34 @@ local function CreateSettingsHub()
 			end
 		end)
 	end
+	local function disableVR()
+		this.ClippingShield.Parent = RobloxGui
+		this.Shield.Parent.ClipsDescendants = true
+		this.VRShield.Visible = false
+		this:ShowShield()
+
+		if vrMenuOpened then
+			vrMenuOpened:disconnect()
+			vrMenuOpened = nil
+		end
+		if vrMenuClosed then
+			vrMenuClosed:disconnect()
+			vrMenuClosed = nil
+		end
+
+		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+		local panel = Panel3D.Get(thisModuleName)
+		panel:SetVisible(false)
+	end
 
 	local UISChanged;
 	local function OnVREnabled(prop)
-		if prop == "VREnabled" and UserInputService.VREnabled then
-			VREnabled = true
-			enableVR()
-			if UISChanged then
-				UISChanged:disconnect()
-				UISChanged = nil
+		if prop == "VREnabled" then
+			VREnabled = UserInputService.VREnabled 
+			if VREnabled then
+				enableVR()
+			else
+				disableVR()
 			end
 		end
 	end
