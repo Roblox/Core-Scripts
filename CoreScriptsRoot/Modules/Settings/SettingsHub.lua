@@ -41,8 +41,6 @@ local chatWasVisible = false
 local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
 local useUserList = (userlistSuccess and userlistFlagValue == true)
 
-local VREnabled = false
-
 local function IsPlayMyPlaceEnabled()
 	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
 		local playMyPlaceSuccess, playMyPlaceFlagValue = pcall(function() return settings():GetFFlag("XboxPlayMyPlace") end)
@@ -957,7 +955,7 @@ local function CreateSettingsHub()
 	end
 
 	function this:ShowShield()
-		this.Shield.BackgroundTransparency = VREnabled and SETTINGS_SHIELD_VR_TRANSPARENCY or SETTINGS_SHIELD_TRANSPARENCY
+		this.Shield.BackgroundTransparency = UserInputService.VREnabled and SETTINGS_SHIELD_VR_TRANSPARENCY or SETTINGS_SHIELD_TRANSPARENCY
 	end
 	function this:HideShield()
 		this.Shield.BackgroundTransparency = 1
@@ -1021,8 +1019,7 @@ local function CreateSettingsHub()
 	local UISChanged;
 	local function OnVREnabled(prop)
 		if prop == "VREnabled" then
-			VREnabled = UserInputService.VREnabled 
-			if VREnabled then
+			if UserInputService.VREnabled then
 				enableVR()
 			else
 				disableVR()
