@@ -77,6 +77,9 @@ function metatable:DoProcessCommands(speakerName, message, channel)
 end
 
 function metatable:PostMessage(fromSpeaker, message)
+	message = self:DoMessageFilter(fromSpeaker.Name, message, self.Name)
+	message = self.ChatService:DoMessageFilter(fromSpeaker.Name, message, self.Name)
+
 	if (self:DoProcessCommands(fromSpeaker.Name, message, self.Name)) then return false end
 
 	if (self.Mutes[fromSpeaker.Name:lower()] ~= nil) then
@@ -90,8 +93,8 @@ function metatable:PostMessage(fromSpeaker, message)
 		
 	end
 	
-	message = self:DoMessageFilter(fromSpeaker.Name, message, self.Name)
-	message = self.ChatService:DoMessageFilter(fromSpeaker.Name, message, self.Name)
+	--message = self:DoMessageFilter(fromSpeaker.Name, message, self.Name)
+	--message = self.ChatService:DoMessageFilter(fromSpeaker.Name, message, self.Name)
 	
 	spawn(function() self.eMessagePosted:Fire(fromSpeaker.Name, message) end)
 	

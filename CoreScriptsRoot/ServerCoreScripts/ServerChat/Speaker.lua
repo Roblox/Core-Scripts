@@ -129,6 +129,10 @@ function metatable:GetExtraData(key)
 	return self.ExtraData[key]
 end
 
+function metatable:SetMainChannel(channel)
+	spawn(function() self.eMainChannelSet:Fire(channel) end)
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
 function module.new(vChatService, name)
@@ -156,6 +160,7 @@ function module.new(vChatService, name)
 	obj.eMuted = Instance.new("BindableEvent")
 	obj.eUnmuted = Instance.new("BindableEvent")
 	obj.eExtraDataUpdated = Instance.new("BindableEvent")
+	obj.eMainChannelSet = Instance.new("BindableEvent")
 	
 	obj.SaidMessage = obj.eSaidMessage.Event
 	obj.ReceivedMessage = obj.eReceivedMessage.Event
@@ -165,6 +170,7 @@ function module.new(vChatService, name)
 	obj.Muted = obj.eMuted.Event
 	obj.Unmuted = obj.eUnmuted.Event
 	obj.ExtraDataUpdated = obj.eExtraDataUpdated.Event
+	obj.MainChannelSet = obj.eMainChannelSet.Event
 
 	obj = setmetatable(obj, metatable)
 	

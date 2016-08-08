@@ -35,6 +35,7 @@ local function CreateGuiObject()
 	local Scroller = Instance.new("ScrollingFrame", BaseFrame)
 	Scroller.Name = "Scroller"
 	Scroller.BackgroundTransparency = 1
+	Scroller.BorderSizePixel = 0
 	Scroller.Position = UDim2.new(0, 0, 0, 3)
 	Scroller.Size = UDim2.new(1, -4, 1, -6)
 	Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
@@ -61,6 +62,23 @@ function metatable:AddMessageLabelToLog(messageObject)
 	table.insert(self.MessageObjectLog, messageObject)
 	self:PositionMessageLabelInWindow(messageObject)
 
+	if (#self.MessageObjectLog > 50) then
+		self:RemoveLastMessageLabelFromLog()
+	end
+end
+
+function metatable:RemoveLastMessageLabelFromLog()
+	local lastMessage = self.MessageObjectLog[1]
+	local posOffset = UDim2.new(0, 0, 0, lastMessage.BaseFrame.AbsoluteSize.Y)
+
+	lastMessage:Destroy()
+	table.remove(self.MessageObjectLog, 1)
+
+	for i, messageObject in pairs(self.MessageObjectLog) do
+		messageObject.BaseFrame.Position = messageObject.BaseFrame.Position - posOffset
+	end
+
+	self.Scroller.CanvasSize = self.Scroller.CanvasSize - posOffset
 end
 
 function metatable:PositionMessageLabelInWindow(messageObject)

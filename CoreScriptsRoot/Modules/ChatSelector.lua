@@ -5,6 +5,7 @@ local CoreGuiService = game:GetService("CoreGui")
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 
 local StarterGui = game:GetService("StarterGui")
+local GuiService = game:GetService("GuiService")
 
 local Util = {}
 do
@@ -123,18 +124,27 @@ do
 			end
 			return false
 		end
-
+		
 		moduleApiTable.ChatBarFocusChanged = Util.Signal()
 		moduleApiTable.VisibilityStateChanged = Util.Signal()
 		moduleApiTable.MessagesChanged = Util.Signal()
 
 		StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType, enabled)
-			local event = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "CoreGuiEnabled", "BindableEvent")
-			if (event) then
-				if (coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.Chat) then
-					ChatWindowState.CoreGuiEnabled = enabled
-					event:Fire(enabled)
+			if (coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.Chat) then
+				ChatWindowState.CoreGuiEnabled = enabled
+
+				local event = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "CoreGuiEnabled", "BindableEvent")
+				if (event) then
+					event:Fire(ChatWindowState.CoreGuiEnabled)
 				end
+			end
+		end)
+
+		GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
+		GuiService.SpecialKeyPressed:connect(function(key, modifiers)
+			local event = FindIndexInCollectionWithType(communicationsConnections.ChatWindow, "SpecialKeyPressed", "BindableEvent")
+			if (event) then
+				event:Fire(key, modifiers)
 			end
 		end)
 
@@ -157,6 +167,7 @@ do
 					communicationsConnections.ChatWindow.FocusChatBar = FindIndexInCollectionWithType(chatWindowCollection, "FocusChatBar", "BindableEvent")
 					communicationsConnections.ChatWindow.TopbarEnabledChanged = FindIndexInCollectionWithType(chatWindowCollection, "TopbarEnabledChanged", "BindableEvent")
 					communicationsConnections.ChatWindow.IsFocused = FindIndexInCollectionWithType(chatWindowCollection, "IsFocused", "BindableFunction")
+					communicationsConnections.ChatWindow.SpecialKeyPressed = FindIndexInCollectionWithType(chatWindowCollection, "SpecialKeyPressed", "BindableEvent")
 
 
 					local function DoConnect(index)

@@ -2,7 +2,7 @@ local source = [[
 local function Run(ChatService)
 	
 	local function ProcessCommandsFunction(fromSpeaker, message, channel)
-		if (message == "/?") then
+		if (message == "/?" or message == "/help") then
 			local speaker = ChatService:GetSpeaker(fromSpeaker)
 			speaker:SendSystemMessage("These are the basic chat commands.", channel)
 			speaker:SendSystemMessage("/me <text> : roleplaying command for doing actions.", channel)
@@ -20,7 +20,7 @@ local function Run(ChatService)
 	
 	local allChannel = ChatService:GetChannel("All")
 	if (allChannel) then
-		allChannel.WelcomeMessage = "Chat '/?' for a list of chat commands."
+		allChannel.WelcomeMessage = "Chat '/?' or '/help' for a list of chat commands."
 	end
 end
 

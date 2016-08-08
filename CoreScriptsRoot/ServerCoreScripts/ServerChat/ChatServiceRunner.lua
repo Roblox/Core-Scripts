@@ -17,7 +17,8 @@ Instance.new("RemoteEvent", EventFolder).Name = "OnChannelJoined"
 Instance.new("RemoteEvent", EventFolder).Name = "OnChannelLeft"
 Instance.new("RemoteEvent", EventFolder).Name = "OnMuted"
 Instance.new("RemoteEvent", EventFolder).Name = "OnUnmuted"
-Instance.new("RemoteEvent", EventFolder).Name =  "OnSpeakerExtraDataUpdated"
+Instance.new("RemoteEvent", EventFolder).Name = "OnSpeakerExtraDataUpdated"
+Instance.new("RemoteEvent", EventFolder).Name = "OnMainChannelSet"
 
 Instance.new("RemoteEvent", EventFolder).Name = "SayMessageRequest"
 Instance.new("RemoteEvent", EventFolder).Name = "GetInitDataRequest"
@@ -62,6 +63,10 @@ local function HandlePlayerJoining(playerObj)
 
 	speaker.Unmuted:connect(function(channel)
 		EventFolder.OnUnmuted:FireClient(playerObj, channel)
+	end)
+
+	speaker.MainChannelSet:connect(function(channel)
+		EventFolder.OnMainChannelSet:FireClient(playerObj, channel)
 	end)
 
 	for i, channel in pairs(ChatService:GetAutoJoinChannelList()) do

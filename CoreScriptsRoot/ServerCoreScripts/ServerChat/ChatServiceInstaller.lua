@@ -42,6 +42,7 @@ local function Install()
 		LoadModuleData("TeamChat", ModulesFolder, newPath)
 		LoadModuleData("ExtraDataInitializer", ModulesFolder, newPath)
 		LoadModuleData("ChatCommandsTeller", ModulesFolder, newPath)
+		LoadModuleData("ChatFloodDetector", ModulesFolder, newPath)
 
 		ModulesFolder.Parent = ServerStorage
 		ModulesFolder.Archivable = false

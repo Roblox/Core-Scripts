@@ -56,14 +56,14 @@ end
 local backgroundIsFaded = false
 local textIsFaded = false
 local lastFadeTime = 0
-local backgroundFadeTimer = 1
-local textFadeTimer = 10
+local backgroundFadeTimer = 0
+local textFadeTimer = 30
 
 local fadedChanged = Instance.new("BindableEvent")
 local mouseStateChanged = Instance.new("BindableEvent")
 local chatBarFocusChanged = Instance.new("BindableEvent")
 
-local defaultFadingTime = 0.5
+local defaultFadingTime = 0.3
 
 local function DoBackgroundFadeIn(setFadingTime)
 	lastFadeTime = tick()
@@ -71,8 +71,9 @@ local function DoBackgroundFadeIn(setFadingTime)
 	fadedChanged:Fire()
 	ChatWindow:FadeInBackground((setFadingTime or defaultFadingTime))
 
-	if (ChatWindow:GetCurrentChannel()) then
-		local Scroller = ChatWindow:GetCurrentChannel().Scroller
+	local currentChannelObject = ChatWindow:GetCurrentChannel()
+	if (currentChannelObject) then
+		local Scroller = currentChannelObject.Scroller
 		Scroller.ScrollingEnabled = true
 		Scroller.ScrollBarThickness = moduleChatChannel.ScrollBarThickness
 	end
@@ -84,8 +85,9 @@ local function DoBackgroundFadeOut(setFadingTime)
 	fadedChanged:Fire()
 	ChatWindow:FadeOutBackground((setFadingTime or defaultFadingTime))
 
-	if (ChatWindow:GetCurrentChannel()) then
-		local Scroller = ChatWindow:GetCurrentChannel().Scroller
+	local currentChannelObject = ChatWindow:GetCurrentChannel()
+	if (currentChannelObject) then
+		local Scroller = currentChannelObject.Scroller
 		scrollBarThickness = Scroller.ScrollBarThickness
 		Scroller.ScrollingEnabled = false
 		Scroller.ScrollBarThickness = 0
@@ -190,7 +192,7 @@ end)
 
 
 local function UpdateMousePosition(mousePos)
-	if (not moduleApiTable.Visible or not moduleApiTable.IsCoreGuiEnabled) then return end
+	if (not moduleApiTable.Visible or not moduleApiTable.IsCoreGuiEnabled or not moduleApiTable.TopbarEnabled) then return end
 
 	local windowPos = ChatWindow.GuiObject.AbsolutePosition
 	local windowSize = ChatWindow.GuiObject.AbsoluteSize
@@ -248,6 +250,27 @@ end)
 --////////////////////////////////////////////////////////////////////////////////////////////
 --///////////////////////////////////////////////// Code to hook client UI up to server events
 --////////////////////////////////////////////////////////////////////////////////////////////
+local function DoChatBarFocus()
+	if (not ChatWindow:GetCoreGuiEnabled()) then return end
+	if (not ChatBar:GetEnabled()) then return end
+
+	if (not ChatBar:IsFocused() and ChatBar:GetVisible()) then
+		moduleApiTable:SetVisible(true)
+		ChatBar:CaptureFocus()
+		moduleApiTable.ChatBarFocusChanged:fire(true)
+	end
+end
+
+--// Event for focusing the chat bar when player presses "/".
+local ChatBarUISConnection = UserInputService.InputBegan:connect(function(input)
+	if (input.KeyCode == Enum.KeyCode.Slash) then
+		DoChatBarFocus()
+	end
+end)
+
+--ChatBarUISConnection:disconnect()
+
+
 local function ProcessChatCommands(message)
 	local processedCommand = false
 
@@ -260,6 +283,18 @@ local function ProcessChatCommands(message)
 		end
 	end 
 
+	--// This is the code that prevents Guests from chatting.
+	--// Guests are generally not allowed to chat, so please do not remove this.
+	if (LocalPlayer.UserId < 0) then
+		processedCommand = true
+
+		local channelObj = ChatWindow:GetCurrentChannel()
+		if (channelObj) then
+			local messageObject = MessageLabelCreator:CreateSystemMessageLabel("Create a free account to get access to chat permissions!")
+			channelObj:AddMessageLabelToLog(messageObject)
+		end
+	end
+
 	return processedCommand
 end
 
@@ -270,12 +305,17 @@ ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 		ChatBar:GetTextBox().Text = ""
 		
 		if (message ~= "" and not ProcessChatCommands(message)) then
-			--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
-			moduleApiTable.MessagePosted:fire(message) 
+			message = string.gsub(message, "\n", "")
+			message = string.gsub(message, "[ ]+", " ")
 			
 			local currentChannel = ChatWindow:GetCurrentChannel()
 			if (currentChannel) then
 				EventFolder.SayMessageRequest:FireServer(message, currentChannel.Name)
+
+				if (currentChannel.Name == "All") then
+					--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
+					moduleApiTable.MessagePosted:fire(message) 
+				end
 			else
 				EventFolder.SayMessageRequest:FireServer(message, nil)
 			end
@@ -284,23 +324,11 @@ ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 	end
 end)
 
---// Event for focusing the chat bar when player presses "/".
-UserInputService.InputBegan:connect(function(input)
-	if (not ChatWindow:GetCoreGuiEnabled()) then return end
-	if (not ChatBar:GetEnabled()) then return end
-	
-	if (input.KeyCode == Enum.KeyCode.Slash and not ChatBar:IsFocused() and ChatBar:GetVisible()) then
-		moduleApiTable:SetVisible(true)
-		ChatBar:CaptureFocus()
-		moduleApiTable.ChatBarFocusChanged:fire(true)
-	end
-end)
-
 EventFolder.OnNewMessage.OnClientEvent:connect(function(fromSpeaker, channel, message)
 	local channelObj = ChatWindow:GetChannel(channel)
 	if (channelObj) then
-		local baseFrame, baseMessage = MessageLabelCreator:CreateMessageLabel(fromSpeaker, message)
-		channelObj:AddMessageLabelToLog(baseFrame, baseMessage)
+		local messageObject = MessageLabelCreator:CreateMessageLabel(fromSpeaker, message)
+		channelObj:AddMessageLabelToLog(messageObject)
 		
 		ChannelsBar:UpdateMessagePostedInChannel(channel)
 		
@@ -320,8 +348,8 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(message, channel)
 	
 	local channelObj = ChatWindow:GetChannel(channel)
 	if (channelObj) then
-		local baseFrame, baseMessage = MessageLabelCreator:CreateSystemMessageLabel(message)
-		channelObj:AddMessageLabelToLog(baseFrame, baseMessage)
+		local messageObject = MessageLabelCreator:CreateSystemMessageLabel(message)
+		channelObj:AddMessageLabelToLog(messageObject)
 		
 		ChannelsBar:UpdateMessagePostedInChannel(channel)
 		
@@ -338,17 +366,20 @@ end)
 
 EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessage)
 	local channelObj = ChatWindow:AddChannel(channel)
-	
-	if (channel == "All") then
-		ChatWindow:SwitchCurrentChannel(channel)
-	end
-	
-	if (welcomeMessage ~= "") then
-		local baseFrame, baseMessage = MessageLabelCreator:CreateWelcomeMessageLabel(welcomeMessage)
-		channelObj:AddMessageLabelToLog(baseFrame, baseMessage)
-	end
 
-	DoFadeInFromNewInformation()
+	if (channelObj) then
+		if (channel == "All") then
+			ChatWindow:SwitchCurrentChannel(channel)
+		end
+		
+		if (welcomeMessage ~= "") then
+			local messageObject = MessageLabelCreator:CreateWelcomeMessageLabel(welcomeMessage)
+			channelObj:AddMessageLabelToLog(messageObject)
+		end
+
+		DoFadeInFromNewInformation()
+	end	
+	
 end)
 
 EventFolder.OnChannelLeft.OnClientEvent:connect(function(channel)
@@ -377,21 +408,65 @@ EventFolder.OnSpeakerExtraDataUpdated.OnClientEvent:connect(function(speakerName
 end)
 
 
+EventFolder.OnMainChannelSet.OnClientEvent:connect(function(channel)
+	if (ChatWindow:GetChannel(channel)) then
+		ChatWindow:SwitchCurrentChannel(channel)
+	end
+end)
+
+
 local reparentingLock = false
 
 --// Do not remove on death behavior
 LocalPlayer.CharacterRemoving:connect(function()
-	if (reparentingLock) then return end
+	if (true or reparentingLock) then return end
 
 	GuiParent.Parent = nil
 	LocalPlayer.CharacterAdded:wait()
 	GuiParent.Parent = PlayerGui
+
 end)
 
+local function connectGuiParent(GuiParent)
+	local DestroyGuardFrame = Instance.new("Frame")
+	DestroyGuardFrame.Name = "DestroyGuardFrame"
+	DestroyGuardFrame.BackgroundTransparency = 1
+	DestroyGuardFrame.Size = UDim2.new(1, 0, 1, 0)
+
+	for i, v in pairs(GuiParent:GetChildren()) do
+		v.Parent = DestroyGuardFrame
+	end
+	DestroyGuardFrame.Parent = GuiParent
+
+	GuiParent.Changed:connect(function(prop)
+		if (prop == "Parent" and not reparentingLock) then
+			local newGuiParent = Instance.new("ScreenGui")
+			newGuiParent.Name = "Chat"
+
+			for i, v in pairs(GuiParent.DestroyGuardFrame:GetChildren()) do
+				v.Parent = newGuiParent
+			end
+
+			--print("waiting")
+			LocalPlayer.CharacterAdded:wait()
+			--print("done waiting")
+
+			newGuiParent.Parent = PlayerGui
+			GuiParent = newGuiParent
+			connectGuiParent(GuiParent)
+		end
+	end)
+end
+
+connectGuiParent(GuiParent)
+
 --// Always on top behavior that relies on parenting order of ScreenGuis
---// This would end up really bad if something else tried to do the 
---// exact same thing however.
-GuiParent.Parent.ChildAdded:connect(function(child)
+--// This would end up really bad if something else tried to do the exact same thing however.
+PlayerGui.ChildAdded:connect(function(child)
+	if (true) then return end
+
+	print("GP:", GuiParent)
+
 	if (child ~= GuiParent) then
 		reparentingLock = true
 
@@ -530,6 +605,14 @@ do
 	function moduleApiTable:fChatBarDisabled()
 		return not ChatBar:GetEnabled()
 	end
+
+
+
+	function moduleApiTable:SpecialKeyPressed(key, modifiers)
+		if (key == Enum.SpecialKey.ChatHotkey) then
+			DoChatBarFocus()
+		end
+	end
 end
 
 spawn(function() wait() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true) end)
@@ -541,8 +624,12 @@ moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	enabled = enabled and moduleApiTable.TopbarEnabled
 
 	ChatWindow:SetCoreGuiEnabled(enabled)
+
 	if (not enabled) then
 		ChatBar:ReleaseFocus()
+		InstantFadeOut()
+	else
+		InstantFadeIn()
 	end
 end)
 

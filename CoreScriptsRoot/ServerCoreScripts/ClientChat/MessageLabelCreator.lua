@@ -59,62 +59,8 @@ end
 --// Above was taken directly from Util.GetStringTextBounds() in the old chat corescripts.
 
 
-local EmojiTable = {
-	[":alien:"] = "http://www.roblox.com/asset/?id=356687448",
-	[":peace:"] = "http://www.roblox.com/asset/?id=272053001",
-}
-
-local emojiRegex = "(:[^%s:]+:)"
 
 
--- this works well until you resize the screen. still working on that part....
-local function ParseMessageLabelIntoEmojis(messageLabel)
-	local messageText = messageLabel.Text
-	local fontSize = tonumber(messageLabel.FontSize.Name:match("%d+"))
-
-	local singleSpaceSize = GetStringTextBounds(" ", messageLabel.Font, messageLabel.FontSize)
-	local numNeededSpaces = math.ceil(fontSize / singleSpaceSize.X)
-
-	local searchFrom = 1
-	local findStart, findEnd, phrase = string.find(messageText, emojiRegex, searchFrom)
-	while (findStart) do
-		searchFrom = findEnd
-		
-		if (EmojiTable[phrase]) then
-			local newMessage = string.sub(messageText, 1, findStart - 1) 
-
-			--// OMG HAX!!!!!
-			--// Pretty much waits until it gets parented properly, then goes 
-			--// through the trouble of making the ImageLabel and positioning it.
-			local mFindStart = findStart
-			local mFindEnd = findEnd
-			local mPhrase = phrase
-			local mNewMessage = newMessage
-			spawn(function()
-				wait()
-				wait()
-
-				local aS = messageLabel.AbsoluteSize
-				local sizeBounds = UDim2.new(0, aS.X, 0, aS.Y)
-				local bounds = GetStringTextBounds(mNewMessage, messageLabel.Font, messageLabel.FontSize, sizeBounds)
-				
-				local emojiLabel = Instance.new("ImageLabel", messageLabel)
-				emojiLabel.Name = "EmojiLabel_" .. mPhrase
-				emojiLabel.BackgroundTransparency = 1
-				emojiLabel.Image = EmojiTable[mPhrase]
-				emojiLabel.Size = UDim2.new(0, fontSize, 0, fontSize)
-				emojiLabel.Position = UDim2.new(0, bounds.X, 0, bounds.Y - fontSize)
-			end)
-
-			newMessage = newMessage .. string.rep(" ", numNeededSpaces) .. string.sub(messageText, findEnd + 1)
-			messageText = newMessage
-		end
-
-		findStart, findEnd, phrase = string.find(messageText, emojiRegex, searchFrom)
-	end
-
-	messageLabel.Text = messageText
-end
 
 local function WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, StrongReferences)
 	local obj = {}
@@ -130,6 +76,12 @@ local function WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, StrongRefe
 
 	function obj:TweenIn(duration)
 		self.Tweener:Tween(duration, 0)
+	end
+
+
+	function obj:Destroy()
+		self.BaseFrame:Destroy()
+		self.BaseMessage:Destroy()
 	end
 
 	return obj
@@ -205,11 +157,7 @@ function metatable:CreateMessageLabel(fromSpeaker, message)
 		useNameColor = speakerPlayer.NameColor
 		useChatColor = speakerPlayer.ChatColor
 	end
-
-	if (string.sub(message, 1, 1) == ">") then
-		useChatColor = Color3.new(120/255, 153/255, 34/255)
-	end
-
+	
 	local formatUseName = string.format("[%s]:", fromSpeaker)
 
 	local speakerNameSize = GetStringTextBounds(formatUseName, useFont, useFontSize)
@@ -223,8 +171,6 @@ function metatable:CreateMessageLabel(fromSpeaker, message)
 
 	NameButton.Text = formatUseName
 	BaseMessage.Text = string.rep(" ", numNeededSpaces) .. message
-
-	ParseMessageLabelIntoEmojis(BaseMessage)
 
 	local Tweener = moduleTransparencyTweener.new()
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")

@@ -188,17 +188,18 @@ function metatable:CreateTweeners()
 	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBoxFrame, "BackgroundTransparency")
 
 	--// Register TextTweener objects and properties
-	--self.TextTweener:RegisterTweenObjectProperty(self.TextLabel, "TextTransparency")
-	--self.TextTweener:RegisterTweenObjectProperty(self.TextLabel, "TextStrokeTransparency")
-	--self.TextTweener:RegisterTweenObjectProperty(self.TextBox, "TextTransparency")
-	--self.TextTweener:RegisterTweenObjectProperty(self.TextBox, "TextStrokeTransparency")
-
-
-	--// Extra weirdness
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextLabel, "TextTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextLabel, "TextStrokeTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBox, "TextTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBox, "TextStrokeTransparency")
+	local registerAsText = false
+	if (registerAsText) then
+		self.TextTweener:RegisterTweenObjectProperty(self.TextLabel, "TextTransparency")
+		self.TextTweener:RegisterTweenObjectProperty(self.TextLabel, "TextStrokeTransparency")
+		self.TextTweener:RegisterTweenObjectProperty(self.TextBox, "TextTransparency")
+		self.TextTweener:RegisterTweenObjectProperty(self.TextBox, "TextStrokeTransparency")
+	else
+		self.BackgroundTweener:RegisterTweenObjectProperty(self.TextLabel, "TextTransparency")
+		self.BackgroundTweener:RegisterTweenObjectProperty(self.TextLabel, "TextStrokeTransparency")
+		self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBox, "TextTransparency")
+		self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBox, "TextStrokeTransparency")
+	end
 
 end
 

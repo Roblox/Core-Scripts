@@ -84,9 +84,8 @@ ConnectGetCore("ChatWindowSize")
 ConnectSetCore("ChatBarDisabled")
 ConnectGetCore("ChatBarDisabled")
 
+ConnectEvent("SpecialKeyPressed")
 
-
-wait()
 pcall(function()
 	game:GetService("StarterGui"):SetCore("CoreGuiChatConnections", containerTable)
 end)

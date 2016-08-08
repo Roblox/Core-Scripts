@@ -68,10 +68,25 @@ local function CreateGuiObject()
 	ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, chatChannelYSize)
 	ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(chatChannelYSize + 2 + chatBarYSize))
 
-
 	ChatChannelParentFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 	ChatChannelParentFrame.BackgroundTransparency = 0.6
 	ChatChannelParentFrame.BorderSizePixel = 0
+
+	local Players = game:GetService("Players")
+	if (not Players.ClassicChat and Players.BubbleChat) then
+		ChatBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
+		ChannelsBarParentFrame.Visible = false
+		ChatChannelParentFrame.Visible = false
+
+		spawn(function()
+			wait()
+			wait()
+			wait()
+			BaseFrame.Size = UDim2.new(BaseFrame.Size.X.Scale, BaseFrame.Size.X.Offset, 0, chatBarYSize)
+		end)
+	end
+
+
 
 	return BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame
 end
@@ -98,7 +113,8 @@ end
 
 function metatable:AddChannel(channelName)
 	if (self:GetChannel(channelName))  then
-		error("Channel '" .. channelName .. "' already exists!")
+		--error("Channel '" .. channelName .. "' already exists!")
+		return
 	end
 	
 	local channel = moduleChatChannel.new(channelName)

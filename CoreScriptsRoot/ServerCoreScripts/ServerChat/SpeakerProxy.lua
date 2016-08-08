@@ -98,6 +98,11 @@ function module.CreateProxy(Speaker)
 	function obj:GetExtraData(key)
 		return obj.Target:GetExtraData(key)
 	end
+
+	function obj:SetMainChannel(channel)
+		AssertParameterTypeEquals(channel, "string")
+		obj.Target:SetMainChannel(channel)
+	end
 	
 	metatable.__metatable = "The metatable is locked"
 	metatable.__tostring = obj.Target.__tostring
@@ -116,6 +121,7 @@ function module.CreateProxy(Speaker)
 		GetPlayerObject = true, 
 		SetExtraData = true, GetExtraData = true, 
 		GetChannelList = true,
+		SetMainChannel = true,
 	}
 
 	metatable.__index = function(tbl, index)
