@@ -68,7 +68,7 @@ local conversationTimedOut =        "Chat ended because you didn't reply"
 local conversationTimedOutSize = 350
 
 local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-local setDialogInUseEvent = RobloxReplicatedStorage:WaitForChild("SetDialogInUse")
+local setDialogInUseEvent = RobloxReplicatedStorage:WaitForChild("SetDialogInUse", 86400)
 
 local player
 local screenGui
