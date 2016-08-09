@@ -922,8 +922,8 @@ local function CreateLeaderstatsMenuItem()
 			end
 		end)
 
-	topbarEnabledChangedEvent.Event:connect(function()
-		PlayerlistModule.TopbarEnabledChanged(topbarEnabled)
+	topbarEnabledChangedEvent.Event:connect(function(enabled)
+		PlayerlistModule.TopbarEnabledChanged(enabled and not InputService.VREnabled) --We don't show the playerlist at all in VR
 	end)
 
 	this:SetColumns(PlayerlistModule.GetStats())
@@ -1191,8 +1191,8 @@ local function CreateChatIcon()
 		end
 	end
 
-	topbarEnabledChangedEvent.Event:connect(function()
-		ChatModule:TopbarEnabledChanged(topbarEnabled)
+	topbarEnabledChangedEvent.Event:connect(function(enabled)
+		ChatModule:TopbarEnabledChanged(enabled)
 	end)
 
 	chatIconButton.MouseButton1Click:connect(function()
@@ -1435,8 +1435,8 @@ local function CreateBackpackIcon()
 		BackpackModule:OpenClose()
 	end
 
-	topbarEnabledChangedEvent.Event:connect(function()
-		BackpackModule:TopbarEnabledChanged(topbarEnabled)
+	topbarEnabledChangedEvent.Event:connect(function(enabled)
+		BackpackModule:TopbarEnabledChanged(enabled)
 	end)
 
 	backpackIconButton.MouseButton1Click:connect(function()
@@ -1785,15 +1785,7 @@ end
 
 local function lookMenuEnabledChanged()
 	if InputService.VREnabled then
-		if lookMenuEnabled then
-			TopbarPanel3D:SetVisible(true)
-			--The look menu is very much tied to the backpack, so for now it will be responsible
-			--for showing/hiding it.
-			Panel3D.Get("Backpack"):SetVisible(StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack))
-		else
-			TopbarPanel3D:SetVisible(false)
-			Panel3D.Get("Backpack"):SetVisible(false)
-		end
+		TopbarPanel3D:SetVisible(lookMenuEnabled)
 	end
 end
 
@@ -1858,9 +1850,11 @@ local function topBarEnabledChanged()
 		lookMenuEnabled = topbarEnabled
 		topbarEnabled = false
 		lookMenuEnabledChanged()
+	else
+		lookMenuEnabled = false
 	end
 
-	topbarEnabledChangedEvent:Fire(topbarEnabled)
+	topbarEnabledChangedEvent:Fire(topbarEnabled or lookMenuEnabled)
 	TopBar:UpdateBackgroundTransparency()
 	for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do
 		-- The All enum will be false if any of the coreguis are false

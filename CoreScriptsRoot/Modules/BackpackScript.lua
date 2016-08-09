@@ -1228,9 +1228,14 @@ end
 local function OnCoreGuiChanged(coreGuiType, enabled)
 	-- Check for enabling/disabling the whole thing
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
-		enabled = enabled and (TopbarEnabled or UserInputService.VREnabled)
+		enabled = enabled and TopbarEnabled 
 		WholeThingEnabled = enabled
 		MainFrame.Visible = enabled
+
+		if UserInputService.VREnabled then
+			local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+			Panel3D.Get("Backpack"):SetVisible(enabled)
+		end
 
 		-- Eat/Release hotkeys (Doesn't affect UserInputService)
 		for _, keyString in pairs(HotkeyStrings) do
