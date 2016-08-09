@@ -1850,8 +1850,12 @@ local function topBarEnabledChanged()
 		lookMenuEnabled = topbarEnabled
 		topbarEnabled = false
 		lookMenuEnabledChanged()
+		Util.SetGUIInsetBounds(0, 0, 0, 0)
 	else
 		lookMenuEnabled = false
+		if not isTenFootInterface then
+			Util.SetGUIInsetBounds(0, TOPBAR_THICKNESS, 0, 0)
+		end
 	end
 
 	topbarEnabledChangedEvent:Fire(topbarEnabled or lookMenuEnabled)
@@ -1886,11 +1890,10 @@ if defeatableTopbar then
 			topBarEnabledChanged()
 		end
 	end)
+else
+	topBarEnabledChanged()
 end
 
 -- Hook-up coregui changing
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
-if not defeatableTopbar then
-	topBarEnabledChanged()
-end
 OnVREnabled("VREnabled")

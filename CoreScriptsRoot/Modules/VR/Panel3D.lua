@@ -42,7 +42,7 @@ local cursor = Utility:Create "ImageLabel" {
 	ZIndex = 10
 }
 local partFolder = Utility:Create "Folder" {
-	Name = "VR",
+	Name = "VRCorePanelParts",
 	Archivable = false
 }
 --End of Panel3D State variables
@@ -1012,18 +1012,7 @@ local function onHeartbeat()
 end
 RunService.Heartbeat:connect(onHeartbeat)
 
---Handle camera changes
-local function onVREnabled(prop)
-	if prop == "VREnabled" then
-		if UserInputService.VREnabled then
-			partFolder.Parent = workspace.CurrentCamera
-		else
-			partFolder.Parent = nil
-		end
-	end
-end
-UserInputService.Changed:connect(onVREnabled)
-onVREnabled("VREnabled")
+
 
 local cameraChangedConnection = nil
 local function onCameraChanged(prop)
@@ -1045,13 +1034,32 @@ local function onWorkspaceChanged(prop)
 		end
 		cameraChangedConnection = workspace.CurrentCamera.Changed:connect(onCameraChanged)
 
-		--Make sure the new camera gets used properly
-		onVREnabled("VREnabled")
+		if UserInputService.VREnabled then
+			partFolder.Parent = workspace.CurrentCamera
+		end
 	end
 end
-if workspace.CurrentCamera then
-	onWorkspaceChanged("CurrentCamera")
+
+local currentCameraChangedConn = nil
+local function onVREnabled(prop)
+	if prop == "VREnabled" then
+		if UserInputService.VREnabled then
+			if workspace.CurrentCamera then
+				onWorkspaceChanged("CurrentCamera")
+			end
+			currentCameraChangedConn = workspace.Changed:connect(onWorkspaceChanged)
+
+			partFolder.Parent = workspace.CurrentCamera
+		else
+			if currentCameraChangedConn then
+				currentCameraChangedConn:disconnect()
+				currentCameraChangedConn = nil
+			end
+			partFolder.Parent = nil
+		end
+	end
 end
-workspace.Changed:connect(onWorkspaceChanged)
+UserInputService.Changed:connect(onVREnabled)
+onVREnabled("VREnabled")
 
 return Panel3D
