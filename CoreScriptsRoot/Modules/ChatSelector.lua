@@ -178,8 +178,7 @@ else
 	ConnectSignals(useModule, interface, "ChatBarFocusChanged")
 	ConnectSignals(useModule, interface, "VisibilityStateChanged")
 	ConnectSignals(useModule, interface, "MessagesChanged")
-
-	StarterGui:RegisterGetCore("UseNewLuaChat", function() return false end)
+	
 end
 
 return interface

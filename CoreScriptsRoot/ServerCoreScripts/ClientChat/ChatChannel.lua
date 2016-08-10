@@ -40,6 +40,7 @@ local function CreateGuiObject()
 	Scroller.Size = UDim2.new(1, -4, 1, -6)
 	Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 	Scroller.ScrollBarThickness = module.ScrollBarThickness
+	Scroller.Active = false
 
 	return BaseFrame, Scroller
 end
