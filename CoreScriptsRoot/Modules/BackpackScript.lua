@@ -1227,6 +1227,9 @@ local function EvaluateBackpackPanelVisibility(enabled)
 	if not enabled then
 		return false
 	end
+	if not StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack) then
+		return false
+	end
 	if not TopbarEnabled then
 		return false
 	end
