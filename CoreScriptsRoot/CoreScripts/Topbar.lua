@@ -68,6 +68,10 @@ local TextService = game:GetService('TextService')
 local topbarEnabled = true
 local topbarEnabledChangedEvent = Instance.new('BindableEvent')
 
+local function isTopbarEnabled()
+	return topbarEnabled and not InputService.VREnabled
+end
+
 if defeatableTopbar then
 	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled) -- registers a placeholder setcore function that keeps track of players enabling/disabling the topbar before it's ready.
 		if type(enabled) == "boolean" then
@@ -189,7 +193,7 @@ local function CreateTopBar()
 	};
 
 	local function ComputeTransparency()
-		if not topbarEnabled then
+		if not isTopbarEnabled() then
 			return 1
 		end
 
@@ -825,7 +829,7 @@ local function CreateUsernameHealthMenuItem()
 
 	local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
 	container.MouseButton1Click:connect(function()
-		if topbarEnabled then
+		if isTopbarEnabled() then
 			PlayerlistModule.ToggleVisibility()
 		end
 	end)
@@ -936,7 +940,7 @@ local function CreateLeaderstatsMenuItem()
 	end)
 
 	leaderstatsContainer.MouseButton1Click:connect(function()
-		if topbarEnabled then
+		if isTopbarEnabled() then
 			PlayerlistModule.ToggleVisibility()
 		end
 	end)
@@ -1669,9 +1673,10 @@ end
 
 local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 	local enabled = coreGuiEnabled and topbarEnabled
+	local vrEnabled = InputService.VREnabled
 	if coreGuiType == Enum.CoreGuiType.PlayerList or coreGuiType == Enum.CoreGuiType.All then
 		if leaderstatsMenuItem then
-			if enabled then
+			if enabled and not vrEnabled then
 				AddItemInOrder(RightMenubar, leaderstatsMenuItem, RIGHT_ITEM_ORDER)
 			else
 				RightMenubar:RemoveItem(leaderstatsMenuItem)
@@ -1685,7 +1690,7 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 	end
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
 		if backpackIcon then
-			if enabled then
+			if enabled and not vrEnabled then
 				AddItemInOrder(LeftMenubar, backpackIcon, LEFT_ITEM_ORDER)
 			else
 				LeftMenubar:RemoveItem(backpackIcon)
@@ -1745,7 +1750,7 @@ end
 if settingsIcon then
 	AddItemInOrder(LeftMenubar, settingsIcon, LEFT_ITEM_ORDER)
 end
-if nameAndHealthMenuItem and topbarEnabled and not isTenFootInterface then
+if nameAndHealthMenuItem and isTopbarEnabled() and not isTenFootInterface then
 	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
 end
 
@@ -1836,7 +1841,7 @@ local gameOptions = settings():FindFirstChild("Game Options")
 if gameOptions and not isTenFootInterface then
 	local success, result = pcall(function()
 		gameOptions.VideoRecordingChangeRequest:connect(function(recording)
-			if recording and topbarEnabled then
+			if recording and isTopbarEnabled() then
 				AddItemInOrder(LeftMenubar, stopRecordingIcon, LEFT_ITEM_ORDER)
 			else
 				LeftMenubar:RemoveItem(stopRecordingIcon)
@@ -1845,10 +1850,9 @@ if gameOptions and not isTenFootInterface then
 	end)
 end
 
-local function topBarEnabledChanged()
+local function topbarEnabledChanged()
 	if InputService.VREnabled then
 		lookMenuEnabled = topbarEnabled
-		topbarEnabled = false
 		lookMenuEnabledChanged()
 		Util.SetGUIInsetBounds(0, 0, 0, 0)
 	else
@@ -1857,8 +1861,9 @@ local function topBarEnabledChanged()
 			Util.SetGUIInsetBounds(0, TOPBAR_THICKNESS, 0, 0)
 		end
 	end
+	
 
-	topbarEnabledChangedEvent:Fire(topbarEnabled or lookMenuEnabled)
+	topbarEnabledChangedEvent:Fire(topbarEnabled)
 	TopBar:UpdateBackgroundTransparency()
 	for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do
 		-- The All enum will be false if any of the coreguis are false
@@ -1871,27 +1876,27 @@ end
 
 local UISChanged;
 local function OnVREnabled(prop)
-	if prop == "VREnabled" and InputService.VREnabled then
-		EnableVR()
-		--TODO: make this work with toggling VR
-		if UISChanged then
-			UISChanged:disconnect()
-			UISChanged = nil
+	if prop == "VREnabled" then
+		if InputService.VREnabled then
+			EnableVR()
+		else
+			--TODO: finish making this work with toggling VR
+			topbarEnabledChanged()
 		end
 	end
 end
 UISChanged = InputService.Changed:connect(OnVREnabled)
 
 if defeatableTopbar then
-	topBarEnabledChanged() -- if it was set before this point, enable/disable it now
+	topbarEnabledChanged() -- if it was set before this point, enable/disable it now
 	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
 		if type(enabled) == "boolean" then
 			topbarEnabled = enabled
-			topBarEnabledChanged()
+			topbarEnabledChanged()
 		end
 	end)
 else
-	topBarEnabledChanged()
+	topbarEnabledChanged()
 end
 
 -- Hook-up coregui changing
