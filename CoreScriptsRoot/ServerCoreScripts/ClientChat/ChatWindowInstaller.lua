@@ -8,9 +8,9 @@ local ScriptContext = game:GetService("ScriptContext")
 local function LoadScriptData(name, path)
 	path = path or scriptPath
 
-	ScriptContext:AddCoreScriptLocal(path .. name, script)
-
-	local generated = script:WaitForChild(path .. name):WaitForChild("Generated")
+	ScriptContext:AddCoreScriptLocal(path .. name, script.Parent) -- this was changed and doing script without script.Parent ruins everything!
+	
+	local generated = script.Parent:WaitForChild(path .. name):WaitForChild("Generated")
 	return generated
 end
 
@@ -25,16 +25,16 @@ local function Install()
 	local ChatScript = LoadScriptData(runnerScriptName)
 	ChatScript.Name = runnerScriptName
 
-	local NewChat = LoadModuleData("NewChat", ChatScript)
+	local ChatMain = LoadModuleData("ChatMain", ChatScript)
 
-	LoadModuleData("ChannelsBar", NewChat)
-	LoadModuleData("ChatBar", NewChat)
-	LoadModuleData("ChatChannel", NewChat)
-	LoadModuleData("ChatWindow", NewChat)
-	LoadModuleData("SpeakerDatabase", NewChat)
-	LoadModuleData("MessageLabelCreator", NewChat)
-	LoadModuleData("ChannelsTab", NewChat)
-	LoadModuleData("TransparencyTweener", NewChat)
+	LoadModuleData("ChannelsBar", ChatMain)
+	LoadModuleData("ChatBar", ChatMain)
+	LoadModuleData("ChatChannel", ChatMain)
+	LoadModuleData("ChatWindow", ChatMain)
+	LoadModuleData("SpeakerDatabase", ChatMain)
+	LoadModuleData("MessageLabelCreator", ChatMain)
+	LoadModuleData("ChannelsTab", ChatMain)
+	LoadModuleData("TransparencyTweener", ChatMain)
 
 	ChatScript.Parent = installDirectory
 	--ChatScript.Archivable = false

@@ -9,9 +9,9 @@ local ScriptContext = game:GetService("ScriptContext")
 local function LoadScriptData(name, path)
 	path = path or scriptPath
 
-	ScriptContext:AddCoreScriptLocal(path .. name, script)
+	ScriptContext:AddCoreScriptLocal(path .. name, script.Parent) -- this was changed and doing script without script.Parent ruins everything!
 
-	local generated = script:WaitForChild(path .. name):WaitForChild("Generated")
+	local generated = script.Parent:WaitForChild(path .. name):WaitForChild("Generated")
 	return generated
 end
 

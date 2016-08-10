@@ -46,6 +46,7 @@ local function CreateGuiObject()
 	BoxFrame.Position = UDim2.new(0, backgroundImagePixelOffset, 0, backgroundImagePixelOffset)
 
 	local TextBox = Instance.new("TextBox", BoxFrame)
+	TextBox.Name = "ChatBar"
 	TextBox.BackgroundTransparency = 1
 	TextBox.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)
 	TextBox.Position = UDim2.new(0, textBoxPixelOffset, 0, textBoxPixelOffset)

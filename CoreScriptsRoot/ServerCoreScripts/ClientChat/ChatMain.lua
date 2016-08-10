@@ -636,7 +636,13 @@ end)
 moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 	if (valueTable["Text"] and type(valueTable["Text"]) == "string") then
 		local channel = "All"
-		local channelObj = ChatWindow:GetChatChannel(channel)
+		local channelObj = ChatWindow:GetChannel(channel)
+
+		if (not channelObj) then
+			wait(0.25)
+			channelObj = ChatWindow:GetChannel(channel)
+		end
+
 		if (channelObj) then
 			local message = valueTable["Text"]
 			
@@ -647,7 +653,6 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 			
 			moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1
 			moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
-			
 		end
 	end
 end)
