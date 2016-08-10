@@ -1223,14 +1223,22 @@ end
 --| End Gamepad Functions |--
 -----------------------------
 
+local function EvaluateBackpackPanelVisibility(enabled)
+	return enabled and StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack) and TopbarEnabled and UserInputService.VREnabled
+end
 
 
 local function OnCoreGuiChanged(coreGuiType, enabled)
 	-- Check for enabling/disabling the whole thing
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
-		enabled = enabled and (TopbarEnabled or UserInputService.VREnabled)
+		enabled = enabled and TopbarEnabled 
 		WholeThingEnabled = enabled
 		MainFrame.Visible = enabled
+
+		if UserInputService.VREnabled then
+			local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+			Panel3D.Get("Backpack"):SetVisible(EvaluateBackpackPanelVisibility(enabled))
+		end
 
 		-- Eat/Release hotkeys (Doesn't affect UserInputService)
 		for _, keyString in pairs(HotkeyStrings) do
@@ -1734,7 +1742,7 @@ local function OnVREnabled(prop)
 			local BackpackPanel = Panel3D.Get(BackpackScript.ModuleName)
 			BackpackPanel:ResizeStuds(inventoryClosedStudSize.x, inventoryClosedStudSize.y)
 			BackpackPanel:SetType(Panel3D.Type.Fixed)
-			BackpackPanel:SetVisible(true)
+			BackpackPanel:SetVisible(EvaluateBackpackPanelVisibility(true))
 
 
 			function BackpackPanel:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
@@ -1806,7 +1814,7 @@ local function OnVREnabled(prop)
 			VRModuleOpenedConn = VRHub.ModuleOpened.Event:connect(function(moduleName)
 				local openedModule = VRHub:GetModule(moduleName)
 				if openedModule ~= BackpackScript and openedModule.VRIsExclusive then
-					BackpackPanel:SetVisible(false)
+					BackpackPanel:SetVisible(EvaluateBackpackPanelVisibility(false))
 					if InventoryFrame.Visible then
 						BackpackScript.OpenClose()
 					end
@@ -1815,7 +1823,7 @@ local function OnVREnabled(prop)
 			VRModuleClosedConn = VRHub.ModuleClosed.Event:connect(function(moduleName)
 				local openedModule = VRHub:GetModule(moduleName)
 				if openedModule ~= BackpackScript then
-					BackpackPanel:SetVisible(true)
+					BackpackPanel:SetVisible(EvaluateBackpackPanelVisibility(true))
 				end
 			end)
 
@@ -1825,7 +1833,7 @@ local function OnVREnabled(prop)
 			end
 		else -- not IsVR (VR was turned off)
 			local BackpackPanel = Panel3D.Get(BackpackScript.ModuleName)
-			BackpackPanel:SetVisible(false)
+			BackpackPanel:SetVisible(EvaluateBackpackPanelVisibility(false))
 			BackpackPanel:LinkTo(nil)
 
 			MainFrame.Parent = RobloxGui
