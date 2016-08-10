@@ -1224,20 +1224,7 @@ end
 -----------------------------
 
 local function EvaluateBackpackPanelVisibility(enabled)
-	if not enabled then
-		return false
-	end
-	if not StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack) then
-		return false
-	end
-	if not TopbarEnabled then
-		return false
-	end
-	if not UserInputService.VREnabled then
-		return false
-	end
-
-	return true
+	return enabled and StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack) and TopbarEnabled and UserInputService.VREnabled
 end
 
 
