@@ -1827,10 +1827,13 @@ local function OnVREnabled(prop)
 				end
 			end)
 
+
 			-- Turn off dragging when in VR
 			for _, slot in pairs(Slots) do
 				slot:SetClickability(false)
 			end
+
+			local Healthbar = require(RobloxGui.Modules.VR.Healthbar3D)
 		else -- not IsVR (VR was turned off)
 			local BackpackPanel = Panel3D.Get(BackpackScript.ModuleName)
 			BackpackPanel:SetVisible(EvaluateBackpackPanelVisibility(false))
