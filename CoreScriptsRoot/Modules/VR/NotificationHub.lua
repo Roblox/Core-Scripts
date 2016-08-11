@@ -1,3 +1,4 @@
+local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Util = require(RobloxGui.Modules.Settings.Utility)
@@ -696,6 +697,13 @@ do
 		end
 	end)
 
+	local menuCloseShortcutBindName = game:GetService("HttpService"):GenerateGUID()
+	local function onMenuCloseShortcut(actionName, inputState, inputObj)
+		if inputState == Enum.UserInputState.Begin then
+			NotificationHubModule:SetVisible(false)
+		end
+	end
+
 	NotificationHubModule.VisibilityStateChanged = Util:Create "BindableEvent" {
 		Name = "VisibilityStateChanged"
 	}
@@ -737,6 +745,8 @@ do
 			notificationsPanel:SetVisible(true)
 			detailsPanel:SetVisible(true)
 
+			ContextActionService:BindCoreAction(menuCloseShortcutBindName, onMenuCloseShortcut, false, Enum.KeyCode.ButtonB)
+
 			VRHub:FireModuleOpened(NotificationHubModule.ModuleName)
 		else
 			if not NO_TRANSITION_ANIMATIONS then
@@ -753,6 +763,8 @@ do
 				notificationsPanel:SetVisible(false)
 				detailsPanel:SetVisible(false)
 			end
+
+			ContextActionService:UnbindCoreAction(menuCloseShortcutBindName)
 
 			VRHub:FireModuleClosed(NotificationHubModule.ModuleName)
 		end
