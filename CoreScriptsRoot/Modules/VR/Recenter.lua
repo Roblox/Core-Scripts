@@ -1,9 +1,12 @@
 local InputService = game:GetService("UserInputService")
+local ContextActionService = game:GetService("ContextActionService")
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
 local Util = require(RobloxGui.Modules.Settings.Utility)
+
+local cancelShortcutName = game:GetService("HttpService"):GenerateGUID()
 
 local RecenterModule = {}
 RecenterModule.ModuleName = "Recenter"
@@ -47,13 +50,16 @@ local recenterFrame = Util:Create "ImageLabel" {
 countdownPanel:SetVisible(false)
 
 local isCountingDown = false
+local function cancelCountdown()
+	isCountingDown = false
+	countdownPanel:SetVisible(false)
+end
 
 VRHub.ModuleOpened.Event:connect(function(moduleName)
 	if moduleName ~= RecenterModule.ModuleName then
 		local module = VRHub:GetModule(moduleName)
 		if module.VRIsExclusive then
-			isCountingDown = false
-			countdownPanel:SetVisible(false)
+			cancelCountdown()
 		end
 	end
 end)
@@ -61,7 +67,7 @@ end)
 function RecenterModule:SetVisible(visible)
 	if visible then
 		if isCountingDown then
-			isCountingDown = false
+			cancelCountdown()
 			VRHub:FireModuleClosed(RecenterModule.ModuleName)
 			return
 		else
@@ -71,6 +77,12 @@ function RecenterModule:SetVisible(visible)
 		spawn(function()
 			isCountingDown = true
 			countdownPanel:SetVisible(true)
+
+			ContextActionService:BindCoreAction(cancelShortcutName, function(actionName, inputState, inputObj)
+				if inputState == Enum.UserInputState.Begin then
+					cancelCountdown()
+				end
+			end, false, Enum.KeyCode.ButtonB)
 
 			for i = 3, 1, -1 do
 				if isCountingDown then
@@ -86,9 +98,12 @@ function RecenterModule:SetVisible(visible)
 			countdownPanel:SetVisible(false)
 			isCountingDown = false
 
+			ContextActionService:UnbindCoreAction(cancelShortcutName)
+
 			VRHub:FireModuleClosed(RecenterModule.ModuleName)
 		end)
 	else
+		cancelCountdown()
 		VRHub:FireModuleClosed(RecenterModule.ModuleName)
 	end
 end
