@@ -40,6 +40,12 @@ local BUTTON_Y_SIZE = 0.29
 local BUTTON_NORMAL_IMG = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
 local BUTTON_SELECTED_IMG = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButtonSelected.png"
 
+local CLOSE_BUTTON_IMG = "rbxasset://textures/ui/Keyboard/close_button_icon.png"
+local CLOSE_BUTTON_HOVER = "rbxasset://textures/ui/Keyboard/close_button_selection.png"
+local CLOSE_BUTTON_SIZE = 32
+local CLOSE_BUTTON_OFFSET = 22
+local CLOSE_BUTTON_HOVER_OFFSET = 22
+
 local emptySelectionImage = Util:Create "ImageLabel" {
 	BackgroundTransparency = 1,
 	Image = ""
@@ -97,6 +103,7 @@ do
 
 		instance.titlebar = Util:Create "ImageLabel" {
 			Parent = parent,
+			Name = "TitlebarBackground",
 
 			Position = UDim2.new(0, -1, 0, -1),
 			Size = UDim2.new(1, 2, 0, WINDOW_TITLEBAR_HEIGHT + 2),
@@ -110,6 +117,7 @@ do
 		}
 		instance.titleText = Util:Create "TextLabel" {
 			Parent = instance.titlebar,
+			Name = "TitleText",
 
 			Position = UDim2.new(0, 1, 0, 1),
 			Size = UDim2.new(1, -2, 1, -2),
@@ -124,6 +132,7 @@ do
 
 		instance.content = Util:Create "ImageLabel" {
 			Parent = parent,
+			Name = "ContentFrame",
 
 			Position = UDim2.new(0, -1, 0, WINDOW_TITLEBAR_HEIGHT + 2),
 			Size = UDim2.new(1, 2, 1, -WINDOW_TITLEBAR_HEIGHT - 4),
@@ -145,17 +154,23 @@ do
 	end
 
 	function WindowFrame:AddCloseButton(callback)
-		local closeBtnSize = 48
-		local closeBtnOffset = 14
 		self.closeButton = Util:Create "ImageButton" {
 			Parent = self.titlebar,
+			Name = "CloseButton",
 
-			Position = UDim2.new(0, closeBtnOffset, 0, closeBtnOffset),
-			Size = UDim2.new(0, closeBtnSize, 0, closeBtnSize),
+			Position = UDim2.new(0, CLOSE_BUTTON_OFFSET, 0, CLOSE_BUTTON_OFFSET),
+			Size = UDim2.new(0, CLOSE_BUTTON_SIZE, 0, CLOSE_BUTTON_SIZE),
 
 			BackgroundTransparency = 1, 
 
-			Image = "rbxasset://textures/ui/VR/closeButtonPadded.png"
+			Image = CLOSE_BUTTON_IMG,
+			SelectionImageObject = Util:Create "ImageButton" {
+				Name = "CloseButtonHover",
+				Position = UDim2.new(0, CLOSE_BUTTON_HOVER_OFFSET / -2, 0, CLOSE_BUTTON_HOVER_OFFSET / -2),
+				Size = UDim2.new(1, CLOSE_BUTTON_HOVER_OFFSET, 1, CLOSE_BUTTON_HOVER_OFFSET),
+				BackgroundTransparency = 1,
+				Image = CLOSE_BUTTON_HOVER
+			}
 		}
 		self.closeButton.MouseButton1Click:connect(callback)
 	end
@@ -221,6 +236,8 @@ do
 	notificationsPanel:ResizeStuds(leftPanelWidth, totalHeight, PIXELS_PER_STUD)
 	local notificationsFrame = Util:Create "TextButton" {
 		Parent = notificationsPanel:GetGUI(),
+		Name = "NotificationsListFrame",
+
 		Position = UDim2.new(0, 0, 0, 0),
 		Size = UDim2.new(1, -4, 1, 0),
 
@@ -247,6 +264,8 @@ do
 	detailsPanel:ResizeStuds(rightPanelWidth, totalHeight, PIXELS_PER_STUD)
 	local detailsFrame = Util:Create "TextButton" {
 		Parent = detailsPanel:GetGUI(),
+		Name = "NotificationsDetailFrame",
+
 		Position = UDim2.new(0, 0, 0, 0),
 		Size = UDim2.new(1, 0, 1, 0),
 		
@@ -338,6 +357,7 @@ do
 		self.notificationsDirty = false
 		self.frame = Util:Create "Frame" {
 			Parent = notificationsWindow.content,
+			Name = "NotificationGroup",
 			BackgroundTransparency = 1
 		}
 		self.detailsFrame = Util:Create "Frame" {
@@ -425,7 +445,9 @@ end
 NotificationGroup.new("Friends",        "Friends",  1)
 NotificationGroup.new("BadgeAwards",    "Badges",   2)
 NotificationGroup.new("PlayerPoints",   "Points",   3)
-NotificationGroup.new("Developer",      "Other",    4)
+
+--Don't want this right now.
+--NotificationGroup.new("Developer",      "Other",    4)
 table.sort(notificationsGroupsList, groupSort)
 
 local function doCallback(callback, ...)
@@ -511,6 +533,7 @@ do
 
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Text = text,
+			TextWrapped = true,
 			Font = Enum.Font.SourceSans,
 			FontSize = Enum.FontSize.Size18,
 			TextColor3 = TEXT_COLOR
@@ -569,6 +592,7 @@ do
 			BackgroundTransparency = 1,
 
 			Text = detailText, 
+			TextWrapped = true,
 			TextColor3 = TEXT_COLOR,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Font = Enum.Font.SourceSansBold,
@@ -639,7 +663,11 @@ do
 	end
 
 	function Notification:OnClicked()
-		self.group:BringNotificationToFront(self)
+		--We don't want this functionality anymore, but I'd like to keep this commented
+		--out for now since this design is still in a state of flux
+		--self.group:BringNotificationToFront(self)
+		self.group:SwitchTo()
+		layoutNotificationsGroups()
 	end
 
 	function Notification:Dismiss()
@@ -655,9 +683,9 @@ do
 
 	local SendNotificationInfoEvent = RobloxGui:WaitForChild("SendNotificationInfo")
 	SendNotificationInfoEvent.Event:connect(function(notificationInfo)
-		local group = notificationsGroups[notificationInfo.GroupName or "Developer"]
+		local group = notificationsGroups[notificationInfo.GroupName or false] --avoid error by nil index
 		if not group then
-			group = notificationsGroups.Developer
+			return --ignore it, invalid group (for now)
 		end
 
 		Notification.new(group, notificationInfo)
