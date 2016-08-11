@@ -1,11 +1,13 @@
-local FORCE_TRY_LOAD_NEW_CHAT = false
-local FORCE_USE_NEW_CHAT = false
+local FORCE_CorescriptNewLoadChat 	= false		-- Force FFLag on client to be true always
+local FORCE_GetShouldUseLuaChat 	= false 	-- Force SFFlag value read from server to be true always
 
 
 local CoreGuiService = game:GetService("CoreGui")
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 
 local StarterGui = game:GetService("StarterGui")
+local UserInputService = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
 
 local function GetUseLuaFlag()
 	local loop_continue = true
@@ -152,10 +154,13 @@ local function ConnectSignals(useModule, interface, sigName)
 	useModule[sigName]:connect(function(...) interface[sigName]:fire(...) end)
 end
 
-if (TryLoadNewChat or FORCE_TRY_LOAD_NEW_CHAT) then
+local isConsole = GuiService:IsTenFootInterface() 		or false -- set true to force a true value
+local isVR = UserInputService.VREnabled					or false
+
+if ( (TryLoadNewChat or FORCE_CorescriptNewLoadChat) and not isConsole and not isVR ) then
 	spawn(function()
-		local useNewChat = GetUseLuaFlag()
-		local useModuleScript = (useNewChat or FORCE_USE_NEW_CHAT) and RobloxGui.Modules.NewChat or RobloxGui.Modules.Chat
+		local useNewChat = GetUseLuaFlag() or FORCE_GetShouldUseLuaChat
+		local useModuleScript = useNewChat and RobloxGui.Modules.NewChat or RobloxGui.Modules.Chat
 		useModule = require(useModuleScript)
 
 		ConnectSignals(useModule, interface, "ChatBarFocusChanged")
