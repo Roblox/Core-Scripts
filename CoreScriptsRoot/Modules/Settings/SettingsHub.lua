@@ -1103,7 +1103,7 @@ local function CreateSettingsHub()
 	GuiService.ShowLeaveConfirmation:connect(function()
 		if #this.MenuStack == 0 then
 			this:SetVisibility(true)
-			this:SwitchToPage(this.LeaveGamePage, nil, 1)
+			this:SwitchToPage(this.PlayerPage, nil, 1)
 		else
 			this:PopMenu(false, true)
 		end
