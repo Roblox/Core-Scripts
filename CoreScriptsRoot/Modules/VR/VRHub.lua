@@ -21,6 +21,16 @@ function VRHub:IsModuleOpened(moduleName)
 	return OpenModules[moduleName] ~= nil
 end
 
+function VRHub:GetOpenedModules()
+	local result = {}
+
+	for _, openModule in pairs(OpenModules) do
+		table.insert(result, openModule)
+	end
+
+	return result
+end
+
 VRHub.ModuleOpened = Util:Create "BindableEvent" {
 	Name = "VRModuleOpened"
 }
