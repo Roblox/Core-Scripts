@@ -14,7 +14,7 @@ local MAX_COLOR = HEALTH_GREEN_COLOR
 
 local NAME_SPACE = 14
 
-local PlayersService = Game:GetService('Players')
+local PlayersService = game:GetService('Players')
 local CoreGui = game:GetService('CoreGui')
 local StarterGui = game:GetService('StarterGui')
 local UserInputService = game:GetService('UserInputService')
@@ -142,6 +142,7 @@ local function RegisterHumanoid(humanoid)
 end
 
 local function OnCharacterChildAdded(child)
+	local player = PlayersService.LocalPlayer
 	if player and child.Parent == player.Character and child:IsA('Humanoid') then
 		RegisterHumanoid(child)
 	end
