@@ -1346,8 +1346,7 @@ local function CreateChatBarWidget(settings)
 	function this:OnChatBarFocusLost(enterPressed)
 		if self.ChatBar then
 			self.ChatBar.Visible = false
-			-- TODO: remove this when API for VR to set enterPressed is released
-			if enterPressed or InputService.VREnabled then
+			if enterPressed then
 				local didMatchSlashCommand = self:ProcessChatBarModes(false)
 				local cText = self:SanitizeInput(self:GetChatBarText())
 				if cText ~= "" then
