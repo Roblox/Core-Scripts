@@ -1,3 +1,8 @@
+--[[
+	// FileName: ChatSelector.lua
+	// Written by: Xsitsu
+	// Description: Code for determining which chat version to use in game.
+]]
 local FORCE_CorescriptNewLoadChat 	= false		-- Force FFLag on client to be true always
 local FORCE_GetShouldUseLuaChat 	= false 	-- Force SFFlag value read from server to be true always
 
@@ -8,6 +13,8 @@ local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+
+local Util = require(RobloxGui.Modules.ChatUtil)
 
 local function GetUseLuaFlag()
 	local loop_continue = true
@@ -31,40 +38,6 @@ end
 
 local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptNewLoadChat") end)
 local TryLoadNewChat = readFlagSuccess and flagEnabled
-
-local Util = {}
-do
-	function Util.Signal()
-		local sig = {}
-
-		local mSignaler = Instance.new('BindableEvent')
-
-		local mArgData = nil
-		local mArgDataCount = nil
-
-		function sig:fire(...)
-			mArgData = {...}
-			mArgDataCount = select('#', ...)
-			mSignaler:Fire()
-		end
-
-		function sig:connect(f)
-			if not f then error("connect(nil)", 2) end
-			return mSignaler.Event:connect(function()
-				f(unpack(mArgData, 1, mArgDataCount))
-			end)
-		end
-
-		function sig:wait()
-			mSignaler.Event:wait()
-			assert(mArgData, "Missing arg data, likely due to :TweenSize/Position corrupting threadrefs.")
-			return unpack(mArgData, 1, mArgDataCount)
-		end
-
-		return sig
-	end
-end
-
 
 
 local useModule = nil

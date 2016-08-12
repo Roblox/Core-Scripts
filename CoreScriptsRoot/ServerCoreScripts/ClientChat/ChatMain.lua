@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChatMain.lua
+--	// Written by: Xsitsu
+--	// Description: Main module to handle initializing chat window UI and chatting.
+
 local moduleApiTable = {}
 
 local UserInputService = game:GetService("UserInputService")
