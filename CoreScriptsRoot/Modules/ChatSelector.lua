@@ -6,6 +6,9 @@
 local FORCE_CorescriptNewLoadChat 	= false		-- Force FFLag on client to be true always
 local FORCE_GetShouldUseLuaChat 	= false 	-- Force SFFlag value read from server to be true always
 
+local FORCE_IS_CONSOLE = false
+local FORCE_IS_VR = false
+
 
 local CoreGuiService = game:GetService("CoreGui")
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
@@ -106,15 +109,15 @@ do
 	interface.MessagesChanged = Util.Signal()
 end
 
-local stopCachingMakeSystemMessage = false
-local MakeSystemMessageCache = {}
-local function MakeSystemMessageCachingFunction(data)
-	if (stopCachingMakeSystemMessage) then return end
-	table.insert(MakeSystemMessageCache, data)
+local StopQueueingSystemMessages = false
+local MakeSystemMessageQueue = {}
+local function MakeSystemMessageQueueingFunction(data)
+	if (StopQueueingSystemMessages) then return end
+	table.insert(MakeSystemMessageQueue, data)
 end
 
 local function NonFunc() end
-StarterGui:RegisterSetCore("ChatMakeSystemMessage", MakeSystemMessageCachingFunction)
+StarterGui:RegisterSetCore("ChatMakeSystemMessage", MakeSystemMessageQueueingFunction)
 StarterGui:RegisterSetCore("ChatWindowPosition", NonFunc)
 StarterGui:RegisterSetCore("ChatWindowSize", NonFunc)
 StarterGui:RegisterGetCore("ChatWindowPosition", NonFunc)
@@ -127,8 +130,8 @@ local function ConnectSignals(useModule, interface, sigName)
 	useModule[sigName]:connect(function(...) interface[sigName]:fire(...) end)
 end
 
-local isConsole = GuiService:IsTenFootInterface() 		or false -- set true to force a true value
-local isVR = UserInputService.VREnabled					or false
+local isConsole = GuiService:IsTenFootInterface() or FORCE_IS_CONSOLE
+local isVR = UserInputService.VREnabled or FORCE_IS_VR
 
 if ( (TryLoadNewChat or FORCE_CorescriptNewLoadChat) and not isConsole and not isVR ) then
 	spawn(function()
@@ -145,8 +148,8 @@ if ( (TryLoadNewChat or FORCE_CorescriptNewLoadChat) and not isConsole and not i
 		useModule:SetVisible(state.Visible)
 		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
 
-		stopCachingMakeSystemMessage = true
-		for i, messageData in pairs(MakeSystemMessageCache) do
+		StopQueueingSystemMessages = true
+		for i, messageData in pairs(MakeSystemMessageQueue) do
 			pcall(function() StarterGui:SetCore("ChatMakeSystemMessage", messageData) end)
 		end
 	end)
