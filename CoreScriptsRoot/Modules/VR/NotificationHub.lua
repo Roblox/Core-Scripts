@@ -80,6 +80,10 @@ local notificationsWindow = nil
 local detailsPanel = Panel3D.Get("NotificationDetails")
 local detailsWindow = nil
 
+local function IsDeveloperGroupEnabled()
+	return false
+end
+
 local WindowFrame = {} 
 do
 	local windows = {}
@@ -446,9 +450,9 @@ end
 NotificationGroup.new("Friends",        "Friends",  1)
 NotificationGroup.new("BadgeAwards",    "Badges",   2)
 NotificationGroup.new("PlayerPoints",   "Points",   3)
-
---Don't want this right now.
---NotificationGroup.new("Developer",      "Other",    4)
+if IsDeveloperGroupEnabled() then
+	NotificationGroup.new("Developer",      "Other",    4)
+end
 table.sort(notificationsGroupsList, groupSort)
 
 local function doCallback(callback, ...)
@@ -686,7 +690,11 @@ do
 	SendNotificationInfoEvent.Event:connect(function(notificationInfo)
 		local group = notificationsGroups[notificationInfo.GroupName or false] --avoid error by nil index
 		if not group then
-			return --ignore it, invalid group (for now)
+			if IsDeveloperGroupEnabled() then
+				group = notificationsGroups.Developer 
+			else
+				return --ignore it, invalid group
+			end
 		end
 
 		Notification.new(group, notificationInfo)
@@ -697,7 +705,7 @@ do
 		end
 	end)
 
-	local menuCloseShortcutBindName = game:GetService("HttpService"):GenerateGUID()
+	local menuCloseShortcutBindName = "NotificationsMenuCloseShortcut"
 	local function onMenuCloseShortcut(actionName, inputState, inputObj)
 		if inputState == Enum.UserInputState.Begin then
 			NotificationHubModule:SetVisible(false)
