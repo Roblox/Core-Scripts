@@ -6,7 +6,7 @@ local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
 local Util = require(RobloxGui.Modules.Settings.Utility)
 
-local cancelShortcutName = game:GetService("HttpService"):GenerateGUID()
+local cancelShortcutName = "CancelRecenterShortcut"
 
 local RecenterModule = {}
 RecenterModule.ModuleName = "Recenter"
