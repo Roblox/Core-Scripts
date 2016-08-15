@@ -124,6 +124,28 @@ do
 				table.insert(MakeSystemMessageCache, data)
 			end
 		end)
+		
+		StarterGui:RegisterGetCore("ChatWindowPosition", function(data)
+			local func = FindIndexInCollectionWithType(communicationsConnections.GetCore, "ChatWindowPosition", "BindableFunction")
+			local rVal = nil
+			if (func) then rVal = func:Invoke(data) end
+			return rVal
+		end)
+
+		StarterGui:RegisterGetCore("ChatWindowSize", function(data)
+			local func = FindIndexInCollectionWithType(communicationsConnections.GetCore, "ChatWindowSize", "BindableFunction")
+			local rVal = nil
+			if (func) then rVal = func:Invoke(data) end
+			return rVal
+		end)
+
+		StarterGui:RegisterGetCore("ChatBarDisabled", function(data)
+			local func = FindIndexInCollectionWithType(communicationsConnections.GetCore, "ChatBarDisabled", "BindableFunction")
+			local rVal = nil
+			if (func) then rVal = func:Invoke(data) end
+			return rVal
+		end)
+
 
 		local function RegisterCoreGuiConnections(containerTable)
 			if (type(containerTable) == "table") then
@@ -191,6 +213,10 @@ do
 						end
 						MakeSystemMessageCache = {}
 					end
+
+					communicationsConnections.GetCore.ChatWindowPosition = FindIndexInCollectionWithType(getCoreCollection, "ChatWindowPosition", "BindableFunction")
+					communicationsConnections.GetCore.ChatWindowSize = FindIndexInCollectionWithType(getCoreCollection, "ChatWindowSize", "BindableFunction")
+					communicationsConnections.GetCore.ChatBarDisabled = FindIndexInCollectionWithType(getCoreCollection, "ChatBarDisabled", "BindableFunction")
 
 				elseif (type(setCoreCollection) ~= nil or type(getCoreCollection) ~= nil) then
 					error("Both 'SetCore' and 'GetCore' must be tables if provided!")

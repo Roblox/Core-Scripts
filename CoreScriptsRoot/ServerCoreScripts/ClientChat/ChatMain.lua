@@ -599,11 +599,11 @@ do
 	
 
 	function moduleApiTable:fChatWindowPosition()
-		return UDim2.new(0, 0, 0, 0) --ChatWindow.Frame.Dragger.Position
+		return ChatWindow.GuiObject.Position
 	end
 	
 	function moduleApiTable:fChatWindowSize()
-		return UDim2.new(0, 0, 0, 0) --ChatWindow.Frame.Dragger.Size
+		return ChatWindow.GuiObject.Size
 	end
 	
 	function moduleApiTable:fChatBarDisabled()

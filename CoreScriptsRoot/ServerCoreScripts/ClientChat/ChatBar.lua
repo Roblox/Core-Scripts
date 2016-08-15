@@ -115,7 +115,7 @@ function metatable:GetEnabled()
 end
 
 function metatable:SetEnabled(enabled)
-	self.GuiObject.Visible = false
+	self.GuiObject.Visible = enabled  --was 'false', not sure why
 end
 
 function metatable:SetTextLabelText(text)
@@ -216,7 +216,7 @@ function module.new()
 	obj.TextBox = TextBox
 	obj.TextLabel = TextLabel
 
-	obj.TweenPixelsPerSecond = 300 + 200
+	obj.TweenPixelsPerSecond = 500
 	obj.TargetYSize = 0
 
 	obj.BackgroundTweener = moduleTransparencyTweener.new()
