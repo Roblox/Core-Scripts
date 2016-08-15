@@ -800,7 +800,9 @@ function Subpanel:GetPart()
 
 	self.part = self.parentPanel:GetPart():Clone()
 	self.part.Parent = workspace.CurrentCamera
-	return self.part
+	if self.part then
+		return self.part
+	end
 end
 
 function Subpanel:GetGUI()
