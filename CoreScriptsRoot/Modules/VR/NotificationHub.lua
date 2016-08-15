@@ -688,7 +688,7 @@ do
 
 	local SendNotificationInfoEvent = RobloxGui:WaitForChild("SendNotificationInfo")
 	SendNotificationInfoEvent.Event:connect(function(notificationInfo)
-		local group = notificationsGroups[notificationInfo.GroupName or false] --avoid error by nil index
+		local group = notificationInfo.GroupName and notificationsGroups[notificationInfo.GroupName] --avoid error by nil index
 		if not group then
 			if IsDeveloperGroupEnabled() then
 				group = notificationsGroups.Developer 
