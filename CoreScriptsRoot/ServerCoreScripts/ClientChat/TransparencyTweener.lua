@@ -1,10 +1,17 @@
 local source = [[
+--	// FileName: TransparencyTweener.lua
+--	// Written by: Xsitsu
+--	// Description: Data structure for tweening transparency of a group of objects as one unit.
+
 local module = {}
 
 local RunService = game:GetService("RunService")
 --////////////////////////////// Include
 --//////////////////////////////////////
 local modulesFolder = script.Parent
+
+--// Can't use ClassMaker in it's current state since this uses custom __index and __newindex.
+--// Maybe in the future I'll expand that to be more powerful, but it's alright like this for now.
 
 --////////////////////////////// Details
 --//////////////////////////////////////

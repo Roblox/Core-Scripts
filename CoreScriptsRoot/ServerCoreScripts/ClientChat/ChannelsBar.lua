@@ -1,5 +1,8 @@
 local source = [[
 local module = {}
+
+local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
 --////////////////////////////// Include
 --//////////////////////////////////////
 local modulesFolder = script.Parent
@@ -158,7 +161,7 @@ function methods:AddChannelTab(channelName)
 
 	--// Although this feature is pretty much ready, it needs some UI design still.
 	local enableRightClickToLeaveChannel = false
-	
+
 	if (enableRightClickToLeaveChannel) then
 		tab.NameTag.MouseButton2Click:connect(function()
 			self.LeaveConfirmationNotice.Text = string.format("Leave channel %s?", tab.ChannelName)
@@ -213,10 +216,9 @@ function methods:OrganizeChannelTabs()
 	self:ScrollChannelsFrame(0)
 end
 
-local lockScrollChannelsFrame = false
 function methods:ScrollChannelsFrame(dir)
-	if (lockScrollChannelsFrame) then return end
-	lockScrollChannelsFrame = true
+	if (self.ScrollChannelsFrameLock) then return end
+	self.ScrollChannelsFrameLock = true
 
 	local newPageNum = self.CurPageNum + dir
 	if (newPageNum < 0) then
@@ -235,7 +237,7 @@ function methods:ScrollChannelsFrame(dir)
 	self.PageRightButton.Visible = (self.CurPageNum + 4 < self.NumTabs)
 
 	local function UnlockFunc()
-		lockScrollChannelsFrame = false
+		self.ScrollChannelsFrameLock = false
 	end
 	self.ScrollerFrame:TweenPosition(endPos, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, tweenTime, true, UnlockFunc)
 end
@@ -298,6 +300,8 @@ function module.new()
 	obj.BackgroundTweener = moduleTransparencyTweener.new()
 	obj.TextTweener = moduleTransparencyTweener.new()
 
+	obj.ScrollChannelsFrameLock = false
+
 	ClassMaker.MakeClass("ChannelsBar", obj)
 
 	obj:CreateTweeners()
@@ -307,9 +311,12 @@ function module.new()
 
 	--// Have to wait to tween until it's properly parented to PlayerGui
 	spawn(function()
-		wait()
+		while (not obj.GuiObject:IsDescendantOf(PlayerGui)) do
+			obj.GuiObject.AncenstryChanged:wait()
+		end
 		obj:ScrollChannelsFrame(0)
 	end)
+
 	return obj
 end
 

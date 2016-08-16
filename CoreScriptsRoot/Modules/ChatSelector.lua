@@ -67,8 +67,6 @@ do
 	function interface:FocusChatBar()
 		if (useModule) then
 			useModule:FocusChatBar()
-		else
-			--// do nothing
 		end
 	end
 
@@ -91,8 +89,6 @@ do
 	function interface:TopbarEnabledChanged(...)
 		if (useModule) then
 			return useModule:TopbarEnabledChanged(...)
-		else
-			
 		end
 	end
 

@@ -335,7 +335,8 @@ local ChatBarUISConnection = UserInputService.InputBegan:connect(function(input)
 	end
 end)
 
---ChatBarUISConnection:disconnect()
+-- Comment out this line to allow pressing the "/" key to chat.
+ChatBarUISConnection:disconnect()
 
 
 local function ProcessChatCommands(message)
@@ -457,11 +458,13 @@ EventFolder.OnChannelLeft.OnClientEvent:connect(function(channel)
 end)
 
 EventFolder.OnMuted.OnClientEvent:connect(function(channel)
-	-- handle
+	--// Do something eventually maybe?
+	--// This used to take away the chat bar in channels the player was muted in.
+	--// We found out this behavior was inconvenient for doing chat commands though. 
 end)
 
 EventFolder.OnUnmuted.OnClientEvent:connect(function(channel)
-	-- handle
+	--// Same as above.
 end)
 
 EventFolder.OnSpeakerExtraDataUpdated.OnClientEvent:connect(function(speakerName, data)

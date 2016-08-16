@@ -95,7 +95,7 @@ function methods:GetEnabled()
 end
 
 function methods:SetEnabled(enabled)
-	self.GuiObject.Visible = enabled  --was 'false', not sure why
+	self.GuiObject.Visible = enabled
 end
 
 function methods:SetTextLabelText(text)
@@ -116,7 +116,7 @@ function methods:CalculateSize()
 
 	self.GuiObject.Size = lastPos
 
-	local newTargetYSize = bounds - fontSize --+ 4
+	local newTargetYSize = bounds - fontSize
 	if (self.TargetYSize ~= newTargetYSize) then
 		self.TargetYSize = newTargetYSize
 		self:TweenToTargetYSize()
@@ -190,7 +190,7 @@ ClassMaker.RegisterClassType("ChatBar", methods)
 
 function module.new()
 	local obj = {}
-	
+
 	local BaseFrame, TextBoxFrame, TextBox, TextLabel = CreateGuiObject()
 	obj.GuiObject = BaseFrame
 	obj.TextBoxFrame = TextBoxFrame
@@ -205,7 +205,7 @@ function module.new()
 
 	ClassMaker.MakeClass("ChatBar", obj)
 
-	obj:SetTextLabelText("To chat click here or press \"/\" key")
+	obj:SetTextLabelText('To chat click here or press "/" key')
 
 	obj:CreateTweeners()
 
