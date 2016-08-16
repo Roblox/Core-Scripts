@@ -4,6 +4,7 @@ local module = {}
 --//////////////////////////////////////
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
+local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 
 --////////////////////////////// Details
 --//////////////////////////////////////
@@ -69,12 +70,6 @@ local function CreateGuiObject()
 	local rate = 1.2 * 1
 	SelectedFrameBackgroundImage.BackgroundColor3 = Color3.fromRGB(78 * rate, 84 * rate, 96 * rate)
 
-	--SelectedFrameBackgroundImage.SliceCenter = Rect.new(8,6,46,44)
-	--SelectedFrameBackgroundImage.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
-
-	--SelectedFrameBackgroundImage.SliceCenter = Rect.new(8, 8, 56, 56)
-	--SelectedFrameBackgroundImage.Image = "rbxasset://textures/ui/Chat/VRChatBackground.png"
-
 	local borderXOffset = 2
 	local blueBarYSize = 4 
 	local BlueBarLeft = Instance.new("ImageLabel", SelectedFrame)
@@ -100,6 +95,11 @@ local function CreateGuiObject()
 	NameTag.BackgroundTransparency = 1
 	NameTag.Font = Enum.Font.SourceSansBold
 	NameTag.FontSize = Enum.FontSize.Size18
+
+	NameTag.FontSize = moduleChatSettings.ChatChannelsTabTextSize
+
+
+
 	NameTag.TextColor3 = Color3.new(1, 1, 1)
 	NameTag.TextStrokeTransparency = 0.75
 

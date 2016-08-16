@@ -4,6 +4,7 @@ local module = {}
 --//////////////////////////////////////
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
+local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 
 --////////////////////////////// Details
 --//////////////////////////////////////
@@ -50,7 +51,7 @@ local function CreateGuiObject()
 	TextBox.BackgroundTransparency = 1
 	TextBox.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)
 	TextBox.Position = UDim2.new(0, textBoxPixelOffset, 0, textBoxPixelOffset)
-	TextBox.FontSize = Enum.FontSize.Size18
+	TextBox.FontSize = moduleChatSettings.ChatBarTextSize
 	TextBox.Font = Enum.Font.SourceSansBold
 	TextBox.TextColor3 = Color3.new(1, 1, 1)
 	TextBox.TextStrokeTransparency = 0.75

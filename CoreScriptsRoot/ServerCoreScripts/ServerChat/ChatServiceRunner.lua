@@ -3,6 +3,7 @@ local source = [[
 --	// Written by: Xsitsu
 --	// Description: Main script to initialize ChatService and run ChatModules.
 
+local EventFolderName = "DefaultChatSystemChatEvents"
 local EventFolderParent = game:GetService("ReplicatedStorage")
 local modulesFolder = script
 
@@ -12,22 +13,51 @@ local proxy = require(modulesFolder:WaitForChild("ChatServiceProxy")).CreateProx
 local didInit = false
 
 
-local EventFolder = Instance.new("Folder")
-EventFolder.Name = "ChatEvents"
-EventFolder.Archivable = false
-Instance.new("RemoteEvent", EventFolder).Name = "OnNewMessage"
-Instance.new("RemoteEvent", EventFolder).Name = "OnNewSystemMessage"
-Instance.new("RemoteEvent", EventFolder).Name = "OnChannelJoined"
-Instance.new("RemoteEvent", EventFolder).Name = "OnChannelLeft"
-Instance.new("RemoteEvent", EventFolder).Name = "OnMuted"
-Instance.new("RemoteEvent", EventFolder).Name = "OnUnmuted"
-Instance.new("RemoteEvent", EventFolder).Name = "OnSpeakerExtraDataUpdated"
-Instance.new("RemoteEvent", EventFolder).Name = "OnMainChannelSet"
+local useEvents = {}
 
-Instance.new("RemoteEvent", EventFolder).Name = "SayMessageRequest"
-Instance.new("RemoteEvent", EventFolder).Name = "GetInitDataRequest"
+local EventFolder = EventFolderParent:FindFirstChild(EventFolderName)
+if (not EventFolder) then
+	EventFolder = Instance.new("Folder")
+	EventFolder.Name = EventFolderName
+	EventFolder.Archivable = false
+	EventFolder.Parent = EventFolderParent
+end
 
-EventFolder.Parent = EventFolderParent
+local function GetObjectWithNameAndType(parentObject, objectName, objectType)
+	for i, child in pairs(parentObject:GetChildren()) do
+		if (child:IsA(objectType) and child.Name == objectName) then
+			return child
+		end
+	end
+
+	return nil
+end
+
+local function CreateIfDoesntExist(parentObject, objectName, objectType)
+	local obj = GetObjectWithNameAndType(parentObject, objectName, objectType)
+	if (not obj) then
+		obj = Instance.new(objectType)
+		obj.Name = objectName
+		obj.Parent = parentObject
+	end
+	useEvents[objectName] = obj
+	
+	return obj
+end
+
+CreateIfDoesntExist(EventFolder, "OnNewMessage", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "OnNewSystemMessage", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "OnChannelJoined", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "OnChannelLeft", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "OnMuted", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "OnUnmuted", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "OnSpeakerExtraDataUpdated", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "OnMainChannelSet", "RemoteEvent")
+
+CreateIfDoesntExist(EventFolder, "SayMessageRequest", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "GetInitDataRequest", "RemoteEvent")
+
+EventFolder = useEvents
 
 
 local Players = game:GetService("Players")

@@ -35,6 +35,7 @@ local function Install()
 	LoadModuleData("MessageLabelCreator", ChatMain)
 	LoadModuleData("ChannelsTab", ChatMain)
 	LoadModuleData("TransparencyTweener", ChatMain)
+	LoadModuleData("ChatSettings", ChatMain)
 
 	ChatScript.Parent = installDirectory
 	--ChatScript.Archivable = false

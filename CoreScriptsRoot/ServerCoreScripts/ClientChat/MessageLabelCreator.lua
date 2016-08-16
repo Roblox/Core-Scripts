@@ -4,6 +4,7 @@ local module = {}
 --//////////////////////////////////////
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
+local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 
 --////////////////////////////// Details
 --//////////////////////////////////////
@@ -103,7 +104,7 @@ function metatable:CreateMessageLabel(fromSpeaker, message)
 	end
 
 	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = Enum.FontSize.Size18
+	local useFontSize = moduleChatSettings.ChatWindowTextSize
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
@@ -201,7 +202,7 @@ end
 
 function metatable:CreateSystemMessageLabel(message)
 	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = Enum.FontSize.Size18
+	local useFontSize = moduleChatSettings.ChatWindowTextSize
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)

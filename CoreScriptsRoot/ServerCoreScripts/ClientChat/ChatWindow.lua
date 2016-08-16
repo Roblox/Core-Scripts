@@ -5,6 +5,7 @@ local module = {}
 local modulesFolder = script.Parent
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
+local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 
 --////////////////////////////// Details
 --//////////////////////////////////////
@@ -31,24 +32,41 @@ end
 local function CreateGuiObject()
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.BackgroundTransparency = 1
-	BaseFrame.Size = UDim2.new(0.35, 0, 0.35, 0)
+	BaseFrame.Size = moduleChatSettings.DefaultWindowSize
 
-	--// This spawns a new thread that waits approximately long enough 
-	--// until the BaseFrame has been parented to PlayerGui so it can 
-	--// actually check the size of it.
-	spawn(function()
-		wait()
-		if (BaseFrame.AbsoluteSize.X < 1600/3.75) then
-			BaseFrame.Size = UDim2.new(0, 1600/3.75, 0, 900/3.75)
+	if (moduleChatSettings.WindowDraggable) then
+		BaseFrame.Active = true
+		BaseFrame.Draggable = true
+	end
+
+	local haveResized = false
+	local function doCheckMinimumResize()
+		--// AbsoluteSize gets set when it is parented correctly, so don't calculate until then
+		--// No longer want this restriction after a resize has been done however.
+		if (not haveResized and BaseFrame.AbsoluteSize.X == 0) then return end
+		haveResized = true
+
+		if (BaseFrame.AbsoluteSize.X < moduleChatSettings.MinimumWindowSizeX) then
+			BaseFrame.Size = UDim2.new(0, moduleChatSettings.MinimumWindowSizeX, 0, moduleChatSettings.MinimumWindowSizeY)
+		end
+	end
+
+	BaseFrame.Changed:connect(function(prop)
+		if (prop == "AbsoluteSize" or prop == "Parent") then
+			doCheckMinimumResize()
 		end
 	end)
+
+	local chatBarTextSizeY = string.match(moduleChatSettings.ChatBarTextSize.Name, "%d+")
+	local channelsBarTextYSize = string.match(moduleChatSettings.ChatChannelsTabTextSize.Name, "%d+")
 
 	--// Chat Size18, 8 pixels on each end for white box in center, 
 	--// 8 pixels on each end for actual chatbot object
 	local chatBarYSize = 18 + 16 + 16
+	chatBarYSize = chatBarTextSizeY + 16 + 16
 
 	--// 32 pixels of button height + offset pixels
-	local chatChannelYSize = 32 + 2
+	local chatChannelYSize = math.max(32, channelsBarTextYSize + 8) + 2
 
 	local ChatBarParentFrame = Instance.new("Frame", BaseFrame)
 	ChatBarParentFrame.Name = "ChatBarParentFrame"

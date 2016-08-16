@@ -5,10 +5,70 @@ local source = [[
 
 local moduleApiTable = {}
 
+
+--// This section of code waits until all of the necessary RemoteEvents are found in EventFolder.
+--// I have to do some weird stuff since people could potentially already have pre-existing 
+--// things in a folder with the same name, and they may have different class types.
+--// I do the useEvents thing and set EventFolder to useEvents so I can have a pseudo folder that 
+--// the rest of the code can interface with and have the guarantee that the RemoteEvents they want 
+--// exist with their desired names.
+
+local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
+
+local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
+local waitChildren = 
+{
+	OnNewMessage = true,
+	OnNewSystemMessage = true,
+	OnChannelJoined = true,
+	OnChannelLeft = true,
+	OnMuted = true,
+	OnUnmuted = true,
+	OnSpeakerExtraDataUpdated = true,
+	OnMainChannelSet = true,
+
+	SayMessageRequest = true,
+	GetInitDataRequest = true,
+}
+
+local useEvents = {}
+
+local FoundAllEventsEvent = Instance.new("BindableEvent")
+
+local function TryRemoveChild(child)
+	if (child:IsA("RemoteEvent") and waitChildren[child.Name]) then
+		waitChildren[child.Name] = nil
+		useEvents[child.Name] = child
+		numChildrenRemaining = numChildrenRemaining - 1
+	end
+end
+
+for i, child in pairs(EventFolder:GetChildren()) do
+	TryRemoveChild(child)
+end
+
+if (numChildrenRemaining > 0) then
+	local con = EventFolder.ChildAdded:connect(function(child)
+		TryRemoveChild(child)
+		if (numChildrenRemaining < 1) then
+			FoundAllEventsEvent:Fire()
+		end
+	end)
+
+	FoundAllEventsEvent.Event:wait() -- I love how this turned out
+	con:disconnect()
+
+	FoundAllEventsEvent:Destroy()
+end
+
+EventFolder = useEvents
+
+
+
+--// Rest of code after waiting for correct events.
+
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-
-local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("ChatEvents")
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
