@@ -259,7 +259,7 @@ end)
 
 
 local function UpdateMousePosition(mousePos)
-	if (not moduleApiTable.Visible or not moduleApiTable.IsCoreGuiEnabled or not moduleApiTable.TopbarEnabled) then return end
+	if not (moduleApiTable.Visible and moduleApiTable.IsCoreGuiEnabled and moduleApiTable.TopbarEnabled) then return end
 
 	local windowPos = ChatWindow.GuiObject.AbsolutePosition
 	local windowSize = ChatWindow.GuiObject.AbsoluteSize
