@@ -32,6 +32,7 @@ local function Install()
 	LoadModuleData("ChatChannelProxy", ChatServiceRunner)
 	LoadModuleData("Speaker", ChatServiceRunner)
 	LoadModuleData("SpeakerProxy", ChatServiceRunner)
+	LoadModuleData("ClassMaker", ChatServiceRunner)
 
 	if (not ServerStorage:FindFirstChild("ChatModules")) then
 		local ModulesFolder = Instance.new("Folder")

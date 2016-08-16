@@ -5,29 +5,12 @@ local module = {}
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
-
---////////////////////////////// Details
---//////////////////////////////////////
-local metatable = {}
-metatable.__ClassName = "MessageLabelCreator"
-
-metatable.__tostring = function(tbl)
-	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
-end
-
-metatable.__metatable = "The metatable is locked"
-metatable.__index = function(tbl, index, value)
-	if rawget(tbl, index) then return rawget(tbl, index) end
-	if rawget(metatable, index) then return rawget(metatable, index) end
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-metatable.__newindex = function(tbl, index, value)
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-
+local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
+local methods = {}
+
 local testLabel = Instance.new("TextLabel")
 testLabel.TextWrapped  = true
 testLabel.Position = UDim2.new(1, 0, 1, 0)
@@ -90,15 +73,12 @@ end
 
 
 
-function metatable:Dump()
-	return tostring(self)
-end
 
-function metatable:RegisterSpeakerDatabase(SpeakerDatabase)
+function methods:RegisterSpeakerDatabase(SpeakerDatabase)
 	rawset(self, "SpeakerDatabase", SpeakerDatabase)
 end
 
-function metatable:CreateMessageLabel(fromSpeaker, message)
+function methods:CreateMessageLabel(fromSpeaker, message)
 	if (string.sub(message, 1, 4) == "/me ") then
 		return self:CreateSystemMessageLabel(fromSpeaker .. " " .. string.sub(message, 5))
 	end
@@ -200,7 +180,7 @@ function metatable:CreateMessageLabel(fromSpeaker, message)
 	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, StrongReferences)
 end
 
-function metatable:CreateSystemMessageLabel(message)
+function methods:CreateSystemMessageLabel(message)
 	local useFont = Enum.Font.SourceSansBold
 	local useFontSize = moduleChatSettings.ChatWindowTextSize
 
@@ -232,20 +212,56 @@ function metatable:CreateSystemMessageLabel(message)
 	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, {})
 end
 
-function metatable:CreateWelcomeMessageLabel(message)
+function methods:CreateWelcomeMessageLabel(message)
 	return self:CreateSystemMessageLabel(message)
+end
+
+function methods:CreateSetCoreMessageLabel(valueTable)
+	local useFont = valueTable.Font or Enum.Font.SourceSansBold
+	local useFontSize = valueTable.FontSize or moduleChatSettings.ChatWindowTextSize
+	local useColor = valueTable.Color or Color3.new(1, 1, 1)
+
+	local message = valueTable.Text
+
+	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
+	BaseFrame.BackgroundTransparency = 1
+
+	local messageBorder = 8
+
+	local BaseMessage = Instance.new("TextLabel", BaseFrame)
+	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
+	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
+	BaseMessage.BackgroundTransparency = 1
+	BaseMessage.Font = useFont
+	BaseMessage.FontSize = useFontSize
+	BaseMessage.TextXAlignment = Enum.TextXAlignment.Left
+	BaseMessage.TextYAlignment = Enum.TextYAlignment.Top
+	BaseMessage.TextStrokeTransparency = 0.75
+	BaseMessage.TextColor3 = useColor
+	BaseMessage.TextWrapped = true
+
+	BaseMessage.Text = message
+
+
+	local Tweener = moduleTransparencyTweener.new()
+	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
+	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
+
+	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, {})
 end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
+ClassMaker.RegisterClassType("MessageLabelCreator", methods)
+
 function module.new()
 	local obj = {}
-	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
-	
+
 	obj.SpeakerDatabase = nil
 	
-	obj = setmetatable(obj, metatable)
-	
+	ClassMaker.MakeClass("MessageLabelCreator", obj)
+
 	return obj
 end
 

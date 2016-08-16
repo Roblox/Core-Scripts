@@ -6,29 +6,12 @@ local modulesFolder = script.Parent
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
-
---////////////////////////////// Details
---//////////////////////////////////////
-local metatable = {}
-metatable.__ClassName = "ChatWindow"
-
-metatable.__tostring = function(tbl)
-	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
-end
-
-metatable.__metatable = "The metatable is locked"
-metatable.__index = function(tbl, index, value)
-	if rawget(tbl, index) then return rawget(tbl, index) end
-	if rawget(metatable, index) then return rawget(metatable, index) end
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-metatable.__newindex = function(tbl, index, value)
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-
+local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
+local methods = {}
+
 local function CreateGuiObject()
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.BackgroundTransparency = 1
@@ -109,11 +92,7 @@ local function CreateGuiObject()
 	return BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame
 end
 
-function metatable:Dump()
-	return tostring(self)
-end
-
-function metatable:RegisterChatBar(ChatBar)
+function methods:RegisterChatBar(ChatBar)
 	rawset(self, "ChatBar", ChatBar)
 	self.ChatBar.GuiObject.Parent = self.ChatBarParentFrame
 
@@ -121,7 +100,7 @@ function metatable:RegisterChatBar(ChatBar)
 	self.TextTweener:RegisterTweenObjectProperty(ChatBar.TextTweener, "Transparency")
 end
 
-function metatable:RegisterChannelsBar(ChannelsBar)
+function methods:RegisterChannelsBar(ChannelsBar)
 	rawset(self, "ChannelsBar", ChannelsBar)
 	self.ChannelsBar.GuiObject.Parent = self.ChannelsBarParentFrame
 
@@ -129,7 +108,7 @@ function metatable:RegisterChannelsBar(ChannelsBar)
 	self.TextTweener:RegisterTweenObjectProperty(ChannelsBar.TextTweener, "Transparency")
 end
 
-function metatable:AddChannel(channelName)
+function methods:AddChannel(channelName)
 	if (self:GetChannel(channelName))  then
 		--error("Channel '" .. channelName .. "' already exists!")
 		return
@@ -154,7 +133,7 @@ function metatable:AddChannel(channelName)
 	return channel
 end
 
-function metatable:RemoveChannel(channelName)
+function methods:RemoveChannel(channelName)
 	if (not self:GetChannel(channelName))  then
 		error("Channel '" .. channelName .. "' does not exist!")
 	end
@@ -175,15 +154,15 @@ function metatable:RemoveChannel(channelName)
 	self.ChannelsBar:RemoveChannelTab(channelName)
 end
 
-function metatable:GetChannel(channelName)
+function methods:GetChannel(channelName)
 	return channelName and self.Channels[channelName:lower()] or nil
 end
 
-function metatable:GetCurrentChannel()
+function methods:GetCurrentChannel()
 	return rawget(self, "CurrentChannel")
 end
 
-function metatable:SwitchCurrentChannel(channelName)
+function methods:SwitchCurrentChannel(channelName)
 	local cur = self:GetCurrentChannel()
 
 	if (cur) then
@@ -203,29 +182,29 @@ function metatable:SwitchCurrentChannel(channelName)
 	rawset(self, "CurrentChannel", new)
 end
 
-function metatable:UpdateFrameVisibility()
+function methods:UpdateFrameVisibility()
 	self.GuiObject.Visible = (self.Visible and self.CoreGuiEnabled)
 end
 
-function metatable:GetVisible()
+function methods:GetVisible()
 	return self.Visible
 end
 
-function metatable:SetVisible(visible)
+function methods:SetVisible(visible)
 	self.Visible = visible
 	self:UpdateFrameVisibility()
 end
 
-function metatable:GetCoreGuiEnabled()
+function methods:GetCoreGuiEnabled()
 	return self.CoreGuiEnabled
 end
 
-function metatable:SetCoreGuiEnabled(enabled)
+function methods:SetCoreGuiEnabled(enabled)
 	self.CoreGuiEnabled = enabled
 	self:UpdateFrameVisibility()
 end
 
-function metatable:FadeOutBackground(duration)
+function methods:FadeOutBackground(duration)
 	--self.ChannelsBar:FadeOutBackground(duration)
 	--self.ChatBar:FadeOutBackground(duration)
 
@@ -236,7 +215,7 @@ function metatable:FadeOutBackground(duration)
 	self.BackgroundTweener:Tween(duration, 1)
 end
 
-function metatable:FadeInBackground(duration)
+function methods:FadeInBackground(duration)
 	--self.ChannelsBar:FadeInBackground(duration)
 	--self.ChatBar:FadeInBackground(duration)
 
@@ -247,7 +226,7 @@ function metatable:FadeInBackground(duration)
 	self.BackgroundTweener:Tween(duration, 0)
 end
 
-function metatable:FadeOutText(duration)
+function methods:FadeOutText(duration)
 	--self.ChannelsBar:FadeOutText(duration)
 	--self.ChatBar:FadeOutText(duration)
 
@@ -258,7 +237,7 @@ function metatable:FadeOutText(duration)
 	self.TextTweener:Tween(duration, 1)
 end
 
-function metatable:FadeInText(duration)
+function methods:FadeInText(duration)
 	--self.ChannelsBar:FadeInText(duration)
 	--self.ChatBar:FadeInText(duration)
 
@@ -269,7 +248,7 @@ function metatable:FadeInText(duration)
 	self.TextTweener:Tween(duration, 0)
 end
 
-function metatable:CreateTweeners()
+function methods:CreateTweeners()
 	self.BackgroundTweener:CancelTween()
 	self.TextTweener:CancelTween()
 
@@ -285,9 +264,10 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
+ClassMaker.RegisterClassType("ChatWindow", methods)
+
 function module.new()
 	local obj = {}
-	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
 
 	local BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame= CreateGuiObject()
 	obj.GuiObject = BaseFrame
@@ -307,8 +287,8 @@ function module.new()
 	obj.BackgroundTweener = moduleTransparencyTweener.new()
 	obj.TextTweener = moduleTransparencyTweener.new()
 
-	obj = setmetatable(obj, metatable)
-
+	ClassMaker.MakeClass("ChatWindow", obj)
+	
 	obj:CreateTweeners()
 
 	return obj

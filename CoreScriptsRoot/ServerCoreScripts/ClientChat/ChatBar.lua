@@ -5,29 +5,12 @@ local module = {}
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
-
---////////////////////////////// Details
---//////////////////////////////////////
-local metatable = {}
-metatable.__ClassName = "ChatBar"
-
-metatable.__tostring = function(tbl)
-	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
-end
-
-metatable.__metatable = "The metatable is locked"
-metatable.__index = function(tbl, index, value)
-	if rawget(tbl, index) then return rawget(tbl, index) end
-	if rawget(metatable, index) then return rawget(metatable, index) end
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-metatable.__newindex = function(tbl, index, value)
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-
+local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
+local methods = {}
+
 local function CreateGuiObject()
 	local backgroundImagePixelOffset = 8
 	local textBoxPixelOffset = 8
@@ -83,52 +66,48 @@ local function CreateGuiObject()
 	return BaseFrame, BoxFrame, TextBox, TextLabel
 end
 
-function metatable:Dump()
-	return tostring(self)
-end
-
-function metatable:GetTextBox()
+function methods:GetTextBox()
 	return self.TextBox
 end
 
-function metatable:IsFocused()
+function methods:IsFocused()
 	return self:GetTextBox():IsFocused()
 end
 
-function metatable:GetVisible()
+function methods:GetVisible()
 	return self.GuiObject.Visible
 end
 
-function metatable:CaptureFocus()
+function methods:CaptureFocus()
 	self:GetTextBox():CaptureFocus()
 end
 
-function metatable:ReleaseFocus(didRelease)
+function methods:ReleaseFocus(didRelease)
 	self:GetTextBox():ReleaseFocus(didRelease)
 end
 
-function metatable:ResetText()
+function methods:ResetText()
 	self:GetTextBox().Text = ""
 end
 
-function metatable:GetEnabled()
+function methods:GetEnabled()
 	return self.GuiObject.Visible
 end
 
-function metatable:SetEnabled(enabled)
+function methods:SetEnabled(enabled)
 	self.GuiObject.Visible = enabled  --was 'false', not sure why
 end
 
-function metatable:SetTextLabelText(text)
+function methods:SetTextLabelText(text)
 	self.TextLabel.Text = text
 end
 
-function metatable:ResetSize()
+function methods:ResetSize()
 	self.TargetYSize = 0
 	self:TweenToTargetYSize()
 end
 
-function metatable:CalculateSize()
+function methods:CalculateSize()
 	local lastPos = self.GuiObject.Size
 	self.GuiObject.Size = UDim2.new(1, 0, 0, 1000)
 
@@ -145,7 +124,7 @@ function metatable:CalculateSize()
 
 end
 
-function metatable:TweenToTargetYSize()
+function methods:TweenToTargetYSize()
 	local endSize = UDim2.new(1, 0, 1, self.TargetYSize)
 	local curSize = self.GuiObject.Size
 
@@ -160,25 +139,25 @@ function metatable:TweenToTargetYSize()
 	self.GuiObject:TweenSize(endSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, tweeningTime, true)
 end
 
-function metatable:FadeOutBackground(duration)
+function methods:FadeOutBackground(duration)
 	self.BackgroundTweener:Tween(duration, 1)
 	--self:FadeOutText(duration)
 end
 
-function metatable:FadeInBackground(duration)
+function methods:FadeInBackground(duration)
 	self.BackgroundTweener:Tween(duration, 0)
 	--self:FadeInText(duration)
 end
 
-function metatable:FadeOutText(duration)
+function methods:FadeOutText(duration)
 	self.TextTweener:Tween(duration, 1)
 end
 
-function metatable:FadeInText(duration)
+function methods:FadeInText(duration)
 	self.TextTweener:Tween(duration, 0)
 end
 
-function metatable:CreateTweeners()
+function methods:CreateTweeners()
 	self.BackgroundTweener:CancelTween()
 	self.TextTweener:CancelTween()
 
@@ -207,10 +186,11 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
+ClassMaker.RegisterClassType("ChatBar", methods)
+
 function module.new()
 	local obj = {}
-	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
-
+	
 	local BaseFrame, TextBoxFrame, TextBox, TextLabel = CreateGuiObject()
 	obj.GuiObject = BaseFrame
 	obj.TextBoxFrame = TextBoxFrame
@@ -223,7 +203,7 @@ function module.new()
 	obj.BackgroundTweener = moduleTransparencyTweener.new()
 	obj.TextTweener = moduleTransparencyTweener.new()
 
-	obj = setmetatable(obj, metatable)
+	ClassMaker.MakeClass("ChatBar", obj)
 
 	obj:SetTextLabelText("To chat click here or press \"/\" key")
 

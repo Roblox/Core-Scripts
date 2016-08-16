@@ -708,9 +708,7 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 		end
 
 		if (channelObj) then
-			local message = valueTable["Text"]
-			
-			local messageLabel = MessageLabelCreator:CreateSystemMessageLabel(message)
+			local messageLabel = MessageLabelCreator:CreateSetCoreMessageLabel(valueTable)
 			channelObj:AddMessageLabelToLog(messageLabel)
 			
 			ChannelsBar:UpdateMessagePostedInChannel(channel)

@@ -1,33 +1,17 @@
 local source = [[
 local module = {}
 
---////////////////////////////// Details
+local modulesFolder = script.Parent
+
+--////////////////////////////// Include
 --//////////////////////////////////////
-local metatable = {}
-metatable.__ClassName = "Speaker"
-
-metatable.__tostring = function(tbl)
-	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
-end
-
-metatable.__metatable = "The metatable is locked"
-metatable.__index = function(tbl, index, value)
-	if rawget(tbl, index) then return rawget(tbl, index) end
-	if rawget(metatable, index) then return rawget(metatable, index) end
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-metatable.__newindex = function(tbl, index, value)
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-
+local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
-function metatable:Dump()
-	return tostring(self)
-end
+local methods = {}
 
-function metatable:Destroy()
+function methods:Destroy()
 	for i, channel in pairs(self.Channels) do
 		channel:InternalRemoveSpeaker(self)
 	end
@@ -35,11 +19,11 @@ function metatable:Destroy()
 	self.eDestroyed:Fire()
 end
 
-function metatable:AssignPlayerObject(playerObj)
+function methods:AssignPlayerObject(playerObj)
 	rawset(self, "PlayerObj", playerObj)
 end
 
-function metatable:SayMessage(message, channelName)
+function methods:SayMessage(message, channelName)
 	if (self.ChatService:DoProcessCommands(self.Name, message, channelName)) then return end
 	if (not channelName) then return end
 
@@ -55,7 +39,7 @@ function metatable:SayMessage(message, channelName)
 	
 end
 
-function metatable:JoinChannel(channelName)
+function methods:JoinChannel(channelName)
 	if (self.Channels[channelName:lower()]) then
 		warn("Speaker is already in channel \"" .. channelName .. "\"")
 		return
@@ -77,7 +61,7 @@ function metatable:JoinChannel(channelName)
 	end)
 end
 
-function metatable:LeaveChannel(channelName)
+function methods:LeaveChannel(channelName)
 	if (not self.Channels[channelName:lower()]) then
 		warn("Speaker is not in channel \"" .. channelName .. "\"")
 		return
@@ -92,7 +76,7 @@ function metatable:LeaveChannel(channelName)
 	end)
 end
 
-function metatable:GetChannelList()
+function methods:GetChannelList()
 	local list = {}
 	for i, channel in pairs(self.Channels) do
 		table.insert(list, channel.Name)
@@ -100,45 +84,46 @@ function metatable:GetChannelList()
 	return list
 end
 
-function metatable:SendMessage(fromSpeaker, channel, message)
+function methods:SendMessage(fromSpeaker, channel, message)
 	spawn(function()
 		self.eReceivedMessage:Fire(fromSpeaker, channel, message)
 	end)
 end
 
-function metatable:SendSystemMessage(message, channel)
+function methods:SendSystemMessage(message, channel)
 	spawn(function()
 		self.eReceivedSystemMessage:Fire(message, channel)
 	end)
 end
 
-function metatable:IsInChannel(channelName)
+function methods:IsInChannel(channelName)
 	return (self.Channels[channelName:lower()] ~= nil)
 end
 
-function metatable:GetPlayerObject()
+function methods:GetPlayerObject()
 	return rawget(self, "PlayerObj")
 end
 
-function metatable:SetExtraData(key, value)
+function methods:SetExtraData(key, value)
 	self.ExtraData[key] = value
 	spawn(function() self.eExtraDataUpdated:Fire(key, value) end) 
 end
 
-function metatable:GetExtraData(key)
+function methods:GetExtraData(key)
 	return self.ExtraData[key]
 end
 
-function metatable:SetMainChannel(channel)
+function methods:SetMainChannel(channel)
 	spawn(function() self.eMainChannelSet:Fire(channel) end)
 end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
+ClassMaker.RegisterClassType("Speaker", methods)
+
 function module.new(vChatService, name)
 	local obj = {}
-	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
-	
+
 	obj.ChatService = newproxy(true)
 	getmetatable(obj.ChatService).__index = vChatService
 	
@@ -172,7 +157,7 @@ function module.new(vChatService, name)
 	obj.ExtraDataUpdated = obj.eExtraDataUpdated.Event
 	obj.MainChannelSet = obj.eMainChannelSet.Event
 
-	obj = setmetatable(obj, metatable)
+	ClassMaker.MakeClass("Speaker", obj)
 	
 	return obj
 end

@@ -5,29 +5,12 @@ local module = {}
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
-
---////////////////////////////// Details
---//////////////////////////////////////
-local metatable = {}
-metatable.__ClassName = "ChannelsTab"
-
-metatable.__tostring = function(tbl)
-	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
-end
-
-metatable.__metatable = "The metatable is locked"
-metatable.__index = function(tbl, index, value)
-	if rawget(tbl, index) then return rawget(tbl, index) end
-	if rawget(metatable, index) then return rawget(metatable, index) end
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-metatable.__newindex = function(tbl, index, value)
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-
+local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
+local methods = {}
+
 local function CreateGuiObject()
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Size = UDim2.new(0.25, 0, 1, 0)
@@ -126,15 +109,11 @@ local function CreateGuiObject()
 	return BaseFrame, NameTag, NewMessageIcon, UnselectedFrame, SelectedFrame
 end
 
-function metatable:Dump()
-	return tostring(self) .. " [" .. self.ChannelName .. "]"
-end
-
-function metatable:Destroy()
+function methods:Destroy()
 	self.GuiObject:Destroy()
 end
 
-function metatable:UpdateMessagePostedInChannel(ignoreActive)
+function methods:UpdateMessagePostedInChannel(ignoreActive)
 	if (self.Active and (ignoreActive ~= true)) then return end
 
 	local count = self.UnreadMessageCount + 1
@@ -157,7 +136,7 @@ function metatable:UpdateMessagePostedInChannel(ignoreActive)
 
 end
 
-function metatable:SetActive(active)
+function methods:SetActive(active)
 	self.Active = active
 	self.UnselectedFrame.Visible = not active
 	self.SelectedFrame.Visible = active
@@ -173,27 +152,27 @@ function metatable:SetActive(active)
 	end
 end
 
-function metatable:RenderDisplayText()
+function methods:RenderDisplayText()
 	
 end
 
-function metatable:FadeOutBackground(duration)
+function methods:FadeOutBackground(duration)
 	self.BackgroundTweener:Tween(duration, 1)
 end
 
-function metatable:FadeInBackground(duration)
+function methods:FadeInBackground(duration)
 	self.BackgroundTweener:Tween(duration, 0)
 end
 
-function metatable:FadeOutText(duration)
+function methods:FadeOutText(duration)
 	self.TextTweener:Tween(duration, 1)
 end
 
-function metatable:FadeInText(duration)
+function methods:FadeInText(duration)
 	self.TextTweener:Tween(duration, 0)
 end
 
-function metatable:CreateTweeners()
+function methods:CreateTweeners()
 	self.BackgroundTweener:CancelTween()
 	self.TextTweener:CancelTween()
 
@@ -219,9 +198,10 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
+ClassMaker.RegisterClassType("ChannelsTab", methods)
+
 function module.new(channelName)
 	local obj = {}
-	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
 
 	local BaseFrame, NameTag, NewMessageIcon, UnselectedFrame, SelectedFrame = CreateGuiObject()
 	obj.GuiObject = BaseFrame
@@ -254,7 +234,7 @@ function module.new(channelName)
 	end
 	obj.NameTag.Text = channelName
 
-	obj = setmetatable(obj, metatable)
+	ClassMaker.MakeClass("ChannelsTab", obj)
 
 	obj:CreateTweeners()
 	obj:SetActive(false)	

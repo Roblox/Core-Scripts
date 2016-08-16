@@ -5,29 +5,12 @@ local module = {}
 local modulesFolder = script.Parent
 local moduleChannelsTab = require(modulesFolder:WaitForChild("ChannelsTab"))
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
-
---////////////////////////////// Details
---//////////////////////////////////////
-local metatable = {}
-metatable.__ClassName = "ChannelsBar"
-
-metatable.__tostring = function(tbl)
-	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
-end
-
-metatable.__metatable = "The metatable is locked"
-metatable.__index = function(tbl, index, value)
-	if rawget(tbl, index) then return rawget(tbl, index) end
-	if rawget(metatable, index) then return rawget(metatable, index) end
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-metatable.__newindex = function(tbl, index, value)
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-
+local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
+local methods = {}
+
 local function CreateGuiObject()
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -145,11 +128,8 @@ local function CreateGuiObject()
 	return BaseFrame, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice
 end
 
-function metatable:Dump()
-	return tostring(self)
-end
 
-function metatable:UpdateMessagePostedInChannel(channelName)
+function methods:UpdateMessagePostedInChannel(channelName)
 	local tab = self:GetChannelTab(channelName)
 	if (tab) then
 		tab:UpdateMessagePostedInChannel()
@@ -158,7 +138,7 @@ function metatable:UpdateMessagePostedInChannel(channelName)
 	end
 end
 		
-function metatable:AddChannelTab(channelName)
+function methods:AddChannelTab(channelName)
 	if (self:GetChannelTab(channelName)) then
 		error("Channel tab '" .. channelName .. "'already exists!")
 	end
@@ -181,7 +161,7 @@ function metatable:AddChannelTab(channelName)
 	return tab
 end
 
-function metatable:RemoveChannelTab(channelName)
+function methods:RemoveChannelTab(channelName)
 	if (not self:GetChannelTab(channelName)) then
 		error("Channel tab '" .. channelName .. "'does not exist!")
 	end
@@ -194,11 +174,11 @@ function metatable:RemoveChannelTab(channelName)
 	self:OrganizeChannelTabs()
 end
 
-function metatable:GetChannelTab(channelName)
+function methods:GetChannelTab(channelName)
 	return self.ChannelTabs[channelName:lower()]
 end
 
-function metatable:OrganizeChannelTabs()
+function methods:OrganizeChannelTabs()
 	local order = {}
 
 	table.insert(order, self:GetChannelTab("All"))
@@ -225,7 +205,7 @@ function metatable:OrganizeChannelTabs()
 end
 
 local lockScrollChannelsFrame = false
-function metatable:ScrollChannelsFrame(dir)
+function methods:ScrollChannelsFrame(dir)
 	if (lockScrollChannelsFrame) then return end
 	lockScrollChannelsFrame = true
 
@@ -251,23 +231,23 @@ function metatable:ScrollChannelsFrame(dir)
 	self.ScrollerFrame:TweenPosition(endPos, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, tweenTime, true, UnlockFunc)
 end
 
-function metatable:FadeOutBackground(duration)
+function methods:FadeOutBackground(duration)
 	self.BackgroundTweener:Tween(duration, 1)
 end
 
-function metatable:FadeInBackground(duration)
+function methods:FadeInBackground(duration)
 	self.BackgroundTweener:Tween(duration, 0)
 end
 
-function metatable:FadeOutText(duration)
+function methods:FadeOutText(duration)
 	self.TextTweener:Tween(duration, 1)
 end
 
-function metatable:FadeInText(duration)
+function methods:FadeInText(duration)
 	self.TextTweener:Tween(duration, 0)
 end
 
-function metatable:CreateTweeners()
+function methods:CreateTweeners()
 	self.BackgroundTweener:CancelTween()
 	self.TextTweener:CancelTween()
 
@@ -286,10 +266,11 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
+ClassMaker.RegisterClassType("ChannelsBar", methods)
+
 function module.new()
 	local obj = {}
-	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
-
+	
 	local BaseFrame, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice = CreateGuiObject()
 	obj.GuiObject = BaseFrame
 	obj.ScrollerFrame = ScrollerFrame
@@ -308,7 +289,7 @@ function module.new()
 	obj.BackgroundTweener = moduleTransparencyTweener.new()
 	obj.TextTweener = moduleTransparencyTweener.new()
 
-	obj = setmetatable(obj, metatable)
+	ClassMaker.MakeClass("ChannelsBar", obj)
 
 	obj:CreateTweeners()
 

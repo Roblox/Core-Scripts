@@ -4,29 +4,12 @@ local module = {}
 --//////////////////////////////////////
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
-
---////////////////////////////// Details
---//////////////////////////////////////
-local metatable = {}
-metatable.__ClassName = "ChatChannel"
-
-metatable.__tostring = function(tbl)
-	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
-end
-
-metatable.__metatable = "The metatable is locked"
-metatable.__index = function(tbl, index, value)
-	if rawget(tbl, index) then return rawget(tbl, index) end
-	if rawget(metatable, index) then return rawget(metatable, index) end
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-metatable.__newindex = function(tbl, index, value)
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-
+local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
+local methods = {}
+
 local function CreateGuiObject()
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -45,19 +28,15 @@ local function CreateGuiObject()
 	return BaseFrame, Scroller
 end
 
-function metatable:Dump()
-	return tostring(self) .. "; " .. self.Name
-end
-
-function metatable:Destroy()
+function methods:Destroy()
 	self.GuiObject:Destroy()
 end
 
-function metatable:SetActive(active)
+function methods:SetActive(active)
 	self.GuiObject.Visible = active
 end
 
-function metatable:AddMessageLabelToLog(messageObject)
+function methods:AddMessageLabelToLog(messageObject)
 	self.TextTweener:RegisterTweenObjectProperty(messageObject.Tweener, "Transparency")
 
 	table.insert(self.MessageObjectLog, messageObject)
@@ -68,7 +47,7 @@ function metatable:AddMessageLabelToLog(messageObject)
 	end
 end
 
-function metatable:RemoveLastMessageLabelFromLog()
+function methods:RemoveLastMessageLabelFromLog()
 	local lastMessage = self.MessageObjectLog[1]
 	local posOffset = UDim2.new(0, 0, 0, lastMessage.BaseFrame.AbsoluteSize.Y)
 
@@ -82,7 +61,7 @@ function metatable:RemoveLastMessageLabelFromLog()
 	self.Scroller.CanvasSize = self.Scroller.CanvasSize - posOffset
 end
 
-function metatable:PositionMessageLabelInWindow(messageObject)
+function methods:PositionMessageLabelInWindow(messageObject)
 	local baseFrame = messageObject.BaseFrame
 	local baseMessage = messageObject.BaseMessage
 
@@ -108,40 +87,41 @@ function metatable:PositionMessageLabelInWindow(messageObject)
 	end
 end
 
-function metatable:ReorderAllMessages()
+function methods:ReorderAllMessages()
 	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 	for i, messageObject in pairs(self.MessageObjectLog) do
 		self:PositionMessageLabelInWindow(messageObject)
 	end
 end
 
-function metatable:RegisterChannelTab(tab)
+function methods:RegisterChannelTab(tab)
 	rawset(self, "ChannelTab", tab)
 end
 
-function metatable:FadeOutBackground(duration)
+function methods:FadeOutBackground(duration)
 	--// Do nothing
 end
 
-function metatable:FadeInBackground(duration)
+function methods:FadeInBackground(duration)
 	--// Do nothing
 end
 
-function metatable:FadeOutText(duration)
+function methods:FadeOutText(duration)
 	self.TextTweener:Tween(duration, 1)
 end
 
-function metatable:FadeInText(duration)
+function methods:FadeInText(duration)
 	self.TextTweener:Tween(duration, 0)
 end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
+ClassMaker.RegisterClassType("ChatChannel", methods)
+
 module.ScrollBarThickness = 4
 
 function module.new(channelName)
 	local obj = {}
-	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
 	
 	local BaseFrame, Scroller = CreateGuiObject()
 	obj.GuiObject = BaseFrame
@@ -155,7 +135,7 @@ function module.new(channelName)
 	obj.Name = channelName
 	obj.GuiObject.Name = "Frame_" .. obj.Name
 
-	obj = setmetatable(obj, metatable)
+	ClassMaker.MakeClass("ChatChannel", obj)
 
 	obj.GuiObject.Changed:connect(function(prop)
 		if (prop == "AbsoluteSize") then

@@ -1,33 +1,17 @@
 local source = [[
 local module = {}
 
---////////////////////////////// Details
+local modulesFolder = script.Parent
+
+--////////////////////////////// Include
 --//////////////////////////////////////
-local metatable = {}
-metatable.__ClassName = "ChatChannel"
-
-metatable.__tostring = function(tbl)
-	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
-end
-
-metatable.__metatable = "The metatable is locked"
-metatable.__index = function(tbl, index, value)
-	if rawget(tbl, index) then return rawget(tbl, index) end
-	if rawget(metatable, index) then return rawget(metatable, index) end
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-metatable.__newindex = function(tbl, index, value)
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-
+local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
-function metatable:Dump()
-	return tostring(self)
-end
+local methods = {}
 
-function metatable:Destroy()
+function methods:Destroy()
 	for i, speaker in pairs(self.Speakers) do
 		speaker:LeaveChannel(self.Name)
 	end
@@ -35,7 +19,7 @@ function metatable:Destroy()
 	self.eDestroyed:Fire()
 end
 
-function metatable:DoMessageFilter(speakerName, message, channel)
+function methods:DoMessageFilter(speakerName, message, channel)
 	for funcId, func in pairs(self.FilterMessageFunctions) do
 		local s, m = pcall(function()
 			local ret = func(speakerName, message, channel)
@@ -53,7 +37,7 @@ function metatable:DoMessageFilter(speakerName, message, channel)
 	return message
 end
 
-function metatable:DoProcessCommands(speakerName, message, channel)
+function methods:DoProcessCommands(speakerName, message, channel)
 	local processed = false
 	
 	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
@@ -76,7 +60,7 @@ function metatable:DoProcessCommands(speakerName, message, channel)
 	return processed
 end
 
-function metatable:PostMessage(fromSpeaker, message)
+function methods:PostMessage(fromSpeaker, message)
 	message = self:DoMessageFilter(fromSpeaker.Name, message, self.Name)
 	message = self.ChatService:DoMessageFilter(fromSpeaker.Name, message, self.Name)
 
@@ -107,7 +91,7 @@ function metatable:PostMessage(fromSpeaker, message)
 	return message
 end
 
-function metatable:InternalAddSpeaker(speaker)
+function methods:InternalAddSpeaker(speaker)
 	if (self.Speakers[speaker.Name]) then
 		warn("Speaker \"" .. speaker.name .. "\" is already in the channel!")
 		return
@@ -117,7 +101,7 @@ function metatable:InternalAddSpeaker(speaker)
 	spawn(function() self.eSpeakerJoined:Fire(speaker.Name) end)
 end
 
-function metatable:InternalRemoveSpeaker(speaker)
+function methods:InternalRemoveSpeaker(speaker)
 	if (not self.Speakers[speaker.Name]) then
 		warn("Speaker \"" .. speaker.name .. "\" is already in the channel!")
 		return
@@ -127,23 +111,23 @@ function metatable:InternalRemoveSpeaker(speaker)
 	spawn(function() self.eSpeakerLeft:Fire(speaker.Name) end)
 end
 
-function metatable:AddWordFilter(expression)
+function methods:AddWordFilter(expression)
 	self.WordFilters[expression] = true
 end
 
-function metatable:RemoveWordFilter(expression)
+function methods:RemoveWordFilter(expression)
 	self.WordFilters[expression] = nil
 end
 
-function metatable:AddWordAlias(expression, replacement)
+function methods:AddWordAlias(expression, replacement)
 	self.WordAliases[expression] = replacement
 end
 
-function metatable:RemoveWordAlias(expression)
+function methods:RemoveWordAlias(expression)
 	self.WordAliases[expression] = nil
 end
 
-function metatable:KickSpeaker(speakerName, reason)
+function methods:KickSpeaker(speakerName, reason)
 	local speaker = self.ChatService:GetSpeaker(speakerName)
 	if (not speaker) then
 		error("Speaker \"" .. speakerName .. "\" does not exist!")
@@ -161,7 +145,7 @@ function metatable:KickSpeaker(speakerName, reason)
 	
 end
 
-function metatable:MuteSpeaker(speakerName, reason, length)
+function methods:MuteSpeaker(speakerName, reason, length)
 	local speaker = self.ChatService:GetSpeaker(speakerName)
 	if (not speaker) then
 		error("Speaker \"" .. speakerName .. "\" does not exist!")
@@ -181,7 +165,7 @@ function metatable:MuteSpeaker(speakerName, reason, length)
 
 end
 
-function metatable:UnmuteSpeaker(speakerName)
+function methods:UnmuteSpeaker(speakerName)
 	local speaker = self.ChatService:GetSpeaker(speakerName)
 	if (not speaker) then
 		error("Speaker \"" .. speakerName .. "\" does not exist!")
@@ -196,11 +180,11 @@ function metatable:UnmuteSpeaker(speakerName)
 	end
 end
 
-function metatable:IsSpeakerMuted(speakerName)
+function methods:IsSpeakerMuted(speakerName)
 	return (self.Mutes[speakerName:lower()] ~= nil)
 end
 
-function metatable:GetSpeakerList()
+function methods:GetSpeakerList()
 	local list = {}
 	for i, speaker in pairs(self.Speakers) do
 		table.insert(list, speaker.Name)
@@ -208,7 +192,7 @@ function metatable:GetSpeakerList()
 	return list
 end
 
-function metatable:RegisterFilterMessageFunction(funcId, func)
+function methods:RegisterFilterMessageFunction(funcId, func)
 	if self.FilterMessageFunctions[funcId] then
 		error(funcId .. " is already in use!")
 	end
@@ -216,11 +200,11 @@ function metatable:RegisterFilterMessageFunction(funcId, func)
 	self.FilterMessageFunctions[funcId] = func
 end
 
-function metatable:UnregisterFilterMessageFunction(funcId)
+function methods:UnregisterFilterMessageFunction(funcId)
 	self.FilterMessageFunctions[funcId] = nil
 end
 
-function metatable:RegisterProcessCommandsFunction(funcId, func)
+function methods:RegisterProcessCommandsFunction(funcId, func)
 	if (self.ProcessCommandsFunctions[funcId]) then
 		error(funcId .. " is already in use!")
 	end
@@ -228,11 +212,11 @@ function metatable:RegisterProcessCommandsFunction(funcId, func)
 	self.ProcessCommandsFunctions[funcId] = func
 end
 
-function metatable:UnregisterProcessCommandsFunction(funcId)
+function methods:UnregisterProcessCommandsFunction(funcId)
 	self.ProcessCommandsFunctions[funcId] = nil
 end
 
-function metatable:SendSystemMessage(message)
+function methods:SendSystemMessage(message)
 	for i , speaker in pairs(self.Speakers) do
 		speaker:SendSystemMessage(message, self.Name)
 	end
@@ -240,10 +224,11 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
+ClassMaker.RegisterClassType("ChatChannel", methods)
+
 function module.new(vChatService, name, welcomeMessage)
 	local obj = {}
-	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
-	
+
 	obj.ChatService = newproxy(true)
 	getmetatable(obj.ChatService).__index = vChatService
 	
@@ -279,7 +264,7 @@ function module.new(vChatService, name, welcomeMessage)
 	obj.SpeakerMuted = obj.eSpeakerMuted.Event
 	obj.SpeakerUnmuted = obj.eSpeakerUnmuted.Event
 	
-	obj = setmetatable(obj, metatable)
+	ClassMaker.MakeClass("ChatChannel", obj)
 	
 	return obj
 end

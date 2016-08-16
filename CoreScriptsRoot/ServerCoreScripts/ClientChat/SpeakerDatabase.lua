@@ -3,34 +3,13 @@ local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
 local modulesFolder = script.Parent
-
---////////////////////////////// Details
---//////////////////////////////////////
-local metatable = {}
-metatable.__ClassName = "SpeakerDatabase"
-
-metatable.__tostring = function(tbl)
-	return tbl.__ClassName .. ": " .. tbl.MemoryLocation
-end
-
-metatable.__metatable = "The metatable is locked"
-metatable.__index = function(tbl, index, value)
-	if rawget(tbl, index) then return rawget(tbl, index) end
-	if rawget(metatable, index) then return rawget(metatable, index) end
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-metatable.__newindex = function(tbl, index, value)
-	error(index .. " is not a valid member of " .. tbl.__ClassName)
-end
-
+local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
-function metatable:Dump()
-	return tostring(self)
-end
+local methods = {}
 
-function metatable:AddSpeaker(speakerName)
+function methods:AddSpeaker(speakerName)
 	if (self:GetSpeaker(speakerName))  then
 		error("Channel '" .. speakerName .. "' already exists!")
 	end
@@ -40,7 +19,7 @@ function metatable:AddSpeaker(speakerName)
 	return speaker
 end
 
-function metatable:RemoveSpeaker(speakerName)
+function methods:RemoveSpeaker(speakerName)
 	if (not self:GetSpeaker(speakerName))  then
 		error("Channel '" .. speakerName .. "' does not exist!")
 	end
@@ -48,19 +27,20 @@ function metatable:RemoveSpeaker(speakerName)
 	self.Speakers[speakerName:lower()] = nil
 end
 
-function metatable:GetSpeaker(speakerName)
+function methods:GetSpeaker(speakerName)
 	return self.Speakers[speakerName:lower()]
 end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
+ClassMaker.RegisterClassType("SpeakerDatabase", methods)
+
 function module.new()
 	local obj = {}
-	obj.MemoryLocation = tostring(obj):match("[0123456789ABCDEF]+")
 	
 	obj.Speakers = {}
 	
-	obj = setmetatable(obj, metatable)
+	ClassMaker.MakeClass("SpeakerDatabase", obj)
 	
 	return obj
 end
