@@ -37,6 +37,7 @@ local function Install()
 	LoadModuleData("TransparencyTweener", ChatMain)
 	LoadModuleData("ChatSettings", ChatMain)
 	LoadModuleData("ClassMaker", ChatMain)
+	LoadModuleData("MessageSender", ChatMain)
 
 	ChatScript.Parent = installDirectory
 	--ChatScript.Archivable = false

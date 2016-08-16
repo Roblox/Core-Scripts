@@ -6,6 +6,7 @@ local modulesFolder = script.Parent
 local moduleChannelsTab = require(modulesFolder:WaitForChild("ChannelsTab"))
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
+local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -75,13 +76,15 @@ local function CreateGuiObject()
 	LeaveConfirmationNotice.Font = Enum.Font.SourceSansBold
 	LeaveConfirmationNotice.FontSize = Enum.FontSize.Size18
 
+	local LeaveTarget = Instance.new("StringValue", LeaveConfirmationFrame)
+	LeaveTarget.Name = "LeaveTarget"
+
 	local outPos = LeaveConfirmationFrame.Position
 	LeaveConfirmationButtonYes.MouseButton1Click:connect(function()
-		print("Leave channel")
+		MessageSender:SendMessage(string.format("/leave %s", LeaveTarget.Value), nil)
 		LeaveConfirmationFrame:TweenPosition(outPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
 	end)
 	LeaveConfirmationButtonNo.MouseButton1Click:connect(function()
-		print("Do not leave channel")
 		LeaveConfirmationFrame:TweenPosition(outPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, 0.2, true)
 	end)
 
@@ -153,10 +156,16 @@ function methods:AddChannelTab(channelName)
 	self.BackgroundTweener:RegisterTweenObjectProperty(tab.BackgroundTweener, "Transparency")
 	self.TextTweener:RegisterTweenObjectProperty(tab.TextTweener, "Transparency")
 
-	--tab.NameTag.MouseButton2Click:connect(function()
-	--	self.LeaveConfirmationNotice.Text = "Leave channel " .. tab.ChannelName .. "?"
-	--	self.LeaveConfirmationFrame:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.2, true)
-	--end)
+	--// Although this feature is pretty much ready, it needs some UI design still.
+	local enableRightClickToLeaveChannel = false
+	
+	if (enableRightClickToLeaveChannel) then
+		tab.NameTag.MouseButton2Click:connect(function()
+			self.LeaveConfirmationNotice.Text = string.format("Leave channel %s?", tab.ChannelName)
+			self.LeaveConfirmationFrame.LeaveTarget.Value = tab.ChannelName
+			self.LeaveConfirmationFrame:TweenPosition(UDim2.new(0, 0, 0, 0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, 0.2, true)
+		end)
+	end
 
 	return tab
 end
@@ -270,7 +279,7 @@ ClassMaker.RegisterClassType("ChannelsBar", methods)
 
 function module.new()
 	local obj = {}
-	
+
 	local BaseFrame, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice = CreateGuiObject()
 	obj.GuiObject = BaseFrame
 	obj.ScrollerFrame = ScrollerFrame

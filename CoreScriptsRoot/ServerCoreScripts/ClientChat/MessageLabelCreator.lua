@@ -6,6 +6,7 @@ local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
+local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -113,20 +114,8 @@ function methods:CreateMessageLabel(fromSpeaker, message)
 	NameButton.TextYAlignment = BaseMessage.TextYAlignment
 	NameButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 
-	local buttonClickLock = false
 	NameButton.MouseButton1Click:connect(function()
-		if (buttonClickLock) then return end
-		buttonClickLock = true
-
-		local t = NameButton.Text
-		local len = string.len(t)
-
-		for i = 1, len do
-			NameButton.Text = string.sub(t, 1, i)
-			wait(0.1)
-		end
-
-		buttonClickLock = false
+		MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
 	end)
 
 	local speakerPlayer = self.SpeakerDatabase:GetSpeaker(fromSpeaker)

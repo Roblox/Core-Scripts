@@ -101,6 +101,8 @@ local SpeakerDatabase = moduleSpeakerDatabase.new()
 local MessageLabelCreator = moduleMessageLabelCreator.new()
 MessageLabelCreator:RegisterSpeakerDatabase(SpeakerDatabase)
 
+local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
+MessageSender:RegisterSayMessageEvent(EventFolder.SayMessageRequest)
 
 
 
@@ -375,14 +377,15 @@ ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 			
 			local currentChannel = ChatWindow:GetCurrentChannel()
 			if (currentChannel) then
-				EventFolder.SayMessageRequest:FireServer(message, currentChannel.Name)
+				MessageSender:SendMessage(message, currentChannel.Name)
 
 				if (currentChannel.Name == "All") then
 					--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
 					moduleApiTable.MessagePosted:fire(message) 
 				end
 			else
-				EventFolder.SayMessageRequest:FireServer(message, nil)
+				MessageSender:SendMessage(message, nil)
+				
 			end
 		end
 		
