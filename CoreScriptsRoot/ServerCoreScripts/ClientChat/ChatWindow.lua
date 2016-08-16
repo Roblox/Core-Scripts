@@ -1,5 +1,8 @@
 local source = [[
 local module = {}
+
+local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
 --////////////////////////////// Include
 --//////////////////////////////////////
 local modulesFolder = script.Parent
@@ -15,19 +18,17 @@ local methods = {}
 local function CreateGuiObject()
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.BackgroundTransparency = 1
-	BaseFrame.Size = moduleChatSettings.DefaultWindowSize
+	
+	local FirstParentedEvent = Instance.new("BindableEvent", BaseFrame)
+	FirstParentedEvent.Name = "FirstParented"
 
 	if (moduleChatSettings.WindowDraggable) then
 		BaseFrame.Active = true
 		BaseFrame.Draggable = true
 	end
 
-	local haveResized = false
 	local function doCheckMinimumResize()
-		--// AbsoluteSize gets set when it is parented correctly, so don't calculate until then
-		--// No longer want this restriction after a resize has been done however.
-		if (not haveResized and BaseFrame.AbsoluteSize.X == 0) then return end
-		haveResized = true
+		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
 
 		if (BaseFrame.AbsoluteSize.X < moduleChatSettings.MinimumWindowSizeX) then
 			BaseFrame.Size = UDim2.new(0, moduleChatSettings.MinimumWindowSizeX, 0, moduleChatSettings.MinimumWindowSizeY)
@@ -35,7 +36,7 @@ local function CreateGuiObject()
 	end
 
 	BaseFrame.Changed:connect(function(prop)
-		if (prop == "AbsoluteSize" or prop == "Parent") then
+		if (prop == "AbsoluteSize") then
 			doCheckMinimumResize()
 		end
 	end)
@@ -43,10 +44,9 @@ local function CreateGuiObject()
 	local chatBarTextSizeY = string.match(moduleChatSettings.ChatBarTextSize.Name, "%d+")
 	local channelsBarTextYSize = string.match(moduleChatSettings.ChatChannelsTabTextSize.Name, "%d+")
 
-	--// Chat Size18, 8 pixels on each end for white box in center, 
+	--// Chat font size pixel height, 8 pixels on each end for white box in center, 
 	--// 8 pixels on each end for actual chatbot object
-	local chatBarYSize = 18 + 16 + 16
-	chatBarYSize = chatBarTextSizeY + 16 + 16
+	local chatBarYSize = chatBarTextSizeY + 16 + 16
 
 	--// 32 pixels of button height + offset pixels
 	local chatChannelYSize = math.max(32, channelsBarTextYSize + 8) + 2
@@ -79,12 +79,18 @@ local function CreateGuiObject()
 		ChannelsBarParentFrame.Visible = false
 		ChatChannelParentFrame.Visible = false
 
-		spawn(function()
-			wait()
-			wait()
-			wait()
-			BaseFrame.Size = UDim2.new(BaseFrame.Size.X.Scale, BaseFrame.Size.X.Offset, 0, chatBarYSize)
+		FirstParentedEvent.Event:connect(function()
+			BaseFrame.Size = UDim2.new(moduleChatSettings.DefaultWindowSize.X.Scale, moduleChatSettings.DefaultWindowSize.X.Offset, 0, chatBarYSize)    
+			BaseFrame.Position = moduleChatSettings.DefaultWindowPosition
+			FirstParentedEvent:Destroy()
 		end)
+	else
+		FirstParentedEvent.Event:connect(function()
+			BaseFrame.Size = moduleChatSettings.DefaultWindowSize
+			BaseFrame.Position = moduleChatSettings.DefaultWindowPosition
+			FirstParentedEvent:Destroy()
+		end)
+
 	end
 
 
@@ -288,7 +294,7 @@ function module.new()
 	obj.TextTweener = moduleTransparencyTweener.new()
 
 	ClassMaker.MakeClass("ChatWindow", obj)
-	
+
 	obj:CreateTweeners()
 
 	return obj

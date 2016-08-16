@@ -14,7 +14,9 @@ module.ChatBarTextSize = Enum.FontSize.Size18
 module.MinimumWindowSizeX = 1600/3.75
 module.MinimumWindowSizeY = 900/3.75
 
-module.DefaultWindowSize = UDim2.new(0.35, 0, 0.35, 0)
+local size = 0.35
+module.DefaultWindowSize = UDim2.new(size, 0, size, 0)
+module.DefaultWindowPosition = UDim2.new(0, 0, 0, 0)
 
 return module
 ]]

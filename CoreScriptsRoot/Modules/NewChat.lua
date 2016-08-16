@@ -34,74 +34,21 @@ do
 			return nil
 		end
 
-		function moduleApiTable:ToggleVisibility()
-			ChatWindowState.Visible = not ChatWindowState.Visible
-			local event = FindInCollectionByKeyAndType(communicationsConnections.ChatWindow, "ToggleVisibility", "BindableEvent")
-			if (event) then
-				event:Fire()
-			else
-				moduleApiTable.VisibilityStateChanged:fire(ChatWindowState.Visible)
-			end
-		end
-
-		function moduleApiTable:SetVisible(visible)
-			ChatWindowState.Visible = visible
-			local event = FindInCollectionByKeyAndType(communicationsConnections.ChatWindow, "SetVisible", "BindableEvent")
-			if (event) then
-				event:Fire(ChatWindowState.Visible)
-			else
-				moduleApiTable.VisibilityStateChanged:fire(ChatWindowState.Visible)
-			end
-		end
-
-		function moduleApiTable:FocusChatBar()
-			local event = FindInCollectionByKeyAndType(communicationsConnections.ChatWindow, "FocusChatBar", "BindableEvent")
-			if (event) then
-				event:Fire()
-			end
-		end
-
-		function moduleApiTable:GetVisibility()
-			local func = FindInCollectionByKeyAndType(communicationsConnections.ChatWindow, "GetVisibility", "BindableFunction")
-			if (func) then
-				return func:Invoke()
-			end
-			return ChatWindowState.Visible
-		end
-
-		function moduleApiTable:GetMessageCount()
-			local func = FindInCollectionByKeyAndType(communicationsConnections.ChatWindow, "GetMessageCount", "BindableFunction")
-			if (func) then
-				return func:Invoke()
-			end
-			return ChatWindowState.MessageCount
-		end
-
-		function moduleApiTable:TopbarEnabledChanged(enabled)
-			ChatWindowState.TopbarEnabled = enabled
-			local event = FindInCollectionByKeyAndType(communicationsConnections.ChatWindow, "TopbarEnabledChanged", "BindableEvent")
-			if (event) then
-				event:Fire(ChatWindowState.TopbarEnabled)
-			end
-		end
-
-		function moduleApiTable:IsFocused(useWasFocused)
-			local func = FindInCollectionByKeyAndType(communicationsConnections.ChatWindow, "IsFocused", "BindableFunction")
-			if (func) then
-				return func:Invoke(useWasFocused)
-			end
-			return false
-		end
-		
-		moduleApiTable.ChatBarFocusChanged = Util.Signal()
-		moduleApiTable.VisibilityStateChanged = Util.Signal()
-		moduleApiTable.MessagesChanged = Util.Signal()
-
 		local function DispatchEvent(eventName, ...)
 			local event = FindInCollectionByKeyAndType(communicationsConnections.ChatWindow, eventName, "BindableEvent")
 			if (event) then
 				event:Fire(...)
+				return true
 			end
+			return false
+		end
+
+		local function AttemptInvokeFunction(functionName, ...)
+			local func = FindInCollectionByKeyAndType(communicationsConnections.ChatWindow, functionName, "BindableFunction")
+			if (func) then
+				return true, func:Invoke()
+			end
+			return false, nil
 		end
 
 		local function DoConnectGetCore(connectionName)
@@ -113,10 +60,68 @@ do
 			end)
 		end
 
+		function moduleApiTable:ToggleVisibility()
+			ChatWindowState.Visible = not ChatWindowState.Visible
+			local didFire = DispatchEvent("ToggleVisibility")
+			if (not didFire) then
+				moduleApiTable.VisibilityStateChanged:fire(ChatWindowState.Visible)
+			end
+		end
+
+		function moduleApiTable:SetVisible(visible)
+			ChatWindowState.Visible = visible
+			local didFire = DispatchEvent("SetVisible", ChatWindowState.Visible)
+			if (not didFire) then
+				moduleApiTable.VisibilityStateChanged:fire(ChatWindowState.Visible)
+			end
+		end
+
+		function moduleApiTable:FocusChatBar()
+			DispatchEvent("FocusChatBar")
+		end
+
+		function moduleApiTable:GetVisibility()
+			local success, retVal = AttemptInvokeFunction("GetVisibility")
+			if (success) then
+				return retVal
+			else
+				return ChatWindowState.Visible 
+			end
+		end
+
+		function moduleApiTable:GetMessageCount()
+			local success, retVal = AttemptInvokeFunction("GetMessageCount")
+			if (success) then
+				return retVal
+			else
+				return ChatWindowState.MessageCount
+			end
+		end
+
+		function moduleApiTable:TopbarEnabledChanged(enabled)
+			ChatWindowState.TopbarEnabled = enabled
+			DispatchEvent("TopbarEnabledChanged", ChatWindowState.TopbarEnabled)
+		end
+
+		function moduleApiTable:IsFocused(useWasFocused)
+			local success, retVal = AttemptInvokeFunction("IsFocused", useWasFocused)
+			if (sucucess) then
+				return retVal
+			else
+				return false
+			end
+		end
+		
+		moduleApiTable.ChatBarFocusChanged = Util.Signal()
+		moduleApiTable.VisibilityStateChanged = Util.Signal()
+		moduleApiTable.MessagesChanged = Util.Signal()
+
+		
+
 		StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType, enabled)
 			if (coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.Chat) then
 				ChatWindowState.CoreGuiEnabled = enabled
-				DispatchEvent("CoroeGuiEnabled", ChatWindowState.CoreGuiEnabled)
+				DispatchEvent("CoreGuiEnabled", ChatWindowState.CoreGuiEnabled)
 			end
 		end)
 
