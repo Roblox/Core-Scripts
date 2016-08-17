@@ -54,7 +54,7 @@ local function CreateGuiObject()
 	TextLabel.TextStrokeTransparency = TextBox.TextStrokeTransparency
 	TextLabel.TextXAlignment = TextBox.TextXAlignment
 	TextLabel.TextYAlignment = TextBox.TextYAlignment
-	TextLabel.Text = "This value was un-initialized lololololololololol"
+	TextLabel.Text = "This value needs to be set with :SetTextLabelText()"
 
 	TextLabel.TextColor3 = Color3.new(0, 0, 0)
 	TextLabel.TextStrokeTransparency = 1
