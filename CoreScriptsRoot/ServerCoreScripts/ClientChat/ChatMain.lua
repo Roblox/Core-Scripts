@@ -474,8 +474,8 @@ EventFolder.OnSpeakerExtraDataUpdated.OnClientEvent:connect(function(speakerName
 		speaker = SpeakerDatabase:AddSpeaker(speakerName)
 	end
 	
-	for k, v in pairs(data) do
-		speaker[k] = v
+	for i, v in pairs(data) do
+		speaker[i] = v
 	end
 end)
 
@@ -488,17 +488,6 @@ end)
 
 
 local reparentingLock = false
-
---// Do not remove on death behavior
-LocalPlayer.CharacterRemoving:connect(function()
-	if (true or reparentingLock) then return end
-
-	GuiParent.Parent = nil
-	LocalPlayer.CharacterAdded:wait()
-	GuiParent.Parent = PlayerGui
-
-end)
-
 local function connectGuiParent(GuiParent)
 	local DestroyGuardFrame = Instance.new("Frame")
 	DestroyGuardFrame.Name = "DestroyGuardFrame"
@@ -519,9 +508,7 @@ local function connectGuiParent(GuiParent)
 				v.Parent = newGuiParent
 			end
 
-			--print("waiting")
 			LocalPlayer.CharacterAdded:wait()
-			--print("done waiting")
 
 			newGuiParent.Parent = PlayerGui
 			GuiParent = newGuiParent
