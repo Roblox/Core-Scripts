@@ -71,6 +71,9 @@ local allowMoveChat = getMoveChatSuccess and moveChatActiveValue
 local getDisableChatBarSuccess, disableChatBarValue = pcall(function() return settings():GetFFlag("SetCoreDisableChatBar") end)
 local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 
+local chatLayoutChangeSuccess,chatLayoutChangeValue = pcall(function() settings():GetFFlag("ChatLayoutChange") return end) -- remember to make a new fflag
+local allowChatLayoutChange = chatLayoutChangeSuccess and chatLayoutChangeValue
+
 --[[ SCRIPT VARIABLES ]]
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
@@ -98,8 +101,6 @@ local playerDropDown = nil
 local blockingUtility = nil
 
 local topbarEnabled = true
-
-
 
 if not NON_CORESCRIPT_MODE and not InputService.VREnabled then
 	playerDropDownModule = require(RobloxGui.Modules:WaitForChild("PlayerDropDown"))
@@ -1345,8 +1346,7 @@ local function CreateChatBarWidget(settings)
 	function this:OnChatBarFocusLost(enterPressed)
 		if self.ChatBar then
 			self.ChatBar.Visible = false
-			-- TODO: remove this when API for VR to set enterPressed is released
-			if enterPressed or InputService.VREnabled then
+			if enterPressed then
 				local didMatchSlashCommand = self:ProcessChatBarModes(false)
 				local cText = self:SanitizeInput(self:GetChatBarText())
 				if cText ~= "" then
@@ -1743,6 +1743,9 @@ local function CreateChatWindowWidget(settings)
 							this.MessageContainer.Size.X.Offset,
 							0,
 							ySize)
+					if not allowChatLayoutChange then
+						this.MessageContainer.Position = UDim2.new(0, 0, 1, -this.MessageContainer.Size.Y.Offset)
+					end
 					this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
 				end
 			end
@@ -1874,6 +1877,9 @@ local function CreateChatWindowWidget(settings)
 					if guiObj then
 						local ySize = guiObj.Size.Y.Offset
 						this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize - UDim2.new(0,0,0,ySize)
+						if allowChatLayoutChange then
+							this.MessageContainer.Position = this.MessageContainer.Position - UDim2.new(0,0,0,ySize)
+						end
 						-- Clamp the canvasposition
 						this:SetCanvasPosition(this.ScrollingFrame.CanvasPosition)
 						guiObj.Parent = nil
@@ -1964,7 +1970,7 @@ local function CreateChatWindowWidget(settings)
 				{
 					Name = 'MessageContainer';
 					Size = UDim2.new(1, -SCROLLBAR_THICKNESS - 1, 0, 0);
-					Position = UDim2.new(0, 0, 0, 0);
+					Position = allowChatLayoutChange and UDim2.new(0, 0, 0, 0) or UDim2.new(0, 0, 1, 0);
 					ZIndex = 1;
 					BackgroundColor3 = Color3.new(0, 0, 0);
 					BackgroundTransparency = 1;
@@ -1972,6 +1978,11 @@ local function CreateChatWindowWidget(settings)
 				};
 
 		local function OnChatWindowResize(prop)
+			if not allowChatLayoutChange then
+				if prop == 'AbsoluteSize' then
+	 				messageContainer.Position = UDim2.new(0, 0, 1, -messageContainer.Size.Y.Offset)
+	 			end
+			end
 			if prop == 'CanvasPosition' then
 				if this.ScrollingFrame then
 					if this:IsScrolledDown() then
@@ -2348,7 +2359,9 @@ local function CreateChat()
 			if Util.IsTouchDevice() then
 				this.ChatWindowWidget:AddSystemChatMessage("Please press the '...' icon to chat", true)
 			end
-			--this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
+			if not allowChatLayoutChange then
+				this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
+			end
 		end
 	end
 
@@ -2781,4 +2794,3 @@ do
 end
 
 return moduleApiTable
-

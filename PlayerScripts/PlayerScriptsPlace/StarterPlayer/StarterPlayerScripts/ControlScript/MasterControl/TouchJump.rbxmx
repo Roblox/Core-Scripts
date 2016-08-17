@@ -57,7 +57,7 @@ function TouchJump:Create(parentFrame)
 	JumpButton.ImageRectSize = Vector2.new(174, 174)
 	JumpButton.Size = UDim2.new(0, jumpButtonSize, 0, jumpButtonSize)
 	JumpButton.Position = isSmallScreen and UDim2.new(1, jumpButtonSize * -2.25, 1, -jumpButtonSize - 20) or
- -		UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
+		UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
 		
 	local touchObject = nil	
 	JumpButton.InputBegan:connect(function(inputObject)
