@@ -286,6 +286,7 @@ UserInputService.TouchTap:connect(function(tapPos, gameProcessedEvent)
 	end
 end)
 
+--// Start and stop fading sequences / timers
 UpdateFadingForMouseState(true)
 UpdateFadingForMouseState(false)
 
