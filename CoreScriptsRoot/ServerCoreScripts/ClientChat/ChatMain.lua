@@ -499,34 +499,36 @@ local function connectGuiParent(GuiParent)
 	end
 	DestroyGuardFrame.Parent = GuiParent
 
-	GuiParent.Changed:connect(function(prop)
-		if (prop == "Parent" and not reparentingLock) then
-			local newGuiParent = Instance.new("ScreenGui")
-			newGuiParent.Name = "Chat"
-
-			for i, v in pairs(GuiParent.DestroyGuardFrame:GetChildren()) do
-				v.Parent = newGuiParent
-			end
-
-			LocalPlayer.CharacterAdded:wait()
-
-			newGuiParent.Parent = PlayerGui
-			GuiParent = newGuiParent
-			connectGuiParent(GuiParent)
-		end
-	end)
 end
 
 connectGuiParent(GuiParent)
 
+GuiParent.Changed:connect(function(prop)
+	if (prop == "Parent" and not reparentingLock) then
+		reparentingLock = true
+
+		local children = GuiParent.DestroyGuardFrame:GetChildren()
+		for i, v in pairs(children) do
+			v.Parent = nil
+		end
+
+		LocalPlayer.CharacterAdded:wait()
+		GuiParent.Parent = PlayerGui
+
+		for i, v in pairs(children) do
+			v.Parent = GuiParent
+		end
+
+		connectGuiParent(GuiParent)
+
+		reparentingLock = false
+	end
+end)
+
 --// Always on top behavior that relies on parenting order of ScreenGuis
 --// This would end up really bad if something else tried to do the exact same thing however.
 PlayerGui.ChildAdded:connect(function(child)
-	if (true) then return end
-
-	print("GP:", GuiParent)
-
-	if (child ~= GuiParent) then
+	if (child ~= GuiParent and not reparentingLock) then
 		reparentingLock = true
 
 		GuiParent.Parent = nil
@@ -674,7 +676,7 @@ do
 	end
 end
 
-spawn(function() wait() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true) end)
+spawn(function() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true) end)
 
 moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	moduleApiTable.IsCoreGuiEnabled = enabled
