@@ -610,9 +610,9 @@ local function MakeSlot(parent, index)
 
 		SelectionObj = NewGui('ImageLabel', 'Selector')
 		SelectionObj.Size = UDim2.new(1, 0, 1, 0)
-		SelectionObj.Image = "rbxasset://textures/ui/Keyboard/key_selection_9slice.png";
-		SelectionObj.ScaleType = Enum.ScaleType.Slice;
-		SelectionObj.SliceCenter = Rect.new(12,12,52,52);
+		SelectionObj.Image = "rbxasset://textures/ui/Keyboard/key_selection_9slice.png"
+		SelectionObj.ScaleType = Enum.ScaleType.Slice
+		SelectionObj.SliceCenter = Rect.new(12,12,52,52)
 		SelectionObj.Parent = selectionObjectClipper
 	end
 
