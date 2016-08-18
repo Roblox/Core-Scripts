@@ -10,8 +10,6 @@ local modulesFolder = script
 local ChatService = require(modulesFolder:WaitForChild("ChatService"))
 local proxy = require(modulesFolder:WaitForChild("ChatServiceProxy")).CreateProxy(ChatService)
 
-local didInit = false
-
 
 local useEvents = {}
 
@@ -62,8 +60,6 @@ EventFolder = useEvents
 
 local Players = game:GetService("Players")
 local function HandlePlayerJoining(playerObj)
-	while not didInit do wait() end
-
 	--// If a developer already created a speaker object with the
 	--// name of a player and then a player joins and tries to 
 	--// take that name, we first need to remove the old speaker object
@@ -244,10 +240,6 @@ if modules then
 		pcall(TryRunModule, module)
 	end
 end
-
-wait()
-
-didInit = true
 
 Players.PlayerAdded:connect(function(playerObj)
 	HandlePlayerJoining(playerObj)
