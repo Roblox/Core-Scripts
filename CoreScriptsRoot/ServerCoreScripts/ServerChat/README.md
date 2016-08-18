@@ -14,11 +14,6 @@ This is the main singleton object that runs the server sided chat service. It ma
 	string[] GetChannelList()
 	string[] GetAutoJoinChannelList()
 
-	void AddWordFilter(string expression)
-	void RemoveWordFilter(string expression)
-	void AddWordAlias(string expression, string replacement)
-	void RemoveWordAlias(string expression)
-
 	void RegisterFilterMessageFunction(string functionId, function func)
 	void UnregisterFilterMessageFunction(string functionId)
 	void RegisterProcessCommandsFunction(string functionId, function func)
@@ -45,11 +40,6 @@ A ChatChannel is an object that stores data about a single channel that Speakers
 	bool Private
 
 #### Methods
-	void AddWordFilter(string expression)
-	void RemoveWordFilter(string expression)
-	void AddWordAlias(string expression, string replacement)
-	void RemoveWordAlias(string expression)
-
 	void RegisterFilterMessageFunction(string functionId, function func)
 	void UnregisterFilterMessageFunction(string functionId)
 	void RegisterProcessCommandsFunction(string functionId, function func)
