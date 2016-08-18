@@ -317,6 +317,17 @@ local function isGuiVisible(gui, debug) -- true if any part of the gui is visibl
 	end
 end
 
+local function addHoverState(button, instance, applyNormal, applyHover)
+	local function indirectNormal()	applyNormal(instance) end
+	local function indirectHover() applyHover(instance) end
+	button.MouseEnter:connect(indirectHover)
+	button.SelectionGained:connect(indirectHover)
+	button.MouseLeave:connect(indirectNormal)
+	button.SelectionLost:connect(indirectNormal)
+
+	applyNormal(instance)
+end
+
 local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 	local SelectionOverrideObject = Util.Create'ImageLabel'
 	{
@@ -906,14 +917,12 @@ local function CreateSelector(selectionStringTable, startPosition)
 		Parent = rightButton
 	};
 	if not UserInputService.TouchEnabled then
-		leftButton.SelectionGained:connect(function() leftButtonImage.ImageColor3 = ARROW_COLOR_HOVER end)
-		leftButton.SelectionLost:connect(function() leftButtonImage.ImageColor3 = ARROW_COLOR end)
-		leftButton.MouseEnter:connect(function() leftButtonImage.ImageColor3 = ARROW_COLOR_HOVER end)
-		leftButton.MouseLeave:connect(function() leftButtonImage.ImageColor3 = ARROW_COLOR end)
-		rightButton.SelectionGained:connect(function() rightButtonImage.ImageColor3 = ARROW_COLOR_HOVER	end)
-		rightButton.SelectionLost:connect(function() rightButtonImage.ImageColor3 = ARROW_COLOR	end)
-		rightButton.MouseEnter:connect(function() rightButtonImage.ImageColor3 = ARROW_COLOR_HOVER end)
-		rightButton.MouseLeave:connect(function() rightButtonImage.ImageColor3 = ARROW_COLOR end)
+		local applyNormal, applyHover = 
+			function(instance) instance.ImageColor3 = ARROW_COLOR end,
+			function(instance) instance.ImageColor3 = ARROW_COLOR_HOVER end
+
+		addHoverState(leftButton, leftButtonImage, applyNormal, applyHover)
+		addHoverState(rightButton, rightButtonImage, applyNormal, applyHover)
 	end
 
 
@@ -1410,18 +1419,14 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		Parent = rightButton,
 		ImageColor3 = UserInputService.TouchEnabled and ARROW_COLOR_TOUCH or ARROW_COLOR
 	};
-
 	if not UserInputService.TouchEnabled then
-		leftButton.SelectionGained:connect(function() leftButtonImage.ImageColor3 = ARROW_COLOR_HOVER end)
-		leftButton.SelectionLost:connect(function() leftButtonImage.ImageColor3 = ARROW_COLOR end)
-		leftButton.MouseEnter:connect(function() leftButtonImage.ImageColor3 = ARROW_COLOR_HOVER end)
-		leftButton.MouseLeave:connect(function() leftButtonImage.ImageColor3 = ARROW_COLOR end)
-		rightButton.SelectionGained:connect(function() rightButtonImage.ImageColor3 = ARROW_COLOR_HOVER	end)
-		rightButton.SelectionLost:connect(function() rightButtonImage.ImageColor3 = ARROW_COLOR	end)
-		rightButton.MouseEnter:connect(function() rightButtonImage.ImageColor3 = ARROW_COLOR_HOVER end)
-		rightButton.MouseLeave:connect(function() rightButtonImage.ImageColor3 = ARROW_COLOR end)
-	end
+		local applyNormal, applyHover = 
+			function(instance) instance.ImageColor3 = ARROW_COLOR end,
+			function(instance) instance.ImageColor3 = ARROW_COLOR_HOVER end
 
+		addHoverState(leftButton, leftButtonImage, applyNormal, applyHover)
+		addHoverState(rightButton, rightButtonImage, applyNormal, applyHover)
+	end
 
 	this.Steps = {}
 	local stepXSize = 35
