@@ -2129,7 +2129,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		end
 		RowFrame.MouseEnter:connect(setRowSelection)
 
-		---t-t-tt--t-t
+		--Could this be cleaned up even more?
 		local function onVREnabled(prop)
 			if prop == "VREnabled" then
 				if UserInputService.VREnabled then
@@ -2154,18 +2154,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		end
 		UserInputService.Changed:connect(onVREnabled)
 		onVREnabled("VREnabled")
-		RowFrame.SelectionGained:connect(function()
-			if UserInputService.VREnabled then
-				--RowFrame.BackgroundTransparency = 0.5
-			end
-		end)
-		RowFrame.SelectionLost:connect(function()
-			if UserInputService.VREnabled then
-				--RowFrame.BackgroundTransparency = 1
-			end
-		end)
 
-		--todo
 		ValueChangerSelection.SelectionGained:connect(function()
 			if usesSelectedObject() then
 				RowFrame.BackgroundTransparency = 0.5
