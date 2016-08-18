@@ -1135,7 +1135,7 @@ local function CreateChatIcon()
 	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 	if not chatEnabled then return end
 
-	local ChatModule = require(GuiRoot.Modules.Chat)
+	local ChatModule = require(GuiRoot.Modules.ChatSelector)
 
 	local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
 	local debounce = 0
@@ -1244,7 +1244,7 @@ local function CreateChatIcon()
 end
 
 local function CreateMobileHideChatIcon()
-	local ChatModule = require(GuiRoot.Modules.Chat)
+	local ChatModule = require(GuiRoot.Modules.ChatSelector)
 
 	local chatHideIconButton = Util.Create'ImageButton'
 	{
@@ -1306,7 +1306,7 @@ local function CreateChatIcon3D(topBarInstance, panel, menubar)
 
 	local VRHub = require(GuiRoot.Modules.VR.VRHub)
 
-	local ChatModule = require(GuiRoot.Modules.Chat)
+	local ChatModule = require(GuiRoot.Modules.ChatSelector)
 	local thisModuleName = ChatModule.ModuleName
 
 	local menuItem = CreateMenuItem3D(thisModuleName)
