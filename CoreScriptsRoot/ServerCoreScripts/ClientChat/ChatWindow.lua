@@ -8,25 +8,25 @@ local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui
 local modulesFolder = script.Parent
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
-local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
 
-local function CreateGuiObject()
+local function CreateGuiObjects()
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.BackgroundTransparency = 1
 	
 	local FirstParentedEvent = Instance.new("BindableEvent", BaseFrame)
 	FirstParentedEvent.Name = "FirstParented"
 
-	if (moduleChatSettings.WindowDraggable) then
+	if (ChatSettings.WindowDraggable) then
 		BaseFrame.Active = true
 		BaseFrame.Draggable = true
 	end
-	moduleChatSettings.SettingsChanged:connect(function(setting, value)
+	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "Draggable") then
 			BaseFrame.Active = value
 			BaseFrame.Draggable = value
@@ -39,8 +39,8 @@ local function CreateGuiObject()
 	local function doCheckMinimumResize()
 		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
 
-		if (BaseFrame.AbsoluteSize.X < moduleChatSettings.MinimumWindowSizeX) then
-			BaseFrame.Size = UDim2.new(0, moduleChatSettings.MinimumWindowSizeX, 0, moduleChatSettings.MinimumWindowSizeY)
+		if (BaseFrame.AbsoluteSize.X < ChatSettings.MinimumWindowSizeX) then
+			BaseFrame.Size = UDim2.new(0, ChatSettings.MinimumWindowSizeX, 0, ChatSettings.MinimumWindowSizeY)
 		end
 	end
 
@@ -50,8 +50,8 @@ local function CreateGuiObject()
 		end
 	end)
 
-	local chatBarTextSizeY = string.match(moduleChatSettings.ChatBarTextSize.Name, "%d+")
-	local channelsBarTextYSize = string.match(moduleChatSettings.ChatChannelsTabTextSize.Name, "%d+")
+	local chatBarTextSizeY = string.match(ChatSettings.ChatBarTextSize.Name, "%d+")
+	local channelsBarTextYSize = string.match(ChatSettings.ChatChannelsTabTextSize.Name, "%d+")
 
 	--// Chat font size pixel height, 8 pixels on each end for white box in center, 
 	--// 8 pixels on each end for actual chatbot object
@@ -89,14 +89,14 @@ local function CreateGuiObject()
 		ChatChannelParentFrame.Visible = false
 
 		FirstParentedEvent.Event:connect(function()
-			BaseFrame.Size = UDim2.new(moduleChatSettings.DefaultWindowSize.X.Scale, moduleChatSettings.DefaultWindowSize.X.Offset, 0, chatBarYSize)    
-			BaseFrame.Position = moduleChatSettings.DefaultWindowPosition
+			BaseFrame.Size = UDim2.new(ChatSettings.DefaultWindowSize.X.Scale, ChatSettings.DefaultWindowSize.X.Offset, 0, chatBarYSize)    
+			BaseFrame.Position = ChatSettings.DefaultWindowPosition
 			FirstParentedEvent:Destroy()
 		end)
 	else
 		FirstParentedEvent.Event:connect(function()
-			BaseFrame.Size = moduleChatSettings.DefaultWindowSize
-			BaseFrame.Position = moduleChatSettings.DefaultWindowPosition
+			BaseFrame.Size = ChatSettings.DefaultWindowSize
+			BaseFrame.Position = ChatSettings.DefaultWindowPosition
 			FirstParentedEvent:Destroy()
 		end)
 
@@ -175,11 +175,11 @@ function methods:RemoveChannel(channelName)
 	self.ChannelsBar:RemoveChannelTab(channelName)
 
 	if (needsChannelSwitch) then
-		local generalChannelExists = (self:GetChannel(moduleChatSettings.GeneralChannelName) ~= nil)
-		local removingGeneralChannel = (indexName == moduleChatSettings.GeneralChannelName:lower())
+		local generalChannelExists = (self:GetChannel(ChatSettings.GeneralChannelName) ~= nil)
+		local removingGeneralChannel = (indexName == ChatSettings.GeneralChannelName:lower())
 
 		if (generalChannelExists and not removingGeneralChannel) then
-			self:SwitchCurrentChannel(moduleChatSettings.GeneralChannelName)
+			self:SwitchCurrentChannel(ChatSettings.GeneralChannelName)
 		else
 			local firstChannel = self:GetFirstChannel()
 			self:SwitchCurrentChannel(firstChannel and firstChannel.Name or nil)
@@ -302,7 +302,7 @@ ClassMaker.RegisterClassType("ChatWindow", methods)
 function module.new()
 	local obj = {}
 
-	local BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame= CreateGuiObject()
+	local BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame= CreateGuiObjects()
 	obj.GuiObject = BaseFrame
 	obj.ChatBarParentFrame = ChatBarParentFrame
 	obj.ChannelsBarParentFrame = ChannelsBarParentFrame

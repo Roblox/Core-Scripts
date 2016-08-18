@@ -10,12 +10,13 @@ local moduleChannelsTab = require(modulesFolder:WaitForChild("ChannelsTab"))
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
+local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
 
-local function CreateGuiObject()
+local function CreateGuiObjects()
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
@@ -27,11 +28,18 @@ local function CreateGuiObject()
 	ScrollingBase.Size = UDim2.new(1, 0, 1, 0)
 	ScrollingBase.Position = UDim2.new(0, 0, 0, 0)
 
-	local ScrollerFrame = Instance.new("Frame", ScrollingBase)
+	local ScrollerSizer = Instance.new("Frame", ScrollingBase)
+	ScrollerSizer.Name = "ScrollerSizer"
+	ScrollerSizer.BackgroundTransparency = 1
+	ScrollerSizer.Size = UDim2.new(1, 0, 1, 0)
+	ScrollerSizer.Position = UDim2.new(0, 0, 0, 0)
+
+	local ScrollerFrame = Instance.new("Frame", ScrollerSizer)
 	ScrollerFrame.Name = "ScrollerFrame"
 	ScrollerFrame.BackgroundTransparency = 1
 	ScrollerFrame.Size = UDim2.new(1, 0, 1, 0)
 	ScrollerFrame.Position = UDim2.new(0, 0, 0, 0)
+
 
 
 	local LeaveConfirmationFrameBase = Instance.new("Frame", BaseFrame)
@@ -131,7 +139,7 @@ local function CreateGuiObject()
 	PageLeftButton.ArrowLabel.Rotation = 180
 
 
-	return BaseFrame, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice
+	return BaseFrame, ScrollerSizer, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice
 end
 
 
@@ -193,25 +201,21 @@ end
 function methods:OrganizeChannelTabs()
 	local order = {}
 
-	table.insert(order, self:GetChannelTab("All"))
+	table.insert(order, self:GetChannelTab(ChatSettings.GeneralChannelName))
 	table.insert(order, self:GetChannelTab("System"))
 
 	for tabIndexName, tab in pairs(self.ChannelTabs) do
-		if (tab.ChannelName ~= "All" and tab.ChannelName ~= "System") then
+		if (tab.ChannelName ~= ChatSettings.GeneralChannelName and tab.ChannelName ~= "System") then
 			table.insert(order, tab)
 		end
 	end
 
 	for index, tab in pairs(order) do
-		tab.GuiObject.Position = UDim2.new((index - 1) * 0.25, 0, 0, 0)
+		tab.GuiObject.Position = UDim2.new(index - 1, 0, 0, 0)
 	end
 
-	--// This does the effect of dynamic tab resizing when a player 
-	--// is in less than 4 channels. It was mathematically easier to
-	--// think about and do rather than resizing the actual tabs 
-	--// themselves.
-	local xSize = math.max(1, 4/self.NumTabs)
-	self.ScrollerFrame.Size = UDim2.new(xSize, 0, 1, 0)
+	--// Dynamic tab resizing
+	self.ScrollerSizer.Size = UDim2.new(1 / math.max(1, math.min(ChatSettings.ChannelsBarFullTabSize, self.NumTabs)), 0, 1, 0)
 
 	self:ScrollChannelsFrame(0)
 end
@@ -220,25 +224,27 @@ function methods:ScrollChannelsFrame(dir)
 	if (self.ScrollChannelsFrameLock) then return end
 	self.ScrollChannelsFrameLock = true
 
+	local tabNumber = ChatSettings.ChannelsBarFullTabSize
+
 	local newPageNum = self.CurPageNum + dir
 	if (newPageNum < 0) then
 		newPageNum = 0
-	elseif (newPageNum > 0 and newPageNum + 4 > self.NumTabs) then
-		newPageNum = self.NumTabs - 4
+	elseif (newPageNum > 0 and newPageNum + tabNumber > self.NumTabs) then
+		newPageNum = self.NumTabs - tabNumber
 	end
 
 	self.CurPageNum = newPageNum
 
-
 	local tweenTime = 0.15
-	local endPos = UDim2.new(-(self.CurPageNum * 0.25), 0, 0, 0)
+	local endPos = UDim2.new(-self.CurPageNum, 0, 0, 0)
 
 	self.PageLeftButton.Visible = (self.CurPageNum > 0)
-	self.PageRightButton.Visible = (self.CurPageNum + 4 < self.NumTabs)
+	self.PageRightButton.Visible = (self.CurPageNum + tabNumber < self.NumTabs)
 
 	local function UnlockFunc()
 		self.ScrollChannelsFrameLock = false
 	end
+	
 	self.ScrollerFrame:TweenPosition(endPos, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, tweenTime, true, UnlockFunc)
 end
 
@@ -282,8 +288,9 @@ ClassMaker.RegisterClassType("ChannelsBar", methods)
 function module.new()
 	local obj = {}
 
-	local BaseFrame, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice = CreateGuiObject()
+	local BaseFrame, ScrollerSizer, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice = CreateGuiObjects()
 	obj.GuiObject = BaseFrame
+	obj.ScrollerSizer = ScrollerSizer
 	obj.ScrollerFrame = ScrollerFrame
 	obj.PageLeftButton = PageLeftButton
 	obj.PageRightButton = PageRightButton

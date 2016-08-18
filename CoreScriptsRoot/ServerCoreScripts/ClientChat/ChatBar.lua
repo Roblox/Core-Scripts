@@ -4,14 +4,14 @@ local module = {}
 --//////////////////////////////////////
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
-local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
 
-local function CreateGuiObject()
+local function CreateGuiObjects()
 	local backgroundImagePixelOffset = 8
 	local textBoxPixelOffset = 8
 
@@ -34,7 +34,7 @@ local function CreateGuiObject()
 	TextBox.BackgroundTransparency = 1
 	TextBox.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)
 	TextBox.Position = UDim2.new(0, textBoxPixelOffset, 0, textBoxPixelOffset)
-	TextBox.FontSize = moduleChatSettings.ChatBarTextSize
+	TextBox.FontSize = ChatSettings.ChatBarTextSize
 	TextBox.Font = Enum.Font.SourceSansBold
 	TextBox.TextColor3 = Color3.new(1, 1, 1)
 	TextBox.TextStrokeTransparency = 0.75
@@ -191,7 +191,7 @@ ClassMaker.RegisterClassType("ChatBar", methods)
 function module.new()
 	local obj = {}
 
-	local BaseFrame, TextBoxFrame, TextBox, TextLabel = CreateGuiObject()
+	local BaseFrame, TextBoxFrame, TextBox, TextLabel = CreateGuiObjects()
 	obj.GuiObject = BaseFrame
 	obj.TextBoxFrame = TextBoxFrame
 	obj.TextBox = TextBox

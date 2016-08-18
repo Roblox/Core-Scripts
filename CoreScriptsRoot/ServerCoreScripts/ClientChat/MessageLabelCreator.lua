@@ -4,7 +4,7 @@ local module = {}
 --//////////////////////////////////////
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
-local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 
@@ -83,7 +83,7 @@ function methods:CreateMessageLabel(fromSpeaker, message)
 	end
 
 	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = moduleChatSettings.ChatWindowTextSize
+	local useFontSize = ChatSettings.ChatWindowTextSize
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
@@ -169,7 +169,7 @@ end
 
 function methods:CreateSystemMessageLabel(message)
 	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = moduleChatSettings.ChatWindowTextSize
+	local useFontSize = ChatSettings.ChatWindowTextSize
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
@@ -205,7 +205,7 @@ end
 
 function methods:CreateSetCoreMessageLabel(valueTable)
 	local useFont = valueTable.Font or Enum.Font.SourceSansBold
-	local useFontSize = valueTable.FontSize or moduleChatSettings.ChatWindowTextSize
+	local useFontSize = valueTable.FontSize or ChatSettings.ChatWindowTextSize
 	local useColor = valueTable.Color or Color3.new(1, 1, 1)
 
 	local message = valueTable.Text
@@ -244,7 +244,7 @@ function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel
 	end
 
 	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = moduleChatSettings.ChatWindowTextSize
+	local useFontSize = ChatSettings.ChatWindowTextSize
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
@@ -342,7 +342,7 @@ end
 
 function methods:CreateChannelEchoSystemMessageLabel(message, echoChannel)
 	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = moduleChatSettings.ChatWindowTextSize
+	local useFontSize = ChatSettings.ChatWindowTextSize
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)

@@ -108,15 +108,6 @@ local function HandlePlayerJoining(playerObj)
 	end
 end
 
-Players.PlayerAdded:connect(function(playerObj)
-	HandlePlayerJoining(playerObj)
-end)
-
-Players.PlayerRemoving:connect(function(playerObj)
-	ChatService:RemoveSpeaker(playerObj.Name)
-end)
-
-
 EventFolder.SayMessageRequest.OnServerEvent:connect(function(playerObj, message, channel)
 	local speaker = ChatService:GetSpeaker(playerObj.Name)
 	if (speaker) then
@@ -258,7 +249,13 @@ wait()
 
 didInit = true
 
-wait()
+Players.PlayerAdded:connect(function(playerObj)
+	HandlePlayerJoining(playerObj)
+end)
+
+Players.PlayerRemoving:connect(function(playerObj)
+	ChatService:RemoveSpeaker(playerObj.Name)
+end)
 
 for i, player in pairs(game:GetService("Players"):GetChildren()) do
 	local spkr = ChatService:GetSpeaker(player.Name)

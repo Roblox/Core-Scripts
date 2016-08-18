@@ -4,16 +4,16 @@ local module = {}
 --//////////////////////////////////////
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
-local moduleChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
 
-local function CreateGuiObject()
+local function CreateGuiObjects()
 	local BaseFrame = Instance.new("Frame")
-	BaseFrame.Size = UDim2.new(0.25, 0, 1, 0)
+	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
 
 	local gapOffsetX = 1
@@ -79,7 +79,7 @@ local function CreateGuiObject()
 	NameTag.Font = Enum.Font.SourceSansBold
 	NameTag.FontSize = Enum.FontSize.Size18
 
-	NameTag.FontSize = moduleChatSettings.ChatChannelsTabTextSize
+	NameTag.FontSize = ChatSettings.ChatChannelsTabTextSize
 
 
 
@@ -203,7 +203,7 @@ ClassMaker.RegisterClassType("ChannelsTab", methods)
 function module.new(channelName)
 	local obj = {}
 
-	local BaseFrame, NameTag, NewMessageIcon, UnselectedFrame, SelectedFrame = CreateGuiObject()
+	local BaseFrame, NameTag, NewMessageIcon, UnselectedFrame, SelectedFrame = CreateGuiObjects()
 	obj.GuiObject = BaseFrame
 	obj.NameTag = NameTag
 	obj.NewMessageIcon = NewMessageIcon

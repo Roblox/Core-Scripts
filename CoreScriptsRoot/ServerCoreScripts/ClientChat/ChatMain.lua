@@ -325,6 +325,8 @@ end)
 --////////////////////////////////////////////////////////////////////////////////////////////
 --///////////////////////////////////////////////// Code to hook client UI up to server events
 --////////////////////////////////////////////////////////////////////////////////////////////
+local didFirstChannelsLoads = false
+
 local function DoChatBarFocus()
 	if (not ChatWindow:GetCoreGuiEnabled()) then return end
 	if (not ChatBar:GetEnabled()) then return end
@@ -466,6 +468,10 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(message, channel)
 end)
 
 EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessage)
+	if (channel == ChatSettings.GeneralChannelName) then
+		didFirstChannelsLoads = true
+	end
+
 	local channelObj = ChatWindow:AddChannel(channel)
 
 	if (channelObj) then
@@ -727,13 +733,10 @@ end)
 
 moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 	if (valueTable["Text"] and type(valueTable["Text"]) == "string") then
-		local channel = "All"
-		local channelObj = ChatWindow:GetChannel(channel)
+		while (not didFirstChannelsLoads) do wait() end
 
-		if (not channelObj) then
-			wait(0.25)
-			channelObj = ChatWindow:GetChannel(channel)
-		end
+		local channel = ChatSettings.GeneralChannelName
+		local channelObj = ChatWindow:GetChannel(channel)
 
 		if (channelObj) then
 			local messageLabel = MessageLabelCreator:CreateSetCoreMessageLabel(valueTable)

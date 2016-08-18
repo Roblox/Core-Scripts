@@ -20,6 +20,8 @@ module.DefaultWindowPosition = UDim2.new(0, 0, 0, 0)
 
 module.GeneralChannelName = "All" -- You can set to 'nil' to turn off echoing to a general channel.
 
+module.ChannelsBarFullTabSize = 4 -- number of tabs in bar before it starts to scroll
+
 local ChangedEvent = Instance.new("BindableEvent")
 
 local proxyTable = setmetatable({},
