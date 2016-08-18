@@ -1398,7 +1398,9 @@ do
 	-- iOS, Android and Xbox already have platform specific keyboards
 	local platform = UserInputService:GetPlatform()
 	VirtualKeyboardPlatform = platform == Enum.Platform.Windows or
-	                          platform == Enum.Platform.OSX
+	                          platform == Enum.Platform.OSX or
+	                          platform == Enum.Platform.IOS or 
+	                          platform == Enum.Platform.Android
 end
 
 
