@@ -87,8 +87,8 @@ function module.CreateProxy(Speaker)
 		obj.Target:SendSystemMessage(message, channel)
 	end
 	
-	function obj:GetPlayerObject()
-		return obj.Target:GetPlayerObject()
+	function obj:GetPlayer()
+		return obj.Target:GetPlayer()
 	end
 	
 	function obj:SetExtraData(key, value)
@@ -118,7 +118,7 @@ function module.CreateProxy(Speaker)
 		SayMessage = true, 
 		JoinChannel = true, LeaveChannel = true, IsInChannel = true, 
 		SendMessage = true, SendSystemMessage = true, 
-		GetPlayerObject = true, 
+		GetPlayer = true, 
 		SetExtraData = true, GetExtraData = true, 
 		GetChannelList = true,
 		SetMainChannel = true,

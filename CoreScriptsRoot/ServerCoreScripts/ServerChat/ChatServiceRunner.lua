@@ -62,7 +62,7 @@ EventFolder = useEvents
 
 local Players = game:GetService("Players")
 local function HandlePlayerJoining(playerObj)
-	while not didInit do wait(0.2) end
+	while not didInit do wait() end
 
 	--// If a developer already created a speaker object with the
 	--// name of a player and then a player joins and tries to 
@@ -154,18 +154,6 @@ ChatService.SpeakerAdded:connect(function(speakerName)
 		data[key] = value
 		EventFolder.OnSpeakerExtraDataUpdated:FireAllClients(speakerName, data)
 	end)
-end)
-
-
-ChatService:RegisterFilterMessageFunction("default_filter", function(fromSpeaker, message)
-	for filter, v in pairs(ChatService.WordFilters) do
-		message = string.gsub(message, filter, string.rep("*", string.len(filter)))
-	end
-	for alias, replacement in pairs(ChatService.WordAliases) do
-		message = string.gsub(message, alias, replacement)
-	end
-	
-	return message
 end)
 
 local function DoJoinCommand(speakerName, channelName)
@@ -270,16 +258,14 @@ wait()
 
 didInit = true
 
+wait()
 
-spawn(function()
-	wait()
-	for i, player in pairs(game:GetService("Players"):GetChildren()) do
-		local spkr = ChatService:GetSpeaker(player.Name)
-		if (not spkr or not spkr:GetPlayerObject()) then
-			HandlePlayerJoining(player)
-		end
+for i, player in pairs(game:GetService("Players"):GetChildren()) do
+	local spkr = ChatService:GetSpeaker(player.Name)
+	if (not spkr or not spkr:GetPlayer()) then
+		HandlePlayerJoining(player)
 	end
-end)
+end
 ]]
 
 local generated = Instance.new("Script")

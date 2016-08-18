@@ -60,7 +60,7 @@ function module.CreateProxy(ChatService)
 		AssertParameterTypeEquals(speakerName, "string")
 		
 		local spkr = obj.Target:GetSpeaker(speakerName)
-		if (spkr and spkr:GetPlayerObject()) then
+		if (spkr and spkr:GetPlayer()) then
 			error("Cannot remove Speaker object in use by Player!")
 		end
 		
@@ -80,27 +80,6 @@ function module.CreateProxy(ChatService)
 			table.insert(proxyList, channel.Name)
 		end
 		return proxyList
-	end
-	
-	function obj:AddWordFilter(expression)
-		AssertParameterTypeEquals(expression, "string")
-		obj.Target:AddWordFilter(expression)
-	end
-	
-	function obj:RemoveWordFilter(expression)
-		AssertParameterTypeEquals(expression, "string")
-		obj.Target:RemoveWordFilter(expression)
-	end
-	
-	function obj:AddWordAlias(expression, replacement)
-		AssertParameterTypeEquals(expression, "string")
-		AssertParameterTypeEquals(replacement, "string")
-		obj.Target:AddWordAlias(expression, replacement)
-	end
-	
-	function obj:RemoveWordAlias(expression)
-		AssertParameterTypeEquals(expression, "string")
-		obj.Target:RemoveWordAlias(expression)
 	end
 	
 	function obj:GetChannelList()
@@ -161,8 +140,6 @@ function module.CreateProxy(ChatService)
 		AddChannel = true, RemoveChannel = true, GetChannel = true,
 		AddSpeaker = true, RemoveSpeaker = true, GetSpeaker = true,
 		GetAutoJoinChannelList = true,
-		AddWordFilter = true, RemoveWordFilter = true,
-		AddWordAlias = true, RemoveWordAlias = true,
 		GetChannelList = true,
 		RegisterFilterMessageFunction = true, UnregisterFilterMessageFunction = true,
 		RegisterProcessCommandsFunction = true, UnregisterProcessCommandsFunction = true,

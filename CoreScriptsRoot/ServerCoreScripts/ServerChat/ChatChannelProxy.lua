@@ -36,27 +36,6 @@ function module.CreateProxy(ChatChannel)
 		metatable.__newindex = function() error("Object is destroyed!") end
 	end)
 	
-	function obj:AddWordFilter(expression)
-		AssertParameterTypeEquals(expression, "string")
-		obj.Target:AddWordFilter(expression)
-	end
-	
-	function obj:RemoveWordFilter(expression)
-		AssertParameterTypeEquals(expression, "string")
-		obj.Target:RemoveWordFilter(expression)
-	end
-	
-	function obj:AddWordAlias(expression, replacement)
-		AssertParameterTypeEquals(expression, "string")
-		AssertParameterTypeEquals(replacement, "string")
-		obj.Target:AddWordAlias(expression, replacement)
-	end
-	
-	function obj:RemoveWordAlias(expression)
-		AssertParameterTypeEquals(expression, "string")
-		obj.Target:RemoveWordAlias(expression)
-	end
-	
 	function obj:KickSpeaker(speakerName, reason)
 		AssertParameterTypeEquals(speakerName, "string")
 		
@@ -156,8 +135,6 @@ function module.CreateProxy(ChatChannel)
 		SpeakerMuted = true, SpeakerUnmuted = true
 	}
 	local readIndexProxy = {
-		AddWordFilter = true, RemoveWordFilter = true,
-		AddWordAlias = true, RemoveWordAlias = true,
 		KickSpeaker = true, MuteSpeaker = true, UnmuteSpeaker = true, IsSpeakerMuted = true,
 		GetSpeakerList = true, SendSystemMessage = true,
 		RegisterFilterMessageFunction = true, UnregisterFilterMessageFunction = true,

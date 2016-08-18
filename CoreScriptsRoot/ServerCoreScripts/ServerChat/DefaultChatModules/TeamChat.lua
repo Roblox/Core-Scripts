@@ -14,16 +14,16 @@ local function Run(ChatService)
 		local speakerObj = ChatService:GetSpeaker(fromSpeaker)
 		local channelObj = ChatService:GetChannel(channel)
 		if (speakerObj and channelObj) then
-			local player = speakerObj:GetPlayerObject()
+			local player = speakerObj:GetPlayer()
 			if (player) then
 				
 				for i, speakerName in pairs(channelObj:GetSpeakerList()) do
 					local otherSpeaker = ChatService:GetSpeaker(speakerName)
 					if (otherSpeaker) then
-						local otherPlayer = otherSpeaker:GetPlayerObject()
+						local otherPlayer = otherSpeaker:GetPlayer()
 						if (otherPlayer) then
 							
-							if (player.TeamColor == otherPlayer.TeamColor) then
+							if (player.Team == otherPlayer.Team) then
 								otherSpeaker:SendMessage(fromSpeaker, channel, message)
 							else
 								--// Could use this line to obfuscate message for cool effects
@@ -55,16 +55,16 @@ local function Run(ChatService)
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speakerObj = ChatService:GetSpeaker(speakerName)
 		if (speakerObj) then
-			local player = speakerObj:GetPlayerObject()
+			local player = speakerObj:GetPlayer()
 			if (player) then
 				player.Changed:connect(function(property)
 					if (property == "Neutral") then
 						PutSpeakerInCorrectTeamChatState(speakerObj, player)
 						
-					elseif (property == "TeamColor") then
+					elseif (property == "Team") then
 						PutSpeakerInCorrectTeamChatState(speakerObj, player)
 						if (speakerObj:IsInChannel(channel.Name)) then
-							speakerObj:SendSystemMessage("You are now on the '" .. player.TeamColor.Name .. "' team.", channel.Name)
+							speakerObj:SendSystemMessage(string.format("You are now on the '%s' team.", player.Team.Name), channel.Name)
 						end
 						
 					end

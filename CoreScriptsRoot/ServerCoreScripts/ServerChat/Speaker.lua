@@ -100,7 +100,7 @@ function methods:IsInChannel(channelName)
 	return (self.Channels[channelName:lower()] ~= nil)
 end
 
-function methods:GetPlayerObject()
+function methods:GetPlayer()
 	return rawget(self, "PlayerObj")
 end
 

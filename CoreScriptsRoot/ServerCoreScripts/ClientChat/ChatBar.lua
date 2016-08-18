@@ -204,9 +204,7 @@ function module.new()
 	obj.TextTweener = moduleTransparencyTweener.new()
 
 	ClassMaker.MakeClass("ChatBar", obj)
-
-	obj:SetTextLabelText('To chat click here or press "/" key')
-
+	
 	obj:CreateTweeners()
 
 	local changedLock = false

@@ -94,6 +94,15 @@ function methods:ReorderAllMessages()
 	end
 end
 
+function methods:ClearMessageLog()
+	for i, v in pairs(self.MessageObjectLog) do
+		v:Destroy()
+	end
+	rawset(self, "MessageObjectLog", {})
+
+	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+end
+
 function methods:RegisterChannelTab(tab)
 	rawset(self, "ChannelTab", tab)
 end
@@ -122,7 +131,7 @@ module.ScrollBarThickness = 4
 
 function module.new(channelName)
 	local obj = {}
-	
+
 	local BaseFrame, Scroller = CreateGuiObject()
 	obj.GuiObject = BaseFrame
 	obj.Scroller = Scroller

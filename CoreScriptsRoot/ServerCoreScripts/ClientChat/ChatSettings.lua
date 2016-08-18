@@ -18,6 +18,8 @@ local size = 0.35
 module.DefaultWindowSize = UDim2.new(size, 0, size, 0)
 module.DefaultWindowPosition = UDim2.new(0, 0, 0, 0)
 
+module.GeneralChannelName = "All" -- You can set to 'nil' to turn off echoing to a general channel.
+
 return module
 ]]
 

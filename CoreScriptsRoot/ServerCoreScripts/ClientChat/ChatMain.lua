@@ -101,11 +101,18 @@ local SpeakerDatabase = moduleSpeakerDatabase.new()
 local MessageLabelCreator = moduleMessageLabelCreator.new()
 MessageLabelCreator:RegisterSpeakerDatabase(SpeakerDatabase)
 
+local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 MessageSender:RegisterSayMessageEvent(EventFolder.SayMessageRequest)
 
 
 
+if (UserInputService.TouchEnabled) then
+	ChatBar:SetTextLabelText('Tap here to chat')
+else
+	ChatBar:SetTextLabelText('To chat click here or press "/" key')
+end
 
 
 
@@ -350,6 +357,14 @@ local function ProcessChatCommands(message)
 		if (ChatWindow:GetChannel(message)) then
 			ChatWindow:SwitchCurrentChannel(message)
 		end
+
+	elseif (string.sub(message, 1, 4) == "/cls" or string.sub(message, 1, 6) == "/clear") then
+		processedCommand = true
+
+		local currentChannel = ChatWindow:GetCurrentChannel()
+		if (currentChannel) then
+			currentChannel:ClearMessageLog()
+		end
 	end 
 
 	--// This is the code that prevents Guests from chatting.
@@ -381,7 +396,7 @@ ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 			if (currentChannel) then
 				MessageSender:SendMessage(message, currentChannel.Name)
 
-				if (currentChannel.Name == "All") then
+				if (currentChannel.Name == ChatSettings.GeneralChannelName) then
 					--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
 					moduleApiTable.MessagePosted:fire(message) 
 				end
@@ -407,6 +422,14 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(fromSpeaker, channel, me
 
 		DoFadeInFromNewInformation()
 
+		if (ChatSettings.GeneralChannelName and channel ~= ChatSettings.GeneralChannelName) then
+			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+			if (generalChannel) then
+				local messageObject = MessageLabelCreator:CreateChannelEchoMessageLabel(fromSpeaker, message, channel)
+				generalChannel:AddMessageLabelToLog(messageObject)
+			end
+
+		end
 	else
 		warn("Just received chat message for channel I'm not in [" .. channel .. "]")
 		
@@ -428,6 +451,14 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(message, channel)
 
 		DoFadeInFromNewInformation()
 
+		if (ChatSettings.GeneralChannelName and channel ~= ChatSettings.GeneralChannelName) then
+			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+			if (generalChannel) then
+				local messageObject = MessageLabelCreator:CreateChannelEchoSystemMessageLabel(message, channel)
+				generalChannel:AddMessageLabelToLog(messageObject)
+			end
+
+		end
 	else
 		warn("Just received system message for channel I'm not in [" .. channel .. "]")
 		

@@ -45,8 +45,6 @@ end
 
 
 
-
-
 local function WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, StrongReferences)
 	local obj = {}
 
@@ -236,6 +234,167 @@ function methods:CreateSetCoreMessageLabel(valueTable)
 	local Tweener = moduleTransparencyTweener.new()
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
+
+	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, {})
+end
+
+function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel)
+	if (string.sub(message, 1, 4) == "/me ") then
+		return self:CreateChannelEchoSystemMessageLabel(fromSpeaker .. " " .. string.sub(message, 5), echoChannel)
+	end
+
+	local useFont = Enum.Font.SourceSansBold
+	local useFontSize = moduleChatSettings.ChatWindowTextSize
+
+	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
+	BaseFrame.BackgroundTransparency = 1
+
+	local messageBorder = 8
+
+	local BaseMessage = Instance.new("TextLabel", BaseFrame)
+	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
+	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
+	BaseMessage.BackgroundTransparency = 1
+	BaseMessage.Font = useFont
+	BaseMessage.FontSize = useFontSize
+	BaseMessage.TextXAlignment = Enum.TextXAlignment.Left
+	BaseMessage.TextYAlignment = Enum.TextYAlignment.Top
+	BaseMessage.TextStrokeTransparency = 0.75
+	BaseMessage.TextWrapped = true
+
+	local NameButton = Instance.new("TextButton", BaseMessage)
+	NameButton.Size = UDim2.new(1, 0, 1, 0)
+	NameButton.Position = UDim2.new(0, 0, 0, 0)
+	NameButton.BackgroundTransparency = 1
+	NameButton.Font = BaseMessage.Font
+	NameButton.FontSize = BaseMessage.FontSize
+	NameButton.TextXAlignment = BaseMessage.TextXAlignment
+	NameButton.TextYAlignment = BaseMessage.TextYAlignment
+	NameButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
+
+	local ChannelButton = NameButton:Clone()
+	ChannelButton.Parent = BaseMessage
+
+	NameButton.MouseButton1Click:connect(function()
+		MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
+	end)
+
+	local speakerPlayer = self.SpeakerDatabase:GetSpeaker(fromSpeaker)
+
+	local useNameColor = Color3.new(1, 1, 1)
+	local useChatColor = Color3.new(1, 1, 1)
+
+	if (speakerPlayer) then
+		useNameColor = speakerPlayer.NameColor
+		useChatColor = speakerPlayer.ChatColor
+	end
+	
+	local formatUseName = string.format("[%s]:", fromSpeaker)
+	local formatChannelName = string.format("{%s}", echoChannel)
+
+	local speakerNameSize = GetStringTextBounds(formatUseName, useFont, useFontSize)
+	local singleSpaceSize = GetStringTextBounds(" ", useFont, useFontSize)
+	local numNeededSpaces = math.ceil(speakerNameSize.X / singleSpaceSize.X) + 1
+
+	local channelNameSize = GetStringTextBounds(formatChannelName, useFont, useFontSize)
+	local numNeededSpaces2 = math.ceil(channelNameSize.X / singleSpaceSize.X) + 1
+
+	NameButton.Size = UDim2.new(0, speakerNameSize.X, 0, speakerNameSize.Y)
+	ChannelButton.Size = UDim2.new(0, channelNameSize.X, 0, channelNameSize.Y)
+
+	NameButton.Position = UDim2.new(0, channelNameSize.X + singleSpaceSize.X, 0, 0)
+
+	BaseMessage.TextColor3 = useChatColor
+	NameButton.TextColor3 = useNameColor
+	ChannelButton.TextColor3 = useNameColor
+
+	ChannelButton.Text = formatChannelName
+	NameButton.Text = formatUseName
+	BaseMessage.Text = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. message
+
+	local Tweener = moduleTransparencyTweener.new()
+	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
+	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
+
+	local StrongReferences = {}
+	local function ProcessChild(child)
+		if (child:IsA("TextLabel") or child:IsA("TextButton")) then
+			Tweener:RegisterTweenObjectProperty(child, "TextTransparency")
+			Tweener:RegisterTweenObjectProperty(child, "TextStrokeTransparency")
+			table.insert(StrongReferences, child)
+
+		elseif (child:IsA("ImageLabel") or child:Is("ImageButton")) then
+			Tweener:RegisterTweenObjectProperty(child, "ImageTransparency")
+			table.insert(StrongReferences, child)
+
+		end
+	end
+
+	for i, v in pairs(BaseMessage:GetChildren()) do
+		ProcessChild(v)
+	end
+
+	BaseMessage.ChildAdded:connect(ProcessChild)
+
+	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, StrongReferences)
+end
+
+function methods:CreateChannelEchoSystemMessageLabel(message, echoChannel)
+	local useFont = Enum.Font.SourceSansBold
+	local useFontSize = moduleChatSettings.ChatWindowTextSize
+
+	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
+	BaseFrame.BackgroundTransparency = 1
+
+	local messageBorder = 8
+
+	local BaseMessage = Instance.new("TextLabel", BaseFrame)
+	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
+	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
+	BaseMessage.BackgroundTransparency = 1
+	BaseMessage.Font = useFont
+	BaseMessage.FontSize = useFontSize
+	BaseMessage.TextXAlignment = Enum.TextXAlignment.Left
+	BaseMessage.TextYAlignment = Enum.TextYAlignment.Top
+	BaseMessage.TextStrokeTransparency = 0.75
+	BaseMessage.TextColor3 = Color3.new(1, 1, 1)
+	BaseMessage.TextWrapped = true
+
+	local ChannelButton = Instance.new("TextButton", BaseMessage)
+	ChannelButton.Size = UDim2.new(1, 0, 1, 0)
+	ChannelButton.Position = UDim2.new(0, 0, 0, 0)
+	ChannelButton.BackgroundTransparency = 1
+	ChannelButton.Font = BaseMessage.Font
+	ChannelButton.FontSize = BaseMessage.FontSize
+	ChannelButton.TextXAlignment = BaseMessage.TextXAlignment
+	ChannelButton.TextYAlignment = BaseMessage.TextYAlignment
+	ChannelButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
+
+
+
+	local formatChannelName = string.format("{%s}", echoChannel)
+
+	local singleSpaceSize = GetStringTextBounds(" ", useFont, useFontSize)
+
+	local channelNameSize = GetStringTextBounds(formatChannelName, useFont, useFontSize)
+	local numNeededSpaces2 = math.ceil(channelNameSize.X / singleSpaceSize.X) + 1
+
+	ChannelButton.Size = UDim2.new(0, channelNameSize.X, 0, channelNameSize.Y)
+
+	ChannelButton.TextColor3 = BaseMessage.TextColor3
+
+	ChannelButton.Text = formatChannelName
+	BaseMessage.Text = string.rep(" ", numNeededSpaces2) .. message
+
+
+	local Tweener = moduleTransparencyTweener.new()
+	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
+	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
+
+	Tweener:RegisterTweenObjectProperty(ChannelButton, "TextTransparency")
+	Tweener:RegisterTweenObjectProperty(ChannelButton, "TextStrokeTransparency")
 
 	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, {})
 end

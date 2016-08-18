@@ -32,8 +32,6 @@ function methods:DoMessageFilter(speakerName, message, channel)
 		end
 	end
 	
-	message = self.FilterMessageFunctions["default_filter"](speakerName, message, channel)
-	
 	return message
 end
 
@@ -109,22 +107,6 @@ function methods:InternalRemoveSpeaker(speaker)
 	
 	self.Speakers[speaker.Name] = nil
 	spawn(function() self.eSpeakerLeft:Fire(speaker.Name) end)
-end
-
-function methods:AddWordFilter(expression)
-	self.WordFilters[expression] = true
-end
-
-function methods:RemoveWordFilter(expression)
-	self.WordFilters[expression] = nil
-end
-
-function methods:AddWordAlias(expression, replacement)
-	self.WordAliases[expression] = replacement
-end
-
-function methods:RemoveWordAlias(expression)
-	self.WordAliases[expression] = nil
 end
 
 function methods:KickSpeaker(speakerName, reason)
@@ -242,9 +224,6 @@ function module.new(vChatService, name, welcomeMessage)
 	
 	obj.Speakers = {}
 	obj.Mutes = {}
-	
-	obj.WordFilters = {}
-	obj.WordAliases = {}
 	
 	obj.FilterMessageFunctions = {}
 	obj.ProcessCommandsFunctions = {}

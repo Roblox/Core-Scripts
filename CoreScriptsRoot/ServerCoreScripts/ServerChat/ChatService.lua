@@ -27,12 +27,10 @@ function methods:DoMessageFilter(speakerName, message, channel)
 		end
 	end
 	
-	message = self.FilterMessageFunctions["default_filter"](speakerName, message, channel)
-	
 	if (RunService:IsServer() and not RunService:IsStudio()) then
 		local fromSpeaker = self:GetSpeaker(speakerName)
 		if (fromSpeaker) then
-			local playerObj = fromSpeaker:GetPlayerObject()
+			local playerObj = fromSpeaker:GetPlayer()
 			if (playerObj) then
 				message = game:GetService("Chat"):FilterStringAsync(message, playerObj, playerObj)
 			end
@@ -72,17 +70,7 @@ function methods:AddChannel(channelName)
 	
 	local channel = ChatChannel.new(self, channelName)
 	self.ChatChannels[channelName:lower()] = channel
-	
-	channel:RegisterFilterMessageFunction("default_filter", function(fromSpeaker, message)
-		for filter, v in pairs(channel.WordFilters) do
-			message = message:gsub(filter, string.rep("*", string.len(filter)))
-		end
-		for alias, replacement in pairs(channel.WordAliases) do
-			message = message:gsub(alias, replacement)
-		end
-		return message
-	end)
-	
+
 	channel:RegisterProcessCommandsFunction("default_commands", function(fromSpeaker, message)
 		if (message:lower() == "/leave") then
 			local channel = self:GetChannel(channelName)
@@ -165,22 +153,6 @@ function methods:GetAutoJoinChannelList()
 	return list
 end
 
-function methods:AddWordFilter(expression)
-	self.WordFilters[expression] = true
-end
-
-function methods:RemoveWordFilter(expression)
-	self.WordFilters[expression] = nil
-end
-
-function methods:AddWordAlias(expression, replacement)
-	self.WordAliases[expression] = replacement
-end
-
-function methods:RemoveWordAlias(expression)
-	self.WordAliases[expression] = nil
-end
-
 function methods:GetChannelList()
 	local list = {}
 	for i, channel in pairs(self.ChatChannels) do
@@ -238,9 +210,6 @@ function module.new()
 	
 	obj.ChatChannels = {}
 	obj.Speakers = {}
-	
-	obj.WordFilters = {}
-	obj.WordAliases = {}
 	
 	obj.FilterMessageFunctions = {}
 	obj.ProcessCommandsFunctions = {}
