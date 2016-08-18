@@ -320,6 +320,7 @@ local function MakeSlot(parent, index)
 	local ToolName = nil
 	local ToolChangeConn = nil
 	local HighlightFrame = nil
+	local SelectionObj = nil
 
 	--NOTE: The following are only defined for Hotbar Slots
 	local ToolTip = nil
@@ -348,7 +349,10 @@ local function MakeSlot(parent, index)
 					child.BackgroundTransparency = finalTransparency
 				end
 			end
+
+			SlotFrame.SelectionImageObject = SelectionObj
 		else
+			SlotFrame.SelectionImageObject = nil
 			SlotFrame.BackgroundTransparency = (SlotFrame.Draggable) and 0 or SLOT_FADE_LOCKED
 		end
 		SlotFrame.BackgroundColor3 = (SlotFrame.Draggable) and SLOT_DRAGGABLE_COLOR or BACKGROUND_COLOR
@@ -598,6 +602,19 @@ local function MakeSlot(parent, index)
 	SlotFrame.BackgroundTransparency = SLOT_FADE_LOCKED
 	SlotFrame.MouseButton1Click:connect(function() changeSlot(slot) end)
 	slot.Frame = SlotFrame
+
+	do
+		local selectionObjectClipper = NewGui('Frame', 'SelectionObjectClipper')
+		selectionObjectClipper.Visible = false
+		selectionObjectClipper.Parent = SlotFrame
+
+		SelectionObj = NewGui('ImageLabel', 'Selector')
+		SelectionObj.Size = UDim2.new(1, 0, 1, 0)
+		SelectionObj.Image = "rbxasset://textures/ui/Keyboard/key_selection_9slice.png"
+		SelectionObj.ScaleType = Enum.ScaleType.Slice
+		SelectionObj.SliceCenter = Rect.new(12,12,52,52)
+		SelectionObj.Parent = selectionObjectClipper
+	end
 
 
 	ToolIcon = NewGui('ImageLabel', 'Icon')
@@ -1623,7 +1640,7 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 			if GamepadEnabled then
 				if GAMEPAD_INPUT_TYPES[UserInputService:GetLastInputType()] then
 					resizeGamepadHintsFrame()
-					gamepadHintsFrame.Visible = true
+					gamepadHintsFrame.Visible = not UserInputService.VREnabled
 				end
 			end
 			enableGamepadInventoryControl()
