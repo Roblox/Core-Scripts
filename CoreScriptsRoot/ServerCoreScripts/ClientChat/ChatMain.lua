@@ -35,7 +35,7 @@ local useEvents = {}
 
 local FoundAllEventsEvent = Instance.new("BindableEvent")
 
-local function TryRemoveChild(child)
+local function TryRemoveChildWithVerifyingIsRemoteEvent(child)
 	if (child:IsA("RemoteEvent") and waitChildren[child.Name]) then
 		waitChildren[child.Name] = nil
 		useEvents[child.Name] = child
@@ -44,18 +44,18 @@ local function TryRemoveChild(child)
 end
 
 for i, child in pairs(EventFolder:GetChildren()) do
-	TryRemoveChild(child)
+	TryRemoveChildWithVerifyingIsRemoteEvent(child)
 end
 
 if (numChildrenRemaining > 0) then
 	local con = EventFolder.ChildAdded:connect(function(child)
-		TryRemoveChild(child)
+		TryRemoveChildWithVerifyingIsRemoteEvent(child)
 		if (numChildrenRemaining < 1) then
 			FoundAllEventsEvent:Fire()
 		end
 	end)
 
-	FoundAllEventsEvent.Event:wait() -- I love how this turned out
+	FoundAllEventsEvent.Event:wait()
 	con:disconnect()
 
 	FoundAllEventsEvent:Destroy()

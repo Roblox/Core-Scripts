@@ -26,6 +26,15 @@ local function CreateGuiObject()
 		BaseFrame.Active = true
 		BaseFrame.Draggable = true
 	end
+	moduleChatSettings.SettingsChanged:connect(function(setting, value)
+		if (setting == "Draggable") then
+			BaseFrame.Active = value
+			BaseFrame.Draggable = value
+
+		elseif (setting == "Resizable") then
+
+		end
+	end)
 
 	local function doCheckMinimumResize()
 		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
@@ -93,8 +102,6 @@ local function CreateGuiObject()
 
 	end
 
-
-
 	return BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame
 end
 
@@ -139,25 +146,45 @@ function methods:AddChannel(channelName)
 	return channel
 end
 
+function methods:GetFirstChannel()
+	--// Channels are not indexed numerically, so this function is necessary.
+	--// Grabs and returns the first channel it happens to, or nil if none exist.
+	for i, v in pairs(self.Channels) do
+		return v
+	end
+	return nil
+end
+
 function methods:RemoveChannel(channelName)
 	if (not self:GetChannel(channelName))  then
 		error("Channel '" .. channelName .. "' does not exist!")
 	end
 	
 	local indexName = channelName:lower()
-	
+
+	local needsChannelSwitch = false
 	if (self.Channels[indexName] == self:GetCurrentChannel()) then
-		if (indexName == "all") then
-			self:SwitchCurrentChannel(nil)
-		else
-			self:SwitchCurrentChannel("All")
-		end
+		needsChannelSwitch = true
+
+		self:SwitchCurrentChannel(nil)
 	end
 	
 	self.Channels[indexName]:Destroy()
 	self.Channels[indexName] = nil
 
 	self.ChannelsBar:RemoveChannelTab(channelName)
+
+	if (needsChannelSwitch) then
+		local generalChannelExists = (self:GetChannel(moduleChatSettings.GeneralChannelName) ~= nil)
+		local removingGeneralChannel = (indexName == moduleChatSettings.GeneralChannelName:lower())
+
+		if (generalChannelExists and not removingGeneralChannel) then
+			self:SwitchCurrentChannel(moduleChatSettings.GeneralChannelName)
+		else
+			local firstChannel = self:GetFirstChannel()
+			self:SwitchCurrentChannel(firstChannel and firstChannel.Name or nil)
+		end
+	end
 end
 
 function methods:GetChannel(channelName)

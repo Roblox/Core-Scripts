@@ -20,7 +20,22 @@ module.DefaultWindowPosition = UDim2.new(0, 0, 0, 0)
 
 module.GeneralChannelName = "All" -- You can set to 'nil' to turn off echoing to a general channel.
 
-return module
+local ChangedEvent = Instance.new("BindableEvent")
+
+local proxyTable = setmetatable({},
+{
+	__index = function(tbl, index)
+		return module[index]
+	end,
+	__newindex = function(tbl, index, value)
+		module[index] = value
+		ChangedEvent:Fire(index, value)
+	end,
+})
+
+rawset(proxyTable, "SettingsChanged", ChangedEvent.Event)
+
+return proxyTable
 ]]
 
 local generated = Instance.new("ModuleScript")

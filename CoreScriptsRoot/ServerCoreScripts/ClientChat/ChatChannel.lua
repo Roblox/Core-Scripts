@@ -4,6 +4,7 @@ local module = {}
 --//////////////////////////////////////
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
+local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
@@ -67,11 +68,9 @@ function methods:PositionMessageLabelInWindow(messageObject)
 
 	baseFrame.Parent = self.Scroller
 	baseFrame.Position = UDim2.new(0, 0, 0, self.Scroller.CanvasSize.Y.Offset)
-	
-	--// This looks stupid, but it's actually necessary.
-	--// TextBounds wont be calculated correctly unless it has enough space.
-	baseFrame.Size = UDim2.new(1, 0, 0, 1000)
-	baseFrame.Size = UDim2.new(1, 0, 0, baseMessage.TextBounds.Y)
+
+	local textBoundsSize = moduleMessageLabelCreator:GetStringTextBounds(baseMessage.Text, baseMessage.Font, baseMessage.FontSize, UDim2.new(0, baseFrame.AbsoluteSize.X, 0, 1000))
+	baseFrame.Size = UDim2.new(1, 0, 0, textBoundsSize.Y)
 
 	local scrollBarBottomPosition = (self.Scroller.CanvasSize.Y.Offset - self.Scroller.AbsoluteSize.Y)
 	local reposition = (self.Scroller.CanvasPosition.Y >= scrollBarBottomPosition)

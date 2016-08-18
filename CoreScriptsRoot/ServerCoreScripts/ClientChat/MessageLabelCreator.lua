@@ -396,7 +396,7 @@ function methods:CreateChannelEchoSystemMessageLabel(message, echoChannel)
 	Tweener:RegisterTweenObjectProperty(ChannelButton, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(ChannelButton, "TextStrokeTransparency")
 
-	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, {})
+	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, {ChannelButton})
 end
 
 --///////////////////////// Constructors
@@ -415,6 +415,10 @@ end
 
 function module:RegisterGuiRoot(root)
 	testLabel.Parent = root
+end
+
+function module:GetStringTextBounds(text, font, fontSize, sizeBounds)
+	return GetStringTextBounds(text, font, fontSize, sizeBounds)
 end
 
 return module
