@@ -55,31 +55,9 @@ local function setDialogInUse(player, dialog, value)
 end
 RemoteEvent_SetDialogInUse.OnServerEvent:connect(setDialogInUse)
 
-
-
-local function GetUseLuaFlag()
-	local loop_continue = true
-	while loop_continue do
-		local success, retVal = pcall(function()
-			return game.IsSFFlagsLoaded
-		end)
-		if not success then
-			loop_continue = false
-		elseif retVal then
-			loop_continue = false
-		else
-			wait(0.1)
-		end
-	end
-
-	local success, retVal = pcall(function() return game:GetService("Chat"):GetShouldUseLuaChat() end)
-	local useNewChat = success and retVal
-	return useNewChat
-end
-
-local FORCE_USE_NEW_CHAT = false
-local useNewChat = GetUseLuaFlag()
-if (useNewChat or FORCE_USE_NEW_CHAT) then
+local success, retVal = pcall(function() return game:GetService("Chat"):GetShouldUseLuaChat() end)
+local useNewChat = success and retVal
+if (useNewChat) then
 	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerChat/ChatServiceInstaller", script.Parent)
 	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ClientChat/ChatWindowInstaller", script.Parent)
 end
