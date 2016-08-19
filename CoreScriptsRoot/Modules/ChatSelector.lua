@@ -17,6 +17,10 @@ local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
 
+local Players = game:GetService("Players")
+while Players.LocalPlayer == nil do Players.ChildAdded:wait() end
+local LocalPlayer = Players.LocalPlayer
+
 local Util = require(RobloxGui.Modules.ChatUtil)
 
 local function GetUseLuaFlag()
@@ -123,7 +127,10 @@ StarterGui:RegisterGetCore("ChatBarDisabled", NonFunc)
 
 
 local function ConnectSignals(useModule, interface, sigName)
-	useModule[sigName]:connect(function(...) interface[sigName]:fire(...) end)
+	--// "MessagesChanged" event is not created for Studio Start Server
+	if (useModule[sigName]) then
+		useModule[sigName]:connect(function(...) interface[sigName]:fire(...) end)
+	end
 end
 
 local isConsole = GuiService:IsTenFootInterface() or FORCE_IS_CONSOLE
@@ -137,9 +144,13 @@ if ( (TryLoadNewChat or FORCE_CorescriptNewLoadChat) and not isConsole and not i
 
 		ConnectSignals(useModule, interface, "ChatBarFocusChanged")
 		ConnectSignals(useModule, interface, "VisibilityStateChanged")
-		ConnectSignals(useModule, interface, "MessagesChanged")
-
-		StarterGui:RegisterGetCore("UseNewLuaChat", function() return useNewChat end)
+		if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu) then
+			ConnectSignals(useModule, interface, "MessagesChanged")
+			StarterGui:RegisterGetCore("UseNewLuaChat", function() return useNewChat end)
+		else
+			--// Cause new chat window UI to not be created in Studio Start Server
+			StarterGui:RegisterGetCore("UseNewLuaChat", function() return false end)
+		end
 
 		useModule:SetVisible(state.Visible)
 		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
@@ -154,7 +165,9 @@ else
 
 	ConnectSignals(useModule, interface, "ChatBarFocusChanged")
 	ConnectSignals(useModule, interface, "VisibilityStateChanged")
-	ConnectSignals(useModule, interface, "MessagesChanged")
+	if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu) then
+		ConnectSignals(useModule, interface, "MessagesChanged")
+	end
 
 	StarterGui:RegisterGetCore("UseNewLuaChat", function() return false end)
 	
