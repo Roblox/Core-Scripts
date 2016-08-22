@@ -14,7 +14,7 @@
 local Players = game:GetService('Players')
 local GuiService = game:GetService('GuiService')
 
-local jumpButtonChangeFlagSuccess, jumpButtonChangeFlagValue = pcall(function() return UserSettings():IsUserFeatureEnabled("JumpButtonPositionChange") end)
+local jumpButtonChangeFlagSuccess, jumpButtonChangeFlagValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserJumpButtonPositionChange") end)
 local repositionJumpButton = (jumpButtonChangeFlagSuccess and jumpButtonChangeFlagValue)
 
 local TouchJump = {}
