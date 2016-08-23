@@ -244,7 +244,9 @@ function methods:ScrollChannelsFrame(dir)
 	local function UnlockFunc()
 		self.ScrollChannelsFrameLock = false
 	end
-	
+
+	self:WaitUntilParentedCorrectly()
+
 	self.ScrollerFrame:TweenPosition(endPos, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, tweenTime, true, UnlockFunc)
 end
 
@@ -279,6 +281,13 @@ function methods:CreateTweeners()
 
 	--// Register TextTweener objects and properties
 	
+end
+
+--// ToDo: Move to common modules
+function methods:WaitUntilParentedCorrectly()
+	while (not self.GuiObject:IsDescendantOf(game:GetService("Players").LocalPlayer)) do
+		self.GuiObject.AncestryChanged:wait()
+	end
 end
 
 --///////////////////////// Constructors

@@ -45,6 +45,14 @@ end
 
 
 
+
+function WaitUntilParentedCorrectly()
+	while (not testLabel:IsDescendantOf(game:GetService("Players").LocalPlayer)) do
+		testLabel.AncestryChanged:wait()
+	end
+end
+
+
 local function WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, StrongReferences)
 	local obj = {}
 
@@ -78,6 +86,8 @@ function methods:RegisterSpeakerDatabase(SpeakerDatabase)
 end
 
 function methods:CreateMessageLabel(fromSpeaker, message)
+	WaitUntilParentedCorrectly()
+
 	if (string.sub(message, 1, 4) == "/me ") then
 		return self:CreateSystemMessageLabel(fromSpeaker .. " " .. string.sub(message, 5))
 	end
@@ -168,6 +178,8 @@ function methods:CreateMessageLabel(fromSpeaker, message)
 end
 
 function methods:CreateSystemMessageLabel(message)
+	WaitUntilParentedCorrectly()
+
 	local useFont = Enum.Font.SourceSansBold
 	local useFontSize = ChatSettings.ChatWindowTextSize
 
@@ -200,10 +212,14 @@ function methods:CreateSystemMessageLabel(message)
 end
 
 function methods:CreateWelcomeMessageLabel(message)
+	WaitUntilParentedCorrectly()
+
 	return self:CreateSystemMessageLabel(message)
 end
 
 function methods:CreateSetCoreMessageLabel(valueTable)
+	WaitUntilParentedCorrectly()
+
 	local useFont = valueTable.Font or Enum.Font.SourceSansBold
 	local useFontSize = valueTable.FontSize or ChatSettings.ChatWindowTextSize
 	local useColor = valueTable.Color or Color3.new(1, 1, 1)
@@ -239,6 +255,8 @@ function methods:CreateSetCoreMessageLabel(valueTable)
 end
 
 function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel)
+	WaitUntilParentedCorrectly()
+
 	if (string.sub(message, 1, 4) == "/me ") then
 		return self:CreateChannelEchoSystemMessageLabel(fromSpeaker .. " " .. string.sub(message, 5), echoChannel)
 	end
@@ -341,6 +359,8 @@ function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel
 end
 
 function methods:CreateChannelEchoSystemMessageLabel(message, echoChannel)
+	WaitUntilParentedCorrectly()
+	
 	local useFont = Enum.Font.SourceSansBold
 	local useFontSize = ChatSettings.ChatWindowTextSize
 

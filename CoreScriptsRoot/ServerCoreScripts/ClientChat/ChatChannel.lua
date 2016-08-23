@@ -49,6 +49,8 @@ function methods:AddMessageLabelToLog(messageObject)
 end
 
 function methods:RemoveLastMessageLabelFromLog()
+	self:WaitUntilParentedCorrectly()
+
 	local lastMessage = self.MessageObjectLog[1]
 	local posOffset = UDim2.new(0, 0, 0, lastMessage.BaseFrame.AbsoluteSize.Y)
 
@@ -63,6 +65,8 @@ function methods:RemoveLastMessageLabelFromLog()
 end
 
 function methods:PositionMessageLabelInWindow(messageObject)
+	self:WaitUntilParentedCorrectly()
+
 	local baseFrame = messageObject.BaseFrame
 	local baseMessage = messageObject.BaseMessage
 
@@ -92,6 +96,8 @@ function methods:PositionMessageLabelInWindow(messageObject)
 end
 
 function methods:ReorderAllMessages()
+	self:WaitUntilParentedCorrectly()
+
 	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 	for i, messageObject in pairs(self.MessageObjectLog) do
 		self:PositionMessageLabelInWindow(messageObject)
@@ -125,6 +131,13 @@ end
 
 function methods:FadeInText(duration)
 	self.TextTweener:Tween(duration, 0)
+end
+
+--// ToDo: Move to common modules
+function methods:WaitUntilParentedCorrectly()
+	while (not self.GuiObject:IsDescendantOf(game:GetService("Players").LocalPlayer)) do
+		self.GuiObject.AncestryChanged:wait()
+	end
 end
 
 --///////////////////////// Constructors
