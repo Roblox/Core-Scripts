@@ -133,6 +133,7 @@ function methods:FadeInText(duration)
 	self.TextTweener:Tween(duration, 0)
 end
 
+--// ToDo: Move to common modules
 function methods:WaitUntilParentedCorrectly()
 	while (not self.GuiObject:IsDescendantOf(game:GetService("Players").LocalPlayer)) do
 		self.GuiObject.AncestryChanged:wait()
