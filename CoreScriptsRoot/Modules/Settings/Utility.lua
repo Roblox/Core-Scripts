@@ -324,15 +324,16 @@ local function isGuiVisible(gui, debug) -- true if any part of the gui is visibl
 	end
 end
 
-local function addHoverState(button, instance, applyNormal, applyHover)
-	local function indirectNormal()	applyNormal(instance) end
-	local function indirectHover() applyHover(instance) end
-	button.MouseEnter:connect(indirectHover)
-	button.SelectionGained:connect(indirectHover)
-	button.MouseLeave:connect(indirectNormal)
-	button.SelectionLost:connect(indirectNormal)
+local function addHoverState(button, instance, onNormalButtonState, onHoverButtonState)
+	local function onNormalButtonStateCallback() onNormalButtonState(instance) end
+	local function onHoverButtonStateCallback() onHoverButtonState(instance) end
+	
+	button.MouseEnter:connect(onHoverButtonStateCallback)
+	button.SelectionGained:connect(onHoverButtonStateCallback)
+	button.MouseLeave:connect(onNormalButtonStateCallback)
+	button.SelectionLost:connect(onNormalButtonStateCallback)
 
-	applyNormal(instance)
+	onNormalButtonState(instance)
 end
 
 local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
