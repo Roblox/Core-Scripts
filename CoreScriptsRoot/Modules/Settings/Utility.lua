@@ -217,7 +217,14 @@ local function isTenFootInterface()
 end
 
 local function usesSelectedObject()
-	return not (UserInputService.TouchEnabled and not UserInputService.GamepadEnabled or UserInputService.VREnabled)
+	--Touch does not use selected objects
+	if UserInputService.TouchEnabled then return false end
+	--VR does not use selected objects (in the same way as gamepad)
+	if UserInputService.VREnabled then return false end
+	--Anything else without a gamepad does not use selected objects
+	if not UserInputService.GamepadEnabled then return false end
+	--PC with gamepad, console... does use selected objects
+	return true
 end
 
 local function isPosOverGui(pos, gui, debug) -- does not account for rotation
