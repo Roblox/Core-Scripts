@@ -795,9 +795,12 @@ local function getRobuxProductToBuyItem(amountNeeded)
 				end
 			end
 		end
-	else -- used by iOS
+	elseif platform == Enum.Platform.IOS then
 		appendStr = isBCMember and "RobuxBC" or "RobuxNonBC"
 		appPrefix = "com.roblox.robloxmobile."
+	else
+		appendStr = isBCMember and "RobuxBCInvalid" or "RobuxNonBCInvalid"
+		appPrefix = "com.roblox.INVALIDPLATFORM."
 	end
 
 	local productStr = appPrefix..prependStr..tostring(productCost)..appendStr
