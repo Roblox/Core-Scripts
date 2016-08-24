@@ -327,7 +327,7 @@ end
 local function addHoverState(button, instance, onNormalButtonState, onHoverButtonState)
 	local function onNormalButtonStateCallback() onNormalButtonState(instance) end
 	local function onHoverButtonStateCallback() onHoverButtonState(instance) end
-	
+
 	button.MouseEnter:connect(onHoverButtonStateCallback)
 	button.SelectionGained:connect(onHoverButtonStateCallback)
 	button.MouseLeave:connect(onNormalButtonStateCallback)
@@ -973,6 +973,9 @@ local function CreateSelector(selectionStringTable, startPosition)
 		end
 
 		if not fixSettingsMenuVR then
+			--The old code was creating an AutoSelectButton for each option in the selector
+			--that tweened in and out when you cycled through the options. This was kind of
+			--strange and didn't play well with VR input.
 			local autoSelectButton = Util.Create'ImageButton'{
 				Name = 'AutoSelectButton',
 				BackgroundTransparency = 1,
@@ -997,8 +1000,12 @@ local function CreateSelector(selectionStringTable, startPosition)
 		this.Selections[i] = nextSelection
 	end
 
+	local autoSelectButton
 	if fixSettingsMenuVR then
-		local autoSelectButton = Util.Create'ImageButton'{
+		--So I moved the AutoSelectButton out of that loop so only one is created
+		--per selector. It functions the same; it increments the selection by one
+		--every time it's clicked/activated.
+		autoSelectButton = Util.Create'ImageButton'{
 			Name = 'AutoSelectButton',
 			BackgroundTransparency = 1,
 			Image = '',
@@ -1096,10 +1103,10 @@ local function CreateSelector(selectionStringTable, startPosition)
 					this.Selections[this.CurrentIndex].TextTransparency = 0
 				else
 					if GuiService.SelectedCoreObject ~= nil and isAutoSelectButton[GuiService.SelectedCoreObject] then
-						if not UserInputService.VREnabled and fixSettingsMenuVR then
-							GuiService.SelectedCoreObject = this.SelectorFrame
-						else
+						if UserInputService.VREnabled and fixSettingsMenuVR then
 							this.Selections[this.CurrentIndex].TextTransparency = 0
+						else
+							GuiService.SelectedCoreObject = this.SelectorFrame
 						end
 					else
 						this.Selections[this.CurrentIndex].TextTransparency = 0.5
@@ -1463,12 +1470,12 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		ImageColor3 = UserInputService.TouchEnabled and ARROW_COLOR_TOUCH or ARROW_COLOR
 	};
 	if not UserInputService.TouchEnabled and fixSettingsMenuVR then
-		local applyNormal, applyHover = 
+		local onNormalButtonState, onHoverButtonState = 
 			function(instance) instance.ImageColor3 = ARROW_COLOR end,
 			function(instance) instance.ImageColor3 = ARROW_COLOR_HOVER end
 
-		addHoverState(leftButton, leftButtonImage, applyNormal, applyHover)
-		addHoverState(rightButton, rightButtonImage, applyNormal, applyHover)
+		addHoverState(leftButton, leftButtonImage, onNormalButtonState, onHoverButtonState)
+		addHoverState(rightButton, rightButtonImage, onNormalButtonState, onHoverButtonState)
 	end
 
 	this.Steps = {}
@@ -1587,8 +1594,9 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	end
 
 	local function isActivateEvent(inputObject)
+		if not inputObject then return false end
 		if fixSettingsMenuVR then
-			return inputObject.UserInputType == Enum.UserInputType.MouseButton1 or inputObject.UserInputType == Enum.UserInputType.Touch or (inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 and inputObject.KeyCode == Enum.KeyCode.ButtonA)
+			return inputObject.UserInputType == Enum.UserInputType.MouseButton1 or inputObject.UserInputType == Enum.UserInputType.Touch or (inputObject.UserInputType == Enum.UserInputType.Gamepad1 and inputObject.KeyCode == Enum.KeyCode.ButtonA)
 		else
 			--I don't want to change the logical statement that is known to be working, so this is left in its less concise state
 			if inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 and inputObject.UserInputType ~= Enum.UserInputType.Touch then 
@@ -1655,7 +1663,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 
 	local function mouseUpFunc(inputObject)
 		if not interactable then return end
-		if inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 and inputObject.UserInputType ~= Enum.UserInputType.Touch and inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
+		if not isActivateEvent() then return end
 
 		lastInputDirection = 0
 	end
@@ -1782,6 +1790,19 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	end
 
 	local isInTree = true
+
+	local navigateLeft = -1 --these are just for differentiation, the actual value isn't important as long as they coerce to boolean true (all numbers do in Lua)
+	local navigateRight = 1
+	local navigationKeyCodes = {
+		[Enum.KeyCode.Thumbstick1] = true, --thumbstick can be either direction
+		[Enum.KeyCode.DPadLeft] = navigateLeft,
+		[Enum.KeyCode.DPadRight] = navigateRight,
+		[Enum.KeyCode.Left] = navigateLeft,
+		[Enum.KeyCode.Right] = navigateRight,
+		[Enum.KeyCode.A] = navigateLeft,
+		[Enum.KeyCode.D] = navigateRight,
+		[Enum.KeyCode.ButtonA] = fixSettingsMenuVR --buttonA can be either direction
+	}
 	UserInputService.InputBegan:connect(function(inputObject)
 		if not interactable then return end
 		if not isInTree then return end
@@ -1794,10 +1815,10 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 			if selected ~= this.SliderFrame then return end
 		end
 
-		if inputObject.KeyCode == Enum.KeyCode.DPadLeft or inputObject.KeyCode == Enum.KeyCode.Left or inputObject.KeyCode == Enum.KeyCode.A then
+		if navigationKeyCodes[inputObject.KeyCode] == navigateLeft then
 			lastInputDirection = -1
 			setCurrentStep(currentStep - 1)
-		elseif inputObject.KeyCode == Enum.KeyCode.DPadRight or inputObject.KeyCode == Enum.KeyCode.Right or inputObject.KeyCode == Enum.KeyCode.D then
+		elseif navigationKeyCodes[inputObject.KeyCode] == navigateRight then
 			lastInputDirection = 1
 			setCurrentStep(currentStep + 1)
 		end
@@ -1814,11 +1835,8 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 			if selected ~= this.SliderFrame then return end
 		end
 
-		if inputObject.KeyCode == Enum.KeyCode.Thumbstick1 or inputObject.KeyCode == Enum.KeyCode.DPadLeft 
-			or inputObject.KeyCode == Enum.KeyCode.DPadRight or inputObject.KeyCode == Enum.KeyCode.Left
-			or inputObject.KeyCode == Enum.KeyCode.A or inputObject.KeyCode == Enum.KeyCode.Right or inputObject.KeyCode == Enum.KeyCode.D
-			or (fixSettingsMenuVR and inputObject.KeyCode == Enum.KeyCode.ButtonA) then
-				lastInputDirection = 0
+		if navigationKeyCodes[inputObject.KeyCode] then --detect any keycode considered a navigation key
+			lastInputDirection = 0
 		end
 	end)
 
