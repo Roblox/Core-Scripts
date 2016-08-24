@@ -156,6 +156,11 @@ function methods:RenderDisplayText()
 	
 end
 
+function methods:SetFontSize(fontSize)
+	self.NameTag.FontSize = fontSize
+end
+
+
 function methods:FadeOutBackground(duration)
 	self.BackgroundTweener:Tween(duration, 1)
 end

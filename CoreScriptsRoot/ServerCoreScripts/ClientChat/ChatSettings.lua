@@ -4,7 +4,7 @@ local source = [[
 local module = {}
 
 module.WindowDraggable = false
-module.WindowResizable = false -- soon (tee emm)
+module.WindowResizable = true
 
 module.ChatWindowTextSize = Enum.FontSize.Size18
 module.ChatChannelsTabTextSize = Enum.FontSize.Size18

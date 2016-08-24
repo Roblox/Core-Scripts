@@ -220,6 +220,12 @@ function methods:OrganizeChannelTabs()
 	self:ScrollChannelsFrame(0)
 end
 
+function methods:ResizeChannelTabText(fontSize)
+	for i, tab in pairs(self.ChannelTabs) do
+		tab:SetFontSize(fontSize)
+	end
+end
+
 function methods:ScrollChannelsFrame(dir)
 	if (self.ScrollChannelsFrameLock) then return end
 	self.ScrollChannelsFrameLock = true
@@ -331,6 +337,12 @@ function module.new()
 			obj.GuiObject.AncenstryChanged:wait()
 		end
 		obj:ScrollChannelsFrame(0)
+	end)
+
+	ChatSettings.SettingsChanged:connect(function(setting, value)
+		if (setting == "ChatChannelsTabTextSize") then
+			obj:ResizeChannelTabText(value)
+		end
 	end)
 
 	return obj

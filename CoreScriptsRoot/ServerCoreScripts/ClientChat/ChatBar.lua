@@ -139,6 +139,11 @@ function methods:TweenToTargetYSize()
 	self.GuiObject:TweenSize(endSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, tweeningTime, true)
 end
 
+function methods:SetFontSize(fontSize)
+	self.TextBox.FontSize = fontSize
+	self.TextLabel.FontSize = fontSize
+end
+
 function methods:FadeOutBackground(duration)
 	self.BackgroundTweener:Tween(duration, 1)
 	--self:FadeOutText(duration)
@@ -229,6 +234,12 @@ function module.new()
 			obj.TextBox.Text = ""
 		end
 		
+	end)
+
+	ChatSettings.SettingsChanged:connect(function(setting, value)
+		if (setting == "ChatBarTextSize") then
+			obj:SetFontSize(value)
+		end
 	end)
 
 

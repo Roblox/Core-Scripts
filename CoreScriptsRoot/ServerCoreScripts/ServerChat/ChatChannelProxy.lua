@@ -123,7 +123,11 @@ function module.CreateProxy(ChatChannel)
 		
 		obj.Target:SendSystemMessage(message)
 	end
-	
+
+	function obj:GetHistoryLog()
+		return obj.Target:GetHistoryLog()
+	end
+
 	metatable.__metatable = "The metatable is locked"
 	metatable.__tostring = function () return tostring(obj.Target) end
 	
@@ -131,14 +135,16 @@ function module.CreateProxy(ChatChannel)
 		Joinable = true, Leavable = true,
 		AutoJoin = true, Private = true,
 		Name = true, WelcomeMessage = true,
+		MaxHistory = true,
 		MessagePosted = true, SpeakerJoined = true, SpeakerLeft = true,
-		SpeakerMuted = true, SpeakerUnmuted = true
+		SpeakerMuted = true, SpeakerUnmuted = true,
 	}
 	local readIndexProxy = {
 		KickSpeaker = true, MuteSpeaker = true, UnmuteSpeaker = true, IsSpeakerMuted = true,
 		GetSpeakerList = true, SendSystemMessage = true,
 		RegisterFilterMessageFunction = true, UnregisterFilterMessageFunction = true,
-		RegisterProcessCommandsFunction = true, UnregisterProcessCommandsFunction = true
+		RegisterProcessCommandsFunction = true, UnregisterProcessCommandsFunction = true,
+		GetHistoryLog = true,
 	}
 
 	metatable.__index = function(tbl, index)
@@ -165,6 +171,12 @@ function module.CreateProxy(ChatChannel)
 			
 			obj.Target[index] = value
 			
+		elseif (index == "MaxHistory") then
+			AssertAssignmentTypeEquals(index, value, "number")
+
+			obj.Target[index] = math.max(0, value)
+			obj.Target:RemoveExcessMessagesFromLog()
+
 		else
 			NotAValidMemberError(index, obj)
 			
