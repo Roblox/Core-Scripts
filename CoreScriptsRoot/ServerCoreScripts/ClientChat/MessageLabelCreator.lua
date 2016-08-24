@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: MessageLabelCreator.lua
+--	// Written by: Xsitsu
+--	// Description: Module to handle taking text and creating stylized GUI objects for display in ChatWindow.
+
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////

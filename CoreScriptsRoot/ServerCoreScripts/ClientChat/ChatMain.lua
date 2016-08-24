@@ -1,7 +1,7 @@
 local source = [[
 --	// FileName: ChatMain.lua
 --	// Written by: Xsitsu
---	// Description: Main module to handle initializing chat window UI and chatting.
+--	// Description: Main module to handle initializing chat window UI and hooking up events to individual UI pieces.
 
 local moduleApiTable = {}
 

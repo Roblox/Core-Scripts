@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ExtraDataInitializer.lua
+--	// Written by: Xsitsu
+--	// Description: Module that sets some basic ExtraData such as name color, and chat color.
+
 local function MakeIsInGroup(groupId, requiredRank)
 	assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
 	

@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChatChannelProxy.lua
+--	// Written by: Xsitsu
+--	// Description: Proxy object for ChatChannel.
+
 local module = {}
 
 local function AssignmentError(index, expected, got)

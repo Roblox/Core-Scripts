@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChatWindow.lua
+--	// Written by: Xsitsu
+--	// Description: Main GUI window piece. Manages ChatBar, ChannelsBar, and ChatChannels.
+
 local module = {}
 
 local Players = game:GetService("Players")
@@ -64,7 +68,8 @@ local function CreateGuiObjects()
 	ChatChannelParentFrame.BackgroundTransparency = 0.6
 	ChatChannelParentFrame.BorderSizePixel = 0
 
-	local ChatResizerFrame = Instance.new("Frame", BaseFrame)
+	local ChatResizerFrame = Instance.new("ImageButton", BaseFrame)
+	ChatResizerFrame.Image = ""
 	ChatResizerFrame.BackgroundTransparency = 0.6
 	ChatResizerFrame.BorderSizePixel = 0
 	ChatResizerFrame.Visible = false

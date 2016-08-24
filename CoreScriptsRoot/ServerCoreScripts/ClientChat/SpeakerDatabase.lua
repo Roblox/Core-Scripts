@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: SpeakerDatabase.lua
+--	// Written by: Xsitsu
+--	// Description: Module for storing ExtraData set on different Speakers.
+
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -11,7 +15,7 @@ local methods = {}
 
 function methods:AddSpeaker(speakerName)
 	if (self:GetSpeaker(speakerName))  then
-		error("Channel '" .. speakerName .. "' already exists!")
+		error("Speaker '" .. speakerName .. "' already exists!")
 	end
 	
 	local speaker = {Name = speakerName}
@@ -21,7 +25,7 @@ end
 
 function methods:RemoveSpeaker(speakerName)
 	if (not self:GetSpeaker(speakerName))  then
-		error("Channel '" .. speakerName .. "' does not exist!")
+		error("Speaker '" .. speakerName .. "' does not exist!")
 	end
 	
 	self.Speakers[speakerName:lower()] = nil

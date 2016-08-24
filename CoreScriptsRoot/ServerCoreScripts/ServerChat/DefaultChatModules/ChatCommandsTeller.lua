@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChatCommandsTeller.lua
+--	// Written by: Xsitsu
+--	// Description: Module that provides information on default chat commands to players.
+
 local function Run(ChatService)
 	
 	local function ProcessCommandsFunction(fromSpeaker, message, channel)

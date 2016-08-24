@@ -231,12 +231,12 @@ end)
 
 local function TryRunModule(module)
 	if module:IsA("ModuleScript") then
-		spawn(function()
+		coroutine.resume(coroutine.create(function()
 			local ret = require(module)
 			if (type(ret) == "function") then
 				ret(proxy)
 			end
-		end)
+		end))
 	end
 end
 
@@ -250,6 +250,9 @@ if modules then
 		pcall(TryRunModule, module)
 	end
 end
+
+wait()
+wait()
 
 Players.PlayerAdded:connect(function(playerObj)
 	HandlePlayerJoining(playerObj)

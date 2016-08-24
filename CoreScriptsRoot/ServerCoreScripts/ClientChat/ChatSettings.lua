@@ -1,9 +1,11 @@
 local source = [[
--- This module is for initial settings that are not intended to be changed during runtime.
+--	// FileName: ChatSettings.lua
+--	// Written by: Xsitsu
+--	// Description: Settings module for configuring different aspects of the chat window.
 
 local module = {}
 
-module.WindowDraggable = false
+module.WindowDraggable = true
 module.WindowResizable = true
 
 module.ChatWindowTextSize = Enum.FontSize.Size18

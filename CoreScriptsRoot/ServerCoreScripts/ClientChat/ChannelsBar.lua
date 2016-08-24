@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChannelsBar.lua
+--	// Written by: Xsitsu
+--	// Description: Manages creating, destroying, and displaying ChannelTabs.
+
 local module = {}
 
 local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
