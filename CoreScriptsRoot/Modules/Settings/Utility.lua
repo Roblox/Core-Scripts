@@ -1732,18 +1732,18 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 			return
 		end
 		if UserInputService.VREnabled then
-			leftButton.Selectable = true
-			rightButton.Selectable = true
-			this.SliderFrame.Selectable = true
+			leftButton.Selectable = interactable
+			rightButton.Selectable = interactable
+			this.SliderFrame.Selectable = interactable
 
 			for i = 1, steps do
-				this.Steps[i].Selectable = true
-				this.Steps[i].Active = true
+				this.Steps[i].Selectable = interactable
+				this.Steps[i].Active = interactable
 			end
 		else
 			leftButton.Selectable = false
 			rightButton.Selectable = false
-			this.SliderFrame.Selectable = false
+			this.SliderFrame.Selectable = interactable
 			for i = 1, steps do
 				this.Steps[i].Selectable = false
 				this.Steps[i].Active = false
