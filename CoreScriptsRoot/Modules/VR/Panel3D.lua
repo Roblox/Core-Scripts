@@ -217,7 +217,7 @@ end
 
 --Panel class implementation
 local Panel = {}
-Panel.mt = { __index = Panel }
+Panel.__index = Panel
 function Panel.new(name)
 	local instance = {
 		name = name,
@@ -247,7 +247,9 @@ function Panel.new(name)
 		lookAtPixel = Vector2.new(-1, -1),
 		lookAtDistance = math.huge,
 		lookAtGuiElement = nil,
-		isClosest = true
+		isClosest = true,
+
+		localCF = CFrame.new()
 	}
 
 	if panels[name] then
@@ -255,7 +257,7 @@ function Panel.new(name)
 	end
 	panels[name] = instance
 
-	return setmetatable(instance, Panel.mt)
+	return setmetatable(instance, Panel)
 end
 
 --Panel accessor methods
