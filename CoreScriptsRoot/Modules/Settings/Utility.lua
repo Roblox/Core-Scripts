@@ -21,6 +21,8 @@ local NON_SELECTED_RIGHT_IMAGE= "rbxasset://textures/ui/Settings/Slider/BarRight
 local CONTROLLER_SCROLL_DELTA = 0.2
 local CONTROLLER_THUMBSTICK_DEADZONE = 0.8
 
+local DROPDOWN_BG_TRANSPARENCY = 0.2
+
 ------------- SERVICES ----------------
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
@@ -470,7 +472,6 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 end
 
 local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
-	local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
 	-------------------- CONSTANTS ------------------------
 	local DEFAULT_DROPDOWN_TEXT = "Choose One"
 	local SCROLLING_FRAME_PIXEL_OFFSET = 25
@@ -505,7 +506,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	local DropDownFullscreenFrame = Util.Create'ImageButton'
 	{
 		Name = "DropDownFullscreenFrame",
-		BackgroundTransparency = 0.2,
+		BackgroundTransparency = DROPDOWN_BG_TRANSPARENCY,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundColor3 = Color3.new(0,0,0),
@@ -522,11 +523,12 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 			return
 		end
 		if UserInputService.VREnabled then
+			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
 			DropDownFullscreenFrame.Parent = Panel3D.Get("SettingsMenu"):GetGUI()
 			DropDownFullscreenFrame.BackgroundTransparency = 1
 		else
 			DropDownFullscreenFrame.Parent = CoreGui.RobloxGui
-			DropDownFullscreenFrame.BackgroundTransparency = 0.2
+			DropDownFullscreenFrame.BackgroundTransparency = DROPDOWN_BG_TRANSPARENCY
 		end
 	end
 	if fixSettingsMenuVR then
@@ -578,6 +580,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		active = false
 
 		if fixSettingsMenuVR and UserInputService.VREnabled then
+			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
 			Panel3D.Get("SettingsMenu"):SetSubpanelDepth(DropDownFullscreenFrame, 0)
 		end
 	end
@@ -591,6 +594,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 		DropDownFullscreenFrame.Visible = true
 		if fixSettingsMenuVR and UserInputService.VREnabled then
+			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
 			Panel3D.Get("SettingsMenu"):SetSubpanelDepth(DropDownFullscreenFrame, 0.5)
 		end
 		if not this.CurrentIndex then this.CurrentIndex = 1 end
