@@ -68,19 +68,21 @@ local function Initialize()
 	local this = settingsPageFactory:CreateNewPage()
 
 	local allSettingsCreated = false
-
+	local function onVRSettingsReady()
+		local vrEnabled = UserInputService.VREnabled
+		for settingFrame, _ in pairs(settingsDisabledInVR) do
+			settingFrame:SetInteractable(not vrEnabled)
+		end
+	end
 	local settingsDisabledInVR = {}
-	--todo: move this to a better place
 	local function onVREnabled(prop)
 		if prop ~= "VREnabled" then return end
-		spawn(function()
-			repeat wait() until allSettingsCreated
-
-			local vrEnabled = UserInputService.VREnabled
-			for settingFrame, _ in pairs(settingsDisabledInVR) do
-				settingFrame:SetInteractable(not vrEnabled)
-			end
-		end)
+		if UserInputService.VREnabled and allSettingsCreated then
+			--Only call this if all settings have been created. 
+			--If they aren't ready by the time VR is enabled, this
+			--will be called later when they are.
+			onVRSettingsReady()
+		end
 	end
 	UserInputService.Changed:connect(onVREnabled)
 	onVREnabled("VREnabled")
@@ -819,6 +821,9 @@ local function Initialize()
 	end
 
 	allSettingsCreated = true
+	if UserInputService.VREnabled then
+		onVRSettingsReady()
+	end
 
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "GameSettingsTab"
