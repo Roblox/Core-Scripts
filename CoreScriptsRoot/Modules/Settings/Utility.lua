@@ -1765,14 +1765,14 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	end
 
 	this.SliderFrame.InputBegan:connect(function(inputObject) 
-		if fixSettingsMenuVR then
+		if fixSettingsMenuVR and UserInputService.VREnabled then
 			local selected = GuiService.SelectedCoreObject
 			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end 
 		end
 		mouseDownFunc(inputObject, currentStep) 
 	end)
 	this.SliderFrame.InputEnded:connect(function(inputObject) 
-		if fixSettingsMenuVR then
+		if fixSettingsMenuVR and UserInputService.VREnabled then
 			local selected = GuiService.SelectedCoreObject
 			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end 
 		end
