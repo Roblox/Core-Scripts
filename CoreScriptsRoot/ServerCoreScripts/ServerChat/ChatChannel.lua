@@ -215,8 +215,9 @@ function methods:SendSystemMessage(message)
 end
 
 function methods:RemoveExcessMessagesFromLog()
+	local remove = table.remove
 	while (#self.ChatHistory > self.MaxHistory) do
-		table.remove(self.ChatHistory, 1)
+		remove(self.ChatHistory, 1)
 	end
 end
 
@@ -229,9 +230,20 @@ function methods:AddMessageToHistoryLog(message, fromSpeaker)
 	self:RemoveExcessMessagesFromLog()
 end
 
+local function DeepCopy(table)
+	local copy =  {}
+	for i, v in pairs(table) do
+		if (type(v) == table) then
+			copy[i] = DeepCopy(v)
+		else
+			copy[i] = v
+		end
+	end
+	return copy
+end
+
 function methods:GetHistoryLog()
-	--// Really easy way to write a deep copy
-	return HttpService:JSONDecode(HttpService:JSONEncode(self.ChatHistory))
+	return DeepCopy(self.ChatHistory)
 end
 
 --///////////////////////// Constructors

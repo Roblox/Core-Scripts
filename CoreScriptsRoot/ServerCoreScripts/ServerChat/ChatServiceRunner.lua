@@ -251,6 +251,7 @@ if modules then
 	end
 end
 
+--// Wait two frames so the ChatModules have some time to initialize
 wait()
 wait()
 
