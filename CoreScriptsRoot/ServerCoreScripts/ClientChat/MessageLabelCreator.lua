@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: MessageLabelCreator.lua
+--	// Written by: Xsitsu
+--	// Description: Module to handle taking text and creating stylized GUI objects for display in ChatWindow.
+
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -132,8 +136,8 @@ function methods:CreateMessageLabel(fromSpeaker, message)
 	local useChatColor = Color3.new(1, 1, 1)
 
 	if (speakerPlayer) then
-		useNameColor = speakerPlayer.NameColor
-		useChatColor = speakerPlayer.ChatColor
+		useNameColor = speakerPlayer.NameColor or useNameColor
+		useChatColor = speakerPlayer.ChatColor or useChatColor
 	end
 	
 	local formatUseName = string.format("[%s]:", fromSpeaker)
@@ -304,8 +308,8 @@ function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel
 	local useChatColor = Color3.new(1, 1, 1)
 
 	if (speakerPlayer) then
-		useNameColor = speakerPlayer.NameColor
-		useChatColor = speakerPlayer.ChatColor
+		useNameColor = speakerPlayer.NameColor or useNameColor
+		useChatColor = speakerPlayer.ChatColor or useChatColor
 	end
 	
 	local formatUseName = string.format("[%s]:", fromSpeaker)

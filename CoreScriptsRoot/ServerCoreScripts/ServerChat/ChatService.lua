@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChatService.lua
+--	// Written by: Xsitsu
+--	// Description: Manages creating and destroying ChatChannels and Speakers.
+
 local module = {}
 
 local modulesFolder = script.Parent

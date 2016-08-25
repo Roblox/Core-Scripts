@@ -1,7 +1,7 @@
 local source = [[
 --	// FileName: ChatMain.lua
 --	// Written by: Xsitsu
---	// Description: Main module to handle initializing chat window UI and chatting.
+--	// Description: Main module to handle initializing chat window UI and hooking up events to individual UI pieces.
 
 local moduleApiTable = {}
 
@@ -467,7 +467,7 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(message, channel)
 	end
 end)
 
-EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessage)
+EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessage, messageLog)
 	if (channel == ChatSettings.GeneralChannelName) then
 		didFirstChannelsLoads = true
 	end
@@ -478,7 +478,20 @@ EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessa
 		if (channel == "All") then
 			ChatWindow:SwitchCurrentChannel(channel)
 		end
-		
+
+		if (messageLog) then
+			for i, messageLogData in pairs(messageLog) do
+				local messageObj = nil
+				if (messageLogData.Speaker) then
+					messageObj = MessageLabelCreator:CreateMessageLabel(messageLogData.Speaker, messageLogData.Message)
+				else
+					messageObj = MessageLabelCreator:CreateSystemMessageLabel(messageLogData.Message)
+				end
+
+				channelObj:AddMessageLabelToLog(messageObj)
+			end
+		end
+
 		if (welcomeMessage ~= "") then
 			local messageObject = MessageLabelCreator:CreateWelcomeMessageLabel(welcomeMessage)
 			channelObj:AddMessageLabelToLog(messageObject)

@@ -1,7 +1,13 @@
 local source = [[
+--	// FileName: ChatWindow.lua
+--	// Written by: Xsitsu
+--	// Description: Main GUI window piece. Manages ChatBar, ChannelsBar, and ChatChannels.
+
 local module = {}
 
-local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -18,29 +24,22 @@ local methods = {}
 local function CreateGuiObjects()
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.BackgroundTransparency = 1
+	BaseFrame.Active = true
 	
 	local FirstParentedEvent = Instance.new("BindableEvent", BaseFrame)
 	FirstParentedEvent.Name = "FirstParented"
-
-	if (ChatSettings.WindowDraggable) then
-		BaseFrame.Active = true
-		BaseFrame.Draggable = true
-	end
-	ChatSettings.SettingsChanged:connect(function(setting, value)
-		if (setting == "Draggable") then
-			BaseFrame.Active = value
-			BaseFrame.Draggable = value
-
-		elseif (setting == "Resizable") then
-
-		end
-	end)
 
 	local function doCheckMinimumResize()
 		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
 
 		if (BaseFrame.AbsoluteSize.X < ChatSettings.MinimumWindowSizeX) then
-			BaseFrame.Size = UDim2.new(0, ChatSettings.MinimumWindowSizeX, 0, ChatSettings.MinimumWindowSizeY)
+			local offset = UDim2.new(0, ChatSettings.MinimumWindowSizeX - BaseFrame.AbsoluteSize.X, 0, 0)
+			BaseFrame.Size = BaseFrame.Size + offset
+		end
+
+		if (BaseFrame.AbsoluteSize.Y < ChatSettings.MinimumWindowSizeY) then
+			local offset = UDim2.new(0, 0, 0, ChatSettings.MinimumWindowSizeY - BaseFrame.AbsoluteSize.Y)
+			BaseFrame.Size = BaseFrame.Size + offset
 		end
 	end
 
@@ -50,39 +49,67 @@ local function CreateGuiObjects()
 		end
 	end)
 
-	local chatBarTextSizeY = string.match(ChatSettings.ChatBarTextSize.Name, "%d+")
-	local channelsBarTextYSize = string.match(ChatSettings.ChatChannelsTabTextSize.Name, "%d+")
 
-	--// Chat font size pixel height, 8 pixels on each end for white box in center, 
-	--// 8 pixels on each end for actual chatbot object
-	local chatBarYSize = chatBarTextSizeY + 16 + 16
-
-	--// 32 pixels of button height + offset pixels
-	local chatChannelYSize = math.max(32, channelsBarTextYSize + 8) + 2
 
 	local ChatBarParentFrame = Instance.new("Frame", BaseFrame)
 	ChatBarParentFrame.Name = "ChatBarParentFrame"
 	ChatBarParentFrame.BackgroundTransparency = 1
-	ChatBarParentFrame.Size = UDim2.new(1, 0, 0, chatBarYSize)
-	ChatBarParentFrame.Position = UDim2.new(0, 0, 1, -chatBarYSize)
 
 	local ChannelsBarParentFrame = Instance.new("Frame", BaseFrame)
 	ChannelsBarParentFrame.Name = "ChannelsBarParentFrame"
 	ChannelsBarParentFrame.BackgroundTransparency = 1
-	ChannelsBarParentFrame.Size = UDim2.new(1, 0, 0, chatChannelYSize)
 	ChannelsBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
 
 	local ChatChannelParentFrame = Instance.new("Frame", BaseFrame)
 	ChatChannelParentFrame.Name = "ChatChannelParentFrame"
 	ChatChannelParentFrame.BackgroundTransparency = 1
-	ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, chatChannelYSize)
-	ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(chatChannelYSize + 2 + chatBarYSize))
 
 	ChatChannelParentFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 	ChatChannelParentFrame.BackgroundTransparency = 0.6
 	ChatChannelParentFrame.BorderSizePixel = 0
 
-	local Players = game:GetService("Players")
+	local ChatResizerFrame = Instance.new("ImageButton", BaseFrame)
+	ChatResizerFrame.Image = ""
+	ChatResizerFrame.BackgroundTransparency = 0.6
+	ChatResizerFrame.BorderSizePixel = 0
+	ChatResizerFrame.Visible = false
+	ChatResizerFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	ChatResizerFrame.Active = true
+
+	local ResizeIcon = Instance.new("ImageLabel", ChatResizerFrame)
+	ResizeIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
+	ResizeIcon.Position = UDim2.new(0.2, 0, 0.2, 0)
+	ResizeIcon.BackgroundTransparency = 1
+	ResizeIcon.Image = "rbxassetid://261880743"
+
+
+	ChatResizerFrame.DragBegin:connect(function(startUdim)
+		BaseFrame.Active = false
+	end)
+
+	local function UpdatePositionFromDrag(atPos)
+		local newSize = atPos - BaseFrame.AbsolutePosition + ChatResizerFrame.AbsoluteSize
+		BaseFrame.Size = UDim2.new(0, newSize.X, 0, newSize.Y)
+		ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
+	end
+
+	ChatResizerFrame.DragStopped:connect(function(endX, endY)
+		BaseFrame.Active = true
+		--UpdatePositionFromDrag(Vector2.new(endX, endY))
+	end)
+
+	local resizeLock = false
+	ChatResizerFrame.Changed:connect(function(prop)
+		if (prop == "AbsolutePosition" and not BaseFrame.Active) then
+			if (resizeLock) then return end
+			resizeLock = true
+
+			UpdatePositionFromDrag(ChatResizerFrame.AbsolutePosition)
+
+			resizeLock = false
+		end
+	end)
+
 	if (not Players.ClassicChat and Players.BubbleChat) then
 		ChatBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
 		ChannelsBarParentFrame.Visible = false
@@ -102,7 +129,92 @@ local function CreateGuiObjects()
 
 	end
 
-	return BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame
+	local function CalculateChannelsBarPixelSize(size)
+		size = size or ChatSettings.ChatChannelsTabTextSize
+		local channelsBarTextYSize = string.match(size.Name, "%d+")
+		local chatChannelYSize = math.max(32, channelsBarTextYSize + 8) + 2
+
+		return chatChannelYSize
+	end
+
+	local function CalculateChatBarPixelSize(size)
+		size = size or ChatSettings.ChatBarTextSize
+		local chatBarTextSizeY = string.match(size.Name, "%d+")
+		local chatBarYSize = chatBarTextSizeY + 16 + 16
+
+		return chatBarYSize
+	end
+
+	local function UpdateDraggable(enabled)
+		BaseFrame.Draggable = enabled
+	end
+
+	local function UpdateResizable(enabled)
+		ChatResizerFrame.Visible = enabled
+		ChatResizerFrame.Draggable = enabled
+
+		local frameSizeY = ChatBarParentFrame.Size.Y.Offset
+
+		if (enabled) then
+			ChatBarParentFrame.Size = UDim2.new(1, -frameSizeY - 2, 0, frameSizeY)
+			ChatBarParentFrame.Position = UDim2.new(0, 0, 1, -frameSizeY)
+		else
+			ChatBarParentFrame.Size = UDim2.new(1, 0, 0, frameSizeY)
+			ChatBarParentFrame.Position = UDim2.new(0, 0, 1, -frameSizeY)
+		end
+	end
+
+	local function UpdateChatChannelParentFrameSize()
+		local channelsBarSize = CalculateChannelsBarPixelSize()
+		local chatBarSize = CalculateChatBarPixelSize()
+
+		ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -channelsBarSize - chatBarSize - 2 - 2)
+		ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, channelsBarSize + 2)
+
+	end
+
+	local function UpdateChatChannelsTabTextSize(size)
+		local channelsBarSize = CalculateChannelsBarPixelSize(size)
+		ChannelsBarParentFrame.Size = UDim2.new(1, 0, 0, channelsBarSize)
+
+		UpdateChatChannelParentFrameSize()
+	end
+
+	local function UpdateChatBarTextSize(size)
+		local chatBarSize = CalculateChatBarPixelSize(size)
+
+		ChatBarParentFrame.Size = UDim2.new(1, 0, 0, chatBarSize)
+		ChatBarParentFrame.Position = UDim2.new(0, 0, 1, -chatBarSize)
+
+		ChatResizerFrame.Size = UDim2.new(0, chatBarSize, 0, chatBarSize)
+		ChatResizerFrame.Position = UDim2.new(1, -chatBarSize, 1, -chatBarSize)
+
+		UpdateChatChannelParentFrameSize()
+		UpdateResizable(ChatSettings.WindowResizable)
+	end
+
+	UpdateChatChannelsTabTextSize(ChatSettings.ChatChannelsTabTextSize)
+	UpdateChatBarTextSize(ChatSettings.ChatBarTextSize)
+	UpdateDraggable(ChatSettings.WindowDraggable)
+	UpdateResizable(ChatSettings.WindowResizable)
+
+	ChatSettings.SettingsChanged:connect(function(setting, value)
+		if (setting == "WindowDraggable") then
+			UpdateDraggable(value)
+
+		elseif (setting == "WindowResizable") then
+			UpdateResizable(value)
+
+		elseif (setting == "ChatChannelsTabTextSize") then
+			UpdateChatChannelsTabTextSize(value)
+
+		elseif (setting == "ChatBarTextSize") then
+			UpdateChatBarTextSize(value)
+
+		end
+	end)
+
+	return BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame, ChatResizerFrame, ResizeIcon
 end
 
 function methods:RegisterChatBar(ChatBar)
@@ -290,6 +402,8 @@ function methods:CreateTweeners()
 
 	--// Register BackgroundTweener objects and properties
 	self.BackgroundTweener:RegisterTweenObjectProperty(self.ChatChannelParentFrame, "BackgroundTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.ChatResizerFrame, "BackgroundTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.ResizeIcon, "ImageTransparency")
 
 	--// Register TextTweener objects and properties
 		-- there are none...
@@ -302,11 +416,13 @@ ClassMaker.RegisterClassType("ChatWindow", methods)
 function module.new()
 	local obj = {}
 
-	local BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame= CreateGuiObjects()
+	local BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame, ChatResizerFrame, ResizeIcon = CreateGuiObjects()
 	obj.GuiObject = BaseFrame
 	obj.ChatBarParentFrame = ChatBarParentFrame
 	obj.ChannelsBarParentFrame = ChannelsBarParentFrame
 	obj.ChatChannelParentFrame = ChatChannelParentFrame
+	obj.ChatResizerFrame = ChatResizerFrame
+	obj.ResizeIcon = ResizeIcon
 
 	obj.ChatBar = nil
 	obj.ChannelsBar = nil

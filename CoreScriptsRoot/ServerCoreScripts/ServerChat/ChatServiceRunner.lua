@@ -57,7 +57,6 @@ CreateIfDoesntExist(EventFolder, "GetInitDataRequest", "RemoteEvent")
 
 EventFolder = useEvents
 
-
 local Players = game:GetService("Players")
 local function HandlePlayerJoining(playerObj)
 	--// If a developer already created a speaker object with the
@@ -80,7 +79,13 @@ local function HandlePlayerJoining(playerObj)
 	end)
 
 	speaker.ChannelJoined:connect(function(channel, welcomeMessage)
-		EventFolder.OnChannelJoined:FireClient(playerObj, channel, welcomeMessage)
+		local log = nil
+
+		local channelObject = ChatService:GetChannel(channel)
+		if (channelObject) then
+			log = channelObject:GetHistoryLog()
+		end
+		EventFolder.OnChannelJoined:FireClient(playerObj, channel, welcomeMessage, log)
 	end)
 
 	speaker.ChannelLeft:connect(function(channel)
@@ -98,6 +103,11 @@ local function HandlePlayerJoining(playerObj)
 	speaker.MainChannelSet:connect(function(channel)
 		EventFolder.OnMainChannelSet:FireClient(playerObj, channel)
 	end)
+
+	for i, oSpeakerName in pairs(ChatService:GetSpeakerList()) do
+		local oSpeaker = ChatService:GetSpeaker(oSpeakerName)
+		EventFolder.OnSpeakerExtraDataUpdated:FireClient(playerObj, oSpeakerName, oSpeaker.ExtraData)
+	end
 
 	for i, channel in pairs(ChatService:GetAutoJoinChannelList()) do
 		speaker:JoinChannel(channel.Name)
@@ -221,12 +231,10 @@ end)
 
 local function TryRunModule(module)
 	if module:IsA("ModuleScript") then
-		spawn(function()
-			local ret = require(module)
-			if (type(ret) == "function") then
-				ret(proxy)
-			end
-		end)
+		local ret = require(module)
+		if (type(ret) == "function") then
+			ret(proxy)
+		end
 	end
 end
 

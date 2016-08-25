@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChannelsTab.lua
+--	// Written by: Xsitsu
+--	// Description: Channel tab button for selecting current channel and also displaying if currently selected.
+
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -155,6 +159,11 @@ end
 function methods:RenderDisplayText()
 	
 end
+
+function methods:SetFontSize(fontSize)
+	self.NameTag.FontSize = fontSize
+end
+
 
 function methods:FadeOutBackground(duration)
 	self.BackgroundTweener:Tween(duration, 1)

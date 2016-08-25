@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: MessageSender.lua
+--	// Written by: Xsitsu
+--	// Description: Module to centralize sending message functionality.
+
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////

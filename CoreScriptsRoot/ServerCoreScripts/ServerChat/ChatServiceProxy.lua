@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChatServiceProxy.lua
+--	// Written by: Xsitsu
+--	// Description: Proxy object for ChatService.
+
 local modulesFolder = script.Parent
 
 local ChatChannelProxy = require(modulesFolder:WaitForChild("ChatChannelProxy"))

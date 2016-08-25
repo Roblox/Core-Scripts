@@ -1,7 +1,12 @@
 local source = [[
+--	// FileName: ChatChannel.lua
+--	// Written by: Xsitsu
+--	// Description: A representation of one channel that speakers can chat in.
+
 local module = {}
 
 local modulesFolder = script.Parent
+local HttpService = game:GetService("HttpService")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -77,7 +82,10 @@ function methods:PostMessage(fromSpeaker, message)
 	
 	--message = self:DoMessageFilter(fromSpeaker.Name, message, self.Name)
 	--message = self.ChatService:DoMessageFilter(fromSpeaker.Name, message, self.Name)
-	
+
+	self:AddMessageToHistoryLog(message, fromSpeaker)
+
+
 	spawn(function() self.eMessagePosted:Fire(fromSpeaker.Name, message) end)
 	
 	for i, speaker in pairs(self.Speakers) do
@@ -199,9 +207,43 @@ function methods:UnregisterProcessCommandsFunction(funcId)
 end
 
 function methods:SendSystemMessage(message)
+	self:AddMessageToHistoryLog(message, nil)
+
 	for i , speaker in pairs(self.Speakers) do
 		speaker:SendSystemMessage(message, self.Name)
 	end
+end
+
+function methods:RemoveExcessMessagesFromLog()
+	local remove = table.remove
+	while (#self.ChatHistory > self.MaxHistory) do
+		remove(self.ChatHistory, 1)
+	end
+end
+
+function methods:AddMessageToHistoryLog(message, fromSpeaker)
+	local logObject = {}
+	logObject.Message = message
+	logObject.Speaker = fromSpeaker and fromSpeaker.Name
+	table.insert(self.ChatHistory, logObject)
+
+	self:RemoveExcessMessagesFromLog()
+end
+
+local function DeepCopy(table)
+	local copy =  {}
+	for i, v in pairs(table) do
+		if (type(v) == table) then
+			copy[i] = DeepCopy(v)
+		else
+			copy[i] = v
+		end
+	end
+	return copy
+end
+
+function methods:GetHistoryLog()
+	return DeepCopy(self.ChatHistory)
 end
 
 --///////////////////////// Constructors
@@ -224,7 +266,10 @@ function module.new(vChatService, name, welcomeMessage)
 	
 	obj.Speakers = {}
 	obj.Mutes = {}
-	
+
+	obj.MaxHistory = 50
+	obj.ChatHistory = {}
+
 	obj.FilterMessageFunctions = {}
 	obj.ProcessCommandsFunctions = {}
 	

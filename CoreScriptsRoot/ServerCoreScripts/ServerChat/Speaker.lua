@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: Speaker.lua
+--	// Written by: Xsitsu
+--	// Description: A representation of one entity that can chat in different ChatChannels..
+
 local module = {}
 
 local modulesFolder = script.Parent

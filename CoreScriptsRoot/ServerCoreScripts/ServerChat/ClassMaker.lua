@@ -2,6 +2,7 @@ local source = [[
 --	// FileName: ClassMaker.lua
 --	// Written by: Xsitsu
 --	// Description: Really basic class maker module.
+
 local classes = {}
 
 local function ToStringFunction(tbl)

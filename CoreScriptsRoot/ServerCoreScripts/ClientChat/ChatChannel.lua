@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChatChannel.lua
+--	// Written by: Xsitsu
+--	// Description: ChatChannel window for displaying messages.
+
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////

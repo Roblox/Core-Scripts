@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChatFloodDetector.lua
+--	// Written by: Xsitsu
+--	// Description: Module that limits the number of messages a speaker can send in a given period of time.
+
 local doFloodCheckByChannel = true
 local informSpeakesOfWaitTimes = true
 local numberMessagesAllowed = 7
