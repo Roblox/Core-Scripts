@@ -231,12 +231,10 @@ end)
 
 local function TryRunModule(module)
 	if module:IsA("ModuleScript") then
-		coroutine.resume(coroutine.create(function()
-			local ret = require(module)
-			if (type(ret) == "function") then
-				ret(proxy)
-			end
-		end))
+		local ret = require(module)
+		if (type(ret) == "function") then
+			ret(proxy)
+		end
 	end
 end
 
@@ -250,10 +248,6 @@ if modules then
 		pcall(TryRunModule, module)
 	end
 end
-
---// Wait two frames so the ChatModules have some time to initialize
-wait()
-wait()
 
 Players.PlayerAdded:connect(function(playerObj)
 	HandlePlayerJoining(playerObj)

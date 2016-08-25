@@ -136,8 +136,8 @@ function methods:CreateMessageLabel(fromSpeaker, message)
 	local useChatColor = Color3.new(1, 1, 1)
 
 	if (speakerPlayer) then
-		useNameColor = speakerPlayer.NameColor
-		useChatColor = speakerPlayer.ChatColor
+		useNameColor = speakerPlayer.NameColor or useNameColor
+		useChatColor = speakerPlayer.ChatColor or useChatColor
 	end
 	
 	local formatUseName = string.format("[%s]:", fromSpeaker)
@@ -308,8 +308,8 @@ function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel
 	local useChatColor = Color3.new(1, 1, 1)
 
 	if (speakerPlayer) then
-		useNameColor = speakerPlayer.NameColor
-		useChatColor = speakerPlayer.ChatColor
+		useNameColor = speakerPlayer.NameColor or useNameColor
+		useChatColor = speakerPlayer.ChatColor or useChatColor
 	end
 	
 	local formatUseName = string.format("[%s]:", fromSpeaker)
