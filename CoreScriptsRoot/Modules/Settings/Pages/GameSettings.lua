@@ -67,6 +67,26 @@ local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
+	local allSettingsCreated = false
+	local function onVRSettingsReady()
+		local vrEnabled = UserInputService.VREnabled
+		for settingFrame, _ in pairs(settingsDisabledInVR) do
+			settingFrame:SetInteractable(not vrEnabled)
+		end
+	end
+	local settingsDisabledInVR = {}
+	local function onVREnabled(prop)
+		if prop ~= "VREnabled" then return end
+		if UserInputService.VREnabled and allSettingsCreated then
+			--Only call this if all settings have been created. 
+			--If they aren't ready by the time VR is enabled, this
+			--will be called later when they are.
+			onVRSettingsReady()
+		end
+	end
+	UserInputService.Changed:connect(onVREnabled)
+	onVREnabled("VREnabled")
+
 	----------- FUNCTIONS ---------------
 	local function createGraphicsOptions()
 
@@ -79,6 +99,8 @@ local function Initialize()
 		this.FullscreenFrame, 
 		this.FullscreenLabel,
 		this.FullscreenEnabler = utility:AddNewRow(this, "Fullscreen", "Selector", {"On", "Off"}, fullScreenInit)
+
+		settingsDisabledInVR[this.FullscreenEnabler] = true
 
 		local fullScreenSelectionFrame = this.FullscreenEnabler.SliderFrame and this.FullscreenEnabler.SliderFrame or this.FullscreenEnabler.SelectorFrame
 
@@ -206,6 +228,8 @@ local function Initialize()
 				this.ShiftLockLabel,
 				this.ShiftLockMode = utility:AddNewRow(this, "Shift Lock Switch", "Selector", {"On", "Off"}, startIndex)
 
+				settingsDisabledInVR[this.ShiftLockMode] = true
+
 				this.ShiftLockOverrideText = utility:Create'TextLabel'
 				{
 					Name = "ShiftLockOverrideLabel",
@@ -269,6 +293,8 @@ local function Initialize()
 			this.CameraModeFrame, 
 			this.CameraModeLabel,
 			this.CameraMode = utility:AddNewRow(this, "Camera Mode", "Selector", cameraEnumNames, startingCameraEnumItem)
+
+			settingsDisabledInVR[this.CameraMode] = true
 
 			this.CameraModeOverrideText = utility:Create'TextLabel'
 			{
@@ -364,6 +390,8 @@ local function Initialize()
 			this.MovementModeFrame, 
 			this.MovementModeLabel,
 			this.MovementMode = utility:AddNewRow(this, "Movement Mode", "Selector", movementEnumNames, startingMovementEnumItem)
+
+			settingsDisabledInVR[this.MovementMode] = true
 
 			this.MovementModeOverrideText = utility:Create'TextLabel'
 			{
@@ -790,6 +818,11 @@ local function Initialize()
 		if success and result == true then
 			createDeveloperConsoleOption()
 		end
+	end
+
+	allSettingsCreated = true
+	if UserInputService.VREnabled then
+		onVRSettingsReady()
 	end
 
 	------ TAB CUSTOMIZATION -------
