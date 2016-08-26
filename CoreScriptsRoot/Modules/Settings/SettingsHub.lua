@@ -51,7 +51,7 @@ end
 
 
 --[[ CORE MODULES ]]
-local chat = require(RobloxGui.Modules.Chat)
+local chat = require(RobloxGui.Modules.ChatSelector)
 
 if isSmallTouchScreen or isTenFootInterface then
 	SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0,0,0,0)

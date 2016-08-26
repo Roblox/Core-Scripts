@@ -1,7 +1,7 @@
 local PURPOSE_DATA = {
-	[Enum.DialogPurpose.Quest] = {"rbxasset://textures/DialogQuest.png", Vector2.new(10, 34)},
-	[Enum.DialogPurpose.Help] = {"rbxasset://textures/DialogHelp.png", Vector2.new(20, 35)},
-	[Enum.DialogPurpose.Shop] = {"rbxasset://textures/ui/DialogShop.png", Vector2.new(22, 43)},
+	[Enum.DialogPurpose.Quest] = {"rbxasset://textures/ui/dialog_purpose_quest.png", Vector2.new(10, 34)},
+	[Enum.DialogPurpose.Help] = {"rbxasset://textures/ui/dialog_purpose_help.png", Vector2.new(20, 35)},
+	[Enum.DialogPurpose.Shop] = {"rbxasset://textures/ui/dialog_purpose_shop.png", Vector2.new(22, 43)},
 }
 local TEXT_HEIGHT = 24 -- Pixel height of one row
 local FONT_SIZE = Enum.FontSize.Size24
