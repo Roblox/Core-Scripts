@@ -110,6 +110,14 @@ function methods:SetTextLabelText(text)
 	self.TextLabel.Text = text
 end
 
+function methods:SetTextBoxText(text)
+	self.TextBox.Text = text
+end
+
+function methods:GetTextBoxText()
+	return self.TextBox.Text
+end
+
 function methods:ResetSize()
 	self.TargetYSize = 0
 	self:TweenToTargetYSize()
@@ -144,7 +152,10 @@ function methods:TweenToTargetYSize()
 	local pixelDistance = math.abs(endAbsoluteSizeY - curAbsoluteSizeY)
 	local tweeningTime = math.min(1, (pixelDistance * (1 / self.TweenPixelsPerSecond))) -- pixelDistance * (seconds per pixels)
 
-	self.GuiObject:TweenSize(endSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, tweeningTime, true)
+	local success = pcall(function() self.GuiObject:TweenSize(endSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, tweeningTime, true) end)
+	if (not success) then
+		self.GuiObject.Size = endSize
+	end
 end
 
 function methods:SetFontSize(fontSize)
@@ -238,7 +249,7 @@ function module.new()
 
 	obj.TextBox.FocusLost:connect(function(enterPressed, inputObject)
 		obj:ResetSize()
-		if (inputObject.KeyCode == Enum.KeyCode.Escape) then
+		if (inputObject and inputObject.KeyCode == Enum.KeyCode.Escape) then
 			obj.TextBox.Text = ""
 		end
 		
