@@ -228,37 +228,6 @@ local function UpdateBackpackLayout()
 	AdjustInventoryFrames()
 end
 
--- NOTE: We should probably migrate to a 2 collection system:
--- One collection for the hotbar and another collection for the inventory
-local function SetNumberOfHotbarSlots(numSlots)
-	if NumberOfHotbarSlots ~= numSlots then
-		local prevNumberOfSlots = NumberOfHotbarSlots
-		local newNumberOfSlots = numSlots
-		-- If we are shrinking the number of slots we need
-		-- to move around our tools to the right locations
-		if prevNumberOfSlots > newNumberOfSlots then
-			-- Delete the slots that are now no longer in the Hotbar
-			-- Iterate backwards as to not corrupt our iterator
-			for i = prevNumberOfSlots, newNumberOfSlots + 1, -1 do
-				local slot = Slots[i]
-				if slot then
-					slot:MoveToInventory()
-					slot:Delete()
-				end
-			end
-			-- Also need to slide-back the inventory slots now that they are indexed earlier
-			for i = prevNumberOfSlots, newNumberOfSlots + 1, -1 do
-				local slot = Slots[i]
-				if not slot.Tool then
-					slot:Delete()
-				end
-			end
-		end
-		NumberOfHotbarSlots = numSlots
-		UpdateBackpackLayout()
-	end
-end
-
 local function Clamp(low, high, num)
 	return math.min(high, math.max(low, num))
 end
@@ -812,6 +781,70 @@ local function MakeSlot(parent, index)
 	SlotFrame.Parent = parent
 	Slots[index] = slot
 	return slot
+end
+
+-- NOTE: We should probably migrate to a 2 collection system:
+-- One collection for the hotbar and another collection for the inventory
+local function SetNumberOfHotbarSlots(numSlots)
+	if NumberOfHotbarSlots ~= numSlots then
+		local prevNumberOfSlots = NumberOfHotbarSlots
+		local newNumberOfSlots = numSlots
+		-- If we are shrinking the number of slots we need
+		-- to move around our tools to the right locations
+		if prevNumberOfSlots > newNumberOfSlots then
+			-- Delete the slots that are now no longer in the Hotbar
+			-- Iterate backwards as to not corrupt our iterator
+			for i = prevNumberOfSlots, newNumberOfSlots + 1, -1 do
+				local slot = Slots[i]
+				if slot then
+					slot:MoveToInventory()
+					slot:Delete()
+				end
+			end
+			-- Also need to slide-back the inventory slots now that they are indexed earlier
+			for i = prevNumberOfSlots, newNumberOfSlots + 1, -1 do
+				local slot = Slots[i]
+				if not slot.Tool then
+					slot:Delete()
+				end
+			end
+		else -- If we added more slots
+			for i = prevNumberOfSlots, newNumberOfSlots do
+				-- Incrementally add hotbar slots
+				NumberOfHotbarSlots = i
+				if Slots[i] then
+					-- Move old
+					local oldSlot = Slots[i]
+					local oldTool = Slots[i].Tool
+
+					local newSlot = MakeSlot(HotbarFrame, i)
+
+					if oldTool then
+						newSlot:Fill(oldTool)
+					elseif not LowestEmptySlot then
+						LowestEmptySlot = newSlot
+					end
+				else
+					local slot = MakeSlot(HotbarFrame, i)
+
+					slot.Frame.Visible = false
+
+					if not LowestEmptySlot then
+						LowestEmptySlot = slot
+					end
+				end
+			end
+		end
+		NumberOfHotbarSlots = numSlots
+		FullHotbarSlots = 0
+		for i = 1, NumberOfHotbarSlots do
+			if Slots[i] and Slots[i].Tool then
+				FullHotbarSlots = FullHotbarSlots + 1
+			end
+		end
+
+		UpdateBackpackLayout()
+	end
 end
 
 local function OnChildAdded(child) -- To Character or Backpack
