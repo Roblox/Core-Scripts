@@ -1162,15 +1162,10 @@ local function CreateSelector(selectionStringTable, startPosition)
 		if prop ~= "VREnabled" then
 			return
 		end
-		if UserInputService.VREnabled then
-			leftButton.Selectable = true
-			rightButton.Selectable = true
-			autoSelectButton.Selectable = true
-		else
-			leftButton.Selectable = false
-			rightButton.Selectable = false
-			autoSelectButton.Selectable = false
-		end
+		local vrEnabled = UserInputService.VREnabled
+		leftButton.Selectable = vrEnabled
+		rightButton.Selectable = vrEnabled
+		autoSelectButton.Selectable = vrEnabled
 	end
 	if fixSettingsMenuVR then
 		UserInputService.Changed:connect(onVREnabled)
