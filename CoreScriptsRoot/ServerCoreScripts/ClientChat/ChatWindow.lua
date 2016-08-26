@@ -52,15 +52,18 @@ local function CreateGuiObjects()
 
 
 	local ChatBarParentFrame = Instance.new("Frame", BaseFrame)
+	ChatBarParentFrame.Selectable = false
 	ChatBarParentFrame.Name = "ChatBarParentFrame"
 	ChatBarParentFrame.BackgroundTransparency = 1
 
 	local ChannelsBarParentFrame = Instance.new("Frame", BaseFrame)
+	ChannelsBarParentFrame.Selectable = false
 	ChannelsBarParentFrame.Name = "ChannelsBarParentFrame"
 	ChannelsBarParentFrame.BackgroundTransparency = 1
 	ChannelsBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
 
 	local ChatChannelParentFrame = Instance.new("Frame", BaseFrame)
+	ChatChannelParentFrame.Selectable = false
 	ChatChannelParentFrame.Name = "ChatChannelParentFrame"
 	ChatChannelParentFrame.BackgroundTransparency = 1
 
@@ -69,6 +72,7 @@ local function CreateGuiObjects()
 	ChatChannelParentFrame.BorderSizePixel = 0
 
 	local ChatResizerFrame = Instance.new("ImageButton", BaseFrame)
+	ChatResizerFrame.Selectable = false
 	ChatResizerFrame.Image = ""
 	ChatResizerFrame.BackgroundTransparency = 0.6
 	ChatResizerFrame.BorderSizePixel = 0
@@ -77,6 +81,7 @@ local function CreateGuiObjects()
 	ChatResizerFrame.Active = true
 
 	local ResizeIcon = Instance.new("ImageLabel", ChatResizerFrame)
+	ResizeIcon.Selectable = false
 	ResizeIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
 	ResizeIcon.Position = UDim2.new(0.2, 0, 0.2, 0)
 	ResizeIcon.BackgroundTransparency = 1

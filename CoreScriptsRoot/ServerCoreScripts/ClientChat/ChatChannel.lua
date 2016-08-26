@@ -17,10 +17,12 @@ local methods = {}
 
 local function CreateGuiObjects()
 	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
 
 	local Scroller = Instance.new("ScrollingFrame", BaseFrame)
+	Scroller.Selectable = false
 	Scroller.Name = "Scroller"
 	Scroller.BackgroundTransparency = 1
 	Scroller.BorderSizePixel = 0

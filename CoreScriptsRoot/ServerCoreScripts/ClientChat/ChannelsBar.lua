@@ -22,10 +22,12 @@ local methods = {}
 
 local function CreateGuiObjects()
 	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
 
 	local ScrollingBase = Instance.new("Frame", BaseFrame)
+	ScrollingBase.Selectable = false
 	ScrollingBase.Name = "ScrollingBase"
 	ScrollingBase.BackgroundTransparency = 1
 	ScrollingBase.ClipsDescendants = true
@@ -33,12 +35,14 @@ local function CreateGuiObjects()
 	ScrollingBase.Position = UDim2.new(0, 0, 0, 0)
 
 	local ScrollerSizer = Instance.new("Frame", ScrollingBase)
+	ScrollerSizer.Selectable = false
 	ScrollerSizer.Name = "ScrollerSizer"
 	ScrollerSizer.BackgroundTransparency = 1
 	ScrollerSizer.Size = UDim2.new(1, 0, 1, 0)
 	ScrollerSizer.Position = UDim2.new(0, 0, 0, 0)
 
 	local ScrollerFrame = Instance.new("Frame", ScrollerSizer)
+	ScrollerFrame.Selectable = false
 	ScrollerFrame.Name = "ScrollerFrame"
 	ScrollerFrame.BackgroundTransparency = 1
 	ScrollerFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -47,12 +51,14 @@ local function CreateGuiObjects()
 
 
 	local LeaveConfirmationFrameBase = Instance.new("Frame", BaseFrame)
+	LeaveConfirmationFrameBase.Selectable = false
 	LeaveConfirmationFrameBase.Size = UDim2.new(1, 0, 1, 0)
 	LeaveConfirmationFrameBase.Position = UDim2.new(0, 0, 0, 0)
 	LeaveConfirmationFrameBase.ClipsDescendants = true
 	LeaveConfirmationFrameBase.BackgroundTransparency = 1
 
 	local LeaveConfirmationFrame = Instance.new("Frame", LeaveConfirmationFrameBase)
+	LeaveConfirmationFrame.Selectable = false
 	LeaveConfirmationFrame.Name = "LeaveConfirmationFrame"
 	LeaveConfirmationFrame.Size = UDim2.new(1, 0, 1, 0)
 	LeaveConfirmationFrame.Position = UDim2.new(0, 0, 1, 0)
@@ -61,11 +67,13 @@ local function CreateGuiObjects()
 	LeaveConfirmationFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 
 	local InputBlocker = Instance.new("TextButton", LeaveConfirmationFrame)
+	InputBlocker.Selectable = false
 	InputBlocker.Size = UDim2.new(1, 0, 1, 0)
 	InputBlocker.BackgroundTransparency = 1
 	InputBlocker.Text = ""
 
 	local LeaveConfirmationButtonYes = Instance.new("TextButton", LeaveConfirmationFrame)
+	LeaveConfirmationButtonYes.Selectable = false
 	LeaveConfirmationButtonYes.Size = UDim2.new(0.25, 0, 1, 0)
 	LeaveConfirmationButtonYes.BackgroundTransparency = 1
 	LeaveConfirmationButtonYes.Font = Enum.Font.SourceSansBold
@@ -82,6 +90,7 @@ local function CreateGuiObjects()
 	LeaveConfirmationButtonNo.Text = "Cancel"
 
 	local LeaveConfirmationNotice = Instance.new("TextLabel", LeaveConfirmationFrame)
+	LeaveConfirmationNotice.Selectable = false
 	LeaveConfirmationNotice.Size = UDim2.new(0.5, 0, 1, 0)
 	LeaveConfirmationNotice.Position = UDim2.new(0.25, 0, 0, 0)
 	LeaveConfirmationNotice.BackgroundTransparency = 1
@@ -109,6 +118,7 @@ local function CreateGuiObjects()
 	local scaleOther = (1 - scale) / 2
 
 	local PageLeftButton = Instance.new("ImageButton", BaseFrame)
+	PageLeftButton.Selectable = false
 	PageLeftButton.Name = "PageLeftButton"
 	PageLeftButton.SizeConstraint = Enum.SizeConstraint.RelativeYY
 	PageLeftButton.Size = UDim2.new(scale, 0, scale, 0)
@@ -123,6 +133,7 @@ local function CreateGuiObjects()
 	ArrowLabel.Image = "rbxasset://textures/ui/Chat/TabArrow.png"
 
 	local PageRightButtonPositionalHelper = Instance.new("Frame", BaseFrame)
+	PageRightButtonPositionalHelper.Selectable = false
 	PageRightButtonPositionalHelper.BackgroundTransparency = 1
 	PageRightButtonPositionalHelper.Name = "PositionalHelper"
 	PageRightButtonPositionalHelper.Size = PageLeftButton.Size

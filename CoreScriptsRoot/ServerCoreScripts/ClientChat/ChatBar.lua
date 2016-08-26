@@ -20,12 +20,14 @@ local function CreateGuiObjects()
 	local textBoxPixelOffset = 8
 
 	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 0.6
 	BaseFrame.BorderSizePixel = 0
 	BaseFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 
 	local BoxFrame = Instance.new("Frame", BaseFrame)
+	BoxFrame.Selectable = false
 	BoxFrame.Name = "BoxFrame"
 	BoxFrame.BackgroundTransparency = 0.6
 	BoxFrame.BorderSizePixel = 0
@@ -34,6 +36,7 @@ local function CreateGuiObjects()
 	BoxFrame.Position = UDim2.new(0, backgroundImagePixelOffset, 0, backgroundImagePixelOffset)
 
 	local TextBox = Instance.new("TextBox", BoxFrame)
+	TextBox.Selectable = false
 	TextBox.Name = "ChatBar"
 	TextBox.BackgroundTransparency = 1
 	TextBox.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)
@@ -49,6 +52,7 @@ local function CreateGuiObjects()
 	TextBox.Text = ""
 
 	local TextLabel = Instance.new("TextLabel", BoxFrame)
+	TextLabel.Selectable = false
 	TextLabel.BackgroundTransparency = 1
 	TextLabel.Size = TextBox.Size
 	TextLabel.Position = TextBox.Position
