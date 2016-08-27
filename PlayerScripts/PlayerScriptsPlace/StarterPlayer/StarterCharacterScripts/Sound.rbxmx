@@ -119,6 +119,10 @@ Util = {
 		return hVel.magnitude	
 	end;
 	
+	TickSpeedSecondsAndLengthSecondsToNormalizedIncrement = function(tickSpeedSeconds, lengthSeconds)
+		return tickSpeedSeconds / lengthSeconds
+	end;
+	
 	--Gets the vertical (y) velocity magnitude of the given part
 	VerticalSpeed = function(Head)
 		return math.abs(Head.Velocity.Y)
@@ -317,16 +321,34 @@ do
 		activeState = state
 	end
 	
-	-- Runs on heartbeat
-	function onHeartbeat(step)
-		local stepScale = step / (1/60.0)
-		
+	Humanoid.Died:connect(			function() stateUpdated(Enum.HumanoidStateType.Dead) 			end)
+	Humanoid.Running:connect(		function() stateUpdated(Enum.HumanoidStateType.Running) 		end)
+	Humanoid.Swimming:connect(		function() stateUpdated(Enum.HumanoidStateType.Swimming) 		end)
+	Humanoid.Climbing:connect(		function() stateUpdated(Enum.HumanoidStateType.Climbing) 		end)
+	Humanoid.Jumping:connect(		function() stateUpdated(Enum.HumanoidStateType.Jumping) 		end)
+	Humanoid.GettingUp:connect(		function() stateUpdated(Enum.HumanoidStateType.GettingUp) 		end)
+	Humanoid.FreeFalling:connect(		function() stateUpdated(Enum.HumanoidStateType.Freefall) 		end)
+	Humanoid.FallingDown:connect(		function() stateUpdated(Enum.HumanoidStateType.FallingDown) 	end)
+	
+	-- required for proper handling of Landed event
+	Humanoid.StateChanged:connect(function(old, new)
+		stateUpdated(new)
+	end)
+	
+	
+	function onUpdate(stepDeltaSeconds, tickSpeedSeconds)
+		local stepScale = stepDeltaSeconds / tickSpeedSeconds
 		do
 			local sound = Sounds[SFX.FreeFalling]
 			if activeState == Enum.HumanoidStateType.Freefall then
 				if Head.Velocity.Y < 0 and Util.VerticalSpeed(Head) > 75 then
 					Util.Resume(sound)
-					sound.Volume = Util.Clamp(sound.Volume + 0.05 * stepScale,0,1)
+					
+					--Volume takes 1.0 seconds to go from volume 0 to 1
+					sound.Volume = Util.Clamp(
+						sound.Volume + 
+						Util.TickSpeedSecondsAndLengthSecondsToNormalizedIncrement(tickSpeedSeconds, 1.0) * stepScale
+					, 0, 1)
 				else
 					sound.Volume = 0
 				end			
@@ -343,23 +365,15 @@ do
 				end
 			end
 		end		
-		
 	end
 	
-	Humanoid.Died:connect(			function() stateUpdated(Enum.HumanoidStateType.Dead) 			end)
-	Humanoid.Running:connect(		function() stateUpdated(Enum.HumanoidStateType.Running) 		end)
-	Humanoid.Swimming:connect(		function() stateUpdated(Enum.HumanoidStateType.Swimming) 		end)
-	Humanoid.Climbing:connect(		function() stateUpdated(Enum.HumanoidStateType.Climbing) 		end)
-	Humanoid.Jumping:connect(		function() stateUpdated(Enum.HumanoidStateType.Jumping) 		end)
-	Humanoid.GettingUp:connect(	function() stateUpdated(Enum.HumanoidStateType.GettingUp) 	end)
-	Humanoid.FreeFalling:connect(	function() stateUpdated(Enum.HumanoidStateType.Freefall) 		end)
-	Humanoid.FallingDown:connect(	function() stateUpdated(Enum.HumanoidStateType.FallingDown) 	end)
-	
-	-- required for proper handling of Landed event
-	Humanoid.StateChanged:connect(function(old, new)
-		stateUpdated(new)
-	end)
-	game:GetService('RunService').Heartbeat:connect(onHeartbeat)
+	local lastTick = tick()
+	local TICK_SPEED_SECONDS = 0.25
+	while true do
+		onUpdate(tick() - lastTick,TICK_SPEED_SECONDS)
+		lastTick = tick()
+		wait(TICK_SPEED_SECONDS)
+	end
 end
 ]]></ProtectedString>
 			</Properties>
