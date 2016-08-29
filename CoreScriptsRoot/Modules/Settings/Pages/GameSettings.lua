@@ -124,7 +124,57 @@ local function Initialize()
 		this.GraphicsQualitySlider = utility:AddNewRow(this, "Graphics Quality", "Slider", GRAPHICS_QUALITY_LEVELS, 1)
 		this.GraphicsQualitySlider:SetMinStep(1)
 
-		------------------------- Connection Setup ----------------------------
+		------------------------------------------------------
+		------------------
+		------------------ Performance Stats -----------------
+    local PerformanceStatsFlagSuccess, PerformanceStatsFlagValue = 
+      pcall(function() return settings():GetFFlag("ShowPerformanceStatsInGui") end)
+		local PerformanceStatsFlagOn = PerformanceStatsFlagSuccess and PerformanceStatsFlagValue
+    
+		if PerformanceStatsFlagOn then
+			this.PerformanceStatsFrame, 
+			this.PerformanceStatsLabel,
+			this.PerformanceStatsMode,
+			this.PerformanceStatsOverrideText = nil
+
+      local startIndex = 2
+			if GameSettings.PerformanceStatsVisible then
+					startIndex = 1
+      end
+
+      this.PerformanceStatsFrame, 
+      this.PerformanceStatsLabel,
+      this.PerformanceStatsMode = utility:AddNewRow(this, 
+        "Performance Stats", 
+        "Selector", 
+        {"On", "Off"}, 
+        2)
+
+      this.PerformanceStatsOverrideText = utility:Create'TextLabel'
+      {
+        Name = "PerformanceStatsLabel",
+        Text = "Set by Developer",
+        TextColor3 = Color3.new(1,1,1),
+        Font = Enum.Font.SourceSans,
+        FontSize = Enum.FontSize.Size24,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0,200,1,0),
+        Position = UDim2.new(1,-350,0,0),
+        Visible = false,
+        ZIndex = 2,
+        Parent = this.PerformanceStatsFrame
+      };
+
+      this.PerformanceStatsMode.IndexChanged:connect(function(newIndex)
+        if newIndex == 1 then
+          GameSettings.PerformanceStatsVisible = true
+        else
+          GameSettings.PerformanceStatsVisible = false
+        end
+      end)
+		end
+		
+    ------------------------- Connection Setup ----------------------------
 		settings().Rendering.EnableFRM = true
 
 		function SetGraphicsQuality(newValue, automaticSettingAllowed)
