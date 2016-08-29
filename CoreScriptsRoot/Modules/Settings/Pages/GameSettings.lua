@@ -138,10 +138,7 @@ local function Initialize()
 			this.PerformanceStatsOverrideText = nil
 
       local startIndex = 2
-      
-      print ("001: GameSettings.PerformanceStatsVisible == ",
-        GameSettings.PerformanceStatsVisible) 
-      
+            
 			if GameSettings.PerformanceStatsVisible then
 					startIndex = 1
       end

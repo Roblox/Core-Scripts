@@ -10,15 +10,18 @@ local PlayersService = game:GetService("Players")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
+
 --[[ Fast Flags ]]--
 local getShowPerformanceStatsInGuiSuccess, showPerformanceStatsInGuiValue = 
 	pcall(function() return settings():GetFFlag("ShowPerformanceStatsInGui") end)
 local showPerformanceStatsInGui = getShowPerformanceStatsInGuiSuccess and showPerformanceStatsInGuiValue
 
+
 --[[ Script Variables ]]--
 local screenGui = Instance.new("ScreenGui")
 local masterFrame = Instance.new("Frame")
 local localPlayer = PlayersService.LocalPlayer
+
 
 --[[ Functions ]]--
 
@@ -42,11 +45,9 @@ function ConfigureMasterFrame()
 end
 
 function UpdatePerformanceStatsVisibility() 
-	print("Toggled!")
-  print ("002: GameSettings.PerformanceStatsVisible == ",
-    GameSettings.PerformanceStatsVisible) 
   masterFrame.Visible = GameSettings.PerformanceStatsVisible
 end
+
 
 --[[ Top Level Code ]]--
 -- If flag is not enabled, bounce.
@@ -66,10 +67,7 @@ PlayersService.PlayerRemoving:connect(UpdateLocalPlayer)
 -- Watch for changes in performance stats visibility.
 GameSettings.PerformanceStatsVisibleChanged:connect(UpdatePerformanceStatsVisibility)
 
-print("008")
-
 -- Make sure stats are visible or not, as specified by current setting.
 UpdateLocalPlayer()
 UpdatePerformanceStatsVisibility()
 
-print("009")
