@@ -10,6 +10,7 @@ local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
 local PlayersService = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
@@ -27,9 +28,7 @@ local ABUSE_TYPES_PLAYER = {
 }
 
 local ABUSE_TYPES_GAME = {
-	"Inappropriate Content",
-	"Bad Model or Script",
-	"Offsite Link",
+	"Inappropriate Content"
 }
 local DEFAULT_ABUSE_DESC_TEXT = "   Short Description (Optional)"
 if utility:IsSmallTouchScreen() then
@@ -108,11 +107,11 @@ local function Initialize()
 		if utility:IsSmallTouchScreen() then
 			this.GameOrPlayerFrame, 
 			this.GameOrPlayerLabel,
-			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1)
+			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 2)
 		else
 			this.GameOrPlayerFrame, 
 			this.GameOrPlayerLabel,
-			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1, 3)
+			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 2, 3)
 		end
 
 		this.WhichPlayerFrame, 
@@ -123,7 +122,7 @@ local function Initialize()
 
 		this.TypeOfAbuseFrame, 
 		this.TypeOfAbuseLabel,
-		this.TypeOfAbuseMode = utility:AddNewRow(this, "Type Of Abuse", "DropDown", ABUSE_TYPES_GAME)
+		this.TypeOfAbuseMode = utility:AddNewRow(this, "Type Of Abuse", "DropDown", ABUSE_TYPES_GAME, 1)
 
 		if utility:IsSmallTouchScreen() then
 			this.AbuseDescriptionFrame, 
@@ -172,11 +171,16 @@ local function Initialize()
 
 			if this.GameOrPlayerMode.CurrentIndex == 1 then
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
+				
+				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_GAME > 1)
+
 				this.WhichPlayerMode:SetInteractable(false)
 				this.WhichPlayerLabel.ZIndex = 1
 				this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
+				makeSubmitButtonActive()
 			else
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
+				this.TypeOfAbuseMode:SetInteractable(true)
 				if #playerNames > 0 then
 					this.WhichPlayerMode:SetInteractable(true)
 					this.WhichPlayerLabel.ZIndex = 2
@@ -186,8 +190,9 @@ local function Initialize()
 					this.WhichPlayerLabel.ZIndex = 1
 					this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
 				end
+				makeSubmitButtonInactive()
 			end
-			makeSubmitButtonInactive()
+			
 		end
 
 		local function cleanupReportAbuseMenu()
@@ -214,7 +219,16 @@ local function Initialize()
 				if abuseReason then
 					reportSucceeded = true
 					spawn(function()
-						game.Players:ReportAbuse(nil, abuseReason, this.AbuseDescription.Selection.Text)
+						local placeId,placeName,placeDescription = tostring(game.PlaceId), "N/A", "N/A"
+						local abuseDescription = this.AbuseDescription.Selection.Text
+						pcall(function()
+							local productInfo = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset)
+							placeName = productInfo.Name
+							placeDescription = productInfo.Description
+						end)
+						local formattedText = string.format("User Report: \n    %s \n".."Place Title: \n    %s \n".."PlaceId: \n    %s \n".."Place Description: \n    %s \n",abuseDescription, placeName, placeId, placeDescription)
+
+						game.Players:ReportAbuse(nil, abuseReason, formattedText)
 					end)
 				end
 			end
@@ -242,9 +256,12 @@ local function Initialize()
 		else
 			submitButton.Position = UDim2.new(1,-194,1,5)
 		end
-		submitButton.Selectable = false
-		submitButton.ZIndex = 1
-		submitText.ZIndex = 1
+		
+		if this.GameOrPlayerMode.CurrentIndex == 1 then
+			makeSubmitButtonActive()
+		else
+			makeSubmitButtonInactive()
+		end
 		submitButton.Parent = this.AbuseDescription.Selection
 
 		local function playerSelectionChanged(newIndex)
@@ -259,6 +276,7 @@ local function Initialize()
 		local function typeOfAbuseChanged(newIndex)
 			if newIndex ~= nil then
 				if this.GameOrPlayerMode.CurrentIndex == 1 then -- 1 is Report Game
+					print("activating submit button")
 					makeSubmitButtonActive()
 				else -- 2 is Report Player
 					if this.WhichPlayerMode:GetSelectedIndex() then
