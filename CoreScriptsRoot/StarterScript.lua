@@ -66,3 +66,30 @@ if useVRKeyboard then
 	require(RobloxGui.Modules.VR.VirtualKeyboard)
 end
 
+
+-- Boot up the VR App Shell
+if UserSettings().GameSettings:InStudioMode() then
+	local UserInputService = game:GetService('UserInputService')
+	local function onVREnabled(prop)
+		if prop == "VREnabled" then
+			if UserInputService.VREnabled then
+				local shellInVRSuccess, shellInVRFlagValue = pcall(function() return settings():GetFFlag("EnabledAppShell3D") end)
+				local shellInVR = (shellInVRSuccess and shellInVRFlagValue == true)
+				local modulesFolder = RobloxGui.Modules
+				local appHomeModule = modulesFolder:FindFirstChild('Shell') and modulesFolder:FindFirstChild('Shell'):FindFirstChild('AppHome')
+				if shellInVR and appHomeModule then
+					require(appHomeModule)
+				end
+			end
+		end
+	end
+
+	UserInputService.Changed:connect(onVREnabled)
+	spawn(function()
+		if UserInputService.VREnabled then
+			onVREnabled("VREnabled")
+		end
+	end)
+end
+
+
