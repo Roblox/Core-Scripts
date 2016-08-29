@@ -570,8 +570,7 @@ local function setupGamepadControls()
 				lastInputChangedCon:disconnect()
 				lastInputChangedCon = nil
 			end
-			pcall(function() InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
-
+			
 			local settingsChildren = gamepadSettingsFrame:GetChildren()
 			for i = 1, #settingsChildren do
 				if settingsChildren[i]:IsA("GuiButton") then
@@ -581,6 +580,9 @@ local function setupGamepadControls()
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,102,0,102), UDim2.new(0.5,-51,0.5,-51),
 														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, 
 				function()
+					if not InputService.VREnabled then
+						pcall(function() InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
+					end
 					if not goingToSettings and not isVisible then GuiService:SetMenuIsOpen(false) end
 					gamepadSettingsFrame.Visible = isVisible
 			end)
