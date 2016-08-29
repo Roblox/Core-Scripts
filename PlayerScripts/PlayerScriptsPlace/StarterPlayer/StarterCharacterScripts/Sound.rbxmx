@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="Script" referent="RBX93b6309b10c744ad8a27a3495cc76921">
+	<Item class="Script" referent="RBX16e4cb69d4fd4f14bf87efbf916c93ef">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -43,7 +43,7 @@ CreateNewSound("Running", 		"rbxasset://sounds/action_footsteps_plastic.mp3",		t
 CreateNewSound("Swimming", 	"rbxasset://sounds/action_swim.mp3",					true,	1.6,	head)
 CreateNewSound("Climbing", 	"rbxasset://sounds/action_footsteps_plastic.mp3",		true,	1,		head)]]></ProtectedString>
 		</Properties>
-		<Item class="LocalScript" referent="RBX457d8f49209d44f8aec210dd92c26204">
+		<Item class="LocalScript" referent="RBX7dae185fd11347acbb6853bbfc52862a">
 			<Properties>
 				<bool name="Disabled">false</bool>
 				<Content name="LinkedSource"><null></null></Content>
@@ -57,7 +57,7 @@ CreateNewSound("Climbing", 	"rbxasset://sounds/action_footsteps_plastic.mp3",		t
 	The Playing/TimePosition properties of Sound objects bypass FilteringEnabled, so this triggers the sound
 	immediately for the player and is replicated to all other players.
 	
-	This script has been optimized to reduce network traffic (in comparison to the existing humanoid sound scripts.
+	This script has been optimized to reduce network traffic (in comparison to the previous humanoid sound scripts.
 ]]--
 
 --All sounds are referenced by this ID
@@ -117,10 +117,6 @@ Util = {
 	HorizontalSpeed = function(Head)
 		local hVel = Head.Velocity + Vector3.new(0,-Head.Velocity.Y,0)
 		return hVel.magnitude	
-	end;
-	
-	TickSpeedSecondsAndLengthSecondsToNormalizedIncrement = function(tickSpeedSeconds, lengthSeconds)
-		return tickSpeedSeconds / lengthSeconds
 	end;
 	
 	--Gets the vertical (y) velocity magnitude of the given part
@@ -344,11 +340,11 @@ do
 				if Head.Velocity.Y < 0 and Util.VerticalSpeed(Head) > 75 then
 					Util.Resume(sound)
 					
-					--Volume takes 1.0 seconds to go from volume 0 to 1
-					sound.Volume = Util.Clamp(
-						sound.Volume + 
-						Util.TickSpeedSecondsAndLengthSecondsToNormalizedIncrement(tickSpeedSeconds, 1.0) * stepScale
-					, 0, 1)
+					--Volume takes 1.1aa seconds to go from volume 0 to 1
+					local ANIMATION_LENGTH_SECONDS = 1.1
+					
+					local normalizedIncrement = tickSpeedSeconds / ANIMATION_LENGTH_SECONDS									
+					sound.Volume = Util.Clamp(sound.Volume + normalizedIncrement * stepScale, 0, 1)
 				else
 					sound.Volume = 0
 				end			
