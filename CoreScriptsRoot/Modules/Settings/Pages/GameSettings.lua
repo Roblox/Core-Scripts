@@ -97,9 +97,9 @@ local function Initialize()
 			fullScreenInit = 2
 		end
 
-		this.FullscreenFrame, 
-		this.FullscreenLabel,
-		this.FullscreenEnabler = utility:AddNewRow(this, "Fullscreen", "Selector", {"On", "Off"}, fullScreenInit)
+		this.FullscreenFrame,
+			this.FullscreenLabel,
+			this.FullscreenEnabler = utility:AddNewRow(this, "Fullscreen", "Selector", {"On", "Off"}, fullScreenInit)
 
 		settingsDisabledInVR[this.FullscreenEnabler] = true
 
@@ -116,13 +116,13 @@ local function Initialize()
         end
 
 		this.GraphicsEnablerFrame, 
-		this.GraphicsEnablerLabel,
-		this.GraphicsQualityEnabler = utility:AddNewRow(this, "Graphics Mode", "Selector", {"Automatic", "Manual"}, graphicsEnablerStart)
+			this.GraphicsEnablerLabel,
+			this.GraphicsQualityEnabler = utility:AddNewRow(this, "Graphics Mode", "Selector", {"Automatic", "Manual"}, graphicsEnablerStart)
 
 		------------------ Gfx Slider GUI Setup  ------------------
 		this.GraphicsQualityFrame, 
-		this.GraphicsQualityLabel,
-		this.GraphicsQualitySlider = utility:AddNewRow(this, "Graphics Quality", "Slider", GRAPHICS_QUALITY_LEVELS, 1)
+			this.GraphicsQualityLabel,
+			this.GraphicsQualitySlider = utility:AddNewRow(this, "Graphics Quality", "Slider", GRAPHICS_QUALITY_LEVELS, 1)
 		this.GraphicsQualitySlider:SetMinStep(1)
 
 		------------------------------------------------------
@@ -265,9 +265,9 @@ local function Initialize()
 		------------------ Shift Lock Switch -----------------
 		if UserInputService.MouseEnabled then
 			this.ShiftLockFrame, 
-			this.ShiftLockLabel,
-			this.ShiftLockMode,
-			this.ShiftLockOverrideText = nil
+				this.ShiftLockLabel,
+				this.ShiftLockMode,
+				this.ShiftLockOverrideText = nil
 
 			if UserInputService.MouseEnabled and UserInputService.KeyboardEnabled then
 				local startIndex = 2
@@ -276,8 +276,8 @@ local function Initialize()
 				end
 
 				this.ShiftLockFrame, 
-				this.ShiftLockLabel,
-				this.ShiftLockMode = utility:AddNewRow(this, "Shift Lock Switch", "Selector", {"On", "Off"}, startIndex)
+					this.ShiftLockLabel,
+					this.ShiftLockMode = utility:AddNewRow(this, "Shift Lock Switch", "Selector", {"On", "Off"}, startIndex)
 
 				settingsDisabledInVR[this.ShiftLockMode] = true
 
@@ -342,8 +342,8 @@ local function Initialize()
 			end
 
 			this.CameraModeFrame, 
-			this.CameraModeLabel,
-			this.CameraMode = utility:AddNewRow(this, "Camera Mode", "Selector", cameraEnumNames, startingCameraEnumItem)
+				this.CameraModeLabel,
+				this.CameraMode = utility:AddNewRow(this, "Camera Mode", "Selector", cameraEnumNames, startingCameraEnumItem)
 
 			settingsDisabledInVR[this.CameraMode] = true
 
@@ -383,12 +383,12 @@ local function Initialize()
 
 			if utility:IsSmallTouchScreen() then
 				this.VRRotationFrame, 
-				this.VRRotationLabel,
-				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity)
+					this.VRRotationLabel,
+					this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity)
 			else
 				this.VRRotationFrame, 
-				this.VRRotationLabel,
-				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity, 3)
+					this.VRRotationLabel,
+					this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity, 3)
 			end
 
 			StarterGui:RegisterGetCore("VRRotationIntensity",
@@ -439,8 +439,8 @@ local function Initialize()
 			end
 
 			this.MovementModeFrame, 
-			this.MovementModeLabel,
-			this.MovementMode = utility:AddNewRow(this, "Movement Mode", "Selector", movementEnumNames, startingMovementEnumItem)
+				this.MovementModeLabel,
+				this.MovementMode = utility:AddNewRow(this, "Movement Mode", "Selector", movementEnumNames, startingMovementEnumItem)
 
 			settingsDisabledInVR[this.MovementMode] = true
 
@@ -564,11 +564,12 @@ local function Initialize()
 		end
 
 		LocalPlayer.Changed:connect(function(property)
-			if IsTouchClient then
+			if UserInputService.TouchEnabled then
 				if TOUCH_CHANGED_PROPS[property] then
 					updateUserSettingsMenu(property)
 				end
-			else
+			end
+			if UserInputService.KeyboardEnabled then
 				if PC_CHANGED_PROPS[property] then
 					updateUserSettingsMenu(property)
 				end
@@ -579,8 +580,8 @@ local function Initialize()
 	local function createVolumeOptions()
 		local startVolumeLevel = math.floor(GameSettings.MasterVolume * 10)
 		this.VolumeFrame, 
-		this.VolumeLabel,
-		this.VolumeSlider = utility:AddNewRow(this, "Volume", "Slider", 10, startVolumeLevel)
+			this.VolumeLabel,
+			this.VolumeSlider = utility:AddNewRow(this, "Volume", "Slider", 10, startVolumeLevel)
 
 		local volumeSound = Instance.new("Sound", game.CoreGui.RobloxGui.Sounds)
 		volumeSound.Name = "VolumeChangeSound"
@@ -627,8 +628,8 @@ local function Initialize()
 
 		if AdvancedEnabled then
 			this.MouseModeFrame, 
-			this.MouseModeLabel,
-			this.MouseModeEnabler = utility:AddNewRow(this, "Mouse Sensitivity Mode", "Selector", {"Basic", "Advanced"}, MouseModeEnablerStart)
+				this.MouseModeLabel,
+				this.MouseModeEnabler = utility:AddNewRow(this, "Mouse Sensitivity Mode", "Selector", {"Basic", "Advanced"}, MouseModeEnablerStart)
         end
 		
 		------------------ Basic Mouse Sensitivity Slider ------------------
@@ -638,8 +639,8 @@ local function Initialize()
 			SliderLabel = "Mouse Sensitivity"
 		end
 		this.MouseSensitivityFrame, 
-		this.MouseSensitivityLabel,
-		this.MouseSensitivitySlider = utility:AddNewRow(this, SliderLabel, "Slider", MouseSteps, startMouseLevel)
+			this.MouseSensitivityLabel,
+			this.MouseSensitivitySlider = utility:AddNewRow(this, SliderLabel, "Slider", MouseSteps, startMouseLevel)
 		this.MouseSensitivitySlider:SetMinStep(1)
 
 		this.MouseSensitivitySlider.ValueChanged:connect(function(newValue)
@@ -651,8 +652,8 @@ local function Initialize()
 		if AdvancedEnabled then
 			local MouseAdvancedStart = tostring(GameSettings.MouseSensitivityFirstPerson.y)
 			this.MouseAdvancedFrame, 
-			this.MouseAdvancedLabel,
-			this.MouseAdvancedEntry = utility:AddNewRow(this, "Advanced Mouse Sensitivity", "TextEntry", 1.0, 1.0, MouseAdvancedStart)
+				this.MouseAdvancedLabel,
+				this.MouseAdvancedEntry = utility:AddNewRow(this, "Advanced Mouse Sensitivity", "TextEntry", 1.0, 1.0, MouseAdvancedStart)
 
 			this.MouseAdvancedEntry.ValueChanged:connect(function(newValueText)
 				local currentFirstSensitivity = GameSettings.MouseSensitivityFirstPerson
@@ -696,8 +697,8 @@ local function Initialize()
         -- This is a common setting in games, even if it is rare
 		if AdvancedEnabled then
 			this.MouseInvertFrame, 
-			this.MouseInvertLabel,
-			this.MouseInvertEnabler = utility:AddNewRow(this, "Advanced Mouse Invert", "Selector", {"Normal", "Inverted"}, MouseInvertStart)
+				this.MouseInvertLabel,
+				this.MouseInvertEnabler = utility:AddNewRow(this, "Advanced Mouse Invert", "Selector", {"Normal", "Inverted"}, MouseInvertStart)
 
 			this.MouseInvertEnabler.IndexChanged:connect(function(newIndex)
 			local currentFirstSensitivity = GameSettings.MouseSensitivityFirstPerson
@@ -760,8 +761,9 @@ local function Initialize()
 			end)
 
 			if GameSettings.UseBasicMouseSensitivity then
+				local MouseAdvancedStart = tostring(GameSettings.MouseSensitivityFirstPerson.x)
 				setMouseModeToBasic()
-				this.MouseAdvancedEntry:SetValue(tostring(MouseAdvancedStart))
+				this.MouseAdvancedEntry:SetValue(MouseAdvancedStart)
 			else
 				setMouseModeToAdvanced()
 			end
