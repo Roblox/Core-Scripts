@@ -1257,15 +1257,19 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 
 	local function onVREnabled(prop)
 		if prop ~= "VREnabled" then return end
+		local Panel3D, settingsPanel = nil, nil
 		if UserInputService.VREnabled then
-			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
-			local settingsPanel = Panel3D.Get("SettingsMenu")
+			Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
+			settingsPanel = Panel3D.Get("SettingsMenu")
 			parent = settingsPanel:GetGUI()
 		else
 			parent = CoreGui.RobloxGui
 		end
 		if AlertViewBacking and AlertViewBacking.Parent ~= nil then
 			AlertViewBacking.Parent = parent
+			if fixSettingsMenuVR and UserInputService.VREnabled then
+				settingsPanel:SetSubpanelDepth(AlertViewBacking, 0.5)
+			end
 		end
 	end
 	if fixSettingsMenuVR then
@@ -1331,6 +1335,10 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 	local destroyAlert = function(actionName, inputState)
 		if fixSettingsMenuVR and UserInputService.VREnabled and (inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Cancel) then
 			return
+		end
+		if fixSettingsMenuVR and UserInputService.VREnabled then
+			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
+			Panel3D.Get("SettingsMenu"):SetSubpanelDepth(AlertViewBacking, 0)
 		end
 		AlertViewBacking:Destroy()
 		AlertViewBacking = nil
