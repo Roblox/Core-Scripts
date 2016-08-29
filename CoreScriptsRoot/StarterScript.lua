@@ -26,6 +26,9 @@ scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", RobloxGui)
 -- In-game notifications script
 scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", RobloxGui)
 
+-- Performance Stats Management
+scriptContext:AddCoreScriptLocal("CoreScripts/PerformanceStatsManagerScript", RobloxGui)
+
 -- Chat script
 spawn(function() require(RobloxGui.Modules.ChatSelector) end)
 spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
