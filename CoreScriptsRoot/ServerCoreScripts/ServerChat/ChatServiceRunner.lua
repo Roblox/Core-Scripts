@@ -250,6 +250,7 @@ if modules then
 end
 
 Players.PlayerAdded:connect(function(playerObj)
+	wait() -- ToDo: Remove this wait when that stupid bug that causes joining players to have the name 'Player1' in studio finally goes away.
 	HandlePlayerJoining(playerObj)
 end)
 
@@ -260,6 +261,7 @@ end)
 for i, player in pairs(game:GetService("Players"):GetChildren()) do
 	local spkr = ChatService:GetSpeaker(player.Name)
 	if (not spkr or not spkr:GetPlayer()) then
+		print("handling:", player)
 		HandlePlayerJoining(player)
 	end
 end

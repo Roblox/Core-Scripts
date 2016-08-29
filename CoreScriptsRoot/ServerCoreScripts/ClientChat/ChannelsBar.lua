@@ -20,8 +20,8 @@ local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 --//////////////////////////////////////
 local methods = {}
 
-local function CreateGuiObjects()
-	local BaseFrame = Instance.new("Frame")
+function methods:CreateGuiObjects(targetParent)
+	local BaseFrame = Instance.new("Frame", targetParent)
 	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
@@ -154,7 +154,26 @@ local function CreateGuiObjects()
 	PageLeftButton.ArrowLabel.Rotation = 180
 
 
-	return BaseFrame, ScrollerSizer, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice
+	rawset(self, "GuiObject", BaseFrame)
+
+	self.GuiObjects.BaseFrame = BaseFrame
+	self.GuiObjects.ScrollerSizer = ScrollerSizer
+	self.GuiObjects.ScrollerFrame = ScrollerFrame
+	self.GuiObjects.PageLeftButton = PageLeftButton
+	self.GuiObjects.PageRightButton = PageRightButton
+	self.GuiObjects.LeaveConfirmationFrame = LeaveConfirmationFrame
+	self.GuiObjects.LeaveConfirmationNotice = LeaveConfirmationNotice
+
+	self.GuiObjects.PageLeftButtonArrow = PageLeftButton.ArrowLabel
+	self.GuiObjects.PageRightButtonArrow = PageRightButton.ArrowLabel
+
+
+	self:CreateTweeners()
+
+	PageLeftButton.MouseButton1Click:connect(function() self:ScrollChannelsFrame(-1) end)
+	PageRightButton.MouseButton1Click:connect(function() self:ScrollChannelsFrame(1) end)
+
+	self:ScrollChannelsFrame(0)
 end
 
 
@@ -173,7 +192,7 @@ function methods:AddChannelTab(channelName)
 	end
 
 	local tab = moduleChannelsTab.new(channelName)
-	tab.GuiObject.Parent = self.ScrollerFrame
+	tab.GuiObject.Parent = self.GuiObjects.ScrollerFrame
 	self.ChannelTabs[channelName:lower()] = tab
 
 	self.NumTabs = self.NumTabs + 1
@@ -230,7 +249,7 @@ function methods:OrganizeChannelTabs()
 	end
 
 	--// Dynamic tab resizing
-	self.ScrollerSizer.Size = UDim2.new(1 / math.max(1, math.min(ChatSettings.ChannelsBarFullTabSize, self.NumTabs)), 0, 1, 0)
+	self.GuiObjects.ScrollerSizer.Size = UDim2.new(1 / math.max(1, math.min(ChatSettings.ChannelsBarFullTabSize, self.NumTabs)), 0, 1, 0)
 
 	self:ScrollChannelsFrame(0)
 end
@@ -259,8 +278,8 @@ function methods:ScrollChannelsFrame(dir)
 	local tweenTime = 0.15
 	local endPos = UDim2.new(-self.CurPageNum, 0, 0, 0)
 
-	self.PageLeftButton.Visible = (self.CurPageNum > 0)
-	self.PageRightButton.Visible = (self.CurPageNum + tabNumber < self.NumTabs)
+	self.GuiObjects.PageLeftButton.Visible = (self.CurPageNum > 0)
+	self.GuiObjects.PageRightButton.Visible = (self.CurPageNum + tabNumber < self.NumTabs)
 
 	local function UnlockFunc()
 		self.ScrollChannelsFrameLock = false
@@ -268,7 +287,7 @@ function methods:ScrollChannelsFrame(dir)
 
 	self:WaitUntilParentedCorrectly()
 
-	self.ScrollerFrame:TweenPosition(endPos, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, tweenTime, true, UnlockFunc)
+	self.GuiObjects.ScrollerFrame:TweenPosition(endPos, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, tweenTime, true, UnlockFunc)
 end
 
 function methods:FadeOutBackground(duration)
@@ -295,10 +314,10 @@ function methods:CreateTweeners()
 	self.TextTweener = moduleTransparencyTweener.new()
 
 	--// Register BackgroundTweener objects and properties
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageLeftButton, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageRightButton, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageLeftButtonArrow, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageRightButtonArrow, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageLeftButton, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageRightButton, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageLeftButtonArrow, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageRightButtonArrow, "ImageTransparency")
 
 	--// Register TextTweener objects and properties
 	
@@ -318,17 +337,8 @@ ClassMaker.RegisterClassType("ChannelsBar", methods)
 function module.new()
 	local obj = {}
 
-	local BaseFrame, ScrollerSizer, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice = CreateGuiObjects()
-	obj.GuiObject = BaseFrame
-	obj.ScrollerSizer = ScrollerSizer
-	obj.ScrollerFrame = ScrollerFrame
-	obj.PageLeftButton = PageLeftButton
-	obj.PageRightButton = PageRightButton
-	obj.LeaveConfirmationFrame = LeaveConfirmationFrame
-	obj.LeaveConfirmationNotice = LeaveConfirmationNotice
-
-	obj.PageLeftButtonArrow = obj.PageLeftButton.ArrowLabel
-	obj.PageRightButtonArrow = obj.PageRightButton.ArrowLabel
+	obj.GuiObject = nil
+	obj.GuiObjects = {}
 
 	obj.ChannelTabs = {}
 	obj.NumTabs = 0
@@ -340,19 +350,6 @@ function module.new()
 	obj.ScrollChannelsFrameLock = false
 
 	ClassMaker.MakeClass("ChannelsBar", obj)
-
-	obj:CreateTweeners()
-
-	PageLeftButton.MouseButton1Click:connect(function() obj:ScrollChannelsFrame(-1) end)
-	PageRightButton.MouseButton1Click:connect(function() obj:ScrollChannelsFrame(1) end)
-
-	--// Have to wait to tween until it's properly parented to PlayerGui
-	spawn(function()
-		while (not obj.GuiObject:IsDescendantOf(PlayerGui)) do
-			obj.GuiObject.AncenstryChanged:wait()
-		end
-		obj:ScrollChannelsFrame(0)
-	end)
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "ChatChannelsTabTextSize") then
