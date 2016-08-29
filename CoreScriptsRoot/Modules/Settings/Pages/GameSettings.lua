@@ -68,13 +68,14 @@ local function Initialize()
 	local this = settingsPageFactory:CreateNewPage()
 
 	local allSettingsCreated = false
+	local settingsDisabledInVR = {}
 	local function onVRSettingsReady()
 		local vrEnabled = UserInputService.VREnabled
 		for settingFrame, _ in pairs(settingsDisabledInVR) do
 			settingFrame:SetInteractable(not vrEnabled)
 		end
 	end
-	local settingsDisabledInVR = {}
+	
 	local function onVREnabled(prop)
 		if prop ~= "VREnabled" then return end
 		if UserInputService.VREnabled and allSettingsCreated then
