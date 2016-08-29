@@ -261,7 +261,6 @@ end)
 for i, player in pairs(game:GetService("Players"):GetChildren()) do
 	local spkr = ChatService:GetSpeaker(player.Name)
 	if (not spkr or not spkr:GetPlayer()) then
-		print("handling:", player)
 		HandlePlayerJoining(player)
 	end
 end

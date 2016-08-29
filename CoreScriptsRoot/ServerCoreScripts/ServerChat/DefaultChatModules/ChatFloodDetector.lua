@@ -5,6 +5,7 @@ local source = [[
 
 local doFloodCheckByChannel = true
 local informSpeakesOfWaitTimes = true
+local chatBotsBypassFloodCheck = true
 local numberMessagesAllowed = 7
 local decayTimePeriod = 15
 
@@ -18,6 +19,10 @@ end
 local function Run(ChatService)
 	local function FloodDetectionProcessCommandsFunction(speakerName, message, channel)
 		if (whitelistedSpeakers[speakerName]) then return false end
+
+		local speakerObj = ChatService:GetSpeaker(speakerName)
+		if (not speakerObj) then return false end
+		if (chatBotsBypassFloodCheck and not speakerObj:GetPlayer()) then return false end
 		
 		if (not floodCheckTable[speakerName]) then
 			floodCheckTable[speakerName] = {}
@@ -44,17 +49,16 @@ local function Run(ChatService)
 			EnterTimeIntoLog(t)
 			return false
 		else
-			local speakerObj = ChatService:GetSpeaker(speakerName)
-			if (speakerObj) then
-				local timeDiff = math.ceil(t[1] - now)
-				local msg = ""
-				if (informSpeakesOfWaitTimes) then
-					msg = string.format("You must wait %d second%s before sending another message!", timeDiff, (timeDiff > 1) and "s" or "")
-				else
-					msg = "You must wait before sending another message!"
-				end				
-				speakerObj:SendSystemMessage(msg, channel)
-			end
+			
+			local timeDiff = math.ceil(t[1] - now)
+			local msg = ""
+			if (informSpeakesOfWaitTimes) then
+				msg = string.format("You must wait %d second%s before sending another message!", timeDiff, (timeDiff > 1) and "s" or "")
+			else
+				msg = "You must wait before sending another message!"
+			end				
+			speakerObj:SendSystemMessage(msg, channel)
+			
 			return true	
 		end
 	end
