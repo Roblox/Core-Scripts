@@ -476,6 +476,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	local DEFAULT_DROPDOWN_TEXT = "Choose One"
 	local SCROLLING_FRAME_PIXEL_OFFSET = 25
 	local SELECTION_TEXT_COLOR_NORMAL = Color3.new(0.7,0.7,0.7)
+	local SELECTION_TEXT_COLOR_NORMAL_VR = Color3.new(0.9, 0.9, 0.9)
 	local SELECTION_TEXT_COLOR_HIGHLIGHTED = Color3.new(1,1,1)
 
 	-------------------- VARIABLES ------------------------
@@ -609,7 +610,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				if GuiService.SelectedCoreObject == this.Selections[i] then
 					this.Selections[i].TextColor3 = SELECTION_TEXT_COLOR_HIGHLIGHTED
 				else
-					this.Selections[i].TextColor3 = SELECTION_TEXT_COLOR_NORMAL
+					this.Selections[i].TextColor3 = UserInputService.VREnabled and SELECTION_TEXT_COLOR_NORMAL_VR or SELECTION_TEXT_COLOR_NORMAL
 				end
 			end
 		end)
@@ -749,6 +750,15 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		this.Selections = {}
 		this.SelectionInfo = {}
 
+		local vrEnabled = UserInputService.VREnabled
+		local font = vrEnabled and Enum.Font.SourceSansBold or Enum.Font.SourceSans
+		local fontSize = vrEnabled and Enum.FontSize.Size36 or Enum.FontSize.Size24
+
+		local itemHeight = vrEnabled and 70 or 50
+		local itemSpacing = itemHeight + 1
+
+		local dropDownWidth = vrEnabled and 600 or 400
+
 		for i,v in pairs(dropDownStringTable) do
 			local SelectionOverrideObject =	Util.Create'Frame'
 			{
@@ -763,11 +773,11 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				AutoButtonColor = false,
-				Size = UDim2.new(1, -28, 0, 50),
-				Position = UDim2.new(0,14,0, (i - 1) * 51),
-				TextColor3 = SELECTION_TEXT_COLOR_NORMAL,
-				Font = Enum.Font.SourceSans,
-				FontSize = Enum.FontSize.Size24,
+				Size = UDim2.new(1, -28, 0, itemHeight),
+				Position = UDim2.new(0,14,0, (i - 1) * itemSpacing),
+				TextColor3 = UserInputService.VREnabled and SELECTION_TEXT_COLOR_NORMAL_VR or SELECTION_TEXT_COLOR_NORMAL,
+				Font = font,
+				FontSize = fontSize,
 				Text = v,
 				ZIndex = 10,
 				SelectionImageObject = SelectionOverrideObject,
@@ -804,17 +814,17 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		GuiService:RemoveSelectionGroup(guid)
 		GuiService:AddSelectionTuple(guid, unpack(this.Selections))
 
-		DropDownScrollingFrame.CanvasSize = UDim2.new(1,-20,0,#dropDownStringTable * 51)
+		DropDownScrollingFrame.CanvasSize = UDim2.new(1,-20,0,#dropDownStringTable * itemSpacing)
 
 		local function updateDropDownSize()
 			if DropDownScrollingFrame.CanvasSize.Y.Offset < (DropDownFullscreenFrame.AbsoluteSize.Y - 10) then
-				DropDownSelectionFrame.Size = UDim2.new(DropDownSelectionFrame.Size.X.Scale, DropDownSelectionFrame.Size.X.Offset,
+				DropDownSelectionFrame.Size = UDim2.new(0, dropDownWidth,
 														0,DropDownScrollingFrame.CanvasSize.Y.Offset + SCROLLING_FRAME_PIXEL_OFFSET)
-				DropDownSelectionFrame.Position = UDim2.new(DropDownSelectionFrame.Position.X.Scale, DropDownSelectionFrame.Position.X.Offset,
+				DropDownSelectionFrame.Position = UDim2.new(0.5, -dropDownWidth / 2,
 															0.5, -DropDownSelectionFrame.Size.Y.Offset/2)
 			else
-				DropDownSelectionFrame.Size = UDim2.new(0, 400, 0.9, 0)
-				DropDownSelectionFrame.Position = UDim2.new(0.5, -200, 0.05, 0)
+				DropDownSelectionFrame.Size = UDim2.new(0, dropDownWidth, 0.9, 0)
+				DropDownSelectionFrame.Position = UDim2.new(0.5, -dropDownWidth / 2, 0.05, 0)
 			end
 		end
 

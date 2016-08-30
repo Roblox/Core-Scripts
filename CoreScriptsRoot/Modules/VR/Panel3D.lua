@@ -846,7 +846,7 @@ function Subpanel:Update()
 end
 
 function Subpanel:GetPixelScale()
-	return self.panel:GetPixelScale()
+	return self.parentPanel:GetPixelScale()
 end
 function Panel:GetPixelScale()
 	return self.pixelScale
