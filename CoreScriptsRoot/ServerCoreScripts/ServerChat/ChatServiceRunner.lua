@@ -250,7 +250,11 @@ if modules then
 end
 
 Players.PlayerAdded:connect(function(playerObj)
-	wait() -- ToDo: Remove this wait when that stupid bug that causes joining players to have the name 'Player1' in studio finally goes away.
+	if (game:GetService("RunService"):IsStudio()) then
+		-- ToDo: Remove this wait when that stupid bug that causes joining players to have the name 'Player1' in studio finally goes away.
+		-- Players enter as 'Player1' and then have their name set as whatever their account name is a frame later.
+		wait() 
+	end
 	HandlePlayerJoining(playerObj)
 end)
 
