@@ -17,6 +17,7 @@ local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 local methods = {}
 
 local testLabel = Instance.new("TextLabel")
+testLabel.Selectable = false
 testLabel.TextWrapped  = true
 testLabel.Position = UDim2.new(1, 0, 1, 0)
 local TextSizeCache = {}
@@ -100,12 +101,14 @@ function methods:CreateMessageLabel(fromSpeaker, message)
 	local useFontSize = ChatSettings.ChatWindowTextSize
 
 	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
 	BaseFrame.BackgroundTransparency = 1
 
 	local messageBorder = 8
 
 	local BaseMessage = Instance.new("TextLabel", BaseFrame)
+	BaseMessage.Selectable = false
 	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
 	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
 	BaseMessage.BackgroundTransparency = 1
@@ -117,6 +120,7 @@ function methods:CreateMessageLabel(fromSpeaker, message)
 	BaseMessage.TextWrapped = true
 
 	local NameButton = Instance.new("TextButton", BaseMessage)
+	NameButton.Selectable = false
 	NameButton.Size = UDim2.new(1, 0, 1, 0)
 	NameButton.Position = UDim2.new(0, 0, 0, 0)
 	NameButton.BackgroundTransparency = 1
@@ -188,12 +192,14 @@ function methods:CreateSystemMessageLabel(message)
 	local useFontSize = ChatSettings.ChatWindowTextSize
 
 	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
 	BaseFrame.BackgroundTransparency = 1
 
 	local messageBorder = 8
 
 	local BaseMessage = Instance.new("TextLabel", BaseFrame)
+	BaseMessage.Selectable = false
 	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
 	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
 	BaseMessage.BackgroundTransparency = 1
@@ -231,12 +237,14 @@ function methods:CreateSetCoreMessageLabel(valueTable)
 	local message = valueTable.Text
 
 	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
 	BaseFrame.BackgroundTransparency = 1
 
 	local messageBorder = 8
 
 	local BaseMessage = Instance.new("TextLabel", BaseFrame)
+	BaseMessage.Selectable = false
 	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
 	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
 	BaseMessage.BackgroundTransparency = 1
@@ -269,12 +277,14 @@ function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel
 	local useFontSize = ChatSettings.ChatWindowTextSize
 
 	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
 	BaseFrame.BackgroundTransparency = 1
 
 	local messageBorder = 8
 
 	local BaseMessage = Instance.new("TextLabel", BaseFrame)
+	BaseMessage.Selectable = false
 	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
 	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
 	BaseMessage.BackgroundTransparency = 1
@@ -286,6 +296,7 @@ function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel
 	BaseMessage.TextWrapped = true
 
 	local NameButton = Instance.new("TextButton", BaseMessage)
+	NameButton.Selectable = false
 	NameButton.Size = UDim2.new(1, 0, 1, 0)
 	NameButton.Position = UDim2.new(0, 0, 0, 0)
 	NameButton.BackgroundTransparency = 1
@@ -296,6 +307,7 @@ function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel
 	NameButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 
 	local ChannelButton = NameButton:Clone()
+	ChannelButton.Selectable = false
 	ChannelButton.Parent = BaseMessage
 
 	NameButton.MouseButton1Click:connect(function()
@@ -369,12 +381,14 @@ function methods:CreateChannelEchoSystemMessageLabel(message, echoChannel)
 	local useFontSize = ChatSettings.ChatWindowTextSize
 
 	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
 	BaseFrame.BackgroundTransparency = 1
 
 	local messageBorder = 8
 
 	local BaseMessage = Instance.new("TextLabel", BaseFrame)
+	BaseMessage.Selectable = false
 	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
 	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
 	BaseMessage.BackgroundTransparency = 1
@@ -387,6 +401,7 @@ function methods:CreateChannelEchoSystemMessageLabel(message, echoChannel)
 	BaseMessage.TextWrapped = true
 
 	local ChannelButton = Instance.new("TextButton", BaseMessage)
+	ChannelButton.Selectable = false
 	ChannelButton.Size = UDim2.new(1, 0, 1, 0)
 	ChannelButton.Position = UDim2.new(0, 0, 0, 0)
 	ChannelButton.BackgroundTransparency = 1

@@ -3,7 +3,6 @@ local source = [[
 --	// Written by: Xsitsu
 --	// Description: Hooks main chat module up to Topbar in corescripts.
 
-
 --// To ALWAYS run this system, you will need the server side force installed 
 --// as well. You can't wait for the server to create it at runtime, because 
 --// that will only happen if the correct fastflags are set and at that point

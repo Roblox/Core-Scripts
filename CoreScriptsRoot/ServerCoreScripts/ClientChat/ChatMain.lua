@@ -92,10 +92,11 @@ local ChatWindow = moduleChatWindow.new()
 local ChatBar = moduleChatBar.new()
 local ChannelsBar = moduleChannelsBar.new()
 
+ChatWindow:CreateGuiObjects(GuiParent)
+
 ChatWindow:RegisterChatBar(ChatBar)
 ChatWindow:RegisterChannelsBar(ChannelsBar)
-ChatWindow.GuiObject.Parent = GuiParent
-ChatWindow.GuiObject.FirstParented:Fire()
+
 
 local SpeakerDatabase = moduleSpeakerDatabase.new()
 local MessageLabelCreator = moduleMessageLabelCreator.new()
