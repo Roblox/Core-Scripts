@@ -4,7 +4,7 @@ local source = [[
 --	// Description: Module that limits the number of messages a speaker can send in a given period of time.
 
 local doFloodCheckByChannel = true
-local informSpeakesOfWaitTimes = true
+local informSpeakersOfWaitTimes = true
 local chatBotsBypassFloodCheck = true
 local numberMessagesAllowed = 7
 local decayTimePeriod = 15
@@ -52,7 +52,7 @@ local function Run(ChatService)
 			
 			local timeDiff = math.ceil(t[1] - now)
 			local msg = ""
-			if (informSpeakesOfWaitTimes) then
+			if (informSpeakersOfWaitTimes) then
 				msg = string.format("You must wait %d second%s before sending another message!", timeDiff, (timeDiff > 1) and "s" or "")
 			else
 				msg = "You must wait before sending another message!"
