@@ -8,6 +8,8 @@ local module = {}
 module.WindowDraggable = false
 module.WindowResizable = false
 
+module.GamepadNavigationEnabled = false
+
 module.ChatWindowTextSize = Enum.FontSize.Size18
 module.ChatChannelsTabTextSize = Enum.FontSize.Size18
 module.ChatBarTextSize = Enum.FontSize.Size18

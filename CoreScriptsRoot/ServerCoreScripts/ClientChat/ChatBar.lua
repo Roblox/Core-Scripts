@@ -36,7 +36,7 @@ function methods:CreateGuiObjects(targetParent)
 	BoxFrame.Position = UDim2.new(0, backgroundImagePixelOffset, 0, backgroundImagePixelOffset)
 
 	local TextBox = Instance.new("TextBox", BoxFrame)
-	TextBox.Selectable = false
+	TextBox.Selectable = ChatSettings.GamepadNavigationEnabled
 	TextBox.Name = "ChatBar"
 	TextBox.BackgroundTransparency = 1
 	TextBox.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)

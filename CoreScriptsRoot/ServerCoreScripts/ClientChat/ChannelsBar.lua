@@ -118,7 +118,7 @@ function methods:CreateGuiObjects(targetParent)
 	local scaleOther = (1 - scale) / 2
 
 	local PageLeftButton = Instance.new("ImageButton", BaseFrame)
-	PageLeftButton.Selectable = false
+	PageLeftButton.Selectable = ChatSettings.GamepadNavigationEnabled
 	PageLeftButton.Name = "PageLeftButton"
 	PageLeftButton.SizeConstraint = Enum.SizeConstraint.RelativeYY
 	PageLeftButton.Size = UDim2.new(scale, 0, scale, 0)

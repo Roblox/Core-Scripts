@@ -83,7 +83,7 @@ local function CreateGuiObjects()
 	BlueBarRight.Name = "BlueBarRight"
 
 	local NameTag = Instance.new("TextButton", BackgroundFrame)
-	NameTag.Selectable = false
+	NameTag.Selectable = ChatSettings.GamepadNavigationEnabled
 	NameTag.Size = UDim2.new(1, 0, 1, 0)
 	NameTag.Position = UDim2.new(0, 0, 0, 0)
 	NameTag.BackgroundTransparency = 1

@@ -11,6 +11,8 @@ local moduleTransparencyTweener = require(modulesFolder:WaitForChild("Transparen
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
+local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
@@ -22,7 +24,7 @@ local function CreateGuiObjects()
 	BaseFrame.BackgroundTransparency = 1
 
 	local Scroller = Instance.new("ScrollingFrame", BaseFrame)
-	Scroller.Selectable = false
+	Scroller.Selectable = ChatSettings.GamepadNavigationEnabled
 	Scroller.Name = "Scroller"
 	Scroller.BackgroundTransparency = 1
 	Scroller.BorderSizePixel = 0
