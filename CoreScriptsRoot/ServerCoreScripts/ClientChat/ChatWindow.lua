@@ -214,9 +214,9 @@ function methods:CreateGuiObjects(targetParent)
 
 	local function CalculateChannelsBarPixelSize(size)
 		if (deviceType == DEVICE_PHONE) then
-			size = size or ChatSettings.ChatChannelsTabTextSize
-		else
 			size = size or ChatSettings.ChatChannelsTabTextSizePhone
+		else
+			size = size or ChatSettings.ChatChannelsTabTextSize
 		end
 
 		local channelsBarTextYSize = string.match(size.Name, "%d+")
@@ -227,9 +227,9 @@ function methods:CreateGuiObjects(targetParent)
 
 	local function CalculateChatBarPixelSize(size)
 		if (deviceType == DEVICE_PHONE) then
-			size = size or ChatSettings.ChatBarTextSize
-		else
 			size = size or ChatSettings.ChatBarTextSizePhone
+		else
+			size = size or ChatSettings.ChatBarTextSize
 		end
 
 		local chatBarTextSizeY = string.match(size.Name, "%d+")
@@ -266,8 +266,8 @@ function methods:CreateGuiObjects(targetParent)
 	local function UpdateChatChannelParentFrameSize()
 		local channelsBarSize = CalculateChannelsBarPixelSize()
 		local chatBarSize = CalculateChatBarPixelSize()
-
-		ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -channelsBarSize - chatBarSize - 2 - 2)
+		
+		ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(channelsBarSize + chatBarSize + 2 + 2))
 		ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, channelsBarSize + 2)
 
 	end
