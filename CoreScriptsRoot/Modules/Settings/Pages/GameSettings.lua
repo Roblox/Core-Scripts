@@ -1,3 +1,4 @@
+
 --[[
 		Filename: GameSettings.lua
 		Written by: jeditkacheff
@@ -103,10 +104,36 @@ local function Initialize()
 
 		settingsDisabledInVR[this.FullscreenEnabler] = true
 
-		local fullScreenSelectionFrame = this.FullscreenEnabler.SliderFrame and this.FullscreenEnabler.SliderFrame or this.FullscreenEnabler.SelectorFrame
-
 		this.FullscreenEnabler.IndexChanged:connect(function(newIndex)
-			GuiService:ToggleFullscreen()
+			if Debounce then return end
+			Debounce = true
+			if newIndex == 1 then
+				if not GameSettings:InFullScreen() then
+					GuiService:ToggleFullscreen()
+					this.FullscreenEnabler:SetSelectionIndex(1)
+				end
+			elseif newIndex == 2 then
+				if GameSettings:InFullScreen() then
+					GuiService:ToggleFullscreen()
+					this.FullscreenEnabler:SetSelectionIndex(2)
+				end
+			end
+			Debounce = false
+		end)
+
+		GameSettings.FullscreenChanged:connect(function(isFullScreen)
+			if Debounce then return end
+			Debounce = true
+			if isFullScreen then
+				if this.FullscreenEnabler:GetSelectedIndex() ~= 1 then
+					this.FullscreenEnabler:SetSelectionIndex(1)
+				end
+			else
+				if this.FullscreenEnabler:GetSelectedIndex() ~= 2 then
+					this.FullscreenEnabler:SetSelectionIndex(2)
+				end	
+			end
+			Debounce = false
 		end)
 		
 		------------------ Gfx Enabler Selection GUI Setup ------------------
