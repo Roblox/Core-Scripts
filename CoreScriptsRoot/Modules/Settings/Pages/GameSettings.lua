@@ -1,4 +1,3 @@
-
 --[[
 		Filename: GameSettings.lua
 		Written by: jeditkacheff
