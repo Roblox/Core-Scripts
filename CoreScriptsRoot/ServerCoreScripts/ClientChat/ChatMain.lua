@@ -144,6 +144,7 @@ local function DoBackgroundFadeIn(setFadingTime)
 	lastFadeTime = tick()
 	backgroundIsFaded = false
 	fadedChanged:Fire()
+	ChatWindow:EnableResizable()
 	ChatWindow:FadeInBackground((setFadingTime or defaultFadingTime))
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
@@ -158,6 +159,7 @@ local function DoBackgroundFadeOut(setFadingTime)
 	lastFadeTime = tick()
 	backgroundIsFaded = true
 	fadedChanged:Fire()
+	ChatWindow:DisableResizable()
 	ChatWindow:FadeOutBackground((setFadingTime or defaultFadingTime))
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()

@@ -53,6 +53,7 @@ function methods:CreateGuiObjects(targetParent)
 
 	local TextLabel = Instance.new("TextLabel", BoxFrame)
 	TextLabel.Selectable = false
+	TextLabel.TextWrapped = true
 	TextLabel.BackgroundTransparency = 1
 	TextLabel.Size = TextBox.Size
 	TextLabel.Position = TextBox.Position

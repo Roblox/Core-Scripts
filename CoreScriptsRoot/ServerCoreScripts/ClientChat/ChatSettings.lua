@@ -6,7 +6,7 @@ local source = [[
 local module = {}
 
 module.WindowDraggable = false
-module.WindowResizable = false
+module.WindowResizable = true
 
 module.GamepadNavigationEnabled = false
 

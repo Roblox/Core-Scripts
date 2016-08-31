@@ -33,75 +33,6 @@ function methods:CreateGuiObjects(targetParent)
 	BaseFrame.BackgroundTransparency = 1
 	BaseFrame.Active = true
 
-
-	local function GetScreenGuiParent()
-		--// Travel up parent list until you find the ScreenGui that the chat window is parented to
-		local screenGuiParent = BaseFrame
-		while (screenGuiParent and not screenGuiParent:IsA("ScreenGui")) do
-			screenGuiParent = screenGuiParent.Parent
-		end
-
-		return screenGuiParent
-	end
-
-
-	local deviceType = DEVICE_DESKTOP
-
-	local screenGuiParent = GetScreenGuiParent()
-	if (screenGuiParent.AbsoluteSize.X <= PHONE_SCREEN_WIDTH) then
-		deviceType = DEVICE_PHONE
-
-	elseif (screenGuiParent.AbsoluteSize.X <= TABLET_SCREEN_WIDTH) then
-		deviceType = DEVICE_TABLET
-
-	end
-
-	local function doCheckSizeBounds()
-		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
-
-		local screenGuiParent = GetScreenGuiParent()
-
-		local minWinSize = ChatSettings.MinimumWindowSize
-		local maxWinSize = ChatSettings.MaximumWindowSize
-
-		local minSizePixelX = (minWinSize.X.Scale * screenGuiParent.AbsoluteSize.X) + minWinSize.X.Offset
-		local minSizePixelY = (minWinSize.Y.Scale * screenGuiParent.AbsoluteSize.Y) + minWinSize.Y.Offset
-
-		local maxSizePixelX = (maxWinSize.X.Scale * screenGuiParent.AbsoluteSize.X) + maxWinSize.X.Offset
-		local maxSizePixelY = (maxWinSize.Y.Scale * screenGuiParent.AbsoluteSize.Y) + maxWinSize.Y.Offset
-
-		local absSizeX = BaseFrame.AbsoluteSize.X
-		local absSizeY = BaseFrame.AbsoluteSize.Y
-
-		if (absSizeX < minSizePixelX) then
-			local offset = UDim2.new(0, minSizePixelX - absSizeX, 0, 0)
-			BaseFrame.Size = BaseFrame.Size + offset
-
-		elseif (absSizeX > maxSizePixelX) then
-			local offset = UDim2.new(0, maxSizePixelX - absSizeX, 0, 0)
-			BaseFrame.Size = BaseFrame.Size + offset
-
-		end
-
-		if (absSizeY < minSizePixelY) then
-			local offset = UDim2.new(0, 0, 0, minSizePixelY - absSizeY)
-			BaseFrame.Size = BaseFrame.Size + offset
-
-		elseif (absSizeY > maxSizePixelY) then
-			local offset = UDim2.new(0, 0, 0, maxSizePixelY - absSizeY)
-			BaseFrame.Size = BaseFrame.Size + offset
-			
-		end
-	end
-
-	BaseFrame.Changed:connect(function(prop)
-		if (prop == "AbsoluteSize") then
-			doCheckSizeBounds()
-		end
-	end)
-
-
-
 	local ChatBarParentFrame = Instance.new("Frame", BaseFrame)
 	ChatBarParentFrame.Selectable = false
 	ChatBarParentFrame.Name = "ChatBarParentFrame"
@@ -137,6 +68,75 @@ function methods:CreateGuiObjects(targetParent)
 	ResizeIcon.Position = UDim2.new(0.2, 0, 0.2, 0)
 	ResizeIcon.BackgroundTransparency = 1
 	ResizeIcon.Image = "rbxassetid://261880743"
+
+	local function GetScreenGuiParent()
+		--// Travel up parent list until you find the ScreenGui that the chat window is parented to
+		local screenGuiParent = BaseFrame
+		while (screenGuiParent and not screenGuiParent:IsA("ScreenGui")) do
+			screenGuiParent = screenGuiParent.Parent
+		end
+
+		return screenGuiParent
+	end
+
+
+	local deviceType = DEVICE_DESKTOP
+
+	local screenGuiParent = GetScreenGuiParent()
+	if (screenGuiParent.AbsoluteSize.X <= PHONE_SCREEN_WIDTH) then
+		deviceType = DEVICE_PHONE
+
+	elseif (screenGuiParent.AbsoluteSize.X <= TABLET_SCREEN_WIDTH) then
+		deviceType = DEVICE_TABLET
+
+	end
+
+	local function doCheckSizeBounds()
+		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
+
+		local screenGuiParent = GetScreenGuiParent()
+
+		local minWinSize = ChatSettings.MinimumWindowSize
+		local maxWinSize = ChatSettings.MaximumWindowSize
+
+		local y = ChannelsBarParentFrame.AbsoluteSize.Y + ChatBarParentFrame.AbsoluteSize.Y + 20
+
+		local minSizePixelX = (minWinSize.X.Scale * screenGuiParent.AbsoluteSize.X) + minWinSize.X.Offset
+		local minSizePixelY = math.max((minWinSize.Y.Scale * screenGuiParent.AbsoluteSize.Y) + minWinSize.Y.Offset, y)
+
+		local maxSizePixelX = (maxWinSize.X.Scale * screenGuiParent.AbsoluteSize.X) + maxWinSize.X.Offset
+		local maxSizePixelY = (maxWinSize.Y.Scale * screenGuiParent.AbsoluteSize.Y) + maxWinSize.Y.Offset
+
+		local absSizeX = BaseFrame.AbsoluteSize.X
+		local absSizeY = BaseFrame.AbsoluteSize.Y
+
+		if (absSizeX < minSizePixelX) then
+			local offset = UDim2.new(0, minSizePixelX - absSizeX, 0, 0)
+			BaseFrame.Size = BaseFrame.Size + offset
+
+		elseif (absSizeX > maxSizePixelX) then
+			local offset = UDim2.new(0, maxSizePixelX - absSizeX, 0, 0)
+			BaseFrame.Size = BaseFrame.Size + offset
+
+		end
+
+		if (absSizeY < minSizePixelY) then
+			local offset = UDim2.new(0, 0, 0, minSizePixelY - absSizeY)
+			BaseFrame.Size = BaseFrame.Size + offset
+
+		elseif (absSizeY > maxSizePixelY) then
+			local offset = UDim2.new(0, 0, 0, maxSizePixelY - absSizeY)
+			BaseFrame.Size = BaseFrame.Size + offset
+			
+		end
+	end
+
+	BaseFrame.Changed:connect(function(prop)
+		if (prop == "AbsoluteSize") then
+			doCheckSizeBounds()
+		end
+	end)
+
 
 
 	ChatResizerFrame.DragBegin:connect(function(startUdim)
@@ -266,7 +266,7 @@ function methods:CreateGuiObjects(targetParent)
 	local function UpdateChatChannelParentFrameSize()
 		local channelsBarSize = CalculateChannelsBarPixelSize()
 		local chatBarSize = CalculateChatBarPixelSize()
-		
+
 		ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(channelsBarSize + chatBarSize + 2 + 2))
 		ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, channelsBarSize + 2)
 
@@ -455,6 +455,14 @@ end
 function methods:SetCoreGuiEnabled(enabled)
 	self.CoreGuiEnabled = enabled
 	self:UpdateFrameVisibility()
+end
+
+function methods:EnableResizable()
+	self.GuiObjects.ChatResizerFrame.Active = true
+end
+
+function methods:DisableResizable()
+	self.GuiObjects.ChatResizerFrame.Active = false
 end
 
 function methods:FadeOutBackground(duration)
