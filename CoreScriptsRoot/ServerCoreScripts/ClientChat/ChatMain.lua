@@ -420,8 +420,10 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(fromSpeaker, channel, me
 		local messageObject = MessageLabelCreator:CreateMessageLabel(fromSpeaker, message)
 		channelObj:AddMessageLabelToLog(messageObject)
 		
-		ChannelsBar:UpdateMessagePostedInChannel(channel)
-		
+		if (fromSpeaker ~= LocalPlayer.Name) then
+			ChannelsBar:UpdateMessagePostedInChannel(channel)
+		end
+
 		moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1
 		moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
 
