@@ -103,6 +103,8 @@ local function Initialize()
 
 		settingsDisabledInVR[this.FullscreenEnabler] = true
 
+		local Debounce = false
+		
 		this.FullscreenEnabler.IndexChanged:connect(function(newIndex)
 			if Debounce then return end
 			Debounce = true
