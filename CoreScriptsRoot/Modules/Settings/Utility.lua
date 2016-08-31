@@ -1040,8 +1040,29 @@ local function CreateSelector(selectionStringTable, startPosition)
 			local isSelected = (i == index)
 
 			if not selectionLabel:IsDescendantOf(game) then
-				this.CurrentIndex = i
-				indexChangedEvent:Fire(index)
+				for i,selectionLabel in pairs(this.Selections) do	
+					local isSelected = (i == index)
+					local tweenPos = UDim2.new(0,leftButton.Size.X.Offset * direction * 3,0,0)
+					if isSelectionLabelVisible[selectionLabel] then
+						tweenPos = UDim2.new(0,leftButton.Size.X.Offset * -direction * 3,0,0)
+					end
+					if tweenPos.X.Offset < 0 then
+						tweenPos = UDim2.new(0,tweenPos.X.Offset + (selectionLabel.AbsoluteSize.X/4),0,0)
+					end
+					if isSelected then
+						isSelectionLabelVisible[selectionLabel] = true
+						selectionLabel.Position = tweenPos
+						selectionLabel.Visible = true
+						PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
+						selectionLabel.Position = UDim2.new(0,leftButton.Size.X.Offset,0,0)
+						this.CurrentIndex = index
+						indexChangedEvent:Fire(index)
+					elseif isSelectionLabelVisible[selectionLabel] then
+						isSelectionLabelVisible[selectionLabel] = false
+						PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
+						selectionLabel.Position = UDim2.new(tweenPos)
+					end
+				end
 				return
 			end
 
@@ -2447,4 +2468,3 @@ function moduleApiTable:TweenProperty(instance, prop, start, final, duration, ea
 end
 
 return moduleApiTable
-
