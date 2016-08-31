@@ -180,7 +180,7 @@ local function Initialize()
 				makeSubmitButtonActive()
 			else
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
-				this.TypeOfAbuseMode:SetInteractable(true)
+				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_PLAYER > 1)
 				if #playerNames > 0 then
 					this.WhichPlayerMode:SetInteractable(true)
 					this.WhichPlayerLabel.ZIndex = 2
