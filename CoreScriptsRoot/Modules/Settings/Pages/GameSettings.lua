@@ -103,11 +103,7 @@ local function Initialize()
 
 		settingsDisabledInVR[this.FullscreenEnabler] = true
 
-		local Debounce = false
-		
 		this.FullscreenEnabler.IndexChanged:connect(function(newIndex)
-			if Debounce then return end
-			Debounce = true
 			if newIndex == 1 then
 				if not GameSettings:InFullScreen() then
 					GuiService:ToggleFullscreen()
@@ -119,12 +115,9 @@ local function Initialize()
 					this.FullscreenEnabler:SetSelectionIndex(2)
 				end
 			end
-			Debounce = false
 		end)
 
 		GameSettings.FullscreenChanged:connect(function(isFullScreen)
-			if Debounce then return end
-			Debounce = true
 			if isFullScreen then
 				if this.FullscreenEnabler:GetSelectedIndex() ~= 1 then
 					this.FullscreenEnabler:SetSelectionIndex(1)
@@ -134,7 +127,6 @@ local function Initialize()
 					this.FullscreenEnabler:SetSelectionIndex(2)
 				end	
 			end
-			Debounce = false
 		end)
 		
 		------------------ Gfx Enabler Selection GUI Setup ------------------
