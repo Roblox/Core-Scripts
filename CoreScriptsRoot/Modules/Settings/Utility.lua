@@ -1037,8 +1037,10 @@ local function CreateSelector(selectionStringTable, startPosition)
 	local function setSelection(index, direction)
 		for i, selectionLabel in pairs(this.Selections) do
 			local isSelected = (i == index)
-
+			
+			local leftButtonUDim = UDim2.new(0,leftButton.Size.X.Offset,0,0)
 			local tweenPos = UDim2.new(0,leftButton.Size.X.Offset * direction * 3,0,0)
+
 			if isSelectionLabelVisible[selectionLabel] then
 				tweenPos = UDim2.new(0,leftButton.Size.X.Offset * -direction * 3,0,0)
 			end
@@ -1053,9 +1055,9 @@ local function CreateSelector(selectionStringTable, startPosition)
 				selectionLabel.Visible = true
 				PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
 				if selectionLabel:IsDescendantOf(game) then
-					selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true)
+					selectionLabel:TweenPosition(leftButtonUDim, Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true)
 				else
-					selectionLabel.Position = UDim2.new(0,leftButton.Size.X.Offset,0,0)
+					selectionLabel.Position = leftButtonUDim
 				end
 				this.CurrentIndex = i
 				indexChangedEvent:Fire(index)
