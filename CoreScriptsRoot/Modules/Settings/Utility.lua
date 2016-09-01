@@ -1033,19 +1033,14 @@ local function CreateSelector(selectionStringTable, startPosition)
 		isAutoSelectButton[autoSelectButton] = true
 	end
 
-
 	---------------------- FUNCTIONS -----------------------------------
 	local function setSelection(index, direction)
 		for i, selectionLabel in pairs(this.Selections) do
 			local isSelected = (i == index)
-
-			if not selectionLabel:IsDescendantOf(game) then
-				this.CurrentIndex = i
-				indexChangedEvent:Fire(index)
-				return
-			end
-
+			
+			local leftButtonUDim = UDim2.new(0,leftButton.Size.X.Offset,0,0)
 			local tweenPos = UDim2.new(0,leftButton.Size.X.Offset * direction * 3,0,0)
+
 			if isSelectionLabelVisible[selectionLabel] then
 				tweenPos = UDim2.new(0,leftButton.Size.X.Offset * -direction * 3,0,0)
 			end
@@ -1059,13 +1054,21 @@ local function CreateSelector(selectionStringTable, startPosition)
 				selectionLabel.Position = tweenPos
 				selectionLabel.Visible = true
 				PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
-				selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true)
+				if selectionLabel:IsDescendantOf(game) then
+					selectionLabel:TweenPosition(leftButtonUDim, Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true)
+				else
+					selectionLabel.Position = leftButtonUDim
+				end
 				this.CurrentIndex = i
 				indexChangedEvent:Fire(index)
 			elseif isSelectionLabelVisible[selectionLabel] then
 				isSelectionLabelVisible[selectionLabel] = false
 				PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
-				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, true)
+				if selectionLabel:IsDescendantOf(game) then
+					selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, true)
+				else
+					selectionLabel.Position = UDim2.new(tweenPos)
+				end
 			end
 		end
 	end
@@ -2447,4 +2450,3 @@ function moduleApiTable:TweenProperty(instance, prop, start, final, duration, ea
 end
 
 return moduleApiTable
-
