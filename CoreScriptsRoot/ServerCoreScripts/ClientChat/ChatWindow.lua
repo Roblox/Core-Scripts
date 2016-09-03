@@ -9,6 +9,13 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+local PHONE_SCREEN_WIDTH = 640
+local TABLET_SCREEN_WIDTH = 1024
+
+local DEVICE_PHONE = 1
+local DEVICE_TABLET = 2
+local DEVICE_DESKTOP = 3
+
 --////////////////////////////// Include
 --//////////////////////////////////////
 local modulesFolder = script.Parent
@@ -21,46 +28,93 @@ local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 --//////////////////////////////////////
 local methods = {}
 
-local function CreateGuiObjects()
-	local BaseFrame = Instance.new("Frame")
+function methods:CreateGuiObjects(targetParent)
+	local BaseFrame = Instance.new("Frame", targetParent)
 	BaseFrame.BackgroundTransparency = 1
 	BaseFrame.Active = true
-	
-	local FirstParentedEvent = Instance.new("BindableEvent", BaseFrame)
-	FirstParentedEvent.Name = "FirstParented"
 
-	local function doCheckMinimumResize()
-		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
 
-		if (BaseFrame.AbsoluteSize.X < ChatSettings.MinimumWindowSizeX) then
-			local offset = UDim2.new(0, ChatSettings.MinimumWindowSizeX - BaseFrame.AbsoluteSize.X, 0, 0)
-			BaseFrame.Size = BaseFrame.Size + offset
+	local function GetScreenGuiParent()
+		--// Travel up parent list until you find the ScreenGui that the chat window is parented to
+		local screenGuiParent = BaseFrame
+		while (screenGuiParent and not screenGuiParent:IsA("ScreenGui")) do
+			screenGuiParent = screenGuiParent.Parent
 		end
 
-		if (BaseFrame.AbsoluteSize.Y < ChatSettings.MinimumWindowSizeY) then
-			local offset = UDim2.new(0, 0, 0, ChatSettings.MinimumWindowSizeY - BaseFrame.AbsoluteSize.Y)
+		return screenGuiParent
+	end
+
+
+	local deviceType = DEVICE_DESKTOP
+
+	local screenGuiParent = GetScreenGuiParent()
+	if (screenGuiParent.AbsoluteSize.X <= PHONE_SCREEN_WIDTH) then
+		deviceType = DEVICE_PHONE
+
+	elseif (screenGuiParent.AbsoluteSize.X <= TABLET_SCREEN_WIDTH) then
+		deviceType = DEVICE_TABLET
+
+	end
+
+	local function doCheckSizeBounds()
+		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
+
+		local screenGuiParent = GetScreenGuiParent()
+
+		local minWinSize = ChatSettings.MinimumWindowSize
+		local maxWinSize = ChatSettings.MaximumWindowSize
+
+		local minSizePixelX = (minWinSize.X.Scale * screenGuiParent.AbsoluteSize.X) + minWinSize.X.Offset
+		local minSizePixelY = (minWinSize.Y.Scale * screenGuiParent.AbsoluteSize.Y) + minWinSize.Y.Offset
+
+		local maxSizePixelX = (maxWinSize.X.Scale * screenGuiParent.AbsoluteSize.X) + maxWinSize.X.Offset
+		local maxSizePixelY = (maxWinSize.Y.Scale * screenGuiParent.AbsoluteSize.Y) + maxWinSize.Y.Offset
+
+		local absSizeX = BaseFrame.AbsoluteSize.X
+		local absSizeY = BaseFrame.AbsoluteSize.Y
+
+		if (absSizeX < minSizePixelX) then
+			local offset = UDim2.new(0, minSizePixelX - absSizeX, 0, 0)
 			BaseFrame.Size = BaseFrame.Size + offset
+
+		elseif (absSizeX > maxSizePixelX) then
+			local offset = UDim2.new(0, maxSizePixelX - absSizeX, 0, 0)
+			BaseFrame.Size = BaseFrame.Size + offset
+
+		end
+
+		if (absSizeY < minSizePixelY) then
+			local offset = UDim2.new(0, 0, 0, minSizePixelY - absSizeY)
+			BaseFrame.Size = BaseFrame.Size + offset
+
+		elseif (absSizeY > maxSizePixelY) then
+			local offset = UDim2.new(0, 0, 0, maxSizePixelY - absSizeY)
+			BaseFrame.Size = BaseFrame.Size + offset
+			
 		end
 	end
 
 	BaseFrame.Changed:connect(function(prop)
 		if (prop == "AbsoluteSize") then
-			doCheckMinimumResize()
+			doCheckSizeBounds()
 		end
 	end)
 
 
 
 	local ChatBarParentFrame = Instance.new("Frame", BaseFrame)
+	ChatBarParentFrame.Selectable = false
 	ChatBarParentFrame.Name = "ChatBarParentFrame"
 	ChatBarParentFrame.BackgroundTransparency = 1
 
 	local ChannelsBarParentFrame = Instance.new("Frame", BaseFrame)
+	ChannelsBarParentFrame.Selectable = false
 	ChannelsBarParentFrame.Name = "ChannelsBarParentFrame"
 	ChannelsBarParentFrame.BackgroundTransparency = 1
 	ChannelsBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
 
 	local ChatChannelParentFrame = Instance.new("Frame", BaseFrame)
+	ChatChannelParentFrame.Selectable = false
 	ChatChannelParentFrame.Name = "ChatChannelParentFrame"
 	ChatChannelParentFrame.BackgroundTransparency = 1
 
@@ -69,6 +123,7 @@ local function CreateGuiObjects()
 	ChatChannelParentFrame.BorderSizePixel = 0
 
 	local ChatResizerFrame = Instance.new("ImageButton", BaseFrame)
+	ChatResizerFrame.Selectable = false
 	ChatResizerFrame.Image = ""
 	ChatResizerFrame.BackgroundTransparency = 0.6
 	ChatResizerFrame.BorderSizePixel = 0
@@ -77,6 +132,7 @@ local function CreateGuiObjects()
 	ChatResizerFrame.Active = true
 
 	local ResizeIcon = Instance.new("ImageLabel", ChatResizerFrame)
+	ResizeIcon.Selectable = false
 	ResizeIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
 	ResizeIcon.Position = UDim2.new(0.2, 0, 0.2, 0)
 	ResizeIcon.BackgroundTransparency = 1
@@ -115,22 +171,54 @@ local function CreateGuiObjects()
 		ChannelsBarParentFrame.Visible = false
 		ChatChannelParentFrame.Visible = false
 
-		FirstParentedEvent.Event:connect(function()
-			BaseFrame.Size = UDim2.new(ChatSettings.DefaultWindowSize.X.Scale, ChatSettings.DefaultWindowSize.X.Offset, 0, chatBarYSize)    
-			BaseFrame.Position = ChatSettings.DefaultWindowPosition
-			FirstParentedEvent:Destroy()
-		end)
+		local useXScale = 0
+		local useXOffset = 0
+
+		local screenGuiParent = GetScreenGuiParent()
+
+		if (deviceType == DEVICE_PHONE) then
+			useXScale = ChatSettings.DefaultWindowSizePhone.X.Scale
+			useXOffset = ChatSettings.DefaultWindowSizePhone.X.Offset
+
+		elseif (deviceType == DEVICE_TABLET) then
+			useXScale = ChatSettings.DefaultWindowSizeTablet.X.Scale
+			useXOffset = ChatSettings.DefaultWindowSizeTablet.X.Offset
+
+		else
+			useXScale = ChatSettings.DefaultWindowSizeTablet.X.Scale
+			useXOffset = ChatSettings.DefaultWindowSizeTablet.X.Offset
+
+		end
+
+		BaseFrame.Size = UDim2.new(useXScale, useXOffset, 0, chatBarYSize)    
+		BaseFrame.Position = ChatSettings.DefaultWindowPosition
+
 	else
-		FirstParentedEvent.Event:connect(function()
-			BaseFrame.Size = ChatSettings.DefaultWindowSize
-			BaseFrame.Position = ChatSettings.DefaultWindowPosition
-			FirstParentedEvent:Destroy()
-		end)
+
+		local screenGuiParent = GetScreenGuiParent()
+
+		if (deviceType == DEVICE_PHONE) then
+			BaseFrame.Size = ChatSettings.DefaultWindowSizePhone
+
+		elseif (deviceType == DEVICE_TABLET) then
+			BaseFrame.Size = ChatSettings.DefaultWindowSizeTablet
+
+		else
+			BaseFrame.Size = ChatSettings.DefaultWindowSizeDesktop
+
+		end
+
+		BaseFrame.Position = ChatSettings.DefaultWindowPosition
 
 	end
 
 	local function CalculateChannelsBarPixelSize(size)
-		size = size or ChatSettings.ChatChannelsTabTextSize
+		if (deviceType == DEVICE_PHONE) then
+			size = size or ChatSettings.ChatChannelsTabTextSizePhone
+		else
+			size = size or ChatSettings.ChatChannelsTabTextSize
+		end
+
 		local channelsBarTextYSize = string.match(size.Name, "%d+")
 		local chatChannelYSize = math.max(32, channelsBarTextYSize + 8) + 2
 
@@ -138,11 +226,22 @@ local function CreateGuiObjects()
 	end
 
 	local function CalculateChatBarPixelSize(size)
-		size = size or ChatSettings.ChatBarTextSize
+		if (deviceType == DEVICE_PHONE) then
+			size = size or ChatSettings.ChatBarTextSizePhone
+		else
+			size = size or ChatSettings.ChatBarTextSize
+		end
+
 		local chatBarTextSizeY = string.match(size.Name, "%d+")
 		local chatBarYSize = chatBarTextSizeY + 16 + 16
 
 		return chatBarYSize
+	end
+
+	if (deviceType == DEVICE_PHONE) then
+		ChatSettings.ChatWindowTextSize = ChatSettings.ChatWindowTextSizePhone
+		ChatSettings.ChatChannelsTabTextSize = ChatSettings.ChatChannelsTabTextSizePhone
+		ChatSettings.ChatBarTextSize = ChatSettings.ChatBarTextSizePhone
 	end
 
 	local function UpdateDraggable(enabled)
@@ -167,8 +266,8 @@ local function CreateGuiObjects()
 	local function UpdateChatChannelParentFrameSize()
 		local channelsBarSize = CalculateChannelsBarPixelSize()
 		local chatBarSize = CalculateChatBarPixelSize()
-
-		ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -channelsBarSize - chatBarSize - 2 - 2)
+		
+		ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(channelsBarSize + chatBarSize + 2 + 2))
 		ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, channelsBarSize + 2)
 
 	end
@@ -214,12 +313,21 @@ local function CreateGuiObjects()
 		end
 	end)
 
-	return BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame, ChatResizerFrame, ResizeIcon
+	rawset(self, "GuiObject", BaseFrame)
+
+	self.GuiObjects.BaseFrame = BaseFrame
+	self.GuiObjects.ChatBarParentFrame = ChatBarParentFrame
+	self.GuiObjects.ChannelsBarParentFrame = ChannelsBarParentFrame
+	self.GuiObjects.ChatChannelParentFrame = ChatChannelParentFrame
+	self.GuiObjects.ChatResizerFrame = ChatResizerFrame
+	self.GuiObjects.ResizeIcon = ResizeIcon
+
+	self:CreateTweeners()
 end
 
 function methods:RegisterChatBar(ChatBar)
 	rawset(self, "ChatBar", ChatBar)
-	self.ChatBar.GuiObject.Parent = self.ChatBarParentFrame
+	self.ChatBar:CreateGuiObjects(self.GuiObjects.ChatBarParentFrame)
 
 	self.BackgroundTweener:RegisterTweenObjectProperty(ChatBar.BackgroundTweener, "Transparency")
 	self.TextTweener:RegisterTweenObjectProperty(ChatBar.TextTweener, "Transparency")
@@ -227,7 +335,7 @@ end
 
 function methods:RegisterChannelsBar(ChannelsBar)
 	rawset(self, "ChannelsBar", ChannelsBar)
-	self.ChannelsBar.GuiObject.Parent = self.ChannelsBarParentFrame
+	self.ChannelsBar:CreateGuiObjects(self.GuiObjects.ChannelsBarParentFrame)
 
 	self.BackgroundTweener:RegisterTweenObjectProperty(ChannelsBar.BackgroundTweener, "Transparency")
 	self.TextTweener:RegisterTweenObjectProperty(ChannelsBar.TextTweener, "Transparency")
@@ -242,7 +350,7 @@ function methods:AddChannel(channelName)
 	local channel = moduleChatChannel.new(channelName)
 	self.Channels[channelName:lower()] = channel
 
-	channel.GuiObject.Parent = self.ChatChannelParentFrame
+	channel.GuiObject.Parent = self.GuiObjects.ChatChannelParentFrame
 	channel:SetActive(false)
 
 	local tab = self.ChannelsBar:AddChannelTab(channelName)
@@ -401,9 +509,9 @@ function methods:CreateTweeners()
 	self.TextTweener = moduleTransparencyTweener.new()
 
 	--// Register BackgroundTweener objects and properties
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.ChatChannelParentFrame, "BackgroundTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.ChatResizerFrame, "BackgroundTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.ResizeIcon, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.ChatChannelParentFrame, "BackgroundTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.ChatResizerFrame, "BackgroundTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.ResizeIcon, "ImageTransparency")
 
 	--// Register TextTweener objects and properties
 		-- there are none...
@@ -416,13 +524,8 @@ ClassMaker.RegisterClassType("ChatWindow", methods)
 function module.new()
 	local obj = {}
 
-	local BaseFrame, ChatBarParentFrame, ChannelsBarParentFrame, ChatChannelParentFrame, ChatResizerFrame, ResizeIcon = CreateGuiObjects()
-	obj.GuiObject = BaseFrame
-	obj.ChatBarParentFrame = ChatBarParentFrame
-	obj.ChannelsBarParentFrame = ChannelsBarParentFrame
-	obj.ChatChannelParentFrame = ChatChannelParentFrame
-	obj.ChatResizerFrame = ChatResizerFrame
-	obj.ResizeIcon = ResizeIcon
+	obj.GuiObject = nil
+	obj.GuiObjects = {}
 
 	obj.ChatBar = nil
 	obj.ChannelsBar = nil
@@ -437,8 +540,6 @@ function module.new()
 	obj.TextTweener = moduleTransparencyTweener.new()
 
 	ClassMaker.MakeClass("ChatWindow", obj)
-
-	obj:CreateTweeners()
 
 	return obj
 end

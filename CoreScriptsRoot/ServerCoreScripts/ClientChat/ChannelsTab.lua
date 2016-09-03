@@ -17,6 +17,7 @@ local methods = {}
 
 local function CreateGuiObjects()
 	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
 
@@ -24,12 +25,14 @@ local function CreateGuiObjects()
 	local gapOffsetY = 1
 
 	local BackgroundFrame = Instance.new("Frame", BaseFrame)
+	BackgroundFrame.Selectable = false
 	BackgroundFrame.Name = "BackgroundFrame"
 	BackgroundFrame.Size = UDim2.new(1, -gapOffsetX * 2, 1, -gapOffsetY * 2)
 	BackgroundFrame.Position = UDim2.new(0, gapOffsetX, 0, gapOffsetY)
 	BackgroundFrame.BackgroundTransparency = 1
 
 	local UnselectedFrame = Instance.new("Frame", BackgroundFrame)
+	UnselectedFrame.Selectable = false
 	UnselectedFrame.Name = "UnselectedFrame"
 	UnselectedFrame.Size = UDim2.new(1, 0, 1, 0)
 	UnselectedFrame.Position = UDim2.new(0, 0, 0, 0)
@@ -38,6 +41,7 @@ local function CreateGuiObjects()
 	UnselectedFrame.BackgroundTransparency = 0.6	
 
 	local SelectedFrame = Instance.new("Frame", BackgroundFrame)
+	SelectedFrame.Selectable = false
 	SelectedFrame.Name = "SelectedFrame"
 	SelectedFrame.Size = UDim2.new(1, 0, 1, 0)
 	SelectedFrame.Position = UDim2.new(0, 0, 0, 0)
@@ -46,6 +50,7 @@ local function CreateGuiObjects()
 	SelectedFrame.BackgroundTransparency = 1
 
 	local SelectedFrameBackgroundImage = Instance.new("ImageLabel", SelectedFrame)
+	SelectedFrameBackgroundImage.Selectable = false
 	SelectedFrameBackgroundImage.Name = "BackgroundImage"
 	SelectedFrameBackgroundImage.BackgroundTransparency = 1
 	SelectedFrameBackgroundImage.BorderSizePixel = 0
@@ -60,6 +65,7 @@ local function CreateGuiObjects()
 	local borderXOffset = 2
 	local blueBarYSize = 4 
 	local BlueBarLeft = Instance.new("ImageLabel", SelectedFrame)
+	BlueBarLeft.Selectable = false
 	BlueBarLeft.Size = UDim2.new(0.5, -borderXOffset, 0, blueBarYSize)
 	BlueBarLeft.BackgroundTransparency = 1
 	BlueBarLeft.ScaleType = Enum.ScaleType.Slice
@@ -77,6 +83,7 @@ local function CreateGuiObjects()
 	BlueBarRight.Name = "BlueBarRight"
 
 	local NameTag = Instance.new("TextButton", BackgroundFrame)
+	NameTag.Selectable = ChatSettings.GamepadNavigationEnabled
 	NameTag.Size = UDim2.new(1, 0, 1, 0)
 	NameTag.Position = UDim2.new(0, 0, 0, 0)
 	NameTag.BackgroundTransparency = 1
@@ -91,17 +98,20 @@ local function CreateGuiObjects()
 	NameTag.TextStrokeTransparency = 0.75
 
 	local NewMessageIconFrame = Instance.new("Frame", BackgroundFrame)
+	NewMessageIconFrame.Selectable = false
 	NewMessageIconFrame.Size = UDim2.new(0, 18, 0, 18)
 	NewMessageIconFrame.Position = UDim2.new(0.8, -9, 0.5, -9)
 	NewMessageIconFrame.BackgroundTransparency = 1
 
 	local NewMessageIcon = Instance.new("ImageLabel", NewMessageIconFrame)
+	NewMessageIcon.Selectable = false
 	NewMessageIcon.Size = UDim2.new(1, 0, 1, 0)
 	NewMessageIcon.BackgroundTransparency = 1
 	NewMessageIcon.Image = "rbxasset://textures/ui/Chat/MessageCounter.png"
 	NewMessageIcon.Visible = false
 
 	local NewMessageIconText = Instance.new("TextLabel", NewMessageIcon)
+	NewMessageIconText.Selectable = false
 	NewMessageIconText.BackgroundTransparency = 1
 	NewMessageIconText.Size = UDim2.new(0, 13, 0, 9)
 	NewMessageIconText.Position = UDim2.new(0.5, -7, 0.5, -7)

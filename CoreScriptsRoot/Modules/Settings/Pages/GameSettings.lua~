@@ -159,7 +159,10 @@ local function Initialize()
 			this.PerformanceStatsOverrideText = nil
 
       local startIndex = 2
-
+<<<<<<< HEAD
+            
+=======
+>>>>>>> cd20487ffb96136ffb0099e385f59527d0b3107d
 			if GameSettings.PerformanceStatsVisible then
 					startIndex = 1
       end
@@ -170,7 +173,11 @@ local function Initialize()
         "Performance Stats", 
         "Selector", 
         {"On", "Off"}, 
+<<<<<<< HEAD
         startIndex)
+=======
+        2)
+>>>>>>> cd20487ffb96136ffb0099e385f59527d0b3107d
 
       this.PerformanceStatsOverrideText = utility:Create'TextLabel'
       {
@@ -297,12 +304,17 @@ local function Initialize()
 				end
 
 				this.ShiftLockFrame, 
+<<<<<<< HEAD
 				this.ShiftLockLabel,
 				this.ShiftLockMode = utility:AddNewRow(this,
           "Shift Lock Switch", 
           "Selector",
           {"On", "Off"},
           startIndex)
+=======
+					this.ShiftLockLabel,
+					this.ShiftLockMode = utility:AddNewRow(this, "Shift Lock Switch", "Selector", {"On", "Off"}, startIndex)
+>>>>>>> cd20487ffb96136ffb0099e385f59527d0b3107d
 
 				settingsDisabledInVR[this.ShiftLockMode] = true
 
