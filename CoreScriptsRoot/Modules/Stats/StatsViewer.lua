@@ -1,7 +1,8 @@
 --[[
 		Filename: StatsButtonViewer.lua
 		Written by: dbanks
-		Description: Widget that displays one or more stats in closeup view. 
+		Description: Widget that displays one or more stats in closeup view:
+      text and graphics.
 --]]
 
 --[[ Services ]]--
@@ -12,16 +13,12 @@ local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
 local StatsAggregatorClass = require(RobloxGui.Modules.Stats.StatsAggregator)
 local StatsButtonClass = require(RobloxGui.Modules.Stats.StatsButton)
 local StatsUtils = require(RobloxGui.Modules.Stats.StatsUtils)
-
--- [[ Variables ]]
-local normalColor = Color3.new()
-local selectedColor = Color3.new(0.3, 0.3, 0.3)
+local StatsTextPanelClass = require(RobloxGui.Modules.Stats.StatsTextPanel)
 
 
 --[[ Classes ]]--
 local StatsViewerClass = {}
 StatsViewerClass.__index = StatsViewerClass
-
 
 
 function StatsViewerClass.new() 
@@ -33,6 +30,9 @@ function StatsViewerClass.new()
 
   StatsUtils.StyleFrame(self._frame)
   
+  self._textPanel = nil
+  self._statsDisplayType = nil
+
   return self
 end
 
@@ -46,9 +46,49 @@ function StatsViewerClass:SetGUIParent(parent)
 end
   
 function StatsViewerClass:SetVisible(visible)
-  print ("Viewer is visble: ", visible)
   self._frame.Visible = visible;
 end
 
+function StatsViewerClass:SetStatsDisplayType(statsDisplayType) 
+  self._statsDisplayType = statsDisplayType
+  self._frame:ClearAllChildren()
+  self._textPanel = nil  
   
+  self._textPanel = StatsTextPanelClass.new(statsDisplayType, true)
+  self._textPanel:PlaceInParent(self._frame,
+    UDim2.new(0.5, 0, 1, 0), 
+    UDim2.new(0, 0, 0, 0))
+end
+
+function StatsViewerClass:SetStatsAggregator(aggregator) 
+  if (self._aggregator) then
+    self._aggregator:RemoveListener(self._listenerId)
+    self._listenerId = nil
+    self._aggregator = nil
+  end
+  
+  self._aggregator = aggregator
+  
+  if (self._aggregator ~= nil) then
+    self._listenerId = aggregator:AddListener(function()
+        self:_updateValue()
+    end)
+  end
+  
+  self:_updateValue()
+end
+  
+function StatsViewerClass:_updateValue()
+  local value
+  if self._aggregator ~= nil then 
+    value = self._aggregator:GetLatestValue()
+  else
+    value = 0
+  end
+  
+  if self._textPanel then
+    self._textPanel:SetValue(value)
+  end
+end
+
 return StatsViewerClass

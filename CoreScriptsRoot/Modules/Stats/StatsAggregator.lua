@@ -4,35 +4,16 @@
 		Description: Gather and store stats on regular heartbeat.
 --]]
 
+--[[ Services ]]--
+local CoreGuiService = game:GetService('CoreGui')
+
+--[[ Modules ]]--
+local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
+local StatsUtils = require(RobloxGui.Modules.Stats.StatsUtils)
+
 --[[ Classes ]]--
 local StatsAggregatorClass = {}
 StatsAggregatorClass.__index = StatsAggregatorClass
-
-StatsAggregatorClass.StatType_Memory =            "st_Memory"
-StatsAggregatorClass.StatType_CPU =               "st_CPU"
-StatsAggregatorClass.StatType_GPU =               "st_GPU"
-StatsAggregatorClass.StatType_NetworkSent =       "st_NetworkSent"
-StatsAggregatorClass.StatType_NetworkReceived =   "st_NetworkReceived"
-StatsAggregatorClass.StatType_Physics =           "st_Physics"
-
-StatsAggregatorClass.AllStatTypes = {
-  StatsAggregatorClass.StatType_Memory,
-  StatsAggregatorClass.StatType_CPU,
-  StatsAggregatorClass.StatType_GPU,
-  StatsAggregatorClass.StatType_NetworkSent,
-  StatsAggregatorClass.StatType_NetworkReceived,
-  StatsAggregatorClass.StatType_Physics,
-}
-
-StatsAggregatorClass.StatNames = {
-  [StatsAggregatorClass.StatType_Memory] = "Memory",
-  [StatsAggregatorClass.StatType_CPU] = "CPU",
-  [StatsAggregatorClass.StatType_GPU] = "GPU",
-  [StatsAggregatorClass.StatType_NetworkSent] = "Network_Sent",
-  [StatsAggregatorClass.StatType_NetworkReceived] = "Network_Received",
-  [StatsAggregatorClass.StatType_Physics] = "Physics",
-}
-
 
 function StatsAggregatorClass.new(statType, numSamples, pauseBetweenSamples) 
   local self = {}
@@ -42,7 +23,7 @@ function StatsAggregatorClass.new(statType, numSamples, pauseBetweenSamples)
   self._numSamples = numSamples
   self._pauseBetweenSamples = pauseBetweenSamples
   
-  self._statName = self.StatNames[self._statType]
+  self._statName = StatsUtils.StatNames[self._statType]
   -- init our circular buffer.
   self._samples = {}
   for i = 0, numSamples-1, 1 do 
@@ -50,7 +31,31 @@ function StatsAggregatorClass.new(statType, numSamples, pauseBetweenSamples)
   end
   self._oldestIndex = 0
   
+  self._listeners = {}
+  
+  -- FIXME(dbanks)
+  -- Just want to be real clear this is a key, not an array index.
+  self._nextListenerId = 1001
+  
   return self
+end
+
+function StatsAggregatorClass:AddListener(callbackFunction)
+  local id = self._nextListenerId
+  self._nextListenerId = self._nextListenerId+1
+  self._listeners[id] = callbackFunction
+  print ("New id is ", id)
+  return id
+end
+
+function StatsAggregatorClass:RemoveListener(listenerId)
+  self._listeners[listenerId] = nil
+end
+
+function StatsAggregatorClass:_notifyAllListeners()
+  for key, value in pairs(self._listeners) do
+    value()
+  end
 end
 
 function StatsAggregatorClass:StartListening()
@@ -60,6 +65,7 @@ function StatsAggregatorClass:StartListening()
         while(1) do          
           local statValue = self:_getStatValue()
           self:_storeStatValue(statValue)
+          self:_notifyAllListeners()
           wait(self._pauseBetweenSamples)
         end
       end)
@@ -106,7 +112,7 @@ function StatsAggregatorClass:_getStatValue()
   local performanceStats = statsService:FindFirstChild("PerformanceStats")
   if performanceStats == nil then
     return 0
-  end
+  end  
   
   local itemStats = performanceStats:FindFirstChild(self._statName)
   if itemStats == nil then

@@ -11,11 +11,42 @@ local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 local CoreGuiService = game:GetService('CoreGui')
 
+--[[ Convenience function]]--
+function WaitForRequire(pathPieces, parent)
+    print("pathPieces = ", pathPieces)
+  if parent == nil then
+    parent = CoreGuiService
+  end
+  
+  if (table.getn(pathPieces) == 0) then 
+    print("parent = ", parent)
+    return require(parent)
+  else 
+    local first = table.remove(pathPieces, 1)
+    print("first = ", first)
+    local newParent = parent:WaitForChild(first)
+    return WaitForRequire(pathPieces, newParent)
+  end
+  
+end
+
 --[[ Modules ]]--
-local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
-local AllStatsAggregatorsClass = require(RobloxGui.Modules.Stats.AllStatsAggregators)
-local StatsButtonClass = require(RobloxGui.Modules.Stats.StatsButton)
-local StatsViewerClass = require(RobloxGui.Modules.Stats.StatsViewer)
+local AllStatsAggregatorsClass = WaitForRequire({"RobloxGui",
+    "Modules", 
+    "Stats", 
+    "AllStatsAggregators"})
+local StatsButtonClass = WaitForRequire({"RobloxGui",
+    "Modules", 
+    "Stats", 
+    "StatsButton"})
+local StatsViewerClass = WaitForRequire({"RobloxGui",
+    "Modules", 
+    "Stats", 
+    "StatsViewer"})
+local StatsUtils = WaitForRequire({"RobloxGui",
+    "Modules", 
+    "Stats", 
+    "StatsUtils"})
 
 --[[ Fast Flags ]]--
 local getShowPerformanceStatsInGuiSuccess, showPerformanceStatsInGuiValue = 
@@ -33,11 +64,11 @@ local localPlayer = PlayersService.LocalPlayer
 local allStatsAggregators = AllStatsAggregatorsClass.new()
 local statsViewer = StatsViewerClass.new()
 local statsButtonsByType ={}
-local currentlySelectedStatButtonType = nil
+local currentDisplayType = nil
 
-for i, buttonType in ipairs(StatsButtonClass.AllStatButtonTypes) do
-  local button = StatsButtonClass.new(buttonType)
-  statsButtonsByType[buttonType] = button
+for i, displayType in ipairs(StatsUtils.AllStatDisplayTypes) do
+  local button = StatsButtonClass.new(displayType)
+  statsButtonsByType[displayType] = button
 end
 
 --[[ Functions ]]--
@@ -47,7 +78,7 @@ end
 function UpdateLocalPlayer()
   localPlayer = PlayersService.LocalPlayer
   if localPlayer then
-    screenGui.Parent = localPlayer.PlayerGui
+    screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
   else
     screenGui.Parent = nil
   end
@@ -78,20 +109,22 @@ end
 
 function ConfigureStatButtonsInMasterFrame()
   -- Set up the row of buttons across the top and handler for button press.
-  for i, buttonType in ipairs(StatsButtonClass.AllStatButtonTypes) do
-    AddButton(buttonType, i)
+  for i, displayType in ipairs(StatsUtils.AllStatDisplayTypes) do
+    AddButton(displayType, i)
   end
 end
 
-function OnButtonToggled(toggledButtonType) 
-  local toggledButton = statsButtonsByType[toggledButtonType]
+function OnButtonToggled(toggledDisplayType) 
+  local toggledButton = statsButtonsByType[toggledDisplayType]
   local selectedState = toggledButton._isSelected
   selectedState = not selectedState
   
+  print("OnButtonToggled type=", toggledDisplayType, "  selected=", selectedState)
+  
   if (selectedState) then 
-    currentlySelectedStatButtonType = toggledButtonType
+    currentDisplayType = toggledDisplayType
   else
-    currentlySelectedStatButtonType = nil
+    currentDisplayType = nil
   end
   
   UpdateButtonSelectedStates()
@@ -99,9 +132,10 @@ function OnButtonToggled(toggledButtonType)
 end
 
 function UpdateButtonSelectedStates()
-  for i, buttonType in ipairs(StatsButtonClass.AllStatButtonTypes) do
+  print("UpdateButtonSelectedStates ", currentDisplayType)
+  for i, buttonType in ipairs(StatsUtils.AllStatDisplayTypes) do
       local button = statsButtonsByType[buttonType]
-      button:SetIsSelected(buttonType == currentlySelectedStatButtonType)
+      button:SetIsSelected(buttonType == currentDisplayType)
   end  
 end
 
@@ -109,24 +143,36 @@ function UpdateViewerVisibility()
   -- If someone is on, show the Viewer.
   -- FIXME(dbanks)
   -- Configure with details of the dude currently selected.
-  statsViewer:SetVisible(currentlySelectedStatButtonType ~= nil)
+  print("UpdateViewerVisibility")
+  print("currentDisplayType = ", currentDisplayType)
+  
+  if (currentDisplayType == nil) then 
+    statsViewer:SetVisible(false)
+    statsViewer:SetStatsAggregator(nil)
+  else
+    statsViewer:SetStatsDisplayType(currentDisplayType)
+    local aggregatorType = StatsUtils.DisplayTypeToAggregatorType[currentDisplayType]
+    statsViewer:SetStatsAggregator(allStatsAggregators:GetAggregator(aggregatorType))
+    
+    statsViewer:SetVisible(true)
+  end
 end
 
-function AddButton(buttonType, index) 
+function AddButton(displayType, index) 
   -- Configure size and position of button.
   -- Configure callback behavior to toggle
   --    button on or off and show/hide viewer.
   -- Parent button in main screen.
-  local button = statsButtonsByType[buttonType]
+  local button = statsButtonsByType[displayType]
   
   button:SetGUIParent(masterFrame)
+  local aggregatorType = StatsUtils.DisplayTypeToAggregatorType[displayType]
+  button:SetStatsAggregator(
+    allStatsAggregators:GetAggregator(aggregatorType))
   
-  local fraction = 1.0/StatsButtonClass.NumButtonTypes
-  print ("fraction = ", fraction)
+  local fraction = 1.0/StatsUtils.NumButtonTypes
   local size = UDim2.new(fraction, 0, 0.1666, 0)
   local position = UDim2.new(fraction * (index - 1), 0, 0, 0)
-  print ("size = ", size)
-  print ("position = ", position)
   button:SetSizeAndPosition(size, position)
   
   button:SetToggleCallbackFunction(OnButtonToggled)
@@ -138,8 +184,6 @@ function ConfigureStatViewerInMasterFrame()
   
   local size = UDim2.new(0.5, 0, 0.5, 0)
   local position = UDim2.new(0.5, 0, 0.25, 0)
-  print ("size = ", size)
-  print ("position = ", position)
   statsViewer:SetSizeAndPosition(size, position)
 end
 
@@ -151,7 +195,6 @@ end
 --[[ Top Level Code ]]--
 -- If flag is not enabled, bounce.
 if not showPerformanceStatsInGui then 
-    print("ShowPerformanceStatsInGui flag not found or enabled.")
 	return
 end
  
@@ -166,7 +209,8 @@ PlayersService.PlayerAdded:connect(UpdateLocalPlayer)
 PlayersService.PlayerRemoving:connect(UpdateLocalPlayer)
 
 -- Watch for changes in performance stats visibility.
-GameSettings.PerformanceStatsVisibleChanged:connect(UpdatePerformanceStatsVisibility)
+GameSettings.PerformanceStatsVisibleChanged:connect(
+  UpdatePerformanceStatsVisibility)
 
 -- Start listening for updates in stats.
 print ("allStatsAggregators: ", allStatsAggregators)
