@@ -9,12 +9,18 @@
 local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
-local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
-local StatsAggregatorClass = require(RobloxGui.Modules.Stats.StatsAggregator)
-local StatsUtils = require(RobloxGui.Modules.Stats.StatsUtils)
-local StatsTextPanelClass = require(RobloxGui.Modules.Stats.StatsTextPanel)
-local StatsAnnotatedGraphClass = require(RobloxGui.Modules.Stats.StatsAnnotatedGraph)
+local folder = CoreGuiService:WaitForChild("RobloxGui")
+folder = folder:WaitForChild("Modules")
+folder = folder:WaitForChild("Stats")
 
+local StatsUtils = require(folder:WaitForChild( 
+    "StatsUtils"))
+local StatsAggregatorClass = require(folder:WaitForChild( 
+    "StatsAggregator"))
+local StatsTextPanelClass = require(folder:WaitForChild( 
+    "StatsTextPanel"))
+local StatsAnnotatedGraphClass = require(folder:WaitForChild( 
+    "StatsAnnotatedGraph"))
 
 --[[ Classes ]]--
 local StatsButtonClass = {}

@@ -12,41 +12,34 @@ local GameSettings = Settings.GameSettings
 local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Convenience function]]--
-function WaitForRequire(pathPieces, parent)
-    print("pathPieces = ", pathPieces)
+function WaitForFolder(pathPieces, parent)
   if parent == nil then
     parent = CoreGuiService
   end
   
   if (table.getn(pathPieces) == 0) then 
-    print("parent = ", parent)
-    return require(parent)
+    return parent
   else 
     local first = table.remove(pathPieces, 1)
-    print("first = ", first)
     local newParent = parent:WaitForChild(first)
-    return WaitForRequire(pathPieces, newParent)
+    return WaitForFolder(pathPieces, newParent)
   end
   
 end
 
 --[[ Modules ]]--
-local AllStatsAggregatorsClass = WaitForRequire({"RobloxGui",
-    "Modules", 
-    "Stats", 
-    "AllStatsAggregators"})
-local StatsButtonClass = WaitForRequire({"RobloxGui",
-    "Modules", 
-    "Stats", 
-    "StatsButton"})
-local StatsViewerClass = WaitForRequire({"RobloxGui",
-    "Modules", 
-    "Stats", 
-    "StatsViewer"})
-local StatsUtils = WaitForRequire({"RobloxGui",
-    "Modules", 
-    "Stats", 
-    "StatsUtils"})
+local folder = CoreGuiService:WaitForChild("RobloxGui")
+folder = folder:WaitForChild("Modules")
+folder = folder:WaitForChild("Stats")
+
+local AllStatsAggregatorsClass = require(folder:WaitForChild( 
+    "AllStatsAggregators"))
+local StatsButtonClass = require(folder:WaitForChild( 
+    "StatsButton"))
+local StatsViewerClass = require(folder:WaitForChild( 
+    "StatsViewer"))
+local StatsUtils = require(folder:WaitForChild( 
+    "StatsUtils"))
 
 --[[ Fast Flags ]]--
 local getShowPerformanceStatsInGuiSuccess, showPerformanceStatsInGuiValue = 

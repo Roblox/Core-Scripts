@@ -33,9 +33,14 @@ local ValueSize = UDim2.new(1,
 local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
-local RobloxGui = CoreGuiService:WaitForChild('RobloxGui')
-local StatsAggregatorClass = require(RobloxGui.Modules.Stats.StatsAggregator)
-local StatsUtils = require(RobloxGui.Modules.Stats.StatsUtils)
+local folder = CoreGuiService:WaitForChild("RobloxGui")
+folder = folder:WaitForChild("Modules")
+folder = folder:WaitForChild("Stats")
+
+local StatsUtils = require(folder:WaitForChild( 
+    "StatsUtils"))
+local StatsAggregatorClass = require(folder:WaitForChild( 
+    "StatsAggregator"))
 
 --[[ Classes ]]--
 local StatsTextPanelClass = {}
