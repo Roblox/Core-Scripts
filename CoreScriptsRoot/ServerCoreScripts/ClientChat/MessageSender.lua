@@ -17,8 +17,8 @@ function methods:SendMessage(message, toChannel)
 	self.SayMessageRequest:FireServer(message, toChannel)
 end
 
-function methods:RegisterSayMessageEvent(event)
-	rawset(self, "SayMessageRequest", event)
+function methods:RegisterSayMessageFunction(func)
+	rawset(self, "SayMessageRequest", func)
 end
 
 --///////////////////////// Constructors

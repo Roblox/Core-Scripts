@@ -15,28 +15,29 @@ local moduleApiTable = {}
 
 local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 
-local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
+local numChildrenRemaining = 11 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren = 
 {
-	OnNewMessage = true,
-	OnNewSystemMessage = true,
-	OnChannelJoined = true,
-	OnChannelLeft = true,
-	OnMuted = true,
-	OnUnmuted = true,
-	OnSpeakerExtraDataUpdated = true,
-	OnMainChannelSet = true,
+	OnNewMessage = "RemoteEvent",
+	OnMessageDoneFiltering = "RemoteEvent",
+	OnNewSystemMessage = "RemoteEvent",
+	OnChannelJoined = "RemoteEvent",
+	OnChannelLeft = "RemoteEvent",
+	OnMuted = "RemoteEvent",
+	OnUnmuted = "RemoteEvent",
+	OnSpeakerExtraDataUpdated = "RemoteEvent",
+	OnMainChannelSet = "RemoteEvent",
 
-	SayMessageRequest = true,
-	GetInitDataRequest = true,
+	SayMessageRequest = "RemoteEvent",
+	GetInitDataRequest = "RemoteFunction",
 }
 
 local useEvents = {}
 
 local FoundAllEventsEvent = Instance.new("BindableEvent")
 
-local function TryRemoveChildWithVerifyingIsRemoteEvent(child)
-	if (child:IsA("RemoteEvent") and waitChildren[child.Name]) then
+local function TryRemoveChildWithVerifyingIsCorrectType(child)
+	if (waitChildren[child.Name] and child:IsA(waitChildren[child.Name])) then
 		waitChildren[child.Name] = nil
 		useEvents[child.Name] = child
 		numChildrenRemaining = numChildrenRemaining - 1
@@ -44,12 +45,12 @@ local function TryRemoveChildWithVerifyingIsRemoteEvent(child)
 end
 
 for i, child in pairs(EventFolder:GetChildren()) do
-	TryRemoveChildWithVerifyingIsRemoteEvent(child)
+	TryRemoveChildWithVerifyingIsCorrectType(child)
 end
 
 if (numChildrenRemaining > 0) then
 	local con = EventFolder.ChildAdded:connect(function(child)
-		TryRemoveChildWithVerifyingIsRemoteEvent(child)
+		TryRemoveChildWithVerifyingIsCorrectType(child)
 		if (numChildrenRemaining < 1) then
 			FoundAllEventsEvent:Fire()
 		end
@@ -105,7 +106,7 @@ MessageLabelCreator:RegisterSpeakerDatabase(SpeakerDatabase)
 local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
-MessageSender:RegisterSayMessageEvent(EventFolder.SayMessageRequest)
+MessageSender:RegisterSayMessageFunction(EventFolder.SayMessageRequest)
 
 
 
@@ -414,14 +415,23 @@ ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 	end
 end)
 
-EventFolder.OnNewMessage.OnClientEvent:connect(function(fromSpeaker, channel, message)
-	local channelObj = ChatWindow:GetChannel(channel)
+EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
+	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
-		local messageObject = MessageLabelCreator:CreateMessageLabel(fromSpeaker, message)
+		local messageObject = MessageLabelCreator:CreateMessageLabel(messageData)
 		channelObj:AddMessageLabelToLog(messageObject)
-		
-		if (fromSpeaker ~= LocalPlayer.Name) then
-			ChannelsBar:UpdateMessagePostedInChannel(channel)
+
+		if (messageData.FromSpeaker ~= LocalPlayer.Name) then
+			ChannelsBar:UpdateMessagePostedInChannel(channelName)
+		end
+
+		local generalChannel = nil
+		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
+			generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+			if (generalChannel) then
+				local messageObject = MessageLabelCreator:CreateChannelEchoMessageLabel(messageData, channelName)
+				generalChannel:AddMessageLabelToLog(messageObject)
+			end
 		end
 
 		moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1
@@ -429,50 +439,53 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(fromSpeaker, channel, me
 
 		DoFadeInFromNewInformation()
 
-		if (ChatSettings.GeneralChannelName and channel ~= ChatSettings.GeneralChannelName) then
-			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
-			if (generalChannel) then
-				local messageObject = MessageLabelCreator:CreateChannelEchoMessageLabel(fromSpeaker, message, channel)
-				generalChannel:AddMessageLabelToLog(messageObject)
-			end
+		local filterData = {}
+		while (filterData.ID ~= messageData.ID) do
+			filterData = EventFolder.OnMessageDoneFiltering.OnClientEvent:wait()
+		end
 
+		--// Speaker may leave these channels during the time it takes to filter.
+		if (not channelObj.Destroyed) then
+			channelObj:UpdateMessageFiltered(filterData)
+		end
+
+		if (generalChannel and not generalChannel.Destroyed) then
+			generalChannel:UpdateMessageFiltered(filterData)
 		end
 	else
-		warn("Just received chat message for channel I'm not in [" .. channel .. "]")
-		
-	end
+		warn(string.format("Just received chat message for channel I'm not in [%s]", channelName))
+	end 
 end)
 
-EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(message, channel)
-	channel = channel or "System"
+EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, channelName)
+	channelName = channelName or "System"
 	
-	local channelObj = ChatWindow:GetChannel(channel)
+	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
-		local messageObject = MessageLabelCreator:CreateSystemMessageLabel(message)
+		local messageObject = MessageLabelCreator:CreateSystemMessageLabel(messageData)
 		channelObj:AddMessageLabelToLog(messageObject)
 		
-		ChannelsBar:UpdateMessagePostedInChannel(channel)
+		ChannelsBar:UpdateMessagePostedInChannel(channelName)
 		
 		moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1
 		moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
 
 		DoFadeInFromNewInformation()
 
-		if (ChatSettings.GeneralChannelName and channel ~= ChatSettings.GeneralChannelName) then
+		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
 			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 			if (generalChannel) then
-				local messageObject = MessageLabelCreator:CreateChannelEchoSystemMessageLabel(message, channel)
+				local messageObject = MessageLabelCreator:CreateChannelEchoSystemMessageLabel(messageData, channelName)
 				generalChannel:AddMessageLabelToLog(messageObject)
 			end
-
 		end
 	else
-		warn("Just received system message for channel I'm not in [" .. channel .. "]")
-		
+		warn(string.format("Just received system message for channel I'm not in [%s]", channelName))
 	end
 end)
 
-EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessage, messageLog)
+
+local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 	if (channel == ChatSettings.GeneralChannelName) then
 		didFirstChannelsLoads = true
 	end
@@ -505,7 +518,9 @@ EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessa
 		DoFadeInFromNewInformation()
 	end	
 	
-end)
+end
+
+EventFolder.OnChannelJoined.OnClientEvent:connect(HandleChannelJoined)
 
 EventFolder.OnChannelLeft.OnClientEvent:connect(function(channel)
 	ChatWindow:RemoveChannel(channel)
@@ -595,9 +610,22 @@ PlayerGui.ChildAdded:connect(function(child)
 end)
 
 
-EventFolder.GetInitDataRequest:FireServer()
+local initData = EventFolder.GetInitDataRequest:InvokeServer()
 
+for speakerName, speakerExtraData in pairs(initData.SpeakerExtraData) do
+	local speaker = SpeakerDatabase:GetSpeaker(speakerName)
+	if (not speaker) then
+		speaker = SpeakerDatabase:AddSpeaker(speakerName)
+	end
+	
+	for i, v in pairs(speakerExtraData) do
+		speaker[i] = v
+	end
+end
 
+for i, channelData in pairs(initData.Channels) do
+	HandleChannelJoined(unpack(channelData))
+end
 
 
 

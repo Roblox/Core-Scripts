@@ -64,15 +64,15 @@ local function Run(ChatService)
 		return processedCommand
 	end
 	
-	local function PrivateMessageReplicationFunction(fromSpeaker, message, channel)
-		ChatService:GetSpeaker(fromSpeaker):SendMessage(fromSpeaker, channel, message)
+	local function PrivateMessageReplicationFunction(fromSpeaker, message, channelName)
+		ChatService:GetSpeaker(fromSpeaker):SendMessage(message, channelName, fromSpeaker)
 
-		local toSpeaker = ChatService:GetSpeaker(string.sub(channel, 4))
+		local toSpeaker = ChatService:GetSpeaker(string.sub(channelName, 4))
 		if (toSpeaker) then
 			if (not toSpeaker:IsInChannel("To " .. fromSpeaker)) then
 				toSpeaker:JoinChannel("To " .. fromSpeaker)
 			end
-			toSpeaker:SendMessage(fromSpeaker, "To " .. fromSpeaker, message)
+			toSpeaker:SendMessage(message, "To " .. fromSpeaker, fromSpeaker)
 		end
 		
 		return true

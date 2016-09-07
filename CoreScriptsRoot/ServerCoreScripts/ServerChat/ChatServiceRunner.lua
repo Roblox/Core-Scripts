@@ -8,8 +8,6 @@ local EventFolderParent = game:GetService("ReplicatedStorage")
 local modulesFolder = script
 
 local ChatService = require(modulesFolder:WaitForChild("ChatService"))
-local proxy = require(modulesFolder:WaitForChild("ChatServiceProxy")).CreateProxy(ChatService)
-
 
 local useEvents = {}
 
@@ -44,6 +42,7 @@ local function CreateIfDoesntExist(parentObject, objectName, objectType)
 end
 
 CreateIfDoesntExist(EventFolder, "OnNewMessage", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "OnMessageDoneFiltering", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnNewSystemMessage", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnChannelJoined", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnChannelLeft", "RemoteEvent")
@@ -53,12 +52,71 @@ CreateIfDoesntExist(EventFolder, "OnSpeakerExtraDataUpdated", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnMainChannelSet", "RemoteEvent")
 
 CreateIfDoesntExist(EventFolder, "SayMessageRequest", "RemoteEvent")
-CreateIfDoesntExist(EventFolder, "GetInitDataRequest", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "GetInitDataRequest", "RemoteFunction")
 
 EventFolder = useEvents
 
+
+local function CreatePlayerSpeakerObject(playerObj)
+	--// If a developer already created a speaker object with the
+	--// name of a player and then a player joins and tries to 
+	--// take that name, we first need to remove the old speaker object
+	local speaker = ChatService:GetSpeaker(playerObj.Name)
+	if (speaker) then
+		ChatService:RemoveSpeaker(playerObj.Name)
+	end
+
+	speaker = ChatService:AddSpeaker(playerObj.Name)
+	speaker:InternalAssignPlayerObject(playerObj)
+
+	for i, channel in pairs(ChatService:GetAutoJoinChannelList()) do
+		speaker:JoinChannel(channel.Name)
+	end
+
+	speaker.ReceivedMessage:connect(function(messageObj, channel)
+		EventFolder.OnNewMessage:FireClient(playerObj, messageObj, channel)
+	end)
+
+	speaker.MessageDoneFiltering:connect(function(messageObj, channel)
+		EventFolder.OnMessageDoneFiltering:FireClient(playerObj, messageObj, channel)
+	end)
+
+	speaker.ReceivedSystemMessage:connect(function(messageObj, channel)
+		EventFolder.OnNewSystemMessage:FireClient(playerObj, messageObj, channel)
+	end)
+
+	speaker.ChannelJoined:connect(function(channel, welcomeMessage)
+		local log = nil
+
+		local channelObject = ChatService:GetChannel(channel)
+		if (channelObject) then
+			log = channelObject:GetHistoryLog()
+		end
+		EventFolder.OnChannelJoined:FireClient(playerObj, channel, welcomeMessage, log)
+	end)
+
+	speaker.ChannelLeft:connect(function(channel)
+		EventFolder.OnChannelLeft:FireClient(playerObj, channel)
+	end)
+
+	speaker.Muted:connect(function(channel, reason, length)
+		EventFolder.OnMuted:FireClient(playerObj, channel, reason, length)
+	end)
+
+	speaker.Unmuted:connect(function(channel)
+		EventFolder.OnUnmuted:FireClient(playerObj, channel)
+	end)
+
+	speaker.MainChannelSet:connect(function(channel)
+		EventFolder.OnMainChannelSet:FireClient(playerObj, channel)
+	end)
+end
+
 local Players = game:GetService("Players")
 local function HandlePlayerJoining(playerObj)
+	if (true) then return end
+
+
 	--// If a developer already created a speaker object with the
 	--// name of a player and then a player joins and tries to 
 	--// take that name, we first need to remove the old speaker object
@@ -117,28 +175,43 @@ end
 EventFolder.SayMessageRequest.OnServerEvent:connect(function(playerObj, message, channel)
 	local speaker = ChatService:GetSpeaker(playerObj.Name)
 	if (speaker) then
-		speaker:SayMessage(message, channel)
+		return speaker:SayMessage(message, channel)
 	end
+
+	return nil
 end)
 
-EventFolder.GetInitDataRequest.OnServerEvent:connect(function(playerObj)
+EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
 	local speaker = ChatService:GetSpeaker(playerObj.Name)
-	if (speaker) then
-		
-		for i, channelName in pairs(speaker:GetChannelList()) do
-			local channel = ChatService:GetChannel(channelName)
-			EventFolder.OnChannelJoined:FireClient(playerObj, channel.Name, channel.WelcomeMessage)
-			if (channel:IsSpeakerMuted(speaker.Name)) then
-				EventFolder.OnMuted:FireClient(playerObj, channelName, nil, nil)
-			end
-		end
-		
-		for i, oSpeakerName in pairs(ChatService:GetSpeakerList()) do
-			local oSpeaker = ChatService:GetSpeaker(oSpeakerName)
-			EventFolder.OnSpeakerExtraDataUpdated:FireClient(playerObj, oSpeakerName, oSpeaker.ExtraData)
-		end
-		
+	if not (speaker and speaker:GetPlayer()) then
+		CreatePlayerSpeakerObject(playerObj)
+		speaker = ChatService:GetSpeaker(playerObj.Name)
 	end
+
+	local data = {}
+	data.Channels = {}
+	data.SpeakerExtraData = {}
+
+	for i, channelName in pairs(speaker:GetChannelList()) do
+		local channelObj = ChatService:GetChannel(channelName)
+		if (channelObj) then
+			local channelData = 
+			{
+				channelName,
+				channelObj.WelcomeMessage,
+				channelObj:GetHistoryLog(),
+			}
+
+			table.insert(data.Channels, channelData)
+		end
+	end
+
+	for i, oSpeakerName in pairs(ChatService:GetSpeakerList()) do
+		local oSpeaker = ChatService:GetSpeaker(oSpeakerName)
+		data.SpeakerExtraData[oSpeakerName] = oSpeaker.ExtraData
+	end
+
+	return data
 end)
 
 ChatService.SpeakerAdded:connect(function(speakerName)
@@ -153,7 +226,7 @@ ChatService.SpeakerAdded:connect(function(speakerName)
 	end)
 end)
 
-local function DoJoinCommand(speakerName, channelName)
+local function DoJoinCommand(speakerName, channelName, fromChannelName)
 	local speaker = ChatService:GetSpeaker(speakerName)
 	local channel = ChatService:GetChannel(channelName)
 	
@@ -164,15 +237,15 @@ local function DoJoinCommand(speakerName, channelName)
 					speaker:JoinChannel(channel.Name)
 				end
 			else
-				speaker:SendSystemMessage("You cannot join channel '" .. channelName .. "'.", nil)
+				speaker:SendSystemMessage("You cannot join channel '" .. channelName .. "'.", fromChannelName)
 			end
 		else
-			speaker:SendSystemMessage("Channel '" .. channelName .. "' does not exist.", nil)
+			speaker:SendSystemMessage("Channel '" .. channelName .. "' does not exist.", fromChannelName)
 		end
 	end
 end
 
-local function DoLeaveCommand(speakerName, channelName)
+local function DoLeaveCommand(speakerName, channelName, fromChannelName)
 	local speaker = ChatService:GetSpeaker(speakerName)
 	local channel = ChatService:GetChannel(channelName)
 	
@@ -181,27 +254,27 @@ local function DoLeaveCommand(speakerName, channelName)
 			if (channel.Leavable) then
 				speaker:LeaveChannel(channel.Name)
 			else
-				speaker:SendSystemMessage("You cannot leave channel '" .. channelName .. "'.", nil)
+				speaker:SendSystemMessage("You cannot leave channel '" .. channelName .. "'.", fromChannelName)
 			end
 		else
-			speaker:SendSystemMessage("You are not in channel '" .. channelName .. "'.", nil)
+			speaker:SendSystemMessage("You are not in channel '" .. channelName .. "'.", fromChannelName)
 		end
 	end
 end
 
 ChatService:RegisterProcessCommandsFunction("default_commands", function(fromSpeaker, message, channel)
 	if (string.sub(message, 1, 6):lower() == "/join ") then
-		DoJoinCommand(fromSpeaker, string.sub(message, 7))
+		DoJoinCommand(fromSpeaker, string.sub(message, 7), channel)
 		return true
 	elseif (string.sub(message, 1, 3):lower() == "/j ") then
-		DoJoinCommand(fromSpeaker, string.sub(message, 4))
+		DoJoinCommand(fromSpeaker, string.sub(message, 4), channel)
 		return true
 		
 	elseif (string.sub(message, 1, 7):lower() == "/leave ") then
-		DoLeaveCommand(fromSpeaker, string.sub(message, 8))
+		DoLeaveCommand(fromSpeaker, string.sub(message, 8), channel)
 		return true
 	elseif (string.sub(message, 1, 3):lower() == "/l ") then
-		DoLeaveCommand(fromSpeaker, string.sub(message, 4))
+		DoLeaveCommand(fromSpeaker, string.sub(message, 4), channel)
 		return true
 		
 	elseif (string.sub(message, 1, 3) == "/e " or string.sub(message, 1, 7) == "/emote ") then
@@ -233,7 +306,7 @@ local function TryRunModule(module)
 	if module:IsA("ModuleScript") then
 		local ret = require(module)
 		if (type(ret) == "function") then
-			ret(proxy)
+			ret(ChatService)
 		end
 	end
 end

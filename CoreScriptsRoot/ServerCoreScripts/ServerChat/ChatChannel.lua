@@ -16,105 +16,36 @@ local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 --//////////////////////////////////////
 local methods = {}
 
-function methods:Destroy()
+function methods:SendSystemMessage(message)
+	local messageObj = self:InternalCreateMessageObject(message, nil)
+
+	self:InternalAddMessageToHistoryLog(messageObj)
+
 	for i, speaker in pairs(self.Speakers) do
-		speaker:LeaveChannel(self.Name)
+		speaker:InternalSendSystemMessage(messageObj, self.Name)
 	end
 	
-	self.eDestroyed:Fire()
+	return messageObj
 end
 
-function methods:DoMessageFilter(speakerName, message, channel)
-	for funcId, func in pairs(self.FilterMessageFunctions) do
-		local s, m = pcall(function()
-			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "string")
-			message = ret
-		end)
-
-		if (not s) then
-			warn("DoMessageFilter Function '" .. funcId .. "'' failed for reason: " .. m)
-		end
+function methods:SendSystemMessageToSpeaker(message, speakerName)
+	local speaker = self.Speakers[speakerName]
+	if (speaker) then
+		local messageObj = self:InternalCreateMessageObject(message, nil)
+		speaker:InternalSendSystemMessage(messageObj, self.Name)
+	else
+		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a system message", speakerName, self.Name))
 	end
-	
-	return message
 end
 
-function methods:DoProcessCommands(speakerName, message, channel)
-	local processed = false
-	
-	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
-	if (processed) then return processed end
-	
-	for funcId, func in pairs(self.ProcessCommandsFunctions) do
-		local s, m = pcall(function()
-			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "boolean")
-			processed = ret
-		end)
-		
-		if (not s) then
-			warn("DoProcessCommands Function '" .. funcId .. "'' failed for reason: " .. m)
-		end
-		
-		if (processed) then break end
+function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker)
+	local speaker = self.Speakers[speakerName]
+	if (speaker) then
+		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker)
+		speaker:InternalSendMessage(messageObj, self.Name)
+	else
+		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
 	end
-	
-	return processed
-end
-
-function methods:PostMessage(fromSpeaker, message)
-	message = self:DoMessageFilter(fromSpeaker.Name, message, self.Name)
-	message = self.ChatService:DoMessageFilter(fromSpeaker.Name, message, self.Name)
-
-	if (self:DoProcessCommands(fromSpeaker.Name, message, self.Name)) then return false end
-
-	if (self.Mutes[fromSpeaker.Name:lower()] ~= nil) then
-		local t = self.Mutes[fromSpeaker.Name:lower()]
-		if (t > 0 and os.time() > t) then
-			self:UnmuteSpeaker(fromSpeaker.Name)
-		else
-			fromSpeaker:SendSystemMessage("You are muted and cannot talk in this channel", self.Name)
-			return false
-		end
-		
-	end
-	
-	--message = self:DoMessageFilter(fromSpeaker.Name, message, self.Name)
-	--message = self.ChatService:DoMessageFilter(fromSpeaker.Name, message, self.Name)
-
-	self:AddMessageToHistoryLog(message, fromSpeaker)
-
-
-	spawn(function() self.eMessagePosted:Fire(fromSpeaker.Name, message) end)
-	
-	for i, speaker in pairs(self.Speakers) do
-		if (true or speaker ~= fromSpeaker) then
-			speaker:SendMessage(fromSpeaker.Name, self.Name, message)
-		end
-	end
-	
-	return message
-end
-
-function methods:InternalAddSpeaker(speaker)
-	if (self.Speakers[speaker.Name]) then
-		warn("Speaker \"" .. speaker.name .. "\" is already in the channel!")
-		return
-	end
-	
-	self.Speakers[speaker.Name] = speaker
-	spawn(function() self.eSpeakerJoined:Fire(speaker.Name) end)
-end
-
-function methods:InternalRemoveSpeaker(speaker)
-	if (not self.Speakers[speaker.Name]) then
-		warn("Speaker \"" .. speaker.name .. "\" is already in the channel!")
-		return
-	end
-	
-	self.Speakers[speaker.Name] = nil
-	spawn(function() self.eSpeakerLeft:Fire(speaker.Name) end)
 end
 
 function methods:KickSpeaker(speakerName, reason)
@@ -122,17 +53,21 @@ function methods:KickSpeaker(speakerName, reason)
 	if (not speaker) then
 		error("Speaker \"" .. speakerName .. "\" does not exist!")
 	end
-	
-	speaker:LeaveChannel(self.Name)
+
+	local messageToSpeaker = ""
+	local messageToChannel = ""
 
 	if (reason) then
-		speaker:SendSystemMessage("You were kicked from '" .. self.Name .. "' for the following reason(s): " .. reason, nil)
-		self:SendSystemMessage(speakerName .. " was kicked for the following reason(s): " .. reason)
+		messageToSpeaker = string.format("You were kicked from '%s' for the following reason(s): %s", self.Name, reason)
+		messageToChannel = string.format("%s was kicked for the following reason(s): %s", speakerName, reason)
 	else
-		speaker:SendSystemMessage("You were kicked from '" .. self.Name .. "'", nil)
-		self:SendSystemMessage(speakerName .. " was kicked")
+		messageToSpeaker = string.format("You were kicked from '%s'", self.Name)
+		messageToChannel = string.format("%s was kicked", speakerName)
 	end
-	
+
+	self:SendSystemMessageToSpeaker(messageToSpeaker, speakerName)
+	speaker:LeaveChannel(self.Name)
+	self:SendSystemMessage(messageToChannel)
 end
 
 function methods:MuteSpeaker(speakerName, reason, length)
@@ -144,7 +79,7 @@ function methods:MuteSpeaker(speakerName, reason, length)
 	self.Mutes[speakerName:lower()] = (length == 0 or length == nil) and 0 or (os.time() + length)
 
 	if (reason) then
-		self:SendSystemMessage(speakerName .. " was muted for the following reason(s): " .. reason)
+		self:SendSystemMessage(string.format("%s was muted for the following reason(s): %s", speakerName, self))
 	end
 
 	spawn(function() self.eSpeakerMuted:Fire(speakerName, reason, length) end)
@@ -206,30 +141,6 @@ function methods:UnregisterProcessCommandsFunction(funcId)
 	self.ProcessCommandsFunctions[funcId] = nil
 end
 
-function methods:SendSystemMessage(message)
-	self:AddMessageToHistoryLog(message, nil)
-
-	for i , speaker in pairs(self.Speakers) do
-		speaker:SendSystemMessage(message, self.Name)
-	end
-end
-
-function methods:RemoveExcessMessagesFromLog()
-	local remove = table.remove
-	while (#self.ChatHistory > self.MaxHistory) do
-		remove(self.ChatHistory, 1)
-	end
-end
-
-function methods:AddMessageToHistoryLog(message, fromSpeaker)
-	local logObject = {}
-	logObject.Message = message
-	logObject.Speaker = fromSpeaker and fromSpeaker.Name
-	table.insert(self.ChatHistory, logObject)
-
-	self:RemoveExcessMessagesFromLog()
-end
-
 local function DeepCopy(table)
 	local copy =  {}
 	for i, v in pairs(table) do
@@ -246,6 +157,134 @@ function methods:GetHistoryLog()
 	return DeepCopy(self.ChatHistory)
 end
 
+--///////////////// Internal-Use Methods
+--//////////////////////////////////////
+function methods:InternalDestroy()
+	for i, speaker in pairs(self.Speakers) do
+		speaker:LeaveChannel(self.Name)
+	end
+	
+	self.eDestroyed:Fire()
+end
+
+function methods:InternalDoMessageFilter(speakerName, message, channel)
+	for funcId, func in pairs(self.FilterMessageFunctions) do
+		local s, m = pcall(function()
+			local ret = func(speakerName, message, channel)
+			assert(type(ret) == "string")
+			message = ret
+		end)
+
+		if (not s) then
+			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
+		end
+	end
+	
+	return message
+end
+
+function methods:InternalDoProcessCommands(speakerName, message, channel)
+	local processed = false
+	
+	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
+	if (processed) then return processed end
+	
+	for funcId, func in pairs(self.ProcessCommandsFunctions) do
+		local s, m = pcall(function()
+			local ret = func(speakerName, message, channel)
+			assert(type(ret) == "boolean")
+			processed = ret
+		end)
+		
+		if (not s) then
+			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, m))
+		end
+		
+		if (processed) then break end
+	end
+	
+	return processed
+end
+
+function methods:InternalPostMessage(fromSpeaker, message)
+	message = self:InternalDoMessageFilter(fromSpeaker.Name, message, self.Name)
+	message = self.ChatService:InternalDoMessageFilter(fromSpeaker.Name, message, self.Name)
+
+	if (self:InternalDoProcessCommands(fromSpeaker.Name, message, self.Name)) then return false end
+
+	if (self.Mutes[fromSpeaker.Name:lower()] ~= nil) then
+		local t = self.Mutes[fromSpeaker.Name:lower()]
+		if (t > 0 and os.time() > t) then
+			self:UnmuteSpeaker(fromSpeaker.Name)
+		else
+			self:SendSystemMessageToSpeaker("You are muted and cannot talk in this channel", fromSpeaker.Name)
+			return false
+		end
+	end
+
+	local messageObj = self:InternalCreateMessageObject(message, fromSpeaker.Name)
+
+	self:InternalAddMessageToHistoryLog(messageObj)
+
+	spawn(function() self.eMessagePosted:Fire(messageObj) end)
+	
+	for i, speaker in pairs(self.Speakers) do
+		speaker:InternalSendMessage(messageObj, self.Name)
+	end
+	
+	return messageObj
+end
+
+function methods:InternalAddSpeaker(speaker)
+	if (self.Speakers[speaker.Name]) then
+		warn("Speaker \"" .. speaker.name .. "\" is already in the channel!")
+		return
+	end
+	
+	self.Speakers[speaker.Name] = speaker
+	spawn(function() self.eSpeakerJoined:Fire(speaker.Name) end)
+end
+
+function methods:InternalRemoveSpeaker(speaker)
+	if (not self.Speakers[speaker.Name]) then
+		warn("Speaker \"" .. speaker.name .. "\" is not in the channel!")
+		return
+	end
+	
+	self.Speakers[speaker.Name] = nil
+	spawn(function() self.eSpeakerLeft:Fire(speaker.Name) end)
+end
+
+function methods:InternalRemoveExcessMessagesFromLog()
+	local remove = table.remove
+	while (#self.ChatHistory > self.MaxHistory) do
+		remove(self.ChatHistory, 1)
+	end
+end
+
+local function ChatHistorySortFunction(message1, message2)
+	return (message1.Time < message2.Time)
+end
+
+function methods:InternalAddMessageToHistoryLog(messageObj)
+	table.insert(self.ChatHistory, logObject)
+	table.sort(self.ChatHistory, ChatHistorySortFunction)
+
+	self:InternalRemoveExcessMessagesFromLog()
+end
+
+function methods:InternalCreateMessageObject(message, fromSpeaker)
+	local messageObj =
+	{
+		ID = self.ChatService:InternalGetUniqueMessageId(),
+		FromSpeaker = fromSpeaker,
+		Message = message,
+		Time = os.time(),
+	}
+
+	return messageObj
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
 ClassMaker.RegisterClassType("ChatChannel", methods)
@@ -253,8 +292,7 @@ ClassMaker.RegisterClassType("ChatChannel", methods)
 function module.new(vChatService, name, welcomeMessage)
 	local obj = {}
 
-	obj.ChatService = newproxy(true)
-	getmetatable(obj.ChatService).__index = vChatService
+	obj.ChatService = vChatService
 	
 	obj.Name = name
 	obj.WelcomeMessage = welcomeMessage or ""
@@ -267,8 +305,11 @@ function module.new(vChatService, name, welcomeMessage)
 	obj.Speakers = {}
 	obj.Mutes = {}
 
-	obj.MaxHistory = 50
+	obj.MaxHistory = 200
+	obj.HistoryIndex = 0
 	obj.ChatHistory = {}
+	obj.MessageQueue = {}
+	obj.InternalMessageQueueChanged = Instance.new("BindableEvent")
 
 	obj.FilterMessageFunctions = {}
 	obj.ProcessCommandsFunctions = {}

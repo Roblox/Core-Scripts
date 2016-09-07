@@ -39,10 +39,32 @@ end
 
 function methods:Destroy()
 	self.GuiObject:Destroy()
+	self.Destroyed = true
 end
 
 function methods:SetActive(active)
 	self.GuiObject.Visible = active
+end
+
+function methods:UpdateMessageFiltered(messageData)
+	local messageObject = nil
+	local searchIndex = 1
+	local searchTable = self.MessageObjectLog
+
+	while (#searchTable >= searchIndex) do
+		local obj = searchTable[searchIndex]
+
+		if (obj.ID == messageData.ID) then
+			messageObject = obj
+			break
+		end
+
+		searchIndex = searchIndex + 1
+	end
+
+	if (messageObject) then
+		messageObject.UpdateTextFunction(messageData)
+	end
 end
 
 function methods:AddMessageLabelToLog(messageObject)
@@ -151,6 +173,7 @@ module.ScrollBarThickness = 4
 
 function module.new(channelName)
 	local obj = {}
+	obj.Destroyed = false
 
 	local BaseFrame, Scroller = CreateGuiObjects()
 	obj.GuiObject = BaseFrame

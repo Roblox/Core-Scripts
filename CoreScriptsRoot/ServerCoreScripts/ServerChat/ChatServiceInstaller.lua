@@ -27,11 +27,8 @@ local function Install()
 	ChatServiceRunner.Name = runnerScriptName
 
 	LoadModuleData("ChatService", ChatServiceRunner)
-	LoadModuleData("ChatServiceProxy", ChatServiceRunner)
 	LoadModuleData("ChatChannel", ChatServiceRunner)
-	LoadModuleData("ChatChannelProxy", ChatServiceRunner)
 	LoadModuleData("Speaker", ChatServiceRunner)
-	LoadModuleData("SpeakerProxy", ChatServiceRunner)
 	LoadModuleData("ClassMaker", ChatServiceRunner)
 
 	if (not ServerStorage:FindFirstChild("ChatModules")) then
