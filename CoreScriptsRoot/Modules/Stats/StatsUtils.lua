@@ -6,6 +6,8 @@
 --[[ Classes ]]--
 local StatsUtils = {}
 
+StatsUtils.ButtonHeight = 64
+
 StatsUtils.NormalColor = Color3.new(0.3, 0.3, 0.1)
 StatsUtils.SelectedColor = Color3.new(0.5, 0.5, 0.3)
 StatsUtils.Transparency = 0.6

@@ -35,8 +35,6 @@ local showPerformanceStatsInGui = getShowPerformanceStatsInGuiSuccess and showPe
 
 
 --[[ Script Variables ]]--
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "PS_Gui"
 local masterFrame = Instance.new("Frame")
 masterFrame.Name = "PS_MasterFrame"
 local localPlayer = PlayersService.LocalPlayer
@@ -126,7 +124,7 @@ function AddButton(displayType, index)
     allStatsAggregators:GetAggregator(aggregatorType))
   
   local fraction = 1.0/StatsUtils.NumButtonTypes
-  local size = UDim2.new(fraction, 0, 0.1666, 0)
+  local size = UDim2.new(fraction, 0, 0, StatsUtils.ButtonHeight)
   local position = UDim2.new(fraction * (index - 1), 0, 0, 0)
   button:SetSizeAndPosition(size, position)
   
@@ -143,10 +141,12 @@ function ConfigureStatViewerInMasterFrame()
 end
 
 function UpdatePerformanceStatsVisibility() 
-  local isVisible = (GameSettings.PerformanceStatsVisible
-  if GameSettings.PerformanceStatsVisible then 
+  local localPlayer = PlayersService.LocalPlayer
+  
+  local isVisible = (GameSettings.PerformanceStatsVisible and localPlayer ~= nil)
+  if isVisible then 
     masterFrame.Visible = true
-    masterFrame.Parent = screenGui
+    masterFrame.Parent = RobloxGuiFolder
   else
     masterFrame.Visible = false
     masterFrame.Parent = nil
@@ -159,15 +159,14 @@ end
 if not showPerformanceStatsInGui then 
 	return
 end
- 
- 
--- Set parent.
-screenGui.Parent = CoreGuiService
 
 -- Set up our GUI.
 ConfigureMasterFrame()
 ConfigureStatButtonsInMasterFrame()
 ConfigureStatViewerInMasterFrame()
+
+PlayersService.PlayerAdded:connect(UpdatePerformanceStatsVisibility)
+PlayersService.PlayerRemoving:connect(UpdatePerformanceStatsVisibility)
 
 -- Watch for changes in performance stats visibility.
 GameSettings.PerformanceStatsVisibleChanged:connect(
