@@ -11,22 +11,6 @@ local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 local CoreGuiService = game:GetService('CoreGui')
 
---[[ Convenience function]]--
-function WaitForFolder(pathPieces, parent)
-  if parent == nil then
-    parent = CoreGuiService
-  end
-  
-  if (table.getn(pathPieces) == 0) then 
-    return parent
-  else 
-    local first = table.remove(pathPieces, 1)
-    local newParent = parent:WaitForChild(first)
-    return WaitForFolder(pathPieces, newParent)
-  end
-  
-end
-
 --[[ Modules ]]--
 local folder = CoreGuiService:WaitForChild("RobloxGui")
 folder = folder:WaitForChild("Modules")
@@ -65,18 +49,6 @@ for i, displayType in ipairs(StatsUtils.AllStatDisplayTypes) do
 end
 
 --[[ Functions ]]--
-
--- Set localPlayer to value of Players.localPlayer
--- Update our screenGui parent accordingly.
-function UpdateLocalPlayer()
-  localPlayer = PlayersService.LocalPlayer
-  if localPlayer then
-    screenGui.Parent = localPlayer:WaitForChild("PlayerGui")
-  else
-    screenGui.Parent = nil
-  end
-end
-
 function ConfigureMasterFrame()
   -- Set up the main frame that contains the whole PS GUI.  
 	masterFrame.Position = UDim2.new(0, 0, 0, 0)
@@ -185,14 +157,13 @@ if not showPerformanceStatsInGui then
 end
  
  
+-- Set parent.
+screenGui.Parent = CoreGuiService
+
 -- Set up our GUI.
 ConfigureMasterFrame()
 ConfigureStatButtonsInMasterFrame()
 ConfigureStatViewerInMasterFrame()
-
--- Watch for changes in local player.
-PlayersService.PlayerAdded:connect(UpdateLocalPlayer)
-PlayersService.PlayerRemoving:connect(UpdateLocalPlayer)
 
 -- Watch for changes in performance stats visibility.
 GameSettings.PerformanceStatsVisibleChanged:connect(
