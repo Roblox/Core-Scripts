@@ -165,9 +165,6 @@ ConfigureMasterFrame()
 ConfigureStatButtonsInMasterFrame()
 ConfigureStatViewerInMasterFrame()
 
-PlayersService.PlayerAdded:connect(UpdatePerformanceStatsVisibility)
-PlayersService.PlayerRemoving:connect(UpdatePerformanceStatsVisibility)
-
 -- Watch for changes in performance stats visibility.
 GameSettings.PerformanceStatsVisibleChanged:connect(
   UpdatePerformanceStatsVisibility)
@@ -181,4 +178,14 @@ UpdateViewerVisibility()
 
 -- Make sure stats are visible or not, as specified by current setting.
 UpdatePerformanceStatsVisibility()
+
+-- This may change if Player shows up...
+spawn(function()
+    local player = PlayersService.LocalPlayer
+    while not player do
+      PlayersService.PlayerAdded:wait()
+      player = PlayersService.LocalPlayer
+    end
+    UpdatePerformanceStatsVisibility()
+end)
 
