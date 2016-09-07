@@ -25,7 +25,7 @@ local StatsViewerClass = require(StatsFolder:WaitForChild(
 local StatsUtils = require(StatsFolder:WaitForChild( 
     "StatsUtils"))
 
-local TopbarConstants = require(ModulesFoler:WaitForChild( 
+local TopbarConstants = require(ModulesFolder:WaitForChild( 
     "TopbarConstants"))
 
 --[[ Fast Flags ]]--
