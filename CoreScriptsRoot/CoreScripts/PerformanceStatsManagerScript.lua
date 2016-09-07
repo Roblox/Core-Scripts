@@ -81,7 +81,6 @@ function ConfigureMasterFrame()
   -- Set up the main frame that contains the whole PS GUI.  
 	masterFrame.Position = UDim2.new(0, 0, 0, 0)
 	masterFrame.Size = UDim2.new(1, 0, 1, 0)
-  masterFrame.Draggable = false
   masterFrame.Selectable = false
   masterFrame.BackgroundTransparency = 0.8
   -- FIXME(dbanks)
@@ -112,8 +111,6 @@ function OnButtonToggled(toggledDisplayType)
   local selectedState = toggledButton._isSelected
   selectedState = not selectedState
   
-  print("OnButtonToggled type=", toggledDisplayType, "  selected=", selectedState)
-  
   if (selectedState) then 
     currentDisplayType = toggledDisplayType
   else
@@ -125,7 +122,6 @@ function OnButtonToggled(toggledDisplayType)
 end
 
 function UpdateButtonSelectedStates()
-  print("UpdateButtonSelectedStates ", currentDisplayType)
   for i, buttonType in ipairs(StatsUtils.AllStatDisplayTypes) do
       local button = statsButtonsByType[buttonType]
       button:SetIsSelected(buttonType == currentDisplayType)
@@ -135,10 +131,7 @@ end
 function UpdateViewerVisibility()
   -- If someone is on, show the Viewer.
   -- FIXME(dbanks)
-  -- Configure with details of the dude currently selected.
-  print("UpdateViewerVisibility")
-  print("currentDisplayType = ", currentDisplayType)
-  
+  -- Configure with details of the dude currently selected.  
   if (currentDisplayType == nil) then 
     statsViewer:SetVisible(false)
     statsViewer:SetStatsAggregator(nil)
@@ -158,7 +151,7 @@ function AddButton(displayType, index)
   -- Parent button in main screen.
   local button = statsButtonsByType[displayType]
   
-  button:SetGUIParent(masterFrame)
+  button:SetParent(masterFrame)
   local aggregatorType = StatsUtils.DisplayTypeToAggregatorType[displayType]
   button:SetStatsAggregator(
     allStatsAggregators:GetAggregator(aggregatorType))
@@ -173,7 +166,7 @@ end
 
 function ConfigureStatViewerInMasterFrame()
   -- Set up the widget that shows currently selected button.
-  statsViewer:SetGUIParent(masterFrame)
+  statsViewer:SetParent(masterFrame)
   
   local size = UDim2.new(0.5, 0, 0.5, 0)
   local position = UDim2.new(0.5, 0, 0.25, 0)
@@ -206,7 +199,6 @@ GameSettings.PerformanceStatsVisibleChanged:connect(
   UpdatePerformanceStatsVisibility)
 
 -- Start listening for updates in stats.
-print ("allStatsAggregators: ", allStatsAggregators)
 allStatsAggregators:StartListening()
 
 -- Make sure we're showing buttons and viewer based on current selection.

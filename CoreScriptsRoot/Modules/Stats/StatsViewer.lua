@@ -21,6 +21,8 @@ local StatsButtonClass = require(folder:WaitForChild(
     "StatsButton"))
 local StatsTextPanelClass = require(folder:WaitForChild( 
     "StatsTextPanel"))
+local StatsAnnotatedGraphClass = require(folder:WaitForChild(
+    "StatsAnnotatedGraph"))
 
 --[[ Globals ]]--
 local TextPanelXFraction = 0.4
@@ -76,7 +78,7 @@ function StatsViewerClass:SetStatsDisplayType(statsDisplayType)
     TextPanelPosition)
   
   self._graph = StatsAnnotatedGraphClass.new()
-  self._graph.PlaceInParent(self._button, 
+  self._graph:PlaceInParent(self._button, 
     GraphSize, 
     GraphPosition)
 end

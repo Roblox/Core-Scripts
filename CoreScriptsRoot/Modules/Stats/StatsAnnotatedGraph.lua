@@ -24,33 +24,32 @@ folder = folder:WaitForChild("Stats")
 
 local StatsUtils = require(folder:WaitForChild( 
     "StatsUtils"))
-local BarChartClass = require(folder:WaitForChild( 
-    "BarChart"))
 
 --[[ Classes ]]--
-local StatsAnnotatedGraph = {}
-StatsAnnotatedGraph.__index = StatsAnnotatedGraph
+local StatsAnnotatedGraphClass = {}
+StatsAnnotatedGraphClass.__index = StatsAnnotatedGraphClass
 
-function StatsAnnotatedGraph.new() 
+function StatsAnnotatedGraphClass.new() 
   local self = {}
-  setmetatable(self, StatsAnnotatedGraph)
+  setmetatable(self, StatsAnnotatedGraphClass)
 
   self._frame = Instance.new("Frame")
   self._frame.Name = "PS_AnnotatedGraph"
 
   StatsUtils.StyleFrame(self._frame)
 
-  self._barChart = BarChartClass.new()
-  self._
-
   return self
-}
-
-function StatsAnnotatedGraph:SetSizeAndPosition(size, position)
-  self._frame.Size = size;
-  self._frame.Position = position;
 end
 
-function StatsAnnotatedGraph:SetParent(parent)
+function StatsAnnotatedGraphClass:PlaceInParent(parent, size, position) 
+  self._frame.Position = position
+  self._frame.Size = size
   self._frame.Parent = parent
 end
+
+function StatsAnnotatedGraphClass:SetValues(values)
+  -- FIXME(dbanks)
+  -- Fill this in.
+end
+
+return StatsAnnotatedGraphClass
