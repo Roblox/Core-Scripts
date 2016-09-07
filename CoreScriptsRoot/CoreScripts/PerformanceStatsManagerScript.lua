@@ -59,20 +59,13 @@ function ConfigureMasterFrame()
 	masterFrame.Size = UDim2.new(1, 0, 1, 0)
   masterFrame.Selectable = false
   masterFrame.BackgroundTransparency = 0.8
-  -- FIXME(dbanks)
-  -- Make it on top of all other GUIS.
-  -- FIXME(dbanks)
-  -- I can click through frame to elements below, but I should still 
-  -- be able to click on active elements in the frame.  Does this
-  -- work as expected?
   masterFrame.Active = false  
+  masterFrame.ZIndex = 0
   
   -- FIXME(dbanks)
   -- Debug, can see the whole frame.
 	-- masterFrame.BackgroundColor3 = Color3.new(0, 0.5, 0.5)
-	-- masterFrame.BackgroundTransparency = 0.8
-  
-	masterFrame.Parent = screenGui
+	-- masterFrame.BackgroundTransparency = 0.8  
 end
 
 function ConfigureStatButtonsInMasterFrame()
@@ -150,7 +143,14 @@ function ConfigureStatViewerInMasterFrame()
 end
 
 function UpdatePerformanceStatsVisibility() 
-  masterFrame.Visible = GameSettings.PerformanceStatsVisible
+  local isVisible = (GameSettings.PerformanceStatsVisible
+  if GameSettings.PerformanceStatsVisible then 
+    masterFrame.Visible = true
+    masterFrame.Parent = screenGui
+  else
+    masterFrame.Visible = false
+    masterFrame.Parent = nil
+  end
 end
 
 
