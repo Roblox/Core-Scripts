@@ -48,7 +48,6 @@ function StatsAggregatorClass:AddListener(callbackFunction)
   local id = self._nextListenerId
   self._nextListenerId = self._nextListenerId+1
   self._listeners[id] = callbackFunction
-  print ("New id is ", id)
   return id
 end
 
@@ -66,13 +65,18 @@ function StatsAggregatorClass:StartListening()
   -- On a regular heartbeat, wake up and read the latest
   -- value into circular buffer.
   spawn(function()
-        while(1) do          
+      self._listening = true
+      while(self._listening) do          
           local statValue = self:_getStatValue()
           self:_storeStatValue(statValue)
           self:_notifyAllListeners()
           wait(self._pauseBetweenSamples)
-        end
-      end)
+      end
+    end)
+end
+
+function StatsAggregatorClass:StopListening()
+  self._listening = false
 end
 
 function StatsAggregatorClass:GetValues()

@@ -22,6 +22,15 @@ local StatsTextPanelClass = require(folder:WaitForChild(
 local StatsAnnotatedGraphClass = require(folder:WaitForChild( 
     "StatsAnnotatedGraph"))
 
+--[[ Globals ]]--
+local TextPanelXFraction = 0.5
+local GraphXFraction = 1 - TextPanelXFraction
+
+local TextPanelPosition = UDim2.new(0, 0, 0, 0)
+local TextPanelSize = UDim2.new(TextPanelXFraction, 0, 1, 0)
+local GraphPosition = UDim2.new(TextPanelXFraction, 0, 0, 0)
+local GraphSize = UDim2.new(GraphXFraction, 0, 1, 0)
+
 --[[ Classes ]]--
 local StatsButtonClass = {}
 StatsButtonClass.__index = StatsButtonClass
@@ -39,9 +48,9 @@ function StatsButtonClass.new(statsDisplayType)
 
   self._textPanel = StatsTextPanelClass.new(statsDisplayType, false)
   self._textPanel:PlaceInParent(self._button,
-    UDim2.new(0.5, 0, 1, 0), 
-    UDim2.new(0, 0, 0, 0))
-  
+    TextPanelSize, 
+    TextPanelPosition)
+    
   self._isSelected = false
   
   self:_updateColor();
@@ -51,7 +60,6 @@ end
 
 function StatsButtonClass:SetToggleCallbackFunction(callbackFunction) 
     self._button.MouseButton1Click:connect(function() 
-          print("Button clicked!!!")
           callbackFunction(self._type)
         end)
 end
@@ -62,7 +70,6 @@ function StatsButtonClass:SetSizeAndPosition(size, position)
 end
 
 function StatsButtonClass:SetIsSelected(isSelected)
-  print ("SetIsSelected ", self._type)
   self._isSelected = isSelected
   self:_updateColor();
 end
@@ -71,7 +78,7 @@ function StatsButtonClass:_updateColor()
   StatsUtils.StyleButtonSelected(self._button, self._isSelected)  
 end
 
-function StatsButtonClass:SetGUIParent(parent)
+function StatsButtonClass:SetParent(parent)
   self._button.Parent = parent
 end
   
