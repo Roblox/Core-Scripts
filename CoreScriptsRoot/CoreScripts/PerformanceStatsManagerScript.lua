@@ -13,8 +13,8 @@ local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
 local RobloxGuiFolder = CoreGuiService:WaitForChild("RobloxGui")
-local ModulesFoler = RobloxGuiFolder:WaitForChild("Modules")
-local StatsFolder = ModulesFoler:WaitForChild("Stats")
+local ModulesFolder = RobloxGuiFolder:WaitForChild("Modules")
+local StatsFolder = ModulesFolder:WaitForChild("Stats")
 
 local AllStatsAggregatorsClass = require(StatsFolder:WaitForChild( 
     "AllStatsAggregators"))
