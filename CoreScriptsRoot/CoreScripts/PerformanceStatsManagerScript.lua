@@ -12,18 +12,21 @@ local GameSettings = Settings.GameSettings
 local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
-local folder = CoreGuiService:WaitForChild("RobloxGui")
-folder = folder:WaitForChild("Modules")
-folder = folder:WaitForChild("Stats")
+local RobloxGuiFolder = CoreGuiService:WaitForChild("RobloxGui")
+local ModulesFoler = RobloxGuiFolder:WaitForChild("Modules")
+local StatsFolder = ModulesFoler:WaitForChild("Stats")
 
-local AllStatsAggregatorsClass = require(folder:WaitForChild( 
+local AllStatsAggregatorsClass = require(StatsFolder:WaitForChild( 
     "AllStatsAggregators"))
-local StatsButtonClass = require(folder:WaitForChild( 
+local StatsButtonClass = require(StatsFolder:WaitForChild( 
     "StatsButton"))
-local StatsViewerClass = require(folder:WaitForChild( 
+local StatsViewerClass = require(StatsFolder:WaitForChild( 
     "StatsViewer"))
-local StatsUtils = require(folder:WaitForChild( 
+local StatsUtils = require(StatsFolder:WaitForChild( 
     "StatsUtils"))
+
+local TopbarConstants = require(ModulesFoler:WaitForChild( 
+    "TopbarConstants"))
 
 --[[ Fast Flags ]]--
 local getShowPerformanceStatsInGuiSuccess, showPerformanceStatsInGuiValue = 
@@ -51,6 +54,7 @@ end
 --[[ Functions ]]--
 function ConfigureMasterFrame()
   -- Set up the main frame that contains the whole PS GUI.  
+  -- Avoid the top button bar.
 	masterFrame.Position = UDim2.new(0, 0, 0, 0)
 	masterFrame.Size = UDim2.new(1, 0, 1, 0)
   masterFrame.Selectable = false
@@ -177,6 +181,5 @@ UpdateButtonSelectedStates()
 UpdateViewerVisibility()
 
 -- Make sure stats are visible or not, as specified by current setting.
-UpdateLocalPlayer()
 UpdatePerformanceStatsVisibility()
 
