@@ -233,7 +233,7 @@ function methods:CreateGuiObjects(targetParent)
 		end
 
 		local chatBarTextSizeY = string.match(size.Name, "%d+")
-		local chatBarYSize = chatBarTextSizeY + 16 + 16
+		local chatBarYSize = chatBarTextSizeY + 14 + 14
 
 		return chatBarYSize
 	end
@@ -267,9 +267,15 @@ function methods:CreateGuiObjects(targetParent)
 		local channelsBarSize = CalculateChannelsBarPixelSize()
 		local chatBarSize = CalculateChatBarPixelSize()
 
-		ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(channelsBarSize + chatBarSize + 2 + 2))
-		ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, channelsBarSize + 2)
+		if (ChatSettings.ShowChannelsBar) then
+			ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(channelsBarSize + chatBarSize + 2 + 2))
+			ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, channelsBarSize + 2)
 
+		else
+			ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(chatBarSize + 2 + 2))
+			ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, 2)
+
+		end
 	end
 
 	local function UpdateChatChannelsTabTextSize(size)
@@ -292,10 +298,16 @@ function methods:CreateGuiObjects(targetParent)
 		UpdateResizable(ChatSettings.WindowResizable)
 	end
 
+	local function UpdateShowChannelsBar(enabled)
+		ChannelsBarParentFrame.Visible = ChatSettings.ShowChannelsBar
+		UpdateChatChannelParentFrameSize()
+	end
+
 	UpdateChatChannelsTabTextSize(ChatSettings.ChatChannelsTabTextSize)
 	UpdateChatBarTextSize(ChatSettings.ChatBarTextSize)
 	UpdateDraggable(ChatSettings.WindowDraggable)
 	UpdateResizable(ChatSettings.WindowResizable)
+	UpdateShowChannelsBar(ChatSettings.ShowTopChannelsBar)
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "WindowDraggable") then
@@ -309,6 +321,9 @@ function methods:CreateGuiObjects(targetParent)
 
 		elseif (setting == "ChatBarTextSize") then
 			UpdateChatBarTextSize(value)
+
+		elseif (setting == "ShowChannelsBar") then
+			UpdateShowChannelsBar(value)
 
 		end
 	end)

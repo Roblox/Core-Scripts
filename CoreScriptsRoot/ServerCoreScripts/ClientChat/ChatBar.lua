@@ -16,8 +16,8 @@ local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local methods = {}
 
 function methods:CreateGuiObjects(targetParent)
-	local backgroundImagePixelOffset = 8
-	local textBoxPixelOffset = 8
+	local backgroundImagePixelOffset = 7
+	local textBoxPixelOffset = 7
 
 	local BaseFrame = Instance.new("Frame", targetParent)
 	BaseFrame.Selectable = false

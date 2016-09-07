@@ -150,6 +150,8 @@ local function DoBackgroundFadeIn(setFadingTime)
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
+		ChatWindow.GuiObject.Active = true
+
 		local Scroller = currentChannelObject.Scroller
 		Scroller.ScrollingEnabled = true
 		Scroller.ScrollBarThickness = moduleChatChannel.ScrollBarThickness
@@ -165,6 +167,8 @@ local function DoBackgroundFadeOut(setFadingTime)
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
+		ChatWindow.GuiObject.Active = false
+		
 		local Scroller = currentChannelObject.Scroller
 		scrollBarThickness = Scroller.ScrollBarThickness
 		Scroller.ScrollingEnabled = false

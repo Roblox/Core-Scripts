@@ -147,7 +147,9 @@ function methods:CreateMessageLabel(messageData)
 	NameButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 
 	NameButton.MouseButton1Click:connect(function()
-		MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
+		-- Click to whisper is currently disabled
+		-- ToDo: Re-enable later when things are sorted out
+		--MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
 	end)
 
 	local speakerPlayer = self.SpeakerDatabase:GetSpeaker(fromSpeaker)
@@ -383,7 +385,9 @@ function methods:CreateChannelEchoMessageLabel(messageData, echoChannel)
 	ChannelButton.Parent = BaseMessage
 
 	NameButton.MouseButton1Click:connect(function()
-		MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
+		-- Click to whisper is currently disabled
+		-- ToDo: Re-enable later when things are sorted out
+		--MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
 	end)
 
 	local speakerPlayer = self.SpeakerDatabase:GetSpeaker(fromSpeaker)

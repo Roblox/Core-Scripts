@@ -6,8 +6,9 @@ local source = [[
 local module = {}
 
 module.WindowDraggable = false
-module.WindowResizable = true
+module.WindowResizable = false
 
+module.ShowChannelsBar = false
 module.GamepadNavigationEnabled = false
 
 module.ChatWindowTextSize = Enum.FontSize.Size18
@@ -23,9 +24,10 @@ module.MaximumWindowSize = UDim2.new(1, 0, 1, 0) -- if you change this to be gre
 
 module.DefaultWindowPosition = UDim2.new(0, 0, 0, 0)
 
-module.DefaultWindowSizePhone = UDim2.new(0.5, 0, 0.5, 18 + 18)
-module.DefaultWindowSizeTablet = UDim2.new(0.4, 0, 0.3, 18 + 18)
-module.DefaultWindowSizeDesktop = UDim2.new(0.3, 0, 0.25, 18 + 18)
+local extraOffset = (7 * 2) + (7 * 2) -- Extra chatbar vertical offset
+module.DefaultWindowSizePhone = UDim2.new(0.5, 0, 0.5, extraOffset)
+module.DefaultWindowSizeTablet = UDim2.new(0.4, 0, 0.3, extraOffset)
+module.DefaultWindowSizeDesktop = UDim2.new(0.3, 0, 0.25, extraOffset)
 
 module.GeneralChannelName = "All" -- You can set to 'nil' to turn off echoing to a general channel.
 
