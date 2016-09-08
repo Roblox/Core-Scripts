@@ -104,7 +104,7 @@ end
 
 function StatsAnnotatedGraphClass:SetValues(values)
   local axisMax = self:_calculateAxisMax(values)
-  self._graph:Render(values, axisMax)
+  self._graph:UpdateGraph(values, axisMax)
   
   -- FIXME(dbanks)
   -- Format based on stat type.

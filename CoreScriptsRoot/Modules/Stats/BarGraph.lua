@@ -11,12 +11,7 @@ local CoreGuiService = game:GetService('CoreGui')
 local BarColor = Color3.new(0.1, 0.7, 0.1)
 
 --[[ Modules ]]--
-local folder = CoreGuiService:WaitForChild("RobloxGui")
-folder = folder:WaitForChild("Modules")
-folder = folder:WaitForChild("Stats")
-
-local StatsUtils = require(folder:WaitForChild( 
-    "StatsUtils"))
+local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
 
 --[[ Classes ]]--
 local BarGraphClass = {}
@@ -39,7 +34,7 @@ function BarGraphClass:PlaceInParent(parent, size, position)
   self._frame.Parent = parent
 end
 
-function BarGraphClass:Render(values, axisMax) 
+function BarGraphClass:UpdateGraph(values, axisMax) 
   self._frame:ClearAllChildren()
   
   local numValues = table.getn(values)
