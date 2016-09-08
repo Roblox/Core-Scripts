@@ -8,12 +8,7 @@
 local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
-local folder = CoreGuiService:WaitForChild("RobloxGui")
-folder = folder:WaitForChild("Modules")
-folder = folder:WaitForChild("Stats")
-
-local StatsUtils = require(folder:WaitForChild( 
-    "StatsUtils"))
+local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
 
 --[[ Classes ]]--
 local StatsAggregatorClass = {}
@@ -56,8 +51,8 @@ function StatsAggregatorClass:RemoveListener(listenerId)
 end
 
 function StatsAggregatorClass:_notifyAllListeners()
-  for key, value in pairs(self._listeners) do
-    value()
+  for listenerId, listenerCallback in pairs(self._listeners) do
+    listenerCallback()
   end
 end
 

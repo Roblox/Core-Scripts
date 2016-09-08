@@ -13,8 +13,18 @@ local Margin = 10
 local LabelXWidth = 30
 
 --[[ Modules ]]--
+<<<<<<< HEAD
+local folder = CoreGuiService:WaitForChild("RobloxGui")
+folder = folder:WaitForChild("Modules")
+folder = folder:WaitForChild("Stats")
+
+local StatsUtils = require(folder:WaitForChild( 
+    "StatsUtils"))
+local BarGraphClass = require(folder:WaitForChild(
+    "BarGraph"))
+=======
 local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
-local BarGraphClass = require(CoreGuiService.RobloxGui.Modules.Stats.BarGraph)
+>>>>>>> master
 
 --[[ Classes ]]--
 local StatsAnnotatedGraphClass = {}
