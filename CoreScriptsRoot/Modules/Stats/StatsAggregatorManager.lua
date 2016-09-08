@@ -1,6 +1,6 @@
 
 --[[
-		Filename: AllStatsAggregators.lua
+		Filename: StatsAggregatorManager.lua
 		Written by: dbanks
 		Description: Indexed array of stats aggregators, one for each stat.
 --]]
@@ -14,24 +14,24 @@ local StatsAggregatorClass = require(CoreGuiService.RobloxGui.Modules.Stats.Stat
 
 
 --[[ Classes ]]--
-local AllStatsAggregatorsClass = {}
-AllStatsAggregatorsClass.__index = AllStatsAggregatorsClass
+local StatsAggregatorManagerClass = {}
+StatsAggregatorManagerClass.__index = StatsAggregatorManagerClass
 
-AllStatsAggregatorsClass.SecondsBetweenUpdate = 1.0
-AllStatsAggregatorsClass.NumSamplesToKeep = 20
+StatsAggregatorManagerClass.SecondsBetweenUpdate = 1.0
+StatsAggregatorManagerClass.NumSamplesToKeep = 20
 
 
 
-function AllStatsAggregatorsClass.new() 
+function StatsAggregatorManagerClass.new() 
   local self = {}
-  setmetatable(self, AllStatsAggregatorsClass)
+  setmetatable(self, StatsAggregatorManagerClass)
   
   self._statsAggregators = {}
   
   for i, statType in ipairs(StatsUtils.AllStatTypes) do
     local statsAggregator = StatsAggregatorClass.new(statType, 
-      AllStatsAggregatorsClass.NumSamplesToKeep, 
-      AllStatsAggregatorsClass.SecondsBetweenUpdate)
+      StatsAggregatorManagerClass.NumSamplesToKeep, 
+      StatsAggregatorManagerClass.SecondsBetweenUpdate)
     self._statsAggregators[statType] = statsAggregator
   end
   
@@ -39,14 +39,14 @@ function AllStatsAggregatorsClass.new()
 end
 
 
-function AllStatsAggregatorsClass:StartListening()
+function StatsAggregatorManagerClass:StartListening()
   for i, statsAggregator in pairs(self._statsAggregators) do
     statsAggregator:StartListening()
   end
 end
 
-function AllStatsAggregatorsClass:GetAggregator(statsType)
+function StatsAggregatorManagerClass:GetAggregator(statsType)
   return self._statsAggregators[statsType]
 end
 
-return AllStatsAggregatorsClass
+return StatsAggregatorManagerClass

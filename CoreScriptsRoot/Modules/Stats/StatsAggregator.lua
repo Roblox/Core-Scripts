@@ -51,8 +51,8 @@ function StatsAggregatorClass:RemoveListener(listenerId)
 end
 
 function StatsAggregatorClass:_notifyAllListeners()
-  for key, value in pairs(self._listeners) do
-    value()
+  for listenerId, listenerCallback in pairs(self._listeners) do
+    listenerCallback()
   end
 end
 

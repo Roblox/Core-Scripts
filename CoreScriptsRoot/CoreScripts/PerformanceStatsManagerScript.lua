@@ -16,8 +16,8 @@ local RobloxGuiFolder = CoreGuiService:WaitForChild("RobloxGui")
 local ModulesFolder = RobloxGuiFolder:WaitForChild("Modules")
 local StatsFolder = ModulesFolder:WaitForChild("Stats")
 
-local AllStatsAggregatorsClass = require(StatsFolder:WaitForChild( 
-    "AllStatsAggregators"))
+local StatsAggregatorManagerClass = require(StatsFolder:WaitForChild( 
+    "StatsAggregatorManager"))
 local StatsButtonClass = require(StatsFolder:WaitForChild( 
     "StatsButton"))
 local StatsViewerClass = require(StatsFolder:WaitForChild( 
@@ -37,9 +37,8 @@ local showPerformanceStatsInGui = getShowPerformanceStatsInGuiSuccess and showPe
 --[[ Script Variables ]]--
 local masterFrame = Instance.new("Frame")
 masterFrame.Name = "PS_MasterFrame"
-local localPlayer = PlayersService.LocalPlayer
 
-local allStatsAggregators = AllStatsAggregatorsClass.new()
+local statsAggregatorManager = StatsAggregatorManagerClass.new()
 local statsViewer = StatsViewerClass.new()
 local statsButtonsByType ={}
 local currentDisplayType = nil
@@ -53,8 +52,8 @@ end
 function ConfigureMasterFrame()
   -- Set up the main frame that contains the whole PS GUI.  
   -- Avoid the top button bar.
-	masterFrame.Position = UDim2.new(0, 0, 0, 0)
-	masterFrame.Size = UDim2.new(1, 0, 1, 0)
+  masterFrame.Position = UDim2.new(0, 0, 0, 0)
+  masterFrame.Size = UDim2.new(1, 0, 1, 0)
   masterFrame.Selectable = false
   masterFrame.BackgroundTransparency = 0.8
   masterFrame.Active = false  
@@ -62,8 +61,8 @@ function ConfigureMasterFrame()
   
   -- FIXME(dbanks)
   -- Debug, can see the whole frame.
-	-- masterFrame.BackgroundColor3 = Color3.new(0, 0.5, 0.5)
-	-- masterFrame.BackgroundTransparency = 0.8  
+  -- masterFrame.BackgroundColor3 = Color3.new(0, 0.5, 0.5)
+  -- masterFrame.BackgroundTransparency = 0.8  
 end
 
 function ConfigureStatButtonsInMasterFrame()
@@ -105,7 +104,7 @@ function UpdateViewerVisibility()
   else
     statsViewer:SetStatsDisplayType(currentDisplayType)
     local aggregatorType = StatsUtils.DisplayTypeToAggregatorType[currentDisplayType]
-    statsViewer:SetStatsAggregator(allStatsAggregators:GetAggregator(aggregatorType))
+    statsViewer:SetStatsAggregator(statsAggregatorManager:GetAggregator(aggregatorType))
     
     statsViewer:SetVisible(true)
   end
@@ -121,7 +120,7 @@ function AddButton(displayType, index)
   button:SetParent(masterFrame)
   local aggregatorType = StatsUtils.DisplayTypeToAggregatorType[displayType]
   button:SetStatsAggregator(
-    allStatsAggregators:GetAggregator(aggregatorType))
+    statsAggregatorManager:GetAggregator(aggregatorType))
   
   local fraction = 1.0/StatsUtils.NumButtonTypes
   local size = UDim2.new(fraction, 0, 0, StatsUtils.ButtonHeight)
@@ -170,7 +169,7 @@ GameSettings.PerformanceStatsVisibleChanged:connect(
   UpdatePerformanceStatsVisibility)
 
 -- Start listening for updates in stats.
-allStatsAggregators:StartListening()
+statsAggregatorManager:StartListening()
 
 -- Make sure we're showing buttons and viewer based on current selection.
 UpdateButtonSelectedStates()
@@ -181,10 +180,10 @@ UpdatePerformanceStatsVisibility()
 
 -- This may change if Player shows up...
 spawn(function()
-    local player = PlayersService.LocalPlayer
-    while not player do
+    local localPlayer = PlayersService.LocalPlayer
+    while not localPlayer do
       PlayersService.PlayerAdded:wait()
-      player = PlayersService.LocalPlayer
+      localPlayer = PlayersService.LocalPlayer
     end
     UpdatePerformanceStatsVisibility()
 end)
