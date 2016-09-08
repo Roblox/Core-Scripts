@@ -152,6 +152,7 @@ local function DoBackgroundFadeIn(setFadingTime)
 	if (currentChannelObject) then
 		ChatWindow.GuiObject.Active = true
 
+
 		local Scroller = currentChannelObject.Scroller
 		Scroller.ScrollingEnabled = true
 		Scroller.ScrollBarThickness = moduleChatChannel.ScrollBarThickness
@@ -168,6 +169,7 @@ local function DoBackgroundFadeOut(setFadingTime)
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
 		ChatWindow.GuiObject.Active = false
+		--ChatWindow:ResetResizerPosition()
 		
 		local Scroller = currentChannelObject.Scroller
 		scrollBarThickness = Scroller.ScrollBarThickness
@@ -357,6 +359,13 @@ end)
 ChatBarUISConnection:disconnect()
 
 
+local function DoSwitchCurrentChannel(targetChannel)
+	if (ChatWindow:GetChannel(targetChannel)) then
+		ChatWindow:SwitchCurrentChannel(targetChannel)
+	end
+end
+
+
 local function ProcessChatCommands(message)
 	local processedCommand = false
 
@@ -364,9 +373,7 @@ local function ProcessChatCommands(message)
 		message = string.sub(message, 4)
 		processedCommand = true
 
-		if (ChatWindow:GetChannel(message)) then
-			ChatWindow:SwitchCurrentChannel(message)
-		end
+		DoSwitchCurrentChannel(message)
 
 	elseif (string.sub(message, 1, 4) == "/cls" or string.sub(message, 1, 6) == "/clear") then
 		processedCommand = true
@@ -395,18 +402,18 @@ end
 --// Event for making player say chat message.
 ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 	if (enterPressed) then
-		local message = string.sub(ChatBar:GetTextBox().Text, 1, 300) -- max of something whenever
+		local message = string.sub(ChatBar:GetTextBox().Text, 1, ChatSettings.MaximumMessageLength)
 		ChatBar:GetTextBox().Text = ""
 		
 		if (message ~= "" and not ProcessChatCommands(message)) then
 			message = string.gsub(message, "\n", "")
 			message = string.gsub(message, "[ ]+", " ")
 			
-			local currentChannel = ChatWindow:GetCurrentChannel()
-			if (currentChannel) then
-				MessageSender:SendMessage(message, currentChannel.Name)
+			local targetChannel = ChatWindow:GetTargetMessageChannel()
+			if (targetChannel) then
+				MessageSender:SendMessage(message, targetChannel)
 
-				if (currentChannel.Name == ChatSettings.GeneralChannelName) then
+				if (targetChannel == ChatSettings.GeneralChannelName) then
 					--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
 					moduleApiTable.MessagePosted:fire(message) 
 				end
@@ -498,7 +505,7 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 
 	if (channelObj) then
 		if (channel == "All") then
-			ChatWindow:SwitchCurrentChannel(channel)
+			DoSwitchCurrentChannel(channel)
 		end
 
 		if (messageLog) then
@@ -555,9 +562,7 @@ end)
 
 
 EventFolder.OnMainChannelSet.OnClientEvent:connect(function(channel)
-	if (ChatWindow:GetChannel(channel)) then
-		ChatWindow:SwitchCurrentChannel(channel)
-	end
+	DoSwitchCurrentChannel(channel)
 end)
 
 

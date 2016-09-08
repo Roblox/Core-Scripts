@@ -89,6 +89,10 @@ function methods:SendMessage(message, channelName, fromSpeaker)
 end
 
 function methods:SendSystemMessage(message, channelName)
+if (not channelName) then
+	print("MSG:", message)
+end
+
 	local channel = self.Channels[channelName:lower()]
 	if (channel) then
 		channel:SendSystemMessageToSpeaker(message, self.Name)

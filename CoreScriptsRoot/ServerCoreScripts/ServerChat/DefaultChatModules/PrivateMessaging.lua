@@ -28,7 +28,7 @@ local function Run(ChatService)
 		if (channelObj and ChatService:GetSpeaker(otherSpeakerName)) then
 			
 			if (channelObj.Name == "To " .. speaker.Name) then
-				speaker:SendSystemMessage("You cannot whisper to yourself.", nil)
+				speaker:SendSystemMessage("You cannot whisper to yourself.", channel)
 			else
 				if (not speaker:IsInChannel(channelObj.Name)) then
 					speaker:JoinChannel(channelObj.Name)
@@ -43,7 +43,7 @@ local function Run(ChatService)
 			end
 
 		else
-			speaker:SendSystemMessage("Speaker '" .. tostring(otherSpeakerName) .. "' does not exist.", nil)
+			speaker:SendSystemMessage("Speaker '" .. tostring(otherSpeakerName) .. "' does not exist.", channel)
 
 		end
 	end

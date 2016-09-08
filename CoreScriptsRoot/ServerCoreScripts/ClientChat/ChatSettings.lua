@@ -24,14 +24,16 @@ module.MaximumWindowSize = UDim2.new(1, 0, 1, 0) -- if you change this to be gre
 
 module.DefaultWindowPosition = UDim2.new(0, 0, 0, 0)
 
-local extraOffset = (7 * 2) + (7 * 2) -- Extra chatbar vertical offset
+local extraOffset = (7 * 2) + (5 * 2) -- Extra chatbar vertical offset
 module.DefaultWindowSizePhone = UDim2.new(0.5, 0, 0.5, extraOffset)
 module.DefaultWindowSizeTablet = UDim2.new(0.4, 0, 0.3, extraOffset)
 module.DefaultWindowSizeDesktop = UDim2.new(0.3, 0, 0.25, extraOffset)
 
-module.GeneralChannelName = "All" -- You can set to 'nil' to turn off echoing to a general channel.
+module.GeneralChannelName = "All" -- You can set to nil to turn off echoing to a general channel.
 
 module.ChannelsBarFullTabSize = 4 -- number of tabs in bar before it starts to scroll
+
+module.MaximumMessageLength = 200
 
 local ChangedEvent = Instance.new("BindableEvent")
 

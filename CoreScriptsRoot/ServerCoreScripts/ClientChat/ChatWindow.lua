@@ -140,7 +140,7 @@ function methods:CreateGuiObjects(targetParent)
 
 
 	ChatResizerFrame.DragBegin:connect(function(startUdim)
-		BaseFrame.Active = false
+		BaseFrame.Draggable = false
 	end)
 
 	local function UpdatePositionFromDrag(atPos)
@@ -150,13 +150,13 @@ function methods:CreateGuiObjects(targetParent)
 	end
 
 	ChatResizerFrame.DragStopped:connect(function(endX, endY)
-		BaseFrame.Active = true
+		BaseFrame.Draggable = ChatSettings.WindowDraggable
 		--UpdatePositionFromDrag(Vector2.new(endX, endY))
 	end)
 
 	local resizeLock = false
 	ChatResizerFrame.Changed:connect(function(prop)
-		if (prop == "AbsolutePosition" and not BaseFrame.Active) then
+		if (prop == "AbsolutePosition" and not BaseFrame.Draggable) then
 			if (resizeLock) then return end
 			resizeLock = true
 
@@ -166,7 +166,8 @@ function methods:CreateGuiObjects(targetParent)
 		end
 	end)
 
-	if (not Players.ClassicChat and Players.BubbleChat) then
+	local bubbleChatOnly = not Players.ClassicChat and Players.BubbleChat
+	if (bubbleChatOnly) then
 		ChatBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
 		ChannelsBarParentFrame.Visible = false
 		ChatChannelParentFrame.Visible = false
@@ -233,7 +234,7 @@ function methods:CreateGuiObjects(targetParent)
 		end
 
 		local chatBarTextSizeY = string.match(size.Name, "%d+")
-		local chatBarYSize = chatBarTextSizeY + 14 + 14
+		local chatBarYSize = chatBarTextSizeY + (7 * 2) + (5 * 2)
 
 		return chatBarYSize
 	end
@@ -413,11 +414,21 @@ function methods:RemoveChannel(channelName)
 		local generalChannelExists = (self:GetChannel(ChatSettings.GeneralChannelName) ~= nil)
 		local removingGeneralChannel = (indexName == ChatSettings.GeneralChannelName:lower())
 
+		local targetSwitchChannel = nil
+
 		if (generalChannelExists and not removingGeneralChannel) then
-			self:SwitchCurrentChannel(ChatSettings.GeneralChannelName)
+			targetSwitchChannel = ChatSettings.GeneralChannelName
 		else
 			local firstChannel = self:GetFirstChannel()
-			self:SwitchCurrentChannel(firstChannel and firstChannel.Name or nil)
+			targetSwitchChannel = (firstChannel and firstChannel.Name or nil)
+		end
+
+		self:SwitchCurrentChannel(targetSwitchChannel)
+	end
+
+	if (not ChatSettings.ShowChannelsBar) then
+		if (rawget(self.ChatBar, "TargetChannel") == channelName) then
+			self.ChatBar:SetChannelTarget(ChatSettings.GeneralChannelName)
 		end
 	end
 end
@@ -426,28 +437,48 @@ function methods:GetChannel(channelName)
 	return channelName and self.Channels[channelName:lower()] or nil
 end
 
+function methods:GetTargetMessageChannel()
+	if (not ChatSettings.ShowChannelsBar) then
+		return rawget(self.ChatBar, "TargetChannel")
+	else
+		local curChannel = self:GetCurrentChannel()
+		return curChannel and curChannel.Name
+	end
+end
+
 function methods:GetCurrentChannel()
 	return rawget(self, "CurrentChannel")
 end
 
 function methods:SwitchCurrentChannel(channelName)
-	local cur = self:GetCurrentChannel()
+	if (not ChatSettings.ShowChannelsBar) then
+		local targ = self:GetChannel(channelName)
+		if (targ) then
+			self.ChatBar:SetChannelTarget(targ.Name)
+		end
 
-	if (cur) then
-		cur:SetActive(false)
-		local tab = self.ChannelsBar:GetChannelTab(cur.Name)
-		tab:SetActive(false)
+		channelName = ChatSettings.GeneralChannelName
 	end
 
+	local cur = self:GetCurrentChannel()
 	local new = self:GetChannel(channelName)
 
-	if (new) then
-		new:SetActive(true)
-		local tab = self.ChannelsBar:GetChannelTab(new.Name)
-		tab:SetActive(true)
-	end
+	if (new ~= cur) then
+		if (cur) then
+			cur:SetActive(false)
+			local tab = self.ChannelsBar:GetChannelTab(cur.Name)
+			tab:SetActive(false)
+		end
 
-	rawset(self, "CurrentChannel", new)
+		if (new) then
+			new:SetActive(true)
+			local tab = self.ChannelsBar:GetChannelTab(new.Name)
+			tab:SetActive(true)
+		end
+
+		rawset(self, "CurrentChannel", new)
+	end
+	
 end
 
 function methods:UpdateFrameVisibility()
@@ -478,6 +509,11 @@ end
 
 function methods:DisableResizable()
 	self.GuiObjects.ChatResizerFrame.Active = false
+end
+
+function methods:ResetResizerPosition()
+	local ChatResizerFrame = self.GuiObjects.ChatResizerFrame
+	ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
 end
 
 function methods:FadeOutBackground(duration)
