@@ -20,11 +20,21 @@ local luaControlsSuccess, luaControlsFlagValue = pcall(function() return setting
 local vrKeyboardSuccess, vrKeyboardFlagValue = pcall(function() return settings():GetFFlag("UseVRKeyboardInLua") end)
 local useVRKeyboard = (vrKeyboardSuccess and vrKeyboardFlagValue == true)
 
--- MainBotChatScript (the Lua part of Dialogs)
+-- MainBotChatScript (the Lua part of Dialogs)
 scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", RobloxGui)
 
 -- In-game notifications script
 scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", RobloxGui)
+
+-- Performance Stats Management
+--[[ Fast Flags ]]--
+local getShowPerformanceStatsInGuiSuccess, showPerformanceStatsInGuiValue = 
+	pcall(function() return settings():GetFFlag("ShowPerformanceStatsInGui") end)
+local showPerformanceStatsInGui = getShowPerformanceStatsInGuiSuccess and showPerformanceStatsInGuiValue
+if (showPerformanceStatsInGui) then 
+  scriptContext:AddCoreScriptLocal("CoreScripts/PerformanceStatsManagerScript",
+    RobloxGui)
+end
 
 -- Chat script
 spawn(function() require(RobloxGui.Modules.ChatSelector) end)
