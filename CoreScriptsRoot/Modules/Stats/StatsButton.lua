@@ -10,7 +10,6 @@ local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
 local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
-local StatsAggregatorClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsAggregator)
 local StatsTextPanelClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsTextPanel)
 local StatsAnnotatedGraphClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsAnnotatedGraph)
 

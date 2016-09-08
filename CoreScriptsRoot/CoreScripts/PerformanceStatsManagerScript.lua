@@ -12,21 +12,11 @@ local GameSettings = Settings.GameSettings
 local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
-local RobloxGuiFolder = CoreGuiService:WaitForChild("RobloxGui")
-local ModulesFolder = RobloxGuiFolder:WaitForChild("Modules")
-local StatsFolder = ModulesFolder:WaitForChild("Stats")
-
-local StatsAggregatorManagerClass = require(StatsFolder:WaitForChild( 
-    "StatsAggregatorManager"))
-local StatsButtonClass = require(StatsFolder:WaitForChild( 
-    "StatsButton"))
-local StatsViewerClass = require(StatsFolder:WaitForChild( 
-    "StatsViewer"))
-local StatsUtils = require(StatsFolder:WaitForChild( 
-    "StatsUtils"))
-
-local TopbarConstants = require(ModulesFolder:WaitForChild( 
-    "TopbarConstants"))
+local StatsAggregatorManagerClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsAggregatorManager)
+local StatsButtonClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsButton)
+local StatsViewerClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsViewer)
+local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
+local TopbarConstants = require(CoreGuiService.RobloxGui.Modules.TopbarConstants)
 
 --[[ Fast Flags ]]--
 local getShowPerformanceStatsInGuiSuccess, showPerformanceStatsInGuiValue = 
@@ -145,7 +135,7 @@ function UpdatePerformanceStatsVisibility()
   local isVisible = (GameSettings.PerformanceStatsVisible and localPlayer ~= nil)
   if isVisible then 
     masterFrame.Visible = true
-    masterFrame.Parent = RobloxGuiFolder
+    masterFrame.Parent = CoreGuiService.RobloxGui
   else
     masterFrame.Visible = false
     masterFrame.Parent = nil
