@@ -106,6 +106,8 @@ function StatsAnnotatedGraphClass:SetValues(values)
   local axisMax = self:_calculateAxisMax(values)
   self._graph:Render(values, axisMax)
   
+  -- FIXME(dbanks)
+  -- Format based on stat type.
   self._topLabel.Text = string.format("%.4f", axisMax)
   self._midLabel.Text = string.format("%.4f", axisMax/2)
   self._bottomLabel.Text = string.format("%.4f", 0,.0)

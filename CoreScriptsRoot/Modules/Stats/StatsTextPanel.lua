@@ -108,7 +108,7 @@ end
 
 function StatsTextPanelClass:SetValue(value) 
   -- FIXME(dbanks)
-  -- Transform to appropriate units and format
+  -- Format based on stat type.
   self._valueLabel.Text = string.format("%.4f", value)
 end
 
