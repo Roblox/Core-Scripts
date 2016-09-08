@@ -18,12 +18,7 @@ local GraphPosition = UDim2.new(TextPanelXFraction, 0, 0, 0)
 local GraphSize = UDim2.new(GraphXFraction, 0, 1, 0)
 
 --[[ Modules ]]--
-local folder = CoreGuiService:WaitForChild("RobloxGui")
-folder = folder:WaitForChild("Modules")
-folder = folder:WaitForChild("Stats")
-
-local StatsUtils = require(folder:WaitForChild( 
-    "StatsUtils"))
+local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
 
 --[[ Classes ]]--
 local StatsAnnotatedGraphClass = {}

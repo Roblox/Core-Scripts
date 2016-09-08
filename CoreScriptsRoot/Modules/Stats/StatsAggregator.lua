@@ -8,12 +8,7 @@
 local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
-local folder = CoreGuiService:WaitForChild("RobloxGui")
-folder = folder:WaitForChild("Modules")
-folder = folder:WaitForChild("Stats")
-
-local StatsUtils = require(folder:WaitForChild( 
-    "StatsUtils"))
+local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
 
 --[[ Classes ]]--
 local StatsAggregatorClass = {}
