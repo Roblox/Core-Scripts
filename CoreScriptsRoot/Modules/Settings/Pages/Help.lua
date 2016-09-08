@@ -292,7 +292,7 @@ local function Initialize()
 				FontSize = Enum.FontSize.Size14,
 				TextColor3 = Color3.new(1,1,1),
 				Name = text .. "Label",
-				ZIndex = 2,
+				ZIndex = 3,
 				Parent = parent
 			};
 			if not smallScreen then
