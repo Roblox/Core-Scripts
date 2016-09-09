@@ -3,13 +3,13 @@
 --
 
 -- Constants
-local PLACEID = Game.PlaceId
+local PLACEID = game.PlaceId
 
-local MPS = Game:GetService 'MarketplaceService'
-local UIS = Game:GetService 'UserInputService'
-local CP = Game:GetService 'ContentProvider'
-local guiService = Game:GetService("GuiService")
+local MPS = game:GetService('MarketplaceService')
+local UIS = game:GetService('UserInputService')
+local guiService = game:GetService("GuiService")
 local ContextActionService = game:GetService('ContextActionService')
+local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 
 local startTime = tick()
 
@@ -35,20 +35,20 @@ end
 --
 -- Variables
 local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
-local currScreenGui = nil
-local renderSteppedConnection = nil
-local fadingBackground = false
-local destroyingBackground = false
-local destroyedLoadingGui = false
-local hasReplicatedFirstElements = false
+local currScreenGui, renderSteppedConnection = nil, nil
+local destroyingBackground, destroyedLoadingGui, hasReplicatedFirstElements = false, false, false
 local backgroundImageTransparency = 0
 local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
-local isTenFootInterface = false 
-pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
+local isTenFootInterface = guiService:IsTenFootInterface()
 local platform = UIS:GetPlatform()
 
-local useGameLoadedSuccess, useGameLoadedFlagValue = pcall(function() return settings():GetFFlag("UseGameLoadedInLoadingScript") end)
-local useGameLoadedToWait = (useGameLoadedSuccess and useGameLoadedFlagValue == true)
+local function IsConvertMyPlaceNameInXboxAppEnabled()
+	if UIS:GetPlatform() == Enum.Platform.XBoxOne then
+		local success, flagValue = pcall(function() return settings():GetFFlag("ConvertMyPlaceNameInXboxApp") end)
+		return (success and flagValue == true)
+	end
+	return false
+end
 
 --
 -- Utility functions
@@ -83,9 +83,35 @@ local MainGui = {}
 local InfoProvider = {}
 
 
+function ExtractGeneratedUsername(gameName)
+	local tempUsername = string.match(gameName, "^([0-9a-fA-F]+)'s Place$")
+	if tempUsername and #tempUsername == 32 then
+		return tempUsername
+	end
+end
+
+-- Fix places that have been made with incorrect temporary usernames
+function GetFilteredGameName(gameName, creatorName)
+	if gameName and type(gameName) == 'string' then
+		local tempUsername = ExtractGeneratedUsername(gameName)
+		if tempUsername then
+			local newGameName = string.gsub(gameName, tempUsername, creatorName, 1)
+			if newGameName then
+				return newGameName
+			end
+		end
+	end
+	return gameName
+end
+
+
 function InfoProvider:GetGameName()
 	if GameAssetInfo ~= nil then
-		return GameAssetInfo.Name
+		if IsConvertMyPlaceNameInXboxAppEnabled() then
+			return GetFilteredGameName(GameAssetInfo.Name, self:GetCreatorName())
+		else
+			return GameAssetInfo.Name
+		end
 	else
 		return ''
 	end
@@ -100,12 +126,12 @@ function InfoProvider:GetCreatorName()
 end
 
 function InfoProvider:LoadAssets()
-	Spawn(function() 
+	spawn(function()
 		if PLACEID <= 0 then
-			while Game.PlaceId <= 0 do
+			while game.PlaceId <= 0 do
 				wait()
 			end
-			PLACEID = Game.PlaceId
+			PLACEID = game.PlaceId
 		end
 
 		-- load game asset info
@@ -143,7 +169,7 @@ function MainGui:tileBackgroundTexture(frameToFill)
 end
 
 -- create a cancel binding for console to be able to cancel anytime while loading
-local function createTenfootCancelGui(parent)
+local function createTenfootCancelGui()
 	local cancelLabel = create'ImageLabel'
 	{
 		Name = "CancelLabel";
@@ -151,7 +177,6 @@ local function createTenfootCancelGui(parent)
 		Position = UDim2.new(1, -32 - 83, 0, 32);
 		BackgroundTransparency = 1;
 		Image = 'rbxasset://textures/ui/Shell/ButtonIcons/BButton.png';
-		Parent = parent;
 	}
 	local cancelText = create'TextLabel'
 	{
@@ -163,7 +188,6 @@ local function createTenfootCancelGui(parent)
 		TextXAlignment = Enum.TextXAlignment.Right;
 		TextColor3 = COLORS.WHITE;
 		Text = "Cancel";
-		Parent = parent;
 	}
 
 	-- bind cancel action
@@ -173,21 +197,35 @@ local function createTenfootCancelGui(parent)
 	end)
 
 	if platformService then
-		local seenBButtonBegin = false
-		ContextActionService:BindCoreAction("CancelGameLoad",
-			function(actionName, inputState, inputObject)
-				if inputState == Enum.UserInputState.Begin then
-					seenBButtonBegin = true
-				elseif inputState == Enum.UserInputState.End and seenBButtonBegin then
-					cancelLabel:Destroy()
-					cancelText.Text = "Canceling..."
-					cancelText.Position = UDim2.new(1, -32, 0, 64)
-					ContextActionService:UnbindCoreAction('CancelGameLoad')
-					platformService:RequestGameShutdown()
-				end
-			end,
-			false,
-			Enum.KeyCode.ButtonB)
+		if not game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
+			local seenBButtonBegin = false
+			ContextActionService:BindCoreAction("CancelGameLoad",
+				function(actionName, inputState, inputObject)
+					if inputState == Enum.UserInputState.Begin then
+						seenBButtonBegin = true
+					elseif inputState == Enum.UserInputState.End and seenBButtonBegin then
+						cancelLabel:Destroy()
+						cancelText.Text = "Canceling..."
+						cancelText.Position = UDim2.new(1, -32, 0, 64)
+						ContextActionService:UnbindCoreAction('CancelGameLoad')
+						platformService:RequestGameShutdown()
+					end
+				end,
+				false,
+				Enum.KeyCode.ButtonB)
+		end
+	end
+
+	while cancelLabel.Parent == nil do
+		if currScreenGui then
+			local blackFrame = currScreenGui:FindFirstChild('BlackFrame')
+			if blackFrame then
+				cancelLabel.Parent = blackFrame
+				cancelText.Parent = blackFrame
+				break
+			end
+		end
+		wait()
 	end
 end
 
@@ -197,7 +235,7 @@ function MainGui:GenerateMain()
 	local screenGui = create 'ScreenGui' {
 		Name = 'RobloxLoadingGui'
 	}
-	
+
 	--
 	-- create descendant frames
 	local mainBackgroundContainer = create 'Frame' {
@@ -221,7 +259,7 @@ function MainGui:GenerateMain()
 			ZIndex = 10,
 			Parent = mainBackgroundContainer,
 		}
-		
+
 		local graphicsFrame = create 'Frame' {
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
@@ -257,7 +295,7 @@ function MainGui:GenerateMain()
 				ZIndex = 2,
 				Parent = graphicsFrame,
 			}
-		
+
 		local uiMessageFrame = create 'Frame' {
 			Name = 'UiMessageFrame',
 			BackgroundTransparency = 1,
@@ -279,7 +317,7 @@ function MainGui:GenerateMain()
 				ZIndex = 2,
 				Parent = uiMessageFrame,
 			}
-		
+
 		local infoFrame = create 'Frame' {
 			Name = 'InfoFrame',
 			BackgroundTransparency = 1,
@@ -355,11 +393,11 @@ function MainGui:GenerateMain()
 				ZIndex = 2,
 				Parent = infoFrame,
 			}
-		
+
 		local backgroundTextureFrame = create 'Frame' {
 			Name = 'BackgroundTextureFrame',
 			BorderSizePixel = 0,
-			Size = UDim2.new(1, 0, 1, 0), 
+			Size = UDim2.new(1, 0, 1, 0),
 			Position = UDim2.new(0, 0, 0, 0),
 			ClipsDescendants = true,
 			ZIndex = 1,
@@ -391,10 +429,10 @@ function MainGui:GenerateMain()
 			Parent = errorFrame,
 		}
 
-	while not Game:GetService("CoreGui") do
+	while not game:GetService("CoreGui") do
 		wait()
 	end
-	screenGui.Parent = Game:GetService("CoreGui")
+	screenGui.Parent = game:GetService("CoreGui")
 	currScreenGui = screenGui
 end
 
@@ -409,21 +447,20 @@ end
 -- start loading assets asap
 InfoProvider:LoadAssets()
 MainGui:GenerateMain()
+if isTenFootInterface then
+	createTenfootCancelGui()
+end
 
-local removedLoadingScreen = false
 local setVerb = true
-local lastRenderTime = nil
+local lastRenderTime, lastDotUpdateTime, brickCountChange = nil, nil, nil
 local fadeCycleTime = 1.7
 local turnCycleTime = 2
 local lastAbsoluteSize = Vector2.new(0, 0)
 local loadingDots = "..."
-local lastDotUpdateTime = nil
 local dotChangeTime = .2
-local brickCountChange = nil
 local lastBrickCount = 0
-local tenfootCancelGuiLoaded = false
 
-renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(function()
+renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(function()
 	if not currScreenGui then return end
 	if not currScreenGui:FindFirstChild("BlackFrame") then return end
 
@@ -431,11 +468,11 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 		currScreenGui.BlackFrame.CloseButton:SetVerb("Exit")
 		setVerb = false
 	end
-	
+
 	if currScreenGui.BlackFrame:FindFirstChild("BackgroundTextureFrame") and currScreenGui.BlackFrame.BackgroundTextureFrame.AbsoluteSize ~= lastAbsoluteSize then
 		lastAbsoluteSize = currScreenGui.BlackFrame.BackgroundTextureFrame.AbsoluteSize
 		MainGui:tileBackgroundTexture(currScreenGui.BlackFrame.BackgroundTextureFrame)
-	end 
+	end
 
 	local infoFrame = currScreenGui.BlackFrame:FindFirstChild('InfoFrame')
 	if infoFrame then
@@ -484,7 +521,7 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 	lastRenderTime = currentTime
 
 	currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.Rotation = currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.Rotation + turnAmount
-	
+
 	local updateLoadingDots =  function()
 		loadingDots = loadingDots.. "."
 		if loadingDots == "...." then
@@ -492,12 +529,12 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 		end
 		currScreenGui.BlackFrame.GraphicsFrame.LoadingText.Text = "Loading" ..loadingDots
 	end
-	
+
 	if currentTime - lastDotUpdateTime >= dotChangeTime and InfoProvider:GetCreatorName() == "" then
 		lastDotUpdateTime = currentTime
 		updateLoadingDots()
 	else
-		if guiService:GetBrickCount() > 0 then  
+		if guiService:GetBrickCount() > 0 then
 			if brickCountChange == nil then
 				brickCountChange = guiService:GetBrickCount()
 			end
@@ -507,14 +544,8 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 			end
 		end
 	end
-	
-	-- fade in close button after 5 seconds unless we are running on a console
-	if isTenFootInterface then
-		if tenfootCancelGuiLoaded == false and currentTime - startTime > 3 then
-			tenfootCancelGuiLoaded = true
-			createTenfootCancelGui(currScreenGui.BlackFrame)
-		end
-	else
+
+	if not isTenFootInterface then
 		if currentTime - startTime > 5 and currScreenGui.BlackFrame.CloseButton.ImageTransparency > 0 then
 			currScreenGui.BlackFrame.CloseButton.ImageTransparency = currScreenGui.BlackFrame.CloseButton.ImageTransparency - fadeAmount
 
@@ -525,8 +556,8 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 	end
 end)
 
-spawn(function() 
-	local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+spawn(function()
+	local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 	local guiInsetChangedEvent = Instance.new("BindableEvent")
 	guiInsetChangedEvent.Name = "GuiInsetChanged"
 	guiInsetChangedEvent.Parent = RobloxGui
@@ -542,13 +573,13 @@ local leaveGameButton, leaveGameTextLabel, errorImage = nil
 
 guiService.ErrorMessageChanged:connect(function()
 	if guiService:GetErrorMessage() ~= '' then
-		if isTenFootInterface then 
+		if isTenFootInterface then
 			currScreenGui.ErrorFrame.Size = UDim2.new(1, 0, 0, 144)
 			currScreenGui.ErrorFrame.Position = UDim2.new(0, 0, 0, 0)
 			currScreenGui.ErrorFrame.BackgroundColor3 = COLORS.BLACK
 			currScreenGui.ErrorFrame.BackgroundTransparency = 0.5
-			currScreenGui.ErrorFrame.ErrorText.FontSize = Enum.FontSize.Size36 
-			currScreenGui.ErrorFrame.ErrorText.Position = UDim2.new(.3, 0, 0, 0) 
+			currScreenGui.ErrorFrame.ErrorText.FontSize = Enum.FontSize.Size36
+			currScreenGui.ErrorFrame.ErrorText.Position = UDim2.new(.3, 0, 0, 0)
 			currScreenGui.ErrorFrame.ErrorText.Size = UDim2.new(.4, 0, 0, 144)
 			if errorImage == nil then
 				errorImage = Instance.new("ImageLabel")
@@ -562,26 +593,26 @@ guiService.ErrorMessageChanged:connect(function()
 			-- we show a B button to kill game data model on console
 			if not isTenFootInterface then
 				if leaveGameButton == nil then
-					local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+					local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 					local utility = require(RobloxGui.Modules.Settings.Utility)
 					local textLabel = nil
 					leaveGameButton, leaveGameTextLabel = utility:MakeStyledButton("LeaveGame", "Leave", UDim2.new(0, 288, 0, 78))
 					leaveGameButton:SetVerb("Exit")
 					leaveGameButton.NextSelectionDown = leaveGameButton
 					leaveGameButton.NextSelectionLeft = leaveGameButton
-					leaveGameButton.NextSelectionRight = leaveGameButton 
+					leaveGameButton.NextSelectionRight = leaveGameButton
 					leaveGameButton.NextSelectionUp = leaveGameButton
 					leaveGameButton.ZIndex = 9
 					leaveGameButton.Position = UDim2.new(0.771875, 0, 0, 37)
 					leaveGameButton.Parent = currScreenGui.ErrorFrame
-					leaveGameTextLabel.FontSize = Enum.FontSize.Size36 
+					leaveGameTextLabel.FontSize = Enum.FontSize.Size36
 					leaveGameTextLabel.ZIndex = 10
 					game:GetService("GuiService").SelectedCoreObject = leaveGameButton
 				else
 					game:GetService("GuiService").SelectedCoreObject = leaveGameButton
 				end
 			end
-		end 
+		end
 		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
 		currScreenGui.ErrorFrame.Visible = true
 		local blackFrame = currScreenGui:FindFirstChild('BlackFrame')
@@ -650,7 +681,7 @@ function fadeAndDestroyBlackFrame(blackFrame)
 				end
 				graphicsFrame.LoadingImage.ImageTransparency = transparency
 				blackFrame.BackgroundTransparency = transparency
-				
+
 				if backgroundImageTransparency < 1 then
 					backgroundImageTransparency = transparency
 					local backgroundImages = blackFrame.BackgroundTextureFrame:GetChildren()
@@ -670,7 +701,7 @@ function fadeAndDestroyBlackFrame(blackFrame)
 	end)
 end
 
-function destroyLoadingElements()
+function destroyLoadingElements(instant)
 	if not currScreenGui then return end
 	if destroyedLoadingGui then return end
 	destroyedLoadingGui = true
@@ -679,7 +710,7 @@ function destroyLoadingElements()
 	for i=1, #guiChildren do
 		-- need to keep this around in case we get a connection error later
 		if guiChildren[i].Name ~= "ErrorFrame" then
-			if guiChildren[i].Name == "BlackFrame" then
+			if guiChildren[i].Name == "BlackFrame" and not instant then
 				fadeAndDestroyBlackFrame(guiChildren[i])
 			else
 				guiChildren[i]:Destroy()
@@ -689,25 +720,18 @@ function destroyLoadingElements()
 end
 
 function handleFinishedReplicating()
-	hasReplicatedFirstElements = (#Game:GetService("ReplicatedFirst"):GetChildren() > 0)
+	hasReplicatedFirstElements = (#game:GetService("ReplicatedFirst"):GetChildren() > 0)
 
 	if not hasReplicatedFirstElements then
-		if useGameLoadedToWait then
-			if game:IsLoaded() then
-				handleRemoveDefaultLoadingGui()
-			else
-				local gameLoadedCon = nil
-				gameLoadedCon = game.Loaded:connect(function()
-					gameLoadedCon:disconnect()
-					gameLoadedCon = nil
-					handleRemoveDefaultLoadingGui()
-				end)
-			end
-		else
-			while game:GetService("ContentProvider").RequestQueueSize > 0 do
-				wait()
-			end
+		if game:IsLoaded() then
 			handleRemoveDefaultLoadingGui()
+		else
+			local gameLoadedCon = nil
+			gameLoadedCon = game.Loaded:connect(function()
+				gameLoadedCon:disconnect()
+				gameLoadedCon = nil
+				handleRemoveDefaultLoadingGui()
+			end)
 		end
 	else
 		wait(5) -- make sure after 5 seconds we remove the default gui, even if the user doesn't
@@ -715,20 +739,39 @@ function handleFinishedReplicating()
 	end
 end
 
-function handleRemoveDefaultLoadingGui()
-	destroyLoadingElements()
+function handleRemoveDefaultLoadingGui(instant)
 	if isTenFootInterface then
 		ContextActionService:UnbindCoreAction('CancelGameLoad')
 	end
+	destroyLoadingElements(instant)
 end
 
-Game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
-if Game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
+game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
+if game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
 	handleFinishedReplicating()
 end
 
-Game:GetService("ReplicatedFirst").RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
-if Game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
+game:GetService("ReplicatedFirst").RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
+if game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
 	handleRemoveDefaultLoadingGui()
-	return
 end
+
+local UserInputServiceChangedConn;
+local function onUserInputServiceChanged(prop)
+	if prop == 'VREnabled' then
+		local UseVr = false
+		pcall(function() UseVr = UIS.VREnabled end)
+
+		if UseVr then
+			if UserInputServiceChangedConn then
+				UserInputServiceChangedConn:disconnect()
+				UserInputServiceChangedConn = nil
+			end
+			handleRemoveDefaultLoadingGui(true)
+			require(RobloxGui.Modules.LoadingScreen3D)
+		end
+	end
+end
+
+UserInputServiceChangedConn = UIS.Changed:connect(onUserInputServiceChanged)
+onUserInputServiceChanged('VREnabled')

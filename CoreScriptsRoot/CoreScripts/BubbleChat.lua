@@ -14,6 +14,12 @@ local GameOptions = settings()["Game Options"]
 --[[ END OF SERVICES ]]
 
 
+while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
+local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
+local playerDropDownModule = require(GuiRoot.Modules:WaitForChild("PlayerDropDown"))
+local blockingUtility = playerDropDownModule:CreateBlockingUtility()
+
+
 --[[ SCRIPT VARIABLES ]]
 local CHAT_BUBBLE_FONT = Enum.Font.SourceSans
 local CHAT_BUBBLE_FONT_SIZE = Enum.FontSize.Size24 -- if you change CHAT_BUBBLE_FONT_SIZE_INT please change this to match
@@ -24,20 +30,24 @@ local CHAT_BUBBLE_WIDTH_PADDING = 30
 local CHAT_BUBBLE_FADE_SPEED = 1.5
 
 local BILLBOARD_MAX_WIDTH = 400
-local BILLBOARD_MAX_HEIGHT = 500
+local BILLBOARD_MAX_HEIGHT = 250	--This limits the number of bubble chats that you see above characters
 
 local ELIPSES = "..."
 local CchMaxChatMessageLength = 128 -- max chat message length, including null terminator and elipses.
 local CchMaxChatMessageLengthExclusive = CchMaxChatMessageLength - string.len(ELIPSES) - 1
+
+local NEAR_BUBBLE_DISTANCE = 65	--previously 45
+local MAX_BUBBLE_DISTANCE = 100	--previously 80
+
 --[[ END OF SCRIPT VARIABLES ]]
 
 
 -- [[ SCRIPT ENUMS ]]
-local ChatType = {	PLAYER_CHAT = "pChat", 
-					PLAYER_TEAM_CHAT = "pChatTeam", 
+local ChatType = {	PLAYER_CHAT = "pChat",
+					PLAYER_TEAM_CHAT = "pChatTeam",
 					PLAYER_WHISPER_CHAT = "pChatWhisper",
-					GAME_MESSAGE= "gMessage", 
-					PLAYER_GAME_CHAT = "pGame", 
+					GAME_MESSAGE= "gMessage",
+					PLAYER_GAME_CHAT = "pGame",
 					BOT_CHAT = "bChat" }
 
 local BubbleColor = {	WHITE = "dub", 
@@ -73,7 +83,7 @@ local function createFifo()
 	function this:PopFront()
 		table.remove(this.data, 1)
 		if this:Empty() then emptyEvent:Fire() end
-	end 
+	end
 
 	function this:Front()
 		return this.data[1]
@@ -116,13 +126,14 @@ local function createMap()
 		if this.data[key] then count = count - 1 end
 		this.data[key] = nil
 	end
-	
+
 	function this:Set(key, value)
 		this.data[key] = value
 		if value then count = count + 1 end
 	end
 
 	function this:Get(key)
+		if not key then return end
 		if not this.data[key] then
 			this.data[key] = createCharacterChats()
 			local emptiedCon = nil
@@ -182,8 +193,6 @@ local function createPlayerChatLine(chatType, player, message, isLocalPlayer)
 		this.User = player.Name
 		this.Origin = player.Character
 	end
-
-	this.HistoryDieDelay = 60
 
 	return this
 end
@@ -270,8 +279,6 @@ end
 
 
 local function createChatOutput()
-	local MaxChatBubblesPerPlayer = 10
-	local MaxChatLinesPerBubble = 5
 
 	local this = {}
 	this.ChatBubble = {}
@@ -328,7 +335,7 @@ local function createChatOutput()
 	end
 
 	function this:CreateBillboardGuiHelper(instance, onlyCharacter)
-		if not this.CharacterSortedMsg:Get(instance)["BillboardGui"] then
+		if instance and not this.CharacterSortedMsg:Get(instance)["BillboardGui"] then
 			if not onlyCharacter then
 				if instance:IsA("Part") then
 					-- Create a new billboardGui object attached to this player
@@ -400,9 +407,9 @@ local function createChatOutput()
 
 		local bubbleDistance = distanceToBubbleOrigin(origin)
 
-		if bubbleDistance < 45 then
+		if bubbleDistance < NEAR_BUBBLE_DISTANCE then
 			this:SetBillboardLODNear(billboardGui)
-		elseif bubbleDistance >= 45 and bubbleDistance < 80 then
+		elseif bubbleDistance >= NEAR_BUBBLE_DISTANCE and bubbleDistance < MAX_BUBBLE_DISTANCE then
 			this:SetBillboardLODDistant(billboardGui)
 		else
 			this:SetBillboardLODVeryFar(billboardGui)
@@ -510,53 +517,71 @@ local function createChatOutput()
 	end
 
 	function this:CreateChatLineRender(instance, line, onlyCharacter, fifo)
+		if not instance then return end
+
 		if not this.CharacterSortedMsg:Get(instance)["BillboardGui"] then
 			this:CreateBillboardGuiHelper(instance, onlyCharacter)
 		end
 
 		local billboardGui = this.CharacterSortedMsg:Get(instance)["BillboardGui"]
-		local chatBubbleRender = this.ChatBubbleWithTail[line.BubbleColor]:Clone()
-		chatBubbleRender.Visible = false
-		local bubbleText = this:CreateBubbleText(line.Message)
+		if billboardGui then
+			local chatBubbleRender = this.ChatBubbleWithTail[line.BubbleColor]:Clone()
+			chatBubbleRender.Visible = false
+			local bubbleText = this:CreateBubbleText(line.Message)
 
-		bubbleText.Parent = chatBubbleRender
-		chatBubbleRender.Parent = billboardGui.BillboardFrame
+			bubbleText.Parent = chatBubbleRender
+			chatBubbleRender.Parent = billboardGui.BillboardFrame
 
-		line.RenderBubble = chatBubbleRender
+			line.RenderBubble = chatBubbleRender
 
-		local currentTextBounds = TextService:GetTextSize(bubbleText.Text, CHAT_BUBBLE_FONT_SIZE_INT, CHAT_BUBBLE_FONT, 
-															Vector2.new(BILLBOARD_MAX_WIDTH, BILLBOARD_MAX_HEIGHT))
-		local bubbleWidthScale = math.max((currentTextBounds.x + CHAT_BUBBLE_WIDTH_PADDING)/BILLBOARD_MAX_WIDTH, 0.1)
-		local numOflines = (currentTextBounds.y/CHAT_BUBBLE_FONT_SIZE_INT)
+			local currentTextBounds = TextService:GetTextSize(bubbleText.Text, CHAT_BUBBLE_FONT_SIZE_INT, CHAT_BUBBLE_FONT, 
+																Vector2.new(BILLBOARD_MAX_WIDTH, BILLBOARD_MAX_HEIGHT))
+			local bubbleWidthScale = math.max((currentTextBounds.x + CHAT_BUBBLE_WIDTH_PADDING)/BILLBOARD_MAX_WIDTH, 0.1)
+			local numOflines = (currentTextBounds.y/CHAT_BUBBLE_FONT_SIZE_INT)
 
-		-- prep chat bubble for tween
-		chatBubbleRender.Size = UDim2.new(0,0,0,0)
-		chatBubbleRender.Position = UDim2.new(0.5,0,1,0)
+			-- prep chat bubble for tween
+			chatBubbleRender.Size = UDim2.new(0,0,0,0)
+			chatBubbleRender.Position = UDim2.new(0.5,0,1,0)
 
-		local newChatBubbleOffsetSizeY = numOflines * CHAT_BUBBLE_LINE_HEIGHT
+			local newChatBubbleOffsetSizeY = numOflines * CHAT_BUBBLE_LINE_HEIGHT
 
-		chatBubbleRender:TweenSizeAndPosition(UDim2.new(bubbleWidthScale, 0, 0, newChatBubbleOffsetSizeY),
-											 	UDim2.new( (1-bubbleWidthScale)/2, 0, 1, -newChatBubbleOffsetSizeY),
-											 	Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.1, true,
-											 	function() bubbleText.Visible = true end)
+			chatBubbleRender:TweenSizeAndPosition(UDim2.new(bubbleWidthScale, 0, 0, newChatBubbleOffsetSizeY),
+												 	UDim2.new( (1-bubbleWidthScale)/2, 0, 1, -newChatBubbleOffsetSizeY),
+												 	Enum.EasingDirection.Out, Enum.EasingStyle.Elastic, 0.1, true,
+												 	function() bubbleText.Visible = true end)
 
-		-- todo: remove when over max bubbles
-		this:SetBillboardGuiLOD(billboardGui, line.Origin)
-		this:UpdateChatLinesForOrigin(line.Origin, -newChatBubbleOffsetSizeY)
+			-- todo: remove when over max bubbles
+			this:SetBillboardGuiLOD(billboardGui, line.Origin)
+			this:UpdateChatLinesForOrigin(line.Origin, -newChatBubbleOffsetSizeY)
 
-		delay(line.BubbleDieDelay, function()
-			this:DestroyBubble(fifo, chatBubbleRender)
-		end)
+			delay(line.BubbleDieDelay, function()
+				this:DestroyBubble(fifo, chatBubbleRender)
+			end)
+		end
+	end
+
+	local testLabel = Instance.new('TextLabel')
+	function isLabelTextAllowed(message)
+		--There exists an internal filter that filters out some profanity. It does this silently if you try to set text of an object.
+		--Here we check if the message is going to be filtered by applying it and comparing it.
+		testLabel.Text = message
+		return (testLabel.Text == message)
 	end
 
 	function this:OnPlayerChatMessage(chatType, sourcePlayer, message, targetPlayer)
 		if not this:BubbleChatEnabled() then return end
 
-		-- eliminate display of emotes
-		if string.find(message, "/e ") == 1 or string.find(message, "/emote ") == 1 then return end
+		-- eliminate display of commands
+		if string.sub(message, 1, 1) == '/' then return end
 
 		local localPlayer = PlayersService.LocalPlayer
 		local fromOthers = localPlayer ~= nil and sourcePlayer ~= localPlayer
+
+		-- annihilate chats made by blocked or muted players
+		if blockingUtility:IsPlayerBlockedByUserId(sourcePlayer.userId) or blockingUtility:IsPlayerMutedByUserId(sourcePlayer.userId) then return end
+
+		-- remove messages that are filtered from the default gui text filter
+		if not isLabelTextAllowed(message) then return end
 
 		local luaChatType = ChatType.PLAYER_CHAT
 		if chatType == Enum.PlayerChatType.Team then
@@ -571,23 +596,17 @@ local function createChatOutput()
 
 		local line = createPlayerChatLine(chatType, sourcePlayer, safeMessage, not fromOthers)
 		
-		local fifo = this.CharacterSortedMsg:Get(line.Origin).Fifo
-		fifo:PushBack(line)
-
-		if sourcePlayer then
+		if sourcePlayer and line.Origin then
+			local fifo = this.CharacterSortedMsg:Get(line.Origin).Fifo
+			fifo:PushBack(line)
 			--Game chat (badges) won't show up here
 			this:CreateChatLineRender(sourcePlayer.Character, line, true, fifo)
 		end
 	end
 
 	function this:OnGameChatMessage(origin, message, color)
-		if not this:BubbleChatEnabled() then return end
-
 		local localPlayer = PlayersService.LocalPlayer
 		local fromOthers = localPlayer ~= nil and (localPlayer.Character ~= origin)
-
-		-- todo: filter?
-		--message = ChatService:FilterStringForPlayerAsync(message, localPlayer)
 
 		local bubbleColor = BubbleColor.WHITE
 

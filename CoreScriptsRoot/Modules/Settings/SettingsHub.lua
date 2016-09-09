@@ -8,6 +8,7 @@
 --[[ CONSTANTS ]]
 local SETTINGS_SHIELD_COLOR = Color3.new(41/255,41/255,41/255)
 local SETTINGS_SHIELD_TRANSPARENCY = 0.2
+local SETTINGS_SHIELD_VR_TRANSPARENCY = 1
 local SETTINGS_SHIELD_SIZE = UDim2.new(1, 0, 1, 0)
 local SETTINGS_SHIELD_INACTIVE_POSITION = UDim2.new(0,0,-1,-36)
 local SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0, 0, 0, 0)
@@ -24,24 +25,35 @@ local RunService = game:GetService("RunService")
 
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
 
 --[[ VARIABLES ]]
 local isTouchDevice = UserInputService.TouchEnabled
+local isSmallTouchScreen = utility:IsSmallTouchScreen()
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local platform = UserInputService:GetPlatform()
--- TODO: Change dev console script to parent this to somewhere other than an engine created gui
-local ControlFrame = RobloxGui:WaitForChild('ControlFrame')
-local ToggleDevConsoleBindableFunc = ControlFrame:WaitForChild('ToggleDevConsole')
+
+local DeveloperConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
+
 local lastInputChangedCon = nil
-local chatWasVisible = false 
+local chatWasVisible = false
+local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
+local useUserList = (userlistSuccess and userlistFlagValue == true)
+
+local function IsPlayMyPlaceEnabled()
+	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+		local playMyPlaceSuccess, playMyPlaceFlagValue = pcall(function() return settings():GetFFlag("XboxPlayMyPlace") end)
+		return (playMyPlaceSuccess and playMyPlaceFlagValue == true)
+	end
+	return false
+end
+
 
 --[[ CORE MODULES ]]
-local playerList = require(RobloxGui.Modules.PlayerlistModule)
-local chat = require(RobloxGui.Modules.Chat)
-local backpack = require(RobloxGui.Modules.BackpackScript)
+local chat = require(RobloxGui.Modules.ChatSelector)
 
-if utility:IsSmallTouchScreen() or isTenFootInterface then
+if isSmallTouchScreen or isTenFootInterface then
 	SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0,0,0,0)
 	SETTINGS_SHIELD_SIZE = UDim2.new(1,0,1,0)
 end
@@ -117,7 +129,7 @@ local function CreateSettingsHub()
 		this[textName].FontSize = Enum.FontSize.Size24
 		local hintLabel = nil
 
-		if not UserInputService.TouchEnabled then
+		if not isTouchDevice then
 			this[textName].Size = UDim2.new(1,0,1,0)
 			if isTenFootInterface then
 				this[textName].Position = UDim2.new(0,60,0,-4)
@@ -147,6 +159,10 @@ local function CreateSettingsHub()
 			if isTenFootInterface then
 				hintLabel.Size = UDim2.new(0,90,0,90)
 				hintLabel.Position = UDim2.new(0,10,0.5,-45)
+			elseif UserInputService.MouseEnabled then
+				hintLabel.Image = keyboardImage
+				hintLabel.Size = UDim2.new(0,48,0,48)
+				hintLabel.Position = UDim2.new(0,10,0,8)
 			end
 		end
 
@@ -188,11 +204,11 @@ local function CreateSettingsHub()
 
 	local function createGui()
 		local PageViewSizeReducer = 0
-		if utility:IsSmallTouchScreen() then
+		if isSmallTouchScreen then
 			PageViewSizeReducer = 5
 		end
 
-		local clippingShield = utility:Create'Frame'
+		this.ClippingShield = utility:Create'Frame'
 		{
 			Name = "SettingsShield",
 			Size = SETTINGS_SHIELD_SIZE,
@@ -216,8 +232,20 @@ local function CreateSettingsHub()
 			Visible = false,
 			Active = true,
 			ZIndex = SETTINGS_BASE_ZINDEX,
-			Parent = clippingShield
+			Parent = this.ClippingShield
 		};
+		this.VRShield = utility:Create("Frame") {
+			Name = "VRBackground",
+			Parent = this.Shield,
+
+			BackgroundColor3 = SETTINGS_SHIELD_COLOR,
+			BackgroundTransparency = SETTINGS_SHIELD_TRANSPARENCY,
+			Position = UDim2.new(0, -4, 0, 24),
+			Size = UDim2.new(1, 8, 1, -40),
+			BorderSizePixel = 0,
+
+			Visible = false
+		}
 
 		this.Modal = utility:Create'TextButton' -- Force unlocks the mouse, really need a way to do this via UIS
 		{
@@ -227,7 +255,8 @@ local function CreateSettingsHub()
 			Size = UDim2.new(1, 0, 1, 0),
 			Modal = true,
 			Text = '',
-			Parent = this.Shield
+			Parent = this.Shield,
+			Selectable = false
 		}
 
 		this.HubBar = utility:Create'ImageLabel'
@@ -244,7 +273,7 @@ local function CreateSettingsHub()
 		};
 
 		local barHeight = 60
-		if utility:IsSmallTouchScreen() then
+		if isSmallTouchScreen then
 			barHeight = 40
 			this.HubBar.Size = UDim2.new(1,-10,0,40)
 			this.HubBar.Position = UDim2.new(0,5,0,6)
@@ -276,45 +305,6 @@ local function CreateSettingsHub()
 			}
 		}
 
-		this.PageViewScrollBar = utility:Create'Frame'{
-			Name = 'ScrollBar',
-			Parent = this.PageViewClipper,
-			BackgroundTransparency = 1,
-			Position = UDim2.new(1, -12, 0, 0),
-			Size = UDim2.new(0, 12, 1, 0),
-
-			utility:Create'ImageLabel'{
-				Name = 'Top',
-				BackgroundTransparency = 1,
-				Image = 'rbxasset://textures/ui/Scroll/scroll-top.png',
-				Position = UDim2.new(0, 0, 0, -6),
-				Size = UDim2.new(1, 0, 0, 12),
-				ZIndex = 3
-			},
-			utility:Create'ImageLabel'{
-				Name = 'Middle',
-				BackgroundTransparency = 1,
-				Image = 'rbxasset://textures/ui/Scroll/scroll-middle.png',
-				Position = UDim2.new(0, 0, 0, 6),
-				Size = UDim2.new(1, 0, 1, -6*2),
-				ZIndex = 3
-			},
-			utility:Create'ImageLabel'{
-				Name = 'Bottom',
-				BackgroundTransparency = 1,
-				Image = 'rbxasset://textures/ui/Scroll/scroll-bottom.png',
-				Position = UDim2.new(0, 0, 1, -6),
-				Size = UDim2.new(1, 0, 0, 12),
-				ZIndex = 3
-			},
-			utility:Create'ImageButton'{
-				Name = 'InputCapture',
-				BackgroundTransparency = 1,
-				Image = '',
-				Size = UDim2.new(1, 0, 1, 0)
-			}
-		}
-
 		this.PageView = utility:Create'ScrollingFrame'
 		{
 			Name = "PageView",
@@ -324,18 +314,17 @@ local function CreateSettingsHub()
 			BorderSizePixel = 0,
 			Selectable = false,
 			Parent = this.PageViewClipper,
-			ScrollingEnabled = false
 		};
 		if UserInputService.MouseEnabled then
 			this.PageViewClipper.Size = UDim2.new(this.HubBar.Size.X.Scale,this.HubBar.Size.X.Offset,
-				 							0.5, -(this.HubBar.Position.Y.Offset - this.HubBar.Size.Y.Offset))
+											0.5, -(this.HubBar.Position.Y.Offset - this.HubBar.Size.Y.Offset))
 		end
 
-		if utility:IsSmallTouchScreen() then
+		if isSmallTouchScreen then
 			this.PageView.CanvasSize = this.PageViewClipper.Size
 		else
 			local bottomOffset = 0
-			if UserInputService.TouchEnabled and not UserInputService.MouseEnabled then
+			if isTouchDevice and not UserInputService.MouseEnabled then
 				bottomOffset = 80
 			end
 			this.BottomButtonFrame = utility:Create'Frame'
@@ -381,23 +370,37 @@ local function CreateSettingsHub()
 			end
 
 			if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
-				addBottomBarButton("InviteToGame", "Send Game Invites", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
-					"", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
-					inviteToGameFunc, {Enum.KeyCode.ButtonX})
+				local function createInviteButton()
+					addBottomBarButton("InviteToGame", "Send Game Invites", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
+						"", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
+						inviteToGameFunc, {Enum.KeyCode.ButtonX})
+				end
+
+				if IsPlayMyPlaceEnabled() then
+					spawn(function()
+						local PlatformService = nil
+						pcall(function() PlatformService = game:GetService('PlatformService') end)
+						local pmpCreatorId = PlatformService and PlatformService:BeginGetPMPCreatorId()
+						if pmpCreatorId == 0 then
+							createInviteButton()
+						end
+					end)
+				else
+					createInviteButton()
+				end
 			else
-				addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png", 
-					"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25), 
+				addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
+					"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
 					leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
 			end
 
-			addBottomBarButton("ResetCharacter", "    Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png", 
-				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25), 
+			addBottomBarButton("ResetCharacter", "    Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png",
+				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25),
 				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY})
 			addBottomBarButton("Resume", "Resume Game", "rbxasset://textures/ui/Settings/Help/BButtonLight" .. buttonImageAppend .. ".png",
-				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25), 
+				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25),
 				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart})
 		end
-
 
 		local function onScreenSizeChanged()
 			local largestPageSize = 600
@@ -406,11 +409,12 @@ local function CreateSettingsHub()
 			if isTenFootInterface then
 				largestPageSize = 800
 				bufferSize = 0.07 * fullScreenSize
-			elseif utility:IsSmallTouchScreen() then
+			elseif isSmallTouchScreen then
 				bufferSize = (1-0.99) * fullScreenSize
 			end
 			local barSize = this.HubBar.Size.Y.Offset
 			local extraSpace = bufferSize*2+barSize*2
+
 
 			local usableScreenHeight = fullScreenSize - extraSpace
 			local minimumPageSize = 150
@@ -466,12 +470,30 @@ local function CreateSettingsHub()
 				end
 			end
 
-			this.PageViewClipper.Size = UDim2.new(
-				this.PageViewClipper.Size.X.Scale,
-				this.PageViewClipper.Size.X.Offset,
-				0,
-				usePageSize
-			)
+			if useUserList and not isTenFootInterface then
+				if isSmallTouchScreen then
+					this.PageViewClipper.Size = UDim2.new(
+						this.PageViewClipper.Size.X.Scale,
+						this.PageViewClipper.Size.X.Offset,
+						0,
+						usePageSize + 44
+					)
+				else
+					this.PageViewClipper.Size = UDim2.new(
+						this.PageViewClipper.Size.X.Scale,
+						this.PageViewClipper.Size.X.Offset,
+						0,
+						usePageSize
+					)
+				end
+			else
+				this.PageViewClipper.Size = UDim2.new(
+					this.PageViewClipper.Size.X.Scale,
+					this.PageViewClipper.Size.X.Offset,
+					0,
+					usePageSize
+				)
+			end
 			this.PageViewClipper.Position = UDim2.new(
 				this.PageViewClipper.Position.X.Scale,
 				this.PageViewClipper.Position.X.Offset,
@@ -479,145 +501,20 @@ local function CreateSettingsHub()
 				-usePageSize/2
 			)
 		end
-		screenSizeChangedCon = RobloxGui.Changed:connect(function(prop)
+		-- TODO: disconnect this event?
+		RobloxGui.Changed:connect(function(prop)
 			if prop == "AbsoluteSize" then
 				onScreenSizeChanged()
 			end
 		end)
 		onScreenSizeChanged()
-
-		-- Resize the scroll bar whenever content or size changes
-		local function resizePageViewScrollBar()
-			local space = this.PageView.AbsoluteSize.y
-			local size = this.PageView.CanvasSize.Y.Offset
-			local progress = this.PageView.CanvasPosition.Y
-
-			if size > space then
-				this.PageViewScrollBar.Visible = true
-
-				this.PageViewScrollBar.Size = UDim2.new(0, 12, space/size, 0)
-				this.PageViewScrollBar.Position = UDim2.new(1, -12, progress/size, 1)
-			else
-				this.PageViewScrollBar.Visible = false
-			end
-		end
-		local onPageViewChangedCon = this.PageView.Changed:connect(function(prop)
-			if prop == 'CanvasSize' or prop == 'CanvasPosition' or prop == 'AbsoluteSize' or prop == 'AbsolutePosition' then
-				resizePageViewScrollBar()
-			end
-		end)
-
-		-- Mouse wheel scrolling
-		this.PageViewClipper.InputCapture.InputChanged:connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseWheel then
-				local dir = input.Position.z
-				local power = 20
-				local pixels = -dir*power
-
-				this:ScrollPixels(pixels)
-			end
-		end)
-
-		-- Scroll bar drag scrolling
-		-- Note: At the time of writing there is a bug where mouse movement position will not account for the top bar so the scroll movement will be offset by 36 pixels.  Should be fixed soon.
-		local isDraggingScrollbar = false
-		local scrollBarHandleOffset = 0
-		this.PageViewScrollBar.InputCapture.InputBegan:connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseButton1 then
-				scrollBarHandleOffset = input.Position.y - this.PageViewScrollBar.AbsolutePosition.y
-				isDraggingScrollbar = true
-			end
-		end)
-		UserInputService.InputChanged:connect(function(input)
-			if isDraggingScrollbar and input.UserInputType == Enum.UserInputType.MouseMovement then
-				local mouseYRelative = input.Position.Y - scrollBarHandleOffset - this.PageViewClipper.AbsolutePosition.y
-				local totalSpace = this.PageViewClipper.AbsoluteSize.y - this.PageViewScrollBar.AbsoluteSize.y
-				local progress = math.max(0, math.min(mouseYRelative/totalSpace, 1))
-				this:ScrollToProgress(progress)
-			end
-		end)
-		UserInputService.InputEnded:connect(function(input)
-			if isDraggingScrollbar and input.UserInputType == Enum.UserInputType.MouseButton1 then
-				isDraggingScrollbar = false
-			end
-		end)
-
-		-- Thumbstick scrolling
-		local deadzone = 0.25
-		local scrolling = false
-		local scrollingPixels = 0
-		UserInputService.InputChanged:connect(function(input)
-			if this.Visible then
-				if input.KeyCode == Enum.KeyCode.Thumbstick2 then
-					if math.abs(input.Position.y) > deadzone then
-						local dir = input.Position.y > 0 and 1 or -1
-						local power = 3 * (math.abs(input.Position.y)-deadzone)/(1-deadzone)
-						scrollingPixels = -dir*power
-
-						this:ScrollPixels(scrollingPixels)
-
-						if not scrolling then
-							scrolling = true
-							while scrolling do
-								this:ScrollPixels(scrollingPixels)
-								RunService.RenderStepped:wait()
-							end
-						end
-					else
-						if scrolling then
-							scrolling = false
-						end
-					end
-				end
-			end
-		end)
-
-		-- touch drag scrolling
-		local pcTestTouchControls = false
-		if UserInputService.TouchEnabled or pcTestTouchControls then
-			local isDraggingTouch = false
-			local touchHandleOffset = 0
-			local touchPosition = 0
-			local lastPosition = 0
-			local listenForActiveInput = pcTestTouchControls and Enum.UserInputType.MouseButton1 or Enum.UserInputType.Touch
-			local listenForPassiveInput = pcTestTouchControls and Enum.UserInputType.MouseMovement or Enum.UserInputType.Touch
-			UserInputService.InputBegan:connect(function(input)
-				if input.UserInputType == listenForActiveInput then
-					local ax, ay = this.PageViewClipper.InputCapture.AbsolutePosition.x, this.PageViewClipper.InputCapture.AbsolutePosition.y
-					local sx, sy = this.PageViewClipper.InputCapture.AbsoluteSize.x, this.PageViewClipper.InputCapture.AbsoluteSize.y
-					local bx, by = ax+sx, ay+sy
-					local px, py = input.Position.x, input.Position.y
-
-					if px > ax and px < bx and py > ay and py < by then
-						touchHandleOffset = input.Position.y - this.PageViewScrollBar.AbsolutePosition.y
-						touchPosition = input.Position.Y - touchHandleOffset - this.PageViewClipper.AbsolutePosition.y
-						lastPosition = input.Position.Y
-						isDraggingTouch = true
-					end
-				end
-			end)
-			UserInputService.InputChanged:connect(function(input)
-				if isDraggingTouch and input.UserInputType == listenForPassiveInput then
-					local delta = input.Position.y - lastPosition
-					touchPosition = touchPosition + -delta
-					lastPosition = input.Position.y
-					local totalSpace = this.PageViewClipper.AbsoluteSize.y - this.PageViewScrollBar.AbsoluteSize.y
-					local progress = math.max(0, math.min(touchPosition/totalSpace, 1))
-					this:ScrollToProgress(progress)
-				end
-			end)
-			UserInputService.InputEnded:connect(function(input)
-				if isDraggingTouch and input.UserInputType == listenForActiveInput then
-					isDraggingTouch = false
-				end
-			end)
-		end
 	end
 
 	local function toggleDevConsole(actionName, inputState, inputObject)
 		if actionName == DEV_CONSOLE_ACTION_NAME then 	-- ContextActionService->F9
-			if inputState and inputState == Enum.UserInputState.Begin and ToggleDevConsoleBindableFunc then
-				ToggleDevConsoleBindableFunc:Invoke()
+			if inputState and inputState == Enum.UserInputState.Begin then
+				local devConsoleVisible = DeveloperConsoleModule:GetVisibility()
+				DeveloperConsoleModule:SetVisibility(not devConsoleVisible)
 			end
 		end
 	end
@@ -670,9 +567,9 @@ local function CreateSettingsHub()
 		if inputState ~= Enum.UserInputState.Begin then return end
 
 		local direction = 0
-		if inputObject.KeyCode == Enum.KeyCode.ButtonR1 then 
+		if inputObject.KeyCode == Enum.KeyCode.ButtonR1 then
 			direction = 1
-		elseif inputObject.KeyCode == Enum.KeyCode.ButtonL1 then 
+		elseif inputObject.KeyCode == Enum.KeyCode.ButtonL1 then
 			direction = -1
 		end
 
@@ -755,7 +652,7 @@ local function CreateSettingsHub()
 	local function RemoveHeader(oldHeader)
 		local removedPos = nil
 
-		for i = 1, #this.TabHeaders do 
+		for i = 1, #this.TabHeaders do
 			if this.TabHeaders[i] == oldHeader then
 				removedPos = i
 				table.remove(this.TabHeaders, i)
@@ -780,7 +677,7 @@ local function CreateSettingsHub()
 		AddHeader(pageToAdd:GetTabHeader(), pageToAdd)
 		pageToAdd.Page.Position = UDim2.new(pageToAdd.TabPosition - 1,0,0,0)
 	end
-	
+
 	function this:RemovePage(pageToRemove)
 		this.Pages.PageTable[pageToRemove] = nil
 		RemoveHeader(pageToRemove:GetTabHeader())
@@ -800,15 +697,6 @@ local function CreateSettingsHub()
 		if this.BottomButtonFrame then
 			setBottomBarBindings()
 		end
-	end
-
-	function this:GetScrollProgress()
-		return this.PageView.CanvasPosition.y / (this.PageView.CanvasSize.Y.Offset - this.PageViewClipper.AbsoluteSize.y)
-	end
-
-	function this:ScrollToProgress(progress)
-		local pixels = (this.PageView.CanvasSize.Y.Offset - this.PageViewClipper.AbsoluteSize.y) * progress
-		this.PageView.CanvasPosition = Vector2.new(0, pixels)
 	end
 
 	function this:ScrollPixels(pixels)
@@ -844,9 +732,6 @@ local function CreateSettingsHub()
 		if direction == nil then
 			direction = 1
 		end
-
-		-- scroll back up
-		this:ScrollToProgress(0)
 
 		-- if we have a page we need to let it know to go away
 		if this.Pages.CurrentPage then
@@ -924,12 +809,14 @@ local function CreateSettingsHub()
 			this.TabConnection = nil
 		end
 
+		local playerList = require(RobloxGui.Modules.PlayerlistModule)
+
 		if this.Visible then
 			this.SettingsShowSignal:fire(this.Visible)
 
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
 			this.Shield.Visible = this.Visible
-			if noAnimation then
+			if noAnimation or not this.Shield:IsDescendantOf(game) then
 				this.Shield.Position = SETTINGS_SHIELD_ACTIVE_POSITION
 			else
 				this.Shield:TweenPosition(SETTINGS_SHIELD_ACTIVE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quart, 0.5, true)
@@ -937,11 +824,11 @@ local function CreateSettingsHub()
 
 			local noOpFunc = function() end
 			ContextActionService:BindCoreAction("RbxSettingsHubStopCharacter", noOpFunc, false,
-												 Enum.PlayerActions.CharacterForward, 
-												 Enum.PlayerActions.CharacterBackward, 
+												 Enum.PlayerActions.CharacterForward,
+												 Enum.PlayerActions.CharacterBackward,
 												 Enum.PlayerActions.CharacterLeft,
 												 Enum.PlayerActions.CharacterRight,
-												 Enum.PlayerActions.CharacterJump, 
+												 Enum.PlayerActions.CharacterJump,
 												 Enum.KeyCode.LeftShift,
 												 Enum.KeyCode.RightShift,
 												 Enum.KeyCode.Tab,
@@ -954,26 +841,26 @@ local function CreateSettingsHub()
 			this.TabConnection = UserInputService.InputBegan:connect(switchTabFromKeyboard)
 
 
-			pcall(function() UserInputService.OverrideMouseIconEnabled = true end)
 			setOverrideMouseIconBehavior()
 			pcall(function() lastInputChangedCon = UserInputService.LastInputTypeChanged:connect(setOverrideMouseIconBehavior) end)
 			if UserInputService.MouseEnabled then
-				pcall(function() 
-					UserInputService.OverrideMouseIconEnabled = true
-					UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow 
+				pcall(function()
+					UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
 				end)
 			end
-
-			pcall(function() PlatformService.BlurIntensity = 10 end)
 
 			if customStartPage then
 				removeBottomBarBindings()
 				this:SwitchToPage(customStartPage, nil, 1, true)
 			else
-				if this.HomePage then
-					this:SwitchToPage(this.HomePage, nil, 1, true)
+				if useUserList and not isTenFootInterface then
+					this:SwitchToPage(this.PlayersPage, nil, 1, true)
 				else
-					this:SwitchToPage(this.GameSettingsPage, nil, 1, true)
+					if this.HomePage then
+						this:SwitchToPage(this.HomePage, nil, 1, true)
+					else
+						this:SwitchToPage(this.GameSettingsPage, nil, 1, true)
+					end
 				end
 			end
 
@@ -984,12 +871,11 @@ local function CreateSettingsHub()
 				chat:ToggleVisibility()
 			end
 
+			local backpack = require(RobloxGui.Modules.BackpackScript)
 			if backpack.IsOpen then
 				backpack:OpenClose()
 			end
 		else
-			pcall(function() UserInputService.OverrideMouseIconEnabled = false end)
-
 			if noAnimation then
 				this.Shield.Position = SETTINGS_SHIELD_INACTIVE_POSITION
 				this.Shield.Visible = this.Visible
@@ -1015,10 +901,9 @@ local function CreateSettingsHub()
 			end
 
 			pcall(function() UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
-			pcall(function() PlatformService.BlurIntensity = 0 end)
 
 			clearMenuStack()
-			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab") 
+			ContextActionService:UnbindCoreAction("RbxSettingsHubSwitchTab")
 			ContextActionService:UnbindCoreAction("RbxSettingsHubStopCharacter")
 			ContextActionService:UnbindCoreAction("RbxSettingsScrollHotkey")
 			removeBottomBarBindings(0.4)
@@ -1070,25 +955,96 @@ local function CreateSettingsHub()
 	end
 
 	function this:ShowShield()
-		this.Shield.BackgroundTransparency = SETTINGS_SHIELD_TRANSPARENCY
+		this.Shield.BackgroundTransparency = UserInputService.VREnabled and SETTINGS_SHIELD_VR_TRANSPARENCY or SETTINGS_SHIELD_TRANSPARENCY
 	end
 	function this:HideShield()
 		this.Shield.BackgroundTransparency = 1
 	end
+
+	local thisModuleName = "SettingsMenu"
+	local vrMenuOpened, vrMenuClosed = nil, nil
+	local function enableVR()
+		local VRHub = require(RobloxGui.Modules.VR.VRHub)
+		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+		local panel = Panel3D.Get(thisModuleName)
+		panel:ResizeStuds(4, 4, 200)
+		panel:SetType(Panel3D.Type.Fixed)
+		panel:SetVisible(false)
+		panel:SetCanFade(false)
+		
+		this.ClippingShield.Parent = panel:GetGUI()
+		this.Shield.Parent.ClipsDescendants = false
+		this.VRShield.Visible = true
+		this:HideShield()
+
+		vrMenuOpened = GuiService.MenuOpened:connect(function()
+			local topbarPanel = Panel3D.Get("Topbar3D")
+			panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
+			panel:SetVisible(true)
+
+			VRHub:FireModuleOpened(thisModuleName)
+		end)
+		vrMenuClosed = GuiService.MenuClosed:connect(function()
+			panel:SetVisible(false)
+
+			VRHub:FireModuleClosed(thisModuleName)
+		end)
+
+		VRHub.ModuleOpened.Event:connect(function(moduleName)
+			if moduleName ~= thisModuleName then
+				this:SetVisibility(false)
+			end
+		end)
+	end
+	local function disableVR()
+		this.ClippingShield.Parent = RobloxGui
+		this.Shield.Parent.ClipsDescendants = true
+		this.VRShield.Visible = false
+		this:ShowShield()
+
+		if vrMenuOpened then
+			vrMenuOpened:disconnect()
+			vrMenuOpened = nil
+		end
+		if vrMenuClosed then
+			vrMenuClosed:disconnect()
+			vrMenuClosed = nil
+		end
+
+		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+		local panel = Panel3D.Get(thisModuleName)
+		panel:SetVisible(false)
+	end
+
+	local UISChanged;
+	local function OnVREnabled(prop)
+		if prop == "VREnabled" then
+			if UserInputService.VREnabled then
+				enableVR()
+			else
+				disableVR()
+			end
+		end
+	end
+	UISChanged = UserInputService.Changed:connect(OnVREnabled)
+	OnVREnabled("VREnabled")
+
 
 	local closeMenuFunc = function(name, inputState, input)
 		if inputState ~= Enum.UserInputState.Begin then return end
 		this:PopMenu(false, true)
 	end
 	ContextActionService:BindCoreAction("RBXEscapeMainMenu", closeMenuFunc, false, Enum.KeyCode.Escape)
-	
+
 	this.ResetCharacterPage:SetHub(this)
 	this.LeaveGamePage:SetHub(this)
 
 	-- full page initialization
-	if utility:IsSmallTouchScreen() then
-		this.HomePage = require(RobloxGui.Modules.Settings.Pages.Home)
-		this.HomePage:SetHub(this)
+	if not useUserList then
+		if utility:IsSmallTouchScreen() then
+			this.HomePage = require(RobloxGui.Modules.Settings.Pages.Home)
+			this.HomePage:SetHub(this)
+		end
 	end
 
 	this.GameSettingsPage = require(RobloxGui.Modules.Settings.Pages.GameSettings)
@@ -1107,11 +1063,21 @@ local function CreateSettingsHub()
 		this.RecordPage:SetHub(this)
 	end
 
+	if useUserList and not isTenFootInterface then
+		this.PlayersPage = require(RobloxGui.Modules.Settings.Pages.Players)
+		this.PlayersPage:SetHub(this)
+	end
+
 	-- page registration
+	if useUserList and not isTenFootInterface then
+		this:AddPage(this.PlayersPage)
+	end
 	this:AddPage(this.ResetCharacterPage)
 	this:AddPage(this.LeaveGamePage)
-	if this.HomePage then
-		this:AddPage(this.HomePage)
+	if not useUserList then
+		if this.HomePage then
+			this:AddPage(this.HomePage)
+		end
 	end
 	this:AddPage(this.GameSettingsPage)
 	if this.ReportAbusePage then
@@ -1122,21 +1088,24 @@ local function CreateSettingsHub()
 		this:AddPage(this.RecordPage)
 	end
 
-	if this.HomePage then
-		this:SwitchToPage(this.HomePage, true, 1)
+	if useUserList and not isTenFootInterface then
+		this:SwitchToPage(this.PlayerPage, true, 1)
 	else
-		this:SwitchToPage(this.GameSettingsPage, true, 1)
+		if this.HomePage then
+			this:SwitchToPage(this.HomePage, true, 1)
+		else
+			this:SwitchToPage(this.GameSettingsPage, true, 1)
+		end
 	end
 	-- hook up to necessary signals
 
 	-- connect back button on android
 	GuiService.ShowLeaveConfirmation:connect(function()
 		if #this.MenuStack == 0 then
-			this:SwitchToPage(this.LeaveGamePage, nil, 1)
 			this:SetVisibility(true)
+			this:SwitchToPage(this.PlayerPage, nil, 1)
 		else
-			this:SetVisibility(false)
-			this:PopMenu()
+			this:PopMenu(false, true)
 		end
 	end)
 
@@ -1164,6 +1133,21 @@ end
 
 local moduleApiTable = {}
 
+	moduleApiTable.ModuleName = "SettingsMenu"
+	moduleApiTable.KeepVRTopbarOpen = true
+	moduleApiTable.VRIsExclusive = true
+	moduleApiTable.VRClosesNonExclusive = true
+	VRHub:RegisterModule(moduleApiTable)
+
+	VRHub.ModuleOpened.Event:connect(function(moduleName)
+		if moduleName ~= moduleApiTable.ModuleName then
+			local module = VRHub:GetModule(moduleName)
+			if module.VRIsExclusive then
+				moduleApiTable:SetVisibility(false)
+			end
+		end
+	end)
+
 	local SettingsHubInstance = CreateSettingsHub()
 
 	function moduleApiTable:SetVisibility(visible, noAnimation, customStartPage, switchedFromGamepadInput)
@@ -1176,34 +1160,6 @@ local moduleApiTable = {}
 
 	function moduleApiTable:SwitchToPage(pageToSwitchTo, ignoreStack)
 		SettingsHubInstance:SwitchToPage(pageToSwitchTo, ignoreStack, 1)
-	end
-	
-	function moduleApiTable:ReportPlayer(player)
-		if SettingsHubInstance.ReportAbusePage and player then
-			local setReportPlayerConnection = nil
-			setReportPlayerConnection = SettingsHubInstance.ReportAbusePage.Displayed.Event:connect(function()
-				-- When we change the SelectionIndex of GameOrPlayerMode it waits until the tween is done
-				-- before it fires the IndexChanged signal. The WhichPlayerMode dropdown listens to this signal
-				-- and resets when it is fired. Therefore we need to listen to this signal and set the player we want
-				-- to report the frame after the dropdown is reset
-				local indexChangedConnection = nil
-				indexChangedConnection = SettingsHubInstance.ReportAbusePage.GameOrPlayerMode.IndexChanged:connect(function()
-					if indexChangedConnection then
-						indexChangedConnection:disconnect()
-						indexChangedConnection = nil
-					end
-					wait() -- We need to wait a frame to set the value of WhichPlayerMode as it is being updated by another script listening to the IndexChanged signal
-					SettingsHubInstance.ReportAbusePage.WhichPlayerMode:SetSelectionByValue(player.Name)				
-				end)
-				SettingsHubInstance.ReportAbusePage.GameOrPlayerMode:SetSelectionIndex(2)
-
-				if setReportPlayerConnection then
-					setReportPlayerConnection:disconnect()
-					setReportPlayerConnection = nil
-				end
-			end)
-			SettingsHubInstance:SetVisibility(true, false, SettingsHubInstance.ReportAbusePage)
-		end
 	end
 
 	function moduleApiTable:GetVisibility()

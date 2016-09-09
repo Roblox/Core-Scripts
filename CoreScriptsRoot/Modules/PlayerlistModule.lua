@@ -5,7 +5,7 @@
 		// Description: Implementation of in game player list and leaderboard
 ]]
 
-local CoreGui = game:GetService'CoreGui'
+local CoreGui = game:GetService('CoreGui')
 local GuiService = game:GetService('GuiService')	-- NOTE: Can only use in core scripts
 local UserInputService = game:GetService('UserInputService')
 local HttpService = game:GetService('HttpService')
@@ -13,6 +13,7 @@ local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local Players = game:GetService('Players')
 local TeamsService = game:FindService('Teams')
 local ContextActionService = game:GetService('ContextActionService')
+local StarterGui = game:GetService('StarterGui')
 
 local RbxGuiLibrary = nil
 if LoadLibrary then
@@ -25,13 +26,14 @@ end
 local Player = Players.LocalPlayer
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 
-RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 
-local playerDropDownModule = require(RobloxGui.Modules:WaitForChild("PlayerDropDown"))
+local playerDropDownModule = require(RobloxGui.Modules.PlayerDropDown)
 local blockingUtility = playerDropDownModule:CreateBlockingUtility()
 local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
+
+local PlayerPermissionsModule = require(RobloxGui.Modules.PlayerPermissionsModule)
 
 --[[ Fast Flags ]]--
 local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
@@ -66,6 +68,8 @@ local GameStats = {}
 -- They can be un-supported at anytime. You should prefer using child add order to order your stats in the leader board.
 
 --[[ Script Variables ]]--
+local topbarEnabled = true
+local playerlistCoreGuiEnabled = true
 local MyPlayerEntryTopFrame = nil
 local PlayerEntries = {}
 local StatAddId = 0
@@ -131,11 +135,11 @@ local SHADOW_IMAGE = 'rbxasset://textures/ui/PlayerList/TileShadowMissingTop.png
 local SHADOW_SLICE_SIZE = 5
 local SHADOW_SLICE_RECT = Rect.new(SHADOW_SLICE_SIZE+1, SHADOW_SLICE_SIZE+1, SHADOW_SLICE_SIZE*2-1, SHADOW_SLICE_SIZE*2-1)
 
-local ADMINS = {	-- Admins with special icons
-    ['7210880'] = 'http://www.roblox.com/asset/?id=134032333', -- Jeditkacheff
-    ['13268404'] = 'http://www.roblox.com/asset/?id=113059239', -- Sorcus
-    ['261'] = 'http://www.roblox.com/asset/?id=105897927', -- shedlestky
-    ['20396599'] = 'http://www.roblox.com/asset/?id=161078086', -- Robloxsai
+local CUSTOM_ICONS = {	-- Admins with special icons
+    ['7210880'] = 'rbxassetid://134032333', -- Jeditkacheff
+    ['13268404'] = 'rbxassetid://113059239', -- Sorcus
+    ['261'] = 'rbxassetid://105897927', -- shedlestky
+    ['20396599'] = 'rbxassetid://161078086', -- Robloxsai
 }
 
 local ABUSES = {
@@ -158,6 +162,7 @@ local FOLLOWER_STATUS = {
 --[[ Images ]]--
 local CHAT_ICON = 'rbxasset://textures/ui/chat_teamButton.png'
 local ADMIN_ICON = 'rbxasset://textures/ui/icon_admin-16.png'
+local INTERN_ICON = 'rbxasset://textures/ui/icon_intern-16.png'
 local PLACE_OWNER_ICON = 'rbxasset://textures/ui/icon_placeowner.png'
 local BC_ICON = 'rbxasset://textures/ui/icon_BC-16.png'
 local TBC_ICON = 'rbxasset://textures/ui/icon_TBC-16.png'
@@ -261,20 +266,15 @@ local function getFollowerStatusIcon(followerStatus)
 	end
 end
 
-local function getAdminIcon(player)
+local function getCustomPlayerIcon(player)
 	local userIdStr = tostring(player.userId)
-	if ADMINS[userIdStr] then return nil end
+	if CUSTOM_ICONS[userIdStr] then return nil end
 	--
-	local success, result = pcall(function()
-		return player:IsInGroup(1200769)	-- yields
-	end)
-	if not success then
-		print("PlayerListScript2: getAdminIcon() failed because", result)
-		return nil
-	end
-	--
-	if result then
+	
+	if PlayerPermissionsModule.IsPlayerAdminAsync(player) then
 		return ADMIN_ICON
+	elseif PlayerPermissionsModule.IsPlayerInternAsync(player) then
+		return INTERN_ICON
 	end
 end
 
@@ -314,8 +314,8 @@ local function getMembershipIcon(player)
 		else
 			local userIdStr = tostring(player.userId)
 			local membershipType = player.MembershipType
-			if ADMINS[userIdStr] then
-				return ADMINS[userIdStr]
+			if CUSTOM_ICONS[userIdStr] then
+				return CUSTOM_ICONS[userIdStr]
 			elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
 				return PLACE_OWNER_ICON
 			elseif membershipType == Enum.MembershipType.None then
@@ -346,7 +346,15 @@ local function sortPlayerEntries(a, b)
 	end
 	if not a.PrimaryStat then return false end
 	if not b.PrimaryStat then return true end
-	return a.PrimaryStat > b.PrimaryStat
+	local statA = a.PrimaryStat
+	local statB = b.PrimaryStat
+	statA = tonumber(statA) or statA
+	statB = tonumber(statB) or statB
+	if type(statA) ~= type(statB) then
+		statA = tostring(statA)
+		statB = tostring(statB)
+	end
+	return statA > statB
 end
 
 local function sortLeaderStats(a, b)
@@ -404,6 +412,7 @@ ScrollList.BottomImage = 'rbxasset://textures/ui/scroll-bottom.png'
 ScrollList.MidImage = 'rbxasset://textures/ui/scroll-middle.png'
 ScrollList.TopImage = 'rbxasset://textures/ui/scroll-top.png'
 ScrollList.SelectionImageObject = noSelectionObject
+ScrollList.Selectable = false
 ScrollList.Parent = Container
 
 -- PlayerDropDown clipping frame
@@ -700,7 +709,7 @@ local function updateSocialIcon(newIcon, bgFrame)
 			socialIcon.Image = newIcon
 		else
 			if nameFrame then
-				newSize = nameFrame.Size.X.Offset + socialIcon.Size.X.Offset + 2
+				local newSize = nameFrame.Size.X.Offset + socialIcon.Size.X.Offset + 2
 				nameFrame.Size = UDim2.new(-0.01, newSize, 0.5, 0)
 				nameFrame.Position = UDim2.new(0.01, offset, 0.245, 0)
 			end
@@ -752,7 +761,10 @@ local function onFollowerStatusChanged()
 		updateSocialIcon(newIcon, bgFrame)
 	end
 end
-playerDropDownModule.FollowerStatusChanged:connect(onFollowerStatusChanged)
+-- Don't listen/show rbx follower status on xbox
+if not isTenFootInterface then
+	playerDropDownModule.FollowerStatusChanged:connect(onFollowerStatusChanged)
+end
 
 function popupHidden()
 	if LastSelectedFrame then
@@ -768,7 +780,25 @@ function popupHidden()
 end
 playerDropDown.HiddenSignal:connect(popupHidden)
 
+local function openPlatformProfileUI(rbxUid)
+	if not rbxUid or rbxUid < 1 then return end
+	pcall(function()
+		local platformService = game:GetService('PlatformService')
+		local platformId = platformService:GetPlatformId(rbxUid)
+		if platformId and #platformId > 0 then
+			platformService:PopupProfileUI(Enum.UserInputType.Gamepad1, platformId)
+		end
+	end)
+end
+
 local function onEntryFrameSelected(selectedFrame, selectedPlayer)
+	if isTenFootInterface then
+		-- open the profile UI for the selected user. On console we allow user to select themselves
+		-- they may want quick access to platform profile features
+		openPlatformProfileUI(selectedPlayer.userId)
+		return
+	end
+
 	if selectedPlayer ~= Player and selectedPlayer.userId > 1 and Player.userId > 1 then
 		if LastSelectedFrame ~= selectedFrame then
 			if LastSelectedFrame then
@@ -821,14 +851,15 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
 			newIcon = getFollowerStatusIcon(followerStatus)
 		end
 
-		if newIcon then
-			updateSocialIcon(newIcon, bgFrame)
-		end
+		updateSocialIcon(newIcon, bgFrame)
 	end
 end
 
--- NOTE: Core script only. This fires when a layer joins the game.
-Player.FriendStatusChanged:connect(onFriendshipChanged)
+-- NOTE: Core script only. This fires when a player joins the game.
+-- Don't listen/show rbx friends status on xbox
+if not isTenFootInterface then
+	Player.FriendStatusChanged:connect(onFriendshipChanged)
+end
 
 --[[ Begin New Server Followers ]]--
 local function setFollowRelationshipsView(relationshipTable)
@@ -841,10 +872,15 @@ local function setFollowRelationshipsView(relationshipTable)
 		local player = entry.Player
 		local userId = tostring(player.userId)
 
+		-- don't update icon if already friends
+		local friendStatus = getFriendStatus(player)
+		if friendStatus == Enum.FriendStatus.Friend then
+			return
+		end
+
+		local icon = nil
 		if relationshipTable[userId] then
 			local relationship = relationshipTable[userId]
-			local icon = nil
-
 			if relationship.IsMutual == true then
 				icon = MUTUAL_FOLLOWING_ICON
 			elseif relationship.IsFollowing == true then
@@ -852,12 +888,12 @@ local function setFollowRelationshipsView(relationshipTable)
 			elseif relationship.IsFollower == true then
 				icon = FOLLOWER_ICON
 			end
+		end
 
-			local frame = entry.Frame
-			local bgFrame = frame:FindFirstChild('BGFrame')
-			if icon and bgFrame then
-				updateSocialIcon(icon, bgFrame)
-			end
+		local frame = entry.Frame
+		local bgFrame = frame:FindFirstChild('BGFrame')
+		if bgFrame then
+			updateSocialIcon(icon, bgFrame)
 		end
 	end
 end
@@ -1244,12 +1280,9 @@ local function createPlayerEntry(player, isTopStat)
 	local containerFrame, entryFrame = createEntryFrame(name, PlayerEntrySizeY, isTopStat)
 	entryFrame.Active = true
 
-	if not isTenFootInterface then
-		local function localEntrySelected()
-			onEntryFrameSelected(containerFrame, player)
-		end
-		entryFrame.MouseButton1Click:connect(localEntrySelected)
-	end
+	entryFrame.MouseButton1Click:connect(function()
+		onEntryFrameSelected(containerFrame, player)
+	end)
 
 	local currentXOffset = 1
 
@@ -1286,12 +1319,12 @@ local function createPlayerEntry(player, isTopStat)
 		else
 			print("PlayerList: GetRankInGroup failed because", result)
 		end
-		local adminIconImage = getAdminIcon(player)
-		if adminIconImage then
+		local iconImage = getCustomPlayerIcon(player)
+		if iconImage then
 			if not membershipIcon then
-				membershipIcon = createImageIcon(adminIconImage, "MembershipIcon", 1, entryFrame)
+				membershipIcon = createImageIcon(iconImage, "MembershipIcon", 1, entryFrame)
 			else
-				membershipIcon.Image = adminIconImage
+				membershipIcon.Image = iconImage
 			end
 		end
 		-- Friendship and Follower status is checked by onFriendshipChanged, which is called by the FriendStatusChanged
@@ -1330,6 +1363,7 @@ local function createTeamEntry(team)
 	teamEntry.TeamScore = 0
 
 	local containerFrame, entryFrame = createEntryFrame(team.Name, TeamEntrySizeY)
+	entryFrame.Selectable = false	-- dont allow gamepad selection of team frames
 	entryFrame.BackgroundColor3 = team.TeamColor.Color
 
 	local teamName = createEntryNameText("TeamName", team.Name, entryFrame.AbsoluteSize.x, 1)
@@ -1521,11 +1555,12 @@ for _,player in pairs(Players:GetPlayers()) do
 end
 
 --[[ Begin new Server Followers ]]--
-if IsServerFollowers then
+-- Don't listen/show rbx followers status on console
+if IsServerFollowers and not isTenFootInterface then
 	-- spawn so we don't block script
 	spawn(function()
 		local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-		RemoveEvent_OnFollowRelationshipChanged = RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged')
+		RemoveEvent_OnFollowRelationshipChanged = RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged', 86400) or RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged')
 		RemoteFunc_GetFollowRelationships = RobloxReplicatedStorage:WaitForChild('GetFollowRelationships')
 
 		RemoveEvent_OnFollowRelationshipChanged.OnClientEvent:connect(function(result)
@@ -1594,6 +1629,7 @@ local closeListFunc = function(name, state, input)
 	spawn(function() GuiService:SetMenuIsOpen(false) end)
 	ContextActionService:UnbindCoreAction("CloseList")
 	ContextActionService:UnbindCoreAction("StopAction")
+	GuiService:RemoveSelectionGroup("PlayerlistGuiSelection")
 	GuiService.SelectedCoreObject = nil
 	UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 end
@@ -1611,15 +1647,10 @@ local setVisible = function(state, fromTemp)
 					local lastInputType = UserInputService:GetLastInputType()
 					local isUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
 												lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
-					if not isTenFootInterface then
-						if isUsingGamepad and not fromTemp then
-							GuiService.SelectedCoreObject = frameChildren[i]
-						end
-					elseif not fromTemp then
-						GuiService.SelectedCoreObject = ScrollList
-					end
-
+					
 					if isUsingGamepad and not fromTemp then
+						GuiService.SelectedCoreObject = frameChildren[i]
+						GuiService:AddSelectionParent("PlayerlistGuiSelection", ScrollList)
 						UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 						ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
 						ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
@@ -1638,6 +1669,7 @@ local setVisible = function(state, fromTemp)
 
 		if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(Container) then
 			GuiService.SelectedCoreObject = nil
+			GuiService:RemoveSelectionGroup("PlayerlistGuiSelection")
 		end
 	end
 end
@@ -1645,7 +1677,7 @@ end
 Playerlist.ToggleVisibility = function(name, inputState, inputObject)
 	if inputState and inputState ~= Enum.UserInputState.Begin then return end
 	if IsSmallScreenDevice then return end
-	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
+	if not playerlistCoreGuiEnabled then return end
 
 	isOpen = not isOpen
 
@@ -1659,7 +1691,7 @@ Playerlist.IsOpen = function()
 end
 
 Playerlist.HideTemp = function(self, key, hidden)
-	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList) then return end
+	if not playerlistCoreGuiEnabled then return end
 	if IsSmallScreenDevice then return end
 	
 	TempHideKeys[key] = hidden and true or nil
@@ -1683,19 +1715,27 @@ end
 -- NOTE: Core script only
 local function onCoreGuiChanged(coreGuiType, enabled)
 	if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
+		-- on console we can always toggle on/off, ignore change
+		if isTenFootInterface then
+			playerlistCoreGuiEnabled = true
+			return
+		end
+
+		playerlistCoreGuiEnabled = enabled and topbarEnabled
+
 		-- not visible on small screen devices
 		if IsSmallScreenDevice then
 			Container.Visible = false
 			return
 		end
 		
-		setVisible(enabled and isOpen and next(TempHideKeys) == nil, true)
+		setVisible(playerlistCoreGuiEnabled and isOpen and next(TempHideKeys) == nil, true)
 		
 		if isTenFootInterface and topStat then
-			topStat:SetTopStatEnabled(enabled)
+			topStat:SetTopStatEnabled(playerlistCoreGuiEnabled)
 		end
 		
-		if enabled then
+		if playerlistCoreGuiEnabled then
 			ContextActionService:BindCoreAction("RbxPlayerListToggle", Playerlist.ToggleVisibility, false, Enum.KeyCode.Tab)
 		else
 			ContextActionService:UnbindCoreAction("RbxPlayerListToggle")
@@ -1703,18 +1743,16 @@ local function onCoreGuiChanged(coreGuiType, enabled)
 	end
 end
 
-onCoreGuiChanged(Enum.CoreGuiType.PlayerList, game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
-game:GetService("StarterGui").CoreGuiChangedSignal:connect(onCoreGuiChanged)
+Playerlist.TopbarEnabledChanged = function(enabled)
+	topbarEnabled = enabled
+	-- Update coregui to reflect new topbar status
+	onCoreGuiChanged(Enum.CoreGuiType.PlayerList, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+end
+
+onCoreGuiChanged(Enum.CoreGuiType.PlayerList, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList))
+StarterGui.CoreGuiChangedSignal:connect(onCoreGuiChanged)
 
 resizePlayerList()
-
-if GuiService then
-	if isTenFootInterface then
-		GuiService:AddSelectionTuple("PlayerListSelection", ScrollList)
-	else
-		GuiService:AddSelectionParent("PlayerListSelection", Container)
-	end
-end
 
 local blockStatusChanged = function(userId, isBlocked)
 	if userId < 0 then return end

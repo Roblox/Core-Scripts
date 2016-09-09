@@ -24,9 +24,12 @@ local MAX_UDIM_SIZE = 2^15 - 1
 local PHONE_SCREEN_WIDTH = 640
 local TABLET_SCREEN_WIDTH = 1024
 
+local FLOOD_CHECK_MESSAGE_COUNT = 7
+local FLOOD_CHECK_MESSAGE_INTERVAL = 15 -- This is in seconds
+
+local VR_CHAT_CLICK_DEBOUNCE = 0.25
 
 local SCROLLBAR_THICKNESS = 7
-
 local CHAT_COLORS =
 {
 	Color3.new(253/255, 41/255, 67/255), -- BrickColor.new("Bright red").Color,
@@ -38,6 +41,13 @@ local CHAT_COLORS =
 	BrickColor.new("Light reddish violet").Color,
 	BrickColor.new("Brick yellow").Color,
 }
+
+local thisModuleName = "Chat"
+
+local emptySelectionImage = Instance.new("ImageLabel")
+emptySelectionImage.ImageTransparency = 1
+emptySelectionImage.BackgroundTransparency = 1
+
 --[[ END OF CONSTANTS ]]
 
 --[[ SERVICES ]]
@@ -48,6 +58,7 @@ local DebrisService = game:GetService('Debris')
 local GuiService = game:GetService('GuiService')
 local InputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
+local ContextActionService = game:GetService('ContextActionService')
 --[[ END OF SERVICES ]]
 
 --[[ Fast Flags ]]--
@@ -60,20 +71,24 @@ local allowMoveChat = getMoveChatSuccess and moveChatActiveValue
 local getDisableChatBarSuccess, disableChatBarValue = pcall(function() return settings():GetFFlag("SetCoreDisableChatBar") end)
 local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 
+local chatLayoutChangeSuccess,chatLayoutChangeValue = pcall(function() settings():GetFFlag("ChatLayoutChange") return end) -- remember to make a new fflag
+local allowChatLayoutChange = chatLayoutChangeSuccess and chatLayoutChangeValue
+
 --[[ SCRIPT VARIABLES ]]
+local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
+local VRHub = require(RobloxGui.Modules.VR.VRHub)
+local PlayerPermissionsModule = require(RobloxGui.Modules.PlayerPermissionsModule)
 
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
 local Player = PlayersService.LocalPlayer
 -- GuiRoot will act as the top-node for parenting GUIs
-local GuiRoot = nil
-if NON_CORESCRIPT_MODE then
-	GuiRoot = Instance.new("ScreenGui")
-	GuiRoot.Name = "RobloxGui"
-	GuiRoot.Parent = Player:WaitForChild('PlayerGui')
-else
-	GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
-end
+local GuiRoot = Instance.new('Frame')
+GuiRoot.Name = 'GuiRoot';
+GuiRoot.Size = UDim2.new(1,0,1,0);
+GuiRoot.BackgroundTransparency = 1;
+
+
 
 local chatRepositioned = false
 local chatBarDisabled = false
@@ -85,38 +100,18 @@ local playerDropDownModule = nil
 local playerDropDown = nil
 local blockingUtility = nil
 
+local topbarEnabled = true
 
-
-if not NON_CORESCRIPT_MODE then
-	playerDropDownModule = require(GuiRoot.Modules:WaitForChild("PlayerDropDown"))
+if not NON_CORESCRIPT_MODE and not InputService.VREnabled then
+	playerDropDownModule = require(RobloxGui.Modules:WaitForChild("PlayerDropDown"))
 	playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 	blockingUtility = playerDropDownModule:CreateBlockingUtility()
 end
 
 --[[ END OF SCRIPT VARIABLES ]]
 
-local function GetTopBarFlag()
-	local topbarSuccess, topbarFlagValue = pcall(function() return settings():GetFFlag("UseInGameTopBar") end)
-	return topbarSuccess and topbarFlagValue == true
-end
-
-local function GetChatFloodCheckMessagesFlag()
-	local flagSuccess, flagValue = pcall(function() return settings():GetFVariable("LuaChatFloodCheckMessages") end)
-	return flagSuccess and tonumber(flagValue) or 7
-end
-
-local function GetChatFloodCheckIntervalFlag()
-	local flagSuccess, flagValue = pcall(function() return settings():GetFVariable("LuaChatFloodCheckInterval") end)
-	return flagSuccess and tonumber(flagValue) or 15
-end
-
 local function GetLuaChatFilteringFlag()
 	local flagSuccess, flagValue = pcall(function() return settings():GetFFlag("LuaChatFiltering") end)
-	return flagSuccess and flagValue == true
-end
-
-local function GetLuaChatPhoneFontSizeFlag()
-	local flagSuccess, flagValue = pcall(function() return settings():GetFFlag("LuaChatPhoneFontSize") end)
 	return flagSuccess and flagValue == true
 end
 
@@ -281,22 +276,34 @@ do
 		return nil -- Found no player
 	end
 
-	local adminCache = {}
-	function Util.IsPlayerAdminAsync(player)
-		local userId = player and player.userId
-		if userId then
-			if adminCache[userId] == nil then
-				local isAdmin = false
-				-- Many things can error is the IsInGroup check
-				pcall(function()
-					isAdmin = player:IsInGroup(1200769)
-				end)
-				adminCache[userId] = isAdmin
+	local function MakeIsInGroup(groupId, requiredRank)
+		assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
+		
+		local inGroupCache = {}
+		return function(player)
+			if player and player.userId then
+				local userId = player.userId
+
+				if inGroupCache[userId] == nil then
+					local inGroup = false
+					pcall(function() -- Many things can error is the IsInGroup check
+						if requiredRank then
+							inGroup = player:GetRankInGroup(groupId) > requiredRank
+						else
+							inGroup = player:IsInGroup(groupId)
+						end
+					end)
+					inGroupCache[userId] = inGroup
+				end
+
+				return inGroupCache[userId]
 			end
-			return adminCache[userId]
+
+			return false
 		end
-		return false
 	end
+	Util.IsPlayerAdminAsync = MakeIsInGroup(1200769)
+	Util.IsPlayerInternAsync = MakeIsInGroup(2868472, 100)
 
 	local function GetNameValue(pName)
 		local value = 0
@@ -373,11 +380,7 @@ local function CreateChatMessage()
 	this.FadeRoutines = {}
 
 	function this:GetMessageFontSize(settings)
-		if GetLuaChatPhoneFontSizeFlag() then
-			return Util.IsSmallScreenSize() and settings.SmallScreenFontSize or settings.FontSize
-		else
-			return settings.FontSize
-		end
+		return Util.IsSmallScreenSize() and settings.SmallScreenFontSize or settings.FontSize
 	end
 
 	function this:OnResize()
@@ -422,14 +425,22 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 	local this = CreateChatMessage()
 
 	this.Settings = settings
-	this.chatMessage = chattedMessage
+	this.rawChatString = chattedMessage
 
 	function this:OnResize(containerSize)
 		if this.Container and this.ChatMessage then
+
+			if InputService.VREnabled then
+				this.ChatMessage.Position = UDim2.new(0, 4, 0, 0)
+				this.ChatMessage.Size = UDim2.new(1, 0, 1, 0)
+			end
+
 			this.Container.Size = UDim2.new(1,0,0,1000)
 			local textHeight = this.ChatMessage.TextBounds.Y
-			this.Container.Size = UDim2.new(1,0,0,textHeight + 1)
-			return textHeight
+		
+			local newContainerHeight = textHeight + 5
+			this.Container.Size = UDim2.new(1,0,0,newContainerHeight)
+			return newContainerHeight
 		end
 	end
 
@@ -448,6 +459,10 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 				object.TextTransparency = 0;
 				object.TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 			end
+
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = InputService.VREnabled
+			end
 		end
 	end
 
@@ -465,14 +480,17 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 					table.insert(this.FadeRoutines, Util.PropertyTweener(object, 'TextStrokeTransparency', object.TextStrokeTransparency, 1, 0.85, Util.Linear))
 				end
 			end
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = false
+			end
 		end
 	end
 
 	local function CreateMessageGuiElement()
 		local fontSize = this:GetMessageFontSize(this.Settings)
 
-		local systemMesasgeDisplayText = this.chatMessage or ""
-		local systemMessageSize = Util.GetStringTextBounds(systemMesasgeDisplayText, this.Settings.Font, fontSize, UDim2.new(0, 400, 0, 1000))
+		local systemMessageDisplayText = this.rawChatString or ""
+		local systemMessageSize = Util.GetStringTextBounds(systemMessageDisplayText, this.Settings.Font, fontSize, UDim2.new(0, 400, 0, 1000))
 
 		local container = Util.Create'Frame'
 		{
@@ -482,13 +500,28 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 		};
+			this.MessageBackgroundImage = Util.Create'ImageLabel'
+			{
+				Name = 'TextEntryBackground';
+				Size = UDim2.new(1,0,1,-2);
+				Position = UDim2.new(0,0,0,1);
+				Image = 'rbxasset://textures/ui/Chat/VRChatBackground.png';
+				ScaleType = Enum.ScaleType.Slice;
+				SliceCenter = Rect.new(8,8,56,56);
+				BackgroundTransparency = 1;
+				ImageTransparency = 0.3;
+				BorderSizePixel = 0;
+				ZIndex = 1;
+				Visible = InputService.VREnabled;
+				Parent = container;
+			}
 
 			local chatMessage = Util.Create'TextLabel'
 			{
 				Name = 'SystemChatMessage';
 				Position = UDim2.new(0, 0, 0, 0);
 				Size = UDim2.new(1, 0, 1, 0);
-				Text = systemMesasgeDisplayText;
+				Text = systemMessageDisplayText;
 				ZIndex = 1;
 				BackgroundColor3 = Color3.new(0, 0, 0);
 				BackgroundTransparency = 1;
@@ -502,6 +535,10 @@ local function CreateSystemChatMessage(settings, chattedMessage)
 				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 				Parent = container;
 			};
+			if InputService.VREnabled then
+				chatMessage.Position = UDim2.new(0, 4, 0, 0)
+				chatMessage.Size = UDim2.new(1, 0, 1, 0)
+			end
 
 		container.Size = UDim2.new(1, 0, 0, systemMessageSize.Y + 1);
 		this.Container = container
@@ -589,8 +626,9 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 		if this.Container and this.ChatMessage then
 			this.Container.Size = UDim2.new(1,0,0,1000)
 			local textHeight = this.ChatMessage.TextBounds.Y
-			this.Container.Size = UDim2.new(1,0,0,textHeight + 1)
-			return textHeight
+			local newContainerHeight = textHeight + 5
+			this.Container.Size = UDim2.new(1,0,0,newContainerHeight)
+			return newContainerHeight
 		end
 	end
 
@@ -649,6 +687,10 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			if this.UserNameDot then
 				this.UserNameDot.ImageTransparency = 0
 			end
+
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = InputService.VREnabled
+			end
 		end
 	end
 
@@ -673,6 +715,9 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				if this.UserNameDot then
 					table.insert(this.FadeRoutines, Util.PropertyTweener(this.UserNameDot, 'ImageTransparency', this.UserNameDot.ImageTransparency, 1, 1, Util.Linear))
 				end
+			end
+			if this.MessageBackgroundImage then
+				this.MessageBackgroundImage.Visible = false
 			end
 		end
 	end
@@ -730,7 +775,23 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 		};
-			local xOffset = 0
+			this.MessageBackgroundImage = Util.Create'ImageLabel'
+			{
+				Name = 'TextEntryBackground';
+				Size = UDim2.new(1,0,1,-2);
+				Position = UDim2.new(0,0,0,1);
+				Image = 'rbxasset://textures/ui/Chat/VRChatBackground.png';
+				ScaleType = Enum.ScaleType.Slice;
+				SliceCenter = Rect.new(8,8,56,56);
+				BackgroundTransparency = 1;
+				ImageTransparency = 0.3;
+				BorderSizePixel = 0;
+				ZIndex = 1;
+				Visible = InputService.VREnabled;
+				Parent = container;
+			}
+
+			local xOffset = InputService.VREnabled and 4 or 0
 
 			if this.SendingPlayer and this.SendingPlayer == Player and this.PlayerChatType == Enum.PlayerChatType.Whisper then
 				local whisperToText = Util.Create'TextLabel'
@@ -776,20 +837,6 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				};
 				xOffset = xOffset + fromMessageSize.X
 				this.WhisperFromText = whisperFromText
-			elseif not GetTopBarFlag() then
-				local userNameDot = Util.Create'ImageLabel'
-				{
-					Name = "UserNameDot";
-					Size = UDim2.new(0, 14, 0, 14);
-					BackgroundTransparency = 1;
-					Position = UDim2.new(0, 0, 0, math.max(0, ((playerNameSize and playerNameSize.Y or 0) - 14)/2) + 2);
-					BorderSizePixel = 0;
-					Image = "rbxasset://textures/ui/chat_teamButton.png";
-					ImageColor3 = playerColor;
-					Parent = container;
-				}
-				xOffset = xOffset + 14 + 3
-				this.UserNameDot = userNameDot
 			end
 		if chatTypeDisplayText then
 			local chatModeButton = Util.Create(Util.IsTouchDevice() and 'TextLabel' or 'TextButton')
@@ -881,12 +928,19 @@ local function CreatePlayerChatMessage(settings, playerChatType, sendingPlayer, 
 				TextStrokeTransparency = this.Settings.TextStrokeTransparency;
 				Parent = container;
 			};
+			if InputService.VREnabled then
+				chatMessage.Size = chatMessage.Size - UDim2.new(0,4,0,0)
+			end
 			-- Check if they got moderated and put up a real message instead of Label
 			if chatMessage.Text == 'Label' and chatMessageDisplayText ~= 'Label' then
 				chatMessage.Text = string.rep(" ", numNeededSpaces) .. '[Content Deleted]'
 			end
-			if this.SendingPlayer and Util.IsPlayerAdminAsync(this.SendingPlayer) then
-				chatMessage.TextColor3 = this.Settings.AdminTextColor
+			if this.SendingPlayer then
+				if PlayerPermissionsModule.IsPlayerAdminAsync(this.SendingPlayer) then
+					chatMessage.TextColor3 = this.Settings.AdminTextColor
+				elseif PlayerPermissionsModule.IsPlayerInternAsync(this.SendingPlayer) then
+					chatMessage.TextColor3 = this.Settings.InternTextColor
+				end
 			end
 			chatMessage.Size = chatMessage.Size + UDim2.new(0, 0, 0, chatMessage.TextBounds.Y);
 
@@ -918,6 +972,10 @@ local function CreateChatBarWidget(settings)
 	this.ChatErrorEvent = Util.Signal() -- Signal Signatue: success, actionType, [captures]
 	this.ChatBarFloodEvent = Util.Signal()
 
+	this.unfocusedAt = 0
+
+	local chatCoreGuiEnabled = true
+
 	-- This function while lets string.find work case-insensitively without clobbering the case of the captures
 	local function nocase(s)
       s = string.gsub(s, "%a", function (c)
@@ -929,8 +987,8 @@ local function CreateChatBarWidget(settings)
 
 	this.ChatMatchingRegex =
 	{
-		[function(chatBarText) return string.find(chatBarText, nocase("^/w ") .. "(%w+)") end] = "Whisper";
-		[function(chatBarText) return string.find(chatBarText, nocase("^/whisper ") .. "(%w+)") end] = "Whisper";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/w ") .. "(%w+_?%w+)") end] = "Whisper";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/whisper ") .. "(%w+_?%w+)") end] = "Whisper";
 
 		[function(chatBarText) return string.find(chatBarText, "^%%") end] = "Team";
 		[function(chatBarText) return string.find(chatBarText, "^%(TEAM%)") end] = "Team";
@@ -948,13 +1006,13 @@ local function CreateChatBarWidget(settings)
 		[function(chatBarText) return string.find(chatBarText, "^/%?") end] = "Help";
 		[function(chatBarText) return string.find(chatBarText, nocase("^/help")) end] = "Help";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/block ") .. "(%w+)") end] = "Block";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/block ") .. "(%w+_?%w+)") end] = "Block";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/unblock ") .. "(%w+)") end] = "Unblock";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/unblock ") .. "(%w+_?%w+)") end] = "Unblock";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/mute ") .. "(%w+)") end] = "Mute";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/mute ") .. "(%w+_?%w+)") end] = "Mute";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/unmute ") .. "(%w+)") end] = "Unmute";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/unmute ") .. "(%w+_?%w+)") end] = "Unmute";
 	}
 
 	local ChatModesDict =
@@ -968,11 +1026,6 @@ local function CreateChatBarWidget(settings)
 	}
 
 	local function TearDownEvents()
-		-- Note: This is a new api so we need to pcall it
-		if not GetTopBarFlag() then
-			pcall(function() GuiService:RemoveSpecialKey(Enum.SpecialKey.ChatHotkey) end)
-			this.SpecialKeyPressedConn = Util.DisconnectEvent(this.SpecialKeyPressedConn)
-		end
 		this.ClickToChatButtonConn = Util.DisconnectEvent(this.ClickToChatButtonConn)
 		this.ChatBarFocusLostConn = Util.DisconnectEvent(this.ChatBarFocusLostConn)
 		this.ChatBarLostFocusConn = Util.DisconnectEvent(this.ChatBarLostFocusConn)
@@ -985,19 +1038,6 @@ local function CreateChatBarWidget(settings)
 
 	local function HookUpEvents()
 		TearDownEvents() -- Cleanup old events
-
-		if not GetTopBarFlag() then
-			pcall(function()
-				-- ChatHotKey is '/'
-				this.SpecialKeyPressedConn = Util.DisconnectEvent(this.SpecialKeyPressedConn)
-				GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
-				this.SpecialKeyPressedConn = GuiService.SpecialKeyPressed:connect(function(key)
-					if key == Enum.SpecialKey.ChatHotkey then
-						this:FocusChatBar()
-					end
-				end)
-			end)
-		end
 
 		if this.ClickToChatButton then this.ClickToChatButtonConn = this.ClickToChatButton.MouseButton1Click:connect(function() this:FocusChatBar() end) end
 
@@ -1021,6 +1061,7 @@ local function CreateChatBarWidget(settings)
 
 			this.ChatBarFocusLostConn = this.ChatBar.FocusLost:connect(function(...)
 				count = 0
+				this.unfocusedAt = tick()
 				this.ChatBarLostFocusEvent:fire(...)
 			end)
 			this.ChatBarChangedConn = this.ChatBar.Changed:connect(function(prop)
@@ -1055,8 +1096,7 @@ local function CreateChatBarWidget(settings)
 
 	function this:CalculateVisibility()
 		if this.ChatBarContainer then
-			local chatEnabled = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat)
-			local enabled = self.WidgetVisible and chatEnabled and not NON_CORESCRIPT_MODE
+			local enabled = self.WidgetVisible and chatCoreGuiEnabled and not NON_CORESCRIPT_MODE
 			if enabled then
 				HookUpEvents()
 			else
@@ -1087,7 +1127,10 @@ local function CreateChatBarWidget(settings)
 	end
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
-		self:CalculateVisibility()
+		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+			chatCoreGuiEnabled = enabled
+			self:CalculateVisibility()
+		end
 	end
 
 	function this:IsAChatMode(mode)
@@ -1170,23 +1213,21 @@ local function CreateChatBarWidget(settings)
 	end
 
 	function this:OnChatBarBoundsChanged()
-		if GetTopBarFlag() then
-			if this.ChatBarContainer and this.ChatBar then
-				local currSize = this.ChatBarContainer.Size
-				if this.ChatBar.Visible and not this.ChatBar.TextFits then
-					local textBounds = Util.GetStringTextBounds(this.ChatBar.Text, this.ChatBar.Font, this.ChatBar.FontSize, UDim2.new(0, this.ChatBar.AbsoluteSize.X, 0, 1000))
-					if textBounds.Y <= 36 then
-						this.ChatBarContainer.Size = UDim2.new(currSize.X.Scale, currSize.X.Offset, currSize.Y.Scale, 58)
-					else --if currSize.Y.Offset <= 54 then
-						this.ChatBarContainer.Size = UDim2.new(currSize.X.Scale, currSize.X.Offset, currSize.Y.Scale, 76)
-					end
-				elseif this.ChatBar.Visible == false or this.ChatBar.TextBounds.Y <= 18 then
-					if currSize.Y.Offset ~= 40 then
-						this.ChatBarContainer.Size = UDim2.new(currSize.X.Scale, currSize.X.Offset, currSize.Y.Scale, 40)
-					end
-				elseif this.ChatBar.TextBounds.Y <= 36 then
+		if this.ChatBarContainer and this.ChatBar then
+			local currSize = this.ChatBarContainer.Size
+			if this.ChatBar.Visible and not this.ChatBar.TextFits then
+				local textBounds = Util.GetStringTextBounds(this.ChatBar.Text, this.ChatBar.Font, this.ChatBar.FontSize, UDim2.new(0, this.ChatBar.AbsoluteSize.X, 0, 1000))
+				if textBounds.Y <= 36 then
 					this.ChatBarContainer.Size = UDim2.new(currSize.X.Scale, currSize.X.Offset, currSize.Y.Scale, 58)
+				else --if currSize.Y.Offset <= 54 then
+					this.ChatBarContainer.Size = UDim2.new(currSize.X.Scale, currSize.X.Offset, currSize.Y.Scale, 76)
 				end
+			elseif this.ChatBar.Visible == false or this.ChatBar.TextBounds.Y <= 18 then
+				if currSize.Y.Offset ~= 40 then
+					this.ChatBarContainer.Size = UDim2.new(currSize.X.Scale, currSize.X.Offset, currSize.Y.Scale, 40)
+				end
+			elseif this.ChatBar.TextBounds.Y <= 36 then
+				this.ChatBarContainer.Size = UDim2.new(currSize.X.Scale, currSize.X.Offset, currSize.Y.Scale, 58)
 			end
 		end
 	end
@@ -1231,13 +1272,8 @@ local function CreateChatBarWidget(settings)
 				end
 				if this.ChatBar then
 					local offset = this.ChatModeText.Size.X.Offset + this.ChatModeText.Position.X.Offset
-					if GetTopBarFlag() then
-						this.ChatBar.Size = UDim2.new(1, -14 - offset, 1, 0)
-						this.ChatBar.Position = UDim2.new(0, 7 + offset, 0, 0)
-					else
-						this.ChatBar.Size = UDim2.new(1, -offset - 5, 1, 0)
-						this.ChatBar.Position = UDim2.new(0, offset + 5, 0, 0)
-					end
+					this.ChatBar.Size = UDim2.new(1, -14 - offset, 1, 0)
+					this.ChatBar.Position = UDim2.new(0, 7 + offset, 0, 0)
 				end
 			end
 		end
@@ -1253,18 +1289,32 @@ local function CreateChatBarWidget(settings)
 			if this.ChatModeText then
 				this.ChatModeText.Visible = true
 			end
-			if Util.IsTouchDevice() then
-				this:SetMessageMode('All') -- Don't remember message mode on mobile devices
+			if Util.IsTouchDevice() or InputService.VREnabled then
+				this:SetMessageMode('All') -- Don't remember message mode on mobile devices or VR
 			end
 			-- Update chatbar properties when chatbar is focused
 			this:OnChatBarBoundsChanged()
-			if GetTopBarFlag() and this.ChatBarContainer then
+			if this.ChatBarContainer then
 				if self.ChatBarInnerBackground then
 					self.ChatBarInnerBackground.BackgroundTransparency = 0
 				end
 			end
 			this.ChatBarGainedFocusEvent:fire()
 		end
+	end
+
+	function this:RemoveFocus()
+		if self:IsFocused() then
+			self.ChatBar:ReleaseFocus()
+		end
+	end
+
+	function this:IsFocused()
+		return self.ChatBar and self.ChatBar == InputService:GetFocusedTextBox()
+	end
+
+	function this:WasFocused()
+		return (tick() - this.unfocusedAt) < VR_CHAT_CLICK_DEBOUNCE
 	end
 
 	function this:SanitizeInput(input)
@@ -1284,10 +1334,10 @@ local function CreateChatBarWidget(settings)
 			return false
 		end
 
-		while sentMessageTimeQueue[1] and tick() - sentMessageTimeQueue[1] > GetChatFloodCheckIntervalFlag() do
+		while sentMessageTimeQueue[1] and tick() - sentMessageTimeQueue[1] > FLOOD_CHECK_MESSAGE_INTERVAL do
 			table.remove(sentMessageTimeQueue, 1)
 		end
-		if #sentMessageTimeQueue > GetChatFloodCheckMessagesFlag() then
+		if #sentMessageTimeQueue > FLOOD_CHECK_MESSAGE_COUNT then
 			return true
 		end
 		return false
@@ -1347,7 +1397,7 @@ local function CreateChatBarWidget(settings)
 		if self.ChatModeText then
 			self.ChatModeText.Visible = false
 		end
-		if GetTopBarFlag() and this.ChatBarContainer then
+		if this.ChatBarContainer then
 			local currSize = this.ChatBarContainer.Size
 			this.ChatBarContainer.Size = UDim2.new(currSize.X.Scale, currSize.X.Offset, currSize.Y.Scale, 32)
 			if self.ChatBarInnerBackground then
@@ -1369,10 +1419,8 @@ local function CreateChatBarWidget(settings)
 			BackgroundTransparency = 0.25;
 			BorderSizePixel = 0;
 		};
-		if GetTopBarFlag() then
-			chatBarContainer.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255);
-			chatBarContainer.BackgroundTransparency = 0.5;
-		end
+		chatBarContainer.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255);
+		chatBarContainer.BackgroundTransparency = 0.5;
 		local chatBarInnerBackground = Util.Create'Frame'
 		{
 			Name = 'InnerBackground';
@@ -1399,14 +1447,12 @@ local function CreateChatBarWidget(settings)
 				FontSize = Enum.FontSize.Size18;
 				Parent = chatBarContainer;
 			}
-			if GetTopBarFlag() then
-				clickToChatButton.TextWrapped = true;
-				clickToChatButton.Position = UDim2.new(0, 7, 0, 0);
-				clickToChatButton.Size = UDim2.new(1, -14, 1, 0);
-				clickToChatButton.TextYAlignment = Enum.TextYAlignment.Center;
-				if Util.IsTouchDevice() then
-					clickToChatButton.Text = "Tap here to chat"
-				end
+			clickToChatButton.TextWrapped = true;
+			clickToChatButton.Position = UDim2.new(0, 7, 0, 0);
+			clickToChatButton.Size = UDim2.new(1, -14, 1, 0);
+			clickToChatButton.TextYAlignment = Enum.TextYAlignment.Center;
+			if Util.IsTouchDevice() then
+				clickToChatButton.Text = "Tap here to chat"
 			end
 
 			local chatBar = Util.Create'TextBox'
@@ -1427,14 +1473,13 @@ local function CreateChatBarWidget(settings)
 				ClearTextOnFocus = false;
 				Visible = not Util.IsTouchDevice();
 				Parent = chatBarContainer;
+				SelectionImageObject = emptySelectionImage;
 			}
-			if GetTopBarFlag() then
-				chatBar.TextWrapped = true;
-				chatBar.Position = UDim2.new(0, 7, 0, 0);
-				chatBar.Size = UDim2.new(1, -14, 1, 0);
-				chatBar.TextYAlignment = Enum.TextYAlignment.Center;
-				chatBar.Visible = false;
-			end
+			chatBar.TextWrapped = true;
+			chatBar.Position = UDim2.new(0, 7, 0, 0);
+			chatBar.Size = UDim2.new(1, -14, 1, 0);
+			chatBar.TextYAlignment = Enum.TextYAlignment.Center;
+			chatBar.Visible = false;
 
 			local chatModeText = Util.Create'TextButton'
 			{
@@ -1452,18 +1497,14 @@ local function CreateChatBarWidget(settings)
 				FontSize = Enum.FontSize.Size18;
 				Parent = chatBarContainer;
 			}
-			if GetTopBarFlag() then
-				chatModeText.Position = UDim2.new(0, 7, 0, 0);
-				chatModeText.Size = UDim2.new(1, -14, 1, 0);
-				chatModeText.TextYAlignment = Enum.TextYAlignment.Center;
-			end
-		if GetTopBarFlag() then
-			-- If top bar then we have this grey background around text
-			chatBarInnerBackground.Parent = chatBarContainer;
-			clickToChatButton.Parent = chatBarInnerBackground;
-			chatBar.Parent = chatBarInnerBackground;
-			chatModeText.Parent = chatBarInnerBackground;
-		end
+			chatModeText.Position = UDim2.new(0, 7, 0, 0);
+			chatModeText.Size = UDim2.new(1, -14, 1, 0);
+			chatModeText.TextYAlignment = Enum.TextYAlignment.Center;
+		-- Create grey background for text
+		chatBarInnerBackground.Parent = chatBarContainer;
+		clickToChatButton.Parent = chatBarInnerBackground;
+		chatBar.Parent = chatBarInnerBackground;
+		chatModeText.Parent = chatBarInnerBackground;
 
 		this.ChatBarContainer = chatBarContainer
 		this.ChatBarInnerBackground = chatBarInnerBackground
@@ -1472,47 +1513,45 @@ local function CreateChatBarWidget(settings)
 		this.ChatModeText = chatModeText
 		this.ChatBarContainer.Parent = GuiRoot
 
-		if GetTopBarFlag() then
-			local function RobloxClientScreenSizeChanged(newSize)
-				if chatBarContainer then
-					local chatbarVisible = this.ChatBar and this.ChatBar.Visible
-					local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
-					-- Phone
-					if newSize.X <= PHONE_SCREEN_WIDTH then
-						chatBarContainer.Size = UDim2.new(0.5, 0,0, chatbarVisible and 40 or 32)
-						if bubbleChatIsOn then
-							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
-						else
-							chatBarContainer.Position = UDim2.new(0, 0, 0.5, 2)
-						end
-					-- Tablet
-					elseif newSize.X <= TABLET_SCREEN_WIDTH then
-						chatBarContainer.Size = UDim2.new(0.4, 0,0, chatbarVisible and 40 or 32)
-						if bubbleChatIsOn then
-							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
-						else
-							chatBarContainer.Position = UDim2.new(0, 0, 0.3, 2)
-						end
-					-- Desktop
+		local function RobloxClientScreenSizeChanged(newSize)
+			if chatBarContainer then
+				local chatbarVisible = this.ChatBar and this.ChatBar.Visible
+				local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
+				-- Phone
+				if newSize.X <= PHONE_SCREEN_WIDTH then
+					chatBarContainer.Size = UDim2.new(0.5, 0,0, chatbarVisible and 40 or 32)
+					if bubbleChatIsOn then
+						chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
 					else
-						chatBarContainer.Size = UDim2.new(0.3, 0,0, chatbarVisible and 40 or 32)
-						if bubbleChatIsOn then
-							chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
-						else
-							chatBarContainer.Position = UDim2.new(0,0,0.25, 2)
-						end
+						chatBarContainer.Position = UDim2.new(0, 0, 0.5, 2)
 					end
-
-					if Util.IsTouchDevice() then
-						-- Hide the chatbar on mobile so they can't see it.
-						chatBarContainer.Position = UDim2.new(0,0,1,20);
+				-- Tablet
+				elseif newSize.X <= TABLET_SCREEN_WIDTH then
+					chatBarContainer.Size = UDim2.new(0.4, 0,0, chatbarVisible and 40 or 32)
+					if bubbleChatIsOn then
+						chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
+					else
+						chatBarContainer.Position = UDim2.new(0, 0, 0.3, 2)
+					end
+				-- Desktop
+				else
+					chatBarContainer.Size = UDim2.new(0.3, 0,0, chatbarVisible and 40 or 32)
+					if bubbleChatIsOn then
+						chatBarContainer.Position = UDim2.new(0, 0, 0, 2)
+					else
+						chatBarContainer.Position = UDim2.new(0,0,0.25, 2)
 					end
 				end
-			end
 
-			GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" and not chatRepositioned then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
-			RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize)
+				if Util.IsTouchDevice() or InputService.VREnabled then
+					-- Hide the chatbar on mobile and in VR so they can't see it.
+					chatBarContainer.Position = UDim2.new(0,0,1,20);
+				end
+			end
 		end
+
+		GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" and not chatRepositioned then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
+		RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize)
 	end
 
 
@@ -1545,6 +1584,8 @@ local function CreateChatWindowWidget(settings)
 	local lastChatActivity = 0
 
 	local FadeLock = false
+
+	local chatCoreGuiEnabled = true
 
 	local function PointInChatWindow(pt)
 		local point0 = this.ChatContainer.AbsolutePosition
@@ -1588,7 +1629,7 @@ local function CreateChatWindowWidget(settings)
 	function this:FadeIn(duration, lockFade)
 		if not FadeLock then
 			duration = duration or 0.75
-			local backgroundTransparency = GetTopBarFlag() and 0.5 or 0.7
+			local backgroundTransparency = InputService.VREnabled and 1 or 0.5
 			-- fade in
 			if this.BackgroundTweener then
 				this.BackgroundTweener:Cancel()
@@ -1650,6 +1691,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:FadeOutChats()
+		if InputService.VREnabled then return end
 		if this.ChatsVisible == false then return end
 		this.ChatsVisible = false
 		if IsPlayerDropDownEnabled and playerDropDown then
@@ -1683,7 +1725,7 @@ local function CreateChatWindowWidget(settings)
 				local ySize = 0
 
 				if this.ScrollingFrame then
-					for index, message in pairs(this.Chats) do
+					for _, message in pairs(this.Chats) do
 						local newHeight = message:OnResize(scrollingFrameAbsoluteSize)
 						if newHeight then
 							local chatMessageElement = message:GetGui()
@@ -1701,7 +1743,9 @@ local function CreateChatWindowWidget(settings)
 							this.MessageContainer.Size.X.Offset,
 							0,
 							ySize)
-					this.MessageContainer.Position = UDim2.new(0, 0, 1, -this.MessageContainer.Size.Y.Offset)
+					if not allowChatLayoutChange then
+						this.MessageContainer.Position = UDim2.new(0, 0, 1, -this.MessageContainer.Size.Y.Offset)
+					end
 					this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
 				end
 			end
@@ -1724,9 +1768,9 @@ local function CreateChatWindowWidget(settings)
 		local chatMessageElement = chatMessage:GetGui()
 
 		chatMessageElement.Parent = this.MessageContainer
-		chatMessage:OnResize()
+		local chatMessageHeight = chatMessage:OnResize() or 10
 		local ySize = this.MessageContainer.Size.Y.Offset
-		local chatMessageElementYSize = UDim2.new(0, 0, 0, chatMessageElement.Size.Y.Offset)
+		local chatMessageElementYSize = UDim2.new(0, 0, 0, chatMessageHeight)
 
 		if not silently then
 			this.MessageCount = this.MessageCount + 1
@@ -1833,6 +1877,9 @@ local function CreateChatWindowWidget(settings)
 					if guiObj then
 						local ySize = guiObj.Size.Y.Offset
 						this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize - UDim2.new(0,0,0,ySize)
+						if allowChatLayoutChange then
+							this.MessageContainer.Position = this.MessageContainer.Position - UDim2.new(0,0,0,ySize)
+						end
 						-- Clamp the canvasposition
 						this:SetCanvasPosition(this.ScrollingFrame.CanvasPosition)
 						guiObj.Parent = nil
@@ -1861,8 +1908,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:CalculateVisibility()
-		local chatEnabled = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat)
-		return this.WidgetVisible and ((chatEnabled and PlayersService.ClassicChat) or NON_CORESCRIPT_MODE)
+		return this.WidgetVisible and ((chatCoreGuiEnabled and PlayersService.ClassicChat) or NON_CORESCRIPT_MODE)
 	end
 
 	function this:ToggleVisibility(visible)
@@ -1878,13 +1924,17 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
-		if this.ChatContainer then
-			this.ChatContainer.Visible = self:CalculateVisibility()
+		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+			chatCoreGuiEnabled = enabled
+			if this.ChatContainer then
+				this.ChatContainer.Visible = self:CalculateVisibility()
+			end
 		end
 	end
 
 	local function CreateChatWindow()
-		local container = Util.Create'Frame'
+		-- This really shouldn't be a button, but it is currently needed for VR.
+		local container = Util.Create 'TextButton'
 		{
 			Name = 'ChatWindowContainer';
 			Size = UDim2.new(0.3, 0, 0.25, 0);
@@ -1893,11 +1943,12 @@ local function CreateChatWindowWidget(settings)
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
 			BorderSizePixel = 0;
+			SelectionImageObject = emptySelectionImage;
+			Active = false;
+			Text = ""
 		};
-		if GetTopBarFlag() then
-			container.Position = UDim2.new(0,0,0,37);
-			container.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255);
-		end
+		container.Position = UDim2.new(0,0,0,37);
+		container.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255);
 			local scrollingFrame = Util.Create'ScrollingFrame'
 			{
 				Name = 'ChatWindow';
@@ -1919,17 +1970,18 @@ local function CreateChatWindowWidget(settings)
 				{
 					Name = 'MessageContainer';
 					Size = UDim2.new(1, -SCROLLBAR_THICKNESS - 1, 0, 0);
-					Position = UDim2.new(0, 0, 1, 0);
+					Position = allowChatLayoutChange and UDim2.new(0, 0, 0, 0) or UDim2.new(0, 0, 1, 0);
 					ZIndex = 1;
 					BackgroundColor3 = Color3.new(0, 0, 0);
 					BackgroundTransparency = 1;
 					Parent = scrollingFrame
 				};
 
-		-- This is some trickery we are doing to make the first chat messages appear at the bottom and go towards the top.
 		local function OnChatWindowResize(prop)
-			if prop == 'AbsoluteSize' then
-				messageContainer.Position = UDim2.new(0, 0, 1, -messageContainer.Size.Y.Offset)
+			if not allowChatLayoutChange then
+				if prop == 'AbsoluteSize' then
+	 				messageContainer.Position = UDim2.new(0, 0, 1, -messageContainer.Size.Y.Offset)
+	 			end
 			end
 			if prop == 'CanvasPosition' then
 				if this.ScrollingFrame then
@@ -1943,11 +1995,11 @@ local function CreateChatWindowWidget(settings)
 
 		local function RobloxClientScreenSizeChanged(newSize)
 			if container then
-				if GetTopBarFlag() then
-					container.Position = UDim2.new(0,0,0,2);
-				end
+				container.Position = UDim2.new(0,0,0,2);
+				if InputService.VREnabled then
+					container.Size = UDim2.new(1,0,1,0)
 				-- Phone
-				if newSize.X <= 640 then
+				elseif newSize.X <= 640 then
 					container.Size = UDim2.new(0.5,0,0.5,0) - container.Position
 				-- Tablet
 				elseif newSize.X <= 1024 then
@@ -1982,45 +2034,41 @@ local function CreateChatWindowWidget(settings)
 			local dontFadeOutOnMouseLeave = false
 
 			if Util:IsTouchDevice() then
-				--if not GetTopBarFlag() then
-					local touchCount = 0
-					this.InputBeganConn = InputService.InputBegan:connect(function(inputObject)
-						if inputObject.UserInputType == Enum.UserInputType.Touch and inputObject.UserInputState == Enum.UserInputState.Begin then
-							if PointInChatWindow(Vector2.new(inputObject.Position.X, inputObject.Position.Y)) then
-								touchCount = touchCount + 1
-								dontFadeOutOnMouseLeave = true
-							end
+				local touchCount = 0
+				this.InputBeganConn = InputService.InputBegan:connect(function(inputObject)
+					if inputObject.UserInputType == Enum.UserInputType.Touch and inputObject.UserInputState == Enum.UserInputState.Begin then
+						if PointInChatWindow(Vector2.new(inputObject.Position.X, inputObject.Position.Y)) then
+							touchCount = touchCount + 1
+							dontFadeOutOnMouseLeave = true
 						end
-					end)
+					end
+				end)
 
-					this.InputEndedConn = InputService.InputEnded:connect(function(inputObject)
-						if inputObject.UserInputType == Enum.UserInputType.Touch and inputObject.UserInputState == Enum.UserInputState.End then
-							local endedCount = touchCount
-							wait(2)
-							if touchCount == endedCount then
-								dontFadeOutOnMouseLeave = false
-							end
+				this.InputEndedConn = InputService.InputEnded:connect(function(inputObject)
+					if inputObject.UserInputType == Enum.UserInputType.Touch and inputObject.UserInputState == Enum.UserInputState.End then
+						local endedCount = touchCount
+						wait(2)
+						if touchCount == endedCount then
+							dontFadeOutOnMouseLeave = false
 						end
-					end)
+					end
+				end)
 
-					spawn(function()
-						local now = tick()
-						while true do
-							wait()
-							now = tick()
-							if this.BackgroundVisible then
-								if not dontFadeOutOnMouseLeave then
-									this:FadeOut(0.25)
-								end
-							-- If background is not visible/in-focus
-							elseif this.ChatsVisible and now > lastChatActivity + MESSAGES_FADE_OUT_TIME then
-								--if not GetTopBarFlag() then
-									this:FadeOutChats()
-								--end
+				spawn(function()
+					local now = tick()
+					while true do
+						wait()
+						now = tick()
+						if this.BackgroundVisible then
+							if not dontFadeOutOnMouseLeave then
+								this:FadeOut(0.25)
 							end
+						-- If background is not visible/in-focus
+						elseif this.ChatsVisible and now > lastChatActivity + MESSAGES_FADE_OUT_TIME then
+							this:FadeOutChats()
 						end
-					end)
-				--end
+					end
+				end)
 			else
 				this.LastMousePosition = Vector2.new()
 
@@ -2087,9 +2135,7 @@ local function CreateChatWindowWidget(settings)
 								end
 							-- If background is not visible/in-focus
 							elseif this.ChatsVisible and now > lastChatActivity + MESSAGES_FADE_OUT_TIME then
-								--if not GetTopBarFlag() then
-									this:FadeOutChats()
-								--end
+								this:FadeOutChats()
 							end
 						end
 					end
@@ -2109,11 +2155,12 @@ local function CreateChat()
 
 	this.Settings =
 	{
-		GlobalTextColor = GetTopBarFlag() and Color3.new(112/255, 110/255, 106/255) or Color3.new(255/255, 255/255, 243/255);
-		WhisperTextColor = GetTopBarFlag() and Color3.new(77/255, 139/255, 255/255) or Color3.new(77/255, 139/255, 255/255);
+		GlobalTextColor = Color3.new(112/255, 110/255, 106/255);
+		WhisperTextColor = Color3.new(77/255, 139/255, 255/255);
 		TeamTextColor = Color3.new(230/255, 207/255, 0);
 		DefaultMessageTextColor = Color3.new(255/255, 255/255, 243/255);
 		AdminTextColor = Color3.new(1, 215/255, 0);
+		InternTextColor = Color3.new(175/255, 221/255, 1);
 		TextStrokeTransparency = 0.75;
 		TextStrokeColor = Color3.new(34/255,34/255,34/255);
 		Font = Enum.Font.SourceSansBold;
@@ -2129,39 +2176,26 @@ local function CreateChat()
 	this.Visible = false
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
+		enabled = enabled and (topbarEnabled or InputService.VREnabled)
 		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
-			if not GetTopBarFlag() then
-				if Util:IsTouchDevice() then
-					Util.SetGUIInsetBounds(0, 0)
-				else
-					if enabled and this.ChatBarWidget then
-						-- Reserve bottom 20 pixels for our chat bar
-						Util.SetGUIInsetBounds(0, 20)
-					else
-						Util.SetGUIInsetBounds(0, 0)
-					end
-				end
-			end
-			if GetTopBarFlag() then
-				if StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat) then
-					pcall(function()
-						self.SpecialKeyPressedConn = Util.DisconnectEvent(self.SpecialKeyPressedConn)
-						GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
-						self.SpecialKeyPressedConn = GuiService.SpecialKeyPressed:connect(function(key)
-							if key == Enum.SpecialKey.ChatHotkey then
-								if self.Visible == false then
-									self:ToggleVisibility()
-								end
-								if self.ChatBarWidget then
-									self.ChatBarWidget:FocusChatBar()
-								end
-							end
-						end)
-					end)
-				else
-					pcall(function() GuiService:RemoveSpecialKey(Enum.SpecialKey.ChatHotkey) end)
+			if enabled then
+				pcall(function()
 					self.SpecialKeyPressedConn = Util.DisconnectEvent(self.SpecialKeyPressedConn)
-				end
+					GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
+					self.SpecialKeyPressedConn = GuiService.SpecialKeyPressed:connect(function(key)
+						if key == Enum.SpecialKey.ChatHotkey then
+							if self.Visible == false then
+								self:ToggleVisibility()
+							end
+							if self.ChatBarWidget then
+								self.ChatBarWidget:FocusChatBar()
+							end
+						end
+					end)
+				end)
+			else
+				pcall(function() GuiService:RemoveSpecialKey(Enum.SpecialKey.ChatHotkey) end)
+				self.SpecialKeyPressedConn = Util.DisconnectEvent(self.SpecialKeyPressedConn)
 			end
 			if this.MobileChatButton then
 				if enabled == true then
@@ -2188,8 +2222,18 @@ local function CreateChat()
 			-- Don't add messages from blocked players, don't show message if is a debug command
 			local isDebugCommand = false
 			pcall(function()
-				if sendingPlayer == PlayersService.LocalPlayer then
+				if not NON_CORESCRIPT_MODE and sendingPlayer == PlayersService.LocalPlayer then
 					isDebugCommand = game:GetService("GuiService"):ShowStatsBasedOnInputString(chattedMessage)
+					
+					-- allows dev console to be opened on mobile
+					-- NOTE: Removed ToggleDevConsole bindable event, so engine no longer handles this
+					if string.lower(chattedMessage) == "/console" then
+						local devConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
+						if devConsoleModule then
+							local devConsoleVisible = devConsoleModule:GetVisibility()
+							devConsoleModule:SetVisibility(not devConsoleVisible)
+						end
+					end
 				end
 			end)
 			if not (this:IsPlayerBlocked(sendingPlayer) or this:IsPlayerMuted(sendingPlayer) or isDebugCommand) then
@@ -2200,7 +2244,7 @@ local function CreateChat()
 
 	function this:OnPlayerAdded(newPlayer)
 		if newPlayer then
-			spawn(function() Util.IsPlayerAdminAsync(newPlayer) end)
+			assert(coroutine.resume(coroutine.create(function() PlayerPermissionsModule.IsPlayerAdminAsync(newPlayer) end)))
 		end
 		if NON_CORESCRIPT_MODE then
 			newPlayer.Chatted:connect(function(msg, recipient)
@@ -2306,7 +2350,7 @@ local function CreateChat()
 			Size = UDim2.new(0, 128, 0, 32);
 			Position = UDim2.new(0, 88, 0, 0);
 			BackgroundTransparency = 1.0;
-			Image = 'http://www.roblox.com/asset/?id=97078724';
+			Image = 'https://www.roblox.com/asset/?id=97078724';
 		};
 	end
 
@@ -2315,7 +2359,19 @@ local function CreateChat()
 			if Util.IsTouchDevice() then
 				this.ChatWindowWidget:AddSystemChatMessage("Please press the '...' icon to chat", true)
 			end
-			this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
+			if not allowChatLayoutChange then
+				this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
+			end
+		end
+	end
+
+	local doOnceVRWelcome = false
+	function this:PrintVRWelcome()
+		if this.ChatWindowWidget and not doOnceVRWelcome then
+			if InputService.VREnabled then
+				this.ChatWindowWidget:AddSystemChatMessage("Press here to chat", true)
+				doOnceVRWelcome = true
+			end
 		end
 	end
 
@@ -2339,49 +2395,50 @@ local function CreateChat()
 		if	FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu and
 			game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 		then
+			if NON_CORESCRIPT_MODE then
+				local chatGui = Instance.new("ScreenGui")
+				chatGui.Name = "RobloxGui"
+				chatGui.Parent = Player:WaitForChild('PlayerGui')
+				GuiRoot.Parent = chatGui
+			end
+
 			-- NOTE: eventually we will make multiple chat window frames
 			this.ChatWindowWidget = CreateChatWindowWidget(this.Settings)
 			this.ChatBarWidget = CreateChatBarWidget(this.Settings)
 			this.CurrentWindowMessageCountChanged = this.ChatWindowWidget.MessageCountChanged
 
-			if GetTopBarFlag() then
-				this.ChatWindowWidget.FadeInSignal:connect(function()
-					this.ChatBarWidget:FadeIn()
-				end)
-				this.ChatWindowWidget.FadeOutSignal:connect(function()
-					this.ChatBarWidget:FadeOut()
-				end)
-			end
+			this.ChatWindowWidget.FadeInSignal:connect(function()
+				this.ChatBarWidget:FadeIn()
+			end)
+			this.ChatWindowWidget.FadeOutSignal:connect(function()
+				this.ChatBarWidget:FadeOut()
+			end)
 
-			--if not GetTopBarFlag() then
-				this.ChatWindowWidget:FadeOut(0)
-				this.ChatBarWidget.ChatBarGainedFocusEvent:connect(function()
-					focusCount = focusCount + 1
-					this.ChatWindowWidget:FadeIn(0.25)
-					this.ChatWindowWidget:SetFadeLock(true)
-					this.ChatBarFocusChanged:fire(true)
-				end)
-				this.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
-					local focusNow = focusCount
-					if Util:IsTouchDevice() then
-						delay(2, function()
-							if focusNow == focusCount then
-								this.ChatWindowWidget:SetFadeLock(false)
-							end
-						end)
-					else
-						this.ChatWindowWidget:SetFadeLock(false)
-					end
-					this.ChatBarFocusChanged:fire(false)
-				end)
-				this.ChatBarWidget.ChatBarFloodEvent:connect(function()
-					if this.ChatWindowWidget then
-						this.ChatWindowWidget:AddSystemChatMessage("Wait before sending another message.")
-					end
-				end)
-			--else
-			--	this.ChatWindowWidget:FadeIn(0)
-			--end
+			this.ChatWindowWidget:FadeOut(0)
+			this.ChatBarWidget.ChatBarGainedFocusEvent:connect(function()
+				focusCount = focusCount + 1
+				this.ChatWindowWidget:FadeIn(0.25)
+				this.ChatWindowWidget:SetFadeLock(true)
+				this.ChatBarFocusChanged:fire(true)
+			end)
+			this.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
+				local focusNow = focusCount
+				if Util:IsTouchDevice() then
+					delay(2, function()
+						if focusNow == focusCount then
+							this.ChatWindowWidget:SetFadeLock(false)
+						end
+					end)
+				else
+					this.ChatWindowWidget:SetFadeLock(false)
+				end
+				this.ChatBarFocusChanged:fire(false)
+			end)
+			this.ChatBarWidget.ChatBarFloodEvent:connect(function()
+				if this.ChatWindowWidget then
+					this.ChatWindowWidget:AddSystemChatMessage("Wait before sending another message.")
+				end
+			end)
 
 			this.ChatBarWidget.ChatErrorEvent:connect(function(msg)
 				if msg then
@@ -2437,24 +2494,52 @@ local function CreateChat()
 				end
 			end)
 
-			if Util.IsTouchDevice() and not GetTopBarFlag() then
-				local mobileChatButton = this:CreateTouchDeviceChatButton()
-				if StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat) then
-					mobileChatButton.Parent = GuiRoot
-				end
+			if not NON_CORESCRIPT_MODE then
+				local function onVREnabled()
+					if InputService.VREnabled then
+						self.Settings.TextStrokeTransparency = 1
+						self:PrintVRWelcome()
+						local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 
-				mobileChatButton.TouchTap:connect(function()
-					mobileChatButton.Visible = false
-					if this.ChatBarWidget then
-						this.ChatBarWidget:FocusChatBar()
+						local panel = Panel3D.Get(thisModuleName)
+						panel:LinkTo("Keyboard")
+						panel:SetType(Panel3D.Type.Fixed)
+						panel:ResizePixels(300, 125)
+						GuiRoot.Parent = panel:GetGUI()
+
+						if this.ChatWindowWidget and this.ChatWindowWidget.ChatContainer then
+							this.ChatWindowWidget.ChatContainer.MouseButton1Click:connect(function()
+								if this.ChatBarWidget then
+									if this.ChatBarWidget:WasFocused() then
+										this.ChatBarWidget:RemoveFocus()
+									else
+										self:FocusChatBar()
+									end
+								end
+							end)
+						end
+
+						function panel:CalculateTransparency()
+							return 0
+						end
+
+						VRHub.ModuleOpened.Event:connect(function(moduleName)
+							local module = VRHub:GetModule(moduleName)
+							if moduleName ~= thisModuleName and module.VRIsExclusive then
+								this:SetVisible(false)
+							end
+						end)
+					else
+						self.Settings.TextStrokeTransparency = 0.75
+						GuiRoot.Parent = RobloxGui
+					end
+				end
+				onVREnabled()
+				InputService.Changed:connect(function(prop)
+					if prop == 'VREnabled' then
+						onVREnabled()
 					end
 				end)
-
-				this.ChatBarWidget.ChatBarLostFocusEvent:connect(function()
-					mobileChatButton.Visible = true
-				end)
-
-				this.MobileChatButton = mobileChatButton
 			end
 		end
 	end
@@ -2482,11 +2567,31 @@ local function CreateChat()
 			if this.Visible then
 				this.ChatBarWidget:FadeIn()
 			end
+			if InputService.VREnabled and not this.Visible then
+				this.ChatBarWidget:RemoveFocus()
+			end
 		end
 		if IsPlayerDropDownEnabled and playerDropDown then
 			if not this.Visible then
 				playerDropDown:Hide()
 			end
+		end
+		if InputService.VREnabled then
+			local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+			
+			local panel = Panel3D.Get(thisModuleName)
+			if this.Visible then
+				local topbarPanel = Panel3D.Get("Topbar3D")
+				panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
+				panel:SetVisible(true)
+				panel:ForceShowUntilLookedAt()
+
+				VRHub:FireModuleOpened(thisModuleName)
+			else
+				panel:SetVisible(this.Visible)
+
+				VRHub:FireModuleClosed(thisModuleName)
+			end			
 		end
 		this.VisibilityStateChanged:fire(this.Visible)
 	end
@@ -2495,10 +2600,19 @@ local function CreateChat()
 		SetVisbility(not self.Visible)
 	end
 
+	function this:SetVisible(visible)
+		SetVisbility(visible)
+	end
+
 	function this:FocusChatBar()
 		if self.ChatBarWidget and this.Visible then
 			self.ChatBarWidget:FocusChatBar()
 		end
+	end
+
+	function this:IsFocused(useWasFocused)
+		if not self.ChatBarWidget then return false end
+		return self.ChatBarWidget:IsFocused() or (useWasFocused and self.ChatBarWidget:WasFocused())
 	end
 
 	function this:GetCurrentWindowMessageCount()
@@ -2506,6 +2620,12 @@ local function CreateChat()
 			return this.ChatWindowWidget:GetMessageCount()
 		end
 		return 0
+	end
+
+	function this:TopbarEnabledChanged(enabled)
+		topbarEnabled = enabled
+		-- Update coregui to reflect new topbar status
+		self:CoreGuiChanged(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
 	end
 
 	function this:Initialize()
@@ -2621,11 +2741,30 @@ end
 local moduleApiTable = {}
 -- Main Entry Point
 do
+	moduleApiTable.ModuleName = thisModuleName
+	moduleApiTable.KeepVRTopbarOpen = true 
+	moduleApiTable.VRIsExclusive = true
+	moduleApiTable.VRClosesNonExclusive = false
+	VRHub:RegisterModule(moduleApiTable)
+
+	VRHub.ModuleOpened.Event:connect(function(moduleName)
+		if moduleName ~= thisModuleName then
+			local module = VRHub:GetModule(moduleName)
+			if module.VRIsExclusive then
+				moduleApiTable:SetVisible(false)
+			end
+		end
+	end)
+
 	local ChatInstance = CreateChat()
 	ChatInstance:Initialize()
 
 	function moduleApiTable:ToggleVisibility()
 		ChatInstance:ToggleVisibility()
+	end
+
+	function moduleApiTable:SetVisible(visible)
+		ChatInstance:SetVisible(visible)
 	end
 
 	function moduleApiTable:FocusChatBar()
@@ -2640,6 +2779,14 @@ do
 		return ChatInstance:GetCurrentWindowMessageCount()
 	end
 
+	function moduleApiTable:TopbarEnabledChanged(...)
+		return ChatInstance:TopbarEnabledChanged(...)
+	end
+
+	function moduleApiTable:IsFocused(useWasFocused)
+		return ChatInstance:IsFocused(useWasFocused)
+	end
+
 	moduleApiTable.ChatBarFocusChanged = ChatInstance.ChatBarFocusChanged
 	moduleApiTable.VisibilityStateChanged = ChatInstance.VisibilityStateChanged
 	moduleApiTable.MessagesChanged = ChatInstance.CurrentWindowMessageCountChanged
@@ -2647,4 +2794,3 @@ do
 end
 
 return moduleApiTable
-

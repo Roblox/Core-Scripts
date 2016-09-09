@@ -42,21 +42,29 @@ local function CreateAttachCamera()
 			if zoom <= 0 then
 				zoom = 0.1
 			end
-			
-			if self.LastCameraTransform then
-				local humanoid = self:GetHumanoid()
-				if lastUpdate and humanoid and humanoid.Torso then
-					local forwardVector = humanoid.Torso.CFrame.lookVector
 
-					local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
-					if IsFinite(y) and math.abs(y) > 0.0001 then
-						self.RotateInput = self.RotateInput + Vector2.new(y, 0)
-					end
+
+			local humanoid = self:GetHumanoid()
+			if lastUpdate and humanoid and humanoid.Torso then
+				
+				-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
+				local delta = math.min(0.1, now - lastUpdate)
+				local gamepadRotation = self:UpdateGamepad()
+				self.RotateInput = self.RotateInput + (gamepadRotation * delta)		
+				
+				local forwardVector = humanoid.Torso.CFrame.lookVector
+
+				local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
+				if IsFinite(y) then
+					-- Preserve vertical rotation from user input
+					self.RotateInput = Vector2.new(y, self.RotateInput.Y)
 				end
 			end
+
 			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
 			self.RotateInput = Vector2.new()
-			
+
+
 			camera.Focus = CFrame.new(subjectPosition)
 			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
 			self.LastCameraTransform = camera.CoordinateFrame

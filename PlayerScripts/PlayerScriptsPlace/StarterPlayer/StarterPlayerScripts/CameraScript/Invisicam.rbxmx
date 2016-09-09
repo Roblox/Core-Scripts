@@ -140,7 +140,6 @@ end
 
 local function OnCharacterAdded(character)
 	Character = character
-	Torso = Character:WaitForChild('Torso')
 	
 	TrackedLimbs = {}
 	for _, child in pairs(Character:GetChildren()) do
@@ -165,6 +164,21 @@ end
 
 -- Update. Called every frame after the camera movement step
 function Invisicam:Update()
+	-- Make sure we still have a Torso
+	if not Torso or not Torso.Parent then
+		local humanoid = Character:FindFirstChild("Humanoid")
+		if humanoid and humanoid.Torso then
+			Torso = humanoid.Torso
+		else
+			-- Not set up with Humanoid? Try and see if there's one in the Character at all:
+			Torso = Character:FindFirstChild("Torso")
+			if not Torso then
+				-- Bail out, since we're relying on Torso existing
+				return
+			end
+		end
+	end
+
 	-- Make a list of world points to raycast to
 	local castPoints = {}
 	Behaviors[Mode](castPoints)

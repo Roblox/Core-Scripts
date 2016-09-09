@@ -9,6 +9,8 @@
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
+local PlayersService = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
@@ -26,9 +28,7 @@ local ABUSE_TYPES_PLAYER = {
 }
 
 local ABUSE_TYPES_GAME = {
-	"Inappropriate Content",
-	"Bad Model or Script",
-	"Offsite Link",
+	"Inappropriate Content"
 }
 local DEFAULT_ABUSE_DESC_TEXT = "   Short Description (Optional)"
 if utility:IsSmallTouchScreen() then
@@ -49,7 +49,7 @@ local function Initialize()
 	function this:GetPlayerFromIndex(index)
 		local playerName = playerNames[index]
 		if playerName then
-			return nameToRbxPlayer[nameToRbxPlayer]
+			return nameToRbxPlayer[playerName]
 		end
 
 		return nil
@@ -57,13 +57,13 @@ local function Initialize()
 
 	function this:UpdatePlayerDropDown()
 		playerNames = {}
-	    nameToRbxPlayer = {}
+	    	nameToRbxPlayer = {}
 
-		local players = game.Players:GetChildren()
+		local players = PlayersService:GetPlayers()
 		local index = 1
 		for i = 1, #players do
 			local player = players[i]
-			if player:IsA('Player') and player ~= game:GetService("Players").LocalPlayer and player.UserId > 0 then
+			if player ~= PlayersService.LocalPlayer and player.UserId > 0 then
 				playerNames[index] = player.Name
 				nameToRbxPlayer[player.Name] = player
 				index = index + 1
@@ -107,11 +107,11 @@ local function Initialize()
 		if utility:IsSmallTouchScreen() then
 			this.GameOrPlayerFrame, 
 			this.GameOrPlayerLabel,
-			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1)
+			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 2)
 		else
 			this.GameOrPlayerFrame, 
 			this.GameOrPlayerLabel,
-			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 1, 3)
+			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 2, 3)
 		end
 
 		this.WhichPlayerFrame, 
@@ -122,7 +122,7 @@ local function Initialize()
 
 		this.TypeOfAbuseFrame, 
 		this.TypeOfAbuseLabel,
-		this.TypeOfAbuseMode = utility:AddNewRow(this, "Type Of Abuse", "DropDown", ABUSE_TYPES_GAME)
+		this.TypeOfAbuseMode = utility:AddNewRow(this, "Type Of Abuse", "DropDown", ABUSE_TYPES_GAME, 1)
 
 		if utility:IsSmallTouchScreen() then
 			this.AbuseDescriptionFrame, 
@@ -171,16 +171,28 @@ local function Initialize()
 
 			if this.GameOrPlayerMode.CurrentIndex == 1 then
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
+				
+				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_GAME > 1)
+
 				this.WhichPlayerMode:SetInteractable(false)
 				this.WhichPlayerLabel.ZIndex = 1
 				this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
+				makeSubmitButtonActive()
 			else
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
-				this.WhichPlayerMode:SetInteractable(true)
-				this.WhichPlayerLabel.ZIndex = 2
-				this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.WhichPlayerMode.DropDownFrame
+				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_PLAYER > 1)
+				if #playerNames > 0 then
+					this.WhichPlayerMode:SetInteractable(true)
+					this.WhichPlayerLabel.ZIndex = 2
+					this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.WhichPlayerMode.DropDownFrame
+				else
+					this.WhichPlayerMode:SetInteractable(false)
+					this.WhichPlayerLabel.ZIndex = 1
+					this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
+				end
+				makeSubmitButtonInactive()
 			end
-			makeSubmitButtonInactive()
+			
 		end
 
 		local function cleanupReportAbuseMenu()
@@ -191,11 +203,13 @@ local function Initialize()
 
 		local function onReportSubmitted()
 			local abuseReason = nil
+			local reportSucceeded = false
 			if this.GameOrPlayerMode.CurrentIndex == 2 then
 				abuseReason = ABUSE_TYPES_PLAYER[this.TypeOfAbuseMode.CurrentIndex]
 
 				local currentAbusingPlayer = this:GetPlayerFromIndex(this.WhichPlayerMode.CurrentIndex)
 				if currentAbusingPlayer and abuseReason then
+					reportSucceeded = true
 					spawn(function()
 						game.Players:ReportAbuse(currentAbusingPlayer, abuseReason, this.AbuseDescription.Selection.Text)
 					end)
@@ -203,13 +217,23 @@ local function Initialize()
 			else
 				abuseReason = ABUSE_TYPES_GAME[this.TypeOfAbuseMode.CurrentIndex]
 				if abuseReason then
+					reportSucceeded = true
 					spawn(function()
-						game.Players:ReportAbuse(nil, abuseReason, this.AbuseDescription.Selection.Text)
+						local placeId,placeName,placeDescription = tostring(game.PlaceId), "N/A", "N/A"
+						local abuseDescription = this.AbuseDescription.Selection.Text
+						pcall(function()
+							local productInfo = MarketplaceService:GetProductInfo(game.PlaceId, Enum.InfoType.Asset)
+							placeName = productInfo.Name
+							placeDescription = productInfo.Description
+						end)
+						local formattedText = string.format("User Report: \n    %s \n".."Place Title: \n    %s \n".."PlaceId: \n    %s \n".."Place Description: \n    %s \n",abuseDescription, placeName, placeId, placeDescription)
+
+						game.Players:ReportAbuse(nil, abuseReason, formattedText)
 					end)
 				end
 			end
 
-			if abuseReason then
+			if reportSucceeded then
 				local alertText = "Thanks for your report! Our moderators will review the chat logs and evaluate what happened."
 
 				if abuseReason == 'Cheating/Exploiting' then
@@ -232,9 +256,12 @@ local function Initialize()
 		else
 			submitButton.Position = UDim2.new(1,-194,1,5)
 		end
-		submitButton.Selectable = false
-		submitButton.ZIndex = 1
-		submitText.ZIndex = 1
+		
+		if this.GameOrPlayerMode.CurrentIndex == 1 then
+			makeSubmitButtonActive()
+		else
+			makeSubmitButtonInactive()
+		end
 		submitButton.Parent = this.AbuseDescription.Selection
 
 		local function playerSelectionChanged(newIndex)
@@ -248,10 +275,15 @@ local function Initialize()
 
 		local function typeOfAbuseChanged(newIndex)
 			if newIndex ~= nil then
-				if this.GameOrPlayerMode.CurrentIndex == 1 or this.WhichPlayerMode:GetSelectedIndex() ~= nil then
+				if this.GameOrPlayerMode.CurrentIndex == 1 then -- 1 is Report Game
+					print("activating submit button")
 					makeSubmitButtonActive()
-				else
-					makeSubmitButtonInactive()
+				else -- 2 is Report Player
+					if this.WhichPlayerMode:GetSelectedIndex() then
+						makeSubmitButtonActive()
+					else
+						makeSubmitButtonInactive()
+					end
 				end
 			else
 				makeSubmitButtonInactive()
@@ -277,6 +309,33 @@ do
 	PageInstance.Displayed.Event:connect(function()
 		PageInstance:UpdatePlayerDropDown()
 	end)
+
+	function PageInstance:ReportPlayer(player)
+		if player then
+			local setReportPlayerConnection = nil
+			setReportPlayerConnection = PageInstance.Displayed.Event:connect(function()
+				-- When we change the SelectionIndex of GameOrPlayerMode it waits until the tween is done
+				-- before it fires the IndexChanged signal. The WhichPlayerMode dropdown listens to this signal
+				-- and resets when it is fired. Therefore we need to listen to this signal and set the player we want
+				-- to report the frame after the dropdown is reset
+				local indexChangedConnection = nil
+				indexChangedConnection = PageInstance.GameOrPlayerMode.IndexChanged:connect(function()
+					if indexChangedConnection then
+						indexChangedConnection:disconnect()
+						indexChangedConnection = nil
+					end
+					PageInstance.WhichPlayerMode:SetSelectionByValue(player.Name)
+				end)
+				PageInstance.GameOrPlayerMode:SetSelectionIndex(2)
+
+				if setReportPlayerConnection then
+					setReportPlayerConnection:disconnect()
+					setReportPlayerConnection = nil
+				end
+			end)
+			PageInstance.HubRef:SetVisibility(true, false, PageInstance)
+		end
+	end
 end
 
 

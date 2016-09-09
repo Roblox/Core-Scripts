@@ -1,7 +1,7 @@
 local PURPOSE_DATA = {
-	[Enum.DialogPurpose.Quest] = {"rbxasset://textures/DialogQuest.png", Vector2.new(10, 34)},
-	[Enum.DialogPurpose.Help] = {"rbxasset://textures/DialogHelp.png", Vector2.new(20, 35)},
-	[Enum.DialogPurpose.Shop] = {"rbxasset://textures/ui/DialogShop.png", Vector2.new(22, 43)},
+	[Enum.DialogPurpose.Quest] = {"rbxasset://textures/ui/dialog_purpose_quest.png", Vector2.new(10, 34)},
+	[Enum.DialogPurpose.Help] = {"rbxasset://textures/ui/dialog_purpose_help.png", Vector2.new(20, 35)},
+	[Enum.DialogPurpose.Shop] = {"rbxasset://textures/ui/dialog_purpose_shop.png", Vector2.new(22, 43)},
 }
 local TEXT_HEIGHT = 24 -- Pixel height of one row
 local FONT_SIZE = Enum.FontSize.Size24
@@ -46,6 +46,9 @@ end
 local filteringEnabledFixFlagSuccess, filteringEnabledFixFlagValue = pcall(function() return settings():GetFFlag("FilteringEnabledDialogFix") end)
 local filterEnabledFixActive = (filteringEnabledFixFlagSuccess and filteringEnabledFixFlagValue)
 
+local goodbyeChoiceActiveFlagSuccess, goodbyeChoiceActiveFlagValue = pcall(function() return settings():GetFFlag("GoodbyeChoiceActiveProperty") end)
+local goodbyeChoiceActiveFlag = (goodbyeChoiceActiveFlagSuccess and goodbyeChoiceActiveFlagValue)
+
 local mainFrame
 local choices = {}
 local lastChoice
@@ -65,7 +68,7 @@ local conversationTimedOut =        "Chat ended because you didn't reply"
 local conversationTimedOutSize = 350
 
 local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-local setDialogInUseEvent = RobloxReplicatedStorage:WaitForChild("SetDialogInUse")
+local setDialogInUseEvent = RobloxReplicatedStorage:WaitForChild("SetDialogInUse", 86400)
 
 local player
 local screenGui
@@ -385,10 +388,11 @@ function initialize(parent)
       obj.RobloxLocked = true
 		obj.Parent = mainFrame
 	end
-   lastChoice.RobloxLocked = true
+	
+	lastChoice.RobloxLocked = true
 	lastChoice.Parent = mainFrame
 
-   mainFrame.RobloxLocked = true
+	mainFrame.RobloxLocked = true
 	mainFrame.Parent = parent
 end
 
@@ -441,8 +445,15 @@ function presentDialogChoices(talkingPart, dialogChoices, parentDialog)
 	local height = (math.ceil(lastChoice.UserPrompt.TextBounds.Y / TEXT_HEIGHT) * TEXT_HEIGHT) + CHOICE_PADDING
 	lastChoice.Size = UDim2.new(1, WIDTH_BONUS, 0, height)
 	lastChoice.Position = UDim2.new(0, XPOS_OFFSET, 0, YPOS_OFFSET + yPosition)
-
-	mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
+	lastChoice.Visible = true
+	
+	if goodbyeChoiceActiveFlag and not parentDialog.GoodbyeChoiceActive then
+		lastChoice.Visible = false
+		mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
+	else
+		mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
+	end
+	
 	mainFrame.Position = UDim2.new(0,20,1.0, -mainFrame.Size.Y.Offset-20)
 	if isSmallTouchScreen then
 		local touchScreenGui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("TouchGui")
@@ -467,6 +478,8 @@ function doDialog(dialog)
 		return
 	else
 		dialog.InUse = true
+		-- only bind if we actual enter the dialog
+		contextActionService:BindCoreAction("Nothing", function() end, false, Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
 		if filterEnabledFixActive then
 			setDialogInUseEvent:FireServer(dialog, true)
 		end
@@ -532,8 +545,6 @@ function startDialog(dialog)
 				gui.Enabled = false
 			end
 		end
-		
-		contextActionService:BindCoreAction("Nothing", function() end, false, Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
 
 		renewKillswitch(dialog)
 

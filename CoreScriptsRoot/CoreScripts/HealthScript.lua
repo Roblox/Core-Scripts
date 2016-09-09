@@ -6,15 +6,15 @@
 
 ---------------------------------------------------------------------
 -- Initialize/Variables
-while not Game do
+while not game do
 	wait(1/60)
 end
-while not Game:GetService("Players") do
+while not game:GetService("Players") do
 	wait(1/60)
 end
 
 local useCoreHealthBar = false
-local success = pcall(function() useCoreHealthBar = Game:GetService("Players"):GetUseCoreScriptHealthBar() end)
+local success = pcall(function() useCoreHealthBar = game:GetService("Players"):GetUseCoreScriptHealthBar() end)
 if not success or not useCoreHealthBar then
 	return
 end
@@ -37,12 +37,12 @@ local characterAddedConnection = nil
 local greenBarImage = "rbxasset://textures/ui/Health-BKG-Center.png"
 local greenBarImageLeft = "rbxasset://textures/ui/Health-BKG-Left-Cap.png"
 local greenBarImageRight = "rbxasset://textures/ui/Health-BKG-Right-Cap.png"
-local hurtOverlayImage = "http://www.roblox.com/asset/?id=34854607"
+local hurtOverlayImage = "https://www.roblox.com/asset/?id=34854607"
 
-Game:GetService("ContentProvider"):Preload(greenBarImage)
-Game:GetService("ContentProvider"):Preload(hurtOverlayImage)
+game:GetService("ContentProvider"):Preload(greenBarImage)
+game:GetService("ContentProvider"):Preload(hurtOverlayImage)
 
-while not Game:GetService("Players").LocalPlayer do
+while not game:GetService("Players").LocalPlayer do
 	wait(1/60)
 end
 
@@ -54,7 +54,7 @@ local capWidth = 7
 
 function CreateGui()
 	if HealthGui and #HealthGui:GetChildren() > 0 then 
-		HealthGui.Parent = Game:GetService("CoreGui").RobloxGui
+		HealthGui.Parent = game:GetService("CoreGui").RobloxGui
 		return 
 	end
 
@@ -145,7 +145,7 @@ function CreateGui()
 	healthBarRight.Parent = healthBar
 	healthBarRight.ImageColor3 = greenColor
 
-	HealthGui.Parent = Game:GetService("CoreGui").RobloxGui
+	HealthGui.Parent = game:GetService("CoreGui").RobloxGui
 end
 
 function UpdateGui(health)
@@ -220,7 +220,7 @@ function AnimateHurtOverlay()
 	local newSize = UDim2.new(20, 0, 20, 0)
 	local newPos = UDim2.new(-10, 0, -10, 0)
 
-	if overlay:IsDescendantOf(Game) then
+	if overlay:IsDescendantOf(game) then
 		-- stop any tweens on overlay
 		overlay:TweenSizeAndPosition(newSize,newPos,Enum.EasingDirection.Out,Enum.EasingStyle.Linear,0,true,function()
 			
@@ -230,7 +230,7 @@ function AnimateHurtOverlay()
 			overlay.Visible = true
 			
 			-- now tween the hide
-			if overlay:IsDescendantOf(Game) then
+			if overlay:IsDescendantOf(game) then
 				overlay:TweenSizeAndPosition(newSize,newPos,Enum.EasingDirection.Out,Enum.EasingStyle.Quad,10,false,function()
 					overlay.Visible = false
 				end)
@@ -262,9 +262,9 @@ function newPlayerCharacter()
 end
 
 function startGui()
-	characterAddedConnection = Game:GetService("Players").LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
+	characterAddedConnection = game:GetService("Players").LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
 
-	local character = Game:GetService("Players").LocalPlayer.Character
+	local character = game:GetService("Players").LocalPlayer.Character
 	if not character then
 		return
 	end
@@ -274,7 +274,7 @@ function startGui()
 		return
 	end
 
-	if not Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
+	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
 		return
 	end
 
@@ -295,7 +295,7 @@ HealthGui.Name = "HealthGui"
 HealthGui.BackgroundTransparency = 1
 HealthGui.Size = UDim2.new(1,0,1,0)
 
-Game:GetService("StarterGui").CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
+game:GetService("StarterGui").CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
 	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
 		if guiEnabled and not enabled then
 			if HealthGui then
@@ -310,7 +310,7 @@ Game:GetService("StarterGui").CoreGuiChangedSignal:connect(function(coreGuiType,
 	end
 end)
 
-if Game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
+if game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
 	guiEnabled = true
 	startGui()
 end

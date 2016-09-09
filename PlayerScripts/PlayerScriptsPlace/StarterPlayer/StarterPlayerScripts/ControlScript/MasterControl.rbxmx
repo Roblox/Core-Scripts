@@ -17,6 +17,9 @@ local MasterControl = {}
 
 local Players = game:GetService('Players')
 local RunService = game:GetService('RunService')
+local UserInputService = game:GetService('UserInputService')
+
+local HasVRAPI = pcall(function() return UserInputService.VREnabled and UserInputService.GetUserCFrame end)
 
 while not Players.LocalPlayer do
 	wait()
@@ -62,7 +65,15 @@ function MasterControl:Init()
 				humanoid.Jump = isJumping
 			end
 			
-			moveFunc(LocalPlayer, moveValue, true)	
+			local adjustedMoveValue = moveValue
+			if HasVRAPI and UserInputService.VREnabled and workspace.CurrentCamera.HeadLocked then
+				local vrFrame = UserInputService.UserHeadCFrame
+				local lookVector = Vector3.new(vrFrame.lookVector.X, 0, vrFrame.lookVector.Z).unit
+				local rotation = CFrame.new(Vector3.new(0, 0, 0), lookVector)
+				adjustedMoveValue = rotation:vectorToWorldSpace(adjustedMoveValue)
+			end
+			
+			moveFunc(LocalPlayer, adjustedMoveValue, true)	
 		end
 	end
 	
@@ -107,6 +118,7 @@ function MasterControl:DoJump()
 end
 
 return MasterControl
+
 ]]></ProtectedString>
 		</Properties>
 	</Item>

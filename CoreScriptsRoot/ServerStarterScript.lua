@@ -54,3 +54,10 @@ local function setDialogInUse(player, dialog, value)
 	end
 end
 RemoteEvent_SetDialogInUse.OnServerEvent:connect(setDialogInUse)
+
+local success, retVal = pcall(function() return game:GetService("Chat"):GetShouldUseLuaChat() end)
+local useNewChat = success and retVal
+if (useNewChat) then
+	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerChat/ChatServiceInstaller", script.Parent)
+	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ClientChat/ChatWindowInstaller", script.Parent)
+end
