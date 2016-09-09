@@ -82,10 +82,10 @@ function methods:MuteSpeaker(speakerName, reason, length)
 		self:SendSystemMessage(string.format("%s was muted for the following reason(s): %s", speakerName, self))
 	end
 
-	spawn(function() self.eSpeakerMuted:Fire(speakerName, reason, length) end)
+	pcall(function() self.eSpeakerMuted:Fire(speakerName, reason, length) end)
 	local spkr = self.ChatService:GetSpeaker(speakerName)
 	if (spkr) then
-		spawn(function() spkr.eMuted:Fire(self.Name, reason, length) end)
+		pcall(function() spkr.eMuted:Fire(self.Name, reason, length) end)
 	end
 
 end
@@ -98,10 +98,10 @@ function methods:UnmuteSpeaker(speakerName)
 	
 	self.Mutes[speakerName:lower()] = nil
 
-	spawn(function() self.eSpeakerUnmuted:Fire(speakerName) end)
+	pcall(function() self.eSpeakerUnmuted:Fire(speakerName) end)
 	local spkr = self.ChatService:GetSpeaker(speakerName)
 	if (spkr) then
-		spawn(function() spkr.eUnmuted:Fire(self.Name) end)
+		pcall(function() spkr.eUnmuted:Fire(self.Name) end)
 	end
 end
 
@@ -226,11 +226,11 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 
 	self:InternalAddMessageToHistoryLog(messageObj)
 
-	spawn(function() self.eMessagePosted:Fire(messageObj) end)
-	
 	for i, speaker in pairs(self.Speakers) do
 		speaker:InternalSendMessage(messageObj, self.Name)
 	end
+
+	pcall(function() self.eMessagePosted:Fire(messageObj) end)
 	
 	return messageObj
 end
@@ -242,7 +242,7 @@ function methods:InternalAddSpeaker(speaker)
 	end
 	
 	self.Speakers[speaker.Name] = speaker
-	spawn(function() self.eSpeakerJoined:Fire(speaker.Name) end)
+	pcall(function() self.eSpeakerJoined:Fire(speaker.Name) end)
 end
 
 function methods:InternalRemoveSpeaker(speaker)
@@ -252,7 +252,7 @@ function methods:InternalRemoveSpeaker(speaker)
 	end
 	
 	self.Speakers[speaker.Name] = nil
-	spawn(function() self.eSpeakerLeft:Fire(speaker.Name) end)
+	pcall(function() self.eSpeakerLeft:Fire(speaker.Name) end)
 end
 
 function methods:InternalRemoveExcessMessagesFromLog()
@@ -267,8 +267,8 @@ local function ChatHistorySortFunction(message1, message2)
 end
 
 function methods:InternalAddMessageToHistoryLog(messageObj)
-	table.insert(self.ChatHistory, logObject)
-	table.sort(self.ChatHistory, ChatHistorySortFunction)
+	table.insert(self.ChatHistory, messageObj)
+	--table.sort(self.ChatHistory, ChatHistorySortFunction)
 
 	self:InternalRemoveExcessMessagesFromLog()
 end

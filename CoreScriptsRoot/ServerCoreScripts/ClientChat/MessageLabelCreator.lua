@@ -112,7 +112,7 @@ function methods:CreateMessageLabel(messageData)
 		return toReturn
 	end
 
-	local extraData = messageData.ExtraData
+	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or Enum.Font.SourceSansBold
 	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
 	local useNameColor = extraData.NameColor or Color3.new(1, 1, 1)
@@ -210,7 +210,7 @@ function methods:CreateSystemMessageLabel(messageData)
 
 	WaitUntilParentedCorrectly()
 
-	local extraData = messageData.ExtraData
+	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or Enum.Font.SourceSansBold
 	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
 	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
@@ -347,7 +347,7 @@ function methods:CreateChannelEchoMessageLabel(messageData, echoChannel)
 		return toReturn
 	end
 
-	local extraData = messageData.ExtraData
+	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or Enum.Font.SourceSansBold
 	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
 	local useNameColor = extraData.NameColor or Color3.new(1, 1, 1)
@@ -454,7 +454,7 @@ function methods:CreateChannelEchoSystemMessageLabel(messageData, echoChannel)
 
 	WaitUntilParentedCorrectly()
 	
-	local extraData = messageData.ExtraData
+	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or Enum.Font.SourceSansBold
 	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
 	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)

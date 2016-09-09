@@ -26,7 +26,7 @@ function methods:SayMessage(message, channelName, extraData)
 
 	local messageObj = channel:InternalPostMessage(self, message, extraData)
 	if (messageObj) then
-		spawn(function() self.eSaidMessage:Fire(messageObj) end)
+		pcall(function() self.eSaidMessage:Fire(messageObj) end)
 	end
 	
 	return messageObj
@@ -45,7 +45,7 @@ function methods:JoinChannel(channelName)
 
 	self.Channels[channelName:lower()] = channel
 	channel:InternalAddSpeaker(self)
-	spawn(function()
+	pcall(function()
 		self.eChannelJoined:Fire(channel.Name, channel.WelcomeMessage)
 	end)
 end
@@ -60,7 +60,7 @@ function methods:LeaveChannel(channelName)
 	
 	self.Channels[channelName:lower()] = nil
 	channel:InternalRemoveSpeaker(self)
-	spawn(function()
+	pcall(function()
 		self.eChannelLeft:Fire(channel.Name)
 	end)
 end
@@ -112,7 +112,7 @@ function methods:GetExtraData(key)
 end
 
 function methods:SetMainChannel(channel)
-	spawn(function() self.eMainChannelSet:Fire(channel) end)
+	pcall(function() self.eMainChannelSet:Fire(channel) end)
 end
 
 --///////////////// Internal-Use Methods
@@ -130,18 +130,18 @@ function methods:InternalAssignPlayerObject(playerObj)
 end
 
 function methods:InternalSendMessage(messageObj, channel)
-	spawn(function()
+	pcall(function()
 		self.eReceivedMessage:Fire(messageObj, channel)
 	end)
 
-	spawn(function()
+	pcall(function()
 		messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message)
 		self.eMessageDoneFiltering:Fire(messageObj, channel)
 	end)
 end
 
 function methods:InternalSendSystemMessage(messageObj, channel)
-	spawn(function()
+	pcall(function()
 		self.eReceivedSystemMessage:Fire(messageObj, channel)
 	end)
 end

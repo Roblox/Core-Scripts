@@ -9,7 +9,6 @@ local FORCE_GetShouldUseLuaChat 	= false 	-- Force SFFlag value read from server
 local FORCE_IS_CONSOLE = false
 local FORCE_IS_VR = false
 
-
 local CoreGuiService = game:GetService("CoreGui")
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 
@@ -144,7 +143,7 @@ if ( (TryLoadNewChat or FORCE_CorescriptNewLoadChat) and not isConsole and not i
 
 		ConnectSignals(useModule, interface, "ChatBarFocusChanged")
 		ConnectSignals(useModule, interface, "VisibilityStateChanged")
-		if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu) then
+		if (true or LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu) then
 			ConnectSignals(useModule, interface, "MessagesChanged")
 			StarterGui:RegisterGetCore("UseNewLuaChat", function() return useNewChat end)
 		else

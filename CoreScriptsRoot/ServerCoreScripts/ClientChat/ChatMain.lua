@@ -585,11 +585,13 @@ local function connectGuiParent(GuiParent)
 	DestroyGuardFrame.Name = "DestroyGuardFrame"
 	DestroyGuardFrame.BackgroundTransparency = 1
 	DestroyGuardFrame.Size = UDim2.new(1, 0, 1, 0)
+	DestroyGuardFrame.Parent = GuiParent
 
 	for i, v in pairs(GuiParent:GetChildren()) do
-		v.Parent = DestroyGuardFrame
+		if (v ~= DestroyGuardFrame) then
+			v.Parent = DestroyGuardFrame
+		end
 	end
-	DestroyGuardFrame.Parent = GuiParent
 
 end
 

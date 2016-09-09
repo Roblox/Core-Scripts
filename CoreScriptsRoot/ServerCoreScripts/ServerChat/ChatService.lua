@@ -45,7 +45,7 @@ function methods:AddChannel(channelName)
 		return false
 	end)
 	
-	spawn(function() self.eChannelAdded:Fire(channelName) end)
+	pcall(function() self.eChannelAdded:Fire(channelName) end)
 
 	return channel
 end
@@ -57,7 +57,7 @@ function methods:RemoveChannel(channelName)
 		self.ChatChannels[channelName:lower()]:InternalDestroy()
 		self.ChatChannels[channelName:lower()] = nil
 
-		spawn(function() self.eChannelRemoved:Fire(n) end)
+		pcall(function() self.eChannelRemoved:Fire(n) end)
 	else
 		warn(string.format("Channel %q does not exist.", channelName))
 	end
@@ -76,7 +76,7 @@ function methods:AddSpeaker(speakerName)
 	local speaker = Speaker.new(self, speakerName)
 	self.Speakers[speakerName:lower()] = speaker
 	
-	spawn(function() self.eSpeakerAdded:Fire(speakerName) end)
+	pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
 
 	return speaker
 end
@@ -88,7 +88,7 @@ function methods:RemoveSpeaker(speakerName)
 		self.Speakers[speakerName:lower()]:InternalDestroy()
 		self.Speakers[speakerName:lower()] = nil
 		
-		spawn(function() self.eSpeakerRemoved:Fire(n) end)
+		pcall(function() self.eSpeakerRemoved:Fire(n) end)
 		
 	else
 		warn("Speaker \"" .. speakerName .. "\" does not exist!")
@@ -215,12 +215,9 @@ function methods:InternalDoProcessCommands(speakerName, message, channel)
 	return processed
 end
 
---// Does this need thread safe checking?
---// I did some basic tests spawning 10000 threads, and I didn't get any duplicate results.
 function methods:InternalGetUniqueMessageId()
 	local id = self.MessageIdCounter
 	self.MessageIdCounter = id + 1
-
 	return id
 end
 
