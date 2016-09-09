@@ -66,7 +66,7 @@ function StatsViewerClass:SetStatsDisplayType(statsDisplayType)
     TextPanelSize, 
     TextPanelPosition)
   
-  self._graph = StatsAnnotatedGraphClass.new(true)
+  self._graph = StatsAnnotatedGraphClass.new(statsDisplayType, true)
   self._graph:PlaceInParent(self._frame, 
     GraphSize, 
     GraphPosition)

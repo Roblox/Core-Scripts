@@ -45,6 +45,7 @@ function StatsTextPanelClass.new(statsDisplayType, isMaximized)
   setmetatable(self, StatsTextPanelClass)
 
   self._statsDisplayType = statsDisplayType
+  self._statsAggregatorType = StatsUtils.DisplayTypeToAggregatorType[statsDisplayType]
   self._isMaximized = isMaximized
   
   self._frame = Instance.new("Frame")
@@ -107,9 +108,7 @@ function StatsTextPanelClass:PlaceInParent(parent, size, position)
 end
 
 function StatsTextPanelClass:SetValue(value) 
-  -- FIXME(dbanks)
-  -- Format based on stat type.
-  self._valueLabel.Text = string.format("%.4f", value)
+  self._valueLabel.Text = StatsUtils.FormatTypedValue(value, self._statsAggregatorType)
 end
 
 function StatsTextPanelClass:SetStatsAggregator(aggregator)
