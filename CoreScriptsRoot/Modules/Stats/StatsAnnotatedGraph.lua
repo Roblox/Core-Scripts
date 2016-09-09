@@ -20,10 +20,11 @@ local BarGraphClass = require(CoreGuiService.RobloxGui.Modules.Stats.BarGraph)
 local StatsAnnotatedGraphClass = {}
 StatsAnnotatedGraphClass.__index = StatsAnnotatedGraphClass
 
-function StatsAnnotatedGraphClass.new(isMaximized) 
+function StatsAnnotatedGraphClass.new(statsDisplayType, isMaximized) 
   local self = {}
   setmetatable(self, StatsAnnotatedGraphClass)
 
+  self._statsAggregatorType = StatsUtils.DisplayTypeToAggregatorType[statsDisplayType]
   self._isMaximized = isMaximized
 
   self._frame = Instance.new("Frame")
@@ -106,11 +107,10 @@ function StatsAnnotatedGraphClass:SetValues(values)
   local axisMax = self:_calculateAxisMax(values)
   self._graph:UpdateGraph(values, axisMax)
   
-  -- FIXME(dbanks)
-  -- Format based on stat type.
-  self._topLabel.Text = string.format("%.4f", axisMax)
-  self._midLabel.Text = string.format("%.4f", axisMax/2)
-  self._bottomLabel.Text = string.format("%.4f", 0,.0)
+  local convertedValue = StatsUtils.ConvertTypedValue(axisMax, self._statsAggregatorType)
+  self._topLabel.Text = string.format("%.2f", convertedValue)
+  self._midLabel.Text = string.format("%.2f", convertedValue/2)
+  self._bottomLabel.Text = string.format("%.2f", 0,.0)
 end
 
 function StatsAnnotatedGraphClass:_calculateAxisMax(values)

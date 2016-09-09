@@ -42,7 +42,7 @@ function StatsButtonClass.new(statsDisplayType)
     TextPanelSize, 
     TextPanelPosition)
     
-  self._graph = StatsAnnotatedGraphClass.new(false)
+  self._graph = StatsAnnotatedGraphClass.new(statsDisplayType, false)
   self._graph:PlaceInParent(self._button, 
     GraphSize, 
     GraphPosition)

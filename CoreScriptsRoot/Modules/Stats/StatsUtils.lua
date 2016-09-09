@@ -109,4 +109,49 @@ function StatsUtils.StyleButtonSelected(frame, isSelected)
   end
 end
 
+function StatsUtils.ConvertTypedValue(value, statsAggregatorType) 
+  -- Convert raw number from stats service to the right 
+  -- units.
+  if statsAggregatorType == StatsUtils.StatType_Memory then 
+    -- from B to MB
+    return value/1000000.0
+  elseif statsAggregatorType == StatsUtils.StatType_CPU then
+    -- No conversion: msec -> msec.
+    return value
+  elseif statsAggregatorType == StatsUtils.StatType_GPU then
+    -- No conversion: msec -> msec.
+    return value
+  elseif statsAggregatorType == StatsUtils.StatType_NetworkSent then
+    -- No conversion: KB/sec -> KS/sec.
+    return value
+  elseif statsAggregatorType == StatsUtils.StatType_NetworkReceived then
+    -- No conversion: KB/sec -> KS/sec.
+    return value
+  elseif statsAggregatorType == StatsUtils.StatType_Physics then
+    -- No conversion: msec -> msec.
+    return value
+  end
+end
+
+function StatsUtils.FormatTypedValue(value, statsAggregatorType) 
+  -- Convert raw number from stats service to string 
+  -- in the right units with proper label.
+  local convertedValue = StatsUtils.ConvertTypedValue(value, statsAggregatorType)
+  
+  if statsAggregatorType == StatsUtils.StatType_Memory then 
+    return string.format("%.2f MB", convertedValue)
+  elseif statsAggregatorType == StatsUtils.StatType_CPU then
+    return string.format("%.2f msec", convertedValue)
+  elseif statsAggregatorType == StatsUtils.StatType_GPU then
+    return string.format("%.2f msec", convertedValue)
+  elseif statsAggregatorType == StatsUtils.StatType_NetworkSent then
+    return string.format("%.2f KB/s", convertedValue)
+  elseif statsAggregatorType == StatsUtils.StatType_NetworkReceived then
+    return string.format("%.2f KB/s", convertedValue)
+  elseif statsAggregatorType == StatsUtils.StatType_Physics then
+    return string.format("%.2f msec", convertedValue)
+  end
+end
+
+
 return StatsUtils
