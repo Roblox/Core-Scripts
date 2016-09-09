@@ -91,7 +91,11 @@ function methods:CreateGuiObjects(targetParent)
 
 	end
 
+	local checkSizeLock = false
 	local function doCheckSizeBounds()
+		if (checkSizeLock) then return end
+		checkSizeLock = true
+
 		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
 
 		local screenGuiParent = GetScreenGuiParent()
@@ -129,7 +133,14 @@ function methods:CreateGuiObjects(targetParent)
 			BaseFrame.Size = BaseFrame.Size + offset
 			
 		end
+
+		local xScale = BaseFrame.AbsoluteSize.X / screenGuiParent.AbsoluteSize.X
+		local yScale = BaseFrame.AbsoluteSize.Y / screenGuiParent.AbsoluteSize.Y
+		BaseFrame.Size = UDim2.new(xScale, 0, yScale, 0)
+
+		checkSizeLock = false
 	end
+
 
 	BaseFrame.Changed:connect(function(prop)
 		if (prop == "AbsoluteSize") then
