@@ -16,8 +16,8 @@ local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 --//////////////////////////////////////
 local methods = {}
 
-function methods:SendSystemMessage(message)
-	local messageObj = self:InternalCreateMessageObject(message, nil)
+function methods:SendSystemMessage(message, extraData)
+	local messageObj = self:InternalCreateMessageObject(message, nil, extraData)
 
 	self:InternalAddMessageToHistoryLog(messageObj)
 
@@ -28,20 +28,20 @@ function methods:SendSystemMessage(message)
 	return messageObj
 end
 
-function methods:SendSystemMessageToSpeaker(message, speakerName)
+function methods:SendSystemMessageToSpeaker(message, speakerName, extraData)
 	local speaker = self.Speakers[speakerName]
 	if (speaker) then
-		local messageObj = self:InternalCreateMessageObject(message, nil)
+		local messageObj = self:InternalCreateMessageObject(message, nil, extraData)
 		speaker:InternalSendSystemMessage(messageObj, self.Name)
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a system message", speakerName, self.Name))
 	end
 end
 
-function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker)
+function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraData)
 	local speaker = self.Speakers[speakerName]
 	if (speaker) then
-		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker)
+		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, extraData)
 		speaker:InternalSendMessage(messageObj, self.Name)
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
@@ -206,7 +206,7 @@ function methods:InternalDoProcessCommands(speakerName, message, channel)
 	return processed
 end
 
-function methods:InternalPostMessage(fromSpeaker, message)
+function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	message = self:InternalDoMessageFilter(fromSpeaker.Name, message, self.Name)
 	message = self.ChatService:InternalDoMessageFilter(fromSpeaker.Name, message, self.Name)
 
@@ -222,7 +222,7 @@ function methods:InternalPostMessage(fromSpeaker, message)
 		end
 	end
 
-	local messageObj = self:InternalCreateMessageObject(message, fromSpeaker.Name)
+	local messageObj = self:InternalCreateMessageObject(message, fromSpeaker.Name, extraData)
 
 	self:InternalAddMessageToHistoryLog(messageObj)
 
@@ -273,14 +273,30 @@ function methods:InternalAddMessageToHistoryLog(messageObj)
 	self:InternalRemoveExcessMessagesFromLog()
 end
 
-function methods:InternalCreateMessageObject(message, fromSpeaker)
+function methods:InternalCreateMessageObject(message, fromSpeaker, extraData)
 	local messageObj =
 	{
 		ID = self.ChatService:InternalGetUniqueMessageId(),
 		FromSpeaker = fromSpeaker,
 		Message = message,
 		Time = os.time(),
+		ExtraData = {},
 	}
+
+	if (fromSpeaker) then
+		local speaker = self.Speakers[fromSpeaker]
+		if (speaker) then
+			for k, v in pairs(speaker.ExtraData) do
+				messageObj.ExtraData[k] = v
+			end
+		end
+	end
+
+	if (extraData) then
+		for k, v in pairs(extraData) do
+			messageObj.ExtraData[k] = v
+		end
+	end
 
 	return messageObj
 end

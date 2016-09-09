@@ -15,7 +15,7 @@ local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 --//////////////////////////////////////
 local methods = {}
 
-function methods:SayMessage(message, channelName)
+function methods:SayMessage(message, channelName, extraData)
 	if (self.ChatService:InternalDoProcessCommands(self.Name, message, channelName)) then return end
 	if (not channelName) then return end
 
@@ -24,7 +24,7 @@ function methods:SayMessage(message, channelName)
 		error("Speaker is not in channel \"" .. channelName .. "\"")
 	end
 
-	local messageObj = channel:InternalPostMessage(self, message)
+	local messageObj = channel:InternalPostMessage(self, message, extraData)
 	if (messageObj) then
 		spawn(function() self.eSaidMessage:Fire(messageObj) end)
 	end
@@ -77,10 +77,10 @@ function methods:GetChannelList()
 	return list
 end
 
-function methods:SendMessage(message, channelName, fromSpeaker)
+function methods:SendMessage(message, channelName, fromSpeaker, extraData)
 	local channel = self.Channels[channelName:lower()]
 	if (channel) then
-		channel:SendMessageToSpeaker(message, self.Name, fromSpeaker)
+		channel:SendMessageToSpeaker(message, self.Name, fromSpeaker, extraData)
 
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot receive a message in it.", self.Name, channelName))
@@ -88,14 +88,10 @@ function methods:SendMessage(message, channelName, fromSpeaker)
 	end
 end
 
-function methods:SendSystemMessage(message, channelName)
-if (not channelName) then
-	print("MSG:", message)
-end
-
+function methods:SendSystemMessage(message, channelName, extraData)
 	local channel = self.Channels[channelName:lower()]
 	if (channel) then
-		channel:SendSystemMessageToSpeaker(message, self.Name)
+		channel:SendSystemMessageToSpeaker(message, self.Name, extraData)
 
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot receive a system message in it.", self.Name, channelName))
@@ -109,7 +105,6 @@ end
 
 function methods:SetExtraData(key, value)
 	self.ExtraData[key] = value
-	spawn(function() self.eExtraDataUpdated:Fire(key, value) end) 
 end
 
 function methods:GetExtraData(key)
@@ -178,7 +173,6 @@ function module.new(vChatService, name)
 	obj.eChannelLeft = Instance.new("BindableEvent")
 	obj.eMuted = Instance.new("BindableEvent")
 	obj.eUnmuted = Instance.new("BindableEvent")
-	obj.eExtraDataUpdated = Instance.new("BindableEvent")
 	obj.eMainChannelSet = Instance.new("BindableEvent")
 	
 	obj.SaidMessage = obj.eSaidMessage.Event
@@ -189,7 +183,6 @@ function module.new(vChatService, name)
 	obj.ChannelLeft = obj.eChannelLeft.Event
 	obj.Muted = obj.eMuted.Event
 	obj.Unmuted = obj.eUnmuted.Event
-	obj.ExtraDataUpdated = obj.eExtraDataUpdated.Event
 	obj.MainChannelSet = obj.eMainChannelSet.Event
 
 	ClassMaker.MakeClass("Speaker", obj)

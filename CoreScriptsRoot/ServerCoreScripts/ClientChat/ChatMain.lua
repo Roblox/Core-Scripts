@@ -15,7 +15,7 @@ local moduleApiTable = {}
 
 local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 
-local numChildrenRemaining = 11 -- #waitChildren returns 0 because it's a dictionary
+local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren = 
 {
 	OnNewMessage = "RemoteEvent",
@@ -25,7 +25,6 @@ local waitChildren =
 	OnChannelLeft = "RemoteEvent",
 	OnMuted = "RemoteEvent",
 	OnUnmuted = "RemoteEvent",
-	OnSpeakerExtraDataUpdated = "RemoteEvent",
 	OnMainChannelSet = "RemoteEvent",
 
 	SayMessageRequest = "RemoteEvent",
@@ -83,7 +82,6 @@ local modulesFolder = script
 local moduleChatWindow = require(modulesFolder:WaitForChild("ChatWindow"))
 local moduleChatBar = require(modulesFolder:WaitForChild("ChatBar"))
 local moduleChannelsBar = require(modulesFolder:WaitForChild("ChannelsBar"))
-local moduleSpeakerDatabase = require(modulesFolder:WaitForChild("SpeakerDatabase"))
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 
@@ -99,9 +97,7 @@ ChatWindow:RegisterChatBar(ChatBar)
 ChatWindow:RegisterChannelsBar(ChannelsBar)
 
 
-local SpeakerDatabase = moduleSpeakerDatabase.new()
 local MessageLabelCreator = moduleMessageLabelCreator.new()
-MessageLabelCreator:RegisterSpeakerDatabase(SpeakerDatabase)
 
 local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 
@@ -391,7 +387,15 @@ local function ProcessChatCommands(message)
 
 		local channelObj = ChatWindow:GetCurrentChannel()
 		if (channelObj) then
-			local messageObject = MessageLabelCreator:CreateSystemMessageLabel("Create a free account to get access to chat permissions!")
+			local messageObj = 
+			{
+				ID = -1,
+				FromSpeaker = nil,
+				Message = "Create a free account to get access to chat permissions!",
+				Time = os.time(),
+				ExtraData = {},
+			}
+			local messageObject = MessageLabelCreator:CreateSystemMessageLabel(messageObj)
 			channelObj:AddMessageLabelToLog(messageObject)
 		end
 	end
@@ -549,21 +553,10 @@ EventFolder.OnUnmuted.OnClientEvent:connect(function(channel)
 	--// Same as above.
 end)
 
-EventFolder.OnSpeakerExtraDataUpdated.OnClientEvent:connect(function(speakerName, data)
-	local speaker = SpeakerDatabase:GetSpeaker(speakerName)
-	if (not speaker) then
-		speaker = SpeakerDatabase:AddSpeaker(speakerName)
-	end
-	
-	for i, v in pairs(data) do
-		speaker[i] = v
-	end
-end)
-
-
 EventFolder.OnMainChannelSet.OnClientEvent:connect(function(channel)
 	DoSwitchCurrentChannel(channel)
 end)
+
 
 
 local reparentingLock = false
@@ -620,17 +613,6 @@ end)
 
 
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
-
-for speakerName, speakerExtraData in pairs(initData.SpeakerExtraData) do
-	local speaker = SpeakerDatabase:GetSpeaker(speakerName)
-	if (not speaker) then
-		speaker = SpeakerDatabase:AddSpeaker(speakerName)
-	end
-	
-	for i, v in pairs(speakerExtraData) do
-		speaker[i] = v
-	end
-end
 
 for i, channelData in pairs(initData.Channels) do
 	HandleChannelJoined(unpack(channelData))

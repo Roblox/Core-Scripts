@@ -48,7 +48,6 @@ CreateIfDoesntExist(EventFolder, "OnChannelJoined", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnChannelLeft", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnMuted", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnUnmuted", "RemoteEvent")
-CreateIfDoesntExist(EventFolder, "OnSpeakerExtraDataUpdated", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnMainChannelSet", "RemoteEvent")
 
 CreateIfDoesntExist(EventFolder, "SayMessageRequest", "RemoteEvent")
@@ -162,11 +161,6 @@ local function HandlePlayerJoining(playerObj)
 		EventFolder.OnMainChannelSet:FireClient(playerObj, channel)
 	end)
 
-	for i, oSpeakerName in pairs(ChatService:GetSpeakerList()) do
-		local oSpeaker = ChatService:GetSpeaker(oSpeakerName)
-		EventFolder.OnSpeakerExtraDataUpdated:FireClient(playerObj, oSpeakerName, oSpeaker.ExtraData)
-	end
-
 	for i, channel in pairs(ChatService:GetAutoJoinChannelList()) do
 		speaker:JoinChannel(channel.Name)
 	end
@@ -212,18 +206,6 @@ EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
 	end
 
 	return data
-end)
-
-ChatService.SpeakerAdded:connect(function(speakerName)
-	local speaker = ChatService:GetSpeaker(speakerName)
-	
-	EventFolder.OnSpeakerExtraDataUpdated:FireAllClients(speakerName, speaker.ExtraData)
-	
-	speaker.ExtraDataUpdated:connect(function(key, value)
-		local data = {}
-		data[key] = value
-		EventFolder.OnSpeakerExtraDataUpdated:FireAllClients(speakerName, data)
-	end)
 end)
 
 local function DoJoinCommand(speakerName, channelName, fromChannelName)

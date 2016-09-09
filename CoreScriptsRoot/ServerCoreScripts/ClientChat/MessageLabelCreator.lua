@@ -87,12 +87,8 @@ end
 
 
 
-function methods:RegisterSpeakerDatabase(SpeakerDatabase)
-	rawset(self, "SpeakerDatabase", SpeakerDatabase)
-end
 
 function methods:CreateMessageLabel(messageData)
-
 	local fromSpeaker = messageData.FromSpeaker
 	local message = messageData.Message
 
@@ -102,19 +98,26 @@ function methods:CreateMessageLabel(messageData)
 		--// Cannot be destructive with messageData
 		local oldMessage = messageData.Message
 		local oldSpeaker = messageData.FromSpeaker
+		local oldChatColor = messageData.ExtraData.ChatColor
 
 		messageData.Message = messageData.FromSpeaker .. " " .. string.sub(message, 5)
 		messageData.FromSpeaker = nil
+		messageData.ExtraData.ChatColor = nil
 
 		local toReturn = self:CreateSystemMessageLabel(messageData)
 
 		messageData.Message = oldMessage
 		messageData.FromSpeaker = oldSpeaker
+		messageData.ExtraData.ChatColor = oldChatColor
 		return toReturn
 	end
 
-	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = ChatSettings.ChatWindowTextSize
+	local extraData = messageData.ExtraData
+	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useNameColor = extraData.NameColor or Color3.new(1, 1, 1)
+	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
@@ -152,15 +155,6 @@ function methods:CreateMessageLabel(messageData)
 		--MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
 	end)
 
-	local speakerPlayer = self.SpeakerDatabase:GetSpeaker(fromSpeaker)
-
-	local useNameColor = Color3.new(1, 1, 1)
-	local useChatColor = Color3.new(1, 1, 1)
-
-	if (speakerPlayer) then
-		useNameColor = speakerPlayer.NameColor or useNameColor
-		useChatColor = speakerPlayer.ChatColor or useChatColor
-	end
 	
 	local formatUseName = string.format("[%s]:", fromSpeaker)
 
@@ -216,8 +210,11 @@ function methods:CreateSystemMessageLabel(messageData)
 
 	WaitUntilParentedCorrectly()
 
-	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = ChatSettings.ChatWindowTextSize
+	local extraData = messageData.ExtraData
+	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
@@ -236,7 +233,7 @@ function methods:CreateSystemMessageLabel(messageData)
 	BaseMessage.TextXAlignment = Enum.TextXAlignment.Left
 	BaseMessage.TextYAlignment = Enum.TextYAlignment.Top
 	BaseMessage.TextStrokeTransparency = 0.75
-	BaseMessage.TextColor3 = Color3.new(1, 1, 1)
+	BaseMessage.TextColor3 = useChatColor
 	BaseMessage.TextWrapped = true
 
 	BaseMessage.Text = message
@@ -336,19 +333,26 @@ function methods:CreateChannelEchoMessageLabel(messageData, echoChannel)
 		--// Cannot be destructive with messageData
 		local oldMessage = messageData.Message
 		local oldSpeaker = messageData.FromSpeaker
+		local oldChatColor = messageData.ExtraData.ChatColor
 
 		messageData.Message = messageData.FromSpeaker .. " " .. string.sub(message, 5)
 		messageData.FromSpeaker = nil
+		messageData.ExtraData.ChatColor = nil
 
 		local toReturn = self:CreateChannelEchoSystemMessageLabel(messageData, echoChannel)
 
 		messageData.Message = oldMessage
 		messageData.FromSpeaker = oldSpeaker
+		messageData.ExtraData.ChatColor = oldChatColor
 		return toReturn
 	end
 
-	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = ChatSettings.ChatWindowTextSize
+	local extraData = messageData.ExtraData
+	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useNameColor = extraData.NameColor or Color3.new(1, 1, 1)
+	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
@@ -390,15 +394,6 @@ function methods:CreateChannelEchoMessageLabel(messageData, echoChannel)
 		--MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
 	end)
 
-	local speakerPlayer = self.SpeakerDatabase:GetSpeaker(fromSpeaker)
-
-	local useNameColor = Color3.new(1, 1, 1)
-	local useChatColor = Color3.new(1, 1, 1)
-
-	if (speakerPlayer) then
-		useNameColor = speakerPlayer.NameColor or useNameColor
-		useChatColor = speakerPlayer.ChatColor or useChatColor
-	end
 	
 	local formatUseName = string.format("[%s]:", fromSpeaker)
 	local formatChannelName = string.format("{%s}", echoChannel)
@@ -459,8 +454,11 @@ function methods:CreateChannelEchoSystemMessageLabel(messageData, echoChannel)
 
 	WaitUntilParentedCorrectly()
 	
-	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = ChatSettings.ChatWindowTextSize
+	local extraData = messageData.ExtraData
+	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
@@ -479,7 +477,7 @@ function methods:CreateChannelEchoSystemMessageLabel(messageData, echoChannel)
 	BaseMessage.TextXAlignment = Enum.TextXAlignment.Left
 	BaseMessage.TextYAlignment = Enum.TextYAlignment.Top
 	BaseMessage.TextStrokeTransparency = 0.75
-	BaseMessage.TextColor3 = Color3.new(1, 1, 1)
+	BaseMessage.TextColor3 = useChatColor
 	BaseMessage.TextWrapped = true
 
 	local ChannelButton = Instance.new("TextButton", BaseMessage)
@@ -527,8 +525,6 @@ ClassMaker.RegisterClassType("MessageLabelCreator", methods)
 function module.new()
 	local obj = {}
 
-	obj.SpeakerDatabase = nil
-	
 	ClassMaker.MakeClass("MessageLabelCreator", obj)
 
 	return obj
