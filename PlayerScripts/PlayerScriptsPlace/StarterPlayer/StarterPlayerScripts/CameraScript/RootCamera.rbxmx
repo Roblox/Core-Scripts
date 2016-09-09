@@ -74,6 +74,7 @@ local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
 local SEAT_OFFSET = Vector3.new(0,5,0)
 local VR_SEAT_OFFSET = Vector3.new(0, 4, 0)
 local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
+local R15_HEAD_OFFSET = Vector3.new(0, 2.0, 0)
 
 -- Reset the camera look vector when the camera is enabled for the first time
 local SetCameraOnSpawn = true
@@ -173,9 +174,14 @@ local function CreateCamera()
 				else
 					local humanoidRootPart = cameraSubject.Torso
 					if humanoidRootPart and humanoidRootPart:IsA('BasePart') then
-						local subjectCFrame = GetRenderCFrame(humanoidRootPart)
-						result = subjectCFrame.p +
-							subjectCFrame:vectorToWorldSpace(HEAD_OFFSET + cameraSubject.CameraOffset)
+						local subjectCFrame = GetRenderCFrame(humanoidRootPart)					
+						if cameraSubject.RigType == Enum.HumanoidRigType.R15 then
+							result = subjectCFrame.p +
+								subjectCFrame:vectorToWorldSpace(R15_HEAD_OFFSET + cameraSubject.CameraOffset)							
+						else
+							result = subjectCFrame.p +
+								subjectCFrame:vectorToWorldSpace(HEAD_OFFSET + cameraSubject.CameraOffset)
+						end 
 					end
 				end
 			end
