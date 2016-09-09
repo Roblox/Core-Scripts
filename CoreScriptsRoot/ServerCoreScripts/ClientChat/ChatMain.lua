@@ -534,11 +534,12 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 
 		if (messageLog) then
 			for i, messageLogData in pairs(messageLog) do
+				
 				local messageObj = nil
-				if (messageLogData.Speaker) then
-					messageObj = MessageLabelCreator:CreateMessageLabel(messageLogData.Speaker, messageLogData.Message)
+				if (messageLogData.FromSpeaker) then
+					messageObj = MessageLabelCreator:CreateMessageLabel(messageLogData)
 				else
-					messageObj = MessageLabelCreator:CreateSystemMessageLabel(messageLogData.Message)
+					messageObj = MessageLabelCreator:CreateSystemMessageLabel(messageLogData)
 				end
 
 				channelObj:AddMessageLabelToLog(messageObj)

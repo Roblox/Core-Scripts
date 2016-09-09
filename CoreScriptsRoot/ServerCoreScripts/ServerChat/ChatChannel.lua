@@ -223,12 +223,12 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	end
 
 	local messageObj = self:InternalCreateMessageObject(message, fromSpeaker.Name, extraData)
-
-	self:InternalAddMessageToHistoryLog(messageObj)
-
+	
 	for i, speaker in pairs(self.Speakers) do
 		speaker:InternalSendMessage(messageObj, self.Name)
 	end
+
+	self:InternalAddMessageToHistoryLog(messageObj)
 
 	pcall(function() self.eMessagePosted:Fire(messageObj) end)
 	
