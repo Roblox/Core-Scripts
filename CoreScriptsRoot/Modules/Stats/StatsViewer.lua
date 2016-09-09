@@ -66,47 +66,31 @@ function StatsViewerClass:SetStatsDisplayType(statsDisplayType)
     TextPanelSize, 
     TextPanelPosition)
   
-  self._graph = StatsAnnotatedGraphClass.new()
-  self._graph:PlaceInParent(self._button, 
+  self._graph = StatsAnnotatedGraphClass.new(true)
+  self._graph:PlaceInParent(self._frame, 
     GraphSize, 
     GraphPosition)
+  
+  self:_applyStatsAggregator();
 end
 
+function StatsViewerClass:_applyStatsAggregator()
+  if (self._aggregator == nil) then 
+    return
+  end
+  
+  if (self._textPanel) then 
+    self._textPanel:SetStatsAggregator(self._aggregator)
+  end
+  if (self._graph) then 
+      self._graph:SetStatsAggregator(self._aggregator)
+  end
+end
+  
+
 function StatsViewerClass:SetStatsAggregator(aggregator) 
-  if (self._aggregator) then
-    self._aggregator:RemoveListener(self._listenerId)
-    self._listenerId = nil
-    self._aggregator = nil
-  end
-  
   self._aggregator = aggregator
-  
-  if (self._aggregator ~= nil) then
-    self._listenerId = aggregator:AddListener(function()
-        self:_updateValue()
-    end)
-  end
-  
-  self:_updateValue()
-end
-  
-function StatsViewerClass:_updateValue()
-  local value
-  local values
-  if self._aggregator ~= nil then 
-    value = self._aggregator:GetLatestValue()
-    values = self._aggregator:GetValues()
-  else
-    value = 0
-    values = {}
-  end
-  
-  if self._textPanel then
-    self._textPanel:SetValue(value)
-  end
-  if self._graph then 
-    self._graph:SetValues(value)
-  end  
-end
+  self:_applyStatsAggregator();
+ end
 
 return StatsViewerClass
