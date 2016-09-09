@@ -362,6 +362,23 @@ local function DoSwitchCurrentChannel(targetChannel)
 end
 
 
+local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
+	local channelObj = ChatWindow:GetChannel(channelName)
+	if (channelObj) then
+		local messageObj = 
+		{
+			ID = -1,
+			FromSpeaker = nil,
+			Message = message,
+			Time = os.time(),
+			ExtraData = extraData,
+		}
+
+		local messageObject = MessageLabelCreator:CreateSystemMessageLabel(messageObj)
+		channelObj:AddMessageLabelToLog(messageObject)
+	end
+end
+
 local function ProcessChatCommands(message)
 	local processedCommand = false
 
@@ -370,6 +387,18 @@ local function ProcessChatCommands(message)
 		processedCommand = true
 
 		DoSwitchCurrentChannel(message)
+
+		if (not ChatSettings.ShowChannelsBar) then
+			local currentChannel = ChatWindow:GetCurrentChannel()
+			if (currentChannel) then
+				local switchToChannel = ChatWindow:GetChannel(message)
+				if (switchToChannel) then
+					SendMessageToSelfInTargetChannel(string.format("You are now chatting in channel: '%s'", message), currentChannel.Name, {})
+				else
+					SendMessageToSelfInTargetChannel(string.format("You are not in channel: '%s'", message), currentChannel.Name, {ChatColor = Color3.fromRGB(245, 50, 50)})
+				end
+			end
+		end
 
 	elseif (string.sub(message, 1, 4) == "/cls" or string.sub(message, 1, 6) == "/clear") then
 		processedCommand = true
@@ -387,16 +416,7 @@ local function ProcessChatCommands(message)
 
 		local channelObj = ChatWindow:GetCurrentChannel()
 		if (channelObj) then
-			local messageObj = 
-			{
-				ID = -1,
-				FromSpeaker = nil,
-				Message = "Create a free account to get access to chat permissions!",
-				Time = os.time(),
-				ExtraData = {},
-			}
-			local messageObject = MessageLabelCreator:CreateSystemMessageLabel(messageObj)
-			channelObj:AddMessageLabelToLog(messageObject)
+			SendMessageToSelfInTargetChannel("Create a free account to get access to chat permissions!", channelObj.Name, {})
 		end
 	end
 

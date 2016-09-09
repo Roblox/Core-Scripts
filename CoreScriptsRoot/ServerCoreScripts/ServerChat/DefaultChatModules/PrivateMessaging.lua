@@ -3,6 +3,8 @@ local source = [[
 --	// Written by: Xsitsu
 --	// Description: Module that handles all private messaging.
 
+local errorExtraData = {ChatColor = Color3.fromRGB(245, 50, 50)}
+
 local function Run(ChatService)
 	
 	local function DoWhisperCommand(fromSpeaker, message, channel)
@@ -28,7 +30,7 @@ local function Run(ChatService)
 		if (channelObj and ChatService:GetSpeaker(otherSpeakerName)) then
 			
 			if (channelObj.Name == "To " .. speaker.Name) then
-				speaker:SendSystemMessage("You cannot whisper to yourself.", channel)
+				speaker:SendSystemMessage("You cannot whisper to yourself.", channel, errorExtraData)
 			else
 				if (not speaker:IsInChannel(channelObj.Name)) then
 					speaker:JoinChannel(channelObj.Name)
@@ -43,7 +45,7 @@ local function Run(ChatService)
 			end
 
 		else
-			speaker:SendSystemMessage("Speaker '" .. tostring(otherSpeakerName) .. "' does not exist.", channel)
+			speaker:SendSystemMessage(string.format("Speaker '%s' does not exist.", tostring(otherSpeakerName)), channel, errorExtraData)
 
 		end
 	end
