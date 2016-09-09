@@ -4,37 +4,6 @@
 	// Description: Code for lua side Top Menu items in ROBLOX.
 ]]
 
-
---[[ CONSTANTS ]]
-
-local TOPBAR_THICKNESS = 36
-local USERNAME_CONTAINER_WIDTH = 170
-local COLUMN_WIDTH = 75
-local NAME_LEADERBOARD_SEP_WIDTH = 2
-
-local ITEM_SPACING = 0
-local VR_ITEM_SPACING = 3
-
-local FONT_COLOR = Color3.new(1,1,1)
-local TOPBAR_BACKGROUND_COLOR = Color3.new(31/255,31/255,31/255)
-local TOPBAR_OPAQUE_TRANSPARENCY = 0
-local TOPBAR_TRANSLUCENT_TRANSPARENCY = 0.5
-
-local HEALTH_BACKGROUND_COLOR = Color3.new(228/255, 236/255, 246/255)
-local HEALTH_RED_COLOR = Color3.new(255/255, 28/255, 0/255)
-local HEALTH_YELLOW_COLOR = Color3.new(250/255, 235/255, 0)
-local HEALTH_GREEN_COLOR = Color3.new(27/255, 252/255, 107/255)
-
-local HEALTH_PERCANTAGE_FOR_OVERLAY = 5 / 100
-
-local HURT_OVERLAY_IMAGE = "https://www.roblox.com/asset/?id=34854607"
-
-local DEBOUNCE_TIME = 0.25
-
-local TOPBAR_LOCAL_CFRAME_3D = CFrame.new(0, -5, 5) * CFrame.Angles(math.rad(25), 0, 0)
-
---[[ END OF CONSTANTS ]]
-
 --[[ FFLAG VALUES ]]
 
 local defeatableTopbarSuccess, defeatableTopbarFlagValue = pcall(function() return settings():GetFFlag("EnableSetCoreTopbarEnabled") end)
@@ -65,8 +34,17 @@ local TextService = game:GetService('TextService')
 
 --[[ END OF SERVICES ]]
 
+--[[ MODULES ]]--
+local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
+local TopbarConstants = require(GuiRoot.Modules.TopbarConstants)
+--[[ END OF MODULES ]]
+
 local topbarEnabled = true
 local topbarEnabledChangedEvent = Instance.new('BindableEvent')
+
+local function isTopbarEnabled()
+	return topbarEnabled and not InputService.VREnabled
+end
 
 if defeatableTopbar then
 	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled) -- registers a placeholder setcore function that keeps track of players enabling/disabling the topbar before it's ready.
@@ -75,6 +53,7 @@ if defeatableTopbar then
 		end
 	end)
 end
+local lookMenuEnabled = true
 
 local settingsActive = false
 
@@ -85,7 +64,6 @@ while not Player do
 	Player = PlayersService.LocalPlayer
 end
 
-local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 
@@ -167,10 +145,10 @@ local function CreateTopBar()
 
 	local topbarContainer = Util.Create'Frame'{
 		Name = "TopBarContainer";
-		Size = UDim2.new(1, 0, 0, TOPBAR_THICKNESS);
-		Position = UDim2.new(0, 0, 0, -TOPBAR_THICKNESS);
-		BackgroundTransparency = TOPBAR_OPAQUE_TRANSPARENCY;
-		BackgroundColor3 = TOPBAR_BACKGROUND_COLOR;
+		Size = UDim2.new(1, 0, 0, TopbarConstants.TOPBAR_THICKNESS);
+		Position = UDim2.new(0, 0, 0, -TopbarConstants.TOPBAR_THICKNESS);
+		BackgroundTransparency = TopbarConstants.TOPBAR_OPAQUE_TRANSPARENCY;
+		BackgroundColor3 = TopbarConstants.TOPBAR_BACKGROUND_COLOR;
 		BorderSizePixel = 0;
 		Active = true;
 		Parent = GuiRoot;
@@ -188,7 +166,7 @@ local function CreateTopBar()
 	};
 
 	local function ComputeTransparency()
-		if not topbarEnabled then
+		if not isTopbarEnabled() then
 			return 1
 		end
 
@@ -197,12 +175,12 @@ local function CreateTopBar()
 			return playerGui:GetTopbarTransparency()
 		end
 
-		return TOPBAR_TRANSLUCENT_TRANSPARENCY
+		return TopbarConstants.TOPBAR_TRANSLUCENT_TRANSPARENCY
 	end
 
 	function this:UpdateBackgroundTransparency()
-		if settingsActive and not VREnabled then
-			topbarContainer.BackgroundTransparency = TOPBAR_OPAQUE_TRANSPARENCY
+		if settingsActive and not InputService.VREnabled then
+			topbarContainer.BackgroundTransparency = TopbarConstants.TOPBAR_OPAQUE_TRANSPARENCY
 			topbarShadow.Visible = false
 		else
 			topbarContainer.BackgroundTransparency = ComputeTransparency()
@@ -236,7 +214,7 @@ local BarAlignmentEnum =
 
 local function CreateMenuBar(barAlignment)
 	local this = {}
-	local thickness = TOPBAR_THICKNESS
+	local thickness = TopbarConstants.TOPBAR_THICKNESS
 	local alignment = barAlignment or BarAlignmentEnum.Right
 	local items = {}
 	local propertyChangedConnections = {}
@@ -245,9 +223,9 @@ local function CreateMenuBar(barAlignment)
 	function this:ArrangeItems()
 		local totalWidth = 0
 
-		local spacing = ITEM_SPACING
+		local spacing = TopbarConstants.ITEM_SPACING
 		if InputService.VREnabled then
-			spacing = VR_ITEM_SPACING
+			spacing = TopbarConstants.VR_ITEM_SPACING
 		end
 
 		for i, item in ipairs(items) do
@@ -623,7 +601,7 @@ local function createNormalHealthBar()
 	local container = Util.Create'ImageButton'
 	{
 		Name = "NameHealthContainer";
-		Size = UDim2.new(0, USERNAME_CONTAINER_WIDTH, 1, 0);
+		Size = UDim2.new(0, TopbarConstants.USERNAME_CONTAINER_WIDTH, 1, 0);
 		AutoButtonColor = false;
 		Image = "";
 		BackgroundTransparency = 1;
@@ -637,7 +615,7 @@ local function createNormalHealthBar()
 		Font = Enum.Font.SourceSansBold;
 		FontSize = Enum.FontSize.Size14;
 		BackgroundTransparency = 1;
-		TextColor3 = FONT_COLOR;
+		TextColor3 = TopbarConstants.FONT_COLOR;
 		TextYAlignment = Enum.TextYAlignment.Bottom;
 		TextXAlignment = Enum.TextXAlignment.Left;
 		Parent = container;
@@ -648,7 +626,7 @@ local function createNormalHealthBar()
 		Size = UDim2.new(1, -14, 0, 3);
 		Position = UDim2.new(0, 7, 1, -9);
 		BorderSizePixel = 0;
-		BackgroundColor3 = HEALTH_BACKGROUND_COLOR;
+		BackgroundColor3 = TopbarConstants.HEALTH_BACKGROUND_COLOR;
 		Parent = container;
 	};
 
@@ -656,7 +634,7 @@ local function createNormalHealthBar()
 		Name = "HealthFill";
 		Size = UDim2.new(1, 0, 1, 0);
 		BorderSizePixel = 0;
-		BackgroundColor3 = HEALTH_GREEN_COLOR;
+		BackgroundColor3 = TopbarConstants.HEALTH_GREEN_COLOR;
 		Parent = healthContainer;
 	};
 
@@ -678,7 +656,7 @@ local function CreateUsernameHealthMenuItem()
 	{
 		Name = "HurtOverlay";
 		BackgroundTransparency = 1;
-		Image = HURT_OVERLAY_IMAGE;
+		Image = TopbarConstants.HURT_OVERLAY_IMAGE;
 		Position = UDim2.new(-10,0,-10,0);
 		Size = UDim2.new(20,0,20,0);
 		Visible = false;
@@ -692,7 +670,7 @@ local function CreateUsernameHealthMenuItem()
 	--------------
 
 	local function AnimateHurtOverlay()
-		if hurtOverlay and not VREnabled then
+		if hurtOverlay and not InputService.VREnabled then
 			local newSize = UDim2.new(20, 0, 20, 0)
 			local newPos = UDim2.new(-10, 0, -10, 0)
 
@@ -718,14 +696,20 @@ local function CreateUsernameHealthMenuItem()
 	end
 
 	local healthColorToPosition = {
-		[Vector3.new(HEALTH_RED_COLOR.r, HEALTH_RED_COLOR.g, HEALTH_RED_COLOR.b)] = 0.1;
-		[Vector3.new(HEALTH_YELLOW_COLOR.r, HEALTH_YELLOW_COLOR.g, HEALTH_YELLOW_COLOR.b)] = 0.5;
-		[Vector3.new(HEALTH_GREEN_COLOR.r, HEALTH_GREEN_COLOR.g, HEALTH_GREEN_COLOR.b)] = 0.8;
+		[Vector3.new(TopbarConstants.HEALTH_RED_COLOR.r, 
+      TopbarConstants.HEALTH_RED_COLOR.g, 
+      TopbarConstants.HEALTH_RED_COLOR.b)] = 0.1;
+		[Vector3.new(TopbarConstants.HEALTH_YELLOW_COLOR.r, 
+      TopbarConstants.HEALTH_YELLOW_COLOR.g, 
+      TopbarConstants.HEALTH_YELLOW_COLOR.b)] = 0.5;
+		[Vector3.new(TopbarConstants.HEALTH_GREEN_COLOR.r, 
+      TopbarConstants.HEALTH_GREEN_COLOR.g, 
+      TopbarConstants.HEALTH_GREEN_COLOR.b)] = 0.8;
 	}
 	local min = 0.1
-	local minColor = HEALTH_RED_COLOR
+	local minColor = TopbarConstants.HEALTH_RED_COLOR
 	local max = 0.8
-	local maxColor = HEALTH_GREEN_COLOR
+	local maxColor = TopbarConstants.HEALTH_GREEN_COLOR
 
 	local function HealthbarColorTransferFunction(healthPercent)
 		if healthPercent < min then
@@ -763,7 +747,8 @@ local function CreateUsernameHealthMenuItem()
 				end
 				healthPercent = Util.Clamp(0, 1, healthPercent)
 				local healthColor = HealthbarColorTransferFunction(healthPercent)
-				local thresholdForHurtOverlay = humanoid.MaxHealth * HEALTH_PERCANTAGE_FOR_OVERLAY
+				local thresholdForHurtOverlay = 
+          humanoid.MaxHealth * TopbarConstants.HEALTH_PERCANTAGE_FOR_OVERLAY
 
 				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth and game.StarterGui:GetCoreGuiEnabled("Health") == true then
 					AnimateHurtOverlay()
@@ -824,7 +809,7 @@ local function CreateUsernameHealthMenuItem()
 
 	local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
 	container.MouseButton1Click:connect(function()
-		if topbarEnabled then
+		if isTopbarEnabled() then
 			PlayerlistModule.ToggleVisibility()
 		end
 	end)
@@ -870,8 +855,12 @@ local function CreateLeaderstatsMenuItem()
 					local columnframe = Util.Create'Frame'
 					{
 						Name = "Column" .. tostring(index);
-						Size = UDim2.new(0, COLUMN_WIDTH + (index == numColumns and 0 or NAME_LEADERBOARD_SEP_WIDTH), 1, 0);
-						Position = UDim2.new(0, NAME_LEADERBOARD_SEP_WIDTH + (COLUMN_WIDTH + NAME_LEADERBOARD_SEP_WIDTH) * (index-1), 0, 0);
+						Size = UDim2.new(0, 
+              TopbarConstants.COLUMN_WIDTH + (index == numColumns and 0 or TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH), 
+              1, 0);
+						Position = UDim2.new(0, 
+              TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH + (TopbarConstants.COLUMN_WIDTH + TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH) * (index-1), 
+              0, 0);
 						BackgroundTransparency = 1;
 						Parent = leaderstatsContainer;
 
@@ -885,7 +874,7 @@ local function CreateLeaderstatsMenuItem()
 							FontSize = Enum.FontSize.Size14;
 							BorderSizePixel = 0;
 							BackgroundTransparency = 1;
-							TextColor3 = FONT_COLOR;
+							TextColor3 = TopbarConstants.FONT_COLOR;
 							TextYAlignment = Enum.TextYAlignment.Center;
 							TextXAlignment = Enum.TextXAlignment.Center;
 						};
@@ -900,7 +889,7 @@ local function CreateLeaderstatsMenuItem()
 							FontSize = Enum.FontSize.Size14;
 							BorderSizePixel = 0;
 							BackgroundTransparency = 1;
-							TextColor3 = FONT_COLOR;
+							TextColor3 = TopbarConstants.FONT_COLOR;
 							TextYAlignment = Enum.TextYAlignment.Center;
 							TextXAlignment = Enum.TextXAlignment.Center;
 						};
@@ -909,7 +898,9 @@ local function CreateLeaderstatsMenuItem()
 					count = count + 1
 				end
 			end
-			leaderstatsContainer.Size = UDim2.new(0, COLUMN_WIDTH * count + NAME_LEADERBOARD_SEP_WIDTH * count, 1, 0)
+			leaderstatsContainer.Size = UDim2.new(0, 
+        TopbarConstants.COLUMN_WIDTH * count + TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH * count,
+        1, 0)
 		end)
 
 	rawset(this, "UpdateColumnValue",
@@ -921,8 +912,8 @@ local function CreateLeaderstatsMenuItem()
 			end
 		end)
 
-	topbarEnabledChangedEvent.Event:connect(function()
-		PlayerlistModule.TopbarEnabledChanged(topbarEnabled)
+	topbarEnabledChangedEvent.Event:connect(function(enabled)
+		PlayerlistModule.TopbarEnabledChanged(enabled and not InputService.VREnabled) --We don't show the playerlist at all in VR
 	end)
 
 	this:SetColumns(PlayerlistModule.GetStats())
@@ -935,7 +926,7 @@ local function CreateLeaderstatsMenuItem()
 	end)
 
 	leaderstatsContainer.MouseButton1Click:connect(function()
-		if topbarEnabled then
+		if isTopbarEnabled() then
 			PlayerlistModule.ToggleVisibility()
 		end
 	end)
@@ -951,7 +942,7 @@ local function CreateSettingsIcon(topBarInstance)
 	local settingsIconButton = Util.Create'ImageButton'
 	{
 		Name = "Settings";
-		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
+		Size = UDim2.new(0, 50, 0, TopbarConstants.TOPBAR_THICKNESS);
 		Image = "";
 		AutoButtonColor = false;
 		BackgroundTransparency = 1;
@@ -1078,7 +1069,7 @@ local function CreateUnreadMessagesNotifier(ChatModule)
 		FontSize = Enum.FontSize.Size14;
 		BorderSizePixel = 0;
 		BackgroundTransparency = 1;
-		TextColor3 = FONT_COLOR;
+		TextColor3 = TopbarConstants.FONT_COLOR;
 		TextYAlignment = Enum.TextYAlignment.Center;
 		TextXAlignment = Enum.TextXAlignment.Center;
 		Parent = chatCounter;
@@ -1130,7 +1121,7 @@ local function CreateChatIcon()
 	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 	if not chatEnabled then return end
 
-	local ChatModule = require(GuiRoot.Modules.Chat)
+	local ChatModule = require(GuiRoot.Modules.ChatSelector)
 
 	local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
 	local debounce = 0
@@ -1138,7 +1129,7 @@ local function CreateChatIcon()
 	local chatIconButton = Util.Create'ImageButton'
 	{
 		Name = "Chat";
-		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
+		Size = UDim2.new(0, 50, 0, TopbarConstants.TOPBAR_THICKNESS);
 		Image = "";
 		AutoButtonColor = false;
 		BackgroundTransparency = 1;
@@ -1179,7 +1170,7 @@ local function CreateChatIcon()
 		if InputService.VREnabled then
 			ChatModule:ToggleVisibility()
 		elseif Util.IsTouchDevice() or bubbleChatIsOn then
-			if debounce + DEBOUNCE_TIME < tick() then
+			if debounce + TopbarConstants.DEBOUNCE_TIME < tick() then
 				if Util.IsTouchDevice() then
 					ChatModule:SetVisible(true)
 				end
@@ -1190,8 +1181,8 @@ local function CreateChatIcon()
 		end
 	end
 
-	topbarEnabledChangedEvent.Event:connect(function()
-		ChatModule:TopbarEnabledChanged(topbarEnabled)
+	topbarEnabledChangedEvent.Event:connect(function(enabled)
+		ChatModule:TopbarEnabledChanged(enabled)
 	end)
 
 	chatIconButton.MouseButton1Click:connect(function()
@@ -1239,12 +1230,12 @@ local function CreateChatIcon()
 end
 
 local function CreateMobileHideChatIcon()
-	local ChatModule = require(GuiRoot.Modules.Chat)
+	local ChatModule = require(GuiRoot.Modules.ChatSelector)
 
 	local chatHideIconButton = Util.Create'ImageButton'
 	{
 		Name = "ChatVisible";
-		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
+		Size = UDim2.new(0, 50, 0, TopbarConstants.TOPBAR_THICKNESS);
 		Image = "";
 		AutoButtonColor = false;
 		BackgroundTransparency = 1;
@@ -1301,7 +1292,7 @@ local function CreateChatIcon3D(topBarInstance, panel, menubar)
 
 	local VRHub = require(GuiRoot.Modules.VR.VRHub)
 
-	local ChatModule = require(GuiRoot.Modules.Chat)
+	local ChatModule = require(GuiRoot.Modules.ChatSelector)
 	local thisModuleName = ChatModule.ModuleName
 
 	local menuItem = CreateMenuItem3D(thisModuleName)
@@ -1404,7 +1395,7 @@ local function CreateBackpackIcon()
 	local backpackIconButton = Util.Create'ImageButton'
 	{
 		Name = "Backpack";
-		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
+		Size = UDim2.new(0, 50, 0, TopbarConstants.TOPBAR_THICKNESS);
 		Image = "";
 		AutoButtonColor = false;
 		BackgroundTransparency = 1;
@@ -1434,8 +1425,8 @@ local function CreateBackpackIcon()
 		BackpackModule:OpenClose()
 	end
 
-	topbarEnabledChangedEvent.Event:connect(function()
-		BackpackModule:TopbarEnabledChanged(topbarEnabled)
+	topbarEnabledChangedEvent.Event:connect(function(enabled)
+		BackpackModule:TopbarEnabledChanged(enabled)
 	end)
 
 	backpackIconButton.MouseButton1Click:connect(function()
@@ -1451,7 +1442,7 @@ local function CreateStopRecordIcon()
 	local stopRecordIconButton = Util.Create'ImageButton'
 	{
 		Name = "StopRecording";
-		Size = UDim2.new(0, 50, 0, TOPBAR_THICKNESS);
+		Size = UDim2.new(0, 50, 0, TopbarConstants.TOPBAR_THICKNESS);
 		Image = "";
 		Visible = true;
 		BackgroundTransparency = 1;
@@ -1668,9 +1659,10 @@ end
 
 local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 	local enabled = coreGuiEnabled and topbarEnabled
+	local vrEnabled = InputService.VREnabled
 	if coreGuiType == Enum.CoreGuiType.PlayerList or coreGuiType == Enum.CoreGuiType.All then
 		if leaderstatsMenuItem then
-			if enabled then
+			if enabled and not vrEnabled then
 				AddItemInOrder(RightMenubar, leaderstatsMenuItem, RIGHT_ITEM_ORDER)
 			else
 				RightMenubar:RemoveItem(leaderstatsMenuItem)
@@ -1684,7 +1676,7 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 	end
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
 		if backpackIcon then
-			if enabled then
+			if enabled and not vrEnabled then
 				AddItemInOrder(LeftMenubar, backpackIcon, LEFT_ITEM_ORDER)
 			else
 				LeftMenubar:RemoveItem(backpackIcon)
@@ -1738,13 +1730,13 @@ Menubar3D:SetDock(TopbarPanel3D:GetGUI())
 
 
 if not isTenFootInterface then
-	Util.SetGUIInsetBounds(0, TOPBAR_THICKNESS, 0, 0)
+	Util.SetGUIInsetBounds(0, TopbarConstants.TOPBAR_THICKNESS, 0, 0)
 end
 
 if settingsIcon then
 	AddItemInOrder(LeftMenubar, settingsIcon, LEFT_ITEM_ORDER)
 end
-if nameAndHealthMenuItem and topbarEnabled and not isTenFootInterface then
+if nameAndHealthMenuItem and isTopbarEnabled() and not isTenFootInterface then
 	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
 end
 
@@ -1782,18 +1774,22 @@ if userGuiIcon3D and vr3dGuis then
 	end
 end
 
+local function lookMenuEnabledChanged()
+	if InputService.VREnabled then
+		TopbarPanel3D:SetVisible(lookMenuEnabled)
+	end
+end
 
 local function EnableVR()
 	local VRHub = require(GuiRoot.Modules.VR.VRHub)
 
 	TopbarPanel3D:SetType(Panel3D.Type.Fixed)
-	TopbarPanel3D:SetVisible(true)
 
 	function TopbarPanel3D:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 		if self.transparency == 1 then
 			local headForwardCF = Panel3D.GetHeadLookXZ()
 			local panelOriginCF = CFrame.new(userHeadCF.p) * headForwardCF
-			self.localCF = panelOriginCF * TOPBAR_LOCAL_CFRAME_3D
+			self.localCF = panelOriginCF * TopbarConstants.TOPBAR_LOCAL_CFRAME_3D
 		end
 	end
 
@@ -1812,6 +1808,7 @@ local function EnableVR()
 	VRHub.ModuleClosed.Event:connect(function(moduleName)
 		if not VRHub:KeepVRTopbarOpen() then
 			TopbarPanel3D:SetCanFade(true)
+			lookMenuEnabledChanged()		
 		end
 	end)
 
@@ -1830,7 +1827,7 @@ local gameOptions = settings():FindFirstChild("Game Options")
 if gameOptions and not isTenFootInterface then
 	local success, result = pcall(function()
 		gameOptions.VideoRecordingChangeRequest:connect(function(recording)
-			if recording and topbarEnabled then
+			if recording and isTopbarEnabled() then
 				AddItemInOrder(LeftMenubar, stopRecordingIcon, LEFT_ITEM_ORDER)
 			else
 				LeftMenubar:RemoveItem(stopRecordingIcon)
@@ -1839,7 +1836,19 @@ if gameOptions and not isTenFootInterface then
 	end)
 end
 
-local function topBarEnabledChanged()
+local function topbarEnabledChanged()
+	if InputService.VREnabled then
+		lookMenuEnabled = topbarEnabled
+		lookMenuEnabledChanged()
+		Util.SetGUIInsetBounds(0, 0, 0, 0)
+	else
+		lookMenuEnabled = false
+		if not isTenFootInterface then
+			Util.SetGUIInsetBounds(0, TopbarConstants.TOPBAR_THICKNESS, 0, 0)
+		end
+	end
+	
+
 	topbarEnabledChangedEvent:Fire(topbarEnabled)
 	TopBar:UpdateBackgroundTransparency()
 	for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do
@@ -1853,30 +1862,29 @@ end
 
 local UISChanged;
 local function OnVREnabled(prop)
-	if prop == "VREnabled" and InputService.VREnabled then
-		VREnabled = true
-		topbarEnabled = false
-		EnableVR()
-		topBarEnabledChanged()
-		if UISChanged then
-			UISChanged:disconnect()
-			UISChanged = nil
+	if prop == "VREnabled" then
+		if InputService.VREnabled then
+			EnableVR()
+		else
+			--TODO: finish making this work with toggling VR
+			topbarEnabledChanged()
 		end
 	end
 end
 UISChanged = InputService.Changed:connect(OnVREnabled)
-OnVREnabled("VREnabled")
 
 if defeatableTopbar then
-	topBarEnabledChanged() -- if it was set before this point, enable/disable it now
+	topbarEnabledChanged() -- if it was set before this point, enable/disable it now
 	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
 		if type(enabled) == "boolean" then
 			topbarEnabled = enabled
-			topBarEnabledChanged()
+			topbarEnabledChanged()
 		end
 	end)
+else
+	topbarEnabledChanged()
 end
 
 -- Hook-up coregui changing
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
-topBarEnabledChanged()
+OnVREnabled("VREnabled")

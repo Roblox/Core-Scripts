@@ -41,8 +41,6 @@ local chatWasVisible = false
 local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
 local useUserList = (userlistSuccess and userlistFlagValue == true)
 
-local VREnabled = false
-
 local function IsPlayMyPlaceEnabled()
 	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
 		local playMyPlaceSuccess, playMyPlaceFlagValue = pcall(function() return settings():GetFFlag("XboxPlayMyPlace") end)
@@ -53,7 +51,7 @@ end
 
 
 --[[ CORE MODULES ]]
-local chat = require(RobloxGui.Modules.Chat)
+local chat = require(RobloxGui.Modules.ChatSelector)
 
 if isSmallTouchScreen or isTenFootInterface then
 	SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0,0,0,0)
@@ -236,6 +234,18 @@ local function CreateSettingsHub()
 			ZIndex = SETTINGS_BASE_ZINDEX,
 			Parent = this.ClippingShield
 		};
+		this.VRShield = utility:Create("Frame") {
+			Name = "VRBackground",
+			Parent = this.Shield,
+
+			BackgroundColor3 = SETTINGS_SHIELD_COLOR,
+			BackgroundTransparency = SETTINGS_SHIELD_TRANSPARENCY,
+			Position = UDim2.new(0, -4, 0, 24),
+			Size = UDim2.new(1, 8, 1, -40),
+			BorderSizePixel = 0,
+
+			Visible = false
+		}
 
 		this.Modal = utility:Create'TextButton' -- Force unlocks the mouse, really need a way to do this via UIS
 		{
@@ -945,15 +955,16 @@ local function CreateSettingsHub()
 	end
 
 	function this:ShowShield()
-		this.Shield.BackgroundTransparency = VREnabled and SETTINGS_SHIELD_VR_TRANSPARENCY or SETTINGS_SHIELD_TRANSPARENCY
+		this.Shield.BackgroundTransparency = UserInputService.VREnabled and SETTINGS_SHIELD_VR_TRANSPARENCY or SETTINGS_SHIELD_TRANSPARENCY
 	end
 	function this:HideShield()
 		this.Shield.BackgroundTransparency = 1
 	end
 
+	local thisModuleName = "SettingsMenu"
+	local vrMenuOpened, vrMenuClosed = nil, nil
 	local function enableVR()
 		local VRHub = require(RobloxGui.Modules.VR.VRHub)
-		local thisModuleName = "SettingsMenu"
 		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 		local panel = Panel3D.Get(thisModuleName)
 		panel:ResizeStuds(4, 4, 200)
@@ -963,16 +974,17 @@ local function CreateSettingsHub()
 		
 		this.ClippingShield.Parent = panel:GetGUI()
 		this.Shield.Parent.ClipsDescendants = false
+		this.VRShield.Visible = true
 		this:HideShield()
 
-		GuiService.MenuOpened:connect(function()
+		vrMenuOpened = GuiService.MenuOpened:connect(function()
 			local topbarPanel = Panel3D.Get("Topbar3D")
 			panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
 			panel:SetVisible(true)
 
 			VRHub:FireModuleOpened(thisModuleName)
 		end)
-		GuiService.MenuClosed:connect(function()
+		vrMenuClosed = GuiService.MenuClosed:connect(function()
 			panel:SetVisible(false)
 
 			VRHub:FireModuleClosed(thisModuleName)
@@ -984,15 +996,33 @@ local function CreateSettingsHub()
 			end
 		end)
 	end
+	local function disableVR()
+		this.ClippingShield.Parent = RobloxGui
+		this.Shield.Parent.ClipsDescendants = true
+		this.VRShield.Visible = false
+		this:ShowShield()
+
+		if vrMenuOpened then
+			vrMenuOpened:disconnect()
+			vrMenuOpened = nil
+		end
+		if vrMenuClosed then
+			vrMenuClosed:disconnect()
+			vrMenuClosed = nil
+		end
+
+		local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+		local panel = Panel3D.Get(thisModuleName)
+		panel:SetVisible(false)
+	end
 
 	local UISChanged;
 	local function OnVREnabled(prop)
-		if prop == "VREnabled" and UserInputService.VREnabled then
-			VREnabled = true
-			enableVR()
-			if UISChanged then
-				UISChanged:disconnect()
-				UISChanged = nil
+		if prop == "VREnabled" then
+			if UserInputService.VREnabled then
+				enableVR()
+			else
+				disableVR()
 			end
 		end
 	end
@@ -1073,7 +1103,7 @@ local function CreateSettingsHub()
 	GuiService.ShowLeaveConfirmation:connect(function()
 		if #this.MenuStack == 0 then
 			this:SetVisibility(true)
-			this:SwitchToPage(this.LeaveGamePage, nil, 1)
+			this:SwitchToPage(this.PlayerPage, nil, 1)
 		else
 			this:PopMenu(false, true)
 		end

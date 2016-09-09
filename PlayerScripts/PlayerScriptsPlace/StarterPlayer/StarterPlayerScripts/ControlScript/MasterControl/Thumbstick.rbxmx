@@ -141,7 +141,6 @@ function Thumbstick:Create(parentFrame)
 		centerPosition = Vector2.new(ThumbstickFrame.AbsolutePosition.x + ThumbstickFrame.AbsoluteSize.x/2,
 			ThumbstickFrame.AbsolutePosition.y + ThumbstickFrame.AbsoluteSize.y/2)
 		local direction = Vector2.new(inputObject.Position.x - centerPosition.x, inputObject.Position.y - centerPosition.y)
-		moveStick(inputObject.Position)
 	end)
 	
 	OnTouchMovedCn = UserInputService.TouchMoved:connect(function(inputObject, isProcessed)

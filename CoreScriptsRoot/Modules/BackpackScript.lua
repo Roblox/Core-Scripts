@@ -228,37 +228,6 @@ local function UpdateBackpackLayout()
 	AdjustInventoryFrames()
 end
 
--- NOTE: We should probably migrate to a 2 collection system:
--- One collection for the hotbar and another collection for the inventory
-local function SetNumberOfHotbarSlots(numSlots)
-	if NumberOfHotbarSlots ~= numSlots then
-		local prevNumberOfSlots = NumberOfHotbarSlots
-		local newNumberOfSlots = numSlots
-		-- If we are shrinking the number of slots we need
-		-- to move around our tools to the right locations
-		if prevNumberOfSlots > newNumberOfSlots then
-			-- Delete the slots that are now no longer in the Hotbar
-			-- Iterate backwards as to not corrupt our iterator
-			for i = prevNumberOfSlots, newNumberOfSlots + 1, -1 do
-				local slot = Slots[i]
-				if slot then
-					slot:MoveToInventory()
-					slot:Delete()
-				end
-			end
-			-- Also need to slide-back the inventory slots now that they are indexed earlier
-			for i = prevNumberOfSlots, newNumberOfSlots + 1, -1 do
-				local slot = Slots[i]
-				if not slot.Tool then
-					slot:Delete()
-				end
-			end
-		end
-		NumberOfHotbarSlots = numSlots
-		UpdateBackpackLayout()
-	end
-end
-
 local function Clamp(low, high, num)
 	return math.min(high, math.max(low, num))
 end
@@ -320,6 +289,7 @@ local function MakeSlot(parent, index)
 	local ToolName = nil
 	local ToolChangeConn = nil
 	local HighlightFrame = nil
+	local SelectionObj = nil
 
 	--NOTE: The following are only defined for Hotbar Slots
 	local ToolTip = nil
@@ -348,7 +318,10 @@ local function MakeSlot(parent, index)
 					child.BackgroundTransparency = finalTransparency
 				end
 			end
+
+			SlotFrame.SelectionImageObject = SelectionObj
 		else
+			SlotFrame.SelectionImageObject = nil
 			SlotFrame.BackgroundTransparency = (SlotFrame.Draggable) and 0 or SLOT_FADE_LOCKED
 		end
 		SlotFrame.BackgroundColor3 = (SlotFrame.Draggable) and SLOT_DRAGGABLE_COLOR or BACKGROUND_COLOR
@@ -599,6 +572,19 @@ local function MakeSlot(parent, index)
 	SlotFrame.MouseButton1Click:connect(function() changeSlot(slot) end)
 	slot.Frame = SlotFrame
 
+	do
+		local selectionObjectClipper = NewGui('Frame', 'SelectionObjectClipper')
+		selectionObjectClipper.Visible = false
+		selectionObjectClipper.Parent = SlotFrame
+
+		SelectionObj = NewGui('ImageLabel', 'Selector')
+		SelectionObj.Size = UDim2.new(1, 0, 1, 0)
+		SelectionObj.Image = "rbxasset://textures/ui/Keyboard/key_selection_9slice.png"
+		SelectionObj.ScaleType = Enum.ScaleType.Slice
+		SelectionObj.SliceCenter = Rect.new(12,12,52,52)
+		SelectionObj.Parent = selectionObjectClipper
+	end
+
 
 	ToolIcon = NewGui('ImageLabel', 'Icon')
 	ToolIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
@@ -795,6 +781,70 @@ local function MakeSlot(parent, index)
 	SlotFrame.Parent = parent
 	Slots[index] = slot
 	return slot
+end
+
+-- NOTE: We should probably migrate to a 2 collection system:
+-- One collection for the hotbar and another collection for the inventory
+local function SetNumberOfHotbarSlots(numSlots)
+	if NumberOfHotbarSlots ~= numSlots then
+		local prevNumberOfSlots = NumberOfHotbarSlots
+		local newNumberOfSlots = numSlots
+		-- If we are shrinking the number of slots we need
+		-- to move around our tools to the right locations
+		if prevNumberOfSlots > newNumberOfSlots then
+			-- Delete the slots that are now no longer in the Hotbar
+			-- Iterate backwards as to not corrupt our iterator
+			for i = prevNumberOfSlots, newNumberOfSlots + 1, -1 do
+				local slot = Slots[i]
+				if slot then
+					slot:MoveToInventory()
+					slot:Delete()
+				end
+			end
+			-- Also need to slide-back the inventory slots now that they are indexed earlier
+			for i = prevNumberOfSlots, newNumberOfSlots + 1, -1 do
+				local slot = Slots[i]
+				if not slot.Tool then
+					slot:Delete()
+				end
+			end
+		else -- If we added more slots
+			for i = prevNumberOfSlots, newNumberOfSlots do
+				-- Incrementally add hotbar slots
+				NumberOfHotbarSlots = i
+				if Slots[i] then
+					-- Move old
+					local oldSlot = Slots[i]
+					local oldTool = Slots[i].Tool
+
+					local newSlot = MakeSlot(HotbarFrame, i)
+
+					if oldTool then
+						newSlot:Fill(oldTool)
+					elseif not LowestEmptySlot then
+						LowestEmptySlot = newSlot
+					end
+				else
+					local slot = MakeSlot(HotbarFrame, i)
+
+					slot.Frame.Visible = false
+
+					if not LowestEmptySlot then
+						LowestEmptySlot = slot
+					end
+				end
+			end
+		end
+		NumberOfHotbarSlots = numSlots
+		FullHotbarSlots = 0
+		for i = 1, NumberOfHotbarSlots do
+			if Slots[i] and Slots[i].Tool then
+				FullHotbarSlots = FullHotbarSlots + 1
+			end
+		end
+
+		UpdateBackpackLayout()
+	end
 end
 
 local function OnChildAdded(child) -- To Character or Backpack
@@ -1223,14 +1273,22 @@ end
 --| End Gamepad Functions |--
 -----------------------------
 
+local function EvaluateBackpackPanelVisibility(enabled)
+	return enabled and StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack) and TopbarEnabled and UserInputService.VREnabled
+end
 
 
 local function OnCoreGuiChanged(coreGuiType, enabled)
 	-- Check for enabling/disabling the whole thing
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
-		enabled = enabled and (TopbarEnabled or UserInputService.VREnabled)
+		enabled = enabled and TopbarEnabled 
 		WholeThingEnabled = enabled
 		MainFrame.Visible = enabled
+
+		if UserInputService.VREnabled then
+			local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
+			Panel3D.Get("Backpack"):SetVisible(EvaluateBackpackPanelVisibility(enabled))
+		end
 
 		-- Eat/Release hotkeys (Doesn't affect UserInputService)
 		for _, keyString in pairs(HotkeyStrings) do
@@ -1615,7 +1673,7 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 			if GamepadEnabled then
 				if GAMEPAD_INPUT_TYPES[UserInputService:GetLastInputType()] then
 					resizeGamepadHintsFrame()
-					gamepadHintsFrame.Visible = true
+					gamepadHintsFrame.Visible = not UserInputService.VREnabled
 				end
 			end
 			enableGamepadInventoryControl()
@@ -1734,7 +1792,7 @@ local function OnVREnabled(prop)
 			local BackpackPanel = Panel3D.Get(BackpackScript.ModuleName)
 			BackpackPanel:ResizeStuds(inventoryClosedStudSize.x, inventoryClosedStudSize.y)
 			BackpackPanel:SetType(Panel3D.Type.Fixed)
-			BackpackPanel:SetVisible(true)
+			BackpackPanel:SetVisible(EvaluateBackpackPanelVisibility(true))
 
 
 			function BackpackPanel:PreUpdate(cameraCF, cameraRenderCF, userHeadCF, lookRay)
@@ -1806,7 +1864,7 @@ local function OnVREnabled(prop)
 			VRModuleOpenedConn = VRHub.ModuleOpened.Event:connect(function(moduleName)
 				local openedModule = VRHub:GetModule(moduleName)
 				if openedModule ~= BackpackScript and openedModule.VRIsExclusive then
-					BackpackPanel:SetVisible(false)
+					BackpackPanel:SetVisible(EvaluateBackpackPanelVisibility(false))
 					if InventoryFrame.Visible then
 						BackpackScript.OpenClose()
 					end
@@ -1815,17 +1873,20 @@ local function OnVREnabled(prop)
 			VRModuleClosedConn = VRHub.ModuleClosed.Event:connect(function(moduleName)
 				local openedModule = VRHub:GetModule(moduleName)
 				if openedModule ~= BackpackScript then
-					BackpackPanel:SetVisible(true)
+					BackpackPanel:SetVisible(EvaluateBackpackPanelVisibility(true))
 				end
 			end)
+
 
 			-- Turn off dragging when in VR
 			for _, slot in pairs(Slots) do
 				slot:SetClickability(false)
 			end
+
+			local Healthbar = require(RobloxGui.Modules.VR.Healthbar3D)
 		else -- not IsVR (VR was turned off)
 			local BackpackPanel = Panel3D.Get(BackpackScript.ModuleName)
-			BackpackPanel:SetVisible(false)
+			BackpackPanel:SetVisible(EvaluateBackpackPanelVisibility(false))
 			BackpackPanel:LinkTo(nil)
 
 			MainFrame.Parent = RobloxGui

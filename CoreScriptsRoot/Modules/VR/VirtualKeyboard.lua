@@ -1162,11 +1162,13 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 						end
 					elseif inputObject.KeyCode == Enum.KeyCode.ButtonL3 then
 						self:SetCaps(not self:GetCaps())
+					elseif inputObject.KeyCode == Enum.KeyCode.ButtonB then
+						self:Close(false)
 					end
 				end
 			end,
 			false,
-			Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonR2)
+			Enum.KeyCode.ButtonL1, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL2, Enum.KeyCode.ButtonL3, Enum.KeyCode.ButtonX, Enum.KeyCode.ButtonY, Enum.KeyCode.ButtonR2, Enum.KeyCode.ButtonB)
 
 		self.Parent = panel:GetGUI()
 
@@ -1396,7 +1398,9 @@ do
 	-- iOS, Android and Xbox already have platform specific keyboards
 	local platform = UserInputService:GetPlatform()
 	VirtualKeyboardPlatform = platform == Enum.Platform.Windows or
-	                          platform == Enum.Platform.OSX
+	                          platform == Enum.Platform.OSX or
+	                          platform == Enum.Platform.IOS or 
+	                          platform == Enum.Platform.Android
 end
 
 
