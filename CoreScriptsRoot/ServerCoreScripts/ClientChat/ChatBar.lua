@@ -90,7 +90,6 @@ function methods:CreateGuiObjects(targetParent)
 	TextBox.TextStrokeTransparency = TextLabel.TextStrokeTransparency
 	TextBox.TextTransparency = TextLabel.TextTransparency
 
-	--TextBox.TextColor3 = Color3.fromRGB(112 * 0.7, 110 * 0.7, 106 * 0.7) --Color3.fromRGB(112, 110, 106)
 
 	local function UpdateOnFocusStatusChanged(isFocused)
 		if (isFocused) then
@@ -106,6 +105,7 @@ function methods:CreateGuiObjects(targetParent)
 	TextBox.Focused:connect(function() UpdateOnFocusStatusChanged(true) end)
 	TextBox.FocusLost:connect(function() UpdateOnFocusStatusChanged(false) end)
 
+	--// Code for getting back into general channel from other target channel when pressing backspace.
 	UserInputService.InputBegan:connect(function(inputObj, gpe)
 		if (inputObj.KeyCode == Enum.KeyCode.Backspace) then
 			if (TextBox:IsFocused() and TextBox.Text == "") then
