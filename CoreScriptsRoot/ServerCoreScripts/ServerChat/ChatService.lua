@@ -159,13 +159,15 @@ end
 
 --///////////////// Internal-Use Methods
 --//////////////////////////////////////
-function methods:InternalApplyRobloxFilter(speakerName, message)
+function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 	if (RunService:IsServer() and not RunService:IsStudio()) then
 		local fromSpeaker = self:GetSpeaker(speakerName)
-		if (fromSpeaker) then
-			local playerObj = fromSpeaker:GetPlayer()
-			if (playerObj) then
-				message = Chat:FilterStringAsync(message, playerObj, playerObj)
+		local toSpeaker = self:GetSpeaker(toSpeakerName)
+		if (fromSpeaker and toSpeaker) then
+			local fromPlayerObj = fromSpeaker:GetPlayer()
+			local toPlayerObj = toSpeaker:GetPlayer()
+			if (fromPlayerObj and toPlayerObj) then
+				message = Chat:FilterStringAsync(message, fromPlayerObj, toPlayerObj)
 			end
 		end
 	else

@@ -135,7 +135,7 @@ function methods:InternalSendMessage(messageObj, channel)
 	end)
 
 	pcall(function()
-		messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message)
+		messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message, self.Name)
 		self.eMessageDoneFiltering:Fire(messageObj, channel)
 	end)
 end
