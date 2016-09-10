@@ -230,8 +230,6 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		speaker:InternalSendMessage(messageObj, self.Name)
 	end
 
-	self:InternalAddMessageToHistoryLog(messageObj)
-
 	pcall(function() self.eMessagePosted:Fire(messageObj) end)
 
 	local filteredMessages = {}
@@ -247,7 +245,10 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 			speaker:InternalSendFilteredMessage(cMessageObj, channel)
 		end
 	end
-	
+
+	messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message, messageObj.FromSpeaker)
+	self:InternalAddMessageToHistoryLog(messageObj)
+
 	return messageObj
 end
 
