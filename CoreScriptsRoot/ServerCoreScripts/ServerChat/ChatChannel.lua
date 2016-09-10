@@ -223,14 +223,30 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	end
 
 	local messageObj = self:InternalCreateMessageObject(message, fromSpeaker.Name, extraData)
-	
+
+	local sentToList = {}
 	for i, speaker in pairs(self.Speakers) do
+		table.insert(sentToList, speaker.Name)
 		speaker:InternalSendMessage(messageObj, self.Name)
 	end
 
 	self:InternalAddMessageToHistoryLog(messageObj)
 
 	pcall(function() self.eMessagePosted:Fire(messageObj) end)
+
+	local filteredMessages = {}
+	for i, speakerName in pairs(sentToList) do
+		filteredMessages[speakerName] = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message, speakerName)
+	end
+
+	for i, speakerName in pairs(sentToList) do
+		local speaker = self.Speakers[speakerName]
+		if (speaker) then
+			local cMessageObj = DeepCopy(messageObj)
+			cMessageObj.Message = filteredMessages[speakerName]
+			speaker:InternalSendFilteredMessage(cMessageObj, channel)
+		end
+	end
 	
 	return messageObj
 end

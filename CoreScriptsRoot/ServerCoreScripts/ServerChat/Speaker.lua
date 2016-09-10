@@ -133,9 +133,10 @@ function methods:InternalSendMessage(messageObj, channel)
 	pcall(function()
 		self.eReceivedMessage:Fire(messageObj, channel)
 	end)
+end
 
+function methods:InternalSendFilteredMessage(messageObj, channel)
 	pcall(function()
-		messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message, self.Name)
 		self.eMessageDoneFiltering:Fire(messageObj, channel)
 	end)
 end
