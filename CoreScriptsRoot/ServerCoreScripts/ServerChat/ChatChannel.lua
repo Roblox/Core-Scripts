@@ -43,6 +43,9 @@ function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraDa
 	if (speaker) then
 		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, extraData)
 		speaker:InternalSendMessage(messageObj, self.Name)
+
+		messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message, speakerName)
+		speaker:InternalSendFilteredMessage(messageObj, channel)
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
 	end
