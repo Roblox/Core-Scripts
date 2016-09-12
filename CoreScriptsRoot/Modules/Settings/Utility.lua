@@ -219,12 +219,10 @@ local function isTenFootInterface()
 end
 
 local function usesSelectedObject()
-	--Touch does not use selected objects
-	if UserInputService.TouchEnabled then return false end
 	--VR does not use selected objects (in the same way as gamepad)
 	if UserInputService.VREnabled then return false end
-	--Anything else without a gamepad does not use selected objects
-	if not UserInputService.GamepadEnabled then return false end
+	--Touch does not use selected objects unless there's also a gamepad 
+	if UserInputService.TouchEnabled and not UserInputService.GamepadEnabled then return false end
 	--PC with gamepad, console... does use selected objects
 	return true
 end
@@ -500,6 +498,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	local interactable = true
 	local guid = HttpService:GenerateGUID(false)
 	local dropDownButtonEnabled
+	local lastStringTable = dropDownStringTable
 
 	this.CurrentIndex = 0
 
@@ -530,6 +529,11 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		else
 			DropDownFullscreenFrame.Parent = CoreGui.RobloxGui
 			DropDownFullscreenFrame.BackgroundTransparency = DROPDOWN_BG_TRANSPARENCY
+		end
+
+		--Force the gui to update, but only if onVREnabled is fired later on
+		if this.UpdateDropDownList then
+			this:UpdateDropDownList(lastStringTable)
 		end
 	end
 	if fixSettingsMenuVR then
@@ -741,6 +745,8 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 
 	function this:UpdateDropDownList(dropDownStringTable)
+		lastStringTable = dropDownStringTable
+
 		if this.Selections then
 			for i = 1, #this.Selections do
 				this.Selections[i]:Destroy()
