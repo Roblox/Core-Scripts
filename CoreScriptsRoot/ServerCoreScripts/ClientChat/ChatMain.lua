@@ -5,7 +5,6 @@ local source = [[
 
 local moduleApiTable = {}
 
-
 --// This section of code waits until all of the necessary RemoteEvents are found in EventFolder.
 --// I have to do some weird stuff since people could potentially already have pre-existing 
 --// things in a folder with the same name, and they may have different class types.
@@ -534,7 +533,7 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 
 		if (messageLog) then
 			for i, messageLogData in pairs(messageLog) do
-				
+
 				local messageObj = nil
 				if (messageLogData.FromSpeaker) then
 					messageObj = MessageLabelCreator:CreateMessageLabel(messageLogData)
@@ -543,6 +542,7 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 				end
 
 				channelObj:AddMessageLabelToLog(messageObj)
+				channelObj:UpdateMessageFiltered(messageLogData)
 			end
 		end
 
