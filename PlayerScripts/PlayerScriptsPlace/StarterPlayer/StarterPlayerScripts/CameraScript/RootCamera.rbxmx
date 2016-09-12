@@ -9,6 +9,7 @@
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
+local GuiService = game:GetService('GuiService')
 
 local HasVRAPI = false
 pcall(function() HasVRAPI = UserInputService.GetUserCFrame ~= nil end)
@@ -875,7 +876,7 @@ local function CreateCamera()
 		return Vector2.new(0,0)
 	end
 
-	local InputBeganConn, InputChangedConn, InputEndedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn = nil, nil, nil, nil, nil, nil
+	local InputBeganConn, InputChangedConn, InputEndedConn, MenuOpenedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn = nil, nil, nil, nil, nil, nil, nil
 
 	function this:DisconnectInputEvents()
 		if InputBeganConn then
@@ -889,6 +890,10 @@ local function CreateCamera()
 		if InputEndedConn then
 			InputEndedConn:disconnect()
 			InputEndedConn = nil
+		end
+		if MenuOpenedConn then
+			MenuOpenedConn:disconnect()
+			MenuOpenedConn = nil
 		end
 		if ShiftLockToggleConn then
 			ShiftLockToggleConn:disconnect()
@@ -941,6 +946,28 @@ local function CreateCamera()
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
 		end
 	end
+	
+	function this:ResetInputStates()
+		isRightMouseDown = false
+		isMiddleMouseDown = false
+		OnMousePanButtonReleased() -- this function doesn't seem to actually need parameters
+		
+		if UserInputService.TouchEnabled then
+			--[[menu opening was causing serious touch issues
+			this should disable all active touch events if 
+			they're active when menu opens.]]
+			for inputObject, value in pairs(fingerTouches) do
+				fingerTouches[inputObject] = nil
+			end
+			panBeginLook = nil
+			startPos = nil
+			lastPos = nil
+			this.UserPanningTheCamera = false	
+			StartingDiff = nil
+			pinchBeginZoom = nil
+			NumUnsunkTouches = 0
+		end
+	end
 
 	function this:ConnectInputEvents()
 		InputBeganConn = UserInputService.InputBegan:connect(function(input, processed)
@@ -979,6 +1006,10 @@ local function CreateCamera()
 			if input.UserInputType == Enum.UserInputType.Keyboard then
 				OnKeyUp(input, processed)
 			end
+		end)
+		
+		MenuOpenedConn = GuiService.MenuOpened:connect(function()
+			this:ResetInputStates()
 		end)
 
 		workspaceChangedConn = workspace.Changed:connect(function(prop)
