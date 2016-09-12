@@ -26,7 +26,7 @@ local showPerformanceStatsInGui = getShowPerformanceStatsInGuiSuccess and showPe
 
 --[[ Script Variables ]]--
 local masterFrame = Instance.new("Frame")
-masterFrame.Name = "PS_MasterFrame"
+masterFrame.Name = "PerformanceStats"
 
 local statsAggregatorManager = StatsAggregatorManagerClass.new()
 local statsViewer = StatsViewerClass.new()

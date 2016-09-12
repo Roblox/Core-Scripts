@@ -42,6 +42,11 @@ function StatsButtonClass.new(statsDisplayType)
     TextPanelSize, 
     TextPanelPosition)
     
+  self._graph = StatsAnnotatedGraphClass.new(statsDisplayType, false)
+  self._graph:PlaceInParent(self._button, 
+    GraphSize, 
+    GraphPosition)
+  
   self._isSelected = false
   
   self:_updateColor();
@@ -74,31 +79,8 @@ function StatsButtonClass:SetParent(parent)
 end
   
 function StatsButtonClass:SetStatsAggregator(aggregator) 
-  if (self._aggregator) then
-    self._aggregator:RemoveListener(self._listenerId)
-    self._listenerId = nil
-    self._aggregator = nil
-  end
-  
-  self._aggregator = aggregator
-  
-  if (self._aggregator ~= nil) then
-    self._listenerId = aggregator:AddListener(function()
-        self:_updateValue()
-    end)
-  end
-  
-  self:_updateValue()
+  self._textPanel:SetStatsAggregator(aggregator)
+  self._graph:SetStatsAggregator(aggregator)
 end
   
-function StatsButtonClass:_updateValue()
-  local value
-  if self._aggregator ~= nil then 
-    value = self._aggregator:GetLatestValue()
-  else
-    value = 0
-  end
-  self._textPanel:SetValue(value)
-end
-
 return StatsButtonClass
