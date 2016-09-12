@@ -1261,10 +1261,14 @@ local function CreateSelector(selectionStringTable, startPosition)
 end
 
 local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc, hasBackground)
-	local parent = CoreGui.RobloxGui
-	local AlertViewBacking = nil
+	local parent = CoreGui.RobloxGui	
 	if parent:FindFirstChild("AlertViewFullScreen") then return end
 
+	--Declare AlertViewBacking so onVREnabled can take it as an upvalue
+	local AlertViewBacking = nil
+
+	--Handle VR toggle while alert is open
+	--Future consideration: maybe rebuild gui when VR toggles mid-game; right now only subpaneling is handled rather than visual style
 	local function onVREnabled(prop)
 		if prop ~= "VREnabled" then return end
 		local Panel3D, settingsPanel = nil, nil
@@ -1282,8 +1286,9 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 			end
 		end
 	end
+	local vrEnabledConn = nil
 	if fixSettingsMenuVR then
-		UserInputService.Changed:connect(onVREnabled)
+		vrEnabledConn = UserInputService.Changed:connect(onVREnabled)
 	end
 
 	local NON_SELECTED_TEXT_COLOR = Color3.new(59/255, 166/255, 241/255)
@@ -1359,6 +1364,9 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		Game.GuiService.SelectedCoreObject = nil
 		if settingsHub then
 			settingsHub:ShowBar()
+		end
+		if vrEnabledConn then
+			vrEnabledConn:disconnect()
 		end
 	end
 
