@@ -6,7 +6,6 @@
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">RootCamera</string>
 			<ProtectedString name="Source"><![CDATA[
-
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
