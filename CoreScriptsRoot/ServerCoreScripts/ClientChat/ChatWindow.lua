@@ -33,75 +33,6 @@ function methods:CreateGuiObjects(targetParent)
 	BaseFrame.BackgroundTransparency = 1
 	BaseFrame.Active = true
 
-
-	local function GetScreenGuiParent()
-		--// Travel up parent list until you find the ScreenGui that the chat window is parented to
-		local screenGuiParent = BaseFrame
-		while (screenGuiParent and not screenGuiParent:IsA("ScreenGui")) do
-			screenGuiParent = screenGuiParent.Parent
-		end
-
-		return screenGuiParent
-	end
-
-
-	local deviceType = DEVICE_DESKTOP
-
-	local screenGuiParent = GetScreenGuiParent()
-	if (screenGuiParent.AbsoluteSize.X <= PHONE_SCREEN_WIDTH) then
-		deviceType = DEVICE_PHONE
-
-	elseif (screenGuiParent.AbsoluteSize.X <= TABLET_SCREEN_WIDTH) then
-		deviceType = DEVICE_TABLET
-
-	end
-
-	local function doCheckSizeBounds()
-		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
-
-		local screenGuiParent = GetScreenGuiParent()
-
-		local minWinSize = ChatSettings.MinimumWindowSize
-		local maxWinSize = ChatSettings.MaximumWindowSize
-
-		local minSizePixelX = (minWinSize.X.Scale * screenGuiParent.AbsoluteSize.X) + minWinSize.X.Offset
-		local minSizePixelY = (minWinSize.Y.Scale * screenGuiParent.AbsoluteSize.Y) + minWinSize.Y.Offset
-
-		local maxSizePixelX = (maxWinSize.X.Scale * screenGuiParent.AbsoluteSize.X) + maxWinSize.X.Offset
-		local maxSizePixelY = (maxWinSize.Y.Scale * screenGuiParent.AbsoluteSize.Y) + maxWinSize.Y.Offset
-
-		local absSizeX = BaseFrame.AbsoluteSize.X
-		local absSizeY = BaseFrame.AbsoluteSize.Y
-
-		if (absSizeX < minSizePixelX) then
-			local offset = UDim2.new(0, minSizePixelX - absSizeX, 0, 0)
-			BaseFrame.Size = BaseFrame.Size + offset
-
-		elseif (absSizeX > maxSizePixelX) then
-			local offset = UDim2.new(0, maxSizePixelX - absSizeX, 0, 0)
-			BaseFrame.Size = BaseFrame.Size + offset
-
-		end
-
-		if (absSizeY < minSizePixelY) then
-			local offset = UDim2.new(0, 0, 0, minSizePixelY - absSizeY)
-			BaseFrame.Size = BaseFrame.Size + offset
-
-		elseif (absSizeY > maxSizePixelY) then
-			local offset = UDim2.new(0, 0, 0, maxSizePixelY - absSizeY)
-			BaseFrame.Size = BaseFrame.Size + offset
-			
-		end
-	end
-
-	BaseFrame.Changed:connect(function(prop)
-		if (prop == "AbsoluteSize") then
-			doCheckSizeBounds()
-		end
-	end)
-
-
-
 	local ChatBarParentFrame = Instance.new("Frame", BaseFrame)
 	ChatBarParentFrame.Selectable = false
 	ChatBarParentFrame.Name = "ChatBarParentFrame"
@@ -138,9 +69,89 @@ function methods:CreateGuiObjects(targetParent)
 	ResizeIcon.BackgroundTransparency = 1
 	ResizeIcon.Image = "rbxassetid://261880743"
 
+	local function GetScreenGuiParent()
+		--// Travel up parent list until you find the ScreenGui that the chat window is parented to
+		local screenGuiParent = BaseFrame
+		while (screenGuiParent and not screenGuiParent:IsA("ScreenGui")) do
+			screenGuiParent = screenGuiParent.Parent
+		end
+
+		return screenGuiParent
+	end
+
+
+	local deviceType = DEVICE_DESKTOP
+
+	local screenGuiParent = GetScreenGuiParent()
+	if (screenGuiParent.AbsoluteSize.X <= PHONE_SCREEN_WIDTH) then
+		deviceType = DEVICE_PHONE
+
+	elseif (screenGuiParent.AbsoluteSize.X <= TABLET_SCREEN_WIDTH) then
+		deviceType = DEVICE_TABLET
+
+	end
+
+	local checkSizeLock = false
+	local function doCheckSizeBounds()
+		if (checkSizeLock) then return end
+		checkSizeLock = true
+
+		if (not BaseFrame:IsDescendantOf(PlayerGui)) then return end
+
+		local screenGuiParent = GetScreenGuiParent()
+
+		local minWinSize = ChatSettings.MinimumWindowSize
+		local maxWinSize = ChatSettings.MaximumWindowSize
+
+		local forceMinY = ChannelsBarParentFrame.AbsoluteSize.Y + ChatBarParentFrame.AbsoluteSize.Y
+
+		local minSizePixelX = (minWinSize.X.Scale * screenGuiParent.AbsoluteSize.X) + minWinSize.X.Offset
+		local minSizePixelY = math.max((minWinSize.Y.Scale * screenGuiParent.AbsoluteSize.Y) + minWinSize.Y.Offset, forceMinY)
+
+		local maxSizePixelX = (maxWinSize.X.Scale * screenGuiParent.AbsoluteSize.X) + maxWinSize.X.Offset
+		local maxSizePixelY = (maxWinSize.Y.Scale * screenGuiParent.AbsoluteSize.Y) + maxWinSize.Y.Offset
+
+		local absSizeX = BaseFrame.AbsoluteSize.X
+		local absSizeY = BaseFrame.AbsoluteSize.Y
+
+		if (absSizeX < minSizePixelX) then
+			local offset = UDim2.new(0, minSizePixelX - absSizeX, 0, 0)
+			BaseFrame.Size = BaseFrame.Size + offset
+
+		elseif (absSizeX > maxSizePixelX) then
+			local offset = UDim2.new(0, maxSizePixelX - absSizeX, 0, 0)
+			BaseFrame.Size = BaseFrame.Size + offset
+
+		end
+
+		if (absSizeY < minSizePixelY) then
+			local offset = UDim2.new(0, 0, 0, minSizePixelY - absSizeY)
+			BaseFrame.Size = BaseFrame.Size + offset
+
+		elseif (absSizeY > maxSizePixelY) then
+			local offset = UDim2.new(0, 0, 0, maxSizePixelY - absSizeY)
+			BaseFrame.Size = BaseFrame.Size + offset
+			
+		end
+
+		local xScale = BaseFrame.AbsoluteSize.X / screenGuiParent.AbsoluteSize.X
+		local yScale = BaseFrame.AbsoluteSize.Y / screenGuiParent.AbsoluteSize.Y
+		BaseFrame.Size = UDim2.new(xScale, 0, yScale, 0)
+
+		checkSizeLock = false
+	end
+
+
+	BaseFrame.Changed:connect(function(prop)
+		if (prop == "AbsoluteSize") then
+			doCheckSizeBounds()
+		end
+	end)
+
+
 
 	ChatResizerFrame.DragBegin:connect(function(startUdim)
-		BaseFrame.Active = false
+		BaseFrame.Draggable = false
 	end)
 
 	local function UpdatePositionFromDrag(atPos)
@@ -150,13 +161,13 @@ function methods:CreateGuiObjects(targetParent)
 	end
 
 	ChatResizerFrame.DragStopped:connect(function(endX, endY)
-		BaseFrame.Active = true
+		BaseFrame.Draggable = ChatSettings.WindowDraggable
 		--UpdatePositionFromDrag(Vector2.new(endX, endY))
 	end)
 
 	local resizeLock = false
 	ChatResizerFrame.Changed:connect(function(prop)
-		if (prop == "AbsolutePosition" and not BaseFrame.Active) then
+		if (prop == "AbsolutePosition" and not BaseFrame.Draggable) then
 			if (resizeLock) then return end
 			resizeLock = true
 
@@ -166,7 +177,8 @@ function methods:CreateGuiObjects(targetParent)
 		end
 	end)
 
-	if (not Players.ClassicChat and Players.BubbleChat) then
+	local bubbleChatOnly = not Players.ClassicChat and Players.BubbleChat
+	if (bubbleChatOnly) then
 		ChatBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
 		ChannelsBarParentFrame.Visible = false
 		ChatChannelParentFrame.Visible = false
@@ -233,7 +245,7 @@ function methods:CreateGuiObjects(targetParent)
 		end
 
 		local chatBarTextSizeY = string.match(size.Name, "%d+")
-		local chatBarYSize = chatBarTextSizeY + 16 + 16
+		local chatBarYSize = chatBarTextSizeY + (7 * 2) + (5 * 2)
 
 		return chatBarYSize
 	end
@@ -266,10 +278,16 @@ function methods:CreateGuiObjects(targetParent)
 	local function UpdateChatChannelParentFrameSize()
 		local channelsBarSize = CalculateChannelsBarPixelSize()
 		local chatBarSize = CalculateChatBarPixelSize()
-		
-		ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(channelsBarSize + chatBarSize + 2 + 2))
-		ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, channelsBarSize + 2)
 
+		if (ChatSettings.ShowChannelsBar) then
+			ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(channelsBarSize + chatBarSize + 2 + 2))
+			ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, channelsBarSize + 2)
+
+		else
+			ChatChannelParentFrame.Size = UDim2.new(1, 0, 1, -(chatBarSize + 2 + 2))
+			ChatChannelParentFrame.Position = UDim2.new(0, 0, 0, 2)
+
+		end
 	end
 
 	local function UpdateChatChannelsTabTextSize(size)
@@ -292,10 +310,16 @@ function methods:CreateGuiObjects(targetParent)
 		UpdateResizable(ChatSettings.WindowResizable)
 	end
 
+	local function UpdateShowChannelsBar(enabled)
+		ChannelsBarParentFrame.Visible = ChatSettings.ShowChannelsBar
+		UpdateChatChannelParentFrameSize()
+	end
+
 	UpdateChatChannelsTabTextSize(ChatSettings.ChatChannelsTabTextSize)
 	UpdateChatBarTextSize(ChatSettings.ChatBarTextSize)
 	UpdateDraggable(ChatSettings.WindowDraggable)
 	UpdateResizable(ChatSettings.WindowResizable)
+	UpdateShowChannelsBar(ChatSettings.ShowTopChannelsBar)
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "WindowDraggable") then
@@ -309,6 +333,9 @@ function methods:CreateGuiObjects(targetParent)
 
 		elseif (setting == "ChatBarTextSize") then
 			UpdateChatBarTextSize(value)
+
+		elseif (setting == "ShowChannelsBar") then
+			UpdateShowChannelsBar(value)
 
 		end
 	end)
@@ -398,11 +425,21 @@ function methods:RemoveChannel(channelName)
 		local generalChannelExists = (self:GetChannel(ChatSettings.GeneralChannelName) ~= nil)
 		local removingGeneralChannel = (indexName == ChatSettings.GeneralChannelName:lower())
 
+		local targetSwitchChannel = nil
+
 		if (generalChannelExists and not removingGeneralChannel) then
-			self:SwitchCurrentChannel(ChatSettings.GeneralChannelName)
+			targetSwitchChannel = ChatSettings.GeneralChannelName
 		else
 			local firstChannel = self:GetFirstChannel()
-			self:SwitchCurrentChannel(firstChannel and firstChannel.Name or nil)
+			targetSwitchChannel = (firstChannel and firstChannel.Name or nil)
+		end
+
+		self:SwitchCurrentChannel(targetSwitchChannel)
+	end
+
+	if (not ChatSettings.ShowChannelsBar) then
+		if (rawget(self.ChatBar, "TargetChannel") == channelName) then
+			self.ChatBar:SetChannelTarget(ChatSettings.GeneralChannelName)
 		end
 	end
 end
@@ -411,28 +448,48 @@ function methods:GetChannel(channelName)
 	return channelName and self.Channels[channelName:lower()] or nil
 end
 
+function methods:GetTargetMessageChannel()
+	if (not ChatSettings.ShowChannelsBar) then
+		return rawget(self.ChatBar, "TargetChannel")
+	else
+		local curChannel = self:GetCurrentChannel()
+		return curChannel and curChannel.Name
+	end
+end
+
 function methods:GetCurrentChannel()
 	return rawget(self, "CurrentChannel")
 end
 
 function methods:SwitchCurrentChannel(channelName)
-	local cur = self:GetCurrentChannel()
+	if (not ChatSettings.ShowChannelsBar) then
+		local targ = self:GetChannel(channelName)
+		if (targ) then
+			self.ChatBar:SetChannelTarget(targ.Name)
+		end
 
-	if (cur) then
-		cur:SetActive(false)
-		local tab = self.ChannelsBar:GetChannelTab(cur.Name)
-		tab:SetActive(false)
+		channelName = ChatSettings.GeneralChannelName
 	end
 
+	local cur = self:GetCurrentChannel()
 	local new = self:GetChannel(channelName)
 
-	if (new) then
-		new:SetActive(true)
-		local tab = self.ChannelsBar:GetChannelTab(new.Name)
-		tab:SetActive(true)
-	end
+	if (new ~= cur) then
+		if (cur) then
+			cur:SetActive(false)
+			local tab = self.ChannelsBar:GetChannelTab(cur.Name)
+			tab:SetActive(false)
+		end
 
-	rawset(self, "CurrentChannel", new)
+		if (new) then
+			new:SetActive(true)
+			local tab = self.ChannelsBar:GetChannelTab(new.Name)
+			tab:SetActive(true)
+		end
+
+		rawset(self, "CurrentChannel", new)
+	end
+	
 end
 
 function methods:UpdateFrameVisibility()
@@ -455,6 +512,19 @@ end
 function methods:SetCoreGuiEnabled(enabled)
 	self.CoreGuiEnabled = enabled
 	self:UpdateFrameVisibility()
+end
+
+function methods:EnableResizable()
+	self.GuiObjects.ChatResizerFrame.Active = true
+end
+
+function methods:DisableResizable()
+	self.GuiObjects.ChatResizerFrame.Active = false
+end
+
+function methods:ResetResizerPosition()
+	local ChatResizerFrame = self.GuiObjects.ChatResizerFrame
+	ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
 end
 
 function methods:FadeOutBackground(duration)

@@ -58,13 +58,15 @@ function WaitUntilParentedCorrectly()
 end
 
 
-local function WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, StrongReferences)
+local function WrapIntoMessageObject(id, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction)
 	local obj = {}
 
+	obj.ID = id
 	obj.BaseFrame = BaseFrame
 	obj.BaseMessage = BaseMessage
 	obj.Tweener = Tweener
 	obj.StrongReferences = StrongReferences
+	obj.UpdateTextFunction = UpdateTextFunction or function() warn("NO MESSAGE RESIZE FUNCTION") end
 
 	function obj:TweenOut(duration)
 		self.Tweener:Tween(duration, 1)
@@ -73,7 +75,6 @@ local function WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, StrongRefe
 	function obj:TweenIn(duration)
 		self.Tweener:Tween(duration, 0)
 	end
-
 
 	function obj:Destroy()
 		self.BaseFrame:Destroy()
@@ -86,19 +87,37 @@ end
 
 
 
-function methods:RegisterSpeakerDatabase(SpeakerDatabase)
-	rawset(self, "SpeakerDatabase", SpeakerDatabase)
-end
 
-function methods:CreateMessageLabel(fromSpeaker, message)
+function methods:CreateMessageLabel(messageData)
+	local fromSpeaker = messageData.FromSpeaker
+	local message = messageData.Message
+
 	WaitUntilParentedCorrectly()
 
 	if (string.sub(message, 1, 4) == "/me ") then
-		return self:CreateSystemMessageLabel(fromSpeaker .. " " .. string.sub(message, 5))
+		--// Cannot be destructive with messageData
+		local oldMessage = messageData.Message
+		local oldSpeaker = messageData.FromSpeaker
+		local oldChatColor = messageData.ExtraData.ChatColor
+
+		messageData.Message = messageData.FromSpeaker .. " " .. string.sub(message, 5)
+		messageData.FromSpeaker = nil
+		messageData.ExtraData.ChatColor = nil
+
+		local toReturn = self:CreateSystemMessageLabel(messageData)
+
+		messageData.Message = oldMessage
+		messageData.FromSpeaker = oldSpeaker
+		messageData.ExtraData.ChatColor = oldChatColor
+		return toReturn
 	end
 
-	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = ChatSettings.ChatWindowTextSize
+	local extraData = messageData.ExtraData or {}
+	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useNameColor = extraData.NameColor or Color3.new(1, 1, 1)
+	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
@@ -131,18 +150,11 @@ function methods:CreateMessageLabel(fromSpeaker, message)
 	NameButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 
 	NameButton.MouseButton1Click:connect(function()
-		MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
+		-- Click to whisper is currently disabled
+		-- ToDo: Re-enable later when things are sorted out
+		--MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
 	end)
 
-	local speakerPlayer = self.SpeakerDatabase:GetSpeaker(fromSpeaker)
-
-	local useNameColor = Color3.new(1, 1, 1)
-	local useChatColor = Color3.new(1, 1, 1)
-
-	if (speakerPlayer) then
-		useNameColor = speakerPlayer.NameColor or useNameColor
-		useChatColor = speakerPlayer.ChatColor or useChatColor
-	end
 	
 	local formatUseName = string.format("[%s]:", fromSpeaker)
 
@@ -150,13 +162,17 @@ function methods:CreateMessageLabel(fromSpeaker, message)
 	local singleSpaceSize = GetStringTextBounds(" ", useFont, useFontSize)
 	local numNeededSpaces = math.ceil(speakerNameSize.X / singleSpaceSize.X) + 1
 
+	local messageSize = GetStringTextBounds(message, useFont, useFontSize)
+	local singleUnderscoreSize = GetStringTextBounds("_", useFont, useFontSize)
+	local numNeededUnderscore = math.ceil(messageSize.X / singleUnderscoreSize.X)
+
 	NameButton.Size = UDim2.new(0, speakerNameSize.X, 0, speakerNameSize.Y)
 
 	BaseMessage.TextColor3 = useChatColor
 	NameButton.TextColor3 = useNameColor
 
 	NameButton.Text = formatUseName
-	BaseMessage.Text = string.rep(" ", numNeededSpaces) .. message
+	BaseMessage.Text = string.rep(" ", numNeededSpaces) .. string.rep("_", numNeededUnderscore)
 
 	local Tweener = moduleTransparencyTweener.new()
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
@@ -182,10 +198,57 @@ function methods:CreateMessageLabel(fromSpeaker, message)
 
 	BaseMessage.ChildAdded:connect(ProcessChild)
 
-	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, StrongReferences)
+	local function UpdateTextFunction(newMessageObject)
+		BaseMessage.Text = string.rep(" ", numNeededSpaces) .. newMessageObject.Message
+	end
+
+	return WrapIntoMessageObject(messageData.ID, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction)
 end
 
-function methods:CreateSystemMessageLabel(message)
+function methods:CreateSystemMessageLabel(messageData)
+	message = messageData.Message
+
+	WaitUntilParentedCorrectly()
+
+	local extraData = messageData.ExtraData or {}
+	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+
+
+	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
+	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
+	BaseFrame.BackgroundTransparency = 1
+
+	local messageBorder = 8
+
+	local BaseMessage = Instance.new("TextLabel", BaseFrame)
+	BaseMessage.Selectable = false
+	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
+	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
+	BaseMessage.BackgroundTransparency = 1
+	BaseMessage.Font = useFont
+	BaseMessage.FontSize = useFontSize
+	BaseMessage.TextXAlignment = Enum.TextXAlignment.Left
+	BaseMessage.TextYAlignment = Enum.TextYAlignment.Top
+	BaseMessage.TextStrokeTransparency = 0.75
+	BaseMessage.TextColor3 = useChatColor
+	BaseMessage.TextWrapped = true
+
+	BaseMessage.Text = message
+
+
+	local Tweener = moduleTransparencyTweener.new()
+	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
+	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
+
+	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {})
+end
+
+function methods:CreateWelcomeMessageLabel(message)
+	WaitUntilParentedCorrectly()
+
 	WaitUntilParentedCorrectly()
 
 	local useFont = Enum.Font.SourceSansBold
@@ -218,13 +281,7 @@ function methods:CreateSystemMessageLabel(message)
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
 
-	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, {})
-end
-
-function methods:CreateWelcomeMessageLabel(message)
-	WaitUntilParentedCorrectly()
-
-	return self:CreateSystemMessageLabel(message)
+	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {})
 end
 
 function methods:CreateSetCoreMessageLabel(valueTable)
@@ -263,18 +320,39 @@ function methods:CreateSetCoreMessageLabel(valueTable)
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
 
-	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, {})
+	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {})
 end
 
-function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel)
+function methods:CreateChannelEchoMessageLabel(messageData, echoChannel)
+	local fromSpeaker = messageData.FromSpeaker
+	local message = messageData.Message
+
 	WaitUntilParentedCorrectly()
 
 	if (string.sub(message, 1, 4) == "/me ") then
-		return self:CreateChannelEchoSystemMessageLabel(fromSpeaker .. " " .. string.sub(message, 5), echoChannel)
+		--// Cannot be destructive with messageData
+		local oldMessage = messageData.Message
+		local oldSpeaker = messageData.FromSpeaker
+		local oldChatColor = messageData.ExtraData.ChatColor
+
+		messageData.Message = messageData.FromSpeaker .. " " .. string.sub(message, 5)
+		messageData.FromSpeaker = nil
+		messageData.ExtraData.ChatColor = nil
+
+		local toReturn = self:CreateChannelEchoSystemMessageLabel(messageData, echoChannel)
+
+		messageData.Message = oldMessage
+		messageData.FromSpeaker = oldSpeaker
+		messageData.ExtraData.ChatColor = oldChatColor
+		return toReturn
 	end
 
-	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = ChatSettings.ChatWindowTextSize
+	local extraData = messageData.ExtraData or {}
+	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useNameColor = extraData.NameColor or Color3.new(1, 1, 1)
+	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
@@ -311,18 +389,11 @@ function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel
 	ChannelButton.Parent = BaseMessage
 
 	NameButton.MouseButton1Click:connect(function()
-		MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
+		-- Click to whisper is currently disabled
+		-- ToDo: Re-enable later when things are sorted out
+		--MessageSender:SendMessage(string.format("/w %s", fromSpeaker), nil)
 	end)
 
-	local speakerPlayer = self.SpeakerDatabase:GetSpeaker(fromSpeaker)
-
-	local useNameColor = Color3.new(1, 1, 1)
-	local useChatColor = Color3.new(1, 1, 1)
-
-	if (speakerPlayer) then
-		useNameColor = speakerPlayer.NameColor or useNameColor
-		useChatColor = speakerPlayer.ChatColor or useChatColor
-	end
 	
 	local formatUseName = string.format("[%s]:", fromSpeaker)
 	local formatChannelName = string.format("{%s}", echoChannel)
@@ -371,14 +442,23 @@ function methods:CreateChannelEchoMessageLabel(fromSpeaker, message, echoChannel
 
 	BaseMessage.ChildAdded:connect(ProcessChild)
 
-	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, StrongReferences)
+	local function UpdateTextFunction(newMessageObject)
+		BaseMessage.Text = string.rep(" ", numNeededSpaces) .. newMessageObject.Message
+	end
+
+	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction)
 end
 
-function methods:CreateChannelEchoSystemMessageLabel(message, echoChannel)
+function methods:CreateChannelEchoSystemMessageLabel(messageData, echoChannel)
+	local message = messageData.Message
+
 	WaitUntilParentedCorrectly()
 	
-	local useFont = Enum.Font.SourceSansBold
-	local useFontSize = ChatSettings.ChatWindowTextSize
+	local extraData = messageData.ExtraData or {}
+	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+
 
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
@@ -397,7 +477,7 @@ function methods:CreateChannelEchoSystemMessageLabel(message, echoChannel)
 	BaseMessage.TextXAlignment = Enum.TextXAlignment.Left
 	BaseMessage.TextYAlignment = Enum.TextYAlignment.Top
 	BaseMessage.TextStrokeTransparency = 0.75
-	BaseMessage.TextColor3 = Color3.new(1, 1, 1)
+	BaseMessage.TextColor3 = useChatColor
 	BaseMessage.TextWrapped = true
 
 	local ChannelButton = Instance.new("TextButton", BaseMessage)
@@ -435,7 +515,7 @@ function methods:CreateChannelEchoSystemMessageLabel(message, echoChannel)
 	Tweener:RegisterTweenObjectProperty(ChannelButton, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(ChannelButton, "TextStrokeTransparency")
 
-	return WrapIntoMessageObject(BaseFrame, BaseMessage, Tweener, {ChannelButton})
+	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {ChannelButton})
 end
 
 --///////////////////////// Constructors
@@ -445,8 +525,6 @@ ClassMaker.RegisterClassType("MessageLabelCreator", methods)
 function module.new()
 	local obj = {}
 
-	obj.SpeakerDatabase = nil
-	
 	ClassMaker.MakeClass("MessageLabelCreator", obj)
 
 	return obj

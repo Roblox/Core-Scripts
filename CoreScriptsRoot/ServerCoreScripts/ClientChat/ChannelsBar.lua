@@ -116,6 +116,14 @@ function methods:CreateGuiObjects(targetParent)
 
 	local scale = 0.7
 	local scaleOther = (1 - scale) / 2
+	local pageButtonImage = "rbxasset://textures/ui/Chat/TabArrowBackground.png"
+	local pageButtonArrowImage = "rbxasset://textures/ui/Chat/TabArrow.png"
+
+	--// ToDo: Remove these lines when the assets are put into trunk.
+	--// These grab unchanging versions hosted on the site, and not from the content folder.
+	pageButtonImage = "rbxassetid://471630199"
+	pageButtonArrowImage = "rbxassetid://471630112"
+
 
 	local PageLeftButton = Instance.new("ImageButton", BaseFrame)
 	PageLeftButton.Selectable = ChatSettings.GamepadNavigationEnabled
@@ -125,12 +133,12 @@ function methods:CreateGuiObjects(targetParent)
 	PageLeftButton.BackgroundTransparency = 1
 	PageLeftButton.Position = UDim2.new(0, 4, scaleOther, 0)
 	PageLeftButton.Visible = false
-	PageLeftButton.Image = "rbxasset://textures/ui/Chat/TabArrowBackground.png"
+	PageLeftButton.Image = pageButtonImage
 	local ArrowLabel = Instance.new("ImageLabel", PageLeftButton)
 	ArrowLabel.Name = "ArrowLabel"
 	ArrowLabel.BackgroundTransparency = 1
 	ArrowLabel.Size = UDim2.new(0.4, 0, 0.4, 0)
-	ArrowLabel.Image = "rbxasset://textures/ui/Chat/TabArrow.png"
+	ArrowLabel.Image = pageButtonArrowImage
 
 	local PageRightButtonPositionalHelper = Instance.new("Frame", BaseFrame)
 	PageRightButtonPositionalHelper.Selectable = false

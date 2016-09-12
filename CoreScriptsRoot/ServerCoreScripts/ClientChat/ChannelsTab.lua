@@ -88,14 +88,17 @@ local function CreateGuiObjects()
 	NameTag.Position = UDim2.new(0, 0, 0, 0)
 	NameTag.BackgroundTransparency = 1
 	NameTag.Font = Enum.Font.SourceSansBold
-	NameTag.FontSize = Enum.FontSize.Size18
-
 	NameTag.FontSize = ChatSettings.ChatChannelsTabTextSize
-
-
-
 	NameTag.TextColor3 = Color3.new(1, 1, 1)
 	NameTag.TextStrokeTransparency = 0.75
+
+	local NameTagNonSelect = NameTag:Clone()
+	local NameTagSelect = NameTag:Clone()
+	NameTagNonSelect.Parent = UnselectedFrame
+	NameTagSelect.Parent = SelectedFrame
+	NameTagNonSelect.Font = Enum.Font.SourceSans
+	NameTagNonSelect.Active = false
+	NameTagSelect.Active = false
 
 	local NewMessageIconFrame = Instance.new("Frame", BackgroundFrame)
 	NewMessageIconFrame.Selectable = false
@@ -120,7 +123,7 @@ local function CreateGuiObjects()
 	NewMessageIconText.TextColor3 = Color3.new(1, 1, 1)
 	NewMessageIconText.Text = ""
 
-	return BaseFrame, NameTag, NewMessageIcon, UnselectedFrame, SelectedFrame
+	return BaseFrame, NameTag, NameTagNonSelect, NameTagSelect, NewMessageIcon, UnselectedFrame, SelectedFrame
 end
 
 function methods:Destroy()
@@ -174,7 +177,6 @@ function methods:SetFontSize(fontSize)
 	self.NameTag.FontSize = fontSize
 end
 
-
 function methods:FadeOutBackground(duration)
 	self.BackgroundTweener:Tween(duration, 1)
 end
@@ -203,6 +205,9 @@ function methods:CreateTweeners()
 	self.BackgroundTweener:RegisterTweenObjectProperty(self.SelectedFrame.BackgroundImage, "BackgroundTransparency")
 	self.BackgroundTweener:RegisterTweenObjectProperty(self.SelectedFrame.BlueBarLeft, "ImageTransparency")
 	self.BackgroundTweener:RegisterTweenObjectProperty(self.SelectedFrame.BlueBarRight, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.NameTagNonSelect, "TextTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.NameTagNonSelect, "TextStrokeTransparency")
+
 
 	--// Register TextTweener objects and properties
 	self.TextTweener:RegisterTweenObjectProperty(self.NameTag, "TextTransparency")
@@ -210,9 +215,9 @@ function methods:CreateTweeners()
 	self.TextTweener:RegisterTweenObjectProperty(self.NewMessageIcon, "ImageTransparency")
 	self.TextTweener:RegisterTweenObjectProperty(self.WhiteTextNewMessageNotification, "TextTransparency")
 	self.TextTweener:RegisterTweenObjectProperty(self.WhiteTextNewMessageNotification, "TextStrokeTransparency")
+	self.TextTweener:RegisterTweenObjectProperty(self.NameTagSelect, "TextTransparency")
+	self.TextTweener:RegisterTweenObjectProperty(self.NameTagSelect, "TextStrokeTransparency")
 
-	--print("Dumping:", self:Dump(), "||", self.BackgroundTweener:Dump())
-	--print("Dumping:", self:Dump(), "||", self.TextTweener:Dump())
 end
 
 --///////////////////////// Constructors
@@ -222,9 +227,11 @@ ClassMaker.RegisterClassType("ChannelsTab", methods)
 function module.new(channelName)
 	local obj = {}
 
-	local BaseFrame, NameTag, NewMessageIcon, UnselectedFrame, SelectedFrame = CreateGuiObjects()
+	local BaseFrame, NameTag, NameTagNonSelect, NameTagSelect, NewMessageIcon, UnselectedFrame, SelectedFrame = CreateGuiObjects()
 	obj.GuiObject = BaseFrame
 	obj.NameTag = NameTag
+	obj.NameTagNonSelect = NameTagNonSelect
+	obj.NameTagSelect = NameTagSelect
 	obj.NewMessageIcon = NewMessageIcon
 	obj.UnselectedFrame = UnselectedFrame
 	obj.SelectedFrame = SelectedFrame
@@ -251,7 +258,12 @@ function module.new(channelName)
 	if (string.len(channelName) > maxNameLength) then
 		channelName = string.sub(channelName, 1, maxNameLength - 3) .. "..."
 	end
-	obj.NameTag.Text = channelName
+	
+	--obj.NameTag.Text = channelName
+
+	obj.NameTag.Text = ""
+	obj.NameTagNonSelect.Text = channelName
+	obj.NameTagSelect.Text = channelName
 
 	ClassMaker.MakeClass("ChannelsTab", obj)
 
