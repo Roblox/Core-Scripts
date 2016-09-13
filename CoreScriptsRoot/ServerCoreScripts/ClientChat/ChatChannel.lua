@@ -39,10 +39,32 @@ end
 
 function methods:Destroy()
 	self.GuiObject:Destroy()
+	self.Destroyed = true
 end
 
 function methods:SetActive(active)
 	self.GuiObject.Visible = active
+end
+
+function methods:UpdateMessageFiltered(messageData)
+	local messageObject = nil
+	local searchIndex = 1
+	local searchTable = self.MessageObjectLog
+
+	while (#searchTable >= searchIndex) do
+		local obj = searchTable[searchIndex]
+
+		if (obj.ID == messageData.ID) then
+			messageObject = obj
+			break
+		end
+
+		searchIndex = searchIndex + 1
+	end
+
+	if (messageObject) then
+		messageObject.UpdateTextFunction(messageData)
+	end
 end
 
 function methods:AddMessageLabelToLog(messageObject)
@@ -92,19 +114,14 @@ function methods:PositionMessageLabelInWindow(messageObject)
 
 	if (reposition) then
 		self.Scroller.CanvasPosition = Vector2.new(0, math.max(0, self.Scroller.CanvasSize.Y.Offset - self.Scroller.AbsoluteSize.Y))
-	else
-		--// May want to set to true some time in the future. The idea was that you would get notifications in the 
-		--// channel you are currently in if messages were posted, but you weren't scrolled all the way down.
-		--// However, this feature wasn't never implemented because of no clean, easy way to think of how to get rid
-		--// of these notifications 1 by 1 while scrolling down.
-		--// If this feature does ever get implemented, then we could also put this in the ChatSettings module.
-		local displayNewMessagesIfNotFullyScrolledDown = false
-		self.ChannelTab:UpdateMessagePostedInChannel(displayNewMessagesIfNotFullyScrolledDown)
 	end
 end
 
 function methods:ReorderAllMessages()
 	self:WaitUntilParentedCorrectly()
+
+	--// Reordering / reparenting with a size less than 1 causes weird glitches to happen with scrolling as repositioning happens.
+	if (self.GuiObject.AbsoluteSize.Y < 1) then return end
 
 	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 	for i, messageObject in pairs(self.MessageObjectLog) do
@@ -156,6 +173,7 @@ module.ScrollBarThickness = 4
 
 function module.new(channelName)
 	local obj = {}
+	obj.Destroyed = false
 
 	local BaseFrame, Scroller = CreateGuiObjects()
 	obj.GuiObject = BaseFrame

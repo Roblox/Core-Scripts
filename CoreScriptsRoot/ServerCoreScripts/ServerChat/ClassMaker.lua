@@ -10,7 +10,7 @@ local function ToStringFunction(tbl)
 end
 
 local function NotValidMemberErrorFunction(tbl, index)
-	error(string.format("%s is not a valid member of %s", index, tbl.__ClassName))
+	error(string.format("%s is not a valid member of %s", index, tbl.__ClassName), 3)
 end
 
 local function DumpFunction(self)
@@ -28,7 +28,7 @@ function module.RegisterClassType(classType, classMethods)
 		local metatable = {}
 		metatable.__metatable = "The metatable is locked"
 		metatable.__tostring = ToStringFunction
-		metatable.__newindex = NotValidMemberErrorFunction
+		metatable.__newindex = function() NotValidMemberErrorFunction() end
 		
 		metatable.__ClassName = classType
 		

@@ -7,6 +7,7 @@ local module = {}
 
 local modulesFolder = script.Parent
 local RunService = game:GetService("RunService")
+local Chat = game:GetService("Chat")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -17,55 +18,6 @@ local Speaker = require(modulesFolder:WaitForChild("Speaker"))
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
-
-function methods:DoMessageFilter(speakerName, message, channel)
-	for funcId, func in pairs(self.FilterMessageFunctions) do
-		local s, m = pcall(function()
-			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "string")
-			message = ret
-		end)
-
-		if (not s) then
-			warn("DoMessageFilter Function '" .. funcId .. "'' failed for reason: " .. m)
-		end
-	end
-	
-	if (RunService:IsServer() and not RunService:IsStudio()) then
-		local fromSpeaker = self:GetSpeaker(speakerName)
-		if (fromSpeaker) then
-			local playerObj = fromSpeaker:GetPlayer()
-			if (playerObj) then
-				message = game:GetService("Chat"):FilterStringAsync(message, playerObj, playerObj)
-			end
-		end
-	end
-	
-	return message
-end
-
-function methods:DoProcessCommands(speakerName, message, channel)
-	local processed = false
-	
-	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
-	if (processed) then return processed end
-	
-	for funcId, func in pairs(self.ProcessCommandsFunctions) do
-		local s, m = pcall(function()
-			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "boolean")
-			processed = ret
-		end)
-		
-		if (not s) then
-			warn("DoProcessCommands Function '" .. funcId .. "' failed for reason: " .. m)
-		end
-		
-		if (processed) then break end
-	end
-	
-	return processed
-end
 
 function methods:AddChannel(channelName)
 	if (self.ChatChannels[channelName:lower()]) then
@@ -93,7 +45,7 @@ function methods:AddChannel(channelName)
 		return false
 	end)
 	
-	spawn(function() self.eChannelAdded:Fire(channelName) end)
+	pcall(function() self.eChannelAdded:Fire(channelName) end)
 
 	return channel
 end
@@ -102,10 +54,10 @@ function methods:RemoveChannel(channelName)
 	if (self.ChatChannels[channelName:lower()]) then
 		local n = self.ChatChannels[channelName:lower()].Name
 		
-		self.ChatChannels[channelName:lower()]:Destroy()
+		self.ChatChannels[channelName:lower()]:InternalDestroy()
 		self.ChatChannels[channelName:lower()] = nil
 
-		spawn(function() self.eChannelRemoved:Fire(n) end)
+		pcall(function() self.eChannelRemoved:Fire(n) end)
 	else
 		warn(string.format("Channel %q does not exist.", channelName))
 	end
@@ -124,7 +76,7 @@ function methods:AddSpeaker(speakerName)
 	local speaker = Speaker.new(self, speakerName)
 	self.Speakers[speakerName:lower()] = speaker
 	
-	spawn(function() self.eSpeakerAdded:Fire(speakerName) end)
+	pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
 
 	return speaker
 end
@@ -133,10 +85,10 @@ function methods:RemoveSpeaker(speakerName)
 	if (self.Speakers[speakerName:lower()]) then
 		local n = self.Speakers[speakerName:lower()].Name
 
-		self.Speakers[speakerName:lower()]:Destroy()
+		self.Speakers[speakerName:lower()]:InternalDestroy()
 		self.Speakers[speakerName:lower()] = nil
 		
-		spawn(function() self.eSpeakerRemoved:Fire(n) end)
+		pcall(function() self.eSpeakerRemoved:Fire(n) end)
 		
 	else
 		warn("Speaker \"" .. speakerName .. "\" does not exist!")
@@ -145,16 +97,6 @@ end
 
 function methods:GetSpeaker(speakerName)
 	return self.Speakers[speakerName:lower()]
-end
-
-function methods:GetAutoJoinChannelList()
-	local list = {}
-	for i, channel in pairs(self.ChatChannels) do
-		if channel.AutoJoin then
-			table.insert(list, channel)
-		end
-	end
-	return list
 end
 
 function methods:GetChannelList()
@@ -167,12 +109,28 @@ function methods:GetChannelList()
 	return list
 end
 
+function methods:GetAutoJoinChannelList()
+	local list = {}
+	for i, channel in pairs(self.ChatChannels) do
+		if channel.AutoJoin then
+			table.insert(list, channel)
+		end
+	end
+	return list
+end
+
 function methods:GetSpeakerList()
 	local list = {}
 	for i, speaker in pairs(self.Speakers) do
 		table.insert(list, speaker.Name)
 	end
 	return list
+end
+
+function methods:SendGlobalSystemMessage(message)
+	for i, speaker in pairs(self.Speakers) do
+		speaker:SendSystemMessage(message, nil)
+	end
 end
 
 function methods:RegisterFilterMessageFunction(funcId, func)
@@ -199,10 +157,70 @@ function methods:UnregisterProcessCommandsFunction(funcId)
 	self.ProcessCommandsFunctions[funcId] = nil
 end
 
-function methods:SendGlobalSystemMessage(message)
-	for i, speaker in pairs(self.Speakers) do
-		speaker:SendSystemMessage(message, nil)
+--///////////////// Internal-Use Methods
+--//////////////////////////////////////
+function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
+	if (RunService:IsServer() and not RunService:IsStudio()) then
+		local fromSpeaker = self:GetSpeaker(speakerName)
+		local toSpeaker = self:GetSpeaker(toSpeakerName)
+		if (fromSpeaker and toSpeaker) then
+			local fromPlayerObj = fromSpeaker:GetPlayer()
+			local toPlayerObj = toSpeaker:GetPlayer()
+			if (fromPlayerObj and toPlayerObj) then
+				message = Chat:FilterStringAsync(message, fromPlayerObj, toPlayerObj)
+			end
+		end
+	else
+		--// Simulate filtering latency.
+		wait(0.2)
 	end
+
+	return message
+end
+
+function methods:InternalDoMessageFilter(speakerName, message, channel)
+	for funcId, func in pairs(self.FilterMessageFunctions) do
+		local s, m = pcall(function()
+			local ret = func(speakerName, message, channel)
+			assert(type(ret) == "string")
+			message = ret
+		end)
+
+		if (not s) then
+			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
+		end
+	end
+	
+	return message
+end
+
+function methods:InternalDoProcessCommands(speakerName, message, channel)
+	local processed = false
+	
+	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
+	if (processed) then return processed end
+	
+	for funcId, func in pairs(self.ProcessCommandsFunctions) do
+		local s, m = pcall(function()
+			local ret = func(speakerName, message, channel)
+			assert(type(ret) == "boolean")
+			processed = ret
+		end)
+		
+		if (not s) then
+			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, m))
+		end
+		
+		if (processed) then break end
+	end
+	
+	return processed
+end
+
+function methods:InternalGetUniqueMessageId()
+	local id = self.MessageIdCounter
+	self.MessageIdCounter = id + 1
+	return id
 end
 
 --///////////////////////// Constructors
@@ -211,7 +229,9 @@ ClassMaker.RegisterClassType("ChatService", methods)
 
 function module.new()
 	local obj = {}
-	
+
+	obj.MessageIdCounter = 0
+
 	obj.ChatChannels = {}
 	obj.Speakers = {}
 	

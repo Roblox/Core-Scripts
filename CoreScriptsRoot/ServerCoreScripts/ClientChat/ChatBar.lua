@@ -4,6 +4,9 @@ local source = [[
 --	// Description: Manages text typing and typing state.
 
 local module = {}
+
+local UserInputService = game:GetService("UserInputService")
+
 --////////////////////////////// Include
 --//////////////////////////////////////
 local modulesFolder = script.Parent
@@ -11,13 +14,15 @@ local moduleTransparencyTweener = require(modulesFolder:WaitForChild("Transparen
 local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
+local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
+
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
 
 function methods:CreateGuiObjects(targetParent)
-	local backgroundImagePixelOffset = 8
-	local textBoxPixelOffset = 8
+	local backgroundImagePixelOffset = 7
+	local textBoxPixelOffset = 5
 
 	local BaseFrame = Instance.new("Frame", targetParent)
 	BaseFrame.Selectable = false
@@ -35,24 +40,37 @@ function methods:CreateGuiObjects(targetParent)
 	BoxFrame.Size = UDim2.new(1, -backgroundImagePixelOffset * 2, 1, -backgroundImagePixelOffset * 2)
 	BoxFrame.Position = UDim2.new(0, backgroundImagePixelOffset, 0, backgroundImagePixelOffset)
 
-	local TextBox = Instance.new("TextBox", BoxFrame)
+	local TextBoxHolderFrame = Instance.new("Frame", BoxFrame)
+	TextBoxHolderFrame.BackgroundTransparency = 1
+	TextBoxHolderFrame.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)
+	TextBoxHolderFrame.Position = UDim2.new(0, textBoxPixelOffset, 0, textBoxPixelOffset)
+
+	local TextBox = Instance.new("TextBox", TextBoxHolderFrame)
 	TextBox.Selectable = ChatSettings.GamepadNavigationEnabled
 	TextBox.Name = "ChatBar"
 	TextBox.BackgroundTransparency = 1
-	TextBox.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)
-	TextBox.Position = UDim2.new(0, textBoxPixelOffset, 0, textBoxPixelOffset)
+	TextBox.Size = UDim2.new(1, 0, 1, 0)
+	TextBox.Position = UDim2.new(0, 0, 0, 0)
 	TextBox.FontSize = ChatSettings.ChatBarTextSize
 	TextBox.Font = Enum.Font.SourceSansBold
 	TextBox.TextColor3 = Color3.new(1, 1, 1)
-	TextBox.TextStrokeTransparency = 0.75
+	--TextBox.TextStrokeTransparency = 0.75
 	TextBox.ClearTextOnFocus = false
 	TextBox.TextXAlignment = Enum.TextXAlignment.Left
 	TextBox.TextYAlignment = Enum.TextYAlignment.Top
 	TextBox.TextWrapped = true
 	TextBox.Text = ""
 
-	local TextLabel = Instance.new("TextLabel", BoxFrame)
+	local MessageModeTextBox = TextBox:Clone()
+	MessageModeTextBox.Name = "MessageMode"
+	MessageModeTextBox.Parent = TextBoxHolderFrame
+	MessageModeTextBox.Size = UDim2.new(0.3, 0, 1, 0)
+	MessageModeTextBox.TextYAlignment = Enum.TextYAlignment.Center
+	MessageModeTextBox.TextColor3 = Color3.fromRGB(77, 139, 255)
+
+	local TextLabel = Instance.new("TextLabel", TextBoxHolderFrame)
 	TextLabel.Selectable = false
+	TextLabel.TextWrapped = true
 	TextLabel.BackgroundTransparency = 1
 	TextLabel.Size = TextBox.Size
 	TextLabel.Position = TextBox.Position
@@ -68,8 +86,79 @@ function methods:CreateGuiObjects(targetParent)
 	TextLabel.TextStrokeTransparency = 1
 	TextLabel.TextTransparency = 0.4
 
-	TextBox.Focused:connect(function() TextLabel.Visible = false end)
-	TextBox.FocusLost:connect(function() TextLabel.Visible = (TextBox.Text == "") end)
+	TextBox.TextColor3 = TextLabel.TextColor3
+	TextBox.TextStrokeTransparency = TextLabel.TextStrokeTransparency
+	TextBox.TextTransparency = TextLabel.TextTransparency
+
+
+	local function UpdateOnFocusStatusChanged(isFocused)
+		if (isFocused) then
+			TextLabel.Visible = false
+			MessageModeTextBox.Visible = true
+		else
+			local setVis = (TextBox.Text == "")
+			TextLabel.Visible = setVis
+			MessageModeTextBox.Visible = not setVis
+		end
+	end
+
+	TextBox.Focused:connect(function() UpdateOnFocusStatusChanged(true) end)
+	TextBox.FocusLost:connect(function() UpdateOnFocusStatusChanged(false) end)
+
+	--// Code for getting back into general channel from other target channel when pressing backspace.
+	UserInputService.InputBegan:connect(function(inputObj, gpe)
+		if (inputObj.KeyCode == Enum.KeyCode.Backspace) then
+			if (TextBox:IsFocused() and TextBox.Text == "") then
+				self:SetChannelTarget(ChatSettings.GeneralChannelName)
+			end
+		end
+	end)
+
+	TextBox.Changed:connect(function(prop)
+		if (prop == "Text")  then
+			if (string.len(TextBox.Text) > ChatSettings.MaximumMessageLength) then
+				TextBox.Text = string.sub(TextBox.Text, 1, ChatSettings.MaximumMessageLength)
+				return
+			end
+		end
+
+		if (prop == "Text" and not ChatSettings.ShowChannelsBar and TextBox.Text:match("%s$")) then
+			local text = TextBox.Text
+			local doProcess = true
+			if (string.sub(TextBox.Text, 1, 3):lower() == "/w ") then
+				text = string.sub(text, 4)
+
+			elseif (string.sub(TextBox.Text, 1, 9):lower() == "/whisper ") then
+				text = string.sub(text,  10)
+
+			else
+				doProcess = false
+
+			end
+
+			if (doProcess) then
+				local match = nil
+				if (string.sub(text, 1, 1) == "\"") then
+					match = string.match(text, "\".+\"%s")
+					if (match) then
+						local len = string.len(match)
+						match = string.sub(match, 2, len - 1)
+					end
+				else
+					match = string.match(text, "%S+%s")
+				end
+
+				if (match) then
+					local len = string.len(match)
+					match = string.sub(match, 1, len - 1)
+					TextBox.Text = ""
+
+					local targ = ChatSettings.GeneralChannelName or rawget(self, "TargetChannel")
+					MessageSender:SendMessage(string.format("/w %s", match), targ)
+				end
+			end
+		end
+	end)
 
 	rawset(self, "GuiObject", BaseFrame)
 	rawset(self, "TextBox", TextBox)
@@ -79,6 +168,7 @@ function methods:CreateGuiObjects(targetParent)
 	self.GuiObjects.TextBoxFrame = BoxFrame
 	self.GuiObjects.TextBox = TextBox
 	self.GuiObjects.TextLabel = TextLabel
+	self.GuiObjects.MessageModeTextBox = MessageModeTextBox
 
 	self:CreateTweeners()
 
@@ -196,6 +286,29 @@ function methods:SetFontSize(fontSize)
 	self.TextLabel.FontSize = fontSize
 end
 
+function methods:SetChannelTarget(targetChannel)
+	local messageModeTextBox = self.GuiObjects.MessageModeTextBox
+	local textBox = self.TextBox
+
+	rawset(self, "TargetChannel", targetChannel)
+
+	if (targetChannel ~= ChatSettings.GeneralChannelName) then
+		messageModeTextBox.Size = UDim2.new(0, 1000, 1, 0)
+		messageModeTextBox.Text = string.format("[%s] ", targetChannel)
+
+		local xSize = messageModeTextBox.TextBounds.X
+		messageModeTextBox.Size = UDim2.new(0, xSize, 1, 0)
+		textBox.Size = UDim2.new(1, -xSize, 1, 0)
+		textBox.Position = UDim2.new(0, xSize, 0, 0)
+
+	else
+		messageModeTextBox.Text = ""
+		textBox.Size = UDim2.new(1, 0, 1, 0)
+		textBox.Position = UDim2.new(0, 0, 0, 0)
+
+	end
+end
+
 function methods:FadeOutBackground(duration)
 	self.BackgroundTweener:Tween(duration, 1)
 	--self:FadeOutText(duration)
@@ -232,11 +345,16 @@ function methods:CreateTweeners()
 		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextStrokeTransparency")
 		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextTransparency")
 		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextStrokeTransparency")
+		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextTransparency")
+		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextStrokeTransparency")
+
 	else
 		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextTransparency")
 		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextStrokeTransparency")
 		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextTransparency")
 		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextStrokeTransparency")
+		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextTransparency")
+		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextStrokeTransparency")
 	end
 
 end
@@ -252,6 +370,8 @@ function module.new()
 	obj.TextBox = nil
 	obj.TextLabel = nil
 	obj.GuiObjects = {}
+
+	obj.TargetChannel = nil
 
 	obj.TweenPixelsPerSecond = 500
 	obj.TargetYSize = 0

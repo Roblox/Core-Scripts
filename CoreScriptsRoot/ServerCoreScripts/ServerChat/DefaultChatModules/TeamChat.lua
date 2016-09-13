@@ -14,9 +14,9 @@ local function Run(ChatService)
 	channel.AutoJoin = false
 	channel.Private = true
 
-	local function TeamChatReplicationFunction(fromSpeaker, message, channel)
+	local function TeamChatReplicationFunction(fromSpeaker, message, channelName)
 		local speakerObj = ChatService:GetSpeaker(fromSpeaker)
-		local channelObj = ChatService:GetChannel(channel)
+		local channelObj = ChatService:GetChannel(channelName)
 		if (speakerObj and channelObj) then
 			local player = speakerObj:GetPlayer()
 			if (player) then
@@ -28,10 +28,11 @@ local function Run(ChatService)
 						if (otherPlayer) then
 							
 							if (player.Team == otherPlayer.Team) then
-								otherSpeaker:SendMessage(fromSpeaker, channel, message)
+								local extraData = {NameColor = player.TeamColor.Color, ChatColor = player.TeamColor.Color}
+								otherSpeaker:SendMessage(message, channelName, fromSpeaker, extraData)
 							else
 								--// Could use this line to obfuscate message for cool effects
-								--otherSpeaker:SendMessage(fromSpeaker, channel, message)
+								--otherSpeaker:SendMessage(message, channelName, fromSpeaker)
 							end
 							
 						end

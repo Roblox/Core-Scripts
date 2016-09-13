@@ -5,7 +5,6 @@ local source = [[
 
 local moduleApiTable = {}
 
-
 --// This section of code waits until all of the necessary RemoteEvents are found in EventFolder.
 --// I have to do some weird stuff since people could potentially already have pre-existing 
 --// things in a folder with the same name, and they may have different class types.
@@ -18,25 +17,25 @@ local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultCh
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren = 
 {
-	OnNewMessage = true,
-	OnNewSystemMessage = true,
-	OnChannelJoined = true,
-	OnChannelLeft = true,
-	OnMuted = true,
-	OnUnmuted = true,
-	OnSpeakerExtraDataUpdated = true,
-	OnMainChannelSet = true,
+	OnNewMessage = "RemoteEvent",
+	OnMessageDoneFiltering = "RemoteEvent",
+	OnNewSystemMessage = "RemoteEvent",
+	OnChannelJoined = "RemoteEvent",
+	OnChannelLeft = "RemoteEvent",
+	OnMuted = "RemoteEvent",
+	OnUnmuted = "RemoteEvent",
+	OnMainChannelSet = "RemoteEvent",
 
-	SayMessageRequest = true,
-	GetInitDataRequest = true,
+	SayMessageRequest = "RemoteEvent",
+	GetInitDataRequest = "RemoteFunction",
 }
 
 local useEvents = {}
 
 local FoundAllEventsEvent = Instance.new("BindableEvent")
 
-local function TryRemoveChildWithVerifyingIsRemoteEvent(child)
-	if (child:IsA("RemoteEvent") and waitChildren[child.Name]) then
+local function TryRemoveChildWithVerifyingIsCorrectType(child)
+	if (waitChildren[child.Name] and child:IsA(waitChildren[child.Name])) then
 		waitChildren[child.Name] = nil
 		useEvents[child.Name] = child
 		numChildrenRemaining = numChildrenRemaining - 1
@@ -44,12 +43,12 @@ local function TryRemoveChildWithVerifyingIsRemoteEvent(child)
 end
 
 for i, child in pairs(EventFolder:GetChildren()) do
-	TryRemoveChildWithVerifyingIsRemoteEvent(child)
+	TryRemoveChildWithVerifyingIsCorrectType(child)
 end
 
 if (numChildrenRemaining > 0) then
 	local con = EventFolder.ChildAdded:connect(function(child)
-		TryRemoveChildWithVerifyingIsRemoteEvent(child)
+		TryRemoveChildWithVerifyingIsCorrectType(child)
 		if (numChildrenRemaining < 1) then
 			FoundAllEventsEvent:Fire()
 		end
@@ -82,7 +81,6 @@ local modulesFolder = script
 local moduleChatWindow = require(modulesFolder:WaitForChild("ChatWindow"))
 local moduleChatBar = require(modulesFolder:WaitForChild("ChatBar"))
 local moduleChannelsBar = require(modulesFolder:WaitForChild("ChannelsBar"))
-local moduleSpeakerDatabase = require(modulesFolder:WaitForChild("SpeakerDatabase"))
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 
@@ -98,14 +96,12 @@ ChatWindow:RegisterChatBar(ChatBar)
 ChatWindow:RegisterChannelsBar(ChannelsBar)
 
 
-local SpeakerDatabase = moduleSpeakerDatabase.new()
 local MessageLabelCreator = moduleMessageLabelCreator.new()
-MessageLabelCreator:RegisterSpeakerDatabase(SpeakerDatabase)
 
 local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
-MessageSender:RegisterSayMessageEvent(EventFolder.SayMessageRequest)
+MessageSender:RegisterSayMessageFunction(EventFolder.SayMessageRequest)
 
 
 
@@ -144,10 +140,14 @@ local function DoBackgroundFadeIn(setFadingTime)
 	lastFadeTime = tick()
 	backgroundIsFaded = false
 	fadedChanged:Fire()
+	ChatWindow:EnableResizable()
 	ChatWindow:FadeInBackground((setFadingTime or defaultFadingTime))
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
+		ChatWindow.GuiObject.Active = true
+
+
 		local Scroller = currentChannelObject.Scroller
 		Scroller.ScrollingEnabled = true
 		Scroller.ScrollBarThickness = moduleChatChannel.ScrollBarThickness
@@ -158,10 +158,14 @@ local function DoBackgroundFadeOut(setFadingTime)
 	lastFadeTime = tick()
 	backgroundIsFaded = true
 	fadedChanged:Fire()
+	ChatWindow:DisableResizable()
 	ChatWindow:FadeOutBackground((setFadingTime or defaultFadingTime))
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
+		ChatWindow.GuiObject.Active = false
+		--ChatWindow:ResetResizerPosition()
+		
 		local Scroller = currentChannelObject.Scroller
 		scrollBarThickness = Scroller.ScrollBarThickness
 		Scroller.ScrollingEnabled = false
@@ -350,6 +354,30 @@ end)
 ChatBarUISConnection:disconnect()
 
 
+local function DoSwitchCurrentChannel(targetChannel)
+	if (ChatWindow:GetChannel(targetChannel)) then
+		ChatWindow:SwitchCurrentChannel(targetChannel)
+	end
+end
+
+
+local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
+	local channelObj = ChatWindow:GetChannel(channelName)
+	if (channelObj) then
+		local messageObj = 
+		{
+			ID = -1,
+			FromSpeaker = nil,
+			Message = message,
+			Time = os.time(),
+			ExtraData = extraData,
+		}
+
+		local messageObject = MessageLabelCreator:CreateSystemMessageLabel(messageObj)
+		channelObj:AddMessageLabelToLog(messageObject)
+	end
+end
+
 local function ProcessChatCommands(message)
 	local processedCommand = false
 
@@ -357,8 +385,18 @@ local function ProcessChatCommands(message)
 		message = string.sub(message, 4)
 		processedCommand = true
 
-		if (ChatWindow:GetChannel(message)) then
-			ChatWindow:SwitchCurrentChannel(message)
+		DoSwitchCurrentChannel(message)
+
+		if (not ChatSettings.ShowChannelsBar) then
+			local currentChannel = ChatWindow:GetCurrentChannel()
+			if (currentChannel) then
+				local switchToChannel = ChatWindow:GetChannel(message)
+				if (switchToChannel) then
+					SendMessageToSelfInTargetChannel(string.format("You are now chatting in channel: '%s'", message), currentChannel.Name, {})
+				else
+					SendMessageToSelfInTargetChannel(string.format("You are not in channel: '%s'", message), currentChannel.Name, {ChatColor = Color3.fromRGB(245, 50, 50)})
+				end
+			end
 		end
 
 	elseif (string.sub(message, 1, 4) == "/cls" or string.sub(message, 1, 6) == "/clear") then
@@ -377,8 +415,7 @@ local function ProcessChatCommands(message)
 
 		local channelObj = ChatWindow:GetCurrentChannel()
 		if (channelObj) then
-			local messageObject = MessageLabelCreator:CreateSystemMessageLabel("Create a free account to get access to chat permissions!")
-			channelObj:AddMessageLabelToLog(messageObject)
+			SendMessageToSelfInTargetChannel("Create a free account to get access to chat permissions!", channelObj.Name, {})
 		end
 	end
 
@@ -388,18 +425,18 @@ end
 --// Event for making player say chat message.
 ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 	if (enterPressed) then
-		local message = string.sub(ChatBar:GetTextBox().Text, 1, 300) -- max of something whenever
+		local message = string.sub(ChatBar:GetTextBox().Text, 1, ChatSettings.MaximumMessageLength)
 		ChatBar:GetTextBox().Text = ""
 		
 		if (message ~= "" and not ProcessChatCommands(message)) then
 			message = string.gsub(message, "\n", "")
 			message = string.gsub(message, "[ ]+", " ")
 			
-			local currentChannel = ChatWindow:GetCurrentChannel()
-			if (currentChannel) then
-				MessageSender:SendMessage(message, currentChannel.Name)
+			local targetChannel = ChatWindow:GetTargetMessageChannel()
+			if (targetChannel) then
+				MessageSender:SendMessage(message, targetChannel)
 
-				if (currentChannel.Name == ChatSettings.GeneralChannelName) then
+				if (targetChannel == ChatSettings.GeneralChannelName) then
 					--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
 					moduleApiTable.MessagePosted:fire(message) 
 				end
@@ -412,63 +449,77 @@ ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 	end
 end)
 
-EventFolder.OnNewMessage.OnClientEvent:connect(function(fromSpeaker, channel, message)
-	local channelObj = ChatWindow:GetChannel(channel)
+EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
+	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
-		local messageObject = MessageLabelCreator:CreateMessageLabel(fromSpeaker, message)
+		local messageObject = MessageLabelCreator:CreateMessageLabel(messageData)
 		channelObj:AddMessageLabelToLog(messageObject)
-		
-		ChannelsBar:UpdateMessagePostedInChannel(channel)
-		
+
+		if (messageData.FromSpeaker ~= LocalPlayer.Name) then
+			ChannelsBar:UpdateMessagePostedInChannel(channelName)
+		end
+
+		local generalChannel = nil
+		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
+			generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+			if (generalChannel) then
+				local messageObject = MessageLabelCreator:CreateChannelEchoMessageLabel(messageData, channelName)
+				generalChannel:AddMessageLabelToLog(messageObject)
+			end
+		end
+
 		moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1
 		moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
 
 		DoFadeInFromNewInformation()
 
-		if (ChatSettings.GeneralChannelName and channel ~= ChatSettings.GeneralChannelName) then
-			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
-			if (generalChannel) then
-				local messageObject = MessageLabelCreator:CreateChannelEchoMessageLabel(fromSpeaker, message, channel)
-				generalChannel:AddMessageLabelToLog(messageObject)
-			end
+		local filterData = {}
+		while (filterData.ID ~= messageData.ID) do
+			filterData = EventFolder.OnMessageDoneFiltering.OnClientEvent:wait()
+		end
 
+		--// Speaker may leave these channels during the time it takes to filter.
+		if (not channelObj.Destroyed) then
+			channelObj:UpdateMessageFiltered(filterData)
+		end
+
+		if (generalChannel and not generalChannel.Destroyed) then
+			generalChannel:UpdateMessageFiltered(filterData)
 		end
 	else
-		warn("Just received chat message for channel I'm not in [" .. channel .. "]")
-		
-	end
+		warn(string.format("Just received chat message for channel I'm not in [%s]", channelName))
+	end 
 end)
 
-EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(message, channel)
-	channel = channel or "System"
+EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, channelName)
+	channelName = channelName or "System"
 	
-	local channelObj = ChatWindow:GetChannel(channel)
+	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
-		local messageObject = MessageLabelCreator:CreateSystemMessageLabel(message)
+		local messageObject = MessageLabelCreator:CreateSystemMessageLabel(messageData)
 		channelObj:AddMessageLabelToLog(messageObject)
 		
-		ChannelsBar:UpdateMessagePostedInChannel(channel)
+		ChannelsBar:UpdateMessagePostedInChannel(channelName)
 		
 		moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1
 		moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
 
 		DoFadeInFromNewInformation()
 
-		if (ChatSettings.GeneralChannelName and channel ~= ChatSettings.GeneralChannelName) then
+		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
 			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 			if (generalChannel) then
-				local messageObject = MessageLabelCreator:CreateChannelEchoSystemMessageLabel(message, channel)
+				local messageObject = MessageLabelCreator:CreateChannelEchoSystemMessageLabel(messageData, channelName)
 				generalChannel:AddMessageLabelToLog(messageObject)
 			end
-
 		end
 	else
-		warn("Just received system message for channel I'm not in [" .. channel .. "]")
-		
+		warn(string.format("Just received system message for channel I'm not in [%s]", channelName))
 	end
 end)
 
-EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessage, messageLog)
+
+local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 	if (channel == ChatSettings.GeneralChannelName) then
 		didFirstChannelsLoads = true
 	end
@@ -477,19 +528,21 @@ EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessa
 
 	if (channelObj) then
 		if (channel == "All") then
-			ChatWindow:SwitchCurrentChannel(channel)
+			DoSwitchCurrentChannel(channel)
 		end
 
 		if (messageLog) then
 			for i, messageLogData in pairs(messageLog) do
+
 				local messageObj = nil
-				if (messageLogData.Speaker) then
-					messageObj = MessageLabelCreator:CreateMessageLabel(messageLogData.Speaker, messageLogData.Message)
+				if (messageLogData.FromSpeaker) then
+					messageObj = MessageLabelCreator:CreateMessageLabel(messageLogData)
 				else
-					messageObj = MessageLabelCreator:CreateSystemMessageLabel(messageLogData.Message)
+					messageObj = MessageLabelCreator:CreateSystemMessageLabel(messageLogData)
 				end
 
 				channelObj:AddMessageLabelToLog(messageObj)
+				channelObj:UpdateMessageFiltered(messageLogData)
 			end
 		end
 
@@ -501,7 +554,9 @@ EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessa
 		DoFadeInFromNewInformation()
 	end	
 	
-end)
+end
+
+EventFolder.OnChannelJoined.OnClientEvent:connect(HandleChannelJoined)
 
 EventFolder.OnChannelLeft.OnClientEvent:connect(function(channel)
 	ChatWindow:RemoveChannel(channel)
@@ -519,23 +574,10 @@ EventFolder.OnUnmuted.OnClientEvent:connect(function(channel)
 	--// Same as above.
 end)
 
-EventFolder.OnSpeakerExtraDataUpdated.OnClientEvent:connect(function(speakerName, data)
-	local speaker = SpeakerDatabase:GetSpeaker(speakerName)
-	if (not speaker) then
-		speaker = SpeakerDatabase:AddSpeaker(speakerName)
-	end
-	
-	for i, v in pairs(data) do
-		speaker[i] = v
-	end
-end)
-
-
 EventFolder.OnMainChannelSet.OnClientEvent:connect(function(channel)
-	if (ChatWindow:GetChannel(channel)) then
-		ChatWindow:SwitchCurrentChannel(channel)
-	end
+	DoSwitchCurrentChannel(channel)
 end)
+
 
 
 local reparentingLock = false
@@ -544,11 +586,13 @@ local function connectGuiParent(GuiParent)
 	DestroyGuardFrame.Name = "DestroyGuardFrame"
 	DestroyGuardFrame.BackgroundTransparency = 1
 	DestroyGuardFrame.Size = UDim2.new(1, 0, 1, 0)
+	DestroyGuardFrame.Parent = GuiParent
 
 	for i, v in pairs(GuiParent:GetChildren()) do
-		v.Parent = DestroyGuardFrame
+		if (v ~= DestroyGuardFrame) then
+			v.Parent = DestroyGuardFrame
+		end
 	end
-	DestroyGuardFrame.Parent = GuiParent
 
 end
 
@@ -591,9 +635,11 @@ PlayerGui.ChildAdded:connect(function(child)
 end)
 
 
-EventFolder.GetInitDataRequest:FireServer()
+local initData = EventFolder.GetInitDataRequest:InvokeServer()
 
-
+for i, channelData in pairs(initData.Channels) do
+	HandleChannelJoined(unpack(channelData))
+end
 
 
 
