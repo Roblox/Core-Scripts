@@ -10,7 +10,7 @@ local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
 local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
-local StatsTextPanelClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsTextPanel)
+local StatsMiniTextPanelClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsMiniTextPanel)
 local StatsAnnotatedGraphClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsAnnotatedGraph)
 
 --[[ Globals ]]--
@@ -26,27 +26,31 @@ local GraphSize = UDim2.new(GraphXFraction, 0, 1, 0)
 local StatsButtonClass = {}
 StatsButtonClass.__index = StatsButtonClass
 
-function StatsButtonClass.new(statsDisplayType) 
+function StatsButtonClass.new(statType) 
   local self = {}
   setmetatable(self, StatsButtonClass)
 
-  self._type = statsDisplayType
+  self._statType = statType
   self._button = Instance.new("TextButton")
   self._button.Name = "PS_Button"
   self._button.Text = ""
   
   StatsUtils.StyleButton(self._button)
 
-  self._textPanel = StatsTextPanelClass.new(statsDisplayType, false)
+  self._textPanel = StatsMiniTextPanelClass.new(statType)
   self._textPanel:PlaceInParent(self._button,
     TextPanelSize, 
     TextPanelPosition)
-    
-  self._graph = StatsAnnotatedGraphClass.new(statsDisplayType, false)
+        
+  self._graph = StatsAnnotatedGraphClass.new(statType, false)
   self._graph:PlaceInParent(self._button, 
     GraphSize, 
     GraphPosition)
   
+  self._textPanel:SetZIndex(StatsUtils.TextZIndex)
+  self._graph:SetZIndex(StatsUtils.GraphZIndex)
+
+
   self._isSelected = false
   
   self:_updateColor();
@@ -56,7 +60,7 @@ end
 
 function StatsButtonClass:SetToggleCallbackFunction(callbackFunction) 
     self._button.MouseButton1Click:connect(function() 
-          callbackFunction(self._type)
+          callbackFunction(self._statType)
         end)
 end
 

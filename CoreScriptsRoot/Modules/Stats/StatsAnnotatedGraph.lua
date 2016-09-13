@@ -20,46 +20,58 @@ local BarGraphClass = require(CoreGuiService.RobloxGui.Modules.Stats.BarGraph)
 local StatsAnnotatedGraphClass = {}
 StatsAnnotatedGraphClass.__index = StatsAnnotatedGraphClass
 
-function StatsAnnotatedGraphClass.new(statsDisplayType, isMaximized) 
+function StatsAnnotatedGraphClass.new(statType, isMaximized) 
   local self = {}
   setmetatable(self, StatsAnnotatedGraphClass)
 
-  self._statsAggregatorType = StatsUtils.DisplayTypeToAggregatorType[statsDisplayType]
+  self._statType = statType
   self._isMaximized = isMaximized
 
   self._frame = Instance.new("Frame")
   self._frame.Name = "PS_AnnotatedGraph"
   self._frame.BackgroundTransparency = 1.0
-  
+    self._frame.ZIndex = StatsUtils.GraphZIndex
+
   self._topLabel = Instance.new("TextLabel")
   self._topLabel.Name = "PS_TopAxisLabel"
-  StatsUtils.StyleTextWidget(self._topLabel)
   self._topLabel.Parent = self._frame
   self._topLabel.TextXAlignment = Enum.TextXAlignment.Left
   self._topLabel.TextYAlignment = Enum.TextYAlignment.Top
+  self._topLabel.FontSize = StatsUtils.PanelGraphFontSize
   
   self._midLabel = Instance.new("TextLabel")
   self._midLabel.Name = "PS_MidAxisLabel"
-  StatsUtils.StyleTextWidget(self._midLabel)
   self._midLabel.Parent = self._frame
   self._midLabel.TextXAlignment = Enum.TextXAlignment.Left
   self._midLabel.TextYAlignment = Enum.TextYAlignment.Center
-  
+  self._midLabel.FontSize = StatsUtils.PanelGraphFontSize
+
   self._bottomLabel = Instance.new("TextLabel")
   self._bottomLabel.Name = "PS_BottomAxisLabel"
-  StatsUtils.StyleTextWidget(self._bottomLabel)
   self._bottomLabel.Parent = self._frame
   self._bottomLabel.TextXAlignment = Enum.TextXAlignment.Left
   self._bottomLabel.TextYAlignment = Enum.TextYAlignment.Bottom
+  self._bottomLabel.FontSize = StatsUtils.PanelGraphFontSize
 
-  
-  self._graph = BarGraphClass.new()
+  local showAverage = isMaximized
+  self._graph = BarGraphClass.new(showAverage)
+
+  StatsUtils.StyleTextWidget(self._topLabel)
+  StatsUtils.StyleTextWidget(self._midLabel)
+  StatsUtils.StyleTextWidget(self._bottomLabel)
 
   self:_layoutElements()
 
   return self
 end
 
+function StatsAnnotatedGraphClass:SetZIndex(zIndex)
+  self._frame.ZIndex = zIndex
+  self._topLabel.ZIndex = zIndex
+  self._midLabel.ZIndex = zIndex
+  self._bottomLabel.ZIndex = zIndex
+  self._graph:SetZIndex(zIndex)
+end
 
 function StatsAnnotatedGraphClass:_layoutElements()
   local labelWidth
@@ -103,11 +115,15 @@ function StatsAnnotatedGraphClass:PlaceInParent(parent, size, position)
   self._frame.Parent = parent
 end
 
-function StatsAnnotatedGraphClass:SetValues(values)
-  local axisMax = self:_calculateAxisMax(values)
-  self._graph:UpdateGraph(values, axisMax)
+function StatsAnnotatedGraphClass:_render()
+  local axisMax = self:_calculateAxisMax(self._values)
+  self._graph:SetAxisMax(axisMax)
+  self._graph:SetValues(self._values)
+
+  self._graph:SetAverage(self._average)
+  self._graph:Render()
   
-  local convertedValue = StatsUtils.ConvertTypedValue(axisMax, self._statsAggregatorType)
+  local convertedValue = StatsUtils.ConvertTypedValue(axisMax, self._statType)
   self._topLabel.Text = string.format("%.2f", convertedValue)
   self._midLabel.Text = string.format("%.2f", convertedValue/2)
   self._bottomLabel.Text = string.format("%.2f", 0,.0)
@@ -159,14 +175,14 @@ function StatsAnnotatedGraphClass:_recursiveGetAxisMax(axisMax, max)
 end
 
 function StatsAnnotatedGraphClass:_updateValue()
-  local values = {}
+  self._values = {}
+  self._average = 0
   if self._aggregator ~= nil then 
-    values = self._aggregator:GetValues()
-  else
-    values = {}
+    self._values = self._aggregator:GetValues()
+    self._average = self._aggregator:GetAverage()
   end
   
-  self:SetValues(values)
+  self:_render()
 end
 
 return StatsAnnotatedGraphClass
