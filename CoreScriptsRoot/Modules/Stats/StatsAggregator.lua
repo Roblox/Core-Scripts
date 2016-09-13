@@ -90,8 +90,7 @@ function StatsAggregatorClass:GetAverage()
   for i = 0, self._numSamples-1, 1 do
     retval = retval + self._samples[i]
   end
-  local average = retval / self._numSamples  
-  return average
+  return retval / self._numSamples  
 end
 
 function StatsAggregatorClass:GetLatestValue()
