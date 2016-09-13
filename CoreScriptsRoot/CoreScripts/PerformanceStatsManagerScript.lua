@@ -31,11 +31,11 @@ masterFrame.Name = "PerformanceStats"
 local statsAggregatorManager = StatsAggregatorManagerClass.new()
 local statsViewer = StatsViewerClass.new()
 local statsButtonsByType ={}
-local currentDisplayType = nil
+local currentStatType = nil
 
-for i, displayType in ipairs(StatsUtils.AllStatDisplayTypes) do
-  local button = StatsButtonClass.new(displayType)
-  statsButtonsByType[displayType] = button
+for i, statType in ipairs(StatsUtils.AllStatTypes) do
+  local button = StatsButtonClass.new(statType)
+  statsButtonsByType[statType] = button
 end
 
 --[[ Functions ]]--
@@ -57,20 +57,20 @@ end
 
 function ConfigureStatButtonsInMasterFrame()
   -- Set up the row of buttons across the top and handler for button press.
-  for i, displayType in ipairs(StatsUtils.AllStatDisplayTypes) do
-    AddButton(displayType, i)
+  for i, statType in ipairs(StatsUtils.AllStatTypes) do
+    AddButton(statType, i)
   end
 end
 
-function OnButtonToggled(toggledDisplayType) 
-  local toggledButton = statsButtonsByType[toggledDisplayType]
+function OnButtonToggled(toggledStatType) 
+  local toggledButton = statsButtonsByType[toggledStatType]
   local selectedState = toggledButton._isSelected
   selectedState = not selectedState
   
   if (selectedState) then 
-    currentDisplayType = toggledDisplayType
+    currentStatType = toggledStatType
   else
-    currentDisplayType = nil
+    currentStatType = nil
   end
   
   UpdateButtonSelectedStates()
@@ -78,9 +78,9 @@ function OnButtonToggled(toggledDisplayType)
 end
 
 function UpdateButtonSelectedStates()
-  for i, buttonType in ipairs(StatsUtils.AllStatDisplayTypes) do
+  for i, buttonType in ipairs(StatsUtils.AllStatTypes) do
       local button = statsButtonsByType[buttonType]
-      button:SetIsSelected(buttonType == currentDisplayType)
+      button:SetIsSelected(buttonType == currentStatType)
   end  
 end
 
@@ -88,29 +88,27 @@ function UpdateViewerVisibility()
   -- If someone is on, show the Viewer.
   -- FIXME(dbanks)
   -- Configure with details of the dude currently selected.  
-  if (currentDisplayType == nil) then 
+  if (currentStatType == nil) then 
     statsViewer:SetVisible(false)
     statsViewer:SetStatsAggregator(nil)
   else
-    statsViewer:SetStatsDisplayType(currentDisplayType)
-    local aggregatorType = StatsUtils.DisplayTypeToAggregatorType[currentDisplayType]
-    statsViewer:SetStatsAggregator(statsAggregatorManager:GetAggregator(aggregatorType))
+    statsViewer:SetStatType(currentStatType)
+    statsViewer:SetStatsAggregator(statsAggregatorManager:GetAggregator(currentStatType))
     
     statsViewer:SetVisible(true)
   end
 end
 
-function AddButton(displayType, index) 
+function AddButton(statType, index) 
   -- Configure size and position of button.
   -- Configure callback behavior to toggle
   --    button on or off and show/hide viewer.
   -- Parent button in main screen.
-  local button = statsButtonsByType[displayType]
+  local button = statsButtonsByType[statType]
   
   button:SetParent(masterFrame)
-  local aggregatorType = StatsUtils.DisplayTypeToAggregatorType[displayType]
   button:SetStatsAggregator(
-    statsAggregatorManager:GetAggregator(aggregatorType))
+    statsAggregatorManager:GetAggregator(statType))
   
   local fraction = 1.0/StatsUtils.NumButtonTypes
   local size = UDim2.new(fraction, 0, 0, StatsUtils.ButtonHeight)
@@ -124,8 +122,10 @@ function ConfigureStatViewerInMasterFrame()
   -- Set up the widget that shows currently selected button.
   statsViewer:SetParent(masterFrame)
   
-  local size = UDim2.new(0.5, 0, 0.5, 0)
-  local position = UDim2.new(0.5, 0, 0.25, 0)
+  local size = UDim2.new(0, StatsUtils.ViewerWidth, 0, StatsUtils.ViewerHeight)
+  local position = UDim2.new(1, -StatsUtils.ViewerWidth, 
+    0, StatsUtils.ButtonHeight + StatsUtils.ViewerTopMargin)
+  
   statsViewer:SetSizeAndPosition(size, position)
 end
 
