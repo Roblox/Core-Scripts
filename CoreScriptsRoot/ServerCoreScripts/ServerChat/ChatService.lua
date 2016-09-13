@@ -223,6 +223,20 @@ function methods:InternalGetUniqueMessageId()
 	return id
 end
 
+function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj)
+	if (self.Speakers[speakerName:lower()]) then
+		error("Speaker \"" .. speakerName .. "\" already exists!")
+	end
+	
+	local speaker = Speaker.new(self, speakerName)
+	speaker:InternalAssignPlayerObject(playerObj)
+	self.Speakers[speakerName:lower()] = speaker
+	
+	pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+
+	return speaker
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
 ClassMaker.RegisterClassType("ChatService", methods)
