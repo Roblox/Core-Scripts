@@ -2992,6 +2992,7 @@ end
 
 local function getDeveloperConsole()
 	if not myDeveloperConsole then
+		myDeveloperConsole = true -- debounce
 		local permissions = DeveloperConsole.GetPermissions()
 		local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
 
@@ -3000,6 +3001,8 @@ local function getDeveloperConsole()
 		if isTenFootInterface then
 			myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
 		end
+	elseif myDeveloperConsole == true then
+		repeat wait() until myDeveloperConsole ~= true
 	end
 
 	return myDeveloperConsole
