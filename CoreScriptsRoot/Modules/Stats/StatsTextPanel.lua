@@ -5,41 +5,6 @@
       particular stat.
 --]]
 
---[[ Globals ]]--
-local TitleHeightY = 55
-local CurrentValueHeightY = 45
-local AverageHeightY = 45
-
-local LeftMarginPix = 10
-local TopMarginPix = 10
-
-local TitlePosition = UDim2.new(0, 
-  LeftMarginPix, 
-  0, 
-  TopMarginPix)
-local TitleSize = UDim2.new(1, 
-  -LeftMarginPix * 2, 
-  0, 
-  TitleHeightY)
-
-local CurrentValuePosition = UDim2.new(0,
-  LeftMarginPix, 
-  0, 
-  TopMarginPix + TitleHeightY)
-local CurrentValueSize = UDim2.new(1, 
-  -LeftMarginPix * 2,
-  0,
-  CurrentValueHeightY)
-
-local AverageValuePosition = UDim2.new(0,
-  LeftMarginPix, 
-  0, 
-  TopMarginPix + TitleHeightY + CurrentValueHeightY)
-local AverageValueSize = UDim2.new(1, 
-  -LeftMarginPix * 2,
-  0, 
-  AverageHeightY)
-
 --[[ Services ]]--
 local CoreGuiService = game:GetService('CoreGui')
 
@@ -47,6 +12,34 @@ local CoreGuiService = game:GetService('CoreGui')
 local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
 local StatsAggregatorClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsAggregator)
 local DecoratedValueLabelClass = require(CoreGuiService.RobloxGui.Modules.Stats.DecoratedValueLabel)
+
+--[[ Globals ]]--
+local TitlePosition = UDim2.new(0, 
+  StatsUtils.TextPanelLeftMarginPix, 
+  0, 
+  StatsUtils.TextPanelTopMarginPix)
+local TitleSize = UDim2.new(1, 
+  -StatsUtils.TextPanelLeftMarginPix * 2, 
+  0, 
+  StatsUtils.TextPanelTitleHeightY)
+
+local CurrentValuePosition = UDim2.new(0,
+  StatsUtils.TextPanelLeftMarginPix, 
+  0, 
+  StatsUtils.TextPanelTopMarginPix + StatsUtils.TextPanelTitleHeightY)
+local CurrentValueSize = UDim2.new(1, 
+  -StatsUtils.TextPanelLeftMarginPix * 2,
+  0,
+  StatsUtils.TextPanelCurrentValueHeightY)
+
+local AverageValuePosition = UDim2.new(0,
+  StatsUtils.TextPanelLeftMarginPix, 
+  0, 
+  StatsUtils.TextPanelTopMarginPix + StatsUtils.TextPanelTitleHeightY + StatsUtils.TextPanelCurrentValueHeightY)
+local AverageValueSize = UDim2.new(1, 
+  -StatsUtils.TextPanelLeftMarginPix * 2,
+  0, 
+  StatsUtils.TextPanelAverageHeightY)
 
 --[[ Classes ]]--
 local StatsTextPanelClass = {}
@@ -92,10 +85,16 @@ function StatsTextPanelClass:_addCurrentValueWidget()
     CurrentValuePosition)
 
   local currentValueDecorationFrame = self._currentValueWidget:GetDecorationFrame()    
-  local currentValueDecoration = Instance.new("Frame")
-  currentValueDecoration.Position = UDim2.new(0.3333, 0, 0, 0)
-  currentValueDecoration.Size = UDim2.new(0.33, 0, 1, 0)  
+  local currentValueDecoration = Instance.new("ImageLabel")
+  currentValueDecoration.Position = UDim2.new(0.5, -StatsUtils.OvalKeySize/2, 
+    0.5, -StatsUtils.OvalKeySize/2)
+  currentValueDecoration.Size = UDim2.new(0, StatsUtils.OvalKeySize,
+    0, StatsUtils.OvalKeySize)  
+  
   currentValueDecoration.Parent = currentValueDecorationFrame
+  currentValueDecoration.BackgroundTransparency = 1
+	currentValueDecoration.Image = 'rbxasset://textures/ui/PerformanceStats/OvalKey.png'
+  currentValueDecoration.ImageColor3 = StatsUtils.GraphBarGreenColor
   
   StatsUtils.StyleBarGraph(currentValueDecoration)
 end
@@ -109,6 +108,7 @@ function StatsTextPanelClass:_addAverageValueWidget()
     AverageValuePosition)
 
   local averageDecorationFrame = self._averageValueWidget:GetDecorationFrame()
+  
   local averageValueDecoration = Instance.new("Frame")
   averageValueDecoration.Position = UDim2.new(0, 0, 0.5, -StatsUtils.GraphAverageLineTotalThickness/2)
   averageValueDecoration.Size = UDim2.new(1, 0, 0, StatsUtils.GraphAverageLineInnerThickness)  
