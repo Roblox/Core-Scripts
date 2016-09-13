@@ -65,8 +65,7 @@ local function CreatePlayerSpeakerObject(playerObj)
 		ChatService:RemoveSpeaker(playerObj.Name)
 	end
 
-	speaker = ChatService:AddSpeaker(playerObj.Name)
-	speaker:InternalAssignPlayerObject(playerObj)
+	speaker = ChatService:InternalAddSpeakerWithPlayerObject(playerObj.Name, playerObj)
 
 	for i, channel in pairs(ChatService:GetAutoJoinChannelList()) do
 		speaker:JoinChannel(channel.Name)
