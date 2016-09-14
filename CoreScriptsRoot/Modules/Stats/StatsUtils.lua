@@ -22,6 +22,8 @@ StatsUtils.GraphBarYellowColor = Color3.new(209/255.0, 211/255.0, 33/255.0)
 StatsUtils.GraphBarRedColor = Color3.new(211/255.0, 88/255.0, 33/255.0)
 StatsUtils.GraphAverageLineColor = Color3.new(208/255.0, 1/255.0, 27/255.0)
 StatsUtils.GraphAverageLineBorderColor = Color3.new(1, 1, 1)
+StatsUtils.NormalColor = TopbarConstants.TOPBAR_BACKGROUND_COLOR
+StatsUtils.Transparency = TopbarConstants.TOPBAR_TRANSLUCENT_TRANSPARENCY;
 
 -- Font Sizes
 StatsUtils.MiniPanelTitleFontSize = Enum.FontSize.Size12
@@ -31,19 +33,18 @@ StatsUtils.PanelValueFontSize = Enum.FontSize.Size14
 StatsUtils.PanelGraphFontSize = Enum.FontSize.Size10
 
 -- Layout
+-- Layout: Buttons
 StatsUtils.ButtonHeight = 36
 
+-- Layout: Viewer
 StatsUtils.ViewerTopMargin = 10
 StatsUtils.ViewerHeight = 144
 StatsUtils.ViewerWidth = 288
 
-StatsUtils.NormalColor = TopbarConstants.TOPBAR_BACKGROUND_COLOR
-StatsUtils.Transparency = TopbarConstants.TOPBAR_TRANSLUCENT_TRANSPARENCY;
-
-
 StatsUtils.TextZIndex =  5
 StatsUtils.GraphZIndex = 2
 
+-- Layout: Graph
 StatsUtils.GraphAverageLineInnerThickness = 2
 StatsUtils.GraphAverageLineBorderThickness = 1
 StatsUtils.GraphAverageLineTotalThickness = (StatsUtils.GraphAverageLineInnerThickness + 
@@ -84,12 +85,19 @@ StatsUtils.StatNames = {
   [StatsUtils.StatType_Memory] = "Memory",
   [StatsUtils.StatType_CPU] = "CPU",
   [StatsUtils.StatType_GPU] = "GPU",
-  [StatsUtils.StatType_NetworkSent] = "Network_Sent",
-  [StatsUtils.StatType_NetworkReceived] = "Network_Received",
+  [StatsUtils.StatType_NetworkSent] = "NetworkSent",
+  [StatsUtils.StatType_NetworkReceived] = "NetworkReceived",
   [StatsUtils.StatType_Physics] = "Physics",
 }
 
-
+StatsUtils.StatMaxNames = {
+  [StatsUtils.StatType_Memory] = "MaxMemory",
+  [StatsUtils.StatType_CPU] = "MaxCPU",
+  [StatsUtils.StatType_GPU] = "MaxGPU",
+  [StatsUtils.StatType_NetworkSent] = "MaxNetworkSent",
+  [StatsUtils.StatType_NetworkReceived] = "MaxNetworkReceived",
+  [StatsUtils.StatType_Physics] = "MaxPhysics",
+}
 
 StatsUtils.NumButtonTypes = table.getn(StatsUtils.AllStatTypes)
 
@@ -134,47 +142,19 @@ function StatsUtils.StyleButtonSelected(frame, isSelected)
   end
 end
 
-function StatsUtils.ConvertTypedValue(value, statType) 
-  -- Convert raw number from stats service to the right 
-  -- units.
+function StatsUtils.FormatTypedValue(value, statType)   
   if statType == StatsUtils.StatType_Memory then 
-    -- from B to MB
-    return value/1000000.0
+    return string.format("%.2f MB", value)
   elseif statType == StatsUtils.StatType_CPU then
-    -- No conversion: msec -> msec.
-    return value
+    return string.format("%.2f ms", value)
   elseif statType == StatsUtils.StatType_GPU then
-    -- No conversion: msec -> msec.
-    return value
+    return string.format("%.2f ms", value)
   elseif statType == StatsUtils.StatType_NetworkSent then
-    -- No conversion: KB/sec -> KS/sec.
-    return value
+    return string.format("%.2f KB/s", value)
   elseif statType == StatsUtils.StatType_NetworkReceived then
-    -- No conversion: KB/sec -> KS/sec.
-    return value
+    return string.format("%.2f KB/s", value)
   elseif statType == StatsUtils.StatType_Physics then
-    -- No conversion: msec -> msec.
-    return value
-  end
-end
-
-function StatsUtils.FormatTypedValue(value, statType) 
-  -- Convert raw number from stats service to string 
-  -- in the right units with proper label.
-  local convertedValue = StatsUtils.ConvertTypedValue(value, statType)
-  
-  if statType == StatsUtils.StatType_Memory then 
-    return string.format("%.2f MB", convertedValue)
-  elseif statType == StatsUtils.StatType_CPU then
-    return string.format("%.2f ms", convertedValue)
-  elseif statType == StatsUtils.StatType_GPU then
-    return string.format("%.2f ms", convertedValue)
-  elseif statType == StatsUtils.StatType_NetworkSent then
-    return string.format("%.2f KB/s", convertedValue)
-  elseif statType == StatsUtils.StatType_NetworkReceived then
-    return string.format("%.2f KB/s", convertedValue)
-  elseif statType == StatsUtils.StatType_Physics then
-    return string.format("%.2f ms", convertedValue)
+    return string.format("%.2f ms", value)
   end
 end
 

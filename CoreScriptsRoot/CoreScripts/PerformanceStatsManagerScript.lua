@@ -85,6 +85,7 @@ function UpdateButtonSelectedStates()
 end
 
 function UpdateViewerVisibility()
+  print ("currentStatType = ", currentStatType)
   -- If someone is on, show the Viewer.
   -- FIXME(dbanks)
   -- Configure with details of the dude currently selected.  
