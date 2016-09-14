@@ -37,7 +37,7 @@ function StatsViewerClass.new()
   StatsUtils.StyleFrame(self._frame)
   
   self._textPanel = nil
-  self._statsDisplayType = nil
+  self._statType = nil
   self._graph = nil
 
   return self
@@ -56,20 +56,23 @@ function StatsViewerClass:SetVisible(visible)
   self._frame.Visible = visible;
 end
 
-function StatsViewerClass:SetStatsDisplayType(statsDisplayType) 
-  self._statsDisplayType = statsDisplayType
+function StatsViewerClass:SetStatType(statType) 
+  self._statType = statType
   self._frame:ClearAllChildren()
   self._textPanel = nil  
   
-  self._textPanel = StatsTextPanelClass.new(statsDisplayType, true)
+  self._textPanel = StatsTextPanelClass.new(statType, true)
   self._textPanel:PlaceInParent(self._frame,
     TextPanelSize, 
     TextPanelPosition)
   
-  self._graph = StatsAnnotatedGraphClass.new(statsDisplayType, true)
+  self._graph = StatsAnnotatedGraphClass.new(statType, true)
   self._graph:PlaceInParent(self._frame, 
     GraphSize, 
     GraphPosition)
+  
+  self._textPanel:SetZIndex(StatsUtils.TextZIndex)
+  self._graph:SetZIndex(StatsUtils.GraphZIndex)
   
   self:_applyStatsAggregator();
 end
