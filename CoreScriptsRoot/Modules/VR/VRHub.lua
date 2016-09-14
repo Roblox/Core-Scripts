@@ -44,7 +44,11 @@ local function onVREnabled(property)
 			if not VRHub.LaserPointer then
 				VRHub.LaserPointer = LaserPointer.new()
 			end
-			VRHub.LaserPointer:setEnabled(true)
+
+			--Check again in case creating the laser pointer gracefully failed (instance hasn't shipped to some platforms yet for example)
+			if VRHub.LaserPointer then
+				VRHub.LaserPointer:setEnabled(true)
+			end
 		end
 		RunService:BindToRenderStep(vrUpdateRenderstepName, Enum.RenderPriority.Last.Value, onRenderSteppedLast)
 	else

@@ -138,6 +138,22 @@ function LaserPointer.new()
 	self.pathEnd = zeroVector3
 
 	do --Create the instances that make up the Laser Pointer
+		--Create the ParabolaAdornment first; if the class doesn't exist, we'll exit early.
+		if not pcall(function()
+			self.parabola = Utility:Create("ParabolaAdornment") {
+				Name = "LaserPointerParabola",
+				Parent = CoreGui,
+				Adornee = self.originPart,
+				A = -1,
+				B = 2,
+				C = 0,
+				Color3 = TELEPORT.COLOR_GOOD,
+				Thickness = TELEPORT.ARC_THICKNESS
+			}
+			end) then
+			return nil
+		end
+
 		self.originPart = Utility:Create("Part") {
 			Name = "LaserPointerOrigin",
 			Anchored = true,
@@ -148,16 +164,8 @@ function LaserPointer.new()
 			Size = minimumPartSize,
 			Transparency = 1 --smallest size possible
 		}
-		self.parabola = Utility:Create("ParabolaAdornment") {
-			Name = "LaserPointerParabola",
-			Parent = CoreGui,
-			Adornee = self.originPart,
-			A = -1,
-			B = 2,
-			C = 0,
-			Color3 = TELEPORT.COLOR_GOOD,
-			Thickness = TELEPORT.ARC_THICKNESS
-		}
+		
+
 		self.plopPart = Utility:Create("Part") {
 			Name = "LaserPointerTeleportPlop",
 			Anchored = true,
