@@ -405,6 +405,10 @@ function methods:CreateChannelEchoMessageLabel(messageData, echoChannel)
 	local channelNameSize = GetStringTextBounds(formatChannelName, useFont, useFontSize)
 	local numNeededSpaces2 = math.ceil(channelNameSize.X / singleSpaceSize.X) + 1
 
+	local messageSize = GetStringTextBounds(message, useFont, useFontSize)
+	local singleUnderscoreSize = GetStringTextBounds("_", useFont, useFontSize)
+	local numNeededUnderscore = math.ceil(messageSize.X / singleUnderscoreSize.X)
+
 	NameButton.Size = UDim2.new(0, speakerNameSize.X, 0, speakerNameSize.Y)
 	ChannelButton.Size = UDim2.new(0, channelNameSize.X, 0, channelNameSize.Y)
 
@@ -416,7 +420,8 @@ function methods:CreateChannelEchoMessageLabel(messageData, echoChannel)
 
 	ChannelButton.Text = formatChannelName
 	NameButton.Text = formatUseName
-	BaseMessage.Text = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. message
+	BaseMessage.Text = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. string.rep("_", numNeededUnderscore)
+
 
 	local Tweener = moduleTransparencyTweener.new()
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
@@ -443,10 +448,10 @@ function methods:CreateChannelEchoMessageLabel(messageData, echoChannel)
 	BaseMessage.ChildAdded:connect(ProcessChild)
 
 	local function UpdateTextFunction(newMessageObject)
-		BaseMessage.Text = string.rep(" ", numNeededSpaces) .. newMessageObject.Message
+		BaseMessage.Text = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. newMessageObject.Message
 	end
 
-	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction)
+	return WrapIntoMessageObject(messageData.ID, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction)
 end
 
 function methods:CreateChannelEchoSystemMessageLabel(messageData, echoChannel)

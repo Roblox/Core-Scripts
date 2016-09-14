@@ -110,61 +110,6 @@ local function CreatePlayerSpeakerObject(playerObj)
 	end)
 end
 
-local Players = game:GetService("Players")
-local function HandlePlayerJoining(playerObj)
-	if (true) then return end
-
-
-	--// If a developer already created a speaker object with the
-	--// name of a player and then a player joins and tries to 
-	--// take that name, we first need to remove the old speaker object
-	local speaker = ChatService:GetSpeaker(playerObj.Name)
-	if (speaker) then
-		ChatService:RemoveSpeaker(playerObj.Name)
-	end
-	
-	speaker = ChatService:AddSpeaker(playerObj.Name)
-	speaker:AssignPlayerObject(playerObj)
-
-	speaker.ReceivedMessage:connect(function(fromSpeaker, channel, message)
-		EventFolder.OnNewMessage:FireClient(playerObj, fromSpeaker, channel, message)
-	end)
-
-	speaker.ReceivedSystemMessage:connect(function(message, channel)
-		EventFolder.OnNewSystemMessage:FireClient(playerObj, message, channel)
-	end)
-
-	speaker.ChannelJoined:connect(function(channel, welcomeMessage)
-		local log = nil
-
-		local channelObject = ChatService:GetChannel(channel)
-		if (channelObject) then
-			log = channelObject:GetHistoryLog()
-		end
-		EventFolder.OnChannelJoined:FireClient(playerObj, channel, welcomeMessage, log)
-	end)
-
-	speaker.ChannelLeft:connect(function(channel)
-		EventFolder.OnChannelLeft:FireClient(playerObj, channel)
-	end)
-
-	speaker.Muted:connect(function(channel, reason, length)
-		EventFolder.OnMuted:FireClient(playerObj, channel, reason, length)
-	end)
-
-	speaker.Unmuted:connect(function(channel)
-		EventFolder.OnUnmuted:FireClient(playerObj, channel)
-	end)
-
-	speaker.MainChannelSet:connect(function(channel)
-		EventFolder.OnMainChannelSet:FireClient(playerObj, channel)
-	end)
-
-	for i, channel in pairs(ChatService:GetAutoJoinChannelList()) do
-		speaker:JoinChannel(channel.Name)
-	end
-end
-
 EventFolder.SayMessageRequest.OnServerEvent:connect(function(playerObj, message, channel)
 	local speaker = ChatService:GetSpeaker(playerObj.Name)
 	if (speaker) then
@@ -303,25 +248,13 @@ if modules then
 	end
 end
 
-Players.PlayerAdded:connect(function(playerObj)
-	if (game:GetService("RunService"):IsStudio()) then
-		-- ToDo: Remove this wait when the bug that causes joining players to have the name 'Player1' in studio finally goes away.
-		-- Players enter as 'Player1' and then have their name set as whatever their account name is a frame later.
-		wait() 
-	end
-	HandlePlayerJoining(playerObj)
-end)
-
+local Players = game:GetService("Players")
 Players.PlayerRemoving:connect(function(playerObj)
-	ChatService:RemoveSpeaker(playerObj.Name)
+	if (ChatService:GetSpeaker(playerObj.Name)) then
+		ChatService:RemoveSpeaker(playerObj.Name)
+	end
 end)
 
-for i, player in pairs(game:GetService("Players"):GetChildren()) do
-	local spkr = ChatService:GetSpeaker(player.Name)
-	if (not spkr or not spkr:GetPlayer()) then
-		HandlePlayerJoining(player)
-	end
-end
 ]]
 
 local generated = Instance.new("Script")
