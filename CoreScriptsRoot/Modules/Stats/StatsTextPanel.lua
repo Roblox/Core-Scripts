@@ -41,7 +41,7 @@ local TitleSize = UDim2.new(1,
   -StatsUtils.TextPanelLeftMarginPix * 2, 
   0, 
   StatsUtils.TextPanelTitleHeightY)
-local LegentItemValueSize = UDim2.new(1, 
+local LegendItemValueSize = UDim2.new(1, 
   -StatsUtils.TextPanelLeftMarginPix * 2,
   0,
   StatsUtils.TextPanelLegendItemHeightY)
@@ -102,7 +102,7 @@ function StatsTextPanelClass:_addCurrentValueWidget()
     "Current")
     
   self._currentValueWidget:PlaceInParent(self._frame, 
-    LegentItemValueSize, 
+    LegendItemValueSize, 
     CurrentValuePosition)
 
   local decorationFrame = self._currentValueWidget:GetDecorationFrame()    
@@ -124,7 +124,7 @@ function StatsTextPanelClass:_addTargetValueWidget()
     "Target")
     
   self._targetValueWidget:PlaceInParent(self._frame, 
-    LegentItemValueSize, 
+    LegendItemValueSize, 
     TargetValuePosition)
 
   local decorationFrame = self._targetValueWidget:GetDecorationFrame()    
@@ -144,7 +144,7 @@ function StatsTextPanelClass:_addAverageValueWidget()
     "Average")
     
   self._averageValueWidget:PlaceInParent(self._frame, 
-    LegentItemValueSize, 
+    LegendItemValueSize, 
     AverageValuePosition)
 
   local decorationFrame = self._averageValueWidget:GetDecorationFrame()

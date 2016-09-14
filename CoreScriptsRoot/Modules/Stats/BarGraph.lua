@@ -39,7 +39,6 @@ function BarGraphClass.new(showExtras)
   self._target = 0
   
   if self._showExtras then
-    print("Showing extras")
     self:_addGraphTarget()
     self:_addGraphAverage()
   end
@@ -90,7 +89,6 @@ function BarGraphClass:Render()
   end  
   
   if self._showExtras then
-    print("Moving target")
     self:_moveGraphTarget()
     self:_moveGraphAverage()
   end
