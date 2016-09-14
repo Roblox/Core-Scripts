@@ -19,31 +19,50 @@ local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
 local BarGraphClass = {}
 BarGraphClass.__index = BarGraphClass
 
-function BarGraphClass.new(showAverage) 
+function BarGraphClass.new(showExtras) 
   local self = {}
   setmetatable(self, BarGraphClass)
 
-  self._frame = Instance.new("Frame")
-  self._frame.Name = "PS_BarGraph"
-  self._frame.BackgroundTransparency = 1.0
+  self._barFrame = Instance.new("Frame")
+  self._barFrame.Name = "PS_BarFrame"
+  self._barFrame.BackgroundTransparency = 1.0
   
-  self._showAverage = showAverage
+  self._lineFrame = Instance.new("Frame")
+  self._lineFrame.Name = "PS_LineFrame"
+  self._lineFrame.BackgroundTransparency = 1.0
+  
+  self._showExtras = showExtras
   
   
   self._values = {}
   self._average = 0
+  self._target = 0
   
+  if self._showExtras then
+    print("Showing extras")
+    self:_addGraphTarget()
+    self:_addGraphAverage()
+  end
+
   return self
 end
 
 function BarGraphClass:SetZIndex(zIndex)
-  self._frame.ZIndex = zIndex
+  self._barFrame.ZIndex = zIndex
+  self._lineFrame.ZIndex = zIndex + 1
+  if self._showExtras then
+    self._targetLine.ZIndex = self._lineFrame.ZIndex
+    self._averageLine.ZIndex = self._lineFrame.ZIndex
+  end
 end
 
 function BarGraphClass:PlaceInParent(parent, size, position) 
-  self._frame.Position = position
-  self._frame.Size = size
-  self._frame.Parent = parent
+  self._barFrame.Position = position
+  self._barFrame.Size = size
+  self._barFrame.Parent = parent
+  self._lineFrame.Position = position
+  self._lineFrame.Size = size
+  self._lineFrame.Parent = parent
 end
 
 function BarGraphClass:SetAxisMax(axisMax) 
@@ -58,42 +77,98 @@ function BarGraphClass:SetAverage(average)
   self._average = average
 end
 
+function BarGraphClass:SetTarget(target) 
+  self._target = target
+end
+
 function BarGraphClass:Render()  
-  self._frame:ClearAllChildren()
+  self._barFrame:ClearAllChildren()
     
   local numValues = table.getn(self._values)
   for i, value in ipairs(self._values) do
     self:_addBar(i, value, numValues)
   end  
   
-  if self._showAverage then
-    self:_addGraphAverage()
+  if self._showExtras then
+    print("Moving target")
+    self:_moveGraphTarget()
+    self:_moveGraphAverage()
   end
+end
+
+function BarGraphClass:_addGraphTarget() 
+  local line = Instance.new("ImageLabel")
+  line.Name = "TargetLine"
+  line.Size = UDim2.new(1, 0, 0, StatsUtils.GraphTargetLineInnerThickness)
+  
+	line.Image = 'rbxasset://textures/ui/PerformanceStats/TargetLine.png'
+  line.BackgroundTransparency = 1
+  line.Parent = self._lineFrame
+  line.ZIndex = self._lineFrame.ZIndex 
+  line.BorderSizePixel = 0
+  
+  line.Changed:connect(function()
+    self:_updateTargetLineImageSize()
+  end)
+  
+  self._targetLine = line
+  self:_updateTargetLineImageSize()
+end
+
+function BarGraphClass:_updateTargetLineImageSize()
+  self._targetLine.ImageRectSize = self._targetLine.AbsoluteSize
 end
 
 function BarGraphClass:_addGraphAverage() 
   local line = Instance.new("Frame")
   line.Name = "AverageLine"
-  line.Position = UDim2.new(0, 0, (self._axisMax - self._average)/self._axisMax,
-    -StatsUtils.GraphAverageLineTotalThickness/2)
   line.Size = UDim2.new(1, 0, 0, StatsUtils.GraphAverageLineInnerThickness)
   
-  line.Parent = self._frame
-  line.ZIndex = self._frame.ZIndex + 1
+  line.Parent = self._lineFrame
+  line.ZIndex = self._lineFrame.ZIndex
   
   StatsUtils.StyleAverageLine(line)
+  
+  self._averageLine = line
+end
 
+function BarGraphClass:_moveGraphTarget() 
+  if self._targetLine == nil then 
+    return
+  end
+  self._targetLine.Position = UDim2.new(0, 
+    0, (
+      self._axisMax - self._target)/self._axisMax,
+    -StatsUtils.GraphTargetLineInnerThickness/2)
+end
+
+function BarGraphClass:_moveGraphAverage() 
+  if self._averageLine == nil then 
+    return
+  end
+  self._averageLine.Position = UDim2.new(0, 
+    0, 
+    (self._axisMax - self._average)/self._axisMax,
+    -StatsUtils.GraphAverageLineTotalThickness/2)
 end
 
 function BarGraphClass:_addBar(i, value, numValues) 
   local realIndex = i-1
   local bar = Instance.new("Frame")
   bar.Name = string.format("Bar_%d", realIndex)
-  bar.Position = UDim2.new(realIndex/numValues, 0, (self._axisMax - value)/self._axisMax, 0)
-  bar.Size = UDim2.new(1/numValues, 0, value/self._axisMax, 0)
-  bar.Parent = self._frame  
-  bar.ZIndex = self._frame.ZIndex
-  StatsUtils.StyleBarGraph(bar)
+  
+  -- Don't let it go off the chart.
+  local clampedValue = math.max(0, math.min(value, self._axisMax))
+  
+  bar.Position = UDim2.new(realIndex/numValues, 0,
+    (self._axisMax - clampedValue)/self._axisMax, 0)
+  bar.Size = UDim2.new(1/numValues, 0, 
+    clampedValue/self._axisMax, 0)
+  bar.Parent = self._barFrame  
+  bar.ZIndex = self._barFrame.ZIndex
+  bar.BorderSizePixel = 0
+  
+  bar.BackgroundColor3 = StatsUtils.GetColorForValue(value, self._target)
 end
 
 return BarGraphClass

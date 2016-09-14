@@ -27,9 +27,12 @@ function StatsAnnotatedGraphClass.new(statType, isMaximized)
   self._statType = statType
   self._statMaxName = StatsUtils.StatMaxNames[statType]
   self._isMaximized = isMaximized
-  local statsService = game:GetService("Stats")
-  self._performanceStats = statsService:FindFirstChild("PerformanceStats")
 
+  self._values = {}
+  self._average = 0
+  self._target = 0
+  self._axisMax = 0
+  
   self._frame = Instance.new("Frame")
   self._frame.Name = "PS_AnnotatedGraph"
   self._frame.BackgroundTransparency = 1.0
@@ -56,8 +59,8 @@ function StatsAnnotatedGraphClass.new(statType, isMaximized)
   self._bottomLabel.TextYAlignment = Enum.TextYAlignment.Bottom
   self._bottomLabel.FontSize = StatsUtils.PanelGraphFontSize
 
-  local showAverage = isMaximized
-  self._graph = BarGraphClass.new(showAverage)
+  local showExtras = isMaximized
+  self._graph = BarGraphClass.new(showExtras)
 
   StatsUtils.StyleTextWidget(self._topLabel)
   StatsUtils.StyleTextWidget(self._midLabel)
@@ -133,28 +136,26 @@ function StatsAnnotatedGraphClass:_getTarget()
 end
 
 function StatsAnnotatedGraphClass:_render()  
-  local target = self:_getTarget()
-  
-  local axisMax = self:_calculateAxisMax(target)
-  self._graph:SetAxisMax(axisMax)
+  self._graph:SetAxisMax(self._axisMax)
   self._graph:SetValues(self._values)
 
   self._graph:SetAverage(self._average)
+  self._graph:SetTarget(self._target)
   self._graph:Render()
   
-  self._topLabel.Text = string.format("%.2f", axisMax)
-  self._midLabel.Text = string.format("%.2f", axisMax/2)
+  self._topLabel.Text = string.format("%.2f", self._axisMax)
+  self._midLabel.Text = string.format("%.2f", self._axisMax/2)
   self._bottomLabel.Text = string.format("%.2f", 0,.0)
 end
 
-function StatsAnnotatedGraphClass:_calculateAxisMax(target)
+function StatsAnnotatedGraphClass:_calculateAxisMax()
   -- Calculate an optimal max axis label for this graph, given this 'target' value.
   -- We want target to be roughly in the middle.
   -- Say, roughly twice the target.
-  local max = target * 2
+  local max = self._target * 2
   local orderOfMagnitude = self:_recursiveGetOrderOfMagnitude(1.0, max)
   local div = math.floor(0.5 + max/orderOfMagnitude)
-  return div * orderOfMagnitude
+  self._axisMax = div * orderOfMagnitude
 end
 
 function StatsAnnotatedGraphClass:SetStatsAggregator(aggregator)
@@ -190,11 +191,15 @@ end
 function StatsAnnotatedGraphClass:_updateValue()
   self._values = {}
   self._average = 0
+  self._target = 0
   if self._aggregator ~= nil then 
     self._values = self._aggregator:GetValues()
     self._average = self._aggregator:GetAverage()
+    self._target = self._aggregator:GetTarget()
   end
   
+  self:_calculateAxisMax()
+
   self:_render()
 end
 

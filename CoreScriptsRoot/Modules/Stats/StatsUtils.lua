@@ -45,6 +45,7 @@ StatsUtils.TextZIndex =  5
 StatsUtils.GraphZIndex = 2
 
 -- Layout: Graph
+StatsUtils.GraphTargetLineInnerThickness = 2
 StatsUtils.GraphAverageLineInnerThickness = 2
 StatsUtils.GraphAverageLineBorderThickness = 1
 StatsUtils.GraphAverageLineTotalThickness = (StatsUtils.GraphAverageLineInnerThickness + 
@@ -52,8 +53,7 @@ StatsUtils.GraphAverageLineTotalThickness = (StatsUtils.GraphAverageLineInnerThi
       
 -- Layout: Main Text Panel
 StatsUtils.TextPanelTitleHeightY = 32
-StatsUtils.TextPanelCurrentValueHeightY = 20
-StatsUtils.TextPanelAverageHeightY = 20
+StatsUtils.TextPanelLegendItemHeightY = 20
 
 StatsUtils.TextPanelLeftMarginPix = 10
 StatsUtils.TextPanelTopMarginPix = 10
@@ -61,6 +61,8 @@ StatsUtils.TextPanelTopMarginPix = 10
 -- Layout: Graph Legend
 StatsUtils.DecorationSize = 12
 StatsUtils.OvalKeySize = 8
+StatsUtils.TargetKeyWidth = 11
+StatsUtils.TargetKeyHeight = 2
 StatsUtils.DecorationMargin = 6
 
 
@@ -158,15 +160,20 @@ function StatsUtils.FormatTypedValue(value, statType)
   end
 end
 
-function StatsUtils.StyleBarGraph(frame)  
-  frame.BackgroundColor3 = StatsUtils.GraphBarGreenColor
-  frame.BorderSizePixel = 0
-end
-
 function StatsUtils.StyleAverageLine(frame)
   frame.BackgroundColor3 = StatsUtils.GraphAverageLineColor
   frame.BorderSizePixel = StatsUtils.GraphAverageLineBorderThickness
   frame.BorderColor3 = StatsUtils.GraphAverageLineBorderColor
+end
+  
+function StatsUtils.GetColorForValue(value, target) 
+  if value < 0.666 * target then 
+    return StatsUtils.GraphBarGreenColor
+  elseif value < 1.333 * target then 
+    return StatsUtils.GraphBarYellowColor
+  else
+    return StatsUtils.GraphBarRedColor
+  end
 end
   
 return StatsUtils

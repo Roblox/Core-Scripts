@@ -14,32 +14,37 @@ local StatsAggregatorClass = require(CoreGuiService.RobloxGui.Modules.Stats.Stat
 local DecoratedValueLabelClass = require(CoreGuiService.RobloxGui.Modules.Stats.DecoratedValueLabel)
 
 --[[ Globals ]]--
+-- Positions
+local top = StatsUtils.TextPanelTopMarginPix
 local TitlePosition = UDim2.new(0, 
   StatsUtils.TextPanelLeftMarginPix, 
   0, 
-  StatsUtils.TextPanelTopMarginPix)
+  top)
+top = top + StatsUtils.TextPanelTitleHeightY
+local CurrentValuePosition = UDim2.new(0,
+  StatsUtils.TextPanelLeftMarginPix, 
+  0, 
+  top)
+top = top + StatsUtils.TextPanelLegendItemHeightY
+local TargetValuePosition = UDim2.new(0,
+  StatsUtils.TextPanelLeftMarginPix, 
+  0, 
+  top)
+top = top + StatsUtils.TextPanelLegendItemHeightY
+local AverageValuePosition = UDim2.new(0,
+  StatsUtils.TextPanelLeftMarginPix, 
+  0, 
+  top)
+
+-- Sizes
 local TitleSize = UDim2.new(1, 
   -StatsUtils.TextPanelLeftMarginPix * 2, 
   0, 
   StatsUtils.TextPanelTitleHeightY)
-
-local CurrentValuePosition = UDim2.new(0,
-  StatsUtils.TextPanelLeftMarginPix, 
-  0, 
-  StatsUtils.TextPanelTopMarginPix + StatsUtils.TextPanelTitleHeightY)
-local CurrentValueSize = UDim2.new(1, 
+local LegentItemValueSize = UDim2.new(1, 
   -StatsUtils.TextPanelLeftMarginPix * 2,
   0,
-  StatsUtils.TextPanelCurrentValueHeightY)
-
-local AverageValuePosition = UDim2.new(0,
-  StatsUtils.TextPanelLeftMarginPix, 
-  0, 
-  StatsUtils.TextPanelTopMarginPix + StatsUtils.TextPanelTitleHeightY + StatsUtils.TextPanelCurrentValueHeightY)
-local AverageValueSize = UDim2.new(1, 
-  -StatsUtils.TextPanelLeftMarginPix * 2,
-  0, 
-  StatsUtils.TextPanelAverageHeightY)
+  StatsUtils.TextPanelLegendItemHeightY)
 
 --[[ Classes ]]--
 local StatsTextPanelClass = {}
@@ -71,32 +76,67 @@ function StatsTextPanelClass.new(statType)
   self._titleLabel.TextYAlignment = Enum.TextYAlignment.Top
   
   self:_addCurrentValueWidget()
+  self:_addTargetValueWidget()
   self:_addAverageValueWidget()
   
   return self
 end
+
+function StatsTextPanelClass:_getTarget()
+  -- Get the current target value for the graphed stat.
+  if self._performanceStats == nil then
+    return 0
+  end  
+  
+  local maxItemStats = self._performanceStats:FindFirstChild(self._statMaxName)
+  if maxItemStats == nil then
+    return 0
+  end
+  
+  return maxItemStats:GetValue()
+end
+
 
 function StatsTextPanelClass:_addCurrentValueWidget()
   self._currentValueWidget = DecoratedValueLabelClass.new(self._statType, 
     "Current")
     
   self._currentValueWidget:PlaceInParent(self._frame, 
-    CurrentValueSize, 
+    LegentItemValueSize, 
     CurrentValuePosition)
 
-  local currentValueDecorationFrame = self._currentValueWidget:GetDecorationFrame()    
-  local currentValueDecoration = Instance.new("ImageLabel")
-  currentValueDecoration.Position = UDim2.new(0.5, -StatsUtils.OvalKeySize/2, 
+  local decorationFrame = self._currentValueWidget:GetDecorationFrame()    
+  local decoration = Instance.new("ImageLabel")
+  decoration.Position = UDim2.new(0.5, -StatsUtils.OvalKeySize/2, 
     0.5, -StatsUtils.OvalKeySize/2)
-  currentValueDecoration.Size = UDim2.new(0, StatsUtils.OvalKeySize,
+  decoration.Size = UDim2.new(0, StatsUtils.OvalKeySize,
     0, StatsUtils.OvalKeySize)  
   
-  currentValueDecoration.Parent = currentValueDecorationFrame
-  currentValueDecoration.BackgroundTransparency = 1
-	currentValueDecoration.Image = 'rbxasset://textures/ui/PerformanceStats/OvalKey.png'
-  currentValueDecoration.ImageColor3 = StatsUtils.GraphBarGreenColor
+  decoration.Parent = decorationFrame
+  decoration.BackgroundTransparency = 1
+	decoration.Image = 'rbxasset://textures/ui/PerformanceStats/OvalKey.png'
+  decoration.BorderSizePixel = 0
+  self._currentValueDecoration = decoration
+end
+
+function StatsTextPanelClass:_addTargetValueWidget()
+  self._targetValueWidget = DecoratedValueLabelClass.new(self._statType, 
+    "Target")
+    
+  self._targetValueWidget:PlaceInParent(self._frame, 
+    LegentItemValueSize, 
+    TargetValuePosition)
+
+  local decorationFrame = self._targetValueWidget:GetDecorationFrame()    
+  local decoration = Instance.new("ImageLabel")
+  decoration.Position = UDim2.new(0.5, -StatsUtils.TargetKeyWidth/2, 
+    0.5, -StatsUtils.TargetKeyHeight/2)
+  decoration.Size = UDim2.new(0, StatsUtils.TargetKeyWidth,
+    0, StatsUtils.TargetKeyHeight)  
   
-  StatsUtils.StyleBarGraph(currentValueDecoration)
+  decoration.Parent = decorationFrame
+  decoration.BackgroundTransparency = 1
+	decoration.Image = 'rbxasset://textures/ui/PerformanceStats/TargetKey.png'
 end
 
 function StatsTextPanelClass:_addAverageValueWidget()
@@ -104,17 +144,17 @@ function StatsTextPanelClass:_addAverageValueWidget()
     "Average")
     
   self._averageValueWidget:PlaceInParent(self._frame, 
-    AverageValueSize, 
+    LegentItemValueSize, 
     AverageValuePosition)
 
-  local averageDecorationFrame = self._averageValueWidget:GetDecorationFrame()
+  local decorationFrame = self._averageValueWidget:GetDecorationFrame()
   
-  local averageValueDecoration = Instance.new("Frame")
-  averageValueDecoration.Position = UDim2.new(0, 0, 0.5, -StatsUtils.GraphAverageLineTotalThickness/2)
-  averageValueDecoration.Size = UDim2.new(1, 0, 0, StatsUtils.GraphAverageLineInnerThickness)  
-  averageValueDecoration.Parent = averageDecorationFrame
+  local decoration = Instance.new("Frame")
+  decoration.Position = UDim2.new(0, 0, 0.5, -StatsUtils.GraphAverageLineTotalThickness/2)
+  decoration.Size = UDim2.new(1, 0, 0, StatsUtils.GraphAverageLineInnerThickness)  
+  decoration.Parent = decorationFrame
   
-  StatsUtils.StyleAverageLine(averageValueDecoration)
+  StatsUtils.StyleAverageLine(decoration)
 end
 
 function StatsTextPanelClass:_getTitle()
@@ -147,18 +187,21 @@ function StatsTextPanelClass:SetStatsAggregator(aggregator)
 end
 
 function StatsTextPanelClass:_updateFromAggregator()
-  local value
-  local average
+  local value = 0
+  local average = 0
+  local target = 0
+  
   if self._aggregator ~= nil then 
     value = self._aggregator:GetLatestValue()
     average = self._aggregator:GetAverage()
-  else
-    value = 0
-    average = 0
+    target = self._aggregator:GetTarget()
   end
   
   self._currentValueWidget:SetValue(value)
+  self._targetValueWidget:SetValue(target)
   self._averageValueWidget:SetValue(average)
+  
+  self._currentValueDecoration.ImageColor3 = StatsUtils.GetColorForValue(value, target) 
 end
 
 function StatsTextPanelClass:SetZIndex(zIndex)
