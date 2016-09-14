@@ -3054,8 +3054,7 @@ StarterGui:RegisterGetCore("DeveloperConsoleVisible", function()
 end)
 StarterGui:RegisterSetCore("DeveloperConsoleVisible", function(visible)
 	if (type(visible) ~= "boolean") then
-		warn("DeveloperConsoleVisible must be given a boolean value.")
-		return
+		error("DeveloperConsoleVisible must be given a boolean value.")
 	end
 
 	if (not myDeveloperConsole) then
