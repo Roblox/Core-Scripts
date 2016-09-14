@@ -2,13 +2,62 @@
 --Handles all global VR state that isn't built into a specific module.
 --Written by 0xBAADF00D (Kyle) on 6/10/16
 local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Util = require(RobloxGui.Modules.Settings.Utility)
+
+local LaserPointer = require(RobloxGui.Modules.VR.LaserPointer)
+local useLaserPointerSuccess, useLaserPointerValue = pcall(function() settings():GetFFlag("UseLaserPointerVR") end)
+local useLaserPointerFlag = useLaserPointerSuccess and useLaserPointerValue
 
 local VRHub = {}
 local RegisteredModules = {}
 local OpenModules = {}
 
+--VR Setup
+local vrUpdateRenderstepName = HttpService:GenerateGUID(true)
+
+VRHub.LaserPointer = nil
+
+local start, dt = tick(), 1/60
+local function onRenderSteppedLast()
+	local now = tick()
+	dt = now - start
+	start = now
+
+	if VRHub.LaserPointer then
+		local cameraSpace = workspace.CurrentCamera.CFrame
+		local laserOriginCFrame = cameraSpace * UserInputService:GetUserCFrame(Enum.UserCFrame.RightHand)
+		VRHub.LaserPointer:update(dt, laserOriginCFrame) --todo update for mobile and no-hands
+	end
+end
+
+local function onVREnabled(property)
+	if property ~= "VREnabled" then
+		return
+	end
+	
+	if UserInputService.VREnabled then
+		if useLaserPointerFlag then
+			if not VRHub.LaserPointer then
+				VRHub.LaserPointer = LaserPointer.new()
+			end
+			VRHub.LaserPointer:setEnabled(true)
+		end
+		RunService:BindToRenderStep(vrUpdateRenderstepName, Enum.RenderPriority.Last.Value, onRenderSteppedLast)
+	else
+		if VRHub.LaserPointer then
+			VRHub.LaserPointer:setEnabled(false)
+		end
+		RunService:UnbindFromRenderStep(vrUpdateRenderstepName)
+	end
+end
+
+UserInputService.Changed:connect(onVREnabled)
+
+--VRHub API
 function VRHub:RegisterModule(module)
 	RegisteredModules[module.ModuleName] = module
 end
