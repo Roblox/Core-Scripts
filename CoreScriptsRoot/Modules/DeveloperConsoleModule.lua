@@ -2990,15 +2990,24 @@ local function onDevConsoleVisibilityChanged(isVisible)
 	end
 end
 
+local getDeveloperConsoleIsCreating = false
 local function getDeveloperConsole()
-	if not myDeveloperConsole then
-		local permissions = DeveloperConsole.GetPermissions()
-		local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
+	if (not myDeveloperConsole) then
+		if (not getDeveloperConsoleIsCreating) then
+			getDeveloperConsoleIsCreating = true
 
-		myDeveloperConsole = DeveloperConsole.new(RobloxGui, permissions, messagesAndStats)
+			local permissions = DeveloperConsole.GetPermissions()
+			local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
 
-		if isTenFootInterface then
-			myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
+			myDeveloperConsole = DeveloperConsole.new(RobloxGui, permissions, messagesAndStats)
+
+			if isTenFootInterface then
+				myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
+			end
+
+			getDeveloperConsoleIsCreating = false
+		else
+			while (getDeveloperConsoleIsCreating) do wait() end
 		end
 	end
 
