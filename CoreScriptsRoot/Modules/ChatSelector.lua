@@ -143,7 +143,7 @@ if ( (TryLoadNewChat or FORCE_CorescriptNewLoadChat) and not isConsole and not i
 
 		ConnectSignals(useModule, interface, "ChatBarFocusChanged")
 		ConnectSignals(useModule, interface, "VisibilityStateChanged")
-		if (true or LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu) then
+		if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu) then
 			ConnectSignals(useModule, interface, "MessagesChanged")
 			StarterGui:RegisterGetCore("UseNewLuaChat", function() return useNewChat end)
 		else
