@@ -23,6 +23,8 @@ function StatsAggregatorClass.new(statType, numSamples, pauseBetweenSamples)
   self._pauseBetweenSamples = pauseBetweenSamples
   
   self._statName = StatsUtils.StatNames[self._statType]
+  self._statMaxName = StatsUtils.StatMaxNames[self._statType]
+  
   -- init our circular buffer.
   self._samples = {}
   for i = 0, numSamples-1, 1 do 
@@ -125,5 +127,24 @@ function StatsAggregatorClass:_getStatValue()
   return itemStats:GetValue()
 end
 
+function StatsAggregatorClass:GetTarget()
+  -- Look up and return the statistic we care about.
+  local statsService = game:GetService("Stats")
+  if statsService == nil then
+    return 0
+  end
+  
+  local performanceStats = statsService:FindFirstChild("PerformanceStats")
+  if performanceStats == nil then
+    return 0
+  end  
+  
+  local itemStats = performanceStats:FindFirstChild(self._statMaxName)
+  if itemStats == nil then
+    return 0
+  end
+  
+  return itemStats:GetValue()
+end
 
 return StatsAggregatorClass

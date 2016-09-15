@@ -25,8 +25,18 @@ function StatsAnnotatedGraphClass.new(statType, isMaximized)
   setmetatable(self, StatsAnnotatedGraphClass)
 
   self._statType = statType
+  self._statMaxName = StatsUtils.StatMaxNames[statType]
   self._isMaximized = isMaximized
 
+  self._values = {}
+  
+  -- Average value of all bars in the graph.
+  self._average = 0
+  -- Suggested max value for the stat being measured.
+  self._target = 0
+  -- Max value we display on the y-axis.  Values higher than this are truncated.
+  self._axisMax = 0
+  
   self._frame = Instance.new("Frame")
   self._frame.Name = "PS_AnnotatedGraph"
   self._frame.BackgroundTransparency = 1.0
@@ -53,8 +63,8 @@ function StatsAnnotatedGraphClass.new(statType, isMaximized)
   self._bottomLabel.TextYAlignment = Enum.TextYAlignment.Bottom
   self._bottomLabel.FontSize = StatsUtils.PanelGraphFontSize
 
-  local showAverage = isMaximized
-  self._graph = BarGraphClass.new(showAverage)
+  local showExtras = isMaximized
+  self._graph = BarGraphClass.new(showExtras)
 
   StatsUtils.StyleTextWidget(self._topLabel)
   StatsUtils.StyleTextWidget(self._midLabel)
@@ -115,33 +125,41 @@ function StatsAnnotatedGraphClass:PlaceInParent(parent, size, position)
   self._frame.Parent = parent
 end
 
-function StatsAnnotatedGraphClass:_render()
-  local axisMax = self:_calculateAxisMax(self._values)
-  self._graph:SetAxisMax(axisMax)
+function StatsAnnotatedGraphClass:_getTarget()
+  -- Get the current target value for the graphed stat.
+  if self._performanceStats == nil then
+    return 0
+  end  
+  
+  local maxItemStats = self._performanceStats:FindFirstChild(self._statMaxName)
+  if maxItemStats == nil then
+    return 0
+  end
+  
+  return maxItemStats:GetValue()
+end
+
+function StatsAnnotatedGraphClass:_render()  
+  self._graph:SetAxisMax(self._axisMax)
   self._graph:SetValues(self._values)
 
   self._graph:SetAverage(self._average)
+  self._graph:SetTarget(self._target)
   self._graph:Render()
   
-  local convertedValue = StatsUtils.ConvertTypedValue(axisMax, self._statType)
-  self._topLabel.Text = string.format("%.2f", convertedValue)
-  self._midLabel.Text = string.format("%.2f", convertedValue/2)
+  self._topLabel.Text = string.format("%.2f", self._axisMax)
+  self._midLabel.Text = string.format("%.2f", self._axisMax/2)
   self._bottomLabel.Text = string.format("%.2f", 0,.0)
 end
 
-function StatsAnnotatedGraphClass:_calculateAxisMax(values)
-  -- Calculate an optimal axis label for this set of values.
-  -- We want a final value 'axisMax' s.t. the largest value 'max' in 'values' is
-  -- such that:
-  -- 0.1 * axisMax <= max < axisMax 
-  local max = 0.0
-  for i, value in ipairs(values) do
-    if value > max then 
-      max = value
-    end
-  end
-  
-  return self:_recursiveGetAxisMax(1, max)
+function StatsAnnotatedGraphClass:_calculateAxisMax()
+  -- Calculate an optimal max axis label for this graph, given this 'target' value.
+  -- We want target to be roughly in the middle.
+  -- Say, roughly twice the target.
+  local max = self._target * 2
+  local orderOfMagnitude = self:_recursiveGetOrderOfMagnitude(1.0, max)
+  local div = math.floor(0.5 + max/orderOfMagnitude)
+  self._axisMax = div * orderOfMagnitude
 end
 
 function StatsAnnotatedGraphClass:SetStatsAggregator(aggregator)
@@ -162,26 +180,30 @@ function StatsAnnotatedGraphClass:SetStatsAggregator(aggregator)
   self:_updateValue()
 end
 
-function StatsAnnotatedGraphClass:_recursiveGetAxisMax(axisMax, max)
-  local axisMin = 0.1 * axisMax
-  
-  if (max < axisMin) then 
-    return self:_recursiveGetAxisMax(axisMin, max)
-  elseif (max >= axisMax) then 
-    return self:_recursiveGetAxisMax(10 * axisMax, max)
-  else
-    return axisMax
+function StatsAnnotatedGraphClass:_recursiveGetOrderOfMagnitude(estimate, target)
+  if (estimate > target) then 
+    return self:_recursiveGetOrderOfMagnitude(estimate/10.0, target)
   end
+  
+  if (estimate * 10 >= target) then 
+    return estimate
+  end
+  
+  return self:_recursiveGetOrderOfMagnitude(estimate*10.0, target)
 end
 
 function StatsAnnotatedGraphClass:_updateValue()
   self._values = {}
   self._average = 0
+  self._target = 0
   if self._aggregator ~= nil then 
     self._values = self._aggregator:GetValues()
     self._average = self._aggregator:GetAverage()
+    self._target = self._aggregator:GetTarget()
   end
   
+  self:_calculateAxisMax()
+
   self:_render()
 end
 

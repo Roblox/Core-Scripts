@@ -72,7 +72,7 @@ end
   
 function DecoratedValueLabelClass:SetValue(value)
   local formattedValue = StatsUtils.FormatTypedValue(value, self._statType)
-  self._label.Text = string.format("%s %s", self._valueName, formattedValue)  
+  self._label.Text = string.format("%s: %s", self._valueName, formattedValue)  
 end
 
 
