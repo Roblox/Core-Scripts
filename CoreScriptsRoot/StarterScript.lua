@@ -84,11 +84,11 @@ if UserSettings().GameSettings:InStudioMode() then
 		end
 	end
 
-	UserInputService.Changed:connect(onVREnabled)
 	spawn(function()
 		if UserInputService.VREnabled then
 			onVREnabled("VREnabled")
 		end
+		UserInputService.Changed:connect(onVREnabled)
 	end)
 end
 
