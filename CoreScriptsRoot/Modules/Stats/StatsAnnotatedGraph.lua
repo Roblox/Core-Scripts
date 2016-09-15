@@ -29,8 +29,12 @@ function StatsAnnotatedGraphClass.new(statType, isMaximized)
   self._isMaximized = isMaximized
 
   self._values = {}
+  
+  -- Average value of all bars in the graph.
   self._average = 0
+  -- Suggested max value for the stat being measured.
   self._target = 0
+  -- Max value we display on the y-axis.  Values higher than this are truncated.
   self._axisMax = 0
   
   self._frame = Instance.new("Frame")

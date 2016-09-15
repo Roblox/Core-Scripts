@@ -33,9 +33,11 @@ function BarGraphClass.new(showExtras)
   
   self._showExtras = showExtras
   
-  
+  -- All of the values we are showing in the bar graph, in order.
   self._values = {}
+  -- Average of these values.
   self._average = 0
+  -- Suggested max for these values.
   self._target = 0
   
   if self._showExtras then
@@ -140,13 +142,17 @@ function BarGraphClass:_moveGraphTarget()
     -StatsUtils.GraphTargetLineInnerThickness/2)
 end
 
-function BarGraphClass:_moveGraphAverage() 
+function BarGraphClass:_moveGraphAverage()   
   if self._averageLine == nil then 
     return
   end
+  
+  -- Never let it go above axis max.
+  local adjustedAverage = math.min(self._average, self._axisMax)
+  
   self._averageLine.Position = UDim2.new(0, 
     0, 
-    (self._axisMax - self._average)/self._axisMax,
+    (self._axisMax - adjustedAverage)/self._axisMax,
     -StatsUtils.GraphAverageLineTotalThickness/2)
 end
 

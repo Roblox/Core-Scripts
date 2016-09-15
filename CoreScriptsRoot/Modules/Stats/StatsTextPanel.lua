@@ -1,7 +1,11 @@
 --[[
 		Filename: StatsTextPanel.lua
 		Written by: dbanks
-		Description: Panel that shows title, value, other data about a 
+		Description: Panel that shows a "Legend" for a graph, including:
+      - name of stat being displayed.
+      - current value of stat.
+      - target (suggested max) value of stat.
+      - average value of stat over the whole graph. 
       particular stat.
 --]]
 
@@ -75,8 +79,11 @@ function StatsTextPanelClass.new(statType)
   self._titleLabel.TextXAlignment = Enum.TextXAlignment.Left
   self._titleLabel.TextYAlignment = Enum.TextYAlignment.Top
   
+  -- Icon + text widgets to show the current value of this stat.
   self:_addCurrentValueWidget()
+  -- Icon + text widgets to show the suggested max value of this stat.
   self:_addTargetValueWidget()
+  -- Icon + text widgets to show the average value of this stat.
   self:_addAverageValueWidget()
   
   return self
