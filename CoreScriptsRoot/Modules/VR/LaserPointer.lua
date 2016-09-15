@@ -143,7 +143,6 @@ function LaserPointer.new()
 			self.parabola = Utility:Create("ParabolaAdornment") {
 				Name = "LaserPointerParabola",
 				Parent = CoreGui,
-				Adornee = self.originPart,
 				A = -1,
 				B = 2,
 				C = 0,
@@ -164,6 +163,7 @@ function LaserPointer.new()
 			Size = minimumPartSize,
 			Transparency = 1 --smallest size possible
 		}
+		self.parabola.Adornee = self.originPart
 		
 
 		self.plopPart = Utility:Create("Part") {
