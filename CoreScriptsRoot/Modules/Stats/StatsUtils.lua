@@ -14,44 +14,65 @@ local TopbarConstants = require(CoreGuiService.RobloxGui.Modules.TopbarConstants
 --[[ Classes ]]--
 local StatsUtils = {}
 
-StatsUtils.ButtonHeight = 55
-
-StatsUtils.ViewerTopMargin = 10
-StatsUtils.ViewerHeight = 220
-StatsUtils.ViewerWidth = 440
-
+-- Colors
+StatsUtils.SelectedBackgroundColor = Color3.new(0.4, 0.4, 0.4)
+StatsUtils.FontColor = Color3.new(1, 1, 1)
+StatsUtils.GraphBarGreenColor = Color3.new(126/255.0, 211/255.0, 33/255.0)
+StatsUtils.GraphBarYellowColor = Color3.new(209/255.0, 211/255.0, 33/255.0)
+StatsUtils.GraphBarRedColor = Color3.new(211/255.0, 88/255.0, 33/255.0)
+StatsUtils.GraphAverageLineColor = Color3.new(208/255.0, 1/255.0, 27/255.0)
+StatsUtils.GraphAverageLineBorderColor = Color3.new(1, 1, 1)
 StatsUtils.NormalColor = TopbarConstants.TOPBAR_BACKGROUND_COLOR
-StatsUtils.SelectedColor = Color3.new(0.4, 0.4, 0.4)
 StatsUtils.Transparency = TopbarConstants.TOPBAR_TRANSLUCENT_TRANSPARENCY;
 
-StatsUtils.FontColor = Color3.new(1, 1, 1)
-
-StatsUtils.MiniPanelTitleFontSize = Enum.FontSize.Size18
-StatsUtils.MiniPanelValueFontSize = Enum.FontSize.Size14
+-- Font Sizes
+StatsUtils.MiniPanelTitleFontSize = Enum.FontSize.Size12
+StatsUtils.MiniPanelValueFontSize = Enum.FontSize.Size10
 StatsUtils.PanelTitleFontSize = Enum.FontSize.Size24
-StatsUtils.PanelValueFontSize = Enum.FontSize.Size18
-StatsUtils.PanelGraphFontSize = Enum.FontSize.Size14
+StatsUtils.PanelValueFontSize = Enum.FontSize.Size14
+StatsUtils.PanelGraphFontSize = Enum.FontSize.Size10
 
+-- Layout
+-- Layout: Buttons
+StatsUtils.ButtonHeight = 36
+
+-- Layout: Viewer
+StatsUtils.ViewerTopMargin = 10
+StatsUtils.ViewerHeight = 144
+StatsUtils.ViewerWidth = 288
+
+StatsUtils.TextZIndex =  5
+StatsUtils.GraphZIndex = 2
+
+-- Layout: Graph
+StatsUtils.GraphTargetLineInnerThickness = 2
+StatsUtils.GraphAverageLineInnerThickness = 2
+StatsUtils.GraphAverageLineBorderThickness = 1
+StatsUtils.GraphAverageLineTotalThickness = (StatsUtils.GraphAverageLineInnerThickness + 
+  2 * StatsUtils.GraphAverageLineBorderThickness)
+      
+-- Layout: Main Text Panel
+StatsUtils.TextPanelTitleHeightY = 32
+StatsUtils.TextPanelLegendItemHeightY = 20
+
+StatsUtils.TextPanelLeftMarginPix = 10
+StatsUtils.TextPanelTopMarginPix = 10
+
+-- Layout: Graph Legend
+StatsUtils.DecorationSize = 12
+StatsUtils.OvalKeySize = 8
+StatsUtils.TargetKeyWidth = 11
+StatsUtils.TargetKeyHeight = 2
+StatsUtils.DecorationMargin = 6
+
+
+-- Enums
 StatsUtils.StatType_Memory =            "st_Memory"
 StatsUtils.StatType_CPU =               "st_CPU"
 StatsUtils.StatType_GPU =               "st_GPU"
 StatsUtils.StatType_NetworkSent =       "st_NetworkSent"
 StatsUtils.StatType_NetworkReceived =   "st_NetworkReceived"
 StatsUtils.StatType_Physics =           "st_Physics"
-
-StatsUtils.TextZIndex =  5
-StatsUtils.GraphZIndex = 2
-
-StatsUtils.GraphBarColor = Color3.new(0.1, 0.7, 0.1)
-StatsUtils.GraphAverageLineColor = Color3.new(1, 0, 0)
-StatsUtils.GraphAverageLineBorderColor = Color3.new(1, 1, 1)
-StatsUtils.GraphAverageLineInnerThickness = 2
-StatsUtils.GraphAverageLineBorderThickness = 1
-StatsUtils.GraphAverageLineTotalThickness = (StatsUtils.GraphAverageLineInnerThickness + 
-  2 * StatsUtils.GraphAverageLineBorderThickness)
-      
-StatsUtils.DecorationSize = 24
-StatsUtils.DecorationMargin = 10
       
 StatsUtils.AllStatTypes = {
   StatsUtils.StatType_Memory,
@@ -66,12 +87,19 @@ StatsUtils.StatNames = {
   [StatsUtils.StatType_Memory] = "Memory",
   [StatsUtils.StatType_CPU] = "CPU",
   [StatsUtils.StatType_GPU] = "GPU",
-  [StatsUtils.StatType_NetworkSent] = "Network_Sent",
-  [StatsUtils.StatType_NetworkReceived] = "Network_Received",
+  [StatsUtils.StatType_NetworkSent] = "NetworkSent",
+  [StatsUtils.StatType_NetworkReceived] = "NetworkReceived",
   [StatsUtils.StatType_Physics] = "Physics",
 }
 
-
+StatsUtils.StatMaxNames = {
+  [StatsUtils.StatType_Memory] = "MaxMemory",
+  [StatsUtils.StatType_CPU] = "MaxCPU",
+  [StatsUtils.StatType_GPU] = "MaxGPU",
+  [StatsUtils.StatType_NetworkSent] = "MaxNetworkSent",
+  [StatsUtils.StatType_NetworkReceived] = "MaxNetworkReceived",
+  [StatsUtils.StatType_Physics] = "MaxPhysics",
+}
 
 StatsUtils.NumButtonTypes = table.getn(StatsUtils.AllStatTypes)
 
@@ -112,63 +140,40 @@ end
 function StatsUtils.StyleButtonSelected(frame, isSelected)
   StatsUtils.StyleButton(frame)
   if (isSelected) then 
-    frame.BackgroundColor3 = StatsUtils.SelectedColor
+    frame.BackgroundColor3 = StatsUtils.SelectedBackgroundColor
   end
 end
 
-function StatsUtils.ConvertTypedValue(value, statType) 
-  -- Convert raw number from stats service to the right 
-  -- units.
+function StatsUtils.FormatTypedValue(value, statType)   
   if statType == StatsUtils.StatType_Memory then 
-    -- from B to MB
-    return value/1000000.0
+    return string.format("%.2f MB", value)
   elseif statType == StatsUtils.StatType_CPU then
-    -- No conversion: msec -> msec.
-    return value
+    return string.format("%.2f ms", value)
   elseif statType == StatsUtils.StatType_GPU then
-    -- No conversion: msec -> msec.
-    return value
+    return string.format("%.2f ms", value)
   elseif statType == StatsUtils.StatType_NetworkSent then
-    -- No conversion: KB/sec -> KS/sec.
-    return value
+    return string.format("%.2f KB/s", value)
   elseif statType == StatsUtils.StatType_NetworkReceived then
-    -- No conversion: KB/sec -> KS/sec.
-    return value
+    return string.format("%.2f KB/s", value)
   elseif statType == StatsUtils.StatType_Physics then
-    -- No conversion: msec -> msec.
-    return value
+    return string.format("%.2f ms", value)
   end
-end
-
-function StatsUtils.FormatTypedValue(value, statType) 
-  -- Convert raw number from stats service to string 
-  -- in the right units with proper label.
-  local convertedValue = StatsUtils.ConvertTypedValue(value, statType)
-  
-  if statType == StatsUtils.StatType_Memory then 
-    return string.format("%.2f MB", convertedValue)
-  elseif statType == StatsUtils.StatType_CPU then
-    return string.format("%.2f ms", convertedValue)
-  elseif statType == StatsUtils.StatType_GPU then
-    return string.format("%.2f ms", convertedValue)
-  elseif statType == StatsUtils.StatType_NetworkSent then
-    return string.format("%.2f KB/s", convertedValue)
-  elseif statType == StatsUtils.StatType_NetworkReceived then
-    return string.format("%.2f KB/s", convertedValue)
-  elseif statType == StatsUtils.StatType_Physics then
-    return string.format("%.2f ms", convertedValue)
-  end
-end
-
-function StatsUtils.StyleBarGraph(frame)  
-  frame.BackgroundColor3 = StatsUtils.GraphBarColor
-  frame.BorderSizePixel = 0
 end
 
 function StatsUtils.StyleAverageLine(frame)
   frame.BackgroundColor3 = StatsUtils.GraphAverageLineColor
   frame.BorderSizePixel = StatsUtils.GraphAverageLineBorderThickness
   frame.BorderColor3 = StatsUtils.GraphAverageLineBorderColor
+end
+  
+function StatsUtils.GetColorForValue(value, target) 
+  if value < 0.666 * target then 
+    return StatsUtils.GraphBarGreenColor
+  elseif value < 1.333 * target then 
+    return StatsUtils.GraphBarYellowColor
+  else
+    return StatsUtils.GraphBarRedColor
+  end
 end
   
 return StatsUtils
