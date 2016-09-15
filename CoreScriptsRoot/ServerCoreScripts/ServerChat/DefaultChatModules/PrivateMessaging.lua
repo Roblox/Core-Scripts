@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: PrivateMessaging.lua
+--	// Written by: Xsitsu
+--	// Description: Module that handles all private messaging.
+
 local function Run(ChatService)
 	
 	local function DoWhisperCommand(fromSpeaker, message, channel)

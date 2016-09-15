@@ -39,11 +39,12 @@ local function Install()
 		ModulesFolder.Name = "ChatModules"
 
 		local newPath = scriptPath .. "DefaultChatModules/"
-		LoadModuleData("PrivateMessaging", ModulesFolder, newPath)
-		LoadModuleData("TeamChat", ModulesFolder, newPath)
 		LoadModuleData("ExtraDataInitializer", ModulesFolder, newPath)
 		LoadModuleData("ChatCommandsTeller", ModulesFolder, newPath)
 		LoadModuleData("ChatFloodDetector", ModulesFolder, newPath)
+		LoadModuleData("PrivateMessaging", ModulesFolder, newPath)
+		LoadModuleData("TeamChat", ModulesFolder, newPath)
+		
 
 		ModulesFolder.Parent = ServerStorage
 		ModulesFolder.Archivable = false

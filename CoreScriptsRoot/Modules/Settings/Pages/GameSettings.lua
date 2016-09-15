@@ -67,6 +67,27 @@ local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
+	local allSettingsCreated = false
+	local settingsDisabledInVR = {}
+	local function onVRSettingsReady()
+		local vrEnabled = UserInputService.VREnabled
+		for settingFrame, _ in pairs(settingsDisabledInVR) do
+			settingFrame:SetInteractable(not vrEnabled)
+		end
+	end
+	
+	local function onVREnabled(prop)
+		if prop ~= "VREnabled" then return end
+		if UserInputService.VREnabled and allSettingsCreated then
+			--Only call this if all settings have been created. 
+			--If they aren't ready by the time VR is enabled, this
+			--will be called later when they are.
+			onVRSettingsReady()
+		end
+	end
+	UserInputService.Changed:connect(onVREnabled)
+	onVREnabled("VREnabled")
+
 	----------- FUNCTIONS ---------------
 	local function createGraphicsOptions()
 
@@ -76,9 +97,11 @@ local function Initialize()
 			fullScreenInit = 2
 		end
 
-		this.FullscreenFrame, 
-		this.FullscreenLabel,
-		this.FullscreenEnabler = utility:AddNewRow(this, "Fullscreen", "Selector", {"On", "Off"}, fullScreenInit)
+		this.FullscreenFrame,
+			this.FullscreenLabel,
+			this.FullscreenEnabler = utility:AddNewRow(this, "Fullscreen", "Selector", {"On", "Off"}, fullScreenInit)
+
+		settingsDisabledInVR[this.FullscreenEnabler] = true
 
 		local fullScreenSelectionFrame = this.FullscreenEnabler.SliderFrame and this.FullscreenEnabler.SliderFrame or this.FullscreenEnabler.SelectorFrame
 
@@ -93,16 +116,66 @@ local function Initialize()
         end
 
 		this.GraphicsEnablerFrame, 
-		this.GraphicsEnablerLabel,
-		this.GraphicsQualityEnabler = utility:AddNewRow(this, "Graphics Mode", "Selector", {"Automatic", "Manual"}, graphicsEnablerStart)
+			this.GraphicsEnablerLabel,
+			this.GraphicsQualityEnabler = utility:AddNewRow(this, "Graphics Mode", "Selector", {"Automatic", "Manual"}, graphicsEnablerStart)
 
 		------------------ Gfx Slider GUI Setup  ------------------
 		this.GraphicsQualityFrame, 
-		this.GraphicsQualityLabel,
-		this.GraphicsQualitySlider = utility:AddNewRow(this, "Graphics Quality", "Slider", GRAPHICS_QUALITY_LEVELS, 1)
+			this.GraphicsQualityLabel,
+			this.GraphicsQualitySlider = utility:AddNewRow(this, "Graphics Quality", "Slider", GRAPHICS_QUALITY_LEVELS, 1)
 		this.GraphicsQualitySlider:SetMinStep(1)
 
-		------------------------- Connection Setup ----------------------------
+		------------------------------------------------------
+		------------------
+		------------------ Performance Stats -----------------
+    local PerformanceStatsFlagSuccess, PerformanceStatsFlagValue = 
+      pcall(function() return settings():GetFFlag("ShowPerformanceStatsInGui") end)
+		local PerformanceStatsFlagOn = PerformanceStatsFlagSuccess and PerformanceStatsFlagValue
+    
+		if PerformanceStatsFlagOn then
+			this.PerformanceStatsFrame, 
+			this.PerformanceStatsLabel,
+			this.PerformanceStatsMode,
+			this.PerformanceStatsOverrideText = nil
+
+      local startIndex = 2
+			if GameSettings.PerformanceStatsVisible then
+					startIndex = 1
+      end
+
+      this.PerformanceStatsFrame, 
+      this.PerformanceStatsLabel,
+      this.PerformanceStatsMode = utility:AddNewRow(this, 
+        "Performance Stats", 
+        "Selector", 
+        {"On", "Off"}, 
+        2)
+
+      this.PerformanceStatsOverrideText = utility:Create'TextLabel'
+      {
+        Name = "PerformanceStatsLabel",
+        Text = "Set by Developer",
+        TextColor3 = Color3.new(1,1,1),
+        Font = Enum.Font.SourceSans,
+        FontSize = Enum.FontSize.Size24,
+        BackgroundTransparency = 1,
+        Size = UDim2.new(0,200,1,0),
+        Position = UDim2.new(1,-350,0,0),
+        Visible = false,
+        ZIndex = 2,
+        Parent = this.PerformanceStatsFrame
+      };
+
+      this.PerformanceStatsMode.IndexChanged:connect(function(newIndex)
+        if newIndex == 1 then
+          GameSettings.PerformanceStatsVisible = true
+        else
+          GameSettings.PerformanceStatsVisible = false
+        end
+      end)
+		end
+		
+    ------------------------- Connection Setup ----------------------------
 		settings().Rendering.EnableFRM = true
 
 		function SetGraphicsQuality(newValue, automaticSettingAllowed)
@@ -192,9 +265,9 @@ local function Initialize()
 		------------------ Shift Lock Switch -----------------
 		if UserInputService.MouseEnabled then
 			this.ShiftLockFrame, 
-			this.ShiftLockLabel,
-			this.ShiftLockMode,
-			this.ShiftLockOverrideText = nil
+				this.ShiftLockLabel,
+				this.ShiftLockMode,
+				this.ShiftLockOverrideText = nil
 
 			if UserInputService.MouseEnabled and UserInputService.KeyboardEnabled then
 				local startIndex = 2
@@ -203,8 +276,10 @@ local function Initialize()
 				end
 
 				this.ShiftLockFrame, 
-				this.ShiftLockLabel,
-				this.ShiftLockMode = utility:AddNewRow(this, "Shift Lock Switch", "Selector", {"On", "Off"}, startIndex)
+					this.ShiftLockLabel,
+					this.ShiftLockMode = utility:AddNewRow(this, "Shift Lock Switch", "Selector", {"On", "Off"}, startIndex)
+
+				settingsDisabledInVR[this.ShiftLockMode] = true
 
 				this.ShiftLockOverrideText = utility:Create'TextLabel'
 				{
@@ -267,8 +342,10 @@ local function Initialize()
 			end
 
 			this.CameraModeFrame, 
-			this.CameraModeLabel,
-			this.CameraMode = utility:AddNewRow(this, "Camera Mode", "Selector", cameraEnumNames, startingCameraEnumItem)
+				this.CameraModeLabel,
+				this.CameraMode = utility:AddNewRow(this, "Camera Mode", "Selector", cameraEnumNames, startingCameraEnumItem)
+
+			settingsDisabledInVR[this.CameraMode] = true
 
 			this.CameraModeOverrideText = utility:Create'TextLabel'
 			{
@@ -306,12 +383,12 @@ local function Initialize()
 
 			if utility:IsSmallTouchScreen() then
 				this.VRRotationFrame, 
-				this.VRRotationLabel,
-				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity)
+					this.VRRotationLabel,
+					this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity)
 			else
 				this.VRRotationFrame, 
-				this.VRRotationLabel,
-				this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity, 3)
+					this.VRRotationLabel,
+					this.VRRotationMode = utility:AddNewRow(this, "VR Camera Rotation", "Selector", VR_ROTATION_INTENSITY_OPTIONS, GameSettings.VRRotationIntensity, 3)
 			end
 
 			StarterGui:RegisterGetCore("VRRotationIntensity",
@@ -362,8 +439,10 @@ local function Initialize()
 			end
 
 			this.MovementModeFrame, 
-			this.MovementModeLabel,
-			this.MovementMode = utility:AddNewRow(this, "Movement Mode", "Selector", movementEnumNames, startingMovementEnumItem)
+				this.MovementModeLabel,
+				this.MovementMode = utility:AddNewRow(this, "Movement Mode", "Selector", movementEnumNames, startingMovementEnumItem)
+
+			settingsDisabledInVR[this.MovementMode] = true
 
 			this.MovementModeOverrideText = utility:Create'TextLabel'
 			{
@@ -485,11 +564,12 @@ local function Initialize()
 		end
 
 		LocalPlayer.Changed:connect(function(property)
-			if IsTouchClient then
+			if UserInputService.TouchEnabled then
 				if TOUCH_CHANGED_PROPS[property] then
 					updateUserSettingsMenu(property)
 				end
-			else
+			end
+			if UserInputService.KeyboardEnabled then
 				if PC_CHANGED_PROPS[property] then
 					updateUserSettingsMenu(property)
 				end
@@ -500,8 +580,8 @@ local function Initialize()
 	local function createVolumeOptions()
 		local startVolumeLevel = math.floor(GameSettings.MasterVolume * 10)
 		this.VolumeFrame, 
-		this.VolumeLabel,
-		this.VolumeSlider = utility:AddNewRow(this, "Volume", "Slider", 10, startVolumeLevel)
+			this.VolumeLabel,
+			this.VolumeSlider = utility:AddNewRow(this, "Volume", "Slider", 10, startVolumeLevel)
 
 		local volumeSound = Instance.new("Sound", game.CoreGui.RobloxGui.Sounds)
 		volumeSound.Name = "VolumeChangeSound"
@@ -548,8 +628,8 @@ local function Initialize()
 
 		if AdvancedEnabled then
 			this.MouseModeFrame, 
-			this.MouseModeLabel,
-			this.MouseModeEnabler = utility:AddNewRow(this, "Mouse Sensitivity Mode", "Selector", {"Basic", "Advanced"}, MouseModeEnablerStart)
+				this.MouseModeLabel,
+				this.MouseModeEnabler = utility:AddNewRow(this, "Mouse Sensitivity Mode", "Selector", {"Basic", "Advanced"}, MouseModeEnablerStart)
         end
 		
 		------------------ Basic Mouse Sensitivity Slider ------------------
@@ -559,8 +639,8 @@ local function Initialize()
 			SliderLabel = "Mouse Sensitivity"
 		end
 		this.MouseSensitivityFrame, 
-		this.MouseSensitivityLabel,
-		this.MouseSensitivitySlider = utility:AddNewRow(this, SliderLabel, "Slider", MouseSteps, startMouseLevel)
+			this.MouseSensitivityLabel,
+			this.MouseSensitivitySlider = utility:AddNewRow(this, SliderLabel, "Slider", MouseSteps, startMouseLevel)
 		this.MouseSensitivitySlider:SetMinStep(1)
 
 		this.MouseSensitivitySlider.ValueChanged:connect(function(newValue)
@@ -572,8 +652,8 @@ local function Initialize()
 		if AdvancedEnabled then
 			local MouseAdvancedStart = tostring(GameSettings.MouseSensitivityFirstPerson.y)
 			this.MouseAdvancedFrame, 
-			this.MouseAdvancedLabel,
-			this.MouseAdvancedEntry = utility:AddNewRow(this, "Advanced Mouse Sensitivity", "TextEntry", 1.0, 1.0, MouseAdvancedStart)
+				this.MouseAdvancedLabel,
+				this.MouseAdvancedEntry = utility:AddNewRow(this, "Advanced Mouse Sensitivity", "TextEntry", 1.0, 1.0, MouseAdvancedStart)
 
 			this.MouseAdvancedEntry.ValueChanged:connect(function(newValueText)
 				local currentFirstSensitivity = GameSettings.MouseSensitivityFirstPerson
@@ -617,8 +697,8 @@ local function Initialize()
         -- This is a common setting in games, even if it is rare
 		if AdvancedEnabled then
 			this.MouseInvertFrame, 
-			this.MouseInvertLabel,
-			this.MouseInvertEnabler = utility:AddNewRow(this, "Advanced Mouse Invert", "Selector", {"Normal", "Inverted"}, MouseInvertStart)
+				this.MouseInvertLabel,
+				this.MouseInvertEnabler = utility:AddNewRow(this, "Advanced Mouse Invert", "Selector", {"Normal", "Inverted"}, MouseInvertStart)
 
 			this.MouseInvertEnabler.IndexChanged:connect(function(newIndex)
 			local currentFirstSensitivity = GameSettings.MouseSensitivityFirstPerson
@@ -681,8 +761,9 @@ local function Initialize()
 			end)
 
 			if GameSettings.UseBasicMouseSensitivity then
+				local MouseAdvancedStart = tostring(GameSettings.MouseSensitivityFirstPerson.x)
 				setMouseModeToBasic()
-				this.MouseAdvancedEntry:SetValue(tostring(MouseAdvancedStart))
+				this.MouseAdvancedEntry:SetValue(MouseAdvancedStart)
 			else
 				setMouseModeToAdvanced()
 			end
@@ -790,6 +871,11 @@ local function Initialize()
 		if success and result == true then
 			createDeveloperConsoleOption()
 		end
+	end
+
+	allSettingsCreated = true
+	if UserInputService.VREnabled then
+		onVRSettingsReady()
 	end
 
 	------ TAB CUSTOMIZATION -------

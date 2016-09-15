@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChatChannel.lua
+--	// Written by: Xsitsu
+--	// Description: ChatChannel window for displaying messages.
+
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -7,16 +11,20 @@ local moduleTransparencyTweener = require(modulesFolder:WaitForChild("Transparen
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
+local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
 
 local function CreateGuiObjects()
 	local BaseFrame = Instance.new("Frame")
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
 
 	local Scroller = Instance.new("ScrollingFrame", BaseFrame)
+	Scroller.Selectable = ChatSettings.GamepadNavigationEnabled
 	Scroller.Name = "Scroller"
 	Scroller.BackgroundTransparency = 1
 	Scroller.BorderSizePixel = 0

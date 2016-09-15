@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChatBar.lua
+--	// Written by: Xsitsu
+--	// Description: Manages text typing and typing state.
+
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -11,17 +15,19 @@ local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 --//////////////////////////////////////
 local methods = {}
 
-local function CreateGuiObjects()
+function methods:CreateGuiObjects(targetParent)
 	local backgroundImagePixelOffset = 8
 	local textBoxPixelOffset = 8
 
-	local BaseFrame = Instance.new("Frame")
+	local BaseFrame = Instance.new("Frame", targetParent)
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 0.6
 	BaseFrame.BorderSizePixel = 0
 	BaseFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 
 	local BoxFrame = Instance.new("Frame", BaseFrame)
+	BoxFrame.Selectable = false
 	BoxFrame.Name = "BoxFrame"
 	BoxFrame.BackgroundTransparency = 0.6
 	BoxFrame.BorderSizePixel = 0
@@ -30,6 +36,7 @@ local function CreateGuiObjects()
 	BoxFrame.Position = UDim2.new(0, backgroundImagePixelOffset, 0, backgroundImagePixelOffset)
 
 	local TextBox = Instance.new("TextBox", BoxFrame)
+	TextBox.Selectable = ChatSettings.GamepadNavigationEnabled
 	TextBox.Name = "ChatBar"
 	TextBox.BackgroundTransparency = 1
 	TextBox.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)
@@ -45,6 +52,7 @@ local function CreateGuiObjects()
 	TextBox.Text = ""
 
 	local TextLabel = Instance.new("TextLabel", BoxFrame)
+	TextLabel.Selectable = false
 	TextLabel.BackgroundTransparency = 1
 	TextLabel.Size = TextBox.Size
 	TextLabel.Position = TextBox.Position
@@ -63,7 +71,40 @@ local function CreateGuiObjects()
 	TextBox.Focused:connect(function() TextLabel.Visible = false end)
 	TextBox.FocusLost:connect(function() TextLabel.Visible = (TextBox.Text == "") end)
 
-	return BaseFrame, BoxFrame, TextBox, TextLabel
+	rawset(self, "GuiObject", BaseFrame)
+	rawset(self, "TextBox", TextBox)
+	rawset(self, "TextLabel", TextLabel)
+
+	self.GuiObjects.BaseFrame = BaseFrame
+	self.GuiObjects.TextBoxFrame = BoxFrame
+	self.GuiObjects.TextBox = TextBox
+	self.GuiObjects.TextLabel = TextLabel
+
+	self:CreateTweeners()
+
+	local changedLock = false
+	self.TextBox.Changed:connect(function(prop)
+		if (prop == "Text") then
+			if (changedLock) then return end
+			changedLock = true
+
+			self:CalculateSize()
+
+			changedLock = false
+		end
+	end)
+
+	self.TextBox.Focused:connect(function()
+		self:CalculateSize()
+	end)
+
+	self.TextBox.FocusLost:connect(function(enterPressed, inputObject)
+		self:ResetSize()
+		if (inputObject and inputObject.KeyCode == Enum.KeyCode.Escape) then
+			self.TextBox.Text = ""
+		end
+		
+	end)
 end
 
 function methods:GetTextBox()
@@ -102,6 +143,14 @@ function methods:SetTextLabelText(text)
 	self.TextLabel.Text = text
 end
 
+function methods:SetTextBoxText(text)
+	self.TextBox.Text = text
+end
+
+function methods:GetTextBoxText()
+	return self.TextBox.Text
+end
+
 function methods:ResetSize()
 	self.TargetYSize = 0
 	self:TweenToTargetYSize()
@@ -136,7 +185,15 @@ function methods:TweenToTargetYSize()
 	local pixelDistance = math.abs(endAbsoluteSizeY - curAbsoluteSizeY)
 	local tweeningTime = math.min(1, (pixelDistance * (1 / self.TweenPixelsPerSecond))) -- pixelDistance * (seconds per pixels)
 
-	self.GuiObject:TweenSize(endSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, tweeningTime, true)
+	local success = pcall(function() self.GuiObject:TweenSize(endSize, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, tweeningTime, true) end)
+	if (not success) then
+		self.GuiObject.Size = endSize
+	end
+end
+
+function methods:SetFontSize(fontSize)
+	self.TextBox.FontSize = fontSize
+	self.TextLabel.FontSize = fontSize
 end
 
 function methods:FadeOutBackground(duration)
@@ -166,20 +223,20 @@ function methods:CreateTweeners()
 
 	--// Register BackgroundTweener objects and properties
 	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObject, "BackgroundTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBoxFrame, "BackgroundTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBoxFrame, "BackgroundTransparency")
 
 	--// Register TextTweener objects and properties
 	local registerAsText = false
 	if (registerAsText) then
-		self.TextTweener:RegisterTweenObjectProperty(self.TextLabel, "TextTransparency")
-		self.TextTweener:RegisterTweenObjectProperty(self.TextLabel, "TextStrokeTransparency")
-		self.TextTweener:RegisterTweenObjectProperty(self.TextBox, "TextTransparency")
-		self.TextTweener:RegisterTweenObjectProperty(self.TextBox, "TextStrokeTransparency")
+		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextTransparency")
+		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextStrokeTransparency")
+		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextTransparency")
+		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextStrokeTransparency")
 	else
-		self.BackgroundTweener:RegisterTweenObjectProperty(self.TextLabel, "TextTransparency")
-		self.BackgroundTweener:RegisterTweenObjectProperty(self.TextLabel, "TextStrokeTransparency")
-		self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBox, "TextTransparency")
-		self.BackgroundTweener:RegisterTweenObjectProperty(self.TextBox, "TextStrokeTransparency")
+		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextTransparency")
+		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextStrokeTransparency")
+		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextTransparency")
+		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextStrokeTransparency")
 	end
 
 end
@@ -191,11 +248,10 @@ ClassMaker.RegisterClassType("ChatBar", methods)
 function module.new()
 	local obj = {}
 
-	local BaseFrame, TextBoxFrame, TextBox, TextLabel = CreateGuiObjects()
-	obj.GuiObject = BaseFrame
-	obj.TextBoxFrame = TextBoxFrame
-	obj.TextBox = TextBox
-	obj.TextLabel = TextLabel
+	obj.GuiObject = nil
+	obj.TextBox = nil
+	obj.TextLabel = nil
+	obj.GuiObjects = {}
 
 	obj.TweenPixelsPerSecond = 500
 	obj.TargetYSize = 0
@@ -204,31 +260,11 @@ function module.new()
 	obj.TextTweener = moduleTransparencyTweener.new()
 
 	ClassMaker.MakeClass("ChatBar", obj)
-	
-	obj:CreateTweeners()
 
-	local changedLock = false
-	obj.TextBox.Changed:connect(function(prop)
-		if (prop == "Text") then
-			if (changedLock) then return end
-			changedLock = true
-
-			obj:CalculateSize()
-
-			changedLock = false
+	ChatSettings.SettingsChanged:connect(function(setting, value)
+		if (setting == "ChatBarTextSize") then
+			obj:SetFontSize(value)
 		end
-	end)
-
-	obj.TextBox.Focused:connect(function()
-		obj:CalculateSize()
-	end)
-
-	obj.TextBox.FocusLost:connect(function(enterPressed, inputObject)
-		obj:ResetSize()
-		if (inputObject.KeyCode == Enum.KeyCode.Escape) then
-			obj.TextBox.Text = ""
-		end
-		
 	end)
 
 

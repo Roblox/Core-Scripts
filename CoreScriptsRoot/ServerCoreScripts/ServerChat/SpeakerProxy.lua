@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: SpeakerProxy.lua
+--	// Written by: Xsitsu
+--	// Description: Proxy object for Speaker.
+
 local module = {}
 
 local function AssignmentError(index, expected, got)

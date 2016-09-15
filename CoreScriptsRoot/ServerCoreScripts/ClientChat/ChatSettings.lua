@@ -1,22 +1,31 @@
 local source = [[
--- This module is for initial settings that are not intended to be changed during runtime.
+--	// FileName: ChatSettings.lua
+--	// Written by: Xsitsu
+--	// Description: Settings module for configuring different aspects of the chat window.
 
 local module = {}
 
 module.WindowDraggable = false
-module.WindowResizable = false -- soon (tee emm)
+module.WindowResizable = false
+
+module.GamepadNavigationEnabled = false
 
 module.ChatWindowTextSize = Enum.FontSize.Size18
 module.ChatChannelsTabTextSize = Enum.FontSize.Size18
 module.ChatBarTextSize = Enum.FontSize.Size18
 
--- these two are in pixels
-module.MinimumWindowSizeX = 1600/3.75
-module.MinimumWindowSizeY = 900/3.75
+module.ChatWindowTextSizePhone = Enum.FontSize.Size14
+module.ChatChannelsTabTextSizePhone = Enum.FontSize.Size18
+module.ChatBarTextSizePhone = Enum.FontSize.Size14
 
-local size = 0.35
-module.DefaultWindowSize = UDim2.new(size, 0, size, 0)
+module.MinimumWindowSize = UDim2.new(0.3, 0, 0.25, 0)
+module.MaximumWindowSize = UDim2.new(1, 0, 1, 0) -- if you change this to be greater than full screen size, weird things start to happen with size/position bounds checking.
+
 module.DefaultWindowPosition = UDim2.new(0, 0, 0, 0)
+
+module.DefaultWindowSizePhone = UDim2.new(0.5, 0, 0.5, 18 + 18)
+module.DefaultWindowSizeTablet = UDim2.new(0.4, 0, 0.3, 18 + 18)
+module.DefaultWindowSizeDesktop = UDim2.new(0.3, 0, 0.25, 18 + 18)
 
 module.GeneralChannelName = "All" -- You can set to 'nil' to turn off echoing to a general channel.
 

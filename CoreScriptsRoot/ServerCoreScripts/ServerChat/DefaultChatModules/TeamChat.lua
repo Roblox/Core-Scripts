@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: TeamChat.lua
+--	// Written by: Xsitsu
+--	// Description: Module that handles all team chat.
+
 local function Run(ChatService)
 	
 	local Players = game:GetService("Players")

@@ -1,4 +1,8 @@
 local source = [[
+--	// FileName: ChannelsBar.lua
+--	// Written by: Xsitsu
+--	// Description: Manages creating, destroying, and displaying ChannelTabs.
+
 local module = {}
 
 local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
@@ -16,12 +20,14 @@ local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 --//////////////////////////////////////
 local methods = {}
 
-local function CreateGuiObjects()
-	local BaseFrame = Instance.new("Frame")
+function methods:CreateGuiObjects(targetParent)
+	local BaseFrame = Instance.new("Frame", targetParent)
+	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
 
 	local ScrollingBase = Instance.new("Frame", BaseFrame)
+	ScrollingBase.Selectable = false
 	ScrollingBase.Name = "ScrollingBase"
 	ScrollingBase.BackgroundTransparency = 1
 	ScrollingBase.ClipsDescendants = true
@@ -29,12 +35,14 @@ local function CreateGuiObjects()
 	ScrollingBase.Position = UDim2.new(0, 0, 0, 0)
 
 	local ScrollerSizer = Instance.new("Frame", ScrollingBase)
+	ScrollerSizer.Selectable = false
 	ScrollerSizer.Name = "ScrollerSizer"
 	ScrollerSizer.BackgroundTransparency = 1
 	ScrollerSizer.Size = UDim2.new(1, 0, 1, 0)
 	ScrollerSizer.Position = UDim2.new(0, 0, 0, 0)
 
 	local ScrollerFrame = Instance.new("Frame", ScrollerSizer)
+	ScrollerFrame.Selectable = false
 	ScrollerFrame.Name = "ScrollerFrame"
 	ScrollerFrame.BackgroundTransparency = 1
 	ScrollerFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -43,12 +51,14 @@ local function CreateGuiObjects()
 
 
 	local LeaveConfirmationFrameBase = Instance.new("Frame", BaseFrame)
+	LeaveConfirmationFrameBase.Selectable = false
 	LeaveConfirmationFrameBase.Size = UDim2.new(1, 0, 1, 0)
 	LeaveConfirmationFrameBase.Position = UDim2.new(0, 0, 0, 0)
 	LeaveConfirmationFrameBase.ClipsDescendants = true
 	LeaveConfirmationFrameBase.BackgroundTransparency = 1
 
 	local LeaveConfirmationFrame = Instance.new("Frame", LeaveConfirmationFrameBase)
+	LeaveConfirmationFrame.Selectable = false
 	LeaveConfirmationFrame.Name = "LeaveConfirmationFrame"
 	LeaveConfirmationFrame.Size = UDim2.new(1, 0, 1, 0)
 	LeaveConfirmationFrame.Position = UDim2.new(0, 0, 1, 0)
@@ -57,11 +67,13 @@ local function CreateGuiObjects()
 	LeaveConfirmationFrame.BackgroundColor3 = Color3.new(0, 0, 0)
 
 	local InputBlocker = Instance.new("TextButton", LeaveConfirmationFrame)
+	InputBlocker.Selectable = false
 	InputBlocker.Size = UDim2.new(1, 0, 1, 0)
 	InputBlocker.BackgroundTransparency = 1
 	InputBlocker.Text = ""
 
 	local LeaveConfirmationButtonYes = Instance.new("TextButton", LeaveConfirmationFrame)
+	LeaveConfirmationButtonYes.Selectable = false
 	LeaveConfirmationButtonYes.Size = UDim2.new(0.25, 0, 1, 0)
 	LeaveConfirmationButtonYes.BackgroundTransparency = 1
 	LeaveConfirmationButtonYes.Font = Enum.Font.SourceSansBold
@@ -78,6 +90,7 @@ local function CreateGuiObjects()
 	LeaveConfirmationButtonNo.Text = "Cancel"
 
 	local LeaveConfirmationNotice = Instance.new("TextLabel", LeaveConfirmationFrame)
+	LeaveConfirmationNotice.Selectable = false
 	LeaveConfirmationNotice.Size = UDim2.new(0.5, 0, 1, 0)
 	LeaveConfirmationNotice.Position = UDim2.new(0.25, 0, 0, 0)
 	LeaveConfirmationNotice.BackgroundTransparency = 1
@@ -105,6 +118,7 @@ local function CreateGuiObjects()
 	local scaleOther = (1 - scale) / 2
 
 	local PageLeftButton = Instance.new("ImageButton", BaseFrame)
+	PageLeftButton.Selectable = ChatSettings.GamepadNavigationEnabled
 	PageLeftButton.Name = "PageLeftButton"
 	PageLeftButton.SizeConstraint = Enum.SizeConstraint.RelativeYY
 	PageLeftButton.Size = UDim2.new(scale, 0, scale, 0)
@@ -119,6 +133,7 @@ local function CreateGuiObjects()
 	ArrowLabel.Image = "rbxasset://textures/ui/Chat/TabArrow.png"
 
 	local PageRightButtonPositionalHelper = Instance.new("Frame", BaseFrame)
+	PageRightButtonPositionalHelper.Selectable = false
 	PageRightButtonPositionalHelper.BackgroundTransparency = 1
 	PageRightButtonPositionalHelper.Name = "PositionalHelper"
 	PageRightButtonPositionalHelper.Size = PageLeftButton.Size
@@ -139,7 +154,26 @@ local function CreateGuiObjects()
 	PageLeftButton.ArrowLabel.Rotation = 180
 
 
-	return BaseFrame, ScrollerSizer, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice
+	rawset(self, "GuiObject", BaseFrame)
+
+	self.GuiObjects.BaseFrame = BaseFrame
+	self.GuiObjects.ScrollerSizer = ScrollerSizer
+	self.GuiObjects.ScrollerFrame = ScrollerFrame
+	self.GuiObjects.PageLeftButton = PageLeftButton
+	self.GuiObjects.PageRightButton = PageRightButton
+	self.GuiObjects.LeaveConfirmationFrame = LeaveConfirmationFrame
+	self.GuiObjects.LeaveConfirmationNotice = LeaveConfirmationNotice
+
+	self.GuiObjects.PageLeftButtonArrow = PageLeftButton.ArrowLabel
+	self.GuiObjects.PageRightButtonArrow = PageRightButton.ArrowLabel
+
+
+	self:CreateTweeners()
+
+	PageLeftButton.MouseButton1Click:connect(function() self:ScrollChannelsFrame(-1) end)
+	PageRightButton.MouseButton1Click:connect(function() self:ScrollChannelsFrame(1) end)
+
+	self:ScrollChannelsFrame(0)
 end
 
 
@@ -158,7 +192,7 @@ function methods:AddChannelTab(channelName)
 	end
 
 	local tab = moduleChannelsTab.new(channelName)
-	tab.GuiObject.Parent = self.ScrollerFrame
+	tab.GuiObject.Parent = self.GuiObjects.ScrollerFrame
 	self.ChannelTabs[channelName:lower()] = tab
 
 	self.NumTabs = self.NumTabs + 1
@@ -215,9 +249,15 @@ function methods:OrganizeChannelTabs()
 	end
 
 	--// Dynamic tab resizing
-	self.ScrollerSizer.Size = UDim2.new(1 / math.max(1, math.min(ChatSettings.ChannelsBarFullTabSize, self.NumTabs)), 0, 1, 0)
+	self.GuiObjects.ScrollerSizer.Size = UDim2.new(1 / math.max(1, math.min(ChatSettings.ChannelsBarFullTabSize, self.NumTabs)), 0, 1, 0)
 
 	self:ScrollChannelsFrame(0)
+end
+
+function methods:ResizeChannelTabText(fontSize)
+	for i, tab in pairs(self.ChannelTabs) do
+		tab:SetFontSize(fontSize)
+	end
 end
 
 function methods:ScrollChannelsFrame(dir)
@@ -238,8 +278,8 @@ function methods:ScrollChannelsFrame(dir)
 	local tweenTime = 0.15
 	local endPos = UDim2.new(-self.CurPageNum, 0, 0, 0)
 
-	self.PageLeftButton.Visible = (self.CurPageNum > 0)
-	self.PageRightButton.Visible = (self.CurPageNum + tabNumber < self.NumTabs)
+	self.GuiObjects.PageLeftButton.Visible = (self.CurPageNum > 0)
+	self.GuiObjects.PageRightButton.Visible = (self.CurPageNum + tabNumber < self.NumTabs)
 
 	local function UnlockFunc()
 		self.ScrollChannelsFrameLock = false
@@ -247,7 +287,7 @@ function methods:ScrollChannelsFrame(dir)
 
 	self:WaitUntilParentedCorrectly()
 
-	self.ScrollerFrame:TweenPosition(endPos, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, tweenTime, true, UnlockFunc)
+	self.GuiObjects.ScrollerFrame:TweenPosition(endPos, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, tweenTime, true, UnlockFunc)
 end
 
 function methods:FadeOutBackground(duration)
@@ -274,10 +314,10 @@ function methods:CreateTweeners()
 	self.TextTweener = moduleTransparencyTweener.new()
 
 	--// Register BackgroundTweener objects and properties
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageLeftButton, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageRightButton, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageLeftButtonArrow, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.PageRightButtonArrow, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageLeftButton, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageRightButton, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageLeftButtonArrow, "ImageTransparency")
+	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageRightButtonArrow, "ImageTransparency")
 
 	--// Register TextTweener objects and properties
 	
@@ -297,17 +337,8 @@ ClassMaker.RegisterClassType("ChannelsBar", methods)
 function module.new()
 	local obj = {}
 
-	local BaseFrame, ScrollerSizer, ScrollerFrame, PageLeftButton, PageRightButton, LeaveConfirmationFrame, LeaveConfirmationNotice = CreateGuiObjects()
-	obj.GuiObject = BaseFrame
-	obj.ScrollerSizer = ScrollerSizer
-	obj.ScrollerFrame = ScrollerFrame
-	obj.PageLeftButton = PageLeftButton
-	obj.PageRightButton = PageRightButton
-	obj.LeaveConfirmationFrame = LeaveConfirmationFrame
-	obj.LeaveConfirmationNotice = LeaveConfirmationNotice
-
-	obj.PageLeftButtonArrow = obj.PageLeftButton.ArrowLabel
-	obj.PageRightButtonArrow = obj.PageRightButton.ArrowLabel
+	obj.GuiObject = nil
+	obj.GuiObjects = {}
 
 	obj.ChannelTabs = {}
 	obj.NumTabs = 0
@@ -320,17 +351,10 @@ function module.new()
 
 	ClassMaker.MakeClass("ChannelsBar", obj)
 
-	obj:CreateTweeners()
-
-	PageLeftButton.MouseButton1Click:connect(function() obj:ScrollChannelsFrame(-1) end)
-	PageRightButton.MouseButton1Click:connect(function() obj:ScrollChannelsFrame(1) end)
-
-	--// Have to wait to tween until it's properly parented to PlayerGui
-	spawn(function()
-		while (not obj.GuiObject:IsDescendantOf(PlayerGui)) do
-			obj.GuiObject.AncenstryChanged:wait()
+	ChatSettings.SettingsChanged:connect(function(setting, value)
+		if (setting == "ChatChannelsTabTextSize") then
+			obj:ResizeChannelTabText(value)
 		end
-		obj:ScrollChannelsFrame(0)
 	end)
 
 	return obj
