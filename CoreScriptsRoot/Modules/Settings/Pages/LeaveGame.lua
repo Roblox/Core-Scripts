@@ -14,6 +14,7 @@ local CoreGui = game:GetService("CoreGui")
 local ContextActionService = game:GetService("ContextActionService")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
@@ -30,6 +31,11 @@ local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
+	this.LeaveFunc = function()
+		GuiService.SelectedCoreObject = nil -- deselects the button and prevents spamming the popup to save in studio when using gamepad
+		RunService.RenderStepped:wait()
+		game:Shutdown()
+	end
 	this.DontLeaveFunc = function(isUsingGamepad)
 		if this.HubRef then
 			this.HubRef:PopMenu(isUsingGamepad, true)
@@ -80,9 +86,9 @@ local function Initialize()
 		buttonSize = UDim2.new(0, 300, 0, 80)
 	end
 
-	this.LeaveGameButton = utility:MakeStyledButton("LeaveGame", "Leave", buttonSize)
+	this.LeaveGameButton = utility:MakeStyledButton("LeaveGame", "Leave", buttonSize, this.LeaveFunc)
 	this.LeaveGameButton.NextSelectionRight = nil
-	this.LeaveGameButton:SetVerb("Exit")
+	---this.LeaveGameButton:SetVerb("Exit")
 	if utility:IsSmallTouchScreen() then
 		this.LeaveGameButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, 0)
 	else
