@@ -45,7 +45,7 @@ function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraDa
 		speaker:InternalSendMessage(messageObj, self.Name)
 
 		messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message, speakerName)
-		speaker:InternalSendFilteredMessage(messageObj, channel)
+		speaker:InternalSendFilteredMessage(messageObj, self.Name)
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
 	end
@@ -82,7 +82,7 @@ function methods:MuteSpeaker(speakerName, reason, length)
 	self.Mutes[speakerName:lower()] = (length == 0 or length == nil) and 0 or (os.time() + length)
 
 	if (reason) then
-		self:SendSystemMessage(string.format("%s was muted for the following reason(s): %s", speakerName, self))
+		self:SendSystemMessage(string.format("%s was muted for the following reason(s): %s", speakerName, reason))
 	end
 
 	pcall(function() self.eSpeakerMuted:Fire(speakerName, reason, length) end)

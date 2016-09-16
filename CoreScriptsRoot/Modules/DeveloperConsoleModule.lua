@@ -2990,15 +2990,24 @@ local function onDevConsoleVisibilityChanged(isVisible)
 	end
 end
 
+local getDeveloperConsoleIsCreating = false
 local function getDeveloperConsole()
-	if not myDeveloperConsole then
-		local permissions = DeveloperConsole.GetPermissions()
-		local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
+	if (not myDeveloperConsole) then
+		if (not getDeveloperConsoleIsCreating) then
+			getDeveloperConsoleIsCreating = true
 
-		myDeveloperConsole = DeveloperConsole.new(RobloxGui, permissions, messagesAndStats)
+			local permissions = DeveloperConsole.GetPermissions()
+			local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
 
-		if isTenFootInterface then
-			myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
+			myDeveloperConsole = DeveloperConsole.new(RobloxGui, permissions, messagesAndStats)
+
+			if isTenFootInterface then
+				myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
+			end
+
+			getDeveloperConsoleIsCreating = false
+		else
+			while (getDeveloperConsoleIsCreating) do wait() end
 		end
 	end
 
@@ -3014,5 +3023,46 @@ function DevConsoleModuleTable:SetVisibility(value)
 	local devConsole = getDeveloperConsole()
 	devConsole:SetVisible(value)
 end
+
+
+local creatingLock = false
+local creatingVisibleValueToSet = false
+
+local function SetCoreConsoleCreation()
+	if (creatingLock) then return end
+	creatingLock = true
+
+	spawn(function()
+		--// Keep GetVisibility call before SetVisibility because the first call will yield for some time and 
+		--// there is the possibility that during the yield time the value of 'creatingVisibleValueToSet' may
+		--// change.
+		DevConsoleModuleTable:GetVisibility()
+		DevConsoleModuleTable:SetVisibility(creatingVisibleValueToSet)
+
+		creatingLock = false
+	end)
+end
+
+local StarterGui = game:GetService("StarterGui")
+StarterGui:RegisterGetCore("DeveloperConsoleVisible", function()
+	if (not myDeveloperConsole) then
+		SetCoreConsoleCreation()
+		return creatingVisibleValueToSet;
+	else
+		return DevConsoleModuleTable:GetVisibility()
+	end
+end)
+StarterGui:RegisterSetCore("DeveloperConsoleVisible", function(visible)
+	if (type(visible) ~= "boolean") then
+		error("DeveloperConsoleVisible must be given a boolean value.")
+	end
+
+	if (not myDeveloperConsole) then
+		creatingVisibleValueToSet = visible
+		SetCoreConsoleCreation()
+	else
+		DevConsoleModuleTable:SetVisibility(visible)
+	end
+end)
 
 return DevConsoleModuleTable
