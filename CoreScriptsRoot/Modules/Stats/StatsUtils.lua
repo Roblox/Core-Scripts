@@ -39,7 +39,7 @@ StatsUtils.ButtonHeight = 36
 -- Layout: Viewer
 StatsUtils.ViewerTopMargin = 10
 StatsUtils.ViewerHeight = 144
-StatsUtils.ViewerWidth = 288
+StatsUtils.ViewerWidth = 306
 
 StatsUtils.TextZIndex =  5
 StatsUtils.GraphZIndex = 2
@@ -52,7 +52,7 @@ StatsUtils.GraphAverageLineTotalThickness = (StatsUtils.GraphAverageLineInnerThi
   2 * StatsUtils.GraphAverageLineBorderThickness)
       
 -- Layout: Main Text Panel
-StatsUtils.TextPanelTitleHeightY = 32
+StatsUtils.TextPanelTitleHeightY = 52
 StatsUtils.TextPanelLegendItemHeightY = 20
 
 StatsUtils.TextPanelLeftMarginPix = 10
