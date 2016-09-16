@@ -34,7 +34,6 @@ local function Initialize()
 	local this = settingsPageFactory:CreateNewPage()
 
 	this.LeaveFunc = function()
-		print("should not be using")
 		GuiService.SelectedCoreObject = nil -- deselects the button and prevents spamming the popup to save in studio when using gamepad
 		RunService.RenderStepped:wait()
 		game:Shutdown()
