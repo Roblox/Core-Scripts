@@ -24,7 +24,7 @@ local PageInstance = nil
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
-local useShutdownToLeaveSuccess,useShutdownToLeaveValue = pcall(function() settings():GetFFlag("ChatLayoutChange") return end) 
+local useShutdownToLeaveSuccess,useShutdownToLeaveValue = pcall(function() settings():GetFFlag("UseShutdownToLeave") return end) 
 local useShutdownToLeave = useShutdownToLeaveSuccess and useShutdownToLeaveValue
 
 ----------- CLASS DECLARATION --------------
