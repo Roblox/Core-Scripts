@@ -43,9 +43,6 @@ function waitForChild(instance, name)
 	end
 end
 
-local gamepadDialogFlagSuccess, gamepadDialogFlagValue = pcall(function() return settings():GetFFlag("GamepadDialogSupport") end)
-local gamepadDialogSupportEnabled = (gamepadDialogFlagSuccess and gamepadDialogFlagValue == true)
-
 local filteringEnabledFixFlagSuccess, filteringEnabledFixFlagValue = pcall(function() return settings():GetFFlag("FilteringEnabledDialogFix") end)
 local filterEnabledFixActive = (filteringEnabledFixFlagSuccess and filteringEnabledFixFlagValue)
 
@@ -471,7 +468,7 @@ function presentDialogChoices(talkingPart, dialogChoices, parentDialog)
 	styleMainFrame(currentTone())
 	mainFrame.Visible = true
 
-	if gamepadDialogSupportEnabled and usingGamepad then
+	if usingGamepad then
 		Game:GetService("GuiService").SelectedCoreObject = choices[1]
 	end
 end
@@ -651,9 +648,7 @@ function onLoad()
   frame.Size = UDim2.new(0,0,0,0)
   frame.BackgroundTransparency = 1
   frame.RobloxLocked = true
-  if gamepadDialogSupportEnabled then
-  		game:GetService("GuiService"):AddSelectionParent("RBXDialogGroup", frame)
-  end
+  game:GetService("GuiService"):AddSelectionParent("RBXDialogGroup", frame)
 
   if (touchEnabled and not isSmallTouchScreen) then
 	frame.Position = UDim2.new(0,20,0.5,0)
@@ -681,58 +676,54 @@ end
 local lastClosestDialog = nil
 local getClosestDialogToPosition = guiService.GetClosestDialogToPosition
 
-if gamepadDialogSupportEnabled then 
-	game:GetService("RunService").Heartbeat:connect(function()
-		local closestDistance = math.huge
-		local closestDialog = nil
-		if usingGamepad == true then
-			if game.Players.LocalPlayer and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-				local characterPosition = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position
-				closestDialog = getClosestDialogToPosition(guiService, characterPosition)
-			end
+game:GetService("RunService").Heartbeat:connect(function()
+	local closestDistance = math.huge
+	local closestDialog = nil
+	if usingGamepad == true then
+		if game.Players.LocalPlayer and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			local characterPosition = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position
+			closestDialog = getClosestDialogToPosition(guiService, characterPosition)
 		end
+	end
 
-		if closestDialog ~= lastClosestDialog then
-			if dialogMap[lastClosestDialog] then
-				dialogMap[lastClosestDialog].Background.ActivationButton.Visible = false
-			end
-			lastClosestDialog = closestDialog
-			contextActionService:UnbindCoreAction("StartDialogAction")
-			if closestDialog ~= nil then
-				contextActionService:BindCoreAction("StartDialogAction",
-													function(actionName, userInputState, inputObject) 
-														if userInputState == Enum.UserInputState.Begin then 
-															if closestDialog and closestDialog.Parent then
-																startDialog(closestDialog) 
-															end
+	if closestDialog ~= lastClosestDialog then
+		if dialogMap[lastClosestDialog] then
+			dialogMap[lastClosestDialog].Background.ActivationButton.Visible = false
+		end
+		lastClosestDialog = closestDialog
+		contextActionService:UnbindCoreAction("StartDialogAction")
+		if closestDialog ~= nil then
+			contextActionService:BindCoreAction("StartDialogAction",
+												function(actionName, userInputState, inputObject) 
+													if userInputState == Enum.UserInputState.Begin then 
+														if closestDialog and closestDialog.Parent then
+															startDialog(closestDialog) 
 														end
-													end, 
-													false, 
-													Enum.KeyCode.ButtonX)
-				if dialogMap[closestDialog] then
-					dialogMap[closestDialog].Background.ActivationButton.Visible = true
-				end
+													end
+												end, 
+												false, 
+												Enum.KeyCode.ButtonX)
+			if dialogMap[closestDialog] then
+				dialogMap[closestDialog].Background.ActivationButton.Visible = true
 			end
 		end
-	end)
-end
+	end
+end)
 
 local lastSelectedChoice = nil
 
-if gamepadDialogSupportEnabled then 
-	guiService.Changed:connect(function(property)
-		if property == "SelectedCoreObject" then
-			if lastSelectedChoice and lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton") then
-				lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton").Visible = false
-				lastSelectedChoice.BackgroundTransparency = 1
-			end
-			lastSelectedChoice = guiService.SelectedCoreObject
-			if lastSelectedChoice and lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton") then
-				lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton").Visible = true
-				lastSelectedChoice.BackgroundTransparency = 0
-			end
+guiService.Changed:connect(function(property)
+	if property == "SelectedCoreObject" then
+		if lastSelectedChoice and lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton") then
+			lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton").Visible = false
+			lastSelectedChoice.BackgroundTransparency = 1
 		end
-	end)
-end
+		lastSelectedChoice = guiService.SelectedCoreObject
+		if lastSelectedChoice and lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton") then
+			lastSelectedChoice:FindFirstChild("RBXchatDialogSelectionButton").Visible = true
+			lastSelectedChoice.BackgroundTransparency = 0
+		end
+	end
+end)
 
 onLoad()

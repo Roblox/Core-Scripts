@@ -9,6 +9,7 @@ local MPS = Game:GetService 'MarketplaceService'
 local UIS = Game:GetService 'UserInputService'
 local CP = Game:GetService 'ContentProvider'
 local guiService = Game:GetService("GuiService")
+local ContextActionService = game:GetService('ContextActionService')
 
 local startTime = tick()
 
@@ -45,6 +46,9 @@ local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and get
 local isTenFootInterface = false 
 pcall(function() isTenFootInterface = guiService:IsTenFootInterface() end)
 local platform = UIS:GetPlatform()
+
+local useGameLoadedSuccess, useGameLoadedFlagValue = pcall(function() return settings():GetFFlag("UseGameLoadedInLoadingScript") end)
+local useGameLoadedToWait = (useGameLoadedSuccess and useGameLoadedFlagValue == true)
 
 --
 -- Utility functions
@@ -135,6 +139,55 @@ function MainGui:tileBackgroundTexture(frameToFill)
 				}
 			end
 		end
+	end
+end
+
+-- create a cancel binding for console to be able to cancel anytime while loading
+local function createTenfootCancelGui(parent)
+	local cancelLabel = create'ImageLabel'
+	{
+		Name = "CancelLabel";
+		Size = UDim2.new(0, 83, 0, 83);
+		Position = UDim2.new(1, -32 - 83, 0, 32);
+		BackgroundTransparency = 1;
+		Image = 'rbxasset://textures/ui/Shell/ButtonIcons/BButton.png';
+		Parent = parent;
+	}
+	local cancelText = create'TextLabel'
+	{
+		Name = "CancelText";
+		Size = UDim2.new(0, 0, 0, 0);
+		Position = UDim2.new(1, -131, 0, 64);
+		BackgroundTransparency = 1;
+		FontSize = Enum.FontSize.Size36;
+		TextXAlignment = Enum.TextXAlignment.Right;
+		TextColor3 = COLORS.WHITE;
+		Text = "Cancel";
+		Parent = parent;
+	}
+
+	-- bind cancel action
+	local platformService = nil
+	pcall(function()
+		platformService = game:GetService('PlatformService')
+	end)
+
+	if platformService then
+		local seenBButtonBegin = false
+		ContextActionService:BindCoreAction("CancelGameLoad",
+			function(actionName, inputState, inputObject)
+				if inputState == Enum.UserInputState.Begin then
+					seenBButtonBegin = true
+				elseif inputState == Enum.UserInputState.End and seenBButtonBegin then
+					cancelLabel:Destroy()
+					cancelText.Text = "Canceling..."
+					cancelText.Position = UDim2.new(1, -32, 0, 64)
+					ContextActionService:UnbindCoreAction('CancelGameLoad')
+					platformService:RequestGameShutdown()
+				end
+			end,
+			false,
+			Enum.KeyCode.ButtonB)
 	end
 end
 
@@ -368,6 +421,7 @@ local lastDotUpdateTime = nil
 local dotChangeTime = .2
 local brickCountChange = nil
 local lastBrickCount = 0
+local tenfootCancelGuiLoaded = false
 
 renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(function()
 	if not currScreenGui then return end
@@ -455,7 +509,12 @@ renderSteppedConnection = Game:GetService("RunService").RenderStepped:connect(fu
 	end
 	
 	-- fade in close button after 5 seconds unless we are running on a console
-	if  not isTenFootInterface then
+	if isTenFootInterface then
+		if tenfootCancelGuiLoaded == false and currentTime - startTime > 3 then
+			tenfootCancelGuiLoaded = true
+			createTenfootCancelGui(currScreenGui.BlackFrame)
+		end
+	else
 		if currentTime - startTime > 5 and currScreenGui.BlackFrame.CloseButton.ImageTransparency > 0 then
 			currScreenGui.BlackFrame.CloseButton.ImageTransparency = currScreenGui.BlackFrame.CloseButton.ImageTransparency - fadeAmount
 
@@ -500,24 +559,27 @@ guiService.ErrorMessageChanged:connect(function()
 				errorImage.BackgroundTransparency = 1
 				errorImage.Parent = currScreenGui.ErrorFrame
 			end
-			if leaveGameButton == nil then
-				local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
-				local utility = require(RobloxGui.Modules.Settings.Utility)
-				local textLabel = nil
-				leaveGameButton, leaveGameTextLabel = utility:MakeStyledButton("LeaveGame", "Leave", UDim2.new(0, 288, 0, 78))
-				leaveGameButton:SetVerb("Exit")
-				leaveGameButton.NextSelectionDown = leaveGameButton
-				leaveGameButton.NextSelectionLeft = leaveGameButton
-				leaveGameButton.NextSelectionRight = leaveGameButton 
-				leaveGameButton.NextSelectionUp = leaveGameButton
-				leaveGameButton.ZIndex = 9
-				leaveGameButton.Position = UDim2.new(0.771875, 0, 0, 37)
-				leaveGameButton.Parent = currScreenGui.ErrorFrame
-				leaveGameTextLabel.FontSize = Enum.FontSize.Size36 
-				leaveGameTextLabel.ZIndex = 10
-				game:GetService("GuiService").SelectedCoreObject = leaveGameButton
-			else
-				game:GetService("GuiService").SelectedCoreObject = leaveGameButton
+			-- we show a B button to kill game data model on console
+			if not isTenFootInterface then
+				if leaveGameButton == nil then
+					local RobloxGui = Game:GetService("CoreGui"):WaitForChild("RobloxGui")
+					local utility = require(RobloxGui.Modules.Settings.Utility)
+					local textLabel = nil
+					leaveGameButton, leaveGameTextLabel = utility:MakeStyledButton("LeaveGame", "Leave", UDim2.new(0, 288, 0, 78))
+					leaveGameButton:SetVerb("Exit")
+					leaveGameButton.NextSelectionDown = leaveGameButton
+					leaveGameButton.NextSelectionLeft = leaveGameButton
+					leaveGameButton.NextSelectionRight = leaveGameButton 
+					leaveGameButton.NextSelectionUp = leaveGameButton
+					leaveGameButton.ZIndex = 9
+					leaveGameButton.Position = UDim2.new(0.771875, 0, 0, 37)
+					leaveGameButton.Parent = currScreenGui.ErrorFrame
+					leaveGameTextLabel.FontSize = Enum.FontSize.Size36 
+					leaveGameTextLabel.ZIndex = 10
+					game:GetService("GuiService").SelectedCoreObject = leaveGameButton
+				else
+					game:GetService("GuiService").SelectedCoreObject = leaveGameButton
+				end
 			end
 		end 
 		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
@@ -630,17 +692,34 @@ function handleFinishedReplicating()
 	hasReplicatedFirstElements = (#Game:GetService("ReplicatedFirst"):GetChildren() > 0)
 
 	if not hasReplicatedFirstElements then
-		while game:GetService("ContentProvider").RequestQueueSize > 0 do
-			wait()
+		if useGameLoadedToWait then
+			if game:IsLoaded() then
+				handleRemoveDefaultLoadingGui()
+			else
+				local gameLoadedCon = nil
+				gameLoadedCon = game.Loaded:connect(function()
+					gameLoadedCon:disconnect()
+					gameLoadedCon = nil
+					handleRemoveDefaultLoadingGui()
+				end)
+			end
+		else
+			while game:GetService("ContentProvider").RequestQueueSize > 0 do
+				wait()
+			end
+			handleRemoveDefaultLoadingGui()
 		end
 	else
 		wait(5) -- make sure after 5 seconds we remove the default gui, even if the user doesn't
+		handleRemoveDefaultLoadingGui()
 	end
-	handleRemoveDefaultLoadingGui()
 end
 
 function handleRemoveDefaultLoadingGui()
 	destroyLoadingElements()
+	if isTenFootInterface then
+		ContextActionService:UnbindCoreAction('CancelGameLoad')
+	end
 end
 
 Game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)

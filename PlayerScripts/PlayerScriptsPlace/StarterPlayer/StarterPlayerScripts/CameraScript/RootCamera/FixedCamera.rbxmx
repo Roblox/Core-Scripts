@@ -23,6 +23,13 @@ local function CreateFixedCamera()
 			self.LastCameraTransform = nil
 		end
 		
+		if lastUpdate then
+			-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
+			local delta = math.min(0.1, now - lastUpdate)
+			local gamepadRotation = self:UpdateGamepad()		
+			self.RotateInput = self.RotateInput + (gamepadRotation * delta)
+		end		
+		
 		local subjectPosition = self:GetSubjectPosition()		
 		if subjectPosition and player and camera then
 			local zoom = self:GetCameraZoom()
