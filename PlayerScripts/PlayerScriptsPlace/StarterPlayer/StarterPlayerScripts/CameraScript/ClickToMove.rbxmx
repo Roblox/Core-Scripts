@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXC6F5D24E04174F7C8BECEAE8BA85B4FC">
+	<Item class="ModuleScript" referent="RBXA370868CA98D4E28A69B701C1F6D966E">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ClickToMove</string>
@@ -823,7 +823,7 @@ local function Pather(character, point)
 										if CameraModule then
 											local look = CameraModule:GetCameraLook()
 											local squashedLook = (look * Vector3.new(1,0,1)).unit
-											local direction = ((point - workspace.CurrentCamera.CoordinateFrame.p) * Vector3.new(1,0,1)).unit
+											local direction = ((point - CameraModule.cframe.p) * Vector3.new(1,0,1)).unit
 
 											local theta = math.deg(math.acos(squashedLook:Dot(direction)))
 
@@ -1257,12 +1257,12 @@ local function CreateClickToMoveModule()
 
 			local focus = camera.Focus.p
 
-			local cameraCFrame = camera.CoordinateFrame
+			local cameraCFrame = CameraModule.cframe
 			local mag = Vector3.new(cameraCFrame.lookVector.x, 0, cameraCFrame.lookVector.z).magnitude
 			local newLook = (Vector3.new(newLookAtPt.x, focus.y, newLookAtPt.z) - focus).unit * mag
 			local flippedLook = newLook + Vector3.new(0, cameraCFrame.lookVector.y, 0)
 
-			local distance = (focus - camera.CoordinateFrame.p).magnitude
+			local distance = (focus - cameraCFrame.p).magnitude
 
 			local newCamPos = focus - flippedLook.unit * distance
 			return CFrame.new(newCamPos, newCamPos + flippedLook)

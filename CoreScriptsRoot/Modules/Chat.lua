@@ -85,6 +85,8 @@ local playerDropDownModule = nil
 local playerDropDown = nil
 local blockingUtility = nil
 
+local topbarEnabled = true
+
 
 
 if not NON_CORESCRIPT_MODE then
@@ -918,6 +920,8 @@ local function CreateChatBarWidget(settings)
 	this.ChatErrorEvent = Util.Signal() -- Signal Signatue: success, actionType, [captures]
 	this.ChatBarFloodEvent = Util.Signal()
 
+	local chatCoreGuiEnabled = true
+
 	-- This function while lets string.find work case-insensitively without clobbering the case of the captures
 	local function nocase(s)
       s = string.gsub(s, "%a", function (c)
@@ -929,8 +933,8 @@ local function CreateChatBarWidget(settings)
 
 	this.ChatMatchingRegex =
 	{
-		[function(chatBarText) return string.find(chatBarText, nocase("^/w ") .. "(%w+)") end] = "Whisper";
-		[function(chatBarText) return string.find(chatBarText, nocase("^/whisper ") .. "(%w+)") end] = "Whisper";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/w ") .. "(%w+_?%w+)") end] = "Whisper";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/whisper ") .. "(%w+_?%w+)") end] = "Whisper";
 
 		[function(chatBarText) return string.find(chatBarText, "^%%") end] = "Team";
 		[function(chatBarText) return string.find(chatBarText, "^%(TEAM%)") end] = "Team";
@@ -948,13 +952,13 @@ local function CreateChatBarWidget(settings)
 		[function(chatBarText) return string.find(chatBarText, "^/%?") end] = "Help";
 		[function(chatBarText) return string.find(chatBarText, nocase("^/help")) end] = "Help";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/block ") .. "(%w+)") end] = "Block";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/block ") .. "(%w+_?%w+)") end] = "Block";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/unblock ") .. "(%w+)") end] = "Unblock";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/unblock ") .. "(%w+_?%w+)") end] = "Unblock";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/mute ") .. "(%w+)") end] = "Mute";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/mute ") .. "(%w+_?%w+)") end] = "Mute";
 
-		[function(chatBarText) return string.find(chatBarText, nocase("^/unmute ") .. "(%w+)") end] = "Unmute";
+		[function(chatBarText) return string.find(chatBarText, nocase("^/unmute ") .. "(%w+_?%w+)") end] = "Unmute";
 	}
 
 	local ChatModesDict =
@@ -1055,8 +1059,7 @@ local function CreateChatBarWidget(settings)
 
 	function this:CalculateVisibility()
 		if this.ChatBarContainer then
-			local chatEnabled = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat)
-			local enabled = self.WidgetVisible and chatEnabled and not NON_CORESCRIPT_MODE
+			local enabled = self.WidgetVisible and chatCoreGuiEnabled and not NON_CORESCRIPT_MODE
 			if enabled then
 				HookUpEvents()
 			else
@@ -1087,7 +1090,10 @@ local function CreateChatBarWidget(settings)
 	end
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
-		self:CalculateVisibility()
+		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+			chatCoreGuiEnabled = enabled
+			self:CalculateVisibility()
+		end
 	end
 
 	function this:IsAChatMode(mode)
@@ -1546,6 +1552,8 @@ local function CreateChatWindowWidget(settings)
 
 	local FadeLock = false
 
+	local chatCoreGuiEnabled = true
+
 	local function PointInChatWindow(pt)
 		local point0 = this.ChatContainer.AbsolutePosition
 		local point1 = point0 + this.ChatContainer.AbsoluteSize
@@ -1861,8 +1869,7 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:CalculateVisibility()
-		local chatEnabled = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat)
-		return this.WidgetVisible and ((chatEnabled and PlayersService.ClassicChat) or NON_CORESCRIPT_MODE)
+		return this.WidgetVisible and ((chatCoreGuiEnabled and PlayersService.ClassicChat) or NON_CORESCRIPT_MODE)
 	end
 
 	function this:ToggleVisibility(visible)
@@ -1878,8 +1885,11 @@ local function CreateChatWindowWidget(settings)
 	end
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
-		if this.ChatContainer then
-			this.ChatContainer.Visible = self:CalculateVisibility()
+		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+			chatCoreGuiEnabled = enabled
+			if this.ChatContainer then
+				this.ChatContainer.Visible = self:CalculateVisibility()
+			end
 		end
 	end
 
@@ -2129,6 +2139,7 @@ local function CreateChat()
 	this.Visible = false
 
 	function this:CoreGuiChanged(coreGuiType, enabled)
+		enabled = enabled and topbarEnabled
 		if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
 			if not GetTopBarFlag() then
 				if Util:IsTouchDevice() then
@@ -2143,7 +2154,7 @@ local function CreateChat()
 				end
 			end
 			if GetTopBarFlag() then
-				if StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat) then
+				if enabled then
 					pcall(function()
 						self.SpecialKeyPressedConn = Util.DisconnectEvent(self.SpecialKeyPressedConn)
 						GuiService:AddSpecialKey(Enum.SpecialKey.ChatHotkey)
@@ -2508,6 +2519,12 @@ local function CreateChat()
 		return 0
 	end
 
+	function this:TopbarEnabledChanged(enabled)
+		topbarEnabled = enabled
+		-- Update coregui to reflect new topbar status
+		self:CoreGuiChanged(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
+	end
+
 	function this:Initialize()
 		--[[ Developer Customization API ]]--
 		if not NON_CORESCRIPT_MODE then
@@ -2638,6 +2655,10 @@ do
 
 	function moduleApiTable:GetMessageCount()
 		return ChatInstance:GetCurrentWindowMessageCount()
+	end
+
+	function moduleApiTable:TopbarEnabledChanged(...)
+		return ChatInstance:TopbarEnabledChanged(...)
 	end
 
 	moduleApiTable.ChatBarFocusChanged = ChatInstance.ChatBarFocusChanged

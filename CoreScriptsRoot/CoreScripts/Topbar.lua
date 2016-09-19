@@ -36,6 +36,10 @@ local function GetChatVisibleIconFlag()
 	local chatVisibleIconSuccess, chatVisibleIconFlagValue = pcall(function() return settings():GetFFlag("MobileToggleChatVisibleIcon") end)
 	return chatVisibleIconSuccess and chatVisibleIconFlagValue == true
 end
+
+local defeatableTopbarSuccess, defeatableTopbarFlagValue = pcall(function() return settings():GetFFlag("EnableSetCoreTopbarEnabled") end)
+local defeatableTopbar = (defeatableTopbarSuccess and defeatableTopbarFlagValue == true)
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -49,6 +53,11 @@ local StarterGui = game:GetService('StarterGui')
 
 --[[ END OF SERVICES ]]
 
+
+local topbarEnabled = true
+local topbarEnabledChangedEvent = Instance.new('BindableEvent')
+
+local settingsActive = false
 
 local GameSettings = UserSettings().GameSettings
 local Player = PlayersService.LocalPlayer
@@ -148,27 +157,31 @@ local function CreateTopBar()
 		Parent = topbarContainer;
 	};
 
-	function this:UpdateBackgroundTransparency()
+	local function ComputeTransparency()
+		if not topbarEnabled then
+			return 1
+		end
+
 		local playerGui = Player:FindFirstChild('PlayerGui')
 		if playerGui then
-			topbarContainer.BackgroundTransparency = playerGui:GetTopbarTransparency()
+			return playerGui:GetTopbarTransparency()
+		end
+
+		return TOPBAR_TRANSLUCENT_TRANSPARENCY
+	end
+
+	function this:UpdateBackgroundTransparency()
+		if settingsActive then
+			topbarContainer.BackgroundTransparency = TOPBAR_OPAQUE_TRANSPARENCY
+			topbarShadow.Visible = false
+		else
+			topbarContainer.BackgroundTransparency = ComputeTransparency()
 			topbarShadow.Visible = (topbarContainer.BackgroundTransparency == 0)
 		end
 	end
 
 	function this:GetInstance()
 		return topbarContainer
-	end
-
-	function this:SetTopbarDisplayMode(opaque)
-		topbarContainer.BackgroundTransparency = opaque and TOPBAR_OPAQUE_TRANSPARENCY or TOPBAR_TRANSLUCENT_TRANSPARENCY
-		topbarShadow.Visible = not opaque
-		this:UpdateBackgroundTransparency()
-	end
-
-	function this:ForceTopbarOpaque()
-		topbarContainer.BackgroundTransparency = TOPBAR_OPAQUE_TRANSPARENCY
-		topbarShadow.Visible = false
 	end
 
 	spawn(function()
@@ -525,7 +538,9 @@ local function CreateUsernameHealthMenuItem()
 
 	local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
 	container.MouseButton1Click:connect(function()
-		PlayerlistModule.ToggleVisibility()
+		if topbarEnabled then
+			PlayerlistModule.ToggleVisibility()
+		end
 	end)
 
 	return this
@@ -621,6 +636,10 @@ local function CreateLeaderstatsMenuItem()
 	end
 	setmetatable(this, mtStore)
 
+	topbarEnabledChangedEvent.Event:connect(function()
+		PlayerlistModule.TopbarEnabledChanged(topbarEnabled)
+	end)
+
 	this:SetColumns(PlayerlistModule.GetStats())
 	PlayerlistModule.OnLeaderstatsChanged.Event:connect(function(newStatColumns)
 		this:SetColumns(newStatColumns)
@@ -631,7 +650,9 @@ local function CreateLeaderstatsMenuItem()
 	end)
 
 	leaderstatsContainer.MouseButton1Click:connect(function()
-		PlayerlistModule.ToggleVisibility()
+		if topbarEnabled then
+			PlayerlistModule.ToggleVisibility()
+		end
 	end)
 
 	return this
@@ -664,8 +685,6 @@ local function CreateSettingsIcon(topBarInstance)
 		Parent = settingsIconButton;
 	};
 
-	local settingsActive = false
-
 	local function UpdateHamburgerIcon()
 		if settingsActive then
 			settingsIconImage.Image = "rbxasset://textures/ui/Menu/HamburgerDown.png";
@@ -691,12 +710,8 @@ local function CreateSettingsIcon(topBarInstance)
 
 	MenuModule.SettingsShowSignal:connect(function(active)
 		settingsActive = active
+		topBarInstance:UpdateBackgroundTransparency()
 		UpdateHamburgerIcon()
-		if active then
-			topBarInstance:ForceTopbarOpaque()
-		else
-			topBarInstance:UpdateBackgroundTransparency()
-		end
 	end)
 
 	return CreateMenuItem(settingsIconButton)
@@ -835,6 +850,10 @@ local function CreateChatIcon()
 		end
 	end
 
+	topbarEnabledChangedEvent.Event:connect(function()
+		ChatModule:TopbarEnabledChanged(topbarEnabled)
+	end)
+
 	chatIconButton.MouseButton1Click:connect(function()
 		toggleChat()
 	end)
@@ -952,6 +971,10 @@ local function CreateBackpackIcon()
 	local function toggleBackpack()
 		BackpackModule:OpenClose()
 	end
+
+	topbarEnabledChangedEvent.Event:connect(function()
+		BackpackModule:TopbarEnabledChanged(topbarEnabled)
+	end)
 
 	backpackIconButton.MouseButton1Click:connect(function()
 		BackpackModule:OpenClose()
@@ -1093,6 +1116,7 @@ local function AddItemInOrder(Bar, Item, ItemOrder)
 end
 
 local function OnCoreGuiChanged(coreGuiType, enabled)
+	enabled = enabled and topbarEnabled
 	if coreGuiType == Enum.CoreGuiType.PlayerList or coreGuiType == Enum.CoreGuiType.All then
 		if leaderstatsMenuItem then
 			if enabled then
@@ -1138,7 +1162,7 @@ local function OnCoreGuiChanged(coreGuiType, enabled)
 		local playerListOn = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList)
 		local healthbarOn = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health)
 		-- Left-align the player's name if either playerlist or healthbar is shown
-		nameAndHealthMenuItem:SetNameVisible(playerListOn or healthbarOn)
+		nameAndHealthMenuItem:SetNameVisible((playerListOn or healthbarOn) and topbarEnabled)
 	end
 end
 
@@ -1153,7 +1177,7 @@ end
 
 local function CheckShiftLockMode()
 	if shiftlockIcon then
-		if IsShiftLockModeEnabled() then
+		if IsShiftLockModeEnabled() and topbarEnabled then
 			AddItemInOrder(LeftMenubar, shiftlockIcon, LEFT_ITEM_ORDER)
 		else
 			LeftMenubar:RemoveItem(shiftlockIcon)
@@ -1175,7 +1199,7 @@ local function OnPlayerChanged(property)
 	end
 end
 
-TopBar:SetTopbarDisplayMode(false)
+TopBar:UpdateBackgroundTransparency()
 
 LeftMenubar:SetDock(TopBar:GetInstance())
 RightMenubar:SetDock(TopBar:GetInstance())
@@ -1187,7 +1211,7 @@ end
 if settingsIcon then
 	AddItemInOrder(LeftMenubar, settingsIcon, LEFT_ITEM_ORDER)
 end
-if nameAndHealthMenuItem and not isTenFootInterface then
+if nameAndHealthMenuItem and topbarEnabled and not isTenFootInterface then
 	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
 end
 
@@ -1197,7 +1221,7 @@ local gameOptions = settings():FindFirstChild("Game Options")
 if gameOptions and not isTenFootInterface then
 	local success, result = pcall(function()
 		gameOptions.VideoRecordingChangeRequest:connect(function(recording)
-			if recording then
+			if recording and topbarEnabled then
 				AddItemInOrder(LeftMenubar, stopRecordingIcon, LEFT_ITEM_ORDER)
 			else
 				LeftMenubar:RemoveItem(stopRecordingIcon)
@@ -1206,25 +1230,34 @@ if gameOptions and not isTenFootInterface then
 	end)
 end
 
--- Hook-up coregui changing
-StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
-for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do
-	-- The All enum will be false if any of the coreguis are false
-	-- therefore by force updating it we are clobbering the previous sets
-	if enumItem ~= Enum.CoreGuiType.All then
-		OnCoreGuiChanged(enumItem, StarterGui:GetCoreGuiEnabled(enumItem))
+function topBarEnabledChanged()
+	topbarEnabledChangedEvent:Fire(topbarEnabled)
+	TopBar:UpdateBackgroundTransparency()
+	CheckShiftLockMode()
+	for _, enumItem in pairs(Enum.CoreGuiType:GetEnumItems()) do
+		-- The All enum will be false if any of the coreguis are false
+		-- therefore by force updating it we are clobbering the previous sets
+		if enumItem ~= Enum.CoreGuiType.All then
+			OnCoreGuiChanged(enumItem, StarterGui:GetCoreGuiEnabled(enumItem))
+		end
 	end
 end
+
+if defeatableTopbar then
+	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
+		if type(enabled) == "boolean" then 
+			topbarEnabled = enabled
+			topBarEnabledChanged()
+		end
+	end)
+end
+
+-- Hook-up coregui changing
+StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)
+topBarEnabledChanged()
 -- Hook up Shiftlock detection
 GameSettings.Changed:connect(OnGameSettingsChanged)
 Player.Changed:connect(OnPlayerChanged)
-CheckShiftLockMode()
-
-
-
-
-
-
 
 
 

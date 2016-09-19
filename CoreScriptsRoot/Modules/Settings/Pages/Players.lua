@@ -98,7 +98,7 @@ local function Initialize()
 
 			-- create new friend status label
 			local status = nil
-			if player and player ~= localPlayer and player.userId > 1 then
+			if player and player ~= localPlayer and player.userId > 1 and localPlayer.userId > 1 then
 				status = getFriendStatus(player)
 			end
 
@@ -106,7 +106,6 @@ local function Initialize()
 			local friendLabelText = nil
 			if not status then
 				friendLabel = Instance.new('TextButton')
-				friendLabel.Name = 'FriendStatus'
 				friendLabel.Text = ''
 				friendLabel.BackgroundTransparency = 1
 				friendLabel.Position = UDim2.new(1,-198,0,7)
@@ -215,7 +214,7 @@ local function Initialize()
 
 	local existingPlayerLabels = {}
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
-		local sortedPlayers = game.Players:GetPlayers()
+		local sortedPlayers = PlayersService:GetPlayers()
 		table.sort(sortedPlayers,function(item1,item2)
 			return item1.Name < item2.Name
 		end)
@@ -226,12 +225,15 @@ local function Initialize()
 		end
 
 		selectionFound = nil
-		local framesToDestroy = {}
-		for index=1, math.max(#sortedPlayers,#existingPlayerLabels) do
+
+
+		-- iterate through players to reuse or create labels for players
+		for index=1, #sortedPlayers do
 			local player = sortedPlayers[index]
 			local frame = existingPlayerLabels[index]
 			if player then
-				if not frame then
+				-- create label (frame) for this player index if one does not exist
+				if not frame or not frame.Parent then
 					frame = Instance.new('ImageLabel')
 					frame.Image = "rbxasset://textures/ui/dialog_white.png"
 					frame.ScaleType = 'Slice'
@@ -277,20 +279,21 @@ local function Initialize()
 				frame.ImageTransparency = frameDefaultTransparency
 
 				friendStatusCreate(frame, player)
-			elseif frame then
-				table.insert(framesToDestroy,frame)
 			end
 		end
-		for i=#framesToDestroy, 1, -1 do
-			local frame = framesToDestroy[i]
-			if frame then
+
+		-- iterate through existing labels in reverse to destroy and remove unused labels
+		for index=#existingPlayerLabels, 1, -1 do
+			local player = sortedPlayers[index]
+			local frame = existingPlayerLabels[index]
+			if frame and not player then
+				table.remove(existingPlayerLabels, i)
 				frame:Destroy()
 			end
 		end
 
 		this.Page.Size = UDim2.new(1,0,0, extraOffset + 80 * #sortedPlayers - 5)
 	end)
-
 
 	return this
 end

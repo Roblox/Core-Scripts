@@ -1,12 +1,15 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX111DCB5EDF814D0CB25DC3588133363A">
+	<Item class="ModuleScript" referent="RBXA74A5A1BA29543E288C039551D27D876">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">RootCamera</string>
-			<ProtectedString name="Source"><![CDATA[local UserInputService = game:GetService('UserInputService')
+			<ProtectedString name="Source"><![CDATA[
 local PlayersService = game:GetService('Players')
+local UserInputService = game:GetService('UserInputService')
+
+local HasVRAPI = pcall(function() local _ = UserInputService.VREnabled end)
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
@@ -54,6 +57,8 @@ end
 local MIN_Y = math.rad(-80)
 local MAX_Y = math.rad(80)
 
+local VR_ANGLE = math.rad(15)
+
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
 local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
 
@@ -62,8 +67,6 @@ local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
 
 -- Reset the camera look vector when the camera is enabled for the first time
 local SetCameraOnSpawn = true
-
-
 
 local function GetRenderCFrame(part)
 	return part:GetRenderCFrame()
@@ -78,6 +81,8 @@ local function CreateCamera()
 	local isRightMouseDown = false
 	local isMiddleMouseDown = false
 	this.RotateInput = Vector2.new()
+
+	this.currentHeight = 0
 
 	function this:GetShiftLock()
 		return ShiftLockController:IsShiftLocked()
@@ -147,6 +152,14 @@ local function CreateCamera()
 		end
 	end
 
+	function this:GetCameraHeight()
+		if not this:IsInFirstPerson() and HasVRAPI and UserInputService.VREnabled then
+			local zoom = this:GetCameraZoom()
+			return math.sin(VR_ANGLE) * zoom
+		end
+		return 0
+	end
+
 	function this:ViewSizeX()
 		local result = 1024
 		local camera = workspace.CurrentCamera
@@ -186,9 +199,14 @@ local function CreateCamera()
 	end
 
 	function this:RotateCamera(startLook, xyRotateVector)
-		local startVertical = math.asin(startLook.y)
-		local yTheta = clamp(-MAX_Y + startVertical, -MIN_Y + startVertical, xyRotateVector.y)
-		return self:RotateVector(startLook, Vector2.new(xyRotateVector.x, yTheta))
+		if HasVRAPI and UserInputService.VREnabled then
+			local yawRotatedVector, xyRotateVector = self:RotateVector(startLook, Vector2.new(xyRotateVector.x, 0))
+			return Vector3.new(yawRotatedVector.x, 0, yawRotatedVector.z).unit, xyRotateVector
+		else
+			local startVertical = math.asin(startLook.y)
+			local yTheta = clamp(-MAX_Y + startVertical, -MIN_Y + startVertical, xyRotateVector.y)
+			return self:RotateVector(startLook, Vector2.new(xyRotateVector.x, yTheta))
+		end
 	end
 
 	function this:IsInFirstPerson()
@@ -275,6 +293,27 @@ local function CreateCamera()
 	end
 
 	function this:Update()
+	end
+	
+	function this:ApplyVRPosition()
+		--we only want this to happen in first person VR
+		local player = game.Players.LocalPlayer
+		if not player or not player.Character 
+				or not player.Character:FindFirstChild("HumanoidRootPart") 
+				or not player.Character.HumanoidRootPart:FindFirstChild("RootJoint") then
+			return
+		end
+		
+		if not this:IsInFirstPerson() then
+			local rootJoint = player.Character.HumanoidRootPart.RootJoint 
+			rootJoint.C0 = CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
+			return 
+		end
+		
+		local vrFrame = UserInputService.UserHeadCFrame
+		local vrRotation = vrFrame - vrFrame.p
+		local rootJoint = player.Character.HumanoidRootPart.RootJoint 
+		rootJoint.C0 = CFrame.new(vrRotation:vectorToObjectSpace(vrFrame.p)) * CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
 	end
 
 	---- Input Events ----
@@ -598,7 +637,7 @@ local function CreateCamera()
 		return Vector2.new(0,0)
 	end
 
-	local InputBeganConn, InputChangedConn, InputEndedConn, ShiftLockToggleConn = nil, nil, nil, nil
+	local InputBeganConn, InputChangedConn, InputEndedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn = nil, nil, nil, nil, nil, nil
 
 	function this:DisconnectInputEvents()
 		if InputBeganConn then
@@ -616,6 +655,14 @@ local function CreateCamera()
 		if ShiftLockToggleConn then
 			ShiftLockToggleConn:disconnect()
 			ShiftLockToggleConn = nil
+		end
+		if GamepadConnectedConn then
+			GamepadConnectedConn:disconnect()
+			GamepadConnectedConn = nil
+		end
+		if GamepadDisconnectedConn then
+			GamepadDisconnectedConn:disconnect()
+			GamepadDisconnectedConn = nil
 		end
 		this.TurningLeft = false
 		this.TurningRight = false
@@ -688,9 +735,39 @@ local function CreateCamera()
 		end)
 
 		this.RotateInput = Vector2.new()
+		
+		local activateGamepad = nil
+		local function assignActivateGamepad()
+			local connectedGamepads = UserInputService:GetConnectedGamepads()
+			if #connectedGamepads > 0 then
+				for i = 1, #connectedGamepads do
+					if activateGamepad == nil then
+						activateGamepad = connectedGamepads[i]
+					elseif connectedGamepads[i].Value < activateGamepad.Value then
+						activateGamepad = connectedGamepads[i]
+					end
+				end
+			end
+			
+			if activateGamepad == nil then -- nothing is connected, at least set up for gamepad1
+				activateGamepad = Enum.UserInputType.Gamepad1
+			end
+		end
+		
+		GamepadConnectedConn = UserInputService.GamepadDisconnected:connect(function(gamepadEnum)
+			if activateGamepad ~= gamepadEnum then return end
+			activateGamepad = nil
+			assignActivateGamepad()
+		end)
+	
+		GamepadDisconnectedConn = UserInputService.GamepadConnected:connect(function(gamepadEnum)
+			if activateGamepad == nil then 
+				assignActivateGamepad()
+			end
+		end)
 
 		local getGamepadPan = function(name, state, input)
-			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.Thumbstick2 then
+			if input.UserInputType == activateGamepad and input.KeyCode == Enum.KeyCode.Thumbstick2 then
 
 				if state == Enum.UserInputState.Cancel then
 					this.GamepadPanningCamera = Vector2.new(0,0)
@@ -707,7 +784,7 @@ local function CreateCamera()
 		end
 
 		local doGamepadZoom = function(name, state, input)
-			if input.UserInputType == Enum.UserInputType.Gamepad1 and input.KeyCode == Enum.KeyCode.ButtonR3 and state == Enum.UserInputState.Begin then
+			if input.UserInputType == activateGamepad and input.KeyCode == Enum.KeyCode.ButtonR3 and state == Enum.UserInputState.Begin then
 				if this.ZoomEnabled then
 					if this.currentZoom > 0.5 then
 						this:ZoomCamera(0)
@@ -721,6 +798,8 @@ local function CreateCamera()
 		game.ContextActionService:BindAction("RootCamGamepadPan", getGamepadPan, false, Enum.KeyCode.Thumbstick2)
 		game.ContextActionService:BindAction("RootCamGamepadZoom", doGamepadZoom, false, Enum.KeyCode.ButtonR3)
 
+		assignActivateGamepad()
+
 		-- set mouse behavior
 		self:UpdateMouseBehavior()
 	end
@@ -730,6 +809,7 @@ local function CreateCamera()
 			self.Enabled = newState
 			if self.Enabled then
 				self:ConnectInputEvents()
+				self.cframe = workspace.CurrentCamera.CoordinateFrame
 			else
 				self:DisconnectInputEvents()
 			end
@@ -753,7 +833,7 @@ local function CreateCamera()
 				wait()
 				humanoid = findPlayerHumanoid(player)
 			end
-			local function setLookBehindChatacter()
+			local function setLookBehindCharacter()
 				if humanoid and humanoid.Torso and player.Character == newCharacter then
 					local newDesiredLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.23,0)).unit
 					local horizontalShift = findAngleBetweenXZVectors(newDesiredLook, this:GetCameraLook())
@@ -771,7 +851,7 @@ local function CreateCamera()
 				end
 			end
 			wait()
-			setLookBehindChatacter()
+			setLookBehindCharacter()
 		end
 
 		player.CharacterAdded:connect(function(character)

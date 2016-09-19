@@ -71,6 +71,7 @@ local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 local utility = require(RobloxGui.Modules.Settings.Utility)
+local topbarEnabled = true
 
 if isTenFootInterface then
 	ICON_SIZE = 100
@@ -1078,6 +1079,7 @@ end
 local function OnCoreGuiChanged(coreGuiType, enabled)
 	-- Check for enabling/disabling the whole thing
 	if coreGuiType == Enum.CoreGuiType.Backpack or coreGuiType == Enum.CoreGuiType.All then
+		enabled = enabled and topbarEnabled
 		WholeThingEnabled = enabled
 		MainFrame.Visible = enabled
 
@@ -1524,6 +1526,12 @@ do -- Hotkey stuff
 			gamepadDisconnected()
 		end
 	end)
+end
+
+function BackpackScript:TopbarEnabledChanged(enabled)
+	topbarEnabled = enabled
+	-- Update coregui to reflect new topbar status
+	OnCoreGuiChanged(Enum.CoreGuiType.Backpack, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Backpack))
 end
 
 -- Listen to enable/disable signals from the StarterGui
