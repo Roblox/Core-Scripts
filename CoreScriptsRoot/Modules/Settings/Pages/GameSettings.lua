@@ -800,7 +800,8 @@ local function Initialize()
 		local showOverscanScreen = function()
 
 			if not overscanScreen then
-				local createOverscanFunc = require(RobloxGui.Modules.OverscanScreen)
+				local overscanModule = RobloxGui.Modules.OverscanScreen or RobloxGui.Modules.Shell.OverscanScreen
+				local createOverscanFunc = require(overscanModule)
 				overscanScreen = createOverscanFunc(RobloxGui)
 				overscanScreen:SetStyleForInGame()
 			end
