@@ -2719,12 +2719,16 @@ end
 -- Permissions --
 -----------------
 do
-	local permissions;
+	local permissionsLoading, permissions = false;
 	function DeveloperConsole.GetPermissions()
+		while permissionsLoading do wait() end
+		
 		if permissions then
 			return permissions
 		end
+		
 		permissions = {}
+		permissionsLoading = true
 		
 		pcall(function()
 			permissions.CreatorFlagValue = settings():GetFFlag("UseCanManageApiToDetermineConsoleAccess")
@@ -2771,8 +2775,9 @@ do
 		permissions.MayViewServerScripts = permissions.IsCreator
 		permissions.MayViewServerJobs = permissions.IsCreator
 		
-		return permissions
+		permissionsLoading = false
 		
+		return permissions
 	end
 end
 
@@ -2990,24 +2995,15 @@ local function onDevConsoleVisibilityChanged(isVisible)
 	end
 end
 
-local getDeveloperConsoleIsCreating = false
 local function getDeveloperConsole()
 	if (not myDeveloperConsole) then
-		if (not getDeveloperConsoleIsCreating) then
-			getDeveloperConsoleIsCreating = true
+		local permissions = DeveloperConsole.GetPermissions()
+		local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
 
-			local permissions = DeveloperConsole.GetPermissions()
-			local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
+		myDeveloperConsole = DeveloperConsole.new(RobloxGui, permissions, messagesAndStats)
 
-			myDeveloperConsole = DeveloperConsole.new(RobloxGui, permissions, messagesAndStats)
-
-			if isTenFootInterface then
-				myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
-			end
-
-			getDeveloperConsoleIsCreating = false
-		else
-			while (getDeveloperConsoleIsCreating) do wait() end
+		if isTenFootInterface then
+			myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
 		end
 	end
 
