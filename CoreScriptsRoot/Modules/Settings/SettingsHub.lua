@@ -978,7 +978,7 @@ local function CreateSettingsHub()
 		this:HideShield()
 
 		vrMenuOpened = this.SettingsShowSignal:connect(function(visible)
-			if visible and this.Visible then
+			if visible then
 				local topbarPanel = Panel3D.Get("Topbar3D")
 				panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
 				panel:SetVisible(true)
