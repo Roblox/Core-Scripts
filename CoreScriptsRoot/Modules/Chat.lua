@@ -71,7 +71,7 @@ local allowMoveChat = getMoveChatSuccess and moveChatActiveValue
 local getDisableChatBarSuccess, disableChatBarValue = pcall(function() return settings():GetFFlag("SetCoreDisableChatBar") end)
 local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 
-local chatLayoutChangeSuccess,chatLayoutChangeValue = pcall(function() settings():GetFFlag("ChatLayoutChange") return end) -- remember to make a new fflag
+local chatLayoutChangeSuccess,chatLayoutChangeValue = pcall(function() return settings():GetFFlag("ChatLayoutChange") end) -- remember to make a new fflag
 local allowChatLayoutChange = chatLayoutChangeSuccess and chatLayoutChangeValue
 
 --[[ SCRIPT VARIABLES ]]
