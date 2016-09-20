@@ -2995,8 +2995,10 @@ local function onDevConsoleVisibilityChanged(isVisible)
 	end
 end
 
+local devConsoleCreating = false
 local function getDeveloperConsole()
-	if (not myDeveloperConsole) then
+	if (not myDeveloperConsole and not devConsoleCreating) then
+		devConsoleCreating = true
 		local permissions = DeveloperConsole.GetPermissions()
 		local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
 
@@ -3005,19 +3007,25 @@ local function getDeveloperConsole()
 		if isTenFootInterface then
 			myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
 		end
+		devConsoleCreating = false
 	end
-
 	return myDeveloperConsole
 end
 
 function DevConsoleModuleTable:GetVisibility()
 	local devConsole = getDeveloperConsole()
-	return devConsole.Visible
+	if devConsole then
+		return devConsole.Visible
+	else
+		return false
+	end
 end
 
 function DevConsoleModuleTable:SetVisibility(value)
 	local devConsole = getDeveloperConsole()
-	devConsole:SetVisible(value)
+	if devConsole then
+		devConsole:SetVisible(value)
+	end
 end
 
 
