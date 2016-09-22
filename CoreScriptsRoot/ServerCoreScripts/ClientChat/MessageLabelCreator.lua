@@ -3,12 +3,15 @@ local source = [[
 --	// Written by: Xsitsu
 --	// Description: Module to handle taking text and creating stylized GUI objects for display in ChatWindow.
 
+local OBJECT_POOL_SIZE = 50
+
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local moduleObjectPool = require(modulesFolder:WaitForChild("ObjectPool"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 
@@ -58,7 +61,16 @@ function WaitUntilParentedCorrectly()
 end
 
 
-local function WrapIntoMessageObject(id, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction)
+function ReturnToObjectPoolRecursive(instance, objectPool)
+	local children = instance:GetChildren()
+	for i = 1, #children do
+		ReturnToObjectPoolRecursive(children[i], objectPool)
+	end
+	instance.Parent = nil
+	objectPool:ReturnInstance(instance)
+end
+
+local function WrapIntoMessageObject(id, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction, ObjectPool)
 	local obj = {}
 
 	obj.ID = id
@@ -67,6 +79,11 @@ local function WrapIntoMessageObject(id, BaseFrame, BaseMessage, Tweener, Strong
 	obj.Tweener = Tweener
 	obj.StrongReferences = StrongReferences
 	obj.UpdateTextFunction = UpdateTextFunction or function() warn("NO MESSAGE RESIZE FUNCTION") end
+	obj.ObjectPool = ObjectPool
+
+	if ObjectPool == nil then
+		print("Blah")
+	end
 
 	function obj:TweenOut(duration)
 		self.Tweener:Tween(duration, 1)
@@ -77,8 +94,7 @@ local function WrapIntoMessageObject(id, BaseFrame, BaseMessage, Tweener, Strong
 	end
 
 	function obj:Destroy()
-		self.BaseFrame:Destroy()
-		self.BaseMessage:Destroy()
+		ReturnToObjectPoolRecursive(self.BaseFrame, self.ObjectPool)
 	end
 
 	return obj
@@ -89,14 +105,15 @@ function methods:CreateMessageLabelFromType(messageData, messageType)
 end
 
 function methods:CreateBaseMessage(message, font, fontSize, chatColor)
-	local BaseFrame = Instance.new("Frame")
+	local BaseFrame = self.ObjectPool:GetInstance("Frame")
 	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
 	BaseFrame.BackgroundTransparency = 1
 
 	local messageBorder = 8
 
-	local BaseMessage = Instance.new("TextLabel", BaseFrame)
+	local BaseMessage = self.ObjectPool:GetInstance("TextLabel")
+	BaseMessage.Parent = BaseFrame
 	BaseMessage.Selectable = false
 	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
 	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
@@ -114,7 +131,8 @@ function methods:CreateBaseMessage(message, font, fontSize, chatColor)
 end
 
 function methods:AddNameButtonToBaseMessage(BaseMessage, speakerNameSize, nameColor, formatName)
-	local NameButton = Instance.new("TextButton", BaseMessage)
+	local NameButton = self.ObjectPool:GetInstance("TextButton")
+	NameButton.Parent = BaseMessage
 	NameButton.Selectable = false
 	NameButton.Size = UDim2.new(0, speakerNameSize.X, 0, speakerNameSize.Y)
 	NameButton.Position = UDim2.new(0, 0, 0, 0)
@@ -130,7 +148,8 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, speakerNameSize, nameCo
 end
 
 function methods:AddChannelButtonToBaseMessage(BaseMessage, channelNameSize, formatChannelName)
-	local ChannelButton = Instance.new("TextButton", BaseMessage)
+	local ChannelButton = self.ObjectPool:GetInstance("TextButton")
+	ChannelButton.Parent = BaseMessage
 	ChannelButton.Selectable = false
 	ChannelButton.Size = UDim2.new(1, 0, 1, 0)
 	ChannelButton.Position = UDim2.new(0, 0, 0, 0)
@@ -223,7 +242,7 @@ function methods:CreateMessageLabel(messageData)
 		BaseMessage.Text = string.rep(" ", numNeededSpaces) .. newMessageObject.Message
 	end
 
-	return WrapIntoMessageObject(messageData.ID, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction)
+	return WrapIntoMessageObject(messageData.ID, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction, self.ObjectPool)
 end
 
 function methods:CreateSystemMessageLabel(messageData)
@@ -241,7 +260,7 @@ function methods:CreateSystemMessageLabel(messageData)
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
 
-	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {})
+	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {}, nil, self.ObjectPool)
 end
 
 function methods:CreateWelcomeMessageLabel(message)
@@ -256,7 +275,7 @@ function methods:CreateWelcomeMessageLabel(message)
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
 
-	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {})
+	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {}, nil, self.ObjectPool)
 end
 
 function methods:CreateSetCoreMessageLabel(valueTable)
@@ -273,7 +292,7 @@ function methods:CreateSetCoreMessageLabel(valueTable)
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
 
-	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {})
+	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {}, nil, self.ObjectPool)
 end
 
 function methods:CreateChannelEchoMessageLabel(messageData)
@@ -361,7 +380,7 @@ function methods:CreateChannelEchoMessageLabel(messageData)
 		BaseMessage.Text = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. newMessageObject.Message
 	end
 
-	return WrapIntoMessageObject(messageData.ID, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction)
+	return WrapIntoMessageObject(messageData.ID, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction, self.ObjectPool)
 end
 
 function methods:CreateChannelEchoSystemMessageLabel(messageData)
@@ -390,7 +409,7 @@ function methods:CreateChannelEchoSystemMessageLabel(messageData)
 	Tweener:RegisterTweenObjectProperty(ChannelButton, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(ChannelButton, "TextStrokeTransparency")
 
-	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {ChannelButton})
+	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {ChannelButton}, nil, self.ObjectPool)
 end
 
 --///////////////////////// Constructors
@@ -399,6 +418,8 @@ ClassMaker.RegisterClassType("MessageLabelCreator", methods)
 
 function module.new()
 	local obj = {}
+
+	obj.ObjectPool = moduleObjectPool.new(OBJECT_POOL_SIZE)
 
 	ClassMaker.MakeClass("MessageLabelCreator", obj)
 
