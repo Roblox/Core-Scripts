@@ -1,7 +1,7 @@
 --[[
-		Filename: StatsButton.lua
-		Written by: dbanks
-		Description: Button that displays latest deets of one or two 
+  Filename: StatsButton.lua
+  Written by: dbanks
+  Description: Button that displays latest deets of one or two 
     particular stats.
 --]]
 

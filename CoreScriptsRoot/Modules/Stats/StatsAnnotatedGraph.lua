@@ -1,7 +1,7 @@
 --[[
-		Filename: StatsAnnotatedGraph.lua
-		Written by: dbanks
-		Description: A graph plus extra annotations like axis markings, 
+  Filename: StatsAnnotatedGraph.lua
+  Written by: dbanks
+  Description: A graph plus extra annotations like axis markings, 
       target lines, etc.
 --]]
 

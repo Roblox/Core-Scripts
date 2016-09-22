@@ -1,7 +1,7 @@
 --[[
-		Filename: StatsButtonViewer.lua
-		Written by: dbanks
-		Description: Widget that displays one or more stats in closeup view:
+  Filename: StatsButtonViewer.lua
+  Written by: dbanks
+  Description: Widget that displays one or more stats in closeup view:
       text and graphics.
 --]]
 

@@ -1,7 +1,7 @@
 --[[
-		Filename: StatsUtils.lua
-		Written by: dbanks
-		Description: Common work in the performance stats world.
+  Filename: StatsUtils.lua
+  Written by: dbanks
+  Description: Common work in the performance stats world.
 --]]
 
 --[[ Services ]]--
