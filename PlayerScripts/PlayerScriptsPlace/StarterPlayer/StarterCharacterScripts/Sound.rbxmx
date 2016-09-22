@@ -23,7 +23,11 @@ function CreateNewSound(name, id, looped, pitch, parent)
 	sound.archivable = false
 	sound.Parent = parent
 	sound.Pitch = pitch
-	sound.Looped = looped	
+	sound.Looped = looped
+	
+	sound.MinDistance = 5
+	sound.MaxDistance = 150
+	sound.Volume = 0.65
 	
 	return sound
 end
