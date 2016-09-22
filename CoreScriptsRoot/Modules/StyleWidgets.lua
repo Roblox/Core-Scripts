@@ -1,8 +1,8 @@
 --[[
-		Filename: StyleWidgets.lua
-		Written by: dbanks
-		Version 1.0
-		Description: Widgets with common style elements that can be shared across
+  Filename: StyleWidgets.lua
+  Written by: dbanks
+  Version 1.0
+  Description: Widgets with common style elements that can be shared across
       different GUIS.
 --]]
 ----------------- SERVICES ------------------------------
