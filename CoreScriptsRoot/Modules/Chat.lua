@@ -21,6 +21,8 @@ local NON_CORESCRIPT_MODE = false
 local MESSAGES_FADE_OUT_TIME = 30
 local MAX_UDIM_SIZE = 2^15 - 1
 
+local CHAT_WINDOW_Y_OFFSET = 2
+
 local PHONE_SCREEN_WIDTH = 640
 local TABLET_SCREEN_WIDTH = 1024
 
@@ -59,6 +61,8 @@ local GuiService = game:GetService('GuiService')
 local InputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 local ContextActionService = game:GetService('ContextActionService')
+local Settings = UserSettings()
+local GameSettings = Settings.GameSettings
 --[[ END OF SERVICES ]]
 
 --[[ Fast Flags ]]--
@@ -78,6 +82,7 @@ local allowChatLayoutChange = chatLayoutChangeSuccess and chatLayoutChangeValue
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
 local PlayerPermissionsModule = require(RobloxGui.Modules.PlayerPermissionsModule)
+local StatsUtils = require(RobloxGui.Modules.Stats.StatsUtils)
 
 -- I am not fond of waiting at the top of the script here...
 while PlayersService.LocalPlayer == nil do PlayersService.ChildAdded:wait() end
@@ -1513,7 +1518,7 @@ local function CreateChatBarWidget(settings)
 		this.ChatModeText = chatModeText
 		this.ChatBarContainer.Parent = GuiRoot
 
-		local function RobloxClientScreenSizeChanged(newSize)
+		local function UpdateChatBarContainerLayout(newSize)
 			if chatBarContainer then
 				local chatbarVisible = this.ChatBar and this.ChatBar.Visible
 				local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
@@ -1550,8 +1555,12 @@ local function CreateChatBarWidget(settings)
 			end
 		end
 
-		GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" and not chatRepositioned then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
-		RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize)
+		GuiRoot.Changed:connect(function(prop) 
+        if (prop == "AbsoluteSize" and not chatRepositioned) then 
+          UpdateChatBarContainerLayout(GuiRoot.AbsoluteSize) 
+        end
+      end)
+		UpdateChatBarContainerLayout(GuiRoot.AbsoluteSize)
 	end
 
 
@@ -1938,7 +1947,6 @@ local function CreateChatWindowWidget(settings)
 		{
 			Name = 'ChatWindowContainer';
 			Size = UDim2.new(0.3, 0, 0.25, 0);
-			Position = UDim2.new(0, 8, 0, 37);
 			ZIndex = 1;
 			BackgroundColor3 = Color3.new(0, 0, 0);
 			BackgroundTransparency = 1;
@@ -1947,7 +1955,7 @@ local function CreateChatWindowWidget(settings)
 			Active = false;
 			Text = ""
 		};
-		container.Position = UDim2.new(0,0,0,37);
+    
 		container.BackgroundColor3 = Color3.new(31/255, 31/255, 31/255);
 			local scrollingFrame = Util.Create'ScrollingFrame'
 			{
@@ -1991,28 +1999,62 @@ local function CreateChatWindowWidget(settings)
 				end
 			end
 		end
-		container.Changed:connect(function(prop) if prop == 'AbsoluteSize' then this:OnResize() end end)
+    
+		container.Changed:connect(function(prop) 
+        if prop == 'AbsoluteSize' then 
+          this:OnResize() 
+        end 
+      end)
 
-		local function RobloxClientScreenSizeChanged(newSize)
-			if container then
-				container.Position = UDim2.new(0,0,0,2);
-				if InputService.VREnabled then
-					container.Size = UDim2.new(1,0,1,0)
-				-- Phone
-				elseif newSize.X <= 640 then
-					container.Size = UDim2.new(0.5,0,0.5,0) - container.Position
-				-- Tablet
-				elseif newSize.X <= 1024 then
-					container.Size = UDim2.new(0.4,0,0.3,0) - container.Position
-				-- Desktop
-				else
-					container.Size = UDim2.new(0.3,0,0.25,0) - container.Position
-				end
-			end
+		local function UpdateChatWindowLayout(newSize)
+      -- A function to position the chat window in light of various factors
+      -- (platform, container window size, presence of performance stats).      
+			if container == nil then
+        return
+      end
+      
+      -- Account for presence/absence of performance stats buttons.
+      local localPlayer = PlayersService.LocalPlayer  
+      local isPerformanceStatsVisible = (GameSettings.PerformanceStatsVisible and localPlayer ~= nil)
+      local yOffset = CHAT_WINDOW_Y_OFFSET      
+      if  then 
+          yOffset = yOffset + StatsUtils.ButtonHeight
+      end
+      container.Position = UDim2.new(0, 0, 0, yOffset);
+              
+      -- Account for new screen size, if applicable.
+      if (newSize == nil) then 
+        return
+      end
+      
+      if InputService.VREnabled then
+        container.Size = UDim2.new(1,0,1,0)
+      -- Phone
+      elseif newSize.X <= 640 then
+        container.Size = UDim2.new(0.5,0,0.5,0) - container.Position
+      -- Tablet
+      elseif newSize.X <= 1024 then
+        container.Size = UDim2.new(0.4,0,0.3,0) - container.Position
+      -- Desktop
+      else
+        container.Size = UDim2.new(0.3,0,0.25,0) - container.Position
+      end
 		end
-
-		GuiRoot.Changed:connect(function(prop) if prop == "AbsoluteSize" and not chatRepositioned then RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize) end end)
-		RobloxClientScreenSizeChanged(GuiRoot.AbsoluteSize)
+    
+    -- When quick profiler button row visiblity changes, update position of chat window.
+    GameSettings.PerformanceStatsVisibleChanged:connect(function()
+        if not chatRepositioned then 
+          UpdateChatWindowLayout(nil)
+        end
+      end)
+    
+		GuiRoot.Changed:connect(function(prop) 
+        if (prop == "AbsoluteSize" and not chatRepositioned) then 
+          UpdateChatWindowLayout(GuiRoot.AbsoluteSize)
+        end 
+      end)
+    
+		UpdateChatWindowLayout()
 
 		messageContainer.Changed:connect(OnChatWindowResize)
 		scrollingFrame.Changed:connect(OnChatWindowResize)

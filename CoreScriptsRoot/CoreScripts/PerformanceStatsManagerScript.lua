@@ -85,7 +85,7 @@ function UpdateButtonSelectedStates()
 end
 
 function UpdateViewerVisibility()
-  -- If someone is on, show the Viewer.
+  -- If a particular button/tab is on, show the Viewer.
   -- FIXME(dbanks)
   -- Configure with details of the dude currently selected.  
   if (currentStatType == nil) then 
