@@ -1,14 +1,13 @@
 local source = [[
 --	// FileName: ChatChannel.lua
 --	// Written by: Xsitsu
---	// Description: ChatChannel window for displaying messages.
+--	// Description: ChatChannel class for handling messages being added and removed from the chat channel.
 
+local MAX_MESSAGES = 50
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
 local modulesFolder = script.Parent
-local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
-local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
@@ -17,183 +16,79 @@ local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 --//////////////////////////////////////
 local methods = {}
 
-local function CreateGuiObjects()
-	local BaseFrame = Instance.new("Frame")
-	BaseFrame.Selectable = false
-	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
-	BaseFrame.BackgroundTransparency = 1
-
-	local Scroller = Instance.new("ScrollingFrame", BaseFrame)
-	Scroller.Selectable = ChatSettings.GamepadNavigationEnabled
-	Scroller.Name = "Scroller"
-	Scroller.BackgroundTransparency = 1
-	Scroller.BorderSizePixel = 0
-	Scroller.Position = UDim2.new(0, 0, 0, 3)
-	Scroller.Size = UDim2.new(1, -4, 1, -6)
-	Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
-	Scroller.ScrollBarThickness = module.ScrollBarThickness
-	Scroller.Active = false
-
-	return BaseFrame, Scroller
-end
-
 function methods:Destroy()
-	self.GuiObject:Destroy()
 	self.Destroyed = true
 end
 
 function methods:SetActive(active)
-	self.GuiObject.Visible = active
+	if active == self.Active then
+		return
+	end
+	if active == false then
+		self.MessageLogDisplay:Clear()
+	else
+		for i = 1, #self.MessageLog do
+			self.MessageLogDisplay:AddMessage(self.MessageLog[i].MessageData, self.MessageLog[i].MessageType)
+		end
+	end
+	self.Active = active
 end
 
 function methods:UpdateMessageFiltered(messageData)
-	local messageObject = nil
-	local searchIndex = 1
-	local searchTable = self.MessageObjectLog
-
-	while (#searchTable >= searchIndex) do
-		local obj = searchTable[searchIndex]
-
-		if (obj.ID == messageData.ID) then
-			messageObject = obj
-			break
-		end
-
-		searchIndex = searchIndex + 1
-	end
-
-	if (messageObject) then
-		messageObject.UpdateTextFunction(messageData)
+	if self.Active then
+		self.MessageLogDisplay:UpdateMessageFiltered(messageData)
 	end
 end
 
-function methods:AddMessageLabelToLog(messageObject)
-	self.TextTweener:RegisterTweenObjectProperty(messageObject.Tweener, "Transparency")
-
-	table.insert(self.MessageObjectLog, messageObject)
-	self:PositionMessageLabelInWindow(messageObject)
-
-	if (#self.MessageObjectLog > 50) then
-		self:RemoveLastMessageLabelFromLog()
+function methods:AddMessageToChannel(messageData, messageType)
+	local messageLogObject = {
+		MessageData = messageData,
+		MessageType = messageType
+	}
+	table.insert(self.MessageLog, messageLogObject)
+	if self.Active then
+		self.MessageLogDisplay:AddMessage(messageLogObject.MessageData, messageLogObject.MessageType)
+	end
+	if #self.MessageLog > MAX_MESSAGES then
+		self:RemoveLastMessageFromChannel()
 	end
 end
 
-function methods:RemoveLastMessageLabelFromLog()
-	self:WaitUntilParentedCorrectly()
+function methods:RemoveLastMessageFromChannel()
+	table.remove(self.MessageLog, 1)
 
-	local lastMessage = self.MessageObjectLog[1]
-	local posOffset = UDim2.new(0, 0, 0, lastMessage.BaseFrame.AbsoluteSize.Y)
-
-	lastMessage:Destroy()
-	table.remove(self.MessageObjectLog, 1)
-
-	for i, messageObject in pairs(self.MessageObjectLog) do
-		messageObject.BaseFrame.Position = messageObject.BaseFrame.Position - posOffset
-	end
-
-	self.Scroller.CanvasSize = self.Scroller.CanvasSize - posOffset
-end
-
-function methods:PositionMessageLabelInWindow(messageObject)
-	self:WaitUntilParentedCorrectly()
-
-	local baseFrame = messageObject.BaseFrame
-	local baseMessage = messageObject.BaseMessage
-
-	baseFrame.Parent = self.Scroller
-	baseFrame.Position = UDim2.new(0, 0, 0, self.Scroller.CanvasSize.Y.Offset)
-
-	local textBoundsSize = moduleMessageLabelCreator:GetStringTextBounds(baseMessage.Text, baseMessage.Font, baseMessage.FontSize, UDim2.new(0, baseFrame.AbsoluteSize.X, 0, 1000))
-	baseFrame.Size = UDim2.new(1, 0, 0, textBoundsSize.Y)
-
-	local scrollBarBottomPosition = (self.Scroller.CanvasSize.Y.Offset - self.Scroller.AbsoluteSize.Y)
-	local reposition = (self.Scroller.CanvasPosition.Y >= scrollBarBottomPosition)
-
-	local add = UDim2.new(0, 0, 0, baseFrame.Size.Y.Offset)
-	self.Scroller.CanvasSize = self.Scroller.CanvasSize + add
-
-	if (reposition) then
-		self.Scroller.CanvasPosition = Vector2.new(0, math.max(0, self.Scroller.CanvasSize.Y.Offset - self.Scroller.AbsoluteSize.Y))
-	end
-end
-
-function methods:ReorderAllMessages()
-	self:WaitUntilParentedCorrectly()
-
-	--// Reordering / reparenting with a size less than 1 causes weird glitches to happen with scrolling as repositioning happens.
-	if (self.GuiObject.AbsoluteSize.Y < 1) then return end
-
-	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
-	for i, messageObject in pairs(self.MessageObjectLog) do
-		self:PositionMessageLabelInWindow(messageObject)
+	if self.Active then
+		self.MessageLogDisplay:RemoveLastMessage()
 	end
 end
 
 function methods:ClearMessageLog()
-	for i, v in pairs(self.MessageObjectLog) do
-		v:Destroy()
-	end
-	rawset(self, "MessageObjectLog", {})
+	rawset(self, "MessageLog", {})
 
-	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
+	if self.Active then
+		self.MessageLogDisplay:Clear()
+	end
 end
 
 function methods:RegisterChannelTab(tab)
 	rawset(self, "ChannelTab", tab)
 end
 
-function methods:FadeOutBackground(duration)
-	--// Do nothing
-end
-
-function methods:FadeInBackground(duration)
-	--// Do nothing
-end
-
-function methods:FadeOutText(duration)
-	self.TextTweener:Tween(duration, 1)
-end
-
-function methods:FadeInText(duration)
-	self.TextTweener:Tween(duration, 0)
-end
-
---// ToDo: Move to common modules
-function methods:WaitUntilParentedCorrectly()
-	while (not self.GuiObject:IsDescendantOf(game:GetService("Players").LocalPlayer)) do
-		self.GuiObject.AncestryChanged:wait()
-	end
-end
-
 --///////////////////////// Constructors
 --//////////////////////////////////////
 ClassMaker.RegisterClassType("ChatChannel", methods)
 
-module.ScrollBarThickness = 4
-
-function module.new(channelName)
+function module.new(channelName, messageLogDisplay)
 	local obj = {}
 	obj.Destroyed = false
+	obj.Active = false
 
-	local BaseFrame, Scroller = CreateGuiObjects()
-	obj.GuiObject = BaseFrame
-	obj.Scroller = Scroller
-
-	obj.MessageObjectLog = {}
+	obj.MessageLog = {}
+	obj.MessageLogDisplay = messageLogDisplay
 	obj.ChannelTab = nil
-
-	obj.TextTweener = moduleTransparencyTweener.new()
-
 	obj.Name = channelName
-	obj.GuiObject.Name = "Frame_" .. obj.Name
 
 	ClassMaker.MakeClass("ChatChannel", obj)
-
-	obj.GuiObject.Changed:connect(function(prop)
-		if (prop == "AbsoluteSize") then
-			spawn(function() obj:ReorderAllMessages() end)
-		end
-	end)
 
 	return obj
 end

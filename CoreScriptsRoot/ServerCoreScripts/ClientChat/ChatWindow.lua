@@ -131,7 +131,7 @@ function methods:CreateGuiObjects(targetParent)
 		elseif (absSizeY > maxSizePixelY) then
 			local offset = UDim2.new(0, 0, 0, maxSizePixelY - absSizeY)
 			BaseFrame.Size = BaseFrame.Size + offset
-			
+
 		end
 
 		local xScale = BaseFrame.AbsoluteSize.X / screenGuiParent.AbsoluteSize.X
@@ -202,7 +202,7 @@ function methods:CreateGuiObjects(targetParent)
 
 		end
 
-		BaseFrame.Size = UDim2.new(useXScale, useXOffset, 0, chatBarYSize)    
+		BaseFrame.Size = UDim2.new(useXScale, useXOffset, 0, chatBarYSize)
 		BaseFrame.Position = ChatSettings.DefaultWindowPosition
 
 	else
@@ -368,25 +368,28 @@ function methods:RegisterChannelsBar(ChannelsBar)
 	self.TextTweener:RegisterTweenObjectProperty(ChannelsBar.TextTweener, "Transparency")
 end
 
+function methods:RegisterMessageLogDisplay(MessageLogDisplay)
+	rawset(self, "MessageLogDisplay", MessageLogDisplay)
+	self.MessageLogDisplay.GuiObject.Parent = self.GuiObjects.ChatChannelParentFrame
+	--self.BackgroundTweener:RegisterTweenObjectProperty(self.MessageLogDisplay.BackgroundTweener, "Transparency")
+	self.TextTweener:RegisterTweenObjectProperty(self.MessageLogDisplay.TextTweener, "Transparency")
+end
+
 function methods:AddChannel(channelName)
 	if (self:GetChannel(channelName))  then
 		--error("Channel '" .. channelName .. "' already exists!")
 		return
 	end
-	
-	local channel = moduleChatChannel.new(channelName)
+
+	local channel = moduleChatChannel.new(channelName, self.MessageLogDisplay)
 	self.Channels[channelName:lower()] = channel
 
-	channel.GuiObject.Parent = self.GuiObjects.ChatChannelParentFrame
 	channel:SetActive(false)
 
 	local tab = self.ChannelsBar:AddChannelTab(channelName)
 	tab.NameTag.MouseButton1Click:connect(function()
 		self:SwitchCurrentChannel(channelName)
 	end)
-
-	--self.BackgroundTweener:RegisterTweenObjectProperty(channel.BackgroundTweener, "Transparency")
-	self.TextTweener:RegisterTweenObjectProperty(channel.TextTweener, "Transparency")
 
 	channel:RegisterChannelTab(tab)
 
@@ -406,7 +409,7 @@ function methods:RemoveChannel(channelName)
 	if (not self:GetChannel(channelName))  then
 		error("Channel '" .. channelName .. "' does not exist!")
 	end
-	
+
 	local indexName = channelName:lower()
 
 	local needsChannelSwitch = false
@@ -415,7 +418,7 @@ function methods:RemoveChannel(channelName)
 
 		self:SwitchCurrentChannel(nil)
 	end
-	
+
 	self.Channels[indexName]:Destroy()
 	self.Channels[indexName] = nil
 
@@ -489,7 +492,7 @@ function methods:SwitchCurrentChannel(channelName)
 
 		rawset(self, "CurrentChannel", new)
 	end
-	
+
 end
 
 function methods:UpdateFrameVisibility()
@@ -531,20 +534,14 @@ function methods:FadeOutBackground(duration)
 	--self.ChannelsBar:FadeOutBackground(duration)
 	--self.ChatBar:FadeOutBackground(duration)
 
-	if (self:GetCurrentChannel()) then
-		self:GetCurrentChannel():FadeOutBackground(duration)
-	end
-
+	self.MessageLogDisplay:FadeOutBackground(duration)
 	self.BackgroundTweener:Tween(duration, 1)
 end
 
 function methods:FadeInBackground(duration)
 	--self.ChannelsBar:FadeInBackground(duration)
 	--self.ChatBar:FadeInBackground(duration)
-
-	if (self:GetCurrentChannel()) then
-		self:GetCurrentChannel():FadeInBackground(duration)
-	end
+	self.MessageLogDisplay:FadeInBackground(duration)
 
 	self.BackgroundTweener:Tween(duration, 0)
 end
@@ -553,9 +550,7 @@ function methods:FadeOutText(duration)
 	--self.ChannelsBar:FadeOutText(duration)
 	--self.ChatBar:FadeOutText(duration)
 
-	if (self:GetCurrentChannel()) then
-		self:GetCurrentChannel():FadeOutText(duration)
-	end
+	self.MessageLogDisplay:FadeOutText(duration)
 
 	self.TextTweener:Tween(duration, 1)
 end
@@ -564,9 +559,7 @@ function methods:FadeInText(duration)
 	--self.ChannelsBar:FadeInText(duration)
 	--self.ChatBar:FadeInText(duration)
 
-	if (self:GetCurrentChannel()) then
-		self:GetCurrentChannel():FadeInText(duration)
-	end
+	self.MessageLogDisplay:FadeInText(duration)
 
 	self.TextTweener:Tween(duration, 0)
 end
@@ -599,7 +592,8 @@ function module.new()
 
 	obj.ChatBar = nil
 	obj.ChannelsBar = nil
-	
+	obj.MessageLogDisplay = nil
+
 	obj.Channels = {}
 	obj.CurrentChannel = nil
 

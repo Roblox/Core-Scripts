@@ -6,16 +6,16 @@ local source = [[
 local moduleApiTable = {}
 
 --// This section of code waits until all of the necessary RemoteEvents are found in EventFolder.
---// I have to do some weird stuff since people could potentially already have pre-existing 
+--// I have to do some weird stuff since people could potentially already have pre-existing
 --// things in a folder with the same name, and they may have different class types.
---// I do the useEvents thing and set EventFolder to useEvents so I can have a pseudo folder that 
---// the rest of the code can interface with and have the guarantee that the RemoteEvents they want 
+--// I do the useEvents thing and set EventFolder to useEvents so I can have a pseudo folder that
+--// the rest of the code can interface with and have the guarantee that the RemoteEvents they want
 --// exist with their desired names.
 
 local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
-local waitChildren = 
+local waitChildren =
 {
 	OnNewMessage = "RemoteEvent",
 	OnMessageDoneFiltering = "RemoteEvent",
@@ -82,6 +82,7 @@ local moduleChatWindow = require(modulesFolder:WaitForChild("ChatWindow"))
 local moduleChatBar = require(modulesFolder:WaitForChild("ChatBar"))
 local moduleChannelsBar = require(modulesFolder:WaitForChild("ChannelsBar"))
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
+local moduleMessageLogDisplay = require(modulesFolder:WaitForChild("MessageLogDisplay"))
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 
 moduleMessageLabelCreator:RegisterGuiRoot(GuiParent)
@@ -89,14 +90,13 @@ moduleMessageLabelCreator:RegisterGuiRoot(GuiParent)
 local ChatWindow = moduleChatWindow.new()
 local ChatBar = moduleChatBar.new()
 local ChannelsBar = moduleChannelsBar.new()
+local MessageLogDisplay = moduleMessageLogDisplay.new()
 
 ChatWindow:CreateGuiObjects(GuiParent)
 
 ChatWindow:RegisterChatBar(ChatBar)
 ChatWindow:RegisterChannelsBar(ChannelsBar)
-
-
-local MessageLabelCreator = moduleMessageLabelCreator.new()
+ChatWindow:RegisterMessageLogDisplay(MessageLogDisplay)
 
 local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
 
@@ -120,7 +120,7 @@ end
 --////////////////////////////////////////////////////////////// Code to do chat window fading
 --////////////////////////////////////////////////////////////////////////////////////////////
 local function CheckIfPointIsInSquare(checkPos, topLeft, bottomRight)
-	return (topLeft.X <= checkPos.X and checkPos.X <= bottomRight.X and 
+	return (topLeft.X <= checkPos.X and checkPos.X <= bottomRight.X and
 		topLeft.Y <= checkPos.Y and checkPos.Y <= bottomRight.Y)
 end
 
@@ -147,10 +147,9 @@ local function DoBackgroundFadeIn(setFadingTime)
 	if (currentChannelObject) then
 		ChatWindow.GuiObject.Active = true
 
-
-		local Scroller = currentChannelObject.Scroller
+		local Scroller = MessageLogDisplay.Scroller
 		Scroller.ScrollingEnabled = true
-		Scroller.ScrollBarThickness = moduleChatChannel.ScrollBarThickness
+		Scroller.ScrollBarThickness = moduleMessageLogDisplay.ScrollBarThickness
 	end
 end
 
@@ -165,8 +164,8 @@ local function DoBackgroundFadeOut(setFadingTime)
 	if (currentChannelObject) then
 		ChatWindow.GuiObject.Active = false
 		--ChatWindow:ResetResizerPosition()
-		
-		local Scroller = currentChannelObject.Scroller
+
+		local Scroller = MessageLogDisplay.Scroller
 		scrollBarThickness = Scroller.ScrollBarThickness
 		Scroller.ScrollingEnabled = false
 		Scroller.ScrollBarThickness = 0
@@ -364,17 +363,17 @@ end
 local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
-		local messageObj = 
+		local messageData =
 		{
 			ID = -1,
 			FromSpeaker = nil,
+			OriginalChannel = channelName,
 			Message = message,
 			Time = os.time(),
 			ExtraData = extraData,
 		}
 
-		local messageObject = MessageLabelCreator:CreateSystemMessageLabel(messageObj)
-		channelObj:AddMessageLabelToLog(messageObject)
+		channelObj:AddMessageToChannel(messageData, "SystemMessage")
 	end
 end
 
@@ -406,11 +405,11 @@ local function ProcessChatCommands(message)
 		if (currentChannel) then
 			currentChannel:ClearMessageLog()
 		end
-	end 
+	end
 
 	--// This is the code that prevents Guests from chatting.
 	--// Guests are generally not allowed to chat, so please do not remove this.
-	if (LocalPlayer.UserId < 0) then
+	if (false and LocalPlayer.UserId < 0) then   --DO NOT SUBMIT
 		processedCommand = true
 
 		local channelObj = ChatWindow:GetCurrentChannel()
@@ -427,33 +426,32 @@ ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 	if (enterPressed) then
 		local message = string.sub(ChatBar:GetTextBox().Text, 1, ChatSettings.MaximumMessageLength)
 		ChatBar:GetTextBox().Text = ""
-		
+
 		if (message ~= "" and not ProcessChatCommands(message)) then
 			message = string.gsub(message, "\n", "")
 			message = string.gsub(message, "[ ]+", " ")
-			
+
 			local targetChannel = ChatWindow:GetTargetMessageChannel()
 			if (targetChannel) then
 				MessageSender:SendMessage(message, targetChannel)
 
 				if (targetChannel == ChatSettings.GeneralChannelName) then
 					--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
-					moduleApiTable.MessagePosted:fire(message) 
+					moduleApiTable.MessagePosted:fire(message)
 				end
 			else
 				MessageSender:SendMessage(message, nil)
-				
+
 			end
 		end
-		
+
 	end
 end)
 
 EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
-		local messageObject = MessageLabelCreator:CreateMessageLabel(messageData)
-		channelObj:AddMessageLabelToLog(messageObject)
+		channelObj:AddMessageToChannel(messageData, "Message")
 
 		if (messageData.FromSpeaker ~= LocalPlayer.Name) then
 			ChannelsBar:UpdateMessagePostedInChannel(channelName)
@@ -463,8 +461,7 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
 			generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 			if (generalChannel) then
-				local messageObject = MessageLabelCreator:CreateChannelEchoMessageLabel(messageData, channelName)
-				generalChannel:AddMessageLabelToLog(messageObject)
+				generalChannel:AddMessageToChannel(messsageData, "ChannelEchoMessage")
 			end
 		end
 
@@ -488,19 +485,18 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		end
 	else
 		warn(string.format("Just received chat message for channel I'm not in [%s]", channelName))
-	end 
+	end
 end)
 
 EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, channelName)
 	channelName = channelName or "System"
-	
+
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
-		local messageObject = MessageLabelCreator:CreateSystemMessageLabel(messageData)
-		channelObj:AddMessageLabelToLog(messageObject)
-		
+		channelObj:AddMessageToChannel(messageData, "SystemMessage")
+
 		ChannelsBar:UpdateMessagePostedInChannel(channelName)
-		
+
 		moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1
 		moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
 
@@ -509,8 +505,7 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, chann
 		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
 			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 			if (generalChannel) then
-				local messageObject = MessageLabelCreator:CreateChannelEchoSystemMessageLabel(messageData, channelName)
-				generalChannel:AddMessageLabelToLog(messageObject)
+				generalChannel:AddMessageToChannel(messageData, "ChannelEchoSystemMessage")
 			end
 		end
 	else
@@ -534,26 +529,23 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 		if (messageLog) then
 			for i, messageLogData in pairs(messageLog) do
 
-				local messageObj = nil
 				if (messageLogData.FromSpeaker) then
-					messageObj = MessageLabelCreator:CreateMessageLabel(messageLogData)
+					channelObj:AddMessageToChannel(messageLogData, "Message")
 				else
-					messageObj = MessageLabelCreator:CreateSystemMessageLabel(messageLogData)
+					channelObj:AddMessageToChannel(messageLogData, "SystemMessage")
 				end
 
-				channelObj:AddMessageLabelToLog(messageObj)
 				channelObj:UpdateMessageFiltered(messageLogData)
 			end
 		end
 
 		if (welcomeMessage ~= "") then
-			local messageObject = MessageLabelCreator:CreateWelcomeMessageLabel(welcomeMessage)
-			channelObj:AddMessageLabelToLog(messageObject)
+			channelObj:AddMessageToChannel(welcomeMessage, "WelcomeMessage")
 		end
 
 		DoFadeInFromNewInformation()
-	end	
-	
+	end
+
 end
 
 EventFolder.OnChannelJoined.OnClientEvent:connect(HandleChannelJoined)
@@ -567,7 +559,7 @@ end)
 EventFolder.OnMuted.OnClientEvent:connect(function(channel)
 	--// Do something eventually maybe?
 	--// This used to take away the chat bar in channels the player was muted in.
-	--// We found out this behavior was inconvenient for doing chat commands though. 
+	--// We found out this behavior was inconvenient for doing chat commands though.
 end)
 
 EventFolder.OnUnmuted.OnClientEvent:connect(function(channel)
@@ -706,7 +698,7 @@ do
 	moduleApiTable.MessageCount = 0
 	moduleApiTable.Visible = true
 	moduleApiTable.IsCoreGuiEnabled = true
-	
+
 	function moduleApiTable:ToggleVisibility()
 		SetVisibility(not ChatWindow:GetVisible())
 	end
@@ -745,21 +737,21 @@ do
 
 	moduleApiTable.MessagePosted = Util.Signal()
 	moduleApiTable.CoreGuiEnabled = Util.Signal()
-	
+
 	moduleApiTable.ChatMakeSystemMessageEvent = Util.Signal()
 	moduleApiTable.ChatWindowPositionEvent = Util.Signal()
 	moduleApiTable.ChatWindowSizeEvent = Util.Signal()
 	moduleApiTable.ChatBarDisabledEvent = Util.Signal()
-	
+
 
 	function moduleApiTable:fChatWindowPosition()
 		return ChatWindow.GuiObject.Position
 	end
-	
+
 	function moduleApiTable:fChatWindowSize()
 		return ChatWindow.GuiObject.Size
 	end
-	
+
 	function moduleApiTable:fChatBarDisabled()
 		return not ChatBar:GetEnabled()
 	end
@@ -799,11 +791,9 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 		local channelObj = ChatWindow:GetChannel(channel)
 
 		if (channelObj) then
-			local messageLabel = MessageLabelCreator:CreateSetCoreMessageLabel(valueTable)
-			channelObj:AddMessageLabelToLog(messageLabel)
-			
+			channelObj:AddMessageToChannel(valueTable, "SetCoreMessage")
 			ChannelsBar:UpdateMessagePostedInChannel(channel)
-			
+
 			moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1
 			moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
 		end

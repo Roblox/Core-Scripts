@@ -84,6 +84,10 @@ local function WrapIntoMessageObject(id, BaseFrame, BaseMessage, Tweener, Strong
 	return obj
 end
 
+function methods:CreateMessageLabelFromType(messageData, messageType)
+	return self["Create" ..messageType.. "Label"](self, messageData)
+end
+
 function methods:CreateBaseMessage(message, font, fontSize, chatColor)
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
@@ -272,11 +276,12 @@ function methods:CreateSetCoreMessageLabel(valueTable)
 	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {})
 end
 
-function methods:CreateChannelEchoMessageLabel(messageData, echoChannel)
+function methods:CreateChannelEchoMessageLabel(messageData)
 	WaitUntilParentedCorrectly()
 
 	local fromSpeaker = messageData.FromSpeaker
 	local message = messageData.Message
+	local echoChannel = messageData.OriginalChannel
 
 	if (string.sub(message, 1, 4) == "/me ") then
 		--// Cannot be destructive with messageData
@@ -359,10 +364,11 @@ function methods:CreateChannelEchoMessageLabel(messageData, echoChannel)
 	return WrapIntoMessageObject(messageData.ID, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction)
 end
 
-function methods:CreateChannelEchoSystemMessageLabel(messageData, echoChannel)
+function methods:CreateChannelEchoSystemMessageLabel(messageData)
 	WaitUntilParentedCorrectly()
 
 	local message = messageData.Message
+	local echoChannel = messageData.OriginalChannel
 
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or Enum.Font.SourceSansBold

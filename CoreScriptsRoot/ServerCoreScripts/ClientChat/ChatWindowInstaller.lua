@@ -9,7 +9,7 @@ local function LoadScriptData(name, path)
 	path = path or scriptPath
 
 	ScriptContext:AddCoreScriptLocal(path .. name, script.Parent) -- this was changed and doing script without script.Parent ruins everything!
-	
+
 	local generated = script.Parent:WaitForChild(path .. name):WaitForChild("Generated")
 	return generated
 end
@@ -30,6 +30,7 @@ local function Install()
 	LoadModuleData("ChannelsBar", ChatMain)
 	LoadModuleData("ChatBar", ChatMain)
 	LoadModuleData("ChatChannel", ChatMain)
+	LoadModuleData("MessageLogDisplay", ChatMain)
 	LoadModuleData("ChatWindow", ChatMain)
 	--LoadModuleData("SpeakerDatabase", ChatMain)
 	LoadModuleData("MessageLabelCreator", ChatMain)
