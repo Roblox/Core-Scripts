@@ -1,8 +1,8 @@
 --[[
-		// FileName: PlayerlistModule.lua
-		// Version 1.3
-		// Written by: jmargh
-		// Description: Implementation of in game player list and leaderboard
+  // FileName: PlayerlistModule.lua
+  // Version 1.3
+  // Written by: jmargh
+  // Description: Implementation of in game player list and leaderboard
 ]]
 
 local CoreGui = game:GetService('CoreGui')
