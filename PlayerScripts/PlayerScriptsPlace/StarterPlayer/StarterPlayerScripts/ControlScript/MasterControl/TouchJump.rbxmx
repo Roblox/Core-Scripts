@@ -26,6 +26,7 @@ while not Players.LocalPlayer do
 	wait()
 end
 local LocalPlayer = Players.LocalPlayer
+local humanoid = MasterControl:GetHumanoid()
 local JumpButton = nil
 local OnInputEnded = nil		-- defined in Create()
 
@@ -97,6 +98,17 @@ function TouchJump:Create(parentFrame)
 		end
 	end)
 	
+	if humanoid then
+		humanoid.Changed:connect(function(prop)
+			if prop == "JumpPower" then
+				if humanoid.JumpPower < 1 and JumpButton.Visible then
+					TouchJump:Disable()
+				elseif humanoid.JumpPower > 0 and not JumpButton.Visible then
+					TouchJump:Enable()
+				end
+			end
+		end)
+	end
 	JumpButton.Parent = parentFrame
 end
 
