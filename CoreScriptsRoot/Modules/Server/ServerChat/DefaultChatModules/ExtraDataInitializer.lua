@@ -1,11 +1,10 @@
-local source = [[
 --	// FileName: ExtraDataInitializer.lua
 --	// Written by: Xsitsu
 --	// Description: Module that sets some basic ExtraData such as name color, and chat color.
 
 local function MakeIsInGroup(groupId, requiredRank)
 	assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
-	
+
 	local inGroupCache = {}
 	return function(player)
 		if player and player.userId then
@@ -31,7 +30,7 @@ local function MakeIsInGroup(groupId, requiredRank)
 end
 
 local IsInGroupAdmins = MakeIsInGroup(1200769)
-local IsInGroupInterns = MakeIsInGroup(2868472, 100) 
+local IsInGroupInterns = MakeIsInGroup(2868472, 100)
 
 local Players = game:GetService("Players")
 local function SpeakerNameIsAdmin(speakerName)
@@ -54,7 +53,7 @@ local function Run(ChatService)
 		BrickColor.new("Light reddish violet").Color,
 		BrickColor.new("Brick yellow").Color,
 	}
-	
+
 	local function GetNameValue(pName)
 		local value = 0
 		for index = 1, #pName do
@@ -70,12 +69,12 @@ local function Run(ChatService)
 		end
 		return value
 	end
-	
+
 	local color_offset = 0
 	local function ComputeNameColor(pName)
 		return NAME_COLORS[((GetNameValue(pName) + color_offset) % #NAME_COLORS) + 1]
 	end
-	
+
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speaker = ChatService:GetSpeaker(speakerName)
 
@@ -95,15 +94,8 @@ local function Run(ChatService)
 			speaker:SetExtraData("Tags", {})
 		end
 
-		
+
 	end)
 end
 
 return Run
-]]
-
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

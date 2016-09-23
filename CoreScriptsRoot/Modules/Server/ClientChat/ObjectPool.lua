@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ObjectPool.lua
 --	// Written by: TheGamer101
 --	// Description: An object pool class used to avoid unnecessarily instantiating Instances.
@@ -53,9 +52,3 @@ function module.new(poolSizePerType)
 end
 
 return module
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

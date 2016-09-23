@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: MessageSender.lua
 --	// Written by: Xsitsu
 --	// Description: Module to centralize sending message functionality.
@@ -30,14 +29,8 @@ function module.new()
 	obj.SayMessageRequest = nil
 
 	ClassMaker.MakeClass("MessageSender", obj)
-	
+
 	return obj
 end
 
 return module.new()
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

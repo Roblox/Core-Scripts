@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChannelsBar.lua
 --	// Written by: Xsitsu
 --	// Description: Manages creating, destroying, and displaying ChannelTabs.
@@ -374,9 +373,3 @@ function module.new()
 end
 
 return module
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

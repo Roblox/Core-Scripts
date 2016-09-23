@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChatChannel.lua
 --	// Written by: Xsitsu
 --	// Description: A representation of one channel that speakers can chat in.
@@ -372,11 +371,3 @@ function module.new(vChatService, name, welcomeMessage)
 end
 
 return module
-
-]]
-
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

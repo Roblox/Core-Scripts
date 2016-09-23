@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: Speaker.lua
 --	// Written by: Xsitsu
 --	// Description: A representation of one entity that can chat in different ChatChannels.
@@ -28,7 +27,7 @@ function methods:SayMessage(message, channelName, extraData)
 	if (messageObj) then
 		pcall(function() self.eSaidMessage:Fire(messageObj) end)
 	end
-	
+
 	return messageObj
 end
 
@@ -37,7 +36,7 @@ function methods:JoinChannel(channelName)
 		warn("Speaker is already in channel \"" .. channelName .. "\"")
 		return
 	end
-	
+
 	local channel = self.ChatService:GetChannel(channelName)
 	if (not channel) then
 		error("Channel \"" .. channelName .. "\" does not exist!")
@@ -55,9 +54,9 @@ function methods:LeaveChannel(channelName)
 		warn("Speaker is not in channel \"" .. channelName .. "\"")
 		return
 	end
-	
+
 	local channel = self.Channels[channelName:lower()]
-	
+
 	self.Channels[channelName:lower()] = nil
 	channel:InternalRemoveSpeaker(self)
 	pcall(function()
@@ -121,7 +120,7 @@ function methods:InternalDestroy()
 	for i, channel in pairs(self.Channels) do
 		channel:InternalRemoveSpeaker(self)
 	end
-	
+
 	self.eDestroyed:Fire()
 end
 
@@ -157,15 +156,15 @@ function module.new(vChatService, name)
 	obj.ChatService = vChatService
 
 	obj.PlayerObj = nil
-	
+
 	obj.Name = name
 	obj.ExtraData = {}
-	
+
 	obj.Channels = {}
-	
+
 	obj.eDestroyed = Instance.new("BindableEvent")
 	obj.Destroyed = obj.eDestroyed.Event
-	
+
 	obj.eSaidMessage = Instance.new("BindableEvent")
 	obj.eReceivedMessage = Instance.new("BindableEvent")
 	obj.eMessageDoneFiltering = Instance.new("BindableEvent")
@@ -175,7 +174,7 @@ function module.new(vChatService, name)
 	obj.eMuted = Instance.new("BindableEvent")
 	obj.eUnmuted = Instance.new("BindableEvent")
 	obj.eMainChannelSet = Instance.new("BindableEvent")
-	
+
 	obj.SaidMessage = obj.eSaidMessage.Event
 	obj.ReceivedMessage = obj.eReceivedMessage.Event
 	obj.MessageDoneFiltering = obj.eMessageDoneFiltering.Event
@@ -187,15 +186,8 @@ function module.new(vChatService, name)
 	obj.MainChannelSet = obj.eMainChannelSet.Event
 
 	ClassMaker.MakeClass("Speaker", obj)
-	
+
 	return obj
 end
 
 return module
-
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

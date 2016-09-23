@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChatWindow.lua
 --	// Written by: Xsitsu
 --	// Description: Main GUI window piece. Manages ChatBar, ChannelsBar, and ChatChannels.
@@ -609,9 +608,3 @@ function module.new()
 end
 
 return module
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

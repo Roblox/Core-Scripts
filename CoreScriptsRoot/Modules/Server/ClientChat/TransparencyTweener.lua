@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: TransparencyTweener.lua
 --	// Written by: Xsitsu
 --	// Description: Data structure for tweening transparency of a group of objects as one unit.
@@ -144,7 +143,7 @@ function metatable:Tween(duration, targetPercentage, startingPercentage)
 		if (not self.Canceled) then
 			self.InternalLastTweenPercentage = targetPercentage
 			self:SetPropertiesToTweenPercentage(targetPercentage)
-			
+
 		else
 			self.Canceled = false
 
@@ -175,9 +174,9 @@ function module.new()
 
 	--// Transparency is a property that doesn't actually exist.
 	--// The index of 'Transparency' is used for reading from and
-	--// writing to InternalLastTweenPercentage. This needs to be 
-	--// done through metatables so we can also get the behavior 
-	--// of calling the method 'SetPropertiesToTweenPercentage' 
+	--// writing to InternalLastTweenPercentage. This needs to be
+	--// done through metatables so we can also get the behavior
+	--// of calling the method 'SetPropertiesToTweenPercentage'
 	--// automatically when a new value is set.
 
 	obj.Transparency = nil
@@ -194,10 +193,3 @@ function module.new()
 end
 
 return module
-
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChatSettings.lua
 --	// Written by: Xsitsu
 --	// Description: Settings module for configuring different aspects of the chat window.
@@ -51,9 +50,3 @@ local proxyTable = setmetatable({},
 rawset(proxyTable, "SettingsChanged", ChangedEvent.Event)
 
 return proxyTable
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

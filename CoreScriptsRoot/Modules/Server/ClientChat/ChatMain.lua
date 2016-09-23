@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChatMain.lua
 --	// Written by: Xsitsu
 --	// Description: Main module to handle initializing chat window UI and hooking up events to individual UI pieces.
@@ -808,9 +807,3 @@ moduleApiTable.ChatBarDisabledEvent:connect(function(disabled)
 end)
 
 return moduleApiTable
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

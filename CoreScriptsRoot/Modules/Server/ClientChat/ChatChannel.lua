@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChatChannel.lua
 --	// Written by: Xsitsu
 --	// Description: ChatChannel class for handling messages being added and removed from the chat channel.
@@ -94,9 +93,3 @@ function module.new(channelName, messageLogDisplay)
 end
 
 return module
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script
