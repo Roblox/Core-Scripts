@@ -28,9 +28,18 @@ module.DefaultWindowSizePhone = UDim2.new(0.5, 0, 0.5, extraOffset)
 module.DefaultWindowSizeTablet = UDim2.new(0.4, 0, 0.3, extraOffset)
 module.DefaultWindowSizeDesktop = UDim2.new(0.3, 0, 0.25, extraOffset)
 
+module.ChatWindowBackgroundFadeOutTime = 0  --Chat background will fade out after this many seconds.
+module.ChatWindowTextFadeOutTime = 30       --Chat text will fade out after this many seconds.
+module.ChatDefaultFadeDuration = 0.3
+module.ChatShouldFadeInFromNewInformation = false
+
 module.GeneralChannelName = "All" -- You can set to nil to turn off echoing to a general channel.
 
 module.ChannelsBarFullTabSize = 4 -- number of tabs in bar before it starts to scroll
+module.MaxChannelNameLength = 12
+--// Although this feature is pretty much ready, it needs some UI design still.
+module.RightClickToLeaveChannelEnabled = false
+module.MessageHistoryLengthPerChannel = 50
 
 module.MaximumMessageLength = 200
 
