@@ -38,7 +38,7 @@ local function Install()
 	LoadModule(script.Parent, "TransparencyTweener", ChatMain)
 	LoadModule(script.Parent, "ChatSettings", ChatMain)
 	LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatMain)
-	LoadModule(script.Parent, "ObjectPool", ChatMain)
+	LoadModule(script.Parent.Parent.Parent.Common, "ObjectPool", ChatMain)
 	LoadModule(script.Parent, "MessageSender", ChatMain)
 
 	ChatScript.Disabled = false
