@@ -35,7 +35,9 @@ local TOUCH_CONTROL_SHEET = "rbxasset://textures/ui/TouchControlsSheet.png"
 
 --[[ Public API ]]--
 function TouchJump:Enable()
-	JumpButton.Visible = true
+	if humanoid.JumpPower > 0 and not JumpButton.Visible then
+		JumpButton.Visible = true
+	end
 end
 
 function TouchJump:Disable()
@@ -99,6 +101,7 @@ function TouchJump:Create(parentFrame)
 	end)
 	
 	if humanoid then
+		
 		humanoid.Changed:connect(function(prop)
 			if prop == "JumpPower" then
 				if humanoid.JumpPower < 1 and JumpButton.Visible then
