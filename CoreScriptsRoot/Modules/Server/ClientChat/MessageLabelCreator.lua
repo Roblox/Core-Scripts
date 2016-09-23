@@ -80,10 +80,6 @@ local function WrapIntoMessageObject(id, BaseFrame, BaseMessage, Tweener, Strong
 	obj.UpdateTextFunction = UpdateTextFunction or function() warn("NO MESSAGE RESIZE FUNCTION") end
 	obj.ObjectPool = ObjectPool
 
-	if ObjectPool == nil then
-		print("Blah")
-	end
-
 	function obj:TweenOut(duration)
 		self.Tweener:Tween(duration, 1)
 	end

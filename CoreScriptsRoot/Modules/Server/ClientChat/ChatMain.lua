@@ -409,7 +409,7 @@ local function ProcessChatCommands(message)
 
 	--// This is the code that prevents Guests from chatting.
 	--// Guests are generally not allowed to chat, so please do not remove this.
-	if (false and LocalPlayer.UserId < 0) then   --DO NOT SUBMIT
+	if (LocalPlayer.UserId < 0) then
 		processedCommand = true
 
 		local channelObj = ChatWindow:GetCurrentChannel()
