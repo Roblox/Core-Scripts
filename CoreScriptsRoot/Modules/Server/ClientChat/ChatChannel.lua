@@ -2,7 +2,6 @@
 --	// Written by: Xsitsu
 --	// Description: ChatChannel class for handling messages being added and removed from the chat channel.
 
-local MAX_MESSAGES = 50
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -66,7 +65,7 @@ function methods:AddMessageToChannel(messageData, messageType)
 	if self.Active then
 		self.MessageLogDisplay:AddMessage(messageLogObject.MessageData, messageLogObject.MessageType)
 	end
-	if #self.MessageLog > MAX_MESSAGES then
+	if #self.MessageLog > ChatSettings.MessageHistoryLengthPerChannel then
 		self:RemoveLastMessageFromChannel()
 	end
 end

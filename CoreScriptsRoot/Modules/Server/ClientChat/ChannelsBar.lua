@@ -208,10 +208,7 @@ function methods:AddChannelTab(channelName)
 	self.BackgroundTweener:RegisterTweenObjectProperty(tab.BackgroundTweener, "Transparency")
 	self.TextTweener:RegisterTweenObjectProperty(tab.TextTweener, "Transparency")
 
-	--// Although this feature is pretty much ready, it needs some UI design still.
-	local enableRightClickToLeaveChannel = false
-
-	if (enableRightClickToLeaveChannel) then
+	if (ChatSettings.RightClickToLeaveChannelEnabled) then
 		tab.NameTag.MouseButton2Click:connect(function()
 			self.LeaveConfirmationNotice.Text = string.format("Leave channel %s?", tab.ChannelName)
 			self.LeaveConfirmationFrame.LeaveTarget.Value = tab.ChannelName

@@ -253,9 +253,8 @@ function module.new(channelName)
 
 	obj.GuiObject.Name = "Frame_" .. obj.ChannelName
 
-	local maxNameLength = 12
-	if (string.len(channelName) > maxNameLength) then
-		channelName = string.sub(channelName, 1, maxNameLength - 3) .. "..."
+	if (string.len(channelName) > ChatSettings.MaxChannelNameLength) then
+		channelName = string.sub(channelName, 1, ChatSettings.MaxChannelNameLength - 3) .. "..."
 	end
 
 	--obj.NameTag.Text = channelName

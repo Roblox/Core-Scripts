@@ -2,6 +2,8 @@
 --	// Written by: Xsitsu
 --	// Description: Main module to handle initializing chat window UI and hooking up events to individual UI pieces.
 
+local BACKGROUND_FADEOUT_TIME = 0
+
 local moduleApiTable = {}
 
 --// This section of code waits until all of the necessary RemoteEvents are found in EventFolder.
@@ -126,21 +128,17 @@ end
 local backgroundIsFaded = false
 local textIsFaded = false
 local lastFadeTime = 0
-local backgroundFadeTimer = 0
-local textFadeTimer = 30
 
 local fadedChanged = Instance.new("BindableEvent")
 local mouseStateChanged = Instance.new("BindableEvent")
 local chatBarFocusChanged = Instance.new("BindableEvent")
-
-local defaultFadingTime = 0.3
 
 local function DoBackgroundFadeIn(setFadingTime)
 	lastFadeTime = tick()
 	backgroundIsFaded = false
 	fadedChanged:Fire()
 	ChatWindow:EnableResizable()
-	ChatWindow:FadeInBackground((setFadingTime or defaultFadingTime))
+	ChatWindow:FadeInBackground((setFadingTime or ChatSettings.ChatDefaultFadeDuration))
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
@@ -157,7 +155,7 @@ local function DoBackgroundFadeOut(setFadingTime)
 	backgroundIsFaded = true
 	fadedChanged:Fire()
 	ChatWindow:DisableResizable()
-	ChatWindow:FadeOutBackground((setFadingTime or defaultFadingTime))
+	ChatWindow:FadeOutBackground((setFadingTime or ChatSettings.ChatDefaultFadeDuration))
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
@@ -175,19 +173,21 @@ local function DoTextFadeIn(setFadingTime)
 	lastFadeTime = tick()
 	textIsFaded = false
 	fadedChanged:Fire()
-	ChatWindow:FadeInText((setFadingTime or defaultFadingTime) * 0)
+	ChatWindow:FadeInText((setFadingTime or ChatSettings.ChatDefaultFadeDuration) * 0)
 end
 
 local function DoTextFadeOut(setFadingTime)
 	lastFadeTime = tick()
 	textIsFaded = true
 	fadedChanged:Fire()
-	ChatWindow:FadeOutText((setFadingTime or defaultFadingTime))
+	ChatWindow:FadeOutText((setFadingTime or ChatSettings.ChatDefaultFadeDuration))
 end
 
 local function DoFadeInFromNewInformation()
-	DoTextFadeIn()
-	DoBackgroundFadeIn()
+	if ChatSettings.ChatShouldFadeInFromNewInformation then
+		DoTextFadeIn()
+		DoBackgroundFadeIn()
+	end
 end
 
 local function InstantFadeIn()
@@ -250,12 +250,12 @@ spawn(function()
 		--end
 
 		if (not backgroundIsFaded) then
-			if (timeDiff > backgroundFadeTimer) then
+			if (timeDiff > ChatSettings.ChatWindowBackgroundFadeOutTime) then
 				DoBackgroundFadeOut()
 			end
 
 		elseif (not textIsFaded) then
-			if (timeDiff > textFadeTimer) then
+			if (timeDiff > ChatSettings.ChatWindowTextFadeOutTime) then
 				DoTextFadeOut()
 			end
 
