@@ -800,7 +800,10 @@ local function Initialize()
 		local showOverscanScreen = function()
 
 			if not overscanScreen then
-				local overscanModule = RobloxGui.Modules.OverscanScreen or RobloxGui.Modules.Shell.OverscanScreen
+				local overscanModule = RobloxGui.Modules:FindFirstChild('OverscanScreen')
+				if not overscanModule then
+					overscanModule = RobloxGui.Modules.Shell.OverscanScreen
+				end
 				local createOverscanFunc = require(overscanModule)
 				overscanScreen = createOverscanFunc(RobloxGui)
 				overscanScreen:SetStyleForInGame()
@@ -824,7 +827,11 @@ local function Initialize()
 												Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2,
 												Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
 
-			local ScreenManager = require(RobloxGui.Modules.ScreenManager)
+			local screenManagerModule = RobloxGui.Modules:FindFirstChild('ScreenManager')
+			if not screenManagerModule then
+				screenManagerModule = RobloxGui.Modules.Shell.ScreenManager
+			end
+			local ScreenManager = require(screenManagerModule)
 			ScreenManager:OpenScreen(overscanScreen)
 
 		end
