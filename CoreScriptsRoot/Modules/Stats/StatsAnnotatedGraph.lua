@@ -1,7 +1,7 @@
 --[[
-		Filename: StatsAnnotatedGraph.lua
-		Written by: dbanks
-		Description: A graph plus extra annotations like axis markings, 
+  Filename: StatsAnnotatedGraph.lua
+  Written by: dbanks
+  Description: A graph plus extra annotations like axis markings, 
       target lines, etc.
 --]]
 
@@ -49,13 +49,6 @@ function StatsAnnotatedGraphClass.new(statType, isMaximized)
   self._topLabel.TextYAlignment = Enum.TextYAlignment.Top
   self._topLabel.FontSize = StatsUtils.PanelGraphFontSize
   
-  self._midLabel = Instance.new("TextLabel")
-  self._midLabel.Name = "PS_MidAxisLabel"
-  self._midLabel.Parent = self._frame
-  self._midLabel.TextXAlignment = Enum.TextXAlignment.Left
-  self._midLabel.TextYAlignment = Enum.TextYAlignment.Center
-  self._midLabel.FontSize = StatsUtils.PanelGraphFontSize
-
   self._bottomLabel = Instance.new("TextLabel")
   self._bottomLabel.Name = "PS_BottomAxisLabel"
   self._bottomLabel.Parent = self._frame
@@ -67,7 +60,6 @@ function StatsAnnotatedGraphClass.new(statType, isMaximized)
   self._graph = BarGraphClass.new(showExtras)
 
   StatsUtils.StyleTextWidget(self._topLabel)
-  StatsUtils.StyleTextWidget(self._midLabel)
   StatsUtils.StyleTextWidget(self._bottomLabel)
 
   self:_layoutElements()
@@ -78,7 +70,6 @@ end
 function StatsAnnotatedGraphClass:SetZIndex(zIndex)
   self._frame.ZIndex = zIndex
   self._topLabel.ZIndex = zIndex
-  self._midLabel.ZIndex = zIndex
   self._bottomLabel.ZIndex = zIndex
   self._graph:SetZIndex(zIndex)
 end
@@ -89,13 +80,11 @@ function StatsAnnotatedGraphClass:_layoutElements()
     labelWidth = LabelXWidth
     
     self._topLabel.Visible = true
-    self._midLabel.Visible = true
     self._bottomLabel.Visible = true
   else
     labelWidth = 0
     
     self._topLabel.Visible = false
-    self._midLabel.Visible = false
     self._bottomLabel.Visible = false
   end
   
@@ -104,15 +93,11 @@ function StatsAnnotatedGraphClass:_layoutElements()
 
   local TopLabelFramePosition = UDim2.new(1, -(Margin + labelWidth), 0, Margin)
   local TopLabelFrameSize = UDim2.new(0, labelWidth, 0.333, -2 * Margin)
-  local MidLabelFramePosition = UDim2.new(1, -(Margin + labelWidth), 0.333, Margin)
-  local MidLabelFrameSize = UDim2.new(0, labelWidth, 0.333, -2 * Margin)
   local BottomLabelFramePosition = UDim2.new(1, -(Margin + labelWidth), 0.666, Margin)
   local BottomLabelFrameSize = UDim2.new(0, labelWidth, 0.333, -2 * Margin)
   
   self._topLabel.Size = TopLabelFrameSize
   self._topLabel.Position = TopLabelFramePosition
-  self._midLabel.Size = MidLabelFrameSize
-  self._midLabel.Position = MidLabelFramePosition
   self._bottomLabel.Size = BottomLabelFrameSize
   self._bottomLabel.Position = BottomLabelFramePosition
   
@@ -148,7 +133,6 @@ function StatsAnnotatedGraphClass:_render()
   self._graph:Render()
   
   self._topLabel.Text = string.format("%.2f", self._axisMax)
-  self._midLabel.Text = string.format("%.2f", self._axisMax/2)
   self._bottomLabel.Text = string.format("%.2f", 0,.0)
 end
 

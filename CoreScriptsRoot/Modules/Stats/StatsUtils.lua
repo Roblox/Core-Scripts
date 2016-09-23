@@ -1,7 +1,7 @@
 --[[
-		Filename: StatsUtils.lua
-		Written by: dbanks
-		Description: Common work in the performance stats world.
+  Filename: StatsUtils.lua
+  Written by: dbanks
+  Description: Common work in the performance stats world.
 --]]
 
 --[[ Services ]]--
@@ -10,6 +10,7 @@ local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
 local TopbarConstants = require(CoreGuiService.RobloxGui.Modules.TopbarConstants)
+local StyleWidgets = require(CoreGuiService.RobloxGui.Modules.StyleWidgets)
 
 --[[ Classes ]]--
 local StatsUtils = {}
@@ -34,7 +35,7 @@ StatsUtils.PanelGraphFontSize = Enum.FontSize.Size10
 
 -- Layout
 -- Layout: Buttons
-StatsUtils.ButtonHeight = 36
+StatsUtils.ButtonHeight = 36 + StyleWidgets.TabSelectionHeight
 
 -- Layout: Viewer
 StatsUtils.ViewerTopMargin = 10

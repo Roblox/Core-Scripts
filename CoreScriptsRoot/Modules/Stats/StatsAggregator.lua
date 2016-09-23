@@ -1,7 +1,7 @@
 --[[
-		Filename: StatsAggregator.lua
-		Written by: dbanks
-		Description: Gather and store stats on regular heartbeat.
+  Filename: StatsAggregator.lua
+  Written by: dbanks
+  Description: Gather and store stats on regular heartbeat.
 --]]
 
 --[[ Services ]]--

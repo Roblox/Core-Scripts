@@ -1,7 +1,7 @@
 --[[
-		Filename: StatsButtonViewer.lua
-		Written by: dbanks
-		Description: Widget that displays one or more stats in closeup view:
+  Filename: StatsButtonViewer.lua
+  Written by: dbanks
+  Description: Widget that displays one or more stats in closeup view:
       text and graphics.
 --]]
 
@@ -31,10 +31,14 @@ function StatsViewerClass.new()
   local self = {}
   setmetatable(self, StatsViewerClass)
   
-  self._frame = Instance.new("Frame")
-  self._frame.Name = "PS_Viewer"
-
-  StatsUtils.StyleFrame(self._frame)
+  self._frameImageLabel = Instance.new("ImageLabel")
+  self._frameImageLabel.Name = "PS_Viewer"
+	self._frameImageLabel.Image = 'rbxasset://textures/ui/PerformanceStats/BackgroundRounded.png'
+  self._frameImageLabel.ScaleType = Enum.ScaleType.Slice
+  self._frameImageLabel.SliceCenter = Rect.new(10, 10, 22, 22)
+  self._frameImageLabel.BackgroundTransparency = 1
+  self._frameImageLabel.ImageColor3 = StatsUtils.NormalColor
+  self._frameImageLabel.ImageTransparency = StatsUtils.Transparency 
   
   self._textPanel = nil
   self._statType = nil
@@ -44,30 +48,30 @@ function StatsViewerClass.new()
 end
 
 function StatsViewerClass:SetSizeAndPosition(size, position)
-  self._frame.Size = size;
-  self._frame.Position = position;
+  self._frameImageLabel.Size = size;
+  self._frameImageLabel.Position = position;
 end
 
 function StatsViewerClass:SetParent(parent)
-  self._frame.Parent = parent
+  self._frameImageLabel.Parent = parent
 end
   
 function StatsViewerClass:SetVisible(visible)
-  self._frame.Visible = visible;
+  self._frameImageLabel.Visible = visible;
 end
 
 function StatsViewerClass:SetStatType(statType) 
   self._statType = statType
-  self._frame:ClearAllChildren()
+  self._frameImageLabel:ClearAllChildren()
   self._textPanel = nil  
   
   self._textPanel = StatsTextPanelClass.new(statType, true)
-  self._textPanel:PlaceInParent(self._frame,
+  self._textPanel:PlaceInParent(self._frameImageLabel,
     TextPanelSize, 
     TextPanelPosition)
   
   self._graph = StatsAnnotatedGraphClass.new(statType, true)
-  self._graph:PlaceInParent(self._frame, 
+  self._graph:PlaceInParent(self._frameImageLabel, 
     GraphSize, 
     GraphPosition)
   

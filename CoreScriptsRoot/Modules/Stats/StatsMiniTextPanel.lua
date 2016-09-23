@@ -1,7 +1,7 @@
 --[[
-		Filename: StatsMiniTextPanel.lua
-		Written by: dbanks
-		Description: Panel that shows title and current value for a given stat.
+  Filename: StatsMiniTextPanel.lua
+  Written by: dbanks
+  Description: Panel that shows title and current value for a given stat.
 --]]
 
 --[[ Globals ]]--
