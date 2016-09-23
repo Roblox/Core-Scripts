@@ -2441,9 +2441,9 @@ local function CreateChat()
 
   local focusCount = 0
   function this:CreateGUI()
-    if FORCE_CHAT_GUI or 
+    if (FORCE_CHAT_GUI or 
       Player.ChatMode == Enum.ChatMode.TextAndMenu and
-      game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne then
+      game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne) then
       if NON_CORESCRIPT_MODE then
         local chatGui = Instance.new("ScreenGui")
         chatGui.Name = "RobloxGui"
