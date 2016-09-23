@@ -367,6 +367,7 @@ local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 			ID = -1,
 			FromSpeaker = nil,
 			OriginalChannel = channelName,
+			IsFiltered = false,
 			Message = message,
 			Time = os.time(),
 			ExtraData = extraData,

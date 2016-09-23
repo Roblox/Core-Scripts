@@ -204,6 +204,9 @@ function methods:CreateMessageLabel(messageData)
 	local numNeededUnderscore = math.ceil(messageSize.X / singleUnderscoreSize.X)
 
 	local tempMessage = string.rep(" ", numNeededSpaces) .. string.rep("_", numNeededUnderscore)
+	if messageData.IsFiltered then
+		tempMessage = string.rep(" ", numNeededSpaces) .. messageData.Message
+	end
 	local BaseFrame, BaseMessage = self:CreateBaseMessage(tempMessage, useFont, useFontSize, useChatColor)
 	local NameButton = self:AddNameButtonToBaseMessage(BaseMessage, speakerNameSize, useNameColor, formatUseName)
 
@@ -340,6 +343,9 @@ function methods:CreateChannelEchoMessageLabel(messageData)
 	local numNeededUnderscore = math.ceil(messageSize.X / singleUnderscoreSize.X)
 
 	local tempMessage = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. string.rep("_", numNeededUnderscore)
+	if messsageData.IsFiltered then
+ 		tempMessage = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. messageData.Message
+	end
 	local BaseFrame, BaseMessage = self:CreateBaseMessage(tempMessage, useFont, useFontSize, useChatColor)
 	local NameButton = self:AddNameButtonToBaseMessage(BaseMessage, speakerNameSize, useNameColor, formatUseName)
 	local ChannelButton = self:AddChannelButtonToBaseMessage(BaseMessage, channelNameSize, formatChannelName, useNameColor)

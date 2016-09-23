@@ -298,6 +298,7 @@ function methods:InternalCreateMessageObject(message, fromSpeaker, extraData)
 		ID = self.ChatService:InternalGetUniqueMessageId(),
 		FromSpeaker = fromSpeaker,
 		OriginalChannel = self.Name,
+		IsFiltered = false,
 		Message = message,
 		Time = os.time(),
 		ExtraData = {},

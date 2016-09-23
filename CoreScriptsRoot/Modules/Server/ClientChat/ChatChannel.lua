@@ -34,8 +34,26 @@ function methods:SetActive(active)
 end
 
 function methods:UpdateMessageFiltered(messageData)
-	if self.Active then
-		self.MessageLogDisplay:UpdateMessageFiltered(messageData)
+	local searchIndex = 1
+	local searchTable = self.MessageLog
+	local messageObj = nil
+	while (#searchTable >= searchIndex) do
+		local obj = searchTable[searchIndex]
+
+		if (obj.MessageData.ID == messageData.ID) then
+			messageObj = obj
+			break
+		end
+
+		searchIndex = searchIndex + 1
+	end
+
+	if messageObj then
+		messageObj.MessageData.Message = messageData.Message
+		messageObj.MessageData.IsFiltered = true
+		if self.Active then
+			self.MessageLogDisplay:UpdateMessageFiltered(messageObj.MessageData)
+		end
 	end
 end
 
