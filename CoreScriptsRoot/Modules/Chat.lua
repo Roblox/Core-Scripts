@@ -608,8 +608,9 @@ end
 InputService.InputBegan:connect(function(inputObject, isProcessed)
     if isProcessed then return end
     local inputType = inputObject.UserInputType
-    if (inputType == Enum.UserInputType.Touch and  inputObject.UserInputState == Enum.UserInputState.Begin) or
-    inputType == Enum.UserInputType.MouseButton1 then
+    if ((inputType == Enum.UserInputType.Touch and  
+        inputObject.UserInputState == Enum.UserInputState.Begin) or
+      inputType == Enum.UserInputType.MouseButton1) then
       if lastSelectedButton and IsPlayerDropDownEnabled then
         playerDropDown:Hide()
       end
@@ -1605,8 +1606,10 @@ local function CreateChatWindowWidget(settings)
     local point1 = point0 + this.ChatContainer.AbsoluteSize
     -- HACK, this is so the "ChatWindow" includes the chatbar box, TODO: refactor the fadeing code to include the chatbar
     point1 = point1 + Vector2.new(0, 34)
-    return point0.X <= pt.X and point1.X >= pt.X and
-    point0.Y <= pt.Y and point1.Y >= pt.Y
+    return (point0.X <= pt.X and 
+      point1.X >= pt.X and
+      point0.Y <= pt.Y and
+      point1.Y >= pt.Y)
   end
 
   function this:IsHovering()
@@ -1715,8 +1718,8 @@ local function CreateChatWindowWidget(settings)
       local instant = false
       if messageGui and this.ScrollingFrame then
         -- If the chat is not in the visible frame then don't waste cpu cycles fading it out
-        if messageGui.AbsolutePosition.Y > (this.ScrollingFrame.AbsolutePosition + this.ScrollingFrame.AbsoluteWindowSize).Y or
-        messageGui.AbsolutePosition.Y + messageGui.AbsoluteSize.Y < this.ScrollingFrame.AbsolutePosition.Y then
+        if (messageGui.AbsolutePosition.Y > (this.ScrollingFrame.AbsolutePosition + this.ScrollingFrame.AbsoluteWindowSize).Y or
+          messageGui.AbsolutePosition.Y + messageGui.AbsoluteSize.Y < this.ScrollingFrame.AbsolutePosition.Y) then
           instant = true
         end
       end
@@ -2438,9 +2441,9 @@ local function CreateChat()
 
   local focusCount = 0
   function this:CreateGUI()
-    if	FORCE_CHAT_GUI or Player.ChatMode == Enum.ChatMode.TextAndMenu and
-    game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
-    then
+    if FORCE_CHAT_GUI or 
+      Player.ChatMode == Enum.ChatMode.TextAndMenu and
+      game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne then
       if NON_CORESCRIPT_MODE then
         local chatGui = Instance.new("ScreenGui")
         chatGui.Name = "RobloxGui"
