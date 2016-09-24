@@ -1,8 +1,8 @@
 
 --[[
-		Filename: StatsAggregatorManager.lua
-		Written by: dbanks
-		Description: Indexed array of stats aggregators, one for each stat.
+  Filename: StatsAggregatorManager.lua
+  Written by: dbanks
+  Description: Indexed array of stats aggregators, one for each stat.
 --]]
 
 --[[ Services ]]--

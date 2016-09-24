@@ -825,13 +825,21 @@ end
 local UserInputService = game:GetService('UserInputService')
 local Platform = UserInputService:GetPlatform()
 local Modules = RobloxGui:FindFirstChild('Modules')
+local CSMModule = Modules:FindFirstChild('ControllerStateManager')
+if Modules and not CSMModule then
+	local ShellModules = Modules:FindFirstChild('Shell')
+	if ShellModules then
+		CSMModule = ShellModules:FindFirstChild('ControllerStateManager')
+	end
+end
+
 if Platform == Enum.Platform.XBoxOne then
 	-- Platform hook for controller connection events
 	-- Displays overlay to user on controller connection lost
 	local PlatformService = nil
 	pcall(function() PlatformService = game:GetService('PlatformService') end)
-	if PlatformService and Modules then
-		local controllerStateManager = require(Modules:FindFirstChild('ControllerStateManager'))
+	if PlatformService and CSMModule then
+		local controllerStateManager = require(CSMModule)
 		if controllerStateManager then
 			controllerStateManager:Initialize()
 

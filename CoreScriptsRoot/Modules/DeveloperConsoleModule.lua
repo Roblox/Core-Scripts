@@ -2719,12 +2719,16 @@ end
 -- Permissions --
 -----------------
 do
-	local permissions;
+	local permissionsLoading, permissions = false;
 	function DeveloperConsole.GetPermissions()
+		while permissionsLoading do wait() end
+		
 		if permissions then
 			return permissions
 		end
+		
 		permissions = {}
+		permissionsLoading = true
 		
 		pcall(function()
 			permissions.CreatorFlagValue = settings():GetFFlag("UseCanManageApiToDetermineConsoleAccess")
@@ -2771,8 +2775,9 @@ do
 		permissions.MayViewServerScripts = permissions.IsCreator
 		permissions.MayViewServerJobs = permissions.IsCreator
 		
-		return permissions
+		permissionsLoading = false
 		
+		return permissions
 	end
 end
 
@@ -2990,38 +2995,37 @@ local function onDevConsoleVisibilityChanged(isVisible)
 	end
 end
 
-local getDeveloperConsoleIsCreating = false
+local devConsoleCreating = false
 local function getDeveloperConsole()
-	if (not myDeveloperConsole) then
-		if (not getDeveloperConsoleIsCreating) then
-			getDeveloperConsoleIsCreating = true
+	if (not myDeveloperConsole and not devConsoleCreating) then
+		devConsoleCreating = true
+		local permissions = DeveloperConsole.GetPermissions()
+		local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
 
-			local permissions = DeveloperConsole.GetPermissions()
-			local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
+		myDeveloperConsole = DeveloperConsole.new(RobloxGui, permissions, messagesAndStats)
 
-			myDeveloperConsole = DeveloperConsole.new(RobloxGui, permissions, messagesAndStats)
-
-			if isTenFootInterface then
-				myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
-			end
-
-			getDeveloperConsoleIsCreating = false
-		else
-			while (getDeveloperConsoleIsCreating) do wait() end
+		if isTenFootInterface then
+			myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
 		end
+		devConsoleCreating = false
 	end
-
 	return myDeveloperConsole
 end
 
 function DevConsoleModuleTable:GetVisibility()
 	local devConsole = getDeveloperConsole()
-	return devConsole.Visible
+	if devConsole then
+		return devConsole.Visible
+	else
+		return false
+	end
 end
 
 function DevConsoleModuleTable:SetVisibility(value)
 	local devConsole = getDeveloperConsole()
-	devConsole:SetVisible(value)
+	if devConsole then
+		devConsole:SetVisible(value)
+	end
 end
 
 

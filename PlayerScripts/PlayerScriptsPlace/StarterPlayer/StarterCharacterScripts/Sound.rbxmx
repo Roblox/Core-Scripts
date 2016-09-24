@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="Script" referent="RBX16e4cb69d4fd4f14bf87efbf916c93ef">
+	<Item class="Script" referent="RBXd23f9ee43b5f4a558f54f1f207b69f96">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -11,8 +11,10 @@
 	Author: @spotco
 	This script creates sounds which are placed under the character head.
 	These sounds are used by the "LocalSound" script.
+	
+	To modify this script, copy it to your "StarterPlayer/StarterCharacterScripts" folder keeping the same script name ("Sound").
+	The default Sound script loaded for every character will then be replaced with your copy of the script.
 ]]--
---humanoidSoundNewLocal.rbxmx--
 
 function CreateNewSound(name, id, looped, pitch, parent)
 	local sound = Instance.new("Sound")
@@ -21,7 +23,11 @@ function CreateNewSound(name, id, looped, pitch, parent)
 	sound.archivable = false
 	sound.Parent = parent
 	sound.Pitch = pitch
-	sound.Looped = looped	
+	sound.Looped = looped
+	
+	sound.MinDistance = 5
+	sound.MaxDistance = 150
+	sound.Volume = 0.65
 	
 	return sound
 end
@@ -43,7 +49,7 @@ CreateNewSound("Running", 		"rbxasset://sounds/action_footsteps_plastic.mp3",		t
 CreateNewSound("Swimming", 	"rbxasset://sounds/action_swim.mp3",					true,	1.6,	head)
 CreateNewSound("Climbing", 	"rbxasset://sounds/action_footsteps_plastic.mp3",		true,	1,		head)]]></ProtectedString>
 		</Properties>
-		<Item class="LocalScript" referent="RBX7dae185fd11347acbb6853bbfc52862a">
+		<Item class="LocalScript" referent="RBX4f389895f57541eaaf886badc1417010">
 			<Properties>
 				<bool name="Disabled">false</bool>
 				<Content name="LinkedSource"><null></null></Content>
@@ -57,7 +63,7 @@ CreateNewSound("Climbing", 	"rbxasset://sounds/action_footsteps_plastic.mp3",		t
 	The Playing/TimePosition properties of Sound objects bypass FilteringEnabled, so this triggers the sound
 	immediately for the player and is replicated to all other players.
 	
-	This script has been optimized to reduce network traffic (in comparison to the previous humanoid sound scripts.
+	This script is optimized to reduce network traffic through minimizing the amount of property replication.
 ]]--
 
 --All sounds are referenced by this ID
@@ -83,7 +89,15 @@ local Sounds = {}
 do
 	local Figure = script.Parent.Parent
 	Head = Figure:WaitForChild("Head")
-	Humanoid = Figure:WaitForChild("Humanoid")
+	while not Humanoid do
+		for _,NewHumanoid in pairs(Figure:GetChildren()) do
+			if NewHumanoid:IsA("Humanoid") then
+				Humanoid = NewHumanoid
+				break
+			end
+		end
+		Figure.ChildAdded:wait()
+	end
 	
 	Sounds[SFX.Died] = 			Head:WaitForChild("Died")
 	Sounds[SFX.Running] = 		Head:WaitForChild("Running")
@@ -99,7 +113,7 @@ end
 local Util
 Util = {
 	
-	--Define linear relationship between (pt1x,pt2x) and (pt2x,pt2y). Evaluate this like at x.
+	--Define linear relationship between (pt1x,pt2x) and (pt2x,pt2y). Evaluate this at x.
 	YForLineGivenXAndTwoPts = function(x,pt1x,pt1y,pt2x,pt2y)
 		--(y - y1)/(x - x1) = m
 		local m = (pt1y - pt2y) / (pt1x - pt2x)
@@ -124,62 +138,32 @@ Util = {
 		return math.abs(Head.Velocity.Y)
 	end;
 	
-	--Checks if Sound.Playing is usable
-	SoundIsV2 = function(sound)
-		return sound.IsLoaded
-	end;
-	
 	--Setting Playing/TimePosition values directly result in less network traffic than Play/Pause/Resume/Stop
 	--If these properties are enabled, use them.
 	Play = function(sound)		
-		if Util.SoundIsV2(sound) then
-			if sound.TimePosition ~= 0 then
-				sound.TimePosition = 0
-			end
-			if not sound.IsPlaying then
-				sound.Playing = true
-			end
-		else
-			if not sound.IsPlaying then
-				sound:Play()
-			end
+		if sound.TimePosition ~= 0 then
+			sound.TimePosition = 0
 		end
-		
+		if not sound.IsPlaying then
+			sound.Playing = true
+		end
 	end;
 	Pause = function(sound)
-		if Util.SoundIsV2(sound) then
-			if sound.IsPlaying then
-				sound.Playing = false
-			end
-		else
-			if sound.IsPlaying then
-				sound:Pause()
-			end
+		if sound.IsPlaying then
+			sound.Playing = false
 		end
 	end;
 	Resume = function(sound)
-		if Util.SoundIsV2(sound) then
-			if not sound.IsPlaying then
-				sound.Playing = true
-			end
-		else
-			if not sound.IsPlaying then
-				sound:Resume()
-			end
+		if not sound.IsPlaying then
+			sound.Playing = true
 		end
 	end;
 	Stop = function(sound)
-		if Util.SoundIsV2(sound) then
-			if sound.IsPlaying then
-				sound.Playing = false
-			end
-			if sound.TimePosition ~= 0 then
-				sound.TimePosition = 0
-			end
-		else
-			if sound.IsPlaying then
-				sound:Stop()
-			end
+		if sound.IsPlaying then
+			sound.Playing = false
+		end
+		if sound.TimePosition ~= 0 then
+			sound.TimePosition = 0
 		end
 	end;
 }
@@ -340,7 +324,7 @@ do
 				if Head.Velocity.Y < 0 and Util.VerticalSpeed(Head) > 75 then
 					Util.Resume(sound)
 					
-					--Volume takes 1.1aa seconds to go from volume 0 to 1
+					--Volume takes 1.1 seconds to go from volume 0 to 1
 					local ANIMATION_LENGTH_SECONDS = 1.1
 					
 					local normalizedIncrement = tickSpeedSeconds / ANIMATION_LENGTH_SECONDS									

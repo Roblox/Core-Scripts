@@ -977,17 +977,18 @@ local function CreateSettingsHub()
 		this.VRShield.Visible = true
 		this:HideShield()
 
-		vrMenuOpened = GuiService.MenuOpened:connect(function()
-			local topbarPanel = Panel3D.Get("Topbar3D")
-			panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
-			panel:SetVisible(true)
+		vrMenuOpened = this.SettingsShowSignal:connect(function(visible)
+			if visible then
+				local topbarPanel = Panel3D.Get("Topbar3D")
+				panel.localCF = topbarPanel.localCF * CFrame.Angles(math.rad(-5), 0, 0) * CFrame.new(0, 4, 0) * CFrame.Angles(math.rad(-15), 0, 0)
+				panel:SetVisible(true)
 
-			VRHub:FireModuleOpened(thisModuleName)
-		end)
-		vrMenuClosed = GuiService.MenuClosed:connect(function()
-			panel:SetVisible(false)
+				VRHub:FireModuleOpened(thisModuleName)
+			else
+				panel:SetVisible(false)
 
-			VRHub:FireModuleClosed(thisModuleName)
+				VRHub:FireModuleClosed(thisModuleName)
+			end
 		end)
 
 		VRHub.ModuleOpened.Event:connect(function(moduleName)

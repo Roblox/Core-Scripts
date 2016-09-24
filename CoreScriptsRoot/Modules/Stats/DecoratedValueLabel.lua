@@ -1,7 +1,7 @@
 --[[
-		Filename: DecoratedValueLabel.lua
-		Written by: dbanks
-		Description: Icon, text label, numeric value.
+  Filename: DecoratedValueLabel.lua
+  Written by: dbanks
+  Description: Icon, text label, numeric value.
       Icon is set by creator/caller.
 --]]
 

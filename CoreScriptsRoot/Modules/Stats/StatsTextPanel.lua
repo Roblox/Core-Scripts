@@ -1,7 +1,7 @@
 --[[
-		Filename: StatsTextPanel.lua
-		Written by: dbanks
-		Description: Panel that shows a "Legend" for a graph, including:
+  Filename: StatsTextPanel.lua
+  Written by: dbanks
+  Description: Panel that shows a "Legend" for a graph, including:
       - name of stat being displayed.
       - current value of stat.
       - target (suggested max) value of stat.
