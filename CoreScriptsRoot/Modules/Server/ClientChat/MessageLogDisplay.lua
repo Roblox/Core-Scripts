@@ -1,9 +1,10 @@
-local source = [[
---	// FileName: ChatChannel.lua
---	// Written by: Xsitsu
+--	// FileName: MessageLogDisplay.lua
+--	// Written by: Xsitsu, TheGamer101
 --	// Description: ChatChannel window for displaying messages.
 
 local module = {}
+module.ScrollBarThickness = 4
+
 --////////////////////////////// Include
 --//////////////////////////////////////
 local modulesFolder = script.Parent
@@ -12,6 +13,8 @@ local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLab
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+
+local MessageLabelCreator = moduleMessageLabelCreator.new()
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -67,18 +70,17 @@ function methods:UpdateMessageFiltered(messageData)
 	end
 end
 
-function methods:AddMessageLabelToLog(messageObject)
+function methods:AddMessage(messageData, messageType)
+  self:WaitUntilParentedCorrectly()
+
+  local messageObject = MessageLabelCreator:CreateMessageLabelFromType(messageData, messageType)
 	self.TextTweener:RegisterTweenObjectProperty(messageObject.Tweener, "Transparency")
 
 	table.insert(self.MessageObjectLog, messageObject)
 	self:PositionMessageLabelInWindow(messageObject)
-
-	if (#self.MessageObjectLog > 50) then
-		self:RemoveLastMessageLabelFromLog()
-	end
 end
 
-function methods:RemoveLastMessageLabelFromLog()
+function methods:RemoveLastMessage()
 	self:WaitUntilParentedCorrectly()
 
 	local lastMessage = self.MessageObjectLog[1]
@@ -129,7 +131,7 @@ function methods:ReorderAllMessages()
 	end
 end
 
-function methods:ClearMessageLog()
+function methods:Clear()
 	for i, v in pairs(self.MessageObjectLog) do
 		v:Destroy()
 	end
@@ -167,11 +169,9 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChatChannel", methods)
+ClassMaker.RegisterClassType("MessageLogDisplay", methods)
 
-module.ScrollBarThickness = 4
-
-function module.new(channelName)
+function module.new()
 	local obj = {}
 	obj.Destroyed = false
 
@@ -184,10 +184,10 @@ function module.new(channelName)
 
 	obj.TextTweener = moduleTransparencyTweener.new()
 
-	obj.Name = channelName
+	obj.Name = "MessageLogDisplay"
 	obj.GuiObject.Name = "Frame_" .. obj.Name
 
-	ClassMaker.MakeClass("ChatChannel", obj)
+	ClassMaker.MakeClass("MessageLogDisplay", obj)
 
 	obj.GuiObject.Changed:connect(function(prop)
 		if (prop == "AbsoluteSize") then
@@ -199,9 +199,3 @@ function module.new(channelName)
 end
 
 return module
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

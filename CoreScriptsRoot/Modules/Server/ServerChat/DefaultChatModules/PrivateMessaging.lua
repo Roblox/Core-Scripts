@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: PrivateMessaging.lua
 --	// Written by: Xsitsu
 --	// Description: Module that handles all private messaging.
@@ -6,7 +5,7 @@ local source = [[
 local errorExtraData = {ChatColor = Color3.fromRGB(245, 50, 50)}
 
 local function Run(ChatService)
-	
+
 	local function DoWhisperCommand(fromSpeaker, message, channel)
 		local otherSpeakerName = message
 		local sendMessage = nil
@@ -28,7 +27,7 @@ local function Run(ChatService)
 		local speaker = ChatService:GetSpeaker(fromSpeaker)
 		local channelObj = ChatService:GetChannel("To " .. otherSpeakerName)
 		if (channelObj and ChatService:GetSpeaker(otherSpeakerName)) then
-			
+
 			if (channelObj.Name == "To " .. speaker.Name) then
 				speaker:SendSystemMessage("You cannot whisper to yourself.", channel, errorExtraData)
 			else
@@ -49,23 +48,23 @@ local function Run(ChatService)
 
 		end
 	end
-	
+
 	local function WhisperCommandsFunction(fromSpeaker, message, channel)
 		local processedCommand = false
 
 		if (string.sub(message, 1, 3):lower() == "/w ") then
 			DoWhisperCommand(fromSpeaker, string.sub(message, 4), channel)
 			processedCommand = true
-			
+
 		elseif (string.sub(message, 1, 9):lower() == "/whisper ") then
 			DoWhisperCommand(fromSpeaker, string.sub(message, 10), channel)
 			processedCommand = true
-			
+
 		end
-		
+
 		return processedCommand
 	end
-	
+
 	local function PrivateMessageReplicationFunction(fromSpeaker, message, channelName)
 		local sendingSpeaker = ChatService:GetSpeaker(fromSpeaker)
 		local extraData = sendingSpeaker.ExtraData
@@ -78,17 +77,17 @@ local function Run(ChatService)
 			end
 			toSpeaker:SendMessage(message, "To " .. fromSpeaker, fromSpeaker, extraData)
 		end
-		
+
 		return true
 	end
-	
+
 	ChatService:RegisterProcessCommandsFunction("whisper_commands", WhisperCommandsFunction)
-	
+
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		if (ChatService:GetChannel("To " .. speakerName)) then
 			ChatService:RemoveChannel("To " .. speakerName)
 		end
-		
+
 		local channel = ChatService:AddChannel("To " .. speakerName)
 		channel.Joinable = false
 		channel.Leavable = true
@@ -96,10 +95,10 @@ local function Run(ChatService)
 		channel.Private = true
 
 		channel.WelcomeMessage = "You are now privately chatting with " .. speakerName .. "."
-		
+
 		channel:RegisterProcessCommandsFunction("replication_function", PrivateMessageReplicationFunction)
 	end)
-	
+
 	ChatService.SpeakerRemoved:connect(function(speakerName)
 		if (ChatService:GetChannel("To " .. speakerName)) then
 			ChatService:RemoveChannel("To " .. speakerName)
@@ -108,10 +107,3 @@ local function Run(ChatService)
 end
 
 return Run
-]]
-
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

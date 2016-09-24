@@ -1,17 +1,16 @@
-local source = [[
 --	// FileName: ChatScript.lua
 --	// Written by: Xsitsu
 --	// Description: Hooks main chat module up to Topbar in corescripts.
 
---// To ALWAYS run this system, you will need the server side force installed 
---// as well. You can't wait for the server to create it at runtime, because 
+--// To ALWAYS run this system, you will need the server side force installed
+--// as well. You can't wait for the server to create it at runtime, because
 --// that will only happen if the correct fastflags are set and at that point
 --// this new chat system will just run anyways.
 
 --// The first forces a run if after waiting it turns out it shouldn't run.
 --// The second skips the waiting and forces a run anyways.
 --// The second bool overrides the first if the second is set to true.
---// Using the first bool allows it the potential of integrating with the 
+--// Using the first bool allows it the potential of integrating with the
 --// topbar while the second one does not.
 local FORCE_NEW_CHAT_SYSTEM = false
 local FORCE_RUN_WITHOUT_TOPBAR = false
@@ -119,10 +118,3 @@ elseif (FORCE_RUN_WITHOUT_TOPBAR or FORCE_NEW_CHAT_SYSTEM) then
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
 	DoEverything()
 end
-]]
-
-local generated = Instance.new("LocalScript")
-generated.Disabled = true
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

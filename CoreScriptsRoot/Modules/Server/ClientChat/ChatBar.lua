@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChatBar.lua
 --	// Written by: Xsitsu
 --	// Description: Manages text typing and typing state.
@@ -193,7 +192,7 @@ function methods:CreateGuiObjects(targetParent)
 		if (inputObject and inputObject.KeyCode == Enum.KeyCode.Escape) then
 			self.TextBox.Text = ""
 		end
-		
+
 	end)
 end
 
@@ -392,9 +391,3 @@ function module.new()
 end
 
 return module
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

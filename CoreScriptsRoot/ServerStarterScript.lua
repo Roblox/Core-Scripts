@@ -35,7 +35,7 @@ end
 --[[ Remote Events ]]--
 local RemoteEvent_SetDialogInUse = Instance.new("RemoteEvent")
 RemoteEvent_SetDialogInUse.Name = "SetDialogInUse"
-RemoteEvent_SetDialogInUse.Parent = RobloxReplicatedStorage 
+RemoteEvent_SetDialogInUse.Parent = RobloxReplicatedStorage
 
 --[[ Event Connections ]]--
 -- Params:
@@ -57,7 +57,8 @@ RemoteEvent_SetDialogInUse.OnServerEvent:connect(setDialogInUse)
 
 local success, retVal = pcall(function() return game:GetService("Chat"):GetShouldUseLuaChat() end)
 local useNewChat = success and retVal
-if (useNewChat) then
-	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerChat/ChatServiceInstaller", script.Parent)
-	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ClientChat/ChatWindowInstaller", script.Parent)
+local FORCE_UseNewChat = require(game:GetService("CoreGui").RobloxGui.Modules.Common.ForceUseNewChat)
+if (useNewChat or FORCE_UseNewChat) then
+	require(game:GetService("CoreGui").RobloxGui.Modules.Server.ClientChat.ChatWindowInstaller)()
+	require(game:GetService("CoreGui").RobloxGui.Modules.Server.ServerChat.ChatServiceInstaller)()
 end

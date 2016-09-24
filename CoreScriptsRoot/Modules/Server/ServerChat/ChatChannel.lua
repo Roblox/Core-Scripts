@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChatChannel.lua
 --	// Written by: Xsitsu
 --	// Description: A representation of one channel that speakers can chat in.
@@ -24,7 +23,7 @@ function methods:SendSystemMessage(message, extraData)
 	for i, speaker in pairs(self.Speakers) do
 		speaker:InternalSendSystemMessage(messageObj, self.Name)
 	end
-	
+
 	return messageObj
 end
 
@@ -78,7 +77,7 @@ function methods:MuteSpeaker(speakerName, reason, length)
 	if (not speaker) then
 		error("Speaker \"" .. speakerName .. "\" does not exist!")
 	end
-	
+
 	self.Mutes[speakerName:lower()] = (length == 0 or length == nil) and 0 or (os.time() + length)
 
 	if (reason) then
@@ -98,7 +97,7 @@ function methods:UnmuteSpeaker(speakerName)
 	if (not speaker) then
 		error("Speaker \"" .. speakerName .. "\" does not exist!")
 	end
-	
+
 	self.Mutes[speakerName:lower()] = nil
 
 	pcall(function() self.eSpeakerUnmuted:Fire(speakerName) end)
@@ -124,7 +123,7 @@ function methods:RegisterFilterMessageFunction(funcId, func)
 	if self.FilterMessageFunctions[funcId] then
 		error(funcId .. " is already in use!")
 	end
-	
+
 	self.FilterMessageFunctions[funcId] = func
 end
 
@@ -136,7 +135,7 @@ function methods:RegisterProcessCommandsFunction(funcId, func)
 	if (self.ProcessCommandsFunctions[funcId]) then
 		error(funcId .. " is already in use!")
 	end
-	
+
 	self.ProcessCommandsFunctions[funcId] = func
 end
 
@@ -166,7 +165,7 @@ function methods:InternalDestroy()
 	for i, speaker in pairs(self.Speakers) do
 		speaker:LeaveChannel(self.Name)
 	end
-	
+
 	self.eDestroyed:Fire()
 end
 
@@ -182,30 +181,30 @@ function methods:InternalDoMessageFilter(speakerName, message, channel)
 			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
 		end
 	end
-	
+
 	return message
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)
 	local processed = false
-	
+
 	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
 	if (processed) then return processed end
-	
+
 	for funcId, func in pairs(self.ProcessCommandsFunctions) do
 		local s, m = pcall(function()
 			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "boolean")
 			processed = ret
 		end)
-		
+
 		if (not s) then
 			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, m))
 		end
-		
+
 		if (processed) then break end
 	end
-	
+
 	return processed
 end
 
@@ -260,7 +259,7 @@ function methods:InternalAddSpeaker(speaker)
 		warn("Speaker \"" .. speaker.name .. "\" is already in the channel!")
 		return
 	end
-	
+
 	self.Speakers[speaker.Name] = speaker
 	pcall(function() self.eSpeakerJoined:Fire(speaker.Name) end)
 end
@@ -270,7 +269,7 @@ function methods:InternalRemoveSpeaker(speaker)
 		warn("Speaker \"" .. speaker.name .. "\" is not in the channel!")
 		return
 	end
-	
+
 	self.Speakers[speaker.Name] = nil
 	pcall(function() self.eSpeakerLeft:Fire(speaker.Name) end)
 end
@@ -298,6 +297,8 @@ function methods:InternalCreateMessageObject(message, fromSpeaker, extraData)
 	{
 		ID = self.ChatService:InternalGetUniqueMessageId(),
 		FromSpeaker = fromSpeaker,
+		OriginalChannel = self.Name,
+		IsFiltered = false,
 		Message = message,
 		Time = os.time(),
 		ExtraData = {},
@@ -329,15 +330,15 @@ function module.new(vChatService, name, welcomeMessage)
 	local obj = {}
 
 	obj.ChatService = vChatService
-	
+
 	obj.Name = name
 	obj.WelcomeMessage = welcomeMessage or ""
-	
+
 	obj.Joinable = true
 	obj.Leavable = true
 	obj.AutoJoin = false
 	obj.Private = false
-	
+
 	obj.Speakers = {}
 	obj.Mutes = {}
 
@@ -349,10 +350,10 @@ function module.new(vChatService, name, welcomeMessage)
 
 	obj.FilterMessageFunctions = {}
 	obj.ProcessCommandsFunctions = {}
-	
+
 	obj.eDestroyed = Instance.new("BindableEvent")
 	obj.Destroyed = obj.eDestroyed.Event
-	
+
 	obj.eMessagePosted = Instance.new("BindableEvent")
 	obj.eSpeakerJoined = Instance.new("BindableEvent")
 	obj.eSpeakerLeft = Instance.new("BindableEvent")
@@ -364,18 +365,10 @@ function module.new(vChatService, name, welcomeMessage)
 	obj.SpeakerLeft = obj.eSpeakerLeft.Event
 	obj.SpeakerMuted = obj.eSpeakerMuted.Event
 	obj.SpeakerUnmuted = obj.eSpeakerUnmuted.Event
-	
+
 	ClassMaker.MakeClass("ChatChannel", obj)
-	
+
 	return obj
 end
 
 return module
-
-]]
-
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

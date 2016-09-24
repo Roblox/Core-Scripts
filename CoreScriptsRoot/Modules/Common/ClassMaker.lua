@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ClassMaker.lua
 --	// Written by: Xsitsu
 --	// Description: Really basic class maker module.
@@ -29,24 +28,24 @@ function module.RegisterClassType(classType, classMethods)
 		metatable.__metatable = "The metatable is locked"
 		metatable.__tostring = ToStringFunction
 		metatable.__newindex = function() NotValidMemberErrorFunction() end
-		
+
 		metatable.__ClassName = classType
-		
+
 		local useClassMethods = {}
 		useClassMethods.Dump = DumpFunction
 		useClassMethods.IsA = IsAFunction
-		
+
 		for i, v in pairs(classMethods) do
 			useClassMethods[i] = v
 		end
 		metatable.__ClassMethods = useClassMethods
-		
+
 		metatable.__index = function(tbl, index)
 			local rVal = rawget(tbl, index) or rawget(metatable.__ClassMethods, index) or rawget(metatable, index)
 			if (rVal) then return rVal end
 			NotValidMemberErrorFunction(tbl, index)
 		end
-		
+
 		classes[classType] = metatable
 	else
 		error(string.format("Class of type '%s' already exists.", classType))
@@ -63,9 +62,3 @@ function module.MakeClass(classType, classProperties)
 end
 
 return module
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

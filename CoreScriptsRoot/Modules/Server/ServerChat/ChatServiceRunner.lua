@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChatServiceRunner.lua
 --	// Written by: Xsitsu
 --	// Description: Main script to initialize ChatService and run ChatModules.
@@ -37,7 +36,7 @@ local function CreateIfDoesntExist(parentObject, objectName, objectType)
 		obj.Parent = parentObject
 	end
 	useEvents[objectName] = obj
-	
+
 	return obj
 end
 
@@ -58,7 +57,7 @@ EventFolder = useEvents
 
 local function CreatePlayerSpeakerObject(playerObj)
 	--// If a developer already created a speaker object with the
-	--// name of a player and then a player joins and tries to 
+	--// name of a player and then a player joins and tries to
 	--// take that name, we first need to remove the old speaker object
 	local speaker = ChatService:GetSpeaker(playerObj.Name)
 	if (speaker) then
@@ -133,7 +132,7 @@ EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
 	for i, channelName in pairs(speaker:GetChannelList()) do
 		local channelObj = ChatService:GetChannel(channelName)
 		if (channelObj) then
-			local channelData = 
+			local channelData =
 			{
 				channelName,
 				channelObj.WelcomeMessage,
@@ -155,7 +154,7 @@ end)
 local function DoJoinCommand(speakerName, channelName, fromChannelName)
 	local speaker = ChatService:GetSpeaker(speakerName)
 	local channel = ChatService:GetChannel(channelName)
-	
+
 	if (speaker) then
 		if (channel) then
 			if (channel.Joinable) then
@@ -174,7 +173,7 @@ end
 local function DoLeaveCommand(speakerName, channelName, fromChannelName)
 	local speaker = ChatService:GetSpeaker(speakerName)
 	local channel = ChatService:GetChannel(channelName)
-	
+
 	if (speaker) then
 		if (speaker:IsInChannel(channelName)) then
 			if (channel.Leavable) then
@@ -195,20 +194,20 @@ ChatService:RegisterProcessCommandsFunction("default_commands", function(fromSpe
 	elseif (string.sub(message, 1, 3):lower() == "/j ") then
 		DoJoinCommand(fromSpeaker, string.sub(message, 4), channel)
 		return true
-		
+
 	elseif (string.sub(message, 1, 7):lower() == "/leave ") then
 		DoLeaveCommand(fromSpeaker, string.sub(message, 8), channel)
 		return true
 	elseif (string.sub(message, 1, 3):lower() == "/l ") then
 		DoLeaveCommand(fromSpeaker, string.sub(message, 4), channel)
 		return true
-		
+
 	elseif (string.sub(message, 1, 3) == "/e " or string.sub(message, 1, 7) == "/emote ") then
 		-- Just don't show these in the chatlog. The animation script listens on these.
 		return true
-		
+
 	end
-	
+
 	return false
 end)
 
@@ -242,7 +241,7 @@ if modules then
 	modules.ChildAdded:connect(function(child)
 		pcall(TryRunModule, child)
 	end)
-	
+
 	for i, module in pairs(modules:GetChildren()) do
 		pcall(TryRunModule, module)
 	end
@@ -254,11 +253,3 @@ Players.PlayerRemoving:connect(function(playerObj)
 		ChatService:RemoveSpeaker(playerObj.Name)
 	end
 end)
-
-]]
-
-local generated = Instance.new("Script")
-generated.Disabled = true
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

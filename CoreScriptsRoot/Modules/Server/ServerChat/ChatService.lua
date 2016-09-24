@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChatService.lua
 --	// Written by: Xsitsu
 --	// Description: Manages creating and destroying ChatChannels and Speakers.
@@ -23,7 +22,7 @@ function methods:AddChannel(channelName)
 	if (self.ChatChannels[channelName:lower()]) then
 		error(string.format("Channel %q alrady exists.", channelName))
 	end
-	
+
 	local channel = ChatChannel.new(self, channelName)
 	self.ChatChannels[channelName:lower()] = channel
 
@@ -38,13 +37,13 @@ function methods:AddChannel(channelName)
 					speaker:SendSystemMessage("You cannot leave this channel.", channelName)
 				end
 			end
-			
+
 			return true
 		end
-		
+
 		return false
 	end)
-	
+
 	pcall(function() self.eChannelAdded:Fire(channelName) end)
 
 	return channel
@@ -53,7 +52,7 @@ end
 function methods:RemoveChannel(channelName)
 	if (self.ChatChannels[channelName:lower()]) then
 		local n = self.ChatChannels[channelName:lower()].Name
-		
+
 		self.ChatChannels[channelName:lower()]:InternalDestroy()
 		self.ChatChannels[channelName:lower()] = nil
 
@@ -72,10 +71,10 @@ function methods:AddSpeaker(speakerName)
 	if (self.Speakers[speakerName:lower()]) then
 		error("Speaker \"" .. speakerName .. "\" already exists!")
 	end
-	
+
 	local speaker = Speaker.new(self, speakerName)
 	self.Speakers[speakerName:lower()] = speaker
-	
+
 	pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
 
 	return speaker
@@ -87,9 +86,9 @@ function methods:RemoveSpeaker(speakerName)
 
 		self.Speakers[speakerName:lower()]:InternalDestroy()
 		self.Speakers[speakerName:lower()] = nil
-		
+
 		pcall(function() self.eSpeakerRemoved:Fire(n) end)
-		
+
 	else
 		warn("Speaker \"" .. speakerName .. "\" does not exist!")
 	end
@@ -137,7 +136,7 @@ function methods:RegisterFilterMessageFunction(funcId, func)
 	if self.FilterMessageFunctions[funcId] then
 		error(funcId .. " is already in use!")
 	end
-	
+
 	self.FilterMessageFunctions[funcId] = func
 end
 
@@ -149,7 +148,7 @@ function methods:RegisterProcessCommandsFunction(funcId, func)
 	if self.ProcessCommandsFunctions[funcId] then
 		error(funcId .. " is already in use!")
 	end
-	
+
 	self.ProcessCommandsFunctions[funcId] = func
 end
 
@@ -190,30 +189,30 @@ function methods:InternalDoMessageFilter(speakerName, message, channel)
 			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
 		end
 	end
-	
+
 	return message
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)
 	local processed = false
-	
+
 	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
 	if (processed) then return processed end
-	
+
 	for funcId, func in pairs(self.ProcessCommandsFunctions) do
 		local s, m = pcall(function()
 			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "boolean")
 			processed = ret
 		end)
-		
+
 		if (not s) then
 			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, m))
 		end
-		
+
 		if (processed) then break end
 	end
-	
+
 	return processed
 end
 
@@ -227,11 +226,11 @@ function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj)
 	if (self.Speakers[speakerName:lower()]) then
 		error("Speaker \"" .. speakerName .. "\" already exists!")
 	end
-	
+
 	local speaker = Speaker.new(self, speakerName)
 	speaker:InternalAssignPlayerObject(playerObj)
 	self.Speakers[speakerName:lower()] = speaker
-	
+
 	pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
 
 	return speaker
@@ -248,10 +247,10 @@ function module.new()
 
 	obj.ChatChannels = {}
 	obj.Speakers = {}
-	
+
 	obj.FilterMessageFunctions = {}
 	obj.ProcessCommandsFunctions = {}
-	
+
 	obj.eChannelAdded  = Instance.new("BindableEvent")
 	obj.eChannelRemoved = Instance.new("BindableEvent")
 	obj.eSpeakerAdded = Instance.new("BindableEvent")
@@ -268,10 +267,3 @@ function module.new()
 end
 
 return module.new()
-
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

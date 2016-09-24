@@ -1,10 +1,9 @@
-local source = [[
 --	// FileName: ChatCommandsTeller.lua
 --	// Written by: Xsitsu
 --	// Description: Module that provides information on default chat commands to players.
 
 local function Run(ChatService)
-	
+
 	local function ProcessCommandsFunction(fromSpeaker, message, channel)
 		if (message == "/?" or message == "/help") then
 			local speaker = ChatService:GetSpeaker(fromSpeaker)
@@ -16,12 +15,12 @@ local function Run(ChatService)
 			speaker:SendSystemMessage("/whisper <speaker> or /w <speaker> : open private message channel with speaker.", channel)
 			return true
 		end
-		
+
 		return false
 	end
-	
+
 	ChatService:RegisterProcessCommandsFunction("chat_commands_inquiry", ProcessCommandsFunction)
-	
+
 	local allChannel = ChatService:GetChannel("All")
 	if (allChannel) then
 		allChannel.WelcomeMessage = "Chat '/?' or '/help' for a list of chat commands."
@@ -29,10 +28,3 @@ local function Run(ChatService)
 end
 
 return Run
-]]
-
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

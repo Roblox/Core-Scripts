@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChannelsTab.lua
 --	// Written by: Xsitsu
 --	// Description: Channel tab button for selecting current channel and also displaying if currently selected.
@@ -38,7 +37,7 @@ local function CreateGuiObjects()
 	UnselectedFrame.Position = UDim2.new(0, 0, 0, 0)
 	UnselectedFrame.BorderSizePixel = 0
 	UnselectedFrame.BackgroundColor3 = Color3.new(0, 0, 0)
-	UnselectedFrame.BackgroundTransparency = 0.6	
+	UnselectedFrame.BackgroundTransparency = 0.6
 
 	local SelectedFrame = Instance.new("Frame", BackgroundFrame)
 	SelectedFrame.Selectable = false
@@ -63,7 +62,7 @@ local function CreateGuiObjects()
 	SelectedFrameBackgroundImage.BackgroundColor3 = Color3.fromRGB(78 * rate, 84 * rate, 96 * rate)
 
 	local borderXOffset = 2
-	local blueBarYSize = 4 
+	local blueBarYSize = 4
 	local BlueBarLeft = Instance.new("ImageLabel", SelectedFrame)
 	BlueBarLeft.Selectable = false
 	BlueBarLeft.Size = UDim2.new(0.5, -borderXOffset, 0, blueBarYSize)
@@ -170,7 +169,7 @@ function methods:SetActive(active)
 end
 
 function methods:RenderDisplayText()
-	
+
 end
 
 function methods:SetFontSize(fontSize)
@@ -236,9 +235,9 @@ function module.new(channelName)
 	obj.UnselectedFrame = UnselectedFrame
 	obj.SelectedFrame = SelectedFrame
 
-	--// These four aren't used, but need to be kept as 
-	--// references so they wont be garbage collected in 
-	--// the tweener objects until this Tab object is 
+	--// These four aren't used, but need to be kept as
+	--// references so they wont be garbage collected in
+	--// the tweener objects until this Tab object is
 	--// garbage collected when it is no longer in use.
 	obj.BlueBarLeft = SelectedFrame.BlueBarLeft
 	obj.BlueBarRight = SelectedFrame.BlueBarRight
@@ -254,11 +253,10 @@ function module.new(channelName)
 
 	obj.GuiObject.Name = "Frame_" .. obj.ChannelName
 
-	local maxNameLength = 12
-	if (string.len(channelName) > maxNameLength) then
-		channelName = string.sub(channelName, 1, maxNameLength - 3) .. "..."
+	if (string.len(channelName) > ChatSettings.MaxChannelNameLength) then
+		channelName = string.sub(channelName, 1, ChatSettings.MaxChannelNameLength - 3) .. "..."
 	end
-	
+
 	--obj.NameTag.Text = channelName
 
 	obj.NameTag.Text = ""
@@ -268,15 +266,9 @@ function module.new(channelName)
 	ClassMaker.MakeClass("ChannelsTab", obj)
 
 	obj:CreateTweeners()
-	obj:SetActive(false)	
+	obj:SetActive(false)
 
 	return obj
 end
 
 return module
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script

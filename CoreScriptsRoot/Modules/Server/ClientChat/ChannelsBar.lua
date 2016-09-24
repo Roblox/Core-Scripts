@@ -1,4 +1,3 @@
-local source = [[
 --	// FileName: ChannelsBar.lua
 --	// Written by: Xsitsu
 --	// Description: Manages creating, destroying, and displaying ChannelTabs.
@@ -82,7 +81,7 @@ function methods:CreateGuiObjects(targetParent)
 	LeaveConfirmationButtonYes.Position = UDim2.new(0, 0, 0, 0)
 	LeaveConfirmationButtonYes.TextColor3 = Color3.new(0, 1, 0)
 	LeaveConfirmationButtonYes.Text = "Confirm"
-	
+
 	local LeaveConfirmationButtonNo = LeaveConfirmationButtonYes:Clone()
 	LeaveConfirmationButtonNo.Parent = LeaveConfirmationFrame
 	LeaveConfirmationButtonNo.Position = UDim2.new(0.75, 0, 0, 0)
@@ -193,7 +192,7 @@ function methods:UpdateMessagePostedInChannel(channelName)
 		warn("ChannelsTab '" .. channelName .. "' does not exist!")
 	end
 end
-		
+
 function methods:AddChannelTab(channelName)
 	if (self:GetChannelTab(channelName)) then
 		error("Channel tab '" .. channelName .. "'already exists!")
@@ -209,10 +208,7 @@ function methods:AddChannelTab(channelName)
 	self.BackgroundTweener:RegisterTweenObjectProperty(tab.BackgroundTweener, "Transparency")
 	self.TextTweener:RegisterTweenObjectProperty(tab.TextTweener, "Transparency")
 
-	--// Although this feature is pretty much ready, it needs some UI design still.
-	local enableRightClickToLeaveChannel = false
-
-	if (enableRightClickToLeaveChannel) then
+	if (ChatSettings.RightClickToLeaveChannelEnabled) then
 		tab.NameTag.MouseButton2Click:connect(function()
 			self.LeaveConfirmationNotice.Text = string.format("Leave channel %s?", tab.ChannelName)
 			self.LeaveConfirmationFrame.LeaveTarget.Value = tab.ChannelName
@@ -228,7 +224,7 @@ function methods:RemoveChannelTab(channelName)
 		error("Channel tab '" .. channelName .. "'does not exist!")
 	end
 
-	local indexName = channelName:lower() 
+	local indexName = channelName:lower()
 	self.ChannelTabs[indexName]:Destroy()
 	self.ChannelTabs[indexName] = nil
 
@@ -289,6 +285,11 @@ function methods:ScrollChannelsFrame(dir)
 	self.GuiObjects.PageLeftButton.Visible = (self.CurPageNum > 0)
 	self.GuiObjects.PageRightButton.Visible = (self.CurPageNum + tabNumber < self.NumTabs)
 
+	if dir == 0 then
+		self.ScrollChannelsFrameLock = false
+		return
+	end
+
 	local function UnlockFunc()
 		self.ScrollChannelsFrameLock = false
 	end
@@ -328,7 +329,7 @@ function methods:CreateTweeners()
 	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageRightButtonArrow, "ImageTransparency")
 
 	--// Register TextTweener objects and properties
-	
+
 end
 
 --// ToDo: Move to common modules
@@ -369,9 +370,3 @@ function module.new()
 end
 
 return module
-]]
-
-local generated = Instance.new("ModuleScript")
-generated.Name = "Generated"
-generated.Source = source
-generated.Parent = script
