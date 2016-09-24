@@ -184,8 +184,8 @@ local function DoTextFadeOut(setFadingTime)
 end
 
 local function DoFadeInFromNewInformation()
+	DoTextFadeIn()
 	if ChatSettings.ChatShouldFadeInFromNewInformation then
-		DoTextFadeIn()
 		DoBackgroundFadeIn()
 	end
 end
