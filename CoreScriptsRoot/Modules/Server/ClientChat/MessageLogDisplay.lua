@@ -86,6 +86,7 @@ function methods:RemoveLastMessage()
 	local lastMessage = self.MessageObjectLog[1]
 	local posOffset = UDim2.new(0, 0, 0, lastMessage.BaseFrame.AbsoluteSize.Y)
 
+	self.TextTweener:UnregisterTweenObject(lastMessage.Tweener)
 	lastMessage:Destroy()
 	table.remove(self.MessageObjectLog, 1)
 
@@ -133,6 +134,7 @@ end
 
 function methods:Clear()
 	for i, v in pairs(self.MessageObjectLog) do
+		self.TextTweener:UnregisterTweenObject(v.Tweener)
 		v:Destroy()
 	end
 	rawset(self, "MessageObjectLog", {})

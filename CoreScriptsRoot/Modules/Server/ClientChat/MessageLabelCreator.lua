@@ -79,17 +79,24 @@ local function WrapIntoMessageObject(id, BaseFrame, BaseMessage, Tweener, Strong
 	obj.StrongReferences = StrongReferences
 	obj.UpdateTextFunction = UpdateTextFunction or function() warn("NO MESSAGE RESIZE FUNCTION") end
 	obj.ObjectPool = ObjectPool
+	obj.Destroyed = false
 
 	function obj:TweenOut(duration)
-		self.Tweener:Tween(duration, 1)
+		if not Destroyed then
+			self.Tweener:Tween(duration, 1)
+		end
 	end
 
 	function obj:TweenIn(duration)
-		self.Tweener:Tween(duration, 0)
+		if not self.Destroyed then
+			self.Tweener:Tween(duration, 0)
+		end
 	end
 
 	function obj:Destroy()
+		self.Tweener:UnregisterTweenObject(self)
 		ReturnToObjectPoolRecursive(self.BaseFrame, self.ObjectPool)
+		self.Destroyed = true
 	end
 
 	return obj
@@ -117,6 +124,7 @@ function methods:CreateBaseMessage(message, font, fontSize, chatColor)
 	BaseMessage.FontSize = fontSize
 	BaseMessage.TextXAlignment = Enum.TextXAlignment.Left
 	BaseMessage.TextYAlignment = Enum.TextYAlignment.Top
+	BaseMessage.TextTransparency = 0
 	BaseMessage.TextStrokeTransparency = 0.75
 	BaseMessage.TextColor3 = chatColor
 	BaseMessage.TextWrapped = true
@@ -136,6 +144,7 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, speakerNameSize, nameCo
 	NameButton.FontSize = BaseMessage.FontSize
 	NameButton.TextXAlignment = BaseMessage.TextXAlignment
 	NameButton.TextYAlignment = BaseMessage.TextYAlignment
+	NameButton.TextTransparency = BaseMessage.TextTransparency
 	NameButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 	NameButton.TextColor3 = nameColor
 	NameButton.Text = formatName
@@ -153,6 +162,7 @@ function methods:AddChannelButtonToBaseMessage(BaseMessage, channelNameSize, for
 	ChannelButton.FontSize = BaseMessage.FontSize
 	ChannelButton.TextXAlignment = BaseMessage.TextXAlignment
 	ChannelButton.TextYAlignment = BaseMessage.TextYAlignment
+	ChannelButton.TextTransparency = BaseMessage.TextTransparency
 	ChannelButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 	ChannelButton.Size = UDim2.new(0, channelNameSize.X, 0, channelNameSize.Y)
 	ChannelButton.TextColor3 = BaseMessage.TextColor3

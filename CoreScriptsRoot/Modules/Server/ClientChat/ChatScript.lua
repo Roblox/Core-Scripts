@@ -103,7 +103,10 @@ local function DoEverything()
 
 	ConnectEvent("SpecialKeyPressed")
 
-	pcall(function() StarterGui:SetCore("CoreGuiChatConnections", containerTable) end)
+	local success, ret = pcall(function() StarterGui:SetCore("CoreGuiChatConnections", containerTable) end)
+	if not success then
+		error("Error calling SetCore CoreGuiChatConnections: " .. ret)
+	end
 end
 
 local success, ret = pcall(function() return StarterGui:GetCore("UseNewLuaChat") end)
