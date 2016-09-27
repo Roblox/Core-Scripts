@@ -303,7 +303,7 @@ local function createGamepadMenuGui()
 	------------ Chat ---------------
 	local chatFunc = function() 
 		toggleCoreGuiRadial()
-		local ChatModule = require(GuiRoot.Modules.Chat)
+		local ChatModule = require(GuiRoot.Modules.ChatSelector)
 		ChatModule:ToggleVisibility()
 	end
 	local chatRadial = createRadialButton("Chat", "Chat", 6, not StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat), Enum.CoreGuiType.Chat, chatFunc)
@@ -533,14 +533,16 @@ local function setupGamepadControls()
 		end
 	end
 
-	function setOverrideMouseIconBehavior()
-		pcall(function()
+	function setOverrideMouseIconBehavior(override)
+		if override then
 			if InputService:GetLastInputType() == Enum.UserInputType.Gamepad1 then
 				InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 			else
 				InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
 			end
-		end)
+		else
+			InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+		end
 	end
 
 	function toggleCoreGuiRadial(goingToSettings)
@@ -549,8 +551,8 @@ local function setupGamepadControls()
 		setVisibility()
 
 		if isVisible then
-			setOverrideMouseIconBehavior()
-			pcall(function() lastInputChangedCon = InputService.LastInputTypeChanged:connect(setOverrideMouseIconBehavior) end)
+			setOverrideMouseIconBehavior(true)
+			lastInputChangedCon = InputService.LastInputTypeChanged:connect(function() setOverrideMouseIconBehavior(true) end)
 
 			gamepadSettingsFrame.Visible = isVisible
 
@@ -570,8 +572,7 @@ local function setupGamepadControls()
 				lastInputChangedCon:disconnect()
 				lastInputChangedCon = nil
 			end
-			pcall(function() InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
-
+			
 			local settingsChildren = gamepadSettingsFrame:GetChildren()
 			for i = 1, #settingsChildren do
 				if settingsChildren[i]:IsA("GuiButton") then
@@ -581,6 +582,9 @@ local function setupGamepadControls()
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,102,0,102), UDim2.new(0.5,-51,0.5,-51),
 														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, 
 				function()
+					if not InputService.VREnabled then
+						setOverrideMouseIconBehavior(false)
+					end
 					if not goingToSettings and not isVisible then GuiService:SetMenuIsOpen(false) end
 					gamepadSettingsFrame.Visible = isVisible
 			end)

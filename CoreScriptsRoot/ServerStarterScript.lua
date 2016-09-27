@@ -15,39 +15,15 @@ end
 local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
 local ScriptContext = game:GetService('ScriptContext')
 
---[[ Fast Flags ]]--
-local serverFollowersSuccess, serverFollowersEnabled = pcall(function() return settings():GetFFlag("UserServerFollowers") end)
-local IsServerFollowers = serverFollowersSuccess and serverFollowersEnabled
-
-local RemoteEvent_NewFollower = nil
-
 --[[ Add Server CoreScript ]]--
--- TODO: FFlag check
-if IsServerFollowers then
-	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerSocialScript", script.Parent)
-else
-	-- above script will create this now
-	RemoteEvent_NewFollower = Instance.new('RemoteEvent')
-	RemoteEvent_NewFollower.Name = "NewFollower"
-	RemoteEvent_NewFollower.Parent = RobloxReplicatedStorage
-end
+ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerSocialScript", script.Parent)
 
 --[[ Remote Events ]]--
 local RemoteEvent_SetDialogInUse = Instance.new("RemoteEvent")
 RemoteEvent_SetDialogInUse.Name = "SetDialogInUse"
-RemoteEvent_SetDialogInUse.Parent = RobloxReplicatedStorage 
+RemoteEvent_SetDialogInUse.Parent = RobloxReplicatedStorage
 
 --[[ Event Connections ]]--
--- Params:
-	-- followerRbxPlayer: player object of the new follower, this is the client who wants to follow another
-	-- followedRbxPlayer: player object of the person being followed
-local function onNewFollower(followerRbxPlayer, followedRbxPlayer)
-	RemoteEvent_NewFollower:FireClient(followedRbxPlayer, followerRbxPlayer)
-end
-if RemoteEvent_NewFollower then
-	RemoteEvent_NewFollower.OnServerEvent:connect(onNewFollower)
-end
-
 local function setDialogInUse(player, dialog, value)
 	if dialog ~= nil then
 		dialog.InUse = value
@@ -57,7 +33,8 @@ RemoteEvent_SetDialogInUse.OnServerEvent:connect(setDialogInUse)
 
 local success, retVal = pcall(function() return game:GetService("Chat"):GetShouldUseLuaChat() end)
 local useNewChat = success and retVal
-if (useNewChat) then
-	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerChat/ChatServiceInstaller", script.Parent)
-	ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ClientChat/ChatWindowInstaller", script.Parent)
+local FORCE_UseNewChat = require(game:GetService("CoreGui").RobloxGui.Modules.Common.ForceUseNewChat)
+if (useNewChat or FORCE_UseNewChat) then
+	require(game:GetService("CoreGui").RobloxGui.Modules.Server.ClientChat.ChatWindowInstaller)()
+	require(game:GetService("CoreGui").RobloxGui.Modules.Server.ServerChat.ChatServiceInstaller)()
 end

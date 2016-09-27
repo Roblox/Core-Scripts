@@ -219,12 +219,10 @@ local function isTenFootInterface()
 end
 
 local function usesSelectedObject()
-	--Touch does not use selected objects
-	if UserInputService.TouchEnabled then return false end
 	--VR does not use selected objects (in the same way as gamepad)
 	if UserInputService.VREnabled then return false end
-	--Anything else without a gamepad does not use selected objects
-	if not UserInputService.GamepadEnabled then return false end
+	--Touch does not use selected objects unless there's also a gamepad 
+	if UserInputService.TouchEnabled and not UserInputService.GamepadEnabled then return false end
 	--PC with gamepad, console... does use selected objects
 	return true
 end
@@ -476,6 +474,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	local DEFAULT_DROPDOWN_TEXT = "Choose One"
 	local SCROLLING_FRAME_PIXEL_OFFSET = 25
 	local SELECTION_TEXT_COLOR_NORMAL = Color3.new(0.7,0.7,0.7)
+	local SELECTION_TEXT_COLOR_NORMAL_VR = Color3.new(0.9, 0.9, 0.9)
 	local SELECTION_TEXT_COLOR_HIGHLIGHTED = Color3.new(1,1,1)
 
 	-------------------- VARIABLES ------------------------
@@ -499,6 +498,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	local interactable = true
 	local guid = HttpService:GenerateGUID(false)
 	local dropDownButtonEnabled
+	local lastStringTable = dropDownStringTable
 
 	this.CurrentIndex = 0
 
@@ -529,6 +529,11 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		else
 			DropDownFullscreenFrame.Parent = CoreGui.RobloxGui
 			DropDownFullscreenFrame.BackgroundTransparency = DROPDOWN_BG_TRANSPARENCY
+		end
+
+		--Force the gui to update, but only if onVREnabled is fired later on
+		if this.UpdateDropDownList then
+			this:UpdateDropDownList(lastStringTable)
 		end
 	end
 	if fixSettingsMenuVR then
@@ -609,7 +614,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				if GuiService.SelectedCoreObject == this.Selections[i] then
 					this.Selections[i].TextColor3 = SELECTION_TEXT_COLOR_HIGHLIGHTED
 				else
-					this.Selections[i].TextColor3 = SELECTION_TEXT_COLOR_NORMAL
+					this.Selections[i].TextColor3 = UserInputService.VREnabled and SELECTION_TEXT_COLOR_NORMAL_VR or SELECTION_TEXT_COLOR_NORMAL
 				end
 			end
 		end)
@@ -740,6 +745,8 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 
 	function this:UpdateDropDownList(dropDownStringTable)
+		lastStringTable = dropDownStringTable
+
 		if this.Selections then
 			for i = 1, #this.Selections do
 				this.Selections[i]:Destroy()
@@ -748,6 +755,15 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 		this.Selections = {}
 		this.SelectionInfo = {}
+
+		local vrEnabled = UserInputService.VREnabled
+		local font = vrEnabled and Enum.Font.SourceSansBold or Enum.Font.SourceSans
+		local fontSize = vrEnabled and Enum.FontSize.Size36 or Enum.FontSize.Size24
+
+		local itemHeight = vrEnabled and 70 or 50
+		local itemSpacing = itemHeight + 1
+
+		local dropDownWidth = vrEnabled and 600 or 400
 
 		for i,v in pairs(dropDownStringTable) do
 			local SelectionOverrideObject =	Util.Create'Frame'
@@ -763,11 +779,11 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				AutoButtonColor = false,
-				Size = UDim2.new(1, -28, 0, 50),
-				Position = UDim2.new(0,14,0, (i - 1) * 51),
-				TextColor3 = SELECTION_TEXT_COLOR_NORMAL,
-				Font = Enum.Font.SourceSans,
-				FontSize = Enum.FontSize.Size24,
+				Size = UDim2.new(1, -28, 0, itemHeight),
+				Position = UDim2.new(0,14,0, (i - 1) * itemSpacing),
+				TextColor3 = UserInputService.VREnabled and SELECTION_TEXT_COLOR_NORMAL_VR or SELECTION_TEXT_COLOR_NORMAL,
+				Font = font,
+				FontSize = fontSize,
 				Text = v,
 				ZIndex = 10,
 				SelectionImageObject = SelectionOverrideObject,
@@ -804,17 +820,17 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		GuiService:RemoveSelectionGroup(guid)
 		GuiService:AddSelectionTuple(guid, unpack(this.Selections))
 
-		DropDownScrollingFrame.CanvasSize = UDim2.new(1,-20,0,#dropDownStringTable * 51)
+		DropDownScrollingFrame.CanvasSize = UDim2.new(1,-20,0,#dropDownStringTable * itemSpacing)
 
 		local function updateDropDownSize()
 			if DropDownScrollingFrame.CanvasSize.Y.Offset < (DropDownFullscreenFrame.AbsoluteSize.Y - 10) then
-				DropDownSelectionFrame.Size = UDim2.new(DropDownSelectionFrame.Size.X.Scale, DropDownSelectionFrame.Size.X.Offset,
+				DropDownSelectionFrame.Size = UDim2.new(0, dropDownWidth,
 														0,DropDownScrollingFrame.CanvasSize.Y.Offset + SCROLLING_FRAME_PIXEL_OFFSET)
-				DropDownSelectionFrame.Position = UDim2.new(DropDownSelectionFrame.Position.X.Scale, DropDownSelectionFrame.Position.X.Offset,
+				DropDownSelectionFrame.Position = UDim2.new(0.5, -dropDownWidth / 2,
 															0.5, -DropDownSelectionFrame.Size.Y.Offset/2)
 			else
-				DropDownSelectionFrame.Size = UDim2.new(0, 400, 0.9, 0)
-				DropDownSelectionFrame.Position = UDim2.new(0.5, -200, 0.05, 0)
+				DropDownSelectionFrame.Size = UDim2.new(0, dropDownWidth, 0.9, 0)
+				DropDownSelectionFrame.Position = UDim2.new(0.5, -dropDownWidth / 2, 0.05, 0)
 			end
 		end
 
@@ -1033,19 +1049,14 @@ local function CreateSelector(selectionStringTable, startPosition)
 		isAutoSelectButton[autoSelectButton] = true
 	end
 
-
 	---------------------- FUNCTIONS -----------------------------------
 	local function setSelection(index, direction)
 		for i, selectionLabel in pairs(this.Selections) do
 			local isSelected = (i == index)
-
-			if not selectionLabel:IsDescendantOf(game) then
-				this.CurrentIndex = i
-				indexChangedEvent:Fire(index)
-				return
-			end
-
+			
+			local leftButtonUDim = UDim2.new(0,leftButton.Size.X.Offset,0,0)
 			local tweenPos = UDim2.new(0,leftButton.Size.X.Offset * direction * 3,0,0)
+
 			if isSelectionLabelVisible[selectionLabel] then
 				tweenPos = UDim2.new(0,leftButton.Size.X.Offset * -direction * 3,0,0)
 			end
@@ -1059,13 +1070,21 @@ local function CreateSelector(selectionStringTable, startPosition)
 				selectionLabel.Position = tweenPos
 				selectionLabel.Visible = true
 				PropertyTweener(selectionLabel, "TextTransparency", 1, 0, TweenTime * 1.1, EaseOutQuad)
-				selectionLabel:TweenPosition(UDim2.new(0,leftButton.Size.X.Offset,0,0), Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true)
+				if selectionLabel:IsDescendantOf(game) then
+					selectionLabel:TweenPosition(leftButtonUDim, Enum.EasingDirection.In, Enum.EasingStyle.Quad, TweenTime, true)
+				else
+					selectionLabel.Position = leftButtonUDim
+				end
 				this.CurrentIndex = i
 				indexChangedEvent:Fire(index)
 			elseif isSelectionLabelVisible[selectionLabel] then
 				isSelectionLabelVisible[selectionLabel] = false
 				PropertyTweener(selectionLabel, "TextTransparency", 0, 1, TweenTime * 1.1, EaseOutQuad)
-				selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, true)
+				if selectionLabel:IsDescendantOf(game) then
+					selectionLabel:TweenPosition(tweenPos, Enum.EasingDirection.Out, Enum.EasingStyle.Quad, TweenTime * 0.9, true)
+				else
+					selectionLabel.Position = UDim2.new(tweenPos)
+				end
 			end
 		end
 	end
@@ -1251,25 +1270,34 @@ local function CreateSelector(selectionStringTable, startPosition)
 end
 
 local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc, hasBackground)
-	local parent = CoreGui.RobloxGui
-	local AlertViewBacking = nil
+	local parent = CoreGui.RobloxGui	
 	if parent:FindFirstChild("AlertViewFullScreen") then return end
 
+	--Declare AlertViewBacking so onVREnabled can take it as an upvalue
+	local AlertViewBacking = nil
+
+	--Handle VR toggle while alert is open
+	--Future consideration: maybe rebuild gui when VR toggles mid-game; right now only subpaneling is handled rather than visual style
 	local function onVREnabled(prop)
 		if prop ~= "VREnabled" then return end
+		local Panel3D, settingsPanel = nil, nil
 		if UserInputService.VREnabled then
-			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
-			local settingsPanel = Panel3D.Get("SettingsMenu")
+			Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
+			settingsPanel = Panel3D.Get("SettingsMenu")
 			parent = settingsPanel:GetGUI()
 		else
 			parent = CoreGui.RobloxGui
 		end
 		if AlertViewBacking and AlertViewBacking.Parent ~= nil then
 			AlertViewBacking.Parent = parent
+			if fixSettingsMenuVR and UserInputService.VREnabled then
+				settingsPanel:SetSubpanelDepth(AlertViewBacking, 0.5)
+			end
 		end
 	end
+	local vrEnabledConn = nil
 	if fixSettingsMenuVR then
-		UserInputService.Changed:connect(onVREnabled)
+		vrEnabledConn = UserInputService.Changed:connect(onVREnabled)
 	end
 
 	local NON_SELECTED_TEXT_COLOR = Color3.new(59/255, 166/255, 241/255)
@@ -1332,6 +1360,10 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		if fixSettingsMenuVR and UserInputService.VREnabled and (inputState == Enum.UserInputState.Begin or inputState == Enum.UserInputState.Cancel) then
 			return
 		end
+		if fixSettingsMenuVR and UserInputService.VREnabled then
+			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
+			Panel3D.Get("SettingsMenu"):SetSubpanelDepth(AlertViewBacking, 0)
+		end
 		AlertViewBacking:Destroy()
 		AlertViewBacking = nil
 		if okPressedFunc then
@@ -1341,6 +1373,9 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		Game.GuiService.SelectedCoreObject = nil
 		if settingsHub then
 			settingsHub:ShowBar()
+		end
+		if vrEnabledConn then
+			vrEnabledConn:disconnect()
 		end
 	end
 
@@ -2447,4 +2482,3 @@ function moduleApiTable:TweenProperty(instance, prop, start, final, duration, ea
 end
 
 return moduleApiTable
-

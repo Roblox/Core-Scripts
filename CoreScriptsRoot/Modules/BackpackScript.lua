@@ -1049,7 +1049,6 @@ local function getInputDirection(inputObject)
 end
 
 local selectToolExperiment = function(actionName, inputState, inputObject)
-
 	local inputDirection = getInputDirection(inputObject)
 
 	if inputDirection == Vector2.new(0,0) then
@@ -1675,8 +1674,9 @@ do -- Make the Inventory expand/collapse arrow (unless TopBar)
 					resizeGamepadHintsFrame()
 					gamepadHintsFrame.Visible = not UserInputService.VREnabled
 				end
+				enableGamepadInventoryControl()
 			end
-			enableGamepadInventoryControl()
+			
 		else
 			if GamepadEnabled then
 				gamepadHintsFrame.Visible = false

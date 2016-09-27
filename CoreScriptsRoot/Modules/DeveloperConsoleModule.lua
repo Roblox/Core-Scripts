@@ -2719,12 +2719,16 @@ end
 -- Permissions --
 -----------------
 do
-	local permissions;
+	local permissionsLoading, permissions = false;
 	function DeveloperConsole.GetPermissions()
+		while permissionsLoading do wait() end
+		
 		if permissions then
 			return permissions
 		end
+		
 		permissions = {}
+		permissionsLoading = true
 		
 		pcall(function()
 			permissions.CreatorFlagValue = settings():GetFFlag("UseCanManageApiToDetermineConsoleAccess")
@@ -2771,8 +2775,9 @@ do
 		permissions.MayViewServerScripts = permissions.IsCreator
 		permissions.MayViewServerJobs = permissions.IsCreator
 		
-		return permissions
+		permissionsLoading = false
 		
+		return permissions
 	end
 end
 
@@ -2990,8 +2995,10 @@ local function onDevConsoleVisibilityChanged(isVisible)
 	end
 end
 
+local devConsoleCreating = false
 local function getDeveloperConsole()
-	if not myDeveloperConsole then
+	if (not myDeveloperConsole and not devConsoleCreating) then
+		devConsoleCreating = true
 		local permissions = DeveloperConsole.GetPermissions()
 		local messagesAndStats = DeveloperConsole.GetMessagesAndStats(permissions)
 
@@ -3000,19 +3007,66 @@ local function getDeveloperConsole()
 		if isTenFootInterface then
 			myDeveloperConsole.VisibleChanged:connect(onDevConsoleVisibilityChanged)
 		end
+		devConsoleCreating = false
 	end
-
 	return myDeveloperConsole
 end
 
 function DevConsoleModuleTable:GetVisibility()
 	local devConsole = getDeveloperConsole()
-	return devConsole.Visible
+	if devConsole then
+		return devConsole.Visible
+	else
+		return false
+	end
 end
 
 function DevConsoleModuleTable:SetVisibility(value)
 	local devConsole = getDeveloperConsole()
-	devConsole:SetVisible(value)
+	if devConsole then
+		devConsole:SetVisible(value)
+	end
 end
+
+
+local creatingLock = false
+local creatingVisibleValueToSet = false
+
+local function SetCoreConsoleCreation()
+	if (creatingLock) then return end
+	creatingLock = true
+
+	spawn(function()
+		--// Keep GetVisibility call before SetVisibility because the first call will yield for some time and 
+		--// there is the possibility that during the yield time the value of 'creatingVisibleValueToSet' may
+		--// change.
+		DevConsoleModuleTable:GetVisibility()
+		DevConsoleModuleTable:SetVisibility(creatingVisibleValueToSet)
+
+		creatingLock = false
+	end)
+end
+
+local StarterGui = game:GetService("StarterGui")
+StarterGui:RegisterGetCore("DeveloperConsoleVisible", function()
+	if (not myDeveloperConsole) then
+		SetCoreConsoleCreation()
+		return creatingVisibleValueToSet;
+	else
+		return DevConsoleModuleTable:GetVisibility()
+	end
+end)
+StarterGui:RegisterSetCore("DeveloperConsoleVisible", function(visible)
+	if (type(visible) ~= "boolean") then
+		error("DeveloperConsoleVisible must be given a boolean value.")
+	end
+
+	if (not myDeveloperConsole) then
+		creatingVisibleValueToSet = visible
+		SetCoreConsoleCreation()
+	else
+		DevConsoleModuleTable:SetVisibility(visible)
+	end
+end)
 
 return DevConsoleModuleTable

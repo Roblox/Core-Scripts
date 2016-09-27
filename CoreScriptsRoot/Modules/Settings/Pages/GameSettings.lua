@@ -103,10 +103,30 @@ local function Initialize()
 
 		settingsDisabledInVR[this.FullscreenEnabler] = true
 
-		local fullScreenSelectionFrame = this.FullscreenEnabler.SliderFrame and this.FullscreenEnabler.SliderFrame or this.FullscreenEnabler.SelectorFrame
-
 		this.FullscreenEnabler.IndexChanged:connect(function(newIndex)
-			GuiService:ToggleFullscreen()
+			if newIndex == 1 then
+				if not GameSettings:InFullScreen() then
+					GuiService:ToggleFullscreen()
+					this.FullscreenEnabler:SetSelectionIndex(1)
+				end
+			elseif newIndex == 2 then
+				if GameSettings:InFullScreen() then
+					GuiService:ToggleFullscreen()
+					this.FullscreenEnabler:SetSelectionIndex(2)
+				end
+			end
+		end)
+
+		GameSettings.FullscreenChanged:connect(function(isFullScreen)
+			if isFullScreen then
+				if this.FullscreenEnabler:GetSelectedIndex() ~= 1 then
+					this.FullscreenEnabler:SetSelectionIndex(1)
+				end
+			else
+				if this.FullscreenEnabler:GetSelectedIndex() ~= 2 then
+					this.FullscreenEnabler:SetSelectionIndex(2)
+				end	
+			end
 		end)
 		
 		------------------ Gfx Enabler Selection GUI Setup ------------------
@@ -139,6 +159,7 @@ local function Initialize()
 			this.PerformanceStatsOverrideText = nil
 
       local startIndex = 2
+
 			if GameSettings.PerformanceStatsVisible then
 					startIndex = 1
       end
@@ -149,7 +170,7 @@ local function Initialize()
         "Performance Stats", 
         "Selector", 
         {"On", "Off"}, 
-        2)
+        startIndex)
 
       this.PerformanceStatsOverrideText = utility:Create'TextLabel'
       {
@@ -276,8 +297,12 @@ local function Initialize()
 				end
 
 				this.ShiftLockFrame, 
-					this.ShiftLockLabel,
-					this.ShiftLockMode = utility:AddNewRow(this, "Shift Lock Switch", "Selector", {"On", "Off"}, startIndex)
+				this.ShiftLockLabel,
+				this.ShiftLockMode = utility:AddNewRow(this,
+          "Shift Lock Switch", 
+          "Selector",
+          {"On", "Off"},
+          startIndex)
 
 				settingsDisabledInVR[this.ShiftLockMode] = true
 
@@ -775,7 +800,11 @@ local function Initialize()
 		local showOverscanScreen = function()
 
 			if not overscanScreen then
-				local createOverscanFunc = require(RobloxGui.Modules.OverscanScreen)
+				local overscanModule = RobloxGui.Modules:FindFirstChild('OverscanScreen')
+				if not overscanModule then
+					overscanModule = RobloxGui.Modules.Shell.OverscanScreen
+				end
+				local createOverscanFunc = require(overscanModule)
 				overscanScreen = createOverscanFunc(RobloxGui)
 				overscanScreen:SetStyleForInGame()
 			end
@@ -798,7 +827,11 @@ local function Initialize()
 												Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2,
 												Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
 
-			local ScreenManager = require(RobloxGui.Modules.ScreenManager)
+			local screenManagerModule = RobloxGui.Modules:FindFirstChild('ScreenManager')
+			if not screenManagerModule then
+				screenManagerModule = RobloxGui.Modules.Shell.ScreenManager
+			end
+			local ScreenManager = require(screenManagerModule)
 			ScreenManager:OpenScreen(overscanScreen)
 
 		end

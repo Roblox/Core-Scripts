@@ -14,6 +14,7 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
+local StyleWidgets = require(RobloxGui.Modules.StyleWidgets)
 
 
 ----------- VARIABLES --------------
@@ -88,19 +89,8 @@ local function Initialize()
 		title.FontSize = Enum.FontSize.Size48
 	end
 
-	local tabSelection = utility:Create'ImageLabel'
-	{
-		Name = "TabSelection",
-		Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuSelection.png",
-		ScaleType = Enum.ScaleType.Slice,
-		SliceCenter = Rect.new(3,1,4,5),
-		Visible = false,
-		BackgroundTransparency = 1,
-		Size = UDim2.new(1,0,0,6),
-		Position = UDim2.new(0,0,1,-6),
-		Parent = this.TabHeader
-	};
-
+	local tabSelection = StyleWidgets.MakeTabSelectionWidget(this.TabHeader)
+ 
 	------ PAGE CREATION -------
 	this.Page = utility:Create'Frame'
 	{
