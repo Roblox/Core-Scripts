@@ -158,6 +158,8 @@ end
 
 --///////////////// Internal-Use Methods
 --//////////////////////////////////////
+--DO NOT REMOVE THIS. Chat must be filtered or your game will face
+--moderation.
 function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 	if (RunService:IsServer() and not RunService:IsStudio()) then
 		local fromSpeaker = self:GetSpeaker(speakerName)

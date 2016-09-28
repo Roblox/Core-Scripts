@@ -5,9 +5,11 @@
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
-local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods

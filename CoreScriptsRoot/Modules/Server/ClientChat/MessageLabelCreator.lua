@@ -7,9 +7,11 @@ local OBJECT_POOL_SIZE = 50
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
-local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local moduleObjectPool = require(modulesFolder:WaitForChild("ObjectPool"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
@@ -170,6 +172,42 @@ function methods:AddChannelButtonToBaseMessage(BaseMessage, channelNameSize, for
 	return ChannelButton
 end
 
+function methods:CreateMeCommandMessageLabel(messageData)
+	--// Cannot be destructive with messageData
+	local oldMessage = messageData.Message
+	local oldSpeaker = messageData.FromSpeaker
+	local oldChatColor = messageData.ExtraData.ChatColor
+
+	local extraData = messageData.ExtraData or {}
+	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+
+	local tempMessage = messageData.FromSpeaker .. " " .. string.sub(oldMessage, 5)
+
+	if not messageData.IsFiltered then
+		local messageSize = GetStringTextBounds(tempMessage, useFont, useFontSize)
+		local singleUnderscoreSize = GetStringTextBounds("_", useFont, useFontSize)
+		local numNeededUnderscore = math.ceil(messageSize.X / singleUnderscoreSize.X)
+		tempMessage = string.rep("_", numNeededUnderscore)
+	end
+
+	messageData.Message = tempMessage
+	messageData.FromSpeaker = nil
+	messageData.ExtraData.ChatColor = nil
+
+	local toReturn = self:CreateSystemMessageLabel(messageData)
+
+	local function UpdateTextFunction(newMessageObject)
+		toReturn.BaseMessage.Text = newMessageObject.FromSpeaker .. " " .. string.sub(newMessageObject.Message, 5)
+	end
+	toReturn.UpdateTextFunction = UpdateTextFunction
+
+	messageData.Message = oldMessage
+	messageData.FromSpeaker = oldSpeaker
+	messageData.ExtraData.ChatColor = oldChatColor
+	return toReturn
+end
+
 function methods:CreateMessageLabel(messageData)
 	WaitUntilParentedCorrectly()
 
@@ -177,21 +215,7 @@ function methods:CreateMessageLabel(messageData)
 	local message = messageData.Message
 
 	if (string.sub(message, 1, 4) == "/me ") then
-		--// Cannot be destructive with messageData
-		local oldMessage = messageData.Message
-		local oldSpeaker = messageData.FromSpeaker
-		local oldChatColor = messageData.ExtraData.ChatColor
-
-		messageData.Message = messageData.FromSpeaker .. " " .. string.sub(message, 5)
-		messageData.FromSpeaker = nil
-		messageData.ExtraData.ChatColor = nil
-
-		local toReturn = self:CreateSystemMessageLabel(messageData)
-
-		messageData.Message = oldMessage
-		messageData.FromSpeaker = oldSpeaker
-		messageData.ExtraData.ChatColor = oldChatColor
-		return toReturn
+		return self:CreateMeCommandMessageLabel(messageData)
 	end
 
 	local extraData = messageData.ExtraData or {}
@@ -268,7 +292,7 @@ function methods:CreateSystemMessageLabel(messageData)
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
 
-	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {}, nil, self.ObjectPool)
+	return WrapIntoMessageObject(messageData.ID, BaseFrame, BaseMessage, Tweener, {}, nil, self.ObjectPool)
 end
 
 function methods:CreateWelcomeMessageLabel(message)
@@ -303,6 +327,46 @@ function methods:CreateSetCoreMessageLabel(valueTable)
 	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {}, nil, self.ObjectPool)
 end
 
+function methods:CreateMeCommandChannelEchoMessageLabel(messageData, echoChannel)
+	--// Cannot be destructive with messageData
+	local oldMessage = messageData.Message
+	local oldSpeaker = messageData.FromSpeaker
+	local oldChatColor = messageData.ExtraData.ChatColor
+
+	local tempMessage = messageData.FromSpeaker .. " " .. string.sub(oldMessage, 5)
+
+	local extraData = messageData.ExtraData or {}
+	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+
+	if not messageData.IsFiltered then
+		local messageSize = GetStringTextBounds(tempMessage, useFont, useFontSize)
+		local singleUnderscoreSize = GetStringTextBounds("_", useFont, useFontSize)
+		local numNeededUnderscore = math.ceil(messageSize.X / singleUnderscoreSize.X)
+		tempMessage = string.rep("_", numNeededUnderscore)
+	end
+
+	messageData.Message = tempMessage
+	messageData.FromSpeaker = nil
+	messageData.ExtraData.ChatColor = nil
+
+	local toReturn = self:CreateChannelEchoSystemMessageLabel(messageData, echoChannel)
+
+	local formatChannelName = string.format("{%s}", echoChannel)
+	local singleSpaceSize = GetStringTextBounds(" ", useFont, useFontSize)
+	local channelNameSize = GetStringTextBounds(formatChannelName, useFont, useFontSize)
+	local numNeededSpaces2 = math.ceil(channelNameSize.X / singleSpaceSize.X) + 1
+	local function UpdateTextFunction(newMessageObject)
+		toReturn.BaseMessage.Text = string.rep(" ", numNeededSpaces2) .. newMessageObject.FromSpeaker .. " " .. string.sub(newMessageObject.Message, 5)
+	end
+	toReturn.UpdateTextFunction = UpdateTextFunction
+
+	messageData.Message = oldMessage
+	messageData.FromSpeaker = oldSpeaker
+	messageData.ExtraData.ChatColor = oldChatColor
+	return toReturn
+end
+
 function methods:CreateChannelEchoMessageLabel(messageData)
 	WaitUntilParentedCorrectly()
 
@@ -311,21 +375,7 @@ function methods:CreateChannelEchoMessageLabel(messageData)
 	local echoChannel = messageData.OriginalChannel
 
 	if (string.sub(message, 1, 4) == "/me ") then
-		--// Cannot be destructive with messageData
-		local oldMessage = messageData.Message
-		local oldSpeaker = messageData.FromSpeaker
-		local oldChatColor = messageData.ExtraData.ChatColor
-
-		messageData.Message = messageData.FromSpeaker .. " " .. string.sub(message, 5)
-		messageData.FromSpeaker = nil
-		messageData.ExtraData.ChatColor = nil
-
-		local toReturn = self:CreateChannelEchoSystemMessageLabel(messageData, echoChannel)
-
-		messageData.Message = oldMessage
-		messageData.FromSpeaker = oldSpeaker
-		messageData.ExtraData.ChatColor = oldChatColor
-		return toReturn
+		return self:CreateMeCommandChannelEchoMessageLabel(messageData, echoChannel)
 	end
 
 	local extraData = messageData.ExtraData or {}
@@ -349,7 +399,7 @@ function methods:CreateChannelEchoMessageLabel(messageData)
 	local numNeededUnderscore = math.ceil(messageSize.X / singleUnderscoreSize.X)
 
 	local tempMessage = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. string.rep("_", numNeededUnderscore)
-	if messsageData.IsFiltered then
+	if messageData.IsFiltered then
  		tempMessage = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. messageData.Message
 	end
 	local BaseFrame, BaseMessage = self:CreateBaseMessage(tempMessage, useFont, useFontSize, useChatColor)
@@ -420,7 +470,7 @@ function methods:CreateChannelEchoSystemMessageLabel(messageData)
 	Tweener:RegisterTweenObjectProperty(ChannelButton, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(ChannelButton, "TextStrokeTransparency")
 
-	return WrapIntoMessageObject(-1, BaseFrame, BaseMessage, Tweener, {ChannelButton}, nil, self.ObjectPool)
+	return WrapIntoMessageObject(messageData.ID, BaseFrame, BaseMessage, Tweener, {ChannelButton}, nil, self.ObjectPool)
 end
 
 --///////////////////////// Constructors

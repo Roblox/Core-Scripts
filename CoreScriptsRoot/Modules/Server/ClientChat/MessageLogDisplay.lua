@@ -7,12 +7,14 @@ module.ScrollBarThickness = 4
 
 --////////////////////////////// Include
 --//////////////////////////////////////
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
-local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 local MessageLabelCreator = moduleMessageLabelCreator.new()
 
