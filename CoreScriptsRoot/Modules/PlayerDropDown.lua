@@ -140,7 +140,7 @@ local function getFriendCountAsync(userId)
 		if userId then
 			str = str..'?userId='..tostring(userId)
 		end
-		return HttpRbxApiService:GetAsync(str, true)
+		return HttpRbxApiService:GetAsync(str)
 	end)
 	if not wasSuccess then
 		print("getFriendCountAsync() failed because", result)
@@ -183,7 +183,7 @@ local function isFollowing(userId, followerUserId)
 	local apiPath = "user/following-exists?userId="
 	local params = userId.."&followerUserId="..followerUserId
 	local success, result = pcall(function()
-		return HttpRbxApiService:GetAsync(apiPath..params, true)
+		return HttpRbxApiService:GetAsync(apiPath..params)
 	end)
 	if not success then
 		print("isFollowing() failed because", result)
@@ -335,7 +335,7 @@ function createPlayerDropDown()
 		local apiPath = "user/unfollow"
 		local params = "followedUserId="..tostring(playerDropDown.Player.userId)
 		local success, result = pcall(function()
-			return HttpRbxApiService:PostAsync(apiPath, params, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
 		end)
 		if not success then
 			print("unfollowPlayer() failed because", result)
@@ -390,7 +390,7 @@ function createPlayerDropDown()
 		local apiPath = "user/follow"
 		local params = "followedUserId="..followedUserId
 		local success, result = pcall(function()
-			return HttpRbxApiService:PostAsync(apiPath, params, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
 		end)
 		if not success then
 			print("followPlayer() failed because", result)
