@@ -1,5 +1,5 @@
 local runnerScriptName = "ChatScript"
-local installDirectory = game:GetService("StarterPlayer"):FindFirstChild("StarterPlayerScripts")
+local installDirectory = game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local function LoadLocalScript(name, parent)

@@ -454,7 +454,9 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
 		if not ChatSettings.ShowUserOwnFilteredMessage then
-			messageData.IsFiltered = true
+			if (messageData.FromSpeaker == LocalPlayer.Name) then
+				messageData.IsFiltered = true
+			end
 		end
 
 		channelObj:AddMessageToChannel(messageData, "Message")
@@ -467,7 +469,7 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
 			generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 			if (generalChannel) then
-				generalChannel:AddMessageToChannel(messsageData, "ChannelEchoMessage")
+				generalChannel:AddMessageToChannel(messageData, "ChannelEchoMessage")
 			end
 		end
 

@@ -2,25 +2,11 @@
 --	// Written by: Xsitsu
 --	// Description: Hooks main chat module up to Topbar in corescripts.
 
---// To ALWAYS run this system, you will need the server side force installed
---// as well. You can't wait for the server to create it at runtime, because
---// that will only happen if the correct fastflags are set and at that point
---// this new chat system will just run anyways.
-
---// The first forces a run if after waiting it turns out it shouldn't run.
---// The second skips the waiting and forces a run anyways.
---// The second bool overrides the first if the second is set to true.
---// Using the first bool allows it the potential of integrating with the
---// topbar while the second one does not.
-local FORCE_NEW_CHAT_SYSTEM = false
-local FORCE_RUN_WITHOUT_TOPBAR = false
-
 local StarterGui = game:GetService("StarterGui")
+local MAX_COREGUI_CONNECTION_ATTEMPTS = 10
 
 local function DoEverything()
 	local Chat = require(script:WaitForChild("ChatMain"))
-
-	if (FORCE_RUN_WITHOUT_TOPBAR) then return end
 
 	local containerTable = {}
 	containerTable.ChatWindow = {}
@@ -103,21 +89,18 @@ local function DoEverything()
 
 	ConnectEvent("SpecialKeyPressed")
 
-	local success, ret = pcall(function() StarterGui:SetCore("CoreGuiChatConnections", containerTable) end)
-	if not success then
-		error("Error calling SetCore CoreGuiChatConnections: " .. ret)
+	local tries = 0
+	while tries < MAX_COREGUI_CONNECTION_ATTEMPTS do
+		tries = tries + 1
+		local success, ret = pcall(function() StarterGui:SetCore("CoreGuiChatConnections", containerTable) end)
+		if success then
+			break
+		end
+		if not success and tries == MAX_COREGUI_CONNECTION_ATTEMPTS then
+			error("Error calling SetCore CoreGuiChatConnections: " .. ret)
+		end
+		wait()
 	end
 end
 
-local success, ret = pcall(function() return StarterGui:GetCore("UseNewLuaChat") end)
-while (not FORCE_RUN_WITHOUT_TOPBAR and not success) do
-	success, ret = pcall(function() return StarterGui:GetCore("UseNewLuaChat") end)
-	wait()
-end
-
-if (success and ret) then
-	DoEverything()
-elseif (FORCE_RUN_WITHOUT_TOPBAR or FORCE_NEW_CHAT_SYSTEM) then
-	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, false)
-	DoEverything()
-end
+DoEverything()
