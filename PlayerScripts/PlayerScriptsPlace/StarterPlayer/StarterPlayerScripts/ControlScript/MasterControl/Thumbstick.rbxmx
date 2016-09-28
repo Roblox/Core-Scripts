@@ -13,6 +13,8 @@
 --]]
 local Players = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
+local GuiService = game:GetService('GuiService')
+
 local MasterControl = require(script.Parent)
 
 local Thumbstick = {}
@@ -139,7 +141,6 @@ function Thumbstick:Create(parentFrame)
 		centerPosition = Vector2.new(ThumbstickFrame.AbsolutePosition.x + ThumbstickFrame.AbsoluteSize.x/2,
 			ThumbstickFrame.AbsolutePosition.y + ThumbstickFrame.AbsoluteSize.y/2)
 		local direction = Vector2.new(inputObject.Position.x - centerPosition.x, inputObject.Position.y - centerPosition.y)
-		moveStick(inputObject.Position)
 	end)
 	
 	OnTouchMovedCn = UserInputService.TouchMoved:connect(function(inputObject, isProcessed)
@@ -167,6 +168,12 @@ function Thumbstick:Create(parentFrame)
 			OnTouchEnded()
 		end
 	end)
+	
+	GuiService.MenuOpened:connect(function()
+		if MoveTouchObject then
+			OnTouchEnded()
+		end
+	end)	
 	
 	ThumbstickFrame.Parent = parentFrame
 end

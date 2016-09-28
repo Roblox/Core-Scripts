@@ -12,6 +12,10 @@
 --]]
 
 local Players = game:GetService('Players')
+local GuiService = game:GetService('GuiService')
+
+local jumpButtonChangeFlagSuccess, jumpButtonChangeFlagValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserJumpButtonPositionChange") end)
+local repositionJumpButton = (jumpButtonChangeFlagSuccess and jumpButtonChangeFlagValue)
 
 local TouchJump = {}
 
@@ -22,20 +26,53 @@ while not Players.LocalPlayer do
 	wait()
 end
 local LocalPlayer = Players.LocalPlayer
+local Humanoid = MasterControl:GetHumanoid()
 local JumpButton = nil
 local OnInputEnded = nil		-- defined in Create()
+local HumChangeConnection = nil
+local ExternallyEnabled = false --[[I don't think there's anything that disables jump from outside this script, but in case that ever happens, 
+							we don't want to re-enable it when jump power is changed]]
 
 --[[ Constants ]]--
 local TOUCH_CONTROL_SHEET = "rbxasset://textures/ui/TouchControlsSheet.png"
 
+--[[ Private Functions ]]--
+local function humanoidChanged(prop)
+	if prop == "JumpPower" then
+		if Humanoid.JumpPower == 0 then
+			TouchJump:Disable()
+		elseif Humanoid.JumpPower > 0 then
+			TouchJump:Enable()
+		end
+	elseif prop == "Parent" then
+		if not Humanoid.Parent then
+			HumChangeConnection:disconnect()
+		end
+	end
+end
+
+local function disableButton()
+	JumpButton.Visible = false
+	OnInputEnded()
+end
+
+local function enableButton()
+	if Humanoid and ExternallyEnabled then
+		if Humanoid.JumpPower > 0 then
+			JumpButton.Visible = true
+		end
+	end
+end
+
 --[[ Public API ]]--
 function TouchJump:Enable()
-	JumpButton.Visible = true
+	ExternallyEnabled = true
+	enableButton()
 end
 
 function TouchJump:Disable()
-	JumpButton.Visible = false
-	OnInputEnded()
+	ExternallyEnabled = false
+	disableButton()
 end
 
 function TouchJump:Create(parentFrame)
@@ -45,7 +82,7 @@ function TouchJump:Create(parentFrame)
 	end
 	
 	local isSmallScreen = parentFrame.AbsoluteSize.y <= 500
-	local jumpButtonSize = isSmallScreen and 70 or 90
+	local jumpButtonSize = isSmallScreen and 70 or 120
 	
 	JumpButton = Instance.new('ImageButton')
 	JumpButton.Name = "JumpButton"
@@ -55,8 +92,14 @@ function TouchJump:Create(parentFrame)
 	JumpButton.ImageRectOffset = Vector2.new(176, 222)
 	JumpButton.ImageRectSize = Vector2.new(174, 174)
 	JumpButton.Size = UDim2.new(0, jumpButtonSize, 0, jumpButtonSize)
-	JumpButton.Position = isSmallScreen and UDim2.new(1, jumpButtonSize * -2.25, 1, -jumpButtonSize - 20) or
-		UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
+	
+	if not repositionJumpButton then
+		JumpButton.Position = isSmallScreen and UDim2.new(1, jumpButtonSize * -2.25, 1, -jumpButtonSize - 20) or
+			UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
+	else
+		JumpButton.Position = isSmallScreen and UDim2.new(1, -(jumpButtonSize*1.5-10), 1, -jumpButtonSize - 20) or
+			UDim2.new(1, -(jumpButtonSize*1.5-10), 1, -jumpButtonSize * 1.75)
+	end
 	
 	local touchObject = nil	
 	JumpButton.InputBegan:connect(function(inputObject)
@@ -81,8 +124,30 @@ function TouchJump:Create(parentFrame)
 		end
 	end)
 	
+	GuiService.MenuOpened:connect(function()
+		if touchObject then
+			OnInputEnded()
+		end
+	end)
+	
+	if Humanoid then
+		HumChangeConnection = Humanoid.Changed:connect(humanoidChanged)
+	end
 	JumpButton.Parent = parentFrame
 end
+
+LocalPlayer.CharacterAdded:connect(function(newCharacter)
+	if HumChangeConnection then
+		HumChangeConnection:disconnect()
+	end
+	-- rebind event to new Humanoid
+	Humanoid = nil
+	repeat
+		Humanoid = MasterControl:GetHumanoid()
+		wait()
+	until Humanoid and Humanoid.Parent == newCharacter
+	HumChangeConnection = Humanoid.Changed:connect(humanoidChanged)
+end)
 
 return TouchJump
 ]]></ProtectedString>

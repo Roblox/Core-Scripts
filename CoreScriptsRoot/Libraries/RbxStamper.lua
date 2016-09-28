@@ -640,9 +640,9 @@ t.GetStampModel = function(assetId, terrainShape, useAssetVersionId)
 	
 	local function setupFakeTerrainPart(cellMat, cellType, cellOrient)
 		local newTerrainPiece = nil
-		if (cellType == 1 or cellType == 4) then newTerrainPiece = Instance.new("WedgePart") newTerrainPiece.formFactor = "Custom"
+		if (cellType == 1 or cellType == 4) then newTerrainPiece = Instance.new("WedgePart")
 		elseif (cellType == 2) then newTerrainPiece = Instance.new("CornerWedgePart")
-		else newTerrainPiece = Instance.new("Part") newTerrainPiece.formFactor = "Custom" end
+		else newTerrainPiece = Instance.new("Part") end
 		newTerrainPiece.Name = "MegaClusterCube"
 		newTerrainPiece.Size = Vector3.new(4, 4, 4)
 		newTerrainPiece.BottomSurface = "Smooth"
@@ -660,7 +660,7 @@ t.GetStampModel = function(assetId, terrainShape, useAssetVersionId)
 		if cellType == 3 then
 			local inverseCornerWedgeMesh = Instance.new("SpecialMesh")
 			inverseCornerWedgeMesh.MeshType = "FileMesh"
-			inverseCornerWedgeMesh.MeshId = "http://www.roblox.com/asset/?id=66832495"
+			inverseCornerWedgeMesh.MeshId = "https://www.roblox.com/asset/?id=66832495"
 			inverseCornerWedgeMesh.Scale = Vector3.new(2, 2, 2)
 			inverseCornerWedgeMesh.Parent = newTerrainPiece
 		end
@@ -828,7 +828,6 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 	-- for megacluster MEGA STAMPING
 	local adornPart = Instance.new("Part")
 	adornPart.Parent = nil
-	adornPart.formFactor = "Custom"
 	adornPart.Size = Vector3.new(4, 4, 4)
 	adornPart.CFrame = CFrame.new()
 	adornPart.Archivable = false

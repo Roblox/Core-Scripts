@@ -28,20 +28,6 @@ local isTenFootInterface = tenFootInterface:IsEnabled()
 local radialButtons = {}
 local lastInputChangedCon = nil
 
-local function getButtonForCoreGuiType(coreGuiType)
-	if coreGuiType == Enum.CoreGuiType.All then
-		return radialButtons
-	else
-		for button, table in pairs(radialButtons) do
-			if table["CoreGuiType"] == coreGuiType then
-				return button
-			end
-		end
-	end
-
-	return nil
-end
-
 local function getImagesForSlot(slot)
 	if slot == 1 then		return "rbxasset://textures/ui/Settings/Radial/Top.png", "rbxasset://textures/ui/Settings/Radial/TopSelected.png",
 									"rbxasset://textures/ui/Settings/Radial/Menu.png",
@@ -111,6 +97,26 @@ local function setButtonEnabled(button, enabled)
 	radialButtons[button]["Disabled"] = not enabled
 end
 
+local function setButtonVisible(button, visible)
+	button.Visible = visible
+	if not visible then
+		setButtonEnabled(button, false)
+	end
+end
+
+local function enableVR()
+	local visibleButtons = {
+		Settings = true, LeaveGame = true,
+		PlayerList = false, Notifications = false,
+		Backpack = false, Chat = false
+	}
+	for button, _ in pairs(radialButtons) do
+		if visibleButtons[button.Name] ~= nil then
+			setButtonVisible(button, visibleButtons[button.Name])
+		end
+	end
+end
+
 local emptySelectedImageObject = utility:Create'ImageLabel'
 {
 	BackgroundTransparency = 1,
@@ -173,7 +179,7 @@ local function createRadialButton(name, text, slot, disabled, coreGuiType, activ
 		TextColor3 = Color3.new(1,1,1),
 		Name = "RadialLabel",
 		Visible = false,
-		ZIndex = 2,
+		ZIndex = 3,
 		Parent = radialButton
 	};
 	if not smallScreen then
@@ -297,7 +303,7 @@ local function createGamepadMenuGui()
 	------------ Chat ---------------
 	local chatFunc = function() 
 		toggleCoreGuiRadial()
-		local ChatModule = require(GuiRoot.Modules.Chat)
+		local ChatModule = require(GuiRoot.Modules.ChatSelector)
 		ChatModule:ToggleVisibility()
 	end
 	local chatRadial = createRadialButton("Chat", "Chat", 6, not StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat), Enum.CoreGuiType.Chat, chatFunc)
@@ -380,6 +386,10 @@ local function createGamepadMenuGui()
 			end
 		end
 	end)
+
+	if InputService.VREnabled then
+		enableVR()
+	end
 end
 
 local function isCoreGuiDisabled()
@@ -523,14 +533,16 @@ local function setupGamepadControls()
 		end
 	end
 
-	function setOverrideMouseIconBehavior()
-		pcall(function()
+	function setOverrideMouseIconBehavior(override)
+		if override then
 			if InputService:GetLastInputType() == Enum.UserInputType.Gamepad1 then
 				InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 			else
 				InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
 			end
-		end)
+		else
+			InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+		end
 	end
 
 	function toggleCoreGuiRadial(goingToSettings)
@@ -539,8 +551,8 @@ local function setupGamepadControls()
 		setVisibility()
 
 		if isVisible then
-			setOverrideMouseIconBehavior()
-			pcall(function() lastInputChangedCon = InputService.LastInputTypeChanged:connect(setOverrideMouseIconBehavior) end)
+			setOverrideMouseIconBehavior(true)
+			lastInputChangedCon = InputService.LastInputTypeChanged:connect(function() setOverrideMouseIconBehavior(true) end)
 
 			gamepadSettingsFrame.Visible = isVisible
 
@@ -560,8 +572,7 @@ local function setupGamepadControls()
 				lastInputChangedCon:disconnect()
 				lastInputChangedCon = nil
 			end
-			pcall(function() InputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None end)
-
+			
 			local settingsChildren = gamepadSettingsFrame:GetChildren()
 			for i = 1, #settingsChildren do
 				if settingsChildren[i]:IsA("GuiButton") then
@@ -571,6 +582,9 @@ local function setupGamepadControls()
 			gamepadSettingsFrame:TweenSizeAndPosition(UDim2.new(0,102,0,102), UDim2.new(0.5,-51,0.5,-51),
 														Enum.EasingDirection.Out, Enum.EasingStyle.Sine, 0.1, true, 
 				function()
+					if not InputService.VREnabled then
+						setOverrideMouseIconBehavior(false)
+					end
 					if not goingToSettings and not isVisible then GuiService:SetMenuIsOpen(false) end
 					gamepadSettingsFrame.Visible = isVisible
 			end)
@@ -601,9 +615,11 @@ local function setupGamepadControls()
 
 	doGamepadMenuButton = function(name, state, input)
 		if state ~= Enum.UserInputState.Begin then return end
-
-		if not toggleCoreGuiRadial() then
-			unbindAllRadialActions()
+		
+		if game.IsLoaded then
+			if not toggleCoreGuiRadial() then
+				unbindAllRadialActions()
+			end
 		end
 	end
 
@@ -617,35 +633,47 @@ local function setupGamepadControls()
 		end)
 	end
 
-	local function setRadialButtonEnabled(coreGuiType, enabled)
-		local returnValue = getButtonForCoreGuiType(coreGuiType)
-		if not returnValue then return end
+	-- some buttons always show/hide depending on platform
+	local function canChangeButtonVisibleState(buttonType)
+		if isTenFootInterface then
+			if buttonType == Enum.CoreGuiType.Chat or buttonType == Enum.CoreGuiType.PlayerList then
+				return false
+			end
+		end
 
-		local buttonsToDisable = {}
-		if type(returnValue) == "table" then
-			for button, buttonTable in pairs(returnValue) do
-				if buttonTable["CoreGuiType"] then
-					if isTenFootInterface and buttonTable["CoreGuiType"] == Enum.CoreGuiType.Chat then
-					else
-						buttonsToDisable[#buttonsToDisable + 1] = button
+		return true
+	end
+
+	local function setRadialButtonEnabled(coreGuiType, enabled)
+		for button, buttonTable in pairs(radialButtons) do
+			local buttonType = buttonTable["CoreGuiType"]
+			if buttonType then
+				if coreGuiType == buttonType or coreGuiType == Enum.CoreGuiType.All then
+					if canChangeButtonVisibleState(buttonType) then
+						setButtonEnabled(button, enabled)
 					end
 				end
 			end
-		else
-			if isTenFootInterface and returnValue.Name == "Chat" then
-			else
-				buttonsToDisable[1] = returnValue
-			end
-		end
-
-		for i = 1, #buttonsToDisable do
-			local button = buttonsToDisable[i]
-			setButtonEnabled(button, enabled)
 		end
 	end
+	
+	local loadedConnection
+	local function enableRadialMenu()
+		ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
+		loadedConnection:disconnect()
+	end
+	
+	loadedConnection = game.Players.PlayerAdded:connect(function(plr) 
+		if game.Players.LocalPlayer and plr == game.Players.LocalPlayer then
+			enableRadialMenu()
+		end
+	end)
+	
+	if game.Players.LocalPlayer then
+		enableRadialMenu()
+	end
+	
 	StarterGui.CoreGuiChangedSignal:connect(setRadialButtonEnabled)
-
-	ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
 end
 
 -- hook up gamepad stuff

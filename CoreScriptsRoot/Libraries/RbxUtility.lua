@@ -571,7 +571,6 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 	selectionPart.Anchored = true
 	selectionPart.Locked = true
 	selectionPart.CanCollide = false
-	selectionPart.FormFactor = Enum.FormFactor.Custom
 	selectionPart.Size = Vector3.new(4.2,4.2,4.2)
 
 	local selectionBox = Instance.new("SelectionBox")
