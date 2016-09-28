@@ -45,9 +45,9 @@ local function decodeJSON(json)
 	return result
 end
 
-local function rbxApiPostAsync(path, params, useHttps, throttlePriority, contentType)
+local function rbxApiPostAsync(path, params, throttlePriority, contentType)
 	local success, result = pcall(function()
-		return HttpRbxApiService:PostAsync(path, params, useHttps, throttlePriority, contentType)
+		return HttpRbxApiService:PostAsync(path, params, throttlePriority, contentType)
 	end)
 	--
 	if not success then
@@ -91,7 +91,7 @@ local function getFollowRelationshipsAsync(uid)
 		jsonPostBody = HttpService:JSONEncode(jsonPostBody)
 		
 		if jsonPostBody then
-			return rbxApiPostAsync(GET_MULTI_FOLLOW, jsonPostBody, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationJson)
+			return rbxApiPostAsync(GET_MULTI_FOLLOW, jsonPostBody, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationJson)
 		end
 	end
 end

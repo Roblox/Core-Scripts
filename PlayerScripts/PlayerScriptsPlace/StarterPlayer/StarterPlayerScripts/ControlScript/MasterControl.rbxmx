@@ -35,8 +35,9 @@ local isSeated = false
 local myVehicleSeat = nil
 local moveValue = Vector3.new(0,0,0)
 
+
 --[[ Local Functions ]]--
-local function getHumanoid()
+function MasterControl:GetHumanoid()
 	local character = LocalPlayer and LocalPlayer.Character
 	if character then
 		if CachedHumanoid and CachedHumanoid.Parent == character then
@@ -58,7 +59,7 @@ function MasterControl:Init()
 	
 	local renderStepFunc = function()
 		if LocalPlayer and LocalPlayer.Character then
-			local humanoid = getHumanoid()
+			local humanoid = self:GetHumanoid()
 			if not humanoid then return end
 			
 			if humanoid and not humanoid.PlatformStand and isJumping then
@@ -74,6 +75,8 @@ function MasterControl:Init()
 			end
 			
 			moveFunc(LocalPlayer, adjustedMoveValue, true)	
+			
+			
 		end
 	end
 	
@@ -111,7 +114,7 @@ function MasterControl:SetIsJumping(jumping)
 end
 
 function MasterControl:DoJump()
-	local humanoid = getHumanoid()
+	local humanoid = self:GetHumanoid()
 	if humanoid then
 		humanoid.Jump = true
 	end

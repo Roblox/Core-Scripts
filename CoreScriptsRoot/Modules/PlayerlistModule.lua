@@ -8,8 +8,6 @@
 local CoreGui = game:GetService('CoreGui')
 local GuiService = game:GetService('GuiService')	-- NOTE: Can only use in core scripts
 local UserInputService = game:GetService('UserInputService')
-local HttpService = game:GetService('HttpService')
-local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local TeamsService = game:FindService('Teams')
 local ContextActionService = game:GetService('ContextActionService')
 local StarterGui = game:GetService('StarterGui')
@@ -38,13 +36,6 @@ local blockingUtility = playerDropDownModule:CreateBlockingUtility()
 local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 
 local PlayerPermissionsModule = require(RobloxGui.Modules.PlayerPermissionsModule)
-
---[[ Fast Flags ]]--
-local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
-local IsFollowersEnabled = followerSuccess and isFollowersEnabled
-
-local serverFollowersSuccess, serverFollowersEnabled = pcall(function() return settings():GetFFlag("UserServerFollowers") end)
-local IsServerFollowers = serverFollowersSuccess and serverFollowersEnabled
 
 --[[ Remotes ]]--
 local RemoveEvent_OnFollowRelationshipChanged = nil
@@ -157,12 +148,6 @@ local ABUSES = {
   "Bad Username",
 }
 
-local FOLLOWER_STATUS = {
-  FOLLOWER = 0,
-  FOLLOWING = 1,
-  MUTUAL = 2,
-}
-
 --[[ Images ]]--
 local CHAT_ICON = 'rbxasset://textures/ui/chat_teamButton.png'
 local ADMIN_ICON = 'rbxasset://textures/ui/icon_admin-16.png'
@@ -193,57 +178,6 @@ local function clamp(value, min, max)
   return value
 end
 
--- Returns whether followerUserId is following userId
-local function isFollowing(userId, followerUserId)
-  local apiPath = "user/following-exists?userId="
-  local params = userId.."&followerUserId="..followerUserId
-  local success, result = pcall(function()
-      return HttpRbxApiService:GetAsync(apiPath..params, true)
-    end)
-  if not success then
-    print("isFollowing() failed because", result)
-    return false
-  end
-
-  -- can now parse web response
-  result = HttpService:JSONDecode(result)
-  return result["success"] and result["isFollowing"]
-end
-
--- TODO: Once server followers is good to go, remove this function and all code paths
-local function getFollowerStatus(selectedPlayer)
-  -- we're going to check this flag first in case of a condition were the two flags are not set in sync
-  -- in that case, followers will be disabled
-  if not IsFollowersEnabled then
-    return nil
-  end
-
-  if selectedPlayer == Player then
-    return nil
-  end
-
-  -- ignore guest
-  if selectedPlayer.userId <= 0 or Player.userId <= 0 then
-    return
-  end
-
-  local myUserId = tostring(Player.userId)
-  local theirUserId = tostring(selectedPlayer.userId)
-
-  local isFollowingMe = isFollowing(myUserId, theirUserId)
-  local isFollowingThem = isFollowing(theirUserId, myUserId)
-
-  if isFollowingMe and isFollowingThem then 	-- mutual
-    return FOLLOWER_STATUS.MUTUAL
-  elseif isFollowingMe then
-    return FOLLOWER_STATUS.FOLLOWER
-  elseif isFollowingThem then
-    return FOLLOWER_STATUS.FOLLOWING
-  else
-    return nil
-  end
-end
-
 local function getFriendStatusIcon(friendStatus)
   if friendStatus == Enum.FriendStatus.Unknown or friendStatus == Enum.FriendStatus.NotFriend then
     return nil
@@ -255,18 +189,6 @@ local function getFriendStatusIcon(friendStatus)
     return FRIEND_RECEIVED_ICON
   else
     error("PlayerList: Unknown value for friendStatus: "..tostring(friendStatus))
-  end
-end
-
-local function getFollowerStatusIcon(followerStatus)
-  if followerStatus == FOLLOWER_STATUS.MUTUAL then
-    return MUTUAL_FOLLOWING_ICON
-  elseif followerStatus == FOLLOWER_STATUS.FOLLOWING then
-    return FOLLOWING_ICON
-  elseif followerStatus == FOLLOWER_STATUS.FOLLOWER then
-    return FOLLOWER_ICON
-  else
-    return nil
   end
 end
 
@@ -293,8 +215,8 @@ local function setAvatarIconAsync(player, iconImage)
 
   local thumbnailLoader = nil
   pcall(function()
-      thumbnailLoader = require(RobloxGui.Modules.ThumbnailLoader)
-    end)
+    thumbnailLoader = require(RobloxGui.Modules.Shell.ThumbnailLoader)
+  end)
 
   local isFinalSuccess = false
   if thumbnailLoader then
@@ -788,30 +710,6 @@ local function getFriendStatus(selectedPlayer)
   end
 end
 
-local function onFollowerStatusChanged()
-  -- TODO: Remove this event completely when server version is stable
-  if not IsFollowersEnabled and not LastSelectedFrame or not LastSelectedPlayer then
-    return
-  end
-
-  -- don't update icon if already friends
-  local friendStatus = getFriendStatus(LastSelectedPlayer)
-  if friendStatus == Enum.FriendStatus.Friend then
-    return
-  end
-
-  local bgFrame = LastSelectedFrame:FindFirstChild('BGFrame')
-  local followerStatus = getFollowerStatus(LastSelectedPlayer)
-  local newIcon = getFollowerStatusIcon(followerStatus)
-  if bgFrame then
-    updateSocialIcon(newIcon, bgFrame)
-  end
-end
--- Don't listen/show rbx follower status on xbox
-if not isTenFootInterface then
-  playerDropDownModule.FollowerStatusChanged:connect(onFollowerStatusChanged)
-end
-
 function popupHidden()
   if LastSelectedFrame then
     for _,childFrame in pairs(LastSelectedFrame:GetChildren()) do
@@ -892,11 +790,10 @@ local function onFriendshipChanged(otherPlayer, newFriendStatus)
   local bgFrame = frame:FindFirstChild('BGFrame')
   if bgFrame then
     --no longer friends, but might still be following
-    if not IsServerFollowers and IsFollowersEnabled and not newIcon then
-      local followerStatus = getFollowerStatus(otherPlayer)
-      newIcon = getFollowerStatusIcon(followerStatus)
-    end
-
+    -- TODO: We need to get follow relationship here; we currently don't have a way
+    -- to get a single users result, so the server script will need to be updated
+    -- issue will be when unfriending a user, but still following them, the icon
+    -- will not show correctly.
     updateSocialIcon(newIcon, bgFrame)
   end
 end
@@ -1604,30 +1501,30 @@ end
 
 --[[ Begin new Server Followers ]]--
 -- Don't listen/show rbx followers status on console
-if IsServerFollowers and not isTenFootInterface then
+if not isTenFootInterface then
   -- spawn so we don't block script
   spawn(function()
-      local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-      RemoveEvent_OnFollowRelationshipChanged = RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged', 86400) or RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged')
-      RemoteFunc_GetFollowRelationships = RobloxReplicatedStorage:WaitForChild('GetFollowRelationships')
+    local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
+    RemoveEvent_OnFollowRelationshipChanged = RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged', 86400) or RobloxReplicatedStorage:WaitForChild('FollowRelationshipChanged')
+    RemoteFunc_GetFollowRelationships = RobloxReplicatedStorage:WaitForChild('GetFollowRelationships')
 
-      RemoveEvent_OnFollowRelationshipChanged.OnClientEvent:connect(function(result)
-          setFollowRelationshipsView(result)
-        end)
-
-      local result = getFollowRelationships()
+    RemoveEvent_OnFollowRelationshipChanged.OnClientEvent:connect(function(result)
       setFollowRelationshipsView(result)
     end)
+
+    local result = getFollowRelationships()
+    setFollowRelationshipsView(result)
+  end)
 end
 
 PlayersService.ChildRemoved:connect(function(child)
-    if child:IsA('Player') then
-      if LastSelectedPlayer and child == LastSelectedPlayer then
-        playerDropDown:Hide()
-      end
-      removePlayerEntry(child)
+  if child:IsA('Player') then
+    if LastSelectedPlayer and child == LastSelectedPlayer then
+      playerDropDown:Hide()
     end
-  end)
+    removePlayerEntry(child)
+  end
+end)
 
 --[[ Teams ]]--
 local function initializeTeams(teams)

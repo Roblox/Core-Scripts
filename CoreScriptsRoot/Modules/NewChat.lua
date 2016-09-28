@@ -223,7 +223,6 @@ do
 		end
 
 		StarterGui:RegisterSetCore("CoreGuiChatConnections", RegisterCoreGuiConnections)
-		print("Registered CoreGuiChatConnections")
 
 end
 

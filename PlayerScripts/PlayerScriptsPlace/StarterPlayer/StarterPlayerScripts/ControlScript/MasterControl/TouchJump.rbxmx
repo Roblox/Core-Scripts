@@ -26,20 +26,53 @@ while not Players.LocalPlayer do
 	wait()
 end
 local LocalPlayer = Players.LocalPlayer
+local Humanoid = MasterControl:GetHumanoid()
 local JumpButton = nil
 local OnInputEnded = nil		-- defined in Create()
+local HumChangeConnection = nil
+local ExternallyEnabled = false --[[I don't think there's anything that disables jump from outside this script, but in case that ever happens, 
+							we don't want to re-enable it when jump power is changed]]
 
 --[[ Constants ]]--
 local TOUCH_CONTROL_SHEET = "rbxasset://textures/ui/TouchControlsSheet.png"
 
+--[[ Private Functions ]]--
+local function humanoidChanged(prop)
+	if prop == "JumpPower" then
+		if Humanoid.JumpPower == 0 then
+			TouchJump:Disable()
+		elseif Humanoid.JumpPower > 0 then
+			TouchJump:Enable()
+		end
+	elseif prop == "Parent" then
+		if not Humanoid.Parent then
+			HumChangeConnection:disconnect()
+		end
+	end
+end
+
+local function disableButton()
+	JumpButton.Visible = false
+	OnInputEnded()
+end
+
+local function enableButton()
+	if Humanoid and ExternallyEnabled then
+		if Humanoid.JumpPower > 0 then
+			JumpButton.Visible = true
+		end
+	end
+end
+
 --[[ Public API ]]--
 function TouchJump:Enable()
-	JumpButton.Visible = true
+	ExternallyEnabled = true
+	enableButton()
 end
 
 function TouchJump:Disable()
-	JumpButton.Visible = false
-	OnInputEnded()
+	ExternallyEnabled = false
+	disableButton()
 end
 
 function TouchJump:Create(parentFrame)
@@ -97,8 +130,24 @@ function TouchJump:Create(parentFrame)
 		end
 	end)
 	
+	if Humanoid then
+		HumChangeConnection = Humanoid.Changed:connect(humanoidChanged)
+	end
 	JumpButton.Parent = parentFrame
 end
+
+LocalPlayer.CharacterAdded:connect(function(newCharacter)
+	if HumChangeConnection then
+		HumChangeConnection:disconnect()
+	end
+	-- rebind event to new Humanoid
+	Humanoid = nil
+	repeat
+		Humanoid = MasterControl:GetHumanoid()
+		wait()
+	until Humanoid and Humanoid.Parent == newCharacter
+	HumChangeConnection = Humanoid.Changed:connect(humanoidChanged)
+end)
 
 return TouchJump
 ]]></ProtectedString>
