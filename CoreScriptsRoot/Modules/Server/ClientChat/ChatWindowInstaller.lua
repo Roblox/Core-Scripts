@@ -1,5 +1,6 @@
 local runnerScriptName = "ChatScript"
 local installDirectory = game:GetService("StarterPlayer"):FindFirstChild("StarterPlayerScripts")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local function LoadLocalScript(name, parent)
 	local originalModule = script.Parent:WaitForChild(name)
@@ -36,10 +37,19 @@ local function Install()
 	LoadModule(script.Parent, "MessageLabelCreator", ChatMain)
 	LoadModule(script.Parent, "ChannelsTab", ChatMain)
 	LoadModule(script.Parent, "TransparencyTweener", ChatMain)
-	LoadModule(script.Parent, "ChatSettings", ChatMain)
 	LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatMain)
 	LoadModule(script.Parent.Parent.Parent.Common, "ObjectPool", ChatMain)
 	LoadModule(script.Parent, "MessageSender", ChatMain)
+
+	if (not ReplicatedStorage:FindFirstChild("ClientChatModules")) then
+		local ModulesFolder = Instance.new("Folder")
+		ModulesFolder.Name = "ClientChatModules"
+
+		LoadModule(script.Parent.DefaultClientChatModules, "ChatSettings", ModulesFolder)
+
+		ModulesFolder.Parent = ReplicatedStorage
+		ModulesFolder.Archivable = false
+	end
 
 	ChatScript.Disabled = false
 

@@ -99,7 +99,9 @@ ChatWindow:RegisterChatBar(ChatBar)
 ChatWindow:RegisterChannelsBar(ChannelsBar)
 ChatWindow:RegisterMessageLogDisplay(MessageLogDisplay)
 
-local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 MessageSender:RegisterSayMessageFunction(EventFolder.SayMessageRequest)
@@ -451,6 +453,10 @@ end)
 EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
+		if not ChatSettings.ShowUserOwnFilteredMessage then
+			messageData.IsFiltered = true
+		end
+
 		channelObj:AddMessageToChannel(messageData, "Message")
 
 		if (messageData.FromSpeaker ~= LocalPlayer.Name) then

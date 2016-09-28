@@ -5,10 +5,12 @@
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
-local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -48,6 +50,9 @@ function methods:UpdateMessageFiltered(messageData)
 	end
 
 	if messageObj then
+		if messageObj.MessageData.IsFiltered then
+			return
+		end
 		messageObj.MessageData.Message = messageData.Message
 		messageObj.MessageData.IsFiltered = true
 		if self.Active then
