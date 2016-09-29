@@ -529,7 +529,6 @@ function methods:FadeOutBackground(duration)
 	self.MessageLogDisplay:FadeOutBackground(duration)
 	
 	self.AnimParams.Frame_TargetAlpha = 1
-	--self.BackgroundTweener:Tween(duration, 1)
 end
 
 function methods:FadeInBackground(duration)
