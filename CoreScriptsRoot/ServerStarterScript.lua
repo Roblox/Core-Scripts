@@ -24,7 +24,10 @@ RemoteEvent_SetDialogInUse.Name = "SetDialogInUse"
 RemoteEvent_SetDialogInUse.Parent = RobloxReplicatedStorage
 
 --[[ Event Connections ]]--
-local function setDialogInUse(player, dialog, value)
+local function setDialogInUse(player, dialog, value, waitTime)
+	if waitTime and waitTime ~= 0 then
+		wait(waitTime)
+	end
 	if dialog ~= nil then
 		dialog.InUse = value
 	end

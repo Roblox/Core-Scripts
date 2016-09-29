@@ -43,9 +43,6 @@ function waitForChild(instance, name)
 	end
 end
 
-local filteringEnabledFixFlagSuccess, filteringEnabledFixFlagValue = pcall(function() return settings():GetFFlag("FilteringEnabledDialogFix") end)
-local filterEnabledFixActive = (filteringEnabledFixFlagSuccess and filteringEnabledFixFlagValue)
-
 local goodbyeChoiceActiveFlagSuccess, goodbyeChoiceActiveFlagValue = pcall(function() return settings():GetFFlag("GoodbyeChoiceActiveProperty") end)
 local goodbyeChoiceActiveFlag = (goodbyeChoiceActiveFlagSuccess and goodbyeChoiceActiveFlagValue)
 
@@ -255,32 +252,16 @@ function normalEndDialog()
 end
 
 function endDialog()
-	if filterEnabledFixActive then
-		if currentDialogTimeoutCoroutine then
-			coroutineMap[currentDialogTimeoutCoroutine] = false
-			currentDialogTimeoutCoroutine = nil
-		end
-	else
-		if currentAbortDialogScript then
-			currentAbortDialogScript:Destroy()
-			currentAbortDialogScript = nil
-		end
+	if currentDialogTimeoutCoroutine then
+		coroutineMap[currentDialogTimeoutCoroutine] = false
+		currentDialogTimeoutCoroutine = nil
 	end
 
 	local dialog = currentConversationDialog
 	currentConversationDialog = nil
 	if dialog and dialog.InUse then
-		if filterEnabledFixActive then
-			spawn(function()
-				wait(5)
-				setDialogInUseEvent:FireServer(dialog, false)
-			end)
-		else
-			local reenableScript = reenableDialogScript:Clone()
-			reenableScript.Archivable = false
-			reenableScript.Disabled = false
-			reenableScript.Parent = dialog
-		end
+		-- Waits 5 seconds before setting InUse to false
+		setDialogInUseEvent:FireServer(dialog, false, 5)
 	end
 
 	for dialog, gui in pairs(dialogMap) do
@@ -480,9 +461,8 @@ function doDialog(dialog)
 		dialog.InUse = true
 		-- only bind if we actual enter the dialog
 		contextActionService:BindCoreAction("Nothing", function() end, false, Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
-		if filterEnabledFixActive then
-			setDialogInUseEvent:FireServer(dialog, true)
-		end
+		-- Immediately sets InUse to true on the server
+		setDialogInUseEvent:FireServer(dialog, true, 0)
 	end
 
 	currentConversationDialog = dialog
@@ -493,35 +473,21 @@ function doDialog(dialog)
 end
 
 function renewKillswitch(dialog)
-	if filterEnabledFixActive then
-		if currentDialogTimeoutCoroutine then
-			coroutineMap[currentDialogTimeoutCoroutine] = false
-			currentDialogTimeoutCoroutine = nil
-		end
-	else
-		if currentAbortDialogScript then
-			currentAbortDialogScript:Destroy()
-			currentAbortDialogScript = nil
-		end
+	if currentDialogTimeoutCoroutine then
+		coroutineMap[currentDialogTimeoutCoroutine] = false
+		currentDialogTimeoutCoroutine = nil
 	end
 
-	if filterEnabledFixActive then
-		currentDialogTimeoutCoroutine = coroutine.create(function(thisCoroutine)
-			wait(15)
-			if thisCoroutine ~= nil then
-				if coroutineMap[thisCoroutine] == nil then
-					setDialogInUseEvent:FireServer(dialog, false)
-				end
-				coroutineMap[thisCoroutine] = nil
+	currentDialogTimeoutCoroutine = coroutine.create(function(thisCoroutine)
+		wait(15)
+		if thisCoroutine ~= nil then
+			if coroutineMap[thisCoroutine] == nil then
+				setDialogInUseEvent:FireServer(dialog, false, 0)
 			end
-		end)
-		coroutine.resume(currentDialogTimeoutCoroutine, currentDialogTimeoutCoroutine)
-	else
-		currentAbortDialogScript = timeoutScript:Clone()
-		currentAbortDialogScript.Archivable = false
-		currentAbortDialogScript.Disabled = false
-		currentAbortDialogScript.Parent = dialog
-	end
+			coroutineMap[thisCoroutine] = nil
+		end
+	end)
+	coroutine.resume(currentDialogTimeoutCoroutine, currentDialogTimeoutCoroutine)
 end
 
 function checkForLeaveArea()
@@ -566,7 +532,7 @@ end
 
 function addDialog(dialog)
 	if dialog.Parent then
-		if dialog.Parent:IsA("BasePart") then
+		if dialog.Parent:IsA("BasePart") and dialog:IsDescendantOf(game.Workspace) then
 			local chatGui = chatNotificationGui:clone()
 			chatGui.Enabled = not dialog.InUse
 			chatGui.Adornee = dialog.Parent
@@ -605,22 +571,6 @@ function addDialog(dialog)
 	end
 end
 
-function fetchScripts()
-	local model = game:GetService("InsertService"):LoadAsset(39226062)
-    if type(model) == "string" then -- load failed, lets try again
-		wait(0.1)
-		model = game:GetService("InsertService"):LoadAsset(39226062)
-	end
-	if type(model) == "string" then -- not going to work, lets bail
-		return
-	end
-
-	waitForChild(model,"TimeoutScript")
-	timeoutScript = model.TimeoutScript
-	waitForChild(model,"ReenableDialogScript")
-	reenableDialogScript = model.ReenableDialogScript
-end
-
 function onLoad()
   waitForProperty(game:GetService("Players"), "LocalPlayer")
   player = game:GetService("Players").LocalPlayer
@@ -633,10 +583,6 @@ function onLoad()
   createMessageDialog()
   messageDialog.RobloxLocked = true
   messageDialog.Parent = gui
-
-  if not filterEnabledFixActive then
-	fetchScripts()
-  end 
   
   --print("Waiting for BottomLeftControl")
   waitForChild(gui, "BottomLeftControl")
