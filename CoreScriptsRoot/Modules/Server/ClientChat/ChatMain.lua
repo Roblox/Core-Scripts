@@ -114,7 +114,23 @@ else
 	ChatBar:SetTextLabelText('To chat click here or press "/" key')
 end
 
-
+spawn(function()
+	local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
+	local ANIMATION_FPS = 20.0
+	
+	local updateWaitTime = 1.0 / ANIMATION_FPS 
+	local lastTick = tick()
+	while true do
+		local currentTick = tick()
+		local tickDelta = currentTick - lastTick
+		local dtScale = CurveUtil:DeltaTimeToTimescale(tickDelta)
+		
+		ChatWindow:Update(dtScale)
+		
+		lastTick = currentTick
+		wait(updateWaitTime)
+	end
+end)
 
 
 

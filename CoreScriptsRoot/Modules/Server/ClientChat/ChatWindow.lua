@@ -24,6 +24,7 @@ local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
+local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -349,36 +350,26 @@ function methods:CreateGuiObjects(targetParent)
 	self.GuiObjects.ChatChannelParentFrame = ChatChannelParentFrame
 	self.GuiObjects.ChatResizerFrame = ChatResizerFrame
 	self.GuiObjects.ResizeIcon = ResizeIcon
-
-	self:CreateTweeners()
 end
 
 function methods:RegisterChatBar(ChatBar)
 	rawset(self, "ChatBar", ChatBar)
 	self.ChatBar:CreateGuiObjects(self.GuiObjects.ChatBarParentFrame)
-
-	self.BackgroundTweener:RegisterTweenObjectProperty(ChatBar.BackgroundTweener, "Transparency")
-	self.TextTweener:RegisterTweenObjectProperty(ChatBar.TextTweener, "Transparency")
 end
 
 function methods:RegisterChannelsBar(ChannelsBar)
 	rawset(self, "ChannelsBar", ChannelsBar)
 	self.ChannelsBar:CreateGuiObjects(self.GuiObjects.ChannelsBarParentFrame)
-
-	self.BackgroundTweener:RegisterTweenObjectProperty(ChannelsBar.BackgroundTweener, "Transparency")
-	self.TextTweener:RegisterTweenObjectProperty(ChannelsBar.TextTweener, "Transparency")
 end
 
 function methods:RegisterMessageLogDisplay(MessageLogDisplay)
 	rawset(self, "MessageLogDisplay", MessageLogDisplay)
 	self.MessageLogDisplay.GuiObject.Parent = self.GuiObjects.ChatChannelParentFrame
-	--self.BackgroundTweener:RegisterTweenObjectProperty(self.MessageLogDisplay.BackgroundTweener, "Transparency")
-	self.TextTweener:RegisterTweenObjectProperty(self.MessageLogDisplay.TextTweener, "Transparency")
 end
 
 function methods:AddChannel(channelName)
 	if (self:GetChannel(channelName))  then
-		--error("Channel '" .. channelName .. "' already exists!")
+		error("Channel '" .. channelName .. "' already exists!")
 		return
 	end
 
@@ -536,15 +527,17 @@ function methods:FadeOutBackground(duration)
 	--self.ChatBar:FadeOutBackground(duration)
 
 	self.MessageLogDisplay:FadeOutBackground(duration)
-	self.BackgroundTweener:Tween(duration, 1)
+	
+	self.AnimParams.Frame_TargetAlpha = 1
+	--self.BackgroundTweener:Tween(duration, 1)
 end
 
 function methods:FadeInBackground(duration)
 	--self.ChannelsBar:FadeInBackground(duration)
 	--self.ChatBar:FadeInBackground(duration)
 	self.MessageLogDisplay:FadeInBackground(duration)
-
-	self.BackgroundTweener:Tween(duration, 0)
+	
+	self.AnimParams.Frame_TargetAlpha = 0.8
 end
 
 function methods:FadeOutText(duration)
@@ -553,7 +546,7 @@ function methods:FadeOutText(duration)
 
 	self.MessageLogDisplay:FadeOutText(duration)
 
-	self.TextTweener:Tween(duration, 1)
+	self.AnimParams.Text_TargetAlpha = 1
 end
 
 function methods:FadeInText(duration)
@@ -562,23 +555,31 @@ function methods:FadeInText(duration)
 
 	self.MessageLogDisplay:FadeInText(duration)
 
-	self.TextTweener:Tween(duration, 0)
+	self.AnimParams.Text_TargetAlpha = 0
 end
 
-function methods:CreateTweeners()
-	self.BackgroundTweener:CancelTween()
-	self.TextTweener:CancelTween()
+function methods:InitializeAnimParams()
+	self.AnimParams.Frame_TargetAlpha = 0
+	self.AnimParams.Frame_CurrentAlpha = 0
+	
+	self.AnimParams.Text_TargetAlpha = 0
+	self.AnimParams.Text_CurrentAlpha = 0
+end
 
-	self.BackgroundTweener = moduleTransparencyTweener.new()
-	self.TextTweener = moduleTransparencyTweener.new()
-
-	--// Register BackgroundTweener objects and properties
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.ChatChannelParentFrame, "BackgroundTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.ChatResizerFrame, "BackgroundTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.ResizeIcon, "ImageTransparency")
-
-	--// Register TextTweener objects and properties
-		-- there are none...
+function methods:Update(dtScale)
+	
+	self.AnimParams.Frame_CurrentAlpha = CurveUtil:Expt(self.AnimParams.Frame_CurrentAlpha , self.AnimParams.Frame_TargetAlpha, 0.1, dtScale)
+	self.AnimParams.Text_CurrentAlpha = CurveUtil:Expt(self.AnimParams.Text_CurrentAlpha, self.AnimParams.Text_TargetAlpha, 0.1, dtScale)
+	
+	self.GuiObjects.ChatChannelParentFrame.BackgroundTransparency = self.AnimParams.Frame_CurrentAlpha
+	self.GuiObjects.ChatResizerFrame.BackgroundTransparency = self.AnimParams.Frame_CurrentAlpha 
+	self.GuiObjects.ResizeIcon.ImageTransparency = self.AnimParams.Frame_CurrentAlpha 
+	
+	--[[
+		update self.ChatBar from self.AnimParams.Text_CurrentAlpha
+		update self.ChannelsBar from self.AnimParams.Text_CurrentAlpha
+		update self.MessageLogDisplay from self.AnimParams.Text_CurrentAlpha
+	]]	
 end
 
 --///////////////////////// Constructors
@@ -600,12 +601,13 @@ function module.new()
 
 	obj.Visible = true
 	obj.CoreGuiEnabled = true
-
-	obj.BackgroundTweener = moduleTransparencyTweener.new()
-	obj.TextTweener = moduleTransparencyTweener.new()
-
+	
+	obj.AnimParams = {}
+	
 	ClassMaker.MakeClass("ChatWindow", obj)
-
+	
+	obj:InitializeAnimParams()
+	
 	return obj
 end
 
