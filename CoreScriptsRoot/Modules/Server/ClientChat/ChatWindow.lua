@@ -17,10 +17,12 @@ local DEVICE_DESKTOP = 3
 
 --////////////////////////////// Include
 --//////////////////////////////////////
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
-local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods

@@ -14,7 +14,7 @@ local Util = require(RobloxGui.Modules.ChatUtil)
 
 local moduleApiTable = {}
 do
-		local ChatWindowState = 
+		local ChatWindowState =
 		{
 			Visible = true,
 			MessageCount = 0,
@@ -85,7 +85,7 @@ do
 			if (success) then
 				return retVal
 			else
-				return ChatWindowState.Visible 
+				return ChatWindowState.Visible
 			end
 		end
 
@@ -111,12 +111,12 @@ do
 				return false
 			end
 		end
-		
+
 		moduleApiTable.ChatBarFocusChanged = Util.Signal()
 		moduleApiTable.VisibilityStateChanged = Util.Signal()
 		moduleApiTable.MessagesChanged = Util.Signal()
 
-		
+
 
 		StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType, enabled)
 			if (coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.Chat) then
@@ -219,7 +219,7 @@ do
 
 				end
 
-			end			
+			end
 		end
 
 		StarterGui:RegisterSetCore("CoreGuiChatConnections", RegisterCoreGuiConnections)
