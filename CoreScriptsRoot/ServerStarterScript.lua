@@ -24,15 +24,33 @@ RemoteEvent_SetDialogInUse.Name = "SetDialogInUse"
 RemoteEvent_SetDialogInUse.Parent = RobloxReplicatedStorage
 
 --[[ Event Connections ]]--
+local playerDialogMap = {}
+
 local function setDialogInUse(player, dialog, value, waitTime)
 	if waitTime and waitTime ~= 0 then
 		wait(waitTime)
 	end
 	if dialog ~= nil then
 		dialog.InUse = value
+		
+		if value == true then
+			playerDialogMap[player] = dialog
+		else
+			playerDialogMap[player] = nil
+		end
 	end
 end
 RemoteEvent_SetDialogInUse.OnServerEvent:connect(setDialogInUse)
+
+game:GetService("Players").PlayerRemoving:connect(function(player)
+	if player then
+		local dialog = playerDialogMap[player]
+		if dialog then
+			dialog.InUse = false
+			playerDialogMap[player] = nil
+		end
+	end
+end)
 
 local success, retVal = pcall(function() return game:GetService("Chat"):GetShouldUseLuaChat() end)
 local useNewChat = success and retVal
