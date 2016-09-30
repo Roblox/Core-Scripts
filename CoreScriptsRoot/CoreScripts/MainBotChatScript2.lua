@@ -465,6 +465,11 @@ function doDialog(dialog)
 		setDialogInUseEvent:FireServer(dialog, true, 0)
 	end
 
+	if dialog.InitialPrompt == "" then
+		warn("Can't start a dialog with an empty InitialPrompt")
+		return
+	end
+	
 	currentConversationDialog = dialog
 	game:GetService("Chat"):Chat(dialog.Parent, dialog.InitialPrompt, getChatColor(dialog.Tone))
 	variableDelay(dialog.InitialPrompt)
