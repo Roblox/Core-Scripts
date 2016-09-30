@@ -548,7 +548,16 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 		end
 
 		if (welcomeMessage ~= "") then
-			channelObj:AddMessageToChannel(welcomeMessage, "WelcomeMessage")
+			welcomeMessageObject = {
+				ID = -1,
+				FromSpeaker = nil,
+				OriginalChannel = channel,
+				IsFiltered = false,
+				Message = welcomeMessage,
+				Time = os.time(),
+				ExtraData = nil,
+			}
+			channelObj:AddMessageToChannel(welcomeMessageObject, "WelcomeMessage")
 		end
 
 		DoFadeInFromNewInformation()
@@ -799,7 +808,16 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 		local channelObj = ChatWindow:GetChannel(channel)
 
 		if (channelObj) then
-			channelObj:AddMessageToChannel(valueTable, "SetCoreMessage")
+			local messageObject = {
+				ID = -1,
+				FromSpeaker = nil,
+				OriginalChannel = channel,
+				IsFiltered = false,
+				Message = valueTable.Text,
+				Time = os.time(),
+				ExtraData = valueTable,
+			}
+			channelObj:AddMessageToChannel(messageObject, "SetCoreMessage")
 			ChannelsBar:UpdateMessagePostedInChannel(channel)
 
 			moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1

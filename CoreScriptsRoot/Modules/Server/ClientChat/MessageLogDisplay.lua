@@ -76,6 +76,9 @@ function methods:AddMessage(messageData, messageType)
   self:WaitUntilParentedCorrectly()
 
   local messageObject = MessageLabelCreator:CreateMessageLabelFromType(messageData, messageType)
+	if messageObject == nil then
+		return
+	end
 	self.TextTweener:RegisterTweenObjectProperty(messageObject.Tweener, "Transparency")
 
 	table.insert(self.MessageObjectLog, messageObject)
