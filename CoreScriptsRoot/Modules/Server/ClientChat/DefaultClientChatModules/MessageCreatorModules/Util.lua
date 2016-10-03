@@ -2,6 +2,19 @@
 --	// Written by: Xsitsu, TheGamer101
 --	// Description: Module for shared code between MessageCreatorModules.
 
+--[[
+Creating a message creator module:
+1) Create a new module inside the MessageCreatorModules folder.
+2) Create a function that takes a messageData object and returns
+the main frame of the created message, the main text label of the created message and a function
+to update the text of the message.
+3) return the following format from the module:
+{
+	KEY_MESSAGE_TYPE = "Message type this module creates messages for."
+	KEY_CREATOR_FUNCTION = YourFunctionHere
+}
+--]]
+
 local DEFAULT_MESSAGE_CREATOR = "UnknownMessage"
 local KEY_MESSAGE_TYPE = "MessageType"
 local KEY_CREATOR_FUNCTION = "MessageCreatorFunc"
