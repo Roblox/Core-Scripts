@@ -1,3 +1,7 @@
+--	// FileName: DefaultChatMessage.lua
+--	// Written by: TheGamer101
+--	// Description: Create a message label for a standard chat message.
+
 local MESSAGE_TYPE = "Message"
 
 local clientChatModules = script.Parent.Parent
@@ -31,7 +35,11 @@ function CreateMessageLabel(messageData)
 		BaseMessage.Text = string.rep(" ", numNeededSpaces) .. newMessageObject.Message
 	end
 
-  return BaseFrame, BaseMessage, UpdateTextFunction
+	return {
+    [util.KEY_BASE_FRAME] = BaseFrame,
+    [util.KEY_BASE_MESSAGE] = BaseMessage,
+    [util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction
+  }
 end
 
 return {

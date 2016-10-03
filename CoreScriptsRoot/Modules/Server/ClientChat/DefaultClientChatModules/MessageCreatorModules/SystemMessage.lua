@@ -1,3 +1,7 @@
+--	// FileName: SystemMessage.lua
+--	// Written by: TheGamer101
+--	// Description: Create a message label for a system message.
+
 local MESSAGE_TYPE = "SystemMessage"
 
 local clientChatModules = script.Parent.Parent
@@ -13,7 +17,11 @@ function CreateSystemMessageLabel(messageData)
 
 	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useFontSize, useChatColor)
 
-	return BaseFrame, BaseMessage
+	return {
+    [util.KEY_BASE_FRAME] = BaseFrame,
+    [util.KEY_BASE_MESSAGE] = BaseMessage,
+    [util.KEY_UPDATE_TEXT_FUNC] = nil
+  }
 end
 
 return {

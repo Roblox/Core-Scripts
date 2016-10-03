@@ -1,3 +1,7 @@
+--	// FileName: MeCommandMessage.lua
+--	// Written by: TheGamer101
+--	// Description: Create a message label for a me command message.
+
 local MESSAGE_TYPE = "MeCommandMessage"
 
 local clientChatModules = script.Parent.Parent
@@ -24,7 +28,11 @@ function CreateMeCommandMessageLabel(messageData)
 		BaseMessage.Text = newMessageObject.FromSpeaker .. " " .. string.sub(newMessageObject.Message, 5)
 	end
 
-	return BaseFrame, BaseMessage, UpdateTextFunction
+  return {
+    [util.KEY_BASE_FRAME] = BaseFrame,
+    [util.KEY_BASE_MESSAGE] = BaseMessage,
+    [util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction
+  }
 end
 
 return {

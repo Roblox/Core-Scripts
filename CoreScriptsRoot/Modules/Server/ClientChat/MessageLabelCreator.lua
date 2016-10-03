@@ -76,7 +76,11 @@ local function WrapIntoMessageObject(id, BaseFrame, BaseMessage, Tweener, Strong
 	return obj
 end
 
-function methods:ProcessCreatedMessage(messageData, BaseFrame, BaseMessage, UpdateTextFunction)
+function methods:ProcessCreatedMessage(messageData, createdMessageObject)
+	local BaseFrame = createdMessageObject[messageCreatorUtil.KEY_BASE_FRAME]
+	local BaseMessage = createdMessageObject[messageCreatorUtil.KEY_BASE_MESSAGE]
+	local UpdateTextFunction = createdMessageObject[messageCreatorUtil.KEY_UPDATE_TEXT_FUNC]
+
 	local Tweener = moduleTransparencyTweener.new()
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
 	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
@@ -112,14 +116,14 @@ function methods:CreateMessageLabelFromType(messageData, messageType)
 		end
 	end
 	if self.MessageCreators[messageType] then
-		local BaseFrame, BaseMessage, UpdateTextFunction = self.MessageCreators[messageType](messageData)
-		if BaseFrame then
-			return self:ProcessCreatedMessage(messageData, BaseFrame, BaseMessage, UpdateTextFunction)
+		local createdMessageObject = self.MessageCreators[messageType](messageData)
+		if createdMessageObject then
+			return self:ProcessCreatedMessage(messageData, createdMessageObject)
 		end
 	elseif self.DefaultCreatorType then
-		local BaseFrame, BaseMessage, UpdateTextFunction = self.MessageCreators[self.DefaultCreatorType](messageData)
-		if BaseFrame then
-			return self:ProcessCreatedMessage(messageData, BaseFrame, BaseMessage, UpdateTextFunction)
+		local createdMessageObject = self.MessageCreators[self.DefaultCreatorType](messageData)
+		if createdMessageObject then
+			return self:ProcessCreatedMessage(messageData, createdMessageObject)
 		end
 	else
 		error("No message creator available for message type: " ..messageType)

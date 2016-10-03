@@ -1,3 +1,7 @@
+--	// FileName: ChannelEchoSystemMessage.lua
+--	// Written by: TheGamer101
+--	// Description: Create a message label for a system message being echoed into another channel.
+
 local MESSAGE_TYPE = "ChannelEchoSystemMessage"
 
 local clientChatModules = script.Parent.Parent
@@ -20,7 +24,11 @@ function CreateChannelEchoSystemMessageLabel(messageData)
 	local BaseFrame, BaseMessage = util:CreateBaseMessage(modifiedMessage, useFont, useFontSize, useChatColor)
 	local ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName, BaseMessage.TextColor3)
 
-	return BaseFrame, BaseMessage
+	return {
+		[util.KEY_BASE_FRAME] = BaseFrame,
+		[util.KEY_BASE_MESSAGE] = BaseMessage,
+		[util.KEY_UPDATE_TEXT_FUNC] = nil
+	}
 end
 
 return {

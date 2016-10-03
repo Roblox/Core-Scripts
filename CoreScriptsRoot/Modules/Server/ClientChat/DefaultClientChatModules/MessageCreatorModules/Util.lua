@@ -16,9 +16,14 @@ to update the text of the message.
 --]]
 
 local DEFAULT_MESSAGE_CREATOR = "UnknownMessage"
+local MESSAGE_CREATOR_MODULES_VERSION = 1
+---Creator Module Object Keys
 local KEY_MESSAGE_TYPE = "MessageType"
 local KEY_CREATOR_FUNCTION = "MessageCreatorFunc"
-local MESSAGE_CREATOR_MODULES_VERSION = 1
+---Creator function return object keys
+local KEY_BASE_FRAME = "BaseFrame"
+local KEY_BASE_MESSAGE = "BaseMessage"
+local KEY_UPDATE_TEXT_FUNC = "UpdateTextFunction"
 
 local module = {}
 local methods = {}
@@ -161,9 +166,14 @@ function module.new()
 
 	obj.ObjectPool = nil
 	obj.DEFAULT_MESSAGE_CREATOR = DEFAULT_MESSAGE_CREATOR
+	obj.MESSAGE_CREATOR_MODULES_VERSION = MESSAGE_CREATOR_MODULES_VERSION
+
 	obj.KEY_MESSAGE_TYPE = KEY_MESSAGE_TYPE
 	obj.KEY_CREATOR_FUNCTION = KEY_CREATOR_FUNCTION
-	obj.MESSAGE_CREATOR_MODULES_VERSION = MESSAGE_CREATOR_MODULES_VERSION
+
+	obj.KEY_BASE_FRAME = KEY_BASE_FRAME
+	obj.KEY_BASE_MESSAGE = KEY_BASE_MESSAGE
+	obj.KEY_UPDATE_TEXT_FUNC = KEY_UPDATE_TEXT_FUNC
 
 	return obj
 end

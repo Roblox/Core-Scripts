@@ -1,3 +1,7 @@
+--	// FileName: ChannelEchoMessage.lua
+--	// Written by: TheGamer101
+--	// Description: Create a message label for a standard message being echoed into another channel.
+
 local MESSAGE_TYPE = "ChannelEchoMessage"
 
 local clientChatModules = script.Parent.Parent
@@ -37,7 +41,11 @@ function CreateChannelEchoMessageLabel(messageData)
 		BaseMessage.Text = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. newMessageObject.Message
 	end
 
-	return BaseFrame, BaseMessage, UpdateTextFunction
+	return {
+		[util.KEY_BASE_FRAME] = BaseFrame,
+		[util.KEY_BASE_MESSAGE] = BaseMessage,
+		[util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction
+	}
 end
 
 return {

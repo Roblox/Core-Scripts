@@ -1,3 +1,8 @@
+--	// FileName: UnknownMessage.lua
+--	// Written by: TheGamer101
+--	// Description: Default handler for message types with no other creator registered.
+--  // Just print that there was a message with no creator for now.
+
 local MESSAGE_TYPE = "UnknownMessage"
 
 local clientChatModules = script.Parent.Parent

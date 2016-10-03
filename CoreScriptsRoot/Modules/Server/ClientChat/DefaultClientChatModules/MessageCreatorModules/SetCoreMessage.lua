@@ -1,3 +1,7 @@
+--	// FileName: SetCoreMessage.lua
+--	// Written by: TheGamer101
+--	// Description: Create a message label for a message created with SetCore(ChatMakeSystemMessage).
+
 local MESSAGE_TYPE = "SetCoreMessage"
 
 local clientChatModules = script.Parent.Parent
@@ -13,7 +17,11 @@ function CreateSetCoreMessageLabel(messageData)
 
 	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useFontSize, useColor)
 
-	return BaseFrame, BaseMessage
+	return {
+		[util.KEY_BASE_FRAME] = BaseFrame,
+		[util.KEY_BASE_MESSAGE] = BaseMessage,
+		[util.KEY_UPDATE_TEXT_FUNC] = nil
+	}
 end
 
 return {
