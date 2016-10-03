@@ -51,6 +51,21 @@ local function Install()
 		ModulesFolder.Archivable = false
 	end
 
+	local clientChatModules = ReplicatedStorage.ClientChatModules
+	if (not clientChatModules:FindFirstChild("MessageCreatorModules")) then
+		local ModulesFolder = Instance.new("Folder")
+		ModulesFolder.Name = "MessageCreatorModules"
+
+		local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
+
+		for i = 1, #creatorModules do
+			LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, ModulesFolder)
+		end
+
+		ModulesFolder.Parent = clientChatModules
+		ModulesFolder.Archivable = false
+	end
+
 	ChatScript.Disabled = false
 
 	local currentPlayers = game:GetService("Players"):GetChildren()
