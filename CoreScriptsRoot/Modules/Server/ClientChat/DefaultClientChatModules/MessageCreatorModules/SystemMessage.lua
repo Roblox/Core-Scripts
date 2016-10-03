@@ -17,6 +17,6 @@ function CreateSystemMessageLabel(messageData)
 end
 
 return {
-	MessageType = MESSAGE_TYPE,
-	CreateMessageFunc = CreateSystemMessageLabel
+	[util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
+	[util.KEY_CREATOR_FUNCTION] = CreateSystemMessageLabel
 }

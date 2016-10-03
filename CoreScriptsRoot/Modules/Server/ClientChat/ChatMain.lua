@@ -13,6 +13,7 @@ local moduleApiTable = {}
 --// the rest of the code can interface with and have the guarantee that the RemoteEvents they want
 --// exist with their desired names.
 
+local RunService = game:GetService("RunService")
 local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
@@ -411,7 +412,7 @@ local function ProcessChatCommands(message)
 
 	--// This is the code that prevents Guests from chatting.
 	--// Guests are generally not allowed to chat, so please do not remove this.
-	if (LocalPlayer.UserId < 0) then
+	if (LocalPlayer.UserId < 0 and not RunService:IsStudio()) then
 		processedCommand = true
 
 		local channelObj = ChatWindow:GetCurrentChannel()

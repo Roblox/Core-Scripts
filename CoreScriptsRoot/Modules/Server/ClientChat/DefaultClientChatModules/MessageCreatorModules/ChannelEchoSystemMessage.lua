@@ -24,6 +24,6 @@ function CreateChannelEchoSystemMessageLabel(messageData)
 end
 
 return {
-	MessageType = MESSAGE_TYPE,
-	CreateMessageFunc = CreateChannelEchoSystemMessageLabel
+	[util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
+	[util.KEY_CREATOR_FUNCTION] = CreateChannelEchoSystemMessageLabel
 }

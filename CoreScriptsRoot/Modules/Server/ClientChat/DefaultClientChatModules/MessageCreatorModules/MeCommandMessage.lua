@@ -9,7 +9,7 @@ function CreateMeCommandMessageLabel(messageData)
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or Enum.Font.SourceSansBold
 	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
-  local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+  local useChatColor = Color3.new(1, 1, 1)
 
 	local tempMessage = messageData.FromSpeaker .. " " .. string.sub(message, 5)
 
@@ -28,6 +28,6 @@ function CreateMeCommandMessageLabel(messageData)
 end
 
 return {
-	MessageType = MESSAGE_TYPE,
-	CreateMessageFunc = CreateMeCommandMessageLabel
+  [util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
+  [util.KEY_CREATOR_FUNCTION] = CreateMeCommandMessageLabel
 }

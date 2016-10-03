@@ -37,7 +37,7 @@ function GetMessageCreators()
 	for i = 1, #creators do
 		if creators[i].Name ~= "Util" then
 			local creator = require(creators[i])
-			typeToFunction[creator.MessageType] = creator.CreateMessageFunc
+			typeToFunction[creator[messageCreatorUtil.KEY_MESSAGE_TYPE]] = creator[messageCreatorUtil.KEY_CREATOR_FUNCTION]
 		end
 	end
 	return typeToFunction
@@ -116,6 +116,11 @@ function methods:CreateMessageLabelFromType(messageData, messageType)
 		if BaseFrame then
 			return self:ProcessCreatedMessage(messageData, BaseFrame, BaseMessage, UpdateTextFunction)
 		end
+	elseif self.DefaultCreatorType then
+		local BaseFrame, BaseMessage, UpdateTextFunction = self.MessageCreators[self.DefaultCreatorType](messageData)
+		if BaseFrame then
+			return self:ProcessCreatedMessage(messageData, BaseFrame, BaseMessage, UpdateTextFunction)
+		end
 	else
 		error("No message creator available for message type: " ..messageType)
 	end
@@ -130,6 +135,7 @@ function module.new()
 
 	obj.ObjectPool = moduleObjectPool.new(OBJECT_POOL_SIZE)
 	obj.MessageCreators = GetMessageCreators()
+	obj.DefaultCreatorType = messageCreatorUtil.DEFAULT_MESSAGE_CREATOR
 
 	ClassMaker.MakeClass("MessageLabelCreator", obj)
 

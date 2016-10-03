@@ -2,6 +2,11 @@
 --	// Written by: Xsitsu, TheGamer101
 --	// Description: Module for shared code between MessageCreatorModules.
 
+local DEFAULT_MESSAGE_CREATOR = "UnknownMessage"
+local KEY_MESSAGE_TYPE = "MessageType"
+local KEY_CREATOR_FUNCTION = "MessageCreatorFunc"
+local MESSAGE_CREATOR_MODULES_VERSION = 1
+
 local module = {}
 local methods = {}
 methods.__index = methods
@@ -142,6 +147,10 @@ function module.new()
 	local obj = setmetatable({}, methods)
 
 	obj.ObjectPool = nil
+	obj.DEFAULT_MESSAGE_CREATOR = DEFAULT_MESSAGE_CREATOR
+	obj.KEY_MESSAGE_TYPE = KEY_MESSAGE_TYPE
+	obj.KEY_CREATOR_FUNCTION = KEY_CREATOR_FUNCTION
+	obj.MESSAGE_CREATOR_MODULES_VERSION = MESSAGE_CREATOR_MODULES_VERSION
 
 	return obj
 end

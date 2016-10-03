@@ -17,6 +17,6 @@ function CreateWelcomeMessageLabel(messageData)
 end
 
 return {
-	MessageType = MESSAGE_TYPE,
-	CreateMessageFunc = CreateWelcomeMessageLabel
+	[util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
+  [util.KEY_CREATOR_FUNCTION] = CreateWelcomeMessageLabel
 }

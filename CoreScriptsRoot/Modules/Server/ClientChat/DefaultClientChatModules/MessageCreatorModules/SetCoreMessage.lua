@@ -17,6 +17,6 @@ function CreateSetCoreMessageLabel(messageData)
 end
 
 return {
-	MessageType = MESSAGE_TYPE,
-	CreateMessageFunc = CreateSetCoreMessageLabel
+	[util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
+	[util.KEY_CREATOR_FUNCTION] = CreateSetCoreMessageLabel
 }
