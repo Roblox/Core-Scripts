@@ -14,6 +14,7 @@ local modulesFolder = script.Parent
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
+local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 
@@ -311,53 +312,86 @@ function methods:SetChannelTarget(targetChannel)
 end
 
 function methods:FadeOutBackground(duration)
-	self.BackgroundTweener:Tween(duration, 1)
+	self.AnimParams.Background_TargetAlpha = 1
+	--self.BackgroundTweener:Tween(duration, 1)
 	--self:FadeOutText(duration)
 end
 
 function methods:FadeInBackground(duration)
-	self.BackgroundTweener:Tween(duration, 0)
+	self.AnimParams.Background_TargetAlpha = 0.8
+	--self.BackgroundTweener:Tween(duration, 0)
 	--self:FadeInText(duration)
 end
 
 function methods:FadeOutText(duration)
-	self.TextTweener:Tween(duration, 1)
+	self.AnimParams.Text_TargetAlpha = 1
 end
 
 function methods:FadeInText(duration)
-	self.TextTweener:Tween(duration, 0)
+	self.AnimParams.Text_TargetAlpha = 0
 end
 
 function methods:CreateTweeners()
-	self.BackgroundTweener:CancelTween()
-	self.TextTweener:CancelTween()
-
-	self.BackgroundTweener = moduleTransparencyTweener.new()
-	self.TextTweener = moduleTransparencyTweener.new()
-
-	--// Register BackgroundTweener objects and properties
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObject, "BackgroundTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBoxFrame, "BackgroundTransparency")
+	-- self.BackgroundTweener:CancelTween()
+	-- self.TextTweener:CancelTween()
+	-- 
+	-- self.BackgroundTweener = moduleTransparencyTweener.new()
+	-- self.TextTweener = moduleTransparencyTweener.new()
+	-- 
+	-- --// Register BackgroundTweener objects and properties
+	-- self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObject, "BackgroundTransparency")
+	-- self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBoxFrame, "BackgroundTransparency")
 
 	--// Register TextTweener objects and properties
-	local registerAsText = false
-	if (registerAsText) then
-		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextTransparency")
-		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextStrokeTransparency")
-		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextTransparency")
-		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextStrokeTransparency")
-		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextTransparency")
-		self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextStrokeTransparency")
+	-- local registerAsText = false
+	-- if (registerAsText) then
+	-- 	self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextTransparency")
+	-- 	self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextStrokeTransparency")
+	-- 	self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextTransparency")
+	-- 	self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextStrokeTransparency")
+	-- 	self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextTransparency")
+	-- 	self.TextTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextStrokeTransparency")
+	-- 
+	-- else
+	-- 	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextTransparency")
+	-- 	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextStrokeTransparency")
+	-- 	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextTransparency")
+	-- 	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextStrokeTransparency")
+	-- 	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextTransparency")
+	-- 	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextStrokeTransparency")
+	-- end
+end
 
-	else
-		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextTransparency")
-		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextLabel, "TextStrokeTransparency")
-		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextTransparency")
-		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.TextBox, "TextStrokeTransparency")
-		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextTransparency")
-		self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.MessageModeTextBox, "TextStrokeTransparency")
-	end
+function methods:InitializeAnimParams()
+	self.AnimParams.Text_TargetAlpha = 0
+	self.AnimParams.Text_CurrentAlpha = 0
+	
+	self.AnimParams.Background_TargetAlpha = 0
+	self.AnimParams.Background_CurrentAlpha = 0
+end
 
+function methods:CopyChatWindowParentAnimParams(parentAnimParams)
+	self.AnimParams.Text_TargetAlpha = parentAnimParams.Text_TargetAlpha
+end
+
+function methods:Update(dtScale)
+	self.AnimParams.Text_CurrentAlpha = CurveUtil:Expt(self.AnimParams.Text_CurrentAlpha, self.AnimParams.Text_TargetAlpha, 0.1, dtScale)
+	self.AnimParams.Background_CurrentAlpha = CurveUtil:Expt(self.AnimParams.Background_CurrentAlpha, self.AnimParams.Background_TargetAlpha, 0.1, dtScale)
+	
+	self.GuiObject.BackgroundTransparency = self.AnimParams.Background_CurrentAlpha
+	self.GuiObjects.TextBoxFrame.BackgroundTransparency = self.AnimParams.Background_CurrentAlpha
+	
+	--[[
+	SPTODO:
+	alpha range 0.6 - 1
+	rename to T
+	]]
+	self.GuiObjects.TextLabel.TextTransparency = self.AnimParams.Text_CurrentAlpha
+	self.GuiObjects.TextLabel.TextStrokeTransparency = self.AnimParams.Text_CurrentAlpha
+	self.GuiObjects.TextBox.TextTransparency = self.AnimParams.Text_CurrentAlpha
+	self.GuiObjects.TextBox.TextStrokeTransparency = self.AnimParams.Text_CurrentAlpha
+	self.GuiObjects.MessageModeTextBox.TextTransparency = self.AnimParams.Text_CurrentAlpha
+	self.GuiObjects.MessageModeTextBox.TextStrokeTransparency = self.AnimParams.Text_CurrentAlpha
 end
 
 --///////////////////////// Constructors
@@ -377,10 +411,14 @@ function module.new()
 	obj.TweenPixelsPerSecond = 500
 	obj.TargetYSize = 0
 
-	obj.BackgroundTweener = moduleTransparencyTweener.new()
-	obj.TextTweener = moduleTransparencyTweener.new()
+	--obj.BackgroundTweener = moduleTransparencyTweener.new()
+	--obj.TextTweener = moduleTransparencyTweener.new()
+	
+	obj.AnimParams = {}
 
 	ClassMaker.MakeClass("ChatBar", obj)
+	
+	obj:InitializeAnimParams()
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "ChatBarTextSize") then

@@ -4,8 +4,8 @@
 
 local module = {}
 
-module.WindowDraggable = false
-module.WindowResizable = false
+module.WindowDraggable = true
+module.WindowResizable = true
 
 module.ShowChannelsBar = false
 module.GamepadNavigationEnabled = false

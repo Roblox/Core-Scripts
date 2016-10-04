@@ -540,18 +540,12 @@ function methods:FadeInBackground(duration)
 end
 
 function methods:FadeOutText(duration)
-	--self.ChannelsBar:FadeOutText(duration)
-	--self.ChatBar:FadeOutText(duration)
-
 	self.MessageLogDisplay:FadeOutText(duration)
 
 	self.AnimParams.Text_TargetAlpha = 1
 end
 
 function methods:FadeInText(duration)
-	--self.ChannelsBar:FadeInText(duration)
-	--self.ChatBar:FadeInText(duration)
-
 	self.MessageLogDisplay:FadeInText(duration)
 
 	self.AnimParams.Text_TargetAlpha = 0
@@ -566,7 +560,6 @@ function methods:InitializeAnimParams()
 end
 
 function methods:Update(dtScale)
-	
 	self.AnimParams.Frame_CurrentAlpha = CurveUtil:Expt(self.AnimParams.Frame_CurrentAlpha , self.AnimParams.Frame_TargetAlpha, 0.1, dtScale)
 	self.AnimParams.Text_CurrentAlpha = CurveUtil:Expt(self.AnimParams.Text_CurrentAlpha, self.AnimParams.Text_TargetAlpha, 0.1, dtScale)
 	
@@ -574,6 +567,8 @@ function methods:Update(dtScale)
 	self.GuiObjects.ChatResizerFrame.BackgroundTransparency = self.AnimParams.Frame_CurrentAlpha 
 	self.GuiObjects.ResizeIcon.ImageTransparency = self.AnimParams.Frame_CurrentAlpha 
 	
+	self.ChatBar:CopyChatWindowParentAnimParams(self.AnimParams)
+	self.ChatBar:Update(dtScale)
 	--[[
 		update self.ChatBar from self.AnimParams.Text_CurrentAlpha
 		update self.ChannelsBar from self.AnimParams.Text_CurrentAlpha
