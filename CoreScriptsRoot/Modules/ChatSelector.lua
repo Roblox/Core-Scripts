@@ -16,6 +16,7 @@ local FORCE_UseNewChat = require(Common:WaitForChild("ForceUseNewChat"))
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
 
 local Players = game:GetService("Players")
 while Players.LocalPlayer == nil do Players.ChildAdded:wait() end
@@ -144,7 +145,7 @@ if ( (TryLoadNewChat or FORCE_UseNewChat) and not isConsole and not isVR ) then
 
 		ConnectSignals(useModule, interface, "ChatBarFocusChanged")
 		ConnectSignals(useModule, interface, "VisibilityStateChanged")
-		if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu) then
+		if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio()) then
 			ConnectSignals(useModule, interface, "MessagesChanged")
 			StarterGui:RegisterGetCore("UseNewLuaChat", function() return useNewChat end)
 		else
@@ -165,7 +166,7 @@ else
 
 	ConnectSignals(useModule, interface, "ChatBarFocusChanged")
 	ConnectSignals(useModule, interface, "VisibilityStateChanged")
-	if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu) then
+	if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio()) then
 		ConnectSignals(useModule, interface, "MessagesChanged")
 	end
 

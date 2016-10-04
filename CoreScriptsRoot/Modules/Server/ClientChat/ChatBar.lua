@@ -63,12 +63,18 @@ function methods:CreateGuiObjects(targetParent)
 	TextBox.TextWrapped = true
 	TextBox.Text = ""
 
-	local MessageModeTextBox = TextBox:Clone()
-	MessageModeTextBox.Name = "MessageMode"
-	MessageModeTextBox.Parent = TextBoxHolderFrame
-	MessageModeTextBox.Size = UDim2.new(0.3, 0, 1, 0)
-	MessageModeTextBox.TextYAlignment = Enum.TextYAlignment.Center
-	MessageModeTextBox.TextColor3 = Color3.fromRGB(77, 139, 255)
+	local MessageModeTextLabel = Instance.new("TextLabel", TextBoxHolderFrame)
+	MessageModeTextLabel.Name = "MessageMode"
+	MessageModeTextLabel.BackgroundTransparency = 1
+	MessageModeTextLabel.Position = UDim2.new(0, 0, 0, 0)
+	MessageModeTextLabel.FontSize = ChatSettings.ChatBarTextSize
+	MessageModeTextLabel.Font = Enum.Font.SourceSansBold
+	MessageModeTextLabel.TextXAlignment = Enum.TextXAlignment.Left
+	MessageModeTextLabel.TextWrapped = true
+	MessageModeTextLabel.Text = ""
+	MessageModeTextLabel.Size = UDim2.new(0.3, 0, 1, 0)
+	MessageModeTextLabel.TextYAlignment = Enum.TextYAlignment.Center
+	MessageModeTextLabel.TextColor3 = Color3.fromRGB(77, 139, 255)
 
 	local TextLabel = Instance.new("TextLabel", TextBoxHolderFrame)
 	TextLabel.Selectable = false
@@ -96,11 +102,11 @@ function methods:CreateGuiObjects(targetParent)
 	local function UpdateOnFocusStatusChanged(isFocused)
 		if (isFocused) then
 			TextLabel.Visible = false
-			MessageModeTextBox.Visible = true
+			MessageModeTextLabel.Visible = true
 		else
 			local setVis = (TextBox.Text == "")
 			TextLabel.Visible = setVis
-			MessageModeTextBox.Visible = not setVis
+			MessageModeTextLabel.Visible = not setVis
 		end
 	end
 
@@ -170,7 +176,7 @@ function methods:CreateGuiObjects(targetParent)
 	self.GuiObjects.TextBoxFrame = BoxFrame
 	self.GuiObjects.TextBox = TextBox
 	self.GuiObjects.TextLabel = TextLabel
-	self.GuiObjects.MessageModeTextBox = MessageModeTextBox
+	self.GuiObjects.MessageModeTextLabel = MessageModeTextLabel
 
 	self:CreateTweeners()
 
@@ -289,22 +295,22 @@ function methods:SetFontSize(fontSize)
 end
 
 function methods:SetChannelTarget(targetChannel)
-	local messageModeTextBox = self.GuiObjects.MessageModeTextBox
+	local messageModeTextLabel = self.GuiObjects.MessageModeTextLabel
 	local textBox = self.TextBox
 
 	rawset(self, "TargetChannel", targetChannel)
 
 	if (targetChannel ~= ChatSettings.GeneralChannelName) then
-		messageModeTextBox.Size = UDim2.new(0, 1000, 1, 0)
-		messageModeTextBox.Text = string.format("[%s] ", targetChannel)
+		messageModeTextLabel.Size = UDim2.new(0, 1000, 1, 0)
+		messageModeTextLabel.Text = string.format("[%s] ", targetChannel)
 
-		local xSize = messageModeTextBox.TextBounds.X
-		messageModeTextBox.Size = UDim2.new(0, xSize, 1, 0)
+		local xSize = messageModeTextLabel.TextBounds.X
+		messageModeTextLabel.Size = UDim2.new(0, xSize, 1, 0)
 		textBox.Size = UDim2.new(1, -xSize, 1, 0)
 		textBox.Position = UDim2.new(0, xSize, 0, 0)
 
 	else
-		messageModeTextBox.Text = ""
+		messageModeTextLabel.Text = ""
 		textBox.Size = UDim2.new(1, 0, 1, 0)
 		textBox.Position = UDim2.new(0, 0, 0, 0)
 
@@ -390,8 +396,8 @@ function methods:Update(dtScale)
 	self.GuiObjects.TextLabel.TextStrokeTransparency = self.AnimParams.Text_CurrentAlpha
 	self.GuiObjects.TextBox.TextTransparency = self.AnimParams.Text_CurrentAlpha
 	self.GuiObjects.TextBox.TextStrokeTransparency = self.AnimParams.Text_CurrentAlpha
-	self.GuiObjects.MessageModeTextBox.TextTransparency = self.AnimParams.Text_CurrentAlpha
-	self.GuiObjects.MessageModeTextBox.TextStrokeTransparency = self.AnimParams.Text_CurrentAlpha
+	self.GuiObjects.MessageModeTextLabel.TextTransparency = self.AnimParams.Text_CurrentAlpha
+	self.GuiObjects.MessageModeTextLabel.TextStrokeTransparency = self.AnimParams.Text_CurrentAlpha
 end
 
 --///////////////////////// Constructors
