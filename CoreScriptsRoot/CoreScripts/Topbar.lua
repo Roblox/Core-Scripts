@@ -376,7 +376,7 @@ local function CreateMenuChangedNotifier()
 		return findScreenGuiAncestor(parent)
 	end
 
-	
+
 	local userGuiModuleName = require(GuiRoot.Modules.VR.UserGui).ModuleName
 	GuiService.Changed:connect(function(prop)
 		-- Notify if the selected object has changed and we are not observing it
@@ -696,14 +696,14 @@ local function CreateUsernameHealthMenuItem()
 	end
 
 	local healthColorToPosition = {
-		[Vector3.new(TopbarConstants.HEALTH_RED_COLOR.r, 
-      TopbarConstants.HEALTH_RED_COLOR.g, 
+		[Vector3.new(TopbarConstants.HEALTH_RED_COLOR.r,
+      TopbarConstants.HEALTH_RED_COLOR.g,
       TopbarConstants.HEALTH_RED_COLOR.b)] = 0.1;
-		[Vector3.new(TopbarConstants.HEALTH_YELLOW_COLOR.r, 
-      TopbarConstants.HEALTH_YELLOW_COLOR.g, 
+		[Vector3.new(TopbarConstants.HEALTH_YELLOW_COLOR.r,
+      TopbarConstants.HEALTH_YELLOW_COLOR.g,
       TopbarConstants.HEALTH_YELLOW_COLOR.b)] = 0.5;
-		[Vector3.new(TopbarConstants.HEALTH_GREEN_COLOR.r, 
-      TopbarConstants.HEALTH_GREEN_COLOR.g, 
+		[Vector3.new(TopbarConstants.HEALTH_GREEN_COLOR.r,
+      TopbarConstants.HEALTH_GREEN_COLOR.g,
       TopbarConstants.HEALTH_GREEN_COLOR.b)] = 0.8;
 	}
 	local min = 0.1
@@ -747,7 +747,7 @@ local function CreateUsernameHealthMenuItem()
 				end
 				healthPercent = Util.Clamp(0, 1, healthPercent)
 				local healthColor = HealthbarColorTransferFunction(healthPercent)
-				local thresholdForHurtOverlay = 
+				local thresholdForHurtOverlay =
           humanoid.MaxHealth * TopbarConstants.HEALTH_PERCANTAGE_FOR_OVERLAY
 
 				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth and game.StarterGui:GetCoreGuiEnabled("Health") == true then
@@ -855,11 +855,11 @@ local function CreateLeaderstatsMenuItem()
 					local columnframe = Util.Create'Frame'
 					{
 						Name = "Column" .. tostring(index);
-						Size = UDim2.new(0, 
-              TopbarConstants.COLUMN_WIDTH + (index == numColumns and 0 or TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH), 
+						Size = UDim2.new(0,
+              TopbarConstants.COLUMN_WIDTH + (index == numColumns and 0 or TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH),
               1, 0);
-						Position = UDim2.new(0, 
-              TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH + (TopbarConstants.COLUMN_WIDTH + TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH) * (index-1), 
+						Position = UDim2.new(0,
+              TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH + (TopbarConstants.COLUMN_WIDTH + TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH) * (index-1),
               0, 0);
 						BackgroundTransparency = 1;
 						Parent = leaderstatsContainer;
@@ -898,7 +898,7 @@ local function CreateLeaderstatsMenuItem()
 					count = count + 1
 				end
 			end
-			leaderstatsContainer.Size = UDim2.new(0, 
+			leaderstatsContainer.Size = UDim2.new(0,
         TopbarConstants.COLUMN_WIDTH * count + TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH * count,
         1, 0)
 		end)
@@ -1371,7 +1371,7 @@ local function CreateUserGuiToggleIcon3D(topBarInstance, panel, menubar)
 	VRHub.ModuleOpened.Event:connect(function(moduleName)
 		if moduleName == UserGuiModule.ModuleName then
 			menuItem:SetActive(true)
-		end		
+		end
 	end)
 	VRHub.ModuleClosed.Event:connect(function(moduleName)
 		if moduleName == UserGuiModule.ModuleName then
@@ -1381,7 +1381,7 @@ local function CreateUserGuiToggleIcon3D(topBarInstance, panel, menubar)
 
 	function menuItem:OnClicked(wasActive)
 		UserGuiModule:SetVisible(not wasActive)
-	end	
+	end
 
 	return menuItem
 end
@@ -1502,11 +1502,11 @@ end
 
 -------------------
 
----- Notifications VR -- 
+---- Notifications VR --
 
 local function CreateNotificationsIcon3D(topBarInstance, panel, menubar)
 	local NotificationHubModule = require(GuiRoot.Modules.VR.NotificationHub)
-	
+
 	local menuItem = CreateMenuItem3D(NotificationHubModule.ModuleName)
 	menuItem:SetHoverText("Notifications")
 
@@ -1525,7 +1525,7 @@ local function CreateNotificationsIcon3D(topBarInstance, panel, menubar)
 		Parent = menuItem:GetInstance(),
 
 		BackgroundTransparency = 1,
-		
+
 		Position = UDim2.new(0.5, 0, 0.25, 0),
 		Size = UDim2.new(0, 18, 0, 18),
 
@@ -1575,7 +1575,7 @@ local function CreateNotificationsIcon3D(topBarInstance, panel, menubar)
 			menuItem:SetActive(false)
 		end
 	end)
-	
+
 	return menuItem
 end
 ------------------------
@@ -1643,7 +1643,7 @@ if chatIcon3D then
 	ITEM_ORDER_3D[chatIcon3D] = 4
 end
 if notificationsIcon3D then
-	ITEM_ORDER_3D[notificationsIcon3D] = 5 
+	ITEM_ORDER_3D[notificationsIcon3D] = 5
 end
 
 -------------------------
@@ -1684,8 +1684,8 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 		end
 	end
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
-		local showTopbarChatIcon = enabled and Player.ChatMode == Enum.ChatMode.TextAndMenu
-		local showThree3DChatIcon = coreGuiEnabled and InputService.VREnabled and Player.ChatMode == Enum.ChatMode.TextAndMenu
+		local showTopbarChatIcon = enabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio())
+		local showThree3DChatIcon = coreGuiEnabled and InputService.VREnabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio())
 
 		if showThree3DChatIcon then
 			if chatIcon3D then
@@ -1808,7 +1808,7 @@ local function EnableVR()
 	VRHub.ModuleClosed.Event:connect(function(moduleName)
 		if not VRHub:KeepVRTopbarOpen() then
 			TopbarPanel3D:SetCanFade(true)
-			lookMenuEnabledChanged()		
+			lookMenuEnabledChanged()
 		end
 	end)
 
@@ -1847,7 +1847,7 @@ local function topbarEnabledChanged()
 			Util.SetGUIInsetBounds(0, TopbarConstants.TOPBAR_THICKNESS, 0, 0)
 		end
 	end
-	
+
 
 	topbarEnabledChangedEvent:Fire(topbarEnabled)
 	TopBar:UpdateBackgroundTransparency()

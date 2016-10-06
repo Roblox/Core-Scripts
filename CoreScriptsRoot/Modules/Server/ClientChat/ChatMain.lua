@@ -2,8 +2,6 @@
 --	// Written by: Xsitsu
 --	// Description: Main module to handle initializing chat window UI and hooking up events to individual UI pieces.
 
-local BACKGROUND_FADEOUT_TIME = 0
-
 local moduleApiTable = {}
 
 --// This section of code waits until all of the necessary RemoteEvents are found in EventFolder.
@@ -13,6 +11,7 @@ local moduleApiTable = {}
 --// the rest of the code can interface with and have the guarantee that the RemoteEvents they want
 --// exist with their desired names.
 
+local RunService = game:GetService("RunService")
 local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
@@ -85,6 +84,7 @@ local moduleChannelsBar = require(modulesFolder:WaitForChild("ChannelsBar"))
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local moduleMessageLogDisplay = require(modulesFolder:WaitForChild("MessageLogDisplay"))
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
+local moduleCommandProcessor = require(modulesFolder:WaitForChild("CommandProcessor"))
 
 moduleMessageLabelCreator:RegisterGuiRoot(GuiParent)
 
@@ -92,6 +92,7 @@ local ChatWindow = moduleChatWindow.new()
 local ChatBar = moduleChatBar.new()
 local ChannelsBar = moduleChannelsBar.new()
 local MessageLogDisplay = moduleMessageLogDisplay.new()
+local CommandProcessor = moduleCommandProcessor.new()
 
 ChatWindow:CreateGuiObjects(GuiParent)
 
@@ -379,57 +380,13 @@ local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 	end
 end
 
-local function ProcessChatCommands(message)
-	local processedCommand = false
-
-	if (string.sub(message, 1, 3) == "/c ") then
-		message = string.sub(message, 4)
-		processedCommand = true
-
-		DoSwitchCurrentChannel(message)
-
-		if (not ChatSettings.ShowChannelsBar) then
-			local currentChannel = ChatWindow:GetCurrentChannel()
-			if (currentChannel) then
-				local switchToChannel = ChatWindow:GetChannel(message)
-				if (switchToChannel) then
-					SendMessageToSelfInTargetChannel(string.format("You are now chatting in channel: '%s'", message), currentChannel.Name, {})
-				else
-					SendMessageToSelfInTargetChannel(string.format("You are not in channel: '%s'", message), currentChannel.Name, {ChatColor = Color3.fromRGB(245, 50, 50)})
-				end
-			end
-		end
-
-	elseif (string.sub(message, 1, 4) == "/cls" or string.sub(message, 1, 6) == "/clear") then
-		processedCommand = true
-
-		local currentChannel = ChatWindow:GetCurrentChannel()
-		if (currentChannel) then
-			currentChannel:ClearMessageLog()
-		end
-	end
-
-	--// This is the code that prevents Guests from chatting.
-	--// Guests are generally not allowed to chat, so please do not remove this.
-	if (LocalPlayer.UserId < 0) then
-		processedCommand = true
-
-		local channelObj = ChatWindow:GetCurrentChannel()
-		if (channelObj) then
-			SendMessageToSelfInTargetChannel("Create a free account to get access to chat permissions!", channelObj.Name, {})
-		end
-	end
-
-	return processedCommand
-end
-
 --// Event for making player say chat message.
 ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 	if (enterPressed) then
 		local message = string.sub(ChatBar:GetTextBox().Text, 1, ChatSettings.MaximumMessageLength)
 		ChatBar:GetTextBox().Text = ""
 
-		if (message ~= "" and not ProcessChatCommands(message)) then
+		if (message ~= "" and not CommandProcessor:ProcessChatCommands(message, ChatWindow)) then
 			message = string.gsub(message, "\n", "")
 			message = string.gsub(message, "[ ]+", " ")
 
@@ -548,7 +505,16 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 		end
 
 		if (welcomeMessage ~= "") then
-			channelObj:AddMessageToChannel(welcomeMessage, "WelcomeMessage")
+			welcomeMessageObject = {
+				ID = -1,
+				FromSpeaker = nil,
+				OriginalChannel = channel,
+				IsFiltered = false,
+				Message = welcomeMessage,
+				Time = os.time(),
+				ExtraData = nil,
+			}
+			channelObj:AddMessageToChannel(welcomeMessageObject, "WelcomeMessage")
 		end
 
 		DoFadeInFromNewInformation()
@@ -799,7 +765,16 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 		local channelObj = ChatWindow:GetChannel(channel)
 
 		if (channelObj) then
-			channelObj:AddMessageToChannel(valueTable, "SetCoreMessage")
+			local messageObject = {
+				ID = -1,
+				FromSpeaker = nil,
+				OriginalChannel = channel,
+				IsFiltered = false,
+				Message = valueTable.Text,
+				Time = os.time(),
+				ExtraData = valueTable,
+			}
+			channelObj:AddMessageToChannel(messageObject, "SetCoreMessage")
 			ChannelsBar:UpdateMessagePostedInChannel(channel)
 
 			moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1

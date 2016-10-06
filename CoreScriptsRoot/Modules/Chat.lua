@@ -165,13 +165,13 @@ do
   end
 
   function Util.EaseInOutQuad(t, b, c, d)
-    if t >= d then 
-      return b + c 
+    if t >= d then
+      return b + c
     end
 
     t = t / (d/2);
-    if (t < 1) then 
-      return c/2*t*t + b 
+    if (t < 1) then
+      return c/2*t*t + b
     end;
     t = t - 1;
     return -c/2 * (t*(t-2) - 1) + b;
@@ -608,7 +608,7 @@ end
 InputService.InputBegan:connect(function(inputObject, isProcessed)
     if isProcessed then return end
     local inputType = inputObject.UserInputType
-    if ((inputType == Enum.UserInputType.Touch and  
+    if ((inputType == Enum.UserInputType.Touch and
         inputObject.UserInputState == Enum.UserInputState.Begin) or
       inputType == Enum.UserInputType.MouseButton1) then
       if lastSelectedButton and IsPlayerDropDownEnabled then
@@ -1560,9 +1560,9 @@ local function CreateChatBarWidget(settings)
       end
     end
 
-    GuiRoot.Changed:connect(function(prop) 
-        if (prop == "AbsoluteSize" and not chatRepositioned) then 
-          UpdateChatBarContainerLayout(GuiRoot.AbsoluteSize) 
+    GuiRoot.Changed:connect(function(prop)
+        if (prop == "AbsoluteSize" and not chatRepositioned) then
+          UpdateChatBarContainerLayout(GuiRoot.AbsoluteSize)
         end
       end)
     UpdateChatBarContainerLayout(GuiRoot.AbsoluteSize)
@@ -1606,7 +1606,7 @@ local function CreateChatWindowWidget(settings)
     local point1 = point0 + this.ChatContainer.AbsoluteSize
     -- HACK, this is so the "ChatWindow" includes the chatbar box, TODO: refactor the fadeing code to include the chatbar
     point1 = point1 + Vector2.new(0, 34)
-    return (point0.X <= pt.X and 
+    return (point0.X <= pt.X and
       point1.X >= pt.X and
       point0.Y <= pt.Y and
       point1.Y >= pt.Y)
@@ -2007,30 +2007,30 @@ local function CreateChatWindowWidget(settings)
       end
     end
 
-    container.Changed:connect(function(prop) 
-        if prop == 'AbsoluteSize' then 
-          this:OnResize() 
-        end 
+    container.Changed:connect(function(prop)
+        if prop == 'AbsoluteSize' then
+          this:OnResize()
+        end
       end)
 
     local function UpdateChatWindowLayout(newSize)
       -- A function to position the chat window in light of various factors
-      -- (platform, container window size, presence of performance stats).      
+      -- (platform, container window size, presence of performance stats).
       if container == nil then
         return
       end
 
       -- Account for presence/absence of performance stats buttons.
-      local localPlayer = PlayersService.LocalPlayer  
+      local localPlayer = PlayersService.LocalPlayer
       local isPerformanceStatsVisible = (GameSettings.PerformanceStatsVisible and localPlayer ~= nil)
-      local yOffset = CHAT_WINDOW_Y_OFFSET      
-      if isPerformanceStatsVisible then 
+      local yOffset = CHAT_WINDOW_Y_OFFSET
+      if isPerformanceStatsVisible then
         yOffset = yOffset + StatsUtils.ButtonHeight
       end
       container.Position = UDim2.new(0, 0, 0, yOffset);
 
       -- Account for new screen size, if applicable.
-      if (newSize == nil) then 
+      if (newSize == nil) then
         return
       end
 
@@ -2050,15 +2050,15 @@ local function CreateChatWindowWidget(settings)
 
     -- When quick profiler button row visiblity changes, update position of chat window.
     GameSettings.PerformanceStatsVisibleChanged:connect(function()
-        if not chatRepositioned then 
+        if not chatRepositioned then
           UpdateChatWindowLayout(nil)
         end
       end)
 
-    GuiRoot.Changed:connect(function(prop) 
-        if (prop == "AbsoluteSize" and not chatRepositioned) then 
+    GuiRoot.Changed:connect(function(prop)
+        if (prop == "AbsoluteSize" and not chatRepositioned) then
           UpdateChatWindowLayout(GuiRoot.AbsoluteSize)
-        end 
+        end
       end)
 
     UpdateChatWindowLayout()
@@ -2441,8 +2441,8 @@ local function CreateChat()
 
   local focusCount = 0
   function this:CreateGUI()
-    if (FORCE_CHAT_GUI or 
-      Player.ChatMode == Enum.ChatMode.TextAndMenu and
+    if (FORCE_CHAT_GUI or
+      (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio()) and
       game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne) then
       if NON_CORESCRIPT_MODE then
         local chatGui = Instance.new("ScreenGui")
@@ -2640,7 +2640,7 @@ local function CreateChat()
         panel:SetVisible(this.Visible)
 
         VRHub:FireModuleClosed(thisModuleName)
-      end			
+      end
     end
     this.VisibilityStateChanged:fire(this.Visible)
   end
@@ -2791,7 +2791,7 @@ local moduleApiTable = {}
 -- Main Entry Point
 do
   moduleApiTable.ModuleName = thisModuleName
-  moduleApiTable.KeepVRTopbarOpen = true 
+  moduleApiTable.KeepVRTopbarOpen = true
   moduleApiTable.VRIsExclusive = true
   moduleApiTable.VRClosesNonExclusive = false
   VRHub:RegisterModule(moduleApiTable)

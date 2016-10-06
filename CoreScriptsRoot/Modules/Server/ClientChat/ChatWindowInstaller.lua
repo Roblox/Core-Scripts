@@ -35,6 +35,7 @@ local function Install()
 	LoadModule(script.Parent, "ChatWindow", ChatMain)
 	--LoadModule("SpeakerDatabase", ChatMain)
 	LoadModule(script.Parent, "MessageLabelCreator", ChatMain)
+	LoadModule(script.Parent, "CommandProcessor", ChatMain)
 	LoadModule(script.Parent, "ChannelsTab", ChatMain)
 	LoadModule(script.Parent, "TransparencyTweener", ChatMain)
 	LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatMain)
@@ -48,6 +49,35 @@ local function Install()
 		LoadModule(script.Parent.DefaultClientChatModules, "ChatSettings", ModulesFolder)
 
 		ModulesFolder.Parent = ReplicatedStorage
+		ModulesFolder.Archivable = false
+	end
+
+	local clientChatModules = ReplicatedStorage.ClientChatModules
+	if (not clientChatModules:FindFirstChild("MessageCreatorModules")) then
+		local ModulesFolder = Instance.new("Folder")
+		ModulesFolder.Name = "MessageCreatorModules"
+
+		local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
+
+		for i = 1, #creatorModules do
+			LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, ModulesFolder)
+		end
+
+		ModulesFolder.Parent = clientChatModules
+		ModulesFolder.Archivable = false
+	end
+
+	if (not clientChatModules:FindFirstChild("CommandModules")) then
+		local ModulesFolder = Instance.new("Folder")
+		ModulesFolder.Name = "CommandModules"
+
+		local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
+
+		for i = 1, #commandModules do
+			LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, ModulesFolder)
+		end
+
+		ModulesFolder.Parent = clientChatModules
 		ModulesFolder.Archivable = false
 	end
 
