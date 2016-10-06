@@ -28,9 +28,7 @@ local function onRenderSteppedLast()
 	start = now
 
 	if VRHub.LaserPointer then
-		local cameraSpace = workspace.CurrentCamera.CFrame
-		local laserOriginCFrame = cameraSpace * UserInputService:GetUserCFrame(Enum.UserCFrame.RightHand)
-		VRHub.LaserPointer:update(dt, laserOriginCFrame) --todo update for mobile and no-hands
+		VRHub.LaserPointer:update(dt)
 	end
 end
 
