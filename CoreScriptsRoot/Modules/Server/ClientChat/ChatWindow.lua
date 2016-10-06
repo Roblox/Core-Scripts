@@ -21,7 +21,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
-local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
@@ -350,6 +349,7 @@ function methods:CreateGuiObjects(targetParent)
 	self.GuiObjects.ChatChannelParentFrame = ChatChannelParentFrame
 	self.GuiObjects.ChatResizerFrame = ChatResizerFrame
 	self.GuiObjects.ResizeIcon = ResizeIcon
+	self:AnimGuiObjects()
 end
 
 function methods:RegisterChatBar(ChatBar)
@@ -523,57 +523,50 @@ function methods:ResetResizerPosition()
 end
 
 function methods:FadeOutBackground(duration)
-	--self.ChannelsBar:FadeOutBackground(duration)
-	--self.ChatBar:FadeOutBackground(duration)
-
+	self.ChannelsBar:FadeOutBackground(duration)
 	self.MessageLogDisplay:FadeOutBackground(duration)
-	
-	self.AnimParams.Frame_TargetAlpha = 1
+	self.ChatBar:FadeOutBackground(duration)
+
+	self.AnimParams.Background_TargetTransparency = 1
 end
 
 function methods:FadeInBackground(duration)
-	--self.ChannelsBar:FadeInBackground(duration)
-	--self.ChatBar:FadeInBackground(duration)
+	self.ChannelsBar:FadeInBackground(duration)
 	self.MessageLogDisplay:FadeInBackground(duration)
-	
-	self.AnimParams.Frame_TargetAlpha = 0.8
+	self.ChatBar:FadeInBackground(duration)
+
+	self.AnimParams.Background_TargetTransparency = 0.6
 end
 
 function methods:FadeOutText(duration)
 	self.MessageLogDisplay:FadeOutText(duration)
-
-	self.AnimParams.Text_TargetAlpha = 1
+	self.ChannelsBar:FadeOutText(duration)
 end
 
 function methods:FadeInText(duration)
 	self.MessageLogDisplay:FadeInText(duration)
+	self.ChannelsBar:FadeInText(duration)
+end
 
-	self.AnimParams.Text_TargetAlpha = 0
+function methods:AnimGuiObjects()
+	self.GuiObjects.ChatChannelParentFrame.BackgroundTransparency = self.AnimParams.Background_CurrentTransparency
+	self.GuiObjects.ChatResizerFrame.BackgroundTransparency = self.AnimParams.Background_CurrentTransparency
+	self.GuiObjects.ResizeIcon.ImageTransparency = self.AnimParams.Background_CurrentTransparency
 end
 
 function methods:InitializeAnimParams()
-	self.AnimParams.Frame_TargetAlpha = 0
-	self.AnimParams.Frame_CurrentAlpha = 0
-	
-	self.AnimParams.Text_TargetAlpha = 0
-	self.AnimParams.Text_CurrentAlpha = 0
+	self.AnimParams.Background_TargetTransparency = 0.6
+	self.AnimParams.Background_CurrentTransparency = 0.6
 end
 
 function methods:Update(dtScale)
-	self.AnimParams.Frame_CurrentAlpha = CurveUtil:Expt(self.AnimParams.Frame_CurrentAlpha , self.AnimParams.Frame_TargetAlpha, 0.1, dtScale)
-	self.AnimParams.Text_CurrentAlpha = CurveUtil:Expt(self.AnimParams.Text_CurrentAlpha, self.AnimParams.Text_TargetAlpha, 0.1, dtScale)
-	
-	self.GuiObjects.ChatChannelParentFrame.BackgroundTransparency = self.AnimParams.Frame_CurrentAlpha
-	self.GuiObjects.ChatResizerFrame.BackgroundTransparency = self.AnimParams.Frame_CurrentAlpha 
-	self.GuiObjects.ResizeIcon.ImageTransparency = self.AnimParams.Frame_CurrentAlpha 
-	
-	self.ChatBar:CopyChatWindowParentAnimParams(self.AnimParams)
+	self.AnimParams.Background_CurrentTransparency = CurveUtil:Expt(self.AnimParams.Background_CurrentTransparency , self.AnimParams.Background_TargetTransparency, 0.1, dtScale)
+
+	self:AnimGuiObjects()
+
 	self.ChatBar:Update(dtScale)
-	--[[
-		update self.ChatBar from self.AnimParams.Text_CurrentAlpha
-		update self.ChannelsBar from self.AnimParams.Text_CurrentAlpha
-		update self.MessageLogDisplay from self.AnimParams.Text_CurrentAlpha
-	]]	
+	self.ChannelsBar:Update(dtScale)
+	self.MessageLogDisplay:Update(dtScale)
 end
 
 --///////////////////////// Constructors
@@ -595,13 +588,13 @@ function module.new()
 
 	obj.Visible = true
 	obj.CoreGuiEnabled = true
-	
+
 	obj.AnimParams = {}
-	
+
 	ClassMaker.MakeClass("ChatWindow", obj)
-	
+
 	obj:InitializeAnimParams()
-	
+
 	return obj
 end
 

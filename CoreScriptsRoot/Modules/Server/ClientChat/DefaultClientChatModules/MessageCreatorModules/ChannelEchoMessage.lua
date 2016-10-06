@@ -41,10 +41,46 @@ function CreateChannelEchoMessageLabel(messageData)
 		BaseMessage.Text = string.rep(" ", numNeededSpaces2 + numNeededSpaces) .. newMessageObject.Message
 	end
 
+	local AnimParams = {}
+	AnimParams.Text_TargetTransparency = 0
+	AnimParams.Text_CurrentTransparency = 0
+	AnimParams.TextStroke_TargetTransparency = 0.75
+	AnimParams.TextStroke_CurrentTransparency = 0.75
+
+	local function FadeInFunction(duration)
+		AnimParams.Text_TargetTransparency = 0
+		AnimParams.TextStroke_TargetTransparency = 0.75
+	end
+
+	local function FadeOutFunction(duration)
+		AnimParams.Text_TargetTransparency = 1
+		AnimParams.TextStroke_TargetTransparency = 1
+	end
+
+	local function AnimGuiObjects()
+		BaseMessage.TextTransparency = AnimParams.Text_CurrentTransparency
+		NameButton.TextTransparency = AnimParams.Text_CurrentTransparency
+		ChannelButton.TextTransparency = AnimParams.Text_CurrentTransparency
+
+		BaseMessage.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
+		NameButton.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
+		ChannelButton.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
+	end
+
+	local function UpdateAnimFunction(dtScale, CurveUtil)
+		AnimParams.Text_CurrentTransparency = CurveUtil:Expt(AnimParams.Text_CurrentTransparency, AnimParams.Text_TargetTransparency, 0.1, dtScale)
+		AnimParams.TextStroke_CurrentTransparency = CurveUtil:Expt(AnimParams.TextStroke_CurrentTransparency, AnimParams.TextStroke_TargetTransparency, 0.1, dtScale)
+
+		AnimGuiObjects()
+	end
+
 	return {
 		[util.KEY_BASE_FRAME] = BaseFrame,
 		[util.KEY_BASE_MESSAGE] = BaseMessage,
-		[util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction
+		[util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction,
+		[util.KEY_FADE_IN] = FadeInFunction,
+		[util.KEY_FADE_OUT] = FadeOutFunction,
+		[util.KEY_UPDATE_ANIMATION] = UpdateAnimFunction
 	}
 end
 

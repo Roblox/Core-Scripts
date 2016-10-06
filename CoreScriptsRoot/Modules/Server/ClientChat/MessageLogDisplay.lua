@@ -10,9 +10,9 @@ module.ScrollBarThickness = 4
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
-local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
+local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
@@ -79,7 +79,6 @@ function methods:AddMessage(messageData, messageType)
 	if messageObject == nil then
 		return
 	end
-	self.TextTweener:RegisterTweenObjectProperty(messageObject.Tweener, "Transparency")
 
 	table.insert(self.MessageObjectLog, messageObject)
 	self:PositionMessageLabelInWindow(messageObject)
@@ -91,7 +90,6 @@ function methods:RemoveLastMessage()
 	local lastMessage = self.MessageObjectLog[1]
 	local posOffset = UDim2.new(0, 0, 0, lastMessage.BaseFrame.AbsoluteSize.Y)
 
-	self.TextTweener:UnregisterTweenObject(lastMessage.Tweener)
 	lastMessage:Destroy()
 	table.remove(self.MessageObjectLog, 1)
 
@@ -139,7 +137,6 @@ end
 
 function methods:Clear()
 	for i, v in pairs(self.MessageObjectLog) do
-		self.TextTweener:UnregisterTweenObject(v.Tweener)
 		v:Destroy()
 	end
 	rawset(self, "MessageObjectLog", {})
@@ -160,11 +157,27 @@ function methods:FadeInBackground(duration)
 end
 
 function methods:FadeOutText(duration)
-	self.TextTweener:Tween(duration, 1)
+	for i = 1, #self.MessageObjectLog do
+		if self.MessageObjectLog[i].FadeOutFunction then
+			self.MessageObjectLog[i].FadeOutFunction(duration)
+		end
+	end
 end
 
 function methods:FadeInText(duration)
-	self.TextTweener:Tween(duration, 0)
+	for i = 1, #self.MessageObjectLog do
+		if self.MessageObjectLog[i].FadeInFunction then
+			self.MessageObjectLog[i].FadeInFunction(duration)
+		end
+	end
+end
+
+function methods:Update(dtScale)
+	for i = 1, #self.MessageObjectLog do
+		if self.MessageObjectLog[i].UpdateAnimFunction then
+			self.MessageObjectLog[i].UpdateAnimFunction(dtScale, CurveUtil)
+		end
+	end
 end
 
 --// ToDo: Move to common modules
@@ -188,8 +201,6 @@ function module.new()
 
 	obj.MessageObjectLog = {}
 	obj.ChannelTab = nil
-
-	obj.TextTweener = moduleTransparencyTweener.new()
 
 	obj.Name = "MessageLogDisplay"
 	obj.GuiObject.Name = "Frame_" .. obj.Name

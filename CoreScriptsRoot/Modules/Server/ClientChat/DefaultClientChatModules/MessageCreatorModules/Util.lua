@@ -24,6 +24,9 @@ local KEY_CREATOR_FUNCTION = "MessageCreatorFunc"
 local KEY_BASE_FRAME = "BaseFrame"
 local KEY_BASE_MESSAGE = "BaseMessage"
 local KEY_UPDATE_TEXT_FUNC = "UpdateTextFunction"
+local KEY_FADE_IN = "FadeInFunction"
+local KEY_FADE_OUT = "FadeOutFunction"
+local KEY_UPDATE_ANIMATION = "UpdateAnimFunction"
 
 local module = {}
 local methods = {}
@@ -174,6 +177,9 @@ function module.new()
 	obj.KEY_BASE_FRAME = KEY_BASE_FRAME
 	obj.KEY_BASE_MESSAGE = KEY_BASE_MESSAGE
 	obj.KEY_UPDATE_TEXT_FUNC = KEY_UPDATE_TEXT_FUNC
+	obj.KEY_FADE_IN = KEY_FADE_IN
+	obj.KEY_FADE_OUT =  KEY_FADE_OUT
+	obj.KEY_UPDATE_ANIMATION = KEY_UPDATE_ANIMATION
 
 	return obj
 end

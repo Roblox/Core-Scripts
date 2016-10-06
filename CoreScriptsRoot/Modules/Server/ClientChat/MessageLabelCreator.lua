@@ -12,7 +12,6 @@ local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
 local messageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 local modulesFolder = script.Parent
-local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local moduleObjectPool = require(modulesFolder:WaitForChild("ObjectPool"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
@@ -43,65 +42,35 @@ function GetMessageCreators()
 	return typeToFunction
 end
 
-local function WrapIntoMessageObject(id, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction, ObjectPool)
+function methods:WrapIntoMessageObject(messageData, createdMessageObject)
+	local BaseFrame = createdMessageObject[messageCreatorUtil.KEY_BASE_FRAME]
+	local BaseMessage = createdMessageObject[messageCreatorUtil.KEY_BASE_MESSAGE]
+	local UpdateTextFunction = createdMessageObject[messageCreatorUtil.KEY_UPDATE_TEXT_FUNC]
+	local FadeInFunction = createdMessageObject[messageCreatorUtil.KEY_FADE_IN]
+	local FadeOutFunction = createdMessageObject[messageCreatorUtil.KEY_FADE_OUT]
+	local UpdateAnimFunction = createdMessageObject[messageCreatorUtil.KEY_UPDATE_ANIMATION]
+	if UpdateAnimFunction == nil then
+		print("No update anim function")
+	end
+
 	local obj = {}
 
 	obj.ID = id
 	obj.BaseFrame = BaseFrame
 	obj.BaseMessage = BaseMessage
-	obj.Tweener = Tweener
-	obj.StrongReferences = StrongReferences
 	obj.UpdateTextFunction = UpdateTextFunction or function() warn("NO MESSAGE RESIZE FUNCTION") end
-	obj.ObjectPool = ObjectPool
+	obj.FadeInFunction = FadeInFunction
+	obj.FadeOutFunction = FadeOutFunction
+	obj.UpdateAnimFunction = UpdateAnimFunction
+	obj.ObjectPool = self.ObjectPool
 	obj.Destroyed = false
 
-	function obj:TweenOut(duration)
-		if not Destroyed then
-			self.Tweener:Tween(duration, 1)
-		end
-	end
-
-	function obj:TweenIn(duration)
-		if not self.Destroyed then
-			self.Tweener:Tween(duration, 0)
-		end
-	end
-
 	function obj:Destroy()
-		self.Tweener:UnregisterTweenObject(self)
 		ReturnToObjectPoolRecursive(self.BaseFrame, self.ObjectPool)
 		self.Destroyed = true
 	end
 
 	return obj
-end
-
-function methods:ProcessCreatedMessage(messageData, createdMessageObject)
-	local BaseFrame = createdMessageObject[messageCreatorUtil.KEY_BASE_FRAME]
-	local BaseMessage = createdMessageObject[messageCreatorUtil.KEY_BASE_MESSAGE]
-	local UpdateTextFunction = createdMessageObject[messageCreatorUtil.KEY_UPDATE_TEXT_FUNC]
-
-	local Tweener = moduleTransparencyTweener.new()
-	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextTransparency")
-	Tweener:RegisterTweenObjectProperty(BaseMessage, "TextStrokeTransparency")
-
-	local StrongReferences = {}
-	local function ProcessChild(child)
-		if (child:IsA("TextLabel") or child:IsA("TextButton")) then
-			Tweener:RegisterTweenObjectProperty(child, "TextTransparency")
-			Tweener:RegisterTweenObjectProperty(child, "TextStrokeTransparency")
-			table.insert(StrongReferences, child)
-		elseif (child:IsA("ImageLabel") or child:Is("ImageButton")) then
-			Tweener:RegisterTweenObjectProperty(child, "ImageTransparency")
-			table.insert(StrongReferences, child)
-		end
-	end
-
-	for i, v in pairs(BaseMessage:GetChildren()) do
-		ProcessChild(v)
-	end
-
-	return WrapIntoMessageObject(messageData.ID, BaseFrame, BaseMessage, Tweener, StrongReferences, UpdateTextFunction, self.ObjectPool)
 end
 
 function methods:CreateMessageLabelFromType(messageData, messageType)
@@ -118,12 +87,12 @@ function methods:CreateMessageLabelFromType(messageData, messageType)
 	if self.MessageCreators[messageType] then
 		local createdMessageObject = self.MessageCreators[messageType](messageData)
 		if createdMessageObject then
-			return self:ProcessCreatedMessage(messageData, createdMessageObject)
+			return self:WrapIntoMessageObject(messageData, createdMessageObject)
 		end
 	elseif self.DefaultCreatorType then
 		local createdMessageObject = self.MessageCreators[self.DefaultCreatorType](messageData)
 		if createdMessageObject then
-			return self:ProcessCreatedMessage(messageData, createdMessageObject)
+			return self:WrapIntoMessageObject(messageData, createdMessageObject)
 		end
 	else
 		error("No message creator available for message type: " ..messageType)

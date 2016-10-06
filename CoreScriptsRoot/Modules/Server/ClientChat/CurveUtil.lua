@@ -4,19 +4,29 @@ function CurveUtil:Expt(start, to, pct, dt_scale)
 	if math.abs(to - start) < 0.05 then
 		return to
 	end
-	
+
 	local y = CurveUtil:Expty(start,to,pct,dt_scale)
-			
+
 	--rtv = start + (to - start) * timescaled_friction--
 	local delta = (to - start) * y
 	return start + delta
 end
 
-function CurveUtil:Expty(start, to, pct, dt_scale)	
+function CurveUtil:Expty(start, to, pct, dt_scale)
 	--y = e ^ (-a * timescale)--
 	local friction = 1 - pct
 	local a = -math.log(friction)
 	return 1 - math.exp(-a * dt_scale)
+end
+
+function CurveUtil:Sign(val)
+	if val > 0 then
+		return 1
+	elseif val < 0 then
+		return -1
+	else
+		return 0
+	end
 end
 
 function CurveUtil:BezierValForT(p0, p1, p2, p3, t)
@@ -34,9 +44,9 @@ function CurveUtil:BezierPt2ForT(
 	p2x, p2y,
 	p3x, p3y,
 	t)
-	
+
 	CurveUtil._BezierPt2ForT.x = CurveUtil:BezierValForT(p0x,p1x,p2x,p3x,t)
-	CurveUtil._BezierPt2ForT.y = CurveUtil:BezierValForT(p0y,p1y,p2y,p3y,t)	
+	CurveUtil._BezierPt2ForT.y = CurveUtil:BezierValForT(p0y,p1y,p2y,p3y,t)
 	return CurveUtil._BezierPt2ForT
 end
 
