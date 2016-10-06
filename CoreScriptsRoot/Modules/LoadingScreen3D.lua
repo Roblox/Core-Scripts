@@ -18,6 +18,11 @@ local GuiService = game:GetService('GuiService')
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Util = require(RobloxGui.Modules.Settings.Utility)
 
+local FixLoadingScreenAngleFlag = false
+do
+	local success, flagValue = pcall(function() return settings():GetFFlag("FixLoadingScreenAngle") end)
+	FixLoadingScreenAngleFlag = success and flagValue
+end
 
 local function FadeElements(element, newValue, duration)
 	duration = duration or 0.5
@@ -250,6 +255,10 @@ end
 local function CleanUp()
 	if CleanedUp then return end
 	CleanedUp = true
+
+	FadeElements(loadingSurfaceGui, 1, SECOND_TO_FADE)
+	wait(SECOND_TO_FADE)
+
 	RunService:UnbindFromRenderStep("LoadingGui3D")
 	surfaceGuiAdorn.Parent = nil
 end
@@ -265,11 +274,7 @@ end
 
 local function OnReplicatingFinishedAsync()
 	local function OnGameLoaded()
-		if not CleanedUp then
-			FadeElements(loadingSurfaceGui, 1, SECOND_TO_FADE)
-			wait(SECOND_TO_FADE)
-			CleanUp()
-		end
+		CleanUp()
 	end
 
 	if game:IsLoaded() then
@@ -281,11 +286,7 @@ local function OnReplicatingFinishedAsync()
 end
 
 local function OnDefaultLoadingGuiRemoved()
-	if not CleanedUp then
-		FadeElements(loadingSurfaceGui, 1, SECOND_TO_FADE)
-		wait(SECOND_TO_FADE)
-		CleanUp()
-	end
+	CleanUp()
 end
 
 
@@ -298,6 +299,17 @@ local function UpdateSurfaceGuiPosition()
 		local cameraRenderCFrame = camera:GetRenderCFrame()
 
 		surfaceGuiAdorn.CFrame = CFrame.new(cameraRenderCFrame.p + cameraHorizontalVector * GUI_DISTANCE_FROM_CAMERA, cameraRenderCFrame.p)
+	end
+end
+
+local function FixCameraOrientation(camera)
+	if camera and FixLoadingScreenAngleFlag then
+		local currentCFrame = camera.CFrame
+		local _, yaw, roll = currentCFrame:toEulerAnglesXYZ()
+		local cameraFocus = camera.Focus
+		camera.CFrame = CFrame.Angles(0, yaw, roll) + currentCFrame.p
+		-- Need to fix the focus or else it will just reset the cframe
+		camera.Focus = CFrame.new(camera.CFrame.p + camera.CFrame.lookVector * (cameraFocus.p - currentCFrame.p).magnitude)
 	end
 end
 
@@ -318,6 +330,8 @@ do
 	end)
 	UpdateSurfaceGuiPosition()
 	UpdateLayout()
+
+	FixCameraOrientation(workspace.CurrentCamera)
 end
 
 GameInfoProvider:LoadAssetsAsync()
