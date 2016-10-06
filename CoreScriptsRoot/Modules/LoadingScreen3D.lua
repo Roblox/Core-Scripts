@@ -251,6 +251,8 @@ local function UpdateLayout(delta)
 
 end
 
+local CameraChangedConn = nil
+local WorkspaceChangedConn = nil
 
 local function CleanUp()
 	if CleanedUp then return end
@@ -261,6 +263,14 @@ local function CleanUp()
 
 	RunService:UnbindFromRenderStep("LoadingGui3D")
 	surfaceGuiAdorn.Parent = nil
+	if CameraChangedConn then
+		CameraChangedConn:disconnect()
+		CameraChangedConn = nil
+	end
+	if WorkspaceChangedConn then
+		WorkspaceChangedConn:disconnect()
+		WorkspaceChangedConn = nil
+	end
 end
 
 local function OnGameInfoLoaded()
@@ -332,6 +342,26 @@ do
 	UpdateLayout()
 
 	FixCameraOrientation(workspace.CurrentCamera)
+
+	local function connectCameraEvent()
+		if workspace.CurrentCamera then
+			if CameraChangedConn then
+				CameraChangedConn:disconnect()
+			end
+			CameraChangedConn = workspace.CurrentCamera.Changed:connect(function(prop)
+				if prop == 'CFrame' then
+					UpdateSurfaceGuiPosition()
+				end
+			end)
+		end
+	end
+	WorkspaceChangedConn = workspace.Changed:connect(function(prop)
+		if prop == 'CurrentCamera' then
+			connectCameraEvent()
+		end
+	end)
+
+	connectCameraEvent()
 end
 
 GameInfoProvider:LoadAssetsAsync()
