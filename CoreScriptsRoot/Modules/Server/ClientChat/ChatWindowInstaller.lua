@@ -41,6 +41,7 @@ local function Install()
 	LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatMain)
 	LoadModule(script.Parent.Parent.Parent.Common, "ObjectPool", ChatMain)
 	LoadModule(script.Parent, "MessageSender", ChatMain)
+	LoadModule(script.Parent, "CurveUtil", ChatMain)
 
 	if (not ReplicatedStorage:FindFirstChild("ClientChatModules")) then
 		local ModulesFolder = Instance.new("Folder")
