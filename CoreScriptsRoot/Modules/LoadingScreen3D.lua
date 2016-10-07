@@ -18,7 +18,6 @@ local GuiService = game:GetService('GuiService')
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Util = require(RobloxGui.Modules.Settings.Utility)
 
-
 local function FadeElements(element, newValue, duration)
 	duration = duration or 0.5
 	if element == nil then return end
@@ -246,12 +245,26 @@ local function UpdateLayout(delta)
 
 end
 
+local CameraChangedConn = nil
+local WorkspaceChangedConn = nil
 
 local function CleanUp()
 	if CleanedUp then return end
 	CleanedUp = true
+
+	FadeElements(loadingSurfaceGui, 1, SECOND_TO_FADE)
+	wait(SECOND_TO_FADE)
+
 	RunService:UnbindFromRenderStep("LoadingGui3D")
 	surfaceGuiAdorn.Parent = nil
+	if CameraChangedConn then
+		CameraChangedConn:disconnect()
+		CameraChangedConn = nil
+	end
+	if WorkspaceChangedConn then
+		WorkspaceChangedConn:disconnect()
+		WorkspaceChangedConn = nil
+	end
 end
 
 local function OnGameInfoLoaded()
@@ -265,11 +278,7 @@ end
 
 local function OnReplicatingFinishedAsync()
 	local function OnGameLoaded()
-		if not CleanedUp then
-			FadeElements(loadingSurfaceGui, 1, SECOND_TO_FADE)
-			wait(SECOND_TO_FADE)
-			CleanUp()
-		end
+		CleanUp()
 	end
 
 	if game:IsLoaded() then
@@ -281,11 +290,7 @@ local function OnReplicatingFinishedAsync()
 end
 
 local function OnDefaultLoadingGuiRemoved()
-	if not CleanedUp then
-		FadeElements(loadingSurfaceGui, 1, SECOND_TO_FADE)
-		wait(SECOND_TO_FADE)
-		CleanUp()
-	end
+	CleanUp()
 end
 
 
@@ -294,10 +299,8 @@ local function UpdateSurfaceGuiPosition()
 	if camera then
 		local cameraCFrame = camera.CFrame
 		local cameraLook = cameraCFrame.lookVector
-		local cameraHorizontalVector = Vector3.new(cameraLook.X, 0, cameraLook.Z).unit
-		local cameraRenderCFrame = camera:GetRenderCFrame()
 
-		surfaceGuiAdorn.CFrame = CFrame.new(cameraRenderCFrame.p + cameraHorizontalVector * GUI_DISTANCE_FROM_CAMERA, cameraRenderCFrame.p)
+		surfaceGuiAdorn.CFrame = (cameraCFrame * CFrame.Angles(0,math.pi,0)) + cameraLook * GUI_DISTANCE_FROM_CAMERA
 	end
 end
 
@@ -318,6 +321,26 @@ do
 	end)
 	UpdateSurfaceGuiPosition()
 	UpdateLayout()
+
+	local function connectCameraEvent()
+		if workspace.CurrentCamera then
+			if CameraChangedConn then
+				CameraChangedConn:disconnect()
+			end
+			CameraChangedConn = workspace.CurrentCamera.Changed:connect(function(prop)
+				if prop == 'CFrame' then
+					UpdateSurfaceGuiPosition()
+				end
+			end)
+		end
+	end
+	WorkspaceChangedConn = workspace.Changed:connect(function(prop)
+		if prop == 'CurrentCamera' then
+			connectCameraEvent()
+		end
+	end)
+
+	connectCameraEvent()
 end
 
 GameInfoProvider:LoadAssetsAsync()
