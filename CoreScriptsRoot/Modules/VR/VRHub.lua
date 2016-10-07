@@ -21,10 +21,10 @@ local vrUpdateRenderstepName = HttpService:GenerateGUID(true)
 
 VRHub.LaserPointer = nil
 
-local start, dt = tick(), 1/60
+local start = tick()
 local function onRenderSteppedLast()
 	local now = tick()
-	dt = now - start
+	local dt = now - start
 	start = now
 
 	if VRHub.LaserPointer then

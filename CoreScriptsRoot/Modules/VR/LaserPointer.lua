@@ -78,8 +78,8 @@ local TELEPORT = {
 	ARC_COLOR_BAD = fromLinearRGB(Color3.fromRGB(253, 68, 72)),
 	ARC_THICKNESS = 0.05,
 
-	PLOP_GOOD = "rbxasset://textures/ui/VR/VR Pointer Disc Blue.png",
-	PLOP_BAD = "rbxasset://textures/ui/VR/VR Pointer Disc Red.png",
+	PLOP_GOOD = "rbxasset://textures/ui/VR/VRPointerDiscBlue.png",
+	PLOP_BAD = "rbxasset://textures/ui/VR/VRPointerDiscRed.png",
 	PLOP_BALL_COLOR_GOOD = BrickColor.new("Bright green"),
 	PLOP_BALL_COLOR_BAD = BrickColor.new("Bright red"),
 	PLOP_BALL_SIZE = 0.5,
@@ -94,7 +94,7 @@ local TELEPORT = {
 
 	MIN_VELOCITY = 10,
 	RANGE_T_EXP = 2,
-	G = 50,
+	G = 50, -- Gravity constant for parabola
 
 	PULSE_DURATION = 0.8,
 	PULSE_PERIOD = 1,
@@ -113,9 +113,11 @@ local TELEPORT = {
 	FADE_IN_DURATION = 0.125,
 
 	CLEAR_AABB_SIZE = Vector3.new(2.5, 4, 2.5),
+	CLEAR_TEST_ENABLED = false,
 
-	SUCCESS_SOUND = "rbxassetid://147722227",
-	FAIL_SOUND = "rbxassetid://138087015",
+	SUCCESS_SOUND = "", --Unused for now
+	FAIL_SOUND = "", --Unused for now
+	SOUNDS_ENABLED = false,
 
 	PATH_RECOMPUTE_DIST_THRESHOLD = 4,
 
@@ -132,7 +134,7 @@ local LASER = {
 
 	MAX_DISTANCE = 100,
 
-	G = 0,
+	G = 0, -- Gravity constant for parabola; in this case we want a laser/straight line
 
 	--Couldn't figure out a good name for this. This is the maximum angle that the parabola's hit point
 	--can be from the laser's hit point when switching to laser pointer mode solely from the parabola hitting
@@ -235,7 +237,7 @@ function LaserPointer.new()
 			Shape = Enum.PartType.Ball,
 			Size = identityVector3 * TELEPORT.PLOP_BALL_SIZE
 		}
-		self.plopAdorn = Utility:Create("ImageHandleAdornment") { --this feels hacky, but no good alternatives for unlit image in 3D that aren't SurfaceGuis w/ ImageLabels
+		self.plopAdorn = Utility:Create("ImageHandleAdornment") {
 			Name = "LaserPointerTeleportPlopAdorn",
 			Parent = self.plopPart,
 			Adornee = self.plopPart,
@@ -251,28 +253,31 @@ function LaserPointer.new()
 			Transparency = 0.5
 		}
 
-		--I want to nuke this part, but for now it's a necessary evil or very bad things happen when you try to teleport
-		--where you don't fit...
-		self.collisionTestPart = Utility:Create("Part") {
-			Name = "LaserPointerTeleportCollisionTester",
-			Size = TELEPORT.CLEAR_AABB_SIZE,
-			Transparency = 1,
-			Anchored = true,
-			CanCollide = true,
-			Parent = workspace.CurrentCamera,
-			CFrame = CFrame.new(1e10, 1e10, 1e10)
-		}
+		if TELEPORT.CLEAR_TEST_ENABLED then
+			--TODO: Before re-enabling CLEAR_TEST_ENABLED, find a better solution
+			self.collisionTestPart = Utility:Create("Part") {
+				Name = "LaserPointerTeleportCollisionTester",
+				Size = TELEPORT.CLEAR_AABB_SIZE,
+				Transparency = 1,
+				Anchored = true,
+				CanCollide = true,
+				Parent = workspace.CurrentCamera,
+				CFrame = CFrame.new(1e10, 1e10, 1e10)
+			}
+		end
 
-		self.teleportSuccessSound = Utility:Create("Sound") {
-			Name = "TeleportSuccessSound",
-			SoundId = TELEPORT.SUCCESS_SOUND,
-			Parent = self.originPart
-		}
-		self.teleportFailSound = Utility:Create("Sound") {
-			Name = "TeleportFailSound",
-			SoundId = TELEPORT.FAIL_SOUND,
-			Parent = self.originPart
-		}
+		if TELEPORT.SOUNDS_ENABLED then
+			self.teleportSuccessSound = Utility:Create("Sound") {
+				Name = "TeleportSuccessSound",
+				SoundId = TELEPORT.SUCCESS_SOUND,
+				Parent = self.originPart
+			}
+			self.teleportFailSound = Utility:Create("Sound") {
+				Name = "TeleportFailSound",
+				SoundId = TELEPORT.FAIL_SOUND,
+				Parent = self.originPart
+			}
+		end
 	end
 
 	do --Event connections and final setup
@@ -549,7 +554,9 @@ do --Action functions
 
 		if teleportValid then
 			--play teleport success sound
-			self.teleportSuccessSound:Play()
+			if TELEPORT.SOUNDS_ENABLED then
+				self.teleportSuccessSound:Play()
+			end
 			self.teleporting = true
 
 			wait(FADE_OUT_DURATION)
@@ -563,7 +570,9 @@ do --Action functions
 			self.teleporting = false
 		else
 			--play teleport failed sound
-			self.teleportFailSound:Play()
+			if TELEPORT.SOUNDS_ENABLED then
+				self.teleportFailSound:Play()
+			end
 		end
 	end
 
@@ -635,25 +644,27 @@ do --Laser/teleport functions
 			return false
 		end
 
-		local bbPos = point
-		local halfBbSize = TELEPORT.CLEAR_AABB_SIZE * 0.5
-		local minBound = Vector3.new(bbPos.X - halfBbSize.X, bbPos.Y, bbPos.Z - halfBbSize.Z)
-		local maxBound = minBound + TELEPORT.CLEAR_AABB_SIZE
+		if TELEPORT.CLEAR_TEST_ENABLED then
+			local bbPos = point
+			local halfBbSize = TELEPORT.CLEAR_AABB_SIZE * 0.5
+			local minBound = Vector3.new(bbPos.X - halfBbSize.X, bbPos.Y, bbPos.Z - halfBbSize.Z)
+			local maxBound = minBound + TELEPORT.CLEAR_AABB_SIZE
 
-		local theta = math.rad(90) - math.asin(normal.Y)
-		local slopeOffset = math.sin(theta) * math.sqrt(halfBbSize.X^2 + halfBbSize.Z^2)
-		self.collisionTestPart.CFrame = CFrame.new(bbPos + Vector3.new(0, (TELEPORT.CLEAR_AABB_SIZE.Y / 2) + slopeOffset + 0.1, 0))
-		
-		--workspace:FindPartsInRegion3 uses AABBs of parts, which means slopes make really big boxes. No good for checking occlusion.
-		--Using an arbitary part here sounds nasty as an implementation detail, but the concept seems sound.
-		--Getting the part out of the workspace entirely would be a good long-term solution.
-		local foundParts = self.collisionTestPart:GetTouchingParts()
-		--send it far away so it doesn't interfere with devs (I really hate doing this)
-		self.collisionTestPart.CFrame = CFrame.new(1e10, 1e10, 1e10)
+			local theta = math.rad(90) - math.asin(normal.Y)
+			local slopeOffset = math.sin(theta) * math.sqrt(halfBbSize.X^2 + halfBbSize.Z^2)
+			self.collisionTestPart.CFrame = CFrame.new(bbPos + Vector3.new(0, (TELEPORT.CLEAR_AABB_SIZE.Y / 2) + slopeOffset + 0.1, 0))
+			
+			--workspace:FindPartsInRegion3 uses AABBs of parts, which means slopes make really big boxes. No good for checking occlusion.
+			--Using an arbitary part here sounds nasty as an implementation detail, but the concept seems sound.
+			--Getting the part out of the workspace entirely would be a good long-term solution.
+			local foundParts = self.collisionTestPart:GetTouchingParts()
+			--send it far away so it doesn't interfere with devs (I really hate doing this)
+			self.collisionTestPart.CFrame = CFrame.new(1e10, 1e10, 1e10)
 
-		for i, v in pairs(foundParts) do
-			if v ~= self.plopPart and v ~= self.plopBall and not v:IsDescendantOf(LocalPlayer.Character) then
-				return false
+			for i, v in pairs(foundParts) do
+				if v ~= self.plopPart and v ~= self.plopBall and not v:IsDescendantOf(LocalPlayer.Character) then
+					return false
+				end
 			end
 		end
 
@@ -798,14 +809,15 @@ do --Laser/teleport functions
 			local ballWave = applyExpCurve(math.sin((now * 2 * math.pi) / TELEPORT.BALL_WAVE_PERIOD), TELEPORT.BALL_WAVE_EXP)
 			ballHeight = TELEPORT.BALL_WAVE_START + (ballWave * TELEPORT.BALL_WAVE_AMPLITUDE)
 		else
-			ballHeight = 0--TELEPORT.BALL_WAVE_AMPLITUDE
+			--If the teleport isn't valid, just lock the ball in place.
+			ballHeight = 0
 		end
 
 		self.plopPart.CFrame = plopCF
 		self.plopBall.CFrame = plopCF * CFrame.new(0, 0, -ballHeight)
 
 		--Handle the pulse animation
-		--We're basically scheduling it to begin every TELEPORT.PULSE_PERIOD seconds,
+		--We're scheduling it to begin every TELEPORT.PULSE_PERIOD seconds
 		--and the animation runs for TELEPORT.PULSE_DURATION seconds. TELEPORT.PULSE_EXP
 		--affects the growth rate of the pulse size; ^2 is a good look, starts slow and accelerates.
 		local timeSincePulseStart = now % TELEPORT.PULSE_PERIOD

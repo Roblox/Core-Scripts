@@ -701,16 +701,16 @@ function Subpanel.new(parentPanel, guiElement)
 	self.parentPanel = parentPanel
 	self.guiElement = guiElement
 	self.lastParent = guiElement.Parent
-	self.ancestryConn = false
-	self.changedConn = false
+	self.ancestryConn = nil
+	self.changedConn = nil
 
 	self.lookAtPixel = Vector2.new(-1, -1)
 	self.cursorPos = Vector2.new(-1, -1)
 	self.lookedAt = false
 
-	self.part = false
-	self.gui = false
-	self.guiSurrogate = false
+	self.part = nil
+	self.gui = nil
+	self.guiSurrogate = nil
 
 	self.depthOffset = 0
 
