@@ -81,7 +81,7 @@ end
 function Http.RbxApiGetAsync(path, throttlePriority, returnRaw)
     -- throttlePriority: defaults to Enum.ThrottlingPriority.Default through reflection
     local success, result = pcall(function()
-        return HttpRbxApiService:GetAsync(path, true, throttlePriority)
+        return HttpRbxApiService:GetAsync(path, throttlePriority)
     end)
     if not success then
         print("Http.RbxApiGetAsync() failed because", result, "for path:", path)
@@ -99,7 +99,7 @@ function Http.RbxApiPostAsync(path, params, throttlePriority, contentType, retur
     -- throttlePriority: defaults to Enum.ThrottlingPriority.Default through reflection
     -- contentType: defaults to Enum.HttpContentType.ApplicationJson through reflection
     local success, result = pcall(function()
-        return HttpRbxApiService:PostAsync(path, params, true, throttlePriority, contentType)
+        return HttpRbxApiService:PostAsync(path, params, throttlePriority, contentType)
     end)
 
     if not success then

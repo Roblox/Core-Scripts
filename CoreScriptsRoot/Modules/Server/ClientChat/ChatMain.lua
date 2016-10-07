@@ -13,6 +13,7 @@ local moduleApiTable = {}
 --// the rest of the code can interface with and have the guarantee that the RemoteEvents they want
 --// exist with their desired names.
 
+local RunService = game:GetService("RunService")
 local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
@@ -99,7 +100,9 @@ ChatWindow:RegisterChatBar(ChatBar)
 ChatWindow:RegisterChannelsBar(ChannelsBar)
 ChatWindow:RegisterMessageLogDisplay(MessageLogDisplay)
 
-local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 MessageSender:RegisterSayMessageFunction(EventFolder.SayMessageRequest)
@@ -409,7 +412,7 @@ local function ProcessChatCommands(message)
 
 	--// This is the code that prevents Guests from chatting.
 	--// Guests are generally not allowed to chat, so please do not remove this.
-	if (LocalPlayer.UserId < 0) then
+	if (LocalPlayer.UserId < 0 and not RunService:IsStudio()) then
 		processedCommand = true
 
 		local channelObj = ChatWindow:GetCurrentChannel()
@@ -451,6 +454,12 @@ end)
 EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
+		if not ChatSettings.ShowUserOwnFilteredMessage then
+			if (messageData.FromSpeaker == LocalPlayer.Name) then
+				messageData.IsFiltered = true
+			end
+		end
+
 		channelObj:AddMessageToChannel(messageData, "Message")
 
 		if (messageData.FromSpeaker ~= LocalPlayer.Name) then
@@ -461,7 +470,7 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
 			generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 			if (generalChannel) then
-				generalChannel:AddMessageToChannel(messsageData, "ChannelEchoMessage")
+				generalChannel:AddMessageToChannel(messageData, "ChannelEchoMessage")
 			end
 		end
 
@@ -540,7 +549,16 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 		end
 
 		if (welcomeMessage ~= "") then
-			channelObj:AddMessageToChannel(welcomeMessage, "WelcomeMessage")
+			welcomeMessageObject = {
+				ID = -1,
+				FromSpeaker = nil,
+				OriginalChannel = channel,
+				IsFiltered = false,
+				Message = welcomeMessage,
+				Time = os.time(),
+				ExtraData = nil,
+			}
+			channelObj:AddMessageToChannel(welcomeMessageObject, "WelcomeMessage")
 		end
 
 		DoFadeInFromNewInformation()
@@ -791,7 +809,16 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 		local channelObj = ChatWindow:GetChannel(channel)
 
 		if (channelObj) then
-			channelObj:AddMessageToChannel(valueTable, "SetCoreMessage")
+			local messageObject = {
+				ID = -1,
+				FromSpeaker = nil,
+				OriginalChannel = channel,
+				IsFiltered = false,
+				Message = valueTable.Text,
+				Time = os.time(),
+				ExtraData = valueTable,
+			}
+			channelObj:AddMessageToChannel(messageObject, "SetCoreMessage")
 			ChannelsBar:UpdateMessagePostedInChannel(channel)
 
 			moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1

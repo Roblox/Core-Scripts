@@ -2743,7 +2743,7 @@ do
 			permissions.IsCreator = false
 			local success, result = pcall(function()
 				local url = string.format("/users/%d/canmanage/%d", game:GetService("Players").LocalPlayer.userId, game.PlaceId)
-				return game:GetService('HttpRbxApiService'):GetAsync(url, false, Enum.ThrottlingPriority.Default)
+				return game:GetService('HttpRbxApiService'):GetAsync(url, Enum.ThrottlingPriority.Default)
 			end)
 			if success and type(result) == "string" then
 				-- API returns: {"Success":BOOLEAN,"CanManage":BOOLEAN}

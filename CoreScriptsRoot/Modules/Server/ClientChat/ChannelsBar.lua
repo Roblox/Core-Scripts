@@ -8,12 +8,14 @@ local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui
 
 --////////////////////////////// Include
 --//////////////////////////////////////
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleChannelsTab = require(modulesFolder:WaitForChild("ChannelsTab"))
 local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
-local ChatSettings = require(modulesFolder:WaitForChild("ChatSettings"))
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////

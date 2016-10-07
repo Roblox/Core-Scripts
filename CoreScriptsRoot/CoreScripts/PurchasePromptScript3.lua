@@ -979,7 +979,7 @@ end
 -- return success and isAvailable
 local function isMarketplaceAvailable()
 	local success, result = pcall(function()
-		return HttpRbxApiService:GetAsync("my/economy-status", false,
+		return HttpRbxApiService:GetAsync("my/economy-status",
 			Enum.ThrottlingPriority.Extreme)
 	end)
 	if not success then
@@ -1062,7 +1062,7 @@ else
 		local apiPath = platform == Enum.Platform.XBoxOne and 'my/platform-currency-budget' or 'currency/balance'
 
 		local success, result = pcall(function()
-			return HttpRbxApiService:GetAsync(apiPath, true)
+			return HttpRbxApiService:GetAsync(apiPath)
 		end)
 
 		if not success then
@@ -1340,7 +1340,7 @@ local function onAcceptPurchase()
 		end
 	else
 		submitPurchase = function()
-			return HttpRbxApiService:PostAsync(apiPath, params, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
 		end
 	end
 

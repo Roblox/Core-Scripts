@@ -215,8 +215,8 @@ local function setAvatarIconAsync(player, iconImage)
 
   local thumbnailLoader = nil
   pcall(function()
-      thumbnailLoader = require(RobloxGui.Modules.ThumbnailLoader)
-    end)
+    thumbnailLoader = require(RobloxGui.Modules.Shell.ThumbnailLoader)
+  end)
 
   local isFinalSuccess = false
   if thumbnailLoader then
