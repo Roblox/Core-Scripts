@@ -44,8 +44,8 @@ end
 
 function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 	local BaseFrame = createdMessageObject[messageCreatorUtil.KEY_BASE_FRAME]
-	local BaseMessage = createdMessageObject[messageCreatorUtil.KEY_BASE_MESSAGE]
 	local UpdateTextFunction = createdMessageObject[messageCreatorUtil.KEY_UPDATE_TEXT_FUNC]
+	local GetHeightFunction = createdMessageObject[messageCreatorUtil.KEY_GET_HEIGHT]
 	local FadeInFunction = createdMessageObject[messageCreatorUtil.KEY_FADE_IN]
 	local FadeOutFunction = createdMessageObject[messageCreatorUtil.KEY_FADE_OUT]
 	local UpdateAnimFunction = createdMessageObject[messageCreatorUtil.KEY_UPDATE_ANIMATION]
@@ -57,8 +57,8 @@ function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 
 	obj.ID = id
 	obj.BaseFrame = BaseFrame
-	obj.BaseMessage = BaseMessage
 	obj.UpdateTextFunction = UpdateTextFunction or function() warn("NO MESSAGE RESIZE FUNCTION") end
+	obj.GetHeightFunction = GetHeightFunction
 	obj.FadeInFunction = FadeInFunction
 	obj.FadeOutFunction = FadeOutFunction
 	obj.UpdateAnimFunction = UpdateAnimFunction

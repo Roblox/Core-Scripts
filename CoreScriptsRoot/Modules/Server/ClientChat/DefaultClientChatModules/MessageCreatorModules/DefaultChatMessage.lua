@@ -35,20 +35,30 @@ function CreateMessageLabel(messageData)
 		BaseMessage.Text = string.rep(" ", numNeededSpaces) .. newMessageObject.Message
 	end
 
+	local function GetHeightFunction()
+		return util:GetMessageHeight(BaseMessage, BaseFrame)
+	end
+
 	local AnimParams = {}
 	AnimParams.Text_TargetTransparency = 0
 	AnimParams.Text_CurrentTransparency = 0
+	AnimParams.Text_NormalizedExptValue = 1
 	AnimParams.TextStroke_TargetTransparency = 0.75
 	AnimParams.TextStroke_CurrentTransparency = 0.75
+	AnimParams.TextStroke_NormalizedExptValue = 1
 
-	local function FadeInFunction(duration)
+	local function FadeInFunction(duration, CurveUtil)
 		AnimParams.Text_TargetTransparency = 0
 		AnimParams.TextStroke_TargetTransparency = 0.75
+		AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
+		AnimParams.TextStroke_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 	end
 
-	local function FadeOutFunction(duration)
+	local function FadeOutFunction(duration, CurveUtil)
 		AnimParams.Text_TargetTransparency = 1
 		AnimParams.TextStroke_TargetTransparency = 1
+		AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
+		AnimParams.TextStroke_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 	end
 
 	local function AnimGuiObjects()
@@ -60,16 +70,26 @@ function CreateMessageLabel(messageData)
 	end
 
 	local function UpdateAnimFunction(dtScale, CurveUtil)
-		AnimParams.Text_CurrentTransparency = CurveUtil:Expt(AnimParams.Text_CurrentTransparency, AnimParams.Text_TargetTransparency, 0.1, dtScale)
-		AnimParams.TextStroke_CurrentTransparency = CurveUtil:Expt(AnimParams.TextStroke_CurrentTransparency, AnimParams.TextStroke_TargetTransparency, 0.1, dtScale)
+		AnimParams.Text_CurrentTransparency = CurveUtil:Expt(
+				AnimParams.Text_CurrentTransparency,
+				AnimParams.Text_TargetTransparency,
+				AnimParams.Text_NormalizedExptValue,
+				dtScale
+		)
+		AnimParams.TextStroke_CurrentTransparency = CurveUtil:Expt(
+				AnimParams.TextStroke_CurrentTransparency,
+				AnimParams.TextStroke_TargetTransparency,
+				AnimParams.TextStroke_NormalizedExptValue,
+				dtScale
+		)
 
 		AnimGuiObjects()
 	end
 
 	return {
     [util.KEY_BASE_FRAME] = BaseFrame,
-    [util.KEY_BASE_MESSAGE] = BaseMessage,
     [util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction,
+		[util.KEY_GET_HEIGHT] = GetHeightFunction,
 		[util.KEY_FADE_IN] = FadeInFunction,
 		[util.KEY_FADE_OUT] = FadeOutFunction,
 		[util.KEY_UPDATE_ANIMATION] = UpdateAnimFunction

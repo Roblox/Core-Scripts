@@ -300,6 +300,7 @@ function methods:FadeOutBackground(duration)
 	end
 
 	self.AnimParams.Background_TargetTransparency = 1
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeInBackground(duration)
@@ -308,6 +309,7 @@ function methods:FadeInBackground(duration)
 	end
 
 	self.AnimParams.Background_TargetTransparency = 0.6
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeOutText(duration)
@@ -332,6 +334,7 @@ end
 function methods:InitializeAnimParams()
 	self.AnimParams.Background_TargetTransparency = 0.6
 	self.AnimParams.Background_CurrentTransparency = 0.6
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(0)
 end
 
 function methods:Update(dtScale)
@@ -339,7 +342,12 @@ function methods:Update(dtScale)
 		channelObj:Update(dtScale)
 	end
 
-	self.AnimParams.Background_CurrentTransparency = CurveUtil:Expt(self.AnimParams.Background_CurrentTransparency, self.AnimParams.Background_TargetTransparency, 0.1, dtScale)
+	self.AnimParams.Background_CurrentTransparency = CurveUtil:Expt(
+			self.AnimParams.Background_CurrentTransparency,
+			self.AnimParams.Background_TargetTransparency,
+			self.AnimParams.Background_NormalizedExptValue,
+			dtScale
+	)
 
 	self:AnimGuiObjects()
 end

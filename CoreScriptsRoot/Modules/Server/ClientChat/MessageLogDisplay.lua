@@ -104,13 +104,11 @@ function methods:PositionMessageLabelInWindow(messageObject)
 	self:WaitUntilParentedCorrectly()
 
 	local baseFrame = messageObject.BaseFrame
-	local baseMessage = messageObject.BaseMessage
 
 	baseFrame.Parent = self.Scroller
 	baseFrame.Position = UDim2.new(0, 0, 0, self.Scroller.CanvasSize.Y.Offset)
 
-	local textBoundsSize = moduleMessageLabelCreator:GetStringTextBounds(baseMessage.Text, baseMessage.Font, baseMessage.FontSize, UDim2.new(0, baseFrame.AbsoluteSize.X, 0, 1000))
-	baseFrame.Size = UDim2.new(1, 0, 0, textBoundsSize.Y)
+	baseFrame.Size = UDim2.new(1, 0, 0, messageObject.GetHeightFunction())
 
 	local scrollBarBottomPosition = (self.Scroller.CanvasSize.Y.Offset - self.Scroller.AbsoluteSize.Y)
 	local reposition = (self.Scroller.CanvasPosition.Y >= scrollBarBottomPosition)
@@ -159,7 +157,7 @@ end
 function methods:FadeOutText(duration)
 	for i = 1, #self.MessageObjectLog do
 		if self.MessageObjectLog[i].FadeOutFunction then
-			self.MessageObjectLog[i].FadeOutFunction(duration)
+			self.MessageObjectLog[i].FadeOutFunction(duration, CurveUtil)
 		end
 	end
 end
@@ -167,7 +165,7 @@ end
 function methods:FadeInText(duration)
 	for i = 1, #self.MessageObjectLog do
 		if self.MessageObjectLog[i].FadeInFunction then
-			self.MessageObjectLog[i].FadeInFunction(duration)
+			self.MessageObjectLog[i].FadeInFunction(duration, CurveUtil)
 		end
 	end
 end

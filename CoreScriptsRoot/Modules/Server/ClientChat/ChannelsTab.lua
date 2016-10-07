@@ -176,20 +176,26 @@ end
 
 function methods:FadeOutBackground(duration)
 	self.AnimParams.Background_TargetTransparency = 1
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeInBackground(duration)
 	self.AnimParams.Background_TargetTransparency = 0.6
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeOutText(duration)
 	self.AnimParams.Text_TargetTransparency = 1
+	self.AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 	self.AnimParams.TextStroke_TargetTransparency = 1
+	self.AnimParams.TextStroke_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeInText(duration)
 	self.AnimParams.Text_TargetTransparency = 0
+	self.AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 	self.AnimParams.TextStroke_TargetTransparency = 0.75
+	self.AnimParams.TextStroke_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:AnimGuiObjects()
@@ -213,18 +219,36 @@ end
 function methods:InitializeAnimParams()
 	self.AnimParams.Text_TargetTransparency = 0
 	self.AnimParams.Text_CurrentTransparency = 0
+	self.AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(0)
 
 	self.AnimParams.TextStroke_TargetTransparency = 0.75
 	self.AnimParams.TextStroke_CurrentTransparency = 0.75
+	self.AnimParams.TextStroke_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(0)
 
 	self.AnimParams.Background_TargetTransparency = 0.6
 	self.AnimParams.Background_CurrentTransparency = 0.6
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(0)
 end
 
 function methods:Update(dtScale)
-	self.AnimParams.Background_CurrentTransparency = CurveUtil:Expt(self.AnimParams.Background_CurrentTransparency, self.AnimParams.Background_TargetTransparency, 0.1, dtScale)
-	self.AnimParams.Text_CurrentTransparency = CurveUtil:Expt(self.AnimParams.Text_CurrentTransparency, self.AnimParams.Text_TargetTransparency, 0.1, dtScale)
-	self.AnimParams.TextStroke_CurrentTransparency = CurveUtil:Expt(self.AnimParams.TextStroke_CurrentTransparency, self.AnimParams.TextStroke_TargetTransparency, 0.1, dtScale)
+	self.AnimParams.Background_CurrentTransparency = CurveUtil:Expt(
+			self.AnimParams.Background_CurrentTransparency,
+			self.AnimParams.Background_TargetTransparency,
+			self.AnimParams.Background_NormalizedExptValue,
+			dtScale
+	)
+	self.AnimParams.Text_CurrentTransparency = CurveUtil:Expt(
+			self.AnimParams.Text_CurrentTransparency,
+			self.AnimParams.Text_TargetTransparency,
+			self.AnimParams.Text_NormalizedExptValue,
+			dtScale
+	)
+	self.AnimParams.TextStroke_CurrentTransparency = CurveUtil:Expt(
+			self.AnimParams.TextStroke_CurrentTransparency,
+			self.AnimParams.TextStroke_TargetTransparency,
+			self.AnimParams.TextStroke_NormalizedExptValue,
+			dtScale
+	)
 
 	self:AnimGuiObjects()
 end

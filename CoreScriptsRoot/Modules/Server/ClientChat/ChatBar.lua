@@ -317,20 +317,24 @@ end
 
 function methods:FadeOutBackground(duration)
 	self.AnimParams.Background_TargetTransparency = 1
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 	self:FadeOutText(duration)
 end
 
 function methods:FadeInBackground(duration)
 	self.AnimParams.Background_TargetTransparency = 0.6
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 	self:FadeInText(duration)
 end
 
 function methods:FadeOutText(duration)
 	self.AnimParams.Text_TargetTransparency = 1
+	self.AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeInText(duration)
 	self.AnimParams.Text_TargetTransparency = 0.4
+	self.AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:AnimGuiObjects()
@@ -345,14 +349,26 @@ end
 function methods:InitializeAnimParams()
 	self.AnimParams.Text_TargetTransparency = 0.4
 	self.AnimParams.Text_CurrentTransparency = 0.4
+	self.AnimParams.Text_NormalizedExptValue = 1
 
 	self.AnimParams.Background_TargetTransparency = 0.6
 	self.AnimParams.Background_CurrentTransparency = 0.6
+	self.AnimParams.Background_NormalizedExptValue = 1
 end
 
 function methods:Update(dtScale)
-	self.AnimParams.Text_CurrentTransparency = CurveUtil:Expt(self.AnimParams.Text_CurrentTransparency, self.AnimParams.Text_TargetTransparency, 0.1, dtScale)
-	self.AnimParams.Background_CurrentTransparency = CurveUtil:Expt(self.AnimParams.Background_CurrentTransparency, self.AnimParams.Background_TargetTransparency, 0.1, dtScale)
+	self.AnimParams.Text_CurrentTransparency = CurveUtil:Expt(
+			self.AnimParams.Text_CurrentTransparency,
+			self.AnimParams.Text_TargetTransparency,
+			self.AnimParams.Text_NormalizedExptValue,
+			dtScale
+	)
+	self.AnimParams.Background_CurrentTransparency = CurveUtil:Expt(
+			self.AnimParams.Background_CurrentTransparency,
+			self.AnimParams.Background_TargetTransparency,
+			self.AnimParams.Background_NormalizedExptValue,
+			dtScale
+	)
 
 	self:AnimGuiObjects()
 end

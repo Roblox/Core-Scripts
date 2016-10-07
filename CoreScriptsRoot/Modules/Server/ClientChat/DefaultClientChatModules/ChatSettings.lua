@@ -4,10 +4,10 @@
 
 local module = {}
 
-module.WindowDraggable = true
-module.WindowResizable = true
+module.WindowDraggable = false
+module.WindowResizable = false
 
-module.ShowChannelsBar = true
+module.ShowChannelsBar = false
 module.GamepadNavigationEnabled = false
 
 module.ChatWindowTextSize = Enum.FontSize.Size18
@@ -29,9 +29,9 @@ module.DefaultWindowSizePhone = UDim2.new(0.5, 0, 0.5, extraOffset)
 module.DefaultWindowSizeTablet = UDim2.new(0.4, 0, 0.3, extraOffset)
 module.DefaultWindowSizeDesktop = UDim2.new(0.3, 0, 0.25, extraOffset)
 
-module.ChatWindowBackgroundFadeOutTime = 0  --Chat background will fade out after this many seconds.
-module.ChatWindowTextFadeOutTime = 30       --Chat text will fade out after this many seconds.
-module.ChatDefaultFadeDuration = 0.3
+module.ChatWindowBackgroundFadeOutTime = 0.5 --Chat background will fade out after this many seconds.
+module.ChatWindowTextFadeOutTime = 30        --Chat text will fade out after this many seconds.
+module.ChatDefaultFadeDuration = 0.8
 module.ChatShouldFadeInFromNewInformation = false
 
 module.GeneralChannelName = "All" -- You can set to nil to turn off echoing to a general channel.
