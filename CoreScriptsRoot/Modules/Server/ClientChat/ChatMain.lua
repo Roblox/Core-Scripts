@@ -115,7 +115,23 @@ else
 	ChatBar:SetTextLabelText('To chat click here or press "/" key')
 end
 
+spawn(function()
+	local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
+	local ANIMATION_FPS = 20.0
 
+	local updateWaitTime = 1.0 / ANIMATION_FPS
+	local lastTick = tick()
+	while true do
+		local currentTick = tick()
+		local tickDelta = currentTick - lastTick
+		local dtScale = CurveUtil:DeltaTimeToTimescale(tickDelta)
+
+		ChatWindow:Update(dtScale)
+
+		lastTick = currentTick
+		wait(updateWaitTime)
+	end
+end)
 
 
 
@@ -130,14 +146,15 @@ end
 
 local backgroundIsFaded = false
 local textIsFaded = false
-local lastFadeTime = 0
+local lastTextFadeTime = 0
+local lastBackgroundFadeTime = 0
 
 local fadedChanged = Instance.new("BindableEvent")
 local mouseStateChanged = Instance.new("BindableEvent")
 local chatBarFocusChanged = Instance.new("BindableEvent")
 
 local function DoBackgroundFadeIn(setFadingTime)
-	lastFadeTime = tick()
+	lastBackgroundFadeTime = tick()
 	backgroundIsFaded = false
 	fadedChanged:Fire()
 	ChatWindow:EnableResizable()
@@ -154,7 +171,7 @@ local function DoBackgroundFadeIn(setFadingTime)
 end
 
 local function DoBackgroundFadeOut(setFadingTime)
-	lastFadeTime = tick()
+	lastBackgroundFadeTime = tick()
 	backgroundIsFaded = true
 	fadedChanged:Fire()
 	ChatWindow:DisableResizable()
@@ -173,14 +190,14 @@ local function DoBackgroundFadeOut(setFadingTime)
 end
 
 local function DoTextFadeIn(setFadingTime)
-	lastFadeTime = tick()
+	lastTextFadeTime = tick()
 	textIsFaded = false
 	fadedChanged:Fire()
 	ChatWindow:FadeInText((setFadingTime or ChatSettings.ChatDefaultFadeDuration) * 0)
 end
 
 local function DoTextFadeOut(setFadingTime)
-	lastFadeTime = tick()
+	lastTextFadeTime = tick()
 	textIsFaded = true
 	fadedChanged:Fire()
 	ChatWindow:FadeOutText((setFadingTime or ChatSettings.ChatDefaultFadeDuration))
@@ -230,7 +247,6 @@ local function UpdateFadingForMouseState(mouseState)
 end
 
 
-local last = 0
 spawn(function()
 	while true do
 		RunService.RenderStepped:wait()
@@ -244,20 +260,14 @@ spawn(function()
 			end
 		end
 
-		local timeDiff = tick() - lastFadeTime
-
-		-- debug timer printing
-		--if (math.abs(last - timeDiff) > 0.5) then
-		--	last = timeDiff
-		--	print("Step", timeDiff, backgroundIsFaded, textIsFaded)
-		--end
-
 		if (not backgroundIsFaded) then
+			local timeDiff = tick() - lastBackgroundFadeTime
 			if (timeDiff > ChatSettings.ChatWindowBackgroundFadeOutTime) then
 				DoBackgroundFadeOut()
 			end
 
 		elseif (not textIsFaded) then
+			local timeDiff = tick() - lastTextFadeTime
 			if (timeDiff > ChatSettings.ChatWindowTextFadeOutTime) then
 				DoTextFadeOut()
 			end

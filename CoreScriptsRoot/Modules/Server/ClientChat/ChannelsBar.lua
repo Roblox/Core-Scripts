@@ -12,10 +12,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleChannelsTab = require(modulesFolder:WaitForChild("ChannelsTab"))
-local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
+local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -48,8 +48,6 @@ function methods:CreateGuiObjects(targetParent)
 	ScrollerFrame.BackgroundTransparency = 1
 	ScrollerFrame.Size = UDim2.new(1, 0, 1, 0)
 	ScrollerFrame.Position = UDim2.new(0, 0, 0, 0)
-
-
 
 	local LeaveConfirmationFrameBase = Instance.new("Frame", BaseFrame)
 	LeaveConfirmationFrameBase.Selectable = false
@@ -175,9 +173,7 @@ function methods:CreateGuiObjects(targetParent)
 
 	self.GuiObjects.PageLeftButtonArrow = PageLeftButton.ArrowLabel
 	self.GuiObjects.PageRightButtonArrow = PageRightButton.ArrowLabel
-
-
-	self:CreateTweeners()
+	self:AnimGuiObjects()
 
 	PageLeftButton.MouseButton1Click:connect(function() self:ScrollChannelsFrame(-1) end)
 	PageRightButton.MouseButton1Click:connect(function() self:ScrollChannelsFrame(1) end)
@@ -206,9 +202,6 @@ function methods:AddChannelTab(channelName)
 
 	self.NumTabs = self.NumTabs + 1
 	self:OrganizeChannelTabs()
-
-	self.BackgroundTweener:RegisterTweenObjectProperty(tab.BackgroundTweener, "Transparency")
-	self.TextTweener:RegisterTweenObjectProperty(tab.TextTweener, "Transparency")
 
 	if (ChatSettings.RightClickToLeaveChannelEnabled) then
 		tab.NameTag.MouseButton2Click:connect(function()
@@ -302,36 +295,61 @@ function methods:ScrollChannelsFrame(dir)
 end
 
 function methods:FadeOutBackground(duration)
-	self.BackgroundTweener:Tween(duration, 1)
+	for channelName, channelObj in pairs(self.ChannelTabs) do
+		channelObj:FadeOutBackground(duration)
+	end
+
+	self.AnimParams.Background_TargetTransparency = 1
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeInBackground(duration)
-	self.BackgroundTweener:Tween(duration, 0)
+	for channelName, channelObj in pairs(self.ChannelTabs) do
+		channelObj:FadeInBackground(duration)
+	end
+
+	self.AnimParams.Background_TargetTransparency = 0.6
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeOutText(duration)
-	self.TextTweener:Tween(duration, 1)
+	for channelName, channelObj in pairs(self.ChannelTabs) do
+		channelObj:FadeOutText(duration)
+	end
 end
 
 function methods:FadeInText(duration)
-	self.TextTweener:Tween(duration, 0)
+	for channelName, channelObj in pairs(self.ChannelTabs) do
+		channelObj:FadeInText(duration)
+	end
 end
 
-function methods:CreateTweeners()
-	self.BackgroundTweener:CancelTween()
-	self.TextTweener:CancelTween()
+function methods:AnimGuiObjects()
+	self.GuiObjects.PageLeftButton.ImageTransparency = self.AnimParams.Background_CurrentTransparency
+	self.GuiObjects.PageRightButton.ImageTransparency = self.AnimParams.Background_CurrentTransparency
+	self.GuiObjects.PageLeftButtonArrow.ImageTransparency = self.AnimParams.Background_CurrentTransparency
+	self.GuiObjects.PageRightButtonArrow.ImageTransparency = self.AnimParams.Background_CurrentTransparency
+end
 
-	self.BackgroundTweener = moduleTransparencyTweener.new()
-	self.TextTweener = moduleTransparencyTweener.new()
+function methods:InitializeAnimParams()
+	self.AnimParams.Background_TargetTransparency = 0.6
+	self.AnimParams.Background_CurrentTransparency = 0.6
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(0)
+end
 
-	--// Register BackgroundTweener objects and properties
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageLeftButton, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageRightButton, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageLeftButtonArrow, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.GuiObjects.PageRightButtonArrow, "ImageTransparency")
+function methods:Update(dtScale)
+	for channelName, channelObj in pairs(self.ChannelTabs) do
+		channelObj:Update(dtScale)
+	end
 
-	--// Register TextTweener objects and properties
+	self.AnimParams.Background_CurrentTransparency = CurveUtil:Expt(
+			self.AnimParams.Background_CurrentTransparency,
+			self.AnimParams.Background_TargetTransparency,
+			self.AnimParams.Background_NormalizedExptValue,
+			dtScale
+	)
 
+	self:AnimGuiObjects()
 end
 
 --// ToDo: Move to common modules
@@ -355,12 +373,13 @@ function module.new()
 	obj.NumTabs = 0
 	obj.CurPageNum = 0
 
-	obj.BackgroundTweener = moduleTransparencyTweener.new()
-	obj.TextTweener = moduleTransparencyTweener.new()
-
 	obj.ScrollChannelsFrameLock = false
 
+	obj.AnimParams = {}
+
 	ClassMaker.MakeClass("ChannelsBar", obj)
+
+	obj:InitializeAnimParams()
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "ChatChannelsTabTextSize") then

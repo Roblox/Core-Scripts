@@ -4,6 +4,7 @@
 --  // Guests are generally not allowed to chat, so please do not remove this.
 
 local util = require(script.Parent:WaitForChild("Util"))
+local RunService = game:GetService("RunService")
 
 function ProcessMessage(message, ChatWindow, ChatSettings)
   local LocalPlayer = game.Players.LocalPlayer
