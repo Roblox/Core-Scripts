@@ -18,12 +18,6 @@ local GuiService = game:GetService('GuiService')
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Util = require(RobloxGui.Modules.Settings.Utility)
 
-local FixLoadingScreenAngleFlag = false
-do
-	local success, flagValue = pcall(function() return settings():GetFFlag("FixLoadingScreenAngle") end)
-	FixLoadingScreenAngleFlag = success and flagValue
-end
-
 local function FadeElements(element, newValue, duration)
 	duration = duration or 0.5
 	if element == nil then return end
@@ -305,21 +299,8 @@ local function UpdateSurfaceGuiPosition()
 	if camera then
 		local cameraCFrame = camera.CFrame
 		local cameraLook = cameraCFrame.lookVector
-		local cameraHorizontalVector = Vector3.new(cameraLook.X, 0, cameraLook.Z).unit
-		local cameraRenderCFrame = camera:GetRenderCFrame()
 
-		surfaceGuiAdorn.CFrame = CFrame.new(cameraRenderCFrame.p + cameraHorizontalVector * GUI_DISTANCE_FROM_CAMERA, cameraRenderCFrame.p)
-	end
-end
-
-local function FixCameraOrientation(camera)
-	if camera and FixLoadingScreenAngleFlag then
-		local currentCFrame = camera.CFrame
-		local _, yaw, roll = currentCFrame:toEulerAnglesXYZ()
-		local cameraFocus = camera.Focus
-		camera.CFrame = CFrame.Angles(0, yaw, roll) + currentCFrame.p
-		-- Need to fix the focus or else it will just reset the cframe
-		camera.Focus = CFrame.new(camera.CFrame.p + camera.CFrame.lookVector * (cameraFocus.p - currentCFrame.p).magnitude)
+		surfaceGuiAdorn.CFrame = (cameraCFrame * CFrame.Angles(0,math.pi,0)) + cameraLook * GUI_DISTANCE_FROM_CAMERA
 	end
 end
 
@@ -340,8 +321,6 @@ do
 	end)
 	UpdateSurfaceGuiPosition()
 	UpdateLayout()
-
-	FixCameraOrientation(workspace.CurrentCamera)
 
 	local function connectCameraEvent()
 		if workspace.CurrentCamera then
