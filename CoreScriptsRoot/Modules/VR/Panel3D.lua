@@ -3,13 +3,13 @@
 --revised/refactored 5/11/16
 
 local UserInputService = game:GetService("UserInputService")
+local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
 local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local PlayersService = game:GetService("Players")
 local Utility = require(RobloxGui.Modules.Settings.Utility)
-
 
 --Panel3D State variables
 local renderStepName = "Panel3DRenderStep-" .. game:GetService("HttpService"):GenerateGUID()
@@ -45,6 +45,14 @@ local partFolder = Utility:Create "Folder" {
 	Name = "VRCorePanelParts",
 	Archivable = false
 }
+local effectFolder = Utility:Create "Folder" {
+	Name = "VRCoreEffectParts",
+	Archivable = false
+}
+pcall(function()
+	GuiService.CoreGuiFolder = partFolder
+	GuiService.CoreEffectFolder = effectFolder
+end)
 --End of Panel3D State variables
 
 
@@ -52,7 +60,7 @@ local partFolder = Utility:Create "Folder" {
 local Panel3D = {}
 Panel3D.Type = {
 	None = 0,
-	Floor = 1,
+--	Floor = 1, todo: remove when deemed safe
 	Fixed = 2,
 	HorizontalFollow = 3,
 	FixedToHead = 4
@@ -219,45 +227,48 @@ end
 local Panel = {}
 Panel.__index = Panel
 function Panel.new(name)
-	local instance = {
-		name = name,
+	local self = {}
+	self.name = name
 
-		part = nil,
-		gui = nil,
+	self.part = false
+	self.gui = false
 
-		width = 1,
-		height = 1,
+	self.width = 1
+	self.height = 1
 
-		isVisible = false,
-		isEnabled = false,
-		panelType = Panel3D.Type.None,
-		pixelScale = 1,
-		showCursor = true,
-		canFade = true,
-		shouldFindLookAtGuiElement = false,
-		ignoreModal = false,
+	self.isVisible = false
+	self.isEnabled = false
+	self.panelType = Panel3D.Type.None
+	self.pixelScale = 1
+	self.showCursor = true
+	self.canFade = true
+	self.shouldFindLookAtGuiElement = false
+	self.ignoreModal = false
 
-		linkedTo = nil,
-		subpanels = {},
+	self.linkedTo = false
+	self.subpanels = {}
 
-		transparency = 1,
-		forceShowUntilLookedAt = false,
-		isLookedAt = false,
-		isOffscreen = true,
-		lookAtPixel = Vector2.new(-1, -1),
-		lookAtDistance = math.huge,
-		lookAtGuiElement = nil,
-		isClosest = true,
+	self.transparency = 1
+	self.forceShowUntilLookedAt = false
+	self.isLookedAt = false
+	self.isOffscreen = true
+	self.lookAtPixel = Vector2.new(-1, -1)
+	self.cursorPos = Vector2.new(-1, -1)
+	self.lookAtDistance = math.huge
+	self.lookAtGuiElement = false
+	self.isClosest = true
 
-		localCF = CFrame.new()
-	}
+	self.localCF = CFrame.new()
+	self.angleFromHorizon = false
+	self.angleFromForward = false
+	self.distance = false
 
 	if panels[name] then
 		error("A panel by the name of " .. name .. " already exists.")
 	end
-	panels[name] = instance
+	panels[name] = self
 
-	return setmetatable(instance, Panel)
+	return setmetatable(self, Panel)
 end
 
 --Panel accessor methods
@@ -322,10 +333,10 @@ function Panel:SetEnabled(enabled)
 
 	self.isEnabled = enabled
 	if enabled then
-		self:GetPart().Parent = workspace.CurrentCamera --todo: Perhaps this can change soon.
+		self:GetPart().Parent = partFolder
 		self:GetGUI().Enabled = true
 		for i, v in pairs(self.subpanels) do
-			v:GetPart().Parent = workspace.CurrentCamera
+			v:GetPart().Parent = partFolder
 			v:GetGUI().Enabled = true
 		end
 	else
@@ -341,13 +352,7 @@ function Panel:SetEnabled(enabled)
 end
 
 function Panel:EvaluatePositioning(cameraCF, cameraRenderCF, userHeadCF)
-	if self.panelType == Panel3D.Type.Floor then
-		--Floor panels simply... go on the floor.
-		--Panel will be in camera's local space (which is assumed to be horizontal),
-		--and floorRotation is derived from the user's head rotation (yaw only)
-		local floorCF = cameraCF * CFrame.new(0, -headHeightFromFloor * currentHeadScale, 0) * floorRotation
-		self:SetPartCFrame(floorCF * pointUpCF)
-	elseif self.panelType == Panel3D.Type.Fixed then
+	if self.panelType == Panel3D.Type.Fixed then
 		--Places the panel in the camera's local space, but doesn't follow the user's head.
 		--Useful if you know what you're doing. localCF can be updated in PreUpdate for animation.
 		local cf = self.localCF - self.localCF.p
@@ -383,7 +388,7 @@ function Panel:SetLookedAt(lookedAt)
 	end
 end
 
-function Panel:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
+function Panel:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay, pointerRay)
 	--reset distance data
 	self.isClosest = false
 	self.lookAtPixel = zeroVector2
@@ -397,9 +402,10 @@ function Panel:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 			--note that we're passing subpanel.guiElement and not subpanel.gui
 			--this is on purpose so we can fall through to the panels underneath since subpanels will rarely take up the whole 
 			--panel size.
-			local worldIntersectPoint, localIntersectPoint, guiPixelHit, isOnGui = Panel3D.RaycastOntoPanel(subpanel.part, subpanel.gui, subpanel.guiElement, lookRay)
+			local worldIntersectPoint, localIntersectPoint, guiPixelHit, isOnGui = Panel3D.RaycastOntoPanel(subpanel.part, subpanel.gui, subpanel.guiElement, pointerRay)
 			if worldIntersectPoint then
 				subpanel.lookAtPixel = guiPixelHit
+				subpanel.cursorPos = guiPixelHit
 
 				if isOnGui and subpanel.depthOffset > highestSubpanelDepth then
 					highestSubpanel = subpanel
@@ -411,7 +417,7 @@ function Panel:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 
 	if highestSubpanel and highestSubpanel.depthOffset > 0 then
 		currentCursorParent = highestSubpanel.gui
-		currentCursorPos = highestSubpanel.lookAtPixel
+		currentCursorPos = highestSubpanel.cursorPos
 		currentClosest = highestSubpanel
 
 		for _, subpanel in pairs(self.subpanels) do
@@ -423,12 +429,13 @@ function Panel:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 	end
 
 	local gui = self:GetGUI()
-	local worldIntersectPoint, localIntersectPoint, guiPixelHit, isOnGui = Panel3D.RaycastOntoPanel(self:GetPart(), gui, gui, lookRay)
+	local worldIntersectPoint, localIntersectPoint, guiPixelHit, isOnGui = Panel3D.RaycastOntoPanel(self:GetPart(), gui, gui, pointerRay)
 	if worldIntersectPoint then
 		self.isOffscreen = false
 
 		--transform worldIntersectPoint to gui space
 		self.lookAtPixel = guiPixelHit
+		self.cursorPos = guiPixelHit
 
 		--fire mouse enter/leave events if necessary
 		self:SetLookedAt(isOnGui)
@@ -440,7 +447,7 @@ function Panel:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
 			currentClosest = self
 			if not highestSubpanel then
 				currentCursorParent = self.gui
-				currentCursorPos = self.lookAtPixel
+				currentCursorPos = self.cursorPos
 			end
 		end
 	else
@@ -474,7 +481,7 @@ function Panel:EvaluateTransparency()
 	self.transparency = self:CalculateTransparency()
 end
 
-function Panel:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay, dt)
+function Panel:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay, pointerRay, dt)
 	if self.forceShowUntilLookedAt and not self.part then
 		self:GetPart()
 		self:GetGUI()
@@ -498,7 +505,7 @@ function Panel:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay, dt)
 		for i, v in pairs(self.subpanels) do
 			v:Update()
 		end
-		self:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay)
+		self:EvaluateGaze(cameraCF, cameraRenderCF, userHeadCF, lookRay, pointerRay)
 
 		self:EvaluateTransparency(cameraCF, cameraRenderCF)
 	end
@@ -598,13 +605,12 @@ function Panel:SetType(panelType, config)
 	self.panelType = panelType
 
 	--clear out old type-specific members
-	self.floorPos = nil
 
-	self.localCF = nil
+	self.localCF = CFrame.new()
 
-	self.angleFromHorizon = nil
-	self.angleFromForward = nil
-	self.distance = nil
+	self.angleFromHorizon = false
+	self.angleFromForward = false
+	self.distance = false
 
 	if not config then
 		config = {}
@@ -689,16 +695,17 @@ end
 
 --Child class, Subpanel
 local Subpanel = {}
-local Subpanel_mt = { __index = Subpanel }
+Subpanel.__index = Subpanel
 function Subpanel.new(parentPanel, guiElement)
-	local self = setmetatable({}, Subpanel_mt)
+	local self = {}
 	self.parentPanel = parentPanel
 	self.guiElement = guiElement
 	self.lastParent = guiElement.Parent
 	self.ancestryConn = nil
 	self.changedConn = nil
 
-	self.lookAtPixel = Vector2.new(0,0)
+	self.lookAtPixel = Vector2.new(-1, -1)
+	self.cursorPos = Vector2.new(-1, -1)
 	self.lookedAt = false
 
 	self.part = nil
@@ -706,6 +713,8 @@ function Subpanel.new(parentPanel, guiElement)
 	self.guiSurrogate = nil
 
 	self.depthOffset = 0
+
+	setmetatable(self, Subpanel)
 
 
 	self:GetGUI()
@@ -801,7 +810,7 @@ function Subpanel:GetPart()
 	end
 
 	self.part = self.parentPanel:GetPart():Clone()
-	self.part.Parent = workspace.CurrentCamera
+	self.part.Parent = partFolder
 	return self.part
 end
 
@@ -817,7 +826,7 @@ function Subpanel:GetGUI()
 		ToolPunchThroughDistance = 1000,
 		CanvasSize = self.parentPanel:GetGUI().CanvasSize,
 		Enabled = self.parentPanel.isEnabled,
-		AlwaysOnTop = true
+		AlwaysOnTop = false
 	}
 	self.guiSurrogate = Utility:Create "Frame" {
 		Parent = self.gui,
@@ -923,9 +932,16 @@ local function onRenderStep()
 	local userHeadCF = UserInputService:GetUserCFrame(Enum.UserCFrame.Head)
 	local lookRay = Ray.new(cameraRenderCF.p, cameraRenderCF.lookVector)
 
+	local inputUserCFrame = Enum.UserCFrame.Head
+	if VRServiceExists then
+		inputUserCFrame = VRService.GuiInputUserCFrame
+	end
+	local inputCF = cameraCF * UserInputService:GetUserCFrame(inputUserCFrame)
+	local pointerRay = Ray.new(inputCF.p, inputCF.lookVector)
+
 	--allow all panels to run their own update code
 	for i, v in pairs(panels) do
-		v:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay, dt)
+		v:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay, pointerRay, dt)
 	end
 
 	--evaluate linked panels
@@ -1038,6 +1054,7 @@ local function onWorkspaceChanged(prop)
 
 		if UserInputService.VREnabled then
 			partFolder.Parent = workspace.CurrentCamera
+			effectFolder.Parent = workspace.CurrentCamera
 		end
 	end
 end
@@ -1052,12 +1069,14 @@ local function onVREnabled(prop)
 			currentCameraChangedConn = workspace.Changed:connect(onWorkspaceChanged)
 
 			partFolder.Parent = workspace.CurrentCamera
+			effectFolder.Parent = workspace.CurrentCamera
 		else
 			if currentCameraChangedConn then
 				currentCameraChangedConn:disconnect()
 				currentCameraChangedConn = nil
 			end
 			partFolder.Parent = nil
+			effectFolder.Parent = nil
 		end
 	end
 end
