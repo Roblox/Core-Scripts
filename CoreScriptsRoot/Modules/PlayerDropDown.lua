@@ -77,37 +77,6 @@ end
 --[[ Events ]]--
 local BlockStatusChanged = createSignal()
 
---[[ Personal Server Stuff ]]--
-local IsPersonalServer = false
-local PersonalServerService = nil
-if game.Workspace:FindFirstChild('PSVariable') then
-	IsPersonalServer = true
-	PersonalServerService = game:GetService('PersonalServerService')
-end
-game.Workspace.ChildAdded:connect(function(child)
-	if child.Name == 'PSVariable' and child:IsA('BoolValue') then
-		IsPersonalServer = true
-		PersonalServerService = game:GetService('PersonalServerService')
-	end
-end)
-
-local PRIVILEGE_LEVEL = {
-	OWNER = 255,
-	ADMIN = 240,
-	MEMBER = 128,
-	VISITOR = 10,
-	BANNED = 0,
-}
-
-local function onPrivilegeLevelSelect(player, rank)
-	while player.PersonalServerRank < rank do
-		PersonalServerService:Promote(player)
-	end
-	while player.PersonalServerRank > rank do
-		PersonalServerService:Demote(player)
-	end
-end
-
 --[[ Follower Notifications ]]--
 local function sendNotification(title, text, image, duration, callback)
 	if BindableEvent_SendNotification then
@@ -410,42 +379,6 @@ function createPlayerDropDown()
 		playerDropDown:Hide()
 	end
 	
-	--[[ GUI Creation Functions ]]--
-	local function createPersonalServerDialog(buttons, selectedPlayer)
-		local showPersonalServerRanks = IsPersonalServer and LocalPlayer.PersonalServerRank >= PRIVILEGE_LEVEL.ADMIN and LocalPlayer.PersonalServerRank > selectedPlayer.PersonalServerRank
-		if showPersonalServerRanks then
-			table.insert(buttons, {
-				Name = "BanButton",
-				Text = "Ban",
-				OnPress = function()
-					playerDropDown:Hide()
-					onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.BANNED)
-				end,
-				})
-			table.insert(buttons, {
-				Name = "VistorButton",
-				Text = "Visitor",
-				OnPress = function()
-					onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.VISITOR)
-				end,
-				})
-			table.insert(buttons, {
-				Name = "MemberButton",
-				Text = "Member",
-				OnPress = function()
-					onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.MEMBER)
-				end,
-				})
-			table.insert(buttons, {
-				Name = "AdminButton",
-				Text = "Admin",
-				OnPress = function()
-					onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.ADMIN)
-				end,
-				})
-		end
-	end
-	
 	local function createPopupFrame(buttons)
 		local frame = Instance.new('Frame')
 		frame.Name = "PopupFrame"
@@ -559,7 +492,6 @@ function createPlayerDropDown()
 			OnPress = onReportButtonPressed,
 			})
 
-		createPersonalServerDialog(buttons, playerDropDown.Player)
 		if playerDropDown.PopupFrame then
 			playerDropDown.PopupFrame:Destroy()
 		end
