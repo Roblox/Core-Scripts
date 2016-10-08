@@ -23,8 +23,14 @@ end
 
 local function Install()
 	if (installDirectory:FindFirstChild(runnerScriptName)) then
+		pcall(function()
+			game:GetService("Chat"):SetIsLuaChatBackendOverwritten(true)
+		end)
 		return
 	end
+	pcall(function()
+		game:GetService("Chat"):SetIsLuaChatBackendOverwritten(false)
+	end)
 
 	local ChatServiceRunner = LoadScript(runnerScriptName, installDirectory)
 	ChatServiceRunner.Name = runnerScriptName
