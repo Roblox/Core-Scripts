@@ -22,17 +22,16 @@ local function LoadModule(location, name, parent)
 end
 
 local function Install()
-	if (installDirectory:FindFirstChild(runnerScriptName)) then
-		return
+
+	local ChatServiceRunner = installDirectory:FindFirstChild(runnerScriptName)
+	if not ChatServiceRunner then
+		ChatServiceRunner = LoadScript(runnerScriptName, installDirectory)
+
+		LoadModule(script.Parent, "ChatService", ChatServiceRunner)
+		LoadModule(script.Parent, "ChatChannel", ChatServiceRunner)
+		LoadModule(script.Parent, "Speaker", ChatServiceRunner)
+		LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatServiceRunner)
 	end
-
-	local ChatServiceRunner = LoadScript(runnerScriptName, installDirectory)
-	ChatServiceRunner.Name = runnerScriptName
-
-	LoadModule(script.Parent, "ChatService", ChatServiceRunner)
-	LoadModule(script.Parent, "ChatChannel", ChatServiceRunner)
-	LoadModule(script.Parent, "Speaker", ChatServiceRunner)
-	LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatServiceRunner)
 
 	if (not ServerStorage:FindFirstChild("ChatModules")) then
 		local ModulesFolder = Instance.new("Folder")
