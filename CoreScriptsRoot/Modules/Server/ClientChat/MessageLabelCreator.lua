@@ -49,13 +49,10 @@ function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 	local FadeInFunction = createdMessageObject[messageCreatorUtil.KEY_FADE_IN]
 	local FadeOutFunction = createdMessageObject[messageCreatorUtil.KEY_FADE_OUT]
 	local UpdateAnimFunction = createdMessageObject[messageCreatorUtil.KEY_UPDATE_ANIMATION]
-	if UpdateAnimFunction == nil then
-		print("No update anim function")
-	end
 
 	local obj = {}
 
-	obj.ID = id
+	obj.ID = messageData.ID
 	obj.BaseFrame = BaseFrame
 	obj.UpdateTextFunction = UpdateTextFunction or function() warn("NO MESSAGE RESIZE FUNCTION") end
 	obj.GetHeightFunction = GetHeightFunction
