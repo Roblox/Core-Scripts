@@ -80,6 +80,8 @@ function BarGraphClass:SetAverage(average)
 end
 
 function BarGraphClass:SetTarget(target) 
+  -- Set the target value, move corresponding graph line 
+  -- accordingly (if present).
   self._target = target
   self:_moveGraphTarget()
 end
@@ -121,7 +123,9 @@ function BarGraphClass:Render()
   end
 end
 
+
 function BarGraphClass:_addGraphTarget() 
+  -- Add the line used to mark target value.
   local line = Instance.new("ImageLabel")
   line.Name = "TargetLine"
   line.Size = UDim2.new(1, 0, 0, StatsUtils.GraphTargetLineInnerThickness)
@@ -145,6 +149,7 @@ function BarGraphClass:_updateTargetLineImageSize()
 end
 
 function BarGraphClass:_addGraphAverage() 
+  -- Add the line used to mark average of current values.
   local line = Instance.new("Frame")
   line.Name = "AverageLine"
   line.Size = UDim2.new(1, 0, 0, StatsUtils.GraphAverageLineInnerThickness)
@@ -158,6 +163,7 @@ function BarGraphClass:_addGraphAverage()
 end
 
 function BarGraphClass:_moveGraphTarget() 
+  -- Update position of graph target line, if present.
   if self._targetLine == nil then 
     return
   end
@@ -167,7 +173,8 @@ function BarGraphClass:_moveGraphTarget()
     -StatsUtils.GraphTargetLineInnerThickness/2)
 end
 
-function BarGraphClass:_moveGraphAverage()   
+function BarGraphClass:_moveGraphAverage()  
+  -- Update position of graph average line, if present.
   if self._averageLine == nil then 
     return
   end
@@ -182,6 +189,7 @@ function BarGraphClass:_moveGraphAverage()
 end
 
 function BarGraphClass:_makeNthBar(index)
+  -- Make the nth bar in the bar graph.
   local realIndex = index-1
   local bar = Instance.new("Frame")
   bar.Name = string.format("Bar_%d", realIndex)
@@ -192,6 +200,7 @@ function BarGraphClass:_makeNthBar(index)
 end
 
 function BarGraphClass:_updateBar(i, value, numValues) 
+  -- Update nth bar in graph: size, position, and color.
   local bar = self._bars[i]
   local realIndex = i-1
 
