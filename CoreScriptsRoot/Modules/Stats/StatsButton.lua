@@ -60,6 +60,12 @@ function StatsButtonClass.new(statType)
   return self
 end
 
+function StatsButtonClass:Refresh()
+  if self._graph then 
+    self._graph:UpdateValuesAndRender()
+  end
+end
+
 function StatsButtonClass:SetToggleCallbackFunction(callbackFunction) 
     self._button.MouseButton1Click:connect(function() 
           callbackFunction(self._statType)

@@ -62,9 +62,7 @@ function StatsAggregatorClass:StartListening()
   -- On a regular heartbeat, wake up and read the latest
   -- value into circular buffer.
   -- Don't bother if we're already listening.
-  print ("StatsAggregatorClass:StartListening")
   if (self._listneing == true) then 
-    print ("StatsAggregatorClass:StartListening early exit")
     return
   end
   
