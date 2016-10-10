@@ -50,9 +50,6 @@ function methods:UpdateMessageFiltered(messageData)
 	end
 
 	if messageObj then
-		if messageObj.MessageData.IsFiltered then
-			return
-		end
 		messageObj.MessageData.Message = messageData.Message
 		messageObj.MessageData.IsFiltered = true
 		if self.Active then
