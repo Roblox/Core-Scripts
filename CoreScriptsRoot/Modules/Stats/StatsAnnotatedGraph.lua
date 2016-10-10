@@ -155,13 +155,45 @@ function StatsAnnotatedGraphClass:SetStatsAggregator(aggregator)
   
   self._aggregator = aggregator
   
-  if (self._aggregator ~= nil) then
-    self._listenerId = aggregator:AddListener(function()
-        self:UpdateValuesAndRender()
-    end)
+  self:OnVisibilityChanged()
+end
+
+function StatsAnnotatedGraphClass:_maybeStopListening()
+  if (self._aggregator == nil) then
+    return
   end
   
-  self:UpdateValuesAndRender()
+  if (self._listenerId == nil) then 
+    return
+  end
+  
+  self._aggregator:RemoveListener(self._listenerId)
+  self._listenerId = nil  
+end
+
+function StatsAnnotatedGraphClass:_maybeStartListening()
+  if (self._aggregator == nil) then
+    return
+  end
+  
+  if (self._listenerId ~= nil) then 
+    return
+  end
+  
+  self._listenerId = self._aggregator:AddListener(function()
+      self:_updateValuesAndRender()
+  end)  
+end
+
+
+
+function StatsAnnotatedGraphClass:OnVisibilityChanged()
+  if StatsUtils.PerformanceStatsShouldBeVisible() then
+    self:_maybeStartListening()
+    self:_updateValuesAndRender()
+  else
+    self:_maybeStopListening()
+  end
 end
 
 function StatsAnnotatedGraphClass:_recursiveGetOrderOfMagnitude(estimate, target)
@@ -176,10 +208,10 @@ function StatsAnnotatedGraphClass:_recursiveGetOrderOfMagnitude(estimate, target
   return self:_recursiveGetOrderOfMagnitude(estimate*10.0, target)
 end
 
-function StatsAnnotatedGraphClass:UpdateValuesAndRender()
-  if not StatsUtils.PerformanceStatsShouldBeVisible() then 
-    return
-  end
+local counter = 0
+
+function StatsAnnotatedGraphClass:_updateValuesAndRender() 
+  counter = counter + 1
   
   self._values = {}
   self._average = 0

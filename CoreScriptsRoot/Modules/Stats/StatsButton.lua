@@ -60,9 +60,9 @@ function StatsButtonClass.new(statType)
   return self
 end
 
-function StatsButtonClass:Refresh()
+function StatsButtonClass:OnVisibilityChanged()
   if self._graph then 
-    self._graph:UpdateValuesAndRender()
+    self._graph:OnVisibilityChanged()
   end
 end
 

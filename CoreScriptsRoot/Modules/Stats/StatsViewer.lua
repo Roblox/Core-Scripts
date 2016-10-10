@@ -47,9 +47,9 @@ function StatsViewerClass.new()
   return self
 end
 
-function StatsViewerClass:Refresh()
+function StatsViewerClass:OnVisibilityChanged()
   if self._graph then 
-    self._graph:UpdateValuesAndRender()
+    self._graph:OnVisibilityChanged()
   end
 end
 
