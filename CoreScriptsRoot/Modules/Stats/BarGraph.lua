@@ -35,6 +35,7 @@ function BarGraphClass.new(showExtras)
 
   -- All of the values we are showing in the bar graph, in order.
   self._values = {}
+  self._bars = {}
   -- Average of these values.
   self._average = 0
   -- Suggested max for these values.
@@ -80,18 +81,42 @@ end
 
 function BarGraphClass:SetTarget(target) 
   self._target = target
+  self:_moveGraphTarget()
 end
 
-function BarGraphClass:Render()  
-  self._barFrame:ClearAllChildren()
+function BarGraphClass:_updateBarCount(newBarCount)
+  -- Make sure we have exactly this number of bars in _bars.
+  -- Reuse old ones if possible.
+  -- If we have more old ones than we need, delete them.
+  local newBars = {}
+  local currentBarCount = table.getn(self._bars)
+  
+  for i = 1, currentBarCount, 1 do
+    if (i <= currentBarCount) then
+      table.insert(newBars, self._bars[i])
+    else
+      self._bars[i].Destroy()
+    end
+  end
+  
+  for i = currentBarCount + 1, newBarCount, 1 do 
+    table.insert(newBars, self:_makeNthBar(i))
+  end
+  
+  self._bars = newBars
+end
+  
 
+function BarGraphClass:Render()    
   local numValues = table.getn(self._values)
+  
+  self:_updateBarCount(numValues)
+  
   for i, value in ipairs(self._values) do
-    self:_addBar(i, value, numValues)
+    self:_updateBar(i, value, numValues)
   end  
 
   if self._showExtras then
-    self:_moveGraphTarget()
     self:_moveGraphAverage()
   end
 end
@@ -156,10 +181,19 @@ function BarGraphClass:_moveGraphAverage()
     -StatsUtils.GraphAverageLineTotalThickness/2)
 end
 
-function BarGraphClass:_addBar(i, value, numValues) 
-  local realIndex = i-1
+function BarGraphClass:_makeNthBar(index)
+  local realIndex = index-1
   local bar = Instance.new("Frame")
   bar.Name = string.format("Bar_%d", realIndex)
+  bar.Parent = self._barFrame  
+  bar.ZIndex = self._barFrame.ZIndex
+  bar.BorderSizePixel = 0
+  return bar
+end
+
+function BarGraphClass:_updateBar(i, value, numValues) 
+  local bar = self._bars[i]
+  local realIndex = i-1
 
   -- Don't let it go off the chart.
   local clampedValue = math.max(0, math.min(value, self._axisMax))
@@ -168,9 +202,6 @@ function BarGraphClass:_addBar(i, value, numValues)
     (self._axisMax - clampedValue)/self._axisMax, 0)
   bar.Size = UDim2.new(1/numValues, 0, 
     clampedValue/self._axisMax, 0)
-  bar.Parent = self._barFrame  
-  bar.ZIndex = self._barFrame.ZIndex
-  bar.BorderSizePixel = 0
 
   bar.BackgroundColor3 = StatsUtils.GetColorForValue(value, self._target)
 end
