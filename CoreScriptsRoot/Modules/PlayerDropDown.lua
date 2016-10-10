@@ -25,13 +25,6 @@ local TEXT_STROKE_COLOR = Color3.new(34/255, 34/255, 34/255)
 local MAX_FRIEND_COUNT = 200
 local FRIEND_IMAGE = 'https://www.roblox.com/thumbs/avatar.ashx?userId='
 
---[[ Fast Flags ]]--
-local followerSuccess, isFollowersEnabled = pcall(function() return settings():GetFFlag("EnableLuaFollowers") end)
-local IsFollowersEnabled = followerSuccess and isFollowersEnabled
-
-local serverFollowersSuccess, serverFollowersEnabled = pcall(function() return settings():GetFFlag("UserServerFollowers") end)
-local IsServerFollowers = serverFollowersSuccess and serverFollowersEnabled
-
 --[[ Modules ]]--
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 local reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
@@ -84,37 +77,6 @@ end
 --[[ Events ]]--
 local BlockStatusChanged = createSignal()
 
---[[ Personal Server Stuff ]]--
-local IsPersonalServer = false
-local PersonalServerService = nil
-if game.Workspace:FindFirstChild('PSVariable') then
-	IsPersonalServer = true
-	PersonalServerService = game:GetService('PersonalServerService')
-end
-game.Workspace.ChildAdded:connect(function(child)
-	if child.Name == 'PSVariable' and child:IsA('BoolValue') then
-		IsPersonalServer = true
-		PersonalServerService = game:GetService('PersonalServerService')
-	end
-end)
-
-local PRIVILEGE_LEVEL = {
-	OWNER = 255,
-	ADMIN = 240,
-	MEMBER = 128,
-	VISITOR = 10,
-	BANNED = 0,
-}
-
-local function onPrivilegeLevelSelect(player, rank)
-	while player.PersonalServerRank < rank do
-		PersonalServerService:Promote(player)
-	end
-	while player.PersonalServerRank > rank do
-		PersonalServerService:Demote(player)
-	end
-end
-
 --[[ Follower Notifications ]]--
 local function sendNotification(title, text, image, duration, callback)
 	if BindableEvent_SendNotification then
@@ -147,7 +109,7 @@ local function getFriendCountAsync(userId)
 		if userId then
 			str = str..'?userId='..tostring(userId)
 		end
-		return HttpRbxApiService:GetAsync(str, true)
+		return HttpRbxApiService:GetAsync(str)
 	end)
 	if not wasSuccess then
 		print("getFriendCountAsync() failed because", result)
@@ -190,7 +152,7 @@ local function isFollowing(userId, followerUserId)
 	local apiPath = "user/following-exists?userId="
 	local params = userId.."&followerUserId="..followerUserId
 	local success, result = pcall(function()
-		return HttpRbxApiService:GetAsync(apiPath..params, true)
+		return HttpRbxApiService:GetAsync(apiPath..params)
 	end)
 	if not success then
 		print("isFollowing() failed because", result)
@@ -342,7 +304,7 @@ function createPlayerDropDown()
 		local apiPath = "user/unfollow"
 		local params = "followedUserId="..tostring(playerDropDown.Player.userId)
 		local success, result = pcall(function()
-			return HttpRbxApiService:PostAsync(apiPath, params, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
 		end)
 		if not success then
 			print("unfollowPlayer() failed because", result)
@@ -397,7 +359,7 @@ function createPlayerDropDown()
 		local apiPath = "user/follow"
 		local params = "followedUserId="..followedUserId
 		local success, result = pcall(function()
-			return HttpRbxApiService:PostAsync(apiPath, params, true, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
 		end)
 		if not success then
 			print("followPlayer() failed because", result)
@@ -415,42 +377,6 @@ function createPlayerDropDown()
 		end
 
 		playerDropDown:Hide()
-	end
-	
-	--[[ GUI Creation Functions ]]--
-	local function createPersonalServerDialog(buttons, selectedPlayer)
-		local showPersonalServerRanks = IsPersonalServer and LocalPlayer.PersonalServerRank >= PRIVILEGE_LEVEL.ADMIN and LocalPlayer.PersonalServerRank > selectedPlayer.PersonalServerRank
-		if showPersonalServerRanks then
-			table.insert(buttons, {
-				Name = "BanButton",
-				Text = "Ban",
-				OnPress = function()
-					playerDropDown:Hide()
-					onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.BANNED)
-				end,
-				})
-			table.insert(buttons, {
-				Name = "VistorButton",
-				Text = "Visitor",
-				OnPress = function()
-					onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.VISITOR)
-				end,
-				})
-			table.insert(buttons, {
-				Name = "MemberButton",
-				Text = "Member",
-				OnPress = function()
-					onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.MEMBER)
-				end,
-				})
-			table.insert(buttons, {
-				Name = "AdminButton",
-				Text = "Admin",
-				OnPress = function()
-					onPrivilegeLevelSelect(selectedPlayer, PRIVILEGE_LEVEL.ADMIN)
-				end,
-				})
-		end
 	end
 	
 	local function createPopupFrame(buttons)
@@ -543,17 +469,15 @@ function createPlayerDropDown()
 				})
 		end
 		-- following status
-		if IsServerFollowers or IsFollowersEnabled then
-			local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
-			local followerText = following and "Unfollow Player" or "Follow Player"
-			
-			if not blocked then
-				table.insert(buttons, {
-					Name = "FollowerButton",
-					Text = followerText,
-					OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
-					})
-			end
+		local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
+		local followerText = following and "Unfollow Player" or "Follow Player"
+		
+		if not blocked then
+			table.insert(buttons, {
+				Name = "FollowerButton",
+				Text = followerText,
+				OnPress = following and onUnfollowButtonPressed or onFollowButtonPressed,
+				})
 		end
 
 		local blockedText = blocked and "Unblock Player" or "Block Player"
@@ -568,7 +492,6 @@ function createPlayerDropDown()
 			OnPress = onReportButtonPressed,
 			})
 
-		createPersonalServerDialog(buttons, playerDropDown.Player)
 		if playerDropDown.PopupFrame then
 			playerDropDown.PopupFrame:Destroy()
 		end

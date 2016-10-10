@@ -8,6 +8,7 @@
 
 -------------- CONSTANTS -------------
 local LEAVE_GAME_ACTION = "LeaveGameCancelAction"
+local LEAVE_GAME_FRAME_WAITS = 2
 
 -------------- SERVICES --------------
 local CoreGui = game:GetService("CoreGui")
@@ -35,7 +36,13 @@ local function Initialize()
 
 	this.LeaveFunc = function()
 		GuiService.SelectedCoreObject = nil -- deselects the button and prevents spamming the popup to save in studio when using gamepad
-		RunService.RenderStepped:wait()
+		
+		-- need to wait for render frames so on slower devices the leave button highlight will update
+		-- otherwise, since on slow devices it takes so long to leave you are left wondering if you pressed the button
+		for i = 1, LEAVE_GAME_FRAME_WAITS do
+			RunService.RenderStepped:wait()
+		end
+
 		game:Shutdown()
 	end
 	this.DontLeaveFunc = function(isUsingGamepad)

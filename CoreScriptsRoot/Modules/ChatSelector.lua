@@ -3,18 +3,20 @@
 	// Written by: Xsitsu
 	// Description: Code for determining which chat version to use in game.
 ]]
-local FORCE_CorescriptNewLoadChat 	= false		-- Force FFLag on client to be true always
-local FORCE_GetShouldUseLuaChat 	= false 	-- Force SFFlag value read from server to be true always
 
 local FORCE_IS_CONSOLE = false
 local FORCE_IS_VR = false
 
 local CoreGuiService = game:GetService("CoreGui")
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
+local Modules = RobloxGui:WaitForChild("Modules")
+local Common = Modules:WaitForChild("Common")
+local FORCE_UseNewChat = require(Common:WaitForChild("ForceUseNewChat"))
 
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
 
 local Players = game:GetService("Players")
 while Players.LocalPlayer == nil do Players.ChildAdded:wait() end
@@ -135,15 +137,15 @@ end
 local isConsole = GuiService:IsTenFootInterface() or FORCE_IS_CONSOLE
 local isVR = UserInputService.VREnabled or FORCE_IS_VR
 
-if ( (TryLoadNewChat or FORCE_CorescriptNewLoadChat) and not isConsole and not isVR ) then
+if ( (TryLoadNewChat or FORCE_UseNewChat) and not isConsole and not isVR ) then
 	spawn(function()
-		local useNewChat = GetUseLuaFlag() or FORCE_GetShouldUseLuaChat
+		local useNewChat = GetUseLuaFlag() or FORCE_UseNewChat
 		local useModuleScript = useNewChat and RobloxGui.Modules.NewChat or RobloxGui.Modules.Chat
 		useModule = require(useModuleScript)
 
 		ConnectSignals(useModule, interface, "ChatBarFocusChanged")
 		ConnectSignals(useModule, interface, "VisibilityStateChanged")
-		if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu) then
+		if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio()) then
 			ConnectSignals(useModule, interface, "MessagesChanged")
 			StarterGui:RegisterGetCore("UseNewLuaChat", function() return useNewChat end)
 		else
@@ -164,12 +166,12 @@ else
 
 	ConnectSignals(useModule, interface, "ChatBarFocusChanged")
 	ConnectSignals(useModule, interface, "VisibilityStateChanged")
-	if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu) then
+	if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio()) then
 		ConnectSignals(useModule, interface, "MessagesChanged")
 	end
 
 	StarterGui:RegisterGetCore("UseNewLuaChat", function() return false end)
-	
+
 end
 
 return interface
