@@ -794,6 +794,7 @@ function t.CreateSignal()
 			cn:disconnect()
 			mAllCns[cn] = nil
 		end
+		pubCn.Disconnect = pubCn.disconnect
 		return pubCn
 	end
 	function this:disconnect()
@@ -811,6 +812,12 @@ function t.CreateSignal()
 		if self ~= this then error("fire must be called with `:`, not `.`", 2) end
 		mBindableEvent:Fire(...)
 	end
+
+	--aliases
+	this.Connect = this.connect
+	this.Disconnect = this.disconnect
+	this.Wait = this.wait
+	this.Fire = this.fire
 
 	return this
 end
