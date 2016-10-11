@@ -155,13 +155,45 @@ function StatsAnnotatedGraphClass:SetStatsAggregator(aggregator)
   
   self._aggregator = aggregator
   
-  if (self._aggregator ~= nil) then
-    self._listenerId = aggregator:AddListener(function()
-        self:_updateValue()
-    end)
+  self:OnVisibilityChanged()
+end
+
+function StatsAnnotatedGraphClass:_stopListening()
+  if (self._aggregator == nil) then
+    return
   end
   
-  self:_updateValue()
+  if (self._listenerId == nil) then 
+    return
+  end
+  
+  self._aggregator:RemoveListener(self._listenerId)
+  self._listenerId = nil  
+end
+
+function StatsAnnotatedGraphClass:_startListening()
+  if (self._aggregator == nil) then
+    return
+  end
+  
+  if (self._listenerId ~= nil) then 
+    return
+  end
+  
+  self._listenerId = self._aggregator:AddListener(function()
+      self:_updateValuesAndRender()
+  end)  
+end
+
+
+
+function StatsAnnotatedGraphClass:OnVisibilityChanged()
+  if StatsUtils.PerformanceStatsShouldBeVisible() then
+    self:_startListening()
+    self:_updateValuesAndRender()
+  else
+    self:_stopListening()
+  end
 end
 
 function StatsAnnotatedGraphClass:_recursiveGetOrderOfMagnitude(estimate, target)
@@ -176,7 +208,7 @@ function StatsAnnotatedGraphClass:_recursiveGetOrderOfMagnitude(estimate, target
   return self:_recursiveGetOrderOfMagnitude(estimate*10.0, target)
 end
 
-function StatsAnnotatedGraphClass:_updateValue()
+function StatsAnnotatedGraphClass:_updateValuesAndRender() 
   self._values = {}
   self._average = 0
   self._target = 0
@@ -187,7 +219,6 @@ function StatsAnnotatedGraphClass:_updateValue()
   end
   
   self:_calculateAxisMax()
-
   self:_render()
 end
 

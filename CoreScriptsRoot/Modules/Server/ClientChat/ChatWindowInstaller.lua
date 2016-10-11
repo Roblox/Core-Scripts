@@ -21,26 +21,29 @@ local function LoadModule(location, name, parent)
 end
 
 local function Install()
-	if (not installDirectory or installDirectory:FindFirstChild(runnerScriptName)) then
+	if (not installDirectory) then
 		return
 	end
 
-	local ChatScript = LoadLocalScript(runnerScriptName, installDirectory)
-	local ChatMain = LoadModule(script.Parent, "ChatMain", ChatScript)
+	local ChatScript = installDirectory:FindFirstChild(runnerScriptName)
+	if not ChatScript then
+		ChatScript = LoadLocalScript(runnerScriptName, installDirectory)
+		local ChatMain = LoadModule(script.Parent, "ChatMain", ChatScript)
 
-	LoadModule(script.Parent, "ChannelsBar", ChatMain)
-	LoadModule(script.Parent, "ChatBar", ChatMain)
-	LoadModule(script.Parent, "ChatChannel", ChatMain)
-	LoadModule(script.Parent, "MessageLogDisplay", ChatMain)
-	LoadModule(script.Parent, "ChatWindow", ChatMain)
-	--LoadModule("SpeakerDatabase", ChatMain)
-	LoadModule(script.Parent, "MessageLabelCreator", ChatMain)
-	LoadModule(script.Parent, "CommandProcessor", ChatMain)
-	LoadModule(script.Parent, "ChannelsTab", ChatMain)
-	LoadModule(script.Parent, "TransparencyTweener", ChatMain)
-	LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatMain)
-	LoadModule(script.Parent.Parent.Parent.Common, "ObjectPool", ChatMain)
-	LoadModule(script.Parent, "MessageSender", ChatMain)
+		LoadModule(script.Parent, "ChannelsBar", ChatMain)
+		LoadModule(script.Parent, "ChatBar", ChatMain)
+		LoadModule(script.Parent, "ChatChannel", ChatMain)
+		LoadModule(script.Parent, "MessageLogDisplay", ChatMain)
+		LoadModule(script.Parent, "ChatWindow", ChatMain)
+		--LoadModule("SpeakerDatabase", ChatMain)
+		LoadModule(script.Parent, "MessageLabelCreator", ChatMain)
+		LoadModule(script.Parent, "CommandProcessor", ChatMain)
+		LoadModule(script.Parent, "ChannelsTab", ChatMain)
+		LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatMain)
+		LoadModule(script.Parent.Parent.Parent.Common, "ObjectPool", ChatMain)
+		LoadModule(script.Parent, "MessageSender", ChatMain)
+		LoadModule(script.Parent, "CurveUtil", ChatMain)
+	end
 
 	if (not ReplicatedStorage:FindFirstChild("ClientChatModules")) then
 		local ModulesFolder = Instance.new("Folder")

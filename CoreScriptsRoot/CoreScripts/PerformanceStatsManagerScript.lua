@@ -132,14 +132,24 @@ end
 function UpdatePerformanceStatsVisibility() 
   local localPlayer = PlayersService.LocalPlayer
   
-  local isVisible = (GameSettings.PerformanceStatsVisible and localPlayer ~= nil)
-  if isVisible then 
+  local shouldBeVisible = StatsUtils.PerformanceStatsShouldBeVisible()
+  
+  if shouldBeVisible then 
     masterFrame.Visible = true
-    masterFrame.Parent = CoreGuiService.RobloxGui
+    masterFrame.Parent = CoreGuiService.RobloxGui    
   else
     masterFrame.Visible = false
     masterFrame.Parent = nil
   end
+  
+  -- Let the children respond to the transition that they are/are not visible.
+  statsViewer:OnVisibilityChanged()
+  for i, buttonType in ipairs(StatsUtils.AllStatTypes) do
+      local button = statsButtonsByType[buttonType]
+      button:OnVisibilityChanged()
+  end  
+
+  
 end
 
 

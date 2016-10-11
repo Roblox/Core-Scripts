@@ -1653,7 +1653,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 			GuiService.SelectedCoreObject = this.SliderFrame
 		end
 
-		if not fixSettingsMenuVR and not UserInputService.VREnabled then
+		if not UserInputService.VREnabled then
 			if repeatAction then
 				lastInputDirection = newStepPos - currentStep
 			else
@@ -1662,8 +1662,8 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 				local mouseInputMovedCon = nil
 				local mouseInputEndedCon = nil
 
-				mouseInputMovedCon = UserInputService.InputChanged:connect(function( inputObject )
-					if not isActivateEvent() then return end
+				mouseInputMovedCon = UserInputService.InputChanged:connect(function(inputObject)
+					if inputObject.UserInputType ~= Enum.UserInputType.MouseMovement then return end
 
 					local mousePos = inputObject.Position.X
 					for i = 1, steps do
@@ -1681,8 +1681,8 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 						end
 					end
 				end)
-				mouseInputEndedCon = UserInputService.InputEnded:connect(function( inputObject )
-					if not isActivateEvent() then return end
+				mouseInputEndedCon = UserInputService.InputEnded:connect(function(inputObject)
+					if not isActivateEvent(inputObject) then return end
 
 					lastInputDirection = 0
 					mouseInputEndedCon:disconnect()
@@ -1698,7 +1698,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 
 	local function mouseUpFunc(inputObject)
 		if not interactable then return end
-		if not isActivateEvent() then return end
+		if not isActivateEvent(inputObject) then return end
 
 		lastInputDirection = 0
 	end
