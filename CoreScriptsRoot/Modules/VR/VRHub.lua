@@ -56,7 +56,7 @@ local function onVREnabled(property)
 		RunService:UnbindFromRenderStep(vrUpdateRenderstepName)
 	end
 end
-
+onVREnabled("VREnabled")
 UserInputService.Changed:connect(onVREnabled)
 
 --VRHub API
