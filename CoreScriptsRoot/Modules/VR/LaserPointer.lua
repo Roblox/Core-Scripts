@@ -580,6 +580,9 @@ do --Action functions
 	end
 
 	function LaserPointer:doToolAim(aimPoint)
+		if not aimPoint then
+			return
+		end
 		if self.equippedTool then
 			local humanoid = getLocalHumanoid()
 			if not humanoid then return end
