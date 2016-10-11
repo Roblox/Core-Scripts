@@ -12,6 +12,8 @@ local GuiService = game:GetService("GuiService")
 local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
 local Utility = require(RobloxGui.Modules.Settings.Utility) --todo: use common utility module when it's done
 
+local IsRaycastWhitelistEnabled = pcall(function() workspace:FindPartOnRayWithWhitelist(Ray.new(Vector3.new(), Vector3.new(1, 0, 0)), {}) end)
+
 local LocalPlayer = Players.LocalPlayer
 
 --Pathfinding sort of works, but it's very slow and does not handle slopes very well.
@@ -432,7 +434,6 @@ do --Configuration functions
 
 	function LaserPointer:setTeleportMode(enabled)
 		if enabled == self.teleportMode then return	end
-		if self.tweener then return end
 
 		self.teleportMode = enabled
 
@@ -453,9 +454,11 @@ do --Configuration functions
 			easingFunc = LASER.TRANSITION_FUNC
 		end
 
-		self.tweener = Utility:TweenProperty(self, "transitionAlpha", alpha0, alpha1, duration, easingFunc, function()
-			self.tweener = false
-		end)
+		if not self.tweener then
+			self.tweener = Utility:TweenProperty(self, "transitionAlpha", alpha0, alpha1, duration, easingFunc, function()
+				self.tweener = false
+			end)
+		end
 	end
 
 	function LaserPointer:setArcLaunchParams(launchAngle, launchVelocity, gravity)
@@ -691,7 +694,12 @@ do --Laser/teleport functions
 
 	function LaserPointer:checkHeadMountedTeleportMode(originPos, originLook)
 		local ray = Ray.new(originPos, originLook * 999)
-		local hitPart = workspace:FindPartOnRayWithWhitelist(ray, { GuiService.CoreGuiFolder })
+		local hitPart = nil
+		if IsRaycastWhitelistEnabled then
+			hitPart = workspace:FindPartOnRayWithWhitelist(ray, { GuiService.CoreGuiFolder })
+		else
+			hitPart = workspace:FindPartOnRayWithIgnoreList(ray, { LocalPlayer.Character })
+		end
 		if hitPart and self:shouldShowLaser() then
 			self:setTeleportMode(false)
 			self:tweenLaserLength(1)
