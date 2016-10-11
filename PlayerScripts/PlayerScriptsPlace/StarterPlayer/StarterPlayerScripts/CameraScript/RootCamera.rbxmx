@@ -19,8 +19,6 @@ local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockControll
 
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
-local headHeightScalingFlagSuccess, headHeightScalingFlagValue = pcall(function() return Settings:IsUserFeatureEnabled("UserVariableCameraHeadHeight") end)
-local headHeightScalingFlag = (headHeightScalingFlagSuccess and headHeightScalingFlagValue)
 
 local function clamp(low, high, num)
 	if low <= high then
@@ -178,13 +176,8 @@ local function CreateCamera()
 					if humanoidRootPart and humanoidRootPart:IsA('BasePart') then
 						local subjectCFrame = GetRenderCFrame(humanoidRootPart)					
 						if cameraSubject.RigType == Enum.HumanoidRigType.R15 then
-							if not headHeightScalingFlag then
-								result = subjectCFrame.p +
-									subjectCFrame:vectorToWorldSpace(R15_HEAD_OFFSET + cameraSubject.CameraOffset)
-							else
-								result = subjectCFrame.p +
-									subjectCFrame:vectorToWorldSpace(R15HeadHeight + cameraSubject.CameraOffset)
-							end				
+							result = subjectCFrame.p +
+								subjectCFrame:vectorToWorldSpace(R15HeadHeight + cameraSubject.CameraOffset)		
 						else
 							result = subjectCFrame.p +
 								subjectCFrame:vectorToWorldSpace(HEAD_OFFSET + cameraSubject.CameraOffset)
@@ -527,12 +520,10 @@ local function CreateCamera()
 			cancelCameraFreeze()
 		end
 		if humanoid and humanoid:IsA('Humanoid') then
-			if headHeightScalingFlag then
-				humanoidChildAddedConn = humanoid.ChildAdded:connect(onHumanoidSubjectChildAdded)
-				humanoidChildRemovedConn = humanoid.ChildRemoved:connect(onHumanoidSubjectChildRemoved)
-				for _, child in pairs(humanoid:GetChildren()) do
-					onHumanoidSubjectChildAdded(child)
-				end
+			humanoidChildAddedConn = humanoid.ChildAdded:connect(onHumanoidSubjectChildAdded)
+			humanoidChildRemovedConn = humanoid.ChildRemoved:connect(onHumanoidSubjectChildRemoved)
+			for _, child in pairs(humanoid:GetChildren()) do
+				onHumanoidSubjectChildAdded(child)
 			end
 		
 			subjectStateChangedConn = humanoid.StateChanged:connect(function(oldState, newState)
