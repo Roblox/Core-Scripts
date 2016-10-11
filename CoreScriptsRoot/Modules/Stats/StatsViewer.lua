@@ -47,6 +47,12 @@ function StatsViewerClass.new()
   return self
 end
 
+function StatsViewerClass:OnVisibilityChanged()
+  if self._graph then 
+    self._graph:OnVisibilityChanged()
+  end
+end
+
 function StatsViewerClass:SetSizeAndPosition(size, position)
   self._frameImageLabel.Size = size;
   self._frameImageLabel.Position = position;
