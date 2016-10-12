@@ -294,7 +294,7 @@ do
 		
 		[Enum.HumanoidStateType.Seated] = function()
 			stopPlayingLoopedSoundsExcept()
-		end	;	
+		end;	
 	}
 	
 	-- Handle state event fired or OnChange fired
