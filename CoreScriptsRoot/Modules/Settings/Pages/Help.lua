@@ -18,7 +18,7 @@ local GuiService = game:GetService("GuiService")
 
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
-
+  
 ------------ Variables -------------------
 local PageInstance = nil
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
@@ -162,23 +162,17 @@ local function Initialize()
     accessoriesFrame.Parent = parentFrame
 
     local miscFrame = nil
-    local hideHudSuccess, hideHudFlagValue = pcall(function() return settings():GetFFlag("AllowHideHudShortcut") end)
-    if (hideHudSuccess and hideHudFlagValue) then
-      miscFrame = createPCGroup("Misc", {	[1] = {["Screenshot"] = "Print Screen"}, 
-          [2] = {["Record Video"] = isOSX and "F12/fn + F12" or "F12"},
-          [3] = {["Hide HUD"] = isOSX and "F7/fn + F7" or "F7"},
-          [4] = {["Dev Console"] = isOSX and "F9/fn + F9" or "F9"},
-          [5] = {["Mouselock"] = "Shift"},
-          [6] = {["Graphics Level"] = isOSX and "F10/fn + F10" or "F10"},
-          [7] = {["Fullscreen"] = isOSX and "F11/fn + F11" or "F11"} })
-    else
-      miscFrame = createPCGroup("Misc", {	[1] = {["Screenshot"] = "Print Screen"}, 
-          [2] = {["Record Video"] = isOSX and "F12/fn + F12" or "F12"},
-          [3] = {["Dev Console"] = isOSX and "F9/fn + F9" or "F9"},
-          [4] = {["Mouselock"] = "Shift"},
-          [5] = {["Graphics Level"] = isOSX and "F10/fn + F10" or "F10"},
-          [6] = {["Fullscreen"] = isOSX and "F11/fn + F11" or "F11"} })
-    end
+    miscFrame = createPCGroup("Misc", {	
+        [1] = {["Screenshot"] = "Print Screen"}, 
+        [2] = {["Record Video"] = isOSX and "F12/fn + F12" or "F12"},
+        [3] = {["Dev Console"] = isOSX and "F9/fn + F9" or "F9"},
+        [4] = {["Mouselock"] = "Shift"},
+        [5] = {["Graphics Level"] = isOSX and "F10/fn + F10" or "F10"},
+        [6] = {["Fullscreen"] = isOSX and "F11/fn + F11" or "F11"},
+        [7] = {["Perf. Stats"] = isOSX and "F9/fn + F9" or "F9"}, 
+      }
+    )
+
     miscFrame.Position = UDim2.new(2/3,PC_TABLE_SPACING * 2,0,0)
     miscFrame.Parent = parentFrame
 

@@ -130,8 +130,6 @@ function ConfigureStatViewerInMasterFrame()
 end
 
 function UpdatePerformanceStatsVisibility() 
-  local localPlayer = PlayersService.LocalPlayer
-  
   local shouldBeVisible = StatsUtils.PerformanceStatsShouldBeVisible()
   
   if shouldBeVisible then 
