@@ -521,7 +521,6 @@ local function CreateSettingsHub()
     end
   end
 
-
   local function toggleDevConsole(actionName, inputState, inputObject)
     if actionName == DEV_CONSOLE_ACTION_NAME then 	-- ContextActionService->F9
       if inputState and inputState == Enum.UserInputState.Begin then
