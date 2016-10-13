@@ -30,7 +30,7 @@ local Humanoid = MasterControl:GetHumanoid()
 local JumpButton = nil
 local OnInputEnded = nil		-- defined in Create()
 local HumChangeConnection = nil
-local ExternallyEnabled = false --[[I don't think there's anything that disables jump from outside this script, but in case that ever happens, 
+local ExternallyEnabled = false --[[I don't think there's anything that disables jump from outside this script, but in case that ever happens,
 							we don't want to re-enable it when jump power is changed]]
 
 --[[ Constants ]]--
@@ -52,7 +52,9 @@ local function humanoidChanged(prop)
 end
 
 local function disableButton()
-	JumpButton.Visible = false
+	if JumpButton then
+		JumpButton.Visible = false
+	end
 	OnInputEnded()
 end
 
@@ -80,10 +82,10 @@ function TouchJump:Create(parentFrame)
 		JumpButton:Destroy()
 		JumpButton = nil
 	end
-	
+
 	local isSmallScreen = parentFrame.AbsoluteSize.y <= 500
 	local jumpButtonSize = isSmallScreen and 70 or 120
-	
+
 	JumpButton = Instance.new('ImageButton')
 	JumpButton.Name = "JumpButton"
 	JumpButton.Visible = false
@@ -92,7 +94,7 @@ function TouchJump:Create(parentFrame)
 	JumpButton.ImageRectOffset = Vector2.new(176, 222)
 	JumpButton.ImageRectSize = Vector2.new(174, 174)
 	JumpButton.Size = UDim2.new(0, jumpButtonSize, 0, jumpButtonSize)
-	
+
 	if not repositionJumpButton then
 		JumpButton.Position = isSmallScreen and UDim2.new(1, jumpButtonSize * -2.25, 1, -jumpButtonSize - 20) or
 			UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
@@ -100,36 +102,36 @@ function TouchJump:Create(parentFrame)
 		JumpButton.Position = isSmallScreen and UDim2.new(1, -(jumpButtonSize*1.5-10), 1, -jumpButtonSize - 20) or
 			UDim2.new(1, -(jumpButtonSize*1.5-10), 1, -jumpButtonSize * 1.75)
 	end
-	
-	local touchObject = nil	
+
+	local touchObject = nil
 	JumpButton.InputBegan:connect(function(inputObject)
 		if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
 			return
 		end
-		
+
 		touchObject = inputObject
 		JumpButton.ImageRectOffset = Vector2.new(0, 222)
 		MasterControl:SetIsJumping(true)
 	end)
-	
+
 	OnInputEnded = function()
 		touchObject = nil
 		MasterControl:SetIsJumping(false)
 		JumpButton.ImageRectOffset = Vector2.new(176, 222)
 	end
-	
+
 	JumpButton.InputEnded:connect(function(inputObject)
 		if inputObject == touchObject then
 			OnInputEnded()
 		end
 	end)
-	
+
 	GuiService.MenuOpened:connect(function()
 		if touchObject then
 			OnInputEnded()
 		end
 	end)
-	
+
 	if Humanoid then
 		HumChangeConnection = Humanoid.Changed:connect(humanoidChanged)
 	end
