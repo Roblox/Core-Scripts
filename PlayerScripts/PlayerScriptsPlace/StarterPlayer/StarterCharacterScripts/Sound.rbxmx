@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="Script" referent="RBXd23f9ee43b5f4a558f54f1f207b69f96">
+	<Item class="Script" referent="RBXf11428b7b777457c8d872c64386aa070">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
@@ -49,7 +49,7 @@ CreateNewSound("Running", 		"rbxasset://sounds/action_footsteps_plastic.mp3",		t
 CreateNewSound("Swimming", 	"rbxasset://sounds/action_swim.mp3",					true,	1.6,	head)
 CreateNewSound("Climbing", 	"rbxasset://sounds/action_footsteps_plastic.mp3",		true,	1,		head)]]></ProtectedString>
 		</Properties>
-		<Item class="LocalScript" referent="RBX4f389895f57541eaaf886badc1417010">
+		<Item class="LocalScript" referent="RBXcf674087fdd94888aaa89ff050d72c40">
 			<Properties>
 				<bool name="Disabled">false</bool>
 				<Content name="LinkedSource"><null></null></Content>
@@ -290,7 +290,11 @@ do
 					0,1)
 				Util.Play(landingSound)			
 			end
-		end
+		end;
+		
+		[Enum.HumanoidStateType.Seated] = function()
+			stopPlayingLoopedSoundsExcept()
+		end;	
 	}
 	
 	-- Handle state event fired or OnChange fired
