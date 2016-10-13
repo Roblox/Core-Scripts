@@ -20,7 +20,6 @@ local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockControll
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
-
 local function clamp(low, high, num)
 	if low <= high then
 		return math.min(high, math.max(low, num))
@@ -88,7 +87,7 @@ end
 
 local function CreateCamera()
 	local this = {}
-
+	local R15HeadHeight = R15_HEAD_OFFSET
 
 	function this:GetActivateValue()
 		return 0.7
@@ -126,7 +125,7 @@ local function CreateCamera()
 	this.RotateInput = Vector2.new()
 
 	this.lastSubject = nil
-	this.lastSubjectPosition = Vector3.new(0, 0, 0)
+	this.lastSubjectPosition = Vector3.new(0, 5, 0)
 
 	local lastVRRotation = 0
 	local vrRotateKeyCooldown = {}
@@ -178,7 +177,7 @@ local function CreateCamera()
 						local subjectCFrame = GetRenderCFrame(humanoidRootPart)					
 						if cameraSubject.RigType == Enum.HumanoidRigType.R15 then
 							result = subjectCFrame.p +
-								subjectCFrame:vectorToWorldSpace(R15_HEAD_OFFSET + cameraSubject.CameraOffset)							
+								subjectCFrame:vectorToWorldSpace(R15HeadHeight + cameraSubject.CameraOffset)		
 						else
 							result = subjectCFrame.p +
 								subjectCFrame:vectorToWorldSpace(HEAD_OFFSET + cameraSubject.CameraOffset)
@@ -452,7 +451,9 @@ local function CreateCamera()
 	local subjectStateChangedConn = nil
 	local cameraChangedConn = nil
 	local workspaceChangedConn = nil
-
+	local humanoidChildAddedConn = nil
+	local humanoidChildRemovedConn = nil
+	
 	local function cancelCameraFreeze(keepConstraints)
 		if not keepConstraints then
 			cameraTranslationConstraints = Vector3.new(cameraTranslationConstraints.x, 1, cameraTranslationConstraints.z)
@@ -471,17 +472,60 @@ local function CreateCamera()
 			cameraFrozen = true
 		end
 	end
+	
+	local function rescaleCameraOffset(newScaleFactor)
+		R15HeadHeight = R15_HEAD_OFFSET*newScaleFactor
+	end
+	
+	local function onHumanoidSubjectChildAdded(child)
+		if child.Name == "BodyHeightScale" and child:IsA("DoubleConstrainedValue") then
+			if heightScaleChangedConn then
+				heightScaleChangedConn:disconnect()
+			end
+			heightScaleChangedConn = child.Changed:connect(rescaleCameraOffset)
+			rescaleCameraOffset(child.Value)
+		end
+	end
+	
+	local function onHumanoidSubjectChildRemoved(child)
+		if child.Name == "BodyHeightScale" then
+			rescaleCameraOffset(1)
+			if heightScaleChangedConn then
+				heightScaleChangedConn:disconnect()
+				heightScaleChangedConn = nil
+			end
+		end
+	end
 
 	local function onNewCameraSubject()
 		if subjectStateChangedConn then
 			subjectStateChangedConn:disconnect()
 			subjectStateChangedConn = nil
 		end
+		if humanoidChildAddedConn then
+			humanoidChildAddedConn:disconnect()
+			humanoidChildAddedConn = nil
+		end
+		if humanoidChildRemovedConn then
+			humanoidChildRemovedConn:disconnect()
+			humanoidChildRemovedConn = nil
+		end
+		if heightScaleChangedConn then
+			heightScaleChangedConn:disconnect()
+			heightScaleChangedConn = nil
+		end
+		
 		local humanoid = workspace.CurrentCamera and workspace.CurrentCamera.CameraSubject
 		if trackingHumanoid ~= humanoid then
 			cancelCameraFreeze()
 		end
 		if humanoid and humanoid:IsA('Humanoid') then
+			humanoidChildAddedConn = humanoid.ChildAdded:connect(onHumanoidSubjectChildAdded)
+			humanoidChildRemovedConn = humanoid.ChildRemoved:connect(onHumanoidSubjectChildRemoved)
+			for _, child in pairs(humanoid:GetChildren()) do
+				onHumanoidSubjectChildAdded(child)
+			end
+		
 			subjectStateChangedConn = humanoid.StateChanged:connect(function(oldState, newState)
 				if newState == Enum.HumanoidStateType.Jumping and not this:IsInFirstPerson() and UserInputService.VREnabled then
 					startCameraFreeze(this:GetSubjectPosition(), humanoid)
