@@ -53,6 +53,14 @@ function StatsViewerClass:OnVisibilityChanged()
   end
 end
 
+function StatsViewerClass:GetIsVisible()
+  return self._frameImageLabel.Visible
+end
+
+function StatsViewerClass:GetStatType()
+  return self._statType
+end
+
 function StatsViewerClass:SetSizeAndPosition(size, position)
   self._frameImageLabel.Size = size;
   self._frameImageLabel.Position = position;
