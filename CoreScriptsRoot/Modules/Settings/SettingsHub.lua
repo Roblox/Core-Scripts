@@ -514,7 +514,8 @@ local function CreateSettingsHub()
   end
 
   local function toggleQuickProfiler(actionName, inputState, inputObject) 
-    if actionName ==QUICK_PROFILER_ACTION_NAME then 	-- ContextActionService->F9
+      -- F7
+      if actionName ==QUICK_PROFILER_ACTION_NAME then
       if inputState and inputState == Enum.UserInputState.Begin then
         GameSettings.PerformanceStatsVisible = not GameSettings.PerformanceStatsVisible
       end
