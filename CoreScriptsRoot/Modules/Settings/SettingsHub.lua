@@ -14,6 +14,7 @@ local SETTINGS_SHIELD_INACTIVE_POSITION = UDim2.new(0,0,-1,-36)
 local SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0, 0, 0, 0)
 local SETTINGS_BASE_ZINDEX = 2
 local DEV_CONSOLE_ACTION_NAME = "Open Dev Console"
+local QUICK_PROFILER_ACTION_NAME = "Show Quick Profiler"
 
 --[[ SERVICES ]]
 local CoreGui = game:GetService("CoreGui")
@@ -22,6 +23,8 @@ local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local Settings = UserSettings()
+local GameSettings = Settings.GameSettings
 
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
@@ -508,6 +511,15 @@ local function CreateSettingsHub()
         end
       end)
     onScreenSizeChanged()
+  end
+
+  local function toggleQuickProfiler(actionName, inputState, inputObject) 
+      -- F7
+      if actionName ==QUICK_PROFILER_ACTION_NAME then
+      if inputState and inputState == Enum.UserInputState.Begin then
+        GameSettings.PerformanceStatsVisible = not GameSettings.PerformanceStatsVisible
+      end
+    end
   end
 
   local function toggleDevConsole(actionName, inputState, inputObject)
@@ -1111,7 +1123,16 @@ local function CreateSettingsHub()
     end)
 
   -- Dev Console Connections
-  ContextActionService:BindCoreAction(DEV_CONSOLE_ACTION_NAME, toggleDevConsole, false, Enum.KeyCode.F9)
+  ContextActionService:BindCoreAction(DEV_CONSOLE_ACTION_NAME, 
+    toggleDevConsole, 
+    false,
+    Enum.KeyCode.F9)
+
+  -- Quick Profiler connections
+  ContextActionService:BindCoreAction(QUICK_PROFILER_ACTION_NAME, 
+    toggleQuickProfiler, 
+    false,
+    Enum.KeyCode.F7)
 
   -- Keyboard control
   UserInputService.InputBegan:connect(function(input)
