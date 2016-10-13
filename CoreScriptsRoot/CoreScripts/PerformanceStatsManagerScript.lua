@@ -12,10 +12,11 @@ local GameSettings = Settings.GameSettings
 local CoreGuiService = game:GetService('CoreGui')
 
 --[[ Modules ]]--
+local GoogleAnalyticsUtils = require(CoreGuiService.RobloxGui.Modules.GoogleAnalyticsUtils)
 local StatsAggregatorManagerClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsAggregatorManager)
 local StatsButtonClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsButton)
-local StatsViewerClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsViewer)
 local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
+local StatsViewerClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsViewer)
 local TopbarConstants = require(CoreGuiService.RobloxGui.Modules.TopbarConstants)
 
 --[[ Fast Flags ]]--
@@ -86,16 +87,33 @@ end
 
 function UpdateViewerVisibility()
   -- If a particular button/tab is on, show the Viewer.
-  -- FIXME(dbanks)
-  -- Configure with details of the dude currently selected.  
+  -- 
+  -- Don't bother if we're already there.
   if (currentStatType == nil) then 
-    statsViewer:SetVisible(false)
-    statsViewer:SetStatsAggregator(nil)
+    if statsViewer:GetIsVisible() then 
+      statsViewer:SetVisible(false)
+      statsViewer:SetStatsAggregator(nil)
+    end
   else
-    statsViewer:SetStatType(currentStatType)
-    statsViewer:SetStatsAggregator(statsAggregatorManager:GetAggregator(currentStatType))
+    local somethingChanged = false
+    if not statsViewer:GetIsVisible() then 
+      somethingChanged = true
+      statsViewer:SetVisible(true)
+    end
     
-    statsViewer:SetVisible(true)
+    if currentStatType ~= statsViewer:GetStatType() then 
+      statsViewer:SetStatType(currentStatType)
+      statsViewer:SetStatsAggregator(statsAggregatorManager:GetAggregator(currentStatType))    
+      somethingChanged = true
+    end
+    
+    if somethingChanged then 
+      -- track it.
+      game:ReportInGoogleAnalytics(GoogleAnalyticsUtils.CA_CATEGORY_GAME, 
+        "Enlarge PerfStat ",
+        currentStatType,
+        0)
+    end
   end
 end
 
@@ -132,6 +150,10 @@ end
 function UpdatePerformanceStatsVisibility() 
   local shouldBeVisible = StatsUtils.PerformanceStatsShouldBeVisible()
   
+  if (shouldBeVisible == masterFrame.Visible) then 
+    return
+  end
+  
   if shouldBeVisible then 
     masterFrame.Visible = true
     masterFrame.Parent = CoreGuiService.RobloxGui    
@@ -147,7 +169,15 @@ function UpdatePerformanceStatsVisibility()
       button:OnVisibilityChanged()
   end  
 
-  
+  -- track it.
+  local actionName = "Hide PerfStats"
+  if shouldBeVisible then 
+    actionName = "Show PerfStats"
+  end
+  game:ReportInGoogleAnalytics(GoogleAnalyticsUtils.CA_CATEGORY_GAME, 
+    actionName, 
+    "",
+    0)
 end
 
 
