@@ -158,11 +158,15 @@ local function Initialize()
       this.PerformanceStatsMode,
       this.PerformanceStatsOverrideText = nil
 
-      local startIndex = 2
-
-      if GameSettings.PerformanceStatsVisible then
-        startIndex = 1
+      function GetDesiredPerformanceStatsIndex()
+        if GameSettings.PerformanceStatsVisible then
+          return 1
+        else
+          return 2
+        end
       end
+
+      local startIndex = GetDesiredPerformanceStatsIndex()
 
       this.PerformanceStatsFrame, 
       this.PerformanceStatsLabel,
@@ -192,6 +196,13 @@ local function Initialize()
             GameSettings.PerformanceStatsVisible = true
           else
             GameSettings.PerformanceStatsVisible = false
+          end
+        end)
+      
+      GameSettings.PerformanceStatsVisibleChanged:connect(function()
+          local desiredIndex = GetDesiredPerformanceStatsIndex()
+          if desiredIndex ~= this.PerformanceStatsMode.CurrentIndex then 
+            this.PerformanceStatsMode:SetSelectionIndex(desiredIndex)
           end
         end)
     end
@@ -224,6 +235,7 @@ local function Initialize()
 
       SetGraphicsQuality(Enum.QualityLevel.Automatic.Value, true)
     end
+
     local function setGraphicsToManual(level)
       this.GraphicsQualitySlider:SetZIndex(2)
       this.GraphicsQualityLabel.ZIndex = 2
