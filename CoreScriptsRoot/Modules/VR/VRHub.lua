@@ -9,7 +9,7 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Util = require(RobloxGui.Modules.Settings.Utility)
 
 local LaserPointer = require(RobloxGui.Modules.VR.LaserPointer)
-local useLaserPointerSuccess, useLaserPointerValue = pcall(function() settings():GetFFlag("UseLaserPointerVR") end)
+local useLaserPointerSuccess, useLaserPointerValue = pcall(function() return settings():GetFFlag("UseLaserPointerVR") end)
 local useLaserPointerFlag = useLaserPointerSuccess and useLaserPointerValue
 
 local VRHub = {}
