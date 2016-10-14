@@ -46,7 +46,7 @@ function ConfigureMasterFrame()
   masterFrame.Position = UDim2.new(0, 0, 0, 0)
   masterFrame.Size = UDim2.new(1, 0, 1, 0)
   masterFrame.Selectable = false
-  masterFrame.BackgroundTransparency = 0.8
+  masterFrame.BackgroundTransparency = 1.0
   masterFrame.Active = false  
   masterFrame.ZIndex = 0
   
