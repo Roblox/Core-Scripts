@@ -740,7 +740,7 @@ local function getRobuxProduct(amountNeeded, isBCMember)
 
 	if platform == Enum.Platform.XBoxOne then
 		productArray = {}
-		local platformCatalogData = require(RobloxGui.Modules.PlatformCatalogData)
+		local platformCatalogData = require(RobloxGui.Modules.Shell.PlatformCatalogData)
 
 		local catalogInfo = platformCatalogData:GetCatalogInfoAsync()
 		if catalogInfo then
@@ -785,7 +785,7 @@ local function getRobuxProductToBuyItem(amountNeeded)
 		end
 		appPrefix = "com.roblox.client."
 	elseif platform == Enum.Platform.XBoxOne then
-		local platformCatalogData = require(RobloxGui.Modules.PlatformCatalogData)
+		local platformCatalogData = require(RobloxGui.Modules.Shell.PlatformCatalogData)
 
 		local catalogInfo = platformCatalogData:GetCatalogInfoAsync()
 		if catalogInfo then
