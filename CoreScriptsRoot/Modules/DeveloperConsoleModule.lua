@@ -2903,10 +2903,10 @@ do
 				
 				local LogService = game:GetService("LogService")
 				
-				LogService.ServerMessageOut:connect(function(text, messageType)
+				LogService.ServerMessageOut:connect(function(text, messageType, timestamp)
 					local message = {
 						Message = text or "[DevConsole Error 3]";
-						Time = ConvertTimeStamp(os_time());
+						Time = ConvertTimeStamp(timestamp);
 						Type = messageType.Value;
 					}
 					if not filterMessageOnAdd(message) then
