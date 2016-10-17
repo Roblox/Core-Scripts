@@ -84,9 +84,17 @@ local function Initialize()
 				end
 			end
 		end
-
+	end
+	
+	this.ResetBindable = Instance.new("BindableEvent")
+	this.ResetBindable.Event:connect(resetCharFunc)
+	
+	local onResetFunction = function()
 		if this.HubRef then
 			this.HubRef:SetVisibility(false, true)
+		end
+		if this.ResetBindable then
+			this.ResetBindable:Fire()
 		end
 	end
 
@@ -97,7 +105,7 @@ local function Initialize()
 		buttonSize = UDim2.new(0, 300, 0, 80)
 	end
 
-	this.ResetCharacterButton = utility:MakeStyledButton("ResetCharacter", "Reset", buttonSize, resetCharFunc)
+	this.ResetCharacterButton = utility:MakeStyledButton("ResetCharacter", "Reset", buttonSize, onResetFunction)
 	this.ResetCharacterButton.NextSelectionRight = nil
 	if utility:IsSmallTouchScreen() then
 		this.ResetCharacterButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, 0)
@@ -124,15 +132,25 @@ end
 
 ----------- Public Facing API Additions --------------
 PageInstance = Initialize()
+local isOpen = false
 
 PageInstance.Displayed.Event:connect(function()
+	isOpen = true
 	GuiService.SelectedCoreObject = PageInstance.ResetCharacterButton
 	ContextActionService:BindCoreAction(RESET_CHARACTER_GAME_ACTION, PageInstance.DontResetCharFromHotkey, false, Enum.KeyCode.ButtonB)
 end)
 
 PageInstance.Hidden.Event:connect(function()
+	isOpen = false
 	ContextActionService:UnbindCoreAction(RESET_CHARACTER_GAME_ACTION)
 end)
 
+function PageInstance:SetResetCallback(bindableEvent)
+	if bindableEvent == false and isOpen then
+		-- We need to close this page if reseting was just disabled and the page is already open
+		PageInstance.HubRef:PopMenu(nil, true)
+	end
+	PageInstance.ResetBindable = bindableEvent
+end
 
 return PageInstance
