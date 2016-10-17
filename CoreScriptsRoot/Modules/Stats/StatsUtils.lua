@@ -6,6 +6,9 @@
 
 --[[ Services ]]--
 local CoreGuiService = game:GetService('CoreGui')
+local PlayersService = game:GetService("Players")
+local Settings = UserSettings()
+local GameSettings = Settings.GameSettings
 
 
 --[[ Modules ]]--
@@ -175,6 +178,11 @@ function StatsUtils.GetColorForValue(value, target)
   else
     return StatsUtils.GraphBarRedColor
   end
+end
+  
+function StatsUtils.PerformanceStatsShouldBeVisible()
+  local localPlayer = PlayersService.LocalPlayer
+  return (GameSettings.PerformanceStatsVisible and localPlayer ~= nil)
 end
   
 return StatsUtils
