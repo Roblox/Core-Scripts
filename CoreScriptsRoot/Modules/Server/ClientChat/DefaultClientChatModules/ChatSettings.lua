@@ -7,7 +7,7 @@ local module = {}
 module.WindowDraggable = false
 module.WindowResizable = false
 
-module.ShowChannelsBar = false
+module.ShowChannelsBar = true
 module.GamepadNavigationEnabled = false
 
 module.ChatWindowTextSize = Enum.FontSize.Size18

@@ -89,10 +89,10 @@ local moduleCommandProcessor = require(modulesFolder:WaitForChild("CommandProces
 moduleMessageLabelCreator:RegisterGuiRoot(GuiParent)
 
 local ChatWindow = moduleChatWindow.new()
-local ChatBar = moduleChatBar.new()
 local ChannelsBar = moduleChannelsBar.new()
 local MessageLogDisplay = moduleMessageLogDisplay.new()
 local CommandProcessor = moduleCommandProcessor.new()
+local ChatBar = moduleChatBar.new(CommandProcessor, ChatWindow)
 
 ChatWindow:CreateGuiObjects(GuiParent)
 
@@ -313,23 +313,6 @@ end)
 UpdateFadingForMouseState(true)
 UpdateFadingForMouseState(false)
 
-ChatBar:GetTextBox().Focused:connect(function()
-	if (not mouseIsInWindow) then
-		DoBackgroundFadeIn()
-		if (textIsFaded) then
-			DoTextFadeIn()
-		end
-	end
-
-	chatBarFocusChanged:Fire()
-end)
-
-ChatBar:GetTextBox().FocusLost:connect(function()
-	DoBackgroundFadeIn()
-	chatBarFocusChanged:Fire()
-end)
-
-
 
 
 
@@ -390,13 +373,42 @@ local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 	end
 end
 
+function chatBarFocused()
+	if (not mouseIsInWindow) then
+		DoBackgroundFadeIn()
+		if (textIsFaded) then
+			DoTextFadeIn()
+		end
+	end
+
+	chatBarFocusChanged:Fire()
+end
+
 --// Event for making player say chat message.
-ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
+function chatBarFocusLost(enterPressed, inputObject)
+	DoBackgroundFadeIn()
+	chatBarFocusChanged:Fire()
+
 	if (enterPressed) then
-		local message = string.sub(ChatBar:GetTextBox().Text, 1, ChatSettings.MaximumMessageLength)
+		local message = ChatBar:GetTextBox().Text
+
+		if ChatBar:IsInCustomState() then
+			local customMessage = ChatBar:GetCustomMessage()
+			if customMessage then
+				message = customMessage
+			end
+			local messageSunk = ChatBar:CustomStateProcessCompletedMessage(message)
+			ChatBar:ResetCustomState()
+			if messageSunk then
+				return
+			end
+		end
+
+		message = string.sub(message, 1, ChatSettings.MaximumMessageLength)
+
 		ChatBar:GetTextBox().Text = ""
 
-		if (message ~= "" and not CommandProcessor:ProcessChatCommands(message, ChatWindow)) then
+		if (message ~= "" and not CommandProcessor:ProcessCompletedChatMessage(message, ChatWindow)) then
 			message = string.gsub(message, "\n", "")
 			message = string.gsub(message, "[ ]+", " ")
 
@@ -415,7 +427,24 @@ ChatBar:GetTextBox().FocusLost:connect(function(enterPressed, inputObject)
 		end
 
 	end
-end)
+end
+
+local ChatBarConnections = {}
+function setupChatBarConnections()
+	for i = 1, #ChatBarConnections do
+		ChatBarConnections[i]:Disconnect()
+	end
+	ChatBarConnections = {}
+
+	local focusLostConnection = ChatBar:GetTextBox().FocusLost:connect(chatBarFocusLost)
+	table.insert(ChatBarConnections, focusLostConnection)
+
+	local focusGainedConnection = ChatBar:GetTextBox().Focused:connect(chatBarFocused)
+	table.insert(ChatBarConnections, focusGainedConnection)
+end
+
+setupChatBarConnections()
+ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
 
 EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 	local channelObj = ChatWindow:GetChannel(channelName)

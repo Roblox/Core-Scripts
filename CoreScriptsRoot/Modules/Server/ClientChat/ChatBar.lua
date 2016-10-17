@@ -22,6 +22,8 @@ local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 local methods = {}
 
 function methods:CreateGuiObjects(targetParent)
+	rawset(self, "ChatBarParentFrame", targetParent)
+
 	local backgroundImagePixelOffset = 7
 	local textBoxPixelOffset = 5
 
@@ -97,75 +99,6 @@ function methods:CreateGuiObjects(targetParent)
 	TextBox.TextStrokeTransparency = TextLabel.TextStrokeTransparency
 	TextBox.TextTransparency = TextLabel.TextTransparency
 
-	local function UpdateOnFocusStatusChanged(isFocused)
-		if (isFocused) then
-			TextLabel.Visible = false
-			MessageModeTextLabel.Visible = true
-		else
-			local setVis = (TextBox.Text == "")
-			TextLabel.Visible = setVis
-			MessageModeTextLabel.Visible = not setVis
-		end
-	end
-
-	TextBox.Focused:connect(function() UpdateOnFocusStatusChanged(true) end)
-	TextBox.FocusLost:connect(function() UpdateOnFocusStatusChanged(false) end)
-
-	--// Code for getting back into general channel from other target channel when pressing backspace.
-	UserInputService.InputBegan:connect(function(inputObj, gpe)
-		if (inputObj.KeyCode == Enum.KeyCode.Backspace) then
-			if (TextBox:IsFocused() and TextBox.Text == "") then
-				self:SetChannelTarget(ChatSettings.GeneralChannelName)
-			end
-		end
-	end)
-
-	TextBox.Changed:connect(function(prop)
-		if (prop == "Text")  then
-			if (string.len(TextBox.Text) > ChatSettings.MaximumMessageLength) then
-				TextBox.Text = string.sub(TextBox.Text, 1, ChatSettings.MaximumMessageLength)
-				return
-			end
-		end
-
-		if (prop == "Text" and not ChatSettings.ShowChannelsBar and TextBox.Text:match("%s$")) then
-			local text = TextBox.Text
-			local doProcess = true
-			if (string.sub(TextBox.Text, 1, 3):lower() == "/w ") then
-				text = string.sub(text, 4)
-
-			elseif (string.sub(TextBox.Text, 1, 9):lower() == "/whisper ") then
-				text = string.sub(text,  10)
-
-			else
-				doProcess = false
-
-			end
-
-			if (doProcess) then
-				local match = nil
-				if (string.sub(text, 1, 1) == "\"") then
-					match = string.match(text, "\".+\"%s")
-					if (match) then
-						local len = string.len(match)
-						match = string.sub(match, 2, len - 1)
-					end
-				else
-					match = string.match(text, "%S+%s")
-				end
-
-				if (match) then
-					local len = string.len(match)
-					match = string.sub(match, 1, len - 1)
-					TextBox.Text = ""
-
-					local targ = ChatSettings.GeneralChannelName or rawget(self, "TargetChannel")
-					MessageSender:SendMessage(string.format("/w %s", match), targ)
-				end
-			end
-		end
-	end)
-
 	rawset(self, "GuiObject", BaseFrame)
 	rawset(self, "TextBox", TextBox)
 	rawset(self, "TextLabel", TextLabel)
@@ -177,34 +110,87 @@ function methods:CreateGuiObjects(targetParent)
 	self.GuiObjects.MessageModeTextLabel = MessageModeTextLabel
 
 	self:AnimGuiObjects()
+	self:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextLabel)
+	self.eGuiObjectsChanged:Fire()
+end
 
-	local changedLock = false
-	self.TextBox.Changed:connect(function(prop)
-		if (prop == "Text") then
-			if (changedLock) then return end
-			changedLock = true
+function methods:DisconnectConnections()
+	for i = 1, #self.Connections do
+		self.Connections[i]:Disconnect()
+	end
+	self.Connections = {}
+end
 
-			self:CalculateSize()
+function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextLabel)
+	self:DisconnectConnections()
 
-			changedLock = false
+	--// Code for getting back into general channel from other target channel when pressing backspace.
+	local inputBeganConnection = UserInputService.InputBegan:connect(function(inputObj, gpe)
+		if (inputObj.KeyCode == Enum.KeyCode.Backspace) then
+			if (TextBox:IsFocused() and TextBox.Text == "") then
+				self:SetChannelTarget(ChatSettings.GeneralChannelName)
+			end
 		end
 	end)
+	table.insert(self.Connections, inputBeganConnection)
 
-	self.TextBox.Focused:connect(function()
+	local textboxChangedConnection = TextBox.Changed:connect(function(prop)
+		if prop ~= "Text" then
+			return
+		end
+
 		self:CalculateSize()
-	end)
 
-	self.TextBox.FocusLost:connect(function(enterPressed, inputObject)
+		if (string.len(TextBox.Text) > ChatSettings.MaximumMessageLength) then
+			TextBox.Text = string.sub(TextBox.Text, 1, ChatSettings.MaximumMessageLength)
+			return
+		end
+
+		if not self.InCustomState then
+			local customState = self.CommandProcessor:ProcessInProgressChatMessage(TextBox.Text, self.ChatWindow, self)
+			if customState then
+				self.InCustomState = true
+				rawset(self, "CustomState", customState)
+			end
+		else
+			self.CustomState:TextUpdated()
+		end
+	end)
+	table.insert(self.Connections, textboxChangedConnection)
+
+	local function UpdateOnFocusStatusChanged(isFocused)
+		if (isFocused) then
+			TextLabel.Visible = false
+			MessageModeTextLabel.Visible = true
+		else
+			local setVis = (TextBox.Text == "")
+			TextLabel.Visible = setVis
+			MessageModeTextLabel.Visible = not setVis
+		end
+	end
+
+	local textboxfocusedConnection = TextBox.Focused:connect(function()
+		self:CalculateSize()
+		UpdateOnFocusStatusChanged(true)
+	end)
+	table.insert(self.Connections, textboxfocusedConnection)
+
+	local textboxFocusLostConnection = TextBox.FocusLost:connect(function(enterPressed, inputObject)
 		self:ResetSize()
 		if (inputObject and inputObject.KeyCode == Enum.KeyCode.Escape) then
-			self.TextBox.Text = ""
+			TextBox.Text = ""
 		end
-
+		UpdateOnFocusStatusChanged(false)
 	end)
+	table.insert(self.Connections, textboxFocusLostConnection)
 end
 
 function methods:GetTextBox()
 	return self.TextBox
+end
+
+function methods:GetMessageModeTextLabel()
+	return self.GuiObjects.MessageModeTextLabel
 end
 
 function methods:IsFocused()
@@ -298,21 +284,53 @@ function methods:SetChannelTarget(targetChannel)
 
 	rawset(self, "TargetChannel", targetChannel)
 
-	if (targetChannel ~= ChatSettings.GeneralChannelName) then
-		messageModeTextLabel.Size = UDim2.new(0, 1000, 1, 0)
-		messageModeTextLabel.Text = string.format("[%s] ", targetChannel)
+	if not self:IsInCustomState() then
+		if (targetChannel ~= ChatSettings.GeneralChannelName) then
+			messageModeTextLabel.Size = UDim2.new(0, 1000, 1, 0)
+			messageModeTextLabel.Text = string.format("[%s] ", targetChannel)
 
-		local xSize = messageModeTextLabel.TextBounds.X
-		messageModeTextLabel.Size = UDim2.new(0, xSize, 1, 0)
-		textBox.Size = UDim2.new(1, -xSize, 1, 0)
-		textBox.Position = UDim2.new(0, xSize, 0, 0)
+			local xSize = messageModeTextLabel.TextBounds.X
+			messageModeTextLabel.Size = UDim2.new(0, xSize, 1, 0)
+			textBox.Size = UDim2.new(1, -xSize, 1, 0)
+			textBox.Position = UDim2.new(0, xSize, 0, 0)
 
-	else
-		messageModeTextLabel.Text = ""
-		textBox.Size = UDim2.new(1, 0, 1, 0)
-		textBox.Position = UDim2.new(0, 0, 0, 0)
+		else
+			messageModeTextLabel.Text = ""
+			textBox.Size = UDim2.new(1, 0, 1, 0)
+			textBox.Position = UDim2.new(0, 0, 0, 0)
 
+		end
 	end
+end
+
+function methods:IsInCustomState()
+	return self.InCustomState
+end
+
+function methods:ResetCustomState()
+	if self.InCustomState then
+		self.CustomState:Destroy()
+		self.CustomState = nil
+		self.InCustomState = false
+
+		self.ChatBarParentFrame:ClearAllChildren()
+		self:CreateGuiObjects(self.ChatBarParentFrame)
+		self:SetTextLabelText('To chat click here or press "/" key')
+	end
+end
+
+function methods:GetCustomMessage()
+	if self.InCustomState then
+		return self.CustomState:GetMessage()
+	end
+	return nil
+end
+
+function methods:CustomStateProcessCompletedMessage(message)
+	if self.InCustomState then
+		return self.CustomState:ProcessCompletedMessage()
+	end
+	return false
 end
 
 function methods:FadeOutBackground(duration)
@@ -377,15 +395,24 @@ end
 --//////////////////////////////////////
 ClassMaker.RegisterClassType("ChatBar", methods)
 
-function module.new()
+function module.new(CommandProcessor, ChatWindow)
 	local obj = {}
 
 	obj.GuiObject = nil
+	obj.ChatBarParentFrame = nil
 	obj.TextBox = nil
 	obj.TextLabel = nil
 	obj.GuiObjects = {}
+	obj.eGuiObjectsChanged  = Instance.new("BindableEvent")
+	obj.GuiObjectsChanged = obj.eGuiObjectsChanged.Event
+
+	obj.Connections = {}
+	obj.InCustomState = false
+	obj.CustomState = nil
 
 	obj.TargetChannel = nil
+	obj.CommandProcessor = CommandProcessor
+	obj.ChatWindow = ChatWindow
 
 	obj.TweenPixelsPerSecond = 500
 	obj.TargetYSize = 0

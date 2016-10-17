@@ -20,4 +20,7 @@ function ProcessMessage(message, ChatWindow, ChatSettings)
   return false
 end
 
-return ProcessMessage
+return {
+  [util.KEY_COMMAND_PROCESSOR_TYPE] = util.COMPLETED_MESSAGE_PROCESSOR,
+  [util.KEY_PROCESSOR_FUNCTION] = ProcessMessage
+}
