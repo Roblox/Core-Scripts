@@ -12,7 +12,11 @@ local GuiService = game:GetService("GuiService")
 local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
 local Utility = require(RobloxGui.Modules.Settings.Utility) --todo: use common utility module when it's done
 
-local IsRaycastWhitelistEnabled = pcall(function() workspace:FindPartOnRayWithWhitelist(Ray.new(Vector3.new(), Vector3.new(1, 0, 0)), {}) end)
+local getRaycastWhitelistSuccess, getRaycastWhitelistEnabled = pcall(function() return settings():GetFFlag("EnableGetHitWhitelist") end)
+local isRaycastWhitelistEnabled = getRaycastWhitelistSuccess and getRaycastWhitelistEnabled
+
+local getTestControlSchemesSuccess, getTestControlSchemesEnabled = pcall(function() return settings():GetFFlag("VRTestControlSchemes") end)
+local areTestControlSchemesEnabled = getTestControlSchemesSuccess and getTestControlSchemesEnabled
 
 local LocalPlayer = Players.LocalPlayer
 
@@ -318,20 +322,22 @@ function LaserPointer.new()
 			end)
 		end
 
-		ContextActionService:BindAction("Head Mounted", function(actionName, inputState, inputObj)
-			if inputState ~= Enum.UserInputState.End then return end
-			VRService.GuiInputUserCFrame = Enum.UserCFrame.Head
-		end, false, Enum.KeyCode.KeypadOne)
-		ContextActionService:BindAction("Right Hand Mounted", function(actionName, inputState, inputObj)
-			if inputState ~= Enum.UserInputState.End then return end
-			VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
-			self.testWalkToMode = false
-		end, false, Enum.KeyCode.KeypadTwo)
-		ContextActionService:BindAction("Parabola Walkto", function(actionName, inputState, inputObj)
-			if inputState ~= Enum.UserInputState.End then return end
-			VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
-			self.testWalkToMode = true
-		end, false, Enum.KeyCode.KeypadThree)
+		if areTestControlSchemesEnabled then
+			ContextActionService:BindAction("Head Mounted", function(actionName, inputState, inputObj)
+				if inputState ~= Enum.UserInputState.End then return end
+				VRService.GuiInputUserCFrame = Enum.UserCFrame.Head
+			end, false, Enum.KeyCode.KeypadOne)
+			ContextActionService:BindAction("Right Hand Mounted", function(actionName, inputState, inputObj)
+				if inputState ~= Enum.UserInputState.End then return end
+				VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
+				self.testWalkToMode = false
+			end, false, Enum.KeyCode.KeypadTwo)
+			ContextActionService:BindAction("Parabola Walkto", function(actionName, inputState, inputObj)
+				if inputState ~= Enum.UserInputState.End then return end
+				VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
+				self.testWalkToMode = true
+			end, false, Enum.KeyCode.KeypadThree)
+		end
 
 		self:setTeleportMode(false)
 	end
@@ -654,7 +660,7 @@ do --Laser/teleport functions
 		end
 
 		local dist = (point - humanoidRootPart.Position).magnitude
-		if dist > TELEPORT.MAX_VALID_DISTANCE then
+		if dist > TELEPORT.MAX_VALID_DISTANCE and not self.testWalkToMode then
 			return false
 		end
 
@@ -706,7 +712,7 @@ do --Laser/teleport functions
 	function LaserPointer:checkHeadMountedTeleportMode(originPos, originLook)
 		local ray = Ray.new(originPos, originLook * 999)
 		local hitPart = nil
-		if IsRaycastWhitelistEnabled then
+		if isRaycastWhitelistEnabled then
 			hitPart = workspace:FindPartOnRayWithWhitelist(ray, { GuiService.CoreGuiFolder })
 		else
 			hitPart = workspace:FindPartOnRayWithIgnoreList(ray, { LocalPlayer.Character })
