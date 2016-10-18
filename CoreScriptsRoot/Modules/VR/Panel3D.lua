@@ -122,7 +122,7 @@ function Panel3D.RaycastOntoPanel(part, parentGui, gui, ray)
 
 	--Find where the view ray intersects with the plane in world space
 	local worldIntersectPoint = Utility:RayPlaneIntersection(ray, planeNormal, pointOnPlane)
-	if worldIntersectPoint and parentGui.Enabled then
+	if worldIntersectPoint then
 		local parentGuiWidth, parentGuiHeight = parentGui.AbsoluteSize.X, parentGui.AbsoluteSize.Y
 		--now figure out where that intersection point was in the panel's local space
 		--and then flip the X axis because the plane is looking back at you (panel's local +X is to the left of the camera)
@@ -137,9 +137,11 @@ function Panel3D.RaycastOntoPanel(part, parentGui, gui, ray)
 		local guiWidth, guiHeight = gui.AbsoluteSize.X, gui.AbsoluteSize.Y
 		local isOnGui = false
 
-		if lookX >= guiX and lookX <= guiX + guiWidth and
-		   lookY >= guiY and lookY <= guiY + guiHeight then
-		   	isOnGui = true
+		if parentGui.Enabled then
+			if lookX >= guiX and lookX <= guiX + guiWidth and
+			   lookY >= guiY and lookY <= guiY + guiHeight then
+			   	isOnGui = true
+			end
 		end
 
 		return worldIntersectPoint, localIntersectPoint, lookAtPixel, isOnGui
