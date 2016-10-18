@@ -238,11 +238,16 @@ end
 
 local modules = game:GetService("ServerStorage"):WaitForChild("ChatModules")
 modules.ChildAdded:connect(function(child)
-	pcall(TryRunModule, child)
+	local success, returnval = pcall(TryRunModule, child)
+	if not success and returnval then
+		print("Error running module " ..child.Name.. ": " ..returnval)
+	end
 end)
 
 for i, module in pairs(modules:GetChildren()) do
-	pcall(TryRunModule, module)
+	local success, returnval = pcall(TryRunModule, module)
+	if not success and returnval then
+	end
 end
 
 local Players = game:GetService("Players")
