@@ -11,8 +11,11 @@ local UserInputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 local GuiService = game:GetService('GuiService')
 
-local HasVRAPI = false
-pcall(function() HasVRAPI = UserInputService.GetUserCFrame ~= nil end)
+local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
+if not VRServiceExists or not VRService then
+	--No VRService? Fall back to UserInputService, it is the original VRService after all
+	VRService = UserInputService
+end
 
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
@@ -157,7 +160,7 @@ local function CreateCamera()
 			if cameraSubject:IsA('VehicleSeat') then
 				local subjectCFrame = GetRenderCFrame(cameraSubject)
 				local offset = SEAT_OFFSET
-				if HasVRAPI and UserInputService.VREnabled then
+				if VRService.VREnabled then
 					offset = VR_SEAT_OFFSET
 				end
 				result = subjectCFrame.p + subjectCFrame:vectorToWorldSpace(offset)
@@ -170,7 +173,7 @@ local function CreateCamera()
 			elseif cameraSubject:IsA('Model') then
 				result = cameraSubject:GetModelCFrame().p
 			elseif cameraSubject:IsA('Humanoid') then
-				if cameraSubject:GetState() == Enum.HumanoidStateType.Dead and cameraSubject == this.lastSubject and HasVRAPI and UserInputService.VREnabled then
+				if cameraSubject:GetState() == Enum.HumanoidStateType.Dead and cameraSubject == this.lastSubject and VRService.VREnabled then
 					result = this.lastSubjectPosition
 				else
 					local humanoidRootPart = cameraSubject.Torso
@@ -215,7 +218,7 @@ local function CreateCamera()
 	end
 
 	function this:GetCameraHeight()
-		if not this:IsInFirstPerson() and HasVRAPI and UserInputService.VREnabled then
+		if not this:IsInFirstPerson() and VRService.VREnabled then
 			local zoom = this:GetCameraZoom()
 			return math.sin(VR_ANGLE) * zoom
 		end
@@ -261,7 +264,7 @@ local function CreateCamera()
 	end
 
 	function this:RotateCamera(startLook, xyRotateVector)
-		if HasVRAPI and UserInputService.VREnabled then
+		if VRService.VREnabled then
 			local yawRotatedVector, xyRotateVector = self:RotateVector(startLook, Vector2.new(xyRotateVector.x, 0))
 			return Vector3.new(yawRotatedVector.x, 0, yawRotatedVector.z).unit, xyRotateVector
 		else
@@ -360,7 +363,7 @@ local function CreateCamera()
 	----- VR STUFF ------
 
 	function this:ApplyVRTransform()
-		if not (HasVRAPI and UserInputService.VREnabled) then
+		if not VRService.VREnabled then
 			return
 		end
 		--we only want this to happen in first person VR
@@ -376,7 +379,7 @@ local function CreateCamera()
 		local isInVehicle = cameraSubject and cameraSubject:IsA('VehicleSeat')		
 		
 		if this:IsInFirstPerson() and not isInVehicle then
-			local vrFrame = UserInputService.UserHeadCFrame
+			local vrFrame = VRService:GetUserCFrame(Enum.UserCFrame.Head)
 			local vrRotation = vrFrame - vrFrame.p
 			local rootJoint = player.Character.HumanoidRootPart.RootJoint 
 			rootJoint.C0 = CFrame.new(vrRotation:vectorToObjectSpace(vrFrame.p)) * CFrame.new(0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 1, 0)
@@ -389,7 +392,7 @@ local function CreateCamera()
 	local vrRotationIntensityExists = true
 	local lastVrRotationCheck = 0
 	function this:ShouldUseVRRotation()
-		if not (HasVRAPI and UserInputService.VREnabled) then
+		if not VRService.VREnabled then
 			return false
 		end
 		if not vrRotationIntensityExists and tick() - lastVrRotationCheck < 1 then return false end
@@ -483,7 +486,7 @@ local function CreateCamera()
 		end
 		if humanoid and humanoid:IsA('Humanoid') then
 			subjectStateChangedConn = humanoid.StateChanged:connect(function(oldState, newState)
-				if newState == Enum.HumanoidStateType.Jumping and not this:IsInFirstPerson() and UserInputService.VREnabled then
+				if newState == Enum.HumanoidStateType.Jumping and not this:IsInFirstPerson() and VRService.VREnabled then
 					startCameraFreeze(this:GetSubjectPosition(), humanoid)
 				elseif newState ~= Enum.HumanoidStateType.Jumping and newState ~= Enum.HumanoidStateType.Freefall then
 					cancelCameraFreeze(true)
@@ -526,7 +529,7 @@ local function CreateCamera()
 
 		if cameraFrozen then
 			-- No longer in 3rd person
-			if self:IsInFirstPerson() then -- not UserInputService.VREnabled
+			if self:IsInFirstPerson() then -- not VRService.VREnabled
 				cancelCameraFreeze()
 			end
 			-- This case you jumped off a cliff and want to keep your character in view
@@ -681,7 +684,7 @@ local function CreateCamera()
 	end
 
 	local function OnMouseMoved(input, processed)
-		if not hasGameLoaded and UserInputService.VREnabled then
+		if not hasGameLoaded and VRService.VREnabled then
 			return
 		end
 		if startPos and lastPos and panBeginLook then
@@ -701,7 +704,7 @@ local function CreateCamera()
 	end
 
 	local function OnMouseWheel(input, processed)
-		if not hasGameLoaded and UserInputService.VREnabled then
+		if not hasGameLoaded and VRService.VREnabled then
 			return
 		end
 		if not processed then
@@ -732,7 +735,7 @@ local function CreateCamera()
 	end
 
 	local function OnKeyDown(input, processed)
-		if not hasGameLoaded and UserInputService.VREnabled then
+		if not hasGameLoaded and VRService.VREnabled then
 			return
 		end
 		if processed then return end
@@ -829,7 +832,7 @@ local function CreateCamera()
 
 	function this:UpdateGamepad()
 		local gamepadPan = this.GamepadPanningCamera
-		if gamepadPan and (hasGameLoaded or not UserInputService.VREnabled) then
+		if gamepadPan and (hasGameLoaded or not VRService.VREnabled) then
 			gamepadPan = gamepadLinearToCurve(gamepadPan)
 			local currentTime = tick()
 			if gamepadPan.X ~= 0 or gamepadPan.Y ~= 0 then
@@ -844,7 +847,7 @@ local function CreateCamera()
 			local finalConstant = 0
 
 			if lastThumbstickRotate then
-				if UserInputService.VREnabled then
+				if VRService.VREnabled then
 					currentSpeed = vrMaxSpeed
 				else
 					local elapsedTime = (currentTime - lastThumbstickRotate) * 10
