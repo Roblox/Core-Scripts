@@ -34,8 +34,6 @@ local function Install()
 		LoadModule(script.Parent, "ChatChannel", ChatServiceRunner)
 		LoadModule(script.Parent, "Speaker", ChatServiceRunner)
 		LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatServiceRunner)
-
-		ChatServiceRunner.Disabled = true
 	end
 
 	local chatModulesArchivable = true
@@ -54,17 +52,16 @@ local function Install()
 		ChatModules.Parent = installDirectory
 	end
 
-	if not ServerScriptService:FindFirstChild(runnerScriptName) then
-		local ChatServiceRunnerCopy = ChatServiceRunner:Clone()
-		ChatServiceRunnerCopy.Disabled = false
-		ChatServiceRunnerCopy.Archivable = false
-		ChatServiceRunnerCopy.Parent = ServerScriptService
-	end
-
 	if not ServerScriptService:FindFirstChild("ChatModules") then
 		local ChatModulesCopy = ChatModules:Clone()
 		ChatModulesCopy.Parent = ServerStorage
 		ChatModulesCopy.Archivable = false
+	end
+
+	if not ServerScriptService:FindFirstChild(runnerScriptName) then
+		local ChatServiceRunnerCopy = ChatServiceRunner:Clone()
+		ChatServiceRunnerCopy.Archivable = false
+		ChatServiceRunnerCopy.Parent = ServerScriptService
 	end
 
 	ChatServiceRunner.Archivable = chatServiceRunnerArchivable
