@@ -907,7 +907,7 @@ do --Event callbacks/update loop
 			self:checkHeadMountedTeleportMode(originPos, originLook)
 
 			--we actually want to render the laser from an offset from the head though
-			local offsetPosition = originCFrame:pointToWorldSpace(HEAD_MOUNT_OFFSET)
+			local offsetPosition = originCFrame:pointToWorldSpace(HEAD_MOUNT_OFFSET * workspace.CurrentCamera.HeadScale)
 			self:renderAsLaser(offsetPosition, laserHitPoint)
 
 			if self.teleportMode then
