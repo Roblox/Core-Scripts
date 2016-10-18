@@ -1,9 +1,11 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXD76DF8ABD3DC4228B34596375A6D3BCC">
+	<Item class="ModuleScript" referent="RBX83D949955C5C44458061C23F812755B2">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">TouchJump</string>
+			<string name="ScriptGuid"></string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: TouchJump
 	// Version 1.0
@@ -29,8 +31,9 @@ local LocalPlayer = Players.LocalPlayer
 local Humanoid = MasterControl:GetHumanoid()
 local JumpButton = nil
 local OnInputEnded = nil		-- defined in Create()
+local CharacterAddedConnection = nil
 local HumChangeConnection = nil
-local ExternallyEnabled = false --[[I don't think there's anything that disables jump from outside this script, but in case that ever happens,
+local ExternallyEnabled = false --[[I don't think there's anything that disables jump from outside this script, but in case that ever happens, 
 							we don't want to re-enable it when jump power is changed]]
 
 --[[ Constants ]]--
@@ -52,9 +55,7 @@ local function humanoidChanged(prop)
 end
 
 local function disableButton()
-	if JumpButton then
-		JumpButton.Visible = false
-	end
+	JumpButton.Visible = false
 	OnInputEnded()
 end
 
@@ -63,6 +64,27 @@ local function enableButton()
 		if Humanoid.JumpPower > 0 then
 			JumpButton.Visible = true
 		end
+	end
+end
+
+local function characterAdded(newCharacter)
+	if HumChangeConnection then
+		HumChangeConnection:disconnect()
+	end
+	-- rebind event to new Humanoid
+	Humanoid = nil
+	repeat
+		Humanoid = MasterControl:GetHumanoid()
+		wait()
+	until Humanoid and Humanoid.Parent == newCharacter
+	HumChangeConnection = Humanoid.Changed:connect(humanoidChanged)
+	humanoidChanged("JumpPower")
+end
+
+local function setupCharacterAddedFunction()
+	CharacterAddedConnection = LocalPlayer.CharacterAdded:connect(characterAdded)
+	if LocalPlayer.Character then
+		characterAdded(LocalPlayer.Character)
 	end
 end
 
@@ -82,10 +104,10 @@ function TouchJump:Create(parentFrame)
 		JumpButton:Destroy()
 		JumpButton = nil
 	end
-
+	
 	local isSmallScreen = parentFrame.AbsoluteSize.y <= 500
 	local jumpButtonSize = isSmallScreen and 70 or 120
-
+	
 	JumpButton = Instance.new('ImageButton')
 	JumpButton.Name = "JumpButton"
 	JumpButton.Visible = false
@@ -94,7 +116,7 @@ function TouchJump:Create(parentFrame)
 	JumpButton.ImageRectOffset = Vector2.new(176, 222)
 	JumpButton.ImageRectSize = Vector2.new(174, 174)
 	JumpButton.Size = UDim2.new(0, jumpButtonSize, 0, jumpButtonSize)
-
+	
 	if not repositionJumpButton then
 		JumpButton.Position = isSmallScreen and UDim2.new(1, jumpButtonSize * -2.25, 1, -jumpButtonSize - 20) or
 			UDim2.new(1, jumpButtonSize * -2.75, 1, -jumpButtonSize - 120)
@@ -102,54 +124,42 @@ function TouchJump:Create(parentFrame)
 		JumpButton.Position = isSmallScreen and UDim2.new(1, -(jumpButtonSize*1.5-10), 1, -jumpButtonSize - 20) or
 			UDim2.new(1, -(jumpButtonSize*1.5-10), 1, -jumpButtonSize * 1.75)
 	end
-
-	local touchObject = nil
+	
+	local touchObject = nil	
 	JumpButton.InputBegan:connect(function(inputObject)
 		if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
 			return
 		end
-
+		
 		touchObject = inputObject
 		JumpButton.ImageRectOffset = Vector2.new(0, 222)
 		MasterControl:SetIsJumping(true)
 	end)
-
+	
 	OnInputEnded = function()
 		touchObject = nil
 		MasterControl:SetIsJumping(false)
 		JumpButton.ImageRectOffset = Vector2.new(176, 222)
 	end
-
+	
 	JumpButton.InputEnded:connect(function(inputObject)
 		if inputObject == touchObject then
 			OnInputEnded()
 		end
 	end)
-
+	
 	GuiService.MenuOpened:connect(function()
 		if touchObject then
 			OnInputEnded()
 		end
 	end)
-
-	if Humanoid then
-		HumChangeConnection = Humanoid.Changed:connect(humanoidChanged)
+	
+	if not CharacterAddedConnection then
+		setupCharacterAddedFunction()
 	end
+	
 	JumpButton.Parent = parentFrame
 end
-
-LocalPlayer.CharacterAdded:connect(function(newCharacter)
-	if HumChangeConnection then
-		HumChangeConnection:disconnect()
-	end
-	-- rebind event to new Humanoid
-	Humanoid = nil
-	repeat
-		Humanoid = MasterControl:GetHumanoid()
-		wait()
-	until Humanoid and Humanoid.Parent == newCharacter
-	HumChangeConnection = Humanoid.Changed:connect(humanoidChanged)
-end)
 
 return TouchJump
 ]]></ProtectedString>

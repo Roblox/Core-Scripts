@@ -3,6 +3,7 @@
 --	// Description: Command to open or close the developer console.
 
 local StarterGui = game:GetService("StarterGui")
+local util = require(script.Parent:WaitForChild("Util"))
 
 function ProcessMessage(message, ChatWindow, ChatSettings)
   if string.sub(message, 1, 8) == "/console" then
@@ -15,4 +16,7 @@ function ProcessMessage(message, ChatWindow, ChatSettings)
   return false
 end
 
-return ProcessMessage
+return {
+  [util.KEY_COMMAND_PROCESSOR_TYPE] = util.COMPLETED_MESSAGE_PROCESSOR,
+  [util.KEY_PROCESSOR_FUNCTION] = ProcessMessage
+}
