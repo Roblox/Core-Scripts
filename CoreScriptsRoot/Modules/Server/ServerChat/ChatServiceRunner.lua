@@ -247,6 +247,7 @@ end)
 for i, module in pairs(modules:GetChildren()) do
 	local success, returnval = pcall(TryRunModule, module)
 	if not success and returnval then
+		print("Error running module " ..module.Name.. ": " ..returnval)
 	end
 end
 
