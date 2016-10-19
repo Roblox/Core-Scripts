@@ -7,10 +7,13 @@
 			<string name="Name">FollowCamera</string>
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
-local RootCameraCreator = require(script.Parent)
+local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
+if not VRServiceExists or not VRService then
+	--No VRService? Fall back to UserInputService, it is the original VRService after all
+	VRService = UserInputService
+end
 
-local HasVRAPI = false
-pcall(function() HasVRAPI = UserInputService.GetUserCFrame ~= nil end)
+local RootCameraCreator = require(script.Parent)
 
 local UP_VECTOR = Vector3.new(0, 1, 0)
 local XZ_VECTOR = Vector3.new(1,0,1)
@@ -143,7 +146,7 @@ local function CreateFollowCamera()
 								self.RotateInput = self.RotateInput + Vector2.new(y * percent, 0)
 							end
 						end
-					elseif not (isInFirstPerson or userRecentlyPannedCamera) and (HasVRAPI and not UserInputService.VREnabled) then
+					elseif not (isInFirstPerson or userRecentlyPannedCamera) and not VRService.VREnabled then
 						local lastVec = -(self.LastCameraTransform.p - subjectPosition)
 						local y = findAngleBetweenXZVectors(lastVec, self:GetCameraLook())
 						-- Check for NaNs
@@ -156,10 +159,10 @@ local function CreateFollowCamera()
 			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
 			self.RotateInput = Vector2.new()
 			
-			camera.Focus = UserInputService.VREnabled and self:GetVRFocus(subjectPosition, timeDelta) or CFrame.new(subjectPosition)
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p) + Vector3.new(0, self:GetCameraHeight(), 0)
+			camera.Focus = VRService.VREnabled and self:GetVRFocus(subjectPosition, timeDelta) or CFrame.new(subjectPosition)
+			camera.CFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p) + Vector3.new(0, self:GetCameraHeight(), 0)
 
-			self.LastCameraTransform = camera.CoordinateFrame
+			self.LastCameraTransform = camera.CFrame
 			self.LastCameraFocus = camera.Focus
 			if isInVehicle or isOnASkateboard and cameraSubject:IsA('BasePart') then
 				self.LastSubjectCFrame = cameraSubject.CFrame

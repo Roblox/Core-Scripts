@@ -12,6 +12,12 @@ local GuiService = game:GetService("GuiService")
 local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
 local Utility = require(RobloxGui.Modules.Settings.Utility) --todo: use common utility module when it's done
 
+local getRaycastWhitelistSuccess, getRaycastWhitelistEnabled = pcall(function() return settings():GetFFlag("EnableGetHitWhitelist") end)
+local isRaycastWhitelistEnabled = getRaycastWhitelistSuccess and getRaycastWhitelistEnabled
+
+local getTestControlSchemesSuccess, getTestControlSchemesEnabled = pcall(function() return settings():GetFFlag("VRTestControlSchemes") end)
+local areTestControlSchemesEnabled = getTestControlSchemesSuccess and getTestControlSchemesEnabled
+
 local LocalPlayer = Players.LocalPlayer
 
 --Pathfinding sort of works, but it's very slow and does not handle slopes very well.
@@ -87,7 +93,7 @@ local TELEPORT = {
 	PLOP_PULSE_MIN_SIZE = 0,
 	PLOP_PULSE_MAX_SIZE = 2,
 
-	MAX_VALID_DISTANCE = 32,
+	MAX_VALID_DISTANCE = 48,
 
 	BUTTON_DOWN_THRESHOLD = 0.95,
 	BUTTON_UP_THRESHOLD = 0.5,
@@ -189,6 +195,8 @@ function LaserPointer.new()
 	self.computingPath = false
 	self.pathStart = zeroVector3
 	self.pathEnd = zeroVector3
+
+	self.testWalkToMode = false
 
 	do --Create the instances that make up the Laser Pointer
 		--Create the ParabolaAdornment first; if the class doesn't exist, we'll exit early.
@@ -314,6 +322,23 @@ function LaserPointer.new()
 			end)
 		end
 
+		if areTestControlSchemesEnabled then
+			ContextActionService:BindCoreAction("Head Mounted", function(actionName, inputState, inputObj)
+				if inputState ~= Enum.UserInputState.End then return end
+				VRService.GuiInputUserCFrame = Enum.UserCFrame.Head
+			end, false, Enum.KeyCode.KeypadOne)
+			ContextActionService:BindCoreAction("Right Hand Mounted", function(actionName, inputState, inputObj)
+				if inputState ~= Enum.UserInputState.End then return end
+				VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
+				self.testWalkToMode = false
+			end, false, Enum.KeyCode.KeypadTwo)
+			ContextActionService:BindCoreAction("Parabola Walkto", function(actionName, inputState, inputObj)
+				if inputState ~= Enum.UserInputState.End then return end
+				VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
+				self.testWalkToMode = true
+			end, false, Enum.KeyCode.KeypadThree)
+		end
+
 		self:setTeleportMode(false)
 	end
 
@@ -324,6 +349,9 @@ do --Helper functions
 
 	function LaserPointer:calculateLaunchVelocity(gravity, launchAngle)
 		local maxVelocity = TELEPORT.MAX_VALID_DISTANCE
+		if self.testWalkToMode then
+			return maxVelocity
+		end
 		local minVelocity = TELEPORT.MIN_VELOCITY
 		local velocityRange = math.max(0, maxVelocity - minVelocity)
 		return ((self.teleportRangeT ^ TELEPORT.RANGE_T_EXP) * velocityRange) + minVelocity
@@ -345,7 +373,7 @@ do --Helper functions
 	end
 
 	function LaserPointer:shouldWalk()
-		return self:isHeadMounted() --more rules later? maybe hand input does walking too? it is unclear at this time.
+		return self:isHeadMounted() or self.testWalkToMode
 	end
 end
 
@@ -375,8 +403,8 @@ do --Input handlers - can we eventually move this stuff to PlayerScripts? CoreSc
 	end
 
 	function LaserPointer:onTeleportButtonAction(actionName, inputState, inputObj)
-		if inputState == Enum.UserInputState.End then
-			if self.equippedTool then
+		if inputState == Enum.UserInputState.Begin then
+			if self.equippedTool and UserInputService.TouchEnabled then
 				self.equippedTool:Activate()
 			else
 				if self.teleportMode then
@@ -388,7 +416,7 @@ do --Input handlers - can we eventually move this stuff to PlayerScripts? CoreSc
 
 	function LaserPointer:setTriggerActionEnabled(enabled)
 		if enabled then
-			ContextActionService:BindCoreAction("TeleportTriggerImpl", function(...) self:onTeleportTriggerAction(...) end, false, Enum.KeyCode.ButtonR2)
+			ContextActionService:BindCoreAction("TeleportTriggerImpl", function(...) self:onTeleportTriggerAction(...) end, false, self.inputUserCFrame == Enum.UserCFrame.RightHand and Enum.KeyCode.ButtonA or Enum.KeyCode.ButtonX)
 		else
 			ContextActionService:UnbindCoreAction("TeleportTriggerImpl")
 		end
@@ -432,7 +460,6 @@ do --Configuration functions
 
 	function LaserPointer:setTeleportMode(enabled)
 		if enabled == self.teleportMode then return	end
-		if self.tweener then return end
 
 		self.teleportMode = enabled
 
@@ -441,21 +468,11 @@ do --Configuration functions
 			setPartInGame(self.plopPart, true)
 			setPartInGame(self.plopBall, true)
 
-			alpha0, alpha1 = 0, 1
-			duration = TELEPORT.TRANSITION_DURATION
-			easingFunc = TELEPORT.TRANSITION_FUNC
+			self:tweenLaserLength(1)
 		else
 			setPartInGame(self.plopPart, false)
 			setPartInGame(self.plopBall, false)
-
-			alpha0, alpha1 = 1, 0
-			duration = LASER.TRANSITION_DURATION
-			easingFunc = LASER.TRANSITION_FUNC
 		end
-
-		self.tweener = Utility:TweenProperty(self, "transitionAlpha", alpha0, alpha1, duration, easingFunc, function()
-			self.tweener = false
-		end)
 	end
 
 	function LaserPointer:setArcLaunchParams(launchAngle, launchVelocity, gravity)
@@ -577,6 +594,9 @@ do --Action functions
 	end
 
 	function LaserPointer:doToolAim(aimPoint)
+		if not aimPoint then
+			return
+		end
 		if self.equippedTool then
 			local humanoid = getLocalHumanoid()
 			if not humanoid then return end
@@ -640,7 +660,7 @@ do --Laser/teleport functions
 		end
 
 		local dist = (point - humanoidRootPart.Position).magnitude
-		if dist > TELEPORT.MAX_VALID_DISTANCE then
+		if dist > TELEPORT.MAX_VALID_DISTANCE and not self.testWalkToMode then
 			return false
 		end
 
@@ -691,13 +711,20 @@ do --Laser/teleport functions
 
 	function LaserPointer:checkHeadMountedTeleportMode(originPos, originLook)
 		local ray = Ray.new(originPos, originLook * 999)
-		local hitPart = workspace:FindPartOnRayWithWhitelist(ray, { GuiService.CoreGuiFolder })
+		local hitPart = nil
+		if isRaycastWhitelistEnabled then
+			hitPart = workspace:FindPartOnRayWithWhitelist(ray, { GuiService.CoreGuiFolder })
+		else
+			hitPart = workspace:FindPartOnRayWithIgnoreList(ray, { LocalPlayer.Character })
+		end
 		if hitPart and self:shouldShowLaser() then
 			self:setTeleportMode(false)
 			self:tweenLaserLength(1)
 			return
 		end
-		self:setTeleportMode(true)
+		if not self.equippedTool then
+			self:setTeleportMode(true)
+		end
 	end
 
 	function LaserPointer:checkTeleportMode(originPos, parabHitPart, parabHitPoint, laserHitPart, laserHitPoint)
@@ -743,7 +770,7 @@ do --Laser/teleport functions
 		--If we are teleporting and the parabola hits a gui part, we switch to laser pointer if the laser pointer is close enough
 		--If we are teleporting and the laser hits a gui part, we switch to laser pointer regardless of where the parabola is
 		if self.teleportMode and laserHitGui then
-			if self:isHeadMounted() and ((parabHitGui and angleBetween < LASER.SWITCH_AIM_THRESHOLD) or laserHitGui) then
+			if self:isHeadMounted() or ((parabHitGui and angleBetween < LASER.SWITCH_AIM_THRESHOLD) or laserHitGui) then
 				newTeleportMode = false
 			end
 		end
@@ -760,6 +787,9 @@ do --Laser/teleport functions
 	function LaserPointer:tweenLaserLength(target, duration)
 		duration = duration or 0.5
 		if self.tweener then
+			if self.tweener:GetFinal() == target then
+				return
+			end
 			self.tweener:Cancel()
 			self.tweener = false
 		end
@@ -779,8 +809,9 @@ do --Laser/teleport functions
 			valid = true
 		end
 
+		self:tweenLaserLength(1)
+
 		if valid then
-			self:tweenLaserLength(1)
 			self.teleportBounceStart = tick()
 			self.parabola.Color3 = TELEPORT.ARC_COLOR_GOOD
 			self.plopAdorn.Visible = true
@@ -864,11 +895,9 @@ do --Event callbacks/update loop
 		local cameraSpace = workspace.CurrentCamera.CFrame
 		local thickness0, thickness1 = LASER.ARC_THICKNESS, TELEPORT.ARC_THICKNESS
 		local gravity0, gravity1 = LASER.G, TELEPORT.G
-		
-		self.parabola.Thickness = self.transitionAlpha * (thickness1-thickness0) + thickness0
 
 		if self:isHeadMounted() then
-			self.parabola.Thickness = self.parabola.Thickness * HEAD_MOUNT_THICKNESS_MULTIPLIER
+			self.parabola.Thickness = LASER.ARC_THICKNESS * HEAD_MOUNT_THICKNESS_MULTIPLIER
 
 			--cast ray from center of camera, then render laser going from offset point to hit point
 			local originCFrame = cameraSpace * UserInputService:GetUserCFrame(Enum.UserCFrame.Head)
@@ -878,14 +907,14 @@ do --Event callbacks/update loop
 			self:checkHeadMountedTeleportMode(originPos, originLook)
 
 			--we actually want to render the laser from an offset from the head though
-			local offsetPosition = originCFrame:pointToWorldSpace(HEAD_MOUNT_OFFSET)
+			local offsetPosition = originCFrame:pointToWorldSpace(HEAD_MOUNT_OFFSET * workspace.CurrentCamera.HeadScale)
 			self:renderAsLaser(offsetPosition, laserHitPoint)
 
 			if self.teleportMode then
 				self:updateTeleportMode(laserHitPoint, laserHitNormal, laserHitPart)
 			else
 				self.parabola.Color3 = LASER.ARC_COLOR_GOOD
-				self:doToolAim()
+				self:doToolAim(laserHitPoint)
 			end
 		else
 			self:updateTeleportHoldState(dt)
@@ -893,7 +922,7 @@ do --Event callbacks/update loop
 			local originCFrame = cameraSpace * UserInputService:GetUserCFrame(self.inputUserCFrame)
 			local originPos, originLook = originCFrame.p, originCFrame.lookVector
 
-			local gravity = self.transitionAlpha * (gravity1 - gravity0) + gravity0
+			local gravity = TELEPORT.G
 
 			local launchAngle = math.asin(originLook.Y)
 			local launchVelocity = self:calculateLaunchVelocity(gravity, launchAngle)
@@ -914,9 +943,16 @@ do --Event callbacks/update loop
 
 			if self.teleportMode then
 				self.parabola.Range = parabHitT * math.cos(launchAngle) * launchVelocity * self.lengthAlpha
+				self.parabola.Thickness = TELEPORT.ARC_THICKNESS
 				self:updateTeleportMode(parabHitPoint, parabHitNormal, parabHitPart)
+
+				local lookCFrame = workspace.CurrentCamera:GetRenderCFrame()
+				local lookRay = Ray.new(lookCFrame.p, lookCFrame.lookVector * 999)
+				local _, lookHitPoint = workspace:FindPartOnRayWithIgnoreList(lookRay, { workspace.CurrentCamera, LocalPlayer.Character })
+				self:doToolAim(lookHitPoint)
 			else
 				self.parabola.Color3 = LASER.ARC_COLOR_GOOD
+				self.parabola.Thickness = LASER.ARC_THICKNESS
 				self:renderAsLaser(originPos, laserHitPoint)
 			end
 		end

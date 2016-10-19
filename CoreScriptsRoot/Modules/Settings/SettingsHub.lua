@@ -1,8 +1,8 @@
 --[[
-		Filename: SettingsHub.lua
-		Written by: jeditkacheff
-		Version 1.0
-		Description: Controls the settings menu navigation and contains the settings pages
+        Filename: SettingsHub.lua
+        Written by: jeditkacheff
+        Version 1.0
+        Description: Controls the settings menu navigation and contains the settings pages
 --]]
 
 --[[ CONSTANTS ]]
@@ -19,6 +19,7 @@ local QUICK_PROFILER_ACTION_NAME = "Show Quick Profiler"
 --[[ SERVICES ]]
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
+local StarterGui = game:GetService("StarterGui")
 local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
@@ -43,6 +44,9 @@ local lastInputChangedCon = nil
 local chatWasVisible = false
 local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
 local useUserList = (userlistSuccess and userlistFlagValue == true)
+
+local resetButtonFlagSuccess, resetButtonFlagValue = pcall(function() return settings():GetFFlag("AllowResetButtonCustomization") end)
+local resetButtonCustomizationAllowed = (resetButtonFlagSuccess and resetButtonFlagValue == true)
 
 local function IsPlayMyPlaceEnabled()
   if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
@@ -346,14 +350,51 @@ local function CreateSettingsHub()
         removeBottomBarBindings()
         this:SwitchToPage(this.LeaveGamePage, nil, 1, true)
       end
-
+      
+      local resetEnabled = true
+      local function setResetEnabled(value)
+        resetEnabled = value
+        if this.ResetCharacterButton then
+          this.ResetCharacterButton.Selectable = value
+          this.ResetCharacterButton.Active = value
+          this.ResetCharacterButton.Enabled.Value = value
+          local resetHint = this.ResetCharacterButton:FindFirstChild("ResetCharacterHint")
+          if resetHint then
+            resetHint.ImageColor3 = (value and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(100, 100, 100))
+          end
+          local resetButtonText = this.ResetCharacterButton:FindFirstChild("ResetCharacterButtonTextLabel")
+          if resetButtonText then
+            resetButtonText.TextColor3 = (value and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(100, 100, 100))
+          end
+        end
+      end
+      
       local resetCharFunc = function()
-        this:AddToMenuStack(this.Pages.CurrentPage)
-        this.HubBar.Visible = false
-        removeBottomBarBindings()
-        this:SwitchToPage(this.ResetCharacterPage, nil, 1, true)
+        if resetEnabled then
+          this:AddToMenuStack(this.Pages.CurrentPage)
+          this.HubBar.Visible = false
+          removeBottomBarBindings()
+          this:SwitchToPage(this.ResetCharacterPage, nil, 1, true)
+        end
       end
 
+      if resetButtonCustomizationAllowed then
+        StarterGui:RegisterSetCore("ResetButtonCallback", function(callback)
+          local isBindableSuccess, isBindableValue = pcall(function() return type(callback) == "userdata" and callback:IsA("BindableEvent") end)
+          local isBindable = (isBindableSuccess and isBindableValue)
+          if isBindable or callback == false then
+            this.ResetCharacterPage:SetResetCallback(callback)
+          else
+            warn("ResetButtonCallback must be set to a BindableEvent or false")
+          end
+          if callback == false then
+            setResetEnabled(false)
+          elseif not resetEnabled and isBindable then
+            setResetEnabled(true)
+          end
+        end)
+      end
+     
       -- Xbox Only
       local inviteToGameFunc = function()
         local platformService = game:GetService('PlatformService')
@@ -523,7 +564,7 @@ local function CreateSettingsHub()
   end
 
   local function toggleDevConsole(actionName, inputState, inputObject)
-    if actionName == DEV_CONSOLE_ACTION_NAME then 	-- ContextActionService->F9
+    if actionName == DEV_CONSOLE_ACTION_NAME then   -- ContextActionService->F9
       if inputState and inputState == Enum.UserInputState.Begin then
         local devConsoleVisible = DeveloperConsoleModule:GetVisibility()
         DeveloperConsoleModule:SetVisibility(not devConsoleVisible)
