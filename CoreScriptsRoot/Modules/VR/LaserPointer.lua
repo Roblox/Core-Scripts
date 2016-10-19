@@ -416,17 +416,17 @@ do --Input handlers - can we eventually move this stuff to PlayerScripts? CoreSc
 
 	function LaserPointer:setTriggerActionEnabled(enabled)
 		if enabled then
-			ContextActionService:BindCoreAction("TeleportTriggerImpl", function(...) self:onTeleportTriggerAction(...) end, false, self.inputUserCFrame == Enum.UserCFrame.RightHand and Enum.KeyCode.ButtonA or Enum.KeyCode.ButtonX)
+			ContextActionService:BindAction("TeleportTriggerImpl", function(...) self:onTeleportTriggerAction(...) end, false, self.inputUserCFrame == Enum.UserCFrame.RightHand and Enum.KeyCode.ButtonA or Enum.KeyCode.ButtonX)
 		else
-			ContextActionService:UnbindCoreAction("TeleportTriggerImpl")
+			ContextActionService:UnbindAction("TeleportTriggerImpl")
 		end
 	end
 
 	function LaserPointer:setButtonActionEnabled(enabled)
 		if enabled then
-			ContextActionService:BindCoreAction("TeleportButtonImpl", function(...) self:onTeleportButtonAction(...) end, false, Enum.KeyCode.ButtonA)
+			ContextActionService:BindAction("TeleportButtonImpl", function(...) self:onTeleportButtonAction(...) end, false, Enum.KeyCode.ButtonA)
 		else
-			ContextActionService:UnbindCoreAction("TeleportButtonImpl")
+			ContextActionService:UnbindAction("TeleportButtonImpl")
 		end
 	end
 end

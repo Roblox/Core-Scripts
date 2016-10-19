@@ -14,6 +14,14 @@ if not VRServiceExists or not VRService then
 	VRService = UserInputService
 end
 
+local VRCameraUpdate = false
+local success, msg = pcall(function()
+	VRCameraUpdate = UserSettings():IsUserFeatureEnabled("VRCameraUpdateLua")
+end)
+if not success then
+	print("Couldn't get feature VRCameraUpdate because: " .. msg)
+end
+
 local RootCameraCreator = require(script.Parent)
 
 local UP_VECTOR = Vector3.new(0, 1, 0)
@@ -169,7 +177,7 @@ local function CreateClassicCamera()
 			local cameraHeight = self:GetCameraHeight()
 			local cameraFocusP = camera.Focus.p
 
-			if VRService.VREnabled and not self:IsInFirstPerson() then
+			if VRService.VREnabled and not self:IsInFirstPerson() and VRCameraUpdate then
 				local vecToSubject = (subjectPosition - camera.CFrame.p)
 				local distToSubject = vecToSubject.magnitude
 
