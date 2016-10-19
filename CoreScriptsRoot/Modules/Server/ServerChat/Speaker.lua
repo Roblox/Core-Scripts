@@ -25,7 +25,10 @@ function methods:SayMessage(message, channelName, extraData)
 
 	local messageObj = channel:InternalPostMessage(self, message, extraData)
 	if (messageObj) then
-		pcall(function() self.eSaidMessage:Fire(messageObj) end)
+		local success, err = pcall(function() self.eSaidMessage:Fire(messageObj) end)
+		if not success and err then
+			print("Error saying message: " ..err)
+		end
 	end
 
 	return messageObj
@@ -44,9 +47,12 @@ function methods:JoinChannel(channelName)
 
 	self.Channels[channelName:lower()] = channel
 	channel:InternalAddSpeaker(self)
-	pcall(function()
+	local success, err = pcall(function()
 		self.eChannelJoined:Fire(channel.Name, channel.WelcomeMessage)
 	end)
+	if not success and err then
+		print("Error joining channel: " ..err)
+	end
 end
 
 function methods:LeaveChannel(channelName)
@@ -59,9 +65,12 @@ function methods:LeaveChannel(channelName)
 
 	self.Channels[channelName:lower()] = nil
 	channel:InternalRemoveSpeaker(self)
-	pcall(function()
+	local success, err = pcall(function()
 		self.eChannelLeft:Fire(channel.Name)
 	end)
+	if not success and err then
+		print("Error leaving channel: " ..err)
+	end
 end
 
 function methods:IsInChannel(channelName)
@@ -111,7 +120,10 @@ function methods:GetExtraData(key)
 end
 
 function methods:SetMainChannel(channel)
-	pcall(function() self.eMainChannelSet:Fire(channel) end)
+	local success, err = pcall(function() self.eMainChannelSet:Fire(channel) end)
+	if not success and err then
+		print("Error setting main channel: " ..err)
+	end
 end
 
 --///////////////// Internal-Use Methods
@@ -129,21 +141,30 @@ function methods:InternalAssignPlayerObject(playerObj)
 end
 
 function methods:InternalSendMessage(messageObj, channel)
-	pcall(function()
+	local success, err = pcall(function()
 		self.eReceivedMessage:Fire(messageObj, channel)
 	end)
+	if not success and err then
+		print("Error sending internal message: " ..err)
+	end
 end
 
 function methods:InternalSendFilteredMessage(messageObj, channel)
-	pcall(function()
+	local success, err = pcall(function()
 		self.eMessageDoneFiltering:Fire(messageObj, channel)
 	end)
+	if not success and err then
+		print("Error sending internal filtered message: " ..err)
+	end
 end
 
 function methods:InternalSendSystemMessage(messageObj, channel)
-	pcall(function()
+	local success, err = pcall(function()
 		self.eReceivedSystemMessage:Fire(messageObj, channel)
 	end)
+	if not success and err then
+		print("Error sending internal system message: " ..err)
+	end
 end
 
 --///////////////////////// Constructors
