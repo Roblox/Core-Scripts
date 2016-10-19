@@ -11,7 +11,7 @@ local util = require(script.Parent:WaitForChild("Util"))
 function CreateMeCommandMessageLabel(messageData)
   local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
-	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFont = extraData.Font or Enum.Font.SourceSansItalic
 	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
   local useChatColor = Color3.new(1, 1, 1)
 
