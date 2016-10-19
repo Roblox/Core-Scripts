@@ -323,16 +323,16 @@ function LaserPointer.new()
 		end
 
 		if areTestControlSchemesEnabled then
-			ContextActionService:BindAction("Head Mounted", function(actionName, inputState, inputObj)
+			ContextActionService:BindCoreAction("Head Mounted", function(actionName, inputState, inputObj)
 				if inputState ~= Enum.UserInputState.End then return end
 				VRService.GuiInputUserCFrame = Enum.UserCFrame.Head
 			end, false, Enum.KeyCode.KeypadOne)
-			ContextActionService:BindAction("Right Hand Mounted", function(actionName, inputState, inputObj)
+			ContextActionService:BindCoreAction("Right Hand Mounted", function(actionName, inputState, inputObj)
 				if inputState ~= Enum.UserInputState.End then return end
 				VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
 				self.testWalkToMode = false
 			end, false, Enum.KeyCode.KeypadTwo)
-			ContextActionService:BindAction("Parabola Walkto", function(actionName, inputState, inputObj)
+			ContextActionService:BindCoreAction("Parabola Walkto", function(actionName, inputState, inputObj)
 				if inputState ~= Enum.UserInputState.End then return end
 				VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
 				self.testWalkToMode = true
