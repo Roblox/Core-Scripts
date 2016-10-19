@@ -1,7 +1,7 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX83D949955C5C44458061C23F812755B2">
+	<Item class="ModuleScript" referent="RBXB5EA896DE310401DB98F1A5B813293CA">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">TouchJump</string>
@@ -32,25 +32,41 @@ local Humanoid = MasterControl:GetHumanoid()
 local JumpButton = nil
 local OnInputEnded = nil		-- defined in Create()
 local CharacterAddedConnection = nil
+local HumStateConnection = nil
 local HumChangeConnection = nil
 local ExternallyEnabled = false --[[I don't think there's anything that disables jump from outside this script, but in case that ever happens, 
-							we don't want to re-enable it when jump power is changed]]
+we don't want to re-enable it when jump power is changed]]
+local JumpPower = 0
+local JumpStateEnabled = true
 
 --[[ Constants ]]--
 local TOUCH_CONTROL_SHEET = "rbxasset://textures/ui/TouchControlsSheet.png"
 
 --[[ Private Functions ]]--
+
+local function updateEnabled()
+	if JumpPower > 0 and JumpStateEnabled then
+		TouchJump:Enable()
+	else
+		TouchJump:Disable()
+	end
+end
+
 local function humanoidChanged(prop)
 	if prop == "JumpPower" then
-		if Humanoid.JumpPower == 0 then
-			TouchJump:Disable()
-		elseif Humanoid.JumpPower > 0 then
-			TouchJump:Enable()
-		end
+		JumpPower =  Humanoid.JumpPower
+		updateEnabled()
 	elseif prop == "Parent" then
 		if not Humanoid.Parent then
 			HumChangeConnection:disconnect()
 		end
+	end
+end
+
+local function humandoidStateEnabledChanged(state, isEnabled)
+	if state == Enum.HumanoidStateType.Jumping then
+		JumpStateEnabled = isEnabled
+		updateEnabled()
 	end
 end
 
@@ -78,7 +94,10 @@ local function characterAdded(newCharacter)
 		wait()
 	until Humanoid and Humanoid.Parent == newCharacter
 	HumChangeConnection = Humanoid.Changed:connect(humanoidChanged)
-	humanoidChanged("JumpPower")
+	HumStateConnection = Humanoid.StateEnabledChanged:connect(humandoidStateEnabledChanged)
+	JumpPower = Humanoid.JumpPower
+	JumpStateEnabled = Humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)
+	updateEnabled()
 end
 
 local function setupCharacterAddedFunction()
