@@ -36,7 +36,7 @@ local HumStateConnection = nil
 local HumChangeConnection = nil
 local ExternallyEnabled = false --[[I don't think there's anything that disables jump from outside this script, but in case that ever happens, 
 we don't want to re-enable it when jump power is changed]]
-local JumpPower = 50
+local JumpPower = 0
 local JumpStateEnabled = true
 
 --[[ Constants ]]--
