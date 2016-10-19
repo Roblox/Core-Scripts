@@ -88,7 +88,7 @@ local function CreateGuiObjects()
 	NameTag.Size = UDim2.new(1, 0, 1, 0)
 	NameTag.Position = UDim2.new(0, 0, 0, 0)
 	NameTag.BackgroundTransparency = 1
-	NameTag.Font = Enum.Font.SourceSansBold
+	NameTag.Font = ChatSettings.DefaultFont
 	NameTag.FontSize = ChatSettings.ChatChannelsTabTextSize
 	NameTag.TextColor3 = Color3.new(1, 1, 1)
 	NameTag.TextStrokeTransparency = 0.75
@@ -119,7 +119,7 @@ local function CreateGuiObjects()
 	NewMessageIconText.BackgroundTransparency = 1
 	NewMessageIconText.Size = UDim2.new(0, 13, 0, 9)
 	NewMessageIconText.Position = UDim2.new(0.5, -7, 0.5, -7)
-	NewMessageIconText.Font = Enum.Font.SourceSansBold
+	NewMessageIconText.Font = ChatSettings.DefaultFont
 	NewMessageIconText.FontSize = Enum.FontSize.Size14
 	NewMessageIconText.TextColor3 = Color3.new(1, 1, 1)
 	NewMessageIconText.Text = ""

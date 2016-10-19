@@ -55,7 +55,7 @@ function methods:CreateGuiObjects(targetParent)
 	TextBox.Size = UDim2.new(1, 0, 1, 0)
 	TextBox.Position = UDim2.new(0, 0, 0, 0)
 	TextBox.FontSize = ChatSettings.ChatBarTextSize
-	TextBox.Font = Enum.Font.SourceSansBold
+	TextBox.Font = ChatSettings.ChatBarFont
 	TextBox.TextColor3 = Color3.new(1, 1, 1)
 	--TextBox.TextStrokeTransparency = 0.75
 	TextBox.ClearTextOnFocus = false
@@ -69,7 +69,7 @@ function methods:CreateGuiObjects(targetParent)
 	MessageModeTextLabel.BackgroundTransparency = 1
 	MessageModeTextLabel.Position = UDim2.new(0, 0, 0, 0)
 	MessageModeTextLabel.FontSize = ChatSettings.ChatBarTextSize
-	MessageModeTextLabel.Font = Enum.Font.SourceSansBold
+	MessageModeTextLabel.Font = ChatSettings.ChatBarFont
 	MessageModeTextLabel.TextXAlignment = Enum.TextXAlignment.Left
 	MessageModeTextLabel.TextWrapped = true
 	MessageModeTextLabel.Text = ""

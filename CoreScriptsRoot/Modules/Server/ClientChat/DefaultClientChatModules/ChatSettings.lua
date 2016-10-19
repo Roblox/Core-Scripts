@@ -19,6 +19,9 @@ module.ChatChannelsTabTextSizePhone = Enum.FontSize.Size18
 module.ChatBarTextSizePhone = Enum.FontSize.Size14
 module.ShowUserOwnFilteredMessage = false  --Show a user the filtered version of their message rather than the original.
 
+module.DefaultFont = Enum.Font.SourceSansBold
+module.ChatBarFont = Enum.Font.SourceSansBold
+
 module.MinimumWindowSize = UDim2.new(0.3, 0, 0.25, 0)
 module.MaximumWindowSize = UDim2.new(1, 0, 1, 0) -- if you change this to be greater than full screen size, weird things start to happen with size/position bounds checking.
 

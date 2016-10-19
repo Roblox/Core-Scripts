@@ -75,7 +75,7 @@ function methods:CreateGuiObjects(targetParent)
 	LeaveConfirmationButtonYes.Selectable = false
 	LeaveConfirmationButtonYes.Size = UDim2.new(0.25, 0, 1, 0)
 	LeaveConfirmationButtonYes.BackgroundTransparency = 1
-	LeaveConfirmationButtonYes.Font = Enum.Font.SourceSansBold
+	LeaveConfirmationButtonYes.Font = ChatSettings.DefaultFont
 	LeaveConfirmationButtonYes.FontSize = Enum.FontSize.Size18
 	LeaveConfirmationButtonYes.TextStrokeTransparency = 0.75
 	LeaveConfirmationButtonYes.Position = UDim2.new(0, 0, 0, 0)
@@ -96,7 +96,7 @@ function methods:CreateGuiObjects(targetParent)
 	LeaveConfirmationNotice.TextColor3 = Color3.new(1, 1, 1)
 	LeaveConfirmationNotice.TextStrokeTransparency = 0.75
 	LeaveConfirmationNotice.Text = "Leave channel <XX>?"
-	LeaveConfirmationNotice.Font = Enum.Font.SourceSansBold
+	LeaveConfirmationNotice.Font = ChatSettings.DefaultFont
 	LeaveConfirmationNotice.FontSize = Enum.FontSize.Size18
 
 	local LeaveTarget = Instance.new("StringValue", LeaveConfirmationFrame)
