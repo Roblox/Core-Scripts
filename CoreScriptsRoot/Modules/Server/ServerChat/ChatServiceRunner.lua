@@ -236,14 +236,18 @@ local function TryRunModule(module)
 	end
 end
 
-local modules = game:GetService("ServerStorage"):FindFirstChild("ChatModules")
-if modules then
-	modules.ChildAdded:connect(function(child)
-		pcall(TryRunModule, child)
-	end)
+local modules = game:GetService("ServerStorage"):WaitForChild("ChatModules")
+modules.ChildAdded:connect(function(child)
+	local success, returnval = pcall(TryRunModule, child)
+	if not success and returnval then
+		print("Error running module " ..child.Name.. ": " ..returnval)
+	end
+end)
 
-	for i, module in pairs(modules:GetChildren()) do
-		pcall(TryRunModule, module)
+for i, module in pairs(modules:GetChildren()) do
+	local success, returnval = pcall(TryRunModule, module)
+	if not success and returnval then
+		print("Error running module " ..module.Name.. ": " ..returnval)
 	end
 end
 

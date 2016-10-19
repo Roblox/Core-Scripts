@@ -44,7 +44,10 @@ function methods:AddChannel(channelName)
 		return false
 	end)
 
-	pcall(function() self.eChannelAdded:Fire(channelName) end)
+	local success, err = pcall(function() self.eChannelAdded:Fire(channelName) end)
+	if not success and err then
+		print("Error addding channel: " ..err)
+	end
 
 	return channel
 end
@@ -56,7 +59,10 @@ function methods:RemoveChannel(channelName)
 		self.ChatChannels[channelName:lower()]:InternalDestroy()
 		self.ChatChannels[channelName:lower()] = nil
 
-		pcall(function() self.eChannelRemoved:Fire(n) end)
+		local success, err = pcall(function() self.eChannelRemoved:Fire(n) end)
+		if not success and err then
+			print("Error removing channel: " ..err)
+		end
 	else
 		warn(string.format("Channel %q does not exist.", channelName))
 	end
@@ -75,7 +81,10 @@ function methods:AddSpeaker(speakerName)
 	local speaker = Speaker.new(self, speakerName)
 	self.Speakers[speakerName:lower()] = speaker
 
-	pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+	local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+	if not success and err then
+		print("Error adding speaker: " ..err)
+	end
 
 	return speaker
 end
@@ -87,7 +96,10 @@ function methods:RemoveSpeaker(speakerName)
 		self.Speakers[speakerName:lower()]:InternalDestroy()
 		self.Speakers[speakerName:lower()] = nil
 
-		pcall(function() self.eSpeakerRemoved:Fire(n) end)
+		local success, err = pcall(function() self.eSpeakerRemoved:Fire(n) end)
+		if not success and err then
+			print("Error removing speaker: " ..err)
+		end
 
 	else
 		warn("Speaker \"" .. speakerName .. "\" does not exist!")
@@ -233,7 +245,10 @@ function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj)
 	speaker:InternalAssignPlayerObject(playerObj)
 	self.Speakers[speakerName:lower()] = speaker
 
-	pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+	local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+	if not success and err then
+		print("Error adding speaker: " ..err)
+	end
 
 	return speaker
 end

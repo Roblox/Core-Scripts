@@ -12,13 +12,16 @@ local function MakeIsInGroup(groupId, requiredRank)
 
 			if inGroupCache[userId] == nil then
 				local inGroup = false
-				pcall(function() -- Many things can error is the IsInGroup check
+				local success, err = pcall(function() -- Many things can error is the IsInGroup check
 					if requiredRank then
 						inGroup = player:GetRankInGroup(groupId) > requiredRank
 					else
 						inGroup = player:IsInGroup(groupId)
 					end
 				end)
+				if not success and err then
+					print("Error checking in group: " ..err)
+				end
 				inGroupCache[userId] = inGroup
 			end
 
