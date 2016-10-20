@@ -1,31 +1,36 @@
---	// FileName: MeCommandMessage.lua
+--	// FileName: MeCommandChannelEchoMessage.lua
 --	// Written by: TheGamer101
---	// Description: Create a message label for a me command message.
+--	// Description: Create a message label for a me command message echoed into another channel.
 
-local MESSAGE_TYPE = "MeCommandMessage"
+local MESSAGE_TYPE = "MeCommandChannelEchoMessage"
 
 local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local util = require(script.Parent:WaitForChild("Util"))
 
-function CreateMeCommandMessageLabel(messageData)
+function CreateMeCommandChannelEchoMessageLabel(messageData)
   local message = messageData.Message
+  local echoChannel = messageData.OriginalChannel
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or Enum.Font.SourceSansItalic
 	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
   local useChatColor = Color3.new(1, 1, 1)
 
-	local tempMessage = messageData.FromSpeaker .. " " .. string.sub(message, 5)
-
+  local tempMessage = messageData.FromSpeaker .. " " .. string.sub(message, 5)
 	if not messageData.IsFiltered then
 		local numNeededUnderscore = util:GetNumberOfUnderscores(tempMessage, useFont, useFontSize)
 		tempMessage = string.rep("_", numNeededUnderscore)
 	end
 
-	local BaseFrame, BaseMessage = util:CreateBaseMessage(tempMessage, useFont, useFontSize, useChatColor)
+  local formatChannelName = string.format("{%s}", echoChannel)
+  local numNeededSpaces2 = util:GetNumberOfSpaces(formatChannelName, useFont, useFontSize) + 1
+  local modifiedMessage = string.rep(" ", numNeededSpaces2) .. message
+
+  local BaseFrame, BaseMessage = util:CreateBaseMessage(modifiedMessage, useFont, useFontSize, useChatColor)
+  local ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName, BaseMessage.TextColor3)
 
 	local function UpdateTextFunction(newMessageObject)
-		BaseMessage.Text = newMessageObject.FromSpeaker .. " " .. string.sub(newMessageObject.Message, 5)
+		BaseMessage.Text = string.rep(" ", numNeededSpaces2) .. newMessageObject.FromSpeaker .. " " .. string.sub(newMessageObject.Message, 5)
 	end
 
   local function GetHeightFunction()
@@ -35,10 +40,10 @@ function CreateMeCommandMessageLabel(messageData)
   local AnimParams = {}
   AnimParams.Text_TargetTransparency = 0
   AnimParams.Text_CurrentTransparency = 0
-  AnimParams.Text_NormalizedExptValue = 1
+  AnimParams.Text_NormalizedExptValue = 0
   AnimParams.TextStroke_TargetTransparency = 0.75
   AnimParams.TextStroke_CurrentTransparency = 0.75
-  AnimParams.Text_NormalizedExptValue = 1
+  AnimParams.TextStroke_NormalizedExptValue = 1
 
   local function FadeInFunction(duration, CurveUtil)
     AnimParams.Text_TargetTransparency = 0
@@ -61,17 +66,17 @@ function CreateMeCommandMessageLabel(messageData)
 
   local function UpdateAnimFunction(dtScale, CurveUtil)
     AnimParams.Text_CurrentTransparency = CurveUtil:Expt(
-        AnimParams.Text_CurrentTransparency,
-        AnimParams.Text_TargetTransparency,
-        AnimParams.Text_NormalizedExptValue,
-        dtScale
-    )
-    AnimParams.TextStroke_CurrentTransparency = CurveUtil:Expt(
-        AnimParams.TextStroke_CurrentTransparency,
-        AnimParams.TextStroke_TargetTransparency,
-        AnimParams.TextStroke_NormalizedExptValue,
-        dtScale
-    )
+				AnimParams.Text_CurrentTransparency,
+				AnimParams.Text_TargetTransparency,
+				AnimParams.Text_NormalizedExptValue,
+				dtScale
+		)
+		AnimParams.TextStroke_CurrentTransparency = CurveUtil:Expt(
+				AnimParams.TextStroke_CurrentTransparency,
+				AnimParams.TextStroke_TargetTransparency,
+				AnimParams.TextStroke_NormalizedExptValue,
+				dtScale
+		)
 
     AnimGuiObjects()
   end
@@ -88,5 +93,5 @@ end
 
 return {
   [util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
-  [util.KEY_CREATOR_FUNCTION] = CreateMeCommandMessageLabel
+  [util.KEY_CREATOR_FUNCTION] = CreateMeCommandChannelEchoMessageLabel
 }

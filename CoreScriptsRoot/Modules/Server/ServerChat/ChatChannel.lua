@@ -84,10 +84,17 @@ function methods:MuteSpeaker(speakerName, reason, length)
 		self:SendSystemMessage(string.format("%s was muted for the following reason(s): %s", speakerName, reason))
 	end
 
-	pcall(function() self.eSpeakerMuted:Fire(speakerName, reason, length) end)
+	local success, err = pcall(function() self.eSpeakerMuted:Fire(speakerName, reason, length) end)
+	if not success and err then
+		print("Error mutting speaker: " ..err)
+	end
+
 	local spkr = self.ChatService:GetSpeaker(speakerName)
 	if (spkr) then
-		pcall(function() spkr.eMuted:Fire(self.Name, reason, length) end)
+		local success, err = pcall(function() spkr.eMuted:Fire(self.Name, reason, length) end)
+		if not success and err then
+			print("Error mutting speaker: " ..err)
+		end
 	end
 
 end
@@ -100,10 +107,17 @@ function methods:UnmuteSpeaker(speakerName)
 
 	self.Mutes[speakerName:lower()] = nil
 
-	pcall(function() self.eSpeakerUnmuted:Fire(speakerName) end)
+	local success, err = pcall(function() self.eSpeakerUnmuted:Fire(speakerName) end)
+	if not success and err then
+		print("Error unmuting speaker: " ..err)
+	end
+
 	local spkr = self.ChatService:GetSpeaker(speakerName)
 	if (spkr) then
-		pcall(function() spkr.eUnmuted:Fire(self.Name) end)
+		local success, err = pcall(function() spkr.eUnmuted:Fire(self.Name) end)
+		if not success and err then
+			print("Error unmuting speaker: " ..err)
+		end
 	end
 end
 
@@ -232,7 +246,10 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		speaker:InternalSendMessage(messageObj, self.Name)
 	end
 
-	pcall(function() self.eMessagePosted:Fire(messageObj) end)
+	local success, err = pcall(function() self.eMessagePosted:Fire(messageObj) end)
+	if not success and err then
+		print("Error posting message: " ..err)
+	end
 
 	local filteredMessages = {}
 	for i, speakerName in pairs(sentToList) do
@@ -261,7 +278,10 @@ function methods:InternalAddSpeaker(speaker)
 	end
 
 	self.Speakers[speaker.Name] = speaker
-	pcall(function() self.eSpeakerJoined:Fire(speaker.Name) end)
+	local success, err = pcall(function() self.eSpeakerJoined:Fire(speaker.Name) end)
+	if not success and err then
+		print("Error removing channel: " ..err)
+	end
 end
 
 function methods:InternalRemoveSpeaker(speaker)
@@ -271,7 +291,10 @@ function methods:InternalRemoveSpeaker(speaker)
 	end
 
 	self.Speakers[speaker.Name] = nil
-	pcall(function() self.eSpeakerLeft:Fire(speaker.Name) end)
+	local success, err = pcall(function() self.eSpeakerLeft:Fire(speaker.Name) end)
+	if not success and err then
+		print("Error removing speaker: " ..err)
+	end
 end
 
 function methods:InternalRemoveExcessMessagesFromLog()

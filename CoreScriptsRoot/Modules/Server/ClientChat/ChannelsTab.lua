@@ -8,9 +8,9 @@ local module = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
-local moduleTransparencyTweener = require(modulesFolder:WaitForChild("TransparencyTweener"))
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
+local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -170,55 +170,87 @@ function methods:SetActive(active)
 	end
 end
 
-function methods:RenderDisplayText()
-
-end
-
 function methods:SetFontSize(fontSize)
 	self.NameTag.FontSize = fontSize
 end
 
 function methods:FadeOutBackground(duration)
-	self.BackgroundTweener:Tween(duration, 1)
+	self.AnimParams.Background_TargetTransparency = 1
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeInBackground(duration)
-	self.BackgroundTweener:Tween(duration, 0)
+	self.AnimParams.Background_TargetTransparency = 0.6
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeOutText(duration)
-	self.TextTweener:Tween(duration, 1)
+	self.AnimParams.Text_TargetTransparency = 1
+	self.AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
+	self.AnimParams.TextStroke_TargetTransparency = 1
+	self.AnimParams.TextStroke_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
 function methods:FadeInText(duration)
-	self.TextTweener:Tween(duration, 0)
+	self.AnimParams.Text_TargetTransparency = 0
+	self.AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
+	self.AnimParams.TextStroke_TargetTransparency = 0.75
+	self.AnimParams.TextStroke_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 end
 
-function methods:CreateTweeners()
-	self.BackgroundTweener:CancelTween()
-	self.TextTweener:CancelTween()
+function methods:AnimGuiObjects()
+	self.UnselectedFrame.BackgroundTransparency = self.AnimParams.Background_CurrentTransparency
+	self.SelectedFrame.BackgroundImage.BackgroundTransparency = self.AnimParams.Background_CurrentTransparency
+	self.SelectedFrame.BlueBarLeft.ImageTransparency = self.AnimParams.Background_CurrentTransparency
+	self.SelectedFrame.BlueBarRight.ImageTransparency = self.AnimParams.Background_CurrentTransparency
+	self.NameTagNonSelect.TextTransparency = self.AnimParams.Background_CurrentTransparency
+	self.NameTagNonSelect.TextStrokeTransparency = self.AnimParams.Background_CurrentTransparency
 
-	self.BackgroundTweener = moduleTransparencyTweener.new()
-	self.TextTweener = moduleTransparencyTweener.new()
+	self.NameTag.TextTransparency = self.AnimParams.Text_CurrentTransparency
+	self.NewMessageIcon.ImageTransparency = self.AnimParams.Text_CurrentTransparency
+	self.WhiteTextNewMessageNotification.TextTransparency = self.AnimParams.Text_CurrentTransparency
+	self.NameTagSelect.TextTransparency = self.AnimParams.Text_CurrentTransparency
 
-	--// Register BackgroundTweener objects and properties
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.UnselectedFrame, "BackgroundTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.SelectedFrame.BackgroundImage, "BackgroundTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.SelectedFrame.BlueBarLeft, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.SelectedFrame.BlueBarRight, "ImageTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.NameTagNonSelect, "TextTransparency")
-	self.BackgroundTweener:RegisterTweenObjectProperty(self.NameTagNonSelect, "TextStrokeTransparency")
+	self.NameTag.TextStrokeTransparency = self.AnimParams.TextStroke_CurrentTransparency
+	self.WhiteTextNewMessageNotification.TextStrokeTransparency = self.AnimParams.TextStroke_CurrentTransparency
+	self.NameTagSelect.TextStrokeTransparency = self.AnimParams.TextStroke_CurrentTransparency
+end
 
+function methods:InitializeAnimParams()
+	self.AnimParams.Text_TargetTransparency = 0
+	self.AnimParams.Text_CurrentTransparency = 0
+	self.AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(0)
 
-	--// Register TextTweener objects and properties
-	self.TextTweener:RegisterTweenObjectProperty(self.NameTag, "TextTransparency")
-	self.TextTweener:RegisterTweenObjectProperty(self.NameTag, "TextStrokeTransparency")
-	self.TextTweener:RegisterTweenObjectProperty(self.NewMessageIcon, "ImageTransparency")
-	self.TextTweener:RegisterTweenObjectProperty(self.WhiteTextNewMessageNotification, "TextTransparency")
-	self.TextTweener:RegisterTweenObjectProperty(self.WhiteTextNewMessageNotification, "TextStrokeTransparency")
-	self.TextTweener:RegisterTweenObjectProperty(self.NameTagSelect, "TextTransparency")
-	self.TextTweener:RegisterTweenObjectProperty(self.NameTagSelect, "TextStrokeTransparency")
+	self.AnimParams.TextStroke_TargetTransparency = 0.75
+	self.AnimParams.TextStroke_CurrentTransparency = 0.75
+	self.AnimParams.TextStroke_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(0)
 
+	self.AnimParams.Background_TargetTransparency = 0.6
+	self.AnimParams.Background_CurrentTransparency = 0.6
+	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(0)
+end
+
+function methods:Update(dtScale)
+	self.AnimParams.Background_CurrentTransparency = CurveUtil:Expt(
+			self.AnimParams.Background_CurrentTransparency,
+			self.AnimParams.Background_TargetTransparency,
+			self.AnimParams.Background_NormalizedExptValue,
+			dtScale
+	)
+	self.AnimParams.Text_CurrentTransparency = CurveUtil:Expt(
+			self.AnimParams.Text_CurrentTransparency,
+			self.AnimParams.Text_TargetTransparency,
+			self.AnimParams.Text_NormalizedExptValue,
+			dtScale
+	)
+	self.AnimParams.TextStroke_CurrentTransparency = CurveUtil:Expt(
+			self.AnimParams.TextStroke_CurrentTransparency,
+			self.AnimParams.TextStroke_TargetTransparency,
+			self.AnimParams.TextStroke_NormalizedExptValue,
+			dtScale
+	)
+
+	self:AnimGuiObjects()
 end
 
 --///////////////////////// Constructors
@@ -237,10 +269,6 @@ function module.new(channelName)
 	obj.UnselectedFrame = UnselectedFrame
 	obj.SelectedFrame = SelectedFrame
 
-	--// These four aren't used, but need to be kept as
-	--// references so they wont be garbage collected in
-	--// the tweener objects until this Tab object is
-	--// garbage collected when it is no longer in use.
 	obj.BlueBarLeft = SelectedFrame.BlueBarLeft
 	obj.BlueBarRight = SelectedFrame.BlueBarRight
 	obj.BackgroundImage = SelectedFrame.BackgroundImage
@@ -249,9 +277,6 @@ function module.new(channelName)
 	obj.ChannelName = channelName
 	obj.UnreadMessageCount = 0
 	obj.Active = false
-
-	obj.BackgroundTweener = moduleTransparencyTweener.new()
-	obj.TextTweener = moduleTransparencyTweener.new()
 
 	obj.GuiObject.Name = "Frame_" .. obj.ChannelName
 
@@ -265,9 +290,12 @@ function module.new(channelName)
 	obj.NameTagNonSelect.Text = channelName
 	obj.NameTagSelect.Text = channelName
 
+	obj.AnimParams = {}
+
 	ClassMaker.MakeClass("ChannelsTab", obj)
 
-	obj:CreateTweeners()
+	obj:InitializeAnimParams()
+	obj:AnimGuiObjects()
 	obj:SetActive(false)
 
 	return obj

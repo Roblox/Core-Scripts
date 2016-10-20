@@ -1,14 +1,20 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXA71F9A81166C415FBA35E635CAA022E8">
+	<Item class="ModuleScript" referent="RBX0DC211A948BA472ABCA8DC0A3BC9F806">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ClassicCamera</string>
+			<string name="ScriptGuid"></string>
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
-local RootCameraCreator = require(script.Parent)
+local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
+if not VRServiceExists or not VRService then
+	--No VRService? Fall back to UserInputService, it is the original VRService after all
+	VRService = UserInputService
+end
 
+local RootCameraCreator = require(script.Parent)
 
 local UP_VECTOR = Vector3.new(0, 1, 0)
 local XZ_VECTOR = Vector3.new(1,0,1)
@@ -157,16 +163,37 @@ local function CreateClassicCamera()
 					end
 				end
 			end
+
+			camera.Focus = VRService.VREnabled and self:GetVRFocus(subjectPosition, timeDelta) or CFrame.new(subjectPosition)
 			
-			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
-			self.RotateInput = ZERO_VECTOR2
+			local cameraHeight = self:GetCameraHeight()
+			local cameraFocusP = camera.Focus.p
 
+			if VRService.VREnabled and not self:IsInFirstPerson() then
+				local vecToSubject = (subjectPosition - camera.CFrame.p)
+				local distToSubject = vecToSubject.magnitude
 
+				--Only move the camera if it exceeded a maximum distance to the subject in VR
+				if distToSubject > zoom or self.RotateInput.x ~= 0 then
+					local desiredDist = math.min(distToSubject, zoom)
+					vecToSubject = self:RotateCamera(vecToSubject.unit * Vector3.new(1, 0, 1), Vector2.new(self.RotateInput.x, 0)) * desiredDist
+					local newPos = cameraFocusP - vecToSubject
+					local desiredLookDir = camera.CFrame.lookVector
+					if self.RotateInput.x ~= 0 then
+						desiredLookDir = vecToSubject
+					end
+					local lookAt = Vector3.new(newPos.x + desiredLookDir.x, newPos.y, newPos.z + desiredLookDir.z)
+					self.RotateInput = ZERO_VECTOR2
+					
+					camera.CFrame = CFrame.new(newPos, lookAt) + Vector3.new(0, cameraHeight, 0)
+				end
+			else
+				local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
+				self.RotateInput = ZERO_VECTOR2
+				camera.CFrame = CFrame.new(cameraFocusP - (zoom * newLookVector), cameraFocusP) + Vector3.new(0, cameraHeight, 0)
+			end
 
-			camera.Focus = UserInputService.VREnabled and self:GetVRFocus(subjectPosition, timeDelta) or CFrame.new(subjectPosition)
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p) + Vector3.new(0, self:GetCameraHeight(), 0)
-
-			self.LastCameraTransform = camera.CoordinateFrame
+			self.LastCameraTransform = camera.CFrame
 			self.LastCameraFocus = camera.Focus
 			if isInVehicle or isOnASkateboard and cameraSubject:IsA('BasePart') then
 				self.LastSubjectCFrame = cameraSubject.CFrame

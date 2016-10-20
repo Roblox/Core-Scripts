@@ -20,8 +20,6 @@ StatsAggregatorManagerClass.__index = StatsAggregatorManagerClass
 StatsAggregatorManagerClass.SecondsBetweenUpdate = 1.0
 StatsAggregatorManagerClass.NumSamplesToKeep = 20
 
-
-
 function StatsAggregatorManagerClass.new() 
   local self = {}
   setmetatable(self, StatsAggregatorManagerClass)
@@ -42,6 +40,12 @@ end
 function StatsAggregatorManagerClass:StartListening()
   for i, statsAggregator in pairs(self._statsAggregators) do
     statsAggregator:StartListening()
+  end
+end
+
+function StatsAggregatorManagerClass:StopListening()
+  for i, statsAggregator in pairs(self._statsAggregators) do
+    statsAggregator:StopListening()
   end
 end
 

@@ -1728,7 +1728,6 @@ LeftMenubar:SetDock(TopBar:GetInstance())
 RightMenubar:SetDock(TopBar:GetInstance())
 Menubar3D:SetDock(TopbarPanel3D:GetGUI())
 
-
 if not isTenFootInterface then
 	Util.SetGUIInsetBounds(0, TopbarConstants.TOPBAR_THICKNESS, 0, 0)
 end
