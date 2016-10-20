@@ -1175,7 +1175,7 @@ local function CreateSettingsHub()
 
   -- Quick Profiler connections
   -- Note: it's actually Ctrl-F7.  We don't have a nice way of 
-  -- making that explicit here, so we check it inside toggleQuickProfiler.
+  -- making that explicit here, so we check it inside toggleQuickProfilerFromHotkey.
   ContextActionService:BindCoreAction(QUICK_PROFILER_ACTION_NAME, 
     toggleQuickProfilerFromHotkey, 
     false,
