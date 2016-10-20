@@ -32,14 +32,14 @@ function methods:CreateGuiObjects(targetParent)
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 0.6
 	BaseFrame.BorderSizePixel = 0
-	BaseFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	BaseFrame.BackgroundColor3 = ChatSettings.ChatBarBackGroundColor
 
 	local BoxFrame = Instance.new("Frame", BaseFrame)
 	BoxFrame.Selectable = false
 	BoxFrame.Name = "BoxFrame"
 	BoxFrame.BackgroundTransparency = 0.6
 	BoxFrame.BorderSizePixel = 0
-	BoxFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+	BoxFrame.BackgroundColor3 = ChatSettings.ChatBarBoxColor
 	BoxFrame.Size = UDim2.new(1, -backgroundImagePixelOffset * 2, 1, -backgroundImagePixelOffset * 2)
 	BoxFrame.Position = UDim2.new(0, backgroundImagePixelOffset, 0, backgroundImagePixelOffset)
 
@@ -274,8 +274,14 @@ function methods:TweenToTargetYSize()
 end
 
 function methods:SetFontSize(fontSize)
-	self.TextBox.FontSize = fontSize
-	self.TextLabel.FontSize = fontSize
+	if not self:IsInCustomState() then
+		if rawget(self, "TextBox") then
+			self.TextBox.FontSize = fontSize
+		end
+		if rawget(self, "TextLabel") then
+			self.TextLabel.FontSize = fontSize
+		end
+	end
 end
 
 function methods:SetChannelTarget(targetChannel)

@@ -38,7 +38,7 @@ local function CreateGuiObjects()
 	UnselectedFrame.Size = UDim2.new(1, 0, 1, 0)
 	UnselectedFrame.Position = UDim2.new(0, 0, 0, 0)
 	UnselectedFrame.BorderSizePixel = 0
-	UnselectedFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	UnselectedFrame.BackgroundColor3 = ChatSettings.ChannelsTabUnselectedColor
 	UnselectedFrame.BackgroundTransparency = 0.6
 
 	local SelectedFrame = Instance.new("Frame", BackgroundFrame)
@@ -47,7 +47,7 @@ local function CreateGuiObjects()
 	SelectedFrame.Size = UDim2.new(1, 0, 1, 0)
 	SelectedFrame.Position = UDim2.new(0, 0, 0, 0)
 	SelectedFrame.BorderSizePixel = 0
-	SelectedFrame.BackgroundColor3 = Color3.new(30/255, 30/255, 30/255)
+	SelectedFrame.BackgroundColor3 = ChatSettings.ChannelsTabSelectedColor
 	SelectedFrame.BackgroundTransparency = 1
 
 	local SelectedFrameBackgroundImage = Instance.new("ImageLabel", SelectedFrame)

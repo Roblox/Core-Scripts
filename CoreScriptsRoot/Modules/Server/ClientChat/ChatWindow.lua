@@ -50,7 +50,7 @@ function methods:CreateGuiObjects(targetParent)
 	ChatChannelParentFrame.Name = "ChatChannelParentFrame"
 	ChatChannelParentFrame.BackgroundTransparency = 1
 
-	ChatChannelParentFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	ChatChannelParentFrame.BackgroundColor3 = ChatSettings.BackGroundColor
 	ChatChannelParentFrame.BackgroundTransparency = 0.6
 	ChatChannelParentFrame.BorderSizePixel = 0
 
@@ -60,7 +60,7 @@ function methods:CreateGuiObjects(targetParent)
 	ChatResizerFrame.BackgroundTransparency = 0.6
 	ChatResizerFrame.BorderSizePixel = 0
 	ChatResizerFrame.Visible = false
-	ChatResizerFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	ChatResizerFrame.BackgroundColor3 = ChatSettings.BackGroundColor
 	ChatResizerFrame.Active = true
 
 	local ResizeIcon = Instance.new("ImageLabel", ChatResizerFrame)

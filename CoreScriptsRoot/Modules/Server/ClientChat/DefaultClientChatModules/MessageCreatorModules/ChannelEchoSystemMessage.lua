@@ -15,7 +15,7 @@ function CreateChannelEchoSystemMessageLabel(messageData)
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or ChatSettings.DefaultFont
 	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
-	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
 	local formatChannelName = string.format("{%s}", echoChannel)
 	local numNeededSpaces2 = util:GetNumberOfSpaces(formatChannelName, useFont, useFontSize) + 1

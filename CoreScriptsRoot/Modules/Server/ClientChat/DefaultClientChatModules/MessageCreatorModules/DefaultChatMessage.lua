@@ -16,8 +16,9 @@ function CreateMessageLabel(messageData)
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or ChatSettings.DefaultFont
 	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
-	local useNameColor = extraData.NameColor or Color3.new(1, 1, 1)
-	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+	local useNameColor = extraData.NameColor or ChatSettings.DefaultNameColor
+
+	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
 	local formatUseName = string.format("[%s]:", fromSpeaker)
 	local speakerNameSize = util:GetStringTextBounds(formatUseName, useFont, useFontSize)
