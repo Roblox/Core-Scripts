@@ -7,7 +7,7 @@ local module = {}
 ---[[ Chat Behaviour Settings ]]
 module.WindowDraggable = false
 module.WindowResizable = false
-module.ShowChannelsBar = true
+module.ShowChannelsBar = false
 module.GamepadNavigationEnabled = false
 module.ShowUserOwnFilteredMessage = false  --Show a user the filtered version of their message rather than the original.
 
