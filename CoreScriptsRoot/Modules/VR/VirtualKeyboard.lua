@@ -15,9 +15,6 @@ local TextService = game:GetService('TextService')
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Util = require(RobloxGui.Modules.Settings.Utility)
 
-local vrKeyboardSuccess, vrKeyboardFlagValue = pcall(function() return settings():GetFFlag("UseVRKeyboardInLua") end)
-local useVRKeyboard = (vrKeyboardSuccess and vrKeyboardFlagValue == true)
-
 local BACKGROUND_OPACITY = 0.3
 local NORMAL_KEY_COLOR = Color3.new(49/255,49/255,49/255)
 local HOVER_KEY_COLOR = Color3.new(49/255,49/255,49/255)
@@ -1421,7 +1418,7 @@ VirtualKeyboardClass.OpenedEvent = GetKeyboard().OpenedEvent
 VirtualKeyboardClass.ClosedEvent = GetKeyboard().ClosedEvent
 
 
-if VirtualKeyboardPlatform and useVRKeyboard then
+if VirtualKeyboardPlatform then
 	UserInputService.TextBoxFocused:connect(function(textbox)
 		VirtualKeyboardClass:ShowVirtualKeyboard(VirtualKeyboardClass:CreateVirtualKeyboardOptions(textbox))
 	end)
