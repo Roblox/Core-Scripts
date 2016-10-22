@@ -59,18 +59,21 @@ if touchEnabled then -- touch devices don't use same control frame
 	RobloxGui.ControlFrame.BottomLeftControl.Visible = false
 end
 
-local function tryRequireVRKeyboard()
-	if UserInputService.VREnabled then
-		return require(RobloxGui.Modules.VR.VirtualKeyboard)
-	end
-	return nil
-end
-if not tryRequireVRKeyboard() then
-	UserInputService.Changed:connect(function(prop)
-		if prop == "VREnabled" then
-			tryRequireVRKeyboard()
+do
+	local UserInputService = game:GetService('UserInputService')
+	local function tryRequireVRKeyboard()
+		if UserInputService.VREnabled then
+			return require(RobloxGui.Modules.VR.VirtualKeyboard)
 		end
-	end)
+		return nil
+	end
+	if not tryRequireVRKeyboard() then
+		UserInputService.Changed:connect(function(prop)
+			if prop == "VREnabled" then
+				tryRequireVRKeyboard()
+			end
+		end)
+	end
 end
 
 -- Boot up the VR App Shell
