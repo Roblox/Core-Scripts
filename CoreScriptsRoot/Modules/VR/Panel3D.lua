@@ -137,9 +137,11 @@ function Panel3D.RaycastOntoPanel(part, parentGui, gui, ray)
 		local guiWidth, guiHeight = gui.AbsoluteSize.X, gui.AbsoluteSize.Y
 		local isOnGui = false
 
-		if lookX >= guiX and lookX <= guiX + guiWidth and
-		   lookY >= guiY and lookY <= guiY + guiHeight then
-		   	isOnGui = true
+		if parentGui.Enabled then
+			if lookX >= guiX and lookX <= guiX + guiWidth and
+			   lookY >= guiY and lookY <= guiY + guiHeight then
+			   	isOnGui = true
+			end
 		end
 
 		return worldIntersectPoint, localIntersectPoint, lookAtPixel, isOnGui
@@ -336,15 +338,13 @@ function Panel:SetEnabled(enabled)
 		self:GetPart().Parent = partFolder
 		self:GetGUI().Enabled = true
 		for i, v in pairs(self.subpanels) do
-			v:GetPart().Parent = partFolder
-			v:GetGUI().Enabled = true
+			v:SetEnabled(v:GetEnabled())
 		end
 	else
 		self:GetPart().Parent = nil
 		self:GetGUI().Enabled = false
 		for i, v in pairs(self.subpanels) do
-			v:GetPart().Parent = nil
-			v:GetGUI().Enabled = false
+			v:SetEnabled(v:GetEnabled())
 		end
 	end
 
@@ -708,6 +708,8 @@ function Subpanel.new(parentPanel, guiElement)
 	self.cursorPos = Vector2.new(-1, -1)
 	self.lookedAt = false
 
+	self.isEnabled = true
+
 	self.part = nil
 	self.gui = nil
 	self.guiSurrogate = nil
@@ -800,8 +802,9 @@ function Subpanel:WatchParent(parent)
 end
 
 function Subpanel:UpdateSurrogate()
-	self.guiSurrogate.Position = UDim2.new(0, self.lastParent.AbsolutePosition.X, 0, self.lastParent.AbsolutePosition.Y)
-	self.guiSurrogate.Size = UDim2.new(0, self.lastParent.AbsoluteSize.X, 0, self.lastParent.AbsoluteSize.Y)
+	local lastParent = self.lastParent
+	self.guiSurrogate.Position = UDim2.new(0, lastParent.AbsolutePosition.X, 0, lastParent.AbsolutePosition.Y)
+	self.guiSurrogate.Size = UDim2.new(0, lastParent.AbsoluteSize.X, 0, lastParent.AbsoluteSize.Y)
 end
 
 function Subpanel:GetPart()
@@ -852,6 +855,23 @@ function Subpanel:Update()
 	if part and parentPart then
 		part.CFrame = parentPart.CFrame * CFrame.new(0, 0, -self.depthOffset)
 	end
+end
+
+function Subpanel:SetEnabled(enabled)
+	-- Don't change check here, parentPanel may try to refresh our enabled state
+	-- alternatively we could listen to an enabled changed event on our parent panel
+	self.isEnabled = enabled
+	if enabled and self.parentPanel.isEnabled then
+		self:GetPart().Parent = partFolder
+		self:GetGUI().Enabled = true
+	else
+		self:GetPart().Parent = nil
+		self:GetGUI().Enabled = false
+	end
+end
+
+function Subpanel:GetEnabled()
+	return self.isEnabled
 end
 
 function Subpanel:GetPixelScale()

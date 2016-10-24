@@ -554,9 +554,13 @@ local function CreateSettingsHub()
     onScreenSizeChanged()
   end
 
-  local function toggleQuickProfiler(actionName, inputState, inputObject) 
-      -- F7
-      if actionName ==QUICK_PROFILER_ACTION_NAME then
+  local function toggleQuickProfilerFromHotkey(actionName, inputState, inputObject) 
+    -- Make sure it's Ctrl-F7.
+    if (not UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)) then
+      return
+    end
+    
+    if actionName ==QUICK_PROFILER_ACTION_NAME then
       if inputState and inputState == Enum.UserInputState.Begin then
         GameSettings.PerformanceStatsVisible = not GameSettings.PerformanceStatsVisible
       end
@@ -1170,8 +1174,10 @@ local function CreateSettingsHub()
     Enum.KeyCode.F9)
 
   -- Quick Profiler connections
+  -- Note: it's actually Ctrl-F7.  We don't have a nice way of 
+  -- making that explicit here, so we check it inside toggleQuickProfilerFromHotkey.
   ContextActionService:BindCoreAction(QUICK_PROFILER_ACTION_NAME, 
-    toggleQuickProfiler, 
+    toggleQuickProfilerFromHotkey, 
     false,
     Enum.KeyCode.F7)
 
