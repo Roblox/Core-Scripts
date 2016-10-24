@@ -558,7 +558,8 @@ local function CreateSettingsHub()
     -- Make sure it's Ctrl-F7.
     -- NOTE: This will only work if FFlagDontSwallowInputForStudioShortcuts is True.
     -- Otherwise, we never get the "Begin" input state when Ctrl key is down.
-    if (not UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)) then
+    if ((not UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)) and 
+      (not UserInputService:IsKeyDown(Enum.KeyCode.RightControl))) then
       return
     end
     
