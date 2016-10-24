@@ -56,8 +56,9 @@ function methods:CreateGuiObjects(targetParent)
 	TextBox.Position = UDim2.new(0, 0, 0, 0)
 	TextBox.TextSize = ChatSettings.ChatBarTextSize
 	TextBox.Font = ChatSettings.ChatBarFont
-	TextBox.TextColor3 = Color3.new(1, 1, 1)
-	--TextBox.TextStrokeTransparency = 0.75
+	TextBox.TextColor3 = ChatSettings.ChatBarTextColor
+	TextBox.TextTransparency = 0.4
+	TextBox.TextStrokeTransparency = 1
 	TextBox.ClearTextOnFocus = false
 	TextBox.TextXAlignment = Enum.TextXAlignment.Left
 	TextBox.TextYAlignment = Enum.TextYAlignment.Top
@@ -86,18 +87,11 @@ function methods:CreateGuiObjects(targetParent)
 	TextLabel.TextSize = TextBox.TextSize
 	TextLabel.Font = TextBox.Font
 	TextLabel.TextColor3 = TextBox.TextColor3
+	TextLabel.TextTransparency = TextBox.TextTransparency
 	TextLabel.TextStrokeTransparency = TextBox.TextStrokeTransparency
 	TextLabel.TextXAlignment = TextBox.TextXAlignment
 	TextLabel.TextYAlignment = TextBox.TextYAlignment
 	TextLabel.Text = "This value needs to be set with :SetTextLabelText()"
-
-	TextLabel.TextColor3 = Color3.new(0, 0, 0)
-	TextLabel.TextStrokeTransparency = 1
-	TextLabel.TextTransparency = 0.4
-
-	TextBox.TextColor3 = TextLabel.TextColor3
-	TextBox.TextStrokeTransparency = TextLabel.TextStrokeTransparency
-	TextBox.TextTransparency = TextLabel.TextTransparency
 
 	rawset(self, "GuiObject", BaseFrame)
 	rawset(self, "TextBox", TextBox)
