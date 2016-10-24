@@ -556,6 +556,8 @@ local function CreateSettingsHub()
 
   local function toggleQuickProfilerFromHotkey(actionName, inputState, inputObject) 
     -- Make sure it's Ctrl-F7.
+    -- NOTE: This will only work if FFlagDontSwallowInputForStudioShortcuts is True.
+    -- Otherwise, we never get the "Begin" input state when Ctrl key is down.
     if (not UserInputService:IsKeyDown(Enum.KeyCode.LeftControl)) then
       return
     end
