@@ -50,7 +50,7 @@ function WaitUntilParentedCorrectly()
 end
 
 local TextSizeCache = {}
-function methods:GetStringTextBounds(text, font, fontSize, sizeBounds)
+function methods:GetStringTextBounds(text, font, textSize, sizeBounds)
   WaitUntilParentedCorrectly()
 	sizeBounds = sizeBounds or false
 	if not TextSizeCache[text] then
@@ -62,40 +62,40 @@ function methods:GetStringTextBounds(text, font, fontSize, sizeBounds)
 	if not TextSizeCache[text][font][sizeBounds] then
 		TextSizeCache[text][font][sizeBounds] = {}
 	end
-	if not TextSizeCache[text][font][sizeBounds][fontSize] then
+	if not TextSizeCache[text][font][sizeBounds][textSize] then
 		testLabel.Text = text
 		testLabel.Font = font
-		testLabel.FontSize = fontSize
+		testLabel.TextSize = textSize
 		if sizeBounds then
 			testLabel.TextWrapped = true;
 			testLabel.Size = sizeBounds
 		else
 			testLabel.TextWrapped = false;
 		end
-		TextSizeCache[text][font][sizeBounds][fontSize] = testLabel.TextBounds
+		TextSizeCache[text][font][sizeBounds][textSize] = testLabel.TextBounds
 	end
-	return TextSizeCache[text][font][sizeBounds][fontSize]
+	return TextSizeCache[text][font][sizeBounds][textSize]
 end
 --// Above was taken directly from Util.GetStringTextBounds() in the old chat corescripts.
 
 function methods:GetMessageHeight(BaseMessage, BaseFrame)
-	local textBoundsSize = self:GetStringTextBounds(BaseMessage.Text, BaseMessage.Font, BaseMessage.FontSize, UDim2.new(0, BaseFrame.AbsoluteSize.X, 0, 1000))
+	local textBoundsSize = self:GetStringTextBounds(BaseMessage.Text, BaseMessage.Font, BaseMessage.TextSize, UDim2.new(0, BaseFrame.AbsoluteSize.X, 0, 1000))
 	return textBoundsSize.Y
 end
 
-function methods:GetNumberOfSpaces(str, font, fontSize)
-	local strSize = self:GetStringTextBounds(str, font, fontSize)
-	local singleSpaceSize = self:GetStringTextBounds(" ", font, fontSize)
+function methods:GetNumberOfSpaces(str, font, textSize)
+	local strSize = self:GetStringTextBounds(str, font, textSize)
+	local singleSpaceSize = self:GetStringTextBounds(" ", font, textSize)
 	return math.ceil(strSize.X / singleSpaceSize.X)
 end
 
-function methods:GetNumberOfUnderscores(str, font, fontSize)
-	local strSize = self:GetStringTextBounds(str, font, fontSize)
-	local singleUnderscoreSize = self:GetStringTextBounds("_", font, fontSize)
+function methods:GetNumberOfUnderscores(str, font, textSize)
+	local strSize = self:GetStringTextBounds(str, font, textSize)
+	local singleUnderscoreSize = self:GetStringTextBounds("_", font, textSize)
 	return math.ceil(strSize.X / singleUnderscoreSize.X)
 end
 
-function methods:CreateBaseMessage(message, font, fontSize, chatColor)
+function methods:CreateBaseMessage(message, font, textSize, chatColor)
 	local BaseFrame = self:GetFromObjectPool("Frame")
 	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
@@ -110,7 +110,7 @@ function methods:CreateBaseMessage(message, font, fontSize, chatColor)
 	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
 	BaseMessage.BackgroundTransparency = 1
 	BaseMessage.Font = font
-	BaseMessage.FontSize = fontSize
+	BaseMessage.TextSize = textSize
 	BaseMessage.TextXAlignment = Enum.TextXAlignment.Left
 	BaseMessage.TextYAlignment = Enum.TextYAlignment.Top
 	BaseMessage.TextTransparency = 0
@@ -123,7 +123,7 @@ function methods:CreateBaseMessage(message, font, fontSize, chatColor)
 end
 
 function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName)
-	local speakerNameSize = self:GetStringTextBounds(formatName, BaseMessage.Font, BaseMessage.FontSize)
+	local speakerNameSize = self:GetStringTextBounds(formatName, BaseMessage.Font, BaseMessage.TextSize)
 	local NameButton = self:GetFromObjectPool("TextButton")
 	NameButton.Parent = BaseMessage
 	NameButton.Selectable = false
@@ -131,7 +131,7 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName)
 	NameButton.Position = UDim2.new(0, 0, 0, 0)
 	NameButton.BackgroundTransparency = 1
 	NameButton.Font = BaseMessage.Font
-	NameButton.FontSize = BaseMessage.FontSize
+	NameButton.TextSize = BaseMessage.TextSize
 	NameButton.TextXAlignment = BaseMessage.TextXAlignment
 	NameButton.TextYAlignment = BaseMessage.TextYAlignment
 	NameButton.TextTransparency = BaseMessage.TextTransparency
@@ -142,7 +142,7 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName)
 end
 
 function methods:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName)
-	local channelNameSize = self:GetStringTextBounds(formatChannelName, BaseMessage.Font, BaseMessage.FontSize)
+	local channelNameSize = self:GetStringTextBounds(formatChannelName, BaseMessage.Font, BaseMessage.TextSize)
 	local ChannelButton = self:GetFromObjectPool("TextButton")
 	ChannelButton.Parent = BaseMessage
 	ChannelButton.Selectable = false
@@ -150,7 +150,7 @@ function methods:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName)
 	ChannelButton.Position = UDim2.new(0, 0, 0, 0)
 	ChannelButton.BackgroundTransparency = 1
 	ChannelButton.Font = BaseMessage.Font
-	ChannelButton.FontSize = BaseMessage.FontSize
+	ChannelButton.TextSize = BaseMessage.TextSize
 	ChannelButton.TextXAlignment = BaseMessage.TextXAlignment
 	ChannelButton.TextYAlignment = BaseMessage.TextYAlignment
 	ChannelButton.TextTransparency = BaseMessage.TextTransparency

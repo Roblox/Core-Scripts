@@ -89,7 +89,7 @@ local function CreateGuiObjects()
 	NameTag.Position = UDim2.new(0, 0, 0, 0)
 	NameTag.BackgroundTransparency = 1
 	NameTag.Font = ChatSettings.DefaultFont
-	NameTag.FontSize = ChatSettings.ChatChannelsTabTextSize
+	NameTag.TextSize = ChatSettings.ChatChannelsTabTextSize
 	NameTag.TextColor3 = Color3.new(1, 1, 1)
 	NameTag.TextStrokeTransparency = 0.75
 
@@ -120,7 +120,7 @@ local function CreateGuiObjects()
 	NewMessageIconText.Size = UDim2.new(0, 13, 0, 9)
 	NewMessageIconText.Position = UDim2.new(0.5, -7, 0.5, -7)
 	NewMessageIconText.Font = ChatSettings.DefaultFont
-	NewMessageIconText.FontSize = Enum.FontSize.Size14
+	NewMessageIconText.TextSize = 14
 	NewMessageIconText.TextColor3 = Color3.new(1, 1, 1)
 	NewMessageIconText.Text = ""
 
@@ -170,8 +170,8 @@ function methods:SetActive(active)
 	end
 end
 
-function methods:SetFontSize(fontSize)
-	self.NameTag.FontSize = fontSize
+function methods:SetTextSize(textSize)
+	self.NameTag.TextSize = textSize
 end
 
 function methods:FadeOutBackground(duration)

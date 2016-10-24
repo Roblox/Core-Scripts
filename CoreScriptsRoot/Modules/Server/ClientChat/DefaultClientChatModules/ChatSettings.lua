@@ -12,12 +12,12 @@ module.GamepadNavigationEnabled = false
 module.ShowUserOwnFilteredMessage = false  --Show a user the filtered version of their message rather than the original.
 
 ---[[ Chat Text Size Settings ]]
-module.ChatWindowTextSize = Enum.FontSize.Size18
-module.ChatChannelsTabTextSize = Enum.FontSize.Size18
-module.ChatBarTextSize = Enum.FontSize.Size18
-module.ChatWindowTextSizePhone = Enum.FontSize.Size14
-module.ChatChannelsTabTextSizePhone = Enum.FontSize.Size18
-module.ChatBarTextSizePhone = Enum.FontSize.Size14
+module.ChatWindowTextSize = 18
+module.ChatChannelsTabTextSize = 18
+module.ChatBarTextSize = 18
+module.ChatWindowTextSizePhone = 14
+module.ChatChannelsTabTextSizePhone = 18
+module.ChatBarTextSizePhone = 14
 
 ---[[ Font Settings ]]
 module.DefaultFont = Enum.Font.SourceSansBold

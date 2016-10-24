@@ -12,10 +12,10 @@ function CreateSystemMessageLabel(messageData)
 	local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or ChatSettings.DefaultFont
-	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useTextsize = extraData.TextSize or ChatSettings.ChatWindowTextSize
 	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
-	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useFontSize, useChatColor)
+	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useTextSize, useChatColor)
 
 	local function GetHeightFunction()
 		return util:GetMessageHeight(BaseMessage, BaseFrame)

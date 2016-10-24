@@ -54,7 +54,7 @@ function methods:CreateGuiObjects(targetParent)
 	TextBox.BackgroundTransparency = 1
 	TextBox.Size = UDim2.new(1, 0, 1, 0)
 	TextBox.Position = UDim2.new(0, 0, 0, 0)
-	TextBox.FontSize = ChatSettings.ChatBarTextSize
+	TextBox.TextSize = ChatSettings.ChatBarTextSize
 	TextBox.Font = ChatSettings.ChatBarFont
 	TextBox.TextColor3 = Color3.new(1, 1, 1)
 	--TextBox.TextStrokeTransparency = 0.75
@@ -68,7 +68,7 @@ function methods:CreateGuiObjects(targetParent)
 	MessageModeTextLabel.Name = "MessageMode"
 	MessageModeTextLabel.BackgroundTransparency = 1
 	MessageModeTextLabel.Position = UDim2.new(0, 0, 0, 0)
-	MessageModeTextLabel.FontSize = ChatSettings.ChatBarTextSize
+	MessageModeTextLabel.TextSize = ChatSettings.ChatBarTextSize
 	MessageModeTextLabel.Font = ChatSettings.ChatBarFont
 	MessageModeTextLabel.TextXAlignment = Enum.TextXAlignment.Left
 	MessageModeTextLabel.TextWrapped = true
@@ -83,7 +83,7 @@ function methods:CreateGuiObjects(targetParent)
 	TextLabel.BackgroundTransparency = 1
 	TextLabel.Size = TextBox.Size
 	TextLabel.Position = TextBox.Position
-	TextLabel.FontSize = TextBox.FontSize
+	TextLabel.TextSize = TextBox.TextSize
 	TextLabel.Font = TextBox.Font
 	TextLabel.TextColor3 = TextBox.TextColor3
 	TextLabel.TextStrokeTransparency = TextBox.TextStrokeTransparency
@@ -242,12 +242,12 @@ function methods:CalculateSize()
 	local lastPos = self.GuiObject.Size
 	self.GuiObject.Size = UDim2.new(1, 0, 0, 1000)
 
-	local fontSize = tonumber(self.TextBox.FontSize.Name:match("%d+"))
+	local textSize = self.TextBox.TextSize
 	local bounds = self.TextBox.TextBounds.Y
 
 	self.GuiObject.Size = lastPos
 
-	local newTargetYSize = bounds - fontSize
+	local newTargetYSize = bounds - textSize
 	if (self.TargetYSize ~= newTargetYSize) then
 		self.TargetYSize = newTargetYSize
 		self:TweenToTargetYSize()
@@ -273,13 +273,13 @@ function methods:TweenToTargetYSize()
 	end
 end
 
-function methods:SetFontSize(fontSize)
+function methods:SetTextSize(textSize)
 	if not self:IsInCustomState() then
 		if rawget(self, "TextBox") then
-			self.TextBox.FontSize = fontSize
+			self.TextBox.TextSize = textSize
 		end
 		if rawget(self, "TextLabel") then
-			self.TextLabel.FontSize = fontSize
+			self.TextLabel.TextSize = textSize
 		end
 	end
 end
@@ -431,7 +431,7 @@ function module.new(CommandProcessor, ChatWindow)
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "ChatBarTextSize") then
-			obj:SetFontSize(value)
+			obj:SetTextSize(value)
 		end
 	end)
 
