@@ -116,8 +116,7 @@ end
 --[[ END OF SCRIPT VARIABLES ]]
 
 local function GetLuaChatFilteringFlag()
-  local flagSuccess, flagValue = pcall(function() return settings():GetFFlag("LuaChatFiltering") end)
-  return flagSuccess and flagValue == true
+  return true
 end
 
 local Util = {}
