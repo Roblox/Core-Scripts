@@ -110,7 +110,7 @@ function UpdateViewerVisibility()
     if somethingChanged then 
       -- track it.
       game:ReportInGoogleAnalytics(GoogleAnalyticsUtils.CA_CATEGORY_GAME, 
-        "Enlarge PerfStat ",
+        "Enlarge PerfStat",
         currentStatType,
         0)
     end
