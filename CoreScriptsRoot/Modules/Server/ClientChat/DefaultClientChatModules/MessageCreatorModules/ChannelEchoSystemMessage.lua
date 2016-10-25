@@ -13,15 +13,15 @@ function CreateChannelEchoSystemMessageLabel(messageData)
 	local echoChannel = messageData.OriginalChannel
 
 	local extraData = messageData.ExtraData or {}
-	local useFont = extraData.Font or Enum.Font.SourceSansBold
-	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
-	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+	local useFont = extraData.Font or ChatSettings.DefaultFont
+	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
+	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
 	local formatChannelName = string.format("{%s}", echoChannel)
-	local numNeededSpaces2 = util:GetNumberOfSpaces(formatChannelName, useFont, useFontSize) + 1
+	local numNeededSpaces2 = util:GetNumberOfSpaces(formatChannelName, useFont, useTextSize) + 1
 	local modifiedMessage = string.rep(" ", numNeededSpaces2) .. message
 
-	local BaseFrame, BaseMessage = util:CreateBaseMessage(modifiedMessage, useFont, useFontSize, useChatColor)
+	local BaseFrame, BaseMessage = util:CreateBaseMessage(modifiedMessage, useFont, useTextSize, useChatColor)
 	local ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName, BaseMessage.TextColor3)
 
 	local function GetHeightFunction()

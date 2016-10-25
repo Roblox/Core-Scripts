@@ -11,11 +11,11 @@ local util = require(script.Parent:WaitForChild("Util"))
 function CreateSystemMessageLabel(messageData)
 	local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
-	local useFont = extraData.Font or Enum.Font.SourceSansBold
-	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
-	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+	local useFont = extraData.Font or ChatSettings.DefaultFont
+	local useTextsize = extraData.TextSize or ChatSettings.ChatWindowTextSize
+	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
-	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useFontSize, useChatColor)
+	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useTextSize, useChatColor)
 
 	local function GetHeightFunction()
 		return util:GetMessageHeight(BaseMessage, BaseFrame)

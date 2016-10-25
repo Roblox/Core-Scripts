@@ -38,7 +38,7 @@ local function CreateGuiObjects()
 	UnselectedFrame.Size = UDim2.new(1, 0, 1, 0)
 	UnselectedFrame.Position = UDim2.new(0, 0, 0, 0)
 	UnselectedFrame.BorderSizePixel = 0
-	UnselectedFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	UnselectedFrame.BackgroundColor3 = ChatSettings.ChannelsTabUnselectedColor
 	UnselectedFrame.BackgroundTransparency = 0.6
 
 	local SelectedFrame = Instance.new("Frame", BackgroundFrame)
@@ -47,7 +47,7 @@ local function CreateGuiObjects()
 	SelectedFrame.Size = UDim2.new(1, 0, 1, 0)
 	SelectedFrame.Position = UDim2.new(0, 0, 0, 0)
 	SelectedFrame.BorderSizePixel = 0
-	SelectedFrame.BackgroundColor3 = Color3.new(30/255, 30/255, 30/255)
+	SelectedFrame.BackgroundColor3 = ChatSettings.ChannelsTabSelectedColor
 	SelectedFrame.BackgroundTransparency = 1
 
 	local SelectedFrameBackgroundImage = Instance.new("ImageLabel", SelectedFrame)
@@ -88,8 +88,8 @@ local function CreateGuiObjects()
 	NameTag.Size = UDim2.new(1, 0, 1, 0)
 	NameTag.Position = UDim2.new(0, 0, 0, 0)
 	NameTag.BackgroundTransparency = 1
-	NameTag.Font = Enum.Font.SourceSansBold
-	NameTag.FontSize = ChatSettings.ChatChannelsTabTextSize
+	NameTag.Font = ChatSettings.DefaultFont
+	NameTag.TextSize = ChatSettings.ChatChannelsTabTextSize
 	NameTag.TextColor3 = Color3.new(1, 1, 1)
 	NameTag.TextStrokeTransparency = 0.75
 
@@ -119,8 +119,8 @@ local function CreateGuiObjects()
 	NewMessageIconText.BackgroundTransparency = 1
 	NewMessageIconText.Size = UDim2.new(0, 13, 0, 9)
 	NewMessageIconText.Position = UDim2.new(0.5, -7, 0.5, -7)
-	NewMessageIconText.Font = Enum.Font.SourceSansBold
-	NewMessageIconText.FontSize = Enum.FontSize.Size14
+	NewMessageIconText.Font = ChatSettings.DefaultFont
+	NewMessageIconText.TextSize = 14
 	NewMessageIconText.TextColor3 = Color3.new(1, 1, 1)
 	NewMessageIconText.Text = ""
 
@@ -170,8 +170,8 @@ function methods:SetActive(active)
 	end
 end
 
-function methods:SetFontSize(fontSize)
-	self.NameTag.FontSize = fontSize
+function methods:SetTextSize(textSize)
+	self.NameTag.TextSize = textSize
 end
 
 function methods:FadeOutBackground(duration)

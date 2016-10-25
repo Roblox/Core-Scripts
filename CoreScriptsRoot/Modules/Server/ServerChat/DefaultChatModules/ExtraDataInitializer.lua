@@ -2,6 +2,29 @@
 --	// Written by: Xsitsu
 --	// Description: Module that sets some basic ExtraData such as name color, and chat color.
 
+local SpecialChatColors = {
+	Groups = {
+		{
+			--- ROBLOX Interns group
+			GroupId = 2868472,
+			Rank = 100,
+			ChatColor = Color3.new(175/255, 221/255, 1),
+		},
+		{
+			--- ROBLOX Admins group
+			GroupId = 1200769,
+			ChatColor =  Color3.new(1, 215/255, 0),
+		},
+	},
+	Players = {
+		{
+			--- Left as an example
+			PlayerName = "TheGamer101",
+			ChatColor = Color3.new(205/255, 0, 0)
+		}
+	}
+}
+
 local function MakeIsInGroup(groupId, requiredRank)
 	assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
 
@@ -32,16 +55,32 @@ local function MakeIsInGroup(groupId, requiredRank)
 	end
 end
 
-local IsInGroupAdmins = MakeIsInGroup(1200769)
-local IsInGroupInterns = MakeIsInGroup(2868472, 100)
+local function ConstructIsInGroups()
+	if SpecialChatColors.Groups then
+		for _, group in pairs(SpecialChatColors.Groups) do
+			group.IsInGroup = MakeIsInGroup(group.GroupId, group.Rank)
+		end
+	end
+end
+ConstructIsInGroups()
 
 local Players = game:GetService("Players")
-local function SpeakerNameIsAdmin(speakerName)
-	return IsInGroupAdmins(Players:FindFirstChild(speakerName))
-end
 
-local function SpeakerNameIsIntern(speakerName)
-	return IsInGroupInterns(Players:FindFirstChild(speakerName))
+function GetSpecialChatColor(speakerName)
+	if SpecialChatColors.Players then
+		for _, player in pairs(SpecialChatColors.Players) do
+			if speakerName:lower() == player.PlayerName:lower() then
+				return player.ChatColor
+			end
+		end
+	end
+	if SpecialChatColors.Groups then
+		for _, group in pairs(SpecialChatColors.Groups) do
+			if group.IsInGroup(Players:FindFirstChild(speakerName)) then
+				return group.ChatColor
+			end
+		end
+	end
 end
 
 local function Run(ChatService)
@@ -85,12 +124,9 @@ local function Run(ChatService)
 			speaker:SetExtraData("NameColor", ComputeNameColor(speaker.Name))
 		end
 		if (not speaker:GetExtraData("ChatColor")) then
-			if (SpeakerNameIsAdmin(speakerName)) then
-				speaker:SetExtraData("ChatColor", Color3.new(1, 215/255, 0))
-			elseif (SpeakerNameIsIntern(speakerName)) then
-				speaker:SetExtraData("ChatColor", Color3.new(175/255, 221/255, 1))
-			else
-				speaker:SetExtraData("ChatColor", Color3.new(255/255, 255/255, 243/255))
+			local specialChatColor = GetSpecialChatColor(speakerName)
+			if specialChatColor then
+				speaker:SetExtraData("ChatColor", specialChatColor)
 			end
 		end
 		if (not speaker:GetExtraData("Tags")) then
