@@ -1342,6 +1342,8 @@ local function CreateChatIcon3D(topBarInstance, panel, menubar)
 						ChatModule:SetVisible(false)
 					end
 				end)
+				-- Chat should not be visible by default in VR
+				ChatModule:SetVisible(false)
 			end
 		end
 	end
