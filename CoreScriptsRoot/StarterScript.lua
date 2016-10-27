@@ -24,14 +24,8 @@ scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", RobloxGui)
 scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", RobloxGui)
 
 -- Performance Stats Management
---[[ Fast Flags ]]--
-local getShowPerformanceStatsInGuiSuccess, showPerformanceStatsInGuiValue = 
-	pcall(function() return settings():GetFFlag("ShowPerformanceStatsInGui") end)
-local showPerformanceStatsInGui = getShowPerformanceStatsInGuiSuccess and showPerformanceStatsInGuiValue
-if (showPerformanceStatsInGui) then 
-  scriptContext:AddCoreScriptLocal("CoreScripts/PerformanceStatsManagerScript",
-    RobloxGui)
-end
+scriptContext:AddCoreScriptLocal("CoreScripts/PerformanceStatsManagerScript",
+  RobloxGui)
 
 -- Chat script
 spawn(function() require(RobloxGui.Modules.ChatSelector) end)
