@@ -148,64 +148,58 @@ local function Initialize()
     ------------------------------------------------------
     ------------------
     ------------------ Performance Stats -----------------
-    local PerformanceStatsFlagSuccess, PerformanceStatsFlagValue = 
-    pcall(function() return settings():GetFFlag("ShowPerformanceStatsInGui") end)
-    local PerformanceStatsFlagOn = PerformanceStatsFlagSuccess and PerformanceStatsFlagValue
+    this.PerformanceStatsFrame, 
+    this.PerformanceStatsLabel,
+    this.PerformanceStatsMode,
+    this.PerformanceStatsOverrideText = nil
 
-    if PerformanceStatsFlagOn then
-      this.PerformanceStatsFrame, 
-      this.PerformanceStatsLabel,
-      this.PerformanceStatsMode,
-      this.PerformanceStatsOverrideText = nil
-
-      function GetDesiredPerformanceStatsIndex()
-        if GameSettings.PerformanceStatsVisible then
-          return 1
-        else
-          return 2
-        end
+    function GetDesiredPerformanceStatsIndex()
+      if GameSettings.PerformanceStatsVisible then
+        return 1
+      else
+        return 2
       end
-
-      local startIndex = GetDesiredPerformanceStatsIndex()
-
-      this.PerformanceStatsFrame, 
-      this.PerformanceStatsLabel,
-      this.PerformanceStatsMode = utility:AddNewRow(this, 
-        "Performance Stats", 
-        "Selector", 
-        {"On", "Off"}, 
-        startIndex)
-
-      this.PerformanceStatsOverrideText = utility:Create'TextLabel'
-      {
-        Name = "PerformanceStatsLabel",
-        Text = "Set by Developer",
-        TextColor3 = Color3.new(1,1,1),
-        Font = Enum.Font.SourceSans,
-        FontSize = Enum.FontSize.Size24,
-        BackgroundTransparency = 1,
-        Size = UDim2.new(0,200,1,0),
-        Position = UDim2.new(1,-350,0,0),
-        Visible = false,
-        ZIndex = 2,
-        Parent = this.PerformanceStatsFrame
-      };
-
-      this.PerformanceStatsMode.IndexChanged:connect(function(newIndex)
-          if newIndex == 1 then
-            GameSettings.PerformanceStatsVisible = true
-          else
-            GameSettings.PerformanceStatsVisible = false
-          end
-        end)
-      
-      GameSettings.PerformanceStatsVisibleChanged:connect(function()
-          local desiredIndex = GetDesiredPerformanceStatsIndex()
-          if desiredIndex ~= this.PerformanceStatsMode.CurrentIndex then 
-            this.PerformanceStatsMode:SetSelectionIndex(desiredIndex)
-          end
-        end)
     end
+
+    local startIndex = GetDesiredPerformanceStatsIndex()
+
+    this.PerformanceStatsFrame, 
+    this.PerformanceStatsLabel,
+    this.PerformanceStatsMode = utility:AddNewRow(this, 
+      "Performance Stats", 
+      "Selector", 
+      {"On", "Off"}, 
+      startIndex)
+
+    this.PerformanceStatsOverrideText = utility:Create'TextLabel'
+    {
+      Name = "PerformanceStatsLabel",
+      Text = "Set by Developer",
+      TextColor3 = Color3.new(1,1,1),
+      Font = Enum.Font.SourceSans,
+      FontSize = Enum.FontSize.Size24,
+      BackgroundTransparency = 1,
+      Size = UDim2.new(0,200,1,0),
+      Position = UDim2.new(1,-350,0,0),
+      Visible = false,
+      ZIndex = 2,
+      Parent = this.PerformanceStatsFrame
+    };
+
+    this.PerformanceStatsMode.IndexChanged:connect(function(newIndex)
+        if newIndex == 1 then
+          GameSettings.PerformanceStatsVisible = true
+        else
+          GameSettings.PerformanceStatsVisible = false
+        end
+      end)
+    
+    GameSettings.PerformanceStatsVisibleChanged:connect(function()
+        local desiredIndex = GetDesiredPerformanceStatsIndex()
+        if desiredIndex ~= this.PerformanceStatsMode.CurrentIndex then 
+          this.PerformanceStatsMode:SetSelectionIndex(desiredIndex)
+        end
+      end)
 
     ------------------------- Connection Setup ----------------------------
     settings().Rendering.EnableFRM = true
