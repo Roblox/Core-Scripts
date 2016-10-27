@@ -50,7 +50,7 @@ function methods:CreateGuiObjects(targetParent)
 	ChatChannelParentFrame.Name = "ChatChannelParentFrame"
 	ChatChannelParentFrame.BackgroundTransparency = 1
 
-	ChatChannelParentFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	ChatChannelParentFrame.BackgroundColor3 = ChatSettings.BackGroundColor
 	ChatChannelParentFrame.BackgroundTransparency = 0.6
 	ChatChannelParentFrame.BorderSizePixel = 0
 
@@ -60,7 +60,7 @@ function methods:CreateGuiObjects(targetParent)
 	ChatResizerFrame.BackgroundTransparency = 0.6
 	ChatResizerFrame.BorderSizePixel = 0
 	ChatResizerFrame.Visible = false
-	ChatResizerFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	ChatResizerFrame.BackgroundColor3 = ChatSettings.BackGroundColor
 	ChatResizerFrame.Active = true
 
 	local ResizeIcon = Instance.new("ImageLabel", ChatResizerFrame)
@@ -225,27 +225,27 @@ function methods:CreateGuiObjects(targetParent)
 
 	end
 
-	local function CalculateChannelsBarPixelSize(size)
+	local function CalculateChannelsBarPixelSize(textSize)
 		if (deviceType == DEVICE_PHONE) then
-			size = size or ChatSettings.ChatChannelsTabTextSizePhone
+			textSize = textSize or ChatSettings.ChatChannelsTabTextSizePhone
 		else
-			size = size or ChatSettings.ChatChannelsTabTextSize
+			textSize = textSize or ChatSettings.ChatChannelsTabTextSize
 		end
 
-		local channelsBarTextYSize = string.match(size.Name, "%d+")
+		local channelsBarTextYSize = textSize
 		local chatChannelYSize = math.max(32, channelsBarTextYSize + 8) + 2
 
 		return chatChannelYSize
 	end
 
-	local function CalculateChatBarPixelSize(size)
+	local function CalculateChatBarPixelSize(textSize)
 		if (deviceType == DEVICE_PHONE) then
-			size = size or ChatSettings.ChatBarTextSizePhone
+			textSize = textSize or ChatSettings.ChatBarTextSizePhone
 		else
-			size = size or ChatSettings.ChatBarTextSize
+			textSize = textSize or ChatSettings.ChatBarTextSize
 		end
 
-		local chatBarTextSizeY = string.match(size.Name, "%d+")
+		local chatBarTextSizeY = textSize
 		local chatBarYSize = chatBarTextSizeY + (7 * 2) + (5 * 2)
 
 		return chatBarYSize

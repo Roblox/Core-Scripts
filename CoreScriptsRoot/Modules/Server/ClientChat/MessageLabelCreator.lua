@@ -118,8 +118,8 @@ function module:RegisterGuiRoot(root)
 	messageCreatorUtil:RegisterGuiRoot(root)
 end
 
-function module:GetStringTextBounds(text, font, fontSize, sizeBounds)
-	return messageCreatorUtil:GetStringTextBounds(text, font, fontSize, sizeBounds)
+function module:GetStringTextBounds(text, font, textSize, sizeBounds)
+	return messageCreatorUtil:GetStringTextBounds(text, font, textSize, sizeBounds)
 end
 
 return module

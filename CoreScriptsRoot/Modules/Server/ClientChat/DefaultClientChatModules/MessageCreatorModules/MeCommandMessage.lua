@@ -12,17 +12,17 @@ function CreateMeCommandMessageLabel(messageData)
   local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or Enum.Font.SourceSansItalic
-	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
   local useChatColor = Color3.new(1, 1, 1)
 
 	local tempMessage = messageData.FromSpeaker .. " " .. string.sub(message, 5)
 
 	if not messageData.IsFiltered then
-		local numNeededUnderscore = util:GetNumberOfUnderscores(tempMessage, useFont, useFontSize)
+		local numNeededUnderscore = util:GetNumberOfUnderscores(tempMessage, useFont, useTextSize)
 		tempMessage = string.rep("_", numNeededUnderscore)
 	end
 
-	local BaseFrame, BaseMessage = util:CreateBaseMessage(tempMessage, useFont, useFontSize, useChatColor)
+	local BaseFrame, BaseMessage = util:CreateBaseMessage(tempMessage, useFont, useTextSize, useChatColor)
 
 	local function UpdateTextFunction(newMessageObject)
 		BaseMessage.Text = newMessageObject.FromSpeaker .. " " .. string.sub(newMessageObject.Message, 5)

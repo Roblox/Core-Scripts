@@ -11,9 +11,9 @@ local util = require(script.Parent:WaitForChild("Util"))
 function CreateWelcomeMessageLabel(messageData)
   local message = messageData.Message
   local extraData = messageData.ExtraData or {}
-	local useFont = extraData.Font or Enum.Font.SourceSansBold
+	local useFont = extraData.Font or ChatSettings.DefaultFont
 	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
-	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
 	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useFontSize, useChatColor)
 

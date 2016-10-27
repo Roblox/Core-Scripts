@@ -25,16 +25,12 @@ local module = {}
 local methods = {}
 methods.__index = methods
 
-function methods:RegisterGuiRoot(root)
-	testLabel.Parent = root
-end
-
 function methods:SendSystemMessageToSelf(message, channelObj, extraData)
 	local messageData =
 	{
 		ID = -1,
 		FromSpeaker = nil,
-		OriginalChannel = channelName,
+		OriginalChannel = channelObj.Name,
 		IsFiltered = false,
 		Message = message,
 		Time = os.time(),

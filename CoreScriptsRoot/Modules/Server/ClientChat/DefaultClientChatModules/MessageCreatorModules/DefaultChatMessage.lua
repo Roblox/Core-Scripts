@@ -14,21 +14,22 @@ function CreateMessageLabel(messageData)
 	local message = messageData.Message
 
 	local extraData = messageData.ExtraData or {}
-	local useFont = extraData.Font or Enum.Font.SourceSansBold
-	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
-	local useNameColor = extraData.NameColor or Color3.new(1, 1, 1)
-	local useChatColor = extraData.ChatColor or Color3.new(1, 1, 1)
+	local useFont = extraData.Font or ChatSettings.DefaultFont
+	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
+	local useNameColor = extraData.NameColor or ChatSettings.DefaultNameColor
+
+	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
 	local formatUseName = string.format("[%s]:", fromSpeaker)
-	local speakerNameSize = util:GetStringTextBounds(formatUseName, useFont, useFontSize)
-	local numNeededSpaces = util:GetNumberOfSpaces(formatUseName, useFont, useFontSize) + 1
-	local numNeededUnderscore = util:GetNumberOfUnderscores(message, useFont, useFontSize)
+	local speakerNameSize = util:GetStringTextBounds(formatUseName, useFont, useTextSize)
+	local numNeededSpaces = util:GetNumberOfSpaces(formatUseName, useFont, useTextSize) + 1
+	local numNeededUnderscore = util:GetNumberOfUnderscores(message, useFont, useTextSize)
 
 	local tempMessage = string.rep(" ", numNeededSpaces) .. string.rep("_", numNeededUnderscore)
 	if messageData.IsFiltered then
 		tempMessage = string.rep(" ", numNeededSpaces) .. messageData.Message
 	end
-	local BaseFrame, BaseMessage = util:CreateBaseMessage(tempMessage, useFont, useFontSize, useChatColor)
+	local BaseFrame, BaseMessage = util:CreateBaseMessage(tempMessage, useFont, useTextSize, useChatColor)
 	local NameButton = util:AddNameButtonToBaseMessage(BaseMessage, useNameColor, formatUseName)
 
 	local function UpdateTextFunction(newMessageObject)
