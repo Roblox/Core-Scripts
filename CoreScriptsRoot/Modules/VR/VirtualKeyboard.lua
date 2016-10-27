@@ -973,7 +973,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	local function UpdateTextEntryFieldText(newText)
 		local textSet = false
 		if useSetTextFromInput then
-			local success, textSet = pcall(function() return textEntryField:SetTextFromInput(newText) end)
+			textSet = pcall(function() textEntryField:SetTextFromInput(newText) end)
 		end
 
 		if not textSet then
