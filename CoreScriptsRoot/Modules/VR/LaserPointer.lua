@@ -19,6 +19,10 @@ local getTestControlSchemesSuccess, getTestControlSchemesEnabled = pcall(functio
 local areTestControlSchemesEnabled = getTestControlSchemesSuccess and getTestControlSchemesEnabled
 
 local LocalPlayer = Players.LocalPlayer
+while not LocalPlayer do
+	Players.Changed:wait()
+	LocalPlayer = Players.LocalPlayer
+end
 
 --Pathfinding sort of works, but it's very slow and does not handle slopes very well.
 --Use at your own risk.
@@ -36,7 +40,7 @@ local function setPartInGame(part, inGame)
 	if not part then
 		return
 	end
-	if inGame and not part:IsDescendantOf(game) then
+	if inGame then
 		local container = GuiService.CoreEffectFolder
 		if not container then
 			coroutine.wrap(function()
@@ -128,7 +132,11 @@ local TELEPORT = {
 	PATH_RECOMPUTE_DIST_THRESHOLD = 4,
 
 	TRANSITION_DURATION = 0.25,
-	TRANSITION_FUNC = Utility:GetEaseInOutQuad()
+	TRANSITION_FUNC = Utility:GetEaseInOutQuad(),
+
+	RIPPLE_ENABLED = true,
+	RIPPLE_IMAGE = "rbxasset://textures/ui/VR/VRPointerDiscBlue.png",
+	RIPPLE_MAX_BUDGET_SECONDS = 4
 }
 
 local LASER = {
@@ -191,6 +199,9 @@ function LaserPointer.new()
 	self.teleporting = false
 	self.teleportBounceStart = tick()
 
+	self.rippleStartTime = tick()
+	self.rippleDisabled = false
+
 	self.pathValid = false
 	self.computingPath = false
 	self.pathStart = zeroVector3
@@ -222,7 +233,7 @@ function LaserPointer.new()
 			BottomSurface = Enum.SurfaceType.SmoothNoOutlines,
 			Material = Enum.Material.SmoothPlastic,
 			Size = minimumPartSize,
-			Transparency = 1 --smallest size possible
+			Transparency = 1
 		}
 		self.parabola.Adornee = self.originPart
 		
@@ -286,6 +297,32 @@ function LaserPointer.new()
 				Parent = self.originPart
 			}
 		end
+
+		if TELEPORT.RIPPLE_ENABLED then
+			self.ripplePart = Utility:Create("Part") {
+				Name = "TeleportRipplePart",
+				Anchored = true,
+				CanCollide = false,
+				Size = minimumPartSize,
+				Transparency = 1
+			}
+			self.rippleAdorn = Utility:Create("ImageHandleAdornment") {
+				Name = "TeleportRippleAdornment",
+				Parent = self.ripplePart,
+				Adornee = self.ripplePart,
+				Size = zeroVector2,
+				Image = TELEPORT.RIPPLE_IMAGE,
+				Transparency = 0.8
+			}
+			self.rippleRingAdorn = Utility:Create("ImageHandleAdornment") {
+				Name = "TeleportRippleRingAdornment",
+				Parent = self.ripplePart,
+				Adornee = self.ripplePart,
+				Size = zeroVector2,
+				Image = TELEPORT.RIPPLE_IMAGE,
+				Transparency = 0.8
+			}
+		end
 	end
 
 	do --Event connections and final setup
@@ -318,6 +355,18 @@ function LaserPointer.new()
 					if self:shouldShowLaser() then
 						self:tweenLaserLength(1)
 					end
+
+					if self.teleportMode then
+						self.teleportMode = false
+						self:setTeleportMode(self.teleportMode)
+					end
+
+					local isRippleMode = self:isRippleMode()
+					setPartInGame(self.ripplePart, isRippleMode)
+					self.rippleStartTime = tick()
+					if isRippleMode then
+						self.rippleDisabled = false
+					end
 				end
 			end)
 		end
@@ -326,16 +375,19 @@ function LaserPointer.new()
 			ContextActionService:BindCoreAction("Head Mounted", function(actionName, inputState, inputObj)
 				if inputState ~= Enum.UserInputState.End then return end
 				VRService.GuiInputUserCFrame = Enum.UserCFrame.Head
+
 			end, false, Enum.KeyCode.KeypadOne)
 			ContextActionService:BindCoreAction("Right Hand Mounted", function(actionName, inputState, inputObj)
 				if inputState ~= Enum.UserInputState.End then return end
-				VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
 				self.testWalkToMode = false
+				VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
+				
 			end, false, Enum.KeyCode.KeypadTwo)
 			ContextActionService:BindCoreAction("Parabola Walkto", function(actionName, inputState, inputObj)
 				if inputState ~= Enum.UserInputState.End then return end
-				VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
 				self.testWalkToMode = true
+				VRService.GuiInputUserCFrame = Enum.UserCFrame.RightHand
+				
 			end, false, Enum.KeyCode.KeypadThree)
 		end
 
@@ -347,18 +399,23 @@ end
 
 do --Helper functions
 
-	function LaserPointer:calculateLaunchVelocity(gravity, launchAngle)
-		local maxVelocity = TELEPORT.MAX_VALID_DISTANCE
-		if self.testWalkToMode then
-			return maxVelocity
-		end
-		local minVelocity = TELEPORT.MIN_VELOCITY
-		local velocityRange = math.max(0, maxVelocity - minVelocity)
-		return ((self.teleportRangeT ^ TELEPORT.RANGE_T_EXP) * velocityRange) + minVelocity
+	local cosMax = math.cos(math.pi/4)
+	local sinMax = math.sin(math.pi/4)
+	function LaserPointer:calculateLaunchVelocity(gravity, desiredRange, height)
+		--return math.sqrt(desiredRange * gravity) / math.sqrt(math.sin(2*math.pi/4))
+		--This calculates a launch velocity for an imaginary projectile that will start at y=height, travel desiredRange
+		--in the x direction until it hits y=0. This is only reached when the projectile is launched at the optimal
+		--launch angle, 45 degrees elevation. Anything above or below that will fall short, which is desired.
+		--See https://en.wikipedia.org/wiki/Range_of_a_projectile for a breakdown of this function.
+		return -(math.sqrt(gravity / cosMax)*desiredRange) / (math.sqrt(2*height*cosMax+2*desiredRange*sinMax))
 	end
 
 	function LaserPointer:isHeadMounted()
 		return self.inputUserCFrame == Enum.UserCFrame.Head
+	end
+
+	function LaserPointer:isRippleMode()
+		return not self.testWalkToMode and self.inputUserCFrame ~= Enum.UserCFrame.Head
 	end
 
 	function LaserPointer:shouldShowLaser()
@@ -374,6 +431,76 @@ do --Helper functions
 
 	function LaserPointer:shouldWalk()
 		return self:isHeadMounted() or self.testWalkToMode
+	end
+
+	function LaserPointer:getRippleOriginPosition()
+		local humanoid = getLocalHumanoid()
+		if not humanoid then return end
+
+		local rootPart = humanoid.Torso
+		if not rootPart then return end
+
+		local hipHeight = humanoid.HipHeight
+		if humanoid.RigType == Enum.HumanoidRigType.R6 then
+			hipHeight = 3
+		end
+
+		return rootPart:GetRenderCFrame().p - Vector3.new(0, hipHeight - 0.01, 0)
+	end
+
+	function LaserPointer:getMaxRippleRadius()
+		local humanoid = getLocalHumanoid()
+		if not humanoid then return 0 end
+
+		return humanoid.WalkSpeed * TELEPORT.RIPPLE_MAX_BUDGET_SECONDS
+	end
+
+	function LaserPointer:calculateRippleRadius()
+		local humanoid = getLocalHumanoid()
+		if not humanoid then return 0 end
+
+		if self.rippleDisabled then
+			return 0
+		end
+
+		local currentTime = tick()
+		local timeSinceRippleStart = currentTime - self.rippleStartTime
+
+		local budget = math.min(timeSinceRippleStart, TELEPORT.RIPPLE_MAX_BUDGET_SECONDS)
+		local studsPerSecond = humanoid.WalkSpeed
+
+		return budget * studsPerSecond
+	end
+
+	function LaserPointer:calculateParabolaRipplePlaneIntersection()
+		-- x = (-b + sqrt(b^2 - 4ac)) / 2a
+		local parabolaOriginCF = self.originPart:GetRenderCFrame()
+		local planeHeight = self:getRippleOriginPosition().Y
+		local a, b, c = self.parabola.A, -self.parabola.B, parabolaOriginCF.p.Y - planeHeight
+
+		if a == 0 then
+			a = 1e-6
+		end
+
+		local det = math.sqrt((b^2) - (4 * a * c))
+		local x1, x2 = (-b + det) / (2 * a), (-b - det) / (2 * a)
+		local x = x1 == x1 and x1 or x2
+		local y = (a * x * x) + (b * x)
+
+		return parabolaOriginCF:pointToWorldSpace(Vector3.new(-x, y, 0))
+	end
+
+	function LaserPointer:horzDistanceFromCharacter(point)
+		local character = LocalPlayer.Character
+		if not character then
+			return math.huge
+		end
+		local rootPart = character:FindFirstChild("HumanoidRootPart") 
+		if not rootPart then
+			return math.huge
+		end
+
+		return ((rootPart:GetRenderCFrame().p - point) * flattenMask).magnitude
 	end
 end
 
@@ -391,7 +518,7 @@ do --Input handlers - can we eventually move this stuff to PlayerScripts? CoreSc
 				if self:shouldWalk() then
 					self:doWalkTo(self.teleportPoint)
 				else
-					 self:doTeleport()
+					self:doTeleport()
 				end
 			end)()
 			return
@@ -451,6 +578,7 @@ do --Configuration functions
 			self:setButtonActionEnabled(not self.inputUserCFrame == Enum.UserCFrame.Head)
 
 			setPartInGame(self.originPart, false)
+			setPartInGame(self.ripplePart, false)
 			
 			if self.clickToMoveModule then
 				self.clickToMoveModule:Stop()
@@ -459,15 +587,13 @@ do --Configuration functions
 	end
 
 	function LaserPointer:setTeleportMode(enabled)
-		if enabled == self.teleportMode then return	end
+		if enabled == self.teleportMode then return end
 
 		self.teleportMode = enabled
 
-		local alpha0, alpha1, duration, easingFunc
 		if self.teleportMode then
 			setPartInGame(self.plopPart, true)
 			setPartInGame(self.plopBall, true)
-
 			self:tweenLaserLength(1)
 		else
 			setPartInGame(self.plopPart, false)
@@ -475,7 +601,7 @@ do --Configuration functions
 		end
 	end
 
-	function LaserPointer:setArcLaunchParams(launchAngle, launchVelocity, gravity)
+	function LaserPointer:setArcLaunchParams(launchAngle, launchVelocity, gravity, desiredRange)
 		local velocityX = math.cos(launchAngle) * launchVelocity
 		local velocityY = math.sin(launchAngle) * launchVelocity
 
@@ -484,10 +610,10 @@ do --Configuration functions
 			velocityX = 1e-6
 		end
 
-		self.parabola.A = (-0.5 * gravity) / (velocityX ^ 2)
+		self.parabola.A = -(0.5 * gravity) * (1 / (velocityX ^ 2))
 		self.parabola.B = velocityY / velocityX
 		self.parabola.C = 0
-		self.parabola.Range = velocityX
+		self.parabola.Range = desiredRange + 5
 	end
 
 	function LaserPointer:renderAsParabola(origin, lookDir)
@@ -576,6 +702,8 @@ do --Action functions
 			end
 			self.teleporting = true
 
+			self.rippleStartTime = tick()
+
 			wait(FADE_OUT_DURATION)
 
 			local camera = workspace.CurrentCamera
@@ -633,7 +761,7 @@ do --Action functions
 end
 
 do --Laser/teleport functions
-	function LaserPointer:canTeleportTo(cameraPos, part, point, normal)
+	function LaserPointer:canTeleportTo(cameraPos, part, point, normal, rippleHitPoint)
 		local character = LocalPlayer.Character
 		if not character then
 			return false
@@ -647,11 +775,13 @@ do --Laser/teleport functions
 			return true
 		end
 
+		--Check if a part was hit
 		if not part then
 			return false
 		end
 
-		if normal.Y < 0 then
+		--Check if the surface hit is upside down or not
+		if normal.Y < -1e-6 and not self:isRippleMode() then
 			return false
 		end
 
@@ -659,8 +789,8 @@ do --Laser/teleport functions
 			return true
 		end
 
-		local dist = (point - humanoidRootPart.Position).magnitude
-		if dist > TELEPORT.MAX_VALID_DISTANCE and not self.testWalkToMode then
+		local dist = LocalPlayer:DistanceFromCharacter(rippleHitPoint)
+		if dist > self:calculateRippleRadius() and self:isRippleMode() then
 			return false
 		end
 
@@ -739,6 +869,11 @@ do --Laser/teleport functions
 			return
 		end
 		if not self.teleportMode and not TELEPORT.MODE_ENABLED then
+			return
+		end
+
+		if self:isRippleMode() and self.rippleDisabled then
+			self:setTeleportMode(false)
 			return
 		end
 
@@ -866,7 +1001,6 @@ do --Laser/teleport functions
 		end
 	end
 
-
 	function LaserPointer:updateTeleportHoldState(dt)
 		--Increase launch velocity if teleport button is held
 		if self.teleportButtonDown and self.teleportMode then
@@ -876,13 +1010,25 @@ do --Laser/teleport functions
 		end
 	end
 
-	function LaserPointer:updateTeleportMode(hitPoint, hitNormal, hitPart)
+	function LaserPointer:updateTeleportMode(hitPoint, hitNormal, hitPart, rippleHitPoint)
 		self.teleportPoint = hitPoint
 		self.teleportNormal = hitNormal
 		self.teleportPart = hitPart
+		self.rippleHitPoint = rippleHitPoint
 
 		self:updateTeleportPlop(hitPoint, hitNormal)
-		self:setTeleportValidState(self:canTeleportTo(workspace.CurrentCamera.CFrame.p, self.teleportPart, self.teleportPoint, self.teleportNormal))
+		self:setTeleportValidState(self:canTeleportTo(workspace.CurrentCamera.CFrame.p, self.teleportPart, self.teleportPoint, self.teleportNormal, self.rippleHitPoint))
+	end
+
+	function LaserPointer:updateRipple()
+		local rippleOrigin = self:getRippleOriginPosition()
+		local rippleRadius = self:calculateRippleRadius()
+
+		local scaleFactor = 256 / 248
+
+		self.ripplePart.CFrame = CFrame.new(rippleOrigin) * CFrame.Angles(math.pi / 2, 0, 0)
+		self.rippleAdorn.Visible = true
+		self.rippleAdorn.Size = Vector2.new(rippleRadius, rippleRadius) * 2 * scaleFactor
 	end
 end
 
@@ -891,6 +1037,11 @@ do --Event callbacks/update loop
 		if not self.enabled then
 			return
 		end
+		local humanoid = getLocalHumanoid()
+		if not humanoid then
+			return
+		end
+
 		local ignore = { game.Players.LocalPlayer.Character, self.originPart, self.plopPart, self.plopBall }
 		local cameraSpace = workspace.CurrentCamera.CFrame
 		local thickness0, thickness1 = LASER.ARC_THICKNESS, TELEPORT.ARC_THICKNESS
@@ -911,7 +1062,7 @@ do --Event callbacks/update loop
 			self:renderAsLaser(offsetPosition, laserHitPoint)
 
 			if self.teleportMode then
-				self:updateTeleportMode(laserHitPoint, laserHitNormal, laserHitPart)
+				self:updateTeleportMode(laserHitPoint, laserHitNormal, laserHitPart, laserHitPoint)
 			else
 				self.parabola.Color3 = LASER.ARC_COLOR_GOOD
 				self:doToolAim(laserHitPoint)
@@ -925,10 +1076,15 @@ do --Event callbacks/update loop
 			local gravity = TELEPORT.G
 
 			local launchAngle = math.asin(originLook.Y)
-			local launchVelocity = self:calculateLaunchVelocity(gravity, launchAngle)
+			local alignment = ((humanoid.Torso.CFrame.p - originPos) * flattenMask).unit:Dot((originLook * flattenMask).unit)
+			local offsetHeight = originPos.Y - self:getRippleOriginPosition().Y
+			local rippleRadius = self:calculateRippleRadius()
 
-			self:setArcLaunchParams(launchAngle, launchVelocity, gravity)
-			
+			local desiredRange = self:getMaxRippleRadius()
+			local launchVelocity = self:calculateLaunchVelocity(gravity, desiredRange, offsetHeight)
+
+			self:setArcLaunchParams(launchAngle, launchVelocity, gravity, desiredRange)
+
 			--Always check for both parabola and laser hits so we can use it to judge when to transition
 			ignore[5] = GuiService.CoreGuiFolder
 			ignore[6] = GuiService.CoreEffectFolder
@@ -942,9 +1098,11 @@ do --Event callbacks/update loop
 			self:checkTeleportMode(originPos, parabHitPart, parabHitPoint, laserHitPart, laserHitPoint)
 
 			if self.teleportMode then
-				self.parabola.Range = parabHitT * math.cos(launchAngle) * launchVelocity * self.lengthAlpha
+				local rippleHitPoint = self:calculateParabolaRipplePlaneIntersection()
+
+				self.parabola.Range = self.parabola.Range * parabHitT
 				self.parabola.Thickness = TELEPORT.ARC_THICKNESS
-				self:updateTeleportMode(parabHitPoint, parabHitNormal, parabHitPart)
+				self:updateTeleportMode(parabHitPoint, parabHitNormal, parabHitPart, rippleHitPoint)
 
 				local lookCFrame = workspace.CurrentCamera:GetRenderCFrame()
 				local lookRay = Ray.new(lookCFrame.p, lookCFrame.lookVector * 999)
@@ -955,6 +1113,8 @@ do --Event callbacks/update loop
 				self.parabola.Thickness = LASER.ARC_THICKNESS
 				self:renderAsLaser(originPos, laserHitPoint)
 			end
+
+			self:updateRipple()
 		end
 	end
 
@@ -973,6 +1133,25 @@ do --Event callbacks/update loop
 				self.equippedTool = false
 				self:setTeleportMode(false)
 				self:tweenLaserLength(1)
+			end
+		end)
+
+		local humanoid = getLocalHumanoid()
+		if not humanoid then
+			return
+		end
+
+		humanoid.Running:connect(function(speed)
+			local isRippleMode = self:isRippleMode()
+			if speed > 1 then
+				self.rippleDisabled = true
+				self.rippleStartTime = tick()
+
+				if isRippleMode then
+					self:setTeleportMode(false)
+				end
+			else
+				self.rippleDisabled = false
 			end
 		end)
 	end
