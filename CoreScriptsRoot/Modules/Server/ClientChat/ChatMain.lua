@@ -474,6 +474,12 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 
 		DoFadeInFromNewInformation()
 
+		if not ChatSettings.ShowUserOwnFilteredMessage then
+			if (messageData.FromSpeaker == LocalPlayer.Name) then
+				return
+			end
+		end
+
 		local filterData = {}
 		while (filterData.ID ~= messageData.ID) do
 			filterData = EventFolder.OnMessageDoneFiltering.OnClientEvent:wait()
