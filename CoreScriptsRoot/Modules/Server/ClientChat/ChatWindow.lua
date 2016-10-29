@@ -29,6 +29,11 @@ local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 --//////////////////////////////////////
 local methods = {}
 
+
+function bubbleChatOnly()
+ 	return not Players.ClassicChat and Players.BubbleChat
+end
+
 function methods:CreateGuiObjects(targetParent)
 	local BaseFrame = Instance.new("Frame", targetParent)
 	BaseFrame.BackgroundTransparency = 1
@@ -178,8 +183,7 @@ function methods:CreateGuiObjects(targetParent)
 		end
 	end)
 
-	local bubbleChatOnly = not Players.ClassicChat and Players.BubbleChat
-	if (bubbleChatOnly) then
+	if bubbleChatOnly() then
 		ChatBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
 		ChannelsBarParentFrame.Visible = false
 		ChatChannelParentFrame.Visible = false
@@ -269,10 +273,14 @@ function methods:CreateGuiObjects(targetParent)
 
 		if (enabled) then
 			ChatBarParentFrame.Size = UDim2.new(1, -frameSizeY - 2, 0, frameSizeY)
-			ChatBarParentFrame.Position = UDim2.new(0, 0, 1, -frameSizeY)
+			if not bubbleChatOnly() then
+				ChatBarParentFrame.Position = UDim2.new(0, 0, 1, -frameSizeY)
+			end
 		else
 			ChatBarParentFrame.Size = UDim2.new(1, 0, 0, frameSizeY)
-			ChatBarParentFrame.Position = UDim2.new(0, 0, 1, -frameSizeY)
+			if not bubbleChatOnly() then
+				ChatBarParentFrame.Position = UDim2.new(0, 0, 1, -frameSizeY)
+			end
 		end
 	end
 
@@ -302,7 +310,9 @@ function methods:CreateGuiObjects(targetParent)
 		local chatBarSize = CalculateChatBarPixelSize(size)
 
 		ChatBarParentFrame.Size = UDim2.new(1, 0, 0, chatBarSize)
-		ChatBarParentFrame.Position = UDim2.new(0, 0, 1, -chatBarSize)
+		if not bubbleChatOnly() then
+			ChatBarParentFrame.Position = UDim2.new(0, 0, 1, -chatBarSize)
+		end
 
 		ChatResizerFrame.Size = UDim2.new(0, chatBarSize, 0, chatBarSize)
 		ChatResizerFrame.Position = UDim2.new(1, -chatBarSize, 1, -chatBarSize)

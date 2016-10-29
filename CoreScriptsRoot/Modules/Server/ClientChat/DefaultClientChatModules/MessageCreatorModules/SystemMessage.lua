@@ -12,7 +12,7 @@ function CreateSystemMessageLabel(messageData)
 	local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or ChatSettings.DefaultFont
-	local useTextsize = extraData.TextSize or ChatSettings.ChatWindowTextSize
+	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
 	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
 	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useTextSize, useChatColor)
