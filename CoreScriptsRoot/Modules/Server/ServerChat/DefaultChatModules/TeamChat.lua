@@ -2,6 +2,8 @@
 --	// Written by: Xsitsu
 --	// Description: Module that handles all team chat.
 
+local errorExtraData = {ChatColor = Color3.fromRGB(245, 50, 50)}
+
 local function Run(ChatService)
 
 	local Players = game:GetService("Players")
@@ -45,6 +47,51 @@ local function Run(ChatService)
 	end
 
 	channel:RegisterProcessCommandsFunction("replication_function", TeamChatReplicationFunction)
+
+	local function DoTeamCommand(fromSpeaker, message, channel)
+		local speaker = ChatService:GetSpeaker(fromSpeaker)
+		if speaker then
+			local player = speaker:GetPlayer()
+
+			if player then
+				if player.Team == nil then
+					speaker:SendSystemMessage("You cannot team chat if you are not on a team!", channel, errorExtraData)
+					return
+				end
+
+				local channelObj = ChatService:GetChannel("Team")
+				if channelObj then
+					if not speaker:IsInChannel(channelObj.Name) then
+						speaker:JoinChannel(channelObj.Name)
+					end
+					if message and string.len(message) > 0 then
+						speaker:SayMessage(message, channelObj.Name)
+					end
+					speaker:SetMainChannel(channelObj.Name)
+				end
+			end
+		end
+	end
+
+	local function TeamCommandsFunction(fromSpeaker, message, channel)
+		local processedCommand = false
+
+		if message == nil then
+			error("Message is nil")
+		end
+
+		if string.sub(message, 1, 5):lower() == "/team" then
+			DoTeamCommand(fromSpeaker, string.sub(message, 6), channel)
+			processedCommand = true
+		elseif string.sub(message, 1, 2):lower() == "/t" then
+			DoTeamCommand(fromSpeaker, string.sub(message, 3), channel)
+			processedCommand = true
+		end
+
+		return processedCommand
+	end
+
+	ChatService:RegisterProcessCommandsFunction("team_commands", TeamCommandsFunction)
 
 	local function PutSpeakerInCorrectTeamChatState(speakerObj, playerObj)
 		if (playerObj.Neutral and speakerObj:IsInChannel(channel.Name)) then
