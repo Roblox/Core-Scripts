@@ -316,11 +316,6 @@ UpdateFadingForMouseState(false)
 
 
 
-
-
-
-
-
 --////////////////////////////////////////////////////////////////////////////////////////////
 --///////////////////////////////////////////////// Code to hook client UI up to server events
 --////////////////////////////////////////////////////////////////////////////////////////////
@@ -337,23 +332,15 @@ local function DoChatBarFocus()
 	end
 end
 
---// Event for focusing the chat bar when player presses "/".
-local ChatBarUISConnection = UserInputService.InputBegan:connect(function(input)
-	if (input.KeyCode == Enum.KeyCode.Slash) then
-		DoChatBarFocus()
-	end
+chatBarFocusChanged:connect(function(focused)
+	moduleApiTable.ChatBarFocusChanged:fire(focused)
 end)
-
--- Comment out this line to allow pressing the "/" key to chat.
-ChatBarUISConnection:disconnect()
-
 
 local function DoSwitchCurrentChannel(targetChannel)
 	if (ChatWindow:GetChannel(targetChannel)) then
 		ChatWindow:SwitchCurrentChannel(targetChannel)
 	end
 end
-
 
 local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 	local channelObj = ChatWindow:GetChannel(channelName)
