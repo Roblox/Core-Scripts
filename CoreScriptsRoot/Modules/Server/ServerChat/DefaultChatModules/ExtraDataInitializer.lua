@@ -117,11 +117,21 @@ local function Run(ChatService)
 		return NAME_COLORS[((GetNameValue(pName) + color_offset) % #NAME_COLORS) + 1]
 	end
 
+	local function GetNameColor(speaker)
+		local player = speaker:GetPlayer()
+		if player then
+			if player.Team ~= nil then
+				return player.TeamColor.Color
+			end
+		end
+		return ComputeNameColor(speaker.Name)
+	end
+
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speaker = ChatService:GetSpeaker(speakerName)
 
 		if (not speaker:GetExtraData("NameColor")) then
-			speaker:SetExtraData("NameColor", ComputeNameColor(speaker.Name))
+			speaker:SetExtraData("NameColor", GetNameColor(speaker))
 		end
 		if (not speaker:GetExtraData("ChatColor")) then
 			local specialChatColor = GetSpecialChatColor(speakerName)

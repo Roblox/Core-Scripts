@@ -22,41 +22,46 @@ local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 local methods = {}
 
 function methods:CreateGuiObjects(targetParent)
-	local BaseFrame = Instance.new("Frame", targetParent)
+	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
+	BaseFrame.Parent = targetParent
 
-	local ScrollingBase = Instance.new("Frame", BaseFrame)
+	local ScrollingBase = Instance.new("Frame")
 	ScrollingBase.Selectable = false
 	ScrollingBase.Name = "ScrollingBase"
 	ScrollingBase.BackgroundTransparency = 1
 	ScrollingBase.ClipsDescendants = true
 	ScrollingBase.Size = UDim2.new(1, 0, 1, 0)
 	ScrollingBase.Position = UDim2.new(0, 0, 0, 0)
+	ScrollingBase.Parent = BaseFrame
 
-	local ScrollerSizer = Instance.new("Frame", ScrollingBase)
+	local ScrollerSizer = Instance.new("Frame")
 	ScrollerSizer.Selectable = false
 	ScrollerSizer.Name = "ScrollerSizer"
 	ScrollerSizer.BackgroundTransparency = 1
 	ScrollerSizer.Size = UDim2.new(1, 0, 1, 0)
 	ScrollerSizer.Position = UDim2.new(0, 0, 0, 0)
+	ScrollerSizer.Parent = ScrollingBase
 
-	local ScrollerFrame = Instance.new("Frame", ScrollerSizer)
+	local ScrollerFrame = Instance.new("Frame")
 	ScrollerFrame.Selectable = false
 	ScrollerFrame.Name = "ScrollerFrame"
 	ScrollerFrame.BackgroundTransparency = 1
 	ScrollerFrame.Size = UDim2.new(1, 0, 1, 0)
 	ScrollerFrame.Position = UDim2.new(0, 0, 0, 0)
+	ScrollerFrame.Parent = ScrollerSizer
 
-	local LeaveConfirmationFrameBase = Instance.new("Frame", BaseFrame)
+	local LeaveConfirmationFrameBase = Instance.new("Frame")
 	LeaveConfirmationFrameBase.Selectable = false
 	LeaveConfirmationFrameBase.Size = UDim2.new(1, 0, 1, 0)
 	LeaveConfirmationFrameBase.Position = UDim2.new(0, 0, 0, 0)
 	LeaveConfirmationFrameBase.ClipsDescendants = true
 	LeaveConfirmationFrameBase.BackgroundTransparency = 1
+	LeaveConfirmationFrameBase.Parent = BaseFrame
 
-	local LeaveConfirmationFrame = Instance.new("Frame", LeaveConfirmationFrameBase)
+	local LeaveConfirmationFrame = Instance.new("Frame")
 	LeaveConfirmationFrame.Selectable = false
 	LeaveConfirmationFrame.Name = "LeaveConfirmationFrame"
 	LeaveConfirmationFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -64,14 +69,16 @@ function methods:CreateGuiObjects(targetParent)
 	LeaveConfirmationFrame.BackgroundTransparency = 0.6
 	LeaveConfirmationFrame.BorderSizePixel = 0
 	LeaveConfirmationFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	LeaveConfirmationFrame.Parent = LeaveConfirmationFrameBase
 
-	local InputBlocker = Instance.new("TextButton", LeaveConfirmationFrame)
+	local InputBlocker = Instance.new("TextButton")
 	InputBlocker.Selectable = false
 	InputBlocker.Size = UDim2.new(1, 0, 1, 0)
 	InputBlocker.BackgroundTransparency = 1
 	InputBlocker.Text = ""
+	InputBlocker.Parent = LeaveConfirmationFrame
 
-	local LeaveConfirmationButtonYes = Instance.new("TextButton", LeaveConfirmationFrame)
+	local LeaveConfirmationButtonYes = Instance.new("TextButton")
 	LeaveConfirmationButtonYes.Selectable = false
 	LeaveConfirmationButtonYes.Size = UDim2.new(0.25, 0, 1, 0)
 	LeaveConfirmationButtonYes.BackgroundTransparency = 1
@@ -81,6 +88,7 @@ function methods:CreateGuiObjects(targetParent)
 	LeaveConfirmationButtonYes.Position = UDim2.new(0, 0, 0, 0)
 	LeaveConfirmationButtonYes.TextColor3 = Color3.new(0, 1, 0)
 	LeaveConfirmationButtonYes.Text = "Confirm"
+	LeaveConfirmationButtonYes.Parent = LeaveConfirmationFrame
 
 	local LeaveConfirmationButtonNo = LeaveConfirmationButtonYes:Clone()
 	LeaveConfirmationButtonNo.Parent = LeaveConfirmationFrame
@@ -88,7 +96,7 @@ function methods:CreateGuiObjects(targetParent)
 	LeaveConfirmationButtonNo.TextColor3 = Color3.new(1, 0, 0)
 	LeaveConfirmationButtonNo.Text = "Cancel"
 
-	local LeaveConfirmationNotice = Instance.new("TextLabel", LeaveConfirmationFrame)
+	local LeaveConfirmationNotice = Instance.new("TextLabel")
 	LeaveConfirmationNotice.Selectable = false
 	LeaveConfirmationNotice.Size = UDim2.new(0.5, 0, 1, 0)
 	LeaveConfirmationNotice.Position = UDim2.new(0.25, 0, 0, 0)
@@ -98,9 +106,11 @@ function methods:CreateGuiObjects(targetParent)
 	LeaveConfirmationNotice.Text = "Leave channel <XX>?"
 	LeaveConfirmationNotice.Font = ChatSettings.DefaultFont
 	LeaveConfirmationNotice.TextSize = 18
+	LeaveConfirmationNotice.Parent = LeaveConfirmationFrame
 
-	local LeaveTarget = Instance.new("StringValue", LeaveConfirmationFrame)
+	local LeaveTarget = Instance.new("StringValue")
 	LeaveTarget.Name = "LeaveTarget"
+	LeaveTarget.Parent = LeaveConfirmationFrame
 
 	local outPos = LeaveConfirmationFrame.Position
 	LeaveConfirmationButtonYes.MouseButton1Click:connect(function()
