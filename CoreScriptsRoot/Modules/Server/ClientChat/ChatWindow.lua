@@ -163,7 +163,11 @@ function methods:CreateGuiObjects(targetParent)
 	local function UpdatePositionFromDrag(atPos)
 		local newSize = atPos - BaseFrame.AbsolutePosition + ChatResizerFrame.AbsoluteSize
 		BaseFrame.Size = UDim2.new(0, newSize.X, 0, newSize.Y)
-		ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
+    if bubbleChatOnly() then
+      ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 0, 0)
+    else
+      ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
+    end
 	end
 
 	ChatResizerFrame.DragStopped:connect(function(endX, endY)
