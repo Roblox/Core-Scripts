@@ -927,6 +927,7 @@ local function Create_PrivImpl(objectType)
 
 		--make the object to mutate
 		local obj = Instance.new(objectType)
+		local parent = nil
 
 		--stored constructor function to be called after other initialization
 		local ctor = nil
@@ -934,7 +935,13 @@ local function Create_PrivImpl(objectType)
 		for k, v in pairs(dat) do
 			--add property
 			if type(k) == 'string' then
-				obj[k] = v
+				if k == 'Parent' then
+					-- Parent should always be set last, setting the Parent of a new object
+					-- immediately makes performance worse for all subsequent property updates.
+					parent = v
+				else
+					obj[k] = v
+				end
 
 
 			--add child
@@ -974,6 +981,10 @@ local function Create_PrivImpl(objectType)
 		--apply constructor function if it exists
 		if ctor then
 			ctor(obj)
+		end
+		
+		if parent then
+			obj.Parent = parent
 		end
 
 		--return the completed object
