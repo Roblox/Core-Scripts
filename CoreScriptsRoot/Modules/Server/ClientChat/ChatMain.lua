@@ -332,7 +332,7 @@ local function DoChatBarFocus()
 	end
 end
 
-chatBarFocusChanged:connect(function(focused)
+chatBarFocusChanged.Event:connect(function(focused)
 	moduleApiTable.ChatBarFocusChanged:fire(focused)
 end)
 
