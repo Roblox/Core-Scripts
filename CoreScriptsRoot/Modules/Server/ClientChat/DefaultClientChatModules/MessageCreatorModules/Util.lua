@@ -89,12 +89,6 @@ function methods:GetNumberOfSpaces(str, font, textSize)
 	return math.ceil(strSize.X / singleSpaceSize.X)
 end
 
-function methods:GetNumberOfUnderscores(str, font, textSize)
-	local strSize = self:GetStringTextBounds(str, font, textSize)
-	local singleUnderscoreSize = self:GetStringTextBounds("_", font, textSize)
-	return math.ceil(strSize.X / singleUnderscoreSize.X)
-end
-
 function methods:CreateBaseMessage(message, font, textSize, chatColor)
 	local BaseFrame = self:GetFromObjectPool("Frame")
 	BaseFrame.Selectable = false

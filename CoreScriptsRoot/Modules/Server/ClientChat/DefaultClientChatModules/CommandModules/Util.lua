@@ -31,7 +31,6 @@ function methods:SendSystemMessageToSelf(message, channelObj, extraData)
 		ID = -1,
 		FromSpeaker = nil,
 		OriginalChannel = channelObj.Name,
-		IsFiltered = false,
 		Message = message,
 		Time = os.time(),
 		ExtraData = extraData,

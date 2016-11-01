@@ -23,12 +23,9 @@ function CreateMessageLabel(messageData)
 	local formatUseName = string.format("[%s]:", fromSpeaker)
 	local speakerNameSize = util:GetStringTextBounds(formatUseName, useFont, useTextSize)
 	local numNeededSpaces = util:GetNumberOfSpaces(formatUseName, useFont, useTextSize) + 1
-	local numNeededUnderscore = util:GetNumberOfUnderscores(message, useFont, useTextSize)
 
-	local tempMessage = string.rep(" ", numNeededSpaces) .. string.rep("_", numNeededUnderscore)
-	if messageData.IsFiltered then
-		tempMessage = string.rep(" ", numNeededSpaces) .. messageData.Message
-	end
+	local tempMessage = string.rep(" ", numNeededSpaces) .. messageData.Message
+
 	local BaseFrame, BaseMessage = util:CreateBaseMessage(tempMessage, useFont, useTextSize, useChatColor)
 	local NameButton = util:AddNameButtonToBaseMessage(BaseMessage, useNameColor, formatUseName)
 

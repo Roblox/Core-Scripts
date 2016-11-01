@@ -350,7 +350,6 @@ local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 			ID = -1,
 			FromSpeaker = nil,
 			OriginalChannel = channelName,
-			IsFiltered = false,
 			Message = message,
 			Time = os.time(),
 			ExtraData = extraData,
@@ -436,12 +435,6 @@ ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
 EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
-		if not ChatSettings.ShowUserOwnFilteredMessage then
-			if (messageData.FromSpeaker == LocalPlayer.Name) then
-				messageData.IsFiltered = true
-			end
-		end
-
 		channelObj:AddMessageToChannel(messageData, "Message")
 
 		if (messageData.FromSpeaker ~= LocalPlayer.Name) then
@@ -541,7 +534,6 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 				ID = -1,
 				FromSpeaker = nil,
 				OriginalChannel = channel,
-				IsFiltered = false,
 				Message = welcomeMessage,
 				Time = os.time(),
 				ExtraData = nil,
@@ -801,7 +793,6 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 				ID = -1,
 				FromSpeaker = nil,
 				OriginalChannel = channel,
-				IsFiltered = false,
 				Message = valueTable.Text,
 				Time = os.time(),
 				ExtraData = valueTable,

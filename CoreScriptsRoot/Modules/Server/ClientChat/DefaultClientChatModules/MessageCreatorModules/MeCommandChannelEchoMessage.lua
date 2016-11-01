@@ -16,12 +16,6 @@ function CreateMeCommandChannelEchoMessageLabel(messageData)
 	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
 	local useChatColor = Color3.new(1, 1, 1)
 
-	local tempMessage = messageData.FromSpeaker .. " " .. string.sub(message, 5)
-	if not messageData.IsFiltered then
-		local numNeededUnderscore = util:GetNumberOfUnderscores(tempMessage, useFont, useTextSize)
-		tempMessage = string.rep("_", numNeededUnderscore)
-	end
-
 	local formatChannelName = string.format("{%s}", echoChannel)
 	local numNeededSpaces2 = util:GetNumberOfSpaces(formatChannelName, useFont, useTextSize) + 1
 	local modifiedMessage = string.rep(" ", numNeededSpaces2) .. message
