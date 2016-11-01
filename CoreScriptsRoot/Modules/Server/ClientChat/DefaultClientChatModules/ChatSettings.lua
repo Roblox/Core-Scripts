@@ -9,7 +9,7 @@ module.WindowDraggable = false
 module.WindowResizable = false
 module.ShowChannelsBar = false
 module.GamepadNavigationEnabled = false
-module.ShowUserOwnFilteredMessage = false  --Show a user the filtered version of their message rather than the original.
+module.ShowUserOwnFilteredMessage = false	--Show a user the filtered version of their message rather than the original.
 
 ---[[ Chat Text Size Settings ]]
 module.ChatWindowTextSize = 18
@@ -44,7 +44,7 @@ module.DefaultWindowSizeDesktop = UDim2.new(0.3, 0, 0.25, extraOffset)
 
 ---[[ Fade Out and In Settings ]]
 module.ChatWindowBackgroundFadeOutTime = 0.5 --Chat background will fade out after this many seconds.
-module.ChatWindowTextFadeOutTime = 30        --Chat text will fade out after this many seconds.
+module.ChatWindowTextFadeOutTime = 30				--Chat text will fade out after this many seconds.
 module.ChatDefaultFadeDuration = 0.8
 module.ChatShouldFadeInFromNewInformation = false
 

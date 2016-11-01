@@ -409,7 +409,7 @@ function module.new(CommandProcessor, ChatWindow)
 	obj.TextBox = nil
 	obj.TextLabel = nil
 	obj.GuiObjects = {}
-	obj.eGuiObjectsChanged  = Instance.new("BindableEvent")
+	obj.eGuiObjectsChanged = Instance.new("BindableEvent")
 	obj.GuiObjectsChanged = obj.eGuiObjectsChanged.Event
 
 	obj.Connections = {}

@@ -40,7 +40,7 @@ methods.__index = methods
 
 local testLabel = Instance.new("TextLabel")
 testLabel.Selectable = false
-testLabel.TextWrapped  = true
+testLabel.TextWrapped = true
 testLabel.Position = UDim2.new(1, 0, 1, 0)
 
 function WaitUntilParentedCorrectly()
@@ -51,7 +51,7 @@ end
 
 local TextSizeCache = {}
 function methods:GetStringTextBounds(text, font, textSize, sizeBounds)
-  WaitUntilParentedCorrectly()
+	WaitUntilParentedCorrectly()
 	sizeBounds = sizeBounds or false
 	if not TextSizeCache[text] then
 		TextSizeCache[text] = {}
@@ -189,7 +189,7 @@ function module.new()
 	obj.KEY_UPDATE_TEXT_FUNC = KEY_UPDATE_TEXT_FUNC
 	obj.KEY_GET_HEIGHT = KEY_GET_HEIGHT
 	obj.KEY_FADE_IN = KEY_FADE_IN
-	obj.KEY_FADE_OUT =  KEY_FADE_OUT
+	obj.KEY_FADE_OUT = KEY_FADE_OUT
 	obj.KEY_UPDATE_ANIMATION = KEY_UPDATE_ANIMATION
 
 	return obj

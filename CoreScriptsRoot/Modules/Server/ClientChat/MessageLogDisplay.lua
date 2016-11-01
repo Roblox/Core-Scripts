@@ -74,9 +74,9 @@ function methods:UpdateMessageFiltered(messageData)
 end
 
 function methods:AddMessage(messageData, messageType)
-  self:WaitUntilParentedCorrectly()
+	self:WaitUntilParentedCorrectly()
 
-  local messageObject = MessageLabelCreator:CreateMessageLabelFromType(messageData, messageType)
+	local messageObject = MessageLabelCreator:CreateMessageLabelFromType(messageData, messageType)
 	if messageObject == nil then
 		return
 	end
