@@ -304,7 +304,7 @@ UserInputService.TouchTap:connect(function(tapPos, gameProcessedEvent)
 	local last = mouseIsInWindow
 
 	UpdateMousePosition(tapPos[1])
-	if (not mouseIsInWindow  and last ~= mouseIsInWindow)  then
+	if (not mouseIsInWindow and last ~= mouseIsInWindow) then
 		DoBackgroundFadeOut()
 	end
 end)

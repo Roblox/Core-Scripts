@@ -13,7 +13,7 @@ local SpecialChatColors = {
 		{
 			--- ROBLOX Admins group
 			GroupId = 1200769,
-			ChatColor =  Color3.new(1, 215/255, 0),
+			ChatColor = Color3.new(1, 215/255, 0),
 		},
 	},
 	Players = {

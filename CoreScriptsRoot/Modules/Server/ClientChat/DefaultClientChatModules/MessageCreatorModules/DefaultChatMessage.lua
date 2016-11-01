@@ -88,13 +88,13 @@ function CreateMessageLabel(messageData)
 	end
 
 	return {
-    [util.KEY_BASE_FRAME] = BaseFrame,
-    [util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction,
+		[util.KEY_BASE_FRAME] = BaseFrame,
+		[util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction,
 		[util.KEY_GET_HEIGHT] = GetHeightFunction,
 		[util.KEY_FADE_IN] = FadeInFunction,
 		[util.KEY_FADE_OUT] = FadeOutFunction,
 		[util.KEY_UPDATE_ANIMATION] = UpdateAnimFunction
-  }
+	}
 end
 
 return {

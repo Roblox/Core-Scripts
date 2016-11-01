@@ -268,7 +268,7 @@ function module.new()
 	obj.FilterMessageFunctions = {}
 	obj.ProcessCommandsFunctions = {}
 
-	obj.eChannelAdded  = Instance.new("BindableEvent")
+	obj.eChannelAdded = Instance.new("BindableEvent")
 	obj.eChannelRemoved = Instance.new("BindableEvent")
 	obj.eSpeakerAdded = Instance.new("BindableEvent")
 	obj.eSpeakerRemoved = Instance.new("BindableEvent")

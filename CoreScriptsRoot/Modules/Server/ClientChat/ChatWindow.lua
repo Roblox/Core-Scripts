@@ -35,31 +35,34 @@ function bubbleChatOnly()
 end
 
 function methods:CreateGuiObjects(targetParent)
-	local BaseFrame = Instance.new("Frame", targetParent)
+	local BaseFrame = Instance.new("Frame")
 	BaseFrame.BackgroundTransparency = 1
 	BaseFrame.Active = true
+	BaseFrame.Parent = targetParent
 
-	local ChatBarParentFrame = Instance.new("Frame", BaseFrame)
+	local ChatBarParentFrame = Instance.new("Frame")
 	ChatBarParentFrame.Selectable = false
 	ChatBarParentFrame.Name = "ChatBarParentFrame"
 	ChatBarParentFrame.BackgroundTransparency = 1
+	ChatBarParentFrame.Parent = BaseFrame
 
-	local ChannelsBarParentFrame = Instance.new("Frame", BaseFrame)
+	local ChannelsBarParentFrame = Instance.new("Frame")
 	ChannelsBarParentFrame.Selectable = false
 	ChannelsBarParentFrame.Name = "ChannelsBarParentFrame"
 	ChannelsBarParentFrame.BackgroundTransparency = 1
 	ChannelsBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
+	ChannelsBarParentFrame.Parent = BaseFrame
 
-	local ChatChannelParentFrame = Instance.new("Frame", BaseFrame)
+	local ChatChannelParentFrame = Instance.new("Frame")
 	ChatChannelParentFrame.Selectable = false
 	ChatChannelParentFrame.Name = "ChatChannelParentFrame"
 	ChatChannelParentFrame.BackgroundTransparency = 1
-
 	ChatChannelParentFrame.BackgroundColor3 = ChatSettings.BackGroundColor
 	ChatChannelParentFrame.BackgroundTransparency = 0.6
 	ChatChannelParentFrame.BorderSizePixel = 0
+	ChatChannelParentFrame.Parent = BaseFrame
 
-	local ChatResizerFrame = Instance.new("ImageButton", BaseFrame)
+	local ChatResizerFrame = Instance.new("ImageButton")
 	ChatResizerFrame.Selectable = false
 	ChatResizerFrame.Image = ""
 	ChatResizerFrame.BackgroundTransparency = 0.6
@@ -67,13 +70,15 @@ function methods:CreateGuiObjects(targetParent)
 	ChatResizerFrame.Visible = false
 	ChatResizerFrame.BackgroundColor3 = ChatSettings.BackGroundColor
 	ChatResizerFrame.Active = true
+	ChatResizerFrame.Parent = BaseFrame
 
-	local ResizeIcon = Instance.new("ImageLabel", ChatResizerFrame)
+	local ResizeIcon = Instance.new("ImageLabel")
 	ResizeIcon.Selectable = false
 	ResizeIcon.Size = UDim2.new(0.8, 0, 0.8, 0)
 	ResizeIcon.Position = UDim2.new(0.2, 0, 0.2, 0)
 	ResizeIcon.BackgroundTransparency = 1
 	ResizeIcon.Image = "rbxassetid://261880743"
+	ResizeIcon.Parent = ChatResizerFrame
 
 	local function GetScreenGuiParent()
 		--// Travel up parent list until you find the ScreenGui that the chat window is parented to
@@ -163,11 +168,11 @@ function methods:CreateGuiObjects(targetParent)
 	local function UpdatePositionFromDrag(atPos)
 		local newSize = atPos - BaseFrame.AbsolutePosition + ChatResizerFrame.AbsoluteSize
 		BaseFrame.Size = UDim2.new(0, newSize.X, 0, newSize.Y)
-    if bubbleChatOnly() then
-      ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 0, 0)
-    else
-      ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
-    end
+		if bubbleChatOnly() then
+			ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 0, 0)
+		else
+			ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
+		end
 	end
 
 	ChatResizerFrame.DragStopped:connect(function(endX, endY)
@@ -382,7 +387,7 @@ function methods:RegisterMessageLogDisplay(MessageLogDisplay)
 end
 
 function methods:AddChannel(channelName)
-	if (self:GetChannel(channelName))  then
+	if (self:GetChannel(channelName)) then
 		error("Channel '" .. channelName .. "' already exists!")
 		return
 	end
@@ -412,7 +417,7 @@ function methods:GetFirstChannel()
 end
 
 function methods:RemoveChannel(channelName)
-	if (not self:GetChannel(channelName))  then
+	if (not self:GetChannel(channelName)) then
 		error("Channel '" .. channelName .. "' does not exist!")
 	end
 

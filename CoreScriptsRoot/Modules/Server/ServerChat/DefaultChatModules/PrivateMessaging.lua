@@ -38,7 +38,7 @@ local function Run(ChatService)
 				if (sendMessage and (string.len(sendMessage) > 0) ) then
 					speaker:SayMessage(sendMessage, channelObj.Name)
 				end
-				
+
 				speaker:SetMainChannel(channelObj.Name)
 
 			end

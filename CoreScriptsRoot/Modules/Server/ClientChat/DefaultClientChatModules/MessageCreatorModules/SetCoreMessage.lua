@@ -10,7 +10,7 @@ local util = require(script.Parent:WaitForChild("Util"))
 
 function CreateSetCoreMessageLabel(messageData)
 	local message = messageData.Message
-  local extraData = messageData.ExtraData or {}
+	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or ChatSettings.DefaultFont
 	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
 	local useColor = extraData.Color or ChatSettings.DefaultMessageColor
@@ -22,33 +22,33 @@ function CreateSetCoreMessageLabel(messageData)
 	end
 
 	local AnimParams = {}
-  AnimParams.Text_TargetTransparency = 0
-  AnimParams.Text_CurrentTransparency = 0
+	AnimParams.Text_TargetTransparency = 0
+	AnimParams.Text_CurrentTransparency = 0
 	AnimParams.Text_NormalizedExptValue = 1
-  AnimParams.TextStroke_TargetTransparency = 0.75
-  AnimParams.TextStroke_CurrentTransparency = 0.75
+	AnimParams.TextStroke_TargetTransparency = 0.75
+	AnimParams.TextStroke_CurrentTransparency = 0.75
 	AnimParams.TextStroke_NormalizedExptValue = 1
 
-  local function FadeInFunction(duration, CurveUtil)
-    AnimParams.Text_TargetTransparency = 0
-    AnimParams.TextStroke_TargetTransparency = 0.75
+	local function FadeInFunction(duration, CurveUtil)
+		AnimParams.Text_TargetTransparency = 0
+		AnimParams.TextStroke_TargetTransparency = 0.75
 		AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 		AnimParams.TextStroke_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
-  end
+	end
 
-  local function FadeOutFunction(duration, CurveUtil)
-    AnimParams.Text_TargetTransparency = 1
-    AnimParams.TextStroke_TargetTransparency = 1
+	local function FadeOutFunction(duration, CurveUtil)
+		AnimParams.Text_TargetTransparency = 1
+		AnimParams.TextStroke_TargetTransparency = 1
 		AnimParams.Text_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
 		AnimParams.TextStroke_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
-  end
+	end
 
-  local function AnimGuiObjects()
-    BaseMessage.TextTransparency = AnimParams.Text_CurrentTransparency
-    BaseMessage.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
-  end
+	local function AnimGuiObjects()
+		BaseMessage.TextTransparency = AnimParams.Text_CurrentTransparency
+		BaseMessage.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
+	end
 
-  local function UpdateAnimFunction(dtScale, CurveUtil)
+	local function UpdateAnimFunction(dtScale, CurveUtil)
 		AnimParams.Text_CurrentTransparency = CurveUtil:Expt(
 				AnimParams.Text_CurrentTransparency,
 				AnimParams.Text_TargetTransparency,
@@ -62,8 +62,8 @@ function CreateSetCoreMessageLabel(messageData)
 				dtScale
 		)
 
-    AnimGuiObjects()
-  end
+		AnimGuiObjects()
+	end
 
 	return {
 		[util.KEY_BASE_FRAME] = BaseFrame,
