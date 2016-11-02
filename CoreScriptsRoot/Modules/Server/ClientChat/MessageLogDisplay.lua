@@ -73,10 +73,10 @@ function methods:UpdateMessageFiltered(messageData)
 	end
 end
 
-function methods:AddMessage(messageData, messageType)
+function methods:AddMessage(messageData)
 	self:WaitUntilParentedCorrectly()
 
-	local messageObject = MessageLabelCreator:CreateMessageLabelFromType(messageData, messageType)
+	local messageObject = MessageLabelCreator:CreateMessageLabel(messageData, self.CurrentChannelName)
 	if messageObject == nil then
 		return
 	end
@@ -143,8 +143,8 @@ function methods:Clear()
 	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 end
 
-function methods:RegisterChannelTab(tab)
-	rawset(self, "ChannelTab", tab)
+function methods:SetCurrentChannelName(name)
+	self.CurrentChannelName = name
 end
 
 function methods:FadeOutBackground(duration)
@@ -199,10 +199,11 @@ function module.new()
 	obj.Scroller = Scroller
 
 	obj.MessageObjectLog = {}
-	obj.ChannelTab = nil
 
 	obj.Name = "MessageLogDisplay"
 	obj.GuiObject.Name = "Frame_" .. obj.Name
+
+	obj.CurrentChannelName = ""
 
 	ClassMaker.MakeClass("MessageLogDisplay", obj)
 

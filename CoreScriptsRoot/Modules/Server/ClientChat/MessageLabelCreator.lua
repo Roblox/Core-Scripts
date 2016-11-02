@@ -70,24 +70,15 @@ function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 	return obj
 end
 
-function methods:CreateMessageLabelFromType(messageData, messageType)
-	local message = messageData.Message
-	if messageType == "Message" then
-		if string.sub(message, 1, 4) == "/me " then
-			messageType = "MeCommandMessage"
-		end
-	elseif messageType == "EchoMessage" then
-		if string.sub(message, 1, 4) == "/me " then
-			messageType = "MeCommandChannelEchoMessage"
-		end
-	end
+function methods:CreateMessageLabel(messageData, currentChannelName)
+	local messageType = messageData.MessageType
 	if self.MessageCreators[messageType] then
-		local createdMessageObject = self.MessageCreators[messageType](messageData)
+		local createdMessageObject = self.MessageCreators[messageType](messageData, currentChannelName)
 		if createdMessageObject then
 			return self:WrapIntoMessageObject(messageData, createdMessageObject)
 		end
 	elseif self.DefaultCreatorType then
-		local createdMessageObject = self.MessageCreators[self.DefaultCreatorType](messageData)
+		local createdMessageObject = self.MessageCreators[self.DefaultCreatorType](messageData, currentChannelName)
 		if createdMessageObject then
 			return self:WrapIntoMessageObject(messageData, createdMessageObject)
 		end

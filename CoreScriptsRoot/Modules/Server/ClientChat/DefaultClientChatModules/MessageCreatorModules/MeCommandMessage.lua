@@ -8,20 +8,33 @@ local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local util = require(script.Parent:WaitForChild("Util"))
 
-function CreateMeCommandMessageLabel(messageData)
+function CreateMeCommandMessageLabel(messageData, channelName)
 	local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or Enum.Font.SourceSansItalic
 	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
 	local useChatColor = Color3.new(1, 1, 1)
+	local numNeededSpaces = 0
 
-	local tempMessage = messageData.FromSpeaker .. " " .. string.sub(message, 5)
+	local BaseFrame, BaseMessage = util:CreateBaseMessage("", useFont, useTextSize, useChatColor)
+	local ChannelButton = nil
 
-	local BaseFrame, BaseMessage = util:CreateBaseMessage(tempMessage, useFont, useTextSize, useChatColor)
-
-	local function UpdateTextFunction(newMessageObject)
-		BaseMessage.Text = newMessageObject.FromSpeaker .. " " .. string.sub(newMessageObject.Message, 5)
+	if channelName ~= messageData.OriginalChannel then
+		local formatChannelName = string.format("{%s}", messageData.OriginalChannel)
+		ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName, useNameColor)
+		numNeededSpaces = util:GetNumberOfSpaces(formatChannelName, useFont, useTextSize) + 1
 	end
+
+	local function UpdateTextFunction(messageObject)
+		if messageData.IsFiltered then
+			BaseMessage.Text = string.rep(" ", numNeededSpaces) .. messageObject.FromSpeaker .. " " .. string.sub(messageObject.Message, 5)
+		else
+			local messageLength = string.len(messageObject.FromSpeaker) + messageObject.MessageLength - 4
+			BaseMessage.Text = string.rep(" ", numNeededSpaces) .. string.rep("_", messageLength)
+		end
+	end
+
+	UpdateTextFunction(messageData)
 
 	local function GetHeightFunction()
 		return util:GetMessageHeight(BaseMessage, BaseFrame)
@@ -52,6 +65,11 @@ function CreateMeCommandMessageLabel(messageData)
 	local function AnimGuiObjects()
 		BaseMessage.TextTransparency = AnimParams.Text_CurrentTransparency
 		BaseMessage.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
+
+		if ChannelButton then
+			ChannelButton.TextTransparency = AnimParams.Text_CurrentTransparency
+			ChannelButton.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
+		end
 	end
 
 	local function UpdateAnimFunction(dtScale, CurveUtil)

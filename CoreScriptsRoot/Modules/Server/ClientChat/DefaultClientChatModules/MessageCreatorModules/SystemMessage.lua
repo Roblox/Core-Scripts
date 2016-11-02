@@ -8,7 +8,7 @@ local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local util = require(script.Parent:WaitForChild("Util"))
 
-function CreateSystemMessageLabel(messageData)
+function CreateSystemMessageLabel(messageData, channelName)
 	local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or ChatSettings.DefaultFont
@@ -16,6 +16,14 @@ function CreateSystemMessageLabel(messageData)
 	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
 	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useTextSize, useChatColor)
+	local ChannelButton = nil
+
+	if channelName ~= messageData.OriginalChannel then
+			local formatChannelName = string.format("{%s}", messageData.OriginalChannel)
+			ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName, useNameColor)
+			local numNeededSpaces = util:GetNumberOfSpaces(formatChannelName, useFont, useTextSize) + 1
+			BaseMessage.Text = string.rep(" ", numNeededSpaces2) .. message
+	end
 
 	local function GetHeightFunction()
 		return util:GetMessageHeight(BaseMessage, BaseFrame)
@@ -46,6 +54,11 @@ function CreateSystemMessageLabel(messageData)
 	local function AnimGuiObjects()
 		BaseMessage.TextTransparency = AnimParams.Text_CurrentTransparency
 		BaseMessage.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
+
+		if ChannelButton then
+			ChannelButton.TextTransparency = AnimParams.Text_CurrentTransparency
+			ChannelButton.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
+		end
 	end
 
 	local function UpdateAnimFunction(dtScale, CurveUtil)

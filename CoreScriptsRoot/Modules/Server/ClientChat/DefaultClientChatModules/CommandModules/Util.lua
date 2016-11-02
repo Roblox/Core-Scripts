@@ -31,12 +31,15 @@ function methods:SendSystemMessageToSelf(message, channelObj, extraData)
 		ID = -1,
 		FromSpeaker = nil,
 		OriginalChannel = channelObj.Name,
+		IsFiltered = true,
+		MessageLength = string.len(message),
 		Message = message,
+		MessageType = "SystemMessage",
 		Time = os.time(),
 		ExtraData = extraData,
 	}
 
-	channelObj:AddMessageToChannel(messageData, "SystemMessage")
+	channelObj:AddMessageToChannel(messageData)
 end
 
 function module.new()

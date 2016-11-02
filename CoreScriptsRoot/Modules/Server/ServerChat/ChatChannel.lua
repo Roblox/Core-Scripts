@@ -16,7 +16,7 @@ local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local methods = {}
 
 function methods:SendSystemMessage(message, extraData)
-	local messageObj = self:InternalCreateMessageObject(message, nil, extraData)
+	local messageObj = self:InternalCreateMessageObject(message, nil, true, extraData)
 
 	self:InternalAddMessageToHistoryLog(messageObj)
 
@@ -30,7 +30,7 @@ end
 function methods:SendSystemMessageToSpeaker(message, speakerName, extraData)
 	local speaker = self.Speakers[speakerName]
 	if (speaker) then
-		local messageObj = self:InternalCreateMessageObject(message, nil, extraData)
+		local messageObj = self:InternalCreateMessageObject(message, nil, true, extraData)
 		speaker:InternalSendSystemMessage(messageObj, self.Name)
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a system message", speakerName, self.Name))
@@ -41,16 +41,15 @@ function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraDa
 	local speaker = self.Speakers[speakerName]
 	if (speaker) then
 
-		local tempMessage = message
-		if speakerName ~= fromSpeaker then
-			tempMessage = string.rep("_", string.len(message))
-		end
-
-		local messageObj = self:InternalCreateMessageObject(tempMessage, fromSpeaker, extraData)
+		local isFiltered = speakerName == fromSpeaker
+		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
 		speaker:InternalSendMessage(messageObj, self.Name)
 
-		messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
-		speaker:InternalSendFilteredMessage(messageObj, self.Name)
+		if not isFiltered then
+			messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+			messageObj.IsFiltered = true
+			speaker:InternalSendFilteredMessage(messageObj, self.Name)
+		end
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
 	end
@@ -244,7 +243,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		end
 	end
 
-	local messageObj = self:InternalCreateMessageObject(string.rep("_", string.len(message)), fromSpeaker.Name, extraData)
+	local messageObj = self:InternalCreateMessageObject(message, fromSpeaker.Name, false, extraData)
 
 	local sentToList = {}
 	for i, speaker in pairs(self.Speakers) do
@@ -253,6 +252,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 			-- Send unfiltered message to speaker who sent the message.
 			local cMessageObj = DeepCopy(messageObj)
 			cMessageObj.Message = message
+			cMessageObj.IsFiltered = true
 			speaker:InternalSendMessage(cMessageObj, self.Name)
 		else
 			speaker:InternalSendMessage(messageObj, self.Name)
@@ -274,11 +274,13 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		if (speaker) then
 			local cMessageObj = DeepCopy(messageObj)
 			cMessageObj.Message = filteredMessages[speakerName]
+			cMessageObj.IsFiltered = true
 			speaker:InternalSendFilteredMessage(cMessageObj, channel)
 		end
 	end
 
 	messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, messageObj.FromSpeaker)
+	messageObj.IsFiltered = true
 	self:InternalAddMessageToHistoryLog(messageObj)
 
 	return messageObj
@@ -328,13 +330,27 @@ function methods:InternalAddMessageToHistoryLog(messageObj)
 	self:InternalRemoveExcessMessagesFromLog()
 end
 
-function methods:InternalCreateMessageObject(message, fromSpeaker, extraData)
+function methods:GetMessageType(message, fromSpeaker)
+	if fromSpeaker == nil then
+		return "SystemMessage"
+	end
+	if string.sub(message, 1, 3) == "/me" then
+		return "MeCommandMessage"
+	end
+	return "Message"
+end
+
+function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
+	local messageType = self:GetMessageType(message, fromSpeaker)
 	local messageObj =
 	{
 		ID = self.ChatService:InternalGetUniqueMessageId(),
 		FromSpeaker = fromSpeaker,
 		OriginalChannel = self.Name,
-		Message = message,
+		MessageLength = string.len(message),
+		MessageType = messageType,
+		IsFiltered = isFiltered,
+		Message = isFiltered and message or nil,
 		Time = os.time(),
 		ExtraData = {},
 	}

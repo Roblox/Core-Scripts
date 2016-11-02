@@ -8,7 +8,7 @@ local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local util = require(script.Parent:WaitForChild("Util"))
 
-function CreateWelcomeMessageLabel(messageData)
+function CreateWelcomeMessageLabel(messageData, channelName)
 	local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or ChatSettings.DefaultFont
