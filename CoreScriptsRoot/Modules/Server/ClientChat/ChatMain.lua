@@ -437,8 +437,9 @@ end
 setupChatBarConnections()
 ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
 
--- Warp the OnMessageDoneFiltering event so that we do not back up the remote event invocation queue.
+-- Wrap the OnMessageDoneFiltering event so that we do not back up the remote event invocation queue.
 -- This is in cases where we are sent OnMessageDoneFiltering events but we have stopped listening/timed out.
+-- BindableEvents do not queue, while RemoteEvents do.
 local FilteredMessageReceived = Instance.new("BindableEvent")
 EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
 	FilteredMessageReceived:Fire(messageData)
