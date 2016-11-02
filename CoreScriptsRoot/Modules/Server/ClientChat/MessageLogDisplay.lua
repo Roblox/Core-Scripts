@@ -70,6 +70,7 @@ function methods:UpdateMessageFiltered(messageData)
 
 	if (messageObject) then
 		messageObject.UpdateTextFunction(messageData)
+		self:ReorderAllMessages()
 	end
 end
 
