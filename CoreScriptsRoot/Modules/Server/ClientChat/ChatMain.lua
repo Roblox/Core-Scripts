@@ -437,6 +437,13 @@ end
 setupChatBarConnections()
 ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
 
+-- Warp the OnMessageDoneFiltering event so that we do not back up the remote event invocation queue.
+-- This is in cases where we are sent OnMessageDoneFiltering events but we have stopped listening/timed out.
+local FilteredMessageReceived = Instance.new("BindableEvent")
+EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
+	FilteredMessageReceived:Fire(messageData)
+end)
+
 EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
@@ -475,7 +482,7 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 			if tick() - filterWaitStartTime > FILTER_MESSAGE_TIMEOUT then
 				return
 			end
-			filterData = EventFolder.OnMessageDoneFiltering.OnClientEvent:wait()
+			filterData = FilteredMessageReceived.Event:wait()
 		end
 
 		--// Speaker may leave these channels during the time it takes to filter.
