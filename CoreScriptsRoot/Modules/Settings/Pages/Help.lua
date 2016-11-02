@@ -449,7 +449,9 @@ do
       PageInstance.HubRef:ShowShield()
 
       if PageInstance:GetCurrentInputType() == TOUCH_TAG then
-        PageInstance.HubRef.BottomButtonFrame.Visible = true
+        if PageInstance.HubRef.BottomButtonFrame then
+          PageInstance.HubRef.BottomButtonFrame.Visible = true
+        end
       end
     end)
 end
