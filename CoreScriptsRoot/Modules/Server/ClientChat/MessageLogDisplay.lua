@@ -28,7 +28,7 @@ local function CreateGuiObjects()
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
 
-	local Scroller = Instance.new("ScrollingFrame", BaseFrame)
+	local Scroller = Instance.new("ScrollingFrame")
 	Scroller.Selectable = ChatSettings.GamepadNavigationEnabled
 	Scroller.Name = "Scroller"
 	Scroller.BackgroundTransparency = 1
@@ -38,6 +38,7 @@ local function CreateGuiObjects()
 	Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 	Scroller.ScrollBarThickness = module.ScrollBarThickness
 	Scroller.Active = false
+	Scroller.Parent = BaseFrame
 
 	return BaseFrame, Scroller
 end
@@ -73,9 +74,9 @@ function methods:UpdateMessageFiltered(messageData)
 end
 
 function methods:AddMessage(messageData, messageType)
-  self:WaitUntilParentedCorrectly()
+	self:WaitUntilParentedCorrectly()
 
-  local messageObject = MessageLabelCreator:CreateMessageLabelFromType(messageData, messageType)
+	local messageObject = MessageLabelCreator:CreateMessageLabelFromType(messageData, messageType)
 	if messageObject == nil then
 		return
 	end

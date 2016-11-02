@@ -27,14 +27,15 @@ function methods:CreateGuiObjects(targetParent)
 	local backgroundImagePixelOffset = 7
 	local textBoxPixelOffset = 5
 
-	local BaseFrame = Instance.new("Frame", targetParent)
+	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 0.6
 	BaseFrame.BorderSizePixel = 0
 	BaseFrame.BackgroundColor3 = ChatSettings.ChatBarBackGroundColor
+	BaseFrame.Parent = targetParent
 
-	local BoxFrame = Instance.new("Frame", BaseFrame)
+	local BoxFrame = Instance.new("Frame")
 	BoxFrame.Selectable = false
 	BoxFrame.Name = "BoxFrame"
 	BoxFrame.BackgroundTransparency = 0.6
@@ -42,13 +43,15 @@ function methods:CreateGuiObjects(targetParent)
 	BoxFrame.BackgroundColor3 = ChatSettings.ChatBarBoxColor
 	BoxFrame.Size = UDim2.new(1, -backgroundImagePixelOffset * 2, 1, -backgroundImagePixelOffset * 2)
 	BoxFrame.Position = UDim2.new(0, backgroundImagePixelOffset, 0, backgroundImagePixelOffset)
+	BoxFrame.Parent = BaseFrame
 
-	local TextBoxHolderFrame = Instance.new("Frame", BoxFrame)
+	local TextBoxHolderFrame = Instance.new("Frame")
 	TextBoxHolderFrame.BackgroundTransparency = 1
 	TextBoxHolderFrame.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)
 	TextBoxHolderFrame.Position = UDim2.new(0, textBoxPixelOffset, 0, textBoxPixelOffset)
+	TextBoxHolderFrame.Parent = BoxFrame
 
-	local TextBox = Instance.new("TextBox", TextBoxHolderFrame)
+	local TextBox = Instance.new("TextBox")
 	TextBox.Selectable = ChatSettings.GamepadNavigationEnabled
 	TextBox.Name = "ChatBar"
 	TextBox.BackgroundTransparency = 1
@@ -64,8 +67,9 @@ function methods:CreateGuiObjects(targetParent)
 	TextBox.TextYAlignment = Enum.TextYAlignment.Top
 	TextBox.TextWrapped = true
 	TextBox.Text = ""
+	TextBox.Parent = TextBoxHolderFrame
 
-	local MessageModeTextLabel = Instance.new("TextLabel", TextBoxHolderFrame)
+	local MessageModeTextLabel = Instance.new("TextLabel")
 	MessageModeTextLabel.Name = "MessageMode"
 	MessageModeTextLabel.BackgroundTransparency = 1
 	MessageModeTextLabel.Position = UDim2.new(0, 0, 0, 0)
@@ -77,8 +81,9 @@ function methods:CreateGuiObjects(targetParent)
 	MessageModeTextLabel.Size = UDim2.new(0.3, 0, 1, 0)
 	MessageModeTextLabel.TextYAlignment = Enum.TextYAlignment.Center
 	MessageModeTextLabel.TextColor3 = Color3.fromRGB(77, 139, 255)
+	MessageModeTextLabel.Parent = TextBoxHolderFrame
 
-	local TextLabel = Instance.new("TextLabel", TextBoxHolderFrame)
+	local TextLabel = Instance.new("TextLabel")
 	TextLabel.Selectable = false
 	TextLabel.TextWrapped = true
 	TextLabel.BackgroundTransparency = 1
@@ -92,6 +97,7 @@ function methods:CreateGuiObjects(targetParent)
 	TextLabel.TextXAlignment = TextBox.TextXAlignment
 	TextLabel.TextYAlignment = TextBox.TextYAlignment
 	TextLabel.Text = "This value needs to be set with :SetTextLabelText()"
+	TextLabel.Parent = TextBoxHolderFrame
 
 	rawset(self, "GuiObject", BaseFrame)
 	rawset(self, "TextBox", TextBox)
@@ -403,7 +409,7 @@ function module.new(CommandProcessor, ChatWindow)
 	obj.TextBox = nil
 	obj.TextLabel = nil
 	obj.GuiObjects = {}
-	obj.eGuiObjectsChanged  = Instance.new("BindableEvent")
+	obj.eGuiObjectsChanged = Instance.new("BindableEvent")
 	obj.GuiObjectsChanged = obj.eGuiObjectsChanged.Event
 
 	obj.Connections = {}

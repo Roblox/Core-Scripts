@@ -20,25 +20,25 @@ function methods:SetupCommandProcessors()
 	for i = 1, #commands do
 		if commands[i].Name ~= "Util" then
 			local commandProcessor = require(commands[i])
-      local processorType = commandProcessor[commandUtil.KEY_COMMAND_PROCESSOR_TYPE]
-      local processorFunction = commandProcessor[commandUtil.KEY_PROCESSOR_FUNCTION]
-      if processorType == commandUtil.IN_PROGRESS_MESSAGE_PROCESSOR then
-        table.insert(self.InProgressMessageProcessors, processorFunction)
-      elseif processorType == commandUtil.COMPLETED_MESSAGE_PROCESSOR then
-        table.insert(self.CompletedMessageProcessors, processorFunction)
-      end
+			local processorType = commandProcessor[commandUtil.KEY_COMMAND_PROCESSOR_TYPE]
+			local processorFunction = commandProcessor[commandUtil.KEY_PROCESSOR_FUNCTION]
+			if processorType == commandUtil.IN_PROGRESS_MESSAGE_PROCESSOR then
+				table.insert(self.InProgressMessageProcessors, processorFunction)
+			elseif processorType == commandUtil.COMPLETED_MESSAGE_PROCESSOR then
+				table.insert(self.CompletedMessageProcessors, processorFunction)
+			end
 		end
 	end
 end
 
 function methods:ProcessCompletedChatMessage(message, ChatWindow)
-  for i = 1, #self.CompletedMessageProcessors do
-    local processedCommand = self.CompletedMessageProcessors[i](message, ChatWindow, ChatSettings)
-    if processedCommand then
-      return true
-    end
-  end
-  return false
+	for i = 1, #self.CompletedMessageProcessors do
+		local processedCommand = self.CompletedMessageProcessors[i](message, ChatWindow, ChatSettings)
+		if processedCommand then
+			return true
+		end
+	end
+	return false
 end
 
 function methods:ProcessInProgressChatMessage(message, ChatWindow, ChatBar)
@@ -59,11 +59,11 @@ function module.new()
 	local obj = {}
 
 	obj.CompletedMessageProcessors = {}
-  obj.InProgressMessageProcessors = {}
+	obj.InProgressMessageProcessors = {}
 
 	ClassMaker.MakeClass("CommandProcessor", obj)
 
-  obj:SetupCommandProcessors()
+	obj:SetupCommandProcessors()
 
 	return obj
 end

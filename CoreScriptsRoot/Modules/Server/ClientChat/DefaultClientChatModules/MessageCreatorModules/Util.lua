@@ -40,7 +40,7 @@ methods.__index = methods
 
 local testLabel = Instance.new("TextLabel")
 testLabel.Selectable = false
-testLabel.TextWrapped  = true
+testLabel.TextWrapped = true
 testLabel.Position = UDim2.new(1, 0, 1, 0)
 
 function WaitUntilParentedCorrectly()
@@ -51,7 +51,7 @@ end
 
 local TextSizeCache = {}
 function methods:GetStringTextBounds(text, font, textSize, sizeBounds)
-  WaitUntilParentedCorrectly()
+	WaitUntilParentedCorrectly()
 	sizeBounds = sizeBounds or false
 	if not TextSizeCache[text] then
 		TextSizeCache[text] = {}
@@ -104,7 +104,6 @@ function methods:CreateBaseMessage(message, font, textSize, chatColor)
 	local messageBorder = 8
 
 	local BaseMessage = self:GetFromObjectPool("TextLabel")
-	BaseMessage.Parent = BaseFrame
 	BaseMessage.Selectable = false
 	BaseMessage.Size = UDim2.new(1, -(messageBorder + 6), 1, 0)
 	BaseMessage.Position = UDim2.new(0, messageBorder, 0, 0)
@@ -118,6 +117,7 @@ function methods:CreateBaseMessage(message, font, textSize, chatColor)
 	BaseMessage.TextColor3 = chatColor
 	BaseMessage.TextWrapped = true
 	BaseMessage.Text = message
+	BaseMessage.Parent = BaseFrame
 
 	return BaseFrame, BaseMessage
 end
@@ -125,7 +125,6 @@ end
 function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName)
 	local speakerNameSize = self:GetStringTextBounds(formatName, BaseMessage.Font, BaseMessage.TextSize)
 	local NameButton = self:GetFromObjectPool("TextButton")
-	NameButton.Parent = BaseMessage
 	NameButton.Selectable = false
 	NameButton.Size = UDim2.new(0, speakerNameSize.X, 0, speakerNameSize.Y)
 	NameButton.Position = UDim2.new(0, 0, 0, 0)
@@ -138,13 +137,13 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName)
 	NameButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 	NameButton.TextColor3 = nameColor
 	NameButton.Text = formatName
+	NameButton.Parent = BaseMessage
 	return NameButton
 end
 
 function methods:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName)
 	local channelNameSize = self:GetStringTextBounds(formatChannelName, BaseMessage.Font, BaseMessage.TextSize)
 	local ChannelButton = self:GetFromObjectPool("TextButton")
-	ChannelButton.Parent = BaseMessage
 	ChannelButton.Selectable = false
 	ChannelButton.Size = UDim2.new(0, channelNameSize.X, 0, channelNameSize.Y)
 	ChannelButton.Position = UDim2.new(0, 0, 0, 0)
@@ -157,6 +156,7 @@ function methods:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName)
 	ChannelButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 	ChannelButton.TextColor3 = BaseMessage.TextColor3
 	ChannelButton.Text = formatChannelName
+	ChannelButton.Parent = BaseMessage
 	return ChannelButton
 end
 
@@ -189,7 +189,7 @@ function module.new()
 	obj.KEY_UPDATE_TEXT_FUNC = KEY_UPDATE_TEXT_FUNC
 	obj.KEY_GET_HEIGHT = KEY_GET_HEIGHT
 	obj.KEY_FADE_IN = KEY_FADE_IN
-	obj.KEY_FADE_OUT =  KEY_FADE_OUT
+	obj.KEY_FADE_OUT = KEY_FADE_OUT
 	obj.KEY_UPDATE_ANIMATION = KEY_UPDATE_ANIMATION
 
 	return obj

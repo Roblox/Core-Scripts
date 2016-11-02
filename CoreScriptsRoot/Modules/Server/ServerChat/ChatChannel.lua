@@ -158,7 +158,7 @@ function methods:UnregisterProcessCommandsFunction(funcId)
 end
 
 local function DeepCopy(table)
-	local copy =  {}
+	local copy =	{}
 	for i, v in pairs(table) do
 		if (type(v) == table) then
 			copy[i] = DeepCopy(v)

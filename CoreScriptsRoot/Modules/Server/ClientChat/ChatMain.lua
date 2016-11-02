@@ -304,7 +304,7 @@ UserInputService.TouchTap:connect(function(tapPos, gameProcessedEvent)
 	local last = mouseIsInWindow
 
 	UpdateMousePosition(tapPos[1])
-	if (not mouseIsInWindow  and last ~= mouseIsInWindow)  then
+	if (not mouseIsInWindow and last ~= mouseIsInWindow) then
 		DoBackgroundFadeOut()
 	end
 end)
@@ -312,11 +312,6 @@ end)
 --// Start and stop fading sequences / timers
 UpdateFadingForMouseState(true)
 UpdateFadingForMouseState(false)
-
-
-
-
-
 
 
 
@@ -337,23 +332,15 @@ local function DoChatBarFocus()
 	end
 end
 
---// Event for focusing the chat bar when player presses "/".
-local ChatBarUISConnection = UserInputService.InputBegan:connect(function(input)
-	if (input.KeyCode == Enum.KeyCode.Slash) then
-		DoChatBarFocus()
-	end
+chatBarFocusChanged.Event:connect(function(focused)
+	moduleApiTable.ChatBarFocusChanged:fire(focused)
 end)
-
--- Comment out this line to allow pressing the "/" key to chat.
-ChatBarUISConnection:disconnect()
-
 
 local function DoSwitchCurrentChannel(targetChannel)
 	if (ChatWindow:GetChannel(targetChannel)) then
 		ChatWindow:SwitchCurrentChannel(targetChannel)
 	end
 end
-
 
 local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 	local channelObj = ChatWindow:GetChannel(channelName)
@@ -473,6 +460,12 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
 
 		DoFadeInFromNewInformation()
+
+		if not ChatSettings.ShowUserOwnFilteredMessage then
+			if (messageData.FromSpeaker == LocalPlayer.Name) then
+				return
+			end
+		end
 
 		local filterData = {}
 		while (filterData.ID ~= messageData.ID) do

@@ -3,6 +3,7 @@
 --	// Description: Hooks main chat module up to Topbar in corescripts.
 
 local StarterGui = game:GetService("StarterGui")
+local GuiService = game:GetService("GuiService")
 local MAX_COREGUI_CONNECTION_ATTEMPTS = 10
 
 local function DoEverything()
@@ -103,4 +104,8 @@ local function DoEverything()
 	end
 end
 
-DoEverything()
+if not GuiService:IsTenFootInterface() then
+	DoEverything()
+else
+	script.Parent:Destroy()
+end

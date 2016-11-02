@@ -12,7 +12,7 @@ function CreateSystemMessageLabel(messageData)
 	local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or ChatSettings.DefaultFont
-	local useTextsize = extraData.TextSize or ChatSettings.ChatWindowTextSize
+	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
 	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
 	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useTextSize, useChatColor)
@@ -66,13 +66,13 @@ function CreateSystemMessageLabel(messageData)
 	end
 
 	return {
-    [util.KEY_BASE_FRAME] = BaseFrame,
-    [util.KEY_UPDATE_TEXT_FUNC] = nil,
+		[util.KEY_BASE_FRAME] = BaseFrame,
+		[util.KEY_UPDATE_TEXT_FUNC] = nil,
 		[util.KEY_GET_HEIGHT] = GetHeightFunction,
 		[util.KEY_FADE_IN] = FadeInFunction,
 		[util.KEY_FADE_OUT] = FadeOutFunction,
 		[util.KEY_UPDATE_ANIMATION] = UpdateAnimFunction
-  }
+	}
 end
 
 return {
