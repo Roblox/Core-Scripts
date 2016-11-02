@@ -11,6 +11,8 @@ local moduleApiTable = {}
 --// the rest of the code can interface with and have the guarantee that the RemoteEvents they want
 --// exist with their desired names.
 
+local FILTER_MESSAGE_TIMEOUT = 60
+
 local RunService = game:GetService("RunService")
 local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
 
@@ -468,7 +470,11 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		end
 
 		local filterData = {}
+		local filterWaitStartTime = tick()
 		while (filterData.ID ~= messageData.ID) do
+			if tick() - filterWaitStartTime > FILTER_MESSAGE_TIMEOUT then
+				return
+			end
 			filterData = EventFolder.OnMessageDoneFiltering.OnClientEvent:wait()
 		end
 
