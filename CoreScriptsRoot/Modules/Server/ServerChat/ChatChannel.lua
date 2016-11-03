@@ -6,17 +6,21 @@ local module = {}
 
 local modulesFolder = script.Parent
 local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local replicatedModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
+local ChatConstants = require(replicatedModules:WaitForChild("ChatConstants"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
+
 local methods = {}
 
 function methods:SendSystemMessage(message, extraData)
-	local messageObj = self:InternalCreateMessageObject(message, nil, extraData)
+	local messageObj = self:InternalCreateMessageObject(message, nil, true, extraData)
 
 	self:InternalAddMessageToHistoryLog(messageObj)
 
@@ -30,7 +34,7 @@ end
 function methods:SendSystemMessageToSpeaker(message, speakerName, extraData)
 	local speaker = self.Speakers[speakerName]
 	if (speaker) then
-		local messageObj = self:InternalCreateMessageObject(message, nil, extraData)
+		local messageObj = self:InternalCreateMessageObject(message, nil, true, extraData)
 		speaker:InternalSendSystemMessage(messageObj, self.Name)
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a system message", speakerName, self.Name))
@@ -40,11 +44,16 @@ end
 function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraData)
 	local speaker = self.Speakers[speakerName]
 	if (speaker) then
-		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, extraData)
+
+		local isFiltered = speakerName == fromSpeaker
+		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
 		speaker:InternalSendMessage(messageObj, self.Name)
 
-		messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message, speakerName)
-		speaker:InternalSendFilteredMessage(messageObj, self.Name)
+		if not isFiltered then
+			messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+			messageObj.IsFiltered = true
+			speaker:InternalSendFilteredMessage(messageObj, self.Name)
+		end
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
 	end
@@ -158,7 +167,7 @@ function methods:UnregisterProcessCommandsFunction(funcId)
 end
 
 local function DeepCopy(table)
-	local copy =  {}
+	local copy =	{}
 	for i, v in pairs(table) do
 		if (type(v) == table) then
 			copy[i] = DeepCopy(v)
@@ -238,12 +247,20 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		end
 	end
 
-	local messageObj = self:InternalCreateMessageObject(message, fromSpeaker.Name, extraData)
+	local messageObj = self:InternalCreateMessageObject(message, fromSpeaker.Name, false, extraData)
 
 	local sentToList = {}
 	for i, speaker in pairs(self.Speakers) do
 		table.insert(sentToList, speaker.Name)
-		speaker:InternalSendMessage(messageObj, self.Name)
+		if speaker.Name == fromSpeaker.Name then
+			-- Send unfiltered message to speaker who sent the message.
+			local cMessageObj = DeepCopy(messageObj)
+			cMessageObj.Message = message
+			cMessageObj.IsFiltered = true
+			speaker:InternalSendMessage(cMessageObj, self.Name)
+		else
+			speaker:InternalSendMessage(messageObj, self.Name)
+		end
 	end
 
 	local success, err = pcall(function() self.eMessagePosted:Fire(messageObj) end)
@@ -253,7 +270,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 
 	local filteredMessages = {}
 	for i, speakerName in pairs(sentToList) do
-		filteredMessages[speakerName] = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message, speakerName)
+		filteredMessages[speakerName] = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
 	end
 
 	for i, speakerName in pairs(sentToList) do
@@ -261,11 +278,13 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		if (speaker) then
 			local cMessageObj = DeepCopy(messageObj)
 			cMessageObj.Message = filteredMessages[speakerName]
+			cMessageObj.IsFiltered = true
 			speaker:InternalSendFilteredMessage(cMessageObj, channel)
 		end
 	end
 
-	messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, messageObj.Message, messageObj.FromSpeaker)
+	messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, messageObj.FromSpeaker)
+	messageObj.IsFiltered = true
 	self:InternalAddMessageToHistoryLog(messageObj)
 
 	return messageObj
@@ -315,14 +334,27 @@ function methods:InternalAddMessageToHistoryLog(messageObj)
 	self:InternalRemoveExcessMessagesFromLog()
 end
 
-function methods:InternalCreateMessageObject(message, fromSpeaker, extraData)
+function methods:GetMessageType(message, fromSpeaker)
+	if fromSpeaker == nil then
+		return ChatConstants.MessageTypeSystem
+	end
+	if string.sub(message, 1, 3) == "/me" then
+		return ChatConstants.MessageTypeMeCommand
+	end
+	return ChatConstants.MessageTypeDefault
+end
+
+function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
+	local messageType = self:GetMessageType(message, fromSpeaker)
 	local messageObj =
 	{
 		ID = self.ChatService:InternalGetUniqueMessageId(),
 		FromSpeaker = fromSpeaker,
 		OriginalChannel = self.Name,
-		IsFiltered = false,
-		Message = message,
+		MessageLength = string.len(message),
+		MessageType = messageType,
+		IsFiltered = isFiltered,
+		Message = isFiltered and message or nil,
 		Time = os.time(),
 		ExtraData = {},
 	}

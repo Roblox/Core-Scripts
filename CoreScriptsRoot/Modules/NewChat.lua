@@ -175,6 +175,7 @@ do
 
 					DoConnect("ChatBarFocusChanged")
 					DoConnect("VisibilityStateChanged")
+					DoConnect("MessagesChanged")
 
 					local index = "MessagePosted"
 					communicationsConnections.ChatWindow[index] = FindInCollectionByKeyAndType(chatWindowCollection, index, "BindableEvent")

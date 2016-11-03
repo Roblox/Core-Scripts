@@ -2,13 +2,12 @@
 --	// Written by: TheGamer101
 --	// Description: Create a message label for a standard chat message.
 
-local MESSAGE_TYPE = "Message"
-
 local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
 local util = require(script.Parent:WaitForChild("Util"))
 
-function CreateMessageLabel(messageData)
+function CreateMessageLabel(messageData, channelName)
 
 	local fromSpeaker = messageData.FromSpeaker
 	local message = messageData.Message
@@ -23,18 +22,27 @@ function CreateMessageLabel(messageData)
 	local formatUseName = string.format("[%s]:", fromSpeaker)
 	local speakerNameSize = util:GetStringTextBounds(formatUseName, useFont, useTextSize)
 	local numNeededSpaces = util:GetNumberOfSpaces(formatUseName, useFont, useTextSize) + 1
-	local numNeededUnderscore = util:GetNumberOfUnderscores(message, useFont, useTextSize)
 
-	local tempMessage = string.rep(" ", numNeededSpaces) .. string.rep("_", numNeededUnderscore)
-	if messageData.IsFiltered then
-		tempMessage = string.rep(" ", numNeededSpaces) .. messageData.Message
-	end
-	local BaseFrame, BaseMessage = util:CreateBaseMessage(tempMessage, useFont, useTextSize, useChatColor)
+	local BaseFrame, BaseMessage = util:CreateBaseMessage("", useFont, useTextSize, useChatColor)
 	local NameButton = util:AddNameButtonToBaseMessage(BaseMessage, useNameColor, formatUseName)
+	local ChannelButton = nil
 
-	local function UpdateTextFunction(newMessageObject)
-		BaseMessage.Text = string.rep(" ", numNeededSpaces) .. newMessageObject.Message
+	if channelName ~= messageData.OriginalChannel then
+			local formatChannelName = string.format("{%s}", messageData.OriginalChannel)
+			ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName, useNameColor)
+			NameButton.Position = UDim2.new(0, ChannelButton.Size.X.Offset + util:GetStringTextBounds(" ", useFont, useTextSize).X, 0, 0)
+			numNeededSpaces = numNeededSpaces + util:GetNumberOfSpaces(formatChannelName, useFont, useTextSize) + 1
 	end
+
+	local function UpdateTextFunction(messageObject)
+		if messageData.IsFiltered then
+			BaseMessage.Text = string.rep(" ", numNeededSpaces) .. messageObject.Message
+		else
+			BaseMessage.Text = string.rep(" ", numNeededSpaces) .. string.rep("_", messageObject.MessageLength)
+		end
+	end
+
+	UpdateTextFunction(messageData)
 
 	local function GetHeightFunction()
 		return util:GetMessageHeight(BaseMessage, BaseFrame)
@@ -65,9 +73,15 @@ function CreateMessageLabel(messageData)
 	local function AnimGuiObjects()
 		BaseMessage.TextTransparency = AnimParams.Text_CurrentTransparency
 		NameButton.TextTransparency = AnimParams.Text_CurrentTransparency
+		if ChannelButton then
+			ChannelButton.TextTransparency = AnimParams.Text_CurrentTransparency
+		end
 
 		BaseMessage.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
 		NameButton.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
+		if ChannelButton then
+			ChannelButton.TextStrokeTransparency = AnimParams.TextStroke_CurrentTransparency
+		end
 	end
 
 	local function UpdateAnimFunction(dtScale, CurveUtil)
@@ -88,16 +102,16 @@ function CreateMessageLabel(messageData)
 	end
 
 	return {
-    [util.KEY_BASE_FRAME] = BaseFrame,
-    [util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction,
+		[util.KEY_BASE_FRAME] = BaseFrame,
+		[util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction,
 		[util.KEY_GET_HEIGHT] = GetHeightFunction,
 		[util.KEY_FADE_IN] = FadeInFunction,
 		[util.KEY_FADE_OUT] = FadeOutFunction,
 		[util.KEY_UPDATE_ANIMATION] = UpdateAnimFunction
-  }
+	}
 end
 
 return {
-	[util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
+	[util.KEY_MESSAGE_TYPE] = ChatConstants.MessageTypeDefault,
 	[util.KEY_CREATOR_FUNCTION] = CreateMessageLabel
 }

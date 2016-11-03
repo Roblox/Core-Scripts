@@ -35,7 +35,7 @@ local function setDialogInUse(player, dialog, value, waitTime)
 	end
 	if dialog ~= nil then
 		dialog.InUse = value
-		
+
 		if dialogInUseFixFlag then
 			if value == true then
 				playerDialogMap[player] = dialog

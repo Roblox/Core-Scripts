@@ -69,16 +69,16 @@ A Speaker object is a representation of one entity that can speak in a ChatChann
 
 #### Methods
 	void SayMessage(string message, string channelName)
-	
+
 	void JoinChannel(string channelName)
 	void LeaveChannel(string channelName)
-	
+
 	string[] GetChannelList()
 	bool IsInChannel(string channelName)
-	
+
 	void SendMessage(string fromSpeaker, string channel, string message)
 	void SendSystemMessage(string message, string channel)
-	
+
 	Player GetPlayerObject() (returns nil for non-player speakers)
 
 	void SetExtraData(string key, Variant data)
@@ -94,3 +94,25 @@ A Speaker object is a representation of one entity that can speak in a ChatChann
 	Unmuted(string channelName)
 	ExtraDataUpdated(string key, Variant value)
 ___
+
+#### Message Object format
+```
+{
+    int ID
+    string FromSpeaker
+    string OriginalChannel
+    bool IsFiltered
+		int MessageLength
+    string Message
+		string MessageType
+    int Time
+    table ExtraData {
+        Color3 ChatColor
+        Color3 NameColor
+        Enum.Font Font
+        int TextSize
+        table Tags
+    }
+}
+```
+	Note: Message will not exist on the client if IsFiltered is False
