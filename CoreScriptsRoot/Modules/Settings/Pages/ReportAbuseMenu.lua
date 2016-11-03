@@ -75,6 +75,9 @@ local function Initialize()
 		if index == 1 then
 			this.GameOrPlayerMode:SetSelectionIndex(1)
 			this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
+		else
+			this.WhichPlayerLabel.ZIndex = 2
+			this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
 		end
 
 		this.WhichPlayerMode:SetInteractable(index > 1 and this.GameOrPlayerMode.CurrentIndex ~= 1)
@@ -134,6 +137,12 @@ local function Initialize()
 			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
 		end
 		
+		this.AbuseDescription.Selection.FocusLost:connect(function()
+			if this.AbuseDescription.Selection.Text == "" then
+				this.AbuseDescription.Selection.Text = DEFAULT_ABUSE_DESC_TEXT
+			end
+		end)
+		
 		if utility:IsSmallTouchScreen() then
 			this.AbuseDescription.Selection.Size = UDim2.new(0, 290, 0, 30)
 			this.AbuseDescription.Selection.Position = UDim2.new(1,-345,this.AbuseDescription.Selection.Position.Y.Scale, this.AbuseDescription.Selection.Position.Y.Offset)
@@ -173,6 +182,7 @@ local function Initialize()
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
 				
 				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_GAME > 1)
+				this.TypeOfAbuseLabel.ZIndex = (#ABUSE_TYPES_GAME > 1 and 2 or 1)
 
 				this.WhichPlayerMode:SetInteractable(false)
 				this.WhichPlayerLabel.ZIndex = 1
@@ -181,6 +191,8 @@ local function Initialize()
 			else
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
 				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_PLAYER > 1)
+				this.TypeOfAbuseLabel.ZIndex = (#ABUSE_TYPES_PLAYER > 1 and 2 or 1)
+				
 				if #playerNames > 0 then
 					this.WhichPlayerMode:SetInteractable(true)
 					this.WhichPlayerLabel.ZIndex = 2
@@ -276,7 +288,6 @@ local function Initialize()
 		local function typeOfAbuseChanged(newIndex)
 			if newIndex ~= nil then
 				if this.GameOrPlayerMode.CurrentIndex == 1 then -- 1 is Report Game
-					print("activating submit button")
 					makeSubmitButtonActive()
 				else -- 2 is Report Player
 					if this.WhichPlayerMode:GetSelectedIndex() then
