@@ -17,7 +17,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local ClientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
-local ChatConstants = require(ClientChatModules:WaitForChild(ChatConstants))
+local ChatConstants = require(ClientChatModules:WaitForChild("ChatConstants"))
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren =
