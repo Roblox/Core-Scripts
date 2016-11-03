@@ -1011,6 +1011,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 				ZIndex = 2
 			}
 			autoSelectButton.MouseButton1Click:connect(function()
+				if not interactable then return end
 				local newIndex = this.CurrentIndex + 1
 				if newIndex > #this.Selections then
 					newIndex = 1
