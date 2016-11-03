@@ -55,10 +55,15 @@ end
 local create = function(className, defaultParent)
 	return function(propertyList)
 		local object = Instance.new(className)
+		local parent = nil
 
 		for index, value in next, propertyList do
 			if type(index) == 'string' then
-				object[index] = value
+				if index == 'Parent' then
+					parent = value
+				else
+					object[index] = value
+				end
 			else
 				if type(value) == 'function' then
 					value(object)
@@ -66,6 +71,10 @@ local create = function(className, defaultParent)
 					value.Parent = object
 				end
 			end
+		end
+		
+		if parent then
+			object.Parent = parent
 		end
 
 		if object.Parent == nil then
