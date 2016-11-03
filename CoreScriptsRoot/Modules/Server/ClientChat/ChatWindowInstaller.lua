@@ -34,7 +34,6 @@ local function Install()
 		LoadModule(script.Parent, "ChatChannel", ChatMain)
 		LoadModule(script.Parent, "MessageLogDisplay", ChatMain)
 		LoadModule(script.Parent, "ChatWindow", ChatMain)
-		--LoadModule("SpeakerDatabase", ChatMain)
 		LoadModule(script.Parent, "MessageLabelCreator", ChatMain)
 		LoadModule(script.Parent, "CommandProcessor", ChatMain)
 		LoadModule(script.Parent, "ChannelsTab", ChatMain)
@@ -50,6 +49,7 @@ local function Install()
 		ClientChatModules.Name = "ClientChatModules"
 
 		LoadModule(script.Parent.DefaultClientChatModules, "ChatSettings", ClientChatModules)
+		LoadModule(script.Parent.DefaultClientChatModules, "ChatConstants", ClientChatModules)
 
 		ClientChatModules.Parent = installDirectory
 	end

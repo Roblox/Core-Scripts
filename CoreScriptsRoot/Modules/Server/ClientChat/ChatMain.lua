@@ -11,8 +11,13 @@ local moduleApiTable = {}
 --// the rest of the code can interface with and have the guarantee that the RemoteEvents they want
 --// exist with their desired names.
 
+local FILTER_MESSAGE_TIMEOUT = 60
+
 local RunService = game:GetService("RunService")
-local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
+local ClientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local ChatConstants = require(ClientChatModules:WaitForChild("ChatConstants"))
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren =
@@ -350,13 +355,15 @@ local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 			ID = -1,
 			FromSpeaker = nil,
 			OriginalChannel = channelName,
-			IsFiltered = false,
+			IsFiltered = true,
+			MessageLength = string.len(message),
 			Message = message,
+			MessageType = ChatConstants.MessageTypeSystem,
 			Time = os.time(),
 			ExtraData = extraData,
 		}
 
-		channelObj:AddMessageToChannel(messageData, "SystemMessage")
+		channelObj:AddMessageToChannel(messageData)
 	end
 end
 
@@ -433,16 +440,18 @@ end
 setupChatBarConnections()
 ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
 
+-- Wrap the OnMessageDoneFiltering event so that we do not back up the remote event invocation queue.
+-- This is in cases where we are sent OnMessageDoneFiltering events but we have stopped listening/timed out.
+-- BindableEvents do not queue, while RemoteEvents do.
+local FilteredMessageReceived = Instance.new("BindableEvent")
+EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
+	FilteredMessageReceived:Fire(messageData)
+end)
+
 EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
-		if not ChatSettings.ShowUserOwnFilteredMessage then
-			if (messageData.FromSpeaker == LocalPlayer.Name) then
-				messageData.IsFiltered = true
-			end
-		end
-
-		channelObj:AddMessageToChannel(messageData, "Message")
+		channelObj:AddMessageToChannel(messageData)
 
 		if (messageData.FromSpeaker ~= LocalPlayer.Name) then
 			ChannelsBar:UpdateMessagePostedInChannel(channelName)
@@ -452,7 +461,7 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
 			generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 			if (generalChannel) then
-				generalChannel:AddMessageToChannel(messageData, "ChannelEchoMessage")
+				generalChannel:AddMessageToChannel(messageData)
 			end
 		end
 
@@ -461,6 +470,10 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 
 		DoFadeInFromNewInformation()
 
+		if messageData.IsFiltered then
+			return
+		end
+
 		if not ChatSettings.ShowUserOwnFilteredMessage then
 			if (messageData.FromSpeaker == LocalPlayer.Name) then
 				return
@@ -468,8 +481,12 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		end
 
 		local filterData = {}
+		local filterWaitStartTime = tick()
 		while (filterData.ID ~= messageData.ID) do
-			filterData = EventFolder.OnMessageDoneFiltering.OnClientEvent:wait()
+			if tick() - filterWaitStartTime > FILTER_MESSAGE_TIMEOUT then
+				return
+			end
+			filterData = FilteredMessageReceived.Event:wait()
 		end
 
 		--// Speaker may leave these channels during the time it takes to filter.
@@ -490,7 +507,7 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, chann
 
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
-		channelObj:AddMessageToChannel(messageData, "SystemMessage")
+		channelObj:AddMessageToChannel(messageData)
 
 		ChannelsBar:UpdateMessagePostedInChannel(channelName)
 
@@ -502,7 +519,7 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, chann
 		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
 			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 			if (generalChannel) then
-				generalChannel:AddMessageToChannel(messageData, "ChannelEchoSystemMessage")
+				generalChannel:AddMessageToChannel(messageData)
 			end
 		end
 	else
@@ -526,11 +543,7 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 		if (messageLog) then
 			for i, messageLogData in pairs(messageLog) do
 
-				if (messageLogData.FromSpeaker) then
-					channelObj:AddMessageToChannel(messageLogData, "Message")
-				else
-					channelObj:AddMessageToChannel(messageLogData, "SystemMessage")
-				end
+				channelObj:AddMessageToChannel(messageLogData)
 
 				channelObj:UpdateMessageFiltered(messageLogData)
 			end
@@ -541,12 +554,14 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 				ID = -1,
 				FromSpeaker = nil,
 				OriginalChannel = channel,
-				IsFiltered = false,
+				IsFiltered = true,
+				MessageLength = string.len(welcomeMessage),
 				Message = welcomeMessage,
+				MessageType = ChatConstants.MessageTypeWelcome,
 				Time = os.time(),
 				ExtraData = nil,
 			}
-			channelObj:AddMessageToChannel(welcomeMessageObject, "WelcomeMessage")
+			channelObj:AddMessageToChannel(welcomeMessageObject)
 		end
 
 		DoFadeInFromNewInformation()
@@ -801,12 +816,14 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 				ID = -1,
 				FromSpeaker = nil,
 				OriginalChannel = channel,
-				IsFiltered = false,
+				IsFiltered = true,
+				MessageLength = string.len(valueTable.Text),
 				Message = valueTable.Text,
+				MessageType = ChatConstants.MessageTypeSetCore,
 				Time = os.time(),
 				ExtraData = valueTable,
 			}
-			channelObj:AddMessageToChannel(messageObject, "SetCoreMessage")
+			channelObj:AddMessageToChannel(messageObject)
 			ChannelsBar:UpdateMessagePostedInChannel(channel)
 
 			moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1

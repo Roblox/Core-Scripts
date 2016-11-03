@@ -2,13 +2,12 @@
 --	// Written by: TheGamer101
 --	// Description: Create a message label for a welcome message.
 
-local MESSAGE_TYPE = "WelcomeMessage"
-
 local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
 local util = require(script.Parent:WaitForChild("Util"))
 
-function CreateWelcomeMessageLabel(messageData)
+function CreateWelcomeMessageLabel(messageData, channelName)
 	local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or ChatSettings.DefaultFont
@@ -76,6 +75,6 @@ function CreateWelcomeMessageLabel(messageData)
 end
 
 return {
-	[util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
+	[util.KEY_MESSAGE_TYPE] = ChatConstants.MessageTypeWelcome,
 	[util.KEY_CREATOR_FUNCTION] = CreateWelcomeMessageLabel
 }
