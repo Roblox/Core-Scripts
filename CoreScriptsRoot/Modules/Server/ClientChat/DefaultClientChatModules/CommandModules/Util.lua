@@ -10,6 +10,9 @@ a bool command processed.
 3) Return this function from the module.
 --]]
 
+local clientChatModules = script.Parent.Parent
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
+
 local COMMAND_MODULES_VERSION = 1
 
 local KEY_COMMAND_PROCESSOR_TYPE = "ProcessorType"
@@ -34,7 +37,7 @@ function methods:SendSystemMessageToSelf(message, channelObj, extraData)
 		IsFiltered = true,
 		MessageLength = string.len(message),
 		Message = message,
-		MessageType = "SystemMessage",
+		MessageType = ChatConstants.MessageTypeSystem,
 		Time = os.time(),
 		ExtraData = extraData,
 	}

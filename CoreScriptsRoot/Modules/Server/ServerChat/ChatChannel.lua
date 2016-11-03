@@ -6,13 +6,17 @@ local module = {}
 
 local modulesFolder = script.Parent
 local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local replicatedModules = ReplicatedStorage:WaitForChild("ClientChatModules")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
+local ChatConstants = require(replicatedModules:WaitForChild("ChatConstants"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
+
 local methods = {}
 
 function methods:SendSystemMessage(message, extraData)
@@ -332,12 +336,12 @@ end
 
 function methods:GetMessageType(message, fromSpeaker)
 	if fromSpeaker == nil then
-		return "SystemMessage"
+		return ChatConstants.MessageTypeSystem
 	end
 	if string.sub(message, 1, 3) == "/me" then
-		return "MeCommandMessage"
+		return ChatConstants.MessageTypeMeCommand
 	end
-	return "Message"
+	return ChatConstants.MessageTypeDefault
 end
 
 function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)

@@ -2,10 +2,9 @@
 --	// Written by: TheGamer101
 --	// Description: Create a message label for a system message.
 
-local MESSAGE_TYPE = "SystemMessage"
-
 local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
 local util = require(script.Parent:WaitForChild("Util"))
 
 function CreateSystemMessageLabel(messageData, channelName)
@@ -89,6 +88,6 @@ function CreateSystemMessageLabel(messageData, channelName)
 end
 
 return {
-	[util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
+	[util.KEY_MESSAGE_TYPE] = ChatConstants.MessageTypeSystem,
 	[util.KEY_CREATOR_FUNCTION] = CreateSystemMessageLabel
 }

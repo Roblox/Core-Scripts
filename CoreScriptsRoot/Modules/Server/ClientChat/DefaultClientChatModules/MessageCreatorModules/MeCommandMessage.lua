@@ -2,10 +2,9 @@
 --	// Written by: TheGamer101
 --	// Description: Create a message label for a me command message.
 
-local MESSAGE_TYPE = "MeCommandMessage"
-
 local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
 local util = require(script.Parent:WaitForChild("Util"))
 
 function CreateMeCommandMessageLabel(messageData, channelName)
@@ -100,6 +99,6 @@ function CreateMeCommandMessageLabel(messageData, channelName)
 end
 
 return {
-	[util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
+	[util.KEY_MESSAGE_TYPE] = ChatConstants.MessageTypeMeCommand,
 	[util.KEY_CREATOR_FUNCTION] = CreateMeCommandMessageLabel
 }

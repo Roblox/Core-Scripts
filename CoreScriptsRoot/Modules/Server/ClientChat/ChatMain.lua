@@ -14,7 +14,10 @@ local moduleApiTable = {}
 local FILTER_MESSAGE_TIMEOUT = 60
 
 local RunService = game:GetService("RunService")
-local EventFolder = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
+local ClientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local ChatConstants = require(ClientChatModules:WaitForChild(ChatConstants))
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren =
@@ -355,7 +358,7 @@ local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 			IsFiltered = true,
 			MessageLength = string.len(message),
 			Message = message,
-			MessageType = "SystemMessage",
+			MessageType = ChatConstants.MessageTypeSystem,
 			Time = os.time(),
 			ExtraData = extraData,
 		}
@@ -554,7 +557,7 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 				IsFiltered = true,
 				MessageLength = string.len(welcomeMessage),
 				Message = welcomeMessage,
-				MessageType = "WelcomeMessage",
+				MessageType = ChatConstants.MessageTypeWelcome,
 				Time = os.time(),
 				ExtraData = nil,
 			}
@@ -816,7 +819,7 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 				IsFiltered = true,
 				MessageLength = string.len(valueTable.Text),
 				Message = valueTable.Text,
-				MessageType = "SetCoreMessage",
+				MessageType = ChatConstants.MessageTypeSetCore,
 				Time = os.time(),
 				ExtraData = valueTable,
 			}

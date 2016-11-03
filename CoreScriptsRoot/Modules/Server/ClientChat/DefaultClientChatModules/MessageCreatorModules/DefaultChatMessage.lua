@@ -2,10 +2,9 @@
 --	// Written by: TheGamer101
 --	// Description: Create a message label for a standard chat message.
 
-local MESSAGE_TYPE = "Message"
-
 local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
 local util = require(script.Parent:WaitForChild("Util"))
 
 function CreateMessageLabel(messageData, channelName)
@@ -113,6 +112,6 @@ function CreateMessageLabel(messageData, channelName)
 end
 
 return {
-	[util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
+	[util.KEY_MESSAGE_TYPE] = ChatConstants.MessageTypeDefault,
 	[util.KEY_CREATOR_FUNCTION] = CreateMessageLabel
 }
