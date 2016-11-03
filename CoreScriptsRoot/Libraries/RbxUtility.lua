@@ -1,6 +1,7 @@
 local t = {}
 
- 
+local rbxUtilitySetParentLastFlagSuccess, rbxUtilitySetParentLastFlagValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserRbxUtilityCreateSetParentLast") end)
+local rbxUtilitySetParentLast = (rbxUtilitySetParentLastFlagSuccess == true and rbxUtilitySetParentLastFlagValue == true)
 
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
@@ -45,7 +46,6 @@ local setmetatable = setmetatable
 local pairs = pairs
 local ipairs = ipairs
 local assert = assert
-local Chipmunk = Chipmunk
 
 
 local StringBuilder = {
@@ -935,7 +935,7 @@ local function Create_PrivImpl(objectType)
 		for k, v in pairs(dat) do
 			--add property
 			if type(k) == 'string' then
-				if k == 'Parent' then
+				if rbxUtilitySetParentLast and k == 'Parent' then
 					-- Parent should always be set last, setting the Parent of a new object
 					-- immediately makes performance worse for all subsequent property updates.
 					parent = v
@@ -983,7 +983,7 @@ local function Create_PrivImpl(objectType)
 			ctor(obj)
 		end
 		
-		if parent then
+		if rbxUtilitySetParentLast and parent then
 			obj.Parent = parent
 		end
 
