@@ -46,6 +46,7 @@ local RbxGui = script.Parent
 local NotificationQueue = {}
 local OverflowQueue = {}
 local FriendRequestBlacklist = {}
+local BadgeBlacklist = {}
 local CurrentGraphicsQualityLevel = GameSettings.SavedQualityLevel.Value
 local BindableEvent_SendNotification = Instance.new('BindableEvent')
 BindableEvent_SendNotification.Name = "SendNotification"
@@ -605,7 +606,8 @@ end
 
 --[[ Badge Notification ]]--
 local function onBadgeAwarded(message, userId, badgeId)
-	if badgesNotificationsActive and userId == LocalPlayer.userId then
+	if BadgeBlacklist[badgeId] and badgesNotificationsActive and userId == LocalPlayer.userId then
+		BadgeBlacklist[badgeId] = true
 		if newNotificationPath then
 			sendNotificationInfo {
 				GroupName = "BadgeAwards",
