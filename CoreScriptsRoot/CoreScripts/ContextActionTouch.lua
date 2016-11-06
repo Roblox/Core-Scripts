@@ -2,6 +2,7 @@
 -- Copyright ROBLOX 2014, created by Ben Tkacheff
 -- this script controls ui and firing of lua functions that are bound in ContextActionService for touch inputs
 -- Essentially a user can bind a lua function to a key code, input type (mousebutton1 etc.) and this
+-- Here is another comment
 
 -- Variables
 local contextActionService = game:GetService("ContextActionService")
@@ -18,8 +19,8 @@ local ContextUpImage = "https://www.roblox.com/asset/?id=97166444"
 
 local oldTouches = {}
 
-local buttonPositionTable = {	
-								[1] = UDim2.new(0,123,0,70), 
+local buttonPositionTable = {
+								[1] = UDim2.new(0,123,0,70),
 								[2] = UDim2.new(0,30,0,60),
 								[3] = UDim2.new(0,180,0,160),
 								[4] = UDim2.new(0,85,0,-25),
@@ -108,7 +109,7 @@ function createNewButton(actionName, functionInfoTable)
 	contextButton.BackgroundTransparency = 1
 	contextButton.Size = UDim2.new(0,45,0,45)
 	contextButton.Active = true
-	if isSmallScreenDevice() then 
+	if isSmallScreenDevice() then
 		contextButton.Size = UDim2.new(0,35,0,35)
 	end
 	contextButton.Image = ContextUpImage
@@ -207,7 +208,7 @@ function removeAction(actionName)
 	if not functionTable[actionName] then return end
 
 	local actionButton = functionTable[actionName]["button"]
-	
+
 	if actionButton then
 		actionButton.Parent = nil
 
