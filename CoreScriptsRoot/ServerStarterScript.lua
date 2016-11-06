@@ -57,6 +57,7 @@ game:GetService("Players").PlayerRemoving:connect(function(player)
 			end
 		end
 	end
+	player:Kick()
 end)
 
 local success, retVal = pcall(function() return game:GetService("Chat"):GetShouldUseLuaChat() end)
