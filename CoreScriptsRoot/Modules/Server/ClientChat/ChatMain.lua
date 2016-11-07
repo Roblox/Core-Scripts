@@ -402,21 +402,20 @@ function chatBarFocusLost(enterPressed, inputObject)
 
 		ChatBar:GetTextBox().Text = ""
 
-		if (message ~= "" and not CommandProcessor:ProcessCompletedChatMessage(message, ChatWindow)) then
-			message = string.gsub(message, "\n", "")
-			message = string.gsub(message, "[ ]+", " ")
+		if message ~= "" then
+			--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
+			moduleApiTable.MessagePosted:fire(message)
 
-			local targetChannel = ChatWindow:GetTargetMessageChannel()
-			if (targetChannel) then
-				MessageSender:SendMessage(message, targetChannel)
+			if not CommandProcessor:ProcessCompletedChatMessage(message, ChatWindow) then
+				message = string.gsub(message, "\n", "")
+				message = string.gsub(message, "[ ]+", " ")
 
-				if (targetChannel == ChatSettings.GeneralChannelName) then
-					--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
-					moduleApiTable.MessagePosted:fire(message)
+				local targetChannel = ChatWindow:GetTargetMessageChannel()
+				if targetChannel then
+					MessageSender:SendMessage(message, targetChannel)
+				else
+					MessageSender:SendMessage(message, nil)
 				end
-			else
-				MessageSender:SendMessage(message, nil)
-
 			end
 		end
 
