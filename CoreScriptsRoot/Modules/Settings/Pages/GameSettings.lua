@@ -146,61 +146,6 @@ local function Initialize()
     this.GraphicsQualitySlider:SetMinStep(1)
 
     ------------------------------------------------------
-    ------------------
-    ------------------ Performance Stats -----------------
-    this.PerformanceStatsFrame, 
-    this.PerformanceStatsLabel,
-    this.PerformanceStatsMode,
-    this.PerformanceStatsOverrideText = nil
-
-    function GetDesiredPerformanceStatsIndex()
-      if GameSettings.PerformanceStatsVisible then
-        return 1
-      else
-        return 2
-      end
-    end
-
-    local startIndex = GetDesiredPerformanceStatsIndex()
-
-    this.PerformanceStatsFrame, 
-    this.PerformanceStatsLabel,
-    this.PerformanceStatsMode = utility:AddNewRow(this, 
-      "Performance Stats", 
-      "Selector", 
-      {"On", "Off"}, 
-      startIndex)
-
-    this.PerformanceStatsOverrideText = utility:Create'TextLabel'
-    {
-      Name = "PerformanceStatsLabel",
-      Text = "Set by Developer",
-      TextColor3 = Color3.new(1,1,1),
-      Font = Enum.Font.SourceSans,
-      FontSize = Enum.FontSize.Size24,
-      BackgroundTransparency = 1,
-      Size = UDim2.new(0,200,1,0),
-      Position = UDim2.new(1,-350,0,0),
-      Visible = false,
-      ZIndex = 2,
-      Parent = this.PerformanceStatsFrame
-    };
-
-    this.PerformanceStatsMode.IndexChanged:connect(function(newIndex)
-        if newIndex == 1 then
-          GameSettings.PerformanceStatsVisible = true
-        else
-          GameSettings.PerformanceStatsVisible = false
-        end
-      end)
-    
-    GameSettings.PerformanceStatsVisibleChanged:connect(function()
-        local desiredIndex = GetDesiredPerformanceStatsIndex()
-        if desiredIndex ~= this.PerformanceStatsMode.CurrentIndex then 
-          this.PerformanceStatsMode:SetSelectionIndex(desiredIndex)
-        end
-      end)
-
     ------------------------- Connection Setup ----------------------------
     settings().Rendering.EnableFRM = true
 
@@ -284,7 +229,64 @@ local function Initialize()
           this.GraphicsQualitySlider:SetValue(graphicsLevel)
         end)
     end
-  end
+  end  -- of createGraphicsOptions
+  
+  local function createPerformanceStatsOptions()    
+    ------------------
+    ------------------ Performance Stats -----------------
+    this.PerformanceStatsFrame, 
+    this.PerformanceStatsLabel,
+    this.PerformanceStatsMode,
+    this.PerformanceStatsOverrideText = nil
+
+    function GetDesiredPerformanceStatsIndex()
+      if GameSettings.PerformanceStatsVisible then
+        return 1
+      else
+        return 2
+      end
+    end
+
+    local startIndex = GetDesiredPerformanceStatsIndex()
+
+    this.PerformanceStatsFrame, 
+    this.PerformanceStatsLabel,
+    this.PerformanceStatsMode = utility:AddNewRow(this, 
+      "Performance Stats", 
+      "Selector", 
+      {"On", "Off"}, 
+      startIndex)
+
+    this.PerformanceStatsOverrideText = utility:Create'TextLabel'
+    {
+      Name = "PerformanceStatsLabel",
+      Text = "Set by Developer",
+      TextColor3 = Color3.new(1,1,1),
+      Font = Enum.Font.SourceSans,
+      FontSize = Enum.FontSize.Size24,
+      BackgroundTransparency = 1,
+      Size = UDim2.new(0,200,1,0),
+      Position = UDim2.new(1,-350,0,0),
+      Visible = false,
+      ZIndex = 2,
+      Parent = this.PerformanceStatsFrame
+    };
+
+    this.PerformanceStatsMode.IndexChanged:connect(function(newIndex)
+        if newIndex == 1 then
+          GameSettings.PerformanceStatsVisible = true
+        else
+          GameSettings.PerformanceStatsVisible = false
+        end
+      end)
+    
+    GameSettings.PerformanceStatsVisibleChanged:connect(function()
+        local desiredIndex = GetDesiredPerformanceStatsIndex()
+        if desiredIndex ~= this.PerformanceStatsMode.CurrentIndex then 
+          this.PerformanceStatsMode:SetSelectionIndex(desiredIndex)
+        end
+      end)
+  end  -- of createPerformanceStats
 
   local function createCameraModeOptions(movementModeEnabled)
     ------------------------------------------------------
@@ -899,6 +901,8 @@ local function Initialize()
   if platform == Enum.Platform.Windows or platform == Enum.Platform.UWP or platform == Enum.Platform.OSX then
     createGraphicsOptions()
   end
+
+  createPerformanceStatsOptions()
 
   if isTenFootInterface then
     createOverscanOption()
