@@ -481,7 +481,7 @@ local function CreateCamera()
 	end
 	
 	local function onHumanoidSubjectChildAdded(child)
-		if child.Name == "BodyHeightScale" and child:IsA("DoubleConstrainedValue") then
+		if child.Name == "BodyHeightScale" and child:IsA("NumberValue") then
 			if heightScaleChangedConn then
 				heightScaleChangedConn:disconnect()
 			end
