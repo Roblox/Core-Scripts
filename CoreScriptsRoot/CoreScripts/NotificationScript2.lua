@@ -606,7 +606,7 @@ end
 
 --[[ Badge Notification ]]--
 local function onBadgeAwarded(message, userId, badgeId)
-	if BadgeBlacklist[badgeId] and badgesNotificationsActive and userId == LocalPlayer.userId then
+	if not BadgeBlacklist[badgeId] and badgesNotificationsActive and userId == LocalPlayer.userId then
 		BadgeBlacklist[badgeId] = true
 		if newNotificationPath then
 			sendNotificationInfo {
