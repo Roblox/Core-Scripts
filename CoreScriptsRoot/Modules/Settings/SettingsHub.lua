@@ -190,8 +190,7 @@ local function CreateSettingsHub()
     end
 
     UserInputService.InputBegan:connect(function(inputObject)
-        if inputObject.UserInputType == Enum.UserInputType.Gamepad1 or inputObject.UserInputType == Enum.UserInputType.Gamepad2 or
-        inputObject.UserInputType == Enum.UserInputType.Gamepad3 or inputObject.UserInputType == Enum.UserInputType.Gamepad4 then
+        if utility:IsGamepadInputType(inputObject.UserInputType) then
           if hintLabel then
             hintLabel.Image = gamepadImage
             if isTenFootInterface then
@@ -222,17 +221,7 @@ local function CreateSettingsHub()
   end
 
   local function shouldShowBumperHints(lastInputType)
-      local gamepadInputTypes = {
-          [Enum.UserInputType.Gamepad1] = true,
-          [Enum.UserInputType.Gamepad2] = true,
-          [Enum.UserInputType.Gamepad3] = true,
-          [Enum.UserInputType.Gamepad4] = true,
-          [Enum.UserInputType.Gamepad5] = true,
-          [Enum.UserInputType.Gamepad6] = true,
-          [Enum.UserInputType.Gamepad7] = true,
-          [Enum.UserInputType.Gamepad8] = true,
-      }
-      return gamepadInputTypes[lastInputType] and this.BumperHintBar.Size.Y.Offset > MINIMUM_BUMPER_HINT_HEIGHT       
+      return utility:IsGamepadInputType(lastInputType) and this.BumperHintBar.Size.Y.Offset > MINIMUM_BUMPER_HINT_HEIGHT       
   end
 
   local function createBumperHints()
