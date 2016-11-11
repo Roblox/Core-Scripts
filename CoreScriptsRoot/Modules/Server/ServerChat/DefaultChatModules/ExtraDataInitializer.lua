@@ -120,7 +120,7 @@ local function Run(ChatService)
 	local function GetNameColor(speaker)
 		local player = speaker:GetPlayer()
 		if player then
-			if player.Team ~= nil and player.Neutral == false then
+			if player.Team ~= nil then
 				return player.TeamColor.Color
 			end
 		end
@@ -129,17 +129,9 @@ local function Run(ChatService)
 
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speaker = ChatService:GetSpeaker(speakerName)
-		local player = speaker:GetPlayer()
 
 		if (not speaker:GetExtraData("NameColor")) then
 			speaker:SetExtraData("NameColor", GetNameColor(speaker))
-		end
-		if (player) then
-			player.Changed:connect(function(property)
-				if property == "Neutral" or property == "TeamColor" then
-					speaker:SetExtraData("NameColor", GetNameColor(speaker))
-				end
-			end)
 		end
 		if (not speaker:GetExtraData("ChatColor")) then
 			local specialChatColor = GetSpecialChatColor(speakerName)
