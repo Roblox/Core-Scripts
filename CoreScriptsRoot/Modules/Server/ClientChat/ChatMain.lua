@@ -540,11 +540,12 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 		end
 
 		if (messageLog) then
-			for i, messageLogData in pairs(messageLog) do
-
-				channelObj:AddMessageToChannel(messageLogData)
-
-				channelObj:UpdateMessageFiltered(messageLogData)
+			local startIndex = 1
+			if #messageLog > ChatSettings.MessageHistoryLengthPerChannel then
+				startIndex = #messageLog - ChatSettings.MessageHistoryLengthPerChannel
+			end
+			for i = startIndex, #messageLog do
+				channelObj:AddMessageToChannel(messageLog[i])
 			end
 		end
 
