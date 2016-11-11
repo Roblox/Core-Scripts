@@ -555,16 +555,21 @@ local function CreateSettingsHub()
   end
 
   local function toggleQuickProfilerFromHotkey(actionName, inputState, inputObject) 
+    print("001")
     -- Make sure it's Ctrl-F7.
     -- NOTE: This will only work if FFlagDontSwallowInputForStudioShortcuts is True.
     -- Otherwise, we never get the "Begin" input state when Ctrl key is down.
     if (not (UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or 
         UserInputService:IsKeyDown(Enum.KeyCode.RightControl))) then
+      print("002")
       return
     end
     
+    print("003")
     if actionName ==QUICK_PROFILER_ACTION_NAME then
+      print("004")
       if inputState and inputState == Enum.UserInputState.Begin then
+        print("005")
         GameSettings.PerformanceStatsVisible = not GameSettings.PerformanceStatsVisible
       end
     end
