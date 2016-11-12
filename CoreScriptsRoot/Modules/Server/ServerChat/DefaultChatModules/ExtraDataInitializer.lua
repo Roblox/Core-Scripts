@@ -120,7 +120,7 @@ local function Run(ChatService)
 	local function GetNameColor(speaker)
 		local player = speaker:GetPlayer()
 		if player then
-			if player.Team ~= nil and player.Neutral == false then
+			if player.Team ~= nil then
 				return player.TeamColor.Color
 			end
 		end
