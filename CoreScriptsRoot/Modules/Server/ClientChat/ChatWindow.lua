@@ -195,7 +195,9 @@ function methods:CreateGuiObjects(targetParent)
 	if bubbleChatOnly() then
 		ChatBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
 		ChannelsBarParentFrame.Visible = false
+		ChannelsBarParentFrame.Active = false
 		ChatChannelParentFrame.Visible = false
+		ChatChannelParentFrame.Active = false
 
 		local useXScale = 0
 		local useXOffset = 0

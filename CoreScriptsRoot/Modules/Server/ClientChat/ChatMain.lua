@@ -285,9 +285,16 @@ spawn(function()
 	end
 end)
 
+function bubbleChatOnly()
+ 	return not Players.ClassicChat and Players.BubbleChat
+end
 
 local function UpdateMousePosition(mousePos)
 	if not (moduleApiTable.Visible and moduleApiTable.IsCoreGuiEnabled and moduleApiTable.TopbarEnabled) then return end
+
+	if bubbleChatOnly() then
+		return
+	end
 
 	local windowPos = ChatWindow.GuiObject.AbsolutePosition
 	local windowSize = ChatWindow.GuiObject.AbsoluteSize
