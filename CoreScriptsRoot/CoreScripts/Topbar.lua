@@ -1686,7 +1686,8 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 		end
 	end
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
-		local showTopbarChatIcon = enabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio())
+		local ChatSelector = require(GuiRoot.Modules.ChatSelector)
+		local showTopbarChatIcon = enabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or ChatSelector:GetNewLuaChatFlag() or RunService:IsStudio())
 		local showThree3DChatIcon = coreGuiEnabled and InputService.VREnabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio())
 
 		if showThree3DChatIcon then
