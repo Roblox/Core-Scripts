@@ -41,11 +41,10 @@ local function Install()
 		ChatModules.Name = "ChatModules"
 		ChatModules.Archivable = false
 
-		LoadModule(script.Parent.DefaultChatModules, "ExtraDataInitializer", ChatModules)
-		LoadModule(script.Parent.DefaultChatModules, "ChatCommandsTeller", ChatModules)
-		LoadModule(script.Parent.DefaultChatModules, "ChatFloodDetector", ChatModules)
-		LoadModule(script.Parent.DefaultChatModules, "PrivateMessaging", ChatModules)
-		LoadModule(script.Parent.DefaultChatModules, "TeamChat", ChatModules)
+		local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
+		for i = 1, #defaultChatModules do
+			LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
+		end
 
 		ChatModules.Parent = installDirectory
 	end

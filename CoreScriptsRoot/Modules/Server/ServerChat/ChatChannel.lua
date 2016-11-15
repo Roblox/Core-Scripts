@@ -44,6 +44,10 @@ end
 function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraData)
 	local speaker = self.Speakers[speakerName]
 	if (speaker) then
+		local isMuted = speaker:IsSpeakerMuted(fromSpeaker)
+		if isMuted then
+			return
+		end
 
 		local isFiltered = speakerName == fromSpeaker
 		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
@@ -251,15 +255,18 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 
 	local sentToList = {}
 	for i, speaker in pairs(self.Speakers) do
-		table.insert(sentToList, speaker.Name)
-		if speaker.Name == fromSpeaker.Name then
-			-- Send unfiltered message to speaker who sent the message.
-			local cMessageObj = DeepCopy(messageObj)
-			cMessageObj.Message = message
-			cMessageObj.IsFiltered = true
-			speaker:InternalSendMessage(cMessageObj, self.Name)
-		else
-			speaker:InternalSendMessage(messageObj, self.Name)
+		local isMuted = speaker:IsSpeakerMuted(fromSpeaker.Name)
+		if not isMuted then
+			table.insert(sentToList, speaker.Name)
+			if speaker.Name == fromSpeaker.Name then
+				-- Send unfiltered message to speaker who sent the message.
+				local cMessageObj = DeepCopy(messageObj)
+				cMessageObj.Message = message
+				cMessageObj.IsFiltered = true
+				speaker:InternalSendMessage(cMessageObj, self.Name)
+			else
+				speaker:InternalSendMessage(messageObj, self.Name)
+			end
 		end
 	end
 
