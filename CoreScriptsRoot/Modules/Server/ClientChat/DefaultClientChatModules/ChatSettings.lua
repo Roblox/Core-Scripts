@@ -10,6 +10,7 @@ module.WindowResizable = false
 module.ShowChannelsBar = false
 module.GamepadNavigationEnabled = false
 module.ShowUserOwnFilteredMessage = false	--Show a user the filtered version of their message rather than the original.
+-- Make the chat work when the top bar is off
 
 ---[[ Chat Text Size Settings ]]
 module.ChatWindowTextSize = 18

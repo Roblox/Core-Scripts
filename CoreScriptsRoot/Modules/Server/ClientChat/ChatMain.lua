@@ -292,7 +292,7 @@ function bubbleChatOnly()
 end
 
 local function UpdateMousePosition(mousePos)
-	if not (moduleApiTable.Visible and moduleApiTable.IsCoreGuiEnabled and moduleApiTable.TopbarEnabled) then return end
+	if not (moduleApiTable.Visible and moduleApiTable.IsCoreGuiEnabled and (moduleApiTable.TopbarEnabled or ChatSettings.ChatOnWithTopBarOff)) then return end
 
 	if bubbleChatOnly() then
 		return
@@ -801,7 +801,7 @@ moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	moduleApiTable.IsCoreGuiEnabled = enabled
 	DealWithCoreGuiEnabledChanged(moduleApiTable.IsCoreGuiEnabled)
 
-	enabled = enabled and moduleApiTable.TopbarEnabled
+	enabled = enabled and (moduleApiTable.TopbarEnabled or ChatSettings.ChatOnWithTopBarOff)
 
 	ChatWindow:SetCoreGuiEnabled(enabled)
 
