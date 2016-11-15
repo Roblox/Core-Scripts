@@ -15,9 +15,11 @@ local FILTER_MESSAGE_TIMEOUT = 60
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Chat = game:GetService("Chat")
+
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
-local ClientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
-local ChatConstants = require(ClientChatModules:WaitForChild("ChatConstants"))
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren =
@@ -105,8 +107,8 @@ ChatWindow:RegisterChatBar(ChatBar)
 ChatWindow:RegisterChannelsBar(ChannelsBar)
 ChatWindow:RegisterMessageLogDisplay(MessageLogDisplay)
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
