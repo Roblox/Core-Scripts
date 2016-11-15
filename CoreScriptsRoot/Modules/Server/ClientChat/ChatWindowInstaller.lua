@@ -46,6 +46,7 @@ local function Install()
 	if not clientChatModules then
 		clientChatModules = Instance.new("Folder")
 		clientChatModules.Name = "ClientChatModules"
+		clientChatModules.Archivable = false
 
 		LoadModule(script.Parent.DefaultClientChatModules, "ChatSettings", clientChatModules)
 		LoadModule(script.Parent.DefaultClientChatModules, "ChatConstants", clientChatModules)
@@ -57,6 +58,7 @@ local function Install()
 	if not MessageCreatorModules then
 		MessageCreatorModules = Instance.new("Folder")
 		MessageCreatorModules.Name = "MessageCreatorModules"
+		MessageCreatorModules.Archivable = false
 
 		local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
 
@@ -71,6 +73,7 @@ local function Install()
 	if not CommandModules then
 		CommandModules = Instance.new("Folder")
 		CommandModules.Name = "CommandModules"
+		CommandModules.Archivable = false
 
 		local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
 
