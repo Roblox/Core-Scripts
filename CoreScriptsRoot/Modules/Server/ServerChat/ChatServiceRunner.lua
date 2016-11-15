@@ -236,7 +236,7 @@ local function TryRunModule(module)
 	end
 end
 
-local modules = game:GetService("ServerStorage"):WaitForChild("ChatModules")
+local modules = game:GetService("Chat"):WaitForChild("ChatModules")
 modules.ChildAdded:connect(function(child)
 	local success, returnval = pcall(TryRunModule, child)
 	if not success and returnval then

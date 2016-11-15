@@ -7,8 +7,8 @@ local methods = {}
 
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("clientChatModules")
 local commandModules = clientChatModules:WaitForChild("CommandModules")
 local commandUtil = require(commandModules:WaitForChild("Util"))
 local modulesFolder = script.Parent

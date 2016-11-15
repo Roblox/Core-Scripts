@@ -19,8 +19,8 @@ local SpecialChatColors = {
 	Players = {
 		{
 			--- Left as an example
-			PlayerName = "TheGamer101",
-			ChatColor = Color3.new(205/255, 0, 0)
+			--  UserId = 2231221,
+			--  ChatColor = Color3.new(205/255, 0, 0)
 		}
 	}
 }
@@ -68,9 +68,12 @@ local Players = game:GetService("Players")
 
 function GetSpecialChatColor(speakerName)
 	if SpecialChatColors.Players then
-		for _, player in pairs(SpecialChatColors.Players) do
-			if speakerName:lower() == player.PlayerName:lower() then
-				return player.ChatColor
+		local playerFromSpeaker = Players:FindFirstChild(speakerName)
+		if playerFromSpeaker then
+			for _, player in pairs(SpecialChatColors.Players) do
+				if playerFromSpeaker.UserId == player.UserId then
+					return player.ChatColor
+				end
 			end
 		end
 	end

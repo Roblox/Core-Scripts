@@ -2,7 +2,6 @@ local runnerScriptName = "ChatServiceRunner"
 
 local installDirectory = game:GetService("Chat")
 local ServerScriptService = game:GetService("ServerScriptService")
-local ServerStorage = game:GetService("ServerStorage")
 
 local function LoadScript(name, parent)
 	local originalModule = script.Parent:WaitForChild(name)
@@ -36,12 +35,11 @@ local function Install()
 		LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatServiceRunner)
 	end
 
-	local chatModulesArchivable = true
 	local ChatModules = installDirectory:FindFirstChild("ChatModules")
 	if not ChatModules then
-		chatModulesArchivable = false
 		ChatModules = Instance.new("Folder")
 		ChatModules.Name = "ChatModules"
+		ChatModules.Archivable = false
 
 		LoadModule(script.Parent.DefaultChatModules, "ExtraDataInitializer", ChatModules)
 		LoadModule(script.Parent.DefaultChatModules, "ChatCommandsTeller", ChatModules)
@@ -52,12 +50,6 @@ local function Install()
 		ChatModules.Parent = installDirectory
 	end
 
-	if not ServerScriptService:FindFirstChild("ChatModules") then
-		local ChatModulesCopy = ChatModules:Clone()
-		ChatModulesCopy.Parent = ServerStorage
-		ChatModulesCopy.Archivable = false
-	end
-
 	if not ServerScriptService:FindFirstChild(runnerScriptName) then
 		local ChatServiceRunnerCopy = ChatServiceRunner:Clone()
 		ChatServiceRunnerCopy.Archivable = false
@@ -65,7 +57,6 @@ local function Install()
 	end
 
 	ChatServiceRunner.Archivable = chatServiceRunnerArchivable
-	ChatModules.Archivable = chatModulesArchivable
 end
 
 return Install
