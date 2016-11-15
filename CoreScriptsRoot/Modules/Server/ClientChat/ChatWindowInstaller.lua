@@ -42,10 +42,10 @@ local function Install()
 		LoadModule(script.Parent, "CurveUtil", ChatMain)
 	end
 
-	local clientChatModules = installDirectory:FindFirstChild("clientChatModules")
+	local clientChatModules = installDirectory:FindFirstChild("ClientChatModules")
 	if not clientChatModules then
 		clientChatModules = Instance.new("Folder")
-		clientChatModules.Name = "clientChatModules"
+		clientChatModules.Name = "ClientChatModules"
 
 		LoadModule(script.Parent.DefaultClientChatModules, "ChatSettings", clientChatModules)
 		LoadModule(script.Parent.DefaultClientChatModules, "ChatConstants", clientChatModules)

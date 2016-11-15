@@ -8,7 +8,7 @@ local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
 local Chat = game:GetService("Chat")
-local clientChatModules = Chat:WaitForChild("clientChatModules")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
 local messageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 local modulesFolder = script.Parent

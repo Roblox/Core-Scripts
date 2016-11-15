@@ -8,7 +8,7 @@ module.ScrollBarThickness = 4
 --////////////////////////////// Include
 --//////////////////////////////////////
 local Chat = game:GetService("Chat")
-local clientChatModules = Chat:WaitForChild("clientChatModules")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))

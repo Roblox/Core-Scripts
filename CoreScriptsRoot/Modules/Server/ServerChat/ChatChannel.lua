@@ -7,7 +7,7 @@ local module = {}
 local modulesFolder = script.Parent
 local HttpService = game:GetService("HttpService")
 local Chat = game:GetService("Chat")
-local replicatedModules = Chat:WaitForChild("clientChatModules")
+local replicatedModules = Chat:WaitForChild("ClientChatModules")
 
 --////////////////////////////// Include
 --//////////////////////////////////////

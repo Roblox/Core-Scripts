@@ -9,7 +9,7 @@ local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui
 --////////////////////////////// Include
 --//////////////////////////////////////
 local Chat = game:GetService("Chat")
-local clientChatModules = Chat:WaitForChild("clientChatModules")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleChannelsTab = require(modulesFolder:WaitForChild("ChannelsTab"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
