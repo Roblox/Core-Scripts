@@ -191,12 +191,10 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 	return message
 end
 
-function methods:InternalDoMessageFilter(speakerName, message, channel)
+function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
 	for funcId, func in pairs(self.FilterMessageFunctions) do
 		local s, m = pcall(function()
-			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "string")
-			message = ret
+			func(speakerName, messageObj, channel)
 		end)
 
 		if (not s) then
