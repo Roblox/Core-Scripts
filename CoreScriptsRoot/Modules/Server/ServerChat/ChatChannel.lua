@@ -41,6 +41,16 @@ function methods:SendSystemMessageToSpeaker(message, speakerName, extraData)
 	end
 end
 
+function methods:SendMessageObjToFilters(message, messageObj, fromSpeaker)
+	local oldMessage = messageObj.Message
+	messageObj.Message = message
+	self:InternalDoMessageFilter(fromSpeaker.Name, messageObj, self.Name)
+	self.ChatService:InternalDoMessageFilter(fromSpeaker.Name, messageObj, self.Name)
+	local newMessage = messageObj.Message
+	messageObj.Message = oldMessage
+	return newMessage
+end
+
 function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraData)
 	local speaker = self.Speakers[speakerName]
 	if (speaker) then
@@ -51,6 +61,7 @@ function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraDa
 
 		local isFiltered = speakerName == fromSpeaker
 		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
+		message = self:SendMessageObjToFilters(message, messageObj, fromSpeaker)
 		speaker:InternalSendMessage(messageObj, self.Name)
 
 		if not isFiltered then
@@ -196,20 +207,16 @@ function methods:InternalDestroy()
 	self.eDestroyed:Fire()
 end
 
-function methods:InternalDoMessageFilter(speakerName, message, channel)
+function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
 	for funcId, func in pairs(self.FilterMessageFunctions) do
 		local s, m = pcall(function()
-			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "string")
-			message = ret
+			func(speakerName, messageObj, channel)
 		end)
 
 		if (not s) then
 			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
 		end
 	end
-
-	return message
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)
@@ -236,9 +243,6 @@ function methods:InternalDoProcessCommands(speakerName, message, channel)
 end
 
 function methods:InternalPostMessage(fromSpeaker, message, extraData)
-	message = self:InternalDoMessageFilter(fromSpeaker.Name, message, self.Name)
-	message = self.ChatService:InternalDoMessageFilter(fromSpeaker.Name, message, self.Name)
-
 	if (self:InternalDoProcessCommands(fromSpeaker.Name, message, self.Name)) then return false end
 
 	if (self.Mutes[fromSpeaker.Name:lower()] ~= nil) then
@@ -252,6 +256,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	end
 
 	local messageObj = self:InternalCreateMessageObject(message, fromSpeaker.Name, false, extraData)
+	message = self:SendMessageObjToFilters(message, messageObj, fromSpeaker)
 
 	local sentToList = {}
 	for i, speaker in pairs(self.Speakers) do
@@ -344,9 +349,6 @@ end
 function methods:GetMessageType(message, fromSpeaker)
 	if fromSpeaker == nil then
 		return ChatConstants.MessageTypeSystem
-	end
-	if string.sub(message, 1, 3) == "/me" then
-		return ChatConstants.MessageTypeMeCommand
 	end
 	return ChatConstants.MessageTypeDefault
 end
