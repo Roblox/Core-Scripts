@@ -333,7 +333,7 @@ function methods:CreateGuiObjects(targetParent)
 	end
 
 	local function UpdateShowChannelsBar(enabled)
-		ChannelsBarParentFrame.Visible = ChatSettings.ShowChannelsBar
+		ChannelsBarParentFrame.Visible = enabled
 		UpdateChatChannelParentFrameSize()
 	end
 
@@ -341,7 +341,7 @@ function methods:CreateGuiObjects(targetParent)
 	UpdateChatBarTextSize(ChatSettings.ChatBarTextSize)
 	UpdateDraggable(ChatSettings.WindowDraggable)
 	UpdateResizable(ChatSettings.WindowResizable)
-	UpdateShowChannelsBar(ChatSettings.ShowTopChannelsBar)
+	UpdateShowChannelsBar(ChatSettings.ShowChannelsBar)
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "WindowDraggable") then
