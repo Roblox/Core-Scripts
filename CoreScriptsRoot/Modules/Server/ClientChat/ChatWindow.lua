@@ -166,6 +166,9 @@ function methods:CreateGuiObjects(targetParent)
 	end)
 
 	local function UpdatePositionFromDrag(atPos)
+		if ChatSettings.WindowDraggable == false and ChatSettings.WindowResizable == false then
+			return
+		end
 		local newSize = atPos - BaseFrame.AbsolutePosition + ChatResizerFrame.AbsoluteSize
 		BaseFrame.Size = UDim2.new(0, newSize.X, 0, newSize.Y)
 		if bubbleChatOnly() then
