@@ -106,6 +106,4 @@ end
 
 if not GuiService:IsTenFootInterface() then
 	DoEverything()
-else
-	script.Parent:Destroy()
 end

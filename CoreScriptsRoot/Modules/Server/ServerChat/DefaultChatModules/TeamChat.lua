@@ -49,6 +49,10 @@ local function Run(ChatService)
 	channel:RegisterProcessCommandsFunction("replication_function", TeamChatReplicationFunction)
 
 	local function DoTeamCommand(fromSpeaker, message, channel)
+		if message == nil then
+			message = ""
+		end
+
 		local speaker = ChatService:GetSpeaker(fromSpeaker)
 		if speaker then
 			local player = speaker:GetPlayer()
@@ -80,10 +84,10 @@ local function Run(ChatService)
 			error("Message is nil")
 		end
 
-		if string.sub(message, 1, 6):lower() == "/team " then
+		if string.sub(message, 1, 6):lower() == "/team " or message:lower() == "/team" then
 			DoTeamCommand(fromSpeaker, string.sub(message, 7), channel)
 			processedCommand = true
-		elseif string.sub(message, 1, 3):lower() == "/t " then
+		elseif string.sub(message, 1, 3):lower() == "/t " or message:lower() == "/t" then
 			DoTeamCommand(fromSpeaker, string.sub(message, 4), channel)
 			processedCommand = true
 		end

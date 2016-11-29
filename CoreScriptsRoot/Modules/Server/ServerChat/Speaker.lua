@@ -126,6 +126,19 @@ function methods:SetMainChannel(channel)
 	end
 end
 
+--- Used to mute a speaker so that this speaker does not see their messages.
+function methods:AddMutedSpeaker(speakerName)
+	self.MutedSpeakers[speakerName] = true
+end
+
+function methods:RemoveMutedSpeaker(speakerName)
+	self.MutedSpeakers[speakerName] = false
+end
+
+function methods:IsSpeakerMuted(speakerName)
+	return self.MutedSpeakers[speakerName]
+end
+
 --///////////////// Internal-Use Methods
 --//////////////////////////////////////
 function methods:InternalDestroy()
@@ -182,6 +195,7 @@ function module.new(vChatService, name)
 	obj.ExtraData = {}
 
 	obj.Channels = {}
+	obj.MutedSpeakers = {}
 
 	obj.eDestroyed = Instance.new("BindableEvent")
 	obj.Destroyed = obj.eDestroyed.Event

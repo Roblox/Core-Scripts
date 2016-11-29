@@ -17,8 +17,8 @@ local DEVICE_DESKTOP = 3
 
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
@@ -166,6 +166,9 @@ function methods:CreateGuiObjects(targetParent)
 	end)
 
 	local function UpdatePositionFromDrag(atPos)
+		if ChatSettings.WindowDraggable == false and ChatSettings.WindowResizable == false then
+			return
+		end
 		local newSize = atPos - BaseFrame.AbsolutePosition + ChatResizerFrame.AbsoluteSize
 		BaseFrame.Size = UDim2.new(0, newSize.X, 0, newSize.Y)
 		if bubbleChatOnly() then
@@ -195,7 +198,9 @@ function methods:CreateGuiObjects(targetParent)
 	if bubbleChatOnly() then
 		ChatBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
 		ChannelsBarParentFrame.Visible = false
+		ChannelsBarParentFrame.Active = false
 		ChatChannelParentFrame.Visible = false
+		ChatChannelParentFrame.Active = false
 
 		local useXScale = 0
 		local useXOffset = 0
@@ -331,7 +336,7 @@ function methods:CreateGuiObjects(targetParent)
 	end
 
 	local function UpdateShowChannelsBar(enabled)
-		ChannelsBarParentFrame.Visible = ChatSettings.ShowChannelsBar
+		ChannelsBarParentFrame.Visible = enabled
 		UpdateChatChannelParentFrameSize()
 	end
 
@@ -339,7 +344,7 @@ function methods:CreateGuiObjects(targetParent)
 	UpdateChatBarTextSize(ChatSettings.ChatBarTextSize)
 	UpdateDraggable(ChatSettings.WindowDraggable)
 	UpdateResizable(ChatSettings.WindowResizable)
-	UpdateShowChannelsBar(ChatSettings.ShowTopChannelsBar)
+	UpdateShowChannelsBar(ChatSettings.ShowChannelsBar)
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "WindowDraggable") then

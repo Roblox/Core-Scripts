@@ -7,8 +7,8 @@ local OBJECT_POOL_SIZE = 50
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
 local messageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 local modulesFolder = script.Parent

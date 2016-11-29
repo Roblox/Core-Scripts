@@ -11,4 +11,7 @@ module.MessageTypeMeCommand = "MeCommand"
 module.MessageTypeWelcome = "Welcome"
 module.MessageTypeSetCore = "SetCore"
 
+module.MajorVersion = 0
+module.MinorVersion = 1
+
 return module

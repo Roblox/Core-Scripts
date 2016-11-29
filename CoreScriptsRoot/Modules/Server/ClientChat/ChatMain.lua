@@ -15,9 +15,11 @@ local FILTER_MESSAGE_TIMEOUT = 60
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Chat = game:GetService("Chat")
+
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
-local ClientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
-local ChatConstants = require(ClientChatModules:WaitForChild("ChatConstants"))
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren =
@@ -105,8 +107,8 @@ ChatWindow:RegisterChatBar(ChatBar)
 ChatWindow:RegisterChannelsBar(ChannelsBar)
 ChatWindow:RegisterMessageLogDisplay(MessageLogDisplay)
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
@@ -285,9 +287,16 @@ spawn(function()
 	end
 end)
 
+function bubbleChatOnly()
+ 	return not Players.ClassicChat and Players.BubbleChat
+end
 
 local function UpdateMousePosition(mousePos)
-	if not (moduleApiTable.Visible and moduleApiTable.IsCoreGuiEnabled and moduleApiTable.TopbarEnabled) then return end
+	if not (moduleApiTable.Visible and moduleApiTable.IsCoreGuiEnabled and (moduleApiTable.TopbarEnabled or ChatSettings.ChatOnWithTopBarOff)) then return end
+
+	if bubbleChatOnly() then
+		return
+	end
 
 	local windowPos = ChatWindow.GuiObject.AbsolutePosition
 	local windowSize = ChatWindow.GuiObject.AbsoluteSize
@@ -402,21 +411,20 @@ function chatBarFocusLost(enterPressed, inputObject)
 
 		ChatBar:GetTextBox().Text = ""
 
-		if (message ~= "" and not CommandProcessor:ProcessCompletedChatMessage(message, ChatWindow)) then
-			message = string.gsub(message, "\n", "")
-			message = string.gsub(message, "[ ]+", " ")
+		if message ~= "" then
+			--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
+			moduleApiTable.MessagePosted:fire(message)
 
-			local targetChannel = ChatWindow:GetTargetMessageChannel()
-			if (targetChannel) then
-				MessageSender:SendMessage(message, targetChannel)
+			if not CommandProcessor:ProcessCompletedChatMessage(message, ChatWindow) then
+				message = string.gsub(message, "\n", "")
+				message = string.gsub(message, "[ ]+", " ")
 
-				if (targetChannel == ChatSettings.GeneralChannelName) then
-					--// Sends signal to eventually call Player:Chat() to handle C++ side legacy stuff.
-					moduleApiTable.MessagePosted:fire(message)
+				local targetChannel = ChatWindow:GetTargetMessageChannel()
+				if targetChannel then
+					MessageSender:SendMessage(message, targetChannel)
+				else
+					MessageSender:SendMessage(message, nil)
 				end
-			else
-				MessageSender:SendMessage(message, nil)
-
 			end
 		end
 
@@ -470,7 +478,7 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 
 		DoFadeInFromNewInformation()
 
-		if messageData.IsFiltered then
+		if messageData.IsFiltered and not (messageData.FromSpeaker == LocalPlayer.Name) then
 			return
 		end
 
@@ -541,11 +549,12 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 		end
 
 		if (messageLog) then
-			for i, messageLogData in pairs(messageLog) do
-
-				channelObj:AddMessageToChannel(messageLogData)
-
-				channelObj:UpdateMessageFiltered(messageLogData)
+			local startIndex = 1
+			if #messageLog > ChatSettings.MessageHistoryLengthPerChannel then
+				startIndex = #messageLog - ChatSettings.MessageHistoryLengthPerChannel
+			end
+			for i = startIndex, #messageLog do
+				channelObj:AddMessageToChannel(messageLog[i])
 			end
 		end
 
@@ -792,7 +801,7 @@ moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	moduleApiTable.IsCoreGuiEnabled = enabled
 	DealWithCoreGuiEnabledChanged(moduleApiTable.IsCoreGuiEnabled)
 
-	enabled = enabled and moduleApiTable.TopbarEnabled
+	enabled = enabled and (moduleApiTable.TopbarEnabled or ChatSettings.ChatOnWithTopBarOff)
 
 	ChatWindow:SetCoreGuiEnabled(enabled)
 

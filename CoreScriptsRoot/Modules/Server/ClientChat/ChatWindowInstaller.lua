@@ -1,7 +1,6 @@
 local runnerScriptName = "ChatScript"
 local installDirectory = game:GetService("Chat")
 local StarterPlayerScripts = game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local function LoadLocalScript(name, parent)
 	local originalModule = script.Parent:WaitForChild(name)
@@ -43,23 +42,23 @@ local function Install()
 		LoadModule(script.Parent, "CurveUtil", ChatMain)
 	end
 
-	local ClientChatModules = installDirectory:FindFirstChild("ClientChatModules")
-	if not ClientChatModules then
-		ClientChatModules = Instance.new("Folder")
-		ClientChatModules.Name = "ClientChatModules"
+	local clientChatModules = installDirectory:FindFirstChild("ClientChatModules")
+	if not clientChatModules then
+		clientChatModules = Instance.new("Folder")
+		clientChatModules.Name = "ClientChatModules"
+		clientChatModules.Archivable = false
 
-		LoadModule(script.Parent.DefaultClientChatModules, "ChatSettings", ClientChatModules)
-		LoadModule(script.Parent.DefaultClientChatModules, "ChatConstants", ClientChatModules)
+		LoadModule(script.Parent.DefaultClientChatModules, "ChatSettings", clientChatModules)
+		LoadModule(script.Parent.DefaultClientChatModules, "ChatConstants", clientChatModules)
 
-		ClientChatModules.Parent = installDirectory
+		clientChatModules.Parent = installDirectory
 	end
 
-	local messageCreatorModulesArchivable = true
-	local MessageCreatorModules = ClientChatModules:FindFirstChild("MessageCreatorModules")
+	local MessageCreatorModules = clientChatModules:FindFirstChild("MessageCreatorModules")
 	if not MessageCreatorModules then
-		messageCreatorModulesArchivable = false
 		MessageCreatorModules = Instance.new("Folder")
 		MessageCreatorModules.Name = "MessageCreatorModules"
+		MessageCreatorModules.Archivable = false
 
 		local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
 
@@ -67,15 +66,14 @@ local function Install()
 			LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, MessageCreatorModules)
 		end
 
-		MessageCreatorModules.Parent = ClientChatModules
+		MessageCreatorModules.Parent = clientChatModules
 	end
 
-	local commandModulesArchivable = true
-	local CommandModules = ClientChatModules:FindFirstChild("CommandModules")
+	local CommandModules = clientChatModules:FindFirstChild("CommandModules")
 	if not CommandModules then
-		commandModulesArchivable = false
 		CommandModules = Instance.new("Folder")
 		CommandModules.Name = "CommandModules"
+		CommandModules.Archivable = false
 
 		local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
 
@@ -83,13 +81,7 @@ local function Install()
 			LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, CommandModules)
 		end
 
-		CommandModules.Parent = ClientChatModules
-	end
-
-	if not ReplicatedStorage:FindFirstChild(ClientChatModules) then
-		local ClientChatModulesCopy = ClientChatModules:Clone()
-		ClientChatModulesCopy.Parent = ReplicatedStorage
-		ClientChatModulesCopy.Archivable = false
+		CommandModules.Parent = clientChatModules
 	end
 
 	if not StarterPlayerScripts:FindFirstChild(runnerScriptName) then
@@ -107,9 +99,6 @@ local function Install()
 	end
 
 	ChatScript.Archivable = chatScriptArchivable
-	ClientChatModules.Archivable = clientChatModulesArchivable
-	MessageCreatorModules.Archivable = messageCreatorModulesArchivable
-	CommandModules.Archivable = commandModulesArchivable
 end
 
 return Install
