@@ -11,6 +11,9 @@ local HttpService = game:GetService('HttpService')
 local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local PlayersService = game:GetService('Players')
 
+local newBlockFunctionSuccess, newBlockFunctionValue = pcall(function() return settings():GetFFlag("UseNewBlockFunction") end)
+local useNewBlockFunction = (newBlockFunctionSuccess == true and newBlockFunctionValue == true)
+
 --[[ Script Variables ]]--
 local LocalPlayer = PlayersService.LocalPlayer
 
@@ -213,9 +216,15 @@ local function BlockPlayerAsync(playerToBlock)
 			if not isBlocked(blockUserId) then
 				BlockedList[blockUserId] = true
 				BlockStatusChanged:fire(blockUserId, true)
-				pcall(function()
-					local success = LocalPlayer:BlockUser(playerToBlock)
-				end)
+				if not useNewBlockFunction then
+					pcall(function()
+						local success = PlayersService:BlockUser(LocalPlayer.UserId, blockUserId)
+					end)				
+				else
+					pcall(function()
+						local success = LocalPlayer:BlockUser(playerToBlock)
+					end)
+				end
 			end
 		end
 	end
@@ -228,9 +237,15 @@ local function UnblockPlayerAsync(playerToUnblock)
 		if isBlocked(unblockUserId) then
 			BlockedList[unblockUserId] = nil
 			BlockStatusChanged:fire(unblockUserId, false)
-			pcall(function()
-				local success = LocalPlayer:UnblockUser(playerToUnblock)
-			end)
+			if not useNewBlockFunction then
+				pcall(function()
+					local success = PlayersService:UnblockUser(LocalPlayer.UserId, unblockUserId)
+				end)
+			else
+				pcall(function()
+					local success = LocalPlayer:UnblockUser(playerToUnblock)
+				end)
+			end
 		end
 	end
 end
