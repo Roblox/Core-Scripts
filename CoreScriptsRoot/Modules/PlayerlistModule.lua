@@ -1490,12 +1490,11 @@ UserInputService.InputBegan:connect(function(inputObject, isProcessed)
 -- NOTE: Core script only
 
 --[[ Player Add/Remove Connections ]]--
-PlayersService.ChildAdded:connect(function(child)
-    if child:IsA('Player') then
-      insertPlayerEntry(child)
-    end
-  end)
-for _,player in pairs(PlayersService:GetPlayers()) do
+PlayersService.PlayerAdded:connect(function(child)
+  insertPlayerEntry(child)
+end)
+
+for _, player in ipairs(PlayersService:GetPlayers()) do
   insertPlayerEntry(player)
 end
 
@@ -1517,13 +1516,11 @@ if not isTenFootInterface then
   end)
 end
 
-PlayersService.ChildRemoved:connect(function(child)
-  if child:IsA('Player') then
-    if LastSelectedPlayer and child == LastSelectedPlayer then
-      playerDropDown:Hide()
-    end
-    removePlayerEntry(child)
+PlayersService.PlayerRemoved:connect(function(child)
+  if LastSelectedPlayer and child == LastSelectedPlayer then
+    playerDropDown:Hide()
   end
+  removePlayerEntry(child)
 end)
 
 --[[ Teams ]]--
