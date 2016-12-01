@@ -13,10 +13,12 @@ soundFolder.Parent = RobloxGui
 
 -- This can be useful in cases where a flag configuration issue causes requiring a CoreScript to fail
 local function safeRequire(moduleScript)
-	local success, err = pcall(function() require(moduleScript) end)
+	local moduleReturnValue = nil
+	local success, err = pcall(function() moduleReturnValue = require(moduleScript) end)
 	if not success then
 		warn("Failure to Start CoreScript module" ..moduleScript.Name.. ".\n" ..err)
 	end
+	return moduleReturnValue
 end
 
 -- TopBar
