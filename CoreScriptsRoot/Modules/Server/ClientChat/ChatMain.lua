@@ -478,7 +478,7 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 
 		DoFadeInFromNewInformation()
 
-		if messageData.IsFiltered then
+		if messageData.IsFiltered and not (messageData.FromSpeaker == LocalPlayer.Name) then
 			return
 		end
 
