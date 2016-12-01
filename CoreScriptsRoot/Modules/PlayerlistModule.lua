@@ -1516,11 +1516,13 @@ if not isTenFootInterface then
   end)
 end
 
-PlayersService.PlayerRemoved:connect(function(child)
-  if LastSelectedPlayer and child == LastSelectedPlayer then
-    playerDropDown:Hide()
+PlayersService.ChildRemoved:connect(function(child)
+  if child:IsA("Player") then
+    if LastSelectedPlayer and child == LastSelectedPlayer then
+      playerDropDown:Hide()
+    end
+    removePlayerEntry(child)
   end
-  removePlayerEntry(child)
 end)
 
 --[[ Teams ]]--
