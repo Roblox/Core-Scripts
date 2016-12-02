@@ -154,7 +154,7 @@ local function Initialize()
     charMoveFrame.Parent = parentFrame
 
     local accessoriesFrame = createPCGroup("Accessories", {	
-	    [1] = {["Equip Tools"] = "1,2,3..."}, 
+        [1] = {["Equip Tools"] = "1,2,3..."}, 
         [2] = {["Unequip Tools"] = "1,2,3..."},
         [3] = {["Drop Tool"] = "Backspace"},
         [4] = {["Use Tool"] = "Left Mouse Button"} })
