@@ -18,8 +18,10 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 local newChatVisiblePropSuccess, newChatVisiblePropValue =  pcall(function() return settings():GetFFlag("ChatVisiblePropertyEnabled") end)
 local newChatVisibleProp = (newChatVisiblePropSuccess and newChatVisiblePropValue)
 
---[[ END OF FFLAG VALUES ]]
+local resetButtonFlagSuccess, resetButtonFlagValue = pcall(function() return settings():GetFFlag("AllowResetButtonCustomization") end)
+local resetButtonCustomizationAllowed = (resetButtonFlagSuccess and resetButtonFlagValue == true)
 
+--[[ END OF FFLAG VALUES ]]
 
 --[[ SERVICES ]]
 
@@ -33,6 +35,12 @@ local RunService = game:GetService('RunService')
 local TextService = game:GetService('TextService')
 
 --[[ END OF SERVICES ]]
+
+-- Register SetCore functions early
+local earlyResetCallbackValue = nil
+if resetButtonCustomizationAllowed then
+	StarterGui:RegisterSetCore("ResetButtonCallback", function(value) earlyResetCallbackValue = value print("early!") end)
+end
 
 --[[ MODULES ]]--
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
@@ -53,8 +61,8 @@ if defeatableTopbar then
 		end
 	end)
 end
-local lookMenuEnabled = true
 
+local lookMenuEnabled = true
 local settingsActive = false
 
 local GameSettings = UserSettings().GameSettings
@@ -939,6 +947,10 @@ end
 local function CreateSettingsIcon(topBarInstance)
 	local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
 
+	if earlyResetCallbackValue ~= nil then
+		MenuModule:SetResetButtonCallback(earlyResetCallbackValue)
+	end
+	
 	local settingsIconButton = Util.Create'ImageButton'
 	{
 		Name = "Settings";
