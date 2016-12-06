@@ -817,6 +817,8 @@ GuiParent.Changed:connect(function(prop)
 	end
 end)
 
+local ChatBarFocusedState = nil
+
 --// Always on top behavior that relies on parenting order of ScreenGuis
 --// This would end up really bad if something else tried to do the exact same thing however.
 PlayerGui.ChildAdded:connect(function(child)
@@ -828,6 +830,17 @@ PlayerGui.ChildAdded:connect(function(child)
 		GuiParent.Parent = PlayerGui
 
 		reparentingLock = false
+	elseif child == GuiParent then
+		if ChatBarFocusedState then
+			RunService.RenderStepped:wait()
+			ChatBar:RestoreFocusedState(ChatBarFocusedState)
+		end
+	end
+end)
+
+PlayerGui.DescendantRemoving:connect(function(descendant)
+	if descendant == GuiParent then
+		ChatBarFocusedState = ChatBar:GetFocusedState()
 	end
 end)
 

@@ -195,6 +195,12 @@ function methods:GetMessageModeTextLabel()
 end
 
 function methods:IsFocused()
+	-- Temporary hack while reparenting is necessary.
+	if not self.GuiObject:IsDescendantOf(game) then
+		if rawget(self, "LastFocusedState") then
+			return self.LastFocusedState.Focused
+		end
+	end
 	return self:GetTextBox():IsFocused()
 end
 
@@ -340,6 +346,23 @@ function methods:CustomStateProcessCompletedMessage(message)
 	return false
 end
 
+-- Temporary hack until ScreenGui.DisplayOrder is released.
+function methods:GetFocusedState()
+	local focusedState = {
+		Focused = self.TextBox:IsFocused(),
+		Text = self.TextBox.Text
+	}
+	rawset(self, "LastFocusedState", focusedState)
+	return focusedState
+end
+
+function methods:RestoreFocusedState(focusedState)
+	self.TextBox.Text = focusedState.Text
+	if focusedState.Focused then
+		self.TextBox:CaptureFocus()
+	end
+end
+
 function methods:FadeOutBackground(duration)
 	self.AnimParams.Background_TargetTransparency = 1
 	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
@@ -425,6 +448,7 @@ function module.new(CommandProcessor, ChatWindow)
 	obj.TargetYSize = 0
 
 	obj.AnimParams = {}
+	obj.LastFocusedState = nil
 
 	ClassMaker.MakeClass("ChatBar", obj)
 
