@@ -81,6 +81,7 @@ function methods:CreateGuiObjects(targetParent)
 	MessageModeTextLabel.Size = UDim2.new(0.3, 0, 1, 0)
 	MessageModeTextLabel.TextYAlignment = Enum.TextYAlignment.Center
 	MessageModeTextLabel.TextColor3 = Color3.fromRGB(77, 139, 255)
+	MessageModeTextLabel.Visible = false
 	MessageModeTextLabel.Parent = TextBoxHolderFrame
 
 	local TextLabel = Instance.new("TextLabel")

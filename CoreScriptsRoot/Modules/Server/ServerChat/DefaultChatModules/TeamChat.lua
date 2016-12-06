@@ -90,6 +90,9 @@ local function Run(ChatService)
 		elseif string.sub(message, 1, 3):lower() == "/t " or message:lower() == "/t" then
 			DoTeamCommand(fromSpeaker, string.sub(message, 4), channel)
 			processedCommand = true
+		elseif string.sub(message, 1, 2):lower() == "% " or message:lower() == "%" then
+			DoTeamCommand(fromSpeaker, string.sub(message, 3), channel)
+			processedCommand = true
 		end
 
 		return processedCommand
