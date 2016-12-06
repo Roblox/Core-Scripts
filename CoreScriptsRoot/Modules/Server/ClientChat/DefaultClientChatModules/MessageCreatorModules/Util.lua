@@ -169,6 +169,79 @@ function methods:RegisterGuiRoot(root)
 	testLabel.Parent = root
 end
 
+-- CreateFadeFunctions usage:
+-- fadeObjects is a map of text labels and button to start and end values for a given property.
+-- e.g {
+--   NameButton = {
+--     TextTransparency = {
+--       FadedIn = 0.5,
+--       FadedOut = 1,
+--     }
+--   },
+--  ImageOne = {
+--	  ImageTransparency = {
+--       FadedIn = 0,
+--       FadedOut = 0.5,
+--     }
+--   }
+-- }
+function methods:CreateFadeFunctions(fadeObjects)
+	local AnimParams = {}
+	for object, properties in pairs(fadeObjects) do
+		AnimParams[object] = {}
+		for property, values in pairs(properties) do
+			AnimParams[object][property] = {
+				Target = values.FadedIn,
+				Current = object[property],
+				NormalizedExptValue = 1,
+			}
+		end
+	end
+
+	local function FadeInFunction(duration, CurveUtil)
+		for object, properties in pairs(AnimParams) do
+			for property, values in pairs(properties) do
+				values.Target = fadeObjects[object][property].FadedIn
+				values.NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
+			end
+		end
+	end
+
+	local function FadeOutFunction(duration, CurveUtil)
+		for object, properties in pairs(AnimParams) do
+			for property, values in pairs(properties) do
+				values.Target = fadeObjects[object][property].FadedOut
+				values.NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
+			end
+		end
+	end
+
+	local function AnimGuiObjects()
+		for object, properties in pairs(AnimParams) do
+			for property, values in pairs(properties) do
+				object[property] = values.Current
+			end
+		end
+	end
+
+	local function UpdateAnimFunction(dtScale, CurveUtil)
+		for object, properties in pairs(AnimParams) do
+			for property, values in pairs(properties) do
+				values.Current = CurveUtil:Expt(
+					values.Current,
+					values.Target,
+					values.NormalizedExptValue,
+					dtScale
+				)
+			end
+		end
+
+		AnimGuiObjects()
+	end
+
+	return FadeInFunction, FadeOutFunction, UpdateAnimFunction
+end
+
 function module.new()
 	local obj = setmetatable({}, methods)
 
