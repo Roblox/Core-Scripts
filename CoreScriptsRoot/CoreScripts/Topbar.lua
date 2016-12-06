@@ -39,7 +39,7 @@ local TextService = game:GetService('TextService')
 -- Register SetCore functions early
 local earlyResetCallbackValue = nil
 if resetButtonCustomizationAllowed then
-	StarterGui:RegisterSetCore("ResetButtonCallback", function(value) earlyResetCallbackValue = value print("early!") end)
+	StarterGui:RegisterSetCore("ResetButtonCallback", function(value) earlyResetCallbackValue = value end)
 end
 
 --[[ MODULES ]]--
