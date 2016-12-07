@@ -291,7 +291,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 			local cMessageObj = DeepCopy(messageObj)
 			cMessageObj.Message = filteredMessages[speakerName]
 			cMessageObj.IsFiltered = true
-			speaker:InternalSendFilteredMessage(cMessageObj, channel)
+			speaker:InternalSendFilteredMessage(cMessageObj, self.Name)
 		end
 	end
 

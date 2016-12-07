@@ -8,6 +8,7 @@ Creating a message creator module:
 2) Create a function that takes a messageData object and returns:
 {
 	KEY_BASE_FRAME = BaseFrame,
+	KEY_BASE_MESSAGE = BaseMessage,
 	KEY_UPDATE_TEXT_FUNC = function(newMessageObject) ---Function to update the text of the message.
 	KEY_GET_HEIGHT = function() ---Function to get the height of the message in absolute pixels,
 	KEY_FADE_IN = function(duration, CurveUtil) ---Function to tell the message to start fading in.
@@ -28,6 +29,7 @@ local KEY_MESSAGE_TYPE = "MessageType"
 local KEY_CREATOR_FUNCTION = "MessageCreatorFunc"
 ---Creator function return object keys
 local KEY_BASE_FRAME = "BaseFrame"
+local KEY_BASE_MESSAGE = "BaseMessage"
 local KEY_UPDATE_TEXT_FUNC = "UpdateTextFunction"
 local KEY_GET_HEIGHT = "GetHeightFunction"
 local KEY_FADE_IN = "FadeInFunction"
@@ -78,8 +80,9 @@ function methods:GetStringTextBounds(text, font, textSize, sizeBounds)
 end
 --// Above was taken directly from Util.GetStringTextBounds() in the old chat corescripts.
 
-function methods:GetMessageHeight(BaseMessage, BaseFrame)
-	local textBoundsSize = self:GetStringTextBounds(BaseMessage.Text, BaseMessage.Font, BaseMessage.TextSize, UDim2.new(0, BaseFrame.AbsoluteSize.X, 0, 1000))
+function methods:GetMessageHeight(BaseMessage, BaseFrame, xSize)
+	xSize = xSize or BaseFrame.AbsoluteSize.X
+	local textBoundsSize = self:GetStringTextBounds(BaseMessage.Text, BaseMessage.Font, BaseMessage.TextSize, UDim2.new(0, xSize, 0, 1000))
 	return textBoundsSize.Y
 end
 
@@ -169,6 +172,79 @@ function methods:RegisterGuiRoot(root)
 	testLabel.Parent = root
 end
 
+-- CreateFadeFunctions usage:
+-- fadeObjects is a map of text labels and button to start and end values for a given property.
+-- e.g {
+--   NameButton = {
+--     TextTransparency = {
+--       FadedIn = 0.5,
+--       FadedOut = 1,
+--     }
+--   },
+--  ImageOne = {
+--	  ImageTransparency = {
+--       FadedIn = 0,
+--       FadedOut = 0.5,
+--     }
+--   }
+-- }
+function methods:CreateFadeFunctions(fadeObjects)
+	local AnimParams = {}
+	for object, properties in pairs(fadeObjects) do
+		AnimParams[object] = {}
+		for property, values in pairs(properties) do
+			AnimParams[object][property] = {
+				Target = values.FadedIn,
+				Current = object[property],
+				NormalizedExptValue = 1,
+			}
+		end
+	end
+
+	local function FadeInFunction(duration, CurveUtil)
+		for object, properties in pairs(AnimParams) do
+			for property, values in pairs(properties) do
+				values.Target = fadeObjects[object][property].FadedIn
+				values.NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
+			end
+		end
+	end
+
+	local function FadeOutFunction(duration, CurveUtil)
+		for object, properties in pairs(AnimParams) do
+			for property, values in pairs(properties) do
+				values.Target = fadeObjects[object][property].FadedOut
+				values.NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
+			end
+		end
+	end
+
+	local function AnimGuiObjects()
+		for object, properties in pairs(AnimParams) do
+			for property, values in pairs(properties) do
+				object[property] = values.Current
+			end
+		end
+	end
+
+	local function UpdateAnimFunction(dtScale, CurveUtil)
+		for object, properties in pairs(AnimParams) do
+			for property, values in pairs(properties) do
+				values.Current = CurveUtil:Expt(
+					values.Current,
+					values.Target,
+					values.NormalizedExptValue,
+					dtScale
+				)
+			end
+		end
+
+		AnimGuiObjects()
+	end
+
+	return FadeInFunction, FadeOutFunction, UpdateAnimFunction
+end
+
 function module.new()
 	local obj = setmetatable({}, methods)
 
@@ -180,6 +256,7 @@ function module.new()
 	obj.KEY_CREATOR_FUNCTION = KEY_CREATOR_FUNCTION
 
 	obj.KEY_BASE_FRAME = KEY_BASE_FRAME
+	obj.KEY_BASE_MESSAGE = KEY_BASE_MESSAGE
 	obj.KEY_UPDATE_TEXT_FUNC = KEY_UPDATE_TEXT_FUNC
 	obj.KEY_GET_HEIGHT = KEY_GET_HEIGHT
 	obj.KEY_FADE_IN = KEY_FADE_IN

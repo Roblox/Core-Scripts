@@ -44,6 +44,10 @@ end
 
 function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 	local BaseFrame = createdMessageObject[messageCreatorUtil.KEY_BASE_FRAME]
+	local BaseMessage = nil
+	if messageCreatorUtil.KEY_BASE_MESSAGE then
+		BaseMessage = createdMessageObject[messageCreatorUtil.KEY_BASE_MESSAGE]
+	end
 	local UpdateTextFunction = createdMessageObject[messageCreatorUtil.KEY_UPDATE_TEXT_FUNC]
 	local GetHeightFunction = createdMessageObject[messageCreatorUtil.KEY_GET_HEIGHT]
 	local FadeInFunction = createdMessageObject[messageCreatorUtil.KEY_FADE_IN]
@@ -54,6 +58,7 @@ function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 
 	obj.ID = messageData.ID
 	obj.BaseFrame = BaseFrame
+	obj.BaseMessage = BaseMessage
 	obj.UpdateTextFunction = UpdateTextFunction or function() warn("NO MESSAGE RESIZE FUNCTION") end
 	obj.GetHeightFunction = GetHeightFunction
 	obj.FadeInFunction = FadeInFunction

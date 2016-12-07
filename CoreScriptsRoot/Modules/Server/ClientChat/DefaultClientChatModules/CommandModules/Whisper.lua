@@ -38,18 +38,18 @@ function whisperStateMethods:TextUpdated()
 			self.PlayerNameEntered = true
 			self.PlayerName = player
 
-			self.MesssageModeLabel.Size = UDim2.new(0, 1000, 1, 0)
-			self.MesssageModeLabel.Text = string.format("[%s]", player)
-			local xSize = self.MesssageModeLabel.TextBounds.X
-			self.MesssageModeLabel.Size = UDim2.new(0, xSize, 1, 0)
+			self.MessageModeLabel.Size = UDim2.new(0, 1000, 1, 0)
+			self.MessageModeLabel.Text = string.format("[%s]", player)
+			local xSize = self.MessageModeLabel.TextBounds.X
+			self.MessageModeLabel.Size = UDim2.new(0, xSize, 1, 0)
 			self.TextBox.Size = UDim2.new(1, -xSize, 1, 0)
 			self.TextBox.Position = UDim2.new(0, xSize, 0, 0)
 			self.TextBox.Text = " "
 		end
 	else
 		if newText == "" then
-			self.MesssageModeLabel.Text = ""
-			self.MesssageModeLabel.Size = UDim2.new(0, 0, 0, 0)
+			self.MessageModeLabel.Text = ""
+			self.MessageModeLabel.Size = UDim2.new(0, 0, 0, 0)
 			self.TextBox.Size = UDim2.new(1, 0, 1, 0)
 			self.TextBox.Position = UDim2.new(0, 0, 0, 0)
 			self.TextBox.Text = ""
@@ -82,7 +82,7 @@ function WhisperCustomState.new(ChatWindow, ChatBar, ChatSettings)
 	obj.ChatBar = ChatBar
 	obj.ChatSettings = ChatSettings
 	obj.TextBox = ChatBar:GetTextBox()
-	obj.MesssageModeLabel = ChatBar:GetMessageModeTextLabel()
+	obj.MessageModeLabel = ChatBar:GetMessageModeTextLabel()
 	obj.OriginalWhisperText = ""
 	obj.PlayerNameEntered = false
 

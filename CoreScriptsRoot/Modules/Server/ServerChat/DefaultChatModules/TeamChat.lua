@@ -29,7 +29,11 @@ local function Run(ChatService)
 						if (otherPlayer) then
 
 							if (player.Team == otherPlayer.Team) then
-								local extraData = {NameColor = player.TeamColor.Color, ChatColor = player.TeamColor.Color}
+								local extraData = {
+									NameColor = player.TeamColor.Color,
+									ChatColor = player.TeamColor.Color,
+									ChannelColor = player.TeamColor.Color
+								}
 								otherSpeaker:SendMessage(message, channelName, fromSpeaker, extraData)
 							else
 								--// Could use this line to obfuscate message for cool effects
@@ -89,6 +93,9 @@ local function Run(ChatService)
 			processedCommand = true
 		elseif string.sub(message, 1, 3):lower() == "/t " or message:lower() == "/t" then
 			DoTeamCommand(fromSpeaker, string.sub(message, 4), channel)
+			processedCommand = true
+		elseif string.sub(message, 1, 2):lower() == "% " or message:lower() == "%" then
+			DoTeamCommand(fromSpeaker, string.sub(message, 3), channel)
 			processedCommand = true
 		end
 

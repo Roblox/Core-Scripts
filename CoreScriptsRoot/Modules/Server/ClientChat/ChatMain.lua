@@ -41,7 +41,7 @@ local useEvents = {}
 
 local FoundAllEventsEvent = Instance.new("BindableEvent")
 
-local function TryRemoveChildWithVerifyingIsCorrectType(child)
+function TryRemoveChildWithVerifyingIsCorrectType(child)
 	if (waitChildren[child.Name] and child:IsA(waitChildren[child.Name])) then
 		waitChildren[child.Name] = nil
 		useEvents[child.Name] = child
@@ -82,6 +82,8 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local GuiParent = Instance.new("ScreenGui", PlayerGui)
 GuiParent.Name = "Chat"
+
+local DidFirstChannelsLoads = false
 
 local modulesFolder = script
 
@@ -146,7 +148,7 @@ end)
 --////////////////////////////////////////////////////////////////////////////////////////////
 --////////////////////////////////////////////////////////////// Code to do chat window fading
 --////////////////////////////////////////////////////////////////////////////////////////////
-local function CheckIfPointIsInSquare(checkPos, topLeft, bottomRight)
+function CheckIfPointIsInSquare(checkPos, topLeft, bottomRight)
 	return (topLeft.X <= checkPos.X and checkPos.X <= bottomRight.X and
 		topLeft.Y <= checkPos.Y and checkPos.Y <= bottomRight.Y)
 end
@@ -160,7 +162,7 @@ local fadedChanged = Instance.new("BindableEvent")
 local mouseStateChanged = Instance.new("BindableEvent")
 local chatBarFocusChanged = Instance.new("BindableEvent")
 
-local function DoBackgroundFadeIn(setFadingTime)
+function DoBackgroundFadeIn(setFadingTime)
 	lastBackgroundFadeTime = tick()
 	backgroundIsFaded = false
 	fadedChanged:Fire()
@@ -177,7 +179,7 @@ local function DoBackgroundFadeIn(setFadingTime)
 	end
 end
 
-local function DoBackgroundFadeOut(setFadingTime)
+function DoBackgroundFadeOut(setFadingTime)
 	lastBackgroundFadeTime = tick()
 	backgroundIsFaded = true
 	fadedChanged:Fire()
@@ -190,44 +192,43 @@ local function DoBackgroundFadeOut(setFadingTime)
 		--ChatWindow:ResetResizerPosition()
 
 		local Scroller = MessageLogDisplay.Scroller
-		scrollBarThickness = Scroller.ScrollBarThickness
 		Scroller.ScrollingEnabled = false
 		Scroller.ScrollBarThickness = 0
 	end
 end
 
-local function DoTextFadeIn(setFadingTime)
+function DoTextFadeIn(setFadingTime)
 	lastTextFadeTime = tick()
 	textIsFaded = false
 	fadedChanged:Fire()
 	ChatWindow:FadeInText((setFadingTime or ChatSettings.ChatDefaultFadeDuration) * 0)
 end
 
-local function DoTextFadeOut(setFadingTime)
+function DoTextFadeOut(setFadingTime)
 	lastTextFadeTime = tick()
 	textIsFaded = true
 	fadedChanged:Fire()
 	ChatWindow:FadeOutText((setFadingTime or ChatSettings.ChatDefaultFadeDuration))
 end
 
-local function DoFadeInFromNewInformation()
+function DoFadeInFromNewInformation()
 	DoTextFadeIn()
 	if ChatSettings.ChatShouldFadeInFromNewInformation then
 		DoBackgroundFadeIn()
 	end
 end
 
-local function InstantFadeIn()
+function InstantFadeIn()
 	DoBackgroundFadeIn(0)
 	DoTextFadeIn(0)
 end
 
-local function InstantFadeOut()
+function InstantFadeOut()
 	DoBackgroundFadeOut(0)
 	DoTextFadeOut(0)
 end
 
-local function DealWithCoreGuiEnabledChanged(enabled)
+function DealWithCoreGuiEnabledChanged(enabled)
 	if (moduleApiTable.Visible) then
 		if (enabled) then
 			InstantFadeIn()
@@ -238,7 +239,7 @@ local function DealWithCoreGuiEnabledChanged(enabled)
 end
 
 local mouseIsInWindow = nil
-local function UpdateFadingForMouseState(mouseState)
+function UpdateFadingForMouseState(mouseState)
 	mouseIsInWindow = mouseState
 
 	mouseStateChanged:Fire()
@@ -291,7 +292,7 @@ function bubbleChatOnly()
  	return not Players.ClassicChat and Players.BubbleChat
 end
 
-local function UpdateMousePosition(mousePos)
+function UpdateMousePosition(mousePos)
 	if not (moduleApiTable.Visible and moduleApiTable.IsCoreGuiEnabled and (moduleApiTable.TopbarEnabled or ChatSettings.ChatOnWithTopBarOff)) then return end
 
 	if bubbleChatOnly() then
@@ -328,14 +329,188 @@ UpdateFadingForMouseState(true)
 UpdateFadingForMouseState(false)
 
 
+--////////////////////////////////////////////////////////////////////////////////////////////
+--///////////// Code to talk to topbar and maintain set/get core backwards compatibility stuff
+--////////////////////////////////////////////////////////////////////////////////////////////
+local Util = {}
+do
+	function Util.Signal()
+		local sig = {}
+
+		local mSignaler = Instance.new('BindableEvent')
+
+		local mArgData = nil
+		local mArgDataCount = nil
+
+		function sig:fire(...)
+			mArgData = {...}
+			mArgDataCount = select('#', ...)
+			mSignaler:Fire()
+		end
+
+		function sig:connect(f)
+			if not f then error("connect(nil)", 2) end
+			return mSignaler.Event:connect(function()
+				f(unpack(mArgData, 1, mArgDataCount))
+			end)
+		end
+
+		function sig:wait()
+			mSignaler.Event:wait()
+			assert(mArgData, "Missing arg data, likely due to :TweenSize/Position corrupting threadrefs.")
+			return unpack(mArgData, 1, mArgDataCount)
+		end
+
+		return sig
+	end
+end
+
+
+function SetVisibility(val)
+	ChatWindow:SetVisible(val)
+	moduleApiTable.VisibilityStateChanged:fire(val)
+	moduleApiTable.Visible = val
+
+	if (moduleApiTable.IsCoreGuiEnabled) then
+		if (val) then
+			InstantFadeIn()
+		else
+			InstantFadeOut()
+		end
+	end
+end
+
+do
+	moduleApiTable.TopbarEnabled = true
+	moduleApiTable.MessageCount = 0
+	moduleApiTable.Visible = true
+	moduleApiTable.IsCoreGuiEnabled = true
+
+	function moduleApiTable:ToggleVisibility()
+		SetVisibility(not ChatWindow:GetVisible())
+	end
+
+	function moduleApiTable:SetVisible(visible)
+		if (ChatWindow:GetVisible() ~= visible) then
+			SetVisibility(visible)
+		end
+	end
+
+	function moduleApiTable:FocusChatBar()
+		ChatBar:CaptureFocus()
+	end
+
+	function moduleApiTable:GetVisibility()
+		return ChatWindow:GetVisible()
+	end
+
+	function moduleApiTable:GetMessageCount()
+		return self.MessageCount
+	end
+
+	function moduleApiTable:TopbarEnabledChanged(enabled)
+		self.TopbarEnabled = enabled
+		self.CoreGuiEnabled:fire(game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
+	end
+
+	function moduleApiTable:IsFocused(useWasFocused)
+		return ChatBar:IsFocused()
+	end
+
+	moduleApiTable.ChatBarFocusChanged = Util.Signal()
+	moduleApiTable.VisibilityStateChanged = Util.Signal()
+	moduleApiTable.MessagesChanged = Util.Signal()
+
+
+	moduleApiTable.MessagePosted = Util.Signal()
+	moduleApiTable.CoreGuiEnabled = Util.Signal()
+
+	moduleApiTable.ChatMakeSystemMessageEvent = Util.Signal()
+	moduleApiTable.ChatWindowPositionEvent = Util.Signal()
+	moduleApiTable.ChatWindowSizeEvent = Util.Signal()
+	moduleApiTable.ChatBarDisabledEvent = Util.Signal()
+
+
+	function moduleApiTable:fChatWindowPosition()
+		return ChatWindow.GuiObject.Position
+	end
+
+	function moduleApiTable:fChatWindowSize()
+		return ChatWindow.GuiObject.Size
+	end
+
+	function moduleApiTable:fChatBarDisabled()
+		return not ChatBar:GetEnabled()
+	end
+
+
+
+	function moduleApiTable:SpecialKeyPressed(key, modifiers)
+		if (key == Enum.SpecialKey.ChatHotkey) then
+			DoChatBarFocus()
+		end
+	end
+end
+
+spawn(function() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true) end)
+
+moduleApiTable.CoreGuiEnabled:connect(function(enabled)
+	moduleApiTable.IsCoreGuiEnabled = enabled
+	DealWithCoreGuiEnabledChanged(moduleApiTable.IsCoreGuiEnabled)
+
+	enabled = enabled and (moduleApiTable.TopbarEnabled or ChatSettings.ChatOnWithTopBarOff)
+
+	ChatWindow:SetCoreGuiEnabled(enabled)
+
+	if (not enabled) then
+		ChatBar:ReleaseFocus()
+		InstantFadeOut()
+	else
+		InstantFadeIn()
+	end
+end)
+
+moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
+	if (valueTable["Text"] and type(valueTable["Text"]) == "string") then
+		while (not DidFirstChannelsLoads) do wait() end
+
+		local channel = ChatSettings.GeneralChannelName
+		local channelObj = ChatWindow:GetChannel(channel)
+
+		if (channelObj) then
+			local messageObject = {
+				ID = -1,
+				FromSpeaker = nil,
+				OriginalChannel = channel,
+				IsFiltered = true,
+				MessageLength = string.len(valueTable.Text),
+				Message = valueTable.Text,
+				MessageType = ChatConstants.MessageTypeSetCore,
+				Time = os.time(),
+				ExtraData = valueTable,
+			}
+			channelObj:AddMessageToChannel(messageObject)
+			ChannelsBar:UpdateMessagePostedInChannel(channel)
+
+			moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1
+			moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
+		end
+	end
+end)
+
+moduleApiTable.ChatBarDisabledEvent:connect(function(disabled)
+	ChatBar:SetEnabled(not disabled)
+	if (disabled) then
+		ChatBar:ReleaseFocus()
+	end
+end)
 
 
 --////////////////////////////////////////////////////////////////////////////////////////////
 --///////////////////////////////////////////////// Code to hook client UI up to server events
 --////////////////////////////////////////////////////////////////////////////////////////////
-local didFirstChannelsLoads = false
 
-local function DoChatBarFocus()
+function DoChatBarFocus()
 	if (not ChatWindow:GetCoreGuiEnabled()) then return end
 	if (not ChatBar:GetEnabled()) then return end
 
@@ -350,13 +525,13 @@ chatBarFocusChanged.Event:connect(function(focused)
 	moduleApiTable.ChatBarFocusChanged:fire(focused)
 end)
 
-local function DoSwitchCurrentChannel(targetChannel)
+function DoSwitchCurrentChannel(targetChannel)
 	if (ChatWindow:GetChannel(targetChannel)) then
 		ChatWindow:SwitchCurrentChannel(targetChannel)
 	end
 end
 
-local function SendMessageToSelfInTargetChannel(message, channelName, extraData)
+function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 	local channelObj = ChatWindow:GetChannel(channelName)
 	if (channelObj) then
 		local messageData =
@@ -384,13 +559,13 @@ function chatBarFocused()
 		end
 	end
 
-	chatBarFocusChanged:Fire()
+	chatBarFocusChanged:Fire(true)
 end
 
 --// Event for making player say chat message.
 function chatBarFocusLost(enterPressed, inputObject)
 	DoBackgroundFadeIn()
-	chatBarFocusChanged:Fire()
+	chatBarFocusChanged:Fire(false)
 
 	if (enterPressed) then
 		local message = ChatBar:GetTextBox().Text
@@ -416,6 +591,11 @@ function chatBarFocusLost(enterPressed, inputObject)
 			moduleApiTable.MessagePosted:fire(message)
 
 			if not CommandProcessor:ProcessCompletedChatMessage(message, ChatWindow) then
+				if ChatSettings.DisallowedWhiteSpace then
+					for i = 1, #ChatSettings.DisallowedWhiteSpace do
+						message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], "")
+					end
+				end
 				message = string.gsub(message, "\n", "")
 				message = string.gsub(message, "[ ]+", " ")
 
@@ -536,9 +716,9 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, chann
 end)
 
 
-local function HandleChannelJoined(channel, welcomeMessage, messageLog)
+function HandleChannelJoined(channel, welcomeMessage, messageLog)
 	if (channel == ChatSettings.GeneralChannelName) then
-		didFirstChannelsLoads = true
+		DidFirstChannelsLoads = true
 	end
 
 	local channelObj = ChatWindow:AddChannel(channel)
@@ -559,7 +739,7 @@ local function HandleChannelJoined(channel, welcomeMessage, messageLog)
 		end
 
 		if (welcomeMessage ~= "") then
-			welcomeMessageObject = {
+			local welcomeMessageObject = {
 				ID = -1,
 				FromSpeaker = nil,
 				OriginalChannel = channel,
@@ -603,7 +783,7 @@ end)
 
 
 local reparentingLock = false
-local function connectGuiParent(GuiParent)
+function connectGuiParent(GuiParent)
 	local DestroyGuardFrame = Instance.new("Frame")
 	DestroyGuardFrame.Name = "DestroyGuardFrame"
 	DestroyGuardFrame.BackgroundTransparency = 1
@@ -642,6 +822,8 @@ GuiParent.Changed:connect(function(prop)
 	end
 end)
 
+local ChatBarFocusedState = nil
+
 --// Always on top behavior that relies on parenting order of ScreenGuis
 --// This would end up really bad if something else tried to do the exact same thing however.
 PlayerGui.ChildAdded:connect(function(child)
@@ -653,6 +835,17 @@ PlayerGui.ChildAdded:connect(function(child)
 		GuiParent.Parent = PlayerGui
 
 		reparentingLock = false
+	elseif child == GuiParent then
+		if ChatBarFocusedState then
+			RunService.RenderStepped:wait()
+			ChatBar:RestoreFocusedState(ChatBarFocusedState)
+		end
+	end
+end)
+
+PlayerGui.DescendantRemoving:connect(function(descendant)
+	if descendant == GuiParent then
+		ChatBarFocusedState = ChatBar:GetFocusedState()
 	end
 end)
 
@@ -662,190 +855,5 @@ local initData = EventFolder.GetInitDataRequest:InvokeServer()
 for i, channelData in pairs(initData.Channels) do
 	HandleChannelJoined(unpack(channelData))
 end
-
-
-
-
-
-
-
-
---////////////////////////////////////////////////////////////////////////////////////////////
---///////////// Code to talk to topbar and maintain set/get core backwards compatibility stuff
---////////////////////////////////////////////////////////////////////////////////////////////
-local Util = {}
-do
-	function Util.Signal()
-		local sig = {}
-
-		local mSignaler = Instance.new('BindableEvent')
-
-		local mArgData = nil
-		local mArgDataCount = nil
-
-		function sig:fire(...)
-			mArgData = {...}
-			mArgDataCount = select('#', ...)
-			mSignaler:Fire()
-		end
-
-		function sig:connect(f)
-			if not f then error("connect(nil)", 2) end
-			return mSignaler.Event:connect(function()
-				f(unpack(mArgData, 1, mArgDataCount))
-			end)
-		end
-
-		function sig:wait()
-			mSignaler.Event:wait()
-			assert(mArgData, "Missing arg data, likely due to :TweenSize/Position corrupting threadrefs.")
-			return unpack(mArgData, 1, mArgDataCount)
-		end
-
-		return sig
-	end
-end
-
-
-
-
-local function SetVisibility(val)
-	ChatWindow:SetVisible(val)
-	moduleApiTable.VisibilityStateChanged:fire(val)
-	moduleApiTable.Visible = val
-
-	if (moduleApiTable.IsCoreGuiEnabled) then
-		if (val) then
-			InstantFadeIn()
-		else
-			InstantFadeOut()
-		end
-	end
-end
-
-do
-	moduleApiTable.TopbarEnabled = true
-	moduleApiTable.MessageCount = 0
-	moduleApiTable.Visible = true
-	moduleApiTable.IsCoreGuiEnabled = true
-
-	function moduleApiTable:ToggleVisibility()
-		SetVisibility(not ChatWindow:GetVisible())
-	end
-
-	function moduleApiTable:SetVisible(visible)
-		if (ChatWindow:GetVisible() ~= visible) then
-			SetVisibility(visible)
-		end
-	end
-
-	function moduleApiTable:FocusChatBar()
-		ChatBar:CaptureFocus()
-	end
-
-	function moduleApiTable:GetVisibility()
-		return ChatWindow:GetVisible()
-	end
-
-	function moduleApiTable:GetMessageCount()
-		return self.MessageCount
-	end
-
-	function moduleApiTable:TopbarEnabledChanged(enabled)
-		self.TopbarEnabled = enabled
-		self.CoreGuiEnabled:fire(game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
-	end
-
-	function moduleApiTable:IsFocused(useWasFocused)
-		return ChatBar:IsFocused()
-	end
-
-	moduleApiTable.ChatBarFocusChanged = Util.Signal()
-	moduleApiTable.VisibilityStateChanged = Util.Signal()
-	moduleApiTable.MessagesChanged = Util.Signal()
-
-
-	moduleApiTable.MessagePosted = Util.Signal()
-	moduleApiTable.CoreGuiEnabled = Util.Signal()
-
-	moduleApiTable.ChatMakeSystemMessageEvent = Util.Signal()
-	moduleApiTable.ChatWindowPositionEvent = Util.Signal()
-	moduleApiTable.ChatWindowSizeEvent = Util.Signal()
-	moduleApiTable.ChatBarDisabledEvent = Util.Signal()
-
-
-	function moduleApiTable:fChatWindowPosition()
-		return ChatWindow.GuiObject.Position
-	end
-
-	function moduleApiTable:fChatWindowSize()
-		return ChatWindow.GuiObject.Size
-	end
-
-	function moduleApiTable:fChatBarDisabled()
-		return not ChatBar:GetEnabled()
-	end
-
-
-
-	function moduleApiTable:SpecialKeyPressed(key, modifiers)
-		if (key == Enum.SpecialKey.ChatHotkey) then
-			DoChatBarFocus()
-		end
-	end
-end
-
-spawn(function() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true) end)
-
-moduleApiTable.CoreGuiEnabled:connect(function(enabled)
-	moduleApiTable.IsCoreGuiEnabled = enabled
-	DealWithCoreGuiEnabledChanged(moduleApiTable.IsCoreGuiEnabled)
-
-	enabled = enabled and (moduleApiTable.TopbarEnabled or ChatSettings.ChatOnWithTopBarOff)
-
-	ChatWindow:SetCoreGuiEnabled(enabled)
-
-	if (not enabled) then
-		ChatBar:ReleaseFocus()
-		InstantFadeOut()
-	else
-		InstantFadeIn()
-	end
-end)
-
-moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
-	if (valueTable["Text"] and type(valueTable["Text"]) == "string") then
-		while (not didFirstChannelsLoads) do wait() end
-
-		local channel = ChatSettings.GeneralChannelName
-		local channelObj = ChatWindow:GetChannel(channel)
-
-		if (channelObj) then
-			local messageObject = {
-				ID = -1,
-				FromSpeaker = nil,
-				OriginalChannel = channel,
-				IsFiltered = true,
-				MessageLength = string.len(valueTable.Text),
-				Message = valueTable.Text,
-				MessageType = ChatConstants.MessageTypeSetCore,
-				Time = os.time(),
-				ExtraData = valueTable,
-			}
-			channelObj:AddMessageToChannel(messageObject)
-			ChannelsBar:UpdateMessagePostedInChannel(channel)
-
-			moduleApiTable.MessageCount = moduleApiTable.MessageCount + 1
-			moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
-		end
-	end
-end)
-
-moduleApiTable.ChatBarDisabledEvent:connect(function(disabled)
-	ChatBar:SetEnabled(not disabled)
-	if (disabled) then
-		ChatBar:ReleaseFocus()
-	end
-end)
 
 return moduleApiTable
