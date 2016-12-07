@@ -20,6 +20,8 @@ local Chat = game:GetService("Chat")
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
+local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
+local messageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren =
@@ -78,6 +80,11 @@ local RunService = game:GetService("RunService")
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+
+while not LocalPlayer do
+	Players.ChildAdded:wait()
+	LocalPlayer = Players.LocalPlayer
+end
 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local GuiParent = Instance.new("ScreenGui", PlayerGui)
@@ -627,6 +634,41 @@ end
 
 setupChatBarConnections()
 ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
+
+function nameButtonClickedFunction(clickedButton, playerName)
+	if ChatSettings.ClickOnPlayerNameToWhisper then
+		local player = Players:FindFirstChild(playerName)
+		if player and player ~= LocalPlayer then
+			local whisperChannel = "To " ..playerName
+			if ChatWindow:GetChannel(whisperChannel) then
+				local targetChannelName = ChatWindow:GetTargetMessageChannel()
+				if targetChannelName ~= whisperChannel then
+					ChatWindow:SwitchCurrentChannel(whisperChannel)
+				end
+				ChatBar:ResetText()
+				ChatBar:CaptureFocus()
+			elseif not ChatBar:IsInCustomState() then
+				local whisperMessage = "/w " ..playerName
+				ChatBar:CaptureFocus()
+				ChatBar:SetText(whisperMessage)
+			end
+		end
+	end
+end
+
+-- Setup message clicked connections.
+local MessageInteractionConnections = {}
+function setupMessageConnections()
+	if messageCreatorUtil.NameButtonClickedEventEnabled then
+		local nameButtonClicked = messageCreatorUtil:GetNameButtonClickedEvent()
+		if nameButtonClicked then
+			local nameButtonConnection = nameButtonClicked.Event:connect(nameButtonClickedFunction)
+			table.insert(MessageInteractionConnections, nameButtonConnection)
+		end
+	end
+end
+
+setupMessageConnections()
 
 -- Wrap the OnMessageDoneFiltering event so that we do not back up the remote event invocation queue.
 -- This is in cases where we are sent OnMessageDoneFiltering events but we have stopped listening/timed out.

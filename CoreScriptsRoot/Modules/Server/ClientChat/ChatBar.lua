@@ -220,6 +220,10 @@ function methods:ResetText()
 	self:GetTextBox().Text = ""
 end
 
+function methods:SetText(text)
+	self:GetTextBox().Text = text
+end
+
 function methods:GetEnabled()
 	return self.GuiObject.Visible
 end

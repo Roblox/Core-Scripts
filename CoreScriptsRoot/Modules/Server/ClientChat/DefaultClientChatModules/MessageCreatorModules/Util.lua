@@ -119,7 +119,7 @@ function methods:CreateBaseMessage(message, font, textSize, chatColor)
 	return BaseFrame, BaseMessage
 end
 
-function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName)
+function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName, playerName)
 	local speakerNameSize = self:GetStringTextBounds(formatName, BaseMessage.Font, BaseMessage.TextSize)
 	local NameButton = self:GetFromObjectPool("TextButton")
 	NameButton.Selectable = false
@@ -135,6 +135,11 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName)
 	NameButton.TextColor3 = nameColor
 	NameButton.Text = formatName
 	NameButton.Parent = BaseMessage
+
+	NameButton.MouseButton1Click:connect(function()
+		self.NameButtonClickedEvent:Fire(NameButton, playerName)
+	end)
+
 	return NameButton
 end
 
@@ -245,10 +250,24 @@ function methods:CreateFadeFunctions(fadeObjects)
 	return FadeInFunction, FadeOutFunction, UpdateAnimFunction
 end
 
+function methods:NewBindableEvent(name)
+	local bindable = Instance.new("BindableEvent")
+	bindable.Name = name
+	return bindable
+end
+
+-- Event is fired with NameButton that was clicked.
+function methods:GetNameButtonClickedEvent()
+	return self.NameButtonClickedEvent
+end
+
 function module.new()
 	local obj = setmetatable({}, methods)
 
 	obj.ObjectPool = nil
+	obj.NameButtonClickedEventEnabled = true
+	obj.NameButtonClickedEvent = obj:NewBindableEvent("NameButtonClickedEvent")
+
 	obj.DEFAULT_MESSAGE_CREATOR = DEFAULT_MESSAGE_CREATOR
 	obj.MESSAGE_CREATOR_MODULES_VERSION = MESSAGE_CREATOR_MODULES_VERSION
 

@@ -86,6 +86,8 @@ function WhisperCustomState.new(ChatWindow, ChatBar, ChatSettings)
 	obj.OriginalWhisperText = ""
 	obj.PlayerNameEntered = false
 
+	obj:TextUpdated()
+
 	return obj
 end
 
