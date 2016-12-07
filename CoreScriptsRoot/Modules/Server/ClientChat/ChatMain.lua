@@ -83,6 +83,8 @@ local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local GuiParent = Instance.new("ScreenGui", PlayerGui)
 GuiParent.Name = "Chat"
 
+local DidFirstChannelsLoads = false
+
 local modulesFolder = script
 
 local moduleChatWindow = require(modulesFolder:WaitForChild("ChatWindow"))
@@ -190,7 +192,6 @@ function DoBackgroundFadeOut(setFadingTime)
 		--ChatWindow:ResetResizerPosition()
 
 		local Scroller = MessageLogDisplay.Scroller
-		scrollBarThickness = Scroller.ScrollBarThickness
 		Scroller.ScrollingEnabled = false
 		Scroller.ScrollBarThickness = 0
 	end
@@ -471,7 +472,7 @@ end)
 
 moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 	if (valueTable["Text"] and type(valueTable["Text"]) == "string") then
-		while (not didFirstChannelsLoads) do wait() end
+		while (not DidFirstChannelsLoads) do wait() end
 
 		local channel = ChatSettings.GeneralChannelName
 		local channelObj = ChatWindow:GetChannel(channel)
@@ -508,7 +509,6 @@ end)
 --////////////////////////////////////////////////////////////////////////////////////////////
 --///////////////////////////////////////////////// Code to hook client UI up to server events
 --////////////////////////////////////////////////////////////////////////////////////////////
-local didFirstChannelsLoads = false
 
 function DoChatBarFocus()
 	if (not ChatWindow:GetCoreGuiEnabled()) then return end
@@ -718,7 +718,7 @@ end)
 
 function HandleChannelJoined(channel, welcomeMessage, messageLog)
 	if (channel == ChatSettings.GeneralChannelName) then
-		didFirstChannelsLoads = true
+		DidFirstChannelsLoads = true
 	end
 
 	local channelObj = ChatWindow:AddChannel(channel)
@@ -739,7 +739,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog)
 		end
 
 		if (welcomeMessage ~= "") then
-			welcomeMessageObject = {
+			local welcomeMessageObject = {
 				ID = -1,
 				FromSpeaker = nil,
 				OriginalChannel = channel,

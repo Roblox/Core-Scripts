@@ -15,5 +15,5 @@ end
 
 return {
 	[util.KEY_MESSAGE_TYPE] = MESSAGE_TYPE,
-	[util.KEY_CREATOR_FUNCTION] = CreateWelcomeMessageLabel
+	[util.KEY_CREATOR_FUNCTION] = CreateUknownMessageLabel
 }

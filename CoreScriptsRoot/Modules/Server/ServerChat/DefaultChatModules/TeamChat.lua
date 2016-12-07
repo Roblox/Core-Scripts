@@ -29,7 +29,11 @@ local function Run(ChatService)
 						if (otherPlayer) then
 
 							if (player.Team == otherPlayer.Team) then
-								local extraData = {NameColor = player.TeamColor.Color, ChatColor = player.TeamColor.Color}
+								local extraData = {
+									NameColor = player.TeamColor.Color,
+									ChatColor = player.TeamColor.Color,
+									ChannelColor = player.TeamColor.Color
+								}
 								otherSpeaker:SendMessage(message, channelName, fromSpeaker, extraData)
 							else
 								--// Could use this line to obfuscate message for cool effects

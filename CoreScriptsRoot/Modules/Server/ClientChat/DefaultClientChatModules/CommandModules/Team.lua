@@ -36,7 +36,7 @@ end
 function teamStateMethods:TextUpdated()
 	local newText = self.TextBox.Text
 	if not self.TeamChatEntered then
-		if IsTeamCommand(message) then
+		if IsTeamCommand(newText) then
 			self:EnterTeamChat()
 		end
 	else
