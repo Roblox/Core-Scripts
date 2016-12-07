@@ -88,6 +88,10 @@ local function Run(ChatService)
 			error("Message is nil")
 		end
 
+		if channel == "Team" then
+			return false
+		end
+
 		if string.sub(message, 1, 6):lower() == "/team " or message:lower() == "/team" then
 			DoTeamCommand(fromSpeaker, string.sub(message, 7), channel)
 			processedCommand = true
