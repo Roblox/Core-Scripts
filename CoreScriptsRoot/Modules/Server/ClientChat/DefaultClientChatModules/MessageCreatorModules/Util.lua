@@ -36,6 +36,16 @@ local KEY_FADE_IN = "FadeInFunction"
 local KEY_FADE_OUT = "FadeOutFunction"
 local KEY_UPDATE_ANIMATION = "UpdateAnimFunction"
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+while not LocalPlayer do
+	Players.ChildAdded:wait()
+	LocalPlayer = Players.LocalPlayer
+end
+
+local clientChatModules = script.Parent.Parent
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
+
 local module = {}
 local methods = {}
 methods.__index = methods
@@ -46,7 +56,7 @@ testLabel.TextWrapped = true
 testLabel.Position = UDim2.new(1, 0, 1, 0)
 
 function WaitUntilParentedCorrectly()
-	while (not testLabel:IsDescendantOf(game:GetService("Players").LocalPlayer)) do
+	while not testLabel:IsDescendantOf(LocalPlayer) do
 		testLabel.AncestryChanged:wait()
 	end
 end
@@ -137,7 +147,7 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName, 
 	NameButton.Parent = BaseMessage
 
 	NameButton.MouseButton1Click:connect(function()
-		self.NameButtonClickedEvent:Fire(NameButton, playerName)
+		self:NameButtonClicked(NameButton, playerName)
 	end)
 
 	return NameButton
@@ -160,6 +170,36 @@ function methods:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName)
 	ChannelButton.Text = formatChannelName
 	ChannelButton.Parent = BaseMessage
 	return ChannelButton
+end
+
+function methods:NameButtonClicked(nameButton, playerName)
+	if not self.ChatWindow then
+		return
+	end
+
+	if ChatSettings.ClickOnPlayerNameToWhisper then
+		local player = Players:FindFirstChild(playerName)
+		if player and player ~= LocalPlayer then
+			local whisperChannel = "To " ..playerName
+			if self.ChatWindow:GetChannel(whisperChannel) then
+				local targetChannelName = self.ChatWindow:GetTargetMessageChannel()
+				if targetChannelName ~= whisperChannel then
+					self.ChatWindow:SwitchCurrentChannel(whisperChannel)
+				end
+				self.ChatBar:ResetText()
+				self.ChatBar:CaptureFocus()
+			elseif not self.ChatBar:IsInCustomState() then
+				local whisperMessage = "/w " ..playerName
+				self.ChatBar:CaptureFocus()
+				self.ChatBar:SetText(whisperMessage)
+			end
+		end
+	end
+end
+
+function methods:RegisterChatWindow(chatWindow)
+	self.ChatWindow = chatWindow
+	self.ChatBar = chatWindow:GetChatBar()
 end
 
 function methods:GetFromObjectPool(className)
@@ -256,17 +296,11 @@ function methods:NewBindableEvent(name)
 	return bindable
 end
 
--- Event is fired with NameButton that was clicked.
-function methods:GetNameButtonClickedEvent()
-	return self.NameButtonClickedEvent
-end
-
 function module.new()
 	local obj = setmetatable({}, methods)
 
 	obj.ObjectPool = nil
-	obj.NameButtonClickedEventEnabled = true
-	obj.NameButtonClickedEvent = obj:NewBindableEvent("NameButtonClickedEvent")
+	obj.ChatWindow = nil
 
 	obj.DEFAULT_MESSAGE_CREATOR = DEFAULT_MESSAGE_CREATOR
 	obj.MESSAGE_CREATOR_MODULES_VERSION = MESSAGE_CREATOR_MODULES_VERSION

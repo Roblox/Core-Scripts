@@ -378,6 +378,10 @@ function methods:CreateGuiObjects(targetParent)
 	self:AnimGuiObjects()
 end
 
+function methods:GetChatBar()
+	return rawget(self, "ChatBar")
+end
+
 function methods:RegisterChatBar(ChatBar)
 	rawset(self, "ChatBar", ChatBar)
 	self.ChatBar:CreateGuiObjects(self.GuiObjects.ChatBarParentFrame)
