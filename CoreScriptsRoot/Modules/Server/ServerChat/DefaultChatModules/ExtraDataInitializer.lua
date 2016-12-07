@@ -139,7 +139,7 @@ local function Run(ChatService)
 		end
 		if (player) then
 			player.Changed:connect(function(property)
-				if property == "TeamColor" or property == "Neutral" then
+				if property == "TeamColor" or property == "Neutral" or property == "Team" then
 					speaker:SetExtraData("NameColor", GetNameColor(speaker))
 				end
 			end)

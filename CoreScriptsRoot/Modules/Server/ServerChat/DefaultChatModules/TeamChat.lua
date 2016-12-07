@@ -109,10 +109,10 @@ local function Run(ChatService)
 	ChatService:RegisterProcessCommandsFunction("team_commands", TeamCommandsFunction)
 
 	local function PutSpeakerInCorrectTeamChatState(speakerObj, playerObj)
-		if (playerObj.Neutral and speakerObj:IsInChannel(channel.Name)) then
+		if (playerObj.Neutral or playerObj.Team == nil) and speakerObj:IsInChannel(channel.Name) then
 			speakerObj:LeaveChannel(channel.Name)
 
-		elseif (not playerObj.Neutral and not speakerObj:IsInChannel(channel.Name)) then
+		elseif not playerObj.Neutral and playerObj.Team and not speakerObj:IsInChannel(channel.Name) then
 			speakerObj:JoinChannel(channel.Name)
 
 		end
