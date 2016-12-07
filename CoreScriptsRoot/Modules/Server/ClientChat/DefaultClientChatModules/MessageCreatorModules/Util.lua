@@ -8,6 +8,7 @@ Creating a message creator module:
 2) Create a function that takes a messageData object and returns:
 {
 	KEY_BASE_FRAME = BaseFrame,
+	KEY_BASE_MESSAGE = BaseMessage,
 	KEY_UPDATE_TEXT_FUNC = function(newMessageObject) ---Function to update the text of the message.
 	KEY_GET_HEIGHT = function() ---Function to get the height of the message in absolute pixels,
 	KEY_FADE_IN = function(duration, CurveUtil) ---Function to tell the message to start fading in.
@@ -28,6 +29,7 @@ local KEY_MESSAGE_TYPE = "MessageType"
 local KEY_CREATOR_FUNCTION = "MessageCreatorFunc"
 ---Creator function return object keys
 local KEY_BASE_FRAME = "BaseFrame"
+local KEY_BASE_MESSAGE = "BaseMessage"
 local KEY_UPDATE_TEXT_FUNC = "UpdateTextFunction"
 local KEY_GET_HEIGHT = "GetHeightFunction"
 local KEY_FADE_IN = "FadeInFunction"
@@ -78,8 +80,9 @@ function methods:GetStringTextBounds(text, font, textSize, sizeBounds)
 end
 --// Above was taken directly from Util.GetStringTextBounds() in the old chat corescripts.
 
-function methods:GetMessageHeight(BaseMessage, BaseFrame)
-	local textBoundsSize = self:GetStringTextBounds(BaseMessage.Text, BaseMessage.Font, BaseMessage.TextSize, UDim2.new(0, BaseFrame.AbsoluteSize.X, 0, 1000))
+function methods:GetMessageHeight(BaseMessage, BaseFrame, xSize)
+	xSize = xSize or BaseFrame.AbsoluteSize.X
+	local textBoundsSize = self:GetStringTextBounds(BaseMessage.Text, BaseMessage.Font, BaseMessage.TextSize, UDim2.new(0, xSize, 0, 1000))
 	return textBoundsSize.Y
 end
 
@@ -253,6 +256,7 @@ function module.new()
 	obj.KEY_CREATOR_FUNCTION = KEY_CREATOR_FUNCTION
 
 	obj.KEY_BASE_FRAME = KEY_BASE_FRAME
+	obj.KEY_BASE_MESSAGE = KEY_BASE_MESSAGE
 	obj.KEY_UPDATE_TEXT_FUNC = KEY_UPDATE_TEXT_FUNC
 	obj.KEY_GET_HEIGHT = KEY_GET_HEIGHT
 	obj.KEY_FADE_IN = KEY_FADE_IN

@@ -119,7 +119,15 @@ function methods:PositionMessageLabelInWindow(messageObject)
 	baseFrame.Parent = self.Scroller
 	baseFrame.Position = UDim2.new(0, 0, 0, self.Scroller.CanvasSize.Y.Offset)
 
-	baseFrame.Size = UDim2.new(1, 0, 0, messageObject.GetHeightFunction())
+	baseFrame.Size = UDim2.new(1, 0, 0, messageObject.GetHeightFunction(self.Scroller.AbsoluteSize.X))
+
+	if messageObject.BaseMessage then
+		local trySize = self.Scroller.AbsoluteSize.X
+		while not messageObject.BaseMessage.TextFits do
+			trySize = trySize - 1
+			baseFrame.Size = UDim2.new(1, 0, 0, messageObject.GetHeightFunction(trySize))
+		end
+	end
 
 	local isScrolledDown = self:IsScrolledDown()
 

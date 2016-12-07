@@ -60,6 +60,7 @@ module.MessageHistoryLengthPerChannel = 50
 
 ---[[ Message Settings ]]
 module.MaximumMessageLength = 200
+module.DisallowedWhiteSpace = {"\n", "\r", "\t", "\v", "\f"}
 
 local ChangedEvent = Instance.new("BindableEvent")
 

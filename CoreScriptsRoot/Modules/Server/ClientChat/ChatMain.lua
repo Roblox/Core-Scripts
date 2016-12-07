@@ -591,6 +591,11 @@ function chatBarFocusLost(enterPressed, inputObject)
 			moduleApiTable.MessagePosted:fire(message)
 
 			if not CommandProcessor:ProcessCompletedChatMessage(message, ChatWindow) then
+				if ChatSettings.DisallowedWhiteSpace then
+					for i = 1, #ChatSettings.DisallowedWhiteSpace do
+						message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], "")
+					end
+				end
 				message = string.gsub(message, "\n", "")
 				message = string.gsub(message, "[ ]+", " ")
 

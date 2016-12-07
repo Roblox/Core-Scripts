@@ -16,8 +16,8 @@ function CreateSetCoreMessageLabel(messageData, channelName)
 
 	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useTextSize, useColor)
 
-	local function GetHeightFunction()
-		return util:GetMessageHeight(BaseMessage, BaseFrame)
+	local function GetHeightFunction(xSize)
+		return util:GetMessageHeight(BaseMessage, BaseFrame, xSize)
 	end
 
 	local FadeParmaters = {}
@@ -30,6 +30,7 @@ function CreateSetCoreMessageLabel(messageData, channelName)
 
 	return {
 		[util.KEY_BASE_FRAME] = BaseFrame,
+		[util.KEY_BASE_MESSAGE] = BaseMessage,
 		[util.KEY_UPDATE_TEXT_FUNC] = nil,
 		[util.KEY_GET_HEIGHT] = GetHeightFunction,
 		[util.KEY_FADE_IN] = FadeInFunction,

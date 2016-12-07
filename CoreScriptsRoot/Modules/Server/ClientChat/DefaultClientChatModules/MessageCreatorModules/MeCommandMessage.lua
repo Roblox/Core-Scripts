@@ -35,8 +35,8 @@ function CreateMeCommandMessageLabel(messageData, channelName)
 
 	UpdateTextFunction(messageData)
 
-	local function GetHeightFunction()
-		return util:GetMessageHeight(BaseMessage, BaseFrame)
+	local function GetHeightFunction(xSize)
+		return util:GetMessageHeight(BaseMessage, BaseFrame, xSize)
 	end
 
 	local FadeParmaters = {}
@@ -56,6 +56,7 @@ function CreateMeCommandMessageLabel(messageData, channelName)
 
 	return {
 		[util.KEY_BASE_FRAME] = BaseFrame,
+		[util.KEY_BASE_MESSAGE] = BaseMessage,
 		[util.KEY_UPDATE_TEXT_FUNC] = UpdateTextFunction,
 		[util.KEY_GET_HEIGHT] = GetHeightFunction,
 		[util.KEY_FADE_IN] = FadeInFunction,
