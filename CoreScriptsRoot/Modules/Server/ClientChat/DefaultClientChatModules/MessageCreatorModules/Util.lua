@@ -153,7 +153,7 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName, 
 	return NameButton
 end
 
-function methods:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName)
+function methods:AddChannelButtonToBaseMessage(BaseMessage, channelColor, formatChannelName, channelName)
 	local channelNameSize = self:GetStringTextBounds(formatChannelName, BaseMessage.Font, BaseMessage.TextSize)
 	local ChannelButton = self:GetFromObjectPool("TextButton")
 	ChannelButton.Selectable = false
@@ -166,9 +166,14 @@ function methods:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName)
 	ChannelButton.TextYAlignment = BaseMessage.TextYAlignment
 	ChannelButton.TextTransparency = BaseMessage.TextTransparency
 	ChannelButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
-	ChannelButton.TextColor3 = BaseMessage.TextColor3
+	ChannelButton.TextColor3 = channelColor
 	ChannelButton.Text = formatChannelName
 	ChannelButton.Parent = BaseMessage
+
+	ChannelButton.MouseButton1Click:connect(function()
+		self:ChannelButtonClicked(ChannelButton, channelName)
+	end)
+
 	return ChannelButton
 end
 
@@ -182,6 +187,7 @@ function methods:NameButtonClicked(nameButton, playerName)
 		if player and player ~= LocalPlayer then
 			local whisperChannel = "To " ..playerName
 			if self.ChatWindow:GetChannel(whisperChannel) then
+				self.ChatBar:ResetCustomState()
 				local targetChannelName = self.ChatWindow:GetTargetMessageChannel()
 				if targetChannelName ~= whisperChannel then
 					self.ChatWindow:SwitchCurrentChannel(whisperChannel)
@@ -193,6 +199,24 @@ function methods:NameButtonClicked(nameButton, playerName)
 				self.ChatBar:CaptureFocus()
 				self.ChatBar:SetText(whisperMessage)
 			end
+		end
+	end
+end
+
+function methods:ChannelButtonClicked(channelButton, channelName)
+	if not self.ChatWindow then
+		return
+	end
+
+	if ChatSettings.ClickOnChannelNameToSetMainChannel then
+		if self.ChatWindow:GetChannel(channelName) then
+			self.ChatBar:ResetCustomState()
+			local targetChannelName = self.ChatWindow:GetTargetMessageChannel()
+			if targetChannelName ~= channelName then
+				self.ChatWindow:SwitchCurrentChannel(channelName)
+			end
+			self.ChatBar:ResetText()
+			self.ChatBar:CaptureFocus()
 		end
 	end
 end

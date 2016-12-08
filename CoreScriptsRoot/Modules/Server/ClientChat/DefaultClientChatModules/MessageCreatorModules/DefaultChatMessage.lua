@@ -16,8 +16,8 @@ function CreateMessageLabel(messageData, channelName)
 	local useFont = extraData.Font or ChatSettings.DefaultFont
 	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
 	local useNameColor = extraData.NameColor or ChatSettings.DefaultNameColor
-	local useChannelColor = extraData.ChannelColor or ChatSettings.DefaultChannelColor or Color3.new(1, 1, 1)
 	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
+	local useChannelColor = extraData.ChannelColor or useChatColor
 
 	local formatUseName = string.format("[%s]:", fromSpeaker)
 	local speakerNameSize = util:GetStringTextBounds(formatUseName, useFont, useTextSize)
@@ -29,7 +29,7 @@ function CreateMessageLabel(messageData, channelName)
 
 	if channelName ~= messageData.OriginalChannel then
 			local formatChannelName = string.format("{%s}", messageData.OriginalChannel)
-			ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName, useChannelColor)
+			ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, useChannelColor, formatChannelName, messageData.OriginalChannel)
 			NameButton.Position = UDim2.new(0, ChannelButton.Size.X.Offset + util:GetStringTextBounds(" ", useFont, useTextSize).X, 0, 0)
 			numNeededSpaces = numNeededSpaces + util:GetNumberOfSpaces(formatChannelName, useFont, useTextSize) + 1
 	end

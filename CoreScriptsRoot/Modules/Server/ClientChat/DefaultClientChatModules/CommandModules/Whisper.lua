@@ -56,6 +56,9 @@ function whisperStateMethods:TextUpdated()
 			---Implement this when setting cursor positon is a thing.
 			---self.TextBox.Text = self.OriginalText .. " " .. self.PlayerName
 			self.PlayerNameEntered = false
+			---Temporary until setting cursor position...
+			self.ChatBar:ResetCustomState()
+			self.ChatBar:CaptureFocus()
 		end
 	end
 end

@@ -29,7 +29,6 @@ module.ChatBarFont = Enum.Font.SourceSansBold
 module.BackGroundColor = Color3.new(0, 0, 0)
 module.DefaultMessageColor = Color3.new(1, 1, 1)
 module.DefaultNameColor = Color3.new(1, 1, 1)
-module.DefaultChannelColor = Color3.new(1, 1, 1)
 module.ChatBarBackGroundColor = Color3.new(0, 0, 0)
 module.ChatBarBoxColor = Color3.new(1, 1, 1)
 module.ChatBarTextColor = Color3.new(0, 0, 0)
@@ -64,6 +63,7 @@ module.MessageHistoryLengthPerChannel = 50
 module.MaximumMessageLength = 200
 module.DisallowedWhiteSpace = {"\n", "\r", "\t", "\v", "\f"}
 module.ClickOnPlayerNameToWhisper = true
+module.ClickOnChannelNameToSetMainChannel = true
 
 local ChangedEvent = Instance.new("BindableEvent")
 
