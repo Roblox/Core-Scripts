@@ -20,6 +20,8 @@ local Chat = game:GetService("Chat")
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
+local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
+local MessageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren =
@@ -79,6 +81,11 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
+while not LocalPlayer do
+	Players.ChildAdded:wait()
+	LocalPlayer = Players.LocalPlayer
+end
+
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local GuiParent = Instance.new("ScreenGui", PlayerGui)
 GuiParent.Name = "Chat"
@@ -108,6 +115,8 @@ ChatWindow:CreateGuiObjects(GuiParent)
 ChatWindow:RegisterChatBar(ChatBar)
 ChatWindow:RegisterChannelsBar(ChannelsBar)
 ChatWindow:RegisterMessageLogDisplay(MessageLogDisplay)
+
+MessageCreatorUtil:RegisterChatWindow(ChatWindow)
 
 local Chat = game:GetService("Chat")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")

@@ -88,6 +88,10 @@ local function Run(ChatService)
 			error("Message is nil")
 		end
 
+		if channel == "Team" then
+			return false
+		end
+
 		if string.sub(message, 1, 6):lower() == "/team " or message:lower() == "/team" then
 			DoTeamCommand(fromSpeaker, string.sub(message, 7), channel)
 			processedCommand = true
@@ -105,10 +109,10 @@ local function Run(ChatService)
 	ChatService:RegisterProcessCommandsFunction("team_commands", TeamCommandsFunction)
 
 	local function PutSpeakerInCorrectTeamChatState(speakerObj, playerObj)
-		if (playerObj.Neutral and speakerObj:IsInChannel(channel.Name)) then
+		if (playerObj.Neutral or playerObj.Team == nil) and speakerObj:IsInChannel(channel.Name) then
 			speakerObj:LeaveChannel(channel.Name)
 
-		elseif (not playerObj.Neutral and not speakerObj:IsInChannel(channel.Name)) then
+		elseif not playerObj.Neutral and playerObj.Team and not speakerObj:IsInChannel(channel.Name) then
 			speakerObj:JoinChannel(channel.Name)
 
 		end

@@ -31,7 +31,7 @@ function CreateMessageLabel(messageData, channelName)
 	local numNeededSpaces = util:GetNumberOfSpaces(formatUseName, useFont, useTextSize) + 1
 
 	local BaseFrame, BaseMessage = util:CreateBaseMessage("", useFont, useTextSize, useChatColor)
-	local NameButton = util:AddNameButtonToBaseMessage(BaseMessage, useNameColor, formatUseName)
+	local NameButton = util:AddNameButtonToBaseMessage(BaseMessage, useNameColor, formatUseName, fromSpeaker)
 	local ChannelButton = nil
 
 	if channelName ~= messageData.OriginalChannel then
