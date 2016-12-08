@@ -41,12 +41,26 @@ local function Install()
 		ChatModules.Name = "ChatModules"
 		ChatModules.Archivable = false
 
-		local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
-		for i = 1, #defaultChatModules do
-			LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
-		end
+		local InsertDefaults = Instance.new("BoolValue")
+		InsertDefaults.Name = "InsertDefaultModules"
+		InsertDefaults.Value = true
+		InsertDefaults.Parent = ChatModules
 
 		ChatModules.Parent = installDirectory
+	end
+
+	local shouldInsertDefaultModules = false
+	if ChatModules:FindFirstChild("InsertDefaultModules") then
+		shouldInsertDefaultModules = ChatModules.InsertDefaultModules.Value
+	end
+
+	if shouldInsertDefaultModules then
+		local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
+		for i = 1, #defaultChatModules do
+			if not ChatModules:FindFirstChild(defaultChatModules[i].Name) then
+				LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
+			end
+		end
 	end
 
 	if not ServerScriptService:FindFirstChild(runnerScriptName) then

@@ -34,9 +34,11 @@ function GetMessageCreators()
 	local typeToFunction = {}
 	local creators = messageCreatorModules:GetChildren()
 	for i = 1, #creators do
-		if creators[i].Name ~= "Util" then
-			local creator = require(creators[i])
-			typeToFunction[creator[messageCreatorUtil.KEY_MESSAGE_TYPE]] = creator[messageCreatorUtil.KEY_CREATOR_FUNCTION]
+		if creators[i]:IsA("ModuleScript") then
+			if creators[i].Name ~= "Util" then
+				local creator = require(creators[i])
+				typeToFunction[creator[messageCreatorUtil.KEY_MESSAGE_TYPE]] = creator[messageCreatorUtil.KEY_CREATOR_FUNCTION]
+			end
 		end
 	end
 	return typeToFunction

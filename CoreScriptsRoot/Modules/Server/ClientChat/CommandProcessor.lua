@@ -18,14 +18,16 @@ local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 function methods:SetupCommandProcessors()
 	local commands = commandModules:GetChildren()
 	for i = 1, #commands do
-		if commands[i].Name ~= "Util" then
-			local commandProcessor = require(commands[i])
-			local processorType = commandProcessor[commandUtil.KEY_COMMAND_PROCESSOR_TYPE]
-			local processorFunction = commandProcessor[commandUtil.KEY_PROCESSOR_FUNCTION]
-			if processorType == commandUtil.IN_PROGRESS_MESSAGE_PROCESSOR then
-				table.insert(self.InProgressMessageProcessors, processorFunction)
-			elseif processorType == commandUtil.COMPLETED_MESSAGE_PROCESSOR then
-				table.insert(self.CompletedMessageProcessors, processorFunction)
+		if commands[i]:IsA("ModuleScript") then
+			if commands[i].Name ~= "Util" then
+				local commandProcessor = require(commands[i])
+				local processorType = commandProcessor[commandUtil.KEY_COMMAND_PROCESSOR_TYPE]
+				local processorFunction = commandProcessor[commandUtil.KEY_PROCESSOR_FUNCTION]
+				if processorType == commandUtil.IN_PROGRESS_MESSAGE_PROCESSOR then
+					table.insert(self.InProgressMessageProcessors, processorFunction)
+				elseif processorType == commandUtil.COMPLETED_MESSAGE_PROCESSOR then
+					table.insert(self.CompletedMessageProcessors, processorFunction)
+				end
 			end
 		end
 	end
