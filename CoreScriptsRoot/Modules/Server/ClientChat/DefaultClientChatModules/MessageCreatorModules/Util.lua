@@ -106,6 +106,7 @@ function methods:CreateBaseMessage(message, font, textSize, chatColor)
 	local BaseFrame = self:GetFromObjectPool("Frame")
 	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
+	BaseFrame.Visible = true
 	BaseFrame.BackgroundTransparency = 1
 
 	local messageBorder = 8
@@ -124,6 +125,7 @@ function methods:CreateBaseMessage(message, font, textSize, chatColor)
 	BaseMessage.TextColor3 = chatColor
 	BaseMessage.TextWrapped = true
 	BaseMessage.Text = message
+	BaseMessage.Visible = true
 	BaseMessage.Parent = BaseFrame
 
 	return BaseFrame, BaseMessage
@@ -144,6 +146,7 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName, 
 	NameButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 	NameButton.TextColor3 = nameColor
 	NameButton.Text = formatName
+	NameButton.Visible = true
 	NameButton.Parent = BaseMessage
 
 	NameButton.MouseButton1Click:connect(function()
@@ -168,6 +171,7 @@ function methods:AddChannelButtonToBaseMessage(BaseMessage, channelColor, format
 	ChannelButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 	ChannelButton.TextColor3 = channelColor
 	ChannelButton.Text = formatChannelName
+	ChannelButton.Visible = true
 	ChannelButton.Parent = BaseMessage
 
 	ChannelButton.MouseButton1Click:connect(function()
