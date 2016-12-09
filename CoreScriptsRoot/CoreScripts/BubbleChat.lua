@@ -8,6 +8,7 @@
 local RunService = game:GetService('RunService')
 local CoreGuiService = game:GetService('CoreGui')
 local PlayersService = game:GetService('Players')
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ChatService = game:GetService("Chat")
 local TextService = game:GetService("TextService")
 local GameOptions = settings()["Game Options"]
@@ -560,28 +561,14 @@ local function createChatOutput()
 		end
 	end
 
-	local testLabel = Instance.new('TextLabel')
-	function isLabelTextAllowed(message)
-		--There exists an internal filter that filters out some profanity. It does this silently if you try to set text of an object.
-		--Here we check if the message is going to be filtered by applying it and comparing it.
-		testLabel.Text = message
-		return (testLabel.Text == message)
-	end
-
 	function this:OnPlayerChatMessage(chatType, sourcePlayer, message, targetPlayer)
 		if not this:BubbleChatEnabled() then return end
-
-		-- eliminate display of commands
-		if string.sub(message, 1, 1) == '/' then return end
 
 		local localPlayer = PlayersService.LocalPlayer
 		local fromOthers = localPlayer ~= nil and sourcePlayer ~= localPlayer
 
 		-- annihilate chats made by blocked or muted players
 		if blockingUtility:IsPlayerBlockedByUserId(sourcePlayer.userId) or blockingUtility:IsPlayerMutedByUserId(sourcePlayer.userId) then return end
-
-		-- remove messages that are filtered from the default gui text filter
-		if not isLabelTextAllowed(message) then return end
 
 		local luaChatType = ChatType.PLAYER_CHAT
 		if chatType == Enum.PlayerChatType.Team then
@@ -631,8 +618,55 @@ local function createChatOutput()
 		end 
 	end
 
-	-- setup to datamodel connections
-	PlayersService.PlayerChatted:connect(function(chatType, player, message, targetPlayer) this:OnPlayerChatMessage(chatType, player, message, targetPlayer) end)
+
+	function findPlayer(playerName)
+		for i,v in pairs(PlayersService:GetPlayers()) do
+			if v.Name == playerName then
+				return v
+			end
+		end
+	end
+	
+	if not require(GuiRoot.Modules.ChatSelector):GetNewLuaChatFlag() then
+		-- setup to datamodel connections
+		PlayersService.PlayerChatted:connect(function(chatType, player, message, targetPlayer) this:OnPlayerChatMessage(chatType, player, message, targetPlayer) end)
+	else
+		ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
+		local OnNewMessage = ReplicatedStorage.DefaultChatSystemChatEvents:WaitForChild("OnNewMessage")
+		local OnMessageDoneFiltering = ReplicatedStorage.DefaultChatSystemChatEvents:WaitForChild("OnMessageDoneFiltering")
+		
+		OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
+			local sender = findPlayer(messageData.FromSpeaker)
+			if not sender then
+				return
+			end
+			if not messageData.IsFiltered then
+				return
+			end
+			--Todo: Once this is moved to a non-corescript
+			--Include the ChatSettings module so we know
+			--whether to show the local user's filtered
+			--or unfiltered message
+		--	if messageData.FromSpeaker == (PlayersService.LocalPlayer ~= nil and PlayersService.LocalPlayer.Name) and ChatSettings.ShowUserOwnFilteredMessage then
+		--		return
+		--	end
+		
+			this:OnPlayerChatMessage(nil, sender, messageData.Message, nil)
+		end)
+		OnMessageDoneFiltering.OnClientEvent:connect(function(messageData, channelName)
+			local sender = findPlayer(messageData.FromSpeaker)
+			if not sender then
+				return
+			end
+			if messageData.FromSpeaker == (PlayersService.LocalPlayer ~= nil and PlayersService.LocalPlayer.Name) --[[and not ChatSettings.ShowUserOwnFilteredMessage--]] then
+				return
+			end
+		
+			this:OnPlayerChatMessage(nil, sender, messageData.Message, nil)
+		end)
+	end
+	
+	
 	ChatService.Chatted:connect(function(origin, message, color) this:OnGameChatMessage(origin, message, color) end)
 
 	local cameraChangedCon = nil
