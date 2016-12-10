@@ -36,7 +36,7 @@ local function Run(ChatService)
 				speaker:AddMutedSpeaker(muteSpeaker.Name)
 				speaker:SendSystemMessage(string.format("Speaker '%s' has been muted.", muteSpeaker.Name), channel)
 			else
-				speaker:SendSystemMessage(string.format("Speaker '%s' does not exist.", tostring(muteSpeakerName), channel, errorExtraData)
+				speaker:SendSystemMessage(string.format("Speaker '%s' does not exist.", tostring(muteSpeakerName)), channel, errorExtraData)
 			end
 		end
 	end
@@ -55,7 +55,7 @@ local function Run(ChatService)
 				speaker:RemoveMutedSpeaker(unmuteSpeaker.Name)
 				speaker:SendSystemMessage(string.format("Speaker '%s' has been unmuted.", unmuteSpeaker.Name), channel)
 			else
-				speaker:SendSystemMessage(string.format("Speaker '%s' does not exist.", tostring(unmuteSpeakerName), channel, errorExtraData)
+				speaker:SendSystemMessage(string.format("Speaker '%s' does not exist.", tostring(unmuteSpeakerName)), channel, errorExtraData)
 			end
 		end
 	end
