@@ -136,7 +136,7 @@ function methods:RemoveMutedSpeaker(speakerName)
 end
 
 function methods:IsSpeakerMuted(speakerName)
-	return self.MutedSpeakers[speakerName]
+	return self.MutedSpeakers[speakerName:lower()]
 end
 
 --///////////////// Internal-Use Methods
