@@ -25,7 +25,7 @@ function methods:SayMessage(message, channelName, extraData)
 
 	local messageObj = channel:InternalPostMessage(self, message, extraData)
 	if (messageObj) then
-		local success, err = pcall(function() self.eSaidMessage:Fire(messageObj) end)
+		local success, err = pcall(function() self.eSaidMessage:Fire(messageObj, channelName) end)
 		if not success and err then
 			print("Error saying message: " ..err)
 		end
@@ -113,14 +113,15 @@ end
 
 function methods:SetExtraData(key, value)
 	self.ExtraData[key] = value
+	self.eExtraDataUpdated:Fire(key, value)
 end
 
 function methods:GetExtraData(key)
 	return self.ExtraData[key]
 end
 
-function methods:SetMainChannel(channel)
-	local success, err = pcall(function() self.eMainChannelSet:Fire(channel) end)
+function methods:SetMainChannel(channelName)
+	local success, err = pcall(function() self.eMainChannelSet:Fire(channelName) end)
 	if not success and err then
 		print("Error setting main channel: " ..err)
 	end
@@ -153,25 +154,25 @@ function methods:InternalAssignPlayerObject(playerObj)
 	rawset(self, "PlayerObj", playerObj)
 end
 
-function methods:InternalSendMessage(messageObj, channel)
+function methods:InternalSendMessage(messageObj, channelName)
 	local success, err = pcall(function()
-		self.eReceivedMessage:Fire(messageObj, channel)
+		self.eReceivedMessage:Fire(messageObj, channelName)
 	end)
 	if not success and err then
 		print("Error sending internal message: " ..err)
 	end
 end
 
-function methods:InternalSendFilteredMessage(messageObj, channel)
+function methods:InternalSendFilteredMessage(messageObj, channelName)
 	local success, err = pcall(function()
-		self.eMessageDoneFiltering:Fire(messageObj, channel)
+		self.eMessageDoneFiltering:Fire(messageObj, channelName)
 	end)
 	if not success and err then
 		print("Error sending internal filtered message: " ..err)
 	end
 end
 
-function methods:InternalSendSystemMessage(messageObj, channel)
+function methods:InternalSendSystemMessage(messageObj, channelName)
 	local success, err = pcall(function()
 		self.eReceivedSystemMessage:Fire(messageObj, channel)
 	end)
@@ -208,6 +209,7 @@ function module.new(vChatService, name)
 	obj.eChannelLeft = Instance.new("BindableEvent")
 	obj.eMuted = Instance.new("BindableEvent")
 	obj.eUnmuted = Instance.new("BindableEvent")
+	obj.eExtraDataUpdated = Instance.new("BindableEvent")
 	obj.eMainChannelSet = Instance.new("BindableEvent")
 
 	obj.SaidMessage = obj.eSaidMessage.Event
@@ -218,6 +220,7 @@ function module.new(vChatService, name)
 	obj.ChannelLeft = obj.eChannelLeft.Event
 	obj.Muted = obj.eMuted.Event
 	obj.Unmuted = obj.eUnmuted.Event
+	obj.ExtraDataUpdated = obj.eExtraDataUpdated.Event
 	obj.MainChannelSet = obj.eMainChannelSet.Event
 
 	ClassMaker.MakeClass("Speaker", obj)
