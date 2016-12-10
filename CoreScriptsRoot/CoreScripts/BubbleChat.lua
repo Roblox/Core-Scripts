@@ -631,9 +631,9 @@ local function createChatOutput()
 		-- setup to datamodel connections
 		PlayersService.PlayerChatted:connect(function(chatType, player, message, targetPlayer) this:OnPlayerChatMessage(chatType, player, message, targetPlayer) end)
 	else
-		ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
-		local OnNewMessage = ReplicatedStorage.DefaultChatSystemChatEvents:WaitForChild("OnNewMessage")
-		local OnMessageDoneFiltering = ReplicatedStorage.DefaultChatSystemChatEvents:WaitForChild("OnMessageDoneFiltering")
+		local ChatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents") or ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents", math.huge)
+		local OnMessageDoneFiltering = ChatEvents:FindFirstChild("OnMessageDoneFiltering") or ChatEvents:WaitForChild("OnMessageDoneFiltering", math.huge)
+		local OnNewMessage = ChatEvents:FindFirstChild("OnNewMessage") or ChatEvents:WaitForChild("OnNewMessage", math.huge)
 		
 		OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 			local sender = findPlayer(messageData.FromSpeaker)
