@@ -1,11 +1,5 @@
 local t = {}
 
-function waitForChild(instance, name)
-	while not instance:FindFirstChild(name) do
-		instance.ChildAdded:wait()
-	end
-end
-
 -- Do a line/plane intersection.  The line starts at the camera.  The plane is at y == 0, normal(0, 1, 0)
 --
 -- vectorPos - End point of the line.

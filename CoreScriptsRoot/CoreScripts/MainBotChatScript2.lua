@@ -46,12 +46,6 @@ function waitForProperty(instance, name)
 	end
 end
 
-function waitForChild(instance, name)
-	while not instance:FindFirstChild(name) do
-		instance.ChildAdded:wait()
-	end
-end
-
 local goodbyeChoiceActiveFlagSuccess, goodbyeChoiceActiveFlagValue = pcall(function()
 	return settings():GetFFlag("GoodbyeChoiceActiveProperty")
 end)
@@ -75,6 +69,8 @@ local characterWanderedOffSize = 350
 local conversationTimedOut =        "Chat ended because you didn't reply"
 local conversationTimedOutSize = 350
 
+local CoreGui = game:GetService("CoreGui")
+local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
 local setDialogInUseEvent = RobloxReplicatedStorage:WaitForChild("SetDialogInUse", 86400)
 
@@ -89,12 +85,9 @@ local dialogConnections = {}
 local touchControlGui = nil
 
 local gui = nil
-waitForChild(game, "CoreGui")
-waitForChild(game:GetService("CoreGui"), "RobloxGui")
 
-game:GetService("CoreGui").RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
-local isTenFootInterface = require(game:GetService("CoreGui").RobloxGui.Modules.TenFootInterface):IsEnabled()
-local utility = require(game:GetService("CoreGui").RobloxGui.Modules.Settings.Utility)
+local isTenFootInterface = require(RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")):IsEnabled()
+local utility = require(RobloxGui.Modules.Settings.Utility)
 local isSmallTouchScreen = utility:IsSmallTouchScreen()
 
 if isTenFootInterface then
@@ -107,10 +100,10 @@ elseif isSmallTouchScreen then
 	FRAME_WIDTH = 250
 end
 
-if game:GetService("CoreGui").RobloxGui:FindFirstChild("ControlFrame") then
-	gui = game:GetService("CoreGui").RobloxGui.ControlFrame
+if RobloxGui:FindFirstChild("ControlFrame") then
+	gui = RobloxGui.ControlFrame
 else
-	gui = game:GetService("CoreGui").RobloxGui
+	gui = RobloxGui
 end
 local touchEnabled = game:GetService("UserInputService").TouchEnabled
 
@@ -557,7 +550,7 @@ function addDialog(dialog)
 			chatGui.Adornee = dialog.Parent
 			chatGui.RobloxLocked = true
 
-			chatGui.Parent = game:GetService("CoreGui")
+			chatGui.Parent = CoreGui
 
 			chatGui.Background.MouseButton1Click:connect(function()
 				startDialog(dialog)
@@ -603,7 +596,7 @@ function onLoad()
 	messageDialog.RobloxLocked = true
 	messageDialog.Parent = gui
 
-	waitForChild(gui, "BottomLeftControl")
+	gui:WaitForChild("BottomLeftControl")
 
 	local frame = Instance.new("Frame")
 	frame.Name = "DialogFrame"
