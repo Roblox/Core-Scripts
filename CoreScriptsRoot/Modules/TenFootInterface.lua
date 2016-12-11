@@ -15,13 +15,14 @@ local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local UserInputService = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local Players = game:GetService("Players")
 
 ------------------ VARIABLES --------------------
 local tenFootInterfaceEnabled = false
 do
 	local platform = UserInputService:GetPlatform()
 
-	tenFootInterfaceEnabled = (platform == Enum.Platform.XBoxOne or platform == Enum.Platform.WiiU or platform == Enum.Platform.PS4 or 
+	tenFootInterfaceEnabled = (platform == Enum.Platform.XBoxOne or platform == Enum.Platform.WiiU or platform == Enum.Platform.PS4 or
 		platform == Enum.Platform.AndroidTV or platform == Enum.Platform.XBox360 or platform == Enum.Platform.PS3 or
 		platform == Enum.Platform.Ouya or platform == Enum.Platform.SteamOS)
 end
@@ -164,7 +165,7 @@ local function CreateModule()
 			BackgroundColor3 = HEALTH_GREEN_COLOR;
 			Parent = healthFillHolder;
 		};
-		
+
 		local healthText = Util.Create'TextLabel'{
 			Name = "HealthText";
 			Size = UDim2.new(0, 98, 0, 50);
@@ -185,7 +186,7 @@ local function CreateModule()
 
 		addToDisplayStack(this.HealthContainer)
 		createContainer()
-		
+
 		return this.Container, username, this.HealthContainer, healthFill
 	end
 
@@ -275,13 +276,14 @@ local function CreateModule()
 			end
 		end
 
-		function tenFootInterfaceChanged()
-			game:WaitForChild("Players")
-			while not game.Players.LocalPlayer do
-				wait()
-			end
+		local localPlayer = Players.LocalPlayer
+		while not localPlayer do
+			Players.PlayerAdded:wait()
+			localPlayer = Players.LocalPlayer
+		end
 
-			local leaderstats = game.Players.LocalPlayer:FindFirstChild('leaderstats')
+		function tenFootInterfaceChanged()
+			local leaderstats = localPlayer:FindFirstChild('leaderstats')
 			if leaderstats then
 				local statChildren = leaderstats:GetChildren()
 				for i = 1, #statChildren do
@@ -294,29 +296,24 @@ local function CreateModule()
 			end
 		end
 
-		game:WaitForChild("Players")
-		while not game.Players.LocalPlayer do
-			wait()
-		end
-
-		local leaderstats = game.Players.LocalPlayer:FindFirstChild('leaderstats')
+		local leaderstats = localPlayer:FindFirstChild('leaderstats')
 		if leaderstats then
 			tenFootInterfaceChanged()
 		else
-			game.Players.LocalPlayer.ChildAdded:connect(tenFootInterfaceChanged)
+			localPlayer.ChildAdded:connect(tenFootInterfaceChanged)
 		end
-		
+
 		--Top Stat Public API
-		
+
 		local topStatApiTable = {}
-		
+
 		function topStatApiTable:SetTopStatEnabled(value)
 			topStatEnabled = value
 			if displayedStat then
 				updateTenFootStat(displayedStat, "")
 			end
 		end
-		
+
 		return topStatApiTable
 	end
 

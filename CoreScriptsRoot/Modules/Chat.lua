@@ -2679,7 +2679,7 @@ local function CreateChat()
   function this:Initialize()
     --[[ Developer Customization API ]]--
     if not NON_CORESCRIPT_MODE then
-      game:WaitForChild("StarterGui"):RegisterSetCore("ChatMakeSystemMessage", 	function(informationTable)
+      StarterGui:RegisterSetCore("ChatMakeSystemMessage", 	function(informationTable)
           if this.ChatWindowWidget then
             this.ChatWindowWidget:AddDeveloperSystemChatMessage(informationTable)
           end
@@ -2694,7 +2694,7 @@ local function CreateChat()
       end
 
       if allowMoveChat then
-        game.StarterGui:RegisterSetCore("ChatWindowPosition", 	function(value)
+        StarterGui:RegisterSetCore("ChatWindowPosition", 	function(value)
             if this.ChatWindowWidget and this.ChatBarWidget then
               value = isUDim2Value(value)
               if value ~= nil and not isBubbleChatOn() then
@@ -2705,7 +2705,7 @@ local function CreateChat()
             end
           end)
 
-        game.StarterGui:RegisterSetCore("ChatWindowSize", 	function(value)
+        StarterGui:RegisterSetCore("ChatWindowSize", 	function(value)
             if this.ChatWindowWidget and this.ChatBarWidget then
               value = isUDim2Value(value)
               if value ~= nil and not isBubbleChatOn() then
@@ -2718,11 +2718,11 @@ local function CreateChat()
           end)
 
       else
-        game.StarterGui:RegisterSetCore("ChatWindowPosition", 	function() end)
-        game.StarterGui:RegisterSetCore("ChatWindowSize",		function() end)
+        StarterGui:RegisterSetCore("ChatWindowPosition", 	function() end)
+        StarterGui:RegisterSetCore("ChatWindowSize",		function() end)
       end
 
-      game.StarterGui:RegisterGetCore("ChatWindowPosition", 	function()
+      StarterGui:RegisterGetCore("ChatWindowPosition", 	function()
           if this.ChatWindowWidget then
             return this.ChatWindowWidget.ChatContainer.Position
           else
@@ -2730,7 +2730,7 @@ local function CreateChat()
           end
         end)
 
-      game.StarterGui:RegisterGetCore("ChatWindowSize", 	function()
+      StarterGui:RegisterGetCore("ChatWindowSize", 	function()
           if this.ChatWindowWidget then
             return this.ChatWindowWidget.ChatContainer.Size
           else
@@ -2739,7 +2739,7 @@ local function CreateChat()
         end)
 
       if allowDisableChatBar then
-        game.StarterGui:RegisterSetCore("ChatBarDisabled", 	function(value)
+        StarterGui:RegisterSetCore("ChatBarDisabled", 	function(value)
             if this.ChatBarWidget then
               if type(value) == "boolean" then
                 chatBarDisabled = value
@@ -2750,10 +2750,10 @@ local function CreateChat()
             end
           end)
       else
-        game.StarterGui:RegisterSetCore("ChatBarDisabled", 	function() end)
+        StarterGui:RegisterSetCore("ChatBarDisabled", 	function() end)
       end
 
-      game.StarterGui:RegisterGetCore("ChatBarDisabled", function() return chatBarDisabled end)
+      StarterGui:RegisterGetCore("ChatBarDisabled", function() return chatBarDisabled end)
     end
 
     this:OnPlayerAdded(Player)

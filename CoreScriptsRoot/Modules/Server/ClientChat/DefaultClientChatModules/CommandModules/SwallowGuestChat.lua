@@ -7,7 +7,7 @@ local util = require(script.Parent:WaitForChild("Util"))
 local RunService = game:GetService("RunService")
 
 function ProcessMessage(message, ChatWindow, ChatSettings)
-	local LocalPlayer = game.Players.LocalPlayer
+	local LocalPlayer = game:GetService("Players").LocalPlayer
 	if LocalPlayer and LocalPlayer.UserId < 0 and not RunService:IsStudio() then
 
 		local channelObj = ChatWindow:GetCurrentChannel()

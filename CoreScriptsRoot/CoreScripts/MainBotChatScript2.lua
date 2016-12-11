@@ -150,7 +150,7 @@ function createChatNotificationGui()
 	icon.Image = ""
 	icon.BackgroundTransparency = 1
 	icon.Parent = button
-	
+
 	local activationButton = Instance.new("ImageLabel")
 	activationButton.Name = "ActivationButton"
 	activationButton.Position = UDim2.new(-0.3, 0, -0.4, 0)
@@ -279,7 +279,7 @@ function endDialog()
 
 	contextActionService:UnbindCoreAction("Nothing")
 	currentConversationPartner = nil
-	
+
 	if touchControlGui then
 		touchControlGui.Visible = true
 	end
@@ -357,7 +357,7 @@ function newChoice()
 	selectionButton.BackgroundTransparency = 1
 	selectionButton.Visible = false
 	selectionButton.Parent = frame
-	
+
 	return frame
 end
 function initialize(parent)
@@ -380,7 +380,7 @@ function initialize(parent)
 		obj.RobloxLocked = true
 		obj.Parent = mainFrame
 	end
-	
+
 	lastChoice.RobloxLocked = true
 	lastChoice.Parent = mainFrame
 
@@ -440,17 +440,17 @@ function presentDialogChoices(talkingPart, dialogChoices, parentDialog)
 	lastChoice.Size = UDim2.new(1, WIDTH_BONUS, 0, height)
 	lastChoice.Position = UDim2.new(0, XPOS_OFFSET, 0, YPOS_OFFSET + yPosition)
 	lastChoice.Visible = true
-	
+
 	if goodbyeChoiceActiveFlag and not parentDialog.GoodbyeChoiceActive then
 		lastChoice.Visible = false
 		mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
 	else
 		mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
 	end
-	
+
 	mainFrame.Position = UDim2.new(0, 20, 1.0, -mainFrame.Size.Y.Offset - 20)
 	if isSmallTouchScreen then
-		local touchScreenGui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("TouchGui")
+		local touchScreenGui = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("TouchGui")
 		if touchScreenGui then
 			touchControlGui = touchScreenGui:FindFirstChild("TouchControlFrame")
 			if touchControlGui then
@@ -483,7 +483,7 @@ function doDialog(dialog)
 		warn("Can't start a dialog with an empty InitialPrompt")
 		return
 	end
-	
+
 	currentConversationDialog = dialog
 	game:GetService("Chat"):Chat(dialog.Parent, dialog.InitialPrompt, getChatColor(dialog.Tone))
 	variableDelay(dialog.InitialPrompt)
@@ -558,7 +558,7 @@ function addDialog(dialog)
 			chatGui.RobloxLocked = true
 
 			chatGui.Parent = game:GetService("CoreGui")
-			
+
 			chatGui.Background.MouseButton1Click:connect(function()
 				startDialog(dialog)
 			end)
@@ -602,7 +602,7 @@ function onLoad()
 	createMessageDialog()
 	messageDialog.RobloxLocked = true
 	messageDialog.Parent = gui
-  
+
 	waitForChild(gui, "BottomLeftControl")
 
 	local frame = Instance.new("Frame")
@@ -650,8 +650,8 @@ game:GetService("RunService").Heartbeat:connect(function()
 	local closestDistance = math.huge
 	local closestDialog = nil
 	if usingGamepad == true then
-		if game.Players.LocalPlayer and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-			local characterPosition = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position
+		if game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.Character and game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			local characterPosition = game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position
 			closestDialog = getClosestDialogToPosition(guiService, characterPosition)
 		end
 	end
@@ -663,10 +663,10 @@ game:GetService("RunService").Heartbeat:connect(function()
 		lastClosestDialog = closestDialog
 		contextActionService:UnbindCoreAction("StartDialogAction")
 		if closestDialog ~= nil then
-			contextActionService:BindCoreAction("StartDialogAction", function(actionName, userInputState, inputObject) 
-				if userInputState == Enum.UserInputState.Begin then 
+			contextActionService:BindCoreAction("StartDialogAction", function(actionName, userInputState, inputObject)
+				if userInputState == Enum.UserInputState.Begin then
 					if closestDialog and closestDialog.Parent then
-						startDialog(closestDialog) 
+						startDialog(closestDialog)
 					end
 				end
 			end, false, Enum.KeyCode.ButtonX)
