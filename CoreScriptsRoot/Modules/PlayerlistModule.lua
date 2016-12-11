@@ -193,7 +193,7 @@ local function getFriendStatusIcon(friendStatus)
 end
 
 local function getCustomPlayerIcon(player)
-  local userIdStr = tostring(player.userId)
+  local userIdStr = tostring(player.UserId)
   if CUSTOM_ICONS[userIdStr] then return nil end
   --
 
@@ -220,7 +220,7 @@ local function setAvatarIconAsync(player, iconImage)
 
   local isFinalSuccess = false
   if thumbnailLoader then
-    local loader = thumbnailLoader:Create(iconImage, player.userId,
+    local loader = thumbnailLoader:Create(iconImage, player.UserId,
       thumbnailLoader.Sizes.Small, thumbnailLoader.AssetType.Avatar, true)
     isFinalSuccess = loader:LoadAsync(false, true, nil)
   end
@@ -235,14 +235,14 @@ local function getMembershipIcon(player)
     -- return nothing, we need to spawn off setAvatarIconAsync() as a later time to not block
     return ""
   else
-    if blockingUtility:IsPlayerBlockedByUserId(player.userId) then
+    if blockingUtility:IsPlayerBlockedByUserId(player.UserId) then
       return BLOCKED_ICON
     else
-      local userIdStr = tostring(player.userId)
+      local userIdStr = tostring(player.UserId)
       local membershipType = player.MembershipType
       if CUSTOM_ICONS[userIdStr] then
         return CUSTOM_ICONS[userIdStr]
-      elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
+      elseif player.UserId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
         return PLACE_OWNER_ICON
       elseif membershipType == Enum.MembershipType.None then
         return ""
@@ -739,11 +739,11 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
   if isTenFootInterface then
     -- open the profile UI for the selected user. On console we allow user to select themselves
     -- they may want quick access to platform profile features
-    openPlatformProfileUI(selectedPlayer.userId)
+    openPlatformProfileUI(selectedPlayer.UserId)
     return
   end
 
-  if selectedPlayer ~= Player and selectedPlayer.userId > 1 and Player.userId > 1 then
+  if selectedPlayer ~= Player and selectedPlayer.UserId > 1 and Player.UserId > 1 then
     if LastSelectedFrame ~= selectedFrame then
       if LastSelectedFrame then
         for _,childFrame in pairs(LastSelectedFrame:GetChildren()) do
@@ -813,7 +813,7 @@ local function setFollowRelationshipsView(relationshipTable)
   for i = 1, #PlayerEntries do
     local entry = PlayerEntries[i]
     local player = entry.Player
-    local userId = tostring(player.userId)
+    local userId = tostring(player.UserId)
 
     -- don't update icon if already friends
     local friendStatus = getFriendStatus(player)

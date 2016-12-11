@@ -1860,7 +1860,7 @@ t.SetupStamperDragger = function(modelToStamp, Mouse, StampInModel, AllowedStamp
 			playerNameTag = stampData.CurrentParts:FindFirstChild("PlayerNameTag")
 			if playerIdTag ~= nil then
 				tempPlayerValue = getPlayer()
-				if tempPlayerValue ~= nil then playerIdTag.Value = tempPlayerValue.userId end
+				if tempPlayerValue ~= nil then playerIdTag.Value = tempPlayerValue.UserId end
 			end
 			if playerNameTag ~= nil then
 				if game:GetService("Players")["LocalPlayer"] then

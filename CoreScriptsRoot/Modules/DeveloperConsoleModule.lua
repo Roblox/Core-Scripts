@@ -41,7 +41,7 @@ local Style; do
 			[56449]   = {c3(255, 63,  127)}; -- ReeseMcBlox
 			[6949935] = {c3(255, 63,  127)}; -- NobleDragon
 		}
-		local funColor = FunColors[Players.LocalPlayer.userId]
+		local funColor = FunColors[Players.LocalPlayer.UserId]
 		if funColor then
 			frameColor = funColor[1] or frameColor
 			textColor = funColor[2] or textColor
@@ -2736,13 +2736,13 @@ do
 	
 		pcall(function()
 			-- This might not support group games, I'll leave it up to "UseCanManageApiToDetermineConsoleAccess"
-			permissions.IsCreator = permissions.CreatorFlagValue or game:GetService("Players").LocalPlayer.userId == game.CreatorId
+			permissions.IsCreator = permissions.CreatorFlagValue or game:GetService("Players").LocalPlayer.UserId == game.CreatorId
 		end)
 		
 		if permissions.CreatorFlagValue then -- Use the new API
 			permissions.IsCreator = false
 			local success, result = pcall(function()
-				local url = string.format("/users/%d/canmanage/%d", game:GetService("Players").LocalPlayer.userId, game.PlaceId)
+				local url = string.format("/users/%d/canmanage/%d", game:GetService("Players").LocalPlayer.UserId, game.PlaceId)
 				return game:GetService('HttpRbxApiService'):GetAsync(url, Enum.ThrottlingPriority.Default)
 			end)
 			if success and type(result) == "string" then

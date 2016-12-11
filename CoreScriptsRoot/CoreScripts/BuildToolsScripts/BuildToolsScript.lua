@@ -44,7 +44,7 @@ waitForProperty(game:GetService("Players"),"LocalPlayer")
 waitForProperty(game:GetService("Players").LocalPlayer,"userId")
 
 -- we aren't in a true build mode session, don't give build tools and delete this script
-if game:GetService("Players").LocalPlayer.userId < 1 then
+if game:GetService("Players").LocalPlayer.UserId < 1 then
 	script:Destroy()
 	return -- this is probably not necessesary, doing it just in case
 end

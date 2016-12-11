@@ -67,7 +67,7 @@ end
 local function OnPlayerAdded(player)
 	if player:IsA('Player') then
 
-		local getRankUrl = ApiProxyUrl .. '/RoleSets/GetRoleSetForUser?placeId=' .. tostring(PlaceId) .. '&userId=' .. tostring(player.userId)
+		local getRankUrl = ApiProxyUrl .. '/RoleSets/GetRoleSetForUser?placeId=' .. tostring(PlaceId) .. '&userId=' .. tostring(player.UserId)
 		local serverRankTable = nil
 		pcall(function()
 			serverRankTable = GetRbxUtil().DecodeJSON(game:HttpGetAsync(getRankUrl))
@@ -98,7 +98,7 @@ local function OnPlayerRemoved(player)
 		if StartingPlayerRanks[player] then
 			local playerRank = player.PersonalServerRank
 			if StartingPlayerRanks[player] ~= playerRank then -- Don't need to make web call if rank is the same
-				local setRankUrl = ApiProxyUrl .. '/RoleSets/PrivilegedSetUserRoleSetRank?placeId=' .. tostring(PlaceId) .. '&userId=' .. tostring(player.userId) .. '&newRank=' .. tostring(playerRank)
+				local setRankUrl = ApiProxyUrl .. '/RoleSets/PrivilegedSetUserRoleSetRank?placeId=' .. tostring(PlaceId) .. '&userId=' .. tostring(player.UserId) .. '&newRank=' .. tostring(playerRank)
 				ypcall(function() game:HttpPostAsync(setRankUrl, 'SetPersonalServerRank') end)
 			end
 			StartingPlayerRanks[player] = nil

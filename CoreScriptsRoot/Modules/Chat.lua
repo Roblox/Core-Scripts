@@ -289,8 +289,8 @@ do
 
     local inGroupCache = {}
     return function(player)
-      if player and player.userId then
-        local userId = player.userId
+      if player and player.UserId then
+        local userId = player.UserId
 
         if inGroupCache[userId] == nil then
           local inGroup = false
@@ -2308,7 +2308,7 @@ local function CreateChat()
 
   function this:IsPlayerBlocked(player)
     if blockingUtility then
-      return player and blockingUtility:IsPlayerBlockedByUserId(player.userId)
+      return player and blockingUtility:IsPlayerBlockedByUserId(player.UserId)
     else
       return false
     end
@@ -2316,7 +2316,7 @@ local function CreateChat()
 
   function this:BlockPlayerAsync(playerToBlock)
     if playerToBlock and Player ~= playerToBlock then
-      local blockUserId = playerToBlock.userId
+      local blockUserId = playerToBlock.UserId
       local playerToBlockName = playerToBlock.Name
       if blockUserId > 0 then
         if not this:IsPlayerBlocked(playerToBlock) then
@@ -2337,7 +2337,7 @@ local function CreateChat()
 
   function this:UnblockPlayerAsync(playerToUnblock)
     if playerToUnblock then
-      local unblockUserId = playerToUnblock.userId
+      local unblockUserId = playerToUnblock.UserId
       local playerToUnblockName = playerToUnblock.Name
 
       if this:IsPlayerBlocked(playerToUnblock) then
@@ -2353,7 +2353,7 @@ local function CreateChat()
 
   function this:IsPlayerMuted(player)
     if blockingUtility then
-      return player and blockingUtility:IsPlayerMutedByUserId(player.userId)
+      return player and blockingUtility:IsPlayerMutedByUserId(player.UserId)
     else
       return false
     end
