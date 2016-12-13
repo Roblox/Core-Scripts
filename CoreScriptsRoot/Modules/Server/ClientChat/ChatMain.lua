@@ -87,8 +87,9 @@ while not LocalPlayer do
 end
 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local GuiParent = Instance.new("ScreenGui", PlayerGui)
+local GuiParent = Instance.new("ScreenGui")
 GuiParent.Name = "Chat"
+GuiParent.Parent = PlayerGui
 
 local DidFirstChannelsLoads = false
 
