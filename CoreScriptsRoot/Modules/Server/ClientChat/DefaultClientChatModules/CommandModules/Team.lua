@@ -49,12 +49,18 @@ function teamStateMethods:TextUpdated()
 			---Implement this when setting cursor positon is a thing.
 			---self.TextBox.Text = self.OriginalTeamText
 			self.TeamChatEntered = false
+			---Temporary until setting cursor position...
+			self.ChatBar:ResetCustomState()
+			self.ChatBar:CaptureFocus()
 		end
 	end
 end
 
 function teamStateMethods:GetMessage()
-	return "/t " ..self.TextBox.Text
+	if self.TeamChatEntered then
+		return "/t " ..self.TextBox.Text
+	end
+	return self.TextBox.Text
 end
 
 function teamStateMethods:ProcessCompletedMessage()

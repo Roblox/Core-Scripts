@@ -87,8 +87,9 @@ while not LocalPlayer do
 end
 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local GuiParent = Instance.new("ScreenGui", PlayerGui)
+local GuiParent = Instance.new("ScreenGui")
 GuiParent.Name = "Chat"
+GuiParent.Parent = PlayerGui
 
 local DidFirstChannelsLoads = false
 
@@ -135,9 +136,9 @@ end
 
 spawn(function()
 	local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
-	local ANIMATION_FPS = 20.0
+	local animationFps = ChatSettings.ChatAnimationFPS or 20.0
 
-	local updateWaitTime = 1.0 / ANIMATION_FPS
+	local updateWaitTime = 1.0 / animationFps
 	local lastTick = tick()
 	while true do
 		local currentTick = tick()

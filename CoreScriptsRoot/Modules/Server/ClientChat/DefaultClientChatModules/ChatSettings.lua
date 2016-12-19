@@ -29,7 +29,6 @@ module.ChatBarFont = Enum.Font.SourceSansBold
 module.BackGroundColor = Color3.new(0, 0, 0)
 module.DefaultMessageColor = Color3.new(1, 1, 1)
 module.DefaultNameColor = Color3.new(1, 1, 1)
-module.DefaultChannelColor = Color3.new(1, 1, 1)
 module.ChatBarBackGroundColor = Color3.new(0, 0, 0)
 module.ChatBarBoxColor = Color3.new(1, 1, 1)
 module.ChatBarTextColor = Color3.new(0, 0, 0)
@@ -50,6 +49,7 @@ module.ChatWindowBackgroundFadeOutTime = 0.5 --Chat background will fade out aft
 module.ChatWindowTextFadeOutTime = 30				--Chat text will fade out after this many seconds.
 module.ChatDefaultFadeDuration = 0.8
 module.ChatShouldFadeInFromNewInformation = false
+module.ChatAnimationFPS = 20.0
 
 ---[[ Channel Settings ]]
 module.GeneralChannelName = "All" -- You can set to nil to turn off echoing to a general channel.
@@ -63,6 +63,7 @@ module.MessageHistoryLengthPerChannel = 50
 module.MaximumMessageLength = 200
 module.DisallowedWhiteSpace = {"\n", "\r", "\t", "\v", "\f"}
 module.ClickOnPlayerNameToWhisper = true
+module.ClickOnChannelNameToSetMainChannel = true
 
 local ChangedEvent = Instance.new("BindableEvent")
 

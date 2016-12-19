@@ -106,6 +106,7 @@ function methods:CreateBaseMessage(message, font, textSize, chatColor)
 	local BaseFrame = self:GetFromObjectPool("Frame")
 	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 0, 18)
+	BaseFrame.Visible = true
 	BaseFrame.BackgroundTransparency = 1
 
 	local messageBorder = 8
@@ -124,6 +125,7 @@ function methods:CreateBaseMessage(message, font, textSize, chatColor)
 	BaseMessage.TextColor3 = chatColor
 	BaseMessage.TextWrapped = true
 	BaseMessage.Text = message
+	BaseMessage.Visible = true
 	BaseMessage.Parent = BaseFrame
 
 	return BaseFrame, BaseMessage
@@ -144,6 +146,7 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName, 
 	NameButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
 	NameButton.TextColor3 = nameColor
 	NameButton.Text = formatName
+	NameButton.Visible = true
 	NameButton.Parent = BaseMessage
 
 	NameButton.MouseButton1Click:connect(function()
@@ -153,7 +156,7 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName, 
 	return NameButton
 end
 
-function methods:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName)
+function methods:AddChannelButtonToBaseMessage(BaseMessage, channelColor, formatChannelName, channelName)
 	local channelNameSize = self:GetStringTextBounds(formatChannelName, BaseMessage.Font, BaseMessage.TextSize)
 	local ChannelButton = self:GetFromObjectPool("TextButton")
 	ChannelButton.Selectable = false
@@ -166,9 +169,15 @@ function methods:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName)
 	ChannelButton.TextYAlignment = BaseMessage.TextYAlignment
 	ChannelButton.TextTransparency = BaseMessage.TextTransparency
 	ChannelButton.TextStrokeTransparency = BaseMessage.TextStrokeTransparency
-	ChannelButton.TextColor3 = BaseMessage.TextColor3
+	ChannelButton.TextColor3 = channelColor
 	ChannelButton.Text = formatChannelName
+	ChannelButton.Visible = true
 	ChannelButton.Parent = BaseMessage
+
+	ChannelButton.MouseButton1Click:connect(function()
+		self:ChannelButtonClicked(ChannelButton, channelName)
+	end)
+
 	return ChannelButton
 end
 
@@ -182,6 +191,7 @@ function methods:NameButtonClicked(nameButton, playerName)
 		if player and player ~= LocalPlayer then
 			local whisperChannel = "To " ..playerName
 			if self.ChatWindow:GetChannel(whisperChannel) then
+				self.ChatBar:ResetCustomState()
 				local targetChannelName = self.ChatWindow:GetTargetMessageChannel()
 				if targetChannelName ~= whisperChannel then
 					self.ChatWindow:SwitchCurrentChannel(whisperChannel)
@@ -193,6 +203,24 @@ function methods:NameButtonClicked(nameButton, playerName)
 				self.ChatBar:CaptureFocus()
 				self.ChatBar:SetText(whisperMessage)
 			end
+		end
+	end
+end
+
+function methods:ChannelButtonClicked(channelButton, channelName)
+	if not self.ChatWindow then
+		return
+	end
+
+	if ChatSettings.ClickOnChannelNameToSetMainChannel then
+		if self.ChatWindow:GetChannel(channelName) then
+			self.ChatBar:ResetCustomState()
+			local targetChannelName = self.ChatWindow:GetTargetMessageChannel()
+			if targetChannelName ~= channelName then
+				self.ChatWindow:SwitchCurrentChannel(channelName)
+			end
+			self.ChatBar:ResetText()
+			self.ChatBar:CaptureFocus()
 		end
 	end
 end
