@@ -20,6 +20,16 @@ local function LoadModule(location, name, parent)
 	return module
 end
 
+local function GetBoolValue(parent, name, defaultValue)
+	local boolValue = parent:FindFirstChild("Name")
+	if boolValue then
+		if boolValue:IsA("BoolValue") then
+			return boolValue.Value
+		end
+	end
+	return defaultValue
+end
+
 local function Install()
 	local chatScriptArchivable = true
 	local ChatScript = installDirectory:FindFirstChild(runnerScriptName)
@@ -75,10 +85,7 @@ local function Install()
 		MessageCreatorModules.Parent = clientChatModules
 	end
 
-	local insertDefaultMessageCreators = false
-	if MessageCreatorModules:FindFirstChild("InsertDefaultModules") then
-		insertDefaultMessageCreators = MessageCreatorModules.InsertDefaultModules.Value
-	end
+	local insertDefaultMessageCreators = GetBoolValue(MessageCreatorModules, "InsertDefaultModules", false)
 
 	if insertDefaultMessageCreators then
 		local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
@@ -103,10 +110,7 @@ local function Install()
 		CommandModules.Parent = clientChatModules
 	end
 
-	local insertDefaultCommands = false
-	if CommandModules:FindFirstChild("InsertDefaultModules") then
-		insertDefaultCommands = CommandModules.InsertDefaultModules.Value
-	end
+	local insertDefaultCommands = GetBoolValue(CommandModules, "InsertDefaultModules", false)
 
 	if insertDefaultCommands then
 		local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()

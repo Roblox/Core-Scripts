@@ -21,6 +21,16 @@ local function LoadModule(location, name, parent)
 	return module
 end
 
+local function GetBoolValue(parent, name, defaultValue)
+	local boolValue = parent:FindFirstChild("Name")
+	if boolValue then
+		if boolValue:IsA("BoolValue") then
+			return boolValue.Value
+		end
+	end
+	return defaultValue
+end
+
 local function Install()
 
 	local chatServiceRunnerArchivable = true
@@ -49,10 +59,7 @@ local function Install()
 		ChatModules.Parent = installDirectory
 	end
 
-	local shouldInsertDefaultModules = false
-	if ChatModules:FindFirstChild("InsertDefaultModules") then
-		shouldInsertDefaultModules = ChatModules.InsertDefaultModules.Value
-	end
+	local shouldInsertDefaultModules = GetBoolValue(ChatModules, "InsertDefaultModules", false)
 
 	if shouldInsertDefaultModules then
 		local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
