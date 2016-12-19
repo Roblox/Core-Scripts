@@ -33,6 +33,9 @@ end
 
 local function Install()
 
+	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptChatInsertDefaultBools") end)
+	local UseInsertDefaultBools = readFlagSuccess and flagEnabled
+
 	local chatServiceRunnerArchivable = true
 	local ChatServiceRunner = installDirectory:FindFirstChild(runnerScriptName)
 	if not ChatServiceRunner then
@@ -51,21 +54,30 @@ local function Install()
 		ChatModules.Name = "ChatModules"
 		ChatModules.Archivable = false
 
-		local InsertDefaults = Instance.new("BoolValue")
-		InsertDefaults.Name = "InsertDefaultModules"
-		InsertDefaults.Value = true
-		InsertDefaults.Parent = ChatModules
+		if UseInsertDefaultBools then
+			local InsertDefaults = Instance.new("BoolValue")
+			InsertDefaults.Name = "InsertDefaultModules"
+			InsertDefaults.Value = true
+			InsertDefaults.Parent = ChatModules
+		else
+			local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()		  		local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
+  		for i = 1, #defaultChatModules do
+				LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
+			end
+		end
 
 		ChatModules.Parent = installDirectory
 	end
 
-	local shouldInsertDefaultModules = GetBoolValue(ChatModules, "InsertDefaultModules", false)
+	if UseInsertDefaultBools then
+		local shouldInsertDefaultModules = GetBoolValue(ChatModules, "InsertDefaultModules", false)
 
-	if shouldInsertDefaultModules then
-		local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
-		for i = 1, #defaultChatModules do
-			if not ChatModules:FindFirstChild(defaultChatModules[i].Name) then
-				LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
+		if shouldInsertDefaultModules then
+			local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
+			for i = 1, #defaultChatModules do
+				if not ChatModules:FindFirstChild(defaultChatModules[i].Name) then
+					LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
+				end
 			end
 		end
 	end

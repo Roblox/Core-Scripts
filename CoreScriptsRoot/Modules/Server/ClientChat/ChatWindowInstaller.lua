@@ -31,6 +31,10 @@ local function GetBoolValue(parent, name, defaultValue)
 end
 
 local function Install()
+
+	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptChatInsertDefaultBools") end)
+	local UseInsertDefaultBools = readFlagSuccess and flagEnabled
+
 	local chatScriptArchivable = true
 	local ChatScript = installDirectory:FindFirstChild(runnerScriptName)
 	if not ChatScript then
@@ -77,21 +81,30 @@ local function Install()
 		MessageCreatorModules.Name = "MessageCreatorModules"
 		MessageCreatorModules.Archivable = false
 
-		local InsertDefaults = Instance.new("BoolValue")
-		InsertDefaults.Name = "InsertDefaultModules"
-		InsertDefaults.Value = true
-		InsertDefaults.Parent = MessageCreatorModules
+		if UseInsertDefaultBools then
+			local InsertDefaults = Instance.new("BoolValue")
+			InsertDefaults.Name = "InsertDefaultModules"
+			InsertDefaults.Value = true
+			InsertDefaults.Parent = MessageCreatorModules
+		else
+			local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
+			for i = 1, #creatorModules do
+				LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, MessageCreatorModules)
+			end
+		end
 
 		MessageCreatorModules.Parent = clientChatModules
 	end
 
-	local insertDefaultMessageCreators = GetBoolValue(MessageCreatorModules, "InsertDefaultModules", false)
+	if UseInsertDefaultBools then
+		local insertDefaultMessageCreators = GetBoolValue(MessageCreatorModules, "InsertDefaultModules", false)
 
-	if insertDefaultMessageCreators then
-		local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
-		for i = 1, #creatorModules do
-			if not MessageCreatorModules:FindFirstChild(creatorModules[i].Name) then
-				LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, MessageCreatorModules)
+		if insertDefaultMessageCreators then
+			local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
+			for i = 1, #creatorModules do
+				if not MessageCreatorModules:FindFirstChild(creatorModules[i].Name) then
+					LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, MessageCreatorModules)
+				end
 			end
 		end
 	end
@@ -102,21 +115,30 @@ local function Install()
 		CommandModules.Name = "CommandModules"
 		CommandModules.Archivable = false
 
-		local InsertDefaults = Instance.new("BoolValue")
-		InsertDefaults.Name = "InsertDefaultModules"
-		InsertDefaults.Value = true
-		InsertDefaults.Parent = CommandModules
+		if UseInsertDefaultBools then
+			local InsertDefaults = Instance.new("BoolValue")
+			InsertDefaults.Name = "InsertDefaultModules"
+			InsertDefaults.Value = true
+			InsertDefaults.Parent = CommandModules
+		else
+			local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
+			for i = 1, #commandModules do
+				LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, CommandModules)
+			end
+		end
 
 		CommandModules.Parent = clientChatModules
 	end
 
-	local insertDefaultCommands = GetBoolValue(CommandModules, "InsertDefaultModules", false)
+	if UseInsertDefaultBools then
+		local insertDefaultCommands = GetBoolValue(CommandModules, "InsertDefaultModules", false)
 
-	if insertDefaultCommands then
-		local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
-		for i = 1, #commandModules do
-			if not CommandModules:FindFirstChild(commandModules[i].Name) then
-				LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, CommandModules)
+		if insertDefaultCommands then
+			local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
+			for i = 1, #commandModules do
+				if not CommandModules:FindFirstChild(commandModules[i].Name) then
+					LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, CommandModules)
+				end
 			end
 		end
 	end
