@@ -79,7 +79,7 @@ A Speaker object is a representation of one entity that can speak in a ChatChann
 	void SendMessage(string fromSpeaker, string channel, string message)
 	void SendSystemMessage(string message, string channel)
 
-	Player GetPlayerObject() (returns nil for non-player speakers)
+	Player GetPlayer() (returns nil for non-player speakers)
 
 	void SetExtraData(string key, Variant data)
 	Variant GetExtraData(string key)
