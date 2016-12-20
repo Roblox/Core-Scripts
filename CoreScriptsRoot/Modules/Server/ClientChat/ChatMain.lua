@@ -695,8 +695,6 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		if (generalChannel and not generalChannel.Destroyed) then
 			generalChannel:UpdateMessageFiltered(filterData)
 		end
-	else
-		warn(string.format("Just received chat message for channel I'm not in [%s]", channelName))
 	end
 end)
 
