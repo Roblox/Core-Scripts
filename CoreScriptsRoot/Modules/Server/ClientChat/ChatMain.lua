@@ -140,6 +140,7 @@ spawn(function()
 
 	local updateWaitTime = 1.0 / animationFps
 	local lastTick = tick()
+	wait(updateWaitTime)
 	while true do
 		local currentTick = tick()
 		local tickDelta = currentTick - lastTick
@@ -236,16 +237,6 @@ end
 function InstantFadeOut()
 	DoBackgroundFadeOut(0)
 	DoTextFadeOut(0)
-end
-
-function DealWithCoreGuiEnabledChanged(enabled)
-	if (moduleApiTable.Visible) then
-		if (enabled) then
-			InstantFadeIn()
-		else
-			InstantFadeOut()
-		end
-	end
 end
 
 local mouseIsInWindow = nil
@@ -466,7 +457,6 @@ spawn(function() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true
 
 moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	moduleApiTable.IsCoreGuiEnabled = enabled
-	DealWithCoreGuiEnabledChanged(moduleApiTable.IsCoreGuiEnabled)
 
 	enabled = enabled and (moduleApiTable.TopbarEnabled or ChatSettings.ChatOnWithTopBarOff)
 
