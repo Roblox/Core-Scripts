@@ -145,7 +145,9 @@ spawn(function()
 		local tickDelta = currentTick - lastTick
 		local dtScale = CurveUtil:DeltaTimeToTimescale(tickDelta)
 
-		ChatWindow:Update(dtScale)
+		if dtScale ~= 0 then
+			ChatWindow:Update(dtScale)
+		end
 
 		lastTick = currentTick
 		wait(updateWaitTime)
@@ -236,16 +238,6 @@ end
 function InstantFadeOut()
 	DoBackgroundFadeOut(0)
 	DoTextFadeOut(0)
-end
-
-function DealWithCoreGuiEnabledChanged(enabled)
-	if (moduleApiTable.Visible) then
-		if (enabled) then
-			InstantFadeIn()
-		else
-			InstantFadeOut()
-		end
-	end
 end
 
 local mouseIsInWindow = nil
@@ -466,7 +458,6 @@ spawn(function() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true
 
 moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	moduleApiTable.IsCoreGuiEnabled = enabled
-	DealWithCoreGuiEnabledChanged(moduleApiTable.IsCoreGuiEnabled)
 
 	enabled = enabled and (moduleApiTable.TopbarEnabled or ChatSettings.ChatOnWithTopBarOff)
 
