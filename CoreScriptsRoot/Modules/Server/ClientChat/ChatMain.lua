@@ -140,13 +140,14 @@ spawn(function()
 
 	local updateWaitTime = 1.0 / animationFps
 	local lastTick = tick()
-	wait(updateWaitTime)
 	while true do
 		local currentTick = tick()
 		local tickDelta = currentTick - lastTick
 		local dtScale = CurveUtil:DeltaTimeToTimescale(tickDelta)
 
-		ChatWindow:Update(dtScale)
+		if dtScale ~= 0 then
+			ChatWindow:Update(dtScale)
+		end
 
 		lastTick = currentTick
 		wait(updateWaitTime)
