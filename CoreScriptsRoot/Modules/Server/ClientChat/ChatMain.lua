@@ -506,6 +506,13 @@ moduleApiTable.ChatBarDisabledEvent:connect(function(disabled)
 	end
 end)
 
+moduleApiTable.ChatWindowSizeEvent:connect(function(size)
+	ChatWindow.GuiObject.Size = size
+end)
+
+moduleApiTable.ChatWindowPositionEvent:connect(function(position)
+	ChatWindow.GuiObject.Position = position
+end)
 
 --////////////////////////////////////////////////////////////////////////////////////////////
 --///////////////////////////////////////////////// Code to hook client UI up to server events

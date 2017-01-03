@@ -262,6 +262,9 @@ function endDialog()
 	if dialog and dialog.InUse then
 		-- Waits 5 seconds before setting InUse to false
 		setDialogInUseEvent:FireServer(dialog, false, 5)
+		delay(5, function()
+			dialog.InUse = false
+		end)
 	end
 
 	for dialog, gui in pairs(dialogMap) do
@@ -495,6 +498,7 @@ function renewKillswitch(dialog)
 		if thisCoroutine ~= nil then
 			if coroutineMap[thisCoroutine] == nil then
 				setDialogInUseEvent:FireServer(dialog, false, 0)
+				dialog.InUse = false
 			end
 			coroutineMap[thisCoroutine] = nil
 		end
