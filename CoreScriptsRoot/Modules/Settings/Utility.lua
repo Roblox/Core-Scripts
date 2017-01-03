@@ -2488,4 +2488,18 @@ function moduleApiTable:TweenProperty(instance, prop, start, final, duration, ea
 	return PropertyTweener(instance, prop, start, final, duration, easingFunc, cbFunc)
 end
 
+local gamepadInputTypes = {
+	  [Enum.UserInputType.Gamepad1] = true,
+	  [Enum.UserInputType.Gamepad2] = true,
+	  [Enum.UserInputType.Gamepad3] = true,
+	  [Enum.UserInputType.Gamepad4] = true,
+	  [Enum.UserInputType.Gamepad5] = true,
+	  [Enum.UserInputType.Gamepad6] = true,
+	  [Enum.UserInputType.Gamepad7] = true,
+	  [Enum.UserInputType.Gamepad8] = true,
+}
+function moduleApiTable:IsGamepadInputType(inputType)
+	return gamepadInputTypes[inputType] or false
+end
+
 return moduleApiTable

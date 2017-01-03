@@ -596,6 +596,15 @@ function Panel:ResizePixels(width, height, pixelsPerStud)
 	self:ResizeStuds(widthInStuds, heightInStuds, pixelsPerStud)
 end
 
+function Panel:GetSize()
+	return self.width, self.height
+end
+
+function Panel:GetSizePixels()
+	local pixelsPerStud = defaultPixelsPerStud * self.pixelScale
+	return self.width * pixelsPerStud, self.height * pixelsPerStud
+end
+
 function Panel:OnHeadScaleChanged(newHeadScale)
 	local pixelsPerStud = self.pixelScale * defaultPixelsPerStud
 	self:ResizeStuds(self.width, self.height, pixelsPerStud)
