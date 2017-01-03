@@ -30,8 +30,8 @@ local purchaseDialogVR = nil
 
 --[[ Flags ]]--
 local platform = UserInputService:GetPlatform()
-local IsNativePurchasing = platform == Enum.Platform.XBoxOne or 
-							platform == Enum.Platform.IOS or 
+local IsNativePurchasing = platform == Enum.Platform.XBoxOne or
+							platform == Enum.Platform.IOS or
 							platform == Enum.Platform.Android or
 							platform == Enum.Platform.UWP
 
@@ -169,7 +169,7 @@ local ASSET_TO_STRING = {
 	[31] = "Right Leg";
 	[32] = "Package";
 	[33] = "YouTube Video";
-	[34] = "Game Pass";	
+	[34] = "Game Pass";
 	[38] = "Plugin";
 	[39] = "SolidModel";
 	[40] = "MeshPart";
@@ -315,7 +315,7 @@ local function setFrameBackground(frame, backgroundColor3, backgroundTransparenc
 	local smooth = frame:FindFirstChild("Smooth3D")
 	if not smooth then
 		frame.BackgroundColor3 = backgroundColor3
-		frame.BackgroundTransparency = backgroundTransparency 
+		frame.BackgroundTransparency = backgroundTransparency
 	else
 		smooth.ImageColor3 = backgroundColor3
 		smooth.ImageTransparency = backgroundTransparency
@@ -774,7 +774,7 @@ local function getRobuxProductToBuyItem(amountNeeded)
 
 	--todo: we should clean all this up at some point so all the platforms have the
 	-- same product names, or at least names that are very similar
-	
+
 	local isUsingNewProductId = (platform == Enum.Platform.Android) or (platform == Enum.Platform.UWP)
 
 	local prependStr, appendStr, appPrefix = "", "", ""
@@ -859,7 +859,7 @@ local function showPurchasePrompt()
 		disableControllerMovement()
 		enableControllerInput()
 	end
-	
+
 end
 
 --[[ Close and Cancel Functions ]]--
@@ -872,11 +872,11 @@ local function onPurchaseFailed(failType)
 
 	local itemName = PurchaseData.ProductInfo and PurchaseData.ProductInfo["Name"] or ""
 	local failedText = string.gsub(PURCHASE_MSG.FAILED, "itemName", string.sub(itemName, 1, 20))
-	
+
 	if itemName == "" then
 		failedText = string.gsub(failedText, " of ", "")
 	end
-		
+
 	if failType == PURCHASE_FAILED.DEFAULT_ERROR then
 		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.UNKNWON_FAILURE)
 	elseif failType == PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED then
@@ -906,7 +906,7 @@ local function onPurchaseFailed(failType)
 
 	showPurchasePrompt()
 	setItemDescriptionText(failedText)
-	
+
 end
 
 local function closePurchaseDialog()
@@ -935,7 +935,7 @@ local function onPromptEnded(isSuccess)
 
 	closePurchaseDialog()
 	if IsPurchasingConsumable then
-		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.userId, PurchaseData.ProductId, didPurchase)
+		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.UserId, PurchaseData.ProductId, didPurchase)
 	else
 		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, didPurchase)
 	end
@@ -1100,7 +1100,7 @@ local function playerHasFundsForPurchase(playerBalance)
 		return true, false
 	end
 
-	
+
 	if studioMockPurchasesEnabled() then
 		setPostBalanceText(PURCHASE_MSG.MOCK_PURCHASE)
 	else
@@ -1138,7 +1138,7 @@ local function canPurchase(disableUpsell)
 			return false
 		end
 	else
-		if game.Players.LocalPlayer.userId < 0 then
+		if Players.LocalPlayer.UserId < 0 then
 			onPurchaseFailed(PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST)
 			return false
 		end
@@ -1192,7 +1192,7 @@ local function canPurchase(disableUpsell)
 			setButtonsVisible(OkButton)
 			return true
 		end
-		
+
 		-- most places will not need to sell third party assets.
 		if areThirdPartySalesRestricted() and not game:GetService("Workspace").AllowThirdPartySales then
 			local ProductCreator = tonumber(PurchaseData.ProductInfo["Creator"]["Id"])
@@ -1207,7 +1207,7 @@ local function canPurchase(disableUpsell)
 
 	if not isFree and isRestrictedThirdParty then
 		onPurchaseFailed(PURCHASE_FAILED.THIRD_PARTY_DISABLED)
-		return false    
+		return false
 	end
 
 	local playerBalance = getPlayerBalance()
@@ -1404,7 +1404,7 @@ local function onAcceptPurchase()
 			onPurchaseFailed(PURCHASE_FAILED.DEFAULT_ERROR)
 			return
 		end
-		MarketplaceService:SignalClientPurchaseSuccess(tostring(result["receipt"]), Players.LocalPlayer.userId, productId)
+		MarketplaceService:SignalClientPurchaseSuccess(tostring(result["receipt"]), Players.LocalPlayer.UserId, productId)
 	else
 		onPurchaseSuccess()
 		if PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
@@ -1521,7 +1521,7 @@ function enableControllerInput()
 		CONTROLLER_CONFIRM_ACTION_NAME,
 		function(actionName, inputState, inputObject)
 			if inputState ~= Enum.UserInputState.Begin then return end
-			
+
 			if purchaseState == PURCHASE_STATE.SUCCEEDED then
 				onPromptEnded()
 			elseif purchaseState == PURCHASE_STATE.FAILED then
@@ -1641,7 +1641,7 @@ MarketplaceService.ServerPurchaseVerification:connect(function(serverResponseTab
 		return
 	end
 
-	if serverResponseTable["playerId"] and tonumber(serverResponseTable["playerId"]) == Players.LocalPlayer.userId then
+	if serverResponseTable["playerId"] and tonumber(serverResponseTable["playerId"]) == Players.LocalPlayer.UserId then
 		onPurchaseSuccess()
 	end
 end)
@@ -1661,7 +1661,7 @@ if IsNativePurchasing then
 	end)
 end
 
-local function onVREnabled(vrEnabled) 
+local function onVREnabled(vrEnabled)
 	if vrEnabled then
 		local Dialog = require(RobloxGui.Modules.VR.Dialog)
 		if not purchaseDialogVR then

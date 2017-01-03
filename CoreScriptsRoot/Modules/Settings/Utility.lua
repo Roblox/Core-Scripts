@@ -227,7 +227,7 @@ end
 local function usesSelectedObject()
 	--VR does not use selected objects (in the same way as gamepad)
 	if UserInputService.VREnabled then return false end
-	--Touch does not use selected objects unless there's also a gamepad 
+	--Touch does not use selected objects unless there's also a gamepad
 	if UserInputService.TouchEnabled and not UserInputService.GamepadEnabled then return false end
 	--PC with gamepad, console... does use selected objects
 	return true
@@ -260,7 +260,7 @@ local function isPosOverGuiWithClipping(pos, gui) -- isPosOverGui, accounts for 
 			end
 			break
 		end
-		
+
 		if check:IsA'GuiObject' and not check.Visible then
 			clipping = true
 			break
@@ -274,7 +274,7 @@ local function isPosOverGuiWithClipping(pos, gui) -- isPosOverGui, accounts for 
 
 		check = check.Parent
 	end
-	
+
 	if clipping then
 		return false
 	else
@@ -308,7 +308,7 @@ local function isGuiVisible(gui, debug) -- true if any part of the gui is visibl
 			end
 			break
 		end
-		
+
 		if check:IsA'GuiObject' and not check.Visible then
 			clipping = true
 			break
@@ -322,7 +322,7 @@ local function isGuiVisible(gui, debug) -- true if any part of the gui is visibl
 
 		check = check.Parent
 	end
-	
+
 	if clipping then
 		return false
 	else
@@ -371,17 +371,17 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		Value = true
 	}
 
-	if clickFunc then 
-		button.MouseButton1Click:connect(function() 
+	if clickFunc then
+		button.MouseButton1Click:connect(function()
 			local lastInputType = nil
 			pcall(function() lastInputType = UserInputService:GetLastInputType() end)
 			if lastInputType then
-				clickFunc(lastInputTypee == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or 
+				clickFunc(lastInputTypee == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
 					lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
 			else
 				clickFunc(false)
 			end
-		end) 
+		end)
 	end
 
 	local function isPointerInput(inputObject)
@@ -462,9 +462,9 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		if prop ~= "SelectedCoreObject" then return end
 		if not usesSelectedObject() then return end
 
-		if GuiService.SelectedCoreObject == nil or GuiService.SelectedCoreObject ~= button then 
+		if GuiService.SelectedCoreObject == nil or GuiService.SelectedCoreObject ~= button then
 			deselectButton()
-			return 
+			return
 		end
 
 		if button.Selectable then
@@ -663,12 +663,12 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				shouldFireChanged = true
 			end
 		end
-		
+
 		if shouldFireChanged then
 			indexChangedEvent:Fire(index)
 		end
 	end
-	
+
 	local function setSelectionByValue(value)
 		local shouldFireChanged = false
 		for i, selectionLabel in pairs(this.Selections) do
@@ -679,7 +679,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				shouldFireChanged = true
 			end
 		end
-		
+
 		if shouldFireChanged then
 			indexChangedEvent:Fire(this.CurrentIndex)
 		end
@@ -714,7 +714,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	function this:SetSelectionIndex(newIndex)
 		setSelection(newIndex)
 	end
-	
+
 	function this:SetSelectionByValue(value)
 		return setSelectionByValue(value)
 	end
@@ -738,7 +738,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	function this:SetInteractable(value)
 		interactable = value
 		this.DropDownFrame.Selectable = interactable
-		
+
 		if not interactable then
 			hideDropDownSelection()
 			this:SetZIndex(1)
@@ -953,7 +953,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 		Parent = rightButton
 	};
 	if not UserInputService.TouchEnabled and fixSettingsMenuVR then
-		local applyNormal, applyHover = 
+		local applyNormal, applyHover =
 			function(instance) instance.ImageColor3 = ARROW_COLOR end,
 			function(instance) instance.ImageColor3 = ARROW_COLOR_HOVER end
 
@@ -1060,7 +1060,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 	local function setSelection(index, direction)
 		for i, selectionLabel in pairs(this.Selections) do
 			local isSelected = (i == index)
-			
+
 			local leftButtonUDim = UDim2.new(0,leftButton.Size.X.Offset,0,0)
 			local tweenPos = UDim2.new(0,leftButton.Size.X.Offset * direction * 3,0,0)
 
@@ -1099,9 +1099,9 @@ local function CreateSelector(selectionStringTable, startPosition)
 	local function stepFunc(inputObject, step)
 		if not interactable then return end
 
-		if inputObject ~= nil and inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 and 
+		if inputObject ~= nil and inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 and
 			inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 and inputObject.UserInputType ~= Enum.UserInputType.Gamepad2 and
-			inputObject.UserInputType ~= Enum.UserInputType.Gamepad3 and inputObject.UserInputType ~= Enum.UserInputType.Gamepad4 and 
+			inputObject.UserInputType ~= Enum.UserInputType.Gamepad3 and inputObject.UserInputType ~= Enum.UserInputType.Gamepad4 and
 			inputObject.UserInputType ~= Enum.UserInputType.Keyboard then return end
 
 		if usesSelectedObject() then
@@ -1130,7 +1130,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 	local function connectToGuiService()
 		guiServiceCon = GuiService.Changed:connect(function(prop)
 			if prop == "SelectedCoreObject" then
-				if GuiService.SelectedCoreObject == this.SelectorFrame then 
+				if GuiService.SelectedCoreObject == this.SelectorFrame then
 					this.Selections[this.CurrentIndex].TextTransparency = 0
 				else
 					if GuiService.SelectedCoreObject ~= nil and isAutoSelectButton[GuiService.SelectedCoreObject] then
@@ -1200,22 +1200,22 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 	leftButton.InputBegan:connect(function(inputObject)
 		if inputObject.UserInputType == Enum.UserInputType.Touch then
-			stepFunc(nil, -1) 
+			stepFunc(nil, -1)
 		end
 	end)
 	leftButton.MouseButton1Click:connect(function()
 		if not UserInputService.TouchEnabled then
-			stepFunc(nil, -1) 
+			stepFunc(nil, -1)
 		end
 	end)
-	rightButton.InputBegan:connect(function(inputObject) 
+	rightButton.InputBegan:connect(function(inputObject)
 		if inputObject.UserInputType == Enum.UserInputType.Touch then
 			stepFunc(nil, 1)
 		end
 	end)
 	rightButton.MouseButton1Click:connect(function()
 		if not UserInputService.TouchEnabled then
-			stepFunc(nil, 1) 
+			stepFunc(nil, 1)
 		end
 	end)
 
@@ -1277,7 +1277,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 end
 
 local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc, hasBackground)
-	local parent = CoreGui.RobloxGui	
+	local parent = CoreGui.RobloxGui
 	if parent:FindFirstChild("AlertViewFullScreen") then return end
 
 	--Declare AlertViewBacking so onVREnabled can take it as an upvalue
@@ -1317,7 +1317,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		ScaleType = Enum.ScaleType.Slice,
 		SliceCenter = Rect.new(8,6,46,44),
 		BackgroundTransparency = 1,
-		
+
 		ImageTransparency = 1,
 		Size = UDim2.new(0, 400, 0, 350),
 		Position = UDim2.new(0.5, -200, 0.5, -175),
@@ -1325,7 +1325,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		Parent = parent
 	};
 	onVREnabled("VREnabled")
-	if hasBackground or UserInputService.VREnabled then 
+	if hasBackground or UserInputService.VREnabled then
 		AlertViewBacking.ImageTransparency = 0
 	else
 		AlertViewBacking.Size = UDim2.new(0.8, 0, 0, 350)
@@ -1333,7 +1333,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 	end
 
 	if CoreGui.RobloxGui.AbsoluteSize.Y <= AlertViewBacking.Size.Y.Offset then
-		AlertViewBacking.Size = UDim2.new(AlertViewBacking.Size.X.Scale, AlertViewBacking.Size.X.Offset, 
+		AlertViewBacking.Size = UDim2.new(AlertViewBacking.Size.X.Scale, AlertViewBacking.Size.X.Offset,
 											AlertViewBacking.Size.Y.Scale, CoreGui.RobloxGui.AbsoluteSize.Y)
 		AlertViewBacking.Position = UDim2.new(0.5, -AlertViewBacking.Size.X.Offset/2, 0.5, -AlertViewBacking.Size.Y.Offset/2)
 	end
@@ -1377,7 +1377,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 			okPressedFunc()
 		end
 		ContextActionService:UnbindCoreAction(removeId)
-		Game.GuiService.SelectedCoreObject = nil
+		GuiService.SelectedCoreObject = nil
 		if settingsHub then
 			settingsHub:ShowBar()
 		end
@@ -1388,7 +1388,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 
 	local AlertViewButtonSize = UDim2.new(1, -20, 0, 60)
 	local AlertViewButtonPosition = UDim2.new(0, 10, 0.65, 0)
-	if not hasBackground then 
+	if not hasBackground then
 		AlertViewButtonSize = UDim2.new(0, 200, 0, 50)
 		AlertViewButtonPosition = UDim2.new(0.5, -100, 0.65, 0)
 	end
@@ -1404,7 +1404,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 	AlertViewButton.Parent = AlertViewBacking
 
 	if usesSelectedObject() then
-		Game.GuiService.SelectedCoreObject = AlertViewButton
+		GuiService.SelectedCoreObject = AlertViewButton
 	end
 
 	GuiService.SelectedCoreObject = AlertViewButton
@@ -1512,7 +1512,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		ImageColor3 = UserInputService.TouchEnabled and ARROW_COLOR_TOUCH or ARROW_COLOR
 	};
 	if not UserInputService.TouchEnabled and fixSettingsMenuVR then
-		local onNormalButtonState, onHoverButtonState = 
+		local onNormalButtonState, onHoverButtonState =
 			function(instance) instance.ImageColor3 = ARROW_COLOR end,
 			function(instance) instance.ImageColor3 = ARROW_COLOR_HOVER end
 
@@ -1572,7 +1572,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		this.Steps[#this.Steps + 1] = nextStep
 	end
 
-	local xSize = initialSpacing + (leftButton.Size.X.Offset) + this.Steps[#this.Steps].Size.X.Offset + 
+	local xSize = initialSpacing + (leftButton.Size.X.Offset) + this.Steps[#this.Steps].Size.X.Offset +
 					this.Steps[#this.Steps].Position.X.Offset
 	this.SliderFrame.Size = UDim2.new(0, xSize, 0, this.SliderFrame.Size.Y.Offset)
 
@@ -1611,12 +1611,12 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 
 	local function setCurrentStep(newStepPosition)
 		if not minStep then minStep = 0 end
-		
+
 		leftButton.Visible = true
 		rightButton.Visible = true
 
-		if newStepPosition <= minStep then 
-			newStepPosition = minStep 
+		if newStepPosition <= minStep then
+			newStepPosition = minStep
 			leftButton.Visible = false
 		end
 		if newStepPosition >= steps then
@@ -1641,8 +1641,8 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 			return inputObject.UserInputType == Enum.UserInputType.MouseButton1 or inputObject.UserInputType == Enum.UserInputType.Touch or (inputObject.UserInputType == Enum.UserInputType.Gamepad1 and inputObject.KeyCode == Enum.KeyCode.ButtonA)
 		else
 			--I don't want to change the logical statement that is known to be working, so this is left in its less concise state
-			if inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 and inputObject.UserInputType ~= Enum.UserInputType.Touch then 
-				return false 
+			if inputObject.UserInputType ~= Enum.UserInputType.MouseButton1 and inputObject.UserInputType ~= Enum.UserInputType.Touch then
+				return false
 			else
 				return true
 			end
@@ -1653,7 +1653,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		if not interactable then return end
 
 		if inputObject == nil then return end
-			
+
 		if not isActivateEvent(inputObject) then return end
 
 		if usesSelectedObject() and not UserInputService.VREnabled then
@@ -1752,8 +1752,8 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 			minStep = newMinStep
 		end
 
-		if currentStep <= minStep then 
-			currentStep = minStep 
+		if currentStep <= minStep then
+			currentStep = minStep
 			leftButton.Visible = false
 		end
 		if currentStep >= steps then
@@ -1798,26 +1798,26 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	end
 
 	for i = 1, steps do
-		this.Steps[i].InputBegan:connect(function(inputObject) 
-			mouseDownFunc(inputObject, i) 
+		this.Steps[i].InputBegan:connect(function(inputObject)
+			mouseDownFunc(inputObject, i)
 		end)
 		this.Steps[i].InputEnded:connect(function(inputObject)
 		 mouseUpFunc(inputObject) end)
 	end
 
-	this.SliderFrame.InputBegan:connect(function(inputObject) 
+	this.SliderFrame.InputBegan:connect(function(inputObject)
 		if fixSettingsMenuVR and UserInputService.VREnabled then
 			local selected = GuiService.SelectedCoreObject
-			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end 
+			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end
 		end
-		mouseDownFunc(inputObject, currentStep) 
+		mouseDownFunc(inputObject, currentStep)
 	end)
-	this.SliderFrame.InputEnded:connect(function(inputObject) 
+	this.SliderFrame.InputEnded:connect(function(inputObject)
 		if fixSettingsMenuVR and UserInputService.VREnabled then
 			local selected = GuiService.SelectedCoreObject
-			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end 
+			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end
 		end
-		mouseUpFunc(inputObject) 
+		mouseUpFunc(inputObject)
 	end)
 
 
@@ -1852,7 +1852,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		if inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 and inputObject.UserInputType ~= Enum.UserInputType.Keyboard then return end
 		local selected = GuiService.SelectedCoreObject
 		if fixSettingsMenuVR then
-			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end 
+			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end
 		else
 			if selected ~= this.SliderFrame then return end
 		end
@@ -1872,7 +1872,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		if inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 and inputObject.UserInputType ~= Enum.UserInputType.Keyboard then return end
 		local selected = GuiService.SelectedCoreObject
 		if fixSettingsMenuVR then
-			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end 
+			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end
 		else
 			if selected ~= this.SliderFrame then return end
 		end
@@ -1883,19 +1883,19 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	end)
 
 	UserInputService.InputChanged:connect(function(inputObject)
-		if not interactable then 
+		if not interactable then
 			lastInputDirection = 0
-			return 
+			return
 		end
 		if not isInTree then
 			lastInputDirection = 0
-			return 
+			return
 		end
 
 		if inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 then return end
 		local selected = GuiService.SelectedCoreObject
 		if fixSettingsMenuVR then
-			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end 
+			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end
 		else
 			if selected ~= this.SliderFrame then return end
 		end
@@ -2002,7 +2002,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 	local ValueChangerSelection = nil
 	local ValueChangerInstance = nil
 	if selectionType == "Slider" then
-		ValueChangerInstance = CreateNewSlider(rowValues, rowDefault)	
+		ValueChangerInstance = CreateNewSlider(rowValues, rowDefault)
 		ValueChangerInstance.SliderFrame.Position = UDim2.new(1,-ValueChangerInstance.SliderFrame.Size.X.Offset,
 														0.5,-ValueChangerInstance.SliderFrame.Size.Y.Offset/2)
 		ValueChangerInstance.SliderFrame.Parent = RowFrame
@@ -2225,7 +2225,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		local valueChangedEvent = Instance.new("BindableEvent")
 		valueChangedEvent.Name = "ValueChanged"
 
-		box.FocusLost:connect(function() 
+		box.FocusLost:connect(function()
 			valueChangedEvent:Fire(box.Text)
 		end)
 
@@ -2248,7 +2248,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
 			if fullscreenDropDown and fullscreenDropDown.Visible then return end
 
-			local valueFrame = ValueChangerInstance.SliderFrame 
+			local valueFrame = ValueChangerInstance.SliderFrame
 			if not valueFrame then
 				valueFrame = ValueChangerInstance.SliderFrame
 			end
@@ -2430,7 +2430,7 @@ function moduleApiTable:RayPlaneIntersection(ray, planeNormal, pointOnPlane)
 	if t < 0 then --plane is behind ray origin, and thus there is no intersection
 		return nil
 	end
-	
+
 	return ray.Origin + ray.Direction * t
 end
 

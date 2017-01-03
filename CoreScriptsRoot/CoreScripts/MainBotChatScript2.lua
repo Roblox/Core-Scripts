@@ -46,12 +46,6 @@ function waitForProperty(instance, name)
 	end
 end
 
-function waitForChild(instance, name)
-	while not instance:FindFirstChild(name) do
-		instance.ChildAdded:wait()
-	end
-end
-
 local goodbyeChoiceActiveFlagSuccess, goodbyeChoiceActiveFlagValue = pcall(function()
 	return settings():GetFFlag("GoodbyeChoiceActiveProperty")
 end)
@@ -75,6 +69,8 @@ local characterWanderedOffSize = 350
 local conversationTimedOut =        "Chat ended because you didn't reply"
 local conversationTimedOutSize = 350
 
+local CoreGui = game:GetService("CoreGui")
+local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
 local setDialogInUseEvent = RobloxReplicatedStorage:WaitForChild("SetDialogInUse", 86400)
 
@@ -89,12 +85,9 @@ local dialogConnections = {}
 local touchControlGui = nil
 
 local gui = nil
-waitForChild(game, "CoreGui")
-waitForChild(game:GetService("CoreGui"), "RobloxGui")
 
-game:GetService("CoreGui").RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
-local isTenFootInterface = require(game:GetService("CoreGui").RobloxGui.Modules.TenFootInterface):IsEnabled()
-local utility = require(game:GetService("CoreGui").RobloxGui.Modules.Settings.Utility)
+local isTenFootInterface = require(RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")):IsEnabled()
+local utility = require(RobloxGui.Modules.Settings.Utility)
 local isSmallTouchScreen = utility:IsSmallTouchScreen()
 
 if isTenFootInterface then
@@ -107,10 +100,10 @@ elseif isSmallTouchScreen then
 	FRAME_WIDTH = 250
 end
 
-if game:GetService("CoreGui").RobloxGui:FindFirstChild("ControlFrame") then
-	gui = game:GetService("CoreGui").RobloxGui.ControlFrame
+if RobloxGui:FindFirstChild("ControlFrame") then
+	gui = RobloxGui.ControlFrame
 else
-	gui = game:GetService("CoreGui").RobloxGui
+	gui = RobloxGui
 end
 local touchEnabled = game:GetService("UserInputService").TouchEnabled
 
@@ -150,7 +143,7 @@ function createChatNotificationGui()
 	icon.Image = ""
 	icon.BackgroundTransparency = 1
 	icon.Parent = button
-	
+
 	local activationButton = Instance.new("ImageLabel")
 	activationButton.Name = "ActivationButton"
 	activationButton.Position = UDim2.new(-0.3, 0, -0.4, 0)
@@ -279,7 +272,7 @@ function endDialog()
 
 	contextActionService:UnbindCoreAction("Nothing")
 	currentConversationPartner = nil
-	
+
 	if touchControlGui then
 		touchControlGui.Visible = true
 	end
@@ -357,7 +350,7 @@ function newChoice()
 	selectionButton.BackgroundTransparency = 1
 	selectionButton.Visible = false
 	selectionButton.Parent = frame
-	
+
 	return frame
 end
 function initialize(parent)
@@ -380,7 +373,7 @@ function initialize(parent)
 		obj.RobloxLocked = true
 		obj.Parent = mainFrame
 	end
-	
+
 	lastChoice.RobloxLocked = true
 	lastChoice.Parent = mainFrame
 
@@ -440,17 +433,17 @@ function presentDialogChoices(talkingPart, dialogChoices, parentDialog)
 	lastChoice.Size = UDim2.new(1, WIDTH_BONUS, 0, height)
 	lastChoice.Position = UDim2.new(0, XPOS_OFFSET, 0, YPOS_OFFSET + yPosition)
 	lastChoice.Visible = true
-	
+
 	if goodbyeChoiceActiveFlag and not parentDialog.GoodbyeChoiceActive then
 		lastChoice.Visible = false
 		mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
 	else
 		mainFrame.Size = UDim2.new(0, FRAME_WIDTH, 0, yPosition + lastChoice.AbsoluteSize.Y + (STYLE_PADDING * 2) + (YPOS_OFFSET * 2))
 	end
-	
+
 	mainFrame.Position = UDim2.new(0, 20, 1.0, -mainFrame.Size.Y.Offset - 20)
 	if isSmallTouchScreen then
-		local touchScreenGui = game.Players.LocalPlayer.PlayerGui:FindFirstChild("TouchGui")
+		local touchScreenGui = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("TouchGui")
 		if touchScreenGui then
 			touchControlGui = touchScreenGui:FindFirstChild("TouchControlFrame")
 			if touchControlGui then
@@ -483,7 +476,7 @@ function doDialog(dialog)
 		warn("Can't start a dialog with an empty InitialPrompt")
 		return
 	end
-	
+
 	currentConversationDialog = dialog
 	game:GetService("Chat"):Chat(dialog.Parent, dialog.InitialPrompt, getChatColor(dialog.Tone))
 	variableDelay(dialog.InitialPrompt)
@@ -557,8 +550,8 @@ function addDialog(dialog)
 			chatGui.Adornee = dialog.Parent
 			chatGui.RobloxLocked = true
 
-			chatGui.Parent = game:GetService("CoreGui")
-			
+			chatGui.Parent = CoreGui
+
 			chatGui.Background.MouseButton1Click:connect(function()
 				startDialog(dialog)
 			end)
@@ -602,8 +595,8 @@ function onLoad()
 	createMessageDialog()
 	messageDialog.RobloxLocked = true
 	messageDialog.Parent = gui
-  
-	waitForChild(gui, "BottomLeftControl")
+
+	gui:WaitForChild("BottomLeftControl")
 
 	local frame = Instance.new("Frame")
 	frame.Name = "DialogFrame"
@@ -650,8 +643,8 @@ game:GetService("RunService").Heartbeat:connect(function()
 	local closestDistance = math.huge
 	local closestDialog = nil
 	if usingGamepad == true then
-		if game.Players.LocalPlayer and game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-			local characterPosition = game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position
+		if game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.Character and game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+			local characterPosition = game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position
 			closestDialog = getClosestDialogToPosition(guiService, characterPosition)
 		end
 	end
@@ -663,10 +656,10 @@ game:GetService("RunService").Heartbeat:connect(function()
 		lastClosestDialog = closestDialog
 		contextActionService:UnbindCoreAction("StartDialogAction")
 		if closestDialog ~= nil then
-			contextActionService:BindCoreAction("StartDialogAction", function(actionName, userInputState, inputObject) 
-				if userInputState == Enum.UserInputState.Begin then 
+			contextActionService:BindCoreAction("StartDialogAction", function(actionName, userInputState, inputObject)
+				if userInputState == Enum.UserInputState.Begin then
 					if closestDialog and closestDialog.Parent then
-						startDialog(closestDialog) 
+						startDialog(closestDialog)
 					end
 				end
 			end, false, Enum.KeyCode.ButtonX)

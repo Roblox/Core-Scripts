@@ -750,7 +750,7 @@ local function CreateUsernameHealthMenuItem()
 				local thresholdForHurtOverlay =
           humanoid.MaxHealth * TopbarConstants.HEALTH_PERCANTAGE_FOR_OVERLAY
 
-				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth and game.StarterGui:GetCoreGuiEnabled("Health") == true then
+				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth and StarterGui:GetCoreGuiEnabled("Health") == true then
 					AnimateHurtOverlay()
 				end
 

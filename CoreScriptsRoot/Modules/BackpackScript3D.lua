@@ -27,7 +27,7 @@ local slotIcons = {}
 local BackpackScript = {}
 local topbarEnabled = false
 
-local player = game.Players.LocalPlayer
+local player = game:GetService("Players").LocalPlayer
 local currentHumanoid = nil
 local CoreGui = game:GetService('CoreGui')
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
@@ -127,8 +127,8 @@ local healthbarEnabled = true
 
 local function UpdateLayout()
 	local width, height = 100, 100
-	local borderSize = (ICON_SPACING - ICON_SIZE) / 2	
-	
+	local borderSize = (ICON_SPACING - ICON_SIZE) / 2
+
 	local x = borderSize
 	local y = 0
 	for _, tool in ipairs(ToolsList) do
@@ -138,7 +138,7 @@ local function UpdateLayout()
 			x = x + ICON_SPACING
 		end
 	end
-	
+
 	if #ToolsList == 0 then
 		width = HEALTHBAR_WIDTH
 		height = HEALTHBAR_SPACE + NAME_SPACE
@@ -148,7 +148,7 @@ local function UpdateLayout()
 		height = ICON_SIZE + HEALTHBAR_SPACE + NAME_SPACE
 		BackpackPanel.showCursor = true
 	end
-	
+
 	BackpackPanel:ResizePixels(width, height)
 
 	playerName.Position = UDim2.new(0, borderSize, 0, 0)
@@ -271,14 +271,14 @@ local function AddTool(tool)
 		if not player.Character then return end
 		local humanoid = player.Character:FindFirstChild("Humanoid")
 		if not humanoid then return end
-		
+
 		local inBackpack = tool.Parent == player.Backpack
 		humanoid:UnequipTools()
 		if inBackpack then
 			humanoid:EquipTool(tool)
 		end
 	end
-	
+
 	slot.icon.MouseButton1Click:connect(slot.OnClick)
 	slot.OnEnter = function()
 		slot.hovered = true
@@ -296,13 +296,13 @@ local function AddTool(tool)
 				slot.bg.Position = UDim2.new(0, 0, 0, 0)
 			elseif tool.Parent == player.Character then
 				slot.bg.Size = UDim2.new(0, ICON_SIZE + 8, 0, ICON_SIZE + 8)
-				slot.bg.Position = UDim2.new(0, -4, 0, -4)				
+				slot.bg.Position = UDim2.new(0, -4, 0, -4)
 			end
 		elseif prop == "TextureId" or prop == "Name" then
 			updateToolData()
 		end
 	end)
-	
+
 	UpdateLayout()
 
 	BackpackScript.ToolAddedEvent:Fire(tool)
@@ -322,7 +322,7 @@ local function RegisterHumanoid(humanoid)
 	end
 	if humanoid then
 		humanoidChangedEvent = humanoid.HealthChanged:connect(function() UpdateHealth(humanoid) end)
-		humanoidAncestryChangedEvent = humanoid.AncestryChanged:connect(function(child, parent) 
+		humanoidAncestryChangedEvent = humanoid.AncestryChanged:connect(function(child, parent)
 			if child == humanoid and parent ~= player.Character then
 				RegisterHumanoid(nil)
 			end
@@ -381,14 +381,14 @@ local function OnCharacterAdded(character)
 	end
 	Tools = {}
 	ToolsList = {}
-	
+
 	character.ChildAdded:connect(OnChildAdded)
 	character.ChildRemoved:connect(OnChildRemoved)
-	
+
 	for i, v in ipairs(backpack:GetChildren()) do
 		OnChildAdded(v)
 	end
-	
+
 	backpack.ChildAdded:connect(OnChildAdded)
 	backpack.ChildRemoved:connect(OnChildRemoved)
 end

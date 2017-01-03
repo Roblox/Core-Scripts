@@ -30,8 +30,8 @@ local function MakeIsInGroup(groupId, requiredRank)
 
 	local inGroupCache = {}
 	return function(player)
-		if player and player.userId then
-			local userId = player.userId
+		if player and player.UserId then
+			local userId = player.UserId
 
 			if inGroupCache[userId] == nil then
 				local inGroup = false
