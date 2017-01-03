@@ -21,7 +21,20 @@ local function LoadModule(location, name, parent)
 	return module
 end
 
+local function GetBoolValue(parent, name, defaultValue)
+	local boolValue = parent:FindFirstChild(name)
+	if boolValue then
+		if boolValue:IsA("BoolValue") then
+			return boolValue.Value
+		end
+	end
+	return defaultValue
+end
+
 local function Install()
+
+	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptChatInsertDefaultBools") end)
+	local UseInsertDefaultBools = readFlagSuccess and flagEnabled
 
 	local chatServiceRunnerArchivable = true
 	local ChatServiceRunner = installDirectory:FindFirstChild(runnerScriptName)
@@ -41,12 +54,32 @@ local function Install()
 		ChatModules.Name = "ChatModules"
 		ChatModules.Archivable = false
 
-		local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
-		for i = 1, #defaultChatModules do
-			LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
+		if UseInsertDefaultBools then
+			local InsertDefaults = Instance.new("BoolValue")
+			InsertDefaults.Name = "InsertDefaultModules"
+			InsertDefaults.Value = true
+			InsertDefaults.Parent = ChatModules
+		else
+			local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()		  		local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
+  		for i = 1, #defaultChatModules do
+				LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
+			end
 		end
 
 		ChatModules.Parent = installDirectory
+	end
+
+	if UseInsertDefaultBools then
+		local shouldInsertDefaultModules = GetBoolValue(ChatModules, "InsertDefaultModules", false)
+
+		if shouldInsertDefaultModules then
+			local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
+			for i = 1, #defaultChatModules do
+				if not ChatModules:FindFirstChild(defaultChatModules[i].Name) then
+					LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
+				end
+			end
+		end
 	end
 
 	if not ServerScriptService:FindFirstChild(runnerScriptName) then

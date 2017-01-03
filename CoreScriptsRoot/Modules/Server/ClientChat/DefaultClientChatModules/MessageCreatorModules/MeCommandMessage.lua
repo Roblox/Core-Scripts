@@ -13,7 +13,7 @@ function CreateMeCommandMessageLabel(messageData, channelName)
 	local useFont = extraData.Font or Enum.Font.SourceSansItalic
 	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
 	local useChatColor = Color3.new(1, 1, 1)
-	local useChannelColor = extraData.ChannelColor or ChatSettings.DefaultChannelColor or Color3.new(1, 1, 1)
+	local useChannelColor = extraData.ChannelColor or useChatColor
 	local numNeededSpaces = 0
 
 	local BaseFrame, BaseMessage = util:CreateBaseMessage("", useFont, useTextSize, useChatColor)
@@ -21,7 +21,7 @@ function CreateMeCommandMessageLabel(messageData, channelName)
 
 	if channelName ~= messageData.OriginalChannel then
 		local formatChannelName = string.format("{%s}", messageData.OriginalChannel)
-		ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, formatChannelName, useChannelColor)
+		ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, useChannelColor, formatChannelName, messageData.OriginalChannel)
 		numNeededSpaces = util:GetNumberOfSpaces(formatChannelName, useFont, useTextSize) + 1
 	end
 

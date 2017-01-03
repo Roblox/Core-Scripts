@@ -87,8 +87,9 @@ while not LocalPlayer do
 end
 
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
-local GuiParent = Instance.new("ScreenGui", PlayerGui)
+local GuiParent = Instance.new("ScreenGui")
 GuiParent.Name = "Chat"
+GuiParent.Parent = PlayerGui
 
 local DidFirstChannelsLoads = false
 
@@ -135,16 +136,18 @@ end
 
 spawn(function()
 	local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
-	local ANIMATION_FPS = 20.0
+	local animationFps = ChatSettings.ChatAnimationFPS or 20.0
 
-	local updateWaitTime = 1.0 / ANIMATION_FPS
+	local updateWaitTime = 1.0 / animationFps
 	local lastTick = tick()
 	while true do
 		local currentTick = tick()
 		local tickDelta = currentTick - lastTick
 		local dtScale = CurveUtil:DeltaTimeToTimescale(tickDelta)
 
-		ChatWindow:Update(dtScale)
+		if dtScale ~= 0 then
+			ChatWindow:Update(dtScale)
+		end
 
 		lastTick = currentTick
 		wait(updateWaitTime)
@@ -235,16 +238,6 @@ end
 function InstantFadeOut()
 	DoBackgroundFadeOut(0)
 	DoTextFadeOut(0)
-end
-
-function DealWithCoreGuiEnabledChanged(enabled)
-	if (moduleApiTable.Visible) then
-		if (enabled) then
-			InstantFadeIn()
-		else
-			InstantFadeOut()
-		end
-	end
 end
 
 local mouseIsInWindow = nil
@@ -465,7 +458,6 @@ spawn(function() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true
 
 moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	moduleApiTable.IsCoreGuiEnabled = enabled
-	DealWithCoreGuiEnabledChanged(moduleApiTable.IsCoreGuiEnabled)
 
 	enabled = enabled and (moduleApiTable.TopbarEnabled or ChatSettings.ChatOnWithTopBarOff)
 
@@ -694,8 +686,6 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		if (generalChannel and not generalChannel.Destroyed) then
 			generalChannel:UpdateMessageFiltered(filterData)
 		end
-	else
-		warn(string.format("Just received chat message for channel I'm not in [%s]", channelName))
 	end
 end)
 
