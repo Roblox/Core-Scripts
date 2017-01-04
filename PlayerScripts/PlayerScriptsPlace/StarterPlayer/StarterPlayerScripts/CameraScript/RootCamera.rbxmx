@@ -1163,7 +1163,7 @@ local function CreateCamera()
 		end)
 
 		local function OnCharacterAdded(newCharacter)
-			this:ZoomCamera(12.5)
+			
 			local humanoid = findPlayerHumanoid(player)
 			local start = tick()
 			while tick() - start < 0.3 and (humanoid == nil or humanoid.Torso == nil) do
@@ -1187,8 +1187,10 @@ local function CreateCamera()
 					this.LastCameraTransform = nil
 				end
 			end
-			wait()
+			
 			setLookBehindCharacter()
+			wait()
+			this:ZoomCamera(12.5)
 		end
 
 		player.CharacterAdded:connect(function(character)
