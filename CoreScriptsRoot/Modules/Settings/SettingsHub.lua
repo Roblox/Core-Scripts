@@ -104,16 +104,16 @@ local function CreateSettingsHub()
 		end
 
 		local myOpenStateChangedCount = this.OpenStateChangedCount
-		local remove = function()
+		local removeBottomButtonFrame = function()
 			if this.OpenStateChangedCount == myOpenStateChangedCount and this.BottomButtonFrame then
 				this.BottomButtonFrame.Visible = false
 			end
 		end
 
 		if delayBeforeRemoving then
-			delay(delayBeforeRemoving, remove)
+			delay(delayBeforeRemoving, removeBottomButtonFrame)
 		else
-			remove()
+			removeBottomButtonFrame()
 		end
 	end
 
@@ -209,6 +209,41 @@ local function CreateSettingsHub()
 		this.BottomBarButtons[#this.BottomBarButtons + 1] = {buttonName, hotKeyTable}
 	end
 
+	local resetEnabled = true
+	local function setResetEnabled(value)
+		resetEnabled = value
+		if this.ResetCharacterButton then
+			this.ResetCharacterButton.Selectable = value
+			this.ResetCharacterButton.Active = value
+			this.ResetCharacterButton.Enabled.Value = value
+			local resetHint = this.ResetCharacterButton:FindFirstChild("ResetCharacterHint")
+			if resetHint then
+				resetHint.ImageColor3 = (value and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(100, 100, 100))
+			end
+			local resetButtonText = this.ResetCharacterButton:FindFirstChild("ResetCharacterButtonTextLabel")
+			if resetButtonText then
+				resetButtonText.TextColor3 = (value and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(100, 100, 100))
+			end
+		end
+	end
+
+	if resetButtonCustomizationAllowed then
+		StarterGui:RegisterSetCore("ResetButtonCallback", function(callback)
+			local isBindableSuccess, isBindableValue = pcall(function() return type(callback) == "userdata" and callback:IsA("BindableEvent") end)
+			local isBindable = (isBindableSuccess and isBindableValue)
+			if isBindable or type(callback) == "boolean" then
+				this.ResetCharacterPage:SetResetCallback(callback)
+			else
+				warn("ResetButtonCallback must be set to a BindableEvent or a boolean")
+			end
+			if callback == false then
+				setResetEnabled(false)
+			elseif not resetEnabled and (isBindable or callback == true) then
+				setResetEnabled(true)
+			end
+		end)
+	end	
+	
 	local function createGui()
 		local PageViewSizeReducer = 0
 		if isSmallTouchScreen then
@@ -350,50 +385,6 @@ local function CreateSettingsHub()
 				removeBottomBarBindings()
 				this:SwitchToPage(this.LeaveGamePage, nil, 1, true)
 			end
-			
-			local resetEnabled = true
-			local function setResetEnabled(value)
-				resetEnabled = value
-				if this.ResetCharacterButton then
-					this.ResetCharacterButton.Selectable = value
-					this.ResetCharacterButton.Active = value
-					this.ResetCharacterButton.Enabled.Value = value
-					local resetHint = this.ResetCharacterButton:FindFirstChild("ResetCharacterHint")
-					if resetHint then
-						resetHint.ImageColor3 = (value and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(100, 100, 100))
-					end
-					local resetButtonText = this.ResetCharacterButton:FindFirstChild("ResetCharacterButtonTextLabel")
-					if resetButtonText then
-						resetButtonText.TextColor3 = (value and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(100, 100, 100))
-					end
-				end
-			end
-			
-			local resetCharFunc = function()
-				if resetEnabled then
-					this:AddToMenuStack(this.Pages.CurrentPage)
-					this.HubBar.Visible = false
-					removeBottomBarBindings()
-					this:SwitchToPage(this.ResetCharacterPage, nil, 1, true)
-				end
-			end
-
-			if resetButtonCustomizationAllowed then
-				StarterGui:RegisterSetCore("ResetButtonCallback", function(callback)
-					local isBindableSuccess, isBindableValue = pcall(function() return type(callback) == "userdata" and callback:IsA("BindableEvent") end)
-					local isBindable = (isBindableSuccess and isBindableValue)
-					if isBindable or type(callback) == "boolean" then
-						this.ResetCharacterPage:SetResetCallback(callback)
-					else
-						warn("ResetButtonCallback must be set to a BindableEvent or a boolean")
-					end
-					if callback == false then
-						setResetEnabled(false)
-					elseif not resetEnabled and (isBindable or callback == true) then
-						setResetEnabled(true)
-					end
-				end)
-			end
 		 
 			-- Xbox Only
 			local inviteToGameFunc = function()
@@ -417,7 +408,8 @@ local function CreateSettingsHub()
 				local function createInviteButton()
 					addBottomBarButton("InviteToGame", "Send Game Invites", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
 						"", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
-						inviteToGameFunc, {Enum.KeyCode.ButtonX})
+						inviteToGameFunc, {Enum.KeyCode.ButtonX}
+					)
 				end
 
 				if IsPlayMyPlaceEnabled() then
@@ -435,15 +427,27 @@ local function CreateSettingsHub()
 			else
 				addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
 					"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
-					leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX})
+					leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX}
+				)
 			end
 
+			local resetCharFunc = function()
+				if resetEnabled then
+					this:AddToMenuStack(this.Pages.CurrentPage)
+					this.HubBar.Visible = false
+					removeBottomBarBindings()
+					this:SwitchToPage(this.ResetCharacterPage, nil, 1, true)
+				end
+			end
+			
 			addBottomBarButton("ResetCharacter", "		Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png",
 				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25),
-				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY})
+				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY}
+			)
 			addBottomBarButton("Resume", "Resume Game", "rbxasset://textures/ui/Settings/Help/BButtonLight" .. buttonImageAppend .. ".png",
 				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25),
-				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart})
+				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart}
+			)
 		end
 
 		local function onScreenSizeChanged()
@@ -547,10 +551,10 @@ local function CreateSettingsHub()
 		end
 		-- TODO: disconnect this event?
 		RobloxGui.Changed:connect(function(prop)
-				if prop == "AbsoluteSize" then
-					onScreenSizeChanged()
-				end
-			end)
+			if prop == "AbsoluteSize" then
+				onScreenSizeChanged()
+			end
+		end)
 		onScreenSizeChanged()
 	end
 
@@ -580,12 +584,28 @@ local function CreateSettingsHub()
 	end
 
 	local lastInputUsedToSelectGui = isTenFootInterface
+	
+	-- Map indicating if a KeyCode or UserInputType should toggle the lastInputUsedToSelectGui variable.
+	local inputUsedToSelectGui = {
+		[Enum.UserInputType.Gamepad1] = true,
+		[Enum.UserInputType.Gamepad2] = true,
+		[Enum.UserInputType.Gamepad3] = true,
+		[Enum.UserInputType.Gamepad4] = true,
+		[Enum.KeyCode.Left] = true,
+		[Enum.KeyCode.Right] = true,
+		[Enum.KeyCode.Up] = true,
+		[Enum.KeyCode.Down] = true,
+		[Enum.KeyCode.Tab] = true,
+		[Enum.UserInputType.Touch] = false,
+		[Enum.UserInputType.MouseButton1] = false,
+		[Enum.UserInputType.MouseButton2] = false
+	}
+	
 	UserInputService.InputBegan:connect(function(input)
-		if input.UserInputType == Enum.UserInputType.Gamepad1 or input.UserInputType == Enum.UserInputType.Gamepad2 or input.UserInputType == Enum.UserInputType.Gamepad3 or input.UserInputType == Enum.UserInputType.Gamepad4
-		or input.KeyCode == Enum.KeyCode.Left or input.KeyCode == Enum.KeyCode.Right or input.KeyCode == Enum.KeyCode.Up or input.KeyCode == Enum.KeyCode.Down or input.KeyCode == Enum.KeyCode.Tab then
-			lastInputUsedToSelectGui = true
-		elseif input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
-			lastInputUsedToSelectGui = false
+		if input.UserInputType and inputUsedToSelectGui[input.UserInputType] ~= nil then
+			lastInputUsedToSelectGui = inputUsedToSelectGui[input.UserInputType]
+		elseif input.KeyCode and inputUsedToSelectGui[input.KeyCode] then
+			lastInputUsedToSelectGui = inputUsedToSelectGui[input.KeyCode]
 		end
 	end)
 	UserInputService.InputChanged:connect(function(input)
@@ -892,7 +912,8 @@ local function CreateSettingsHub()
 				Enum.KeyCode.LeftShift,
 				Enum.KeyCode.RightShift,
 				Enum.KeyCode.Tab,
-				Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4)
+				Enum.UserInputType.Gamepad1, Enum.UserInputType.Gamepad2, Enum.UserInputType.Gamepad3, Enum.UserInputType.Gamepad4
+			)
 
 			ContextActionService:BindCoreAction("RbxSettingsHubSwitchTab", switchTabFromBumpers, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL1)
 			ContextActionService:BindCoreAction("RbxSettingsScrollHotkey", scrollHotkeyFunc, false, Enum.KeyCode.PageUp, Enum.KeyCode.PageDown)
@@ -1102,7 +1123,7 @@ local function CreateSettingsHub()
 
 	-- full page initialization
 	if not useUserList then
-		if utility:IsSmallTouchScreen() then
+		if isSmallTouchScreen then
 			this.HomePage = require(RobloxGui.Modules.Settings.Pages.Home)
 			this.HomePage:SetHub(this)
 		end
@@ -1174,7 +1195,8 @@ local function CreateSettingsHub()
 	ContextActionService:BindCoreAction(DEV_CONSOLE_ACTION_NAME, 
 		toggleDevConsole, 
 		false,
-		Enum.KeyCode.F9)
+		Enum.KeyCode.F9
+	)
 
 	-- Quick Profiler connections
 	-- Note: it's actually Ctrl-F7.	We don't have a nice way of 
@@ -1182,7 +1204,8 @@ local function CreateSettingsHub()
 	ContextActionService:BindCoreAction(QUICK_PROFILER_ACTION_NAME, 
 		toggleQuickProfilerFromHotkey, 
 		false,
-		Enum.KeyCode.F7)
+		Enum.KeyCode.F7
+	)
 
 	-- Keyboard control
 	UserInputService.InputBegan:connect(function(input)
