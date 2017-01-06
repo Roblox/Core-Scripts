@@ -104,5 +104,3 @@ if UserSettings().GameSettings:InStudioMode() then
 		UserInputService.Changed:connect(onVREnabled)
 	end)
 end
-
-

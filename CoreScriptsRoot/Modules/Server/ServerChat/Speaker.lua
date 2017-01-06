@@ -174,7 +174,7 @@ end
 
 function methods:InternalSendSystemMessage(messageObj, channelName)
 	local success, err = pcall(function()
-		self.eReceivedSystemMessage:Fire(messageObj, channel)
+		self.eReceivedSystemMessage:Fire(messageObj, channelName)
 	end)
 	if not success and err then
 		print("Error sending internal system message: " ..err)

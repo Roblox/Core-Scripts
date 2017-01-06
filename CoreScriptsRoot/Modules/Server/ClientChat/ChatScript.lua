@@ -4,7 +4,12 @@
 
 local StarterGui = game:GetService("StarterGui")
 local GuiService = game:GetService("GuiService")
+local ChatService = game:GetService("Chat")
+
 local MAX_COREGUI_CONNECTION_ATTEMPTS = 10
+
+local ClientChatModules = ChatService:WaitForChild("ClientChatModules")
+local ChatSettings = require(ClientChatModules:WaitForChild("ChatSettings"))
 
 local function DoEverything()
 	local Chat = require(script:WaitForChild("ChatMain"))
@@ -14,6 +19,9 @@ local function DoEverything()
 	containerTable.SetCore = {}
 	containerTable.GetCore = {}
 
+	containerTable.ChatWindow.ChatTypes = {}
+	containerTable.ChatWindow.ChatTypes.BubbleChatEnabled = ChatSettings.BubbleChatEnabled
+	containerTable.ChatWindow.ChatTypes.ClassicChatEnabled = ChatSettings.ClassicChatEnabled
 
 	--// Connection functions
 	local function ConnectEvent(name)
@@ -90,6 +98,10 @@ local function DoEverything()
 
 	ConnectEvent("SpecialKeyPressed")
 
+	SetCoreGuiChatConnections(containerTable)
+end
+
+function SetCoreGuiChatConnections(containerTable)
 	local tries = 0
 	while tries < MAX_COREGUI_CONNECTION_ATTEMPTS do
 		tries = tries + 1
@@ -104,6 +116,25 @@ local function DoEverything()
 	end
 end
 
+function checkBothChatTypesDisabled()
+	if ChatSettings.BubbleChatEnabled ~= nil then
+		if ChatSettings.ClassicChatEnabled ~= nil then
+			return not (ChatSettings.BubbleChatEnabled or ChatSettings.ClassicChatEnabled)
+		end
+	end
+	return false
+end
+
 if not GuiService:IsTenFootInterface() then
-	DoEverything()
+	if not checkBothChatTypesDisabled() then
+		DoEverything()
+	else
+		local containerTable = {}
+		containerTable.ChatWindow = {}
+
+		containerTable.ChatWindow.ChatTypes = {}
+		containerTable.ChatWindow.ChatTypes.BubbleChatEnabled = false
+		containerTable.ChatWindow.ChatTypes.ClassicChatEnabled = false
+		SetCoreGuiChatConnections(containerTable)
+	end
 end
