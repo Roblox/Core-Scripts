@@ -133,7 +133,7 @@ do
 			return not (BubbleChatEnabled or ClassicChatEnabled)
 		end
 
-		function SetInitalChatTypes(chatTypesTable)
+		function SetInitialChatTypes(chatTypesTable)
 			if ChatTypesSet then
 				return
 			end
@@ -224,7 +224,7 @@ do
 					end
 
 					if type(chatWindowCollection.ChatTypes) == "table" then
-						SetInitalChatTypes(chatWindowCollection.ChatTypes)
+						SetInitialChatTypes(chatWindowCollection.ChatTypes)
 					end
 
 					eventConnections = {}
