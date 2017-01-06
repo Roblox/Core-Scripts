@@ -1690,7 +1690,7 @@ end
 local ChatModule = require(GuiRoot.Modules.ChatSelector)
 
 local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
-	local enabled = coreGuiEnabled and topbarEnabled and (not ChatModule:IsDisabled())
+	local enabled = coreGuiEnabled and topbarEnabled
 	local vrEnabled = InputService.VREnabled
 	if coreGuiType == Enum.CoreGuiType.PlayerList or coreGuiType == Enum.CoreGuiType.All then
 		if leaderstatsMenuItem then
@@ -1716,6 +1716,7 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 		end
 	end
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+		enabled = enabled and (not ChatModule:IsDisabled())
 		local ChatSelector = require(GuiRoot.Modules.ChatSelector)
 		local showTopbarChatIcon = enabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or ChatSelector:GetNewLuaChatFlag() or RunService:IsStudio())
 		local showThree3DChatIcon = coreGuiEnabled and InputService.VREnabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio())
