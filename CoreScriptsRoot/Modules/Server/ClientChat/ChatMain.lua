@@ -89,6 +89,7 @@ end
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local GuiParent = Instance.new("ScreenGui")
 GuiParent.Name = "Chat"
+GuiParent.ResetOnSpawn = false
 GuiParent.Parent = PlayerGui
 
 local DidFirstChannelsLoads = false
