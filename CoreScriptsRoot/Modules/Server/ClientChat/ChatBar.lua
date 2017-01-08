@@ -444,7 +444,7 @@ function module.new(CommandProcessor, ChatWindow)
 	obj.InCustomState = false
 	obj.CustomState = nil
 
-	obj.TargetChannel = nil
+	obj.TargetChannel = ""
 	obj.CommandProcessor = CommandProcessor
 	obj.ChatWindow = ChatWindow
 
