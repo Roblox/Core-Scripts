@@ -450,7 +450,7 @@ spawn(function()
 	RemoteEvent_NewFollower.OnClientEvent:connect(function(followerRbxPlayer)
 		if newNotificationPath then
 			local message = ("%s is now following you"):format(followerRbxPlayer.Name)
-			local image = getFriendImage(followerRbxPlayer.userId)
+			local image = getFriendImage(followerRbxPlayer.UserId)
 			sendNotificationInfo {
 				GroupName = "Friends",
 				Title = "New Follower",
@@ -461,7 +461,7 @@ spawn(function()
 			}
 		else
 			sendNotification("New Follower", followerRbxPlayer.Name.." is now following you!",
-				FRIEND_IMAGE..followerRbxPlayer.userId.."&x=48&y=48", 5, function() end)
+				FRIEND_IMAGE..followerRbxPlayer.UserId.."&x=48&y=48", 5, function() end)
 		end
 	end)
 end)
@@ -476,7 +476,7 @@ local function sendFriendNotification(fromPlayer)
 			Title = fromPlayer.Name,
 			Text = "Sent you a friend request!",
 			DetailText = fromPlayer.Name,
-			Image = getFriendImage(fromPlayer.userId),
+			Image = getFriendImage(fromPlayer.UserId),
 			Duration = 8,
 			Callback = function(buttonChosen)
 				if buttonChosen == acceptText then
@@ -492,7 +492,7 @@ local function sendFriendNotification(fromPlayer)
 	else
 		local notification = {}
 		local notificationFrame = createNotification(fromPlayer.Name, "Sent you a friend request!",
-			FRIEND_IMAGE..tostring(fromPlayer.userId).."&x=48&y=48")
+			FRIEND_IMAGE..tostring(fromPlayer.UserId).."&x=48&y=48")
 		notificationFrame.Position = UDim2.new(1, 4, 1, -(NOTIFICATION_Y_OFFSET + 2) * 1.5 - 4)
 		--
 		local acceptButton = createTextButton("AcceptButton", "Accept", UDim2.new(0, 0, 1, 2))
@@ -539,12 +539,12 @@ local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 					DetailText = "You are now friends with " .. toPlayer.Name .. "!",
 					
 
-					Image = getFriendImage(toPlayer.userId),
+					Image = getFriendImage(toPlayer.UserId),
 					Duration = DEFAULT_NOTIFICATION_DURATION
 				}
 			else
 				sendNotification("New Friend", "You are now friends with "..toPlayer.Name.."!",
-					FRIEND_IMAGE..tostring(toPlayer.userId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "Friends")
+					FRIEND_IMAGE..tostring(toPlayer.UserId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "Friends")
 			end
 		end
 	elseif toPlayer == LocalPlayer then
@@ -559,12 +559,12 @@ local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 					Text = fromPlayer.Name,
 					DetailText = "You are now friends with " .. fromPlayer.Name .. "!",
 
-					Image = getFriendImage(fromPlayer.userId),
+					Image = getFriendImage(fromPlayer.UserId),
 					Duration = DEFAULT_NOTIFICATION_DURATION
 				}
 			else
 				sendNotification("New Friend", "You are now friends with "..fromPlayer.Name.."!", 
-					FRIEND_IMAGE..tostring(fromPlayer.userId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "Friends")
+					FRIEND_IMAGE..tostring(fromPlayer.UserId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "Friends")
 			end
 		end
 	end
@@ -573,7 +573,7 @@ end
 --[[ Player Points Notifications ]]--
 local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
 	if newNotificationPath then
-		if pointsNotificationsActive and userId == LocalPlayer.userId then
+		if pointsNotificationsActive and userId == LocalPlayer.UserId then
 			local title, text, detailText
 			if pointsAwarded == 1 then
 				title = "Point Awarded"
@@ -600,7 +600,7 @@ local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTot
 			}
 		end
 	else
-		if pointsNotificationsActive and userId == LocalPlayer.userId then
+		if pointsNotificationsActive and userId == LocalPlayer.UserId then
 			if pointsAwarded == 1 then
 				sendNotification("Point Awarded", "You received "..tostring(pointsAwarded).." point!", PLAYER_POINTS_IMG, DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "PlayerPoints")
 			elseif pointsAwarded > 0 then
@@ -614,7 +614,7 @@ end
 
 --[[ Badge Notification ]]--
 local function onBadgeAwarded(message, userId, badgeId)
-	if not BadgeBlacklist[badgeId] and badgesNotificationsActive and userId == LocalPlayer.userId then
+	if not BadgeBlacklist[badgeId] and badgesNotificationsActive and userId == LocalPlayer.UserId then
 		BadgeBlacklist[badgeId] = true
 		if newNotificationPath then
 			sendNotificationInfo {
@@ -689,7 +689,6 @@ end
 
 end
 
-
 GuiService.SendCoreUiNotification = function(title, text)
 	local notification = createNotification(title, text, "")
 	notification.BackgroundTransparency = .5
@@ -755,8 +754,8 @@ end
 MarketplaceService.ClientLuaDialogRequested:connect(onClientLuaDialogRequested)
 
 --[[ Developer customization API ]]--
-local function createDeveloperNotification(notificationTable) 
-	if type(notificationTable) == "table" then 
+local function createDeveloperNotification(notificationTable)
+	if type(notificationTable) == "table" then
 		if type(notificationTable.Title) == "string" and type(notificationTable.Text) == "string" then
 			local iconImage = (type(notificationTable.Icon) == "string" and notificationTable.Icon or "")
 			local duration = (type(notificationTable.Duration) == "number" and notificationTable.Duration or DEFAULT_NOTIFICATION_DURATION)
@@ -778,25 +777,26 @@ local function createDeveloperNotification(notificationTable)
 				sendNotification(notificationTable.Title, notificationTable.Text, iconImage, duration, bindable, button1Text, button2Text, "Developer")
 			end
 		end
-	end 
+	end
 end
 
 if allowDisableNotifications then
-	game:WaitForChild("StarterGui"):RegisterSetCore("PointsNotificationsActive", function(value) if type(value) == "boolean" then pointsNotificationsActive = value end end)
-	game:WaitForChild("StarterGui"):RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
+	StarterGui:RegisterSetCore("PointsNotificationsActive", function(value) if type(value) == "boolean" then pointsNotificationsActive = value end end)
+	StarterGui:RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
 else
-	game:WaitForChild("StarterGui"):RegisterSetCore("PointsNotificationsActive", function() end)
-	game:WaitForChild("StarterGui"):RegisterSetCore("BadgesNotificationsActive", function() end)
+	StarterGui:RegisterSetCore("PointsNotificationsActive", function() end)
+	StarterGui:RegisterSetCore("BadgesNotificationsActive", function() end)
 end
 
-game:WaitForChild("StarterGui"):RegisterGetCore("PointsNotificationsActive", function() return pointsNotificationsActive end)
-game:WaitForChild("StarterGui"):RegisterGetCore("BadgesNotificationsActive", function() return badgesNotificationsActive end)
+StarterGui:RegisterGetCore("PointsNotificationsActive", function() return pointsNotificationsActive end)
+StarterGui:RegisterGetCore("BadgesNotificationsActive", function() return badgesNotificationsActive end)
 
 if allowSendNotifications then
-	game:WaitForChild("StarterGui"):RegisterSetCore("SendNotification", createDeveloperNotification)
+	StarterGui:RegisterSetCore("SendNotification", createDeveloperNotification)
 else
-	game:WaitForChild("StarterGui"):RegisterSetCore("SendNotification", function() end)
+	StarterGui:RegisterSetCore("SendNotification", function() end)
 end
+
 
 if not isTenFootInterface then
 	local gamepadMenu = RobloxGui:WaitForChild("CoreScripts/GamepadMenu")
@@ -874,7 +874,7 @@ if Platform == Enum.Platform.XBoxOne then
 			if not game:IsLoaded() then
 				game.Loaded:wait()
 			end
-			
+
 			-- retro check in case of controller disconnect while loading
 			-- for now, gamepad1 is always mapped to the active user
 			controllerStateManager:CheckUserConnected()
