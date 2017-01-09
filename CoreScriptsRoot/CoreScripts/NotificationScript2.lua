@@ -21,6 +21,7 @@ local TeleportService = game:GetService('TeleportService')
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
+local StarterGui = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Settings = UserSettings()
@@ -263,7 +264,7 @@ end
 
 local lastTimeInserted = 0
 insertNotification = function(notification)
-	spawn(function() 
+	spawn(function()
 		while isPaused do wait() end
 		notification.IsActive = true
 		local size = #NotificationQueue
@@ -272,7 +273,7 @@ insertNotification = function(notification)
 			OverflowQueue[#OverflowQueue + 1] = notification
 			return
 		end
-		
+
 		NotificationQueue[size + 1] = notification
 		notification.Frame.Parent = NotificationFrame
 
@@ -311,7 +312,7 @@ removeNotification = function(notification)
 	local frame = notification.Frame
 	if frame and frame.Parent then
 		notification.IsActive = false
-		spawn(function() 
+		spawn(function()
 			while isPaused do wait() end
 
 			-- Tween out now, or set up to tween out immediately after current tween is finished, but don't interrupt.
@@ -366,7 +367,7 @@ local function sendNotification(title, text, image, duration, callback, button1T
 		BindableEvent_SendNotification:Fire(title, text, image, duration, callback, button1Text, button2Text, groupName)
 	end
 
-	
+
 end
 local function onSendNotification(title, text, image, duration, callback, button1Text, button2Text)
 	if UserInputService.VREnabled then
@@ -377,7 +378,7 @@ local function onSendNotification(title, text, image, duration, callback, button
 	local notification = {}
 	local notificationFrame = createNotification(title, text, image)
 	--
-	
+
 	local button1 = nil
 	if button1Text and button1Text ~= "" then
 		notification.IsFriend = true -- Prevents other notifications overlapping the buttons
@@ -397,9 +398,9 @@ local function onSendNotification(title, text, image, duration, callback, button
 			end
 		end)
 	end
-	
+
 	if button2Text and button2Text ~= "" then
-		notification.IsFriend = true 
+		notification.IsFriend = true
 		local button2 = createTextButton("Button1", button2Text, UDim2.new(0.5, 2, 1, 2))
 		button2.Parent = notificationFrame
 		local button2ClickedConnection = nil
@@ -421,7 +422,7 @@ local function onSendNotification(title, text, image, duration, callback, button
 			button1.Size = UDim2.new(1, -2, .5, 0)
 		end
 	end
-	
+
 	notification.Frame = notificationFrame
 	notification.Duration = duration
 	insertNotification(notification)
@@ -537,7 +538,7 @@ local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 					Title = "New Friend",
 					Text = toPlayer.Name,
 					DetailText = "You are now friends with " .. toPlayer.Name .. "!",
-					
+
 
 					Image = getFriendImage(toPlayer.UserId),
 					Duration = DEFAULT_NOTIFICATION_DURATION
@@ -563,7 +564,7 @@ local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 					Duration = DEFAULT_NOTIFICATION_DURATION
 				}
 			else
-				sendNotification("New Friend", "You are now friends with "..fromPlayer.Name.."!", 
+				sendNotification("New Friend", "You are now friends with "..fromPlayer.Name.."!",
 					FRIEND_IMAGE..tostring(fromPlayer.UserId).."&x=48&y=48", DEFAULT_NOTIFICATION_DURATION, nil, nil, nil, "Friends")
 			end
 		end
