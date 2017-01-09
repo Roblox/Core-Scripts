@@ -624,7 +624,7 @@ function this:ShowOwnFilteredMessage()
 	local clientChatModules = ChatService:FindFirstChild("ClientChatModules")
 	if clientChatModules then
 		local chatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-		return chatSettings.ShowOwnFilteredMessage
+		return chatSettings.ShowUserOwnFilteredMessage
 	end
 	return false
 end
@@ -670,7 +670,7 @@ OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 		return
 	end
 
-	if not messageData.IsFiltered then
+	if not messageData.IsFiltered or messageData.FromSpeaker == LocalPlayer.Name then
 		if messageData.FromSpeaker ~= LocalPlayer.Name or this:ShowOwnFilteredMessage() then
 			return
 		end
