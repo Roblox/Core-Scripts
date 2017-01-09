@@ -578,7 +578,7 @@ local function createChatOutput()
 		local fromOthers = localPlayer ~= nil and sourcePlayer ~= localPlayer
 
 		-- annihilate chats made by blocked or muted players
-		if blockingUtility:IsPlayerBlockedByUserId(sourcePlayer.userId) or blockingUtility:IsPlayerMutedByUserId(sourcePlayer.userId) then return end
+		if blockingUtility:IsPlayerBlockedByUserId(sourcePlayer.UserId) or blockingUtility:IsPlayerMutedByUserId(sourcePlayer.UserId) then return end
 
 		-- remove messages that are filtered from the default gui text filter
 		if not isLabelTextAllowed(message) then return end

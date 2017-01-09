@@ -1,7 +1,7 @@
 --LaserPointer.lua
 --Implements the visual part of the VR laser pointer
 --Written by Kyle, September 2016
-local CoreGui = game.CoreGui
+local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local ContextActionService = game:GetService("ContextActionService")
 local UserInputService = game:GetService("UserInputService")
@@ -63,7 +63,7 @@ local function getLocalHumanoid()
 			return child
 		end
 	end
-end	
+end
 
 local function applyExpCurve(x, exp)
 	local y = x ^ exp
@@ -144,7 +144,7 @@ local LASER = {
 
 	--Couldn't figure out a good name for this. This is the maximum angle that the parabola's hit point
 	--can be from the laser's hit point when switching to laser pointer mode solely from the parabola hitting
-	--a gui part. 
+	--a gui part.
 	SWITCH_AIM_THRESHOLD = math.rad(15),
 
 	TRANSITION_DURATION = 0.075,
@@ -225,7 +225,7 @@ function LaserPointer.new()
 			Transparency = 1 --smallest size possible
 		}
 		self.parabola.Adornee = self.originPart
-		
+
 
 		self.plopPart = Utility:Create("Part") {
 			Name = "LaserPointerTeleportPlop",
@@ -451,7 +451,7 @@ do --Configuration functions
 			self:setButtonActionEnabled(not self.inputUserCFrame == Enum.UserCFrame.Head)
 
 			setPartInGame(self.originPart, false)
-			
+
 			if self.clickToMoveModule then
 				self.clickToMoveModule:Stop()
 			end
@@ -673,7 +673,7 @@ do --Laser/teleport functions
 			local theta = math.rad(90) - math.asin(normal.Y)
 			local slopeOffset = math.sin(theta) * math.sqrt(halfBbSize.X^2 + halfBbSize.Z^2)
 			self.collisionTestPart.CFrame = CFrame.new(bbPos + Vector3.new(0, (TELEPORT.CLEAR_AABB_SIZE.Y / 2) + slopeOffset + 0.1, 0))
-			
+
 			--workspace:FindPartsInRegion3 uses AABBs of parts, which means slopes make really big boxes. No good for checking occlusion.
 			--Using an arbitary part here sounds nasty as an implementation detail, but the concept seems sound.
 			--Getting the part out of the workspace entirely would be a good long-term solution.
@@ -700,7 +700,7 @@ do --Laser/teleport functions
 					self:recomputePath(startPos, endPos)
 				end
 			end
-			
+
 			if not self.pathValid then
 				return false
 			end
@@ -754,7 +754,7 @@ do --Laser/teleport functions
 		--todo: update this when we move the parts; also update it so that it can work with user surfaceguis
 		--we may need to be more creative about that since we can't easily tell if a part has a surfacegui from Lua
 		local coreGuiPartContainer = GuiService.CoreGuiFolder
-		local laserHitGui = laserHitPart and laserHitPart:IsDescendantOf(coreGuiPartContainer)	
+		local laserHitGui = laserHitPart and laserHitPart:IsDescendantOf(coreGuiPartContainer)
 		local parabHitGui = laserHitGui
 		--only check parab hit part if it's not the same as the laser hit part
 		if parabHitPart ~= laserHitPart then
@@ -891,7 +891,7 @@ do --Event callbacks/update loop
 		if not self.enabled then
 			return
 		end
-		local ignore = { game.Players.LocalPlayer.Character, self.originPart, self.plopPart, self.plopBall }
+		local ignore = { Players.LocalPlayer.Character, self.originPart, self.plopPart, self.plopBall }
 		local cameraSpace = workspace.CurrentCamera.CFrame
 		local thickness0, thickness1 = LASER.ARC_THICKNESS, TELEPORT.ARC_THICKNESS
 		local gravity0, gravity1 = LASER.G, TELEPORT.G
@@ -928,7 +928,7 @@ do --Event callbacks/update loop
 			local launchVelocity = self:calculateLaunchVelocity(gravity, launchAngle)
 
 			self:setArcLaunchParams(launchAngle, launchVelocity, gravity)
-			
+
 			--Always check for both parabola and laser hits so we can use it to judge when to transition
 			ignore[5] = GuiService.CoreGuiFolder
 			ignore[6] = GuiService.CoreEffectFolder

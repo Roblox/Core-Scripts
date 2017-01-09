@@ -55,7 +55,7 @@ A ChatChannel is an object that stores data about a single channel that Speakers
 	void SendSystemMessage(string message)
 
 #### Events
-	MessagePosted(string fromSpeaker, string message)
+	MessagePosted(table messageObj)
 	SpeakerJoined(string speakerName)
 	SpeakerLeft(string speakerName)
 	SpeakerMuted(string speakerName, string reason, int length)
@@ -79,20 +79,22 @@ A Speaker object is a representation of one entity that can speak in a ChatChann
 	void SendMessage(string fromSpeaker, string channel, string message)
 	void SendSystemMessage(string message, string channel)
 
-	Player GetPlayerObject() (returns nil for non-player speakers)
+	Player GetPlayer() (returns nil for non-player speakers)
 
 	void SetExtraData(string key, Variant data)
 	Variant GetExtraData(string key)
 
 #### Events
-	SaidMessage(string message, string channelName)
-	ReceivedMessage(string fromSpeaker, string channel, string message)
-	ReceivedSystemMessage(string message, string channel)
+	SaidMessage(table messageObject, string channelName)
+	ReceivedMessage(table messageObject, string channelName)
+	ReceivedSystemMessage(table messageObject, string channelName)
 	ChannelJoined(string channelName, string channelWelcomeMessage)
 	ChannelLeft(string channelName)
 	Muted(string channelName, string reason, int length)
 	Unmuted(string channelName)
 	ExtraDataUpdated(string key, Variant value)
+	MainChannelSet(string channelName)
+
 ___
 
 #### Message Object format

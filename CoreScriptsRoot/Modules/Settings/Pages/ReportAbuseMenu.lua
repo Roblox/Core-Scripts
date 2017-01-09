@@ -71,7 +71,7 @@ local function Initialize()
 		end
 
 		this.WhichPlayerMode:UpdateDropDownList(playerNames)
-		
+
 		if index == 1 then
 			this.GameOrPlayerMode:SetSelectionIndex(1)
 			this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
@@ -108,41 +108,41 @@ local function Initialize()
 		this.HubRef = newHubRef
 
 		if utility:IsSmallTouchScreen() then
-			this.GameOrPlayerFrame, 
+			this.GameOrPlayerFrame,
 			this.GameOrPlayerLabel,
 			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 2)
 		else
-			this.GameOrPlayerFrame, 
+			this.GameOrPlayerFrame,
 			this.GameOrPlayerLabel,
 			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 2, 3)
 		end
 
-		this.WhichPlayerFrame, 
+		this.WhichPlayerFrame,
 		this.WhichPlayerLabel,
 		this.WhichPlayerMode = utility:AddNewRow(this, "Which Player?", "DropDown", {"update me"})
 		this.WhichPlayerMode:SetInteractable(false)
 		this.WhichPlayerLabel.ZIndex = 1
 
-		this.TypeOfAbuseFrame, 
+		this.TypeOfAbuseFrame,
 		this.TypeOfAbuseLabel,
 		this.TypeOfAbuseMode = utility:AddNewRow(this, "Type Of Abuse", "DropDown", ABUSE_TYPES_GAME, 1)
 
 		if utility:IsSmallTouchScreen() then
-			this.AbuseDescriptionFrame, 
+			this.AbuseDescriptionFrame,
 			this.AbuseDescriptionLabel,
 			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil)
 		else
-			this.AbuseDescriptionFrame, 
+			this.AbuseDescriptionFrame,
 			this.AbuseDescriptionLabel,
 			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
 		end
-		
+
 		this.AbuseDescription.Selection.FocusLost:connect(function()
 			if this.AbuseDescription.Selection.Text == "" then
 				this.AbuseDescription.Selection.Text = DEFAULT_ABUSE_DESC_TEXT
 			end
 		end)
-		
+
 		if utility:IsSmallTouchScreen() then
 			this.AbuseDescription.Selection.Size = UDim2.new(0, 290, 0, 30)
 			this.AbuseDescription.Selection.Position = UDim2.new(1,-345,this.AbuseDescription.Selection.Position.Y.Scale, this.AbuseDescription.Selection.Position.Y.Offset)
@@ -180,7 +180,7 @@ local function Initialize()
 
 			if this.GameOrPlayerMode.CurrentIndex == 1 then
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
-				
+
 				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_GAME > 1)
 				this.TypeOfAbuseLabel.ZIndex = (#ABUSE_TYPES_GAME > 1 and 2 or 1)
 
@@ -192,7 +192,7 @@ local function Initialize()
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
 				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_PLAYER > 1)
 				this.TypeOfAbuseLabel.ZIndex = (#ABUSE_TYPES_PLAYER > 1 and 2 or 1)
-				
+
 				if #playerNames > 0 then
 					this.WhichPlayerMode:SetInteractable(true)
 					this.WhichPlayerLabel.ZIndex = 2
@@ -204,7 +204,7 @@ local function Initialize()
 				end
 				makeSubmitButtonInactive()
 			end
-			
+
 		end
 
 		local function cleanupReportAbuseMenu()
@@ -223,7 +223,7 @@ local function Initialize()
 				if currentAbusingPlayer and abuseReason then
 					reportSucceeded = true
 					spawn(function()
-						game.Players:ReportAbuse(currentAbusingPlayer, abuseReason, this.AbuseDescription.Selection.Text)
+						PlayersService:ReportAbuse(currentAbusingPlayer, abuseReason, this.AbuseDescription.Selection.Text)
 					end)
 				end
 			else
@@ -240,7 +240,7 @@ local function Initialize()
 						end)
 						local formattedText = string.format("User Report: \n    %s \n".."Place Title: \n    %s \n".."PlaceId: \n    %s \n".."Place Description: \n    %s \n",abuseDescription, placeName, placeId, placeDescription)
 
-						game.Players:ReportAbuse(nil, abuseReason, formattedText)
+						PlayersService:ReportAbuse(nil, abuseReason, formattedText)
 					end)
 				end
 			end
@@ -268,7 +268,7 @@ local function Initialize()
 		else
 			submitButton.Position = UDim2.new(1,-194,1,5)
 		end
-		
+
 		if this.GameOrPlayerMode.CurrentIndex == 1 then
 			makeSubmitButtonActive()
 		else

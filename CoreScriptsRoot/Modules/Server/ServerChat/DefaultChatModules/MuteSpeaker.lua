@@ -26,15 +26,15 @@ local function Run(ChatService)
 		local muteSpeakerName = GetSpeakerNameFromMessage(message)
 		local speaker = ChatService:GetSpeaker(speakerName)
 		if speaker then
-			if muteSpeakerName == speakerName then
+			if muteSpeakerName:lower() == speakerName:lower() then
 				speaker:SendSystemMessage("You cannot mute yourself.", channel, errorExtraData)
 				return
 			end
 
 			local muteSpeaker = ChatService:GetSpeaker(muteSpeakerName)
 			if muteSpeaker then
-				speaker:AddMutedSpeaker(muteSpeakerName)
-				speaker:SendSystemMessage(string.format("Speaker '%s' has been muted.", tostring(muteSpeakerName)), channel)
+				speaker:AddMutedSpeaker(muteSpeaker.Name)
+				speaker:SendSystemMessage(string.format("Speaker '%s' has been muted.", muteSpeaker.Name), channel)
 			else
 				speaker:SendSystemMessage(string.format("Speaker '%s' does not exist.", tostring(muteSpeakerName)), channel, errorExtraData)
 			end
@@ -45,15 +45,15 @@ local function Run(ChatService)
 		local unmuteSpeakerName = GetSpeakerNameFromMessage(message)
 		local speaker = ChatService:GetSpeaker(speakerName)
 		if speaker then
-			if unmuteSpeakerName == speakerName then
+			if unmuteSpeakerName:lower() == speakerName:lower() then
 				speaker:SendSystemMessage("You cannot mute yourself.", channel, errorExtraData)
 				return
 			end
 
 			local unmuteSpeaker = ChatService:GetSpeaker(unmuteSpeakerName)
 			if unmuteSpeaker then
-				speaker:RemoveMutedSpeaker(unmuteSpeakerName)
-				speaker:SendSystemMessage(string.format("Speaker '%s' has been unmuted.", tostring(unmuteSpeakerName)), channel)
+				speaker:RemoveMutedSpeaker(unmuteSpeaker.Name)
+				speaker:SendSystemMessage(string.format("Speaker '%s' has been unmuted.", unmuteSpeaker.Name), channel)
 			else
 				speaker:SendSystemMessage(string.format("Speaker '%s' does not exist.", tostring(unmuteSpeakerName)), channel, errorExtraData)
 			end

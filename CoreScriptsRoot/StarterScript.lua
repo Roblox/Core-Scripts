@@ -11,6 +11,16 @@ local soundFolder = Instance.new("Folder")
 soundFolder.Name = "Sounds"
 soundFolder.Parent = RobloxGui
 
+-- This can be useful in cases where a flag configuration issue causes requiring a CoreScript to fail
+local function safeRequire(moduleScript)
+	local moduleReturnValue = nil
+	local success, err = pcall(function() moduleReturnValue = require(moduleScript) end)
+	if not success then
+		warn("Failure to Start CoreScript module" ..moduleScript.Name.. ".\n" ..err)
+	end
+	return moduleReturnValue
+end
+
 -- TopBar
 scriptContext:AddCoreScriptLocal("CoreScripts/Topbar", RobloxGui)
 
@@ -28,8 +38,8 @@ scriptContext:AddCoreScriptLocal("CoreScripts/PerformanceStatsManagerScript",
   RobloxGui)
 
 -- Chat script
-spawn(function() require(RobloxGui.Modules.ChatSelector) end)
-spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
+spawn(function() safeRequire(RobloxGui.Modules.ChatSelector) end)
+spawn(function() safeRequire(RobloxGui.Modules.PlayerlistModule) end)
 
 scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)
 
@@ -41,7 +51,7 @@ scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript3", RobloxGui)
 scriptContext:AddCoreScriptLocal("CoreScripts/BlockPlayerPrompt", RobloxGui)
 
 -- Backpack!
-spawn(function() require(RobloxGui.Modules.BackpackScript) end)
+spawn(function() safeRequire(RobloxGui.Modules.BackpackScript) end)
 
 scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", RobloxGui)
 
@@ -60,7 +70,7 @@ do
 	local UserInputService = game:GetService('UserInputService')
 	local function tryRequireVRKeyboard()
 		if UserInputService.VREnabled then
-			return require(RobloxGui.Modules.VR.VirtualKeyboard)
+			return safeRequire(RobloxGui.Modules.VR.VirtualKeyboard)
 		end
 		return nil
 	end
@@ -84,7 +94,7 @@ if UserSettings().GameSettings:InStudioMode() then
 				local modulesFolder = RobloxGui.Modules
 				local appHomeModule = modulesFolder:FindFirstChild('Shell') and modulesFolder:FindFirstChild('Shell'):FindFirstChild('AppHome')
 				if shellInVR and appHomeModule then
-					require(appHomeModule)
+					safeRequire(appHomeModule)
 				end
 			end
 		end

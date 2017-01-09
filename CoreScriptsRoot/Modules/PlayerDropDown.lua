@@ -11,6 +11,9 @@ local HttpService = game:GetService('HttpService')
 local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local PlayersService = game:GetService('Players')
 
+local newBlockFunctionSuccess, newBlockFunctionValue = pcall(function() return settings():GetFFlag("UseNewBlockFunction") end)
+local useNewBlockFunction = (newBlockFunctionSuccess == true and newBlockFunctionValue == true)
+
 --[[ Script Variables ]]--
 local LocalPlayer = PlayersService.LocalPlayer
 
@@ -129,7 +132,7 @@ end
 -- checks if we can send a friend request. Right now the only way we
 -- can't is if one of the players is at the max friend limit
 local function canSendFriendRequestAsync(otherPlayer)
-	local theirFriendCount = getFriendCountAsync(otherPlayer.userId)
+	local theirFriendCount = getFriendCountAsync(otherPlayer.UserId)
 	local myFriendCount = getFriendCountAsync()
 
 	-- assume max friends if web call fails
@@ -171,7 +174,7 @@ local BlockedList = {}
 local MutedList = {}
 
 local function GetBlockedPlayersAsync()
-	local userId = LocalPlayer.userId
+	local userId = LocalPlayer.UserId
 	local apiPath = "userblock/getblockedusers" .. "?" .. "userId=" .. tostring(userId) .. "&" .. "page=" .. "1"
 	if userId > 0 then
 		local blockList = nil
@@ -240,11 +243,20 @@ local function BlockPlayerAsync(playerToBlock)
 			if not isBlocked(blockUserId) then
 				BlockedList[blockUserId] = true
 				BlockStatusChanged:fire(blockUserId, true)
-				local success, ret = pcall(function()
-					local success = PlayersService:BlockUser(LocalPlayer.userId, blockUserId)
-					return success
-				end)
-				return success and ret
+				local success = false
+				local wasBlocked = false
+				if not useNewBlockFunction then
+					success, wasBlocked = pcall(function()
+						local playerBlocked = PlayersService:BlockUser(LocalPlayer.userId, blockUserId)
+						return playerBlocked
+					end)
+				else
+					success, wasBlocked = pcall(function()
+						local playerBlocked = LocalPlayer:BlockUser(playerToBlock)
+						return playerBlocked
+					end)
+				end
+				return success and wasBlocked
 			else
 				return true
 			end
@@ -255,16 +267,25 @@ end
 
 local function UnblockPlayerAsync(playerToUnblock)
 	if playerToUnblock then
-		local unblockUserId = playerToUnblock.userId
+		local unblockUserId = playerToUnblock.UserId
 
 		if isBlocked(unblockUserId) then
 			BlockedList[unblockUserId] = nil
 			BlockStatusChanged:fire(unblockUserId, false)
-			local success, ret = pcall(function()
-				local success = PlayersService:UnblockUser(LocalPlayer.userId, unblockUserId)
-				return success
-			end)
-			return success and ret
+			local success = false
+			local wasUnBlocked = false
+			if not useNewBlockFunction then
+				success, wasUnBlocked = pcall(function()
+					local playerUnblocked = PlayersService:UnblockUser(LocalPlayer.userId, unblockUserId)
+					return playerUnblocked
+				end)
+			else
+				success, wasUnBlocked = pcall(function()
+					local playerUnblocked = LocalPlayer:UnblockUser(playerToUnblock)
+					return playerUnblocked
+				end)
+			end
+			return success and wasUnBlocked
 		else
 			return true
 		end
@@ -339,7 +360,7 @@ function createPlayerDropDown()
 		if not playerDropDown.Player then return end
 		--
 		local apiPath = "user/unfollow"
-		local params = "followedUserId="..tostring(playerDropDown.Player.userId)
+		local params = "followedUserId="..tostring(playerDropDown.Player.UserId)
 		local success, result = pcall(function()
 			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
 		end)
@@ -392,7 +413,7 @@ function createPlayerDropDown()
 	local function onFollowButtonPressed()
 		if not playerDropDown.Player then return end
 		--
-		local followedUserId = tostring(playerDropDown.Player.userId)
+		local followedUserId = tostring(playerDropDown.Player.UserId)
 		local apiPath = "user/follow"
 		local params = "followedUserId="..followedUserId
 		local success, result = pcall(function()
@@ -488,7 +509,7 @@ function createPlayerDropDown()
 			canDeclineFriend = true
 		end
 
-		local blocked = isBlocked(playerDropDown.Player.userId)
+		local blocked = isBlocked(playerDropDown.Player.UserId)
 
 		if not blocked then
 			table.insert(buttons, {
@@ -506,7 +527,7 @@ function createPlayerDropDown()
 				})
 		end
 		-- following status
-		local following = isFollowing(playerDropDown.Player.userId, LocalPlayer.userId)
+		local following = isFollowing(playerDropDown.Player.UserId, LocalPlayer.UserId)
 		local followerText = following and "Unfollow Player" or "Follow Player"
 
 		if not blocked then

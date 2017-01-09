@@ -201,8 +201,6 @@ function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
 			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
 		end
 	end
-
-	return message
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)

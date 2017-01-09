@@ -81,6 +81,7 @@ function methods:CreateGuiObjects(targetParent)
 	MessageModeTextLabel.Size = UDim2.new(0.3, 0, 1, 0)
 	MessageModeTextLabel.TextYAlignment = Enum.TextYAlignment.Center
 	MessageModeTextLabel.TextColor3 = Color3.fromRGB(77, 139, 255)
+	MessageModeTextLabel.Visible = false
 	MessageModeTextLabel.Parent = TextBoxHolderFrame
 
 	local TextLabel = Instance.new("TextLabel")
@@ -194,6 +195,12 @@ function methods:GetMessageModeTextLabel()
 end
 
 function methods:IsFocused()
+	-- Temporary hack while reparenting is necessary.
+	if not self.GuiObject:IsDescendantOf(game) then
+		if rawget(self, "LastFocusedState") then
+			return self.LastFocusedState.Focused
+		end
+	end
 	return self:GetTextBox():IsFocused()
 end
 
@@ -211,6 +218,10 @@ end
 
 function methods:ResetText()
 	self:GetTextBox().Text = ""
+end
+
+function methods:SetText(text)
+	self:GetTextBox().Text = text
 end
 
 function methods:GetEnabled()
@@ -339,6 +350,23 @@ function methods:CustomStateProcessCompletedMessage(message)
 	return false
 end
 
+-- Temporary hack until ScreenGui.DisplayOrder is released.
+function methods:GetFocusedState()
+	local focusedState = {
+		Focused = self.TextBox:IsFocused(),
+		Text = self.TextBox.Text
+	}
+	rawset(self, "LastFocusedState", focusedState)
+	return focusedState
+end
+
+function methods:RestoreFocusedState(focusedState)
+	self.TextBox.Text = focusedState.Text
+	if focusedState.Focused then
+		self.TextBox:CaptureFocus()
+	end
+end
+
 function methods:FadeOutBackground(duration)
 	self.AnimParams.Background_TargetTransparency = 1
 	self.AnimParams.Background_NormalizedExptValue = CurveUtil:NormalizedDefaultExptValueInSeconds(duration)
@@ -424,6 +452,7 @@ function module.new(CommandProcessor, ChatWindow)
 	obj.TargetYSize = 0
 
 	obj.AnimParams = {}
+	obj.LastFocusedState = nil
 
 	ClassMaker.MakeClass("ChatBar", obj)
 

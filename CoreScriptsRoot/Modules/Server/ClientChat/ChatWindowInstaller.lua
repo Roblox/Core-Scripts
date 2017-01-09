@@ -20,7 +20,21 @@ local function LoadModule(location, name, parent)
 	return module
 end
 
+local function GetBoolValue(parent, name, defaultValue)
+	local boolValue = parent:FindFirstChild("Name")
+	if boolValue then
+		if boolValue:IsA("BoolValue") then
+			return boolValue.Value
+		end
+	end
+	return defaultValue
+end
+
 local function Install()
+
+	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptChatInsertDefaultBools") end)
+	local UseInsertDefaultBools = readFlagSuccess and flagEnabled
+
 	local chatScriptArchivable = true
 	local ChatScript = installDirectory:FindFirstChild(runnerScriptName)
 	if not ChatScript then
@@ -48,10 +62,17 @@ local function Install()
 		clientChatModules.Name = "ClientChatModules"
 		clientChatModules.Archivable = false
 
-		LoadModule(script.Parent.DefaultClientChatModules, "ChatSettings", clientChatModules)
-		LoadModule(script.Parent.DefaultClientChatModules, "ChatConstants", clientChatModules)
-
 		clientChatModules.Parent = installDirectory
+	end
+
+	local chatSettings = clientChatModules:FindFirstChild("ChatSettings")
+	if not chatSettings then
+		LoadModule(script.Parent.DefaultClientChatModules, "ChatSettings", clientChatModules)
+	end
+
+	local chatConstants = clientChatModules:FindFirstChild("ChatConstants")
+	if not chatConstants then
+		LoadModule(script.Parent.DefaultClientChatModules, "ChatConstants", clientChatModules)
 	end
 
 	local MessageCreatorModules = clientChatModules:FindFirstChild("MessageCreatorModules")
@@ -60,13 +81,32 @@ local function Install()
 		MessageCreatorModules.Name = "MessageCreatorModules"
 		MessageCreatorModules.Archivable = false
 
-		local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
-
-		for i = 1, #creatorModules do
-			LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, MessageCreatorModules)
+		if UseInsertDefaultBools then
+			local InsertDefaults = Instance.new("BoolValue")
+			InsertDefaults.Name = "InsertDefaultModules"
+			InsertDefaults.Value = true
+			InsertDefaults.Parent = MessageCreatorModules
+		else
+			local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
+			for i = 1, #creatorModules do
+				LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, MessageCreatorModules)
+			end
 		end
 
 		MessageCreatorModules.Parent = clientChatModules
+	end
+
+	if UseInsertDefaultBools then
+		local insertDefaultMessageCreators = GetBoolValue(MessageCreatorModules, "InsertDefaultModules", false)
+
+		if insertDefaultMessageCreators then
+			local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
+			for i = 1, #creatorModules do
+				if not MessageCreatorModules:FindFirstChild(creatorModules[i].Name) then
+					LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, MessageCreatorModules)
+				end
+			end
+		end
 	end
 
 	local CommandModules = clientChatModules:FindFirstChild("CommandModules")
@@ -75,13 +115,32 @@ local function Install()
 		CommandModules.Name = "CommandModules"
 		CommandModules.Archivable = false
 
-		local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
-
-		for i = 1, #commandModules do
-			LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, CommandModules)
+		if UseInsertDefaultBools then
+			local InsertDefaults = Instance.new("BoolValue")
+			InsertDefaults.Name = "InsertDefaultModules"
+			InsertDefaults.Value = true
+			InsertDefaults.Parent = CommandModules
+		else
+			local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
+			for i = 1, #commandModules do
+				LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, CommandModules)
+			end
 		end
 
 		CommandModules.Parent = clientChatModules
+	end
+
+	if UseInsertDefaultBools then
+		local insertDefaultCommands = GetBoolValue(CommandModules, "InsertDefaultModules", false)
+
+		if insertDefaultCommands then
+			local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
+			for i = 1, #commandModules do
+				if not CommandModules:FindFirstChild(commandModules[i].Name) then
+					LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, CommandModules)
+				end
+			end
+		end
 	end
 
 	if not StarterPlayerScripts:FindFirstChild(runnerScriptName) then

@@ -30,8 +30,8 @@ local function MakeIsInGroup(groupId, requiredRank)
 
 	local inGroupCache = {}
 	return function(player)
-		if player and player.userId then
-			local userId = player.userId
+		if player and player.UserId then
+			local userId = player.UserId
 
 			if inGroupCache[userId] == nil then
 				local inGroup = false
@@ -139,7 +139,7 @@ local function Run(ChatService)
 		end
 		if (player) then
 			player.Changed:connect(function(property)
-				if property == "TeamColor" or property == "Neutral" then
+				if property == "TeamColor" or property == "Neutral" or property == "Team" then
 					speaker:SetExtraData("NameColor", GetNameColor(speaker))
 				end
 			end)
