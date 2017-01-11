@@ -68,11 +68,11 @@ function CurveUtil:SecondsToTick(sec)
 end
 
 function CurveUtil:ExptValueInSeconds(threshold, start, seconds)
-    return 1 - math.pow((threshold / start), 1 / (60.0 * seconds))
+		return 1 - math.pow((threshold / start), 1 / (60.0 * seconds))
 end
 
 function CurveUtil:NormalizedDefaultExptValueInSeconds(seconds)
-    return self:ExptValueInSeconds(DEFAULT_THRESHOLD, 1, seconds)
+		return self:ExptValueInSeconds(DEFAULT_THRESHOLD, 1, seconds)
 end
 
 return CurveUtil

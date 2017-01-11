@@ -153,11 +153,11 @@ local function Initialize()
         [5] = {["Jump"] = "Space"}} )
     charMoveFrame.Parent = parentFrame
 
-    local accessoriesFrame = createPCGroup("Accessories", {	[1] = {["Equip Tools"] = "1,2,3..."}, 
+    local accessoriesFrame = createPCGroup("Accessories", {	
+        [1] = {["Equip Tools"] = "1,2,3..."}, 
         [2] = {["Unequip Tools"] = "1,2,3..."},
         [3] = {["Drop Tool"] = "Backspace"},
-        [4] = {["Use Tool"] = "Left Mouse Button"},
-        [5] = {["Drop Hats"] = "+"} })
+        [4] = {["Use Tool"] = "Left Mouse Button"} })
     accessoriesFrame.Position = UDim2.new(1/3,PC_TABLE_SPACING,0,0)
     accessoriesFrame.Parent = parentFrame
 
@@ -449,7 +449,9 @@ do
       PageInstance.HubRef:ShowShield()
 
       if PageInstance:GetCurrentInputType() == TOUCH_TAG then
-        PageInstance.HubRef.BottomButtonFrame.Visible = true
+        if PageInstance.HubRef.BottomButtonFrame then
+          PageInstance.HubRef.BottomButtonFrame.Visible = true
+        end
       end
     end)
 end

@@ -191,20 +191,16 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 	return message
 end
 
-function methods:InternalDoMessageFilter(speakerName, message, channel)
+function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
 	for funcId, func in pairs(self.FilterMessageFunctions) do
 		local s, m = pcall(function()
-			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "string")
-			message = ret
+			func(speakerName, messageObj, channel)
 		end)
 
 		if (not s) then
 			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
 		end
 	end
-
-	return message
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)
@@ -268,7 +264,7 @@ function module.new()
 	obj.FilterMessageFunctions = {}
 	obj.ProcessCommandsFunctions = {}
 
-	obj.eChannelAdded  = Instance.new("BindableEvent")
+	obj.eChannelAdded = Instance.new("BindableEvent")
 	obj.eChannelRemoved = Instance.new("BindableEvent")
 	obj.eSpeakerAdded = Instance.new("BindableEvent")
 	obj.eSpeakerRemoved = Instance.new("BindableEvent")

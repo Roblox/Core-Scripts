@@ -8,8 +8,8 @@ local UserInputService = game:GetService("UserInputService")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
@@ -27,77 +27,78 @@ function methods:CreateGuiObjects(targetParent)
 	local backgroundImagePixelOffset = 7
 	local textBoxPixelOffset = 5
 
-	local BaseFrame = Instance.new("Frame", targetParent)
+	local BaseFrame = Instance.new("Frame")
 	BaseFrame.Selectable = false
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 0.6
 	BaseFrame.BorderSizePixel = 0
-	BaseFrame.BackgroundColor3 = Color3.new(0, 0, 0)
+	BaseFrame.BackgroundColor3 = ChatSettings.ChatBarBackGroundColor
+	BaseFrame.Parent = targetParent
 
-	local BoxFrame = Instance.new("Frame", BaseFrame)
+	local BoxFrame = Instance.new("Frame")
 	BoxFrame.Selectable = false
 	BoxFrame.Name = "BoxFrame"
 	BoxFrame.BackgroundTransparency = 0.6
 	BoxFrame.BorderSizePixel = 0
-	BoxFrame.BackgroundColor3 = Color3.new(1, 1, 1)
+	BoxFrame.BackgroundColor3 = ChatSettings.ChatBarBoxColor
 	BoxFrame.Size = UDim2.new(1, -backgroundImagePixelOffset * 2, 1, -backgroundImagePixelOffset * 2)
 	BoxFrame.Position = UDim2.new(0, backgroundImagePixelOffset, 0, backgroundImagePixelOffset)
+	BoxFrame.Parent = BaseFrame
 
-	local TextBoxHolderFrame = Instance.new("Frame", BoxFrame)
+	local TextBoxHolderFrame = Instance.new("Frame")
 	TextBoxHolderFrame.BackgroundTransparency = 1
 	TextBoxHolderFrame.Size = UDim2.new(1, -textBoxPixelOffset * 2, 1, -textBoxPixelOffset * 2)
 	TextBoxHolderFrame.Position = UDim2.new(0, textBoxPixelOffset, 0, textBoxPixelOffset)
+	TextBoxHolderFrame.Parent = BoxFrame
 
-	local TextBox = Instance.new("TextBox", TextBoxHolderFrame)
+	local TextBox = Instance.new("TextBox")
 	TextBox.Selectable = ChatSettings.GamepadNavigationEnabled
 	TextBox.Name = "ChatBar"
 	TextBox.BackgroundTransparency = 1
 	TextBox.Size = UDim2.new(1, 0, 1, 0)
 	TextBox.Position = UDim2.new(0, 0, 0, 0)
-	TextBox.FontSize = ChatSettings.ChatBarTextSize
-	TextBox.Font = Enum.Font.SourceSansBold
-	TextBox.TextColor3 = Color3.new(1, 1, 1)
-	--TextBox.TextStrokeTransparency = 0.75
+	TextBox.TextSize = ChatSettings.ChatBarTextSize
+	TextBox.Font = ChatSettings.ChatBarFont
+	TextBox.TextColor3 = ChatSettings.ChatBarTextColor
+	TextBox.TextTransparency = 0.4
+	TextBox.TextStrokeTransparency = 1
 	TextBox.ClearTextOnFocus = false
 	TextBox.TextXAlignment = Enum.TextXAlignment.Left
 	TextBox.TextYAlignment = Enum.TextYAlignment.Top
 	TextBox.TextWrapped = true
 	TextBox.Text = ""
+	TextBox.Parent = TextBoxHolderFrame
 
-	local MessageModeTextLabel = Instance.new("TextLabel", TextBoxHolderFrame)
+	local MessageModeTextLabel = Instance.new("TextLabel")
 	MessageModeTextLabel.Name = "MessageMode"
 	MessageModeTextLabel.BackgroundTransparency = 1
 	MessageModeTextLabel.Position = UDim2.new(0, 0, 0, 0)
-	MessageModeTextLabel.FontSize = ChatSettings.ChatBarTextSize
-	MessageModeTextLabel.Font = Enum.Font.SourceSansBold
+	MessageModeTextLabel.TextSize = ChatSettings.ChatBarTextSize
+	MessageModeTextLabel.Font = ChatSettings.ChatBarFont
 	MessageModeTextLabel.TextXAlignment = Enum.TextXAlignment.Left
 	MessageModeTextLabel.TextWrapped = true
 	MessageModeTextLabel.Text = ""
 	MessageModeTextLabel.Size = UDim2.new(0.3, 0, 1, 0)
 	MessageModeTextLabel.TextYAlignment = Enum.TextYAlignment.Center
 	MessageModeTextLabel.TextColor3 = Color3.fromRGB(77, 139, 255)
+	MessageModeTextLabel.Visible = false
+	MessageModeTextLabel.Parent = TextBoxHolderFrame
 
-	local TextLabel = Instance.new("TextLabel", TextBoxHolderFrame)
+	local TextLabel = Instance.new("TextLabel")
 	TextLabel.Selectable = false
 	TextLabel.TextWrapped = true
 	TextLabel.BackgroundTransparency = 1
 	TextLabel.Size = TextBox.Size
 	TextLabel.Position = TextBox.Position
-	TextLabel.FontSize = TextBox.FontSize
+	TextLabel.TextSize = TextBox.TextSize
 	TextLabel.Font = TextBox.Font
 	TextLabel.TextColor3 = TextBox.TextColor3
+	TextLabel.TextTransparency = TextBox.TextTransparency
 	TextLabel.TextStrokeTransparency = TextBox.TextStrokeTransparency
 	TextLabel.TextXAlignment = TextBox.TextXAlignment
 	TextLabel.TextYAlignment = TextBox.TextYAlignment
 	TextLabel.Text = "This value needs to be set with :SetTextLabelText()"
-
-	TextLabel.TextColor3 = Color3.new(0, 0, 0)
-	TextLabel.TextStrokeTransparency = 1
-	TextLabel.TextTransparency = 0.4
-
-	TextBox.TextColor3 = TextLabel.TextColor3
-	TextBox.TextStrokeTransparency = TextLabel.TextStrokeTransparency
-	TextBox.TextTransparency = TextLabel.TextTransparency
+	TextLabel.Parent = TextBoxHolderFrame
 
 	rawset(self, "GuiObject", BaseFrame)
 	rawset(self, "TextBox", TextBox)
@@ -194,6 +195,12 @@ function methods:GetMessageModeTextLabel()
 end
 
 function methods:IsFocused()
+	-- Temporary hack while reparenting is necessary.
+	if not self.GuiObject:IsDescendantOf(game) then
+		if rawget(self, "LastFocusedState") then
+			return self.LastFocusedState.Focused
+		end
+	end
 	return self:GetTextBox():IsFocused()
 end
 
@@ -211,6 +218,10 @@ end
 
 function methods:ResetText()
 	self:GetTextBox().Text = ""
+end
+
+function methods:SetText(text)
+	self:GetTextBox().Text = text
 end
 
 function methods:GetEnabled()
@@ -242,12 +253,12 @@ function methods:CalculateSize()
 	local lastPos = self.GuiObject.Size
 	self.GuiObject.Size = UDim2.new(1, 0, 0, 1000)
 
-	local fontSize = tonumber(self.TextBox.FontSize.Name:match("%d+"))
+	local textSize = self.TextBox.TextSize
 	local bounds = self.TextBox.TextBounds.Y
 
 	self.GuiObject.Size = lastPos
 
-	local newTargetYSize = bounds - fontSize
+	local newTargetYSize = bounds - textSize
 	if (self.TargetYSize ~= newTargetYSize) then
 		self.TargetYSize = newTargetYSize
 		self:TweenToTargetYSize()
@@ -273,9 +284,15 @@ function methods:TweenToTargetYSize()
 	end
 end
 
-function methods:SetFontSize(fontSize)
-	self.TextBox.FontSize = fontSize
-	self.TextLabel.FontSize = fontSize
+function methods:SetTextSize(textSize)
+	if not self:IsInCustomState() then
+		if rawget(self, "TextBox") then
+			self.TextBox.TextSize = textSize
+		end
+		if rawget(self, "TextLabel") then
+			self.TextLabel.TextSize = textSize
+		end
+	end
 end
 
 function methods:SetChannelTarget(targetChannel)
@@ -331,6 +348,23 @@ function methods:CustomStateProcessCompletedMessage(message)
 		return self.CustomState:ProcessCompletedMessage()
 	end
 	return false
+end
+
+-- Temporary hack until ScreenGui.DisplayOrder is released.
+function methods:GetFocusedState()
+	local focusedState = {
+		Focused = self.TextBox:IsFocused(),
+		Text = self.TextBox.Text
+	}
+	rawset(self, "LastFocusedState", focusedState)
+	return focusedState
+end
+
+function methods:RestoreFocusedState(focusedState)
+	self.TextBox.Text = focusedState.Text
+	if focusedState.Focused then
+		self.TextBox:CaptureFocus()
+	end
 end
 
 function methods:FadeOutBackground(duration)
@@ -403,7 +437,7 @@ function module.new(CommandProcessor, ChatWindow)
 	obj.TextBox = nil
 	obj.TextLabel = nil
 	obj.GuiObjects = {}
-	obj.eGuiObjectsChanged  = Instance.new("BindableEvent")
+	obj.eGuiObjectsChanged = Instance.new("BindableEvent")
 	obj.GuiObjectsChanged = obj.eGuiObjectsChanged.Event
 
 	obj.Connections = {}
@@ -418,6 +452,7 @@ function module.new(CommandProcessor, ChatWindow)
 	obj.TargetYSize = 0
 
 	obj.AnimParams = {}
+	obj.LastFocusedState = nil
 
 	ClassMaker.MakeClass("ChatBar", obj)
 
@@ -425,7 +460,7 @@ function module.new(CommandProcessor, ChatWindow)
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "ChatBarTextSize") then
-			obj:SetFontSize(value)
+			obj:SetTextSize(value)
 		end
 	end)
 

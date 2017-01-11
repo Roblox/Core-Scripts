@@ -19,12 +19,6 @@ local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
 local StatsViewerClass = require(CoreGuiService.RobloxGui.Modules.Stats.StatsViewer)
 local TopbarConstants = require(CoreGuiService.RobloxGui.Modules.TopbarConstants)
 
---[[ Fast Flags ]]--
-local getShowPerformanceStatsInGuiSuccess, showPerformanceStatsInGuiValue = 
-	pcall(function() return settings():GetFFlag("ShowPerformanceStatsInGui") end)
-local showPerformanceStatsInGui = getShowPerformanceStatsInGuiSuccess and showPerformanceStatsInGuiValue
-
-
 --[[ Script Variables ]]--
 local masterFrame = Instance.new("Frame")
 masterFrame.Name = "PerformanceStats"
@@ -182,11 +176,6 @@ end
 
 
 --[[ Top Level Code ]]--
--- If flag is not enabled, bounce.
-if not showPerformanceStatsInGui then 
-	return
-end
-
 -- Set up our GUI.
 ConfigureMasterFrame()
 ConfigureStatButtonsInMasterFrame()

@@ -143,8 +143,8 @@ end
 
 --[[ Connections ]]--
 function RemoteFunc_GetFollowRelationships.OnServerInvoke(player)
-	local uid = player.userId
-	local uidStr = tostring(player.userId)
+	local uid = player.UserId
+	local uidStr = tostring(player.UserId)
 	if uid and uid > 0 and PlayerToRelationshipMap[uidStr] then
 		return PlayerToRelationshipMap[uidStr]
 	else
@@ -157,8 +157,8 @@ RemoteEvent_NewFollower.OnServerEvent:connect(function(player1, player2, player1
 	if player1FollowsPlayer2 == nil then
 		return
 	end
-	local userId1 = tostring(player1.userId)
-	local userId2 = tostring(player2.userId)
+	local userId1 = tostring(player1.UserId)
+	local userId2 = tostring(player2.UserId)
 
 	local user1map = PlayerToRelationshipMap[userId1]
 	local user2map = PlayerToRelationshipMap[userId2]

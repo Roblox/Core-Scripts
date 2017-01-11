@@ -15,9 +15,6 @@ local TextService = game:GetService('TextService')
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Util = require(RobloxGui.Modules.Settings.Utility)
 
-local vrKeyboardSuccess, vrKeyboardFlagValue = pcall(function() return settings():GetFFlag("UseVRKeyboardInLua") end)
-local useVRKeyboard = (vrKeyboardSuccess and vrKeyboardFlagValue == true)
-
 local BACKGROUND_OPACITY = 0.3
 local NORMAL_KEY_COLOR = Color3.new(49/255,49/255,49/255)
 local HOVER_KEY_COLOR = Color3.new(49/255,49/255,49/255)
@@ -25,6 +22,9 @@ local PRESSED_KEY_COLOR = Color3.new(0,162/255,1)
 local SET_KEY_COLOR = Color3.new(0,162/255,1)
 
 local KEY_TEXT_COLOR = Color3.new(1,1,1)
+
+local useSetTextFromInputSuccess, useSetTextFromInputValue = pcall(function() return settings():GetFFlag("UseSetTextFromInputForVrKeyboard") end)
+local useSetTextFromInput = useSetTextFromInputSuccess and useSetTextFromInputValue
 ---------------------------------------- KEYBOARD LAYOUT --------------------------------------
 local MINIMAL_KEYBOARD_LAYOUT = HttpService:JSONDecode([==[
 [
@@ -971,7 +971,15 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	end
 
 	local function UpdateTextEntryFieldText(newText)
-		textEntryField.Text = newText
+		local textSet = false
+		if useSetTextFromInput then
+			textSet = pcall(function() textEntryField:SetTextFromInput(newText) end)
+		end
+
+		if not textSet then
+			textEntryField.Text = newText
+		end
+
 		SetTextFieldCursorPosition(textfieldCursorPosition)
 	end
 
@@ -1421,7 +1429,7 @@ VirtualKeyboardClass.OpenedEvent = GetKeyboard().OpenedEvent
 VirtualKeyboardClass.ClosedEvent = GetKeyboard().ClosedEvent
 
 
-if VirtualKeyboardPlatform and useVRKeyboard then
+if VirtualKeyboardPlatform then
 	UserInputService.TextBoxFocused:connect(function(textbox)
 		VirtualKeyboardClass:ShowVirtualKeyboard(VirtualKeyboardClass:CreateVirtualKeyboardOptions(textbox))
 	end)

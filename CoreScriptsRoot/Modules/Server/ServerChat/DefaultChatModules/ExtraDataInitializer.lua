@@ -2,13 +2,36 @@
 --	// Written by: Xsitsu
 --	// Description: Module that sets some basic ExtraData such as name color, and chat color.
 
+local SpecialChatColors = {
+	Groups = {
+		{
+			--- ROBLOX Interns group
+			GroupId = 2868472,
+			Rank = 100,
+			ChatColor = Color3.new(175/255, 221/255, 1),
+		},
+		{
+			--- ROBLOX Admins group
+			GroupId = 1200769,
+			ChatColor = Color3.new(1, 215/255, 0),
+		},
+	},
+	Players = {
+		{
+			--- Left as an example
+			--  UserId = 2231221,
+			--  ChatColor = Color3.new(205/255, 0, 0)
+		}
+	}
+}
+
 local function MakeIsInGroup(groupId, requiredRank)
 	assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
 
 	local inGroupCache = {}
 	return function(player)
-		if player and player.userId then
-			local userId = player.userId
+		if player and player.UserId then
+			local userId = player.UserId
 
 			if inGroupCache[userId] == nil then
 				local inGroup = false
@@ -32,16 +55,35 @@ local function MakeIsInGroup(groupId, requiredRank)
 	end
 end
 
-local IsInGroupAdmins = MakeIsInGroup(1200769)
-local IsInGroupInterns = MakeIsInGroup(2868472, 100)
+local function ConstructIsInGroups()
+	if SpecialChatColors.Groups then
+		for _, group in pairs(SpecialChatColors.Groups) do
+			group.IsInGroup = MakeIsInGroup(group.GroupId, group.Rank)
+		end
+	end
+end
+ConstructIsInGroups()
 
 local Players = game:GetService("Players")
-local function SpeakerNameIsAdmin(speakerName)
-	return IsInGroupAdmins(Players:FindFirstChild(speakerName))
-end
 
-local function SpeakerNameIsIntern(speakerName)
-	return IsInGroupInterns(Players:FindFirstChild(speakerName))
+function GetSpecialChatColor(speakerName)
+	if SpecialChatColors.Players then
+		local playerFromSpeaker = Players:FindFirstChild(speakerName)
+		if playerFromSpeaker then
+			for _, player in pairs(SpecialChatColors.Players) do
+				if playerFromSpeaker.UserId == player.UserId then
+					return player.ChatColor
+				end
+			end
+		end
+	end
+	if SpecialChatColors.Groups then
+		for _, group in pairs(SpecialChatColors.Groups) do
+			if group.IsInGroup(Players:FindFirstChild(speakerName)) then
+				return group.ChatColor
+			end
+		end
+	end
 end
 
 local function Run(ChatService)
@@ -78,19 +120,34 @@ local function Run(ChatService)
 		return NAME_COLORS[((GetNameValue(pName) + color_offset) % #NAME_COLORS) + 1]
 	end
 
+	local function GetNameColor(speaker)
+		local player = speaker:GetPlayer()
+		if player then
+			if player.Team ~= nil then
+				return player.TeamColor.Color
+			end
+		end
+		return ComputeNameColor(speaker.Name)
+	end
+
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speaker = ChatService:GetSpeaker(speakerName)
+		local player = speaker:GetPlayer()
 
 		if (not speaker:GetExtraData("NameColor")) then
-			speaker:SetExtraData("NameColor", ComputeNameColor(speaker.Name))
+			speaker:SetExtraData("NameColor", GetNameColor(speaker))
+		end
+		if (player) then
+			player.Changed:connect(function(property)
+				if property == "TeamColor" or property == "Neutral" or property == "Team" then
+					speaker:SetExtraData("NameColor", GetNameColor(speaker))
+				end
+			end)
 		end
 		if (not speaker:GetExtraData("ChatColor")) then
-			if (SpeakerNameIsAdmin(speakerName)) then
-				speaker:SetExtraData("ChatColor", Color3.new(1, 215/255, 0))
-			elseif (SpeakerNameIsIntern(speakerName)) then
-				speaker:SetExtraData("ChatColor", Color3.new(175/255, 221/255, 1))
-			else
-				speaker:SetExtraData("ChatColor", Color3.new(255/255, 255/255, 243/255))
+			local specialChatColor = GetSpecialChatColor(speakerName)
+			if specialChatColor then
+				speaker:SetExtraData("ChatColor", specialChatColor)
 			end
 		end
 		if (not speaker:GetExtraData("Tags")) then

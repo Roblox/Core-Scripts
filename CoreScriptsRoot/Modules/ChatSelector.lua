@@ -51,6 +51,10 @@ local useModule = nil
 local state = {Visible = true}
 local interface = {}
 do
+	function interface:GetNewLuaChatFlag()
+		return GetUseLuaFlag() or FORCE_UseNewChat
+	end
+
 	function interface:ToggleVisibility()
 		if (useModule) then
 			useModule:ToggleVisibility()
@@ -123,6 +127,16 @@ StarterGui:RegisterGetCore("ChatWindowPosition", NonFunc)
 StarterGui:RegisterGetCore("ChatWindowSize", NonFunc)
 StarterGui:RegisterSetCore("ChatBarDisabled", NonFunc)
 StarterGui:RegisterGetCore("ChatBarDisabled", NonFunc)
+
+local readChatActiveFlagSuccess, chatActiveEnabled = pcall(function() return settings():GetFFlag("CorescriptSetCoreChatActiveEnabled") end)
+if readChatActiveFlagSuccess and chatActiveEnabled then
+	StarterGui:RegisterGetCore("ChatActive", function()
+		return interface:GetVisibility()
+	end)
+	StarterGui:RegisterSetCore("ChatActive", function(visible)
+		return interface:SetVisible(visible)
+	end)
+end
 
 
 local function ConnectSignals(useModule, interface, sigName)

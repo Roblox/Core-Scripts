@@ -11,6 +11,8 @@ local GuiService = game:GetService("GuiService")
 
 local Util = require(RobloxGui.Modules.ChatUtil)
 
+local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptNewChatSetCoresEnabled") end)
+local EnableChatSetCoreAPIs = readFlagSuccess and flagEnabled
 
 local moduleApiTable = {}
 do
@@ -25,7 +27,9 @@ do
 		local communicationsConnections = {}
 		local eventConnections = {}
 
-		local MakeSystemMessageCache = {}
+		local MakeSystemMessageCache = {} -- Remove with CorescriptNewChatSetCoresEnabled
+
+		local SetCoreCache = {}
 
 		local function FindInCollectionByKeyAndType(collection, indexName, type)
 			if (collection and collection[indexName] and collection[indexName]:IsA(type)) then
@@ -130,14 +134,37 @@ do
 			DispatchEvent("SpecialKeyPressed", key, modifiers)
 		end)
 
-		StarterGui:RegisterSetCore("ChatMakeSystemMessage", function(data)
-			local event = FindInCollectionByKeyAndType(communicationsConnections.SetCore, "ChatMakeSystemMessage", "BindableEvent")
-			if (event) then
-				event:Fire(data)
-			else
-				table.insert(MakeSystemMessageCache, data)
-			end
-		end)
+		if EnableChatSetCoreAPIs == false then
+			StarterGui:RegisterSetCore("ChatMakeSystemMessage", function(data)
+				local event = FindInCollectionByKeyAndType(communicationsConnections.SetCore, "ChatMakeSystemMessage", "BindableEvent")
+				if (event) then
+					event:Fire(data)
+				else
+					table.insert(MakeSystemMessageCache, data)
+				end
+			end)
+		end
+
+		function DoConnectSetCore(setCoreName)
+			StarterGui:RegisterSetCore(setCoreName, function(data)
+				local event = FindInCollectionByKeyAndType(communicationsConnections.SetCore, setCoreName, "BindableEvent")
+				if (event) then
+					event:Fire(data)
+				else
+					if SetCoreCache[setCoreName] == nil then
+						SetCoreCache[setCoreName] = {}
+					end
+					table.insert(SetCoreCache[setCoreName], data)
+				end
+			end)
+		end
+
+		if EnableChatSetCoreAPIs then
+			DoConnectSetCore("ChatMakeSystemMessage")
+			DoConnectSetCore("ChatWindowPosition")
+			DoConnectSetCore("ChatWindowSize")
+			DoConnectSetCore("ChatBarDisabled")
+		end
 
 		DoConnectGetCore("ChatWindowPosition")
 		DoConnectGetCore("ChatWindowSize")
@@ -175,6 +202,7 @@ do
 
 					DoConnect("ChatBarFocusChanged")
 					DoConnect("VisibilityStateChanged")
+					DoConnect("MessagesChanged")
 
 					local index = "MessagePosted"
 					communicationsConnections.ChatWindow[index] = FindInCollectionByKeyAndType(chatWindowCollection, index, "BindableEvent")
@@ -201,13 +229,35 @@ do
 					communicationsConnections.SetCore = {}
 					communicationsConnections.GetCore = {}
 
-					local event = FindInCollectionByKeyAndType(setCoreCollection, "ChatMakeSystemMessage", "BindableEvent")
-					if (event) then
-						communicationsConnections.SetCore.ChatMakeSystemMessage = event
-						for i, messageData in pairs(MakeSystemMessageCache) do
-							pcall(function() StarterGui:SetCore("ChatMakeSystemMessage", messageData) end)
+					if EnableChatSetCoreAPIs == false then
+						local event = FindInCollectionByKeyAndType(setCoreCollection, "ChatMakeSystemMessage", "BindableEvent")
+						if (event) then
+							communicationsConnections.SetCore.ChatMakeSystemMessage = event
+							for i, messageData in pairs(MakeSystemMessageCache) do
+								pcall(function() StarterGui:SetCore("ChatMakeSystemMessage", messageData) end)
+							end
+							MakeSystemMessageCache = {}
 						end
-						MakeSystemMessageCache = {}
+					end
+
+					local function addSetCore(setCoreName)
+						local event = FindInCollectionByKeyAndType(setCoreCollection, setCoreName, "BindableEvent")
+						if (event) then
+							communicationsConnections.SetCore[setCoreName] = event
+							if SetCoreCache[setCoreName] then
+								for i, data in pairs(SetCoreCache[setCoreName]) do
+									event:Fire(data)
+								end
+								SetCoreCache[setCoreName] = nil
+							end
+						end
+					end
+
+					if EnableChatSetCoreAPIs then
+						addSetCore("ChatMakeSystemMessage")
+						addSetCore("ChatWindowPosition")
+						addSetCore("ChatWindowSize")
+						addSetCore("ChatBarDisabled")
 					end
 
 					communicationsConnections.GetCore.ChatWindowPosition = FindInCollectionByKeyAndType(getCoreCollection, "ChatWindowPosition", "BindableFunction")

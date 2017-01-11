@@ -750,7 +750,7 @@ local function CreateUsernameHealthMenuItem()
 				local thresholdForHurtOverlay =
           humanoid.MaxHealth * TopbarConstants.HEALTH_PERCANTAGE_FOR_OVERLAY
 
-				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth and game.StarterGui:GetCoreGuiEnabled("Health") == true then
+				if healthDelta >= thresholdForHurtOverlay and health ~= humanoid.MaxHealth and StarterGui:GetCoreGuiEnabled("Health") == true then
 					AnimateHurtOverlay()
 				end
 
@@ -1342,6 +1342,8 @@ local function CreateChatIcon3D(topBarInstance, panel, menubar)
 						ChatModule:SetVisible(false)
 					end
 				end)
+				-- Chat should not be visible by default in VR
+				ChatModule:SetVisible(false)
 			end
 		end
 	end
@@ -1684,7 +1686,8 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 		end
 	end
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
-		local showTopbarChatIcon = enabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio())
+		local ChatSelector = require(GuiRoot.Modules.ChatSelector)
+		local showTopbarChatIcon = enabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or ChatSelector:GetNewLuaChatFlag() or RunService:IsStudio())
 		local showThree3DChatIcon = coreGuiEnabled and InputService.VREnabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio())
 
 		if showThree3DChatIcon then

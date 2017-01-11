@@ -2,6 +2,10 @@
 --	// Written by: Xsitsu
 --	// Description: Module that handles all private messaging.
 
+local Chat = game:GetService("Chat")
+local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
+local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
+
 local errorExtraData = {ChatColor = Color3.fromRGB(245, 50, 50)}
 
 local function Run(ChatService)
@@ -38,7 +42,7 @@ local function Run(ChatService)
 				if (sendMessage and (string.len(sendMessage) > 0) ) then
 					speaker:SayMessage(sendMessage, channelObj.Name)
 				end
-				
+
 				speaker:SetMainChannel(channelObj.Name)
 
 			end
@@ -81,6 +85,12 @@ local function Run(ChatService)
 		return true
 	end
 
+	local function PrivateMessageAddTypeFunction(speakerName, messageObj, channelName)
+		if ChatConstants.MessageTypeWhisper then
+			messageObj.MessageType = ChatConstants.MessageTypeWhisper
+		end
+	end
+
 	ChatService:RegisterProcessCommandsFunction("whisper_commands", WhisperCommandsFunction)
 
 	ChatService.SpeakerAdded:connect(function(speakerName)
@@ -97,6 +107,7 @@ local function Run(ChatService)
 		channel.WelcomeMessage = "You are now privately chatting with " .. speakerName .. "."
 
 		channel:RegisterProcessCommandsFunction("replication_function", PrivateMessageReplicationFunction)
+		channel:RegisterFilterMessageFunction("message_type_function", PrivateMessageAddTypeFunction)
 	end)
 
 	ChatService.SpeakerRemoved:connect(function(speakerName)

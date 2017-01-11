@@ -7,8 +7,8 @@ local OBJECT_POOL_SIZE = 50
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
 local messageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 local modulesFolder = script.Parent
@@ -34,9 +34,11 @@ function GetMessageCreators()
 	local typeToFunction = {}
 	local creators = messageCreatorModules:GetChildren()
 	for i = 1, #creators do
-		if creators[i].Name ~= "Util" then
-			local creator = require(creators[i])
-			typeToFunction[creator[messageCreatorUtil.KEY_MESSAGE_TYPE]] = creator[messageCreatorUtil.KEY_CREATOR_FUNCTION]
+		if creators[i]:IsA("ModuleScript") then
+			if creators[i].Name ~= "Util" then
+				local creator = require(creators[i])
+				typeToFunction[creator[messageCreatorUtil.KEY_MESSAGE_TYPE]] = creator[messageCreatorUtil.KEY_CREATOR_FUNCTION]
+			end
 		end
 	end
 	return typeToFunction
@@ -44,6 +46,10 @@ end
 
 function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 	local BaseFrame = createdMessageObject[messageCreatorUtil.KEY_BASE_FRAME]
+	local BaseMessage = nil
+	if messageCreatorUtil.KEY_BASE_MESSAGE then
+		BaseMessage = createdMessageObject[messageCreatorUtil.KEY_BASE_MESSAGE]
+	end
 	local UpdateTextFunction = createdMessageObject[messageCreatorUtil.KEY_UPDATE_TEXT_FUNC]
 	local GetHeightFunction = createdMessageObject[messageCreatorUtil.KEY_GET_HEIGHT]
 	local FadeInFunction = createdMessageObject[messageCreatorUtil.KEY_FADE_IN]
@@ -54,6 +60,7 @@ function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 
 	obj.ID = messageData.ID
 	obj.BaseFrame = BaseFrame
+	obj.BaseMessage = BaseMessage
 	obj.UpdateTextFunction = UpdateTextFunction or function() warn("NO MESSAGE RESIZE FUNCTION") end
 	obj.GetHeightFunction = GetHeightFunction
 	obj.FadeInFunction = FadeInFunction
@@ -70,24 +77,15 @@ function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 	return obj
 end
 
-function methods:CreateMessageLabelFromType(messageData, messageType)
-	local message = messageData.Message
-	if messageType == "Message" then
-		if string.sub(message, 1, 4) == "/me " then
-			messageType = "MeCommandMessage"
-		end
-	elseif messageType == "EchoMessage" then
-		if string.sub(message, 1, 4) == "/me " then
-			messageType = "MeCommandChannelEchoMessage"
-		end
-	end
+function methods:CreateMessageLabel(messageData, currentChannelName)
+	local messageType = messageData.MessageType
 	if self.MessageCreators[messageType] then
-		local createdMessageObject = self.MessageCreators[messageType](messageData)
+		local createdMessageObject = self.MessageCreators[messageType](messageData, currentChannelName)
 		if createdMessageObject then
 			return self:WrapIntoMessageObject(messageData, createdMessageObject)
 		end
 	elseif self.DefaultCreatorType then
-		local createdMessageObject = self.MessageCreators[self.DefaultCreatorType](messageData)
+		local createdMessageObject = self.MessageCreators[self.DefaultCreatorType](messageData, currentChannelName)
 		if createdMessageObject then
 			return self:WrapIntoMessageObject(messageData, createdMessageObject)
 		end
@@ -118,8 +116,8 @@ function module:RegisterGuiRoot(root)
 	messageCreatorUtil:RegisterGuiRoot(root)
 end
 
-function module:GetStringTextBounds(text, font, fontSize, sizeBounds)
-	return messageCreatorUtil:GetStringTextBounds(text, font, fontSize, sizeBounds)
+function module:GetStringTextBounds(text, font, textSize, sizeBounds)
+	return messageCreatorUtil:GetStringTextBounds(text, font, textSize, sizeBounds)
 end
 
 return module

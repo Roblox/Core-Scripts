@@ -5,8 +5,8 @@
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
@@ -27,8 +27,9 @@ function methods:SetActive(active)
 	if active == false then
 		self.MessageLogDisplay:Clear()
 	else
+		self.MessageLogDisplay:SetCurrentChannelName(self.Name)
 		for i = 1, #self.MessageLog do
-			self.MessageLogDisplay:AddMessage(self.MessageLog[i].MessageData, self.MessageLog[i].MessageType)
+			self.MessageLogDisplay:AddMessage(self.MessageLog[i])
 		end
 	end
 	self.Active = active
@@ -41,7 +42,7 @@ function methods:UpdateMessageFiltered(messageData)
 	while (#searchTable >= searchIndex) do
 		local obj = searchTable[searchIndex]
 
-		if (obj.MessageData.ID == messageData.ID) then
+		if (obj.ID == messageData.ID) then
 			messageObj = obj
 			break
 		end
@@ -50,22 +51,18 @@ function methods:UpdateMessageFiltered(messageData)
 	end
 
 	if messageObj then
-		messageObj.MessageData.Message = messageData.Message
-		messageObj.MessageData.IsFiltered = true
+		messageObj.Message = messageData.Message
+		messageObj.IsFiltered = true
 		if self.Active then
-			self.MessageLogDisplay:UpdateMessageFiltered(messageObj.MessageData)
+			self.MessageLogDisplay:UpdateMessageFiltered(messageObj)
 		end
 	end
 end
 
-function methods:AddMessageToChannel(messageData, messageType)
-	local messageLogObject = {
-		MessageData = messageData,
-		MessageType = messageType
-	}
-	table.insert(self.MessageLog, messageLogObject)
+function methods:AddMessageToChannel(messageData)
+	table.insert(self.MessageLog, messageData)
 	if self.Active then
-		self.MessageLogDisplay:AddMessage(messageLogObject.MessageData, messageLogObject.MessageType)
+		self.MessageLogDisplay:AddMessage(messageData)
 	end
 	if #self.MessageLog > ChatSettings.MessageHistoryLengthPerChannel then
 		self:RemoveLastMessageFromChannel()

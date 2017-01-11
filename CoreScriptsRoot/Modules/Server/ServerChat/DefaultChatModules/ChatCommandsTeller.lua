@@ -13,6 +13,14 @@ local function Run(ChatService)
 			speaker:SendSystemMessage("/join <channel> or /j <channel> : join channel.", channel)
 			speaker:SendSystemMessage("/leave <channel> or /l <channel> : leave channel. (leaves current if none specified)", channel)
 			speaker:SendSystemMessage("/whisper <speaker> or /w <speaker> : open private message channel with speaker.", channel)
+			speaker:SendSystemMessage("/mute <speaker> : mute a speaker.", channel)
+			speaker:SendSystemMessage("/unmute <speaker> : unmute a speaker.", channel)
+
+			local player = speaker:GetPlayer()
+			if player and player.Team then
+				speaker:SendSystemMessage("/team <message> or /t <message> : send a team chat to players on your team.", channel)
+			end
+
 			return true
 		end
 

@@ -11,34 +11,35 @@ local soundFolder = Instance.new("Folder")
 soundFolder.Name = "Sounds"
 soundFolder.Parent = RobloxGui
 
+-- This can be useful in cases where a flag configuration issue causes requiring a CoreScript to fail
+local function safeRequire(moduleScript)
+	local moduleReturnValue = nil
+	local success, err = pcall(function() moduleReturnValue = require(moduleScript) end)
+	if not success then
+		warn("Failure to Start CoreScript module" ..moduleScript.Name.. ".\n" ..err)
+	end
+	return moduleReturnValue
+end
+
 -- TopBar
 scriptContext:AddCoreScriptLocal("CoreScripts/Topbar", RobloxGui)
 
 -- SettingsScript
 local luaControlsSuccess, luaControlsFlagValue = pcall(function() return settings():GetFFlag("UseLuaCameraAndControl") end)
 
-local vrKeyboardSuccess, vrKeyboardFlagValue = pcall(function() return settings():GetFFlag("UseVRKeyboardInLua") end)
-local useVRKeyboard = (vrKeyboardSuccess and vrKeyboardFlagValue == true)
-
--- MainBotChatScript (the Lua part of Dialogs)
+-- MainBotChatScript (the Lua part of Dialogs)
 scriptContext:AddCoreScriptLocal("CoreScripts/MainBotChatScript2", RobloxGui)
 
 -- In-game notifications script
 scriptContext:AddCoreScriptLocal("CoreScripts/NotificationScript2", RobloxGui)
 
 -- Performance Stats Management
---[[ Fast Flags ]]--
-local getShowPerformanceStatsInGuiSuccess, showPerformanceStatsInGuiValue = 
-	pcall(function() return settings():GetFFlag("ShowPerformanceStatsInGui") end)
-local showPerformanceStatsInGui = getShowPerformanceStatsInGuiSuccess and showPerformanceStatsInGuiValue
-if (showPerformanceStatsInGui) then 
-  scriptContext:AddCoreScriptLocal("CoreScripts/PerformanceStatsManagerScript",
-    RobloxGui)
-end
+scriptContext:AddCoreScriptLocal("CoreScripts/PerformanceStatsManagerScript",
+  RobloxGui)
 
 -- Chat script
-spawn(function() require(RobloxGui.Modules.ChatSelector) end)
-spawn(function() require(RobloxGui.Modules.PlayerlistModule) end)
+spawn(function() safeRequire(RobloxGui.Modules.ChatSelector) end)
+spawn(function() safeRequire(RobloxGui.Modules.PlayerlistModule) end)
 
 scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)
 
@@ -47,7 +48,7 @@ scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", RobloxGui)
 scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript3", RobloxGui)
 
 -- Backpack!
-spawn(function() require(RobloxGui.Modules.BackpackScript) end)
+spawn(function() safeRequire(RobloxGui.Modules.BackpackScript) end)
 
 scriptContext:AddCoreScriptLocal("CoreScripts/VehicleHud", RobloxGui)
 
@@ -62,10 +63,22 @@ if touchEnabled then -- touch devices don't use same control frame
 	RobloxGui.ControlFrame.BottomLeftControl.Visible = false
 end
 
-if useVRKeyboard then
-	require(RobloxGui.Modules.VR.VirtualKeyboard)
+do
+	local UserInputService = game:GetService('UserInputService')
+	local function tryRequireVRKeyboard()
+		if UserInputService.VREnabled then
+			return safeRequire(RobloxGui.Modules.VR.VirtualKeyboard)
+		end
+		return nil
+	end
+	if not tryRequireVRKeyboard() then
+		UserInputService.Changed:connect(function(prop)
+			if prop == "VREnabled" then
+				tryRequireVRKeyboard()
+			end
+		end)
+	end
 end
-
 
 -- Boot up the VR App Shell
 if UserSettings().GameSettings:InStudioMode() then
@@ -78,7 +91,7 @@ if UserSettings().GameSettings:InStudioMode() then
 				local modulesFolder = RobloxGui.Modules
 				local appHomeModule = modulesFolder:FindFirstChild('Shell') and modulesFolder:FindFirstChild('Shell'):FindFirstChild('AppHome')
 				if shellInVR and appHomeModule then
-					require(appHomeModule)
+					safeRequire(appHomeModule)
 				end
 			end
 		end

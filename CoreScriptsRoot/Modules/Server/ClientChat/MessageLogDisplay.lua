@@ -7,8 +7,8 @@ module.ScrollBarThickness = 4
 
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
 local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
@@ -28,7 +28,7 @@ local function CreateGuiObjects()
 	BaseFrame.Size = UDim2.new(1, 0, 1, 0)
 	BaseFrame.BackgroundTransparency = 1
 
-	local Scroller = Instance.new("ScrollingFrame", BaseFrame)
+	local Scroller = Instance.new("ScrollingFrame")
 	Scroller.Selectable = ChatSettings.GamepadNavigationEnabled
 	Scroller.Name = "Scroller"
 	Scroller.BackgroundTransparency = 1
@@ -38,6 +38,7 @@ local function CreateGuiObjects()
 	Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 	Scroller.ScrollBarThickness = module.ScrollBarThickness
 	Scroller.Active = false
+	Scroller.Parent = BaseFrame
 
 	return BaseFrame, Scroller
 end
@@ -69,13 +70,14 @@ function methods:UpdateMessageFiltered(messageData)
 
 	if (messageObject) then
 		messageObject.UpdateTextFunction(messageData)
+		self:ReorderAllMessages()
 	end
 end
 
-function methods:AddMessage(messageData, messageType)
-  self:WaitUntilParentedCorrectly()
+function methods:AddMessage(messageData)
+	self:WaitUntilParentedCorrectly()
 
-  local messageObject = MessageLabelCreator:CreateMessageLabelFromType(messageData, messageType)
+	local messageObject = MessageLabelCreator:CreateMessageLabel(messageData, self.CurrentChannelName)
 	if messageObject == nil then
 		return
 	end
@@ -100,6 +102,19 @@ function methods:RemoveLastMessage()
 	self.Scroller.CanvasSize = self.Scroller.CanvasSize - posOffset
 end
 
+function methods:IsScrolledDown()
+	local yCanvasSize = self.Scroller.CanvasSize.Y.Offset
+	local yContainerSize = self.Scroller.AbsoluteWindowSize.Y
+	local yScrolledPosition = self.Scroller.CanvasPosition.Y
+
+	return (yCanvasSize < yContainerSize or
+					yCanvasSize - yScrolledPosition <= yContainerSize + 5)
+end
+
+function min(x, y)
+	return x < y and x or y
+end
+
 function methods:PositionMessageLabelInWindow(messageObject)
 	self:WaitUntilParentedCorrectly()
 
@@ -108,15 +123,26 @@ function methods:PositionMessageLabelInWindow(messageObject)
 	baseFrame.Parent = self.Scroller
 	baseFrame.Position = UDim2.new(0, 0, 0, self.Scroller.CanvasSize.Y.Offset)
 
-	baseFrame.Size = UDim2.new(1, 0, 0, messageObject.GetHeightFunction())
+	baseFrame.Size = UDim2.new(1, 0, 0, messageObject.GetHeightFunction(self.Scroller.AbsoluteSize.X))
 
-	local scrollBarBottomPosition = (self.Scroller.CanvasSize.Y.Offset - self.Scroller.AbsoluteSize.Y)
-	local reposition = (self.Scroller.CanvasPosition.Y >= scrollBarBottomPosition)
+	if messageObject.BaseMessage then
+		local trySize = self.Scroller.AbsoluteSize.X
+		local minTrySize = min(self.Scroller.AbsoluteSize.X - 10, 0)
+		while not messageObject.BaseMessage.TextFits do
+			trySize = trySize - 1
+			if trySize < minTrySize then
+				break
+			end
+			baseFrame.Size = UDim2.new(1, 0, 0, messageObject.GetHeightFunction(trySize))
+		end
+	end
+
+	local isScrolledDown = self:IsScrolledDown()
 
 	local add = UDim2.new(0, 0, 0, baseFrame.Size.Y.Offset)
 	self.Scroller.CanvasSize = self.Scroller.CanvasSize + add
 
-	if (reposition) then
+	if isScrolledDown then
 		self.Scroller.CanvasPosition = Vector2.new(0, math.max(0, self.Scroller.CanvasSize.Y.Offset - self.Scroller.AbsoluteSize.Y))
 	end
 end
@@ -127,9 +153,16 @@ function methods:ReorderAllMessages()
 	--// Reordering / reparenting with a size less than 1 causes weird glitches to happen with scrolling as repositioning happens.
 	if (self.GuiObject.AbsoluteSize.Y < 1) then return end
 
+	local oldCanvasPositon = self.Scroller.CanvasPosition
+	local wasScrolledDown = self:IsScrolledDown()
+
 	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 	for i, messageObject in pairs(self.MessageObjectLog) do
 		self:PositionMessageLabelInWindow(messageObject)
+	end
+
+	if not wasScrolledDown then
+		self.Scroller.CanvasPosition = oldCanvasPositon
 	end
 end
 
@@ -142,8 +175,8 @@ function methods:Clear()
 	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 end
 
-function methods:RegisterChannelTab(tab)
-	rawset(self, "ChannelTab", tab)
+function methods:SetCurrentChannelName(name)
+	self.CurrentChannelName = name
 end
 
 function methods:FadeOutBackground(duration)
@@ -198,10 +231,11 @@ function module.new()
 	obj.Scroller = Scroller
 
 	obj.MessageObjectLog = {}
-	obj.ChannelTab = nil
 
 	obj.Name = "MessageLogDisplay"
 	obj.GuiObject.Name = "Frame_" .. obj.Name
+
+	obj.CurrentChannelName = ""
 
 	ClassMaker.MakeClass("MessageLogDisplay", obj)
 
