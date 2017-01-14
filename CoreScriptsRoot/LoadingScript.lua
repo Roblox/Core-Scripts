@@ -199,30 +199,22 @@ local function createTenfootCancelGui()
 		Text = "Cancel";
 	}
 
-	-- bind cancel action
-	local platformService = nil
-	pcall(function()
-		platformService = game:GetService('PlatformService')
-	end)
-
-	if platformService then
-		if not game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
-			local seenBButtonBegin = false
-			ContextActionService:BindCoreAction("CancelGameLoad",
-				function(actionName, inputState, inputObject)
-					if inputState == Enum.UserInputState.Begin then
-						seenBButtonBegin = true
-					elseif inputState == Enum.UserInputState.End and seenBButtonBegin then
-						cancelLabel:Destroy()
-						cancelText.Text = "Canceling..."
-						cancelText.Position = UDim2.new(1, -32, 0, 64)
-						ContextActionService:UnbindCoreAction('CancelGameLoad')
-						platformService:RequestGameShutdown()
-					end
-				end,
-				false,
-				Enum.KeyCode.ButtonB)
-		end
+	if not game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
+		local seenBButtonBegin = false
+		ContextActionService:BindCoreAction("CancelGameLoad",
+			function(actionName, inputState, inputObject)
+				if inputState == Enum.UserInputState.Begin then
+					seenBButtonBegin = true
+				elseif inputState == Enum.UserInputState.End and seenBButtonBegin then
+					cancelLabel:Destroy()
+					cancelText.Text = "Canceling..."
+					cancelText.Position = UDim2.new(1, -32, 0, 64)
+					ContextActionService:UnbindCoreAction('CancelGameLoad')
+					game:Shutdown()
+				end
+			end,
+			false,
+			Enum.KeyCode.ButtonB)
 	end
 
 	while cancelLabel.Parent == nil do
