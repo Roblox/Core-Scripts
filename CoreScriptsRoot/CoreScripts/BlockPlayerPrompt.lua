@@ -21,8 +21,8 @@ local PromptCreator = require(CoreGuiModules:WaitForChild("PromptCreator"))
 local PlayerDropDownModule = require(CoreGuiModules:WaitForChild("PlayerDropDown"))
 local BlockingUtility = PlayerDropDownModule:CreateBlockingUtility()
 
--- Check flag here in future.
-local AllowPromptBlockPlayer = true
+local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptPromptBlockEnabled") end)
+local AllowPromptBlockPlayer = readFlagSuccess and flagEnabled
 
 local THUMBNAIL_URL = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&userId="
 local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=420&height=420&userId="
@@ -61,12 +61,6 @@ function DoPromptBlockPlayer(playerToBlock)
 end
 
 function PromptBlockPlayer(player)
-	-- TESTING, DO NOT SUBMIT
-	if true then
-		DoPromptBlockPlayer(player)
-		return
-	end
-
 	if LocalPlayer.UserId < 0 then
 		error("PromptBlockPlayer can not be called for guests!")
 	end
@@ -89,7 +83,6 @@ function DoPromptUnblockPlayer(playerToUnblock)
 	end
 	local function promptCompletedCallback(clickedConfirm)
 		if clickedConfirm then
-			wait(5)
 			local successfullyUnblocked = BlockingUtility:UnblockPlayerAsync(playerToUnblock)
 			if not successfullyUnblocked then
 				while PromptCreator:IsCurrentlyPrompting() do
@@ -119,12 +112,6 @@ function DoPromptUnblockPlayer(playerToUnblock)
 end
 
 function PromptUnblockPlayer(player)
-	-- TESTING, DO NOT SUBMIT
-	if true then
-		DoPromptUnblockPlayer(player)
-		return
-	end
-
 	if LocalPlayer.UserId < 0 then
 		error("PromptUnblockPlayer can not be called for guests!")
 	end
