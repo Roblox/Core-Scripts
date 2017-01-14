@@ -24,6 +24,9 @@ local BlockingUtility = PlayerDropDownModule:CreateBlockingUtility()
 -- Check flag here in future.
 local AllowPromptBlockPlayer = true
 
+local THUMBNAIL_URL = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&userId="
+local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=420&height=420&userId="
+
 function DoPromptBlockPlayer(playerToBlock)
 	if BlockingUtility:IsPlayerBlockedByUserId(playerToBlock.UserId) then
 		return
@@ -31,21 +34,16 @@ function DoPromptBlockPlayer(playerToBlock)
 	local function promptCompletedCallback(clickedConfirm)
 		if clickedConfirm then
 			local successfullyBlocked = BlockingUtility:BlockPlayerAsync(playerToBlock)
-			if successfullyBlocked then
-				return {
-					WindowTitle = "Successfully Blocked",
-					MainText = string.format("%s has been blocked.", playerToBlock.Name),
-					AdditonalText = nil,
-					ConfirmationText = "Okay",
-					Image = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&userId=" ..playerToBlock.UserId,
-				}
-			else
-				return {
+			if not successfullyBlocked then
+				while PromptCreator:IsCurrentlyPrompting() do
+					wait()
+				end
+				PromptCreator:CreatePrompt({
 					WindowTitle = "Error Blocking Player",
-					MainText = string.format("An error occured while blocking %s.", playerToBlock.Name),
-					AdditonalText = "Please try again later",
+					MainText = string.format("An error occured while blocking %s. Please try again later.", playerToBlock.Name),
 					ConfirmationText = "Okay",
-				}
+					CancelActive = false,
+				})
 			end
 		end
 		return nil
@@ -56,9 +54,8 @@ function DoPromptBlockPlayer(playerToBlock)
 		ConfirmationText = "Block",
 		CancelText = "Cancel",
 		CancelActive = true,
-		AdditonalText = nil,
-		Image = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&userId=" ..playerToBlock.UserId,
-		CallbackWaitingText = "Blocking...",
+		Image = BUST_THUMBNAIL_URL ..playerToBlock.UserId,
+		ImageConsoleVR = THUMBNAIL_URL ..playerToBlock.UserId,
 		PromptCompletedCallback = promptCompletedCallback,
 	})
 end
@@ -94,22 +91,17 @@ function DoPromptUnblockPlayer(playerToUnblock)
 		if clickedConfirm then
 			wait(5)
 			local successfullyUnblocked = BlockingUtility:UnblockPlayerAsync(playerToUnblock)
-			if successfullyUnblocked then
-				return {
-					WindowTitle = "Successfully Unblocked",
-					MainText = string.format("%s has been unblocked.", playerToUnblock.Name),
-					AdditonalText = nil,
-					ConfirmationText = "Okay",
-					Image = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&userId=" ..playerToUnblock.UserId,
-				}
-			else
-				return {
+			if not successfullyUnblocked then
+				while PromptCreator:IsCurrentlyPrompting() do
+					wait()
+				end
+				PromptCreator:CreatePrompt({
 					WindowTitle = "Error Unblocking Player",
-					MainText = string.format("An error occured while unblocking %s.", playerToUnblock.Name),
-					AdditonalText = "Please try again later",
+					MainText = string.format("An error occured while unblocking %s. Please try again later.", playerToUnblock.Name),
 					ConfirmationText = "Okay",
-					Image = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&userId=" ..playerToUnblock.UserId,
-				}
+					Image = BUST_THUMBNAIL_URL ..playerToUnblock.UserId,
+					ImageConsoleVR = THUMBNAIL_URL ..playerToUnblock.UserId,
+				})
 			end
 		end
 		return nil
@@ -120,9 +112,8 @@ function DoPromptUnblockPlayer(playerToUnblock)
 		ConfirmationText = "Unblock",
 		CancelText = "Cancel",
 		CancelActive = true,
-		AdditonalText = nil,
-		Image = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&userId=" ..playerToUnblock.UserId,
-		CallbackWaitingText = "Unblocking...",
+		Image = BUST_THUMBNAIL_URL ..playerToUnblock.UserId,
+		ImageConsoleVR = THUMBNAIL_URL ..playerToUnblock.UserId,
 		PromptCompletedCallback = promptCompletedCallback,
 	})
 end
