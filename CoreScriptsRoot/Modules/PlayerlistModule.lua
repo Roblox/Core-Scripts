@@ -832,12 +832,14 @@ local function setFollowRelationshipsView(relationshipTable)
         icon = FOLLOWER_ICON
       end
     end
-
-    local frame = entry.Frame
-    local bgFrame = frame:FindFirstChild('BGFrame')
-    if bgFrame then
-      updateSocialIcon(icon, bgFrame)
-    end
+	
+	if icon then
+		local frame = entry.Frame
+		local bgFrame = frame:FindFirstChild('BGFrame')
+		if bgFrame then
+		  updateSocialIcon(icon, bgFrame)
+		end
+	end
   end
 end
 
