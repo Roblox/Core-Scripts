@@ -211,7 +211,7 @@ local function Initialize()
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
 		local sortedPlayers = PlayersService:GetPlayers()
 		table.sort(sortedPlayers,function(item1,item2)
-			return item1.Name < item2.Name
+			return item1.Name:lower() < item2.Name:lower()
 		end)
 
 		local extraOffset = 20

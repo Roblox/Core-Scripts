@@ -202,7 +202,6 @@ function DoBackgroundFadeOut(setFadingTime)
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
 		ChatWindow.GuiObject.Active = false
-		--ChatWindow:ResetResizerPosition()
 
 		local Scroller = MessageLogDisplay.Scroller
 		Scroller.ScrollingEnabled = false

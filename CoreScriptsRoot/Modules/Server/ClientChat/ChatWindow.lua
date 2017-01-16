@@ -560,11 +560,6 @@ function methods:DisableResizable()
 	self.GuiObjects.ChatResizerFrame.Active = false
 end
 
-function methods:ResetResizerPosition()
-	local ChatResizerFrame = self.GuiObjects.ChatResizerFrame
-	ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
-end
-
 function methods:FadeOutBackground(duration)
 	self.ChannelsBar:FadeOutBackground(duration)
 	self.MessageLogDisplay:FadeOutBackground(duration)

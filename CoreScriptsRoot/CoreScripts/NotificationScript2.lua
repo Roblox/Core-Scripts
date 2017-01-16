@@ -37,6 +37,9 @@ local allowSendNotifications = getSendNotificationSuccess and sendNotificationAc
 local getNewNotificationPathSuccess, newNotificationPathValue = pcall(function() return settings():GetFFlag("UseNewNotificationPathLua") end)
 local newNotificationPath = getNewNotificationPathSuccess and newNotificationPathValue
 
+local getTenFootBadgeNotifications, tenFootBadgeNotificationsValue = pcall(function() return settings():GetFFlag("TenFootBadgeNotifications") end)
+local tenFootBadgeNotifications = getTenFootBadgeNotifications and tenFootBadgeNotificationsValue
+
 --[[ Script Variables ]]--
 local LocalPlayer = nil
 while not Players.LocalPlayer do
@@ -65,8 +68,13 @@ local badgesNotificationsActive = true
 --[[ Constants ]]--
 local BG_TRANSPARENCY = 0.7
 local MAX_NOTIFICATIONS = 3
-local NOTIFICATION_Y_OFFSET = 64
-local IMAGE_SIZE = 48
+local NOTIFICATION_Y_OFFSET = isTenFootInterface and 128 or 64
+local NOTIFICATION_TITLE_Y_OFFSET = isTenFootInterface and 24 or 12
+local NOTIFICATION_FRAME_WIDTH = isTenFootInterface and 450 or 200
+local NOTIFICATION_TITLE_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size42 or Enum.FontSize.Size18
+local NOTIFICATION_TEXT_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size32 or Enum.FontSize.Size14
+local IMAGE_SIZE = isTenFootInterface and 72 or 48
+
 local EASE_DIR = Enum.EasingDirection.InOut
 local EASE_STYLE = Enum.EasingStyle.Sine
 local TWEEN_TIME = 0.35
@@ -103,7 +111,7 @@ local function createTextButton(name, text, position)
 	return button
 end
 
-local NotificationFrame = createFrame("NotificationFrame", UDim2.new(0, 200, 0.42, 0), UDim2.new(1, -204, 0.50, 0), 1)
+local NotificationFrame = createFrame("NotificationFrame", UDim2.new(0, NOTIFICATION_FRAME_WIDTH, 0.42, 0), UDim2.new(1, -NOTIFICATION_FRAME_WIDTH-4, 0.50, 0), 1.0)
 NotificationFrame.Parent = RbxGui
 
 local DefaultNotification = createFrame("Notification", UDim2.new(1, 0, 0, NOTIFICATION_Y_OFFSET), UDim2.new(0, 0, 0, 0), BG_TRANSPARENCY)
@@ -116,7 +124,7 @@ NotificationTitle.Size = UDim2.new(0, 0, 0, 0)
 NotificationTitle.Position = UDim2.new(0.5, 0, 0.5, -12)
 NotificationTitle.BackgroundTransparency = 1
 NotificationTitle.Font = Enum.Font.SourceSansBold
-NotificationTitle.FontSize = Enum.FontSize.Size18
+NotificationTitle.FontSize = NOTIFICATION_TITLE_FONT_SIZE
 NotificationTitle.TextColor3 = Color3.new(0.97, 0.97, 0.97)
 
 local NotificationText = Instance.new('TextLabel')
@@ -125,7 +133,7 @@ NotificationText.Size = UDim2.new(1, -20, 0, 28)
 NotificationText.Position = UDim2.new(0, 10, 0.5, 1)
 NotificationText.BackgroundTransparency = 1
 NotificationText.Font = Enum.Font.SourceSans
-NotificationText.FontSize = Enum.FontSize.Size14
+NotificationText.FontSize = NOTIFICATION_TEXT_FONT_SIZE
 NotificationText.TextColor3 = Color3.new(0.92, 0.92, 0.92)
 NotificationText.TextWrap = true
 NotificationText.TextYAlignment = Enum.TextYAlignment.Top
@@ -133,7 +141,7 @@ NotificationText.TextYAlignment = Enum.TextYAlignment.Top
 local NotificationImage = Instance.new('ImageLabel')
 NotificationImage.Name = "NotificationImage"
 NotificationImage.Size = UDim2.new(0, IMAGE_SIZE, 0, IMAGE_SIZE)
-NotificationImage.Position = UDim2.new(0, 8, 0.5, -24)
+NotificationImage.Position = UDim2.new(0, (1.0/6.0) * IMAGE_SIZE, 0, 0.5 * (NOTIFICATION_Y_OFFSET - IMAGE_SIZE))
 NotificationImage.BackgroundTransparency = 1
 NotificationImage.Image = ""
 
@@ -209,12 +217,12 @@ local function createNotification(title, text, image)
 		local notificationImage = NotificationImage:Clone()
 		notificationImage.Image = image
 		notificationImage.Parent = notificationFrame
-		--
-		notificationTitle.Position = UDim2.new(0, NotificationImage.Size.X.Offset + 16, 0.5, -12)
+
+		notificationTitle.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, -NOTIFICATION_TITLE_Y_OFFSET)
 		notificationTitle.TextXAlignment = Enum.TextXAlignment.Left
-		--
+
 		notificationText.Size = UDim2.new(1, -IMAGE_SIZE - 16, 0, 28)
-		notificationText.Position = UDim2.new(0, IMAGE_SIZE + 16, 0.5, 1)
+		notificationText.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, 1)
 		notificationText.TextXAlignment = Enum.TextXAlignment.Left
 	end
 
@@ -655,6 +663,21 @@ function onGameSettingsChanged(property, amount)
 end
 
 --[[ Connections ]]--
+
+if tenFootBadgeNotifications then
+
+BadgeService.BadgeAwarded:connect(onBadgeAwarded)
+if not isTenFootInterface then
+	Players.FriendRequestEvent:connect(onFriendRequestEvent)
+	PointsService.PointsAwarded:connect(onPointsAwarded)
+	--GameSettings.Changed:connect(onGameSettingsChanged)
+	game.GraphicsQualityChangeRequest:connect(function(graphicsIncrease) --graphicsIncrease is a boolean
+		onGameSettingsChanged("SavedQualityLevel", graphicsIncrease == true and 1 or -1)
+	end)
+end
+
+else
+
 if not isTenFootInterface then
 	Players.FriendRequestEvent:connect(onFriendRequestEvent)
 	PointsService.PointsAwarded:connect(onPointsAwarded)
@@ -663,6 +686,8 @@ if not isTenFootInterface then
 	game.GraphicsQualityChangeRequest:connect(function(graphicsIncrease) --graphicsIncrease is a boolean
 		onGameSettingsChanged("SavedQualityLevel", graphicsIncrease == true and 1 or -1)
 	end)
+end
+
 end
 
 GuiService.SendCoreUiNotification = function(title, text)
@@ -772,6 +797,7 @@ if allowSendNotifications then
 else
 	StarterGui:RegisterSetCore("SendNotification", function() end)
 end
+
 
 if not isTenFootInterface then
 	local gamepadMenu = RobloxGui:WaitForChild("CoreScripts/GamepadMenu")
