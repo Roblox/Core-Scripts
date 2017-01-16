@@ -7,7 +7,13 @@
 local useNewBubbleChatSuccess, useNewBubbleChatEnabled = pcall(function() return settings():GetFFlag("CorescriptNewBubbleChatEnabled") end)
 useNewBubbleChatEnabled = useNewBubbleChatEnabled and useNewBubbleChatSuccess
 if useNewBubbleChatEnabled then
-	return --Don't enable this file if the new Bubble chat is enabled
+	-- We need to check if the BubbleChat script exists before we can disable this bubble chat.
+	-- This is for during the transition period when CorescriptNewBubbleChatEnabled could be true on the client, but not the server.
+	local ChatService = game:GetService("Chat")
+	local BubbleChat = ChatService:WaitForChild("BubbleChat", 3)
+	if BubbleChat then
+		return --Don't enable this file if the new Bubble chat is enabled
+	end
 end
 
 --[[ SERVICES ]]
