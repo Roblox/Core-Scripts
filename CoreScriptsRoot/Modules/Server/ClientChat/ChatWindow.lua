@@ -29,9 +29,22 @@ local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 --//////////////////////////////////////
 local methods = {}
 
+function getClassicChatEnabled()
+	if ChatSettings.ClassicChatEnabled ~= nil then
+		return ChatSettings.ClassicChatEnabled
+	end
+	return Players.ClassicChat
+end
+
+function getBubbleChatEnabled()
+	if ChatSettings.BubbleChatEnabled ~= nil then
+		return ChatSettings.BubbleChatEnabled
+	end
+	return Players.BubbleChat
+end
 
 function bubbleChatOnly()
- 	return not Players.ClassicChat and Players.BubbleChat
+ 	return not getClassicChatEnabled() and getBubbleChatEnabled()
 end
 
 function methods:CreateGuiObjects(targetParent)

@@ -2,6 +2,8 @@
 --	// Written by: Xsitsu
 --	// Description: Settings module for configuring different aspects of the chat window.
 
+local PlayersService = game:GetService("Players")
+
 local module = {}
 
 ---[[ Chat Behaviour Settings ]]
@@ -12,6 +14,10 @@ module.GamepadNavigationEnabled = false
 module.ShowUserOwnFilteredMessage = true	--Show a user the filtered version of their message rather than the original.
 -- Make the chat work when the top bar is off
 module.ChatOnWithTopBarOff = false
+
+--- Replace with true/false to force the chat type. Otherwise this will default to the setting on the website.
+module.BubbleChatEnabled = PlayersService.BubbleChat
+module.ClassicChatEnabled = PlayersService.ClassicChat
 
 ---[[ Chat Text Size Settings ]]
 module.ChatWindowTextSize = 18

@@ -2835,6 +2835,18 @@ do
     return ChatInstance:IsFocused(useWasFocused)
   end
 
+	function moduleApiTable:ClassicChatEnabled()
+		return PlayersService.ClassicChat
+	end
+
+	function moduleApiTable:IsBubbleChatOnly()
+		return PlayersService.BubbleChat and not PlayersService.ClassicChat
+	end
+
+	function moduleApiTable:IsDisabled()
+		return false
+	end
+
   moduleApiTable.ChatBarFocusChanged = ChatInstance.ChatBarFocusChanged
   moduleApiTable.VisibilityStateChanged = ChatInstance.VisibilityStateChanged
   moduleApiTable.MessagesChanged = ChatInstance.CurrentWindowMessageCountChanged
