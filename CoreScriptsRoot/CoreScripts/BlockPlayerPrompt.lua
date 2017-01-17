@@ -43,10 +43,12 @@ function DoPromptBlockPlayer(playerToBlock)
 					MainText = string.format("An error occured while blocking %s. Please try again later.", playerToBlock.Name),
 					ConfirmationText = "Okay",
 					CancelActive = false,
+					Image = BUST_THUMBNAIL_URL ..playerToBlock.UserId,
+					ImageConsoleVR = THUMBNAIL_URL ..playerToBlock.UserId,
+					StripeColor = Color3.fromRGB(183, 34, 54),
 				})
 			end
 		end
-		return nil
 	end
 	PromptCreator:CreatePrompt({
 		WindowTitle = "Confirm Block",
@@ -94,10 +96,10 @@ function DoPromptUnblockPlayer(playerToUnblock)
 					ConfirmationText = "Okay",
 					Image = BUST_THUMBNAIL_URL ..playerToUnblock.UserId,
 					ImageConsoleVR = THUMBNAIL_URL ..playerToUnblock.UserId,
+					StripeColor = Color3.fromRGB(183, 34, 54),
 				})
 			end
 		end
-		return nil
 	end
 	PromptCreator:CreatePrompt({
 		WindowTitle = "Confirm Unblock",

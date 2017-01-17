@@ -27,7 +27,10 @@ local THUMBNAIL_URL = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&use
 local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=420&height=420&userId="
 
 function SendFriendRequest(playerToFriend)
-
+	local success = pcall(function()
+		LocalPlayer:RequestFriendship(playerToFriend)
+	end)
+	return success
 end
 
 function AtFriendLimit()
@@ -39,25 +42,42 @@ function AtFriendLimit()
 end
 
 function DoPromptRequestFriendPlayer(playerToFriend)
-	if LocalPlayer:IsFriendsWith(playerToFriend) then
+	if LocalPlayer:IsFriendsWith(playerToFriend.UserId) then
 		return
 	end
 	local function promptCompletedCallback(clickedConfirm)
 		if clickedConfirm then
-			local successfullySentFriendRequest = BlockingUtility:BlockPlayerAsync(playerToBlock)
-			if not successfullyBlocked then
+			if AtFriendLimit() then
 				while PromptCreator:IsCurrentlyPrompting() do
 					wait()
 				end
 				PromptCreator:CreatePrompt({
-					WindowTitle = "Error Blocking Player",
-					MainText = string.format("An error occured while blocking %s. Please try again later.", playerToBlock.Name),
+					WindowTitle = "Friend Limit Reached",
+					MainText = string.format("You can not send a friend request because you are at the max friend limit."),
 					ConfirmationText = "Okay",
 					CancelActive = false,
+					Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
+					ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
+					StripeColor = Color3.fromRGB(183, 34, 54),
 				})
+			else
+				local successfullySentFriendRequest = SendFriendRequest(playerToFriend)
+				if not successfullySentFriendRequest then
+					while PromptCreator:IsCurrentlyPrompting() do
+						wait()
+					end
+					PromptCreator:CreatePrompt({
+						WindowTitle = "Error Sending Friend Request",
+						MainText = string.format("An error occured while sending %s a friend request. Please try again later.", playerToFriend.Name),
+						ConfirmationText = "Okay",
+						CancelActive = false,
+						Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
+						ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
+						StripeColor = Color3.fromRGB(183, 34, 54),
+					})
+				end
 			end
 		end
-		return nil
 	end
 	PromptCreator:CreatePrompt({
 		WindowTitle = "Send Friend Request?",
@@ -88,7 +108,66 @@ function PromptRequestFriendPlayer(player)
 	end
 end
 
-if AllowPromptBlockPlayer then
+function UnFriendPlayer(playerToUnfriend)
+	local success = pcall(function()
+		LocalPlayer:RevokeFriendship(playerToUnfriend)
+	end)
+	return success
+end
+
+function DoPromptUnfriendPlayer(playerToUnfriend)
+	if not LocalPlayer:IsFriendsWith(playerToUnfriend.UserId) then
+		return
+	end
+	local function promptCompletedCallback(clickedConfirm)
+		if clickedConfirm then
+			local successfullyUnfriended = UnFriendPlayer(playerToUnfriend)
+			if not successfullyUnfriended then
+				while PromptCreator:IsCurrentlyPrompting() do
+					wait()
+				end
+				PromptCreator:CreatePrompt({
+					WindowTitle = "Error Unfriending Player",
+					MainText = string.format("An error occured while unfriending %s. Please try again later.", playerToUnfriend.Name),
+					ConfirmationText = "Okay",
+					CancelActive = false,
+					Image = BUST_THUMBNAIL_URL ..playerToUnfriend.UserId,
+					ImageConsoleVR = THUMBNAIL_URL ..playerToUnfriend.UserId,
+					StripeColor = Color3.fromRGB(183, 34, 54),
+				})
+			end
+		end
+	end
+	PromptCreator:CreatePrompt({
+		WindowTitle = "Unfriend Player?",
+		MainText = string.format("Would you like to remove %s from your friends list?", playerToUnfriend.Name),
+		ConfirmationText = "Unfriend",
+		CancelText = "Cancel",
+		CancelActive = true,
+		Image = BUST_THUMBNAIL_URL ..playerToUnfriend.UserId,
+		ImageConsoleVR = THUMBNAIL_URL ..playerToUnfriend.UserId,
+		PromptCompletedCallback = promptCompletedCallback,
+	})
+end
+
+function PromptUnfriendPlayer(player)
+	if LocalPlayer.UserId < 0 then
+		error("PromptUnfriend can not be called for guests!")
+	end
+	if typeof(player) == "Instance" and player:IsA("Player") then
+		if player.UserId < 0 then
+			error("PromptUnfriend can not be called on guests!")
+		end
+		if player == LocalPlayer then
+			error("PromptUnfriend: A user can not unfriend themselves!")
+		end
+		DoPromptUnfriendPlayer(player)
+	else
+		error("Invalid argument to PromptUnfriend")
+	end
+end
+
+if AllowPromptFriendPlayer then
 	StarterGui:RegisterSetCore("PromptSendFriendRequest", PromptRequestFriendPlayer)
 	StarterGui:RegisterSetCore("PromptUnfriend", PromptUnfriendPlayer)
 else
