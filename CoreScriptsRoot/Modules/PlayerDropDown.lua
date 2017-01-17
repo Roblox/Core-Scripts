@@ -575,6 +575,18 @@ do
 		return createPlayerDropDown()
 	end
 
+	function moduleApiTable:GetFriendCountAsync(player)
+		return getFriendCountAsync(player.UserId)
+	end
+
+	function moduleApiTable:MaxFriendCount()
+		return MAX_FRIEND_COUNT
+	end
+
+	function moduleApiTable:GetFriendStatus()
+		return getFriendStatus()
+	end
+
 	function moduleApiTable:CreateBlockingUtility()
 		local blockingUtility = {}
 
