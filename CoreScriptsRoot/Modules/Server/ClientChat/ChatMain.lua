@@ -956,6 +956,21 @@ if PlayerUnMutedEvent then
 	end)
 end
 
+-- Get a list of blocked users from the corescripts.
+-- Spawned because this method can yeild.
+spawn(function()
+	-- Pcalled because this method is not released on all platforms yet.
+	pcall(function()
+		local blockedUserIds = StarterGui:GetCore("GetBlockedUserIds")
+		if #blockedUserIds > 0 then
+			local setInitalBlockedUserIds = EventFolder:FindFirstChild("SetBlockedUserIds")
+			if setInitalBlockedUserIds then
+				setInitalBlockedUserIds:FireServer(blockedUserIds)
+			end
+		end
+	end)
+end)
+
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
 
 for i, channelData in pairs(initData.Channels) do
