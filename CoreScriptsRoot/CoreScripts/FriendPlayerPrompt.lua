@@ -33,8 +33,8 @@ function SendFriendRequest(playerToFriend)
 	return success
 end
 
-function AtFriendLimit()
-	local friendCount = PlayerDropDownModule:GetFriendCountAsync(LocalPlayer)
+function AtFriendLimit(player)
+	local friendCount = PlayerDropDownModule:GetFriendCountAsync(player)
 	if friendCount >= PlayerDropDownModule:MaxFriendCount() then
 		return true
 	end
@@ -47,13 +47,13 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 	end
 	local function promptCompletedCallback(clickedConfirm)
 		if clickedConfirm then
-			if AtFriendLimit() then
+			if AtFriendLimit(LocalPlayer) then
 				while PromptCreator:IsCurrentlyPrompting() do
 					wait()
 				end
 				PromptCreator:CreatePrompt({
 					WindowTitle = "Friend Limit Reached",
-					MainText = string.format("You can not send a friend request because you are at the max friend limit."),
+					MainText = "You can not send a friend request because you are at the max friend limit.",
 					ConfirmationText = "Okay",
 					CancelActive = false,
 					Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
@@ -61,20 +61,32 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 					StripeColor = Color3.fromRGB(183, 34, 54),
 				})
 			else
-				local successfullySentFriendRequest = SendFriendRequest(playerToFriend)
-				if not successfullySentFriendRequest then
-					while PromptCreator:IsCurrentlyPrompting() do
-						wait()
-					end
+				if AtFriendLimit(playerToFriend) then
 					PromptCreator:CreatePrompt({
 						WindowTitle = "Error Sending Friend Request",
-						MainText = string.format("An error occured while sending %s a friend request. Please try again later.", playerToFriend.Name),
+						MainText = string.format("You can not send a friend request to %s because they are at the max friend limit.",  playerToFriend.Name),
 						ConfirmationText = "Okay",
 						CancelActive = false,
 						Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
 						ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
 						StripeColor = Color3.fromRGB(183, 34, 54),
 					})
+				else
+					local successfullySentFriendRequest = SendFriendRequest(playerToFriend)
+					if not successfullySentFriendRequest then
+						while PromptCreator:IsCurrentlyPrompting() do
+							wait()
+						end
+						PromptCreator:CreatePrompt({
+							WindowTitle = "Error Sending Friend Request",
+							MainText = string.format("An error occured while sending %s a friend request. Please try again later.", playerToFriend.Name),
+							ConfirmationText = "Okay",
+							CancelActive = false,
+							Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
+							ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
+							StripeColor = Color3.fromRGB(183, 34, 54),
+						})
+					end
 				end
 			end
 		end
