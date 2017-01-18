@@ -79,7 +79,7 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 						end
 						PromptCreator:CreatePrompt({
 							WindowTitle = "Error Sending Friend Request",
-							MainText = string.format("An error occured while sending %s a friend request. Please try again later.", playerToFriend.Name),
+							MainText = string.format("An error occurred while sending %s a friend request. Please try again later.", playerToFriend.Name),
 							ConfirmationText = "Okay",
 							CancelActive = false,
 							Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
@@ -140,7 +140,7 @@ function DoPromptUnfriendPlayer(playerToUnfriend)
 				end
 				PromptCreator:CreatePrompt({
 					WindowTitle = "Error Unfriending Player",
-					MainText = string.format("An error occured while unfriending %s. Please try again later.", playerToUnfriend.Name),
+					MainText = string.format("An error occurred while unfriending %s. Please try again later.", playerToUnfriend.Name),
 					ConfirmationText = "Okay",
 					CancelActive = false,
 					Image = BUST_THUMBNAIL_URL ..playerToUnfriend.UserId,
