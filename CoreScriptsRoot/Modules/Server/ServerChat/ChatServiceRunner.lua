@@ -51,6 +51,8 @@ CreateIfDoesntExist(EventFolder, "OnMainChannelSet", "RemoteEvent")
 
 CreateIfDoesntExist(EventFolder, "SayMessageRequest", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "GetInitDataRequest", "RemoteFunction")
+CreateIfDoesntExist(EventFolder, "MutePlayerRequest", "RemoteFunction")
+CreateIfDoesntExist(EventFolder, "UnMutePlayerRequest", "RemoteFunction")
 
 EventFolder = useEvents
 
@@ -117,6 +119,30 @@ EventFolder.SayMessageRequest.OnServerEvent:connect(function(playerObj, message,
 
 	return nil
 end)
+
+EventFolder.MutePlayerRequest.OnServerInvoke = function(playerObj, muteSpeakerName)
+	local speaker = ChatService:GetSpeaker(playerObj.Name)
+	if speaker then
+		local muteSpeaker = ChatService:GetSpeaker(muteSpeakerName)
+		if muteSpeaker then
+			speaker:AddMutedSpeaker(muteSpeaker.Name)
+			return true
+		end
+	end
+	return false
+end
+
+EventFolder.UnMutePlayerRequest.OnServerInvoke = function(playerObj, unmuteSpeakerName)
+	local speaker = ChatService:GetSpeaker(playerObj.Name)
+	if speaker then
+		local unmuteSpeaker = ChatService:GetSpeaker(unmuteSpeakerName)
+		if unmuteSpeaker then
+			speaker:RemoveMutedSpeaker(unmuteSpeaker.Name)
+			return true
+		end
+	end
+	return false
+end
 
 EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
 	local speaker = ChatService:GetSpeaker(playerObj.Name)

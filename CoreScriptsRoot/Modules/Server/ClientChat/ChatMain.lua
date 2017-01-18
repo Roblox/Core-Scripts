@@ -16,6 +16,7 @@ local FILTER_MESSAGE_TIMEOUT = 60
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Chat = game:GetService("Chat")
+local StarterGui = game:GetService("StarterGui")
 
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
@@ -869,6 +870,91 @@ PlayerGui.DescendantRemoving:connect(function(descendant)
 	end
 end)
 
+
+--- Interaction with SetCore Player events.
+
+local PlayerBlockedEvent = nil
+local PlayerMutedEvent = nil
+local PlayerUnBlockedEvent = nil
+local PlayerUnMutedEvent = nil
+
+
+-- This is pcalled because the SetCore methods may not be released yet.
+pcall(function()
+	PlayerBlockedEvent = StarterGui:GetCore("PlayerBlockedEvent")
+	PlayerMutedEvent = StarterGui:GetCore("PlayerMutedEvent")
+	PlayerUnBlockedEvent = StarterGui:GetCore("PlayerUnblockedEvent")
+	PlayerUnMutedEvent = StarterGui:GetCore("PlayerUnmutedEvent")
+end)
+
+function SendSystemMessageToSelf(message)
+	local currentChannel = ChatWindow:GetCurrentChannel()
+
+	if currentChannel then
+		local messageData =
+		{
+			ID = -1,
+			FromSpeaker = nil,
+			OriginalChannel = channelObj.Name,
+			IsFiltered = true,
+			MessageLength = string.len(message),
+			Message = message,
+			MessageType = ChatConstants.MessageTypeSystem,
+			Time = os.time(),
+			ExtraData = extraData,
+		}
+
+		currentChannel:AddMessageToChannel(messageData)
+	end
+end
+
+function MutePlayer(player)
+	local mutePlayerRequest = EventFolder:FindFirstChild("MutePlayerRequest")
+	if mutePlayerRequest then
+		return mutePlayerRequest:InvokeServer(player.Name)
+	end
+	return false
+end
+
+if PlayerBlockedEvent then
+	PlayerBlockedEvent:connect(function(player)
+		if MutePlayer(player) then
+			SendSystemMessageToSelf(string.format("Speaker '%s' has been blocked.", player.Name))
+		end
+	end)
+end
+
+if PlayerMutedEvent then
+	PlayerMutedEvent:connect(function(player)
+		if MutePlayer(player) then
+			SendSystemMessageToSelf(string.format("Speaker '%s' has been muted.", player.Name))
+		end
+	end)
+end
+
+function UnmutePlayer(player)
+	local unmutePlayerRequest = EventFolder:FindFirstChild("UnMutePlayerRequest")
+	if unmutePlayerRequest then
+		return unmutePlayerRequest:InvokeServer(player.Name)
+	end
+	return false
+end
+
+if PlayerUnBlockedEvent then
+	PlayerUnBlockedEvent:connect(function(player)
+		if UnmutePlayer(player) then
+			SendSystemMessageToSelf(string.format("Speaker '%s' has been unblocked.", player.Name))
+		end
+	end)
+end
+
+if PlayerUnMutedEvent then
+	PlayerUnMutedEvent:connect(function(player)
+		if UnmutePlayer(player) then
+			SendSystemMessageToSelf(string.format("Speaker '%s' has been unmuted.", player.Name))
+		end
+	end)
+end
 
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
 
