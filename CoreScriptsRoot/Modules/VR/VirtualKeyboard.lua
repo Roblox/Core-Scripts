@@ -243,7 +243,7 @@ local function RayPlaneIntersection(ray, planeNormal, pointOnPlane)
 	ray = ray.Unit
 	-- compute Pn (dot) Rd = Vd and check if Vd == 0 then we know ray is parallel to plane
 	local Vd = planeNormal:Dot(ray.Direction)
-	
+
 	-- could fuzzy equals this a little bit to account for imprecision or very close angles to zero
 	if Vd == 0 then -- parallel, no intersection
 		return nil
@@ -255,7 +255,7 @@ local function RayPlaneIntersection(ray, planeNormal, pointOnPlane)
 	if t < 0 then --plane is behind ray origin, and thus there is no intersection
 		return nil
 	end
-	
+
 	return ray.Origin + ray.Direction * t
 end
 
@@ -380,7 +380,7 @@ local function CreateKeyboardKey(keyboard, layoutData, keyData)
 		BorderSizePixel = 0;
 		Parent = newKeyElement;
 	}
-	
+
 	local selectionObject = Util:Create'ImageLabel'
 	{
 		Name = 'SelectionObject';
@@ -1136,8 +1136,8 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 				-- Attach to it if it's linked to our keyboard panel
 				if textboxPanel.linkedTo == panel then
 					local panelCF = textboxPanel.localCF
-					localCF = panelCF * CFrame.new(0, (-textboxPanel.height / 2) - 0.5, 0) * 
-										CFrame.Angles(math.rad(30), 0, 0) * 
+					localCF = panelCF * CFrame.new(0, (-textboxPanel.height / 2) - 0.5, 0) *
+										CFrame.Angles(math.rad(30), 0, 0) *
 										CFrame.new(0, (-panel.height / 2) - 0.5, 0)
 				else
 					--Otherwise, best-guess where it should go based on the user's head.
@@ -1208,7 +1208,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 		keyboardContainer.Visible = false
 
 		Panel3D.Get("Topbar3D"):SetVisible(true)
-		
+
 		self:SubmitText(submit, false)
 		closedEvent:Fire()
 	end)
@@ -1362,7 +1362,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 				if result and result["Status"] == VOICE_STATUS_CODE_ENUM.ASR_STATUS_OK  then
 					setBufferText(result["Response"])
 				else
-					voiceProcessingStatus.Text = "An error occured, please try again."
+					voiceProcessingStatus.Text = "An error occurred, please try again."
 					wait(2)
 				end
 				VoiceToTextFSM:TransitionState(CreateWaitingVoiceState())
@@ -1407,7 +1407,7 @@ do
 	local platform = UserInputService:GetPlatform()
 	VirtualKeyboardPlatform = platform == Enum.Platform.Windows or
 	                          platform == Enum.Platform.OSX or
-	                          platform == Enum.Platform.IOS or 
+	                          platform == Enum.Platform.IOS or
 	                          platform == Enum.Platform.Android
 end
 
