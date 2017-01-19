@@ -35,6 +35,9 @@ end
 
 function AtFriendLimit(player)
 	local friendCount = PlayerDropDownModule:GetFriendCountAsync(player)
+	if friendCount == nil then
+		return false
+	end
 	if friendCount >= PlayerDropDownModule:MaxFriendCount() then
 		return true
 	end

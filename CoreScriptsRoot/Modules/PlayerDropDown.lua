@@ -614,12 +614,12 @@ if CorescriptPlayerEventsEnabled then
 		end
 	end)
 
-	StarterGui:RegisterGetCore("PlayerBlockedEvent", function() return PlayerBlockedEvent end)
-	StarterGui:RegisterGetCore("PlayerUnblockedEvent", function() return PlayerUnblockedEvent end)
-	StarterGui:RegisterGetCore("PlayerMutedEvent", function() return PlayerMutedEvent end)
-	StarterGui:RegisterGetCore("PlayerUnmutedEvent", function() return PlayerUnMutedEvent end)
-	StarterGui:RegisterGetCore("PlayerFriendedEvent", function() return PlayerFriendedEvent end)
-	StarterGui:RegisterGetCore("PlayerUnfriendedEvent", function() return PlayerUnFriendedEvent end)
+	StarterGui:RegisterGetCore("PlayerBlockedEvent", function() return PlayerBlockedEvent.Event end)
+	StarterGui:RegisterGetCore("PlayerUnblockedEvent", function() return PlayerUnblockedEvent.Event end)
+	StarterGui:RegisterGetCore("PlayerMutedEvent", function() return PlayerMutedEvent.Event end)
+	StarterGui:RegisterGetCore("PlayerUnmutedEvent", function() return PlayerUnMutedEvent.Event end)
+	StarterGui:RegisterGetCore("PlayerFriendedEvent", function() return PlayerFriendedEvent.Event end)
+	StarterGui:RegisterGetCore("PlayerUnfriendedEvent", function() return PlayerUnFriendedEvent.Event end)
 end
 
 do
