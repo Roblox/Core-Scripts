@@ -18,6 +18,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Chat = game:GetService("Chat")
 local StarterGui = game:GetService("StarterGui")
 
+local DefaultChatSystemChatEvents = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
@@ -895,13 +896,13 @@ function SendSystemMessageToSelf(message)
 		{
 			ID = -1,
 			FromSpeaker = nil,
-			OriginalChannel = channelObj.Name,
+			OriginalChannel = currentChannel.Name,
 			IsFiltered = true,
 			MessageLength = string.len(message),
 			Message = message,
 			MessageType = ChatConstants.MessageTypeSystem,
 			Time = os.time(),
-			ExtraData = extraData,
+			ExtraData = nil,
 		}
 
 		currentChannel:AddMessageToChannel(messageData)
@@ -909,7 +910,7 @@ function SendSystemMessageToSelf(message)
 end
 
 function MutePlayer(player)
-	local mutePlayerRequest = EventFolder:FindFirstChild("MutePlayerRequest")
+	local mutePlayerRequest = DefaultChatSystemChatEvents:FindFirstChild("MutePlayerRequest")
 	if mutePlayerRequest then
 		return mutePlayerRequest:InvokeServer(player.Name)
 	end
@@ -933,7 +934,7 @@ if PlayerMutedEvent then
 end
 
 function UnmutePlayer(player)
-	local unmutePlayerRequest = EventFolder:FindFirstChild("UnMutePlayerRequest")
+	local unmutePlayerRequest = DefaultChatSystemChatEvents:FindFirstChild("UnMutePlayerRequest")
 	if unmutePlayerRequest then
 		return unmutePlayerRequest:InvokeServer(player.Name)
 	end
@@ -963,7 +964,7 @@ spawn(function()
 	pcall(function()
 		local blockedUserIds = StarterGui:GetCore("GetBlockedUserIds")
 		if #blockedUserIds > 0 then
-			local setInitalBlockedUserIds = EventFolder:FindFirstChild("SetBlockedUserIds")
+			local setInitalBlockedUserIds = DefaultChatSystemChatEvents:FindFirstChild("SetBlockedUserIdsRequest")
 			if setInitalBlockedUserIds then
 				setInitalBlockedUserIds:FireServer(blockedUserIds)
 			end

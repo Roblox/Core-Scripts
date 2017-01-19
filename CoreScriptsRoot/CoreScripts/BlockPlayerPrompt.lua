@@ -146,7 +146,4 @@ else
 	StarterGui:RegisterSetCore("PromptUnblockPlayer", function()
 		error("PromptUnblockPlayer is not yet enabled!")
 	end)
-	StarterGui:RegisterGetCore("GetBlockedUserIds", function()
-		error("GetBlockedUserIds is not yet enabled!")
-	end)
 end
