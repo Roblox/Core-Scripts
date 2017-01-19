@@ -1,6 +1,8 @@
 local runnerScriptName = "ChatScript"
 local bubbleChatScriptName = "BubbleChat"
 local installDirectory = game:GetService("Chat")
+
+local ChatService = game:GetService("Chat")
 local StarterPlayerScripts = game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts")
 
 local function LoadLocalScript(location, name, parent)
@@ -31,7 +33,18 @@ local function GetBoolValue(parent, name, defaultValue)
 	return defaultValue
 end
 
+local function loadDefaultChatDisabled()
+	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("LoadDefaultChatEnabled") end)
+	if readFlagSuccess and flagEnabled then
+		return not ChatService.LoadDefaultChat
+	end
+	return false
+end
+
 local function Install()
+	if loadDefaultChatDisabled() then
+		return
+	end
 
 	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptChatInsertDefaultBools") end)
 	local UseInsertDefaultBools = readFlagSuccess and flagEnabled
