@@ -918,7 +918,7 @@ function MutePlayer(player)
 end
 
 if PlayerBlockedEvent then
-	PlayerBlockedEvent:connect(function(player)
+	PlayerBlockedEvent.Event:connect(function(player)
 		if MutePlayer(player) then
 			SendSystemMessageToSelf(string.format("Speaker '%s' has been blocked.", player.Name))
 		end
@@ -926,7 +926,7 @@ if PlayerBlockedEvent then
 end
 
 if PlayerMutedEvent then
-	PlayerMutedEvent:connect(function(player)
+	PlayerMutedEvent.Event:connect(function(player)
 		if MutePlayer(player) then
 			SendSystemMessageToSelf(string.format("Speaker '%s' has been muted.", player.Name))
 		end
@@ -942,7 +942,7 @@ function UnmutePlayer(player)
 end
 
 if PlayerUnBlockedEvent then
-	PlayerUnBlockedEvent:connect(function(player)
+	PlayerUnBlockedEvent.Event:connect(function(player)
 		if UnmutePlayer(player) then
 			SendSystemMessageToSelf(string.format("Speaker '%s' has been unblocked.", player.Name))
 		end
@@ -950,7 +950,7 @@ if PlayerUnBlockedEvent then
 end
 
 if PlayerUnMutedEvent then
-	PlayerUnMutedEvent:connect(function(player)
+	PlayerUnMutedEvent.Event:connect(function(player)
 		if UnmutePlayer(player) then
 			SendSystemMessageToSelf(string.format("Speaker '%s' has been unmuted.", player.Name))
 		end
