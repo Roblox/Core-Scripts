@@ -12,7 +12,6 @@ local Chat = game:GetService("Chat")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleChannelsTab = require(modulesFolder:WaitForChild("ChannelsTab"))
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
@@ -20,6 +19,7 @@ local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 function methods:CreateGuiObjects(targetParent)
 	local BaseFrame = Instance.new("Frame")
@@ -171,7 +171,7 @@ function methods:CreateGuiObjects(targetParent)
 	PageLeftButton.ArrowLabel.Rotation = 180
 
 
-	rawset(self, "GuiObject", BaseFrame)
+	self.GuiObject = BaseFrame
 
 	self.GuiObjects.BaseFrame = BaseFrame
 	self.GuiObjects.ScrollerSizer = ScrollerSizer
@@ -371,10 +371,9 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChannelsBar", methods)
 
 function module.new()
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.GuiObject = nil
 	obj.GuiObjects = {}
@@ -386,8 +385,6 @@ function module.new()
 	obj.ScrollChannelsFrameLock = false
 
 	obj.AnimParams = {}
-
-	ClassMaker.MakeClass("ChannelsBar", obj)
 
 	obj:InitializeAnimParams()
 

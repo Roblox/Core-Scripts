@@ -11,13 +11,13 @@ local replicatedModules = Chat:WaitForChild("ClientChatModules")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local ChatConstants = require(replicatedModules:WaitForChild("ChatConstants"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 
 local methods = {}
+methods.__index = methods
 
 function methods:SendSystemMessage(message, extraData)
 	local messageObj = self:InternalCreateMessageObject(message, nil, true, extraData)
@@ -388,10 +388,9 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChatChannel", methods)
 
 function module.new(vChatService, name, welcomeMessage)
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.ChatService = vChatService
 
@@ -429,8 +428,6 @@ function module.new(vChatService, name, welcomeMessage)
 	obj.SpeakerLeft = obj.eSpeakerLeft.Event
 	obj.SpeakerMuted = obj.eSpeakerMuted.Event
 	obj.SpeakerUnmuted = obj.eSpeakerUnmuted.Event
-
-	ClassMaker.MakeClass("ChatChannel", obj)
 
 	return obj
 end

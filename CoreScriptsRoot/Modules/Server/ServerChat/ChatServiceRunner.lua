@@ -6,6 +6,7 @@ local EventFolderName = "DefaultChatSystemChatEvents"
 local EventFolderParent = game:GetService("ReplicatedStorage")
 local modulesFolder = script
 
+local PlayersService = game:GetService("Players")
 local ChatService = require(modulesFolder:WaitForChild("ChatService"))
 
 local useEvents = {}
@@ -51,6 +52,9 @@ CreateIfDoesntExist(EventFolder, "OnMainChannelSet", "RemoteEvent")
 
 CreateIfDoesntExist(EventFolder, "SayMessageRequest", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "GetInitDataRequest", "RemoteFunction")
+CreateIfDoesntExist(EventFolder, "MutePlayerRequest", "RemoteFunction")
+CreateIfDoesntExist(EventFolder, "UnMutePlayerRequest", "RemoteFunction")
+CreateIfDoesntExist(EventFolder, "SetBlockedUserIdsRequest", "RemoteEvent")
 
 EventFolder = useEvents
 
@@ -116,6 +120,64 @@ EventFolder.SayMessageRequest.OnServerEvent:connect(function(playerObj, message,
 	end
 
 	return nil
+end)
+
+EventFolder.MutePlayerRequest.OnServerInvoke = function(playerObj, muteSpeakerName)
+	local speaker = ChatService:GetSpeaker(playerObj.Name)
+	if speaker then
+		local muteSpeaker = ChatService:GetSpeaker(muteSpeakerName)
+		if muteSpeaker then
+			speaker:AddMutedSpeaker(muteSpeaker.Name)
+			return true
+		end
+	end
+	return false
+end
+
+EventFolder.UnMutePlayerRequest.OnServerInvoke = function(playerObj, unmuteSpeakerName)
+	local speaker = ChatService:GetSpeaker(playerObj.Name)
+	if speaker then
+		local unmuteSpeaker = ChatService:GetSpeaker(unmuteSpeakerName)
+		if unmuteSpeaker then
+			speaker:RemoveMutedSpeaker(unmuteSpeaker.Name)
+			return true
+		end
+	end
+	return false
+end
+
+-- Map storing Player -> Blocked user Ids.
+local BlockedUserIdsMap = {}
+
+PlayersService.PlayerAdded:connect(function(newPlayer)
+	for player, blockedUsers in pairs(BlockedUserIdsMap) do
+		local speaker = ChatService:GetSpeaker(player.Name)
+		if speaker then
+			for i = 1, #blockedUsers do
+				local blockedUserId = blockedUsers[i]
+				if blockedUserId == newPlayer.UserId then
+					speaker:AddMutedSpeaker(newPlayer.Name)
+				end
+			end
+		end
+	end
+end)
+
+PlayersService.PlayerRemoving:connect(function(removingPlayer)
+	BlockedUserIdsMap[removingPlayer] = nil
+end)
+
+EventFolder.SetBlockedUserIdsRequest.OnServerEvent:connect(function(player, blockedUserIdsList)
+	BlockedUserIdsMap[player] = blockedUserIdsList
+	local speaker = ChatService:GetSpeaker(player.Name)
+	if speaker then
+		for i = 1, #blockedUserIdsList do
+			local blockedPlayer = PlayersService:GetPlayerByUserId(blockedUserIdsList[i])
+			if blockedPlayer then
+				speaker:AddMutedSpeaker(blockedPlayer.Name)
+			end
+		end
+	end
 end)
 
 EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
