@@ -160,6 +160,9 @@ local function DoJoinCommand(speakerName, channelName, fromChannelName)
 			if (channel.Joinable) then
 				if (not speaker:IsInChannel(channel.Name)) then
 					speaker:JoinChannel(channel.Name)
+				else
+					speaker:SetMainChannel(channel.Name)
+					speaker:SendSystemMessage(string.format("You are now chatting in channel: '%s'", channel.Name), channel.Name)
 				end
 			else
 				speaker:SendSystemMessage("You cannot join channel '" .. channelName .. "'.", fromChannelName)

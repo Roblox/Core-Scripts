@@ -5,7 +5,7 @@
 local function Run(ChatService)
 
 	local function ProcessCommandsFunction(fromSpeaker, message, channel)
-		if (message == "/?" or message == "/help") then
+		if (message:lower() == "/?" or message:lower() == "/help") then
 			local speaker = ChatService:GetSpeaker(fromSpeaker)
 			speaker:SendSystemMessage("These are the basic chat commands.", channel)
 			speaker:SendSystemMessage("/me <text> : roleplaying command for doing actions.", channel)
