@@ -340,6 +340,21 @@ UserInputService.TouchTap:connect(function(tapPos, gameProcessedEvent)
 	end
 end)
 
+UserInputService.Changed:connect(function(prop)
+	if prop == "MouseBehavior" then
+		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+			local windowPos = ChatWindow.GuiObject.AbsolutePosition
+			local windowSize = ChatWindow.GuiObject.AbsoluteSize
+			local screenSize = GuiParent.DestroyGuardFrame.AbsoluteSize
+
+			local centerScreenIsInWindow = CheckIfPointIsInSquare(screenSize/2, windowPos, windowPos + windowSize)
+			if centerScreenIsInWindow then
+				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+			end
+		end
+	end
+end)
+
 --// Start and stop fading sequences / timers
 UpdateFadingForMouseState(true)
 UpdateFadingForMouseState(false)
