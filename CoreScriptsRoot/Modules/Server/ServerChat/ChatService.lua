@@ -10,13 +10,13 @@ local Chat = game:GetService("Chat")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local ChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local Speaker = require(modulesFolder:WaitForChild("Speaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 function methods:AddChannel(channelName)
 	if (self.ChatChannels[channelName:lower()]) then
@@ -251,10 +251,9 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChatService", methods)
 
 function module.new()
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.MessageIdCounter = 0
 
@@ -273,8 +272,6 @@ function module.new()
 	obj.ChannelRemoved = obj.eChannelRemoved.Event
 	obj.SpeakerAdded = obj.eSpeakerAdded.Event
 	obj.SpeakerRemoved = obj.eSpeakerRemoved.Event
-
-	ClassMaker.MakeClass("ChatService", obj)
 
 	return obj
 end

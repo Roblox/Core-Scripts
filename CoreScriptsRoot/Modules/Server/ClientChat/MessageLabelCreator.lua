@@ -14,12 +14,12 @@ local messageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 local modulesFolder = script.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local moduleObjectPool = require(modulesFolder:WaitForChild("ObjectPool"))
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 function ReturnToObjectPoolRecursive(instance, objectPool)
 	local children = instance:GetChildren()
@@ -96,16 +96,13 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("MessageLabelCreator", methods)
 
 function module.new()
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.ObjectPool = moduleObjectPool.new(OBJECT_POOL_SIZE)
 	obj.MessageCreators = GetMessageCreators()
 	obj.DefaultCreatorType = messageCreatorUtil.DEFAULT_MESSAGE_CREATOR
-
-	ClassMaker.MakeClass("MessageLabelCreator", obj)
 
 	messageCreatorUtil:RegisterObjectPool(obj.ObjectPool)
 
