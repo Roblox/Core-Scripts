@@ -16,7 +16,9 @@ local FILTER_MESSAGE_TIMEOUT = 60
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Chat = game:GetService("Chat")
+local StarterGui = game:GetService("StarterGui")
 
+local DefaultChatSystemChatEvents = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
@@ -89,6 +91,7 @@ end
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local GuiParent = Instance.new("ScreenGui")
 GuiParent.Name = "Chat"
+GuiParent.ResetOnSpawn = false
 GuiParent.Parent = PlayerGui
 
 local DidFirstChannelsLoads = false
@@ -201,7 +204,6 @@ function DoBackgroundFadeOut(setFadingTime)
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
 		ChatWindow.GuiObject.Active = false
-		--ChatWindow:ResetResizerPosition()
 
 		local Scroller = MessageLogDisplay.Scroller
 		Scroller.ScrollingEnabled = false
@@ -290,8 +292,22 @@ spawn(function()
 	end
 end)
 
+function getClassicChatEnabled()
+	if ChatSettings.ClassicChatEnabled ~= nil then
+		return ChatSettings.ClassicChatEnabled
+	end
+	return Players.ClassicChat
+end
+
+function getBubbleChatEnabled()
+	if ChatSettings.BubbleChatEnabled ~= nil then
+		return ChatSettings.BubbleChatEnabled
+	end
+	return Players.BubbleChat
+end
+
 function bubbleChatOnly()
- 	return not Players.ClassicChat and Players.BubbleChat
+ 	return not getClassicChatEnabled() and getBubbleChatEnabled()
 end
 
 function UpdateMousePosition(mousePos)
@@ -323,6 +339,21 @@ UserInputService.TouchTap:connect(function(tapPos, gameProcessedEvent)
 	UpdateMousePosition(tapPos[1])
 	if (not mouseIsInWindow and last ~= mouseIsInWindow) then
 		DoBackgroundFadeOut()
+	end
+end)
+
+UserInputService.Changed:connect(function(prop)
+	if prop == "MouseBehavior" then
+		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+			local windowPos = ChatWindow.GuiObject.AbsolutePosition
+			local windowSize = ChatWindow.GuiObject.AbsoluteSize
+			local screenSize = GuiParent.DestroyGuardFrame.AbsoluteSize
+
+			local centerScreenIsInWindow = CheckIfPointIsInSquare(screenSize/2, windowPos, windowPos + windowSize)
+			if centerScreenIsInWindow then
+				UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+			end
+		end
 	end
 end)
 
@@ -855,6 +886,106 @@ PlayerGui.DescendantRemoving:connect(function(descendant)
 	end
 end)
 
+
+--- Interaction with SetCore Player events.
+
+local PlayerBlockedEvent = nil
+local PlayerMutedEvent = nil
+local PlayerUnBlockedEvent = nil
+local PlayerUnMutedEvent = nil
+
+
+-- This is pcalled because the SetCore methods may not be released yet.
+pcall(function()
+	PlayerBlockedEvent = StarterGui:GetCore("PlayerBlockedEvent")
+	PlayerMutedEvent = StarterGui:GetCore("PlayerMutedEvent")
+	PlayerUnBlockedEvent = StarterGui:GetCore("PlayerUnblockedEvent")
+	PlayerUnMutedEvent = StarterGui:GetCore("PlayerUnmutedEvent")
+end)
+
+function SendSystemMessageToSelf(message)
+	local currentChannel = ChatWindow:GetCurrentChannel()
+
+	if currentChannel then
+		local messageData =
+		{
+			ID = -1,
+			FromSpeaker = nil,
+			OriginalChannel = currentChannel.Name,
+			IsFiltered = true,
+			MessageLength = string.len(message),
+			Message = message,
+			MessageType = ChatConstants.MessageTypeSystem,
+			Time = os.time(),
+			ExtraData = nil,
+		}
+
+		currentChannel:AddMessageToChannel(messageData)
+	end
+end
+
+function MutePlayer(player)
+	local mutePlayerRequest = DefaultChatSystemChatEvents:FindFirstChild("MutePlayerRequest")
+	if mutePlayerRequest then
+		return mutePlayerRequest:InvokeServer(player.Name)
+	end
+	return false
+end
+
+if PlayerBlockedEvent then
+	PlayerBlockedEvent.Event:connect(function(player)
+		if MutePlayer(player) then
+			SendSystemMessageToSelf(string.format("Speaker '%s' has been blocked.", player.Name))
+		end
+	end)
+end
+
+if PlayerMutedEvent then
+	PlayerMutedEvent.Event:connect(function(player)
+		if MutePlayer(player) then
+			SendSystemMessageToSelf(string.format("Speaker '%s' has been muted.", player.Name))
+		end
+	end)
+end
+
+function UnmutePlayer(player)
+	local unmutePlayerRequest = DefaultChatSystemChatEvents:FindFirstChild("UnMutePlayerRequest")
+	if unmutePlayerRequest then
+		return unmutePlayerRequest:InvokeServer(player.Name)
+	end
+	return false
+end
+
+if PlayerUnBlockedEvent then
+	PlayerUnBlockedEvent.Event:connect(function(player)
+		if UnmutePlayer(player) then
+			SendSystemMessageToSelf(string.format("Speaker '%s' has been unblocked.", player.Name))
+		end
+	end)
+end
+
+if PlayerUnMutedEvent then
+	PlayerUnMutedEvent.Event:connect(function(player)
+		if UnmutePlayer(player) then
+			SendSystemMessageToSelf(string.format("Speaker '%s' has been unmuted.", player.Name))
+		end
+	end)
+end
+
+-- Get a list of blocked users from the corescripts.
+-- Spawned because this method can yeild.
+spawn(function()
+	-- Pcalled because this method is not released on all platforms yet.
+	pcall(function()
+		local blockedUserIds = StarterGui:GetCore("GetBlockedUserIds")
+		if #blockedUserIds > 0 then
+			local setInitalBlockedUserIds = DefaultChatSystemChatEvents:FindFirstChild("SetBlockedUserIdsRequest")
+			if setInitalBlockedUserIds then
+				setInitalBlockedUserIds:FireServer(blockedUserIds)
+			end
+		end
+	end)
+end)
 
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
 
