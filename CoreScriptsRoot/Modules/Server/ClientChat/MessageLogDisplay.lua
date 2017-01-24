@@ -11,7 +11,6 @@ local Chat = game:GetService("Chat")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLabelCreator"))
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
@@ -21,6 +20,7 @@ local MessageLabelCreator = moduleMessageLabelCreator.new()
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 local function CreateGuiObjects()
 	local BaseFrame = Instance.new("Frame")
@@ -111,6 +111,10 @@ function methods:IsScrolledDown()
 					yCanvasSize - yScrolledPosition <= yContainerSize + 5)
 end
 
+function min(x, y)
+	return x < y and x or y
+end
+
 function methods:PositionMessageLabelInWindow(messageObject)
 	self:WaitUntilParentedCorrectly()
 
@@ -123,8 +127,12 @@ function methods:PositionMessageLabelInWindow(messageObject)
 
 	if messageObject.BaseMessage then
 		local trySize = self.Scroller.AbsoluteSize.X
+		local minTrySize = min(self.Scroller.AbsoluteSize.X - 10, 0)
 		while not messageObject.BaseMessage.TextFits do
 			trySize = trySize - 1
+			if trySize < minTrySize then
+				break
+			end
 			baseFrame.Size = UDim2.new(1, 0, 0, messageObject.GetHeightFunction(trySize))
 		end
 	end
@@ -162,7 +170,7 @@ function methods:Clear()
 	for i, v in pairs(self.MessageObjectLog) do
 		v:Destroy()
 	end
-	rawset(self, "MessageObjectLog", {})
+	self.MessageObjectLog = {}
 
 	self.Scroller.CanvasSize = UDim2.new(0, 0, 0, 0)
 end
@@ -212,10 +220,9 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("MessageLogDisplay", methods)
 
 function module.new()
-	local obj = {}
+	local obj = setmetatable({}, methods)
 	obj.Destroyed = false
 
 	local BaseFrame, Scroller = CreateGuiObjects()
@@ -228,8 +235,6 @@ function module.new()
 	obj.GuiObject.Name = "Frame_" .. obj.Name
 
 	obj.CurrentChannelName = ""
-
-	ClassMaker.MakeClass("MessageLogDisplay", obj)
 
 	obj.GuiObject.Changed:connect(function(prop)
 		if (prop == "AbsoluteSize") then

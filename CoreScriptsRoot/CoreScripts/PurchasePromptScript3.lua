@@ -180,6 +180,13 @@ local ASSET_TO_STRING = {
 	[45] = "Front Accessory";
 	[46] = "Back Accessory";
 	[47] = "Waist Accessory";
+	[48] = "Climb Animation";
+	[50] = "Fall Animation";
+	[51] = "Idle Animation";
+	[52] = "Jump Animation";
+	[53] = "Run Animation";
+	[54] = "Swim Animation";
+	[55] = "Walk Animation";
 	[0]  = "Product";
 	-- NOTE: GamePass and Plugin AssetTypeIds are now in sync on ST1, ST2 and ST3
 }

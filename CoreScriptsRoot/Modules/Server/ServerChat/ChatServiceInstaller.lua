@@ -1,5 +1,6 @@
 local runnerScriptName = "ChatServiceRunner"
 
+local ChatService = game:GetService("Chat")
 local installDirectory = game:GetService("Chat")
 local ServerScriptService = game:GetService("ServerScriptService")
 
@@ -31,7 +32,18 @@ local function GetBoolValue(parent, name, defaultValue)
 	return defaultValue
 end
 
+local function loadDefaultChatDisabled()
+	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("LoadDefaultChatEnabled") end)
+	if readFlagSuccess and flagEnabled then
+		return not ChatService.LoadDefaultChat
+	end
+	return false
+end
+
 local function Install()
+	if loadDefaultChatDisabled() then
+		return
+	end
 
 	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptChatInsertDefaultBools") end)
 	local UseInsertDefaultBools = readFlagSuccess and flagEnabled
@@ -45,7 +57,6 @@ local function Install()
 		LoadModule(script.Parent, "ChatService", ChatServiceRunner)
 		LoadModule(script.Parent, "ChatChannel", ChatServiceRunner)
 		LoadModule(script.Parent, "Speaker", ChatServiceRunner)
-		LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatServiceRunner)
 	end
 
 	local ChatModules = installDirectory:FindFirstChild("ChatModules")

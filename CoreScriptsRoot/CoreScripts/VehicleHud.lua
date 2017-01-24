@@ -15,7 +15,7 @@ end
 local LocalPlayer = Players.LocalPlayer
 local RobloxGui = script.Parent
 local CurrentVehicleSeat = nil
-local VehicleSeatRenderCn = nil
+local VehicleSeatHeartbeatCn = nil
 local VehicleSeatHUDChangedCn = nil
 
 local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
@@ -98,7 +98,7 @@ local function getHumanoid()
 	end
 end
 
-local function onRenderStepped()
+local function onHeartbeat()
 	if CurrentVehicleSeat then
 		local speed = CurrentVehicleSeat.Velocity.magnitude
 		SpeedText.Text = tostring(math.min(math.floor(speed), 9999))
@@ -116,27 +116,19 @@ end
 
 local function onSeated(active, currentSeatPart)
 	if active then
-		-- TODO: Clean up when new API is live for a while
 		if currentSeatPart and currentSeatPart:IsA('VehicleSeat') then
 			CurrentVehicleSeat = currentSeatPart
-		else
-			local camSubject = workspace.CurrentCamera.CameraSubject
-			if camSubject and camSubject:IsA('VehicleSeat') then
-				CurrentVehicleSeat = camSubject
-			end
-		end
-		if CurrentVehicleSeat then
 			VehicleHudFrame.Visible = CurrentVehicleSeat.HeadsUpDisplay
-			VehicleSeatRenderCn = RunService.RenderStepped:connect(onRenderStepped)
+			VehicleSeatHeartbeatCn = RunService.Heartbeat:connect(onHeartbeat)
 			VehicleSeatHUDChangedCn = CurrentVehicleSeat.Changed:connect(onVehicleSeatChanged)
 		end
 	else
 		if CurrentVehicleSeat then
 			VehicleHudFrame.Visible = false
 			CurrentVehicleSeat = nil
-			if VehicleSeatRenderCn then
-				VehicleSeatRenderCn:disconnect()
-				VehicleSeatRenderCn = nil
+			if VehicleSeatHeartbeatCn then
+				VehicleSeatHeartbeatCn:disconnect()
+				VehicleSeatHeartbeatCn = nil
 			end
 			if VehicleSeatHUDChangedCn then
 				VehicleSeatHUDChangedCn:disconnect()
@@ -154,7 +146,10 @@ local function connectSeated()
 	end
 	humanoid.Seated:connect(onSeated)
 end
-connectSeated()
+if LocalPlayer.Character then
+	connectSeated()
+end
 LocalPlayer.CharacterAdded:connect(function(character)
+	onSeated(false)
 	connectSeated()
 end)
