@@ -789,6 +789,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 
 			if addHistoryToGeneralChannel then
 				if ChatSettings.GeneralChannelName and channel ~= ChatSettings.GeneralChannelName then
+					local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 					if generalChannel then
 						generalChannel:AddMessagesToChannelByTimeStamp(messageLog, startIndex)
 					end
@@ -841,6 +842,7 @@ EventFolder.OnMainChannelSet.OnClientEvent:connect(function(channel)
 end)
 
 coroutine.wrap(function()
+	-- ChannelNameColorUpdated may not exist if the client version is older than the server version.
 	local ChannelNameColorUpdated = DefaultChatSystemChatEvents:WaitForChild("ChannelNameColorUpdated", 5)
 	if ChannelNameColorUpdated then
 		ChannelNameColorUpdated.OnClientEvent:connect(function(channelName, channelNameColor)
