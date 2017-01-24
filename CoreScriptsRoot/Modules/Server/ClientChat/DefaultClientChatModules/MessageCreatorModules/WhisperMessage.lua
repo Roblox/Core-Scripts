@@ -5,6 +5,7 @@
 local PlayersService = game:GetService("Players")
 local LocalPlayer = PlayersService.LocalPlayer
 while not LocalPlayer do
+	PlayersService.ChildAdded:wait()
 	LocalPlayer = PlayersService.LocalPlayer
 end
 

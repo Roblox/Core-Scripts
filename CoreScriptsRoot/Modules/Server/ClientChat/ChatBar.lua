@@ -12,7 +12,6 @@ local Chat = game:GetService("Chat")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
@@ -20,9 +19,10 @@ local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 function methods:CreateGuiObjects(targetParent)
-	rawset(self, "ChatBarParentFrame", targetParent)
+	self.ChatBarParentFrame = targetParent
 
 	local backgroundImagePixelOffset = 7
 	local textBoxPixelOffset = 5
@@ -100,9 +100,9 @@ function methods:CreateGuiObjects(targetParent)
 	TextLabel.Text = "This value needs to be set with :SetTextLabelText()"
 	TextLabel.Parent = TextBoxHolderFrame
 
-	rawset(self, "GuiObject", BaseFrame)
-	rawset(self, "TextBox", TextBox)
-	rawset(self, "TextLabel", TextLabel)
+	self.GuiObject = BaseFrame
+	self.TextBox = TextBox
+	self.TextLabel  = TextLabel
 
 	self.GuiObjects.BaseFrame = BaseFrame
 	self.GuiObjects.TextBoxFrame = BoxFrame
@@ -151,7 +151,7 @@ function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextLabel)
 			local customState = self.CommandProcessor:ProcessInProgressChatMessage(TextBox.Text, self.ChatWindow, self)
 			if customState then
 				self.InCustomState = true
-				rawset(self, "CustomState", customState)
+				self.CustomState = customState
 			end
 		else
 			self.CustomState:TextUpdated()
@@ -197,7 +197,7 @@ end
 function methods:IsFocused()
 	-- Temporary hack while reparenting is necessary.
 	if not self.GuiObject:IsDescendantOf(game) then
-		if rawget(self, "LastFocusedState") then
+		if self.LastFocusedState then
 			return self.LastFocusedState.Focused
 		end
 	end
@@ -286,10 +286,10 @@ end
 
 function methods:SetTextSize(textSize)
 	if not self:IsInCustomState() then
-		if rawget(self, "TextBox") then
+		if self.TextBox then
 			self.TextBox.TextSize = textSize
 		end
-		if rawget(self, "TextLabel") then
+		if self.TextLabel then
 			self.TextLabel.TextSize = textSize
 		end
 	end
@@ -299,7 +299,7 @@ function methods:SetChannelTarget(targetChannel)
 	local messageModeTextLabel = self.GuiObjects.MessageModeTextLabel
 	local textBox = self.TextBox
 
-	rawset(self, "TargetChannel", targetChannel)
+	self.TargetChannel = targetChannel
 
 	if not self:IsInCustomState() then
 		if (targetChannel ~= ChatSettings.GeneralChannelName) then
@@ -356,7 +356,7 @@ function methods:GetFocusedState()
 		Focused = self.TextBox:IsFocused(),
 		Text = self.TextBox.Text
 	}
-	rawset(self, "LastFocusedState", focusedState)
+	self.LastFocusedState = focusedState
 	return focusedState
 end
 
@@ -427,10 +427,9 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChatBar", methods)
 
 function module.new(CommandProcessor, ChatWindow)
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.GuiObject = nil
 	obj.ChatBarParentFrame = nil
@@ -453,8 +452,6 @@ function module.new(CommandProcessor, ChatWindow)
 
 	obj.AnimParams = {}
 	obj.LastFocusedState = nil
-
-	ClassMaker.MakeClass("ChatBar", obj)
 
 	obj:InitializeAnimParams()
 
