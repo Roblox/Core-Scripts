@@ -232,7 +232,7 @@ function methods:InternalGetUniqueMessageId()
 	return id
 end
 
-function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj)
+function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj, fireSpeakerAdded)
 	if (self.Speakers[speakerName:lower()]) then
 		error("Speaker \"" .. speakerName .. "\" already exists!")
 	end
@@ -241,12 +241,21 @@ function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj)
 	speaker:InternalAssignPlayerObject(playerObj)
 	self.Speakers[speakerName:lower()] = speaker
 
-	local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
-	if not success and err then
-		print("Error adding speaker: " ..err)
+	if fireSpeakerAdded then
+		local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+		if not success and err then
+			print("Error adding speaker: " ..err)
+		end
 	end
 
 	return speaker
+end
+
+function methods:InternalFireSpeakerAdded(speakerName)
+	local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+	if not success and err then
+		print("Error firing speaker added: " ..err)
+	end
 end
 
 --///////////////////////// Constructors

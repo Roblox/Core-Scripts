@@ -178,6 +178,10 @@ function methods:InternalSendSystemMessage(messageObj, channelName)
 	end
 end
 
+function methods:UpdateChannelNameColor(channelName, channelNameColor)
+	self.eChannelNameColorUpdated:Fire(channelName, channelNameColor)
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
 
@@ -207,6 +211,7 @@ function module.new(vChatService, name)
 	obj.eUnmuted = Instance.new("BindableEvent")
 	obj.eExtraDataUpdated = Instance.new("BindableEvent")
 	obj.eMainChannelSet = Instance.new("BindableEvent")
+	obj.eChannelNameColorUpdated = Instance.new("BindableEvent")
 
 	obj.SaidMessage = obj.eSaidMessage.Event
 	obj.ReceivedMessage = obj.eReceivedMessage.Event
@@ -218,6 +223,7 @@ function module.new(vChatService, name)
 	obj.Unmuted = obj.eUnmuted.Event
 	obj.ExtraDataUpdated = obj.eExtraDataUpdated.Event
 	obj.MainChannelSet = obj.eMainChannelSet.Event
+	obj.ChannelNameColorUpdated = obj.eChannelNameColorUpdated.Event
 
 	return obj
 end
