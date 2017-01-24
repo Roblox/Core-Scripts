@@ -6,11 +6,11 @@ local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
 local modulesFolder = script.Parent
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 function methods:GetInstance(className)
   if self.InstancePoolsByClass[className] == nil then
@@ -38,15 +38,12 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ObjectPool", methods)
 
 function module.new(poolSizePerType)
-	local obj = {}
+	local obj = setmetatable({}, methods)
 	obj.InstancePoolsByClass = {}
 	obj.Name = "ObjectPool"
   obj.PoolSizePerType = poolSizePerType
-
-	ClassMaker.MakeClass("ObjectPool", obj)
 
 	return obj
 end

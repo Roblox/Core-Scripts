@@ -47,6 +47,10 @@ scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)
 scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", RobloxGui)
 scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript3", RobloxGui)
 
+-- Prompt Block Player Script
+scriptContext:AddCoreScriptLocal("CoreScripts/BlockPlayerPrompt", RobloxGui)
+scriptContext:AddCoreScriptLocal("CoreScripts/FriendPlayerPrompt", RobloxGui)
+
 -- Backpack!
 spawn(function() safeRequire(RobloxGui.Modules.BackpackScript) end)
 
@@ -104,5 +108,3 @@ if UserSettings().GameSettings:InStudioMode() then
 		UserInputService.Changed:connect(onVREnabled)
 	end)
 end
-
-

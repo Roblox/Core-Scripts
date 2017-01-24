@@ -29,6 +29,11 @@ local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockControll
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
+local spawnLocationFixFlagExists, spawnLocationFixFlagEnabled = pcall(function()
+	return Settings:IsUserFeatureEnabled("UserSpawnLocationFixEnabled")
+end)
+local FFlagSpawnLocationFixEnabled = spawnLocationFixFlagExists and spawnLocationFixFlagEnabled
+
 local function clamp(low, high, num)
 	if low <= high then
 		return math.min(high, math.max(low, num))

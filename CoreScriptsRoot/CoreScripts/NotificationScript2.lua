@@ -68,6 +68,7 @@ local badgesNotificationsActive = true
 --[[ Constants ]]--
 local BG_TRANSPARENCY = 0.7
 local MAX_NOTIFICATIONS = 3
+
 local NOTIFICATION_Y_OFFSET = isTenFootInterface and 145 or 64
 local NOTIFICATION_TITLE_Y_OFFSET = isTenFootInterface and 40 or 12
 local NOTIFICATION_TEXT_Y_OFFSET = isTenFootInterface and -16 or 1
@@ -75,6 +76,7 @@ local NOTIFICATION_FRAME_WIDTH = isTenFootInterface and 450 or 200
 local NOTIFICATION_TEXT_HEIGHT = isTenFootInterface and 85 or 28
 local NOTIFICATION_TITLE_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size42 or Enum.FontSize.Size18
 local NOTIFICATION_TEXT_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size14
+
 local IMAGE_SIZE = isTenFootInterface and 72 or 48
 
 local EASE_DIR = Enum.EasingDirection.InOut

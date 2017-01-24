@@ -8,13 +8,13 @@ local module = {}
 local Chat = game:GetService("Chat")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 function methods:Destroy()
 	self.Destroyed = true
@@ -78,7 +78,7 @@ function methods:RemoveLastMessageFromChannel()
 end
 
 function methods:ClearMessageLog()
-	rawset(self, "MessageLog", {})
+	self.MessageLog = {}
 
 	if self.Active then
 		self.MessageLogDisplay:Clear()
@@ -86,15 +86,14 @@ function methods:ClearMessageLog()
 end
 
 function methods:RegisterChannelTab(tab)
-	rawset(self, "ChannelTab", tab)
+	self.ChannelTab = tab
 end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChatChannel", methods)
 
 function module.new(channelName, messageLogDisplay)
-	local obj = {}
+	local obj = setmetatable({}, methods)
 	obj.Destroyed = false
 	obj.Active = false
 
@@ -102,8 +101,6 @@ function module.new(channelName, messageLogDisplay)
 	obj.MessageLogDisplay = messageLogDisplay
 	obj.ChannelTab = nil
 	obj.Name = channelName
-
-	ClassMaker.MakeClass("ChatChannel", obj)
 
 	return obj
 end
