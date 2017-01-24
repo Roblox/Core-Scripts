@@ -21,8 +21,12 @@ if LoadLibrary then
 end
 
 while not PlayersService.LocalPlayer do
-  PlayersService.ChildAdded:Wait()
+	-- This does not follow the usual pattern of PlayersService:PlayerAdded:Wait()
+	-- because it caused a bug where the local players name would show as Player in game.
+	-- The local players name is not yet set when the PlayerAdded event fires.
+  wait()
 end
+
 local Player = PlayersService.LocalPlayer
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 

@@ -5,6 +5,7 @@
 local Chat = game:GetService("Chat")
 local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
+local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
 
 local errorExtraData = {ChatColor = Color3.fromRGB(245, 50, 50)}
 
@@ -93,6 +94,13 @@ local function Run(ChatService)
 
 	ChatService:RegisterProcessCommandsFunction("whisper_commands", WhisperCommandsFunction)
 
+	local function GetWhisperChanneNameColor()
+		if ChatSettings.WhisperChannelNameColor then
+			return ChatSettings.WhisperChannelNameColor
+		end
+		return Color3.fromRGB(102, 14, 102)
+	end
+
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		if (ChatService:GetChannel("To " .. speakerName)) then
 			ChatService:RemoveChannel("To " .. speakerName)
@@ -105,6 +113,7 @@ local function Run(ChatService)
 		channel.Private = true
 
 		channel.WelcomeMessage = "You are now privately chatting with " .. speakerName .. "."
+		channel.ChannelNameColor = GetWhisperChanneNameColor()
 
 		channel:RegisterProcessCommandsFunction("replication_function", PrivateMessageReplicationFunction)
 		channel:RegisterFilterMessageFunction("message_type_function", PrivateMessageAddTypeFunction)

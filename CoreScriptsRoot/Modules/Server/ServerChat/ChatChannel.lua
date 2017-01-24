@@ -335,13 +335,8 @@ function methods:InternalRemoveExcessMessagesFromLog()
 	end
 end
 
-local function ChatHistorySortFunction(message1, message2)
-	return (message1.Time < message2.Time)
-end
-
 function methods:InternalAddMessageToHistoryLog(messageObj)
 	table.insert(self.ChatHistory, messageObj)
-	--table.sort(self.ChatHistory, ChatHistorySortFunction)
 
 	self:InternalRemoveExcessMessagesFromLog()
 end
@@ -386,16 +381,24 @@ function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, e
 	return messageObj
 end
 
+function methods:SetChannelNameColor(color)
+	self.ChannelNameColor = color
+	for i, speaker in pairs(self.Speakers) do
+		speaker:UpdateChannelNameColor(self.Name, color)
+	end
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
 
-function module.new(vChatService, name, welcomeMessage)
+function module.new(vChatService, name, welcomeMessage, channelNameColor)
 	local obj = setmetatable({}, methods)
 
 	obj.ChatService = vChatService
 
 	obj.Name = name
 	obj.WelcomeMessage = welcomeMessage or ""
+	obj.ChannelNameColor = channelNameColor
 
 	obj.Joinable = true
 	obj.Leavable = true
