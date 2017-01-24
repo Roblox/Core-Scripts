@@ -54,7 +54,7 @@ The chat bar object handles text entry.
 
 ### Methods
 	TextBox GetTextBox()
-	TextLabel GetMessageModeTextLabel
+	TextButton GetMessageModeTextButton
 
 	bool IsFocused()
 	CaptureFocus()

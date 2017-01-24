@@ -40,6 +40,8 @@ module.ChatBarBoxColor = Color3.new(1, 1, 1)
 module.ChatBarTextColor = Color3.new(0, 0, 0)
 module.ChannelsTabUnselectedColor = Color3.new(0, 0, 0)
 module.ChannelsTabSelectedColor = Color3.new(30/255, 30/255, 30/255)
+module.DefaultChannelNameColor = Color3.fromRGB(35, 76, 142)
+module.WhisperChannelNameColor = Color3.fromRGB(102, 14, 102)
 
 ---[[ Window Settings ]]
 module.MinimumWindowSize = UDim2.new(0.3, 0, 0.25, 0)
