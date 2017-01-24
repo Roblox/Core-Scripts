@@ -68,11 +68,15 @@ local badgesNotificationsActive = true
 --[[ Constants ]]--
 local BG_TRANSPARENCY = 0.7
 local MAX_NOTIFICATIONS = 3
-local NOTIFICATION_Y_OFFSET = isTenFootInterface and 128 or 64
-local NOTIFICATION_TITLE_Y_OFFSET = isTenFootInterface and 24 or 12
+
+local NOTIFICATION_Y_OFFSET = isTenFootInterface and 145 or 64
+local NOTIFICATION_TITLE_Y_OFFSET = isTenFootInterface and 40 or 12
+local NOTIFICATION_TEXT_Y_OFFSET = isTenFootInterface and -16 or 1
 local NOTIFICATION_FRAME_WIDTH = isTenFootInterface and 450 or 200
+local NOTIFICATION_TEXT_HEIGHT = isTenFootInterface and 85 or 28
 local NOTIFICATION_TITLE_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size42 or Enum.FontSize.Size18
-local NOTIFICATION_TEXT_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size32 or Enum.FontSize.Size14
+local NOTIFICATION_TEXT_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size14
+
 local IMAGE_SIZE = isTenFootInterface and 72 or 48
 
 local EASE_DIR = Enum.EasingDirection.InOut
@@ -221,8 +225,8 @@ local function createNotification(title, text, image)
 		notificationTitle.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, -NOTIFICATION_TITLE_Y_OFFSET)
 		notificationTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-		notificationText.Size = UDim2.new(1, -IMAGE_SIZE - 16, 0, 28)
-		notificationText.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, 1)
+		notificationText.Size = UDim2.new(1, -IMAGE_SIZE - 16, 0, NOTIFICATION_TEXT_HEIGHT)
+		notificationText.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, NOTIFICATION_TEXT_Y_OFFSET)
 		notificationText.TextXAlignment = Enum.TextXAlignment.Left
 	end
 
@@ -882,3 +886,4 @@ if Platform == Enum.Platform.XBoxOne then
 		end
 	end
 end
+
