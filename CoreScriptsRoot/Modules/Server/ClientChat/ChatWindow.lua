@@ -50,7 +50,7 @@ end
 function methods:CreateGuiObjects(targetParent)
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.BackgroundTransparency = 1
-	BaseFrame.Active = true
+	BaseFrame.Active = ChatSettings.WindowDraggable
 	BaseFrame.Parent = targetParent
 
 	local ChatBarParentFrame = Instance.new("Frame")
@@ -291,6 +291,7 @@ function methods:CreateGuiObjects(targetParent)
 	end
 
 	local function UpdateDraggable(enabled)
+		BaseFrame.Active = enabled
 		BaseFrame.Draggable = enabled
 	end
 
