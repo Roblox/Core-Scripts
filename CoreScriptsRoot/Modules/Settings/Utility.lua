@@ -209,7 +209,10 @@ local function getViewportSize()
 		game.Workspace.Changed:wait()
 	end
 
-	while game.Workspace.CurrentCamera.ViewportSize == Vector2.new(0,0) do
+	-- ViewportSize is initally set to 1, 1 in Camera.cpp constructor.
+	-- Also check against 0, 0 incase this is changed in the future.
+	while game.Workspace.CurrentCamera.ViewportSize == Vector2.new(0,0) or
+		game.Workspace.CurrentCamera.ViewportSize == Vector2.new(1,1) do
 		game.Workspace.CurrentCamera.Changed:wait()
 	end
 

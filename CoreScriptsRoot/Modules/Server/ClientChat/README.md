@@ -14,7 +14,6 @@ This is the main client side chat object.
 
 	EnableResizable()
 	DisableResizable()
-	ResetResizerPosition()
 
 	FadeOutBackground(float duration)
 	FadeInBackground(float duration)

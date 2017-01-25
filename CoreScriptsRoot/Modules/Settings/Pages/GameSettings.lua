@@ -619,7 +619,7 @@ local function Initialize()
 
     local volumeSound = Instance.new("Sound", game:GetService("CoreGui").RobloxGui.Sounds)
     volumeSound.Name = "VolumeChangeSound"
-    volumeSound.SoundId = "rbxasset://sounds/metalstone2.mp3"
+    volumeSound.SoundId = "rbxasset://sounds/uuhhh.mp3"
 
     this.VolumeSlider.ValueChanged:connect(function(newValue)
         local soundPercent = newValue/10

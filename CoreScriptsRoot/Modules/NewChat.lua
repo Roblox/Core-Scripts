@@ -8,6 +8,11 @@ local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 
 local StarterGui = game:GetService("StarterGui")
 local GuiService = game:GetService("GuiService")
+local PlayersService = game:GetService("Players")
+
+local ChatTypesSet = false
+local ClassicChatEnabled = PlayersService.ClassicChat
+local BubbleChatEnabled = PlayersService.BubbleChat
 
 local Util = require(RobloxGui.Modules.ChatUtil)
 
@@ -116,11 +121,48 @@ do
 			end
 		end
 
+		function moduleApiTable:ClassicChatEnabled()
+			return ClassicChatEnabled
+		end
+
+		function moduleApiTable:IsBubbleChatOnly()
+			return BubbleChatEnabled and not ClassicChatEnabled
+		end
+
+		function moduleApiTable:IsDisabled()
+			return not (BubbleChatEnabled or ClassicChatEnabled)
+		end
+
+		function SetInitialChatTypes(chatTypesTable)
+			if ChatTypesSet then
+				return
+			end
+			ChatTypesSet = true
+
+			local bubbleChat = chatTypesTable.BubbleChatEnabled
+			local classicChat = chatTypesTable.ClassicChatEnabled
+			if type(bubbleChat) == "boolean" then
+				BubbleChatEnabled = bubbleChat
+			end
+			if type(classicChat) == "boolean" then
+				ClassicChatEnabled = classicChat
+			end
+
+			if not (ClassicChatEnabled or BubbleChatEnabled) then
+				moduleApiTable.ChatDisabled:fire()
+			end
+			if BubbleChatEnabled and not ClassicChatEnabled then
+				moduleApiTable.BubbleChatOnlySet:fire()
+			end
+		end
+
 		moduleApiTable.ChatBarFocusChanged = Util.Signal()
 		moduleApiTable.VisibilityStateChanged = Util.Signal()
 		moduleApiTable.MessagesChanged = Util.Signal()
 
-
+		-- Signals that are called when we get information on if Bubble Chat and Classic chat are enabled from the chat.
+		moduleApiTable.BubbleChatOnlySet = Util.Signal()
+		moduleApiTable.ChatDisabled = Util.Signal()
 
 		StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType, enabled)
 			if (coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.Chat) then
@@ -179,6 +221,10 @@ do
 				if (type(chatWindowCollection) == "table") then
 					for i, v in pairs(eventConnections) do
 						v:disconnect()
+					end
+
+					if type(chatWindowCollection.ChatTypes) == "table" then
+						SetInitialChatTypes(chatWindowCollection.ChatTypes)
 					end
 
 					eventConnections = {}
@@ -264,7 +310,7 @@ do
 					communicationsConnections.GetCore.ChatWindowSize = FindInCollectionByKeyAndType(getCoreCollection, "ChatWindowSize", "BindableFunction")
 					communicationsConnections.GetCore.ChatBarDisabled = FindInCollectionByKeyAndType(getCoreCollection, "ChatBarDisabled", "BindableFunction")
 
-				elseif (type(setCoreCollection) ~= nil or type(getCoreCollection) ~= nil) then
+				elseif (type(setCoreCollection) ~= "nil" or type(getCoreCollection) ~= "nil") then
 					error("Both 'SetCore' and 'GetCore' must be tables if provided!")
 
 				end
