@@ -78,7 +78,7 @@ function methods:CreateGuiObjects(targetParent)
 	MessageModeTextButton.TextXAlignment = Enum.TextXAlignment.Left
 	MessageModeTextButton.TextWrapped = true
 	MessageModeTextButton.Text = ""
-	MessageModeTextButton.Size = UDim2.new(0.3, 0, 1, 0)
+	MessageModeTextButton.Size = UDim2.new(0, 0, 0, 0)
 	MessageModeTextButton.TextYAlignment = Enum.TextYAlignment.Center
 	MessageModeTextButton.TextColor3 = self:GetDefaultChannelNameColor()
 	MessageModeTextButton.Visible = true
@@ -339,6 +339,7 @@ function methods:SetChannelTarget(targetChannel)
 			textLabel.Position = UDim2.new(0, xSize, 0, 0)
 		else
 			messageModeTextButton.Text = ""
+			messageModeTextButton.Size = UDim2.new(0, 0, 0, 0)
 			textBox.Size = UDim2.new(1, 0, 1, 0)
 			textBox.Position = UDim2.new(0, 0, 0, 0)
 			textLabel.Size = UDim2.new(1, 0, 1, 0)
