@@ -511,6 +511,9 @@ function methods:SwitchCurrentChannel(channelName)
 
 	local cur = self:GetCurrentChannel()
 	local new = self:GetChannel(channelName)
+	if new == nil then
+		error(string.format("Channel '%s' does not exist.", channelName))
+	end
 
 	if (new ~= cur) then
 		if (cur) then

@@ -83,6 +83,12 @@ local EASE_DIR = Enum.EasingDirection.InOut
 local EASE_STYLE = Enum.EasingStyle.Sine
 local TWEEN_TIME = 0.35
 local DEFAULT_NOTIFICATION_DURATION = 5
+local FRIEND_REQUEST_NOTIFICATION_THROTTLE = 5
+
+local friendRequestNotificationFIntSuccess, friendRequestNotificationFIntValue = pcall(function() return tonumber(settings():GetFVariable("FriendRequestNotificationThrottle")) end)
+if friendRequestNotificationFIntSuccess and friendRequestNotificationFIntValue ~= nil then
+	FRIEND_REQUEST_NOTIFICATION_THROTTLE = friendRequestNotificationFIntValue
+end
 
 --[[ Images ]]--
 local PLAYER_POINTS_IMG = 'https://www.roblox.com/asset?id=206410433'
@@ -471,9 +477,30 @@ spawn(function()
 	end)
 end)
 
+local checkFriendRequestIsThrottled; do
+	local friendRequestThrottlingMap = {}
+	
+	checkFriendRequestIsThrottled = function(fromPlayer)
+		local throttleFinishedTime = friendRequestThrottlingMap[fromPlayer]
+		
+		if throttleFinishedTime then
+			if tick() < throttleFinishedTime then
+				return true
+			end
+		end
+
+		friendRequestThrottlingMap[fromPlayer] = tick() + FRIEND_REQUEST_NOTIFICATION_THROTTLE
+		return false
+	end
+end
+
 local function sendFriendNotification(fromPlayer)
 	--TODO: remove this flag check when stable
 	if newNotificationPath then
+		if checkFriendRequestIsThrottled(fromPlayer) then
+			return
+		end
+	
 		local acceptText = "Accept"
 		local declineText = "Decline"
 		sendNotificationInfo {

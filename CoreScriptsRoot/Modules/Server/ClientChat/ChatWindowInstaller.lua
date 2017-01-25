@@ -24,7 +24,7 @@ local function LoadModule(location, name, parent)
 end
 
 local function GetBoolValue(parent, name, defaultValue)
-	local boolValue = parent:FindFirstChild("Name")
+	local boolValue = parent:FindFirstChild(name)
 	if boolValue then
 		if boolValue:IsA("BoolValue") then
 			return boolValue.Value
