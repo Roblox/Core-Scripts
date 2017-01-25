@@ -83,7 +83,12 @@ local EASE_DIR = Enum.EasingDirection.InOut
 local EASE_STYLE = Enum.EasingStyle.Sine
 local TWEEN_TIME = 0.35
 local DEFAULT_NOTIFICATION_DURATION = 5
-local FRIEND_REQUEST_NOTIFICATION_THROTTLE = 5 -- Time between displaying new friend requests from one unique player.
+local FRIEND_REQUEST_NOTIFICATION_THROTTLE = 5
+
+local friendRequestNotificationFIntSuccess, friendRequestNotificationFIntValue = pcall(function() return tonumber(settings():GetFVariable("FriendRequestNotificationThrottle")) end)
+if friendRequestNotificationFIntSuccess and friendRequestNotificationFIntValue ~= nil then
+	FRIEND_REQUEST_NOTIFICATION_THROTTLE = friendRequestNotificationFIntValue
+end
 
 --[[ Images ]]--
 local PLAYER_POINTS_IMG = 'https://www.roblox.com/asset?id=206410433'
