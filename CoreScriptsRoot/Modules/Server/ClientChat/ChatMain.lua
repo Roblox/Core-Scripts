@@ -188,7 +188,6 @@ function DoBackgroundFadeIn(setFadingTime)
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
-		ChatWindow.GuiObject.Active = true
 
 		local Scroller = MessageLogDisplay.Scroller
 		Scroller.ScrollingEnabled = true
@@ -204,7 +203,6 @@ function DoBackgroundFadeOut(setFadingTime)
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
-		ChatWindow.GuiObject.Active = false
 
 		local Scroller = MessageLogDisplay.Scroller
 		Scroller.ScrollingEnabled = false

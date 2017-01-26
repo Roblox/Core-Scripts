@@ -18,11 +18,6 @@ if not VRServiceExists or not VRService then
 	VRService = UserInputService
 end
 
-local spawnLocationFixFlagExists, spawnLocationFixFlagEnabled = pcall(function()
-	return settings():GetFFlag("SpawnLocationFixEnabled")
-end)
-local FFlagSpawnLocationFixEnabled = spawnLocationFixFlagExists and spawnLocationFixFlagEnabled
-
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
 
