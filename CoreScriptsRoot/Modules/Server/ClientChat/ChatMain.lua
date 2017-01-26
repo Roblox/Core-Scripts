@@ -668,12 +668,25 @@ end
 setupChatBarConnections()
 ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
 
--- Wrap the OnMessageDoneFiltering event so that we do not back up the remote event invocation queue.
--- This is in cases where we are sent OnMessageDoneFiltering events but we have stopped listening/timed out.
--- BindableEvents do not queue, while RemoteEvents do.
-local FilteredMessageReceived = Instance.new("BindableEvent")
 EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
-	FilteredMessageReceived:Fire(messageData)
+	if not ChatSettings.ShowUserOwnFilteredMessage then
+		if messageData.FromSpeaker == LocalPlayer.Name then
+			return
+		end
+	end
+
+	local channelName = messageData.OriginalChannel
+	local channelObj = ChatWindow:GetChannel(channelName)
+	if channelObj then
+		channelObj:UpdateMessageFiltered(messageData)
+	end
+
+	if ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
+		local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+		if generalChannel then
+			generalChannel:UpdateMessageFiltered(filterData)
+		end
+	end
 end)
 
 EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
@@ -697,34 +710,6 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
 
 		DoFadeInFromNewInformation()
-
-		if messageData.IsFiltered and not (messageData.FromSpeaker == LocalPlayer.Name) then
-			return
-		end
-
-		if not ChatSettings.ShowUserOwnFilteredMessage then
-			if (messageData.FromSpeaker == LocalPlayer.Name) then
-				return
-			end
-		end
-
-		local filterData = {}
-		local filterWaitStartTime = tick()
-		while (filterData.ID ~= messageData.ID) do
-			if tick() - filterWaitStartTime > FILTER_MESSAGE_TIMEOUT then
-				return
-			end
-			filterData = FilteredMessageReceived.Event:wait()
-		end
-
-		--// Speaker may leave these channels during the time it takes to filter.
-		if (not channelObj.Destroyed) then
-			channelObj:UpdateMessageFiltered(filterData)
-		end
-
-		if (generalChannel and not generalChannel.Destroyed) then
-			generalChannel:UpdateMessageFiltered(filterData)
-		end
 	end
 end)
 

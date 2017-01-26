@@ -86,6 +86,21 @@ function methods:AddMessage(messageData)
 	self:PositionMessageLabelInWindow(messageObject)
 end
 
+function methods:AddMessageAtIndex(messageData, index)
+	local messageObject = MessageLabelCreator:CreateMessageLabel(messageData, self.CurrentChannelName)
+	if messageObject == nil then
+		return
+	end
+
+	table.insert(self.MessageObjectLog, index, messageObject)
+
+	local wasScrolledToBottom = self:IsScrolledDown()
+	self:ReorderAllMessages()
+	if wasScrolledToBottom then
+		self.Scroller.CanvasPosition = Vector2.new(0, math.max(0, self.Scroller.CanvasSize.Y.Offset - self.Scroller.AbsoluteSize.Y))
+	end
+end
+
 function methods:RemoveLastMessage()
 	self:WaitUntilParentedCorrectly()
 
