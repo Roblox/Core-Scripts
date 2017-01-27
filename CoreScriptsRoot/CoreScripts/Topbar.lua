@@ -1237,9 +1237,7 @@ local function CreateChatIcon()
 		if newChatVisibleProp then
 			willEnableChat = GameSettings.ChatVisible
 		end
-		if willEnableChat then
-			ChatModule:SetVisible(true)
-		end
+		ChatModule:SetVisible(willEnableChat)
 	end
 
 	local menuItem = CreateMenuItem(chatIconButton)
