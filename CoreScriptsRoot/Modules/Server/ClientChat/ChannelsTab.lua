@@ -5,16 +5,16 @@
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 local function CreateGuiObjects()
 	local BaseFrame = Instance.new("Frame")
@@ -264,10 +264,9 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChannelsTab", methods)
 
 function module.new(channelName)
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	local BaseFrame, NameTag, NameTagNonSelect, NameTagSelect, NewMessageIcon, UnselectedFrame, SelectedFrame = CreateGuiObjects()
 	obj.GuiObject = BaseFrame
@@ -300,8 +299,6 @@ function module.new(channelName)
 	obj.NameTagSelect.Text = channelName
 
 	obj.AnimParams = {}
-
-	ClassMaker.MakeClass("ChannelsTab", obj)
 
 	obj:InitializeAnimParams()
 	obj:AnimGuiObjects()

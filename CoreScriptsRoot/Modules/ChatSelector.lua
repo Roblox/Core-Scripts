@@ -22,6 +22,9 @@ local Players = game:GetService("Players")
 
 local Util = require(RobloxGui.Modules.ChatUtil)
 
+local ClassicChatEnabled = Players.ClassicChat
+local BubbleChatEnabled = Players.BubbleChat
+
 local function GetUseLuaFlag()
 	local loop_continue = true
 	while loop_continue do
@@ -51,6 +54,10 @@ local useModule = nil
 local state = {Visible = true}
 local interface = {}
 do
+	function interface:GetNewLuaChatFlag()
+		return GetUseLuaFlag() or FORCE_UseNewChat
+	end
+
 	function interface:ToggleVisibility()
 		if (useModule) then
 			useModule:ToggleVisibility()
@@ -103,9 +110,35 @@ do
 		end
 	end
 
+	function interface:ClassicChatEnabled()
+		if useModule then
+			return useModule:ClassicChatEnabled()
+		else
+			return ClassicChatEnabled
+		end
+	end
+
+	function interface:IsBubbleChatOnly()
+		if useModule then
+			return useModule:IsBubbleChatOnly()
+		end
+		return BubbleChatEnabled and not ClassicChatEnabled
+	end
+
+	function interface:IsDisabled()
+		if useModule then
+			return useModule:IsDisabled()
+		end
+		return not (BubbleChatEnabled or ClassicChatEnabled)
+	end
+
 	interface.ChatBarFocusChanged = Util.Signal()
 	interface.VisibilityStateChanged = Util.Signal()
 	interface.MessagesChanged = Util.Signal()
+
+	-- Signals that are called when we get information on if Bubble Chat and Classic chat are enabled from the chat.
+	interface.BubbleChatOnlySet = Util.Signal()
+	interface.ChatDisabled = Util.Signal()
 end
 
 local StopQueueingSystemMessages = false
@@ -123,6 +156,16 @@ StarterGui:RegisterGetCore("ChatWindowPosition", NonFunc)
 StarterGui:RegisterGetCore("ChatWindowSize", NonFunc)
 StarterGui:RegisterSetCore("ChatBarDisabled", NonFunc)
 StarterGui:RegisterGetCore("ChatBarDisabled", NonFunc)
+
+local readChatActiveFlagSuccess, chatActiveEnabled = pcall(function() return settings():GetFFlag("CorescriptSetCoreChatActiveEnabled") end)
+if readChatActiveFlagSuccess and chatActiveEnabled then
+	StarterGui:RegisterGetCore("ChatActive", function()
+		return interface:GetVisibility()
+	end)
+	StarterGui:RegisterSetCore("ChatActive", function(visible)
+		return interface:SetVisible(visible)
+	end)
+end
 
 
 local function ConnectSignals(useModule, interface, sigName)
@@ -143,6 +186,8 @@ if ( (TryLoadNewChat or FORCE_UseNewChat) and not isConsole and not isVR ) then
 
 		ConnectSignals(useModule, interface, "ChatBarFocusChanged")
 		ConnectSignals(useModule, interface, "VisibilityStateChanged")
+		ConnectSignals(useModule, interface, "BubbleChatOnlySet")
+		ConnectSignals(useModule, interface, "ChatDisabled")
 
 		while Players.LocalPlayer == nil do Players.ChildAdded:wait() end
 		local LocalPlayer = Players.LocalPlayer

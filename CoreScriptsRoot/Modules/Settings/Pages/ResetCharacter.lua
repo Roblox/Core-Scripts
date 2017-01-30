@@ -86,14 +86,15 @@ local function Initialize()
 		end
 	end
 	
-	this.ResetBindable = Instance.new("BindableEvent")
-	this.ResetBindable.Event:connect(resetCharFunc)
+	this.ResetBindable = true
 	
 	local onResetFunction = function()
 		if this.HubRef then
 			this.HubRef:SetVisibility(false, true)
 		end
-		if this.ResetBindable then
+		if this.ResetBindable == true then
+			resetCharFunc()
+		elseif this.ResetBindable then
 			this.ResetBindable:Fire()
 		end
 	end

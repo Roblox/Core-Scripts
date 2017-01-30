@@ -52,7 +52,7 @@ local function Run(ChatService)
 			local timeDiff = math.ceil(t[1] - now)
 			local msg = ""
 			if (informSpeakersOfWaitTimes) then
-				msg = string.format("You must wait %d second%s before sending another message!", timeDiff, (timeDiff > 1) and "s" or "")
+				msg = string.format("You must wait %d %s before sending another message!", timeDiff, (timeDiff > 1) and "seconds" or "second")
 			else
 				msg = "You must wait before sending another message!"
 			end

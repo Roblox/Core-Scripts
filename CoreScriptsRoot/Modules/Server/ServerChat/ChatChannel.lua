@@ -6,18 +6,18 @@ local module = {}
 
 local modulesFolder = script.Parent
 local HttpService = game:GetService("HttpService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local replicatedModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local replicatedModules = Chat:WaitForChild("ClientChatModules")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local ChatConstants = require(replicatedModules:WaitForChild("ChatConstants"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 
 local methods = {}
+methods.__index = methods
 
 function methods:SendSystemMessage(message, extraData)
 	local messageObj = self:InternalCreateMessageObject(message, nil, true, extraData)
@@ -41,12 +41,27 @@ function methods:SendSystemMessageToSpeaker(message, speakerName, extraData)
 	end
 end
 
+function methods:SendMessageObjToFilters(message, messageObj, fromSpeaker)
+	local oldMessage = messageObj.Message
+	messageObj.Message = message
+	self:InternalDoMessageFilter(fromSpeaker.Name, messageObj, self.Name)
+	self.ChatService:InternalDoMessageFilter(fromSpeaker.Name, messageObj, self.Name)
+	local newMessage = messageObj.Message
+	messageObj.Message = oldMessage
+	return newMessage
+end
+
 function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraData)
 	local speaker = self.Speakers[speakerName]
 	if (speaker) then
+		local isMuted = speaker:IsSpeakerMuted(fromSpeaker)
+		if isMuted then
+			return
+		end
 
 		local isFiltered = speakerName == fromSpeaker
 		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
+		message = self:SendMessageObjToFilters(message, messageObj, fromSpeaker)
 		speaker:InternalSendMessage(messageObj, self.Name)
 
 		if not isFiltered then
@@ -192,20 +207,16 @@ function methods:InternalDestroy()
 	self.eDestroyed:Fire()
 end
 
-function methods:InternalDoMessageFilter(speakerName, message, channel)
+function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
 	for funcId, func in pairs(self.FilterMessageFunctions) do
 		local s, m = pcall(function()
-			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "string")
-			message = ret
+			func(speakerName, messageObj, channel)
 		end)
 
 		if (not s) then
 			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
 		end
 	end
-
-	return message
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)
@@ -232,9 +243,6 @@ function methods:InternalDoProcessCommands(speakerName, message, channel)
 end
 
 function methods:InternalPostMessage(fromSpeaker, message, extraData)
-	message = self:InternalDoMessageFilter(fromSpeaker.Name, message, self.Name)
-	message = self.ChatService:InternalDoMessageFilter(fromSpeaker.Name, message, self.Name)
-
 	if (self:InternalDoProcessCommands(fromSpeaker.Name, message, self.Name)) then return false end
 
 	if (self.Mutes[fromSpeaker.Name:lower()] ~= nil) then
@@ -248,18 +256,22 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	end
 
 	local messageObj = self:InternalCreateMessageObject(message, fromSpeaker.Name, false, extraData)
+	message = self:SendMessageObjToFilters(message, messageObj, fromSpeaker)
 
 	local sentToList = {}
 	for i, speaker in pairs(self.Speakers) do
-		table.insert(sentToList, speaker.Name)
-		if speaker.Name == fromSpeaker.Name then
-			-- Send unfiltered message to speaker who sent the message.
-			local cMessageObj = DeepCopy(messageObj)
-			cMessageObj.Message = message
-			cMessageObj.IsFiltered = true
-			speaker:InternalSendMessage(cMessageObj, self.Name)
-		else
-			speaker:InternalSendMessage(messageObj, self.Name)
+		local isMuted = speaker:IsSpeakerMuted(fromSpeaker.Name)
+		if not isMuted then
+			table.insert(sentToList, speaker.Name)
+			if speaker.Name == fromSpeaker.Name then
+				-- Send unfiltered message to speaker who sent the message.
+				local cMessageObj = DeepCopy(messageObj)
+				cMessageObj.Message = message
+				cMessageObj.IsFiltered = true
+				speaker:InternalSendMessage(cMessageObj, self.Name)
+			else
+				speaker:InternalSendMessage(messageObj, self.Name)
+			end
 		end
 	end
 
@@ -279,7 +291,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 			local cMessageObj = DeepCopy(messageObj)
 			cMessageObj.Message = filteredMessages[speakerName]
 			cMessageObj.IsFiltered = true
-			speaker:InternalSendFilteredMessage(cMessageObj, channel)
+			speaker:InternalSendFilteredMessage(cMessageObj, self.Name)
 		end
 	end
 
@@ -323,13 +335,8 @@ function methods:InternalRemoveExcessMessagesFromLog()
 	end
 end
 
-local function ChatHistorySortFunction(message1, message2)
-	return (message1.Time < message2.Time)
-end
-
 function methods:InternalAddMessageToHistoryLog(messageObj)
 	table.insert(self.ChatHistory, messageObj)
-	--table.sort(self.ChatHistory, ChatHistorySortFunction)
 
 	self:InternalRemoveExcessMessagesFromLog()
 end
@@ -337,9 +344,6 @@ end
 function methods:GetMessageType(message, fromSpeaker)
 	if fromSpeaker == nil then
 		return ChatConstants.MessageTypeSystem
-	end
-	if string.sub(message, 1, 3) == "/me" then
-		return ChatConstants.MessageTypeMeCommand
 	end
 	return ChatConstants.MessageTypeDefault
 end
@@ -377,17 +381,24 @@ function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, e
 	return messageObj
 end
 
+function methods:SetChannelNameColor(color)
+	self.ChannelNameColor = color
+	for i, speaker in pairs(self.Speakers) do
+		speaker:UpdateChannelNameColor(self.Name, color)
+	end
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChatChannel", methods)
 
-function module.new(vChatService, name, welcomeMessage)
-	local obj = {}
+function module.new(vChatService, name, welcomeMessage, channelNameColor)
+	local obj = setmetatable({}, methods)
 
 	obj.ChatService = vChatService
 
 	obj.Name = name
 	obj.WelcomeMessage = welcomeMessage or ""
+	obj.ChannelNameColor = channelNameColor
 
 	obj.Joinable = true
 	obj.Leavable = true
@@ -420,8 +431,6 @@ function module.new(vChatService, name, welcomeMessage)
 	obj.SpeakerLeft = obj.eSpeakerLeft.Event
 	obj.SpeakerMuted = obj.eSpeakerMuted.Event
 	obj.SpeakerUnmuted = obj.eSpeakerUnmuted.Event
-
-	ClassMaker.MakeClass("ChatChannel", obj)
 
 	return obj
 end

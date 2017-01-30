@@ -64,6 +64,10 @@ function StatsButtonClass:OnVisibilityChanged()
   if self._graph then 
     self._graph:OnVisibilityChanged()
   end
+  
+  if self._textPanel then 
+    self._textPanel:OnVisibilityChanged()
+  end
 end
 
 function StatsButtonClass:SetToggleCallbackFunction(callbackFunction) 

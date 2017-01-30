@@ -1,20 +1,20 @@
---	// FileName: SetCoreMessage.lua
+--	// FileName: WelcomeMessage.lua
 --	// Written by: TheGamer101
---	// Description: Create a message label for a message created with SetCore(ChatMakeSystemMessage).
+--	// Description: Create a message label for a welcome message.
 
 local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
 local util = require(script.Parent:WaitForChild("Util"))
 
-function CreateSetCoreMessageLabel(messageData, channelName)
+function CreateWelcomeMessageLabel(messageData, channelName)
 	local message = messageData.Message
 	local extraData = messageData.ExtraData or {}
 	local useFont = extraData.Font or ChatSettings.DefaultFont
-	local useTextSize = extraData.TextSize or ChatSettings.ChatWindowTextSize
-	local useColor = extraData.Color or ChatSettings.DefaultMessageColor
+	local useFontSize = extraData.FontSize or ChatSettings.ChatWindowTextSize
+	local useChatColor = extraData.ChatColor or ChatSettings.DefaultMessageColor
 
-	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useTextSize, useColor)
+	local BaseFrame, BaseMessage = util:CreateBaseMessage(message, useFont, useFontSize, useChatColor)
 
 	local function GetHeightFunction(xSize)
 		return util:GetMessageHeight(BaseMessage, BaseFrame, xSize)
@@ -40,6 +40,6 @@ function CreateSetCoreMessageLabel(messageData, channelName)
 end
 
 return {
-	[util.KEY_MESSAGE_TYPE] = ChatConstants.MessageTypeSetCore,
-	[util.KEY_CREATOR_FUNCTION] = CreateSetCoreMessageLabel
+	[util.KEY_MESSAGE_TYPE] = ChatConstants.MessageTypeWelcome,
+	[util.KEY_CREATOR_FUNCTION] = CreateWelcomeMessageLabel
 }

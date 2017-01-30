@@ -5,7 +5,7 @@
 local util = require(script.Parent:WaitForChild("Util"))
 
 function ProcessMessage(message, ChatWindow, ChatSettings)
-	if string.sub(message, 1, 3) ~= "/c " then
+	if string.sub(message, 1, 3):lower() ~= "/c " then
 		return false
 	end
 

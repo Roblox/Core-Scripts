@@ -17,27 +17,40 @@ local DEVICE_DESKTOP = 3
 
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
+function getClassicChatEnabled()
+	if ChatSettings.ClassicChatEnabled ~= nil then
+		return ChatSettings.ClassicChatEnabled
+	end
+	return Players.ClassicChat
+end
+
+function getBubbleChatEnabled()
+	if ChatSettings.BubbleChatEnabled ~= nil then
+		return ChatSettings.BubbleChatEnabled
+	end
+	return Players.BubbleChat
+end
 
 function bubbleChatOnly()
- 	return not Players.ClassicChat and Players.BubbleChat
+ 	return not getClassicChatEnabled() and getBubbleChatEnabled()
 end
 
 function methods:CreateGuiObjects(targetParent)
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.BackgroundTransparency = 1
-	BaseFrame.Active = true
+	BaseFrame.Active = ChatSettings.WindowDraggable
 	BaseFrame.Parent = targetParent
 
 	local ChatBarParentFrame = Instance.new("Frame")
@@ -166,6 +179,9 @@ function methods:CreateGuiObjects(targetParent)
 	end)
 
 	local function UpdatePositionFromDrag(atPos)
+		if ChatSettings.WindowDraggable == false and ChatSettings.WindowResizable == false then
+			return
+		end
 		local newSize = atPos - BaseFrame.AbsolutePosition + ChatResizerFrame.AbsoluteSize
 		BaseFrame.Size = UDim2.new(0, newSize.X, 0, newSize.Y)
 		if bubbleChatOnly() then
@@ -191,52 +207,6 @@ function methods:CreateGuiObjects(targetParent)
 			resizeLock = false
 		end
 	end)
-
-	if bubbleChatOnly() then
-		ChatBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
-		ChannelsBarParentFrame.Visible = false
-		ChatChannelParentFrame.Visible = false
-
-		local useXScale = 0
-		local useXOffset = 0
-
-		local screenGuiParent = GetScreenGuiParent()
-
-		if (deviceType == DEVICE_PHONE) then
-			useXScale = ChatSettings.DefaultWindowSizePhone.X.Scale
-			useXOffset = ChatSettings.DefaultWindowSizePhone.X.Offset
-
-		elseif (deviceType == DEVICE_TABLET) then
-			useXScale = ChatSettings.DefaultWindowSizeTablet.X.Scale
-			useXOffset = ChatSettings.DefaultWindowSizeTablet.X.Offset
-
-		else
-			useXScale = ChatSettings.DefaultWindowSizeTablet.X.Scale
-			useXOffset = ChatSettings.DefaultWindowSizeTablet.X.Offset
-
-		end
-
-		BaseFrame.Size = UDim2.new(useXScale, useXOffset, 0, chatBarYSize)
-		BaseFrame.Position = ChatSettings.DefaultWindowPosition
-
-	else
-
-		local screenGuiParent = GetScreenGuiParent()
-
-		if (deviceType == DEVICE_PHONE) then
-			BaseFrame.Size = ChatSettings.DefaultWindowSizePhone
-
-		elseif (deviceType == DEVICE_TABLET) then
-			BaseFrame.Size = ChatSettings.DefaultWindowSizeTablet
-
-		else
-			BaseFrame.Size = ChatSettings.DefaultWindowSizeDesktop
-
-		end
-
-		BaseFrame.Position = ChatSettings.DefaultWindowPosition
-
-	end
 
 	local function CalculateChannelsBarPixelSize(textSize)
 		if (deviceType == DEVICE_PHONE) then
@@ -264,6 +234,56 @@ function methods:CreateGuiObjects(targetParent)
 		return chatBarYSize
 	end
 
+	if bubbleChatOnly() then
+		ChatBarParentFrame.Position = UDim2.new(0, 0, 0, 0)
+		ChannelsBarParentFrame.Visible = false
+		ChannelsBarParentFrame.Active = false
+		ChatChannelParentFrame.Visible = false
+		ChatChannelParentFrame.Active = false
+
+		local useXScale = 0
+		local useXOffset = 0
+
+		local screenGuiParent = GetScreenGuiParent()
+
+		if (deviceType == DEVICE_PHONE) then
+			useXScale = ChatSettings.DefaultWindowSizePhone.X.Scale
+			useXOffset = ChatSettings.DefaultWindowSizePhone.X.Offset
+
+		elseif (deviceType == DEVICE_TABLET) then
+			useXScale = ChatSettings.DefaultWindowSizeTablet.X.Scale
+			useXOffset = ChatSettings.DefaultWindowSizeTablet.X.Offset
+
+		else
+			useXScale = ChatSettings.DefaultWindowSizeTablet.X.Scale
+			useXOffset = ChatSettings.DefaultWindowSizeTablet.X.Offset
+
+		end
+
+		local chatBarYSize = CalculateChatBarPixelSize()
+
+		BaseFrame.Size = UDim2.new(useXScale, useXOffset, 0, chatBarYSize)
+		BaseFrame.Position = ChatSettings.DefaultWindowPosition
+
+	else
+
+		local screenGuiParent = GetScreenGuiParent()
+
+		if (deviceType == DEVICE_PHONE) then
+			BaseFrame.Size = ChatSettings.DefaultWindowSizePhone
+
+		elseif (deviceType == DEVICE_TABLET) then
+			BaseFrame.Size = ChatSettings.DefaultWindowSizeTablet
+
+		else
+			BaseFrame.Size = ChatSettings.DefaultWindowSizeDesktop
+
+		end
+
+		BaseFrame.Position = ChatSettings.DefaultWindowPosition
+
+	end
+
 	if (deviceType == DEVICE_PHONE) then
 		ChatSettings.ChatWindowTextSize = ChatSettings.ChatWindowTextSizePhone
 		ChatSettings.ChatChannelsTabTextSize = ChatSettings.ChatChannelsTabTextSizePhone
@@ -271,6 +291,7 @@ function methods:CreateGuiObjects(targetParent)
 	end
 
 	local function UpdateDraggable(enabled)
+		BaseFrame.Active = enabled
 		BaseFrame.Draggable = enabled
 	end
 
@@ -331,7 +352,7 @@ function methods:CreateGuiObjects(targetParent)
 	end
 
 	local function UpdateShowChannelsBar(enabled)
-		ChannelsBarParentFrame.Visible = ChatSettings.ShowChannelsBar
+		ChannelsBarParentFrame.Visible = enabled
 		UpdateChatChannelParentFrameSize()
 	end
 
@@ -339,7 +360,7 @@ function methods:CreateGuiObjects(targetParent)
 	UpdateChatBarTextSize(ChatSettings.ChatBarTextSize)
 	UpdateDraggable(ChatSettings.WindowDraggable)
 	UpdateResizable(ChatSettings.WindowResizable)
-	UpdateShowChannelsBar(ChatSettings.ShowTopChannelsBar)
+	UpdateShowChannelsBar(ChatSettings.ShowChannelsBar)
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
 		if (setting == "WindowDraggable") then
@@ -360,7 +381,7 @@ function methods:CreateGuiObjects(targetParent)
 		end
 	end)
 
-	rawset(self, "GuiObject", BaseFrame)
+	self.GuiObject = BaseFrame
 
 	self.GuiObjects.BaseFrame = BaseFrame
 	self.GuiObjects.ChatBarParentFrame = ChatBarParentFrame
@@ -371,18 +392,22 @@ function methods:CreateGuiObjects(targetParent)
 	self:AnimGuiObjects()
 end
 
+function methods:GetChatBar()
+	return self.ChatBar
+end
+
 function methods:RegisterChatBar(ChatBar)
-	rawset(self, "ChatBar", ChatBar)
+	self.ChatBar = ChatBar
 	self.ChatBar:CreateGuiObjects(self.GuiObjects.ChatBarParentFrame)
 end
 
 function methods:RegisterChannelsBar(ChannelsBar)
-	rawset(self, "ChannelsBar", ChannelsBar)
+	self.ChannelsBar = ChannelsBar
 	self.ChannelsBar:CreateGuiObjects(self.GuiObjects.ChannelsBarParentFrame)
 end
 
 function methods:RegisterMessageLogDisplay(MessageLogDisplay)
-	rawset(self, "MessageLogDisplay", MessageLogDisplay)
+	self.MessageLogDisplay = MessageLogDisplay
 	self.MessageLogDisplay.GuiObject.Parent = self.GuiObjects.ChatChannelParentFrame
 end
 
@@ -451,8 +476,8 @@ function methods:RemoveChannel(channelName)
 		self:SwitchCurrentChannel(targetSwitchChannel)
 	end
 
-	if (not ChatSettings.ShowChannelsBar) then
-		if (rawget(self.ChatBar, "TargetChannel") == channelName) then
+	if not ChatSettings.ShowChannelsBar then
+		if self.ChatBar.TargetChannel == channelName then
 			self.ChatBar:SetChannelTarget(ChatSettings.GeneralChannelName)
 		end
 	end
@@ -464,7 +489,7 @@ end
 
 function methods:GetTargetMessageChannel()
 	if (not ChatSettings.ShowChannelsBar) then
-		return rawget(self.ChatBar, "TargetChannel")
+		return self.ChatBar.TargetChannel
 	else
 		local curChannel = self:GetCurrentChannel()
 		return curChannel and curChannel.Name
@@ -472,7 +497,7 @@ function methods:GetTargetMessageChannel()
 end
 
 function methods:GetCurrentChannel()
-	return rawget(self, "CurrentChannel")
+	return self.CurrentChannel
 end
 
 function methods:SwitchCurrentChannel(channelName)
@@ -487,6 +512,9 @@ function methods:SwitchCurrentChannel(channelName)
 
 	local cur = self:GetCurrentChannel()
 	local new = self:GetChannel(channelName)
+	if new == nil then
+		error(string.format("Channel '%s' does not exist.", channelName))
+	end
 
 	if (new ~= cur) then
 		if (cur) then
@@ -501,7 +529,7 @@ function methods:SwitchCurrentChannel(channelName)
 			tab:SetActive(true)
 		end
 
-		rawset(self, "CurrentChannel", new)
+		self.CurrentChannel = new
 	end
 
 end
@@ -534,11 +562,6 @@ end
 
 function methods:DisableResizable()
 	self.GuiObjects.ChatResizerFrame.Active = false
-end
-
-function methods:ResetResizerPosition()
-	local ChatResizerFrame = self.GuiObjects.ChatResizerFrame
-	ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
 end
 
 function methods:FadeOutBackground(duration)
@@ -598,10 +621,9 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChatWindow", methods)
 
 function module.new()
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.GuiObject = nil
 	obj.GuiObjects = {}
@@ -617,8 +639,6 @@ function module.new()
 	obj.CoreGuiEnabled = true
 
 	obj.AnimParams = {}
-
-	ClassMaker.MakeClass("ChatWindow", obj)
 
 	obj:InitializeAnimParams()
 
