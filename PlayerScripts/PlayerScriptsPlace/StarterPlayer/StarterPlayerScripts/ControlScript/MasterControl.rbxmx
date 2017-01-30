@@ -63,7 +63,10 @@ function MasterControl:Init()
 			if not humanoid then return end
 			
 			if humanoid and not humanoid.PlatformStand and isJumping then
-				humanoid.Jump = isJumping
+				local state = humanoid:GetState()
+				if state ~= Enum.HumanoidStateType.Jumping and state ~= Enum.HumanoidStateType.Freefall and state ~= Enum.HumanoidStateType.Landed then
+					humanoid.Jump = isJumping
+				end
 			end
 			
 			local adjustedMoveValue = moveValue
@@ -111,6 +114,10 @@ end
 
 function MasterControl:SetIsJumping(jumping)
 	isJumping = jumping
+	local humanoid = self:GetHumanoid()
+	if humanoid and not humanoid.PlatformStand then
+		humanoid.Jump = isJumping
+	end
 end
 
 function MasterControl:DoJump()
