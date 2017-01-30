@@ -174,7 +174,6 @@ end
 
 
 function StatsTextPanelClass:SetStatsAggregator(aggregator)
-  print ("Calling StatsTextPanelClass:StatsTextPanelClass with aggregator = ", aggregator)
   if (self._aggregator) then
     self._aggregator:RemoveListener(self._listenerId)
     self._listenerId = nil
@@ -182,13 +181,13 @@ function StatsTextPanelClass:SetStatsAggregator(aggregator)
   end
   
   self._aggregator = aggregator
-    
-  self:RefreshVisibility()
+  
+  self:_refreshVisibility()
 end
 
-function StatsTextPanelClass:SetVisible(visible)
+function StatsTextPanelClass:SetVisible(visible)  
   self._frame.Visible = visible
-  self:RefreshVisibility()
+  self:_refreshVisibility()
 end
 
 function StatsTextPanelClass:_shouldBeVisible()
@@ -200,7 +199,7 @@ function StatsTextPanelClass:_shouldBeVisible()
 end
 
 
-function StatsTextPanelClass:RefreshVisibility()  
+function StatsTextPanelClass:_refreshVisibility()  
   if self:_shouldBeVisible() then
     self:_startListening()
     self:_updateFromAggregator()
@@ -253,9 +252,6 @@ function StatsTextPanelClass:_updateFromAggregator()
   
   self._currentValueDecoration.ImageColor3 = StatsUtils.GetColorForValue(value, target) 
   
-  if (self._statType == StatsUtils.StatType_Memory) then
-    print("This is memory")
-  end
 end
 
 function StatsTextPanelClass:SetZIndex(zIndex)

@@ -91,7 +91,11 @@ end
 function StatsViewerClass:SetStatType(statType) 
   self._statType = statType
   self._frameImageLabel:ClearAllChildren()
-  self._textPanel = nil  
+  -- If there's already a text panel, make it clear it is no longer visible.
+  if (self._textPanel) then 
+    self._textPanel:SetVisible(false)
+    self._textPanel = nil
+  end
   
   self._textPanel = StatsTextPanelClass.new(statType, true)
   self._textPanel:PlaceInParent(self._frameImageLabel,
