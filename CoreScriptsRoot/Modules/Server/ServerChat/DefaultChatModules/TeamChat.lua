@@ -2,6 +2,10 @@
 --	// Written by: Xsitsu
 --	// Description: Module that handles all team chat.
 
+local Chat = game:GetService("Chat")
+local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
+local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
+
 local errorExtraData = {ChatColor = Color3.fromRGB(245, 50, 50)}
 
 local function Run(ChatService)
@@ -29,7 +33,11 @@ local function Run(ChatService)
 						if (otherPlayer) then
 
 							if (player.Team == otherPlayer.Team) then
-								local extraData = {NameColor = player.TeamColor.Color, ChatColor = player.TeamColor.Color}
+								local extraData = {
+									NameColor = player.TeamColor.Color,
+									ChatColor = player.TeamColor.Color,
+									ChannelColor = player.TeamColor.Color
+								}
 								otherSpeaker:SendMessage(message, channelName, fromSpeaker, extraData)
 							else
 								--// Could use this line to obfuscate message for cool effects
@@ -84,11 +92,18 @@ local function Run(ChatService)
 			error("Message is nil")
 		end
 
+		if channel == "Team" then
+			return false
+		end
+
 		if string.sub(message, 1, 6):lower() == "/team " or message:lower() == "/team" then
 			DoTeamCommand(fromSpeaker, string.sub(message, 7), channel)
 			processedCommand = true
 		elseif string.sub(message, 1, 3):lower() == "/t " or message:lower() == "/t" then
 			DoTeamCommand(fromSpeaker, string.sub(message, 4), channel)
+			processedCommand = true
+		elseif string.sub(message, 1, 2):lower() == "% " or message:lower() == "%" then
+			DoTeamCommand(fromSpeaker, string.sub(message, 3), channel)
 			processedCommand = true
 		end
 
@@ -97,13 +112,26 @@ local function Run(ChatService)
 
 	ChatService:RegisterProcessCommandsFunction("team_commands", TeamCommandsFunction)
 
+	local function GetDefaultChannelNameColor()
+		if ChatSettings.DefaultChannelNameColor then
+			return ChatSettings.DefaultChannelNameColor
+		end
+		return Color3.fromRGB(35, 76, 142)
+	end
+
 	local function PutSpeakerInCorrectTeamChatState(speakerObj, playerObj)
-		if (playerObj.Neutral and speakerObj:IsInChannel(channel.Name)) then
-			speakerObj:LeaveChannel(channel.Name)
+		if playerObj.Neutral or playerObj.Team == nil then
+			speakerObj:UpdateChannelNameColor(channel.Name, GetDefaultChannelNameColor())
 
-		elseif (not playerObj.Neutral and not speakerObj:IsInChannel(channel.Name)) then
-			speakerObj:JoinChannel(channel.Name)
+			if speakerObj:IsInChannel(channel.Name) then
+				speakerObj:LeaveChannel(channel.Name)
+			end
+		elseif not playerObj.Neutral and playerObj.Team then
+			speakerObj:UpdateChannelNameColor(channel.Name, playerObj.Team.TeamColor.Color)
 
+			if not speakerObj:IsInChannel(channel.Name) then
+				speakerObj:JoinChannel(channel.Name)
+			end
 		end
 	end
 

@@ -1,6 +1,13 @@
---	// FileName: DefaultChatMessage.lua
+--	// FileName: WhisperMessage.lua
 --	// Written by: TheGamer101
---	// Description: Create a message label for a standard chat message.
+--	// Description: Create a message label for a whisper chat message.
+
+local PlayersService = game:GetService("Players")
+local LocalPlayer = PlayersService.LocalPlayer
+while not LocalPlayer do
+	PlayersService.ChildAdded:wait()
+	LocalPlayer = PlayersService.LocalPlayer
+end
 
 local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
@@ -28,7 +35,12 @@ function CreateMessageLabel(messageData, channelName)
 	local ChannelButton = nil
 
 	if channelName ~= messageData.OriginalChannel then
-			local formatChannelName = string.format("{%s}", messageData.OriginalChannel)
+			local whisperString = messageData.OriginalChannel
+			if messageData.FromSpeaker ~= LocalPlayer.Name then
+				whisperString = string.format("From %s", messageData.FromSpeaker)
+			end
+
+			local formatChannelName = string.format("{%s}", whisperString)
 			ChannelButton = util:AddChannelButtonToBaseMessage(BaseMessage, useChannelColor, formatChannelName, messageData.OriginalChannel)
 			NameButton.Position = UDim2.new(0, ChannelButton.Size.X.Offset + util:GetStringTextBounds(" ", useFont, useTextSize).X, 0, 0)
 			numNeededSpaces = numNeededSpaces + util:GetNumberOfSpaces(formatChannelName, useFont, useTextSize) + 1
@@ -80,6 +92,6 @@ function CreateMessageLabel(messageData, channelName)
 end
 
 return {
-	[util.KEY_MESSAGE_TYPE] = ChatConstants.MessageTypeDefault,
+	[util.KEY_MESSAGE_TYPE] = ChatConstants.MessageTypeWhisper,
 	[util.KEY_CREATOR_FUNCTION] = CreateMessageLabel
 }

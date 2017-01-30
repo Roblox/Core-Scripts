@@ -7,19 +7,19 @@ local OBJECT_POOL_SIZE = 50
 local module = {}
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local clientChatModules = ReplicatedStorage:WaitForChild("ClientChatModules")
+local Chat = game:GetService("Chat")
+local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
 local messageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 local modulesFolder = script.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local moduleObjectPool = require(modulesFolder:WaitForChild("ObjectPool"))
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 function ReturnToObjectPoolRecursive(instance, objectPool)
 	local children = instance:GetChildren()
@@ -34,9 +34,11 @@ function GetMessageCreators()
 	local typeToFunction = {}
 	local creators = messageCreatorModules:GetChildren()
 	for i = 1, #creators do
-		if creators[i].Name ~= "Util" then
-			local creator = require(creators[i])
-			typeToFunction[creator[messageCreatorUtil.KEY_MESSAGE_TYPE]] = creator[messageCreatorUtil.KEY_CREATOR_FUNCTION]
+		if creators[i]:IsA("ModuleScript") then
+			if creators[i].Name ~= "Util" then
+				local creator = require(creators[i])
+				typeToFunction[creator[messageCreatorUtil.KEY_MESSAGE_TYPE]] = creator[messageCreatorUtil.KEY_CREATOR_FUNCTION]
+			end
 		end
 	end
 	return typeToFunction
@@ -44,6 +46,10 @@ end
 
 function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 	local BaseFrame = createdMessageObject[messageCreatorUtil.KEY_BASE_FRAME]
+	local BaseMessage = nil
+	if messageCreatorUtil.KEY_BASE_MESSAGE then
+		BaseMessage = createdMessageObject[messageCreatorUtil.KEY_BASE_MESSAGE]
+	end
 	local UpdateTextFunction = createdMessageObject[messageCreatorUtil.KEY_UPDATE_TEXT_FUNC]
 	local GetHeightFunction = createdMessageObject[messageCreatorUtil.KEY_GET_HEIGHT]
 	local FadeInFunction = createdMessageObject[messageCreatorUtil.KEY_FADE_IN]
@@ -54,6 +60,7 @@ function methods:WrapIntoMessageObject(messageData, createdMessageObject)
 
 	obj.ID = messageData.ID
 	obj.BaseFrame = BaseFrame
+	obj.BaseMessage = BaseMessage
 	obj.UpdateTextFunction = UpdateTextFunction or function() warn("NO MESSAGE RESIZE FUNCTION") end
 	obj.GetHeightFunction = GetHeightFunction
 	obj.FadeInFunction = FadeInFunction
@@ -89,16 +96,13 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("MessageLabelCreator", methods)
 
 function module.new()
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.ObjectPool = moduleObjectPool.new(OBJECT_POOL_SIZE)
 	obj.MessageCreators = GetMessageCreators()
 	obj.DefaultCreatorType = messageCreatorUtil.DEFAULT_MESSAGE_CREATOR
-
-	ClassMaker.MakeClass("MessageLabelCreator", obj)
 
 	messageCreatorUtil:RegisterObjectPool(obj.ObjectPool)
 

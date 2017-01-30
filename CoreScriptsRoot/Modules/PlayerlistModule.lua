@@ -21,8 +21,12 @@ if LoadLibrary then
 end
 
 while not PlayersService.LocalPlayer do
+	-- This does not follow the usual pattern of PlayersService:PlayerAdded:Wait()
+	-- because it caused a bug where the local players name would show as Player in game.
+	-- The local players name is not yet set when the PlayerAdded event fires.
   wait()
 end
+
 local Player = PlayersService.LocalPlayer
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 
@@ -193,7 +197,7 @@ local function getFriendStatusIcon(friendStatus)
 end
 
 local function getCustomPlayerIcon(player)
-  local userIdStr = tostring(player.userId)
+  local userIdStr = tostring(player.UserId)
   if CUSTOM_ICONS[userIdStr] then return nil end
   --
 
@@ -220,7 +224,7 @@ local function setAvatarIconAsync(player, iconImage)
 
   local isFinalSuccess = false
   if thumbnailLoader then
-    local loader = thumbnailLoader:Create(iconImage, player.userId,
+    local loader = thumbnailLoader:Create(iconImage, player.UserId,
       thumbnailLoader.Sizes.Small, thumbnailLoader.AssetType.Avatar, true)
     isFinalSuccess = loader:LoadAsync(false, true, nil)
   end
@@ -235,14 +239,14 @@ local function getMembershipIcon(player)
     -- return nothing, we need to spawn off setAvatarIconAsync() as a later time to not block
     return ""
   else
-    if blockingUtility:IsPlayerBlockedByUserId(player.userId) then
+    if blockingUtility:IsPlayerBlockedByUserId(player.UserId) then
       return BLOCKED_ICON
     else
-      local userIdStr = tostring(player.userId)
+      local userIdStr = tostring(player.UserId)
       local membershipType = player.MembershipType
       if CUSTOM_ICONS[userIdStr] then
         return CUSTOM_ICONS[userIdStr]
-      elseif player.userId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
+      elseif player.UserId == game.CreatorId and game.CreatorType == Enum.CreatorType.User then
         return PLACE_OWNER_ICON
       elseif membershipType == Enum.MembershipType.None then
         return ""
@@ -308,25 +312,25 @@ Container.Name = "PlayerListContainer"
 Container.Size = MinContainerSize
 
 if isTenFootInterface then
-  Container.Position = UDim2.new(0.5, -MinContainerSize.X.Offset/2, 0.25, 0)  
+  Container.Position = UDim2.new(0.5, -MinContainerSize.X.Offset/2, 0.25, 0)
 else
   Container.Position = UDim2.new(1, -167, 0, 2)
 end
 
--- Every time Performance Stats toggles on/off we need to 
+-- Every time Performance Stats toggles on/off we need to
 -- reposition the main Container, so things don't overlap.
--- Optimally I could just call an "UpdateContainerPosition" function 
--- that takes into account everything that affects Container position 
+-- Optimally I could just call an "UpdateContainerPosition" function
+-- that takes into account everything that affects Container position
 -- and recalculate things.
--- 
+--
 -- Unfortunately, the position of Container may be kind of hard to re-calculate
 -- on the fly when it's been shaped based on current leader board state.
 --
--- So instead we do this: 
--- We always track where we'd be putting the widget if there were no 
+-- So instead we do this:
+-- We always track where we'd be putting the widget if there were no
 -- position stats in targetContainerYOffset.
 -- Whenever we reposition Container, we first move it to the ignoring-stats
--- location, (updating targetContainerYOffset), then call the 
+-- location, (updating targetContainerYOffset), then call the
 -- AdjustContainerPosition function to derive final position.
 local targetContainerYOffset = Container.Position.Y.Offset
 
@@ -335,29 +339,29 @@ Container.Visible = false
 Container.Parent = RobloxGui
 
 local function AdjustContainerPosition()
-  -- A function to position the Container in light of presence of performance stats.  
+  -- A function to position the Container in light of presence of performance stats.
   if Container == nil then
     return
   end
 
   -- Account for presence/absence of performance stats buttons.
-  local localPlayer = PlayersService.LocalPlayer  
+  local localPlayer = PlayersService.LocalPlayer
   local isPerformanceStatsVisible = (GameSettings.PerformanceStatsVisible and localPlayer ~= nil)
-  local yOffset = targetContainerYOffset      
-  if isPerformanceStatsVisible then 
+  local yOffset = targetContainerYOffset
+  if isPerformanceStatsVisible then
     yOffset = yOffset + StatsUtils.ButtonHeight
   end
 
-  Container.Position = UDim2.new(Container.Position.X.Scale, 
-    Container.Position.X.Offset, 
-    Container.Position.Y.Scale, 
+  Container.Position = UDim2.new(Container.Position.X.Scale,
+    Container.Position.X.Offset,
+    Container.Position.Y.Scale,
     yOffset)
 end
 
--- When quick profiler button row visiblity changes, update position of 
+-- When quick profiler button row visiblity changes, update position of
 -- Container.
 GameSettings.PerformanceStatsVisibleChanged:connect(AdjustContainerPosition)
-AdjustContainerPosition()    
+AdjustContainerPosition()
 
 -- Scrolling Frame
 local noSelectionObject = Instance.new("Frame")
@@ -739,11 +743,11 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
   if isTenFootInterface then
     -- open the profile UI for the selected user. On console we allow user to select themselves
     -- they may want quick access to platform profile features
-    openPlatformProfileUI(selectedPlayer.userId)
+    openPlatformProfileUI(selectedPlayer.UserId)
     return
   end
 
-  if selectedPlayer ~= Player and selectedPlayer.userId > 1 and Player.userId > 1 then
+  if selectedPlayer ~= Player and selectedPlayer.UserId > 1 and Player.UserId > 1 then
     if LastSelectedFrame ~= selectedFrame then
       if LastSelectedFrame then
         for _,childFrame in pairs(LastSelectedFrame:GetChildren()) do
@@ -762,7 +766,7 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
       -- NOTE: Core script only
       ScrollList.ScrollingEnabled = false
 
-      local PopupFrame = playerDropDown:CreatePopup(selectedPlayer)		
+      local PopupFrame = playerDropDown:CreatePopup(selectedPlayer)
       PopupFrame.Position = UDim2.new(1, 1, 0, selectedFrame.Position.Y.Offset - ScrollList.CanvasPosition.y)
       PopupFrame.Parent = PopupClipFrame
       PopupFrame:TweenPosition(UDim2.new(0, 0, 0, selectedFrame.Position.Y.Offset - ScrollList.CanvasPosition.y), Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
@@ -813,7 +817,7 @@ local function setFollowRelationshipsView(relationshipTable)
   for i = 1, #PlayerEntries do
     local entry = PlayerEntries[i]
     local player = entry.Player
-    local userId = tostring(player.userId)
+    local userId = tostring(player.UserId)
 
     -- don't update icon if already friends
     local friendStatus = getFriendStatus(player)
@@ -833,11 +837,13 @@ local function setFollowRelationshipsView(relationshipTable)
       end
     end
 
-    local frame = entry.Frame
-    local bgFrame = frame:FindFirstChild('BGFrame')
-    if bgFrame then
-      updateSocialIcon(icon, bgFrame)
-    end
+	if icon then
+		local frame = entry.Frame
+		local bgFrame = frame:FindFirstChild('BGFrame')
+		if bgFrame then
+		  updateSocialIcon(icon, bgFrame)
+		end
+	end
   end
 end
 
@@ -1490,12 +1496,11 @@ UserInputService.InputBegan:connect(function(inputObject, isProcessed)
 -- NOTE: Core script only
 
 --[[ Player Add/Remove Connections ]]--
-PlayersService.ChildAdded:connect(function(child)
-    if child:IsA('Player') then
-      insertPlayerEntry(child)
-    end
-  end)
-for _,player in pairs(PlayersService:GetPlayers()) do
+PlayersService.PlayerAdded:connect(function(child)
+  insertPlayerEntry(child)
+end)
+
+for _, player in ipairs(PlayersService:GetPlayers()) do
   insertPlayerEntry(player)
 end
 
@@ -1518,7 +1523,7 @@ if not isTenFootInterface then
 end
 
 PlayersService.ChildRemoved:connect(function(child)
-  if child:IsA('Player') then
+  if child:IsA("Player") then
     if LastSelectedPlayer and child == LastSelectedPlayer then
       playerDropDown:Hide()
     end

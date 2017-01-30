@@ -19,8 +19,8 @@ local SpecialChatColors = {
 	Players = {
 		{
 			--- Left as an example
-			PlayerName = "TheGamer101",
-			ChatColor = Color3.new(205/255, 0, 0)
+			--  UserId = 2231221,
+			--  ChatColor = Color3.new(205/255, 0, 0)
 		}
 	}
 }
@@ -30,8 +30,8 @@ local function MakeIsInGroup(groupId, requiredRank)
 
 	local inGroupCache = {}
 	return function(player)
-		if player and player.userId then
-			local userId = player.userId
+		if player and player.UserId then
+			local userId = player.UserId
 
 			if inGroupCache[userId] == nil then
 				local inGroup = false
@@ -68,9 +68,12 @@ local Players = game:GetService("Players")
 
 function GetSpecialChatColor(speakerName)
 	if SpecialChatColors.Players then
-		for _, player in pairs(SpecialChatColors.Players) do
-			if speakerName:lower() == player.PlayerName:lower() then
-				return player.ChatColor
+		local playerFromSpeaker = Players:FindFirstChild(speakerName)
+		if playerFromSpeaker then
+			for _, player in pairs(SpecialChatColors.Players) do
+				if playerFromSpeaker.UserId == player.UserId then
+					return player.ChatColor
+				end
 			end
 		end
 	end
@@ -129,9 +132,17 @@ local function Run(ChatService)
 
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speaker = ChatService:GetSpeaker(speakerName)
+		local player = speaker:GetPlayer()
 
 		if (not speaker:GetExtraData("NameColor")) then
 			speaker:SetExtraData("NameColor", GetNameColor(speaker))
+		end
+		if (player) then
+			player.Changed:connect(function(property)
+				if property == "TeamColor" or property == "Neutral" or property == "Team" then
+					speaker:SetExtraData("NameColor", GetNameColor(speaker))
+				end
+			end)
 		end
 		if (not speaker:GetExtraData("ChatColor")) then
 			local specialChatColor = GetSpecialChatColor(speakerName)

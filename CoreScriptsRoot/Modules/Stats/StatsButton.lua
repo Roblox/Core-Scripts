@@ -68,6 +68,10 @@ function StatsButtonClass:OnPerformanceStatsShouldBeVisibleChanged()
   if self._textPanel then 
     self._textPanel:OnPerformanceStatsShouldBeVisibleChanged()
   end
+  
+  if self._textPanel then 
+    self._textPanel:OnVisibilityChanged()
+  end
 end
 
 function StatsButtonClass:SetToggleCallbackFunction(callbackFunction) 

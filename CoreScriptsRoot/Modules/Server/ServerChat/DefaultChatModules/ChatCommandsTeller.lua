@@ -5,7 +5,7 @@
 local function Run(ChatService)
 
 	local function ProcessCommandsFunction(fromSpeaker, message, channel)
-		if (message == "/?" or message == "/help") then
+		if (message:lower() == "/?" or message:lower() == "/help") then
 			local speaker = ChatService:GetSpeaker(fromSpeaker)
 			speaker:SendSystemMessage("These are the basic chat commands.", channel)
 			speaker:SendSystemMessage("/me <text> : roleplaying command for doing actions.", channel)
@@ -13,6 +13,8 @@ local function Run(ChatService)
 			speaker:SendSystemMessage("/join <channel> or /j <channel> : join channel.", channel)
 			speaker:SendSystemMessage("/leave <channel> or /l <channel> : leave channel. (leaves current if none specified)", channel)
 			speaker:SendSystemMessage("/whisper <speaker> or /w <speaker> : open private message channel with speaker.", channel)
+			speaker:SendSystemMessage("/mute <speaker> : mute a speaker.", channel)
+			speaker:SendSystemMessage("/unmute <speaker> : unmute a speaker.", channel)
 
 			local player = speaker:GetPlayer()
 			if player and player.Team then

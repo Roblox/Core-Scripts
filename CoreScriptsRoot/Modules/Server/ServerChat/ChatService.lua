@@ -10,13 +10,13 @@ local Chat = game:GetService("Chat")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local ChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local Speaker = require(modulesFolder:WaitForChild("Speaker"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 function methods:AddChannel(channelName)
 	if (self.ChatChannels[channelName:lower()]) then
@@ -191,20 +191,16 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 	return message
 end
 
-function methods:InternalDoMessageFilter(speakerName, message, channel)
+function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
 	for funcId, func in pairs(self.FilterMessageFunctions) do
 		local s, m = pcall(function()
-			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "string")
-			message = ret
+			func(speakerName, messageObj, channel)
 		end)
 
 		if (not s) then
 			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
 		end
 	end
-
-	return message
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)
@@ -236,7 +232,7 @@ function methods:InternalGetUniqueMessageId()
 	return id
 end
 
-function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj)
+function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj, fireSpeakerAdded)
 	if (self.Speakers[speakerName:lower()]) then
 		error("Speaker \"" .. speakerName .. "\" already exists!")
 	end
@@ -245,20 +241,28 @@ function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj)
 	speaker:InternalAssignPlayerObject(playerObj)
 	self.Speakers[speakerName:lower()] = speaker
 
-	local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
-	if not success and err then
-		print("Error adding speaker: " ..err)
+	if fireSpeakerAdded then
+		local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+		if not success and err then
+			print("Error adding speaker: " ..err)
+		end
 	end
 
 	return speaker
 end
 
+function methods:InternalFireSpeakerAdded(speakerName)
+	local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+	if not success and err then
+		print("Error firing speaker added: " ..err)
+	end
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChatService", methods)
 
 function module.new()
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.MessageIdCounter = 0
 
@@ -277,8 +281,6 @@ function module.new()
 	obj.ChannelRemoved = obj.eChannelRemoved.Event
 	obj.SpeakerAdded = obj.eSpeakerAdded.Event
 	obj.SpeakerRemoved = obj.eSpeakerRemoved.Event
-
-	ClassMaker.MakeClass("ChatService", obj)
 
 	return obj
 end

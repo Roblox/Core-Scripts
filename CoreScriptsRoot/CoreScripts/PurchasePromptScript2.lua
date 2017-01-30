@@ -184,6 +184,13 @@ local ASSET_TO_STRING = {
 	[45] = "Front Accessory";
 	[46] = "Back Accessory";
 	[47] = "Waist Accessory";
+	[48] = "Climb Animation";
+	[50] = "Fall Animation";
+	[51] = "Idle Animation";
+	[52] = "Jump Animation";
+	[53] = "Run Animation";
+	[54] = "Swim Animation";
+	[55] = "Walk Animation";
 	[0]  = "Product";
 	-- NOTE: GamePass and Plugin AssetTypeIds are now in sync on ST1, ST2 and ST3
 }
@@ -828,7 +835,7 @@ local function onPromptEnded(isSuccess)
 
 	closePurchaseDialog()
 	if IsPurchasingConsumable then
-		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.userId, PurchaseData.ProductId, didPurchase)
+		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.UserId, PurchaseData.ProductId, didPurchase)
 	else
 		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, didPurchase)
 	end
@@ -1046,7 +1053,7 @@ local function canPurchase(disableUpsell)
 			return false
 		end
 	else
-		if game.Players.LocalPlayer.userId < 0 then
+		if game.Players.LocalPlayer.UserId < 0 then
 			onPurchaseFailed(PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST)
 			return false
 		end
@@ -1326,7 +1333,7 @@ local function onAcceptPurchase()
 			onPurchaseFailed(PURCHASE_FAILED.DEFAULT_ERROR)
 			return
 		end
-		MarketplaceService:SignalClientPurchaseSuccess(tostring(result["receipt"]), Players.LocalPlayer.userId, productId)
+		MarketplaceService:SignalClientPurchaseSuccess(tostring(result["receipt"]), Players.LocalPlayer.UserId, productId)
 	else
 		onPurchaseSuccess()
 		if PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
@@ -1553,7 +1560,7 @@ MarketplaceService.ServerPurchaseVerification:connect(function(serverResponseTab
 		return
 	end
 
-	if serverResponseTable["playerId"] and tonumber(serverResponseTable["playerId"]) == Players.LocalPlayer.userId then
+	if serverResponseTable["playerId"] and tonumber(serverResponseTable["playerId"]) == Players.LocalPlayer.UserId then
 		onPurchaseSuccess()
 	end
 end)
