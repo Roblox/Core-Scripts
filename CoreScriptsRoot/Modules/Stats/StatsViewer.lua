@@ -47,9 +47,12 @@ function StatsViewerClass.new()
   return self
 end
 
-function StatsViewerClass:OnVisibilityChanged()
+function StatsViewerClass:OnPerformanceStatsShouldBeVisibleChanged()
   if self._graph then 
-    self._graph:OnVisibilityChanged()
+    self._graph:OnPerformanceStatsShouldBeVisibleChanged()
+  end
+  if self._textPanel then 
+    self._textPanel:OnPerformanceStatsShouldBeVisibleChanged()
   end
 end
 
@@ -62,8 +65,8 @@ function StatsViewerClass:GetStatType()
 end
 
 function StatsViewerClass:SetSizeAndPosition(size, position)
-  self._frameImageLabel.Size = size;
-  self._frameImageLabel.Position = position;
+  self._frameImageLabel.Size = size
+  self._frameImageLabel.Position = position
 end
 
 function StatsViewerClass:SetParent(parent)
@@ -71,7 +74,15 @@ function StatsViewerClass:SetParent(parent)
 end
   
 function StatsViewerClass:SetVisible(visible)
-  self._frameImageLabel.Visible = visible;
+  self._frameImageLabel.Visible = visible
+  
+  if (self._graph) then   
+    self._graph:SetVisible(visible)
+  end
+  
+  if (self._textPanel) then 
+    self._textPanel:SetVisible(visible)
+  end
 end
 
 function StatsViewerClass:SetStatType(statType) 
@@ -91,6 +102,10 @@ function StatsViewerClass:SetStatType(statType)
   
   self._textPanel:SetZIndex(StatsUtils.TextZIndex)
   self._graph:SetZIndex(StatsUtils.GraphZIndex)
+  
+  self._graph:SetVisible(self._frameImageLabel.Visible)
+  self._textPanel:SetVisible(self._frameImageLabel.Visible)
+
   
   self:_applyStatsAggregator();
 end

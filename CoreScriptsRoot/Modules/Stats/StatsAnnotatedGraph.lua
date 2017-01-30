@@ -155,7 +155,7 @@ function StatsAnnotatedGraphClass:SetStatsAggregator(aggregator)
   
   self._aggregator = aggregator
   
-  self:OnVisibilityChanged()
+  self:RefreshVisibility()
 end
 
 function StatsAnnotatedGraphClass:_stopListening()
@@ -185,15 +185,30 @@ function StatsAnnotatedGraphClass:_startListening()
   end)  
 end
 
+function StatsAnnotatedGraphClass:_shouldBeVisible()
+  if StatsUtils:PerformanceStatsShouldBeVisible() then 
+    return self._frame.Visible
+  else
+    return false
+  end
+end
 
+function StatsAnnotatedGraphClass:SetVisible(visible)
+  self._frame.Visible = visible
+  self:RefreshVisibility()
+end
 
-function StatsAnnotatedGraphClass:OnVisibilityChanged()
-  if StatsUtils.PerformanceStatsShouldBeVisible() then
+function StatsAnnotatedGraphClass:RefreshVisibility()
+  if self:_shouldBeVisible() then
     self:_startListening()
     self:_updateValuesAndRender()
   else
     self:_stopListening()
   end
+end
+
+function StatsAnnotatedGraphClass:OnPerformanceStatsShouldBeVisibleChanged()
+  self:RefreshVisibility()
 end
 
 function StatsAnnotatedGraphClass:_recursiveGetOrderOfMagnitude(estimate, target)

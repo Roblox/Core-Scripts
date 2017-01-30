@@ -52,7 +52,9 @@ function StatsMiniTextPanelClass.new(statType)
   self._frame.ZIndex = StatsUtils.TextPanelZIndex
   
   self._titleLabel = Instance.new("TextLabel")
+  self._titleLabel.Name = "TitleLabel"
   self._valueLabel = Instance.new("TextLabel")
+  self._valueLabel.Name = "ValueLabel"
 
   StatsUtils.StyleTextWidget(self._titleLabel)
   StatsUtils.StyleTextWidget(self._valueLabel)
@@ -98,18 +100,67 @@ function StatsMiniTextPanelClass:SetStatsAggregator(aggregator)
   end
   
   self._aggregator = aggregator
-  
-  if (self._aggregator ~= nil) then
-    self._listenerId = aggregator:AddListener(function()
-        self:_updateFromAggregator()
-    end)
+    
+  self:RefreshVisibility()
+end
+
+function StatsMiniTextPanelClass:SetVisible(visible)
+  self.frame.Visible = visible
+  self:RefreshVisibility()
+end
+
+function StatsMiniTextPanelClass:_shouldBeVisible()
+  if StatsUtils.PerformanceStatsShouldBeVisible() then 
+    return self._frame.Visible
+  else
+    return false
+  end
+end
+
+
+function StatsMiniTextPanelClass:RefreshVisibility()
+  if self:_shouldBeVisible() then
+    self:_startListening()
+    self:_updateFromAggregator()
+  else
+    self:_stopListening()
+  end
+end
+
+function StatsMiniTextPanelClass:_stopListening()
+  if (self._aggregator == nil) then
+    return
   end
   
-  self:_updateFromAggregator()
+  if (self._listenerId == nil) then 
+    return
+  end
+  
+  self._aggregator:RemoveListener(self._listenerId)
+  self._listenerId = nil  
+end
+
+function StatsMiniTextPanelClass:_startListening()
+  if (self._aggregator == nil) then
+    return
+  end
+  
+  if (self._listenerId ~= nil) then 
+    return
+  end
+  
+  self._listenerId = self._aggregator:AddListener(function()
+      self:_updateFromAggregator()
+  end)  
+end
+
+function StatsMiniTextPanelClass:OnPerformanceStatsShouldBeVisibleChanged()
+  self:RefreshVisibility()
 end
 
 function StatsMiniTextPanelClass:_updateFromAggregator()
   local value
+  
   if self._aggregator ~= nil then 
     value = self._aggregator:GetLatestValue()
   else
@@ -118,5 +169,7 @@ function StatsMiniTextPanelClass:_updateFromAggregator()
   
   self._valueLabel.Text = StatsUtils.FormatTypedValue(value, self._statType)
 end
+
+
 
 return StatsMiniTextPanelClass

@@ -65,10 +65,8 @@ function StatsTextPanelClass.new(statType)
   self._frame.ZIndex = StatsUtils.TextPanelZIndex
   
   self._titleLabel = Instance.new("TextLabel")
-  self._minimizedCurrentValueLabel = Instance.new("TextLabel")
 
   StatsUtils.StyleTextWidget(self._titleLabel)
-  StatsUtils.StyleTextWidget(self._minimizedCurrentValueLabel)
   
   self._titleLabel.FontSize = StatsUtils.PanelTitleFontSize
   self._titleLabel.Text = self:_getTitle()
@@ -176,6 +174,7 @@ end
 
 
 function StatsTextPanelClass:SetStatsAggregator(aggregator)
+  print ("Calling StatsTextPanelClass:StatsTextPanelClass with aggregator = ", aggregator)
   if (self._aggregator) then
     self._aggregator:RemoveListener(self._listenerId)
     self._listenerId = nil
@@ -183,21 +182,65 @@ function StatsTextPanelClass:SetStatsAggregator(aggregator)
   end
   
   self._aggregator = aggregator
-  
-  if (self._aggregator ~= nil) then
-    self._listenerId = aggregator:AddListener(function()
-        self:_updateFromAggregator()
-    end)
+    
+  self:RefreshVisibility()
+end
+
+function StatsTextPanelClass:SetVisible(visible)
+  self._frame.Visible = visible
+  self:RefreshVisibility()
+end
+
+function StatsTextPanelClass:_shouldBeVisible()
+  if StatsUtils.PerformanceStatsShouldBeVisible() then 
+    return self._frame.Visible
+  else
+    return false
+  end
+end
+
+
+function StatsTextPanelClass:RefreshVisibility()  
+  if self:_shouldBeVisible() then
+    self:_startListening()
+    self:_updateFromAggregator()
+  else
+    self:_stopListening()
+  end
+end
+
+function StatsTextPanelClass:_stopListening()
+  if (self._aggregator == nil) then
+    return
   end
   
-  self:_updateFromAggregator()
+  if (self._listenerId == nil) then 
+    return
+  end
+  
+  self._aggregator:RemoveListener(self._listenerId)
+  self._listenerId = nil  
+end
+
+function StatsTextPanelClass:_startListening()
+  if (self._aggregator == nil) then
+    return
+  end
+  
+  if (self._listenerId ~= nil) then 
+    return
+  end
+  
+  self._listenerId = self._aggregator:AddListener(function()
+      self:_updateFromAggregator()
+  end)  
 end
 
 function StatsTextPanelClass:_updateFromAggregator()
   local value = 0
   local average = 0
   local target = 0
-  
+    
   if self._aggregator ~= nil then 
     value = self._aggregator:GetLatestValue()
     average = self._aggregator:GetAverage()
@@ -209,6 +252,10 @@ function StatsTextPanelClass:_updateFromAggregator()
   self._averageValueWidget:SetValue(average)
   
   self._currentValueDecoration.ImageColor3 = StatsUtils.GetColorForValue(value, target) 
+  
+  if (self._statType == StatsUtils.StatType_Memory) then
+    print("This is memory")
+  end
 end
 
 function StatsTextPanelClass:SetZIndex(zIndex)

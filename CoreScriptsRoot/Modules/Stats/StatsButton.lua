@@ -60,9 +60,13 @@ function StatsButtonClass.new(statType)
   return self
 end
 
-function StatsButtonClass:OnVisibilityChanged()
+function StatsButtonClass:OnPerformanceStatsShouldBeVisibleChanged()
   if self._graph then 
-    self._graph:OnVisibilityChanged()
+    self._graph:OnPerformanceStatsShouldBeVisibleChanged()
+  end
+  
+  if self._textPanel then 
+    self._textPanel:OnPerformanceStatsShouldBeVisibleChanged()
   end
 end
 
