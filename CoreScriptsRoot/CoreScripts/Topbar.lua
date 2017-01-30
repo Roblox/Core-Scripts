@@ -18,6 +18,9 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 local newChatVisiblePropSuccess, newChatVisiblePropValue =  pcall(function() return settings():GetFFlag("ChatVisiblePropertyEnabled") end)
 local newChatVisibleProp = (newChatVisiblePropSuccess and newChatVisiblePropValue)
 
+local showHealthWhenDamagedSuccess, showHealthWhenDamagedValue = pcall(function() return setting:GetFFlag("OnlyShowHealthWhenDamaged") end)
+local onlyShowHealthWhenDamagedEnabled = showHealthWhenDamagedSuccess and showHealthWhenDamagedValue
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -669,6 +672,9 @@ local function CreateUsernameHealthMenuItem()
 	local humanoidChangedConn, childAddedConn, childRemovedConn = nil
 	--------------
 
+	local HealthBarEnabled = true
+	local CurrentHumanoid = nil
+
 	local function AnimateHurtOverlay()
 		if hurtOverlay and not InputService.VREnabled then
 			local newSize = UDim2.new(20, 0, 20, 0)
@@ -736,9 +742,25 @@ local function CreateUsernameHealthMenuItem()
 		return Color3.new(result.x, result.y, result.z)
 	end
 
+	local function UpdateHealthVisible()
+		local isEnabled = HealthBarEnabled and CurrentHumanoid and CurrentHumanoid.Health ~= CurrentHumanoid.MaxHealth
+		healthContainer.Visible = isEnabled
+		if isEnabled then
+			username.Size = UDim2.new(1, -14, 0, 22);
+			username.TextYAlignment = Enum.TextYAlignment.Bottom;
+		else
+			username.Size = UDim2.new(1, -14, 1, 0);
+			username.TextYAlignment = Enum.TextYAlignment.Center;
+		end
+	end
+
 	local function OnHumanoidAdded(humanoid)
+		CurrentHumanoid = humanoid
 		local lastHealth = humanoid.Health
 		local function OnHumanoidHealthChanged(health)
+			if onlyShowHealthWhenDamagedEnabled then
+				UpdateHealthVisible()
+			end
 			if humanoid then
 				local healthDelta = lastHealth - health
 				local healthPercent = health / humanoid.MaxHealth
@@ -786,13 +808,18 @@ local function CreateUsernameHealthMenuItem()
 
 	rawset(this, "SetHealthbarEnabled",
 		function(self, enabled)
-			healthContainer.Visible = enabled
-			if enabled then
-				username.Size = UDim2.new(1, -14, 0, 22);
-				username.TextYAlignment = Enum.TextYAlignment.Bottom;
+			if onlyShowHealthWhenDamagedEnabled then
+				HealthBarEnabled = enabled
+				UpdateHealthVisible()
 			else
-				username.Size = UDim2.new(1, -14, 1, 0);
-				username.TextYAlignment = Enum.TextYAlignment.Center;
+				healthContainer.Visible = enabled
+				if enabled then
+					username.Size = UDim2.new(1, -14, 0, 22);
+					username.TextYAlignment = Enum.TextYAlignment.Bottom;
+				else
+					username.Size = UDim2.new(1, -14, 1, 0);
+					username.TextYAlignment = Enum.TextYAlignment.Center;
+				end
 			end
 		end)
 
