@@ -1231,7 +1231,7 @@ local function CreateChatIcon()
 		ChatModule.VisibilityStateChanged:connect(onChatStateChanged)
 	end
 
-	if not (Util.IsTouchDevice() or InputService.VREnabled) then
+	if not InputService.VREnabled then
 		-- check to see if the chat was disabled
 		local willEnableChat = true
 		if newChatVisibleProp then
