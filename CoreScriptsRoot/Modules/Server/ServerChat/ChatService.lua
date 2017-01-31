@@ -168,6 +168,8 @@ function methods:UnregisterProcessCommandsFunction(funcId)
 	self.ProcessCommandsFunctions[funcId] = nil
 end
 
+local StudioMessageFilteredCache = {}
+
 --///////////////// Internal-Use Methods
 --//////////////////////////////////////
 --DO NOT REMOVE THIS. Chat must be filtered or your game will face
@@ -185,7 +187,11 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 		end
 	else
 		--// Simulate filtering latency.
-		wait(0.2)
+		--// There is only latency the first time the message is filtered, all following calls will be instant.
+		if not StudioMessageFilteredCache[message] then
+			StudioMessageFilteredCache[message] = true
+			wait(0.2)
+		end
 	end
 
 	return message
