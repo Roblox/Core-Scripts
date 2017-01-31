@@ -740,7 +740,8 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, chann
 end)
 
 
-function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameColor, addHistoryToGeneralChannel)
+function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameColor, addHistoryToGeneralChannel,
+	addWelcomeMessageToGeneralChannel)
 	if ChatWindow:GetChannel(channel) then
 		--- If the channel has already been added, remove it first.
 		ChatWindow:RemoveChannel(channel)
@@ -794,6 +795,15 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 				ExtraData = nil,
 			}
 			channelObj:AddMessageToChannel(welcomeMessageObject)
+
+			if addWelcomeMessageToGeneralChannel and not ChatSettings.ShowChannelsBar then
+				if channel ~= ChatSettings.GeneralChannelName then
+					local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+					if generalChannel then
+						generalChannel:AddMessageToChannel(welcomeMessageObject)
+					end
+				end
+			end
 		end
 
 		DoFadeInFromNewInformation()
@@ -802,7 +812,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 end
 
 EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessage, messageLog, channelNameColor)
-	HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameColor, false)
+	HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameColor, false, true)
 end)
 
 EventFolder.OnChannelLeft.OnClientEvent:connect(function(channel)
@@ -1011,13 +1021,13 @@ local initData = EventFolder.GetInitDataRequest:InvokeServer()
 -- Handle joining general channel first.
 for i, channelData in pairs(initData.Channels) do
 	if channelData[1] == ChatSettings.GeneralChannelName then
-		HandleChannelJoined(channelData[1], channelData[2], channelData[3], channelData[4], true)
+		HandleChannelJoined(channelData[1], channelData[2], channelData[3], channelData[4], true, false)
 	end
 end
 
 for i, channelData in pairs(initData.Channels) do
 	if channelData[1] ~= ChatSettings.GeneralChannelName then
-		HandleChannelJoined(channelData[1], channelData[2], channelData[3], channelData[4], true)
+		HandleChannelJoined(channelData[1], channelData[2], channelData[3], channelData[4], true, false)
 	end
 end
 
