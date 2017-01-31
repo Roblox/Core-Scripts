@@ -56,6 +56,9 @@ function methods:UpdateMessageFiltered(messageData)
 		if self.Active then
 			self.MessageLogDisplay:UpdateMessageFiltered(messageObj)
 		end
+	else
+		-- We have not seen this filtered message before, but we should still add it to our log.
+		self:AddMessageToChannelByTimeStamp(messageData)
 	end
 end
 
@@ -91,6 +94,36 @@ function methods:AddMessagesToChannelByTimeStamp(messageLog, startIndex)
 		for i = 1, #self.MessageLog do
 			self.MessageLogDisplay:AddMessage(self.MessageLog[i])
 		end
+	end
+end
+
+function methods:AddMessageToChannelByTimeStamp(messageData)
+	if #self.MessageLog >= 1 then
+		-- These are the fast cases to evalutate.
+		if self.MessageLog[1].Time > messageData.Time then
+			return
+		elseif messageData.Time >= self.MessageLog[#self.MessageLog].Time then
+			self:AddMessageToChannel(messageData)
+			return
+		end
+
+		for i = 1, #self.MessageLog do
+			if messageData.Time < self.MessageLog[i].Time then
+				table.insert(self.MessageLog, i, messageData)
+
+				if #self.MessageLog > ChatSettings.MessageHistoryLengthPerChannel then
+					self:RemoveLastMessageFromChannel()
+				end
+
+				if self.Active then
+					self.MessageLogDisplay:AddMessageAtIndex(messageData, i)
+				end
+
+				return
+			end
+		end
+	else
+		self:AddMessageToChannel(messageData)
 	end
 end
 

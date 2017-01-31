@@ -157,10 +157,10 @@ function UpdatePerformanceStatsVisibility()
   end
   
   -- Let the children respond to the transition that they are/are not visible.
-  statsViewer:OnVisibilityChanged()
+  statsViewer:OnPerformanceStatsShouldBeVisibleChanged()
   for i, buttonType in ipairs(StatsUtils.AllStatTypes) do
       local button = statsButtonsByType[buttonType]
-      button:OnVisibilityChanged()
+      button:OnPerformanceStatsShouldBeVisibleChanged()
   end  
 
   -- track it.
@@ -180,6 +180,7 @@ end
 ConfigureMasterFrame()
 ConfigureStatButtonsInMasterFrame()
 ConfigureStatViewerInMasterFrame()
+
 
 -- Watch for changes in performance stats visibility.
 GameSettings.PerformanceStatsVisibleChanged:connect(

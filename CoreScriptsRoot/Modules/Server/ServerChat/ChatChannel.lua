@@ -22,6 +22,11 @@ methods.__index = methods
 function methods:SendSystemMessage(message, extraData)
 	local messageObj = self:InternalCreateMessageObject(message, nil, true, extraData)
 
+	local success, err = pcall(function() self.eMessagePosted:Fire(messageObj) end)
+	if not success and err then
+		print("Error posting message: " ..err)
+	end
+
 	self:InternalAddMessageToHistoryLog(messageObj)
 
 	for i, speaker in pairs(self.Speakers) do
@@ -298,6 +303,36 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, messageObj.FromSpeaker)
 	messageObj.IsFiltered = true
 	self:InternalAddMessageToHistoryLog(messageObj)
+
+	-- One more pass is needed to ensure that no speakers do not recieve the message.
+	-- Otherwise a user could join while the message is being filtered who had not originally been sent the message.
+	local speakersMissingMessage = {}
+	for _, speaker in pairs(self.Speakers) do
+		local isMuted = speaker:IsSpeakerMuted(fromSpeaker.Name)
+		if not isMuted then
+			local wasSentMessage = false
+			for _, sentSpeakerName in pairs(sentToList) do
+				if speaker.Name == sentSpeakerName then
+					wasSentMessage = true
+					break
+				end
+			end
+			if not wasSentMessage then
+				table.insert(speakersMissingMessage, speaker.Name)
+			end
+		end
+	end
+
+	for _, speakerName in pairs(speakersMissingMessage) do
+		local speaker = self.Speakers[speakerName]
+		if speaker then
+			local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+			local cMessageObj = DeepCopy(messageObj)
+			cMessageObj.Message = filteredMessage
+			cMessageObj.IsFiltered = true
+			speaker:InternalSendFilteredMessage(cMessageObj, self.Name)
+		end
+	end
 
 	return messageObj
 end
