@@ -22,6 +22,11 @@ methods.__index = methods
 function methods:SendSystemMessage(message, extraData)
 	local messageObj = self:InternalCreateMessageObject(message, nil, true, extraData)
 
+	local success, err = pcall(function() self.eMessagePosted:Fire(messageObj) end)
+	if not success and err then
+		print("Error posting message: " ..err)
+	end
+
 	self:InternalAddMessageToHistoryLog(messageObj)
 
 	for i, speaker in pairs(self.Speakers) do
