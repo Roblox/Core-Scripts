@@ -22,6 +22,7 @@ local DefaultChatSystemChatEvents = ReplicatedStorage:WaitForChild("DefaultChatS
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
 local MessageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 
@@ -91,10 +92,16 @@ while not LocalPlayer do
 	LocalPlayer = Players.LocalPlayer
 end
 
+local ChatDisplayOrder = 6
+if ChatSettings.ScreenGuiDisplayOrder ~= nil then
+	ChatDisplayOrder = ChatSettings.ScreenGuiDisplayOrder
+end
+
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local GuiParent = Instance.new("ScreenGui")
 GuiParent.Name = "Chat"
 GuiParent.ResetOnSpawn = false
+GuiParent.DisplayOrder = ChatDisplayOrder
 GuiParent.Parent = PlayerGui
 
 local DidFirstChannelsLoads = false
@@ -124,10 +131,6 @@ ChatWindow:RegisterChannelsBar(ChannelsBar)
 ChatWindow:RegisterMessageLogDisplay(MessageLogDisplay)
 
 MessageCreatorUtil:RegisterChatWindow(ChatWindow)
-
-local Chat = game:GetService("Chat")
-local clientChatModules = Chat:WaitForChild("ClientChatModules")
-local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 MessageSender:RegisterSayMessageFunction(EventFolder.SayMessageRequest)
