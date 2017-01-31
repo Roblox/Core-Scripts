@@ -14,6 +14,7 @@ module.GamepadNavigationEnabled = false
 module.ShowUserOwnFilteredMessage = true	--Show a user the filtered version of their message rather than the original.
 -- Make the chat work when the top bar is off
 module.ChatOnWithTopBarOff = false
+module.ScreenGuiDisplayOrder = 6 -- The DisplayOrder value for the ScreenGui containing the chat.
 
 --- Replace with true/false to force the chat type. Otherwise this will default to the setting on the website.
 module.BubbleChatEnabled = PlayersService.BubbleChat
