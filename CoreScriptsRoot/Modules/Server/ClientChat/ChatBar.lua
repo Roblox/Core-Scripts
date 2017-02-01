@@ -69,20 +69,20 @@ function methods:CreateGuiObjects(targetParent)
 	TextBox.Text = ""
 	TextBox.Parent = TextBoxHolderFrame
 
-	local MessageModeTextLabel = Instance.new("TextLabel")
-	MessageModeTextLabel.Name = "MessageMode"
-	MessageModeTextLabel.BackgroundTransparency = 1
-	MessageModeTextLabel.Position = UDim2.new(0, 0, 0, 0)
-	MessageModeTextLabel.TextSize = ChatSettings.ChatBarTextSize
-	MessageModeTextLabel.Font = ChatSettings.ChatBarFont
-	MessageModeTextLabel.TextXAlignment = Enum.TextXAlignment.Left
-	MessageModeTextLabel.TextWrapped = true
-	MessageModeTextLabel.Text = ""
-	MessageModeTextLabel.Size = UDim2.new(0.3, 0, 1, 0)
-	MessageModeTextLabel.TextYAlignment = Enum.TextYAlignment.Center
-	MessageModeTextLabel.TextColor3 = Color3.fromRGB(77, 139, 255)
-	MessageModeTextLabel.Visible = false
-	MessageModeTextLabel.Parent = TextBoxHolderFrame
+	local MessageModeTextButton = Instance.new("TextButton")
+	MessageModeTextButton.Name = "MessageMode"
+	MessageModeTextButton.BackgroundTransparency = 1
+	MessageModeTextButton.Position = UDim2.new(0, 0, 0, 0)
+	MessageModeTextButton.TextSize = ChatSettings.ChatBarTextSize
+	MessageModeTextButton.Font = ChatSettings.ChatBarFont
+	MessageModeTextButton.TextXAlignment = Enum.TextXAlignment.Left
+	MessageModeTextButton.TextWrapped = true
+	MessageModeTextButton.Text = ""
+	MessageModeTextButton.Size = UDim2.new(0, 0, 0, 0)
+	MessageModeTextButton.TextYAlignment = Enum.TextYAlignment.Center
+	MessageModeTextButton.TextColor3 = self:GetDefaultChannelNameColor()
+	MessageModeTextButton.Visible = true
+	MessageModeTextButton.Parent = TextBoxHolderFrame
 
 	local TextLabel = Instance.new("TextLabel")
 	TextLabel.Selectable = false
@@ -108,10 +108,10 @@ function methods:CreateGuiObjects(targetParent)
 	self.GuiObjects.TextBoxFrame = BoxFrame
 	self.GuiObjects.TextBox = TextBox
 	self.GuiObjects.TextLabel = TextLabel
-	self.GuiObjects.MessageModeTextLabel = MessageModeTextLabel
+	self.GuiObjects.MessageModeTextButton = MessageModeTextButton
 
 	self:AnimGuiObjects()
-	self:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextLabel)
+	self:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
 	self.eGuiObjectsChanged:Fire()
 end
 
@@ -122,7 +122,7 @@ function methods:DisconnectConnections()
 	self.Connections = {}
 end
 
-function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextLabel)
+function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
 	self:DisconnectConnections()
 
 	--// Code for getting back into general channel from other target channel when pressing backspace.
@@ -160,15 +160,19 @@ function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextLabel)
 	table.insert(self.Connections, textboxChangedConnection)
 
 	local function UpdateOnFocusStatusChanged(isFocused)
-		if (isFocused) then
+		if isFocused or TextBox.Text ~= "" then
 			TextLabel.Visible = false
-			MessageModeTextLabel.Visible = true
 		else
-			local setVis = (TextBox.Text == "")
-			TextLabel.Visible = setVis
-			MessageModeTextLabel.Visible = not setVis
+			TextLabel.Visible = true
 		end
 	end
+
+	local messageModeConnection = MessageModeTextButton.MouseButton1Click:connect(function()
+		if MessageModeTextButton.Text ~= "" then
+			self:SetChannelTarget(ChatSettings.GeneralChannelName)
+		end
+	end)
+	table.insert(self.Connections, messageModeConnection)
 
 	local textboxfocusedConnection = TextBox.Focused:connect(function()
 		self:CalculateSize()
@@ -190,8 +194,14 @@ function methods:GetTextBox()
 	return self.TextBox
 end
 
+function methods:GetMessageModeTextButton()
+	return self.GuiObjects.MessageModeTextButton
+end
+
+-- Deprecated in favour of GetMessageModeTextButton
+-- Retained for compatibility reasons.
 function methods:GetMessageModeTextLabel()
-	return self.GuiObjects.MessageModeTextLabel
+	return self:GetMessageModeTextButton()
 end
 
 function methods:IsFocused()
@@ -295,27 +305,45 @@ function methods:SetTextSize(textSize)
 	end
 end
 
+function methods:GetDefaultChannelNameColor()
+	if ChatSettings.DefaultChannelNameColor then
+		return ChatSettings.DefaultChannelNameColor
+	end
+	return Color3.fromRGB(35, 76, 142)
+end
+
 function methods:SetChannelTarget(targetChannel)
-	local messageModeTextLabel = self.GuiObjects.MessageModeTextLabel
+	local messageModeTextButton = self.GuiObjects.MessageModeTextButton
 	local textBox = self.TextBox
+	local textLabel = self.TextLabel
 
 	self.TargetChannel = targetChannel
 
 	if not self:IsInCustomState() then
-		if (targetChannel ~= ChatSettings.GeneralChannelName) then
-			messageModeTextLabel.Size = UDim2.new(0, 1000, 1, 0)
-			messageModeTextLabel.Text = string.format("[%s] ", targetChannel)
+		if targetChannel ~= ChatSettings.GeneralChannelName then
+			messageModeTextButton.Size = UDim2.new(0, 1000, 1, 0)
+			messageModeTextButton.Text = string.format("[%s] ", targetChannel)
 
-			local xSize = messageModeTextLabel.TextBounds.X
-			messageModeTextLabel.Size = UDim2.new(0, xSize, 1, 0)
+			local channelNameColor = self:GetChannelNameColor(targetChannel)
+			if channelNameColor then
+				messageModeTextButton.TextColor3 = channelNameColor
+			else
+				messageModeTextButton.TextColor3 = self:GetDefaultChannelNameColor()
+			end
+
+			local xSize = messageModeTextButton.TextBounds.X
+			messageModeTextButton.Size = UDim2.new(0, xSize, 1, 0)
 			textBox.Size = UDim2.new(1, -xSize, 1, 0)
 			textBox.Position = UDim2.new(0, xSize, 0, 0)
-
+			textLabel.Size = UDim2.new(1, -xSize, 1, 0)
+			textLabel.Position = UDim2.new(0, xSize, 0, 0)
 		else
-			messageModeTextLabel.Text = ""
+			messageModeTextButton.Text = ""
+			messageModeTextButton.Size = UDim2.new(0, 0, 0, 0)
 			textBox.Size = UDim2.new(1, 0, 1, 0)
 			textBox.Position = UDim2.new(0, 0, 0, 0)
-
+			textLabel.Size = UDim2.new(1, 0, 1, 0)
+			textLabel.Position = UDim2.new(0, 0, 0, 0)
 		end
 	end
 end
@@ -395,7 +423,7 @@ function methods:AnimGuiObjects()
 
 	self.GuiObjects.TextLabel.TextTransparency = self.AnimParams.Text_CurrentTransparency
 	self.GuiObjects.TextBox.TextTransparency = self.AnimParams.Text_CurrentTransparency
-	self.GuiObjects.MessageModeTextLabel.TextTransparency = self.AnimParams.Text_CurrentTransparency
+	self.GuiObjects.MessageModeTextButton.TextTransparency = self.AnimParams.Text_CurrentTransparency
 end
 
 function methods:InitializeAnimParams()
@@ -425,6 +453,17 @@ function methods:Update(dtScale)
 	self:AnimGuiObjects()
 end
 
+function methods:SetChannelNameColor(channelName, channelNameColor)
+	self.ChannelNameColors[channelName] = channelNameColor
+	if self.GuiObjects.MessageModeTextButton.Text == channelName then
+		self.GuiObjects.MessageModeTextButton.TextColor3 = channelNameColor
+	end
+end
+
+function methods:GetChannelNameColor(channelName)
+	return self.ChannelNameColors[channelName]
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
 
@@ -452,6 +491,8 @@ function module.new(CommandProcessor, ChatWindow)
 
 	obj.AnimParams = {}
 	obj.LastFocusedState = nil
+
+	obj.ChannelNameColors = {}
 
 	obj:InitializeAnimParams()
 

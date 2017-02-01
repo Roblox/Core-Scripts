@@ -33,6 +33,7 @@ function methods:AddChannel(channelName)
 			if (channel and speaker) then
 				if (channel.Leavable) then
 					speaker:LeaveChannel(channelName)
+					speaker:SendSystemMessage(string.format("You have left channel '%s'", channelName), "System")
 				else
 					speaker:SendSystemMessage("You cannot leave this channel.", channelName)
 				end
@@ -168,6 +169,8 @@ function methods:UnregisterProcessCommandsFunction(funcId)
 	self.ProcessCommandsFunctions[funcId] = nil
 end
 
+local StudioMessageFilteredCache = {}
+
 --///////////////// Internal-Use Methods
 --//////////////////////////////////////
 --DO NOT REMOVE THIS. Chat must be filtered or your game will face
@@ -185,7 +188,11 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 		end
 	else
 		--// Simulate filtering latency.
-		wait(0.2)
+		--// There is only latency the first time the message is filtered, all following calls will be instant.
+		if not StudioMessageFilteredCache[message] then
+			StudioMessageFilteredCache[message] = true
+			wait(0.2)
+		end
 	end
 
 	return message
@@ -232,7 +239,7 @@ function methods:InternalGetUniqueMessageId()
 	return id
 end
 
-function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj)
+function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj, fireSpeakerAdded)
 	if (self.Speakers[speakerName:lower()]) then
 		error("Speaker \"" .. speakerName .. "\" already exists!")
 	end
@@ -241,12 +248,21 @@ function methods:InternalAddSpeakerWithPlayerObject(speakerName, playerObj)
 	speaker:InternalAssignPlayerObject(playerObj)
 	self.Speakers[speakerName:lower()] = speaker
 
-	local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
-	if not success and err then
-		print("Error adding speaker: " ..err)
+	if fireSpeakerAdded then
+		local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+		if not success and err then
+			print("Error adding speaker: " ..err)
+		end
 	end
 
 	return speaker
+end
+
+function methods:InternalFireSpeakerAdded(speakerName)
+	local success, err = pcall(function() self.eSpeakerAdded:Fire(speakerName) end)
+	if not success and err then
+		print("Error firing speaker added: " ..err)
+	end
 end
 
 --///////////////////////// Constructors

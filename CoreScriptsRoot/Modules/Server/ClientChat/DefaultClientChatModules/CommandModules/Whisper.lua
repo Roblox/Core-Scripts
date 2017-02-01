@@ -20,6 +20,13 @@ function whisperStateMethods:PlayerExists(possiblePlayerName)
 	return false
 end
 
+function whisperStateMethods:GetWhisperChanneNameColor()
+	if self.ChatSettings.WhisperChannelNameColor then
+		return self.ChatSettings.WhisperChannelNameColor
+	end
+	return Color3.fromRGB(102, 14, 102)
+end
+
 function whisperStateMethods:TextUpdated()
 	local newText = self.TextBox.Text
 	if not self.PlayerNameEntered then
@@ -38,18 +45,20 @@ function whisperStateMethods:TextUpdated()
 			self.PlayerNameEntered = true
 			self.PlayerName = player
 
-			self.MessageModeLabel.Size = UDim2.new(0, 1000, 1, 0)
-			self.MessageModeLabel.Text = string.format("[%s]", player)
-			local xSize = self.MessageModeLabel.TextBounds.X
-			self.MessageModeLabel.Size = UDim2.new(0, xSize, 1, 0)
+			self.MessageModeButton.Size = UDim2.new(0, 1000, 1, 0)
+			self.MessageModeButton.Text = string.format("[%s]", player)
+			self.MessageModeButton.TextColor3 = self:GetWhisperChanneNameColor()
+
+			local xSize = self.MessageModeButton.TextBounds.X
+			self.MessageModeButton.Size = UDim2.new(0, xSize, 1, 0)
 			self.TextBox.Size = UDim2.new(1, -xSize, 1, 0)
 			self.TextBox.Position = UDim2.new(0, xSize, 0, 0)
 			self.TextBox.Text = " "
 		end
 	else
 		if newText == "" then
-			self.MessageModeLabel.Text = ""
-			self.MessageModeLabel.Size = UDim2.new(0, 0, 0, 0)
+			self.MessageModeButton.Text = ""
+			self.MessageModeButton.Size = UDim2.new(0, 0, 0, 0)
 			self.TextBox.Size = UDim2.new(1, 0, 1, 0)
 			self.TextBox.Position = UDim2.new(0, 0, 0, 0)
 			self.TextBox.Text = ""
@@ -75,6 +84,7 @@ function whisperStateMethods:ProcessCompletedMessage()
 end
 
 function whisperStateMethods:Destroy()
+	self.MessageModeConnection:disconnect()
 	self.Destroyed = true
 end
 
@@ -85,9 +95,19 @@ function WhisperCustomState.new(ChatWindow, ChatBar, ChatSettings)
 	obj.ChatBar = ChatBar
 	obj.ChatSettings = ChatSettings
 	obj.TextBox = ChatBar:GetTextBox()
-	obj.MessageModeLabel = ChatBar:GetMessageModeTextLabel()
+	obj.MessageModeButton = ChatBar:GetMessageModeTextButton()
 	obj.OriginalWhisperText = ""
 	obj.PlayerNameEntered = false
+
+	obj.MessageModeConnection = obj.MessageModeButton.MouseButton1Click:connect(function()
+		local chatBarText = obj.TextBox.Text
+		if string.sub(chatBarText, 1, 1) == " " then
+			chatBarText = string.sub(chatBarText, 2)
+		end
+		obj.ChatBar:ResetCustomState()
+		obj.ChatBar:SetTextBoxText(chatBarText)
+		obj.ChatBar:CaptureFocus()
+	end)
 
 	obj:TextUpdated()
 

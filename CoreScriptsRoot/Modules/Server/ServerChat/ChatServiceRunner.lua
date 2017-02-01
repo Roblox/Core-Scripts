@@ -49,6 +49,7 @@ CreateIfDoesntExist(EventFolder, "OnChannelLeft", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnMuted", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnUnmuted", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "OnMainChannelSet", "RemoteEvent")
+CreateIfDoesntExist(EventFolder, "ChannelNameColorUpdated", "RemoteEvent")
 
 CreateIfDoesntExist(EventFolder, "SayMessageRequest", "RemoteEvent")
 CreateIfDoesntExist(EventFolder, "GetInitDataRequest", "RemoteFunction")
@@ -68,7 +69,7 @@ local function CreatePlayerSpeakerObject(playerObj)
 		ChatService:RemoveSpeaker(playerObj.Name)
 	end
 
-	speaker = ChatService:InternalAddSpeakerWithPlayerObject(playerObj.Name, playerObj)
+	speaker = ChatService:InternalAddSpeakerWithPlayerObject(playerObj.Name, playerObj, false)
 
 	for i, channel in pairs(ChatService:GetAutoJoinChannelList()) do
 		speaker:JoinChannel(channel.Name)
@@ -88,12 +89,14 @@ local function CreatePlayerSpeakerObject(playerObj)
 
 	speaker.ChannelJoined:connect(function(channel, welcomeMessage)
 		local log = nil
+		local channelNameColor = nil
 
 		local channelObject = ChatService:GetChannel(channel)
 		if (channelObject) then
 			log = channelObject:GetHistoryLog()
+			channelNameColor = channelObject.ChannelNameColor
 		end
-		EventFolder.OnChannelJoined:FireClient(playerObj, channel, welcomeMessage, log)
+		EventFolder.OnChannelJoined:FireClient(playerObj, channel, welcomeMessage, log, channelNameColor)
 	end)
 
 	speaker.ChannelLeft:connect(function(channel)
@@ -111,6 +114,12 @@ local function CreatePlayerSpeakerObject(playerObj)
 	speaker.MainChannelSet:connect(function(channel)
 		EventFolder.OnMainChannelSet:FireClient(playerObj, channel)
 	end)
+
+	speaker.ChannelNameColorUpdated:connect(function(channelName, channelNameColor)
+		EventFolder.ChannelNameColorUpdated:FireClient(playerObj, channelName, channelNameColor)
+	end)
+
+	ChatService:InternalFireSpeakerAdded(speaker.Name)
 end
 
 EventFolder.SayMessageRequest.OnServerEvent:connect(function(playerObj, message, channel)
@@ -199,6 +208,7 @@ EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
 				channelName,
 				channelObj.WelcomeMessage,
 				channelObj:GetHistoryLog(),
+				channelObj.ChannelNameColor,
 			}
 
 			table.insert(data.Channels, channelData)
@@ -222,6 +232,9 @@ local function DoJoinCommand(speakerName, channelName, fromChannelName)
 			if (channel.Joinable) then
 				if (not speaker:IsInChannel(channel.Name)) then
 					speaker:JoinChannel(channel.Name)
+				else
+					speaker:SetMainChannel(channel.Name)
+					speaker:SendSystemMessage(string.format("You are now chatting in channel: '%s'", channel.Name), channel.Name)
 				end
 			else
 				speaker:SendSystemMessage("You cannot join channel '" .. channelName .. "'.", fromChannelName)
@@ -240,6 +253,7 @@ local function DoLeaveCommand(speakerName, channelName, fromChannelName)
 		if (speaker:IsInChannel(channelName)) then
 			if (channel.Leavable) then
 				speaker:LeaveChannel(channel.Name)
+				speaker:SendSystemMessage(string.format("You have left channel '%s'", channel.Name), "System")
 			else
 				speaker:SendSystemMessage("You cannot leave channel '" .. channelName .. "'.", fromChannelName)
 			end
