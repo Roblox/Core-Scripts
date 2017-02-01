@@ -181,7 +181,8 @@ function Thumbpad:Create(parentFrame)
 	
 	--input connections
 	ThumbpadFrame.InputBegan:connect(function(inputObject)
-		if TouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
+		if TouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch
+			or inputObject.UserInputState ~= Enum.UserInputState.Begin then
 			return
 		end
 		

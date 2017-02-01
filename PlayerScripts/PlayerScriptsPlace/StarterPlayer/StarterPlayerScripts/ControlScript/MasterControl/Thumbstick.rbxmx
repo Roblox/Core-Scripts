@@ -132,7 +132,8 @@ function Thumbstick:Create(parentFrame)
 	
 	-- input connections
 	ThumbstickFrame.InputBegan:connect(function(inputObject)
-		if MoveTouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
+		if MoveTouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch
+			or inputObject.UserInputState ~= Enum.UserInputState.Begin then
 			return
 		end
 		
