@@ -685,7 +685,7 @@ EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
 	if ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
 		local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 		if generalChannel then
-			generalChannel:UpdateMessageFiltered(filterData)
+			generalChannel:UpdateMessageFiltered(messageData)
 		end
 	end
 end)
