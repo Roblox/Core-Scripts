@@ -253,6 +253,7 @@ local function DoLeaveCommand(speakerName, channelName, fromChannelName)
 		if (speaker:IsInChannel(channelName)) then
 			if (channel.Leavable) then
 				speaker:LeaveChannel(channel.Name)
+				speaker:SendSystemMessage(string.format("You have left channel '%s'", channel.Name), "System")
 			else
 				speaker:SendSystemMessage("You cannot leave channel '" .. channelName .. "'.", fromChannelName)
 			end

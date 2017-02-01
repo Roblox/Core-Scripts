@@ -33,6 +33,7 @@ function methods:AddChannel(channelName)
 			if (channel and speaker) then
 				if (channel.Leavable) then
 					speaker:LeaveChannel(channelName)
+					speaker:SendSystemMessage(string.format("You have left channel '%s'", channelName), "System")
 				else
 					speaker:SendSystemMessage("You cannot leave this channel.", channelName)
 				end
