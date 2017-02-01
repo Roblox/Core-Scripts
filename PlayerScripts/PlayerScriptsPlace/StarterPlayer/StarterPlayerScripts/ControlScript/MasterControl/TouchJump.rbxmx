@@ -147,7 +147,8 @@ function TouchJump:Create(parentFrame)
 	
 	local touchObject = nil	
 	JumpButton.InputBegan:connect(function(inputObject)
-		if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
+		if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch
+			or inputObject.UserInputState ~= Enum.UserInputState.Begin then
 			return
 		end
 		
