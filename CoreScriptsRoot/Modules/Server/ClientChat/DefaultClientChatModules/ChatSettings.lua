@@ -67,6 +67,9 @@ module.MaxChannelNameLength = 12
 --// Although this feature is pretty much ready, it needs some UI design still.
 module.RightClickToLeaveChannelEnabled = false
 module.MessageHistoryLengthPerChannel = 50
+-- Show the help text for joining and leaving channels. This is not useful unless custom channels have been added.
+-- So it is turned off by default.
+module.ShowJoinAndLeaveHelpText = false
 
 ---[[ Message Settings ]]
 module.MaximumMessageLength = 200
