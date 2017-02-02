@@ -19,13 +19,13 @@ local function Run(ChatService)
 			local pos = string.find(message, "\"", 2)
 			if (pos) then
 				otherSpeakerName = string.sub(message, 2, pos - 1)
-				sendMessage = string.sub(message, pos + 1)
+				sendMessage = string.sub(message, pos + 2)
 			end
 		else
 			local first = string.match(message, "^[^%s]+")
 			if (first) then
 				otherSpeakerName = first
-				sendMessage = string.sub(message, string.len(otherSpeakerName) + 1)
+				sendMessage = string.sub(message, string.len(otherSpeakerName) + 2)
 			end
 		end
 

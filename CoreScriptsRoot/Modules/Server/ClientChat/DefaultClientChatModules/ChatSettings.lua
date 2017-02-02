@@ -77,6 +77,9 @@ module.DisallowedWhiteSpace = {"\n", "\r", "\t", "\v", "\f"}
 module.ClickOnPlayerNameToWhisper = true
 module.ClickOnChannelNameToSetMainChannel = true
 
+---[[ Misc Settings ]]
+module.WhisperCommandAutoCompletePlayerNames = true
+
 local ChangedEvent = Instance.new("BindableEvent")
 
 local proxyTable = setmetatable({},
