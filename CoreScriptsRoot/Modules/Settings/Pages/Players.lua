@@ -26,18 +26,6 @@ local frameSelectedTransparency = .65
 local THUMBNAIL_URL = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&userId="
 local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=420&height=420&userId="
 
------------- Functions -------------------
-local function AtFriendLimit(player)
-	local friendCount = PlayerDropDownModule:GetFriendCountAsync(player)
-	if friendCount == nil then
-		return false
-	end
-	if friendCount >= PlayerDropDownModule:MaxFriendCount() then
-		return true
-	end
-	return false
-end
-
 ------------ Variables -------------------
 local PageInstance = nil
 local localPlayer = PlayersService.LocalPlayer
@@ -91,6 +79,17 @@ local function Initialize()
 		else
 			return Enum.FriendStatus.NotFriend
 		end
+	end
+	
+	local function AtFriendLimit(player)
+		local friendCount = PlayerDropDownModule:GetFriendCountAsync(player)
+		if friendCount == nil then
+			return false
+		end
+		if friendCount >= PlayerDropDownModule:MaxFriendCount() then
+			return true
+		end
+		return false
 	end
 
 	------ PAGE CUSTOMIZATION -------
