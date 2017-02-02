@@ -13,7 +13,7 @@ local UserInputService = game:GetService('UserInputService')
 
 ----------- UTILITIES --------------
 local coreGuiModules = RobloxGui:WaitForChild("Modules")
-local utility = require(coreGuiModules.Settings:WaitForChild("Utility")
+local utility = require(coreGuiModules.Settings:WaitForChild("Utility"))
 local isTenFootInterface = require(coreGuiModules:WaitForChild("TenFootInterface")):IsEnabled()
 local PromptCreator = require(coreGuiModules:WaitForChild("PromptCreator"))
 local PlayerDropDownModule = require(coreGuiModules:WaitForChild("PlayerDropDown"))
