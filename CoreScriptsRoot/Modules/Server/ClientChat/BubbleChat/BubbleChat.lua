@@ -16,7 +16,7 @@ while LocalPlayer == nil do
 	LocalPlayer = PlayersService.LocalPlayer
 end
 
-local PlayerGui = LocalPlayer.PlayerGui
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 --[[ SCRIPT VARIABLES ]]
 local CHAT_BUBBLE_FONT = Enum.Font.SourceSans

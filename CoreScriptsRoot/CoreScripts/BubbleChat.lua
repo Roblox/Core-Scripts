@@ -9,6 +9,9 @@ useNewBubbleChatEnabled = useNewBubbleChatEnabled and useNewBubbleChatSuccess
 if useNewBubbleChatEnabled then
 	-- We need to check if the BubbleChat script exists before we can disable this bubble chat.
 	-- This is for during the transition period when CorescriptNewBubbleChatEnabled could be true on the client, but not the server.
+	if not game:IsLoaded() then
+		game.Loaded:wait()
+	end
 	local ChatService = game:GetService("Chat")
 	local BubbleChat = ChatService:WaitForChild("BubbleChat", 3)
 	if BubbleChat then
