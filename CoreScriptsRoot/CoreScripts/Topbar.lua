@@ -18,7 +18,7 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 local newChatVisiblePropSuccess, newChatVisiblePropValue =  pcall(function() return settings():GetFFlag("ChatVisiblePropertyEnabled") end)
 local newChatVisibleProp = (newChatVisiblePropSuccess and newChatVisiblePropValue)
 
-local showHealthWhenDamagedSuccess, showHealthWhenDamagedValue = pcall(function() return setting:GetFFlag("OnlyShowHealthWhenDamaged") end)
+local showHealthWhenDamagedSuccess, showHealthWhenDamagedValue = pcall(function() return settings():GetFFlag("OnlyShowHealthWhenDamaged") end)
 local onlyShowHealthWhenDamagedEnabled = showHealthWhenDamagedSuccess and showHealthWhenDamagedValue
 
 --[[ END OF FFLAG VALUES ]]
