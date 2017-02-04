@@ -181,6 +181,8 @@ function Thumbpad:Create(parentFrame)
 	
 	--input connections
 	ThumbpadFrame.InputBegan:connect(function(inputObject)
+		--A touch that starts elsewhere on the screen will be sent to a frame's InputBegan event
+		--if it moves over the frame. So we check that this is actually a new touch (inputObject.UserInputState ~= Enum.UserInputState.Begin)
 		if TouchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch
 			or inputObject.UserInputState ~= Enum.UserInputState.Begin then
 			return
