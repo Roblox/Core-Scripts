@@ -18,6 +18,11 @@ if not VRServiceExists or not VRService then
 	VRService = UserInputService
 end
 
+local spawnLocationFixFlagExists, spawnLocationFixFlagEnabled = pcall(function()
+	return settings():GetFFlag("SpawnLocationFixEnabled")
+end)
+local FFlagSpawnLocationFixEnabled = spawnLocationFixFlagExists and spawnLocationFixFlagEnabled
+
 local CameraScript = script.Parent
 local ShiftLockController = require(CameraScript:WaitForChild('ShiftLockController'))
 
@@ -1161,34 +1166,46 @@ local function CreateCamera()
 				end
 			end
 		end)
-
+		
 		local function OnCharacterAdded(newCharacter)
-			this:ZoomCamera(12.5)
+
+			if (not FFlagSpawnLocationFixEnabled) then
+				this:ZoomCamera(12.5)
+			end
 			local humanoid = findPlayerHumanoid(player)
 			local start = tick()
 			while tick() - start < 0.3 and (humanoid == nil or humanoid.Torso == nil) do
 				wait()
 				humanoid = findPlayerHumanoid(player)
 			end
-			local function setLookBehindCharacter()
-				if humanoid and humanoid.Torso and player.Character == newCharacter then
-					local newDesiredLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.23,0)).unit
-					local horizontalShift = findAngleBetweenXZVectors(newDesiredLook, this:GetCameraLook())
-					local vertShift = math.asin(this:GetCameraLook().y) - math.asin(newDesiredLook.y)
-					if not IsFinite(horizontalShift) then
-						horizontalShift = 0
-					end
-					if not IsFinite(vertShift) then
-						vertShift = 0
-					end
-					this.RotateInput = Vector2.new(horizontalShift, vertShift)
 
-					-- reset old camera info so follow cam doesn't rotate us
-					this.LastCameraTransform = nil
-				end
+			if (not FFlagSpawnLocationFixEnabled) then
+				wait()
 			end
-			wait()
-			setLookBehindCharacter()
+
+
+			if humanoid and humanoid.Torso and player.Character == newCharacter then
+				local newDesiredLook = (humanoid.Torso.CFrame.lookVector - Vector3.new(0,0.23,0)).unit
+				local horizontalShift = findAngleBetweenXZVectors(newDesiredLook, this:GetCameraLook())
+				local vertShift = math.asin(this:GetCameraLook().y) - math.asin(newDesiredLook.y)
+				if not IsFinite(horizontalShift) then
+					horizontalShift = 0
+				end
+				if not IsFinite(vertShift) then
+					vertShift = 0
+				end
+				this.RotateInput = Vector2.new(horizontalShift, vertShift)
+				
+				-- reset old camera info so follow cam doesn't rotate us
+				this.LastCameraTransform = nil
+			end
+			
+			-- Need to wait for camera cframe to update before we zoom in
+			-- Not waiting will force camera to original cframe
+			if (FFlagSpawnLocationFixEnabled) then
+				wait()
+				this:ZoomCamera(12.5)
+			end
 		end
 
 		player.CharacterAdded:connect(function(character)
