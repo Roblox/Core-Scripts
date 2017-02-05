@@ -13,6 +13,6 @@ module.MessageTypeSetCore = "SetCore"
 module.MessageTypeWhisper = "Whisper"
 
 module.MajorVersion = 0
-module.MinorVersion = 2
+module.MinorVersion = 4
 
 return module

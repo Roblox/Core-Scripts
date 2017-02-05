@@ -1,9 +1,12 @@
 local runnerScriptName = "ChatScript"
+local bubbleChatScriptName = "BubbleChat"
 local installDirectory = game:GetService("Chat")
+
+local ChatService = game:GetService("Chat")
 local StarterPlayerScripts = game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts")
 
-local function LoadLocalScript(name, parent)
-	local originalModule = script.Parent:WaitForChild(name)
+local function LoadLocalScript(location, name, parent)
+	local originalModule = location:WaitForChild(name)
 	local script = Instance.new("LocalScript")
 	script.Name = name
 	script.Source = originalModule.Source
@@ -21,7 +24,7 @@ local function LoadModule(location, name, parent)
 end
 
 local function GetBoolValue(parent, name, defaultValue)
-	local boolValue = parent:FindFirstChild("Name")
+	local boolValue = parent:FindFirstChild(name)
 	if boolValue then
 		if boolValue:IsA("BoolValue") then
 			return boolValue.Value
@@ -30,16 +33,30 @@ local function GetBoolValue(parent, name, defaultValue)
 	return defaultValue
 end
 
+local function loadDefaultChatDisabled()
+	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("LoadDefaultChatEnabled") end)
+	if readFlagSuccess and flagEnabled then
+		return not ChatService.LoadDefaultChat
+	end
+	return false
+end
+
 local function Install()
+	if loadDefaultChatDisabled() then
+		return
+	end
 
 	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptChatInsertDefaultBools") end)
 	local UseInsertDefaultBools = readFlagSuccess and flagEnabled
+
+	local useNewBubbleChatSuccess, useNewBubbleChatEnabled = pcall(function() return settings():GetFFlag("CorescriptNewBubbleChatEnabled") end)
+	useNewBubbleChatEnabled = useNewBubbleChatEnabled and useNewBubbleChatSuccess
 
 	local chatScriptArchivable = true
 	local ChatScript = installDirectory:FindFirstChild(runnerScriptName)
 	if not ChatScript then
 		chatScriptArchivable = false
-		ChatScript = LoadLocalScript(runnerScriptName, installDirectory)
+		ChatScript = LoadLocalScript(script.Parent, runnerScriptName, installDirectory)
 		local ChatMain = LoadModule(script.Parent, "ChatMain", ChatScript)
 
 		LoadModule(script.Parent, "ChannelsBar", ChatMain)
@@ -50,10 +67,16 @@ local function Install()
 		LoadModule(script.Parent, "MessageLabelCreator", ChatMain)
 		LoadModule(script.Parent, "CommandProcessor", ChatMain)
 		LoadModule(script.Parent, "ChannelsTab", ChatMain)
-		LoadModule(script.Parent.Parent.Parent.Common, "ClassMaker", ChatMain)
 		LoadModule(script.Parent.Parent.Parent.Common, "ObjectPool", ChatMain)
 		LoadModule(script.Parent, "MessageSender", ChatMain)
 		LoadModule(script.Parent, "CurveUtil", ChatMain)
+	end
+
+	local bubbleChatScriptArchivable = true
+	local BubbleChatScript = installDirectory:FindFirstChild(bubbleChatScriptName)
+	if not BubbleChatScript and useNewBubbleChatEnabled then
+		bubbleChatScriptArchivable = false
+		BubbleChatScript = LoadLocalScript(script.Parent.BubbleChat, bubbleChatScriptName, installDirectory)
 	end
 
 	local clientChatModules = installDirectory:FindFirstChild("ClientChatModules")
@@ -151,13 +174,33 @@ local function Install()
 		local currentPlayers = game:GetService("Players"):GetChildren()
 		for i, player in pairs(currentPlayers) do
 			if (player:IsA("Player") and player:FindFirstChild("PlayerScripts") and not player.PlayerScripts:FindFirstChild(runnerScriptName)) then
-				ChatScript:Clone().Parent = player.PlayerScripts
-				ChatScript.Archivable = false
+				ChatScriptCopy = ChatScript:Clone()
+				ChatScriptCopy.Parent = player.PlayerScripts
+				ChatScriptCopy.Archivable = false
 			end
 		end
 	end
 
 	ChatScript.Archivable = chatScriptArchivable
+
+	if useNewBubbleChatEnabled then
+		if not StarterPlayerScripts:FindFirstChild(bubbleChatScriptName) then
+			local BubbleChatScriptCopy = BubbleChatScript:Clone()
+			BubbleChatScriptCopy.Parent = StarterPlayerScripts
+			BubbleChatScriptCopy.Archivable = false
+
+			local currentPlayers = game:GetService("Players"):GetChildren()
+			for i, player in pairs(currentPlayers) do
+				if (player:IsA("Player") and player:FindFirstChild("PlayerScripts") and not player.PlayerScripts:FindFirstChild(bubbleChatScriptName)) then
+					BubbleChatScriptCopy = BubbleChatScript:Clone()
+					BubbleChatScriptCopy.Parent = player.PlayerScripts
+					BubbleChatScriptCopy.Archivable = false
+				end
+			end
+		end
+
+		BubbleChatScript.Archivable = bubbleChatScriptArchivable
+	end
 end
 
 return Install

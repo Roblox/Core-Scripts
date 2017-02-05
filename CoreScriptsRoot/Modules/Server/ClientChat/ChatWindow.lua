@@ -22,22 +22,35 @@ local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local modulesFolder = script.Parent
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
+function getClassicChatEnabled()
+	if ChatSettings.ClassicChatEnabled ~= nil then
+		return ChatSettings.ClassicChatEnabled
+	end
+	return Players.ClassicChat
+end
+
+function getBubbleChatEnabled()
+	if ChatSettings.BubbleChatEnabled ~= nil then
+		return ChatSettings.BubbleChatEnabled
+	end
+	return Players.BubbleChat
+end
 
 function bubbleChatOnly()
- 	return not Players.ClassicChat and Players.BubbleChat
+ 	return not getClassicChatEnabled() and getBubbleChatEnabled()
 end
 
 function methods:CreateGuiObjects(targetParent)
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.BackgroundTransparency = 1
-	BaseFrame.Active = true
+	BaseFrame.Active = ChatSettings.WindowDraggable
 	BaseFrame.Parent = targetParent
 
 	local ChatBarParentFrame = Instance.new("Frame")
@@ -278,6 +291,7 @@ function methods:CreateGuiObjects(targetParent)
 	end
 
 	local function UpdateDraggable(enabled)
+		BaseFrame.Active = enabled
 		BaseFrame.Draggable = enabled
 	end
 
@@ -367,7 +381,7 @@ function methods:CreateGuiObjects(targetParent)
 		end
 	end)
 
-	rawset(self, "GuiObject", BaseFrame)
+	self.GuiObject = BaseFrame
 
 	self.GuiObjects.BaseFrame = BaseFrame
 	self.GuiObjects.ChatBarParentFrame = ChatBarParentFrame
@@ -379,21 +393,21 @@ function methods:CreateGuiObjects(targetParent)
 end
 
 function methods:GetChatBar()
-	return rawget(self, "ChatBar")
+	return self.ChatBar
 end
 
 function methods:RegisterChatBar(ChatBar)
-	rawset(self, "ChatBar", ChatBar)
+	self.ChatBar = ChatBar
 	self.ChatBar:CreateGuiObjects(self.GuiObjects.ChatBarParentFrame)
 end
 
 function methods:RegisterChannelsBar(ChannelsBar)
-	rawset(self, "ChannelsBar", ChannelsBar)
+	self.ChannelsBar = ChannelsBar
 	self.ChannelsBar:CreateGuiObjects(self.GuiObjects.ChannelsBarParentFrame)
 end
 
 function methods:RegisterMessageLogDisplay(MessageLogDisplay)
-	rawset(self, "MessageLogDisplay", MessageLogDisplay)
+	self.MessageLogDisplay = MessageLogDisplay
 	self.MessageLogDisplay.GuiObject.Parent = self.GuiObjects.ChatChannelParentFrame
 end
 
@@ -462,8 +476,8 @@ function methods:RemoveChannel(channelName)
 		self:SwitchCurrentChannel(targetSwitchChannel)
 	end
 
-	if (not ChatSettings.ShowChannelsBar) then
-		if (rawget(self.ChatBar, "TargetChannel") == channelName) then
+	if not ChatSettings.ShowChannelsBar then
+		if self.ChatBar.TargetChannel == channelName then
 			self.ChatBar:SetChannelTarget(ChatSettings.GeneralChannelName)
 		end
 	end
@@ -475,7 +489,7 @@ end
 
 function methods:GetTargetMessageChannel()
 	if (not ChatSettings.ShowChannelsBar) then
-		return rawget(self.ChatBar, "TargetChannel")
+		return self.ChatBar.TargetChannel
 	else
 		local curChannel = self:GetCurrentChannel()
 		return curChannel and curChannel.Name
@@ -483,7 +497,7 @@ function methods:GetTargetMessageChannel()
 end
 
 function methods:GetCurrentChannel()
-	return rawget(self, "CurrentChannel")
+	return self.CurrentChannel
 end
 
 function methods:SwitchCurrentChannel(channelName)
@@ -498,6 +512,9 @@ function methods:SwitchCurrentChannel(channelName)
 
 	local cur = self:GetCurrentChannel()
 	local new = self:GetChannel(channelName)
+	if new == nil then
+		error(string.format("Channel '%s' does not exist.", channelName))
+	end
 
 	if (new ~= cur) then
 		if (cur) then
@@ -512,7 +529,7 @@ function methods:SwitchCurrentChannel(channelName)
 			tab:SetActive(true)
 		end
 
-		rawset(self, "CurrentChannel", new)
+		self.CurrentChannel = new
 	end
 
 end
@@ -545,11 +562,6 @@ end
 
 function methods:DisableResizable()
 	self.GuiObjects.ChatResizerFrame.Active = false
-end
-
-function methods:ResetResizerPosition()
-	local ChatResizerFrame = self.GuiObjects.ChatResizerFrame
-	ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
 end
 
 function methods:FadeOutBackground(duration)
@@ -609,10 +621,9 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChatWindow", methods)
 
 function module.new()
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.GuiObject = nil
 	obj.GuiObjects = {}
@@ -628,8 +639,6 @@ function module.new()
 	obj.CoreGuiEnabled = true
 
 	obj.AnimParams = {}
-
-	ClassMaker.MakeClass("ChatWindow", obj)
 
 	obj:InitializeAnimParams()
 

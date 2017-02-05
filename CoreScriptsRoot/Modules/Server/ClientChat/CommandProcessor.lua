@@ -4,6 +4,7 @@
 
 local module = {}
 local methods = {}
+methods.__index = methods
 
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -13,7 +14,6 @@ local commandModules = clientChatModules:WaitForChild("CommandModules")
 local commandUtil = require(commandModules:WaitForChild("Util"))
 local modulesFolder = script.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 
 function methods:SetupCommandProcessors()
 	local commands = commandModules:GetChildren()
@@ -55,15 +55,12 @@ end
 
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("CommandProcessor", methods)
 
 function module.new()
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.CompletedMessageProcessors = {}
 	obj.InProgressMessageProcessors = {}
-
-	ClassMaker.MakeClass("CommandProcessor", obj)
 
 	obj:SetupCommandProcessors()
 

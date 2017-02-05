@@ -18,6 +18,9 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 local newChatVisiblePropSuccess, newChatVisiblePropValue =  pcall(function() return settings():GetFFlag("ChatVisiblePropertyEnabled") end)
 local newChatVisibleProp = (newChatVisiblePropSuccess and newChatVisiblePropValue)
 
+local showHealthWhenDamagedSuccess, showHealthWhenDamagedValue = pcall(function() return settings():GetFFlag("OnlyShowHealthWhenDamaged") end)
+local onlyShowHealthWhenDamagedEnabled = showHealthWhenDamagedSuccess and showHealthWhenDamagedValue
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -669,6 +672,9 @@ local function CreateUsernameHealthMenuItem()
 	local humanoidChangedConn, childAddedConn, childRemovedConn = nil
 	--------------
 
+	local HealthBarEnabled = true
+	local CurrentHumanoid = nil
+
 	local function AnimateHurtOverlay()
 		if hurtOverlay and not InputService.VREnabled then
 			local newSize = UDim2.new(20, 0, 20, 0)
@@ -736,9 +742,25 @@ local function CreateUsernameHealthMenuItem()
 		return Color3.new(result.x, result.y, result.z)
 	end
 
+	local function UpdateHealthVisible()
+		local isEnabled = HealthBarEnabled and CurrentHumanoid and CurrentHumanoid.Health ~= CurrentHumanoid.MaxHealth
+		healthContainer.Visible = isEnabled
+		if isEnabled then
+			username.Size = UDim2.new(1, -14, 0, 22);
+			username.TextYAlignment = Enum.TextYAlignment.Bottom;
+		else
+			username.Size = UDim2.new(1, -14, 1, 0);
+			username.TextYAlignment = Enum.TextYAlignment.Center;
+		end
+	end
+
 	local function OnHumanoidAdded(humanoid)
+		CurrentHumanoid = humanoid
 		local lastHealth = humanoid.Health
 		local function OnHumanoidHealthChanged(health)
+			if onlyShowHealthWhenDamagedEnabled then
+				UpdateHealthVisible()
+			end
 			if humanoid then
 				local healthDelta = lastHealth - health
 				local healthPercent = health / humanoid.MaxHealth
@@ -786,13 +808,18 @@ local function CreateUsernameHealthMenuItem()
 
 	rawset(this, "SetHealthbarEnabled",
 		function(self, enabled)
-			healthContainer.Visible = enabled
-			if enabled then
-				username.Size = UDim2.new(1, -14, 0, 22);
-				username.TextYAlignment = Enum.TextYAlignment.Bottom;
+			if onlyShowHealthWhenDamagedEnabled then
+				HealthBarEnabled = enabled
+				UpdateHealthVisible()
 			else
-				username.Size = UDim2.new(1, -14, 1, 0);
-				username.TextYAlignment = Enum.TextYAlignment.Center;
+				healthContainer.Visible = enabled
+				if enabled then
+					username.Size = UDim2.new(1, -14, 0, 22);
+					username.TextYAlignment = Enum.TextYAlignment.Bottom;
+				else
+					username.Size = UDim2.new(1, -14, 1, 0);
+					username.TextYAlignment = Enum.TextYAlignment.Center;
+				end
 			end
 		end)
 
@@ -1117,6 +1144,9 @@ local function CreateUnreadMessagesNotifier(ChatModule)
 	return chatCounter
 end
 
+local useNewBubbleChatSuccess, useNewBubbleChatEnabled = pcall(function() return settings():GetFFlag("CorescriptNewBubbleChatEnabled") end)
+useNewBubbleChatEnabled = useNewBubbleChatEnabled and useNewBubbleChatSuccess
+
 local function CreateChatIcon()
 	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 	if not chatEnabled then return end
@@ -1169,7 +1199,7 @@ local function CreateChatIcon()
 	local function toggleChat()
 		if InputService.VREnabled then
 			ChatModule:ToggleVisibility()
-		elseif Util.IsTouchDevice() or bubbleChatIsOn then
+		elseif Util.IsTouchDevice() or useNewBubbleChatEnabled and ChatModule:IsBubbleChatOnly() or bubbleChatIsOn then
 			if debounce + TopbarConstants.DEBOUNCE_TIME < tick() then
 				if Util.IsTouchDevice() then
 					ChatModule:SetVisible(true)
@@ -1189,29 +1219,52 @@ local function CreateChatIcon()
 		toggleChat()
 	end)
 
-	if Util.IsTouchDevice() or bubbleChatIsOn then
+	if useNewBubbleChatEnabled then
 		if ChatModule.ChatBarFocusChanged then
 			ChatModule.ChatBarFocusChanged:connect(function(isFocused)
-				updateIcon(isFocused)
-				debounce = tick()
+				if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
+					updateIcon(isFocused)
+					debounce = tick()
+				end
 			end)
 		end
-		updateIcon(false)
+
+		if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
+			updateIcon(false)
+		end
+
+		if ChatModule.BubbleChatOnlySet then
+			ChatModule.BubbleChatOnlySet:connect(function()
+				if ChatModule:IsBubbleChatOnly() then
+					updateIcon(false)
+				elseif not Util.IsTouchDevice() then
+					updateIcon(true)
+				end
+			end)
+		end
+	else
+		if Util.IsTouchDevice() or bubbleChatIsOn then
+			if ChatModule.ChatBarFocusChanged then
+				ChatModule.ChatBarFocusChanged:connect(function(isFocused)
+					updateIcon(isFocused)
+					debounce = tick()
+				end)
+			end
+			updateIcon(false)
+		end
 	end
 
 	if ChatModule.VisibilityStateChanged then
 		ChatModule.VisibilityStateChanged:connect(onChatStateChanged)
 	end
 
-	if not (Util.IsTouchDevice() or InputService.VREnabled) then
+	if not InputService.VREnabled then
 		-- check to see if the chat was disabled
 		local willEnableChat = true
 		if newChatVisibleProp then
 			willEnableChat = GameSettings.ChatVisible
 		end
-		if willEnableChat then
-			ChatModule:SetVisible(true)
-		end
+		ChatModule:SetVisible(willEnableChat)
 	end
 
 	local menuItem = CreateMenuItem(chatIconButton)
@@ -1659,6 +1712,8 @@ local function AddItemInOrder(Bar, Item, ItemOrder)
 	Bar:AddItem(Item, index)
 end
 
+local ChatModule = require(GuiRoot.Modules.ChatSelector)
+
 local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 	local enabled = coreGuiEnabled and topbarEnabled
 	local vrEnabled = InputService.VREnabled
@@ -1686,6 +1741,7 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 		end
 	end
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
+		enabled = enabled and (not ChatModule:IsDisabled())
 		local ChatSelector = require(GuiRoot.Modules.ChatSelector)
 		local showTopbarChatIcon = enabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or ChatSelector:GetNewLuaChatFlag() or RunService:IsStudio())
 		local showThree3DChatIcon = coreGuiEnabled and InputService.VREnabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio())
@@ -1703,7 +1759,7 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 			if chatIcon then
 				AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
 			end
-			if mobileShowChatIcon and PlayersService.ClassicChat then
+			if mobileShowChatIcon and (useNewBubbleChatEnabled and ChatModule:ClassicChatEnabled() or PlayersService.ClassicChat) then
 				AddItemInOrder(LeftMenubar, mobileShowChatIcon, LEFT_ITEM_ORDER)
 			end
 		else
@@ -1724,6 +1780,25 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 	end
 end
 
+local function OnChatModuleDisabled()
+	if chatIcon3D then
+		Menubar3D:RemoveItem(chatIcon3D)
+	end
+	if chatIcon then
+		LeftMenubar:RemoveItem(chatIcon)
+	end
+	if mobileShowChatIcon then
+		LeftMenubar:RemoveItem(mobileShowChatIcon)
+	end
+end
+
+if useNewBubbleChatEnabled then
+	if ChatModule.ChatDisabled then
+		ChatModule.ChatDisabled:connect(function()
+			OnChatModuleDisabled()
+		end)
+	end
+end
 
 TopBar:UpdateBackgroundTransparency()
 

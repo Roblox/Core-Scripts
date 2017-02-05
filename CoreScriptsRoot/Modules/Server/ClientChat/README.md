@@ -14,7 +14,6 @@ This is the main client side chat object.
 
 	EnableResizable()
 	DisableResizable()
-	ResetResizerPosition()
 
 	FadeOutBackground(float duration)
 	FadeInBackground(float duration)
@@ -55,7 +54,7 @@ The chat bar object handles text entry.
 
 ### Methods
 	TextBox GetTextBox()
-	TextLabel GetMessageModeTextLabel
+	TextButton GetMessageModeTextButton
 
 	bool IsFocused()
 	CaptureFocus()

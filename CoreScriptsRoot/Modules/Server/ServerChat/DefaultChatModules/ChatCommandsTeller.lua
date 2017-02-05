@@ -2,16 +2,29 @@
 --	// Written by: Xsitsu
 --	// Description: Module that provides information on default chat commands to players.
 
+local Chat = game:GetService("Chat")
+local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
+local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
+
 local function Run(ChatService)
 
+	local function ShowJoinAndLeaveCommands()
+		if ChatSettings.ShowJoinAndLeaveHelpText ~= nil then
+			return ChatSettings.ShowJoinAndLeaveHelpText
+		end
+		return false
+	end
+
 	local function ProcessCommandsFunction(fromSpeaker, message, channel)
-		if (message == "/?" or message == "/help") then
+		if (message:lower() == "/?" or message:lower() == "/help") then
 			local speaker = ChatService:GetSpeaker(fromSpeaker)
 			speaker:SendSystemMessage("These are the basic chat commands.", channel)
 			speaker:SendSystemMessage("/me <text> : roleplaying command for doing actions.", channel)
 			speaker:SendSystemMessage("/c <channel> : switch channel menu tabs.", channel)
-			speaker:SendSystemMessage("/join <channel> or /j <channel> : join channel.", channel)
-			speaker:SendSystemMessage("/leave <channel> or /l <channel> : leave channel. (leaves current if none specified)", channel)
+			if ShowJoinAndLeaveCommands() then
+				speaker:SendSystemMessage("/join <channel> or /j <channel> : join channel.", channel)
+				speaker:SendSystemMessage("/leave <channel> or /l <channel> : leave channel. (leaves current if none specified)", channel)
+			end
 			speaker:SendSystemMessage("/whisper <speaker> or /w <speaker> : open private message channel with speaker.", channel)
 			speaker:SendSystemMessage("/mute <speaker> : mute a speaker.", channel)
 			speaker:SendSystemMessage("/unmute <speaker> : unmute a speaker.", channel)

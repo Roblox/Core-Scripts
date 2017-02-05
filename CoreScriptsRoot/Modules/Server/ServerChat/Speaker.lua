@@ -6,13 +6,10 @@ local module = {}
 
 local modulesFolder = script.Parent
 
---////////////////////////////// Include
---//////////////////////////////////////
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
-
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
+methods.__index = methods
 
 function methods:SayMessage(message, channelName, extraData)
 	if (self.ChatService:InternalDoProcessCommands(self.Name, message, channelName)) then return end
@@ -108,7 +105,7 @@ function methods:SendSystemMessage(message, channelName, extraData)
 end
 
 function methods:GetPlayer()
-	return rawget(self, "PlayerObj")
+	return self.PlayerObj
 end
 
 function methods:SetExtraData(key, value)
@@ -151,7 +148,7 @@ function methods:InternalDestroy()
 end
 
 function methods:InternalAssignPlayerObject(playerObj)
-	rawset(self, "PlayerObj", playerObj)
+	self.PlayerObj = playerObj
 end
 
 function methods:InternalSendMessage(messageObj, channelName)
@@ -174,19 +171,22 @@ end
 
 function methods:InternalSendSystemMessage(messageObj, channelName)
 	local success, err = pcall(function()
-		self.eReceivedSystemMessage:Fire(messageObj, channel)
+		self.eReceivedSystemMessage:Fire(messageObj, channelName)
 	end)
 	if not success and err then
 		print("Error sending internal system message: " ..err)
 	end
 end
 
+function methods:UpdateChannelNameColor(channelName, channelNameColor)
+	self.eChannelNameColorUpdated:Fire(channelName, channelNameColor)
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("Speaker", methods)
 
 function module.new(vChatService, name)
-	local obj = {}
+	local obj = setmetatable({}, methods)
 
 	obj.ChatService = vChatService
 
@@ -211,6 +211,7 @@ function module.new(vChatService, name)
 	obj.eUnmuted = Instance.new("BindableEvent")
 	obj.eExtraDataUpdated = Instance.new("BindableEvent")
 	obj.eMainChannelSet = Instance.new("BindableEvent")
+	obj.eChannelNameColorUpdated = Instance.new("BindableEvent")
 
 	obj.SaidMessage = obj.eSaidMessage.Event
 	obj.ReceivedMessage = obj.eReceivedMessage.Event
@@ -222,8 +223,7 @@ function module.new(vChatService, name)
 	obj.Unmuted = obj.eUnmuted.Event
 	obj.ExtraDataUpdated = obj.eExtraDataUpdated.Event
 	obj.MainChannelSet = obj.eMainChannelSet.Event
-
-	ClassMaker.MakeClass("Speaker", obj)
+	obj.ChannelNameColorUpdated = obj.eChannelNameColorUpdated.Event
 
 	return obj
 end

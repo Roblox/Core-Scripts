@@ -11,16 +11,21 @@ local replicatedModules = Chat:WaitForChild("ClientChatModules")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
-local ClassMaker = require(modulesFolder:WaitForChild("ClassMaker"))
 local ChatConstants = require(replicatedModules:WaitForChild("ChatConstants"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 
 local methods = {}
+methods.__index = methods
 
 function methods:SendSystemMessage(message, extraData)
 	local messageObj = self:InternalCreateMessageObject(message, nil, true, extraData)
+
+	local success, err = pcall(function() self.eMessagePosted:Fire(messageObj) end)
+	if not success and err then
+		print("Error posting message: " ..err)
+	end
 
 	self:InternalAddMessageToHistoryLog(messageObj)
 
@@ -299,6 +304,36 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	messageObj.IsFiltered = true
 	self:InternalAddMessageToHistoryLog(messageObj)
 
+	-- One more pass is needed to ensure that no speakers do not recieve the message.
+	-- Otherwise a user could join while the message is being filtered who had not originally been sent the message.
+	local speakersMissingMessage = {}
+	for _, speaker in pairs(self.Speakers) do
+		local isMuted = speaker:IsSpeakerMuted(fromSpeaker.Name)
+		if not isMuted then
+			local wasSentMessage = false
+			for _, sentSpeakerName in pairs(sentToList) do
+				if speaker.Name == sentSpeakerName then
+					wasSentMessage = true
+					break
+				end
+			end
+			if not wasSentMessage then
+				table.insert(speakersMissingMessage, speaker.Name)
+			end
+		end
+	end
+
+	for _, speakerName in pairs(speakersMissingMessage) do
+		local speaker = self.Speakers[speakerName]
+		if speaker then
+			local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+			local cMessageObj = DeepCopy(messageObj)
+			cMessageObj.Message = filteredMessage
+			cMessageObj.IsFiltered = true
+			speaker:InternalSendFilteredMessage(cMessageObj, self.Name)
+		end
+	end
+
 	return messageObj
 end
 
@@ -335,13 +370,8 @@ function methods:InternalRemoveExcessMessagesFromLog()
 	end
 end
 
-local function ChatHistorySortFunction(message1, message2)
-	return (message1.Time < message2.Time)
-end
-
 function methods:InternalAddMessageToHistoryLog(messageObj)
 	table.insert(self.ChatHistory, messageObj)
-	--table.sort(self.ChatHistory, ChatHistorySortFunction)
 
 	self:InternalRemoveExcessMessagesFromLog()
 end
@@ -386,17 +416,24 @@ function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, e
 	return messageObj
 end
 
+function methods:SetChannelNameColor(color)
+	self.ChannelNameColor = color
+	for i, speaker in pairs(self.Speakers) do
+		speaker:UpdateChannelNameColor(self.Name, color)
+	end
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
-ClassMaker.RegisterClassType("ChatChannel", methods)
 
-function module.new(vChatService, name, welcomeMessage)
-	local obj = {}
+function module.new(vChatService, name, welcomeMessage, channelNameColor)
+	local obj = setmetatable({}, methods)
 
 	obj.ChatService = vChatService
 
 	obj.Name = name
 	obj.WelcomeMessage = welcomeMessage or ""
+	obj.ChannelNameColor = channelNameColor
 
 	obj.Joinable = true
 	obj.Leavable = true
@@ -429,8 +466,6 @@ function module.new(vChatService, name, welcomeMessage)
 	obj.SpeakerLeft = obj.eSpeakerLeft.Event
 	obj.SpeakerMuted = obj.eSpeakerMuted.Event
 	obj.SpeakerUnmuted = obj.eSpeakerUnmuted.Event
-
-	ClassMaker.MakeClass("ChatChannel", obj)
 
 	return obj
 end

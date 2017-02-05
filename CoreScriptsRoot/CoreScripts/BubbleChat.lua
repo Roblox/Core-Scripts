@@ -4,6 +4,21 @@
 	// Description: Code for rendering bubble chat
 ]]
 
+local useNewBubbleChatSuccess, useNewBubbleChatEnabled = pcall(function() return settings():GetFFlag("CorescriptNewBubbleChatEnabled") end)
+useNewBubbleChatEnabled = useNewBubbleChatEnabled and useNewBubbleChatSuccess
+if useNewBubbleChatEnabled then
+	-- We need to check if the BubbleChat script exists before we can disable this bubble chat.
+	-- This is for during the transition period when CorescriptNewBubbleChatEnabled could be true on the client, but not the server.
+	if not game:IsLoaded() then
+		game.Loaded:wait()
+	end
+	local ChatService = game:GetService("Chat")
+	local BubbleChat = ChatService:WaitForChild("BubbleChat", 3)
+	if BubbleChat then
+		return --Don't enable this file if the new Bubble chat is enabled
+	end
+end
+
 --[[ SERVICES ]]
 local RunService = game:GetService('RunService')
 local CoreGuiService = game:GetService('CoreGui')
@@ -50,8 +65,8 @@ local ChatType = {	PLAYER_CHAT = "pChat",
 					PLAYER_GAME_CHAT = "pGame",
 					BOT_CHAT = "bChat" }
 
-local BubbleColor = {	WHITE = "dub", 
-					BLUE = "blu", 
+local BubbleColor = {	WHITE = "dub",
+					BLUE = "blu",
 					GREEN = "gre",
 					RED = "red" }
 
@@ -166,7 +181,7 @@ local function createChatLine(chatType, message, bubbleColor, isLocalPlayer)
 	function this:IsPlayerChat()
 		if not this.ChatType then return false end
 
-		if this.ChatType == ChatType.PLAYER_CHAT or 
+		if this.ChatType == ChatType.PLAYER_CHAT or
 			this.ChatType == ChatType.PLAYER_WHISPER_CHAT or
 			this.ChatType == ChatType.PLAYER_TEAM_CHAT then
 				return true
@@ -232,7 +247,7 @@ end
 
 function createChatBubbleWithTail(filePrefix, position, size, sliceRect)
 	local chatBubbleMain = createChatBubbleMain(filePrefix, sliceRect)
-	
+
 	local chatBubbleTail = createChatBubbleTail(position, size)
 	chatBubbleTail.Parent = chatBubbleMain
 
@@ -241,7 +256,7 @@ end
 
 function createScaledChatBubbleWithTail(filePrefix, frameScaleSize, position, sliceRect)
 	local chatBubbleMain = createChatBubbleMain(filePrefix, sliceRect)
-	
+
 	local frame = Instance.new("Frame")
 	frame.Name = "ChatBubbleTailFrame"
 	frame.BackgroundTransparency = 1
@@ -308,7 +323,7 @@ local function createChatOutput()
 
 	local function createBillboardInstance(adornee)
 		local billboardGui = Instance.new("BillboardGui")
-		billboardGui.Adornee = adornee	
+		billboardGui.Adornee = adornee
 		billboardGui.RobloxLocked = true
 		billboardGui.Size = UDim2.new(0,BILLBOARD_MAX_WIDTH,0,BILLBOARD_MAX_HEIGHT)
 		billboardGui.StudsOffset = Vector3.new(0, 1.5, 2)
@@ -401,7 +416,7 @@ local function createChatOutput()
 
 		if origin:IsA("Model") then
 			local head = origin:FindFirstChild("Head")
-			if not head then origin = origin.PrimaryPart 
+			if not head then origin = origin.PrimaryPart
 			else origin = head end
 		end
 
@@ -471,7 +486,7 @@ local function createChatOutput()
 				if bubbleText then bubbleText.TextTransparency = 0.5 end
 			end
 
-			local udimValue = UDim2.new( bubble.Position.X.Scale, bubble.Position.X.Offset, 
+			local udimValue = UDim2.new( bubble.Position.X.Scale, bubble.Position.X.Offset,
 										1, currentBubbleYPos - bubble.Size.Y.Offset - CHAT_BUBBLE_TAIL_HEIGHT )
 			bubble:TweenPosition(udimValue, Enum.EasingDirection.Out, Enum.EasingStyle.Bounce, 0.1, true)
 			currentBubbleYPos = currentBubbleYPos - bubble.Size.Y.Offset - CHAT_BUBBLE_TAIL_HEIGHT
@@ -509,7 +524,7 @@ local function createChatOutput()
 				end
 			end
 
-			if bubble then 
+			if bubble then
 				bubble:Destroy()
 				bubbleQueue:PopFront()
 			end
@@ -534,7 +549,7 @@ local function createChatOutput()
 
 			line.RenderBubble = chatBubbleRender
 
-			local currentTextBounds = TextService:GetTextSize(bubbleText.Text, CHAT_BUBBLE_FONT_SIZE_INT, CHAT_BUBBLE_FONT, 
+			local currentTextBounds = TextService:GetTextSize(bubbleText.Text, CHAT_BUBBLE_FONT_SIZE_INT, CHAT_BUBBLE_FONT,
 																Vector2.new(BILLBOARD_MAX_WIDTH, BILLBOARD_MAX_HEIGHT))
 			local bubbleWidthScale = math.max((currentTextBounds.x + CHAT_BUBBLE_WIDTH_PADDING)/BILLBOARD_MAX_WIDTH, 0.1)
 			local numOflines = (currentTextBounds.y/CHAT_BUBBLE_FONT_SIZE_INT)
@@ -585,7 +600,7 @@ local function createChatOutput()
 
 		local luaChatType = ChatType.PLAYER_CHAT
 		if chatType == Enum.PlayerChatType.Team then
-			luaChatType = ChatType.PLAYER_TEAM_CHAT 
+			luaChatType = ChatType.PLAYER_TEAM_CHAT
 		elseif chatType == Enum.PlayerChatType.All then
 			luaChatType = ChatType.PLAYER_GAME_CHAT
 		elseif chatType == Enum.PlayerChatType.Whisper then
@@ -595,7 +610,7 @@ local function createChatOutput()
 		local safeMessage = this:SanitizeChatLine(message)
 
 		local line = createPlayerChatLine(chatType, sourcePlayer, safeMessage, not fromOthers)
-		
+
 		if sourcePlayer and line.Origin then
 			local fifo = this.CharacterSortedMsg:Get(line.Origin).Fifo
 			fifo:PushBack(line)
@@ -616,7 +631,7 @@ local function createChatOutput()
 
 		local safeMessage = this:SanitizeChatLine(message)
 		local line = createGameChatLine(origin, safeMessage, not fromOthers, bubbleColor)
-	
+
 		this.CharacterSortedMsg:Get(line.Origin).Fifo:PushBack(line)
 		this:CreateChatLineRender(origin, line, false, this.CharacterSortedMsg:Get(line.Origin).Fifo)
 	end
@@ -626,9 +641,9 @@ local function createChatOutput()
 	end
 
 	function this:CameraChanged(prop)
-		if prop == "CoordinateFrame" then 
-			this:CameraCFrameChanged() 
-		end 
+		if prop == "CoordinateFrame" then
+			this:CameraCFrameChanged()
+		end
 	end
 
 	-- setup to datamodel connections
