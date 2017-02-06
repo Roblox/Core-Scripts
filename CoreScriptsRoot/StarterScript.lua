@@ -38,7 +38,7 @@ scriptContext:AddCoreScriptLocal("CoreScripts/PerformanceStatsManagerScript",
   RobloxGui)
 
 -- Chat script
-spawn(function() safeRequire(RobloxGui.Modules.ChatSelector) end)
+spawn(function() safeRequire(RobloxGui.Modules.Chat) end)
 spawn(function() safeRequire(RobloxGui.Modules.PlayerlistModule) end)
 
 scriptContext:AddCoreScriptLocal("CoreScripts/BubbleChat", RobloxGui)

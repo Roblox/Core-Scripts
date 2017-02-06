@@ -1151,7 +1151,7 @@ local function CreateChatIcon()
 	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 	if not chatEnabled then return end
 
-	local ChatModule = require(GuiRoot.Modules.ChatSelector)
+	local ChatModule = require(GuiRoot.Modules.Chat)
 
 	local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
 	local debounce = 0
@@ -1283,7 +1283,7 @@ local function CreateChatIcon()
 end
 
 local function CreateMobileHideChatIcon()
-	local ChatModule = require(GuiRoot.Modules.ChatSelector)
+	local ChatModule = require(GuiRoot.Modules.Chat)
 
 	local chatHideIconButton = Util.Create'ImageButton'
 	{
@@ -1345,7 +1345,7 @@ local function CreateChatIcon3D(topBarInstance, panel, menubar)
 
 	local VRHub = require(GuiRoot.Modules.VR.VRHub)
 
-	local ChatModule = require(GuiRoot.Modules.ChatSelector)
+	local ChatModule = require(GuiRoot.Modules.Chat)
 	local thisModuleName = ChatModule.ModuleName
 
 	local menuItem = CreateMenuItem3D(thisModuleName)
@@ -1712,7 +1712,7 @@ local function AddItemInOrder(Bar, Item, ItemOrder)
 	Bar:AddItem(Item, index)
 end
 
-local ChatModule = require(GuiRoot.Modules.ChatSelector)
+local ChatModule = require(GuiRoot.Modules.Chat)
 
 local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 	local enabled = coreGuiEnabled and topbarEnabled
@@ -1742,8 +1742,8 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 	end
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
 		enabled = enabled and (not ChatModule:IsDisabled())
-		local ChatSelector = require(GuiRoot.Modules.ChatSelector)
-		local showTopbarChatIcon = enabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or ChatSelector:GetNewLuaChatFlag() or RunService:IsStudio())
+		local Chat = require(GuiRoot.Modules.Chat)
+		local showTopbarChatIcon = enabled
 		local showThree3DChatIcon = coreGuiEnabled and InputService.VREnabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio())
 
 		if showThree3DChatIcon then

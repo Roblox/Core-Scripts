@@ -304,7 +304,7 @@ local function createGamepadMenuGui()
 	------------ Chat ---------------
 	local chatFunc = function()
 		toggleCoreGuiRadial()
-		local ChatModule = require(GuiRoot.Modules.ChatSelector)
+		local ChatModule = require(GuiRoot.Modules.Chat)
 		ChatModule:ToggleVisibility()
 	end
 	local chatRadial = createRadialButton("Chat", "Chat", 6, not StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat), Enum.CoreGuiType.Chat, chatFunc)

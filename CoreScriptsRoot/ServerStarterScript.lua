@@ -59,10 +59,5 @@ game:GetService("Players").PlayerRemoving:connect(function(player)
 	end
 end)
 
-local success, retVal = pcall(function() return game:GetService("Chat"):GetShouldUseLuaChat() end)
-local useNewChat = success and retVal
-local FORCE_UseNewChat = require(game:GetService("CoreGui").RobloxGui.Modules.Common.ForceUseNewChat)
-if (useNewChat or FORCE_UseNewChat) then
-	require(game:GetService("CoreGui").RobloxGui.Modules.Server.ClientChat.ChatWindowInstaller)()
-	require(game:GetService("CoreGui").RobloxGui.Modules.Server.ServerChat.ChatServiceInstaller)()
-end
+require(game:GetService("CoreGui").RobloxGui.Modules.Server.ClientChat.ChatWindowInstaller)()
+require(game:GetService("CoreGui").RobloxGui.Modules.Server.ServerChat.ChatServiceInstaller)()
