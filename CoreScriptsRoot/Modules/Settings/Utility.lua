@@ -1338,7 +1338,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 	if CoreGui.RobloxGui.AbsoluteSize.Y <= AlertViewBacking.Size.Y.Offset then
 		AlertViewBacking.Size = UDim2.new(AlertViewBacking.Size.X.Scale, AlertViewBacking.Size.X.Offset,
 											AlertViewBacking.Size.Y.Scale, CoreGui.RobloxGui.AbsoluteSize.Y)
-		AlertViewBacking.Position = UDim2.new(0.5, -AlertViewBacking.Size.X.Offset/2, 0.5, -AlertViewBacking.Size.Y.Offset/2)
+		AlertViewBacking.Position = UDim2.new(AlertViewBacking.Position.X.Scale, -AlertViewBacking.Size.X.Offset/2, 0.5, -AlertViewBacking.Size.Y.Offset/2)
 	end
 
 	local AlertViewText = Util.Create'TextLabel'

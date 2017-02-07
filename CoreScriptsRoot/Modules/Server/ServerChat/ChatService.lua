@@ -2,12 +2,26 @@
 --	// Written by: Xsitsu
 --	// Description: Manages creating and destroying ChatChannels and Speakers.
 
+local MAX_FILTER_RETRIES = 3
+local MAX_FILTER_DURATION = 60
+
+--- Constants used to decide when to notify that the chat filter is having issues filtering messages.
+local FILTER_NOTIFCATION_THRESHOLD = 3 --Number of notifcation failures before an error message is output.
+local FILTER_NOTIFCATION_INTERVAL = 60 --Time between error messages.
+local FILTER_THRESHOLD_TIME = 60 --If there has not been an issue in this many seconds, the count of issues resets.
+
 local module = {}
 
-local modulesFolder = script.Parent
 local RunService = game:GetService("RunService")
 local Chat = game:GetService("Chat")
 local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
+
+local modulesFolder = script.Parent
+local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
+local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
+
+local errorTextColor = ChatSettings.ErrorMessageTextColor or Color3.fromRGB(245, 50, 50)
+local errorExtraData = {ChatColor = errorTextColor}
 
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -166,6 +180,26 @@ function methods:UnregisterProcessCommandsFunction(funcId)
 	self.ProcessCommandsFunctions:RemoveFunction(funcId)
 end
 
+local LastFilterNoficationTime = 0
+local LastFilterIssueTime = 0
+local FilterIssueCount = 0
+function methods:InternalNotifyFilterIssue()
+	if (tick() - LastFilterIssueTime) > FILTER_THRESHOLD_TIME then
+		FilterIssueCount = 0
+	end
+	FilterIssueCount = FilterIssueCount + 1
+	LastFilterIssueTime = tick()
+	if FilterIssueCount >= FILTER_NOTIFCATION_THRESHOLD then
+		if (tick() - LastFilterNoficationTime) > FILTER_NOTIFCATION_INTERVAL then
+			LastFilterNoficationTime = tick()
+			local systemChannel = self:GetChannel("System")
+			if systemChannel then
+				systemChannel:SendSystemMessage("The chat filter is currently experiencing issues and messages may be slow to appear.", errorExtraData)
+			end
+		end
+	end
+end
+
 local StudioMessageFilteredCache = {}
 
 --///////////////// Internal-Use Methods
@@ -180,7 +214,23 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 			local fromPlayerObj = fromSpeaker:GetPlayer()
 			local toPlayerObj = toSpeaker:GetPlayer()
 			if (fromPlayerObj and toPlayerObj) then
-				message = Chat:FilterStringAsync(message, fromPlayerObj, toPlayerObj)
+				local filterStartTime = tick()
+				local filterRetries = 0
+				while true do
+					local success, message = pcall(function()
+						return Chat:FilterStringAsync(message, fromPlayerObj, toPlayerObj)
+					end)
+					if success then
+						return message
+					else
+						warn("Error filtering message:", message)
+					end
+					filterRetries = filterRetries + 1
+					if filterRetries > MAX_FILTER_RETRIES or (tick() - filterStartTime) > MAX_FILTER_DURATION then
+						self:InternalNotifyFilterIssue()
+						return nil
+					end
+				end
 			end
 		end
 	else
@@ -190,9 +240,10 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 			StudioMessageFilteredCache[message] = true
 			wait(0.2)
 		end
+		return message
 	end
 
-	return message
+	return nil
 end
 
 function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
