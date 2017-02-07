@@ -339,9 +339,11 @@ UserInputService.TouchTap:connect(function(tapPos, gameProcessedEvent)
 	local last = mouseIsInWindow
 
 	UpdateMousePosition(tapPos[1])
-	if (not mouseIsInWindow and last ~= mouseIsInWindow) then
-		DoBackgroundFadeOut()
-	end
+end)
+
+UserInputService.TouchMoved:connect(function(inputObject, gameProcessedEvent)
+	local tapPos = Vector2.new(inputObject.Position.X, inputObject.Position.Y)
+	UpdateMousePosition(tapPos)
 end)
 
 UserInputService.Changed:connect(function(prop)
@@ -557,6 +559,7 @@ function DoChatBarFocus()
 
 	if (not ChatBar:IsFocused() and ChatBar:GetVisible()) then
 		moduleApiTable:SetVisible(true)
+		InstantFadeIn()
 		ChatBar:CaptureFocus()
 		moduleApiTable.ChatBarFocusChanged:fire(true)
 	end

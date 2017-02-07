@@ -6,7 +6,8 @@ local Chat = game:GetService("Chat")
 local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
 
-local errorExtraData = {ChatColor = Color3.fromRGB(245, 50, 50)}
+local errorTextColor = ChatSettings.ErrorMessageTextColor or Color3.fromRGB(245, 50, 50)
+local errorExtraData = {ChatColor = errorTextColor}
 
 local function Run(ChatService)
 

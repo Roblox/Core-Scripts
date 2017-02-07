@@ -70,9 +70,12 @@ function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraDa
 		speaker:InternalSendMessage(messageObj, self.Name)
 
 		if not isFiltered then
-			messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
-			messageObj.IsFiltered = true
-			speaker:InternalSendFilteredMessage(messageObj, self.Name)
+			local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+			if filteredMessage then
+				messageObj.Message = filteredMessage
+				messageObj.IsFiltered = true
+				speaker:InternalSendFilteredMessage(messageObj, self.Name)
+			end
 		end
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
@@ -287,7 +290,12 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 
 	local filteredMessages = {}
 	for i, speakerName in pairs(sentToList) do
-		filteredMessages[speakerName] = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+		local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+		if filteredMessage then
+			filteredMessages[speakerName] = filteredMessage
+		else
+			return false
+		end
 	end
 
 	for i, speakerName in pairs(sentToList) do
@@ -300,7 +308,12 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		end
 	end
 
-	messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, messageObj.FromSpeaker)
+	local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, messageObj.FromSpeaker)
+	if filteredMessage then
+		messageObj.Message = filteredMessage
+	else
+		return false
+	end
 	messageObj.IsFiltered = true
 	self:InternalAddMessageToHistoryLog(messageObj)
 
@@ -327,6 +340,9 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		local speaker = self.Speakers[speakerName]
 		if speaker then
 			local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+			if filteredMessage == nil then
+				return false
+			end
 			local cMessageObj = DeepCopy(messageObj)
 			cMessageObj.Message = filteredMessage
 			cMessageObj.IsFiltered = true

@@ -43,6 +43,7 @@ module.ChannelsTabUnselectedColor = Color3.new(0, 0, 0)
 module.ChannelsTabSelectedColor = Color3.new(30/255, 30/255, 30/255)
 module.DefaultChannelNameColor = Color3.fromRGB(35, 76, 142)
 module.WhisperChannelNameColor = Color3.fromRGB(102, 14, 102)
+module.ErrorMessageTextColor = Color3.fromRGB(245, 50, 50)
 
 ---[[ Window Settings ]]
 module.MinimumWindowSize = UDim2.new(0.3, 0, 0.25, 0)
@@ -76,6 +77,9 @@ module.MaximumMessageLength = 200
 module.DisallowedWhiteSpace = {"\n", "\r", "\t", "\v", "\f"}
 module.ClickOnPlayerNameToWhisper = true
 module.ClickOnChannelNameToSetMainChannel = true
+
+---[[ Misc Settings ]]
+module.WhisperCommandAutoCompletePlayerNames = true
 
 local ChangedEvent = Instance.new("BindableEvent")
 
