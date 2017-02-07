@@ -160,9 +160,10 @@ local FollowNotificationsBetweenMap = {}
 
 -- client fires event to server on new follow
 RemoteEvent_NewFollower.OnServerEvent:connect(function(player1, player2, player1FollowsPlayer2)
-	if player1FollowsPlayer2 == nil then
+	if player1 == nil or player2 == nil or player1FollowsPlayer2 == nil then
 		return
 	end
+
 	local userId1 = tostring(player1.UserId)
 	local userId2 = tostring(player2.UserId)
 
