@@ -5,7 +5,6 @@
 local Chat = game:GetService("Chat")
 local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
-local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
 
 local function Run(ChatService)
 
@@ -41,7 +40,7 @@ local function Run(ChatService)
 		return false
 	end
 
-	ChatService:RegisterProcessCommandsFunction("chat_commands_inquiry", ProcessCommandsFunction, ChatConstants.StandardPriority)
+	ChatService:RegisterProcessCommandsFunction("chat_commands_inquiry", ProcessCommandsFunction)
 
 	local allChannel = ChatService:GetChannel("All")
 	if (allChannel) then
