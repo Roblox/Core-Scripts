@@ -16,7 +16,7 @@ while LocalPlayer == nil do
 	LocalPlayer = PlayersService.LocalPlayer
 end
 
-local PlayerGui = LocalPlayer.PlayerGui
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 --[[ SCRIPT VARIABLES ]]
 local CHAT_BUBBLE_FONT = Enum.Font.SourceSans
@@ -350,7 +350,7 @@ end
 function this:CreateBillboardGuiHelper(instance, onlyCharacter)
 	if instance and not this.CharacterSortedMsg:Get(instance)["BillboardGui"] then
 		if not onlyCharacter then
-			if instance:IsA("Part") then
+			if instance:IsA("BasePart") then
 				-- Create a new billboardGui object attached to this player
 				local billboardGui = createBillboardInstance(instance)
 				this.CharacterSortedMsg:Get(instance)["BillboardGui"] = billboardGui
@@ -360,7 +360,7 @@ function this:CreateBillboardGuiHelper(instance, onlyCharacter)
 
 		if instance:IsA("Model") then
 			local head = instance:FindFirstChild("Head")
-			if head and head:IsA("Part") then
+			if head and head:IsA("BasePart") then
 				-- Create a new billboardGui object attached to this player
 				local billboardGui = createBillboardInstance(head)
 				this.CharacterSortedMsg:Get(instance)["BillboardGui"] = billboardGui

@@ -22,6 +22,7 @@ local DefaultChatSystemChatEvents = ReplicatedStorage:WaitForChild("DefaultChatS
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
 local MessageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 
@@ -91,10 +92,16 @@ while not LocalPlayer do
 	LocalPlayer = Players.LocalPlayer
 end
 
+local ChatDisplayOrder = 6
+if ChatSettings.ScreenGuiDisplayOrder ~= nil then
+	ChatDisplayOrder = ChatSettings.ScreenGuiDisplayOrder
+end
+
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local GuiParent = Instance.new("ScreenGui")
 GuiParent.Name = "Chat"
 GuiParent.ResetOnSpawn = false
+GuiParent.DisplayOrder = ChatDisplayOrder
 GuiParent.Parent = PlayerGui
 
 local DidFirstChannelsLoads = false
@@ -124,10 +131,6 @@ ChatWindow:RegisterChannelsBar(ChannelsBar)
 ChatWindow:RegisterMessageLogDisplay(MessageLogDisplay)
 
 MessageCreatorUtil:RegisterChatWindow(ChatWindow)
-
-local Chat = game:GetService("Chat")
-local clientChatModules = Chat:WaitForChild("ClientChatModules")
-local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 MessageSender:RegisterSayMessageFunction(EventFolder.SayMessageRequest)
@@ -336,9 +339,11 @@ UserInputService.TouchTap:connect(function(tapPos, gameProcessedEvent)
 	local last = mouseIsInWindow
 
 	UpdateMousePosition(tapPos[1])
-	if (not mouseIsInWindow and last ~= mouseIsInWindow) then
-		DoBackgroundFadeOut()
-	end
+end)
+
+UserInputService.TouchMoved:connect(function(inputObject, gameProcessedEvent)
+	local tapPos = Vector2.new(inputObject.Position.X, inputObject.Position.Y)
+	UpdateMousePosition(tapPos)
 end)
 
 UserInputService.Changed:connect(function(prop)
@@ -554,6 +559,7 @@ function DoChatBarFocus()
 
 	if (not ChatBar:IsFocused() and ChatBar:GetVisible()) then
 		moduleApiTable:SetVisible(true)
+		InstantFadeIn()
 		ChatBar:CaptureFocus()
 		moduleApiTable.ChatBarFocusChanged:fire(true)
 	end
@@ -666,12 +672,25 @@ end
 setupChatBarConnections()
 ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
 
--- Wrap the OnMessageDoneFiltering event so that we do not back up the remote event invocation queue.
--- This is in cases where we are sent OnMessageDoneFiltering events but we have stopped listening/timed out.
--- BindableEvents do not queue, while RemoteEvents do.
-local FilteredMessageReceived = Instance.new("BindableEvent")
 EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
-	FilteredMessageReceived:Fire(messageData)
+	if not ChatSettings.ShowUserOwnFilteredMessage then
+		if messageData.FromSpeaker == LocalPlayer.Name then
+			return
+		end
+	end
+
+	local channelName = messageData.OriginalChannel
+	local channelObj = ChatWindow:GetChannel(channelName)
+	if channelObj then
+		channelObj:UpdateMessageFiltered(messageData)
+	end
+
+	if ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
+		local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+		if generalChannel then
+			generalChannel:UpdateMessageFiltered(messageData)
+		end
+	end
 end)
 
 EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
@@ -695,34 +714,6 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
 
 		DoFadeInFromNewInformation()
-
-		if messageData.IsFiltered and not (messageData.FromSpeaker == LocalPlayer.Name) then
-			return
-		end
-
-		if not ChatSettings.ShowUserOwnFilteredMessage then
-			if (messageData.FromSpeaker == LocalPlayer.Name) then
-				return
-			end
-		end
-
-		local filterData = {}
-		local filterWaitStartTime = tick()
-		while (filterData.ID ~= messageData.ID) do
-			if tick() - filterWaitStartTime > FILTER_MESSAGE_TIMEOUT then
-				return
-			end
-			filterData = FilteredMessageReceived.Event:wait()
-		end
-
-		--// Speaker may leave these channels during the time it takes to filter.
-		if (not channelObj.Destroyed) then
-			channelObj:UpdateMessageFiltered(filterData)
-		end
-
-		if (generalChannel and not generalChannel.Destroyed) then
-			generalChannel:UpdateMessageFiltered(filterData)
-		end
 	end
 end)
 
@@ -752,7 +743,8 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, chann
 end)
 
 
-function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameColor, addHistoryToGeneralChannel)
+function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameColor, addHistoryToGeneralChannel,
+	addWelcomeMessageToGeneralChannel)
 	if ChatWindow:GetChannel(channel) then
 		--- If the channel has already been added, remove it first.
 		ChatWindow:RemoveChannel(channel)
@@ -806,6 +798,15 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 				ExtraData = nil,
 			}
 			channelObj:AddMessageToChannel(welcomeMessageObject)
+
+			if addWelcomeMessageToGeneralChannel and not ChatSettings.ShowChannelsBar then
+				if channel ~= ChatSettings.GeneralChannelName then
+					local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+					if generalChannel then
+						generalChannel:AddMessageToChannel(welcomeMessageObject)
+					end
+				end
+			end
 		end
 
 		DoFadeInFromNewInformation()
@@ -814,7 +815,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 end
 
 EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessage, messageLog, channelNameColor)
-	HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameColor, false)
+	HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameColor, false, true)
 end)
 
 EventFolder.OnChannelLeft.OnClientEvent:connect(function(channel)
@@ -1005,15 +1006,17 @@ end
 -- Spawned because this method can yeild.
 spawn(function()
 	-- Pcalled because this method is not released on all platforms yet.
-	pcall(function()
-		local blockedUserIds = StarterGui:GetCore("GetBlockedUserIds")
-		if #blockedUserIds > 0 then
-			local setInitalBlockedUserIds = DefaultChatSystemChatEvents:FindFirstChild("SetBlockedUserIdsRequest")
-			if setInitalBlockedUserIds then
-				setInitalBlockedUserIds:FireServer(blockedUserIds)
+	if LocalPlayer.UserId > 0 then
+		pcall(function()
+			local blockedUserIds = StarterGui:GetCore("GetBlockedUserIds")
+			if #blockedUserIds > 0 then
+				local setInitalBlockedUserIds = DefaultChatSystemChatEvents:FindFirstChild("SetBlockedUserIdsRequest")
+				if setInitalBlockedUserIds then
+					setInitalBlockedUserIds:FireServer(blockedUserIds)
+				end
 			end
-		end
-	end)
+		end)
+	end
 end)
 
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
@@ -1021,13 +1024,13 @@ local initData = EventFolder.GetInitDataRequest:InvokeServer()
 -- Handle joining general channel first.
 for i, channelData in pairs(initData.Channels) do
 	if channelData[1] == ChatSettings.GeneralChannelName then
-		HandleChannelJoined(channelData[1], channelData[2], channelData[3], channelData[4], true)
+		HandleChannelJoined(channelData[1], channelData[2], channelData[3], channelData[4], true, false)
 	end
 end
 
 for i, channelData in pairs(initData.Channels) do
 	if channelData[1] ~= ChatSettings.GeneralChannelName then
-		HandleChannelJoined(channelData[1], channelData[2], channelData[3], channelData[4], true)
+		HandleChannelJoined(channelData[1], channelData[2], channelData[3], channelData[4], true, false)
 	end
 end
 

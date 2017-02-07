@@ -17,6 +17,9 @@ local RunService = game:GetService('RunService')
 
 local GET_MULTI_FOLLOW = "user/multi-following-exists"
 
+-- Maximum amount of follow notifications that a player is allowed to send to another player.
+local MAX_FOLLOW_NOTIFICATIONS_BETWEEN = 5
+
 local PlayerToRelationshipMap = {}
 
 --[[ Remotes ]]--
@@ -152,17 +155,33 @@ function RemoteFunc_GetFollowRelationships.OnServerInvoke(player)
 	end
 end
 
+-- Map: { UserId -> { UserId -> NumberOfNotificationsSent } }
+local FollowNotificationsBetweenMap = {}
+
 -- client fires event to server on new follow
 RemoteEvent_NewFollower.OnServerEvent:connect(function(player1, player2, player1FollowsPlayer2)
-	if player1FollowsPlayer2 == nil then
+	if player1 == nil or player2 == nil or player1FollowsPlayer2 == nil then
 		return
 	end
+
 	local userId1 = tostring(player1.UserId)
 	local userId2 = tostring(player2.UserId)
 
 	local user1map = PlayerToRelationshipMap[userId1]
 	local user2map = PlayerToRelationshipMap[userId2]
 
+	local sentNotificationsMap = FollowNotificationsBetweenMap[userId1]
+	if sentNotificationsMap[userId2] then
+		sentNotificationsMap[userId2] = sentNotificationsMap[userId2] + 1
+		if sentNotificationsMap[userId2] > MAX_FOLLOW_NOTIFICATIONS_BETWEEN then
+			-- This player is likely trying to spam the other player with notifications.
+			-- We won't send any more.
+			return
+		end
+	else
+		sentNotificationsMap[userId2] = 1
+	end
+	
 	if user1map then
 		local relationTable = user1map[userId2]
 		if relationTable then
@@ -194,6 +213,7 @@ end)
 
 local function onPlayerAdded(newPlayer)
 	local uid = newPlayer.UserId
+	FollowNotificationsBetweenMap[uid] = {}	
 	if uid > 0 then
 		local uidStr = tostring(uid)
 		local result = getFollowRelationshipsAsync(uid)
@@ -212,5 +232,6 @@ Players.PlayerRemoving:connect(function(prevPlayer)
 	local uid = tostring(prevPlayer.UserId)
 	if PlayerToRelationshipMap[uid] then
 		PlayerToRelationshipMap[uid] = nil
+		FollowNotificationsBetweenMap[uid] = nil
 	end
 end)

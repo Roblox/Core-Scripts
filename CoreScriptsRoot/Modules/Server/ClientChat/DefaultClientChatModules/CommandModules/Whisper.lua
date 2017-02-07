@@ -3,21 +3,78 @@
 --	// Description: Whisper chat bar manipulation.
 
 local util = require(script.Parent:WaitForChild("Util"))
-local playerService = game:GetService("Players")
+local ChatSettings = require(script.Parent.Parent:WaitForChild("ChatSettings"))
+
+local PlayersService = game:GetService("Players")
+
+local LocalPlayer = PlayersService.LocalPlayer
+while LocalPlayer == nil do
+	PlayersService.ChildAdded:wait()
+	LocalPlayer = PlayersService.LocalPlayer
+end
 
 local whisperStateMethods = {}
 whisperStateMethods.__index = whisperStateMethods
 
 local WhisperCustomState = {}
 
-function whisperStateMethods:PlayerExists(possiblePlayerName)
-	local players = playerService:GetPlayers()
-	for i = 1, #players do
-		if players[i].Name:lower() == possiblePlayerName:lower() then
-			return true
+function whisperStateMethods:TrimWhisperCommand(text)
+	if string.sub(text, 1, 3):lower() == "/w " then
+		return string.sub(text, 4)
+	elseif string.sub(text, 1, 9):lower() == "/whisper " then
+		return string.sub(text, 10)
+ 	end
+	return nil
+end
+
+function whisperStateMethods:TrimWhiteSpace(text)
+	local newText = string.gsub(text, "%s+", "")
+	local wasWhitespaceTrimmed = text[#text] == " "
+	return newText, wasWhitespaceTrimmed
+end
+
+function whisperStateMethods:ShouldAutoCompleteNames()
+	if ChatSettings.WhisperCommandAutoCompletePlayerNames ~= nil then
+		return ChatSettings.WhisperCommandAutoCompletePlayerNames
+	end
+	return true
+end
+
+function whisperStateMethods:GetWhisperingPlayer(enteredText)
+	enteredText = enteredText:lower()
+	local trimmedText = self:TrimWhisperCommand(enteredText)
+	if trimmedText then
+		local possiblePlayerName, whitespaceTrimmed = self:TrimWhiteSpace(trimmedText)
+		local possibleMatches = {}
+		local players = PlayersService:GetPlayers()
+		for i = 1, #players do
+			if players[i] ~= LocalPlayer then
+				local lowerPlayerName = players[i].Name:lower()
+				if string.sub(lowerPlayerName, 1, string.len(possiblePlayerName)) == possiblePlayerName then
+					possibleMatches[players[i]] = players[i].Name:lower()
+				end
+			end
+		end
+		local matchCount = 0
+		local lastMatch = nil
+		local lastMatchName = nil
+		for player, playerName in pairs(possibleMatches) do
+			matchCount = matchCount + 1
+			lastMatch = player
+			lastMatchName = playerName
+			if playerName == possiblePlayerName and whitespaceTrimmed then
+				return player
+			end
+		end
+		if matchCount == 1 then
+			if self:ShouldAutoCompleteNames() then
+				return lastMatch
+			elseif lastMatchName == possiblePlayerName then
+				return lastMatch
+			end
 		end
 	end
-	return false
+	return nil
 end
 
 function whisperStateMethods:GetWhisperChanneNameColor()
@@ -30,23 +87,13 @@ end
 function whisperStateMethods:TextUpdated()
 	local newText = self.TextBox.Text
 	if not self.PlayerNameEntered then
-		local possiblePlayerName = string.sub(newText, 4)
-		local player = nil
-		if self:PlayerExists(possiblePlayerName) then
-			player = possiblePlayerName
-			self.OriginalText = string.sub(newText, 1, 3)
-		end
-		possiblePlayerName = string.sub(newText, 10)
-		if player == nil and self:PlayerExists(possiblePlayerName) then
-			player = possiblePlayerName
-			self.OriginalText = string.sub(newText, 1, 9)
-		end
+		local player = self:GetWhisperingPlayer(newText)
 		if player then
 			self.PlayerNameEntered = true
-			self.PlayerName = player
+			self.PlayerName = player.Name
 
 			self.MessageModeButton.Size = UDim2.new(0, 1000, 1, 0)
-			self.MessageModeButton.Text = string.format("[%s]", player)
+			self.MessageModeButton.Text = string.format("[%s]", player.Name)
 			self.MessageModeButton.TextColor3 = self:GetWhisperChanneNameColor()
 
 			local xSize = self.MessageModeButton.TextBounds.X
@@ -74,6 +121,7 @@ end
 
 function whisperStateMethods:GetMessage()
 	if self.PlayerNameEntered then
+		print("Giving text:", "/w " ..self.PlayerName.. " " ..self.TextBox.Text)
 		return "/w " ..self.PlayerName.. " " ..self.TextBox.Text
 	end
 	return self.TextBox.Text

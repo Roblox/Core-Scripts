@@ -181,10 +181,32 @@ function StatsTextPanelClass:SetStatsAggregator(aggregator)
   end
   
   self._aggregator = aggregator
-    
-  self:OnVisibilityChanged()
+  
+  self:_refreshVisibility()
 end
 
+function StatsTextPanelClass:SetVisible(visible)  
+  self._frame.Visible = visible
+  self:_refreshVisibility()
+end
+
+function StatsTextPanelClass:_shouldBeVisible()
+  if StatsUtils.PerformanceStatsShouldBeVisible() then 
+    return self._frame.Visible
+  else
+    return false
+  end
+end
+
+
+function StatsTextPanelClass:_refreshVisibility()  
+  if self:_shouldBeVisible() then
+    self:_startListening()
+    self:_updateFromAggregator()
+  else
+    self:_stopListening()
+  end
+end
 
 function StatsTextPanelClass:_stopListening()
   if (self._aggregator == nil) then
@@ -213,15 +235,6 @@ function StatsTextPanelClass:_startListening()
   end)  
 end
 
-function StatsTextPanelClass:OnVisibilityChanged()
-  if StatsUtils.PerformanceStatsShouldBeVisible() then
-    self:_startListening()
-    self:_updateFromAggregator()
-  else
-    self:_stopListening()
-  end
-end
-
 function StatsTextPanelClass:_updateFromAggregator()
   local value = 0
   local average = 0
@@ -238,6 +251,7 @@ function StatsTextPanelClass:_updateFromAggregator()
   self._averageValueWidget:SetValue(average)
   
   self._currentValueDecoration.ImageColor3 = StatsUtils.GetColorForValue(value, target) 
+  
 end
 
 function StatsTextPanelClass:SetZIndex(zIndex)

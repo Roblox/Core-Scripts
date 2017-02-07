@@ -12,6 +12,7 @@ local replicatedModules = Chat:WaitForChild("ClientChatModules")
 --////////////////////////////// Include
 --//////////////////////////////////////
 local ChatConstants = require(replicatedModules:WaitForChild("ChatConstants"))
+local Util = require(modulesFolder:WaitForChild("Util"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -21,6 +22,11 @@ methods.__index = methods
 
 function methods:SendSystemMessage(message, extraData)
 	local messageObj = self:InternalCreateMessageObject(message, nil, true, extraData)
+
+	local success, err = pcall(function() self.eMessagePosted:Fire(messageObj) end)
+	if not success and err then
+		print("Error posting message: " ..err)
+	end
 
 	self:InternalAddMessageToHistoryLog(messageObj)
 
@@ -65,9 +71,12 @@ function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraDa
 		speaker:InternalSendMessage(messageObj, self.Name)
 
 		if not isFiltered then
-			messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
-			messageObj.IsFiltered = true
-			speaker:InternalSendFilteredMessage(messageObj, self.Name)
+			local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+			if filteredMessage then
+				messageObj.Message = filteredMessage
+				messageObj.IsFiltered = true
+				speaker:InternalSendFilteredMessage(messageObj, self.Name)
+			end
 		end
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
@@ -157,28 +166,20 @@ function methods:GetSpeakerList()
 	return list
 end
 
-function methods:RegisterFilterMessageFunction(funcId, func)
-	if self.FilterMessageFunctions[funcId] then
-		error(funcId .. " is already in use!")
-	end
-
-	self.FilterMessageFunctions[funcId] = func
+function methods:RegisterFilterMessageFunction(funcId, func, priority)
+	self.FilterMessageFunctions:AddFunction(funcId, func, priority)
 end
 
 function methods:UnregisterFilterMessageFunction(funcId)
-	self.FilterMessageFunctions[funcId] = nil
+	self.FilterMessageFunctions:RemoveFunction(funcId)
 end
 
-function methods:RegisterProcessCommandsFunction(funcId, func)
-	if (self.ProcessCommandsFunctions[funcId]) then
-		error(funcId .. " is already in use!")
-	end
-
-	self.ProcessCommandsFunctions[funcId] = func
+function methods:RegisterProcessCommandsFunction(funcId, func, priority)
+	self.ProcessCommandsFunctions:AddFunction(funcId, func, priority)
 end
 
 function methods:UnregisterProcessCommandsFunction(funcId)
-	self.ProcessCommandsFunctions[funcId] = nil
+	self.ProcessCommandsFunctions:RemoveFunction(funcId)
 end
 
 local function DeepCopy(table)
@@ -208,38 +209,35 @@ function methods:InternalDestroy()
 end
 
 function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
-	for funcId, func in pairs(self.FilterMessageFunctions) do
-		local s, m = pcall(function()
+	local filtersIterator = self.FilterMessageFunctions:GetIterator()
+	for funcId, func, priority in filtersIterator do
+		local success, errorMessage = pcall(function()
 			func(speakerName, messageObj, channel)
 		end)
 
-		if (not s) then
-			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
+		if not success then
+			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, errorMessage))
 		end
 	end
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)
-	local processed = false
-
-	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
-	if (processed) then return processed end
-
-	for funcId, func in pairs(self.ProcessCommandsFunctions) do
-		local s, m = pcall(function()
+	local commandsIterator = self.ProcessCommandsFunctions:GetIterator()
+	for funcId, func, priority in commandsIterator do
+		local success, returnValue = pcall(function()
 			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "boolean")
-			processed = ret
+			return ret
 		end)
 
-		if (not s) then
-			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, m))
+		if not success then
+			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, returnValue))
+		elseif returnValue then
+			return true
 		end
-
-		if (processed) then break end
 	end
 
-	return processed
+	return false
 end
 
 function methods:InternalPostMessage(fromSpeaker, message, extraData)
@@ -282,7 +280,12 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 
 	local filteredMessages = {}
 	for i, speakerName in pairs(sentToList) do
-		filteredMessages[speakerName] = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+		local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+		if filteredMessage then
+			filteredMessages[speakerName] = filteredMessage
+		else
+			return false
+		end
 	end
 
 	for i, speakerName in pairs(sentToList) do
@@ -295,9 +298,47 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		end
 	end
 
-	messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, messageObj.FromSpeaker)
+	local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, messageObj.FromSpeaker)
+	if filteredMessage then
+		messageObj.Message = filteredMessage
+	else
+		return false
+	end
 	messageObj.IsFiltered = true
 	self:InternalAddMessageToHistoryLog(messageObj)
+
+	-- One more pass is needed to ensure that no speakers do not recieve the message.
+	-- Otherwise a user could join while the message is being filtered who had not originally been sent the message.
+	local speakersMissingMessage = {}
+	for _, speaker in pairs(self.Speakers) do
+		local isMuted = speaker:IsSpeakerMuted(fromSpeaker.Name)
+		if not isMuted then
+			local wasSentMessage = false
+			for _, sentSpeakerName in pairs(sentToList) do
+				if speaker.Name == sentSpeakerName then
+					wasSentMessage = true
+					break
+				end
+			end
+			if not wasSentMessage then
+				table.insert(speakersMissingMessage, speaker.Name)
+			end
+		end
+	end
+
+	for _, speakerName in pairs(speakersMissingMessage) do
+		local speaker = self.Speakers[speakerName]
+		if speaker then
+			local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+			if filteredMessage == nil then
+				return false
+			end
+			local cMessageObj = DeepCopy(messageObj)
+			cMessageObj.Message = filteredMessage
+			cMessageObj.IsFiltered = true
+			speaker:InternalSendFilteredMessage(cMessageObj, self.Name)
+		end
+	end
 
 	return messageObj
 end
@@ -414,8 +455,8 @@ function module.new(vChatService, name, welcomeMessage, channelNameColor)
 	obj.MessageQueue = {}
 	obj.InternalMessageQueueChanged = Instance.new("BindableEvent")
 
-	obj.FilterMessageFunctions = {}
-	obj.ProcessCommandsFunctions = {}
+	obj.FilterMessageFunctions = Util:NewSortedFunctionContainer()
+	obj.ProcessCommandsFunctions = Util:NewSortedFunctionContainer()
 
 	obj.eDestroyed = Instance.new("BindableEvent")
 	obj.Destroyed = obj.eDestroyed.Event
