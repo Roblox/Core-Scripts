@@ -20,7 +20,6 @@ local function Run(ChatService)
 		for i = 1, #COMMAND_STARTERS do
 			local starter = COMMAND_STARTERS[i]
 			if string.sub(message, 1, string.len(starter)) == starter then
-				speakerObj:SendSystemMessage("Your message contains whitespace that is not allowed.", channel)
 				return true
 			end
 		end
