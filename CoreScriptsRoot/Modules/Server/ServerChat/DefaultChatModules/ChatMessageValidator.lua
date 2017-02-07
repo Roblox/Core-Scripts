@@ -6,6 +6,7 @@ local Chat = game:GetService("Chat")
 local RunService = game:GetService("RunService")
 local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
+local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
 
 local DISALLOWED_WHITESPACE = {"\n", "\r", "\t", "\v", "\f"}
 
@@ -19,11 +20,11 @@ local function Run(ChatService)
 		local playerObj = speakerObj:GetPlayer()
 		if not speakerObj then return false end
 		if not playerObj then return false end
-		
+
 		if not RunService:IsStudio() and playerObj.UserId < 1 then
 			return true
 		end
-		
+
 		if message:len() > ChatSettings.MaximumMessageLength + 1 then
 			speakerObj:SendSystemMessage("Your message exceeds the maximum message length.", channel)
 			return true
@@ -38,7 +39,7 @@ local function Run(ChatService)
 		return false
 	end
 
-	ChatService:RegisterProcessCommandsFunction("message_validation", ValidateChatFunction)
+	ChatService:RegisterProcessCommandsFunction("message_validation", ValidateChatFunction, ChatSettings.LowPriority)
 end
 
 return Run
