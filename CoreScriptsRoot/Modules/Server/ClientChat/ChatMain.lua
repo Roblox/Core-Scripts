@@ -336,8 +336,6 @@ UserInputService.InputChanged:connect(function(inputObject)
 end)
 
 UserInputService.TouchTap:connect(function(tapPos, gameProcessedEvent)
-	local last = mouseIsInWindow
-
 	UpdateMousePosition(tapPos[1])
 end)
 
