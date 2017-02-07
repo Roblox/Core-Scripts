@@ -637,7 +637,11 @@ function chatBarFocusLost(enterPressed, inputObject)
 			if not CommandProcessor:ProcessCompletedChatMessage(message, ChatWindow) then
 				if ChatSettings.DisallowedWhiteSpace then
 					for i = 1, #ChatSettings.DisallowedWhiteSpace do
-						message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], "")
+						if ChatSettings.DisallowedWhiteSpace[i] == "\t" then
+							message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], " ")
+						else
+							message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], "")
+						end
 					end
 				end
 				message = string.gsub(message, "\n", "")
