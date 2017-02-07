@@ -57,7 +57,6 @@ local function Install()
 		LoadModule(script.Parent, "ChatService", ChatServiceRunner)
 		LoadModule(script.Parent, "ChatChannel", ChatServiceRunner)
 		LoadModule(script.Parent, "Speaker", ChatServiceRunner)
-		LoadModule(script.Parent, "Util", ChatServiceRunner)
 	end
 
 	local ChatModules = installDirectory:FindFirstChild("ChatModules")
