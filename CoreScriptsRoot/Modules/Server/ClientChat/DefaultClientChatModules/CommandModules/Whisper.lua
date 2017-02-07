@@ -121,7 +121,6 @@ end
 
 function whisperStateMethods:GetMessage()
 	if self.PlayerNameEntered then
-		print("Giving text:", "/w " ..self.PlayerName.. " " ..self.TextBox.Text)
 		return "/w " ..self.PlayerName.. " " ..self.TextBox.Text
 	end
 	return self.TextBox.Text
