@@ -92,7 +92,7 @@ local function Run(ChatService)
 		end
 	end
 
-	ChatService:RegisterProcessCommandsFunction("whisper_commands", WhisperCommandsFunction)
+	ChatService:RegisterProcessCommandsFunction("whisper_commands", WhisperCommandsFunction, ChatConstants.StandardPriority)
 
 	local function GetWhisperChanneNameColor()
 		if ChatSettings.WhisperChannelNameColor then
@@ -115,7 +115,7 @@ local function Run(ChatService)
 		channel.WelcomeMessage = "You are now privately chatting with " .. speakerName .. "."
 		channel.ChannelNameColor = GetWhisperChanneNameColor()
 
-		channel:RegisterProcessCommandsFunction("replication_function", PrivateMessageReplicationFunction)
+		channel:RegisterProcessCommandsFunction("replication_function", PrivateMessageReplicationFunction, ChatConstants.LowPriority)
 		channel:RegisterFilterMessageFunction("message_type_function", PrivateMessageAddTypeFunction)
 	end)
 

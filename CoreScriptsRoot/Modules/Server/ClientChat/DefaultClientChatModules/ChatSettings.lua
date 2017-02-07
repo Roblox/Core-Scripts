@@ -79,6 +79,8 @@ module.ClickOnChannelNameToSetMainChannel = true
 
 ---[[ Misc Settings ]]
 module.WhisperCommandAutoCompletePlayerNames = true
+--- Messages starting with these characters are automatically sunk.
+module.ChatCommandStarters = {"/"}
 
 local ChangedEvent = Instance.new("BindableEvent")
 

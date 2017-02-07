@@ -5,6 +5,7 @@
 local Chat = game:GetService("Chat")
 local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
+local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
 
 local errorExtraData = {ChatColor = Color3.fromRGB(245, 50, 50)}
 
@@ -54,7 +55,7 @@ local function Run(ChatService)
 		return true
 	end
 
-	channel:RegisterProcessCommandsFunction("replication_function", TeamChatReplicationFunction)
+	channel:RegisterProcessCommandsFunction("replication_function", TeamChatReplicationFunction, ChatConstants.LowPriority)
 
 	local function DoTeamCommand(fromSpeaker, message, channel)
 		if message == nil then
@@ -110,7 +111,7 @@ local function Run(ChatService)
 		return processedCommand
 	end
 
-	ChatService:RegisterProcessCommandsFunction("team_commands", TeamCommandsFunction)
+	ChatService:RegisterProcessCommandsFunction("team_commands", TeamCommandsFunction, ChatConstants.StandardPriority)
 
 	local function GetDefaultChannelNameColor()
 		if ChatSettings.DefaultChannelNameColor then

@@ -7,16 +7,38 @@ local module = {}
 local modulesFolder = script.Parent
 local RunService = game:GetService("RunService")
 local Chat = game:GetService("Chat")
+local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
+local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
+
 local ChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local Speaker = require(modulesFolder:WaitForChild("Speaker"))
+local Util = require(modulesFolder:WaitForChild("Util"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
 methods.__index = methods
+
+function DefaultChannelCommands(fromSpeaker, message)
+	if (message:lower() == "/leave") then
+		local channel = self:GetChannel(channelName)
+		local speaker = self:GetSpeaker(fromSpeaker)
+		if (channel and speaker) then
+			if (channel.Leavable) then
+				speaker:LeaveChannel(channelName)
+				speaker:SendSystemMessage(string.format("You have left channel '%s'", channelName), "System")
+			else
+				speaker:SendSystemMessage("You cannot leave this channel.", channelName)
+			end
+		end
+
+		return true
+	end
+	return false
+end
 
 function methods:AddChannel(channelName)
 	if (self.ChatChannels[channelName:lower()]) then
@@ -26,24 +48,7 @@ function methods:AddChannel(channelName)
 	local channel = ChatChannel.new(self, channelName)
 	self.ChatChannels[channelName:lower()] = channel
 
-	channel:RegisterProcessCommandsFunction("default_commands", function(fromSpeaker, message)
-		if (message:lower() == "/leave") then
-			local channel = self:GetChannel(channelName)
-			local speaker = self:GetSpeaker(fromSpeaker)
-			if (channel and speaker) then
-				if (channel.Leavable) then
-					speaker:LeaveChannel(channelName)
-					speaker:SendSystemMessage(string.format("You have left channel '%s'", channelName), "System")
-				else
-					speaker:SendSystemMessage("You cannot leave this channel.", channelName)
-				end
-			end
-
-			return true
-		end
-
-		return false
-	end)
+	channel:RegisterProcessCommandsFunction("default_commands", DefaultChannelCommands, ChatConstants.HighPriority)
 
 	local success, err = pcall(function() self.eChannelAdded:Fire(channelName) end)
 	if not success and err then
@@ -145,28 +150,20 @@ function methods:SendGlobalSystemMessage(message)
 	end
 end
 
-function methods:RegisterFilterMessageFunction(funcId, func)
-	if self.FilterMessageFunctions[funcId] then
-		error(funcId .. " is already in use!")
-	end
-
-	self.FilterMessageFunctions[funcId] = func
+function methods:RegisterFilterMessageFunction(funcId, func, priority)
+	self.FilterMessageFunctions:AddFunction(funcId, func, priority)
 end
 
 function methods:UnregisterFilterMessageFunction(funcId)
-	self.FilterMessageFunctions[funcId] = nil
+	self.FilterMessageFunctions:RemoveFunction(funcId)
 end
 
-function methods:RegisterProcessCommandsFunction(funcId, func)
-	if self.ProcessCommandsFunctions[funcId] then
-		error(funcId .. " is already in use!")
-	end
-
-	self.ProcessCommandsFunctions[funcId] = func
+function methods:RegisterProcessCommandsFunction(funcId, func, priority)
+	self.ProcessCommandsFunctions:AddFunction(funcId, func, priority)
 end
 
 function methods:UnregisterProcessCommandsFunction(funcId)
-	self.ProcessCommandsFunctions[funcId] = nil
+	self.ProcessCommandsFunctions:RemoveFunction(funcId)
 end
 
 local StudioMessageFilteredCache = {}
@@ -199,38 +196,37 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 end
 
 function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
-	for funcId, func in pairs(self.FilterMessageFunctions) do
-		local s, m = pcall(function()
+	local filtersIterator = self.FilterMessageFunctions:GetIterator()
+
+	for funcId, func, priority in filtersIterator do
+		local success, errorMessage = pcall(function()
 			func(speakerName, messageObj, channel)
 		end)
 
-		if (not s) then
-			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
+		if not success then
+			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, errorMessage))
 		end
 	end
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)
-	local processed = false
+	local commandsIterator = self.ProcessCommandsFunctions:GetIterator()
 
-	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
-	if (processed) then return processed end
-
-	for funcId, func in pairs(self.ProcessCommandsFunctions) do
-		local s, m = pcall(function()
+	for funcId, func, priority in commandsIterator do
+		local success, returnValue = pcall(function()
 			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "boolean")
-			processed = ret
+			return ret
 		end)
 
-		if (not s) then
-			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, m))
+		if not success then
+			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, returnValue))
+		elseif returnValue then
+			return true
 		end
-
-		if (processed) then break end
 	end
 
-	return processed
+	return false
 end
 
 function methods:InternalGetUniqueMessageId()
@@ -276,8 +272,8 @@ function module.new()
 	obj.ChatChannels = {}
 	obj.Speakers = {}
 
-	obj.FilterMessageFunctions = {}
-	obj.ProcessCommandsFunctions = {}
+	obj.FilterMessageFunctions = Util:NewSortedFunctionContainer()
+	obj.ProcessCommandsFunctions = Util:NewSortedFunctionContainer()
 
 	obj.eChannelAdded = Instance.new("BindableEvent")
 	obj.eChannelRemoved = Instance.new("BindableEvent")
@@ -288,6 +284,9 @@ function module.new()
 	obj.ChannelRemoved = obj.eChannelRemoved.Event
 	obj.SpeakerAdded = obj.eSpeakerAdded.Event
 	obj.SpeakerRemoved = obj.eSpeakerRemoved.Event
+
+	obj.ChatServiceMajorVersion = 0
+	obj.ChatServiceMinorVersion = 5
 
 	return obj
 end

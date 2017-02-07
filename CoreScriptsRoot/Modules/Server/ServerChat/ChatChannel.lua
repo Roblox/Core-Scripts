@@ -12,6 +12,7 @@ local replicatedModules = Chat:WaitForChild("ClientChatModules")
 --////////////////////////////// Include
 --//////////////////////////////////////
 local ChatConstants = require(replicatedModules:WaitForChild("ChatConstants"))
+local Util = require(modulesFolder:WaitForChild("Util"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -162,28 +163,20 @@ function methods:GetSpeakerList()
 	return list
 end
 
-function methods:RegisterFilterMessageFunction(funcId, func)
-	if self.FilterMessageFunctions[funcId] then
-		error(funcId .. " is already in use!")
-	end
-
-	self.FilterMessageFunctions[funcId] = func
+function methods:RegisterFilterMessageFunction(funcId, func, priority)
+	self.FilterMessageFunctions:AddFunction(funcId, func, priority)
 end
 
 function methods:UnregisterFilterMessageFunction(funcId)
-	self.FilterMessageFunctions[funcId] = nil
+	self.FilterMessageFunctions:RemoveFunction(funcId)
 end
 
-function methods:RegisterProcessCommandsFunction(funcId, func)
-	if (self.ProcessCommandsFunctions[funcId]) then
-		error(funcId .. " is already in use!")
-	end
-
-	self.ProcessCommandsFunctions[funcId] = func
+function methods:RegisterProcessCommandsFunction(funcId, func, priority)
+	self.ProcessCommandsFunctions:AddFunction(funcId, func, priority)
 end
 
 function methods:UnregisterProcessCommandsFunction(funcId)
-	self.ProcessCommandsFunctions[funcId] = nil
+	self.ProcessCommandsFunctions:RemoveFunction(funcId)
 end
 
 local function DeepCopy(table)
@@ -213,38 +206,35 @@ function methods:InternalDestroy()
 end
 
 function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
-	for funcId, func in pairs(self.FilterMessageFunctions) do
-		local s, m = pcall(function()
+	local filtersIterator = self.FilterMessageFunctions:GetIterator()
+	for funcId, func, priority in filtersIterator do
+		local success, errorMessage = pcall(function()
 			func(speakerName, messageObj, channel)
 		end)
 
-		if (not s) then
-			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
+		if not success then
+			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, errorMessage))
 		end
 	end
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)
-	local processed = false
-
-	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
-	if (processed) then return processed end
-
-	for funcId, func in pairs(self.ProcessCommandsFunctions) do
-		local s, m = pcall(function()
+	local commandsIterator = self.ProcessCommandsFunctions:GetIterator()
+	for funcId, func, priority in commandsIterator do
+		local success, returnValue = pcall(function()
 			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "boolean")
-			processed = ret
+			return ret
 		end)
 
-		if (not s) then
-			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, m))
+		if not success then
+			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, returnValue))
+		elseif returnValue then
+			return true
 		end
-
-		if (processed) then break end
 	end
 
-	return processed
+	return false
 end
 
 function methods:InternalPostMessage(fromSpeaker, message, extraData)
@@ -449,8 +439,8 @@ function module.new(vChatService, name, welcomeMessage, channelNameColor)
 	obj.MessageQueue = {}
 	obj.InternalMessageQueueChanged = Instance.new("BindableEvent")
 
-	obj.FilterMessageFunctions = {}
-	obj.ProcessCommandsFunctions = {}
+	obj.FilterMessageFunctions = Util:NewSortedFunctionContainer()
+	obj.ProcessCommandsFunctions = Util:NewSortedFunctionContainer()
 
 	obj.eDestroyed = Instance.new("BindableEvent")
 	obj.Destroyed = obj.eDestroyed.Event
