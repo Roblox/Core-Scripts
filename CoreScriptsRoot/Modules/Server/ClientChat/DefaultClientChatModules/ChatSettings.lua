@@ -4,6 +4,9 @@
 
 local PlayersService = game:GetService("Players")
 
+local clientChatModules = script.Parent
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
+
 local module = {}
 
 ---[[ Chat Behaviour Settings ]]
@@ -77,6 +80,7 @@ module.MaximumMessageLength = 200
 module.DisallowedWhiteSpace = {"\n", "\r", "\t", "\v", "\f"}
 module.ClickOnPlayerNameToWhisper = true
 module.ClickOnChannelNameToSetMainChannel = true
+module.BubbleChatMessageTypes = {ChatConstants.MessageTypeDefault, ChatConstants.MessageTypeWhisper}
 
 ---[[ Misc Settings ]]
 module.WhisperCommandAutoCompletePlayerNames = true
