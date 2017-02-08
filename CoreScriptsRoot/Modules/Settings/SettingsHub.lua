@@ -229,6 +229,8 @@ local function CreateSettingsHub()
 
 	if resetButtonCustomizationAllowed then
 		StarterGui:RegisterSetCore("ResetButtonCallback", function(callback)
+			local isBindableEvent = typeof(callback) == "Instance" and callback:IsA("BindableEvent")
+			if isBindableEvent or type(callback) == "boolean" then
 				this.ResetCharacterPage:SetResetCallback(callback)
 			else
 				warn("ResetButtonCallback must be set to a BindableEvent or a boolean")
