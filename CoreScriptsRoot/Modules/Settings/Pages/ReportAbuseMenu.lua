@@ -70,6 +70,10 @@ local function Initialize()
 			end
 		end
 
+		table.sort(playerNames, function(a, b)
+			return a:lower() < b:lower()
+		end)
+
 		this.WhichPlayerMode:UpdateDropDownList(playerNames)
 
 		if index == 1 then
