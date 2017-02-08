@@ -65,7 +65,7 @@ function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraDa
 			return
 		end
 
-		-- We need to claim the message is filted even if it not in this case for compatibility with legacy client side code.
+		-- We need to claim the message is filtered even if it not in this case for compatibility with legacy client side code.
 		local isFiltered = speakerName == fromSpeaker
 		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
 		message = self:SendMessageObjToFilters(message, messageObj, fromSpeaker)
@@ -265,7 +265,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 				local cMessageObj = DeepCopy(messageObj)
 				cMessageObj.Message = message
 				cMessageObj.IsFiltered = true
-				-- We need to claim the message is filted even if it not in this case for compatibility with legacy client side code.
+				-- We need to claim the message is filtered even if it not in this case for compatibility with legacy client side code.
 				speaker:InternalSendMessage(cMessageObj, self.Name)
 			else
 				speaker:InternalSendMessage(messageObj, self.Name)
