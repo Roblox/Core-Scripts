@@ -450,6 +450,7 @@ local function onSendNotificationInfo(notificationInfo)
 	--Right now, calling sendNotification(...) will essentially translate into a sendNotificationInfo(table), which will then be translated back
 	--into a parameter list here. One option in the future is to update the code that produces the notification in non-VR to use notificationInfo table.
 	onSendNotification(notificationInfo.Title, notificationInfo.Text, notificationInfo.Image, notificationInfo.Duration, notificationInfo.Callback, notificationInfo.Button1Text, notificationInfo.Button2Text)
+	onSendNotification(notificationInfo.Title, notificationInfo.Text, notificationInfo.Image, notificationInfo.Duration, notificationInfo.Callback, notificationInfo.Button1Text, notificationInfo.Button2Text)
 end
 BindableEvent_SendNotificationInfo.Event:connect(onSendNotificationInfo)
 
@@ -791,7 +792,7 @@ local function createDeveloperNotification(notificationTable)
 		if type(notificationTable.Title) == "string" and type(notificationTable.Text) == "string" then
 			local iconImage = (type(notificationTable.Icon) == "string" and notificationTable.Icon or "")
 			local duration = (type(notificationTable.Duration) == "number" and notificationTable.Duration or DEFAULT_NOTIFICATION_DURATION)
-			local success, bindable = pcall(function() return (notificationTable.Callback:IsA("BindableFunction") and notificationTable.Callback or nil) end)
+			local bindable = (typeof(notificationTable.Callback) == "Instance" and notificationTable.Callback:IsA("BindableFunction") and notificationTable.Callback or nil)
 			local button1Text = (type(notificationTable.Button1) == "string" and notificationTable.Button1 or "")
 			local button2Text = (type(notificationTable.Button2) == "string" and notificationTable.Button2 or "")
 			if newNotificationPath then
