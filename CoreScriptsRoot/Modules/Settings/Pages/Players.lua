@@ -169,9 +169,7 @@ local function Initialize()
 						end
 					end
 				end
-				local friendLabel2, friendLabelText2 = utility:MakeStyledButton("FriendStatus", status == Enum.FriendStatus.FriendRequestReceived and "Accept Request" or "Add Friend", UDim2.new(0, 182, 0, 46), addFriendFunc)
-				friendLabel = friendLabel2
-				friendLabelText = friendLabelText2
+				friendLabel, friendLabelText = utility:MakeStyledButton("FriendStatus", status == Enum.FriendStatus.FriendRequestReceived and "Accept Request" or "Add Friend", UDim2.new(0, 182, 0, 46), addFriendFunc)
 				friendLabelText.ZIndex = 3
 				friendLabelText.Position = friendLabelText.Position + UDim2.new(0,0,0,1)
 				friendLabel.Position = UDim2.new(1,-198,0,7)
