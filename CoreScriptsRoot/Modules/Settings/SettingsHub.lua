@@ -237,6 +237,7 @@ local function CreateSettingsHub()
 			end
 			if callback == false then
 				setResetEnabled(false)
+			elseif not resetEnabled and (isBindableEvent or callback == true) then
 				setResetEnabled(true)
 			end
 		end)
