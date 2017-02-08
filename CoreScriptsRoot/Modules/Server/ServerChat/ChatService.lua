@@ -36,28 +36,29 @@ local Util = require(modulesFolder:WaitForChild("Util"))
 local methods = {}
 methods.__index = methods
 
-function DefaultChannelCommands(fromSpeaker, message)
-	if (message:lower() == "/leave") then
-		local channel = self:GetChannel(channelName)
-		local speaker = self:GetSpeaker(fromSpeaker)
-		if (channel and speaker) then
-			if (channel.Leavable) then
-				speaker:LeaveChannel(channelName)
-				speaker:SendSystemMessage(string.format("You have left channel '%s'", channelName), "System")
-			else
-				speaker:SendSystemMessage("You cannot leave this channel.", channelName)
-			end
-		end
-
-		return true
-	end
-	return false
-end
-
 function methods:AddChannel(channelName)
 	if (self.ChatChannels[channelName:lower()]) then
 		error(string.format("Channel %q alrady exists.", channelName))
 	end
+
+	local function DefaultChannelCommands(fromSpeaker, message)
+		if (message:lower() == "/leave") then
+			local channel = self:GetChannel(channelName)
+			local speaker = self:GetSpeaker(fromSpeaker)
+			if (channel and speaker) then
+				if (channel.Leavable) then
+					speaker:LeaveChannel(channelName)
+					speaker:SendSystemMessage(string.format("You have left channel '%s'", channelName), "System")
+				else
+					speaker:SendSystemMessage("You cannot leave this channel.", channelName)
+				end
+			end
+
+			return true
+		end
+		return false
+	end
+
 
 	local channel = ChatChannel.new(self, channelName)
 	self.ChatChannels[channelName:lower()] = channel
