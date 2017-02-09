@@ -450,7 +450,6 @@ local function onSendNotificationInfo(notificationInfo)
 	--Right now, calling sendNotification(...) will essentially translate into a sendNotificationInfo(table), which will then be translated back
 	--into a parameter list here. One option in the future is to update the code that produces the notification in non-VR to use notificationInfo table.
 	onSendNotification(notificationInfo.Title, notificationInfo.Text, notificationInfo.Image, notificationInfo.Duration, notificationInfo.Callback, notificationInfo.Button1Text, notificationInfo.Button2Text)
-	onSendNotification(notificationInfo.Title, notificationInfo.Text, notificationInfo.Image, notificationInfo.Duration, notificationInfo.Callback, notificationInfo.Button1Text, notificationInfo.Button2Text)
 end
 BindableEvent_SendNotificationInfo.Event:connect(onSendNotificationInfo)
 
