@@ -2348,6 +2348,9 @@ function Methods.ApplyScrollbarToFrame(devConsole,
 			
 			local yOffset = (bodyHeight - windowHeight) * value
       -- Never let yOffset go negative.
+      -- Without this line, things that are smaller than the containing scroll 
+      -- window start at the bottom and grow up.
+      -- It's a better UX to have things start at top and grow down.
       if (yOffset < 0) then 
         yOffset = 0
       end
