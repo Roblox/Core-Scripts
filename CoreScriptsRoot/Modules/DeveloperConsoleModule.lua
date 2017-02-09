@@ -1,5 +1,6 @@
 -- Made by Tomarty (talk to me if you have questions)
 
+--[[ Globals ]]--
 -- Quick optimizations
 local Instance_new = Instance.new
 local UDim2_new = UDim2.new
@@ -11,6 +12,7 @@ local os_time = os.time
 
 local DEBUG = false
 
+--[[ Services ]]--
 local CoreGui = game:GetService('CoreGui')
 local RobloxGui = CoreGui:FindFirstChild('RobloxGui')
 local Modules = RobloxGui:FindFirstChild('Modules')
@@ -18,6 +20,10 @@ local Modules = RobloxGui:FindFirstChild('Modules')
 local ContextActionService = game:GetService("ContextActionService")
 local GuiService = game:GetService('GuiService')
 local isTenFootInterface = GuiService:IsTenFootInterface()
+
+--[[ Modules ]]--
+local MemoryAnalyzerClass = require(CoreGui.RobloxGui.Modules.Stats.MemoryAnalyzer)
+
 
 -- Eye candy uses RenderStepped
 local EYECANDY_ENABLED = true
@@ -368,6 +374,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		buttonImage.Size = UDim2_new(buttonImageSize, 0, buttonImageSize, 0)
 		buttonImage.Position = UDim2_new((1 - buttonImageSize) / 2, 0, (1 - buttonImageSize) / 2, 0)		
 	end
+  
 	-- This is used for creating the square exit button and the square window resize button
 	local function createCornerButton(name, x, y, image, buttonImageSize)
 		-- Corners (x, y):
@@ -761,7 +768,13 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	do -- Console/Log tabs
 		
 		-- Wrapper for :AddTab
-		local function createConsoleTab(name, text, width, outputMessageSync, commandLineVisible, commandInputtedCallback, openCallback)
+		local function createConsoleTab(name, 
+        text, 
+        width,
+        outputMessageSync, 
+        commandLineVisible, 
+        commandInputtedCallback,
+        openCallback)
 			local tabBody = Primitives.FolderFrame(body, name)
 			local output, commandLine;
 			local disconnector = CreateDisconnectSignal()
@@ -788,8 +801,14 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 						if open and not commandLine then
 							commandLine = devConsole:CreateCommandLine()
 							commandLine.Frame.Parent = frame
-							commandLine.Frame.Size = UDim2_new(1, -(Style.HandleHeight + Style.BorderSize * 2), 0, Style.CommandLineHeight)
-							commandLine.Frame.Position = UDim2_new(0, Style.BorderSize, 1, -(Style.CommandLineHeight + Style.BorderSize))
+							commandLine.Frame.Size = UDim2_new(1,
+                -(Style.HandleHeight + Style.BorderSize * 2),
+                0,
+                Style.CommandLineHeight)
+							commandLine.Frame.Position = UDim2_new(0,
+                Style.BorderSize, 
+                1, 
+                -(Style.CommandLineHeight + Style.BorderSize))
 							commandLine.CommandInputted:connect(commandInputtedCallback)
 						end
 					end
@@ -1137,7 +1156,8 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				open = openNew
 			end
 			
-			local tab, statList = createStatsTab('ServerJobs', "Server Jobs", 70, config, openCallback, filterStats, {Stats = true})
+			local tab, statList = createStatsTab('ServerJobs', "Server Jobs", 70, config, 
+        openCallback, filterStats, {Stats = true})
 			
 			textFilterChanged:connect(function()
 				statList:Refresh()
@@ -1147,6 +1167,55 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		end
 	end
 	
+  
+	do -- Local Memory tab
+    
+    local getFlagSuccess, flagValue = pcall(function() 
+        return settings():GetFFlag("EnableLocalMemoryUIInDevConsole") 
+      end)		
+        
+    local showLocalMemoryTab = getFlagSuccess and flagValue
+ 
+    if (showLocalMemoryTab) then
+      local tabBody = Primitives.FolderFrame(body, 'LocalMemory')
+      
+      local memoryAnalyzer = MemoryAnalyzerClass.new(tabBody)
+            
+      -- When memory analyzer decides it's new size, we get notified.
+      memoryAnalyzer:setHeightChangedCallback(function(newHeight)
+          body.Size = UDim2.new(1, 0, 0, newHeight)
+          -- body.Size = UDim2.new(1, 0, 0, newHeight)
+        end)
+      
+      -- Considering all state (is dev console even showing, which tab is showing), 
+      -- do I need to update the memory stats tab right now, and should I be listening
+      -- for regular updats?
+      function syncMemoryAnalyzerVisibility()
+        if (tab.Open and tab.Visible and devConsole.Visible) then 
+          memoryAnalyzer:renderUpdates()
+          memoryAnalyzer:startListeningForUpdates()
+          body.Size = UDim2.new(1, 0, 0, memoryAnalyzer:getHeightInPix())
+        else
+          memoryAnalyzer:stopListeningForUpdates()
+        end
+      end
+      
+      -- 80 is the tab width
+      -- Every time 'open' state changes, call syncVisibility.
+      tab = devConsole:AddTab("Local Memory", 80, tabBody, function(open)      
+          syncMemoryAnalyzerVisibility()
+        end)
+      tab:SetVisible(true)   
+      
+      -- Every time dev console's open state changes, call syncVisibility.
+      devConsole.VisibleChanged:connect(function(visible)
+          syncMemoryAnalyzerVisibility()
+      end)
+    end 
+	end
+
+
+  
 	--[[
 	do -- Sample tab
 		local tabBody = Primitives.FolderFrame(body, 'TabName')
@@ -2258,7 +2327,11 @@ end
 ----------------
 -- Scroll bar --
 ----------------
-function Methods.ApplyScrollbarToFrame(devConsole, scrollbar, window, body, frame)
+function Methods.ApplyScrollbarToFrame(devConsole, 
+    scrollbar, 
+    window, 
+    body, 
+    frame)  
 	local windowHeight, bodyHeight
 	local height = scrollbar:GetHeight()
 	local value = scrollbar:GetValue()
@@ -2274,8 +2347,17 @@ function Methods.ApplyScrollbarToFrame(devConsole, scrollbar, window, body, fram
 			scrollbar:SetHeight(height)
 			
 			local yOffset = (bodyHeight - windowHeight) * value
+      -- Never let yOffset go negative.
+      -- Without this line, things that are smaller than the containing scroll 
+      -- window start at the bottom and grow up.
+      -- It's a better UX to have things start at top and grow down.
+      if (yOffset < 0) then 
+        yOffset = 0
+      end
+      
 			local x = body.Position.X
 			local y = body.Position.Y
+      
 			body.Position = UDim2_new(x.Scale, x.Offset, y.Scale, -math.floor(yOffset))
 		end
 
