@@ -93,7 +93,7 @@ function whisperStateMethods:TextUpdated()
 			self.PlayerName = player.Name
 
 			self.MessageModeButton.Size = UDim2.new(0, 1000, 1, 0)
-			self.MessageModeButton.Text = string.format("[%s]", player.Name)
+			self.MessageModeButton.Text = string.format("[To %s]", player.Name)
 			self.MessageModeButton.TextColor3 = self:GetWhisperChanneNameColor()
 
 			local xSize = self.MessageModeButton.TextBounds.X
@@ -121,7 +121,6 @@ end
 
 function whisperStateMethods:GetMessage()
 	if self.PlayerNameEntered then
-		print("Giving text:", "/w " ..self.PlayerName.. " " ..self.TextBox.Text)
 		return "/w " ..self.PlayerName.. " " ..self.TextBox.Text
 	end
 	return self.TextBox.Text
