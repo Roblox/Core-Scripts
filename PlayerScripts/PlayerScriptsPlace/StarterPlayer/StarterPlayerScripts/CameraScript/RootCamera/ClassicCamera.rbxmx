@@ -47,9 +47,9 @@ end
 local function CreateClassicCamera()
 	local module = RootCameraCreator()
 	
-	local tweenAcceleration    = math.rad(220)
-	local tweenSpeed           = math.rad(0)
-	local tweenMaxSpeed        = math.rad(250)
+	local tweenAcceleration = math.rad(220)
+	local tweenSpeed = math.rad(0)
+	local tweenMaxSpeed = math.rad(250)
 	local timeBeforeAutoRotate = 2
 
 	local lastUpdate = tick()
