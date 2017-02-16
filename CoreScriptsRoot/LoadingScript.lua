@@ -9,7 +9,7 @@ local MarketplaceService = game:GetService('MarketplaceService')
 local InputService = game:GetService('UserInputService')
 local guiService = game:GetService('GuiService')
 local ContextActionService = game:GetService('ContextActionService')
-local ReplicatedFirst = game:GetService('ReplicatedFirs')
+local ReplicatedFirst = game:GetService('ReplicatedFirst')
 local RobloxGui = game:GetService('CoreGui'):WaitForChild('RobloxGui')
 local RunService = game:GetService('RunService')
 
@@ -18,7 +18,7 @@ local startTime = tick()
 local COLORS = {
 	BLACK = Color3.fromRGB(0, 0, 0),
 	BACKGROUND_COLOR = Color3.fromRGB(45, 45, 45),
-	WHITE = Color3.fromRGB(1, 1, 1),
+	WHITE = Color3.fromRGB(255, 255, 255),
 	ERROR = Color3.fromRGB(253, 68, 72)
 }
 
@@ -48,7 +48,7 @@ local backgroundImageTransparency = 0
 local isMobile = (InputService.TouchEnabled and not InputService.MouseEnabled and getViewportSize().Y <= 500)
 local isTenFootInterface = guiService:IsTenFootInterface()
 local platform = InputService:GetPlatform()
-local Settings = UserSettings
+local Settings = UserSettings()
 
 local function IsConvertMyPlaceNameInXboxAppEnabled()
 	if InputService:GetPlatform() == Enum.Platform.XBoxOne then
@@ -62,12 +62,10 @@ end
 -- Utility functions
 local function create(className)
 	return function(propertyList)
-		local object = Instance.new(class)
+		local object = Instance.new(className)
 
 		local parent = propertyList.Parent
-		if parent then
-			propertyList.Parent = nil
-		end
+		propertyList.Parent = nil
 
 		for key, value in next, propertyList do
 			if type(key) ~= 'number' then
@@ -176,16 +174,14 @@ end
 
 -- create a cancel binding for console to be able to cancel anytime while loading
 local function createTenfootCancelGui()
-	local cancelLabel = create 'ImageLabel'
-	{
+	local cancelLabel = create 'ImageLabel' {
 		Name = "CancelLabel";
 		Size = UDim2.new(0, 83, 0, 83);
 		Position = UDim2.new(1, -32 - 83, 0, 32);
 		BackgroundTransparency = 1;
 		Image = 'rbxasset://textures/ui/Shell/ButtonIcons/BButton.png';
 	}
-	local cancelText = create 'TextLabel'
-	{
+	local cancelText = create 'TextLabel' {
 		Name = "CancelText";
 		Size = UDim2.new(0, 0, 0, 0);
 		Position = UDim2.new(1, -131, 0, 64);
