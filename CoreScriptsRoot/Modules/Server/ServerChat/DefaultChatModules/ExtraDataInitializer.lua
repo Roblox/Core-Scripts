@@ -28,27 +28,23 @@ local SpecialChatColors = {
 local function MakeIsInGroup(groupId, requiredRank)
 	assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
 
-	local inGroupCache = {}
 	return function(player)
 		if player and player.UserId then
 			local userId = player.UserId
 
-			if inGroupCache[userId] == nil then
-				local inGroup = false
-				local success, err = pcall(function() -- Many things can error is the IsInGroup check
-					if requiredRank then
-						inGroup = player:GetRankInGroup(groupId) > requiredRank
-					else
-						inGroup = player:IsInGroup(groupId)
-					end
-				end)
-				if not success and err then
-					print("Error checking in group: " ..err)
+			local inGroup = false
+			local success, err = pcall(function() -- Many things can error is the IsInGroup check
+				if requiredRank then
+					inGroup = player:GetRankInGroup(groupId) > requiredRank
+				else
+					inGroup = player:IsInGroup(groupId)
 				end
-				inGroupCache[userId] = inGroup
+			end)
+			if not success and err then
+				print("Error checking in group: " ..err)
 			end
 
-			return inGroupCache[userId]
+			return inGroup
 		end
 
 		return false

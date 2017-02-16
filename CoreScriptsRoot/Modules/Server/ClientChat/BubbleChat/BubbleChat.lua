@@ -660,11 +660,46 @@ game.Workspace.Changed:connect(function(prop)
 	end
 end)
 
+
+local AllowedMessageTypes = nil
+
+function getAllowedMessageTypes()
+	if AllowedMessageTypes then
+		return AllowedMessageTypes
+	end
+	local clientChatModules = ChatService:FindFirstChild("ClientChatModules")
+	if clientChatModules then
+		local chatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
+		if chatSettings.BubbleChatMessageTypes then
+			AllowedMessageTypes = chatSettings.BubbleChatMessageTypes
+			return AllowedMessageTypes
+		end
+		local chatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
+		AllowedMessageTypes = {ChatConstants.MessageTypeDefault, ChatConstants.MessageTypeWhisper}
+		return AllowedMessageTypes
+	end
+	return {"Message", "Whisper"}
+end
+
+function checkAllowedMessageType(messageData)
+	local allowedMessageTypes = getAllowedMessageTypes()
+	for i = 1, #allowedMessageTypes do
+		if allowedMessageTypes[i] == messageData.MessageType then
+			return true
+		end
+	end
+	return false
+end
+
 local ChatEvents = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local OnMessageDoneFiltering = ChatEvents:WaitForChild("OnMessageDoneFiltering")
 local OnNewMessage = ChatEvents:WaitForChild("OnNewMessage")
 
 OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
+	if not checkAllowedMessageType(messageData) then
+		return
+	end
+
 	local sender = findPlayer(messageData.FromSpeaker)
 	if not sender then
 		return
@@ -680,6 +715,10 @@ OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 end)
 
 OnMessageDoneFiltering.OnClientEvent:connect(function(messageData, channelName)
+	if not checkAllowedMessageType(messageData) then
+		return
+	end
+
 	local sender = findPlayer(messageData.FromSpeaker)
 	if not sender then
 		return
