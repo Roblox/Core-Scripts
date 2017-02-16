@@ -171,15 +171,17 @@ RemoteEvent_NewFollower.OnServerEvent:connect(function(player1, player2, player1
 	local user2map = PlayerToRelationshipMap[userId2]
 
 	local sentNotificationsMap = FollowNotificationsBetweenMap[userId1]
-	if sentNotificationsMap[userId2] then
-		sentNotificationsMap[userId2] = sentNotificationsMap[userId2] + 1
-		if sentNotificationsMap[userId2] > MAX_FOLLOW_NOTIFICATIONS_BETWEEN then
-			-- This player is likely trying to spam the other player with notifications.
-			-- We won't send any more.
-			return
+	if sentNotificationsMap then
+		if sentNotificationsMap[userId2] then
+			sentNotificationsMap[userId2] = sentNotificationsMap[userId2] + 1
+			if sentNotificationsMap[userId2] > MAX_FOLLOW_NOTIFICATIONS_BETWEEN then
+				-- This player is likely trying to spam the other player with notifications.
+				-- We won't send any more.
+				return
+			end
+		else
+			sentNotificationsMap[userId2] = 1
 		end
-	else
-		sentNotificationsMap[userId2] = 1
 	end
 	
 	if user1map then
@@ -213,9 +215,9 @@ end)
 
 local function onPlayerAdded(newPlayer)
 	local uid = newPlayer.UserId
-	FollowNotificationsBetweenMap[uid] = {}	
 	if uid > 0 then
 		local uidStr = tostring(uid)
+		FollowNotificationsBetweenMap[uidStr] = {}	
 		local result = getFollowRelationshipsAsync(uid)
 		if result then
 			updateAndNotifyClients(result, uidStr, newPlayer)
