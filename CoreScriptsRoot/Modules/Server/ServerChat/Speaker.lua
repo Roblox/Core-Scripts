@@ -145,6 +145,19 @@ function methods:InternalDestroy()
 	end
 
 	self.eDestroyed:Fire()
+
+	self.eDestroyed:Destroy()
+	self.eSaidMessage:Destroy()
+	self.eReceivedMessage:Destroy()
+	self.eMessageDoneFiltering:Destroy()
+	self.eReceivedSystemMessage:Destroy()
+	self.eChannelJoined:Destroy()
+	self.eChannelLeft:Destroy()
+	self.eMuted:Destroy()
+	self.eUnmuted:Destroy()
+	self.eExtraDataUpdated:Destroy()
+	self.eMainChannelSet:Destroy()
+	self.eChannelNameColorUpdated:Destroy()
 end
 
 function methods:InternalAssignPlayerObject(playerObj)
@@ -198,9 +211,8 @@ function module.new(vChatService, name)
 	obj.Channels = {}
 	obj.MutedSpeakers = {}
 
+	-- Make sure to destroy added binadable events in the InternalDestroy method.
 	obj.eDestroyed = Instance.new("BindableEvent")
-	obj.Destroyed = obj.eDestroyed.Event
-
 	obj.eSaidMessage = Instance.new("BindableEvent")
 	obj.eReceivedMessage = Instance.new("BindableEvent")
 	obj.eMessageDoneFiltering = Instance.new("BindableEvent")
@@ -213,6 +225,7 @@ function module.new(vChatService, name)
 	obj.eMainChannelSet = Instance.new("BindableEvent")
 	obj.eChannelNameColorUpdated = Instance.new("BindableEvent")
 
+	obj.Destroyed = obj.eDestroyed.Event
 	obj.SaidMessage = obj.eSaidMessage.Event
 	obj.ReceivedMessage = obj.eReceivedMessage.Event
 	obj.MessageDoneFiltering = obj.eMessageDoneFiltering.Event
