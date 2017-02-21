@@ -139,27 +139,41 @@ local function Run(ChatService)
 
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speakerObj = ChatService:GetSpeaker(speakerName)
-		if (speakerObj) then
+		if speakerObj then
 			local player = speakerObj:GetPlayer()
-			if (player) then
-				player.Changed:connect(function(property)
-					if (property == "Neutral") then
-						PutSpeakerInCorrectTeamChatState(speakerObj, player)
-
-					elseif (property == "Team") then
-						PutSpeakerInCorrectTeamChatState(speakerObj, player)
-						if (speakerObj:IsInChannel(channel.Name)) then
-							speakerObj:SendSystemMessage(string.format("You are now on the '%s' team.", player.Team.Name), channel.Name)
-						end
-
-					end
-				end)
-
+			if player then
 				PutSpeakerInCorrectTeamChatState(speakerObj, player)
 			end
 		end
 	end)
 
+	-- The Player changed connections must be stored and disconnected to avoid a memory leak.
+	-- This took about a week to track down.
+	local PlayerChangedConnections = {}
+	Players.PlayerAdded:connect(function(player)
+		local changedConn = player.Changed:connect(function(property)
+			local speakerObj = ChatService:GetSpeaker(player.Name)
+			if speakerObj then
+				if property == "Neutral" then
+					PutSpeakerInCorrectTeamChatState(speakerObj, player)
+				elseif property == "Team" then
+					PutSpeakerInCorrectTeamChatState(speakerObj, player)
+					if speakerObj:IsInChannel(channel.Name) then
+						speakerObj:SendSystemMessage(string.format("You are now on the '%s' team.", player.Team.Name), channel.Name)
+					end
+				end
+			end
+		end)
+		PlayerChangedConnections[player] = changedConn
+	end)
+
+	Players.PlayerRemoving:connect(function(player)
+		local changedConn = PlayerChangedConnections[player]
+		if changedConn then
+			changedConn:Disconnect()
+		end
+		PlayerChangedConnections[player] = nil
+	end)
 end
 
 return Run
