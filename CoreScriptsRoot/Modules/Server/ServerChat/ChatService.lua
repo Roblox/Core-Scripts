@@ -110,9 +110,18 @@ function methods:AddSpeaker(speakerName)
 	return speaker
 end
 
+function methods:InternalUnmuteSpeaker(speakerName)
+	for channelName, channel in pairs(self.ChatChannels) do
+		if channel:IsSpeakerMuted(speakerName) then
+			channel:UnmuteSpeaker(speakerName)
+		end
+	end
+end
+
 function methods:RemoveSpeaker(speakerName)
 	if (self.Speakers[speakerName:lower()]) then
 		local n = self.Speakers[speakerName:lower()].Name
+		self:InternalUnmuteSpeaker(n)
 
 		self.Speakers[speakerName:lower()]:InternalDestroy()
 		self.Speakers[speakerName:lower()] = nil
