@@ -205,6 +205,13 @@ function methods:InternalDestroy()
 	end
 
 	self.eDestroyed:Fire()
+
+	self.eDestroyed:Destroy()
+	self.eMessagePosted:Destroy()
+	self.eSpeakerJoined:Destroy()
+	self.eSpeakerLeft:Destroy()
+	self.eSpeakerMuted:Destroy()
+	self.eSpeakerUnmuted:Destroy()
 end
 
 function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
@@ -452,15 +459,12 @@ function module.new(vChatService, name, welcomeMessage, channelNameColor)
 	obj.MaxHistory = 200
 	obj.HistoryIndex = 0
 	obj.ChatHistory = {}
-	obj.MessageQueue = {}
-	obj.InternalMessageQueueChanged = Instance.new("BindableEvent")
 
 	obj.FilterMessageFunctions = Util:NewSortedFunctionContainer()
 	obj.ProcessCommandsFunctions = Util:NewSortedFunctionContainer()
 
+	-- Make sure to destroy added binadable events in the InternalDestroy method.
 	obj.eDestroyed = Instance.new("BindableEvent")
-	obj.Destroyed = obj.eDestroyed.Event
-
 	obj.eMessagePosted = Instance.new("BindableEvent")
 	obj.eSpeakerJoined = Instance.new("BindableEvent")
 	obj.eSpeakerLeft = Instance.new("BindableEvent")
@@ -472,6 +476,7 @@ function module.new(vChatService, name, welcomeMessage, channelNameColor)
 	obj.SpeakerLeft = obj.eSpeakerLeft.Event
 	obj.SpeakerMuted = obj.eSpeakerMuted.Event
 	obj.SpeakerUnmuted = obj.eSpeakerUnmuted.Event
+	obj.Destroyed = obj.eDestroyed.Event
 
 	return obj
 end

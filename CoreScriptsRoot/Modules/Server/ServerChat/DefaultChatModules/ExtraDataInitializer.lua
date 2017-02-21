@@ -128,29 +128,41 @@ local function Run(ChatService)
 
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speaker = ChatService:GetSpeaker(speakerName)
-		local player = speaker:GetPlayer()
-
-		if (not speaker:GetExtraData("NameColor")) then
+		if not speaker:GetExtraData("NameColor") then
 			speaker:SetExtraData("NameColor", GetNameColor(speaker))
 		end
-		if (player) then
-			player.Changed:connect(function(property)
-				if property == "TeamColor" or property == "Neutral" or property == "Team" then
-					speaker:SetExtraData("NameColor", GetNameColor(speaker))
-				end
-			end)
-		end
-		if (not speaker:GetExtraData("ChatColor")) then
+		if not speaker:GetExtraData("ChatColor") then
 			local specialChatColor = GetSpecialChatColor(speakerName)
 			if specialChatColor then
 				speaker:SetExtraData("ChatColor", specialChatColor)
 			end
 		end
-		if (not speaker:GetExtraData("Tags")) then
+		if not speaker:GetExtraData("Tags") then
 			speaker:SetExtraData("Tags", {})
 		end
+	end)
 
+	-- The Player changed connections must be stored and disconnected to avoid a memory leak.
+	-- This took about a week to track down.
+	local PlayerChangedConnections = {}
+	Players.PlayerAdded:connect(function(player)
+		local changedConn = player.Changed:connect(function(property)
+			local speaker = ChatService:GetSpeaker(player.Name)
+			if speaker then
+				if property == "TeamColor" or property == "Neutral" or property == "Team" then
+					speaker:SetExtraData("NameColor", GetNameColor(speaker))
+				end
+			end
+		end)
+		PlayerChangedConnections[player] = changedConn
+	end)
 
+	Players.PlayerRemoving:connect(function(player)
+		local changedConn = PlayerChangedConnections[player]
+		if changedConn then
+			changedConn:Disconnect()
+		end
+		PlayerChangedConnections[player] = nil
 	end)
 end
 
