@@ -184,10 +184,14 @@ local function CreateModule()
 			Visible = false
 		}
 
+		local accountType = Util.Create'TextLabel'{
+			Visible = false
+		}
+
 		addToDisplayStack(this.HealthContainer)
 		createContainer()
 
-		return this.Container, username, this.HealthContainer, healthFill
+		return this.Container, username, this.HealthContainer, healthFill, accountType
 	end
 
 	function this:SetupTopStat()
