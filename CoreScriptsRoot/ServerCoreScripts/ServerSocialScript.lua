@@ -158,9 +158,13 @@ end
 -- Map: { UserId -> { UserId -> NumberOfNotificationsSent } }
 local FollowNotificationsBetweenMap = {}
 
+local function isPlayer(value)
+	return typeof(value) == "Instance" and value:IsA("Player")
+end
+
 -- client fires event to server on new follow
 RemoteEvent_NewFollower.OnServerEvent:connect(function(player1, player2, player1FollowsPlayer2)
-	if player1 == nil or player2 == nil or player1FollowsPlayer2 == nil then
+	if not isPlayer(player1) or not isPlayer(player2) or type(player1FollowsPlayer2) ~= "boolean" then
 		return
 	end
 

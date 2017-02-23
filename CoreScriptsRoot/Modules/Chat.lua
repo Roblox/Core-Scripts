@@ -1849,20 +1849,14 @@ local function CreateChatWindowWidget(settings)
     local settings = shallowCopy(this.Settings)
 
     if informationTable["Text"] and type(informationTable["Text"]) == "string" then
-      if informationTable["Color"] and pcall(function() Color3.new(informationTable["Color"].r, informationTable["Color"].g, informationTable["Color"].b) end) then
-        settings.DefaultMessageTextColor = informationTable["Color"]
+      if typeof(informationTable.Color) == "Color3" then
+        settings.DefaultMessageTextColor = informationTable.Color
       end
-      if informationTable["Font"] then
-        local success, value = pcall(function() return checkEnum(Enum.Font:GetEnumItems(), informationTable["Font"].Value) end)
-        if success and value ~= nil then
-          settings.Font = value
-        end
+      if typeof(informationTable.Font) == "EnumItem" and informationTable.Font.EnumType == Enum.Font then
+        settings.Font = informationTable.Font
       end
-      if informationTable["FontSize"] then
-        local success, value = pcall(function() return checkEnum(Enum.FontSize:GetEnumItems(), informationTable["FontSize"].Value) end)
-        if success and value ~= nil then
-          settings.FontSize = value
-        end
+      if typeof(informationTable.FontSize) == "EnumItem" and informationTable.FontSize.EnumType == Enum.FontSize then
+        settings.FontSize = informationTable.FontSize
       end
       local chatMessage = CreateSystemChatMessage(settings, informationTable["Text"])
       this:PushMessageIntoQueue(chatMessage, false)
@@ -2685,8 +2679,7 @@ local function CreateChat()
           end
         end)
       local function isUDim2Value(value)
-        local success, value = pcall(function() return UDim2.new(value.X.Scale, value.X.Offset, value.Y.Scale, value.Y.Offset) end)
-        return success and value or nil
+        return typeof(value) == "UDim2" and value or nil
       end
 
       local function isBubbleChatOn()

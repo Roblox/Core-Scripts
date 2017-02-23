@@ -30,6 +30,16 @@ local dialogInUseFixFlagSuccess, dialogInUseFixValue = pcall(function() return s
 local dialogInUseFixFlag = (dialogInUseFixFlagSuccess and dialogInUseFixValue)
 
 local function setDialogInUse(player, dialog, value, waitTime)
+	if typeof(dialog) ~= "Instance" or not dialog:IsA("Dialog") then
+		return
+	end
+	if type(value) ~= "boolean" then
+		return
+	end
+	if type(waitTime) ~= "number" and type(waitTime) ~= "nil" then
+		return
+	end
+
 	if waitTime and waitTime ~= 0 then
 		wait(waitTime)
 	end
