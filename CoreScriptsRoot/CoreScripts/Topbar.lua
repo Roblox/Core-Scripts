@@ -70,6 +70,11 @@ while not Player do
 	Player = PlayersService.LocalPlayer
 end
 
+local accountTypeText = "Account: Over 13"
+if Player:GetUnder13() then
+	accountTypeText = "Account: Under 13"
+end
+
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
 local isTenFootInterface = TenFootInterface:IsEnabled()
 
@@ -627,11 +632,6 @@ local function createNormalHealthBar()
 		Parent = container;
 	};
 
-
-	local accountTypeText = "Account: Over 13"
-	if Player:GetUnder13() then
-		accountTypeText = "Account: Under 13"
-	end
 
 	local accountType = nil
 
@@ -1700,11 +1700,6 @@ local function CreateNoTopBarAccountType()
 		BackgroundTransparency = 1;
 		Parent = container;
 	}
-
-	local accountTypeText = "Account: Over 13"
-	if Player:GetUnder13() then
-		accountTypeText = "Account: Under 13"
-	end
 
 	local accountTypeTextLabel = Util.Create'TextLabel'{
 		Name = "AccountTypeText";
