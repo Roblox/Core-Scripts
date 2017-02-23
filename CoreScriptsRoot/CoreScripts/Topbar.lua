@@ -70,9 +70,9 @@ while not Player do
 	Player = PlayersService.LocalPlayer
 end
 
-local accountTypeText = "Account: Over 13"
+local accountTypeText = "Account Over 13 yrs"
 if Player:GetUnder13() then
-	accountTypeText = "Account: Under 13"
+	accountTypeText = "Account: Under 13 yrs"
 end
 
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
