@@ -24,6 +24,9 @@ local onlyShowHealthWhenDamagedEnabled = showHealthWhenDamagedSuccess and showHe
 local showVisibleAgeSuccess, showVisibleAgeValue = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAge") end)
 local showVisibleAgeEnabled = showVisibleAgeSuccess and showVisibleAgeValue
 
+local chatPrivacySettingSuccess, chatPrivacySettingValue = pcall(function() return settings():GetFFlag("UserChatPrivacySetting") end)
+local chatPrivacySettingEnabled = chatPrivacySettingSuccess and chatPrivacySettingValue
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -37,6 +40,7 @@ local StarterGui = game:GetService('StarterGui')
 local ContextActionService = game:GetService("ContextActionService")
 local RunService = game:GetService('RunService')
 local TextService = game:GetService('TextService')
+local ChatService = game:GetService('Chat')
 
 --[[ END OF SERVICES ]]
 
@@ -69,6 +73,8 @@ while not Player do
 	PlayersService.ChildAdded:wait()
 	Player = PlayersService.LocalPlayer
 end
+
+local canChat = true
 
 local accountTypeText = "Account Over 13 yrs"
 if Player:GetUnder13() then
@@ -1861,8 +1867,14 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 			end
 		end
 		if showTopbarChatIcon then
-			if chatIcon then
-				AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
+			if Util.IsTouchDevice or ChatModule:IsBubbleChatOnly() then
+				if chatIcon and canChat then
+					AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
+				end
+			else
+				if chatIcon then
+					AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
+				end
 			end
 			if mobileShowChatIcon and (useNewBubbleChatEnabled and ChatModule:ClassicChatEnabled() or PlayersService.ClassicChat) then
 				AddItemInOrder(LeftMenubar, mobileShowChatIcon, LEFT_ITEM_ORDER)
@@ -2068,6 +2080,26 @@ if defeatableTopbar then
 	end)
 else
 	topbarEnabledChanged()
+end
+
+if chatPrivacySettingEnabled then
+	spawn(function()
+		if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
+			local success, localUserCanChat = pcall(function()
+				return ChatService:CanUserChatAsync(LocalPlayer.UserId)
+			end)
+			canChat = success and localUserCanChat
+			if canChat == false then
+				if chatIcon then
+					LeftMenubar:RemoveItem(chatIcon)
+				end
+				if ChatModule:IsBubbleChatOnly() and mobileShowChatIcon then
+					LeftMenubar:RemoveItem(mobileShowChatIcon)
+				end
+				ChatModule:SetVisible(false)
+			end
+		end
+	end)
 end
 
 -- Hook-up coregui changing
