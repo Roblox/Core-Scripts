@@ -15,6 +15,26 @@ if ChatSettings.DisallowedWhiteSpace then
 end
 
 local function Run(ChatService)
+
+	local function ChatSettingsEnabled()
+		local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
+		local chatPrivacySettingsEnabled = true
+		if chatPrivacySettingsSuccess then
+			chatPrivacySettingsEnabled = chatPrivacySettingsValue
+		end
+		return chatPrivacySettingsEnabled
+	end
+
+	local function CanUserChat(playerObj)
+		if ChatSettingsEnabled() == false then
+			return true
+		end
+		local success, canChat = pcall(function()
+			return Chat:CanUserChatAsync(playerObj.UserId)
+		end)
+		return success and canChat
+	end
+
 	local function ValidateChatFunction(speakerName, message, channel)
 		local speakerObj = ChatService:GetSpeaker(speakerName)
 		local playerObj = speakerObj:GetPlayer()
@@ -22,6 +42,11 @@ local function Run(ChatService)
 		if not playerObj then return false end
 
 		if not RunService:IsStudio() and playerObj.UserId < 1 then
+			return true
+		end
+
+		if not RunService:IsStudio() and not CanUserChat(playerObj) then
+			speakerObj:SendSystemMessage("Your chat settings prevent you from sending messages.", channel)
 			return true
 		end
 

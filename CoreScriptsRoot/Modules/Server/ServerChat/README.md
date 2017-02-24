@@ -102,6 +102,7 @@ ___
 {
     int ID
     string FromSpeaker
+		int SpeakerUserId
     string OriginalChannel
     bool IsFiltered
 		int MessageLength
@@ -118,3 +119,4 @@ ___
 }
 ```
 	Note: Message will not exist on the client if IsFiltered is False
+	SpeakerUserId will be 0 if the speaker is not a player.
