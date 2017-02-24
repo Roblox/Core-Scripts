@@ -238,7 +238,7 @@ function methods:GetHistoryLogForSpeaker(speaker)
 	local userId = -1
 	local player = speaker:GetPlayer()
 	if player then
-		userId = Player.UserId
+		userId = player.UserId
 	end
 	local chatlog = {}
 	for i = 1, #self.ChatHistory do
