@@ -2097,7 +2097,7 @@ if chatPrivacySettingEnabled then
 		local success, localUserCanChat = pcall(function()
 			return ChatService:CanUserChatAsync(Player.UserId)
 		end)
-		canChat = success and localUserCanChat
+		canChat = RunService:IsStudio() or (success and localUserCanChat)
 		if canChat == false then
 			if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
 				if chatIcon then
