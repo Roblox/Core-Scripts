@@ -64,6 +64,7 @@ local function Run(ChatService)
 		if channelObj and otherSpeaker then
 			if not CanCommunicate(speaker, otherSpeaker) then
 				speaker:SendSystemMessage("You are not able to chat with this player.", channel, errorExtraData)
+				return
 			end
 
 			if (channelObj.Name == "To " .. speaker.Name) then
