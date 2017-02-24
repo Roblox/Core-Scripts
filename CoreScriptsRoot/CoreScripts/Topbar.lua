@@ -24,6 +24,9 @@ local onlyShowHealthWhenDamagedEnabled = showHealthWhenDamagedSuccess and showHe
 local showVisibleAgeSuccess, showVisibleAgeValue = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAge") end)
 local showVisibleAgeEnabled = showVisibleAgeSuccess and showVisibleAgeValue
 
+local showVisibleAgeXboxSuccess, showVisibleAgeXboxValue = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAgeXbox"))
+local showVisibleAgeEnabledXbox = showVisibleAgeXboxSuccess and showVisibleAgeXboxValue
+
 local chatPrivacySettingSuccess, chatPrivacySettingValue = pcall(function() return settings():GetFFlag("UserChatPrivacySetting") end)
 local chatPrivacySettingEnabled = chatPrivacySettingSuccess and chatPrivacySettingValue
 
@@ -1748,7 +1751,14 @@ local RightMenubar = CreateMenuBar(BarAlignmentEnum.Right)
 local Menubar3D = CreateMenuBar3D(BarAlignmentEnum.Left, TopbarPanel3D)
 
 local settingsIcon = CreateSettingsIcon(TopBar)
-local noTopBarAccountType = showVisibleAgeEnabled and CreateNoTopBarAccountType() or nil
+local noTopBarAccountType = nil
+
+if isTenFootInterface and showVisibleAgeEnabledXbox then
+	TenFootInterface:CreateAccountType(accountTypeText)
+elseif showVisibleAgeEnabled then
+	noTopBarAccountType = CreateNoTopBarAccountType()
+end
+
 local mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon() or nil
 local chatIcon = CreateChatIcon()
 local backpackIcon = CreateBackpackIcon()
