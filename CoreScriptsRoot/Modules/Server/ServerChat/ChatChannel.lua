@@ -70,7 +70,7 @@ function methods:CanCommunicateByUserId(userId1, userId2)
 	if ChatSettingsEnabled() == false then
 		return true
 	end
-	if userId1 < 1 or userId2 < 1 then
+	if userId1 == 0 or userId2 == 0 then
 		return true
 	end
 	local success, canCommunicate = pcall(function()
@@ -83,7 +83,7 @@ function methods:CanCommunicate(speakerObj1, speakerObj2)
 	local player1 = speakerObj1:GetPlayer()
 	local player2 = speakerObj2:GetPlayer()
 	if player1 and player2 then
-		self:CanCommunicateByUserId(player1.UserId, player2.UserId)
+		return self:CanCommunicateByUserId(player1.UserId, player2.UserId)
 	end
 	return true
 end

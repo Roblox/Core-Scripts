@@ -119,4 +119,4 @@ ___
 }
 ```
 	Note: Message will not exist on the client if IsFiltered is False
-	SpeakerUserId will be -1 if the speaker is not a player.
+	SpeakerUserId will be 0 if the speaker is not a player.

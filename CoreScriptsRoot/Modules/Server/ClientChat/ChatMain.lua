@@ -523,7 +523,7 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 			local messageObject = {
 				ID = -1,
 				FromSpeaker = nil,
-				SpeakerUserId = -1,
+				SpeakerUserId = 0,
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(valueTable.Text),
@@ -591,7 +591,7 @@ function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 		{
 			ID = -1,
 			FromSpeaker = nil,
-			SpeakerUserId = -1,
+			SpeakerUserId = 0,
 			OriginalChannel = channelName,
 			IsFiltered = true,
 			MessageLength = string.len(message),
@@ -803,7 +803,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 			local welcomeMessageObject = {
 				ID = -1,
 				FromSpeaker = nil,
-				SpeakerUserId = -1,
+				SpeakerUserId = 0,
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(welcomeMessage),
@@ -956,7 +956,7 @@ function SendSystemMessageToSelf(message)
 		{
 			ID = -1,
 			FromSpeaker = nil,
-			SpeakerUserId = -1,
+			SpeakerUserId = 0,
 			OriginalChannel = currentChannel.Name,
 			IsFiltered = true,
 			MessageLength = string.len(message),
