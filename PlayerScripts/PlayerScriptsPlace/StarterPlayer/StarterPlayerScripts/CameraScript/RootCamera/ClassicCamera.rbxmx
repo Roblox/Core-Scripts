@@ -51,16 +51,7 @@ local function CreateClassicCamera()
 	local tweenSpeed = math.rad(0)
 	local tweenMaxSpeed = math.rad(250)
 	local timeBeforeAutoRotate = 2
-	
-	local lastThumbstickRotate = nil
-	local numOfSeconds = 0.7
-	local currentSpeed = 0
-	local maxSpeed = 0.1
-	local thumbstickSensitivity = 1
-	local lastThumbstickPos = ZERO_VECTOR2
-	local ySensitivity = 0.8
-	local lastVelocity = nil
-	
+
 	local lastUpdate = tick()
 	module.LastUserPanCamera = tick()
 	function module:Update()
