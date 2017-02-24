@@ -24,7 +24,7 @@ local onlyShowHealthWhenDamagedEnabled = showHealthWhenDamagedSuccess and showHe
 local showVisibleAgeSuccess, showVisibleAgeValue = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAge") end)
 local showVisibleAgeEnabled = showVisibleAgeSuccess and showVisibleAgeValue
 
-local showVisibleAgeXboxSuccess, showVisibleAgeXboxValue = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAgeXbox"))
+local showVisibleAgeXboxSuccess, showVisibleAgeXboxValue = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAgeXbox") end)
 local showVisibleAgeEnabledXbox = showVisibleAgeXboxSuccess and showVisibleAgeXboxValue
 
 local chatPrivacySettingSuccess, chatPrivacySettingValue = pcall(function() return settings():GetFFlag("UserChatPrivacySetting") end)
@@ -1755,7 +1755,7 @@ local noTopBarAccountType = nil
 
 if isTenFootInterface and showVisibleAgeEnabledXbox then
 	TenFootInterface:CreateAccountType(accountTypeText)
-elseif showVisibleAgeEnabled then
+elseif not isTenFootInterface and showVisibleAgeEnabled then
 	noTopBarAccountType = CreateNoTopBarAccountType()
 end
 
@@ -2094,20 +2094,20 @@ end
 
 if chatPrivacySettingEnabled then
 	spawn(function()
-		if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
-			local success, localUserCanChat = pcall(function()
-				return ChatService:CanUserChatAsync(Player.UserId)
-			end)
-			canChat = success and localUserCanChat
-			if canChat == false then
+		local success, localUserCanChat = pcall(function()
+			return ChatService:CanUserChatAsync(Player.UserId)
+		end)
+		canChat = success and localUserCanChat
+		if canChat == false then
+			if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
 				if chatIcon then
 					LeftMenubar:RemoveItem(chatIcon)
 				end
 				if ChatModule:IsBubbleChatOnly() and mobileShowChatIcon then
 					LeftMenubar:RemoveItem(mobileShowChatIcon)
 				end
-				ChatModule:SetVisible(false)
 			end
+			ChatModule:SetVisible(false)
 		end
 	end)
 end
