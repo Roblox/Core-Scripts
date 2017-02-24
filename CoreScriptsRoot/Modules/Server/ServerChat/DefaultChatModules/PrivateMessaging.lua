@@ -3,6 +3,7 @@
 --	// Description: Module that handles all private messaging.
 
 local Chat = game:GetService("Chat")
+local RunService = game:GetService("RunService")
 local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
@@ -23,6 +24,9 @@ local function Run(ChatService)
 
 	local function CanCommunicate(fromSpeaker, toSpeaker)
 		if ChatSettingsEnabled() == false then
+			return true
+		end
+		if RunService:IsStudio() then
 			return true
 		end
 		local fromPlayer = fromSpeaker:GetPlayer()

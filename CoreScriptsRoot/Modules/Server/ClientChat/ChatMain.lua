@@ -1041,7 +1041,7 @@ if chatPrivacySettingsEnabled then
 			return Chat:CanUserChatAsync(LocalPlayer.UserId)
 		end)
 		if success then
-			canChat = canLocalUserChat
+			canChat = RunService:IsStudio() or canLocalUserChat
 			if canChat == false then
 				ChatBar:SetEnabled(canChat)
 			end

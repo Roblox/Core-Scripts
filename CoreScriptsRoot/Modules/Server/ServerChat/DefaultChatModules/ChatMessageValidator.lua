@@ -29,6 +29,9 @@ local function Run(ChatService)
 		if ChatSettingsEnabled() == false then
 			return true
 		end
+		if RunService:IsStudio() then
+			return true
+		end
 		local success, canChat = pcall(function()
 			return Chat:CanUserChatAsync(playerObj.UserId)
 		end)
@@ -45,7 +48,7 @@ local function Run(ChatService)
 			return true
 		end
 
-		if not RunService:IsStudio() and not CanUserChat(playerObj) then
+		if not CanUserChat(playerObj) then
 			speakerObj:SendSystemMessage("Your chat settings prevent you from sending messages.", channel)
 			return true
 		end

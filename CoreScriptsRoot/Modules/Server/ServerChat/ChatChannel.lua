@@ -7,6 +7,7 @@ local module = {}
 local modulesFolder = script.Parent
 local HttpService = game:GetService("HttpService")
 local Chat = game:GetService("Chat")
+local RunService = game:GetService("RunService")
 local replicatedModules = Chat:WaitForChild("ClientChatModules")
 
 --////////////////////////////// Include
@@ -67,6 +68,9 @@ function ChatSettingsEnabled()
 end
 
 function methods:CanCommunicateByUserId(userId1, userId2)
+	if RunService:IsStudio() then
+		return true
+	end
 	if ChatSettingsEnabled() == false then
 		return true
 	end
@@ -93,7 +97,7 @@ function methods:SendMessageToSpeaker(message, speakerName, fromSpeakerName, ext
 	local speakerTo = self.Speakers[speakerName]
 	local speakerFrom = self.Speakers[fromSpeakerName]
 	if speakerTo and speakerFrom then
-		local isMuted = speaker:IsSpeakerMuted(fromSpeaker)
+		local isMuted = speakerTo:IsSpeakerMuted(fromSpeakerName)
 		if isMuted then
 			return
 		end
@@ -103,16 +107,16 @@ function methods:SendMessageToSpeaker(message, speakerName, fromSpeakerName, ext
 		end
 
 		-- We need to claim the message is filtered even if it not in this case for compatibility with legacy client side code.
-		local isFiltered = speakerName == fromSpeaker
-		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
-		message = self:SendMessageObjToFilters(message, messageObj, fromSpeaker)
-		speaker:InternalSendMessage(messageObj, self.Name)
+		local isFiltered = speakerName == fromSpeakerName
+		local messageObj = self:InternalCreateMessageObject(message, fromSpeakerName, isFiltered, extraData)
+		message = self:SendMessageObjToFilters(message, messageObj, fromSpeakerName)
+		speakerTo:InternalSendMessage(messageObj, self.Name)
 
 		local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
 		if filteredMessage then
 			messageObj.Message = filteredMessage
 			messageObj.IsFiltered = true
-			speaker:InternalSendFilteredMessage(messageObj, self.Name)
+			speakerTo:InternalSendFilteredMessage(messageObj, self.Name)
 		end
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
