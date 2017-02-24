@@ -1930,7 +1930,7 @@ end
 if settingsIcon then
 	AddItemInOrder(LeftMenubar, settingsIcon, LEFT_ITEM_ORDER)
 end
-if noTopBarAccountType then
+if noTopBarAccountType and not isTenFootInterface then
 	AddItemInOrder(LeftMenubar, noTopBarAccountType, LEFT_ITEM_ORDER)
 end
 if nameAndHealthMenuItem and isTopbarEnabled() and not isTenFootInterface then
@@ -2086,7 +2086,7 @@ if chatPrivacySettingEnabled then
 	spawn(function()
 		if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
 			local success, localUserCanChat = pcall(function()
-				return ChatService:CanUserChatAsync(LocalPlayer.UserId)
+				return ChatService:CanUserChatAsync(Player.UserId)
 			end)
 			canChat = success and localUserCanChat
 			if canChat == false then
