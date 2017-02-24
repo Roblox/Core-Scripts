@@ -14,9 +14,9 @@ This is the main singleton object that runs the server sided chat service. It ma
 	string[] GetChannelList()
 	string[] GetAutoJoinChannelList()
 
-	void RegisterFilterMessageFunction(string functionId, function func)
+	void RegisterFilterMessageFunction(string functionId, function func, int priority)
 	void UnregisterFilterMessageFunction(string functionId)
-	void RegisterProcessCommandsFunction(string functionId, function func)
+	void RegisterProcessCommandsFunction(string functionId, function func, int priority)
 	void UnregisterProcessCommandsFunction(string functionId)
 
 
@@ -40,9 +40,9 @@ A ChatChannel is an object that stores data about a single channel that Speakers
 	bool Private
 
 #### Methods
-	void RegisterFilterMessageFunction(string functionId, function func)
+	void RegisterFilterMessageFunction(string functionId, function func, int priority)
 	void UnregisterFilterMessageFunction(string functionId)
-	void RegisterProcessCommandsFunction(string functionId, function func)
+	void RegisterProcessCommandsFunction(string functionId, function func, int priority)
 	void UnregisterProcessCommandsFunction(string functionId)
 
 	void KickSpeaker(string speakerName, string reason)
@@ -102,6 +102,7 @@ ___
 {
     int ID
     string FromSpeaker
+		int SpeakerUserId
     string OriginalChannel
     bool IsFiltered
 		int MessageLength
@@ -118,3 +119,4 @@ ___
 }
 ```
 	Note: Message will not exist on the client if IsFiltered is False
+	SpeakerUserId will be 0 if the speaker is not a player.

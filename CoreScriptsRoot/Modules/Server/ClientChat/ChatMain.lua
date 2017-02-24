@@ -92,6 +92,14 @@ while not LocalPlayer do
 	LocalPlayer = Players.LocalPlayer
 end
 
+local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
+local chatPrivacySettingsEnabled = true
+if chatPrivacySettingsSuccess then
+	chatPrivacySettingsEnabled = chatPrivacySettingsValue
+end
+
+local canChat = true
+
 local ChatDisplayOrder = 6
 if ChatSettings.ScreenGuiDisplayOrder ~= nil then
 	ChatDisplayOrder = ChatSettings.ScreenGuiDisplayOrder
@@ -336,12 +344,12 @@ UserInputService.InputChanged:connect(function(inputObject)
 end)
 
 UserInputService.TouchTap:connect(function(tapPos, gameProcessedEvent)
-	local last = mouseIsInWindow
-
 	UpdateMousePosition(tapPos[1])
-	if (not mouseIsInWindow and last ~= mouseIsInWindow) then
-		DoBackgroundFadeOut()
-	end
+end)
+
+UserInputService.TouchMoved:connect(function(inputObject, gameProcessedEvent)
+	local tapPos = Vector2.new(inputObject.Position.X, inputObject.Position.Y)
+	UpdateMousePosition(tapPos)
 end)
 
 UserInputService.Changed:connect(function(prop)
@@ -515,6 +523,7 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 			local messageObject = {
 				ID = -1,
 				FromSpeaker = nil,
+				SpeakerUserId = 0,
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(valueTable.Text),
@@ -533,9 +542,11 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 end)
 
 moduleApiTable.ChatBarDisabledEvent:connect(function(disabled)
-	ChatBar:SetEnabled(not disabled)
-	if (disabled) then
-		ChatBar:ReleaseFocus()
+	if canChat then
+		ChatBar:SetEnabled(not disabled)
+		if (disabled) then
+			ChatBar:ReleaseFocus()
+		end
 	end
 end)
 
@@ -557,6 +568,7 @@ function DoChatBarFocus()
 
 	if (not ChatBar:IsFocused() and ChatBar:GetVisible()) then
 		moduleApiTable:SetVisible(true)
+		InstantFadeIn()
 		ChatBar:CaptureFocus()
 		moduleApiTable.ChatBarFocusChanged:fire(true)
 	end
@@ -579,6 +591,7 @@ function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 		{
 			ID = -1,
 			FromSpeaker = nil,
+			SpeakerUserId = 0,
 			OriginalChannel = channelName,
 			IsFiltered = true,
 			MessageLength = string.len(message),
@@ -634,7 +647,11 @@ function chatBarFocusLost(enterPressed, inputObject)
 			if not CommandProcessor:ProcessCompletedChatMessage(message, ChatWindow) then
 				if ChatSettings.DisallowedWhiteSpace then
 					for i = 1, #ChatSettings.DisallowedWhiteSpace do
-						message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], "")
+						if ChatSettings.DisallowedWhiteSpace[i] == "\t" then
+							message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], " ")
+						else
+							message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], "")
+						end
 					end
 				end
 				message = string.gsub(message, "\n", "")
@@ -786,6 +803,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 			local welcomeMessageObject = {
 				ID = -1,
 				FromSpeaker = nil,
+				SpeakerUserId = 0,
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(welcomeMessage),
@@ -938,6 +956,7 @@ function SendSystemMessageToSelf(message)
 		{
 			ID = -1,
 			FromSpeaker = nil,
+			SpeakerUserId = 0,
 			OriginalChannel = currentChannel.Name,
 			IsFiltered = true,
 			MessageLength = string.len(message),
@@ -1015,6 +1034,20 @@ spawn(function()
 		end)
 	end
 end)
+
+if chatPrivacySettingsEnabled then
+	spawn(function()
+		local success, canLocalUserChat = pcall(function()
+			return Chat:CanUserChatAsync(LocalPlayer.UserId)
+		end)
+		if success then
+			canChat = RunService:IsStudio() or canLocalUserChat
+			if canChat == false then
+				ChatBar:SetEnabled(canChat)
+			end
+		end
+	end)
+end
 
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
 

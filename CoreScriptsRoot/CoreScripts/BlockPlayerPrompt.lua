@@ -24,8 +24,8 @@ local BlockingUtility = PlayerDropDownModule:CreateBlockingUtility()
 local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptPromptBlockEnabled") end)
 local AllowPromptBlockPlayer = readFlagSuccess and flagEnabled
 
-local THUMBNAIL_URL = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&userId="
-local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=420&height=420&userId="
+local THUMBNAIL_URL = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&format=png&userId="
+local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=420&height=420&format=png&userId="
 
 function DoPromptBlockPlayer(playerToBlock)
 	if BlockingUtility:IsPlayerBlockedByUserId(playerToBlock.UserId) then

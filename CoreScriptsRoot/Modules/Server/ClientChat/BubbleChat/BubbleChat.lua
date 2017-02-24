@@ -16,7 +16,7 @@ while LocalPlayer == nil do
 	LocalPlayer = PlayersService.LocalPlayer
 end
 
-local PlayerGui = LocalPlayer.PlayerGui
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 --[[ SCRIPT VARIABLES ]]
 local CHAT_BUBBLE_FONT = Enum.Font.SourceSans
@@ -350,7 +350,7 @@ end
 function this:CreateBillboardGuiHelper(instance, onlyCharacter)
 	if instance and not this.CharacterSortedMsg:Get(instance)["BillboardGui"] then
 		if not onlyCharacter then
-			if instance:IsA("Part") then
+			if instance:IsA("BasePart") then
 				-- Create a new billboardGui object attached to this player
 				local billboardGui = createBillboardInstance(instance)
 				this.CharacterSortedMsg:Get(instance)["BillboardGui"] = billboardGui
@@ -360,7 +360,7 @@ function this:CreateBillboardGuiHelper(instance, onlyCharacter)
 
 		if instance:IsA("Model") then
 			local head = instance:FindFirstChild("Head")
-			if head and head:IsA("Part") then
+			if head and head:IsA("BasePart") then
 				-- Create a new billboardGui object attached to this player
 				local billboardGui = createBillboardInstance(head)
 				this.CharacterSortedMsg:Get(instance)["BillboardGui"] = billboardGui
@@ -660,11 +660,46 @@ game.Workspace.Changed:connect(function(prop)
 	end
 end)
 
+
+local AllowedMessageTypes = nil
+
+function getAllowedMessageTypes()
+	if AllowedMessageTypes then
+		return AllowedMessageTypes
+	end
+	local clientChatModules = ChatService:FindFirstChild("ClientChatModules")
+	if clientChatModules then
+		local chatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
+		if chatSettings.BubbleChatMessageTypes then
+			AllowedMessageTypes = chatSettings.BubbleChatMessageTypes
+			return AllowedMessageTypes
+		end
+		local chatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
+		AllowedMessageTypes = {ChatConstants.MessageTypeDefault, ChatConstants.MessageTypeWhisper}
+		return AllowedMessageTypes
+	end
+	return {"Message", "Whisper"}
+end
+
+function checkAllowedMessageType(messageData)
+	local allowedMessageTypes = getAllowedMessageTypes()
+	for i = 1, #allowedMessageTypes do
+		if allowedMessageTypes[i] == messageData.MessageType then
+			return true
+		end
+	end
+	return false
+end
+
 local ChatEvents = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local OnMessageDoneFiltering = ChatEvents:WaitForChild("OnMessageDoneFiltering")
 local OnNewMessage = ChatEvents:WaitForChild("OnNewMessage")
 
 OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
+	if not checkAllowedMessageType(messageData) then
+		return
+	end
+
 	local sender = findPlayer(messageData.FromSpeaker)
 	if not sender then
 		return
@@ -680,6 +715,10 @@ OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
 end)
 
 OnMessageDoneFiltering.OnClientEvent:connect(function(messageData, channelName)
+	if not checkAllowedMessageType(messageData) then
+		return
+	end
+
 	local sender = findPlayer(messageData.FromSpeaker)
 	if not sender then
 		return

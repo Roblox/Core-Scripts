@@ -93,7 +93,7 @@ local function CreatePlayerSpeakerObject(playerObj)
 
 		local channelObject = ChatService:GetChannel(channel)
 		if (channelObject) then
-			log = channelObject:GetHistoryLog()
+			log = channelObject:GetHistoryLogForSpeaker(speaker)
 			channelNameColor = channelObject.ChannelNameColor
 		end
 		EventFolder.OnChannelJoined:FireClient(playerObj, channel, welcomeMessage, log, channelNameColor)
@@ -207,7 +207,7 @@ EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
 			{
 				channelName,
 				channelObj.WelcomeMessage,
-				channelObj:GetHistoryLog(),
+				channelObj:GetHistoryLogForSpeaker(speaker),
 				channelObj.ChannelNameColor,
 			}
 

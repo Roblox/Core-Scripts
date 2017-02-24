@@ -7,11 +7,13 @@ local module = {}
 local modulesFolder = script.Parent
 local HttpService = game:GetService("HttpService")
 local Chat = game:GetService("Chat")
+local RunService = game:GetService("RunService")
 local replicatedModules = Chat:WaitForChild("ClientChatModules")
 
 --////////////////////////////// Include
 --//////////////////////////////////////
 local ChatConstants = require(replicatedModules:WaitForChild("ChatConstants"))
+local Util = require(modulesFolder:WaitForChild("Util"))
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -56,23 +58,65 @@ function methods:SendMessageObjToFilters(message, messageObj, fromSpeaker)
 	return newMessage
 end
 
-function methods:SendMessageToSpeaker(message, speakerName, fromSpeaker, extraData)
-	local speaker = self.Speakers[speakerName]
-	if (speaker) then
-		local isMuted = speaker:IsSpeakerMuted(fromSpeaker)
+function ChatSettingsEnabled()
+	local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
+	local chatPrivacySettingsEnabled = true
+	if chatPrivacySettingsSuccess then
+		chatPrivacySettingsEnabled = chatPrivacySettingsValue
+	end
+	return chatPrivacySettingsEnabled
+end
+
+function methods:CanCommunicateByUserId(userId1, userId2)
+	if RunService:IsStudio() then
+		return true
+	end
+	if ChatSettingsEnabled() == false then
+		return true
+	end
+	-- UserId is set as 0 for non player speakers.
+	if userId1 == 0 or userId2 == 0 then
+		return true
+	end
+	local success, canCommunicate = pcall(function()
+		return Chat:CanUsersChatAsync(userId1, userId2)
+	end)
+	return success and canCommunicate
+end
+
+function methods:CanCommunicate(speakerObj1, speakerObj2)
+	local player1 = speakerObj1:GetPlayer()
+	local player2 = speakerObj2:GetPlayer()
+	if player1 and player2 then
+		return self:CanCommunicateByUserId(player1.UserId, player2.UserId)
+	end
+	return true
+end
+
+function methods:SendMessageToSpeaker(message, speakerName, fromSpeakerName, extraData)
+	local speakerTo = self.Speakers[speakerName]
+	local speakerFrom = self.Speakers[fromSpeakerName]
+	if speakerTo and speakerFrom then
+		local isMuted = speakerTo:IsSpeakerMuted(fromSpeakerName)
 		if isMuted then
 			return
 		end
 
-		local isFiltered = speakerName == fromSpeaker
-		local messageObj = self:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
-		message = self:SendMessageObjToFilters(message, messageObj, fromSpeaker)
-		speaker:InternalSendMessage(messageObj, self.Name)
+		if not self:CanCommunicate(speakerTo, speakerFrom) then
+			return
+		end
 
-		if not isFiltered then
-			messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+		-- We need to claim the message is filtered even if it not in this case for compatibility with legacy client side code.
+		local isFiltered = speakerName == fromSpeakerName
+		local messageObj = self:InternalCreateMessageObject(message, fromSpeakerName, isFiltered, extraData)
+		message = self:SendMessageObjToFilters(message, messageObj, fromSpeakerName)
+		speakerTo:InternalSendMessage(messageObj, self.Name)
+
+		local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+		if filteredMessage then
+			messageObj.Message = filteredMessage
 			messageObj.IsFiltered = true
-			speaker:InternalSendFilteredMessage(messageObj, self.Name)
+			speakerTo:InternalSendFilteredMessage(messageObj, self.Name)
 		end
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
@@ -162,28 +206,20 @@ function methods:GetSpeakerList()
 	return list
 end
 
-function methods:RegisterFilterMessageFunction(funcId, func)
-	if self.FilterMessageFunctions[funcId] then
-		error(funcId .. " is already in use!")
-	end
-
-	self.FilterMessageFunctions[funcId] = func
+function methods:RegisterFilterMessageFunction(funcId, func, priority)
+	self.FilterMessageFunctions:AddFunction(funcId, func, priority)
 end
 
 function methods:UnregisterFilterMessageFunction(funcId)
-	self.FilterMessageFunctions[funcId] = nil
+	self.FilterMessageFunctions:RemoveFunction(funcId)
 end
 
-function methods:RegisterProcessCommandsFunction(funcId, func)
-	if (self.ProcessCommandsFunctions[funcId]) then
-		error(funcId .. " is already in use!")
-	end
-
-	self.ProcessCommandsFunctions[funcId] = func
+function methods:RegisterProcessCommandsFunction(funcId, func, priority)
+	self.ProcessCommandsFunctions:AddFunction(funcId, func, priority)
 end
 
 function methods:UnregisterProcessCommandsFunction(funcId)
-	self.ProcessCommandsFunctions[funcId] = nil
+	self.ProcessCommandsFunctions:RemoveFunction(funcId)
 end
 
 local function DeepCopy(table)
@@ -202,6 +238,22 @@ function methods:GetHistoryLog()
 	return DeepCopy(self.ChatHistory)
 end
 
+function methods:GetHistoryLogForSpeaker(speaker)
+	local userId = -1
+	local player = speaker:GetPlayer()
+	if player then
+		userId = player.UserId
+	end
+	local chatlog = {}
+	for i = 1, #self.ChatHistory do
+		local logUserId = self.ChatHistory[i].SpeakerUserId
+		if self:CanCommunicateByUserId(userId, logUserId) then
+			table.insert(chatlog, DeepCopy(self.ChatHistory[i]))
+		end
+	end
+	return chatlog
+end
+
 --///////////////// Internal-Use Methods
 --//////////////////////////////////////
 function methods:InternalDestroy()
@@ -210,41 +262,45 @@ function methods:InternalDestroy()
 	end
 
 	self.eDestroyed:Fire()
+
+	self.eDestroyed:Destroy()
+	self.eMessagePosted:Destroy()
+	self.eSpeakerJoined:Destroy()
+	self.eSpeakerLeft:Destroy()
+	self.eSpeakerMuted:Destroy()
+	self.eSpeakerUnmuted:Destroy()
 end
 
 function methods:InternalDoMessageFilter(speakerName, messageObj, channel)
-	for funcId, func in pairs(self.FilterMessageFunctions) do
-		local s, m = pcall(function()
+	local filtersIterator = self.FilterMessageFunctions:GetIterator()
+	for funcId, func, priority in filtersIterator do
+		local success, errorMessage = pcall(function()
 			func(speakerName, messageObj, channel)
 		end)
 
-		if (not s) then
-			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, m))
+		if not success then
+			warn(string.format("DoMessageFilter Function '%s' failed for reason: %s", funcId, errorMessage))
 		end
 	end
 end
 
 function methods:InternalDoProcessCommands(speakerName, message, channel)
-	local processed = false
-
-	processed = self.ProcessCommandsFunctions["default_commands"](speakerName, message, channel)
-	if (processed) then return processed end
-
-	for funcId, func in pairs(self.ProcessCommandsFunctions) do
-		local s, m = pcall(function()
+	local commandsIterator = self.ProcessCommandsFunctions:GetIterator()
+	for funcId, func, priority in commandsIterator do
+		local success, returnValue = pcall(function()
 			local ret = func(speakerName, message, channel)
 			assert(type(ret) == "boolean")
-			processed = ret
+			return ret
 		end)
 
-		if (not s) then
-			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, m))
+		if not success then
+			warn(string.format("DoProcessCommands Function '%s' failed for reason: %s", funcId, returnValue))
+		elseif returnValue then
+			return true
 		end
-
-		if (processed) then break end
 	end
 
-	return processed
+	return false
 end
 
 function methods:InternalPostMessage(fromSpeaker, message, extraData)
@@ -266,13 +322,14 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	local sentToList = {}
 	for i, speaker in pairs(self.Speakers) do
 		local isMuted = speaker:IsSpeakerMuted(fromSpeaker.Name)
-		if not isMuted then
+		if not isMuted and self:CanCommunicate(fromSpeaker, speaker) then
 			table.insert(sentToList, speaker.Name)
 			if speaker.Name == fromSpeaker.Name then
 				-- Send unfiltered message to speaker who sent the message.
 				local cMessageObj = DeepCopy(messageObj)
 				cMessageObj.Message = message
 				cMessageObj.IsFiltered = true
+				-- We need to claim the message is filtered even if it not in this case for compatibility with legacy client side code.
 				speaker:InternalSendMessage(cMessageObj, self.Name)
 			else
 				speaker:InternalSendMessage(messageObj, self.Name)
@@ -287,7 +344,12 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 
 	local filteredMessages = {}
 	for i, speakerName in pairs(sentToList) do
-		filteredMessages[speakerName] = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+		local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+		if filteredMessage then
+			filteredMessages[speakerName] = filteredMessage
+		else
+			return false
+		end
 	end
 
 	for i, speakerName in pairs(sentToList) do
@@ -300,7 +362,12 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		end
 	end
 
-	messageObj.Message = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, messageObj.FromSpeaker)
+	local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, messageObj.FromSpeaker)
+	if filteredMessage then
+		messageObj.Message = filteredMessage
+	else
+		return false
+	end
 	messageObj.IsFiltered = true
 	self:InternalAddMessageToHistoryLog(messageObj)
 
@@ -309,7 +376,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	local speakersMissingMessage = {}
 	for _, speaker in pairs(self.Speakers) do
 		local isMuted = speaker:IsSpeakerMuted(fromSpeaker.Name)
-		if not isMuted then
+		if not isMuted and self:CanCommunicate(fromSpeaker, speaker) then
 			local wasSentMessage = false
 			for _, sentSpeakerName in pairs(sentToList) do
 				if speaker.Name == sentSpeakerName then
@@ -327,6 +394,9 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		local speaker = self.Speakers[speakerName]
 		if speaker then
 			local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
+			if filteredMessage == nil then
+				return false
+			end
 			local cMessageObj = DeepCopy(messageObj)
 			cMessageObj.Message = filteredMessage
 			cMessageObj.IsFiltered = true
@@ -385,10 +455,25 @@ end
 
 function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, extraData)
 	local messageType = self:GetMessageType(message, fromSpeaker)
+
+	local speakerUserId = -1
+	local speaker = nil
+
+	if fromSpeaker then
+		speaker = self.Speakers[fromSpeaker]
+		if speaker then
+			local player = speaker:GetPlayer()
+			if player then
+				speakerUserId = player.UserId
+			end
+		end
+	end
+
 	local messageObj =
 	{
 		ID = self.ChatService:InternalGetUniqueMessageId(),
 		FromSpeaker = fromSpeaker,
+		SpeakerUserId = speakerUserId,
 		OriginalChannel = self.Name,
 		MessageLength = string.len(message),
 		MessageType = messageType,
@@ -398,12 +483,9 @@ function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, e
 		ExtraData = {},
 	}
 
-	if (fromSpeaker) then
-		local speaker = self.Speakers[fromSpeaker]
-		if (speaker) then
-			for k, v in pairs(speaker.ExtraData) do
-				messageObj.ExtraData[k] = v
-			end
+	if speaker then
+		for k, v in pairs(speaker.ExtraData) do
+			messageObj.ExtraData[k] = v
 		end
 	end
 
@@ -446,15 +528,12 @@ function module.new(vChatService, name, welcomeMessage, channelNameColor)
 	obj.MaxHistory = 200
 	obj.HistoryIndex = 0
 	obj.ChatHistory = {}
-	obj.MessageQueue = {}
-	obj.InternalMessageQueueChanged = Instance.new("BindableEvent")
 
-	obj.FilterMessageFunctions = {}
-	obj.ProcessCommandsFunctions = {}
+	obj.FilterMessageFunctions = Util:NewSortedFunctionContainer()
+	obj.ProcessCommandsFunctions = Util:NewSortedFunctionContainer()
 
+	-- Make sure to destroy added binadable events in the InternalDestroy method.
 	obj.eDestroyed = Instance.new("BindableEvent")
-	obj.Destroyed = obj.eDestroyed.Event
-
 	obj.eMessagePosted = Instance.new("BindableEvent")
 	obj.eSpeakerJoined = Instance.new("BindableEvent")
 	obj.eSpeakerLeft = Instance.new("BindableEvent")
@@ -466,6 +545,7 @@ function module.new(vChatService, name, welcomeMessage, channelNameColor)
 	obj.SpeakerLeft = obj.eSpeakerLeft.Event
 	obj.SpeakerMuted = obj.eSpeakerMuted.Event
 	obj.SpeakerUnmuted = obj.eSpeakerUnmuted.Event
+	obj.Destroyed = obj.eDestroyed.Event
 
 	return obj
 end
