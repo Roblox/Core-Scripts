@@ -70,6 +70,7 @@ function methods:CanCommunicateByUserId(userId1, userId2)
 	if ChatSettingsEnabled() == false then
 		return true
 	end
+	-- UserId is set as 0 for non player speakers.
 	if userId1 == 0 or userId2 == 0 then
 		return true
 	end
