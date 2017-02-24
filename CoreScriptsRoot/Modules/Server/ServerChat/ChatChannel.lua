@@ -95,7 +95,7 @@ end
 
 function methods:SendMessageToSpeaker(message, speakerName, fromSpeakerName, extraData)
 	local speakerTo = self.Speakers[speakerName]
-	local speakerFrom = self.Speakers[fromSpeakerName]
+	local speakerFrom = self.ChatService:GetSpeaker(fromSpeakerName)
 	if speakerTo and speakerFrom then
 		local isMuted = speakerTo:IsSpeakerMuted(fromSpeakerName)
 		if isMuted then
