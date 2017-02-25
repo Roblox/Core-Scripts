@@ -1738,8 +1738,10 @@ local function CreateNoTopBarAccountType()
 		wait()
 		calculateAccountText()
 		accountTypeTextLabel.Text = accountTypeText
-		local containerSize = 22 + accountTypeTextLabel.TextBounds.X
-		container.Size = UDim2.new(0, containerSize, 1, 0)
+		if container.Visible then
+			local containerSize = 22 + accountTypeTextLabel.TextBounds.X
+			container.Size = UDim2.new(0, containerSize, 1, 0)
+		end
 	end)
 
 	local function UpdateNoTopBarAccountType()
