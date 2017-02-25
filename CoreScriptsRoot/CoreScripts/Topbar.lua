@@ -79,9 +79,13 @@ end
 
 local canChat = true
 
-local accountTypeText = "Account Over 13 yrs"
-if Player:GetUnder13() then
-	accountTypeText = "Account: Under 13 yrs"
+local accountTypeText = "Account: Under 13 yrs"
+
+function calculateAccountText()
+	accountTypeText = "Account Over 13 yrs"
+	if Player:GetUnder13() then
+		accountTypeText = "Account: Under 13 yrs"
+	end
 end
 
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
@@ -659,6 +663,12 @@ local function createNormalHealthBar()
 			Parent = container;
 		};
 	end
+
+	spawn(function()
+		wait()
+		calculateAccountText()
+		accountType.Text = accountTypeText
+	end)
 
 	local healthContainer = Util.Create'Frame'{
 		Name = "HealthContainer";
@@ -1724,6 +1734,14 @@ local function CreateNoTopBarAccountType()
 		Parent = bubble;
 	};
 
+	spawn(function()
+		wait()
+		calculateAccountText()
+		accountTypeTextLabel.Text = accountTypeText
+		local containerSize = 22 + accountTypeTextLabel.TextBounds.X
+		container.Size = UDim2.new(0, containerSize, 1, 0)
+	end)
+
 	local function UpdateNoTopBarAccountType()
 		if isTopbarEnabled() then
 			container.Visible = false
@@ -1754,7 +1772,11 @@ local settingsIcon = CreateSettingsIcon(TopBar)
 local noTopBarAccountType = nil
 
 if isTenFootInterface and showVisibleAgeEnabledXbox then
-	TenFootInterface:CreateAccountType(accountTypeText)
+	spawn(function()
+		wait()
+		calculateAccountText()
+		TenFootInterface:CreateAccountType(accountTypeText)
+	end)
 elseif not isTenFootInterface and showVisibleAgeEnabled then
 	noTopBarAccountType = CreateNoTopBarAccountType()
 end
