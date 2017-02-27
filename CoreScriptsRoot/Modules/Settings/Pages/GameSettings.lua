@@ -297,8 +297,8 @@ local function Initialize()
       return
     end
 
-    if #option ~= 4 then
-      warn("AddOption length isn't 4")
+    if #option ~= 5 then
+      warn("AddOption length isn't 5")
       return
     end
 
@@ -313,6 +313,13 @@ local function Initialize()
       return
     end
 
+    if typeof(option[5]) ~= "Instance" or not option[5]:IsA("BindableEvent") then
+      warn("The fifth entry of AddOption must be a BindableEvent")
+      return
+    end
+
+    local customRow
+
     if option[2] == "Slider" then
       if typeof(option[3]) ~= "number" or option[3] < 2 then
         warn("The third entry of AddOption must be a number greater than 2 for sliders.")
@@ -324,11 +331,15 @@ local function Initialize()
         return
       end
 
-      utility:AddNewRow(this,
-        option[1],
-        "Slider",
-        option[3],
-        option[4])
+      _, __, customRow = utility:AddNewRow(this,
+                  option[1],
+                  "Slider",
+                  option[3],
+                  option[4])
+
+      customRow.ValueChanged:connect(function(val)
+        option[5]:Fire(val)
+      end)
     elseif option[2] == "Selector" or option[2] == "DropDown" then
       if typeof(option[3]) ~= "table" then
         warn("The third entry of AddOption must be a table of values for Selectors and Dropdowns.")
@@ -340,11 +351,15 @@ local function Initialize()
         return
       end
 
-      utility:AddNewRow(this,
-        option[1],
-        option[2],
-        option[3],
-        option[4])
+      _, __, customRow = utility:AddNewRow(this,
+                  option[1],
+                  option[2],
+                  option[3],
+                  option[4])
+
+      customRow.IndexChanged:connect(function(val)
+        option[5]:Fire(val)
+      end)
     elseif option[2] == "TextBox" then
       --TODO: should we allow this?
 
@@ -355,7 +370,7 @@ local function Initialize()
       return
     end
 
-    table.insert(customOptions, option)
+    table.insert(customOptions, customRow)
   end)
 
   StarterGui:RegisterGetCore("AddOption", function()
