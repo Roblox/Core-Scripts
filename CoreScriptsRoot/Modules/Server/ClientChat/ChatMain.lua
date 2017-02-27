@@ -495,8 +495,6 @@ do
 	end
 end
 
-spawn(function() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true) end)
-
 moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	moduleApiTable.IsCoreGuiEnabled = enabled
 
