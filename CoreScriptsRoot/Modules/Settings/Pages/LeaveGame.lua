@@ -92,7 +92,7 @@ local function Initialize()
 		buttonSize = UDim2.new(0, 300, 0, 80)
 	end
 
-	this.LeaveGameButton = utility:MakeStyledButton("LeaveGame", "Leave", buttonSize, this.LeaveFunc or nil)
+	this.LeaveGameButton = utility:MakeStyledButton("LeaveGame", "Leave", buttonSize, this.LeaveFunc)
 	this.LeaveGameButton.NextSelectionRight = nil
 	
 	if utility:IsSmallTouchScreen() then
