@@ -331,6 +331,18 @@ local function Initialize()
         return
       end
 
+      if option[3] > 10 then
+        warn("The third entry of AddOption can't be greater than 10, setting it to 10.")
+
+        option[3] = 10
+      end
+
+      if option[3] < 1 then
+        warn("The third entry of AddOption can't be less than 1, setting it to 1.")
+
+        option[3] = 1
+      end
+
       _, __, customRow = utility:AddNewRow(this,
                   option[1],
                   "Slider",
