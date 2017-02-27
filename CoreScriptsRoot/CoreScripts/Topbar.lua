@@ -1323,6 +1323,9 @@ local function CreateChatIcon()
 	if not InputService.VREnabled then
 		-- check to see if the chat was disabled
 		local willEnableChat = true
+		if Util.IsTouchDevice() and GuiService:GetScreenResolution().Y < 700 then
+			willEnableChat = false
+		end
 		if newChatVisibleProp then
 			willEnableChat = GameSettings.ChatVisible
 		end
@@ -1901,7 +1904,7 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 			end
 		end
 		if showTopbarChatIcon then
-			if Util.IsTouchDevice or ChatModule:IsBubbleChatOnly() then
+			if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
 				if chatIcon and canChat then
 					AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
 				end
