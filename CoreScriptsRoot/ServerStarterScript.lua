@@ -33,10 +33,10 @@ local function setDialogInUse(player, dialog, value, waitTime)
 	if typeof(dialog) ~= "Instance" or not dialog:IsA("Dialog") then
 		return
 	end
-	if type(value) ~= "boolean" then
+	if typeof(value) ~= "boolean" then
 		return
 	end
-	if type(waitTime) ~= "number" and type(waitTime) ~= "nil" then
+	if typeof(waitTime) ~= "number" and typeof(waitTime) ~= "nil" then
 		return
 	end
 
