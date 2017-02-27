@@ -61,6 +61,7 @@ local PageInstance = nil
 local LocalPlayer = Players.LocalPlayer
 local platform = UserInputService:GetPlatform()
 local overscanScreen = nil
+local customOptions = {}
 
 ----------- CLASS DECLARATION --------------
 
@@ -288,6 +289,78 @@ local function Initialize()
         end
       end)
   end  -- of createPerformanceStats
+
+  ----------- CUSTOM OPTIONS ---------
+  StarterGui:RegisterSetCore("AddOption", function(option)
+    if typeof(option) ~= "table" then
+      warn("AddOption must have a table")
+      return
+    end
+
+    if #option ~= 4 then
+      warn("AddOption length isn't 4")
+      return
+    end
+
+    --TODO: Instead of strings, this should use Enums. However, CoreScripts can't set an Enum, only Roblox (with C) can.
+    if typeof(option[1]) ~= "string" then
+      warn("The first entry of AddOption must be a string")
+      return
+    end
+
+    if typeof(option[2]) ~= "string" then
+      warn("The second entry of AddOption must be a string")
+      return
+    end
+
+    if option[2] == "Slider" then
+      if typeof(option[3]) ~= "number" or option[3] < 2 then
+        warn("The third entry of AddOption must be a number greater than 2 for sliders.")
+        return
+      end
+
+      if typeof(option[4]) ~= "number" or option[4] > option[3] then
+        warn("The fourth entry of AddOption must be a number less than or equal to that of the third entry for sliders.")
+        return
+      end
+
+      utility:AddNewRow(this,
+        option[1],
+        "Slider",
+        option[3],
+        option[4])
+    elseif option[2] == "Selector" or option[2] == "DropDown" then
+      if typeof(option[3]) ~= "table" then
+        warn("The third entry of AddOption must be a table of values for Selectors and Dropdowns.")
+        return
+      end
+
+      if typeof(option[4]) ~= "number" or option[4] > #option[3] then
+        warn("The fourth entry of AddOption must be a number less than the length of the table of values.")
+        return
+      end
+
+      utility:AddNewRow(this,
+        option[1],
+        option[2],
+        option[3],
+        option[4])
+    elseif option[2] == "TextBox" then
+      --TODO: should we allow this?
+
+      warn("You cannot create TextBoxes with AddOption.")
+      return
+    else
+      warn("Invalid option type "..tostring(option[2]))
+      return
+    end
+
+    table.insert(customOptions, option)
+  end)
+
+  StarterGui:RegisterGetCore("AddOption", function()
+    return customOptions
+  end)
 
   local function createCameraModeOptions(movementModeEnabled)
     ------------------------------------------------------
