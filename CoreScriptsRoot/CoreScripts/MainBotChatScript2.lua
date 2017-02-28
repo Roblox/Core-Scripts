@@ -488,7 +488,9 @@ function doDialog(dialog)
 	if dialog.InUse and (not dialogMultiplePlayersFlag or not isDialogMultiplePlayers(dialog)) then
 		return
 	else
-		currentConversationDialog = dialog
+		if dialogMultiplePlayersFlag then
+			currentConversationDialog = dialog
+		end
 		dialog.InUse = true
 		-- only bind if we actual enter the dialog
 		contextActionService:BindCoreAction("Nothing", function()
@@ -496,7 +498,9 @@ function doDialog(dialog)
 		-- Immediately sets InUse to true on the server
 		setDialogInUseEvent:FireServer(dialog, true, 0)
 	end
-
+	if not dialogMultiplePlayersFlag then
+		currentConversationDialog = dialog
+	end
 	chatFunc(dialog, dialog.Parent, dialog.InitialPrompt, getChatColor(dialog.Tone))
 	variableDelay(dialog.InitialPrompt)
 
