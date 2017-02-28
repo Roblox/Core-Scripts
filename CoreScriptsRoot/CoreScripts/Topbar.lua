@@ -82,7 +82,7 @@ local canChat = true
 local accountTypeText = "Account: Under 13 yrs"
 
 function calculateAccountText()
-	accountTypeText = "Account Over 13 yrs"
+	accountTypeText = "Account: Over 13 yrs"
 	if Player:GetUnder13() then
 		accountTypeText = "Account: Under 13 yrs"
 	end
