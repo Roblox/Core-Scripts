@@ -642,7 +642,7 @@ function getAllowedMessageTypes()
 			return AllowedMessageTypes
 		end
 		local chatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
-		AllowedMessageTypes = {ChatConstants.MessageTypeDefault, ChatConstants.MessageTypeWhisper}
+		AllowedMessageTypes = {chatConstants.MessageTypeDefault, chatConstants.MessageTypeWhisper}
 		return AllowedMessageTypes
 	end
 	return {"Message", "Whisper"}
