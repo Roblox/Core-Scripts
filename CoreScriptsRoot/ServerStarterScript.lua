@@ -29,12 +29,29 @@ local playerDialogMap = {}
 local dialogInUseFixFlagSuccess, dialogInUseFixValue = pcall(function() return settings():GetFFlag("DialogInUseFix") end)
 local dialogInUseFixFlag = (dialogInUseFixFlagSuccess and dialogInUseFixValue)
 
+local dialogMultiplePlayersFlagSuccess, dialogMultiplePlayersFlagValue = pcall(function() return settings():GetFFlag("DialogMultiplePlayers") end)
+local dialogMultiplePlayersFlag = (dialogMultiplePlayersFlagSuccess and dialogMultiplePlayersFlagValue)
+
 local function setDialogInUse(player, dialog, value, waitTime)
+	if typeof(dialog) ~= "Instance" or not dialog:IsA("Dialog") then
+		return
+	end
+	if type(value) ~= "boolean" then
+		return
+	end
+	if type(waitTime) ~= "number" and type(waitTime) ~= "nil" then
+		return
+	end
+
 	if waitTime and waitTime ~= 0 then
 		wait(waitTime)
 	end
 	if dialog ~= nil then
-		dialog.InUse = value
+		if dialogMultiplePlayersFlag then
+			dialog:SetPlayerIsUsing(player, true)
+		else
+			dialog.InUse = value
+		end
 
 		if dialogInUseFixFlag then
 			if value == true then
@@ -52,7 +69,11 @@ game:GetService("Players").PlayerRemoving:connect(function(player)
 		if player then
 			local dialog = playerDialogMap[player]
 			if dialog then
-				dialog.InUse = false
+				if not dialogMultiplePlayersFlag then
+					dialog:SetPlayerIsUsing(player, false)
+				else
+					dialog.InUse = false
+				end
 				playerDialogMap[player] = nil
 			end
 		end
