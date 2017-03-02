@@ -636,13 +636,19 @@ function getAllowedMessageTypes()
 	end
 	local clientChatModules = ChatService:FindFirstChild("ClientChatModules")
 	if clientChatModules then
-		local chatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-		if chatSettings.BubbleChatMessageTypes then
-			AllowedMessageTypes = chatSettings.BubbleChatMessageTypes
-			return AllowedMessageTypes
+		local chatSettings = clientChatModules:FindFirstChild("ChatSettings")
+		if chatSettings then
+			chatSettings = require(chatSettings)
+			if chatSettings.BubbleChatMessageTypes then
+				AllowedMessageTypes = chatSettings.BubbleChatMessageTypes
+				return AllowedMessageTypes
+			end
 		end
-		local chatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
-		AllowedMessageTypes = {chatConstants.MessageTypeDefault, chatConstants.MessageTypeWhisper}
+		local chatConstants = clientChatModules:FindFirstChild("ChatConstants")
+		if chatConstants then
+			chatConstants = require(chatConstants)
+			AllowedMessageTypes = {chatConstants.MessageTypeDefault, chatConstants.MessageTypeWhisper}
+		end
 		return AllowedMessageTypes
 	end
 	return {"Message", "Whisper"}
