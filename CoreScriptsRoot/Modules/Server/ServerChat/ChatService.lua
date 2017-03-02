@@ -36,7 +36,7 @@ local Util = require(modulesFolder:WaitForChild("Util"))
 local methods = {}
 methods.__index = methods
 
-function methods:AddChannel(channelName)
+function methods:AddChannel(channelName, autoJoin)
 	if (self.ChatChannels[channelName:lower()]) then
 		error(string.format("Channel %q alrady exists.", channelName))
 	end
@@ -68,6 +68,15 @@ function methods:AddChannel(channelName)
 	local success, err = pcall(function() self.eChannelAdded:Fire(channelName) end)
 	if not success and err then
 		print("Error addding channel: " ..err)
+	end
+
+	if autoJoin ~= nil then
+		channel.AutoJoin = autoJoin
+		if autoJoin then
+			for _, speaker in pairs(self.Speakers) do
+				speaker:JoinChannel(channelName)
+			end
+		end
 	end
 
 	return channel
