@@ -5,6 +5,7 @@
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local InputService = game:GetService("UserInputService")
+local VRService = game:GetService("VRService")
 local Utility = require(RobloxGui.Modules.Settings.Utility)
 local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 
@@ -79,6 +80,10 @@ end
 
 
 game:GetService("RunService"):BindToRenderStep("DialogPanel", Enum.RenderPriority.First.Value, function()
+	if not VRService.VREnabled then
+		return
+	end
+	
 	if DialogPanel.transparency == 1 or resetBaseAngle then
 		updatePanelPosition()
 	end
