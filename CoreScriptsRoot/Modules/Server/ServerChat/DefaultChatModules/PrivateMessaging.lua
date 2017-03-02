@@ -3,6 +3,7 @@
 --	// Description: Module that handles all private messaging.
 
 local Chat = game:GetService("Chat")
+local RunService = game:GetService("RunService")
 local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
@@ -11,6 +12,33 @@ local errorTextColor = ChatSettings.ErrorMessageTextColor or Color3.fromRGB(245,
 local errorExtraData = {ChatColor = errorTextColor}
 
 local function Run(ChatService)
+
+	local function ChatSettingsEnabled()
+		local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
+		local chatPrivacySettingsEnabled = true
+		if chatPrivacySettingsSuccess then
+			chatPrivacySettingsEnabled = chatPrivacySettingsValue
+		end
+		return chatPrivacySettingsEnabled
+	end
+
+	local function CanCommunicate(fromSpeaker, toSpeaker)
+		if ChatSettingsEnabled() == false then
+			return true
+		end
+		if RunService:IsStudio() then
+			return true
+		end
+		local fromPlayer = fromSpeaker:GetPlayer()
+		local toPlayer = toSpeaker:GetPlayer()
+		if fromPlayer and toPlayer then
+			local success, canChat = pcall(function()
+				return Chat:CanUsersChatAsync(fromPlayer.UserId, toPlayer.UserId)
+			end)
+			return success and canChat
+		end
+		return false
+	end
 
 	local function DoWhisperCommand(fromSpeaker, message, channel)
 		local otherSpeakerName = message
@@ -31,8 +59,13 @@ local function Run(ChatService)
 		end
 
 		local speaker = ChatService:GetSpeaker(fromSpeaker)
+		local otherSpeaker = ChatService:GetSpeaker(otherSpeakerName)
 		local channelObj = ChatService:GetChannel("To " .. otherSpeakerName)
-		if (channelObj and ChatService:GetSpeaker(otherSpeakerName)) then
+		if channelObj and otherSpeaker then
+			if not CanCommunicate(speaker, otherSpeaker) then
+				speaker:SendSystemMessage("You are not able to chat with this player.", channel, errorExtraData)
+				return
+			end
 
 			if (channelObj.Name == "To " .. speaker.Name) then
 				speaker:SendSystemMessage("You cannot whisper to yourself.", channel, errorExtraData)

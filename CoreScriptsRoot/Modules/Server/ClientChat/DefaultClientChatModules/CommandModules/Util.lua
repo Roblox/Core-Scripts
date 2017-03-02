@@ -33,6 +33,7 @@ function methods:SendSystemMessageToSelf(message, channelObj, extraData)
 	{
 		ID = -1,
 		FromSpeaker = nil,
+		SpeakerUserId = 0,
 		OriginalChannel = channelObj.Name,
 		IsFiltered = true,
 		MessageLength = string.len(message),

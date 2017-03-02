@@ -125,6 +125,24 @@ StatsUtils.TypeToShortName = {
   [StatsUtils.StatType_Physics] = "Phys",
 }
 
+StatsUtils.MemoryAnalyzerTypeToName = {
+  ["HumanoidTexture"] = "Humanoid Textures",
+  ["HumanoidTextureOrphan"] = "Humanoid Textures (Orphaned)",
+  ["OtherTexture"] = "Other Textures",
+  ["OtherTextureOrphan"] = "Other Textures (Orphaned)",
+  ["CoreScript"] = "Core Scripts",
+  ["UserScript"] = "User Scripts",
+  ["Sounds"] = "Sounds",
+}
+      
+function StatsUtils.GetMemoryAnalyzerStatName(memoryAnalyzerStatType) 
+  if (StatsUtils.MemoryAnalyzerTypeToName[memoryAnalyzerStatType] == nil) then 
+    return memoryAnalyzerStatType
+  else
+    return StatsUtils.MemoryAnalyzerTypeToName[memoryAnalyzerStatType]
+  end
+end
+
 function StatsUtils.StyleFrame(frame)
   frame.BackgroundColor3 = StatsUtils.NormalColor
   frame.BackgroundTransparency = StatsUtils.Transparency

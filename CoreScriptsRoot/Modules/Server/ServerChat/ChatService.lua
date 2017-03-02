@@ -110,9 +110,18 @@ function methods:AddSpeaker(speakerName)
 	return speaker
 end
 
+function methods:InternalUnmuteSpeaker(speakerName)
+	for channelName, channel in pairs(self.ChatChannels) do
+		if channel:IsSpeakerMuted(speakerName) then
+			channel:UnmuteSpeaker(speakerName)
+		end
+	end
+end
+
 function methods:RemoveSpeaker(speakerName)
 	if (self.Speakers[speakerName:lower()]) then
 		local n = self.Speakers[speakerName:lower()].Name
+		self:InternalUnmuteSpeaker(n)
 
 		self.Speakers[speakerName:lower()]:InternalDestroy()
 		self.Speakers[speakerName:lower()] = nil
@@ -211,27 +220,32 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 	if (RunService:IsServer() and not RunService:IsStudio()) then
 		local fromSpeaker = self:GetSpeaker(speakerName)
 		local toSpeaker = self:GetSpeaker(toSpeakerName)
-		if (fromSpeaker and toSpeaker) then
-			local fromPlayerObj = fromSpeaker:GetPlayer()
-			local toPlayerObj = toSpeaker:GetPlayer()
-			if (fromPlayerObj and toPlayerObj) then
-				local filterStartTime = tick()
-				local filterRetries = 0
-				while true do
-					local success, message = pcall(function()
-						return Chat:FilterStringAsync(message, fromPlayerObj, toPlayerObj)
-					end)
-					if success then
-						return message
-					else
-						warn("Error filtering message:", message)
-					end
-					filterRetries = filterRetries + 1
-					if filterRetries > MAX_FILTER_RETRIES or (tick() - filterStartTime) > MAX_FILTER_DURATION then
-						self:InternalNotifyFilterIssue()
-						return nil
-					end
-				end
+
+		if fromSpeaker == nil or toSpeaker == nil then
+			return nil
+		end
+
+		local fromPlayerObj = fromSpeaker:GetPlayer()
+		local toPlayerObj = toSpeaker:GetPlayer()
+		if fromPlayerObj == nil or toPlayerObj == nil then
+			return message
+		end
+
+		local filterStartTime = tick()
+		local filterRetries = 0
+		while true do
+			local success, message = pcall(function()
+				return Chat:FilterStringAsync(message, fromPlayerObj, toPlayerObj)
+			end)
+			if success then
+				return message
+			else
+				warn("Error filtering message:", message)
+			end
+			filterRetries = filterRetries + 1
+			if filterRetries > MAX_FILTER_RETRIES or (tick() - filterStartTime) > MAX_FILTER_DURATION then
+				self:InternalNotifyFilterIssue()
+				return nil
 			end
 		end
 	else

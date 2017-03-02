@@ -92,6 +92,14 @@ while not LocalPlayer do
 	LocalPlayer = Players.LocalPlayer
 end
 
+local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
+local chatPrivacySettingsEnabled = true
+if chatPrivacySettingsSuccess then
+	chatPrivacySettingsEnabled = chatPrivacySettingsValue
+end
+
+local canChat = true
+
 local ChatDisplayOrder = 6
 if ChatSettings.ScreenGuiDisplayOrder ~= nil then
 	ChatDisplayOrder = ChatSettings.ScreenGuiDisplayOrder
@@ -115,8 +123,6 @@ local moduleMessageLabelCreator = require(modulesFolder:WaitForChild("MessageLab
 local moduleMessageLogDisplay = require(modulesFolder:WaitForChild("MessageLogDisplay"))
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local moduleCommandProcessor = require(modulesFolder:WaitForChild("CommandProcessor"))
-
-moduleMessageLabelCreator:RegisterGuiRoot(GuiParent)
 
 local ChatWindow = moduleChatWindow.new()
 local ChannelsBar = moduleChannelsBar.new()
@@ -487,8 +493,6 @@ do
 	end
 end
 
-spawn(function() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true) end)
-
 moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	moduleApiTable.IsCoreGuiEnabled = enabled
 
@@ -515,6 +519,7 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 			local messageObject = {
 				ID = -1,
 				FromSpeaker = nil,
+				SpeakerUserId = 0,
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(valueTable.Text),
@@ -533,9 +538,11 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 end)
 
 moduleApiTable.ChatBarDisabledEvent:connect(function(disabled)
-	ChatBar:SetEnabled(not disabled)
-	if (disabled) then
-		ChatBar:ReleaseFocus()
+	if canChat then
+		ChatBar:SetEnabled(not disabled)
+		if (disabled) then
+			ChatBar:ReleaseFocus()
+		end
 	end
 end)
 
@@ -580,6 +587,7 @@ function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 		{
 			ID = -1,
 			FromSpeaker = nil,
+			SpeakerUserId = 0,
 			OriginalChannel = channelName,
 			IsFiltered = true,
 			MessageLength = string.len(message),
@@ -791,6 +799,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 			local welcomeMessageObject = {
 				ID = -1,
 				FromSpeaker = nil,
+				SpeakerUserId = 0,
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(welcomeMessage),
@@ -943,6 +952,7 @@ function SendSystemMessageToSelf(message)
 		{
 			ID = -1,
 			FromSpeaker = nil,
+			SpeakerUserId = 0,
 			OriginalChannel = currentChannel.Name,
 			IsFiltered = true,
 			MessageLength = string.len(message),
@@ -1020,6 +1030,20 @@ spawn(function()
 		end)
 	end
 end)
+
+if chatPrivacySettingsEnabled then
+	spawn(function()
+		local success, canLocalUserChat = pcall(function()
+			return Chat:CanUserChatAsync(LocalPlayer.UserId)
+		end)
+		if success then
+			canChat = RunService:IsStudio() or canLocalUserChat
+			if canChat == false then
+				ChatBar:SetEnabled(canChat)
+			end
+		end
+	end)
+end
 
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
 
