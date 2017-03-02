@@ -70,6 +70,7 @@ function methods:CreateGuiObjects(targetParent)
 	TextBox.Parent = TextBoxHolderFrame
 
 	local MessageModeTextButton = Instance.new("TextButton")
+	MessageModeTextButton.Selectable = false
 	MessageModeTextButton.Name = "MessageMode"
 	MessageModeTextButton.BackgroundTransparency = 1
 	MessageModeTextButton.Position = UDim2.new(0, 0, 0, 0)
