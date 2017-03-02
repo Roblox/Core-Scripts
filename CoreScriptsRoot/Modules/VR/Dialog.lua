@@ -189,6 +189,10 @@ function Dialog:Close()
 			break
 		end
 	end
+	if renderFuncBound and #DialogQueue == 0 then
+		renderFuncBound = false
+		RunService:UnbindFromRenderStep("DialogPanel")
+	end	
 	updatePanel()
 end
 
