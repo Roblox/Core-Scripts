@@ -96,7 +96,7 @@ function dialogPanelRenderUpdate()
 			guiElement.BackgroundTransparency = transparency
 		end
 	end
-end)
+end
 
 local DialogQueue = {}
 
