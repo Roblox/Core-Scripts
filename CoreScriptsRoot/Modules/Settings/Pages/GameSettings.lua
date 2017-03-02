@@ -807,7 +807,7 @@ local function Initialize()
   end
 
   local function createOverscanOption()
-  	local showOverscanScreen = function()
+      local showOverscanScreen = function()
       if RunService:IsStudio() then
         return
       end
