@@ -363,7 +363,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	
 	
 	do -- Title
-		local title = Primitives.InvisibleTextLabel(handle, 'Title', "ROBLOX Developer Console")
+		local title = Primitives.InvisibleTextLabel(handle, 'Title', "Roblox Developer Console")
 		title.Size = UDim2_new(1, -5, 1, 0)
 		title.Position = UDim2_new(0, 5, 0, 0)	
 		title.FontSize = Enum.FontSize.Size18
@@ -725,13 +725,17 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		
 		do -- Search/filter/contains textbox
 			
-			local label = Primitives.InvisibleTextLabel(optionsFrame, 'FilterLabel', "Contains:")
+			local container = Primitives.FolderFrame(optionsFrame, 'Search')
+			container.Visible = false
+			optionTypeContainers.Search = container
+      
+			local label = Primitives.InvisibleTextLabel(container, 'FilterLabel', "Contains:")
 			label.FontSize = 'Size18'
 			label.TextXAlignment = 'Left'
 			label.Size = UDim2_new(0, 60, 0, Style.CheckboxSize)
 			label.Position = UDim2_new(0, 4, 0, 4 + Style.CheckboxSize + 4)
 			
-			local textBox = Primitives.TextBox(optionsFrame, 'ContainsFilter')
+			local textBox = Primitives.TextBox(container, 'ContainsFilter')
 			textBox.ClearTextOnFocus = true
 			textBox.FontSize = 'Size18'
 			textBox.TextXAlignment = 'Left'
@@ -785,9 +789,9 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				end
 				
 				if open then
-					
 					setShownOptionTypes({
 						Log = true;
+            Search = true;
 					})
 					
 					if not output then
@@ -853,10 +857,10 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			return tab
 		end
 		
-		-- Local Log tab --
+		-- Client Log tab --
 		if permissions.MayViewClientLog then
 			local tab = createConsoleTab(
-				'LocalLog', "Local Log", 60,
+				'ClientLog', "Client Log", 60,
 				devConsole.MessagesAndStats.OutputMessageSyncLocal,
 				permissions.ClientCodeExecutionEnabled
 			)
@@ -910,7 +914,8 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		end
 		
 		-- Wrapper for :AddTab
-		local function createStatsTab(name, text, width, config, openCallback, filterStats, shownOptionTypes)
+		local function createStatsTab(name, text, width, config, 
+        openCallback, filterStats, shownOptionTypes)
 			local statsSyncServer = devConsole.MessagesAndStats.StatsSyncServer
 			
 			local open = false
@@ -1021,7 +1026,12 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				open = openNew
 			end
 			
-			local tab, statList = createStatsTab('ServerScripts', "Server Scripts", 80, config, openCallback, filterStats, {Scripts = true})
+			local tab, statList = createStatsTab('ServerScripts', "Server Scripts",
+          80, config, openCallback, filterStats, 
+          { 
+            Scripts = true;
+            Search = true;
+          })
 
 			textFilterChanged:connect(function()
 				statList:Refresh()
@@ -1083,7 +1093,12 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				open = openNew
 			end
 
-			local tab, statList = createStatsTab('ServerStats', "Server Stats", 70, config, openCallback, filterStats, {Stats = true})
+			local tab, statList = createStatsTab('ServerStats', "Server Stats",
+        70, config, openCallback, filterStats, 
+        {
+          Stats = true;
+          Search = true; 
+        })
 			
 			textFilterChanged:connect(function()
 				statList:Refresh()
@@ -1156,8 +1171,12 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				open = openNew
 			end
 			
-			local tab, statList = createStatsTab('ServerJobs', "Server Jobs", 70, config, 
-        openCallback, filterStats, {Stats = true})
+			local tab, statList = createStatsTab('ServerJobs', "Server Jobs", 70, 
+        config, openCallback, filterStats, 
+        {
+          Stats = true;
+          Search = true; 
+        })
 			
 			textFilterChanged:connect(function()
 				statList:Refresh()
@@ -1168,16 +1187,16 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	end
 	
   
-	do -- Local Memory tab
+	do -- Client Memory tab
     
     local getFlagSuccess, flagValue = pcall(function() 
-        return settings():GetFFlag("EnableLocalMemoryUIInDevConsole") 
+        return settings():GetFFlag("EnableClientMemoryUIInDevConsole") 
       end)		
         
-    local showLocalMemoryTab = getFlagSuccess and flagValue
+    local showClientMemoryTab = getFlagSuccess and flagValue
  
-    if (showLocalMemoryTab) then
-      local tabBody = Primitives.FolderFrame(body, 'LocalMemory')
+    if (showClientMemoryTab) then
+      local tabBody = Primitives.FolderFrame(body, 'ClientMemory')
       
       local memoryAnalyzer = MemoryAnalyzerClass.new(tabBody)
             
@@ -1202,7 +1221,11 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
       
       -- 80 is the tab width
       -- Every time 'open' state changes, call syncVisibility.
-      tab = devConsole:AddTab("Local Memory", 80, tabBody, function(open)      
+      tab = devConsole:AddTab("Client Memory", 80, tabBody, function(open)      
+          if (open) then
+            setShownOptionTypes({})
+          end
+          
           syncMemoryAnalyzerVisibility()
         end)
       tab:SetVisible(true)   

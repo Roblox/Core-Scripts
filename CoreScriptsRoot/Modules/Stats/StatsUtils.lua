@@ -127,12 +127,14 @@ StatsUtils.TypeToShortName = {
 
 StatsUtils.MemoryAnalyzerTypeToName = {
   ["HumanoidTexture"] = "Humanoid Textures",
-  ["HumanoidTextureOrphan"] = "Humanoid Textures (Orphaned)",
+  ["HumanoidTextureOrphan"] = "Humanoid Textures (Unused)",
   ["OtherTexture"] = "Other Textures",
-  ["OtherTextureOrphan"] = "Other Textures (Orphaned)",
+  ["OtherTextureOrphan"] = "Other Textures (Unused)",
   ["CoreScript"] = "Core Scripts",
   ["UserScript"] = "User Scripts",
   ["Sounds"] = "Sounds",
+  ["CSG"] = "Solid Models",
+  ["Meshes"] = "Meshes",
 }
       
 function StatsUtils.GetMemoryAnalyzerStatName(memoryAnalyzerStatType) 
