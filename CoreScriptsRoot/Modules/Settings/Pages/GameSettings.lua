@@ -807,10 +807,10 @@ local function Initialize()
   end
 
   local function createOverscanOption()
-    local showOverscanScreen = function()
-			if RunService:IsStudio() then
-				return
-			end
+  	local showOverscanScreen = function()
+      if RunService:IsStudio() then
+        return
+      end
 
       if not overscanScreen then
         local overscanModule = RobloxGui.Modules:FindFirstChild('OverscanScreen')
@@ -853,12 +853,12 @@ local function Initialize()
     adjustText.Font = Enum.Font.SourceSans
     adjustButton.Position = UDim2.new(1,-400,0,12)
 
-		if RunService:IsStudio() then
-			adjustButton.Selectable = value
-			adjustButton.Active = value
-			adjustButton.Enabled.Value = value
-			adjustText.TextColor3 = Color3.fromRGB(100, 100, 100)
-		end
+    if RunService:IsStudio() then
+      adjustButton.Selectable = value
+      adjustButton.Active = value
+      adjustButton.Enabled.Value = value
+      adjustText.TextColor3 = Color3.fromRGB(100, 100, 100)
+    end
 
     local row = utility:AddNewRowObject(this, "Safe Zone", adjustButton)
     setButtonRowRef(row)
