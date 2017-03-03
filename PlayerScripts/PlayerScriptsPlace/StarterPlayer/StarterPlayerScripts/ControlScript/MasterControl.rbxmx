@@ -68,7 +68,7 @@ local function characterAdded(character)
 	LocalCharacter = character
 	CachedHumanoid = LocalCharacter:FindFirstChildOfClass("Humanoid")
 	characterAncestryChangedConn = character.AncestryChanged:connect(function()
-		if not character:IsDescendantOf(workspace) then
+		if character.Parent == nil then
 			LocalCharacter = nil
 		else
 			LocalCharacter = character
@@ -92,6 +92,7 @@ function MasterControl:Init()
 
 	local getHumanoid = self.GetHumanoid
 	local moveFunc = LocalPlayer.Move
+	local getUserCFrame = VRService.GetUserCFrame
 	local renderStepFunc = function()
 		local humanoid = getHumanoid()
 		if not humanoid then return end
@@ -105,7 +106,7 @@ function MasterControl:Init()
 		
 		local adjustedMoveValue = moveValue
 		if VREnabled and workspace.CurrentCamera.HeadLocked then
-			local vrFrame = VRService:GetUserCFrame()
+			local vrFrame = getUserCFrame(VRService)
 			local lookVector = Vector3.new(vrFrame.lookVector.X, 0, vrFrame.lookVector.Z).unit
 			local rotation = CFrame.new(ZERO_VECTOR3, lookVector)
 			adjustedMoveValue = rotation:vectorToWorldSpace(adjustedMoveValue)
