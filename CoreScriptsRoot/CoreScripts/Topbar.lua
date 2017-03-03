@@ -1792,7 +1792,11 @@ if isTenFootInterface and showVisibleAgeEnabledXbox then
 	spawn(function()
 		wait()
 		calculateAccountText()
-		TenFootInterface:CreateAccountType(accountTypeText)
+		if showVisibleAgeV2Enabled then
+			TenFootInterface:CreateAccountTypeV2(accountTypeTextShort)
+		else
+			TenFootInterface:CreateAccountType(accountTypeText)
+		end
 	end)
 elseif not isTenFootInterface and showVisibleAgeEnabled then
 	noTopBarAccountType = CreateNoTopBarAccountType()
