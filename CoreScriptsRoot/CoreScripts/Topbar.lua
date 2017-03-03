@@ -798,6 +798,9 @@ local function CreateUsernameHealthMenuItem()
 		local isEnabled = HealthBarEnabled and CurrentHumanoid and CurrentHumanoid.Health ~= CurrentHumanoid.MaxHealth
 		healthContainer.Visible = isEnabled
 		if showVisibleAgeEnabled then
+			if showVisibleAgeV2Enabled then
+				return
+			end
 			if isEnabled then
 				username.Size = UDim2.new(1, -14, 0, 18);
 				username.TextYAlignment = Enum.TextYAlignment.Bottom;
