@@ -1031,7 +1031,6 @@ local function onRenderStep()
 	end
 	lastClosest = currentClosest
 end
-RunService:BindToRenderStep(renderStepName, Enum.RenderPriority.Last.Value, onRenderStep)
 
 --Implement cursor autohide functionality
 UserInputService.InputChanged:connect(function(inputObj, processed)
@@ -1080,6 +1079,7 @@ local function onWorkspaceChanged(prop)
 end
 
 local currentCameraChangedConn = nil
+local renderStepFuncBound = false
 local function onVREnabled(prop)
 	if prop == "VREnabled" then
 		if UserInputService.VREnabled then
@@ -1090,6 +1090,11 @@ local function onVREnabled(prop)
 
 			partFolder.Parent = workspace.CurrentCamera
 			effectFolder.Parent = workspace.CurrentCamera
+			
+			if not renderStepFuncBound then
+				RunService:BindToRenderStep(renderStepName, Enum.RenderPriority.Last.Value, onRenderStep)
+				renderStepFuncBound = true
+			end
 		else
 			if currentCameraChangedConn then
 				currentCameraChangedConn:disconnect()
@@ -1097,6 +1102,11 @@ local function onVREnabled(prop)
 			end
 			partFolder.Parent = nil
 			effectFolder.Parent = nil
+			
+			if renderStepFuncBound then
+				RunService:UnbindFromRenderStep(renderStepName)
+				renderStepFuncBound = false
+			end
 		end
 	end
 end
