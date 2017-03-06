@@ -304,6 +304,10 @@ function methods:NewBindableEvent(name)
 	return bindable
 end
 
+function methods:RegisterGuiRoot()
+	-- This is left here for compatibility with legacy chat versions.
+end
+
 function module.new()
 	local obj = setmetatable({}, methods)
 
