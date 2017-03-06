@@ -124,7 +124,6 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName, 
 	local changedConn = nil
 	changedConn = NameButton.Changed:connect(function(prop)
 		if prop == "Parent" then
-			print("Disconnecting!")
 			clickedConn:Disconnect()
 			changedConn:Disconnect()
 		end
