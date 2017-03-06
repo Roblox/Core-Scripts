@@ -117,8 +117,17 @@ function methods:AddNameButtonToBaseMessage(BaseMessage, nameColor, formatName, 
 	NameButton.Visible = true
 	NameButton.Parent = BaseMessage
 
-	NameButton.MouseButton1Click:connect(function()
+	local clickedConn = NameButton.MouseButton1Click:connect(function()
 		self:NameButtonClicked(NameButton, playerName)
+	end)
+
+	local changedConn = nil
+	changedConn = NameButton.Changed:connect(function(prop)
+		if prop == "Parent" then
+			print("Disconnecting!")
+			clickedConn:Disconnect()
+			changedConn:Disconnect()
+		end
 	end)
 
 	return NameButton
@@ -142,8 +151,16 @@ function methods:AddChannelButtonToBaseMessage(BaseMessage, channelColor, format
 	ChannelButton.Visible = true
 	ChannelButton.Parent = BaseMessage
 
-	ChannelButton.MouseButton1Click:connect(function()
+	local clickedConn = ChannelButton.MouseButton1Click:connect(function()
 		self:ChannelButtonClicked(ChannelButton, channelName)
+	end)
+
+	local changedConn = nil
+ 	changedConn = ChannelButton.Changed:connect(function(prop)
+		if prop == "Parent" then
+			clickedConn:Disconnect()
+			changedConn:Disconnect()
+		end
 	end)
 
 	return ChannelButton
