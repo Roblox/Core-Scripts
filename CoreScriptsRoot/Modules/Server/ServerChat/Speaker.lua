@@ -149,6 +149,7 @@ function methods:InternalDestroy()
 	self.eDestroyed:Destroy()
 	self.eSaidMessage:Destroy()
 	self.eReceivedMessage:Destroy()
+	self.eReceivedUnfilteredMessage:Destroy()
 	self.eMessageDoneFiltering:Destroy()
 	self.eReceivedSystemMessage:Destroy()
 	self.eChannelJoined:Destroy()
@@ -166,7 +167,7 @@ end
 
 function methods:InternalSendMessage(messageObj, channelName)
 	local success, err = pcall(function()
-		self.eReceivedMessage:Fire(messageObj, channelName)
+		self.eReceivedUnfilteredMessage:Fire(messageObj, channelName)
 	end)
 	if not success and err then
 		print("Error sending internal message: " ..err)
@@ -175,6 +176,7 @@ end
 
 function methods:InternalSendFilteredMessage(messageObj, channelName)
 	local success, err = pcall(function()
+		self.eReceivedMessage:Fire(messageObj, channelName)
 		self.eMessageDoneFiltering:Fire(messageObj, channelName)
 	end)
 	if not success and err then
@@ -215,6 +217,7 @@ function module.new(vChatService, name)
 	obj.eDestroyed = Instance.new("BindableEvent")
 	obj.eSaidMessage = Instance.new("BindableEvent")
 	obj.eReceivedMessage = Instance.new("BindableEvent")
+	obj.eReceivedUnfilteredMessage = Instance.new("BindableEvent")
 	obj.eMessageDoneFiltering = Instance.new("BindableEvent")
 	obj.eReceivedSystemMessage = Instance.new("BindableEvent")
 	obj.eChannelJoined = Instance.new("BindableEvent")
@@ -228,6 +231,7 @@ function module.new(vChatService, name)
 	obj.Destroyed = obj.eDestroyed.Event
 	obj.SaidMessage = obj.eSaidMessage.Event
 	obj.ReceivedMessage = obj.eReceivedMessage.Event
+	obj.RecievedUnfilteredMessage = obj.eReceivedUnfilteredMessage.Event
 	obj.MessageDoneFiltering = obj.eMessageDoneFiltering.Event
 	obj.ReceivedSystemMessage = obj.eReceivedSystemMessage.Event
 	obj.ChannelJoined = obj.eChannelJoined.Event

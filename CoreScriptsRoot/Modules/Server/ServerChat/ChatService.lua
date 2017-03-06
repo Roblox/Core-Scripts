@@ -228,15 +228,16 @@ local StudioMessageFilteredCache = {}
 function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 	if (RunService:IsServer() and not RunService:IsStudio()) then
 		local fromSpeaker = self:GetSpeaker(speakerName)
-		local toSpeaker = self:GetSpeaker(toSpeakerName)
+		local toSpeaker = toSpeakerName and self:GetSpeaker(toSpeakerName)
 
-		if fromSpeaker == nil or toSpeaker == nil then
+		if fromSpeaker == nil then
 			return nil
 		end
 
 		local fromPlayerObj = fromSpeaker:GetPlayer()
-		local toPlayerObj = toSpeaker:GetPlayer()
-		if fromPlayerObj == nil or toPlayerObj == nil then
+		local toPlayerObj = toSpeaker and toSpeaker:GetPlayer()
+
+		if fromPlayerObj == nil then
 			return message
 		end
 
@@ -244,7 +245,11 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 		local filterRetries = 0
 		while true do
 			local success, message = pcall(function()
-				return Chat:FilterStringAsync(message, fromPlayerObj, toPlayerObj)
+				if toPlayerObj then
+					return Chat:FilterStringAsync(message, fromPlayerObj, toPlayerObj)
+				else
+					return Chat:FilterStringForBroadcast(message, fromPlayerObj)
+				end
 			end)
 			if success then
 				return message

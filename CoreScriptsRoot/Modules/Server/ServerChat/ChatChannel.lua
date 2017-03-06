@@ -362,7 +362,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		end
 	end
 
-	local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, messageObj.FromSpeaker)
+	local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message)
 	if filteredMessage then
 		messageObj.Message = filteredMessage
 	else
