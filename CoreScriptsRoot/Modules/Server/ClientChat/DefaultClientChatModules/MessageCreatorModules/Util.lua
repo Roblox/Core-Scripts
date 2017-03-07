@@ -304,6 +304,12 @@ function methods:NewBindableEvent(name)
 	return bindable
 end
 
+--- DEPRECATED METHODS:
+function methods:RegisterGuiRoot()
+	-- This is left here for compatibility with ChatScript versions lower than 0.5
+end
+--- End of Deprecated methods.
+
 function module.new()
 	local obj = setmetatable({}, methods)
 
