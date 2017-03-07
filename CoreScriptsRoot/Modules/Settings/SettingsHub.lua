@@ -241,8 +241,8 @@ local function CreateSettingsHub()
 				setResetEnabled(true)
 			end
 		end)
-	end	
-	
+	end
+
 	local function createGui()
 		local PageViewSizeReducer = 0
 		if isSmallTouchScreen then
@@ -384,12 +384,14 @@ local function CreateSettingsHub()
 				removeBottomBarBindings()
 				this:SwitchToPage(this.LeaveGamePage, nil, 1, true)
 			end
-		 
+
 			-- Xbox Only
 			local inviteToGameFunc = function()
-				local platformService = game:GetService('PlatformService')
-				if platformService then
-					platformService:PopupGameInviteUI()
+				if not RunService:IsStudio() then
+					local platformService = game:GetService('PlatformService')
+					if platformService then
+						platformService:PopupGameInviteUI()
+					end
 				end
 			end
 
@@ -409,6 +411,19 @@ local function CreateSettingsHub()
 						"", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
 						inviteToGameFunc, {Enum.KeyCode.ButtonX}
 					)
+					if RunService:IsStudio() then
+						this.InviteToGameButton.Selectable = value
+						this.InviteToGameButton.Active = value
+						this.InviteToGameButton.Enabled.Value = value
+						local inviteHint = this.InviteToGameButton:FindFirstChild("InviteToGameHint")
+						if inviteHint then
+							inviteHint.ImageColor3 = Color3.fromRGB(100, 100, 100)
+						end
+						local inviteButtonText = this.InviteToGameText
+						if inviteButtonText then
+							inviteButtonText.TextColor3 = Color3.fromRGB(100, 100, 100)
+						end
+					end
 				end
 
 				if IsPlayMyPlaceEnabled() then
@@ -438,7 +453,7 @@ local function CreateSettingsHub()
 					this:SwitchToPage(this.ResetCharacterPage, nil, 1, true)
 				end
 			end
-			
+
 			addBottomBarButton("ResetCharacter", "		Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png",
 				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25),
 				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY}
@@ -557,15 +572,15 @@ local function CreateSettingsHub()
 		onScreenSizeChanged()
 	end
 
-	local function toggleQuickProfilerFromHotkey(actionName, inputState, inputObject) 
+	local function toggleQuickProfilerFromHotkey(actionName, inputState, inputObject)
 		-- Make sure it's Ctrl-F7.
 		-- NOTE: This will only work if FFlagDontSwallowInputForStudioShortcuts is True.
 		-- Otherwise, we never get the "Begin" input state when Ctrl key is down.
-		if (not (UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or 
+		if (not (UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or
 				UserInputService:IsKeyDown(Enum.KeyCode.RightControl))) then
 			return
 		end
-		
+
 		if actionName ==QUICK_PROFILER_ACTION_NAME then
 			if inputState and inputState == Enum.UserInputState.Begin then
 				GameSettings.PerformanceStatsVisible = not GameSettings.PerformanceStatsVisible
@@ -583,7 +598,7 @@ local function CreateSettingsHub()
 	end
 
 	local lastInputUsedToSelectGui = isTenFootInterface
-	
+
 	-- Map indicating if a KeyCode or UserInputType should toggle the lastInputUsedToSelectGui variable.
 	local inputUsedToSelectGui = {
 		[Enum.UserInputType.Gamepad1] = true,
@@ -599,7 +614,7 @@ local function CreateSettingsHub()
 		[Enum.UserInputType.MouseButton1] = false,
 		[Enum.UserInputType.MouseButton2] = false
 	}
-	
+
 	UserInputService.InputBegan:connect(function(input)
 		if input.UserInputType and inputUsedToSelectGui[input.UserInputType] ~= nil then
 			lastInputUsedToSelectGui = inputUsedToSelectGui[input.UserInputType]
@@ -1191,17 +1206,17 @@ local function CreateSettingsHub()
 	end)
 
 	-- Dev Console Connections
-	ContextActionService:BindCoreAction(DEV_CONSOLE_ACTION_NAME, 
-		toggleDevConsole, 
+	ContextActionService:BindCoreAction(DEV_CONSOLE_ACTION_NAME,
+		toggleDevConsole,
 		false,
 		Enum.KeyCode.F9
 	)
 
 	-- Quick Profiler connections
-	-- Note: it's actually Ctrl-F7.	We don't have a nice way of 
+	-- Note: it's actually Ctrl-F7.	We don't have a nice way of
 	-- making that explicit here, so we check it inside toggleQuickProfilerFromHotkey.
-	ContextActionService:BindCoreAction(QUICK_PROFILER_ACTION_NAME, 
-		toggleQuickProfilerFromHotkey, 
+	ContextActionService:BindCoreAction(QUICK_PROFILER_ACTION_NAME,
+		toggleQuickProfilerFromHotkey,
 		false,
 		Enum.KeyCode.F7
 	)

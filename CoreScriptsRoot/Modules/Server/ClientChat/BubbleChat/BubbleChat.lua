@@ -8,6 +8,7 @@
 local PlayersService = game:GetService('Players')
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ChatService = game:GetService("Chat")
+local TextService = game:GetService("TextService")
 --[[ END OF SERVICES ]]
 
 local LocalPlayer = PlayersService.LocalPlayer
@@ -54,41 +55,7 @@ BubbleChatScreenGui.Name = "BubbleChat"
 BubbleChatScreenGui.ResetOnSpawn = false
 BubbleChatScreenGui.Parent = PlayerGui
 
-local testLabel = Instance.new("TextLabel")
-testLabel.Selectable = false
-testLabel.TextWrapped = true
-testLabel.Position = UDim2.new(1, 0, 1, 0)
-testLabel.Parent = BubbleChatScreenGui
-
-local TextSizeCache = {}
-
 --[[ FUNCTIONS ]]
-
-local function getStringTextBounds(text, font, textSize, sizeBounds)
-	sizeBounds = sizeBounds or false
-	if not TextSizeCache[text] then
-		TextSizeCache[text] = {}
-	end
-	if not TextSizeCache[text][font] then
-		TextSizeCache[text][font] = {}
-	end
-	if not TextSizeCache[text][font][sizeBounds] then
-		TextSizeCache[text][font][sizeBounds] = {}
-	end
-	if not TextSizeCache[text][font][sizeBounds][textSize] then
-		testLabel.Text = text
-		testLabel.Font = font
-		testLabel.TextSize = textSize
-		if sizeBounds then
-			testLabel.TextWrapped = true;
-			testLabel.Size = UDim2.new(0, sizeBounds.x, 0, sizeBounds.y)
-		else
-			testLabel.TextWrapped = false;
-		end
-		TextSizeCache[text][font][sizeBounds][textSize] = testLabel.TextBounds
-	end
-	return TextSizeCache[text][font][sizeBounds][textSize]
-end
 
 local function lerpLength(msg, min, max)
 	return min + (max-min) * math.min(string.len(msg)/75.0, 1.0)
@@ -547,11 +514,11 @@ function this:CreateChatLineRender(instance, line, onlyCharacter, fifo)
 
 		line.RenderBubble = chatBubbleRender
 
-		local currentTextBounds = getStringTextBounds(bubbleText.Text, CHAT_BUBBLE_FONT,
-																									CHAT_BUBBLE_FONT_SIZE_INT,
-																									Vector2.new(BILLBOARD_MAX_WIDTH, BILLBOARD_MAX_HEIGHT))
-		local bubbleWidthScale = math.max((currentTextBounds.x + CHAT_BUBBLE_WIDTH_PADDING)/BILLBOARD_MAX_WIDTH, 0.1)
-		local numOflines = (currentTextBounds.y/CHAT_BUBBLE_FONT_SIZE_INT)
+		local currentTextBounds = TextService:GetTextSize(
+				bubbleText.Text, CHAT_BUBBLE_FONT_SIZE_INT, CHAT_BUBBLE_FONT,
+				Vector2.new(BILLBOARD_MAX_WIDTH, BILLBOARD_MAX_HEIGHT))
+		local bubbleWidthScale = math.max((currentTextBounds.X + CHAT_BUBBLE_WIDTH_PADDING)/BILLBOARD_MAX_WIDTH, 0.1)
+		local numOflines = (currentTextBounds.Y/CHAT_BUBBLE_FONT_SIZE_INT)
 
 		-- prep chat bubble for tween
 		chatBubbleRender.Size = UDim2.new(0,0,0,0)
@@ -612,9 +579,12 @@ end
 function this:BubbleChatEnabled()
 	local clientChatModules = ChatService:FindFirstChild("ClientChatModules")
 	if clientChatModules then
-		local chatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-		if chatSettings.BubbleChatEnabled ~= nil then
-			return chatSettings.BubbleChatEnabled
+		local chatSettings = clientChatModules:FindFirstChild("ChatSettings")
+		if chatSettings then
+			local chatSettings = require(chatSettings)
+			if chatSettings.BubbleChatEnabled ~= nil then
+				return chatSettings.BubbleChatEnabled
+			end
 		end
 	end
 	return PlayersService.BubbleChat
@@ -623,8 +593,11 @@ end
 function this:ShowOwnFilteredMessage()
 	local clientChatModules = ChatService:FindFirstChild("ClientChatModules")
 	if clientChatModules then
-		local chatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-		return chatSettings.ShowUserOwnFilteredMessage
+		local chatSettings = clientChatModules:FindFirstChild("ChatSettings")
+		if chatSettings then
+			chatSettings = require(chatSettings)
+			return chatSettings.ShowUserOwnFilteredMessage
+		end
 	end
 	return false
 end
@@ -669,13 +642,19 @@ function getAllowedMessageTypes()
 	end
 	local clientChatModules = ChatService:FindFirstChild("ClientChatModules")
 	if clientChatModules then
-		local chatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-		if chatSettings.BubbleChatMessageTypes then
-			AllowedMessageTypes = chatSettings.BubbleChatMessageTypes
-			return AllowedMessageTypes
+		local chatSettings = clientChatModules:FindFirstChild("ChatSettings")
+		if chatSettings then
+			chatSettings = require(chatSettings)
+			if chatSettings.BubbleChatMessageTypes then
+				AllowedMessageTypes = chatSettings.BubbleChatMessageTypes
+				return AllowedMessageTypes
+			end
 		end
-		local chatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
-		AllowedMessageTypes = {ChatConstants.MessageTypeDefault, ChatConstants.MessageTypeWhisper}
+		local chatConstants = clientChatModules:FindFirstChild("ChatConstants")
+		if chatConstants then
+			chatConstants = require(chatConstants)
+			AllowedMessageTypes = {chatConstants.MessageTypeDefault, chatConstants.MessageTypeWhisper}
+		end
 		return AllowedMessageTypes
 	end
 	return {"Message", "Whisper"}

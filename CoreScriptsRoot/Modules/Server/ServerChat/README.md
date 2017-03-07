@@ -3,7 +3,7 @@
 This is the main singleton object that runs the server sided chat service. It manages both ChatChannels and Speakers.
 
 #### Methods
-	ChatChannel AddChannel(string channelName)
+	ChatChannel AddChannel(string channelName, bool autoJoin)
 	void RemoveChannel(string channelName)
 	ChatChannel GetChannel(string channelName)
 

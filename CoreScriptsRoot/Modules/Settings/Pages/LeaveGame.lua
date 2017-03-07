@@ -25,9 +25,6 @@ local PageInstance = nil
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
-local useShutdownToLeaveSuccess,useShutdownToLeaveValue = pcall(function() return settings():GetFFlag("UseShutdownToLeave") end) 
-local useShutdownToLeave = useShutdownToLeaveSuccess and useShutdownToLeaveValue
-
 ----------- CLASS DECLARATION --------------
 
 local function Initialize()
@@ -95,12 +92,8 @@ local function Initialize()
 		buttonSize = UDim2.new(0, 300, 0, 80)
 	end
 
-	this.LeaveGameButton = utility:MakeStyledButton("LeaveGame", "Leave", buttonSize, useShutdownToLeave and this.LeaveFunc or nil)
+	this.LeaveGameButton = utility:MakeStyledButton("LeaveGame", "Leave", buttonSize, this.LeaveFunc)
 	this.LeaveGameButton.NextSelectionRight = nil
-	
-	if not useShutdownToLeave then
-		this.LeaveGameButton:SetVerb("Exit")
-	end
 	
 	if utility:IsSmallTouchScreen() then
 		this.LeaveGameButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, 0)

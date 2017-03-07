@@ -124,8 +124,6 @@ local moduleMessageLogDisplay = require(modulesFolder:WaitForChild("MessageLogDi
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local moduleCommandProcessor = require(modulesFolder:WaitForChild("CommandProcessor"))
 
-moduleMessageLabelCreator:RegisterGuiRoot(GuiParent)
-
 local ChatWindow = moduleChatWindow.new()
 local ChannelsBar = moduleChannelsBar.new()
 local MessageLogDisplay = moduleMessageLogDisplay.new()
@@ -494,8 +492,6 @@ do
 		end
 	end
 end
-
-spawn(function() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true) end)
 
 moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	moduleApiTable.IsCoreGuiEnabled = enabled
