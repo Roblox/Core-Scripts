@@ -608,7 +608,7 @@ function addDialog(dialog)
 							timeoutDialog()
 						end
 					else
-						if dialog == currentConversationDialog then
+						if dialog == currentConversationDialog and currentConversationDialog.InUse == false then
 							timeoutDialog()
 						end
 					end
