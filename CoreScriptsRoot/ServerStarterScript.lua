@@ -51,7 +51,7 @@ local function setDialogInUse(player, dialog, value, waitTime)
 	end
 	if dialog ~= nil then
 		if dialogMultiplePlayersFlag then
-			dialog:SetPlayerIsUsing(player, true)
+			dialog:SetPlayerIsUsing(player, value)
 		else
 			dialog.InUse = value
 		end
