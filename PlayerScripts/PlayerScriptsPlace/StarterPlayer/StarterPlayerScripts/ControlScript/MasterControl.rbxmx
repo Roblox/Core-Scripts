@@ -106,7 +106,7 @@ function MasterControl:Init()
 		
 		local adjustedMoveValue = moveValue
 		if VREnabled and workspace.CurrentCamera.HeadLocked then
-			local vrFrame = getUserCFrame(VRService)
+			local vrFrame = getUserCFrame(VRService, Enum.UserCFrame.Head)
 			local lookVector = Vector3.new(vrFrame.lookVector.X, 0, vrFrame.lookVector.Z).unit
 			local rotation = CFrame.new(ZERO_VECTOR3, lookVector)
 			adjustedMoveValue = rotation:vectorToWorldSpace(adjustedMoveValue)
