@@ -1490,7 +1490,7 @@ local function CreateClickToMoveModule()
 				if BindableEvent_EnableTouchJump then
 					BindableEvent_EnableTouchJump:Fire(true)
 				end
-				if currentSeatPart.ClassName == "VehicleSeat" then
+				if currentSeatPart and currentSeatPart.ClassName == "VehicleSeat" then
 					CurrentSeatPart = currentSeatPart
 					if AutoJumperInstance then
 						AutoJumperInstance:Stop()
