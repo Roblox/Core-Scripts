@@ -74,17 +74,24 @@ function ControlState:SwitchTo(newControl)
 	end
 end
 
+function ControlState:IsTouchJumpModuleUsed()
+	return isJumpEnabled
+end
+
 --[[ Modules ]]--
 local ClickToMoveTouchControls = nil
 local ControlModules = {}
 
 local MasterControl = require(script:WaitForChild('MasterControl'))
+--MasterControl needs access to ControlState in order to be able to fully enable and disable control
+MasterControl.ControlState = ControlState
 
 local ThumbstickModule = require(script.MasterControl:WaitForChild('Thumbstick'))
 local ThumbpadModule = require(script.MasterControl:WaitForChild('Thumbpad'))
 local DPadModule = require(script.MasterControl:WaitForChild('DPad'))
 local DefaultModule = ControlModules.Thumbstick
 local TouchJumpModule = require(script.MasterControl:WaitForChild('TouchJump'))
+MasterControl.TouchJumpModule = TouchJumpModule
 
 local keyboardModule = require(script.MasterControl:WaitForChild('KeyboardMovement'))
 ControlModules.Gamepad = require(script.MasterControl:WaitForChild('Gamepad'))
