@@ -199,7 +199,7 @@ local function CreateClassicCamera()
 	return module
 end
 
-return CreateClassicCamera
+return CreateClassicCamera()
 ]]></ProtectedString>
 		</Properties>
 	</Item>

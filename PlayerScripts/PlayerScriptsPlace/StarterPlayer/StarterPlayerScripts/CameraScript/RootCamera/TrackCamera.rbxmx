@@ -53,7 +53,7 @@ local function CreateTrackCamera()
 	return module
 end
 
-return CreateTrackCamera
+return CreateTrackCamera()
 ]]></ProtectedString>
 		</Properties>
 	</Item>

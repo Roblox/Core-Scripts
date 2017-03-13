@@ -68,7 +68,7 @@ local function CreateWatchCamera()
 	return module
 end
 
-return CreateWatchCamera
+return CreateWatchCamera()
 ]]></ProtectedString>
 		</Properties>
 	</Item>

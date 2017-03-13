@@ -75,7 +75,7 @@ local function CreateAttachCamera()
 	return module
 end
 
-return CreateAttachCamera
+return CreateAttachCamera()
 ]]></ProtectedString>
 		</Properties>
 	</Item>

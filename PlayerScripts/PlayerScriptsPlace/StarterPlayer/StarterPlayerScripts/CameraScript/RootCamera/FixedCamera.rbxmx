@@ -48,7 +48,7 @@ local function CreateFixedCamera()
 	return module
 end
 
-return CreateFixedCamera
+return CreateFixedCamera()
 ]]></ProtectedString>
 		</Properties>
 	</Item>
