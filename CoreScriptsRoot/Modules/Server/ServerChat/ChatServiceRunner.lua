@@ -75,7 +75,7 @@ local function CreatePlayerSpeakerObject(playerObj)
 		speaker:JoinChannel(channel.Name)
 	end
 
-	speaker.ReceivedMessage:connect(function(messageObj, channel)
+	speaker.RecievedUnfilteredMessage:connect(function(messageObj, channel)
 		EventFolder.OnNewMessage:FireClient(playerObj, messageObj, channel)
 	end)
 

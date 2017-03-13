@@ -100,7 +100,7 @@ local updateMovement = function()
 	
 	local humanoid = getHumanoid()
 	if not humanoid then return end
-		
+	
 	if isJumpEnabled and isJumping and not humanoid.PlatformStand then
 		local state = humanoid:GetState()
 		if state ~= STATE_JUMPING and state ~= STATE_FREEFALL and state ~= STATE_LANDED then
@@ -110,7 +110,7 @@ local updateMovement = function()
 	
 	local adjustedMoveValue = moveValue
 	if VREnabled and workspace.CurrentCamera.HeadLocked then
-		local vrFrame = getUserCFrame(VRService)
+		local vrFrame = getUserCFrame(VRService, Enum.UserCFrame.Head)
 		local lookVector = Vector3.new(vrFrame.lookVector.X, 0, vrFrame.lookVector.Z).unit
 		local rotation = CFrame.new(ZERO_VECTOR3, lookVector)
 		adjustedMoveValue = rotation:vectorToWorldSpace(adjustedMoveValue)

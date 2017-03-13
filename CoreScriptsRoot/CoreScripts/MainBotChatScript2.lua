@@ -485,7 +485,9 @@ function doDialog(dialog)
 		return
 	end
 
-	if dialog.InUse and (not dialogMultiplePlayersFlag or not isDialogMultiplePlayers(dialog)) then
+	local isMultiplePlayers = dialogMultiplePlayersFlag and isDialogMultiplePlayers(dialog)
+
+	if dialog.InUse and not isMultiplePlayers then
 		return
 	else
 		if dialogMultiplePlayersFlag then
@@ -596,7 +598,7 @@ function addDialog(dialog)
 				elseif prop == "InUse" then
 					if dialogMultiplePlayersFlag then
 						if not isDialogMultiplePlayers(dialog) then
-							chatGui.Enabled = not currentConversationDialog and not dialog.InUse
+							chatGui.Enabled = (currentConversationDialog == nil) and not dialog.InUse
 						else
 							chatGui.Enabled = (currentConversationDialog ~= dialog)
 						end
@@ -608,7 +610,7 @@ function addDialog(dialog)
 							timeoutDialog()
 						end
 					else
-						if dialog == currentConversationDialog then
+						if dialog == currentConversationDialog and currentConversationDialog.InUse == false then
 							timeoutDialog()
 						end
 					end

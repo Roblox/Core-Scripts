@@ -42,13 +42,16 @@ local function setDialogInUse(player, dialog, value, waitTime)
 	if type(waitTime) ~= "number" and type(waitTime) ~= "nil" then
 		return
 	end
+	if typeof(player) ~= "Instance" or not player:IsA("Player") then
+		return
+	end
 
 	if waitTime and waitTime ~= 0 then
 		wait(waitTime)
 	end
 	if dialog ~= nil then
 		if dialogMultiplePlayersFlag then
-			dialog:SetPlayerIsUsing(player, true)
+			dialog:SetPlayerIsUsing(player, value)
 		else
 			dialog.InUse = value
 		end
@@ -69,7 +72,7 @@ game:GetService("Players").PlayerRemoving:connect(function(player)
 		if player then
 			local dialog = playerDialogMap[player]
 			if dialog then
-				if not dialogMultiplePlayersFlag then
+				if dialogMultiplePlayersFlag then
 					dialog:SetPlayerIsUsing(player, false)
 				else
 					dialog.InUse = false
