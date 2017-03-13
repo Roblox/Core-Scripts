@@ -94,7 +94,7 @@ LocalPlayer.CharacterAdded:connect(characterAdded)
 local getHumanoid = MasterControl.GetHumanoid
 local moveFunc = LocalPlayer.Move
 local getUserCFrame = VRService.GetUserCFrame
-local renderStepFunc = function()
+local updateMovement = function()
 	
 	if not areControlsEnabled then return end
 	
@@ -121,7 +121,7 @@ end
 
 --[[ Public API ]]--
 function MasterControl:Init()
-	RunService:BindToRenderStep("MasterControlStep", Enum.RenderPriority.Input.Value, renderStepFunc)
+	RunService:BindToRenderStep("MasterControlStep", Enum.RenderPriority.Input.Value, updateMovement)
 end
 
 function MasterControl:Enable()
@@ -140,9 +140,9 @@ function MasterControl:Disable()
 	end
 	
 	--After current control state is disabled, moveValue has been set to zero,
-	--Call renderStepFunc one last time to make sure this propagates to the engine -
+	--Call updateMovement one last time to make sure this propagates to the engine -
 	--Otherwise if disabled while humanoid is moving, humanoid won't stop moving.
-	renderStepFunc()
+	updateMovement()
 	
 	isJumping = false
 	areControlsEnabled = false
