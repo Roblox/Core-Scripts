@@ -231,7 +231,7 @@ function module.new(vChatService, name)
 	obj.Destroyed = obj.eDestroyed.Event
 	obj.SaidMessage = obj.eSaidMessage.Event
 	obj.ReceivedMessage = obj.eReceivedMessage.Event
-	obj.RecievedUnfilteredMessage = obj.eReceivedUnfilteredMessage.Event
+	obj.ReceivedUnfilteredMessage = obj.eReceivedUnfilteredMessage.Event
 	obj.MessageDoneFiltering = obj.eMessageDoneFiltering.Event
 	obj.ReceivedSystemMessage = obj.eReceivedSystemMessage.Event
 	obj.ChannelJoined = obj.eChannelJoined.Event
@@ -241,6 +241,10 @@ function module.new(vChatService, name)
 	obj.ExtraDataUpdated = obj.eExtraDataUpdated.Event
 	obj.MainChannelSet = obj.eMainChannelSet.Event
 	obj.ChannelNameColorUpdated = obj.eChannelNameColorUpdated.Event
+
+	--- DEPRECATED:
+	--- Mispelled version of ReceivedUnfilteredMessage, retained for compatibility with legacy versions.
+	obj.RecievedUnfilteredMessage = obj.eReceivedUnfilteredMessage.Event
 
 	return obj
 end
