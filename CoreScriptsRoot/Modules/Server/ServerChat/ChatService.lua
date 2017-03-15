@@ -315,7 +315,7 @@ function methods:InternalDoProcessCommands(speakerName, message, channel)
 	for funcId, func, priority in commandsIterator do
 		local success, returnValue = pcall(function()
 			local ret = func(speakerName, message, channel)
-			if type(ret) != "boolean" then
+			if type(ret) ~= "boolean" then
 				error("Process command functions must return a bool")
 			end
 			return ret
