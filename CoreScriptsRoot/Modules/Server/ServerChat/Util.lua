@@ -38,6 +38,13 @@ local SortedFunctionContainer = {}; do
 		end)
 	end
 
+	function methods:HasFunction(funcId)
+		if self.RegisteredFunctions[funcId] == nil then
+			return false
+		end
+		return true
+	end
+
 	function methods:RemoveFunction(funcId)
 		local functionPriority = self.RegisteredFunctions[funcId]
 		self.RegisteredFunctions[funcId] = nil
