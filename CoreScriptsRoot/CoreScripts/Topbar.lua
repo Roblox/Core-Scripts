@@ -1215,16 +1215,12 @@ local function CreateUnreadMessagesNotifier(ChatModule)
 	return chatCounter
 end
 
-local useNewBubbleChatSuccess, useNewBubbleChatEnabled = pcall(function() return settings():GetFFlag("CorescriptNewBubbleChatEnabled") end)
-useNewBubbleChatEnabled = useNewBubbleChatEnabled and useNewBubbleChatSuccess
-
 local function CreateChatIcon()
 	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 	if not chatEnabled then return end
 
 	local ChatModule = require(GuiRoot.Modules.ChatSelector)
 
-	local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
 	local debounce = 0
 
 	local chatIconButton = Util.Create'ImageButton'
@@ -1270,7 +1266,7 @@ local function CreateChatIcon()
 	local function toggleChat()
 		if InputService.VREnabled then
 			ChatModule:ToggleVisibility()
-		elseif Util.IsTouchDevice() or useNewBubbleChatEnabled and ChatModule:IsBubbleChatOnly() or bubbleChatIsOn then
+		elseif Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
 			if debounce + TopbarConstants.DEBOUNCE_TIME < tick() then
 				if Util.IsTouchDevice() then
 					ChatModule:SetVisible(true)
@@ -1314,7 +1310,7 @@ local function CreateChatIcon()
 			end)
 		end
 	else
-		if Util.IsTouchDevice() or bubbleChatIsOn then
+		if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
 			if ChatModule.ChatBarFocusChanged then
 				ChatModule.ChatBarFocusChanged:connect(function(isFocused)
 					updateIcon(isFocused)
