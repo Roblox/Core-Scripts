@@ -527,6 +527,27 @@ function methods:SetChannelNameColor(color)
 	end
 end
 
+function methods:GetWelcomeMessageForSpeaker(speaker)
+	if self.GetWelcomeMessageFunction then
+		local welcomeMessage = self.GetWelcomeMessageFunction(speaker)
+		if welcomeMessage then
+			return welcomeMessage
+		end
+	end
+	return self.WelcomeMessage
+end
+
+function methods:RegisterGetWelcomeMessageFunction(func)
+	if type(func) ~= "function" then
+		error("RegisterGetWelcomeMessageFunction must be called with a function.")
+	end
+	self.GetWelcomeMessageFunction = func
+end
+
+function methods:UnRegisterGetWelcomeMessageFunction()
+	self.GetWelcomeMessageFunction = nil
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
 
@@ -537,6 +558,7 @@ function module.new(vChatService, name, welcomeMessage, channelNameColor)
 
 	obj.Name = name
 	obj.WelcomeMessage = welcomeMessage or ""
+	obj.GetWelcomeMessageFunction = nil
 	obj.ChannelNameColor = channelNameColor
 
 	obj.Joinable = true
