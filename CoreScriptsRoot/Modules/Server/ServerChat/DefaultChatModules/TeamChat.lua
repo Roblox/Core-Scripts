@@ -147,8 +147,6 @@ local function Run(ChatService)
 		end
 	end)
 
-	-- The Player changed connections must be stored and disconnected to avoid a memory leak.
-	-- This took about a week to track down.
 	local PlayerChangedConnections = {}
 	Players.PlayerAdded:connect(function(player)
 		local changedConn = player.Changed:connect(function(property)

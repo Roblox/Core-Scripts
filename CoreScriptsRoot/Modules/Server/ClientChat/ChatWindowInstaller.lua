@@ -3,6 +3,7 @@ local bubbleChatScriptName = "BubbleChat"
 local installDirectory = game:GetService("Chat")
 
 local ChatService = game:GetService("Chat")
+local PlayersService = game:GetService("Players")
 local StarterPlayerScripts = game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts")
 
 local function LoadLocalScript(location, name, parent)
@@ -171,7 +172,7 @@ local function Install()
 		ChatScriptCopy.Parent = StarterPlayerScripts
 		ChatScriptCopy.Archivable = false
 
-		local currentPlayers = game:GetService("Players"):GetChildren()
+		local currentPlayers = PlayersService:GetPlayers()
 		for i, player in pairs(currentPlayers) do
 			if (player:IsA("Player") and player:FindFirstChild("PlayerScripts") and not player.PlayerScripts:FindFirstChild(runnerScriptName)) then
 				ChatScriptCopy = ChatScript:Clone()
@@ -189,7 +190,7 @@ local function Install()
 			BubbleChatScriptCopy.Parent = StarterPlayerScripts
 			BubbleChatScriptCopy.Archivable = false
 
-			local currentPlayers = game:GetService("Players"):GetChildren()
+			local currentPlayers = PlayersService:GetPlayers()
 			for i, player in pairs(currentPlayers) do
 				if (player:IsA("Player") and player:FindFirstChild("PlayerScripts") and not player.PlayerScripts:FindFirstChild(bubbleChatScriptName)) then
 					BubbleChatScriptCopy = BubbleChatScript:Clone()

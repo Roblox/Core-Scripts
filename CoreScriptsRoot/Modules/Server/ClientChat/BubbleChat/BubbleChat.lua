@@ -579,9 +579,12 @@ end
 function this:BubbleChatEnabled()
 	local clientChatModules = ChatService:FindFirstChild("ClientChatModules")
 	if clientChatModules then
-		local chatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-		if chatSettings.BubbleChatEnabled ~= nil then
-			return chatSettings.BubbleChatEnabled
+		local chatSettings = clientChatModules:FindFirstChild("ChatSettings")
+		if chatSettings then
+			local chatSettings = require(chatSettings)
+			if chatSettings.BubbleChatEnabled ~= nil then
+				return chatSettings.BubbleChatEnabled
+			end
 		end
 	end
 	return PlayersService.BubbleChat
@@ -590,8 +593,11 @@ end
 function this:ShowOwnFilteredMessage()
 	local clientChatModules = ChatService:FindFirstChild("ClientChatModules")
 	if clientChatModules then
-		local chatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-		return chatSettings.ShowUserOwnFilteredMessage
+		local chatSettings = clientChatModules:FindFirstChild("ChatSettings")
+		if chatSettings then
+			chatSettings = require(chatSettings)
+			return chatSettings.ShowUserOwnFilteredMessage
+		end
 	end
 	return false
 end
@@ -636,13 +642,19 @@ function getAllowedMessageTypes()
 	end
 	local clientChatModules = ChatService:FindFirstChild("ClientChatModules")
 	if clientChatModules then
-		local chatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
-		if chatSettings.BubbleChatMessageTypes then
-			AllowedMessageTypes = chatSettings.BubbleChatMessageTypes
-			return AllowedMessageTypes
+		local chatSettings = clientChatModules:FindFirstChild("ChatSettings")
+		if chatSettings then
+			chatSettings = require(chatSettings)
+			if chatSettings.BubbleChatMessageTypes then
+				AllowedMessageTypes = chatSettings.BubbleChatMessageTypes
+				return AllowedMessageTypes
+			end
 		end
-		local chatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
-		AllowedMessageTypes = {ChatConstants.MessageTypeDefault, ChatConstants.MessageTypeWhisper}
+		local chatConstants = clientChatModules:FindFirstChild("ChatConstants")
+		if chatConstants then
+			chatConstants = require(chatConstants)
+			AllowedMessageTypes = {chatConstants.MessageTypeDefault, chatConstants.MessageTypeWhisper}
+		end
 		return AllowedMessageTypes
 	end
 	return {"Message", "Whisper"}

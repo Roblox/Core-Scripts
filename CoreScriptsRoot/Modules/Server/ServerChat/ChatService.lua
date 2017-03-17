@@ -36,7 +36,7 @@ local Util = require(modulesFolder:WaitForChild("Util"))
 local methods = {}
 methods.__index = methods
 
-function methods:AddChannel(channelName)
+function methods:AddChannel(channelName, autoJoin)
 	if (self.ChatChannels[channelName:lower()]) then
 		error(string.format("Channel %q alrady exists.", channelName))
 	end
@@ -68,6 +68,15 @@ function methods:AddChannel(channelName)
 	local success, err = pcall(function() self.eChannelAdded:Fire(channelName) end)
 	if not success and err then
 		print("Error addding channel: " ..err)
+	end
+
+	if autoJoin ~= nil then
+		channel.AutoJoin = autoJoin
+		if autoJoin then
+			for _, speaker in pairs(self.Speakers) do
+				speaker:JoinChannel(channelName)
+			end
+		end
 	end
 
 	return channel
@@ -175,18 +184,38 @@ function methods:SendGlobalSystemMessage(message)
 end
 
 function methods:RegisterFilterMessageFunction(funcId, func, priority)
+	if self.FilterMessageFunctions:HasFunction(funcId) then
+		error(string.format("FilterMessageFunction '%s' already exists", funcId))
+	end
 	self.FilterMessageFunctions:AddFunction(funcId, func, priority)
 end
 
+function methods:FilterMessageFunctionExists(funcId)
+	return self.FilterMessageFunctions:HasFunction(funcId)
+end
+
 function methods:UnregisterFilterMessageFunction(funcId)
+	if not self.FilterMessageFunctions:HasFunction(funcId) then
+		error(string.format("FilterMessageFunction '%s' does not exists", funcId))
+	end
 	self.FilterMessageFunctions:RemoveFunction(funcId)
 end
 
 function methods:RegisterProcessCommandsFunction(funcId, func, priority)
+	if self.ProcessCommandsFunctions:HasFunction(funcId) then
+		error(string.format("ProcessCommandsFunction '%s' already exists", funcId))
+	end
 	self.ProcessCommandsFunctions:AddFunction(funcId, func, priority)
 end
 
+function methods:ProcessCommandsFunctionExists(funcId)
+	return self.ProcessCommandsFunctions:HasFunction(funcId)
+end
+
 function methods:UnregisterProcessCommandsFunction(funcId)
+	if not self.ProcessCommandsFunctions:HasFunction(funcId) then
+		error(string.format("ProcessCommandsFunction '%s' does not exist", funcId))
+	end
 	self.ProcessCommandsFunctions:RemoveFunction(funcId)
 end
 
@@ -219,15 +248,16 @@ local StudioMessageFilteredCache = {}
 function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 	if (RunService:IsServer() and not RunService:IsStudio()) then
 		local fromSpeaker = self:GetSpeaker(speakerName)
-		local toSpeaker = self:GetSpeaker(toSpeakerName)
+		local toSpeaker = toSpeakerName and self:GetSpeaker(toSpeakerName)
 
-		if fromSpeaker == nil or toSpeaker == nil then
+		if fromSpeaker == nil then
 			return nil
 		end
 
 		local fromPlayerObj = fromSpeaker:GetPlayer()
-		local toPlayerObj = toSpeaker:GetPlayer()
-		if fromPlayerObj == nil or toPlayerObj == nil then
+		local toPlayerObj = toSpeaker and toSpeaker:GetPlayer()
+
+		if fromPlayerObj == nil then
 			return message
 		end
 
@@ -235,7 +265,11 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 		local filterRetries = 0
 		while true do
 			local success, message = pcall(function()
-				return Chat:FilterStringAsync(message, fromPlayerObj, toPlayerObj)
+				if toPlayerObj then
+					return Chat:FilterStringAsync(message, fromPlayerObj, toPlayerObj)
+				else
+					return Chat:FilterStringForBroadcast(message, fromPlayerObj)
+				end
 			end)
 			if success then
 				return message
@@ -281,7 +315,9 @@ function methods:InternalDoProcessCommands(speakerName, message, channel)
 	for funcId, func, priority in commandsIterator do
 		local success, returnValue = pcall(function()
 			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "boolean")
+			if type(ret) ~= "boolean" then
+				error("Process command functions must return a bool")
+			end
 			return ret
 		end)
 

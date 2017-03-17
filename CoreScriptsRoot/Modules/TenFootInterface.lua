@@ -31,6 +31,9 @@ if FORCE_TEN_FOOT_INTERFACE then
 	tenFootInterfaceEnabled = true
 end
 
+local showVisibleAgeV2Success, showVisibleAgeV2Value = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAgeV2") end)
+local showVisibleAgeV2Enabled = showVisibleAgeV2Success and showVisibleAgeV2Value
+
 local Util = {}
 do
 	function Util.Create(instanceType)
@@ -62,7 +65,7 @@ local function CreateModule()
 			{
 				Name = "TopRightContainer";
 				Size = UDim2.new(0, 350, 0, 100);
-				Position = UDim2.new(1,-360,0,10);
+				Position = showVisibleAgeV2Enabled and UDim2.new(1,-415,0,10) or UDim2.new(1,-360,0,10);
 				AutoButtonColor = false;
 				Image = "";
 				Active = false;
@@ -201,6 +204,34 @@ local function CreateModule()
 		end)
 
 		return this.Container, username, this.HealthContainer, healthFill, accountType
+	end
+
+	function this:CreateAccountTypeV2(accountTypeTextShort)
+		this.AccountTypeContainer = Util.Create'Frame'{
+			Name = "AccountTypeContainer";
+			Size = UDim2.new(0, 50, 0, 50);
+			Position = UDim2.new(1, -55, 0, 10);
+			BorderSizePixel = 0;
+			BackgroundColor3 = Color3.new(0,0,0);
+			BackgroundTransparency = 0.5;
+			Parent = RobloxGui;
+		};
+
+		local accountTypeTextLabel = Util.Create'TextLabel'{
+			Name = "AccountTypeText";
+			Size = UDim2.new(1, 0, 1, 0);
+			Position = UDim2.new(0, 0, 0, 0);
+			BackgroundTransparency = 1;
+			BackgroundColor3 = Color3.new(0,0,0);
+			Font = Enum.Font.SourceSans;
+			FontSize = Enum.FontSize.Size36;
+			Text = accountTypeTextShort;
+			TextColor3 = Color3.new(1,1,1);
+			BorderSizePixel = 0;
+			Parent = this.AccountTypeContainer;
+			TextXAlignment = Enum.TextXAlignment.Center;
+			TextYAlignment = Enum.TextYAlignment.Center;
+		};
 	end
 
 	function this:CreateAccountType(accountTypeText)
@@ -412,6 +443,10 @@ local moduleApiTable = {}
 
 	function moduleApiTable:CreateAccountType(accountTypeText)
 		return TenFootInterfaceModule:CreateAccountType(accountTypeText)
+	end
+
+	function moduleApiTable:CreateAccountTypeV2(accountTypeTextShort)
+		return TenFootInterfaceModule:CreateAccountTypeV2(accountTypeTextShort)
 	end
 
 	function moduleApiTable:SetupTopStat()
