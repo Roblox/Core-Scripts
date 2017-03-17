@@ -184,18 +184,38 @@ function methods:SendGlobalSystemMessage(message)
 end
 
 function methods:RegisterFilterMessageFunction(funcId, func, priority)
+	if self.FilterMessageFunctions:HasFunction(funcId) then
+		error(string.format("FilterMessageFunction '%s' already exists", funcId))
+	end
 	self.FilterMessageFunctions:AddFunction(funcId, func, priority)
 end
 
+function methods:FilterMessageFunctionExists(funcId)
+	return self.FilterMessageFunctions:HasFunction(funcId)
+end
+
 function methods:UnregisterFilterMessageFunction(funcId)
+	if not self.FilterMessageFunctions:HasFunction(funcId) then
+		error(string.format("FilterMessageFunction '%s' does not exists", funcId))
+	end
 	self.FilterMessageFunctions:RemoveFunction(funcId)
 end
 
 function methods:RegisterProcessCommandsFunction(funcId, func, priority)
+	if self.ProcessCommandsFunctions:HasFunction(funcId) then
+		error(string.format("ProcessCommandsFunction '%s' already exists", funcId))
+	end
 	self.ProcessCommandsFunctions:AddFunction(funcId, func, priority)
 end
 
+function methods:ProcessCommandsFunctionExists(funcId)
+	return self.ProcessCommandsFunctions:HasFunction(funcId)
+end
+
 function methods:UnregisterProcessCommandsFunction(funcId)
+	if not self.ProcessCommandsFunctions:HasFunction(funcId) then
+		error(string.format("ProcessCommandsFunction '%s' does not exist", funcId))
+	end
 	self.ProcessCommandsFunctions:RemoveFunction(funcId)
 end
 
@@ -295,7 +315,9 @@ function methods:InternalDoProcessCommands(speakerName, message, channel)
 	for funcId, func, priority in commandsIterator do
 		local success, returnValue = pcall(function()
 			local ret = func(speakerName, message, channel)
-			assert(type(ret) == "boolean")
+			if type(ret) ~= "boolean" then
+				error("Process command functions must return a bool")
+			end
 			return ret
 		end)
 
