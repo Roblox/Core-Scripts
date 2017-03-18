@@ -152,15 +152,14 @@ local function CreateFollowCamera()
 						
 						local y = findAngleBetweenXZVectors(lastVec, self:GetCameraLook())
 						
-						-- This cutoff is to decide if humanoids angle of movement,
+						-- This cutoff is to decide if the humanoid's angle of movement,
 						-- relative to the camera's look vector, is enough that
-						-- we wan the camera to be following them. The point is to provide 
-						-- a sizable deadzone to allow more precision forward movements.
+						-- we want the camera to be following them. The point is to provide 
+						-- a sizable deadzone to allow more precise forward movements.
 						local thetaCutoff = 0.4
-						local theta = y/timeDelta
 						
 						-- Check for NaNs
-						if IsFinite(y) and math.abs(y) > 0.0001 and math.abs(theta) > thetaCutoff then
+						if IsFinite(y) and math.abs(y) > 0.0001 and math.abs(y) > thetaCutoff*timeDelta then
 							self.RotateInput = self.RotateInput + Vector2.new(y, 0)
 						end
 					end
