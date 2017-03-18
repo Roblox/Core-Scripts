@@ -43,22 +43,7 @@ local function Initialize()
 
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "PlayersTab"
-
-	this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/PlayersTabIcon.png"
-	if utility:IsSmallTouchScreen() then
-		this.TabHeader.Icon.Size = UDim2.new(0,34,0,28)
-		this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-14)
-		this.TabHeader.Size = UDim2.new(0,115,1,0)
-	elseif isTenFootInterface then
-		this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/PlayersTabIcon@2x.png"
-		this.TabHeader.Icon.Size = UDim2.new(0,88,0,74)
-		this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
-		this.TabHeader.Size = UDim2.new(0,280,1,0)
-	else
-		this.TabHeader.Icon.Size = UDim2.new(0,44,0,37)
-		this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-18)	-- -22
-		this.TabHeader.Size = UDim2.new(0,150,1,0)
-	end
+	this.TabHeader.Icon.Image = isTenFootInterface and "rbxasset://textures/ui/Settings/MenuBarIcons/PlayersTabIcon@2x.png" or "rbxasset://textures/ui/Settings/MenuBarIcons/PlayersTabIcon.png"
 
 	this.TabHeader.Icon.Title.Text = "Players"
 
@@ -174,38 +159,49 @@ local function Initialize()
 		end
 	end)
 
-	if utility:IsSmallTouchScreen() then
-		local spaceFor3Buttons = RobloxGui.AbsoluteSize.x >= 720	-- else there is only space for 2
+	local buttonsContainer = utility:Create("Frame") {
+		Name = "ButtonsContainer",
+		Size = UDim2.new(1, 0, 0, 62),
+		BackgroundTransparency = 1,
+		Parent = this.Page,
 
-		local resetFunc = function()
-			this.HubRef:SwitchToPage(this.HubRef.ResetCharacterPage, false, 1)
-		end
-		local resetButton, resetLabel = utility:MakeStyledButton("ResetButton", "Reset Character", UDim2.new(0, 200, 0, 62), resetFunc)
-		resetLabel.Size = UDim2.new(1, 0, 1, -6)
-		resetLabel.FontSize = Enum.FontSize.Size24
-		resetButton.Position = UDim2.new(0.5,spaceFor3Buttons and -340 or -220,0,14)
-		resetButton.Parent = this.Page
+		Visible = false
+	}
+	local buttonsLayout = utility:Create("UIListLayout") {
+		FillDirection = Enum.FillDirection.Horizontal,
+		Padding = UDim.new(0, 10),
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		Parent = buttonsContainer
+	}
 
-		local leaveGameFunc = function()
-			this.HubRef:SwitchToPage(this.HubRef.LeaveGamePage, false, 1)
-		end
-		local leaveButton, leaveLabel = utility:MakeStyledButton("LeaveButton", "Leave Game", UDim2.new(0, 200, 0, 62), leaveGameFunc)
-		leaveLabel.Size = UDim2.new(1, 0, 1, -6)
-		leaveLabel.FontSize = Enum.FontSize.Size24
-		leaveButton.Position = UDim2.new(0.5,spaceFor3Buttons and -100 or 20,0,14)
-		leaveButton.Parent = this.Page
-
-		if spaceFor3Buttons then
-			local resumeGameFunc = function()
-				this.HubRef:SetVisibility(false)
-			end
-			resumeButton, resumeLabel = utility:MakeStyledButton("ResumeButton", "Resume Game", UDim2.new(0, 200, 0, 62), resumeGameFunc)
-			resumeLabel.Size = UDim2.new(1, 0, 1, -6)
-			resumeLabel.FontSize = Enum.FontSize.Size24
-			resumeButton.Position = UDim2.new(0.5,140,0,14)
-			resumeButton.Parent = this.Page
-		end
+	local resetFunc = function()
+		this.HubRef:SwitchToPage(this.HubRef.ResetCharacterPage, false, 1)
 	end
+	local resetButton, resetLabel = utility:MakeStyledButton("ResetButton", "Reset Character", UDim2.new(0.5, -5, 1, 0), resetFunc)
+	resetLabel.Size = UDim2.new(1, 0, 1, -6)
+	resetLabel.FontSize = Enum.FontSize.Size24
+	resetButton.Parent = buttonsContainer
+
+	local leaveGameFunc = function()
+		this.HubRef:SwitchToPage(this.HubRef.LeaveGamePage, false, 1)
+	end
+	local leaveButton, leaveLabel = utility:MakeStyledButton("LeaveButton", "Leave Game", UDim2.new(0.5, -5, 1, 0), leaveGameFunc)
+	leaveLabel.Size = UDim2.new(1, 0, 1, -6)
+	leaveLabel.FontSize = Enum.FontSize.Size24
+	leaveButton.Parent = buttonsContainer
+
+	utility:OnResized(buttonsContainer, function(newSize, isPortrait)
+		if isPortrait or utility:IsSmallTouchScreen() then
+			buttonsContainer.Visible = true
+			buttonsContainer.Size = UDim2.new(1, 0, 0, isPortrait and 50 or 62)
+			buttonsLayout:ApplyLayout() 
+			resetLabel.TextSize = isPortrait and 18 or 24
+			leaveLabel.TextSize = isPortrait and 18 or 24
+		else
+			buttonsContainer.Visible = false
+			buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
+		end
+	end)
 
 	local existingPlayerLabels = {}
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)

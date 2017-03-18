@@ -67,6 +67,8 @@ do
 	end
 end
 
+local onResizedCallbacks = {}
+setmetatable(onResizedCallbacks, { __mode = 'k' })
 
 -- used by several guis to show no selection adorn
 local noSelectionObject = Util.Create'ImageLabel'
@@ -220,7 +222,13 @@ local function getViewportSize()
 end
 
 local function isSmallTouchScreen()
-	return UserInputService.TouchEnabled and getViewportSize().Y <= 500
+	local viewportSize = getViewportSize()
+	return UserInputService.TouchEnabled and (viewportSize.Y < 500 or viewportSize.X < 700)
+end
+
+local function isPortrait()
+	local viewport = getViewportSize()
+	return viewport.Y > viewport.X
 end
 
 local function isTenFootInterface()
@@ -343,6 +351,11 @@ local function addHoverState(button, instance, onNormalButtonState, onHoverButto
 	button.SelectionLost:connect(onNormalButtonStateCallback)
 
 	onNormalButtonState(instance)
+end
+
+local function addOnResizedCallback(key, callback)
+	onResizedCallbacks[key] = callback
+	callback(getViewportSize(), isPortrait())
 end
 
 local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
@@ -478,6 +491,21 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 	return button, textLabel, setRowRef
 end
 
+local function AddButtonRow(pageToAddTo, name, text, size, clickFunc, hubRef)
+	local button, textLabel, setRowRef = MakeButton(name, text, size, clickFunc, pageToAddTo, hubRef)
+	local row = Util.Create'Frame'
+	{
+		Name = name .. "Row",
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, size.Y.Scale, size.Y.Offset),
+		Parent = pageToAddTo.Page
+	}
+	button.Parent = row
+	button.AnchorPoint = Vector2.new(1, 0)
+	button.Position = UDim2.new(1, -20, 0, 0)
+	return row, button, textLabel, setRowRef
+end
+
 local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	-------------------- CONSTANTS ------------------------
 	local DEFAULT_DROPDOWN_TEXT = "Choose One"
@@ -557,8 +585,9 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		ScaleType = Enum.ScaleType.Slice,
 		SliceCenter = Rect.new(8,6,46,44),
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0, 400, 0.9, 0),
-		Position = UDim2.new(0.5, -200, 0.05, 0),
+		Size = UDim2.new(0.6, 0, 0.9, 0),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
 		ZIndex = 10,
 		Parent = DropDownFullscreenFrame
 	};
@@ -636,20 +665,25 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		dropDownButtonEnabled.Value = false
 	end
 
-	local dropDownFrameSize = UDim2.new(0,400,0,44)
-	if isSmallTouchScreen() then
-		dropDownFrameSize = UDim2.new(0,300,0,44)
-	end
+	local dropDownFrameSize = UDim2.new(0.6, 0, 0, 50)
 	this.DropDownFrame = MakeButton("DropDownFrame", DEFAULT_DROPDOWN_TEXT, dropDownFrameSize, DropDownFrameClicked)
+	this.DropDownFrame.Position = UDim2.new(1, 0, 0.5, 0)
+	this.DropDownFrame.AnchorPoint = Vector2.new(1, 0.5)
+
 	dropDownButtonEnabled = this.DropDownFrame.Enabled
 	local selectedTextLabel = this.DropDownFrame.DropDownFrameTextLabel
+	selectedTextLabel.Position = UDim2.new(0, 15, 0, 0)
+	selectedTextLabel.Size = UDim2.new(1, -50, 1, -8)
+	selectedTextLabel.ClipsDescendants = true
+	selectedTextLabel.TextXAlignment = Enum.TextXAlignment.Left
 	local dropDownImage = Util.Create'ImageLabel'
 	{
 		Name = "DropDownImage",
 		Image = "rbxasset://textures/ui/Settings/DropDown/DropDown.png",
 		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0.5),
 		Size = UDim2.new(0,15,0,10),
-		Position = UDim2.new(1, -45,0.5,-7),
+		Position = UDim2.new(1,-12,0.5,0),
 		ZIndex = 2,
 		Parent = this.DropDownFrame
 	};
@@ -900,20 +934,23 @@ local function CreateSelector(selectionStringTable, startPosition)
 		NextSelectionLeft = this.SelectorFrame,
 		NextSelectionRight = this.SelectorFrame,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0,502,0,50),
+		Size = UDim2.new(0.6,0,0,50),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 0.5),
 		ZIndex = 2,
 		SelectionImageObject = noSelectionObject
 	};
 	if isSmallTouchScreen() then
-		this.SelectorFrame.Size = UDim2.new(0,400,0,50)
+	--	this.SelectorFrame.Size = UDim2.new(0,400,0,50)
 	end
 
 	local leftButton = Util.Create'ImageButton'
 	{
 		Name = "LeftButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0,-10,0.5,-25),
-		Size =  UDim2.new(0,60,0,50),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0,0,0.5,0),
+		Size =  UDim2.new(0,50,0,50),
 		Image =  "",
 		ZIndex = 3,
 		Selectable = false,
@@ -924,7 +961,8 @@ local function CreateSelector(selectionStringTable, startPosition)
 	{
 		Name = "RightButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(1,-50,0.5,-25),
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1,0,0.5,0),
 		Size =  UDim2.new(0,50,0,50),
 		Image =  "",
 		ZIndex = 3,
@@ -937,7 +975,8 @@ local function CreateSelector(selectionStringTable, startPosition)
 	{
 		Name = "LeftButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(1,-24,0.5,-15),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5,0,0.5,0),
 		Size =  UDim2.new(0,18,0,30),
 		Image =  "rbxasset://textures/ui/Settings/Slider/Left.png",
 		ImageColor3 = ARROW_COLOR,
@@ -948,7 +987,8 @@ local function CreateSelector(selectionStringTable, startPosition)
 	{
 		Name = "RightButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0,6,0.5,-15),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5,0,0.5,0),
 		Size =  UDim2.new(0,18,0,30),
 		Image =  "rbxasset://textures/ui/Settings/Slider/Right.png",
 		ImageColor3 = ARROW_COLOR,
@@ -982,6 +1022,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 			TextTransparency = 0.5,
 			Font = Enum.Font.SourceSans,
 			FontSize = Enum.FontSize.Size24,
+			TextSize = 16,
 			Text = v,
 			ZIndex = 2,
 			Visible = false,
@@ -1274,6 +1315,21 @@ local function CreateSelector(selectionStringTable, startPosition)
 		end
 	end)
 
+	local function onResized(viewportSize, portrait)
+		local textSize = 0
+		if portrait then
+			textSize = 16
+		else
+			textSize = isTenFootInterface() and 36 or 24
+		end
+
+		for i, selection in pairs(this.Selections) do
+			selection.TextSize = textSize
+		end
+	end
+	onResized(getViewportSize(), isPortrait())
+	addOnResizedCallback(this.SelectorFrame, onResized)
+
 	connectToGuiService()
 
 	return this
@@ -1457,19 +1513,29 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		NextSelectionLeft = this.SliderFrame,
 		NextSelectionRight = this.SliderFrame,
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0,502,0,50),
+		Size = UDim2.new(0.6, 0, 0, 50),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(1, 0.5),
 		SelectionImageObject = noSelectionObject,
 		ZIndex = 2
 	};
-	if isSmallTouchScreen() then
-		this.SliderFrame.Size = UDim2.new(0,400,0,30)
-	end
+
+	this.StepsContainer = Util.Create "Frame"
+	{
+		Name = "StepsContainer",
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		Size = UDim2.new(1, -100, 1, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		BackgroundTransparency = 1,
+		Parent = this.SliderFrame,
+	}
 
 	local leftButton = Util.Create'ImageButton'
 	{
 		Name = "LeftButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0,0,0.5,-25),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0,0,0.5,0),
 		Size =  UDim2.new(0,50,0,50),
 		Image =  "",
 		ZIndex = 3,
@@ -1482,7 +1548,8 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	{
 		Name = "RightButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(1,-50,0.5,-25),
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1,0,0.5,0),
 		Size =  UDim2.new(0,50,0,50),
 		Image =  "",
 		ZIndex = 3,
@@ -1496,9 +1563,10 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	{
 		Name = "LeftButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(1,-24,0.5,-15),
-		Size =  UDim2.new(0,18,0,30),
-		Image =  "rbxasset://textures/ui/Settings/Slider/Left.png",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5,0,0.5,0),
+		Size =  UDim2.new(0,30,0,30),
+		Image =  "rbxasset://textures/ui/Settings/Slider/Less.png",
 		ZIndex = 4,
 		Parent = leftButton,
 		ImageColor3 = UserInputService.TouchEnabled and ARROW_COLOR_TOUCH or ARROW_COLOR
@@ -1507,9 +1575,10 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	{
 		Name = "RightButton",
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0,6,0.5,-15),
-		Size =  UDim2.new(0,18,0,30),
-		Image =  "rbxasset://textures/ui/Settings/Slider/Right.png",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5,0,0.5,0),
+		Size =  UDim2.new(0,30,0,30),
+		Image =  "rbxasset://textures/ui/Settings/Slider/More.png",
 		ZIndex = 4,
 		Parent = rightButton,
 		ImageColor3 = UserInputService.TouchEnabled and ARROW_COLOR_TOUCH or ARROW_COLOR
@@ -1529,6 +1598,11 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		stepXSize = 25
 	end
 
+	local stepXScale = 1 / steps
+	stepXSize = 0
+
+	local stepsAspectConstraints = {}
+
 	for i = 1, steps do
 		local nextStep = Util.Create'ImageButton'
 		{
@@ -1538,13 +1612,14 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 			BorderSizePixel = 0,
 			AutoButtonColor = false,
 			Active = false,
-			Position = UDim2.new(0,initialSpacing + leftButton.Size.X.Offset + ((stepXSize + spacing) * (i - 1)),0.5,-12),
-			Size =  UDim2.new(0,stepXSize,0, 24),
+			AnchorPoint = Vector2.new(0, 0.5),
+			Position = UDim2.new((i - 1) * stepXScale, spacing / 2, 0.5, 0),
+			Size =  UDim2.new(stepXScale,-spacing, 24 / 50, 0),
 			Image =  "",
 			ZIndex = 3,
 			Selectable = false,
 			ImageTransparency = 0.36,
-			Parent = this.SliderFrame,
+			Parent = this.StepsContainer,
 			SelectionImageObject = noSelectionObject
 		};
 
@@ -1573,11 +1648,8 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		end
 
 		this.Steps[#this.Steps + 1] = nextStep
+		stepsAspectConstraints[#this.Steps] = aspectRatioConstraint
 	end
-
-	local xSize = initialSpacing + (leftButton.Size.X.Offset) + this.Steps[#this.Steps].Size.X.Offset +
-					this.Steps[#this.Steps].Position.X.Offset
-	this.SliderFrame.Size = UDim2.new(0, xSize, 0, this.SliderFrame.Size.Y.Offset)
 
 
 	------------------- FUNCTIONS ---------------------
@@ -1987,6 +2059,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		Text = rowDisplayName,
 		Font = Enum.Font.SourceSansBold,
 		FontSize = Enum.FontSize.Size24,
+		TextSize = 16,
 		TextColor3 = Color3.new(1,1,1),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
@@ -1995,31 +2068,32 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		ZIndex = 2,
 		Parent = RowFrame
 	};
-	if isTenFootInterface() then
-		RowLabel.FontSize = Enum.FontSize.Size36
-	end
 	if not isARealRow then
 		RowLabel.Text = ''
 	end
+
+	local function onResized(viewportSize, portrait)
+		if portrait then
+			RowLabel.TextSize = 16
+		else
+			RowLabel.TextSize = isTenFootInterface() and 36 or 24
+		end
+	end
+	onResized(getViewportSize(), isPortrait())
+	addOnResizedCallback(RowFrame, onResized)
 
 	local ValueChangerSelection = nil
 	local ValueChangerInstance = nil
 	if selectionType == "Slider" then
 		ValueChangerInstance = CreateNewSlider(rowValues, rowDefault)
-		ValueChangerInstance.SliderFrame.Position = UDim2.new(1,-ValueChangerInstance.SliderFrame.Size.X.Offset,
-														0.5,-ValueChangerInstance.SliderFrame.Size.Y.Offset/2)
 		ValueChangerInstance.SliderFrame.Parent = RowFrame
 		ValueChangerSelection = ValueChangerInstance.SliderFrame
 	elseif selectionType == "Selector" then
 		ValueChangerInstance = CreateSelector(rowValues, rowDefault)
-		ValueChangerInstance.SelectorFrame.Position = UDim2.new(1,-ValueChangerInstance.SelectorFrame.Size.X.Offset,
-														0.5,-ValueChangerInstance.SelectorFrame.Size.Y.Offset/2)
 		ValueChangerInstance.SelectorFrame.Parent = RowFrame
 		ValueChangerSelection = ValueChangerInstance.SelectorFrame
 	elseif selectionType == "DropDown" then
 		ValueChangerInstance = CreateDropDown(rowValues, rowDefault, pageToAddTo.HubRef)
-		ValueChangerInstance.DropDownFrame.Position = UDim2.new(1,-ValueChangerInstance.DropDownFrame.Size.X.Offset - 50,
-														0.5,-ValueChangerInstance.DropDownFrame.Size.Y.Offset/2)
 		ValueChangerInstance.DropDownFrame.Parent = RowFrame
 		ValueChangerSelection = ValueChangerInstance.DropDownFrame
 	elseif selectionType == "TextBox" then
@@ -2036,8 +2110,9 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 
 		local box = Util.Create'TextBox'
 		{
-			Size = UDim2.new(1,-10,0,100),
-			Position = UDim2.new(0,5,0,nextRowPositionY),
+			AnchorPoint = Vector2.new(1, 0.5),
+			Size = UDim2.new(0.6,0,1,0),
+			Position = UDim2.new(1,0,0.5,0),
 			Text = rowDisplayName,
 			TextColor3 = Color3.new(49/255, 49/255, 49/255),
 			BackgroundTransparency = 0.5,
@@ -2050,7 +2125,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			ZIndex = 2,
 			SelectionImageObject = SelectionOverrideObject,
 			ClearTextOnFocus = false,
-			Parent = pageToAddTo.Page
+			Parent = RowFrame
 		};
 		ValueChangerSelection = box
 
@@ -2110,8 +2185,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				end
 			end
 		end
-		RowFrame.MouseEnter:connect(setRowSelection)
-		RowFrame.Size = UDim2.new(1, 0, 0, 100)
+		box.MouseEnter:connect(setRowSelection)
 
 		UserInputService.InputBegan:connect(processInput)
 
@@ -2129,8 +2203,9 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 
 		local box = Util.Create'TextBox'
 		{
+			AnchorPoint = Vector2.new(1, 0.5),
 			Size = UDim2.new(0.4,-10,0,40),
-			Position = UDim2.new(0.5,5,0,nextRowPositionY+5),
+			Position = UDim2.new(1,0,0.5,0),
 			Text = rowDisplayName,
 			TextColor3 = Color3.new(0.7, 0.7, 0.7),
 			BackgroundTransparency = 1.0,
@@ -2143,7 +2218,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			ZIndex = 2,
 			SelectionImageObject = SelectionOverrideObject,
 			ClearTextOnFocus = false,
-			Parent = pageToAddTo.Page
+			Parent = RowFrame
 		};
 		ValueChangerSelection = box
 
@@ -2337,7 +2412,7 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 		Size = UDim2.new(1,0,0,ROW_HEIGHT),
 		Position = UDim2.new(0,0,0,nextRowPositionY),
 		ZIndex = 2,
-		Selectable = false,
+		Selectable = true,
 		SelectionImageObject = noSelectionObject,
 		Parent = pageToAddTo.Page
 	};
@@ -2353,7 +2428,7 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 		Name = rowDisplayName .. "Label",
 		Text = rowDisplayName,
 		Font = Enum.Font.SourceSansBold,
-		FontSize = Enum.FontSize.Size24,
+		TextSize = 16,
 		TextColor3 = Color3.new(1,1,1),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
@@ -2362,9 +2437,15 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 		ZIndex = 2,
 		Parent = RowFrame
 	};
-	if isTenFootInterface() then
-		RowLabel.FontSize = Enum.FontSize.Size36
+	local function onResized(viewportSize, portrait)
+		if portrait then
+			RowLabel.TextSize = 16
+		else
+			RowLabel.TextSize = isTenFootInterface() and 36 or 24
+		end
 	end
+	onResized(getViewportSize(), isPortrait())
+	addOnResizedCallback(RowFrame, onResized)
 
 	if extraSpacing then
 		RowFrame.Position = UDim2.new(RowFrame.Position.X.Scale,RowFrame.Position.X.Offset,
@@ -2475,8 +2556,16 @@ function moduleApiTable:IsSmallTouchScreen()
 	return isSmallTouchScreen()
 end
 
+function moduleApiTable:IsPortrait()
+	return isPortrait()
+end
+
 function moduleApiTable:MakeStyledButton(name, text, size, clickFunc, pageRef, hubRef)
 	return MakeButton(name, text, size, clickFunc, pageRef, hubRef)
+end
+
+function moduleApiTable:AddButtonRow(pageToAddTo, name, text, size, clickFunc, hubRef)
+	return AddButtonRow(pageToAddTo, name, text, size, clickFunc, hubRef)
 end
 
 function moduleApiTable:CreateSignal()
@@ -2489,6 +2578,19 @@ end
 
 function moduleApiTable:TweenProperty(instance, prop, start, final, duration, easingFunc, cbFunc)
 	return PropertyTweener(instance, prop, start, final, duration, easingFunc, cbFunc)
+end
+
+function moduleApiTable:OnResized(key, callback)
+	return addOnResizedCallback(key, callback)
+end
+
+function moduleApiTable:FireOnResized()
+	local newSize = getViewportSize()
+	local portrait = moduleApiTable:IsPortrait()
+
+	for key, callback in pairs(onResizedCallbacks) do
+		callback(newSize, portrait)
+	end
 end
 
 return moduleApiTable

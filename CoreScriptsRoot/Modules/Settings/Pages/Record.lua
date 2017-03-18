@@ -8,6 +8,7 @@
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
+local TextService = game:GetService("TextService")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
@@ -37,37 +38,55 @@ local function Initialize()
 	this.TabHeader.Name = "RecordTab"
 
 	this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/RecordTab.png"
-	this.TabHeader.Icon.Size = UDim2.new(0,41,0,40)
-	this.TabHeader.Icon.Position = UDim2.new(0,5,0.5,-20)
+	this.TabHeader.Icon.AspectRatioConstraint.AspectRatio = 41 / 40
 
 	this.TabHeader.Icon.Title.Text = "Record"
-
-	this.TabHeader.Size = UDim2.new(0,130,1,0)
-
 
 	------ PAGE CUSTOMIZATION -------
 	this.Page.Name = "Record"
 
-	local function makeTextLabel(name, text, bold, size, pos, parent)
+	local function makeTextLabel(name, text, isTitle, parent, layoutOrder)
+		local leftPadding, rightPadding, bottomPadding, textSize, font = 10, 0, 10, 24, Enum.Font.SourceSans
+
+		if isTitle then
+			leftPadding, rightPadding, bottomPadding, textSize, font = 10, 0, 0, 36, Enum.Font.SourceSansBold
+		end
+
+		local container = utility:Create'Frame'
+		{
+			Name = name .. "Container",
+			BackgroundTransparency = 1,
+			ZIndex = 2,
+			LayoutOrder = layoutOrder,
+			Parent = parent
+		};
 		local textLabel = utility:Create'TextLabel'
 		{
 			Name = name,
 			BackgroundTransparency = 1,
 			Text = text,
 			TextWrapped = true,
-			Font = Enum.Font.SourceSans,
-			FontSize = Enum.FontSize.Size24,
+			Font = font,
+			TextSize = textSize,
 			TextColor3 = Color3.new(1,1,1),
-			Size = size,
-			Position = pos,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextYAlignment = Enum.TextYAlignment.Top,
+			Position = UDim2.new(0, leftPadding, 0, 0),
+			Size = UDim2.new(1, -(leftPadding + rightPadding), 1, 0),
 			ZIndex = 2,
-			Parent = parent
+			Parent = container
 		};
-		if bold then textLabel.Font = Enum.Font.SourceSansBold end
 
-		return textLabel
+		local function onResized(prop)
+			if prop == "AbsoluteSize" then
+				local textSize = TextService:GetTextSize(text, textLabel.TextSize, textLabel.Font, Vector2.new(parent.AbsoluteSize.X - leftPadding - rightPadding, 1e4))
+				container.Size = UDim2.new(1, 0, 0, textSize.Y + bottomPadding)
+			end
+		end
+		onResized("AbsoluteSize")
+		parent.Changed:connect(onResized)
+
+		return textLabel, container
 	end
 
 	-- need to override this function from SettingsPageFactory
@@ -87,35 +106,32 @@ local function Initialize()
 		---------------------------------- SCREENSHOT -------------------------------------
 		local screenshotTitle = makeTextLabel("ScreenshotTitle", 
 												"Screenshot",
-												true, UDim2.new(1,0,0,36), UDim2.new(0,10,0.05,0), this.Page)
-		screenshotTitle.FontSize = Enum.FontSize.Size36
+												true, this.Page, 1)
 
 		local screenshotBody = makeTextLabel("ScreenshotBody", 
 												"By clicking the 'Take Screenshot' button, the menu will close and take a screenshot and save it to your computer.",
-												false, UDim2.new(1,-10,0,70), UDim2.new(0,0,1,0), screenshotTitle)
+												false, this.Page, 2)
 
 		local closeSettingsFunc = function()
 			this.HubRef:SetVisibility(false, true)
 		end
-		this.ScreenshotButton = utility:MakeStyledButton("ScreenshotButton", "Take Screenshot", UDim2.new(0,300,0,44), closeSettingsFunc, this)
-		
-		this.ScreenshotButton.Position = UDim2.new(0,400,1,0)
-		this.ScreenshotButton.Parent = screenshotBody
+		this.ScreenshotButtonRow, this.ScreenshotButton = utility:AddButtonRow(this, "ScreenshotButton", "Take Screenshot", UDim2.new(0, 300, 0, 44), closeSettingsFunc)
+		this.ScreenshotButtonRow.LayoutOrder = 3
 
 
 		---------------------------------- VIDEO -------------------------------------
 		local videoTitle = makeTextLabel("VideoTitle", 
 												"Video",
-												true, UDim2.new(1,0,0,36), UDim2.new(0,10,0.5,0), this.Page)
-		videoTitle.FontSize = Enum.FontSize.Size36
+												true, this.Page, 4)
 
 		local videoBody = makeTextLabel("VideoBody", 
 												"By clicking the 'Record Video' button, the menu will close and start recording your screen.",
-												false, UDim2.new(1,-10,0,70), UDim2.new(0,0,1,0), videoTitle)
+												false, this.Page, 5)
 
 		this.VideoSettingsFrame, 
 		this.VideoSettingsLabel,
-		this.VideoSettingsMode = utility:AddNewRow(this, "Video Settings", "Selector", recordEnumNames, startSetting, 270)
+		this.VideoSettingsMode = utility:AddNewRow(this, "Video Settings", "Selector", recordEnumNames, startSetting)
+		this.VideoSettingsFrame.LayoutOrder = 5
 
 		this.VideoSettingsMode.IndexChanged:connect(function(newIndex)
 			if newIndex == 1 then
@@ -124,12 +140,9 @@ local function Initialize()
 				GameSettings.VideoUploadPromptBehavior = Enum.UploadSetting.Always
 			end
 		end)
-
-
-		local recordButton = utility:MakeStyledButton("RecordButton", "Record Video", UDim2.new(0,300,0,44), closeSettingsFunc, this)
 		
-		recordButton.Position = UDim2.new(0,410,1,10)
-		recordButton.Parent = this.VideoSettingsMode.SelectorFrame.Parent
+		local recordButtonRow, recordButton = utility:AddButtonRow(this, "RecordButton", "Record Video", UDim2.new(0, 300, 0, 44), closeSettingsFunc)
+		recordButtonRow.LayoutOrder = 6
 		recordButton.MouseButton1Click:connect(function()
 			recordingEvent:Fire(not isRecordingVideo)
 		end)
@@ -145,7 +158,6 @@ local function Initialize()
 				end
 			end)
 		end
-
 
 		recordButton:SetVerb("RecordToggle")
 		this.ScreenshotButton:SetVerb("Screenshot")

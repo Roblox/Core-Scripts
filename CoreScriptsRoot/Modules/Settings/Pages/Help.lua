@@ -436,7 +436,7 @@ do
 
   PageInstance.Displayed.Event:connect(function()
       if PageInstance:GetCurrentInputType() == TOUCH_TAG then
-        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() then
+        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() and not utility:IsPortrait() then
           PageInstance.HubRef.BottomButtonFrame.Visible = false
         end
       end
@@ -449,7 +449,7 @@ do
       PageInstance.HubRef:ShowShield()
 
       if PageInstance:GetCurrentInputType() == TOUCH_TAG then
-        if PageInstance.HubRef.BottomButtonFrame then
+        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() and not utility:IsPortrait() then
           PageInstance.HubRef.BottomButtonFrame.Visible = true
         end
       end
