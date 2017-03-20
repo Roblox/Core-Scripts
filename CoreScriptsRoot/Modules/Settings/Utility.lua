@@ -1327,7 +1327,6 @@ local function CreateSelector(selectionStringTable, startPosition)
 			selection.TextSize = textSize
 		end
 	end
-	onResized(getViewportSize(), isPortrait())
 	addOnResizedCallback(this.SelectorFrame, onResized)
 
 	connectToGuiService()
@@ -2444,7 +2443,6 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 			RowLabel.TextSize = isTenFootInterface() and 36 or 24
 		end
 	end
-	onResized(getViewportSize(), isPortrait())
 	addOnResizedCallback(RowFrame, onResized)
 
 	if extraSpacing then

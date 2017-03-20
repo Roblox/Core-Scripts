@@ -27,7 +27,7 @@ do
 		platform == Enum.Platform.Ouya or platform == Enum.Platform.SteamOS)
 end
 
-if true then--FORCE_TEN_FOOT_INTERFACE then
+if FORCE_TEN_FOOT_INTERFACE then
 	tenFootInterfaceEnabled = true
 end
 

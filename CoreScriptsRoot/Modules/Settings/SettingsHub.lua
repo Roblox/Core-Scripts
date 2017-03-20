@@ -633,10 +633,23 @@ local function CreateSettingsHub()
 		RobloxGui.Changed:connect(function(prop)
 			if prop == "AbsoluteSize" then
 				onScreenSizeChanged()
-				utility:FireOnResized()
 			end
 		end)
 		onScreenSizeChanged()
+
+		local function cameraViewportChanged(prop)
+			if prop == "ViewportSize" then
+				utility:FireOnResized()
+			end
+		end
+		local function onWorkspaceChanged(prop)
+			if prop == "CurrentCamera" then
+				cameraViewportChanged("ViewportSize")
+				workspace.CurrentCamera.Changed:connect(cameraViewportChanged)
+			end
+		end
+		onWorkspaceChanged("CurrentCamera")
+		workspace.Changed:connect(onWorkspaceChanged)
 	end
 
 	local function toggleQuickProfilerFromHotkey(actionName, inputState, inputObject)
