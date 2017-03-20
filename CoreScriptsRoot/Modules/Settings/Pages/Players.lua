@@ -167,17 +167,13 @@ local function Initialize()
 
 		Visible = false
 	}
-	local buttonsLayout = utility:Create("UIListLayout") {
-		FillDirection = Enum.FillDirection.Horizontal,
-		Padding = UDim.new(0, 10),
-		HorizontalAlignment = Enum.HorizontalAlignment.Center,
-		Parent = buttonsContainer
-	}
 
 	local resetFunc = function()
 		this.HubRef:SwitchToPage(this.HubRef.ResetCharacterPage, false, 1)
 	end
 	local resetButton, resetLabel = utility:MakeStyledButton("ResetButton", "Reset Character", UDim2.new(0.5, -5, 1, 0), resetFunc)
+	resetButton.AnchorPoint = Vector2.new(1, 0)
+	resetButton.Position = UDim2.new(1, 0, 0, 0)
 	resetLabel.Size = UDim2.new(1, 0, 1, -6)
 	resetLabel.FontSize = Enum.FontSize.Size24
 	resetButton.Parent = buttonsContainer
@@ -186,6 +182,8 @@ local function Initialize()
 		this.HubRef:SwitchToPage(this.HubRef.LeaveGamePage, false, 1)
 	end
 	local leaveButton, leaveLabel = utility:MakeStyledButton("LeaveButton", "Leave Game", UDim2.new(0.5, -5, 1, 0), leaveGameFunc)
+	leaveButton.AnchorPoint = Vector2.new(0, 0)
+	leaveButton.Position = UDim2.new(0, 0, 0, 0)
 	leaveLabel.Size = UDim2.new(1, 0, 1, -6)
 	leaveLabel.FontSize = Enum.FontSize.Size24
 	leaveButton.Parent = buttonsContainer
@@ -194,7 +192,6 @@ local function Initialize()
 		if isPortrait or utility:IsSmallTouchScreen() then
 			buttonsContainer.Visible = true
 			buttonsContainer.Size = UDim2.new(1, 0, 0, isPortrait and 50 or 62)
-			buttonsLayout:ApplyLayout() 
 			resetLabel.TextSize = isPortrait and 18 or 24
 			leaveLabel.TextSize = isPortrait and 18 or 24
 		else

@@ -525,14 +525,21 @@ local function CreateSettingsHub()
 				this.HubBar.Position = UDim2.new(0.5, 0, 0, 10)
 				this.HubBar.Size = UDim2.new(1, -20, 0, 40)
 			else
-				this.MenuAspectRatio.Parent = this.MenuContainer
-				this.HubBar.Size = isTenFootInterface and UDim2.new(0, 1200, 0, 100) or UDim2.new(0, 800, 0, 60)
+				if isTenFootInterface then
+					this.HubBar.Size = UDim2.new(0, 1200, 0, 100)
+					this.MenuAspectRatio.Parent = this.MenuContainer
+				elseif isSmallTouchScreen then
+					this.HubBar.Size = UDim2.new(1, -10, 0, 40)
+					this.MenuAspectRatio.Parent = nil
+				else
+					this.HubBar.Size = UDim2.new(0, 800, 0, 60)
+					this.MenuAspectRatio.Parent = this.MenuContainer
+				end
 			end
 
 			if shouldShowBottomBar() then
 				setBottomBarBindings()
 			else
-				print("removing bottom bar!!")
 				removeBottomBarBindings()
 			end
 
