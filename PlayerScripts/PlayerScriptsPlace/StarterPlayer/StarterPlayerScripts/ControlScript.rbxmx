@@ -58,6 +58,10 @@ local IsModalEnabled = UserInputService.ModalEnabled
 local BindableEvent_OnFailStateChanged = nil
 local isJumpEnabled = false
 
+local DynamicThumbstickAvailable = pcall(function() 
+	return Enum.DevTouchMovementMode.DynamicThumbstick and Enum.TouchMovementMode.DynamicThumbstick
+end)
+
 local ControlState = {}
 ControlState.Current = nil
 function ControlState:SwitchTo(newControl)
@@ -86,6 +90,7 @@ local MasterControl = require(script:WaitForChild('MasterControl'))
 --MasterControl needs access to ControlState in order to be able to fully enable and disable control
 MasterControl.ControlState = ControlState
 
+local DynamicThumbstickModule = require(script.MasterControl:WaitForChild('DynamicThumbstick'))
 local ThumbstickModule = require(script.MasterControl:WaitForChild('Thumbstick'))
 local ThumbpadModule = require(script.MasterControl:WaitForChild('Thumbpad'))
 local DPadModule = require(script.MasterControl:WaitForChild('DPad'))
@@ -99,7 +104,10 @@ ControlModules.Gamepad = require(script.MasterControl:WaitForChild('Gamepad'))
 function getTouchModule()
 	local module = nil
 	if not IsUserChoice then
-		if DevMovementMode == Enum.DevTouchMovementMode.Thumbstick then
+		if DynamicThumbstickAvailable and DevMovementMode == Enum.DevTouchMovementMode.DynamicThumbstick then
+			module = DynamicThumbstickModule
+			isJumpEnabled = false
+		elseif DevMovementMode == Enum.DevTouchMovementMode.Thumbstick then
 			module = ThumbstickModule
 			isJumpEnabled = true
 		elseif DevMovementMode == Enum.DevTouchMovementMode.Thumbpad then
@@ -115,7 +123,10 @@ function getTouchModule()
 			module = nil
 		end
 	else
-		if UserMovementMode == Enum.TouchMovementMode.Default or UserMovementMode == Enum.TouchMovementMode.Thumbstick then
+		if DynamicThumbstickAvailable and UserMovementMode == Enum.TouchMovementMode.DynamicThumbstick then
+			module = DynamicThumbstickModule
+			isJumpEnabled = false
+		elseif UserMovementMode == Enum.TouchMovementMode.Default or UserMovementMode == Enum.TouchMovementMode.Thumbstick then
 			module = ThumbstickModule
 			isJumpEnabled = true
 		elseif UserMovementMode == Enum.TouchMovementMode.Thumbpad then
@@ -216,7 +227,8 @@ function ControlModules.Touch:Disable()
 	
 	if newModuleToDisable == ThumbstickModule or
 		newModuleToDisable == DPadModule or
-		newModuleToDisable == ThumbpadModule then
+		newModuleToDisable == ThumbpadModule or
+		newModuleToDisable == DynamicThumbstickModule then
 			newModuleToDisable:Disable()
 			setJumpModule(false)
 			TouchJumpModule:Disable()
@@ -320,6 +332,7 @@ local function createTouchGuiContainer()
 	DPadModule:Create(TouchControlFrame)
 	ThumbpadModule:Create(TouchControlFrame)
 	TouchJumpModule:Create(TouchControlFrame)
+	DynamicThumbstickModule:Create(TouchControlFrame)
 end
 
 --[[ Settings Changed Connections ]]--
