@@ -27,14 +27,6 @@ local RunService = game:GetService("RunService")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
--- Enable the old SettingsHub.lua if the EnablePortraitMode flag is off
-local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
-local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
-
-if not enablePortraitMode then
-	return require(RobloxGui.Modules.SettingsHubOld)
-end
-
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
@@ -93,22 +85,7 @@ local function CreateSettingsHub()
 	PoppedMenuEvent.Name = "PoppedMenu"
 	this.PoppedMenu = PoppedMenuEvent.Event
 
-	local function shouldShowBottomBar(whichPage)
-		whichPage = whichPage or this.Pages.CurrentPage
-		if whichPage == this.LeaveGamePage or whichPage == this.ResetCharacterPage then
-			return false
-		end
-
-		local isPortrait = utility:IsPortrait()
-
-		if isPortrait or isSmallTouchScreen then
-			return false
-		end
-		return true
-	end
-
 	local function setBottomBarBindings()
-		print(debug.traceback())
 		for i = 1, #this.BottomBarButtons do
 			local buttonTable = this.BottomBarButtons[i]
 			local buttonName = buttonTable[1]
@@ -323,23 +300,6 @@ local function CreateSettingsHub()
 			Selectable = false
 		}
 
-		this.MenuContainer = utility:Create'Frame'
-		{
-			Name = 'MenuContainer',
-			ZIndex = this.Shield.ZIndex,
-			BackgroundTransparency = 1,
-			Position = UDim2.new(0.5, 0, 0.5, 0),
-			Size = UDim2.new(0.95, 0, 0.95, 0),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Parent = this.Shield
-		}
-		this.MenuAspectRatio = utility:Create'UIAspectRatioConstraint'
-		{
-			Name = 'MenuAspectRatio',
-			AspectRatio = 800 / 600,
-			Parent = this.MenuContainer
-		}
-
 		this.HubBar = utility:Create'ImageLabel'
 		{
 			Name = "HubBar",
@@ -350,26 +310,21 @@ local function CreateSettingsHub()
 			Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuBackground.png",
 			ScaleType = Enum.ScaleType.Slice,
 			SliceCenter = Rect.new(4,4,6,6),
-			AnchorPoint = Vector2.new(0.5, 0),
-			Parent = this.MenuContainer
-		}
-		this.HubBarListLayout = utility:Create'UIListLayout'
-		{
-			FillDirection = Enum.FillDirection.Horizontal,
-			HorizontalAlignment = Enum.HorizontalAlignment.Center,
-			SortOrder = Enum.SortOrder.LayoutOrder,
-			Parent = this.HubBar
-		}
+			Parent = this.Shield
+		};
 
+		local barHeight = 60
 		if isSmallTouchScreen then
+			barHeight = 40
 			this.HubBar.Size = UDim2.new(1,-10,0,40)
-			this.HubBar.Position = UDim2.new(0.5,0,0,6)
+			this.HubBar.Position = UDim2.new(0,5,0,6)
 		elseif isTenFootInterface then
+			barHeight = 100
 			this.HubBar.Size = UDim2.new(0,1200,0,100)
-			this.HubBar.Position = UDim2.new(0.5,0,0.1,0)
+			this.HubBar.Position = UDim2.new(0.5,-600,0.1,0)
 		else
 			this.HubBar.Size = UDim2.new(0,800,0,60)
-			this.HubBar.Position = UDim2.new(0.5,0,0.1,0)
+			this.HubBar.Position = UDim2.new(0.5,-400,0.1,0)
 		end
 
 		this.PageViewClipper = utility:Create'Frame'
@@ -380,9 +335,8 @@ local function CreateSettingsHub()
 				1, -this.HubBar.Size.Y.Offset - this.HubBar.Position.Y.Offset - PageViewSizeReducer),
 			Position = UDim2.new(this.HubBar.Position.X.Scale, this.HubBar.Position.X.Offset,
 				this.HubBar.Position.Y.Scale, this.HubBar.Position.Y.Offset + this.HubBar.Size.Y.Offset + 1),
-			AnchorPoint = Vector2.new(0.5, 0),
 			ClipsDescendants = true,
-			Parent = this.MenuContainer,
+			Parent = this.Shield,
 
 			utility:Create'ImageButton'{
 				Name = 'InputCapture',
@@ -395,9 +349,7 @@ local function CreateSettingsHub()
 		this.PageView = utility:Create'ScrollingFrame'
 		{
 			Name = "PageView",
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5, 0, 0.5, 0),
-			Size = UDim2.new(1, 0, 1, -20),
+			Size = UDim2.new(1, 0, 1, 0),
 			ZIndex = this.Shield.ZIndex,
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
@@ -409,246 +361,207 @@ local function CreateSettingsHub()
 				0.5, -(this.HubBar.Position.Y.Offset - this.HubBar.Size.Y.Offset))
 		end
 
-		local bottomOffset = 0
-		if isTouchDevice and not UserInputService.MouseEnabled then
-			bottomOffset = 80
-		end
-		this.BottomButtonFrame = utility:Create'Frame'
-		{
-			Name = "BottomButtonFrame",
-			Size = this.HubBar.Size,
-			Position = UDim2.new(0.5, -this.HubBar.Size.X.Offset/2, 1-this.HubBar.Position.Y.Scale-this.HubBar.Size.Y.Scale, -this.HubBar.Position.Y.Offset-this.HubBar.Size.Y.Offset),
-			ZIndex = this.Shield.ZIndex + 1,
-			BackgroundTransparency = 1,
-			Parent = this.MenuContainer
-		};
-
-		local leaveGameFunc = function()
-			this:AddToMenuStack(this.Pages.CurrentPage)
-			this.HubBar.Visible = false
-			removeBottomBarBindings()
-			this:SwitchToPage(this.LeaveGamePage, nil, 1, true)
-		end
-
-		-- Xbox Only
-		local inviteToGameFunc = function()
-			if not RunService:IsStudio() then
-				local platformService = game:GetService('PlatformService')
-				if platformService then
-					platformService:PopupGameInviteUI()
-				end
-			end
-		end
-
-		local resumeFunc = function()
-			setVisibilityInternal(false)
-		end
-
-		local buttonImageAppend = ""
-
-		if isTenFootInterface then
-			buttonImageAppend = "@2x"
-		end
-
-		if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
-			local function createInviteButton()
-				addBottomBarButton("InviteToGame", "Send Game Invites", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
-					"", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
-					inviteToGameFunc, {Enum.KeyCode.ButtonX}
-				)
-				if RunService:IsStudio() then
-					this.InviteToGameButton.Selectable = value
-					this.InviteToGameButton.Active = value
-					this.InviteToGameButton.Enabled.Value = value
-					local inviteHint = this.InviteToGameButton:FindFirstChild("InviteToGameHint")
-					if inviteHint then
-						inviteHint.ImageColor3 = Color3.fromRGB(100, 100, 100)
-					end
-					local inviteButtonText = this.InviteToGameText
-					if inviteButtonText then
-						inviteButtonText.TextColor3 = Color3.fromRGB(100, 100, 100)
-					end
-				end
-			end
-
-			if IsPlayMyPlaceEnabled() then
-				spawn(function()
-						local PlatformService = nil
-						pcall(function() PlatformService = game:GetService('PlatformService') end)
-						local pmpCreatorId = PlatformService and PlatformService:BeginGetPMPCreatorId()
-						if pmpCreatorId == 0 then
-							createInviteButton()
-						end
-					end)
-			else
-				createInviteButton()
-			end
+		if isSmallTouchScreen then
+			this.PageView.CanvasSize = this.PageViewClipper.Size
 		else
-			addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
-				"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
-				leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX}
-			)
-		end
+			local bottomOffset = 0
+			if isTouchDevice and not UserInputService.MouseEnabled then
+				bottomOffset = 80
+			end
+			this.BottomButtonFrame = utility:Create'Frame'
+			{
+				Name = "BottomButtonFrame",
+				Size = this.HubBar.Size,
+				Position = UDim2.new(0.5, -this.HubBar.Size.X.Offset/2, 1-this.HubBar.Position.Y.Scale-this.HubBar.Size.Y.Scale, -this.HubBar.Position.Y.Offset-this.HubBar.Size.Y.Offset),
+				ZIndex = this.Shield.ZIndex + 1,
+				BackgroundTransparency = 1,
+				Parent = this.Shield
+			};
 
-		local resetCharFunc = function()
-			if resetEnabled then
+			local leaveGameFunc = function()
 				this:AddToMenuStack(this.Pages.CurrentPage)
 				this.HubBar.Visible = false
 				removeBottomBarBindings()
-				this:SwitchToPage(this.ResetCharacterPage, nil, 1, true)
+				this:SwitchToPage(this.LeaveGamePage, nil, 1, true)
 			end
-		end
 
-		addBottomBarButton("ResetCharacter", "		Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png",
-			"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25),
-			resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY}
-		)
-		addBottomBarButton("Resume", "Resume Game", "rbxasset://textures/ui/Settings/Help/BButtonLight" .. buttonImageAppend .. ".png",
-			"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25),
-			resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart}
-		)
+			-- Xbox Only
+			local inviteToGameFunc = function()
+				if not RunService:IsStudio() then
+					local platformService = game:GetService('PlatformService')
+					if platformService then
+						platformService:PopupGameInviteUI()
+					end
+				end
+			end
+
+			local resumeFunc = function()
+				setVisibilityInternal(false)
+			end
+
+			local buttonImageAppend = ""
+
+			if isTenFootInterface then
+				buttonImageAppend = "@2x"
+			end
+
+			if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
+				local function createInviteButton()
+					addBottomBarButton("InviteToGame", "Send Game Invites", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
+						"", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
+						inviteToGameFunc, {Enum.KeyCode.ButtonX}
+					)
+					if RunService:IsStudio() then
+						this.InviteToGameButton.Selectable = value
+						this.InviteToGameButton.Active = value
+						this.InviteToGameButton.Enabled.Value = value
+						local inviteHint = this.InviteToGameButton:FindFirstChild("InviteToGameHint")
+						if inviteHint then
+							inviteHint.ImageColor3 = Color3.fromRGB(100, 100, 100)
+						end
+						local inviteButtonText = this.InviteToGameText
+						if inviteButtonText then
+							inviteButtonText.TextColor3 = Color3.fromRGB(100, 100, 100)
+						end
+					end
+				end
+
+				if IsPlayMyPlaceEnabled() then
+					spawn(function()
+							local PlatformService = nil
+							pcall(function() PlatformService = game:GetService('PlatformService') end)
+							local pmpCreatorId = PlatformService and PlatformService:BeginGetPMPCreatorId()
+							if pmpCreatorId == 0 then
+								createInviteButton()
+							end
+						end)
+				else
+					createInviteButton()
+				end
+			else
+				addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
+					"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
+					leaveGameFunc, {Enum.KeyCode.L, Enum.KeyCode.ButtonX}
+				)
+			end
+
+			local resetCharFunc = function()
+				if resetEnabled then
+					this:AddToMenuStack(this.Pages.CurrentPage)
+					this.HubBar.Visible = false
+					removeBottomBarBindings()
+					this:SwitchToPage(this.ResetCharacterPage, nil, 1, true)
+				end
+			end
+
+			addBottomBarButton("ResetCharacter", "		Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png",
+				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25),
+				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY}
+			)
+			addBottomBarButton("Resume", "Resume Game", "rbxasset://textures/ui/Settings/Help/BButtonLight" .. buttonImageAppend .. ".png",
+				"rbxasset://textures/ui/Settings/Help/EscapeIcon.png", UDim2.new(0.5,isTenFootInterface and 200 or 140,0.5,-25),
+				resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart}
+			)
+		end
 
 		local function onScreenSizeChanged()
 			local largestPageSize = 600
 			local fullScreenSize = RobloxGui.AbsoluteSize.y
 			local bufferSize = (1-0.95) * fullScreenSize
-			local isPortrait = utility:IsPortrait()
 			if isTenFootInterface then
 				largestPageSize = 800
 				bufferSize = 0.07 * fullScreenSize
-				this.MenuContainer.Size = UDim2.new(0.95, 0, 0.95, 0)
 			elseif isSmallTouchScreen then
-				bufferSize = math.min(10, (1-0.99) * fullScreenSize)
-				this.MenuContainer.Size = UDim2.new(1, 0, 0.99, 0)
-			else
-				this.MenuContainer.Size = UDim2.new(0.95, 0, 0.95, 0)
+				bufferSize = (1-0.99) * fullScreenSize
 			end
 			local barSize = this.HubBar.Size.Y.Offset
 			local extraSpace = bufferSize*2+barSize*2
-			local isPortrait = utility:IsPortrait() 
 
-			if isPortrait then
-				this.MenuContainer.Size = UDim2.new(1, 0, 1, 0)
-				this.MenuAspectRatio.Parent = nil
-				this.HubBar.Position = UDim2.new(0.5, 0, 0, 10)
-				this.HubBar.Size = UDim2.new(1, -20, 0, 40)
-			else
-				if isTenFootInterface then
-					this.HubBar.Size = UDim2.new(0, 1200, 0, 100)
-					this.MenuAspectRatio.Parent = this.MenuContainer
-				elseif isSmallTouchScreen then
-					this.HubBar.Size = UDim2.new(1, -10, 0, 40)
-					this.MenuAspectRatio.Parent = nil
-				else
-					this.HubBar.Size = UDim2.new(0, 800, 0, 60)
-					this.MenuAspectRatio.Parent = this.MenuContainer
-				end
-			end
-
-			--We need to wait and let the HubBar AbsoluteSize actually update.
-			--This is in the same frame, so the delay should be very minimal.
-			--Maybe in the future we need to have a way to force AbsoluteSize
-			--to update, or we can just avoid using it so soon.
-			RunService.Heartbeat:wait()
-
-			if shouldShowBottomBar() then
-				setBottomBarBindings()
-			else
-				removeBottomBarBindings()
-			end
 
 			local usableScreenHeight = fullScreenSize - extraSpace
 			local minimumPageSize = 150
 			local usePageSize = nil
 
-			if not isPortrait then
-				if largestPageSize < usableScreenHeight then
-					usePageSize = largestPageSize
-					this.HubBar.Position = UDim2.new(
-						this.HubBar.Position.X.Scale,
-						this.HubBar.Position.X.Offset,
+			if largestPageSize < usableScreenHeight then
+				usePageSize = largestPageSize
+				this.HubBar.Position = UDim2.new(
+					this.HubBar.Position.X.Scale,
+					this.HubBar.Position.X.Offset,
+					0.5,
+					-largestPageSize/2 - this.HubBar.Size.Y.Offset
+				)
+				if this.BottomButtonFrame then
+					this.BottomButtonFrame.Position = UDim2.new(
+						this.BottomButtonFrame.Position.X.Scale,
+						this.BottomButtonFrame.Position.X.Offset,
 						0.5,
-						-largestPageSize/2 - this.HubBar.Size.Y.Offset
+						largestPageSize/2
 					)
-					if this.BottomButtonFrame then
-						this.BottomButtonFrame.Position = UDim2.new(
-							this.BottomButtonFrame.Position.X.Scale,
-							this.BottomButtonFrame.Position.X.Offset,
-							0.5,
-							largestPageSize/2
-						)
-					end
-				elseif usableScreenHeight < minimumPageSize then
-					usePageSize = minimumPageSize
-					this.HubBar.Position = UDim2.new(
-						this.HubBar.Position.X.Scale,
-						this.HubBar.Position.X.Offset,
+				end
+			elseif usableScreenHeight < minimumPageSize then
+				usePageSize = minimumPageSize
+				this.HubBar.Position = UDim2.new(
+					this.HubBar.Position.X.Scale,
+					this.HubBar.Position.X.Offset,
+					0.5,
+					-minimumPageSize/2 - this.HubBar.Size.Y.Offset
+				)
+				if this.BottomButtonFrame then
+					this.BottomButtonFrame.Position = UDim2.new(
+						this.BottomButtonFrame.Position.X.Scale,
+						this.BottomButtonFrame.Position.X.Offset,
 						0.5,
-						-minimumPageSize/2 - this.HubBar.Size.Y.Offset
+						minimumPageSize/2
 					)
-					if this.BottomButtonFrame then
-						this.BottomButtonFrame.Position = UDim2.new(
-							this.BottomButtonFrame.Position.X.Scale,
-							this.BottomButtonFrame.Position.X.Offset,
-							0.5,
-							minimumPageSize/2
-						)
-					end
-				else
-					usePageSize = usableScreenHeight
-					this.HubBar.Position = UDim2.new(
-						this.HubBar.Position.X.Scale,
-						this.HubBar.Position.X.Offset,
-						0,
-						bufferSize
-					)
-					if this.BottomButtonFrame then
-						this.BottomButtonFrame.Position = UDim2.new(
-							this.BottomButtonFrame.Position.X.Scale,
-							this.BottomButtonFrame.Position.X.Offset,
-							1,
-							-(bufferSize + barSize)
-						)
-					end
 				end
 			else
 				usePageSize = usableScreenHeight
+				this.HubBar.Position = UDim2.new(
+					this.HubBar.Position.X.Scale,
+					this.HubBar.Position.X.Offset,
+					0,
+					bufferSize
+				)
+				if this.BottomButtonFrame then
+					this.BottomButtonFrame.Position = UDim2.new(
+						this.BottomButtonFrame.Position.X.Scale,
+						this.BottomButtonFrame.Position.X.Offset,
+						1,
+						-(bufferSize + barSize)
+					)
+				end
 			end
 
 			if useUserList and not isTenFootInterface then
 				if isSmallTouchScreen then
 					this.PageViewClipper.Size = UDim2.new(
-						0,
-						this.HubBar.AbsoluteSize.X,
+						this.PageViewClipper.Size.X.Scale,
+						this.PageViewClipper.Size.X.Offset,
 						0,
 						usePageSize + 44
 					)
 				else
 					this.PageViewClipper.Size = UDim2.new(
-						0,
-						this.HubBar.AbsoluteSize.X,
+						this.PageViewClipper.Size.X.Scale,
+						this.PageViewClipper.Size.X.Offset,
 						0,
 						usePageSize
 					)
 				end
 			else
 				this.PageViewClipper.Size = UDim2.new(
-					0,
-						this.HubBar.AbsoluteSize.X,
+					this.PageViewClipper.Size.X.Scale,
+					this.PageViewClipper.Size.X.Offset,
 					0,
 					usePageSize
 				)
 			end
-			if not isPortrait then
-				this.PageViewClipper.Position = UDim2.new(
-					this.PageViewClipper.Position.X.Scale,
-					this.PageViewClipper.Position.X.Offset,
-					0.5,
-					-usePageSize/2
-				)
-			else
-				this.PageViewClipper.Position = UDim2.new(0.5, 0, 0, this.HubBar.Position.Y.Offset + this.HubBar.AbsoluteSize.Y)
-			end
+			this.PageViewClipper.Position = UDim2.new(
+				this.PageViewClipper.Position.X.Scale,
+				this.PageViewClipper.Position.X.Offset,
+				0.5,
+				-usePageSize/2
+			)
 		end
 		-- TODO: disconnect this event?
 		RobloxGui.Changed:connect(function(prop)
@@ -657,20 +570,6 @@ local function CreateSettingsHub()
 			end
 		end)
 		onScreenSizeChanged()
-
-		local function cameraViewportChanged(prop)
-			if prop == "ViewportSize" then
-				utility:FireOnResized()
-			end
-		end
-		local function onWorkspaceChanged(prop)
-			if prop == "CurrentCamera" then
-				cameraViewportChanged("ViewportSize")
-				workspace.CurrentCamera.Changed:connect(cameraViewportChanged)
-			end
-		end
-		onWorkspaceChanged("CurrentCamera")
-		workspace.Changed:connect(onWorkspaceChanged)
 	end
 
 	local function toggleQuickProfilerFromHotkey(actionName, inputState, inputObject)
@@ -827,13 +726,17 @@ local function CreateSettingsHub()
 	local function AddHeader(newHeader, headerPage)
 		if not newHeader then return end
 
-		table.insert(this.TabHeaders, newHeader)
+		this.TabHeaders[#this.TabHeaders + 1] = newHeader
 		headerPage.TabPosition = #this.TabHeaders
 
 		local sizeOfTab = 1/#this.TabHeaders
 		for i = 1, #this.TabHeaders do
+			local tabMaxPos = (sizeOfTab * i)
+			local tabMinPos = (sizeOfTab * (i - 1))
+			local pos = ((tabMaxPos - tabMinPos)/2) + tabMinPos
+
 			local tab = this.TabHeaders[i]
-			tab.Size = UDim2.new(sizeOfTab, 0, 1, 0)
+			tab.Position = UDim2.new(pos,-tab.Size.X.Offset/2,0,0)
 		end
 
 		setZIndex(SETTINGS_BASE_ZINDEX + 1, newHeader)
@@ -885,7 +788,7 @@ local function CreateSettingsHub()
 	function this:ShowBar()
 		this.HubBar.Visible = true
 		this.PageViewClipper.Visible = true
-		if this.BottomButtonFrame and shouldShowBottomBar() then
+		if this.BottomButtonFrame then
 			setBottomBarBindings()
 		end
 	end
@@ -939,8 +842,8 @@ local function CreateSettingsHub()
 		end
 
 		if this.BottomButtonFrame then
-			this.BottomButtonFrame.Visible = shouldShowBottomBar(pageToSwitchTo) --this causes an issue, figure out why
-			this.HubBar.Visible = not (pageToSwitchTo == this.LeaveGamePage or pageToSwitchTo == this.ResetCharacterPage)
+			this.BottomButtonFrame.Visible = (pageToSwitchTo ~= this.ResetCharacterPage and pageToSwitchTo ~= this.LeaveGamePage)
+			this.HubBar.Visible = this.BottomButtonFrame.Visible
 		end
 
 		-- make sure page is visible
@@ -1028,9 +931,7 @@ local function CreateSettingsHub()
 
 			ContextActionService:BindCoreAction("RbxSettingsHubSwitchTab", switchTabFromBumpers, false, Enum.KeyCode.ButtonR1, Enum.KeyCode.ButtonL1)
 			ContextActionService:BindCoreAction("RbxSettingsScrollHotkey", scrollHotkeyFunc, false, Enum.KeyCode.PageUp, Enum.KeyCode.PageDown)
-			if shouldShowBottomBar() then
-				setBottomBarBindings()
-			end
+			setBottomBarBindings()
 
 			this.TabConnection = UserInputService.InputBegan:connect(switchTabFromKeyboard)
 
@@ -1131,7 +1032,7 @@ local function CreateSettingsHub()
 				PoppedMenuEvent:Fire(lastStackItem)
 			end
 
-			if shouldShowBottomBar(lastStackItem) then
+			if lastStackItem == this.LeaveGamePage or lastStackItem == this.ResetCharacterPage then
 				setBottomBarBindings()
 			end
 
@@ -1139,7 +1040,6 @@ local function CreateSettingsHub()
 			this:SwitchToPage(this.MenuStack[#this.MenuStack], true, 1, skipAnimation)
 			if #this.MenuStack == 0 then
 				this:SetVisibility(false)
-
 				this.Pages.CurrentPage:Hide(0, 0)
 			end
 		else
