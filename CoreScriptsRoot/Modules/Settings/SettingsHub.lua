@@ -537,6 +537,12 @@ local function CreateSettingsHub()
 				end
 			end
 
+			--We need to wait and let the HubBar AbsoluteSize actually update.
+			--This is in the same frame, so the delay should be very minimal.
+			--Maybe in the future we need to have a way to force AbsoluteSize
+			--to update, or we can just avoid using it so soon.
+			RunService.Heartbeat:wait()
+
 			if shouldShowBottomBar() then
 				setBottomBarBindings()
 			else
