@@ -21,9 +21,6 @@ local PromptCreator = require(CoreGuiModules:WaitForChild("PromptCreator"))
 local PlayerDropDownModule = require(CoreGuiModules:WaitForChild("PlayerDropDown"))
 local BlockingUtility = PlayerDropDownModule:CreateBlockingUtility()
 
-local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptPromptBlockEnabled") end)
-local AllowPromptBlockPlayer = readFlagSuccess and flagEnabled
-
 local THUMBNAIL_URL = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&format=png&userId="
 local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=420&height=420&format=png&userId="
 
@@ -137,15 +134,6 @@ function GetBlockedUserIds()
 	return BlockingUtility:GetBlockedUserIdsAsync()
 end
 
-if AllowPromptBlockPlayer then
-	StarterGui:RegisterSetCore("PromptBlockPlayer", PromptBlockPlayer)
-	StarterGui:RegisterSetCore("PromptUnblockPlayer", PromptUnblockPlayer)
-	StarterGui:RegisterGetCore("GetBlockedUserIds", GetBlockedUserIds)
-else
-	StarterGui:RegisterSetCore("PromptBlockPlayer", function()
-		error("PromptBlockPlayer is not yet enabled!")
-	end)
-	StarterGui:RegisterSetCore("PromptUnblockPlayer", function()
-		error("PromptUnblockPlayer is not yet enabled!")
-	end)
-end
+StarterGui:RegisterSetCore("PromptBlockPlayer", PromptBlockPlayer)
+StarterGui:RegisterSetCore("PromptUnblockPlayer", PromptUnblockPlayer)
+StarterGui:RegisterGetCore("GetBlockedUserIds", GetBlockedUserIds)
