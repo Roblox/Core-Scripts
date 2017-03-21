@@ -1428,13 +1428,11 @@ local function CreateCamera()
 	
 	local function OnDynamicThumbstickEnabled()
 		if UserInputService.TouchEnabled then
-			print("DynamicThumbstick enabled")
 			isDynamicThumbstickEnabled = true
 		end
 	end
 	
 	local function OnDynamicThumbstickDisabled()
-		print("DynamicThumbstick disabled")
 		isDynamicThumbstickEnabled = false
 	end
 	
