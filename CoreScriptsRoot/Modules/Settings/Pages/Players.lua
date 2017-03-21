@@ -168,32 +168,41 @@ local function Initialize()
 		Visible = false
 	}
 
-	local resetFunc = function()
-		this.HubRef:SwitchToPage(this.HubRef.ResetCharacterPage, false, 1)
-	end
-	local resetButton, resetLabel = utility:MakeStyledButton("ResetButton", "Reset Character", UDim2.new(0.5, -5, 1, 0), resetFunc)
-	resetButton.AnchorPoint = Vector2.new(1, 0)
-	resetButton.Position = UDim2.new(1, 0, 0, 0)
-	resetLabel.Size = UDim2.new(1, 0, 1, -6)
-	resetLabel.FontSize = Enum.FontSize.Size24
-	resetButton.Parent = buttonsContainer
-
 	local leaveGameFunc = function()
 		this.HubRef:SwitchToPage(this.HubRef.LeaveGamePage, false, 1)
 	end
-	local leaveButton, leaveLabel = utility:MakeStyledButton("LeaveButton", "Leave Game", UDim2.new(0.5, -5, 1, 0), leaveGameFunc)
+	local leaveButton, leaveLabel = utility:MakeStyledButton("LeaveButton", "Leave Game", UDim2.new(1 / 3, -5, 1, 0), leaveGameFunc)
 	leaveButton.AnchorPoint = Vector2.new(0, 0)
 	leaveButton.Position = UDim2.new(0, 0, 0, 0)
 	leaveLabel.Size = UDim2.new(1, 0, 1, -6)
-	leaveLabel.FontSize = Enum.FontSize.Size24
 	leaveButton.Parent = buttonsContainer
+
+	local resetFunc = function()
+		this.HubRef:SwitchToPage(this.HubRef.ResetCharacterPage, false, 1)
+	end
+	local resetButton, resetLabel = utility:MakeStyledButton("ResetButton", "Reset Character", UDim2.new(1 / 3, -5, 1, 0), resetFunc)
+	resetButton.AnchorPoint = Vector2.new(0.5, 0)
+	resetButton.Position = UDim2.new(0.5, 0, 0, 0)
+	resetLabel.Size = UDim2.new(1, 0, 1, -6)
+	resetButton.Parent = buttonsContainer
+	
+	local resumeGameFunc = function()
+		this.HubRef:SetVisibility(false)
+	end
+	local resumeButton, resumeLabel = utility:MakeStyledButton("ResumeButton", "Resume Game", UDim2.new(1 / 3, -5, 1, 0), resumeGameFunc)
+	resumeButton.AnchorPoint = Vector2.new(1, 0)
+	resumeButton.Position = UDim2.new(1, 0, 0, 0)
+	resumeLabel.Size = UDim2.new(1, 0, 1, -6)
+	resumeButton.Parent = buttonsContainer
 
 	utility:OnResized(buttonsContainer, function(newSize, isPortrait)
 		if isPortrait or utility:IsSmallTouchScreen() then
+			local buttonsFontSize = isPortrait and 18 or 24
 			buttonsContainer.Visible = true
 			buttonsContainer.Size = UDim2.new(1, 0, 0, isPortrait and 50 or 62)
-			resetLabel.TextSize = isPortrait and 18 or 24
-			leaveLabel.TextSize = isPortrait and 18 or 24
+			resetLabel.TextSize = buttonsFontSize
+			leaveLabel.TextSize = buttonsFontSize
+			resumeLabel.TextSize = buttonsFontSize
 		else
 			buttonsContainer.Visible = false
 			buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
