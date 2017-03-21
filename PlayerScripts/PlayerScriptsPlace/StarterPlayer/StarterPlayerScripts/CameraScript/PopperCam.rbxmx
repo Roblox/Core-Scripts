@@ -41,6 +41,8 @@ local PlayersService = game:GetService('Players')
 local Camera = nil
 local CameraChangeConn = nil
 
+local SubjectPart = nil
+
 local PlayerCharacters = {} -- For ignoring in raycasts
 local VehicleParts = {} -- Also just for ignoring
 
@@ -99,6 +101,14 @@ local function OnCameraChanged(property)
 			if newSubject:IsA('VehicleSeat') then
 				VehicleParts = newSubject:GetConnectedParts(true)
 			end
+			
+			if newSubject:IsA("BasePart") then
+				SubjectPart = newSubject
+			elseif newSubject:IsA("Model") then
+				SubjectPart = newSubject.PrimaryPart
+			elseif newSubject:IsA("Humanoid") then
+				SubjectPart = newSubject.Torso
+			end
 		end
 	end
 end
@@ -146,7 +156,12 @@ end
 function PopperCam:Update()
 	if PopperEnabled then
 		-- First, prep some intermediate vars
-		local focusPoint = Camera.Focus.p
+		local focusPoint
+		if SubjectPart then
+			focusPoint = SubjectPart.Position
+		else
+			focusPoint = Camera.Focus.p
+		end
 		local cameraCFrame = Camera.CoordinateFrame
 		local cameraFrontPoint = cameraCFrame.p + (cameraCFrame.lookVector * NEAR_CLIP_PLANE_OFFSET)
 		local screenSize = Camera.ViewportSize
