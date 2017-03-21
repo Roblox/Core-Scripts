@@ -438,6 +438,20 @@ function MainGui:GenerateMain()
 	end
 	screenGui.Parent = game:GetService("CoreGui")
 	currScreenGui = screenGui
+
+	local function onResized(prop)
+		if prop == "AbsoluteSize" then
+			if screenGui.AbsoluteSize.Y < screenGui.AbsoluteSize.X then
+				--Landscape
+				infoFrame.Position = UDim2.new(0, (isMobile == true and 20 or 100), 1, (isMobile == true and -120 or -150))
+			else
+				--Portrait
+				infoFrame.Position = UDim2.new(0, 20, 0, 100)
+			end
+		end
+	end
+	onResized("AbsoluteSize")
+	screenGui.Changed:connect(onResized)
 end
 
 function round(num, idp)

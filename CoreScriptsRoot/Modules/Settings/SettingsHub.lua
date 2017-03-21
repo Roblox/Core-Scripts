@@ -108,7 +108,6 @@ local function CreateSettingsHub()
 	end
 
 	local function setBottomBarBindings()
-		print(debug.traceback())
 		for i = 1, #this.BottomBarButtons do
 			local buttonTable = this.BottomBarButtons[i]
 			local buttonName = buttonTable[1]
