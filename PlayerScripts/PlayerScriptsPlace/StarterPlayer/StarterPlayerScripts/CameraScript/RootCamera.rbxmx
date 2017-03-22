@@ -53,7 +53,10 @@ local function IsFinite(num)
 end
 
 local THUMBSTICK_DEADZONE = 0.2
-local DefaultZoom = 12.5
+
+local LANDSCAPE_DEFAULT_ZOOM = 12.5
+local PORTRAIT_DEFAULT_ZOOM = 25
+local DefaultZoom = LANDSCAPE_DEFAULT_ZOOM
 
 local humanoidCache = {}
 local function findPlayerHumanoid(player)
@@ -89,9 +92,9 @@ local ZERO_VECTOR2 = Vector2.new(0,0)
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
 local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
 
-local MAX_TIME_TAP_IS_DOUBLE = 1.5
-local MAX_TAP_POS_DELTA = 20
-local MAX_TAP_TIME_DELTA = 1.0
+local MAX_TIME_FOR_DOUBLE_TAP = 1.5
+local MAX_TAP_POS_DELTA = 15
+local MAX_TAP_TIME_DELTA = 0.75
 
 local SEAT_OFFSET = Vector3.new(0,5,0)
 local VR_SEAT_OFFSET = Vector3.new(0, 4, 0)
@@ -107,18 +110,23 @@ local GestureArea = nil
 
 do
 	-- Check for changes in ViewportSize to decide if PortraitMode
+	local CameraChangedConn = nil
 	local function onWorkspaceChanged(property)
 		if property == 'CurrentCamera' then
+			if CameraChangedConn then
+				CameraChangedConn:Disconnect()
+				CameraChangedConn = nil
+			end
 			local newCamera = workspace.CurrentCamera
 			if newCamera then
 				local size = newCamera.ViewportSize
 				PortraitMode = size.X < size.Y
-				DefaultZoom = PortraitMode and 25 or 12.5
-				newCamera.Changed:Connect(function(property)
+				DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
+				CameraChangedConn = newCamera.Changed:Connect(function(property)
 					if property == 'ViewportSize' then
 						size = newCamera.ViewportSize
 						PortraitMode = size.X < size.Y
-						DefaultZoom = PortraitMode and 25 or 12.5
+						DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
 					end
 				end)
 			end
@@ -142,18 +150,28 @@ do
 			GestureArea.Size = UDim2.new(1, 0, .6, 0)
 			GestureArea.Position = UDim2.new(0, 0, 0, 0)
 			GestureArea.Parent = ScreenGui
-			if workspace.CurrentCamera then
-				local size = workspace.CurrentCamera.ViewportSize
-				PortraitMode = size.X < size.Y
+		end
+		for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
+			if child:IsA("Tool") then
+				IsAToolEquipped = true
 			end
 		end
+		character.ChildAdded:Connect(function(child)
+			if child:IsA("Tool") then
+				IsAToolEquipped = true
+			end
+		end)
+		character.ChildRemoved:Connect(function(child)
+			if child:IsA("Tool") then
+				IsAToolEquipped = false
+			end
+		end)
 	end
 	
 	if LocalPlayer then
 		if LocalPlayer.Character ~= nil then
 			OnCharacterAdded(LocalPlayer.Character)
 		end
-	
 		LocalPlayer.CharacterAdded:connect(function(character)
 			OnCharacterAdded(character)
 		end)
@@ -789,7 +807,7 @@ local function CreateCamera()
 	
 	local function OnTouchTap(position)
 		if isDynamicThumbstickEnabled then
-			if lastTapTime and tick() - lastTapTime < MAX_TIME_TAP_IS_DOUBLE then
+			if lastTapTime and tick() - lastTapTime < MAX_TIME_FOR_DOUBLE_TAP then
 				local tween = {
 					from = this:GetCameraZoom(),
 					to = DefaultZoom,

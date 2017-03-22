@@ -59,29 +59,29 @@ local FadeInAndOutMaxAlpha = 0.35
 local FadeInAndOutHalfDuration = 0.3
 
 --[[ Local functionality ]]--
-
-local function listenToToolEquip(tool)
-	tool.Equipped:Connect(function()
-		IsAToolEquipped = true
-	end)
-	tool.Unequipped:Connect(function()
-		IsAToolEquipped = false
-	end)
-end
 	
 do
-	for _, item in ipairs(Backpack:GetChildren()) do
-		if item:IsA("Tool") then
-			Tools[#Tools + 1] = item
-			listenToToolEquip(item)
+	local function onCharacterAdded(character)
+		for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
+			if child:IsA("Tool") then
+				IsAToolEquipped = true
+			end
 		end
+		character.ChildAdded:Connect(function(child)
+			if child:IsA("Tool") then
+				IsAToolEquipped = true
+			end
+		end)
+		character.ChildRemoved:Connect(function(child)
+			if child:IsA("Tool") then
+				IsAToolEquipped = false
+			end
+		end)
 	end
-	
-	Backpack.ChildAdded:Connect(function(item)
-		if item:IsA("Tool") then
-			listenToToolEquip(item)
-		end
-	end)
+	LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+	if LocalPlayer.Character then
+		onCharacterAdded(LocalPlayer.Character)
+	end
 end
 
 --[[ Public API ]]--
