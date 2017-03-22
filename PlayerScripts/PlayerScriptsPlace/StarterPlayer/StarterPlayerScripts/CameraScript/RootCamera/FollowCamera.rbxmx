@@ -18,6 +18,7 @@ local RootCameraCreator = require(script.Parent)
 local UP_VECTOR = Vector3.new(0, 1, 0)
 local XZ_VECTOR = Vector3.new(1, 0, 1)
 local ZERO_VECTOR3 = Vector3.new(0, 0, 0)
+local PORTRAIT_OFFSET = Vector3.new(0, -3, 0)
 
 local function clamp(low, high, num)
 	if low <= high then
@@ -52,6 +53,7 @@ local function CreateFollowCamera()
 	local lastUpdate = tick()
 	module.LastUserPanCamera = tick()
 	function module:Update()
+		module:ProcessTweens()
 		local now = tick()
 		local timeDelta = (now - lastUpdate)
 		
@@ -168,7 +170,13 @@ local function CreateFollowCamera()
 			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
 			self.RotateInput = Vector2.new()
 			
-			camera.Focus = VRService.VREnabled and self:GetVRFocus(subjectPosition, timeDelta) or CFrame.new(subjectPosition)
+			if VRService.VREnabled then
+				camera.Focus = self:GetVRFocus(subjectPosition, timeDelta)
+			elseif self:IsPortraitMode() then
+				camera.Focus = CFrame.new(subjectPosition + PORTRAIT_OFFSET)
+			else
+				camera.Focus = CFrame.new(subjectPosition)
+			end
 			camera.CFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p) + Vector3.new(0, self:GetCameraHeight(), 0)
 
 			self.LastCameraTransform = camera.CFrame

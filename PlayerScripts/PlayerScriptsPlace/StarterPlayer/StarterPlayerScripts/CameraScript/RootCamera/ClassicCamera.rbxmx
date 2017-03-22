@@ -51,10 +51,11 @@ local function CreateClassicCamera()
 	local tweenSpeed = math.rad(0)
 	local tweenMaxSpeed = math.rad(250)
 	local timeBeforeAutoRotate = 2
-
+	
 	local lastUpdate = tick()
 	module.LastUserPanCamera = tick()
 	function module:Update()
+		module:ProcessTweens()
 		local now = tick()
 		local timeDelta = (now - lastUpdate)
 		
