@@ -142,17 +142,6 @@ local function Initialize()
 			end
 		end)
 
-		if utility:IsSmallTouchScreen() then
-	--		this.AbuseDescription.Selection.Size = UDim2.new(0, 290, 0, 30)
-	--		this.AbuseDescription.Selection.Position = UDim2.new(1,-345,this.AbuseDescription.Selection.Position.Y.Scale, this.AbuseDescription.Selection.Position.Y.Offset)
-
-	--		this.AbuseDescriptionLabel = this.TypeOfAbuseLabel:clone()
-	--		this.AbuseDescriptionLabel.Text = "Abuse Description"
-	--		this.AbuseDescriptionLabel.Position = UDim2.new(this.AbuseDescriptionLabel.Position.X.Scale, this.AbuseDescriptionLabel.Position.X.Offset,
-	--													0,50)
-	--		this.AbuseDescriptionLabel.Parent = this.AbuseDescriptionFrame
-		end
-
 		local SelectionOverrideObject = utility:Create'ImageLabel'
 		{
 			Image = "",

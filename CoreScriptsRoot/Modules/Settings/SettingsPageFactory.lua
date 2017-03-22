@@ -110,7 +110,7 @@ local function Initialize()
 			this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
 		else
 			this.TabHeader.Icon.Size = UDim2.new(0,44,0,37)
-			this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-18)	-- -22
+			this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-18)
 		end
 
 		if utility:IsPortrait() then
