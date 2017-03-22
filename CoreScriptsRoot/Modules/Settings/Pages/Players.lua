@@ -212,6 +212,11 @@ local function Initialize()
 				buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
 			end
 		end)
+	else
+		if not utility:IsSmallTouchScreen() then
+			buttonsContainer.Visible = false
+			buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
+		end
 	end
 
 	local existingPlayerLabels = {}
