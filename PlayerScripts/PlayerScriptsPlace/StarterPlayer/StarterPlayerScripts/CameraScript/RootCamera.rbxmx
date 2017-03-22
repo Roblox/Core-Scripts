@@ -53,7 +53,7 @@ local function IsFinite(num)
 end
 
 local THUMBSTICK_DEADZONE = 0.2
-local DEFAULT_ZOOM = UserInputService.TouchEnabled and 25 or 10
+local DefaultZoom = 12.5
 
 local humanoidCache = {}
 local function findPlayerHumanoid(player)
@@ -113,16 +113,19 @@ do
 			if newCamera then
 				local size = newCamera.ViewportSize
 				PortraitMode = size.X < size.Y
+				DefaultZoom = PortraitMode and 25 or 12.5
 				newCamera.Changed:Connect(function(property)
 					if property == 'ViewportSize' then
 						size = newCamera.ViewportSize
 						PortraitMode = size.X < size.Y
+						DefaultZoom = PortraitMode and 25 or 12.5
 					end
 				end)
 			end
 		end
 	end
 	if workspace.CurrentCamera then
+		workspace.Changed:Connect(onWorkspaceChanged)
 		onWorkspaceChanged('CurrentCamera')
 	end
 
@@ -293,7 +296,7 @@ local function CreateCamera()
 	function this:GetCameraZoom()
 		if this.currentZoom == nil then
 			local player = PlayersService.LocalPlayer
-			this.currentZoom = player and clamp(player.CameraMinZoomDistance, player.CameraMaxZoomDistance, DEFAULT_ZOOM) or DEFAULT_ZOOM
+			this.currentZoom = player and clamp(player.CameraMinZoomDistance, player.CameraMaxZoomDistance, DefaultZoom) or DefaultZoom
 		end
 		return this.currentZoom
 	end
@@ -789,7 +792,7 @@ local function CreateCamera()
 			if lastTapTime and tick() - lastTapTime < MAX_TIME_TAP_IS_DOUBLE then
 				local tween = {
 					from = this:GetCameraZoom(),
-					to = DEFAULT_ZOOM,
+					to = DefaultZoom,
 					start = tick(),
 					duration = 0.2,
 					func = function(from, to, alpha)
@@ -1356,7 +1359,7 @@ local function CreateCamera()
 		local function OnCharacterAdded(newCharacter)
 
 			if (not FFlagSpawnLocationFixEnabled) then
-				this:ZoomCamera(12.5)
+				this:ZoomCamera(DefaultZoom)
 			end
 			local humanoid = findPlayerHumanoid(player)
 			local start = tick()
@@ -1390,7 +1393,7 @@ local function CreateCamera()
 			-- Not waiting will force camera to original cframe
 			if (FFlagSpawnLocationFixEnabled) then
 				wait()
-				this:ZoomCamera(12.5)
+				this:ZoomCamera(DefaultZoom)
 			end
 		end
 
@@ -1474,7 +1477,6 @@ local function CreateCamera()
 end
 
 return CreateCamera
-
 ]]></ProtectedString>
 		</Properties>
 	</Item>
