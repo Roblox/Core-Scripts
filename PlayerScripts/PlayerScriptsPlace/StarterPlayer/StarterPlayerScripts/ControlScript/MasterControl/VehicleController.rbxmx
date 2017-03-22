@@ -107,13 +107,24 @@ end
 
 local function onRenderStepped()
 	if CurrentVehicleSeat then
-		local moveValue = MasterControl:GetMoveVector()
-		if game:GetService("UserInputService"):GetGamepadConnected(Enum.UserInputType.Gamepad1) and onlyTriggersForThrottle and useTriggersForThrottle then
-			CurrentVehicleSeat.Throttle = -CurrentThrottle
-		else
-			CurrentVehicleSeat.Throttle = getClosestFittingValue(-moveValue.z)
+		local didSetThrottleSteerFloat = false
+		didSetThrottleSteerFloat = pcall(function()
+		  if game:GetService("UserInputService"):GetGamepadConnected(Enum.UserInputType.Gamepad1) and onlyTriggersForThrottle and useTriggersForThrottle then
+		    CurrentVehicleSeat.ThrottleFloat = -CurrentThrottle
+		  else
+		    CurrentVehicleSeat.ThrottleFloat = -moveValue.z
+		  end
+		  CurrentVehicleSeat.SteerFloat = moveValue.x
+		end)	
+		
+		if didSetThrottleSteerFloat == false then
+		  if game:GetService("UserInputService"):GetGamepadConnected(Enum.UserInputType.Gamepad1) and onlyTriggersForThrottle and useTriggersForThrottle then
+		    CurrentVehicleSeat.Throttle = -CurrentThrottle
+		  else
+		    CurrentVehicleSeat.Throttle = getClosestFittingValue(-moveValue.z)
+		  end
+		  CurrentVehicleSeat.Steer = getClosestFittingValue(moveValue.x)
 		end
-		CurrentVehicleSeat.Steer = getClosestFittingValue(moveValue.x)
 	end
 end
 
