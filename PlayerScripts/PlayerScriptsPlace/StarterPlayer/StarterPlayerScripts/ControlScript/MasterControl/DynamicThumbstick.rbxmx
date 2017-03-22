@@ -21,15 +21,13 @@ local Thumbstick = {}
 
 --[[ Script Variables ]]--
 while not Players.LocalPlayer do
-	wait()
+	Players.PlayerAdded:wait()
 end
 local LocalPlayer = Players.LocalPlayer
 
 local Backpack = LocalPlayer:WaitForChild("Backpack")
 local Tools = {}
 local IsAToolEquipped = false
-
-local IsPortraitMode = true
 
 local RevertAutoJumpEnabledToFalse = false
 
@@ -43,7 +41,7 @@ local ThumbstickFrame = nil
 local OnMoveTouchEnded = nil		-- defined in Create()
 local OnTouchMovedCn = nil
 local OnTouchEndedCn = nil
-local OnRenderSteppedCn
+local OnRenderSteppedCn = nil
 local currentMoveVector = Vector3.new(0,0,0)
 
 --[[ Constants ]]--
@@ -62,49 +60,7 @@ local FadeInAndOutHalfDuration = 0.3
 
 --[[ Local functionality ]]--
 
-local function adjustFrameSizeAndPosition()
-	if ThumbstickFrame then
-		if IsPortraitMode then
-			ThumbstickFrame.Size = UDim2.new(1, 0, .4, 0)
-			ThumbstickFrame.Position = UDim2.new(0, 0, 0.6, 0)
-		else
-			ThumbstickFrame.Size = UDim2.new(0.5, 0, 1, 0)
-			ThumbstickFrame.Position = UDim2.new(0, 0, 0, 0)
-		end
-	end
-end
-
-spawn(function()
-	while(true) do
-		--IsPortraitMode = newOrientation == Enum.ScreenOrientation.Portrait
-		wait()
-		local size = workspace.CurrentCamera.ViewportSize
-		local mode = size.X < size.Y
-		if mode ~= IsPortraitMode then
-			IsPortraitMode = mode
-			adjustFrameSizeAndPosition()
-		end
-	end
-end)
-
-local function onWorkspaceChanged(property)
-	if property == 'CurrentCamera' then
-		local newCamera = workspace.CurrentCamera
-		if newCamera then
-			local size = newCamera.ViewportSize
-			IsPortraitMode = size.X < size.Y
-			newCamera.Changed:Connect(function(property)
-				if property == 'ViewportSize' then
-					size = newCamera.ViewportSize
-					IsPortraitMode = size.X < size.Y
-					adjustFrameSizeAndPosition()
-				end
-			end)
-		end
-	end
-end
-
-local function setupTool(tool)
+local function listenToToolEquip(tool)
 	tool.Equipped:Connect(function()
 		IsAToolEquipped = true
 	end)
@@ -117,25 +73,24 @@ do
 	for _, item in ipairs(Backpack:GetChildren()) do
 		if item:IsA("Tool") then
 			Tools[#Tools + 1] = item
-			setupTool(item)
+			listenToToolEquip(item)
 		end
 	end
 	
 	Backpack.ChildAdded:Connect(function(item)
 		if item:IsA("Tool") then
-			setupTool(item)
+			listenToToolEquip(item)
 		end
 	end)
-	
-	workspace.Changed:Connect(onWorkspaceChanged)	
-	onWorkspaceChanged('CurrentCamera')
 end
 
 --[[ Public API ]]--
 function Thumbstick:Enable()
 	local humanoid = MasterControl:GetHumanoid()
 	if humanoid then
-		RevertAutoJumpEnabledToFalse = humanoid.AutoJumpEnabled == false
+		local shouldRevert = humanoid.AutoJumpEnabled == false
+		shouldRevert = shouldRevert and humanoid.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
+		RevertAutoJumpEnabledToFalse = shouldRevert
 		humanoid.AutoJumpEnabled = true
 	end
 	ThumbstickFrame.Visible = true
@@ -194,7 +149,8 @@ function Thumbstick:Create(parentFrame)
 	ThumbstickFrame.Visible = false
 	ThumbstickFrame.BackgroundTransparency = 1.0
 	ThumbstickFrame.BackgroundColor3 = color
-	adjustFrameSizeAndPosition()
+	ThumbstickFrame.Size = UDim2.new(1, 0, .4, 0)
+	ThumbstickFrame.Position = UDim2.new(0, 0, 0.6, 0)
 	
 	ImageCenter = Instance.new('ImageLabel')
 	ImageCenter.Name = "ImageCenter"

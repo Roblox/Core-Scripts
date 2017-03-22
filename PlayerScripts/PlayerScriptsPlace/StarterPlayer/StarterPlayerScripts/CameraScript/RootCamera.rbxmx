@@ -124,8 +124,8 @@ do
 			end
 		end
 	end
+	workspace.Changed:Connect(onWorkspaceChanged)
 	if workspace.CurrentCamera then
-		workspace.Changed:Connect(onWorkspaceChanged)
 		onWorkspaceChanged('CurrentCamera')
 	end
 
@@ -136,12 +136,12 @@ do
 			ScreenGui.Parent = PlayerGui
 			
 			GestureArea = Instance.new("Frame")
-			GestureArea.Parent = ScreenGui
 			GestureArea.BackgroundTransparency = 1.0
 			GestureArea.Visible = true
 			GestureArea.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 			GestureArea.Size = UDim2.new(1, 0, .6, 0)
 			GestureArea.Position = UDim2.new(0, 0, 0, 0)
+			GestureArea.Parent = ScreenGui
 			if workspace.CurrentCamera then
 				local size = workspace.CurrentCamera.ViewportSize
 				PortraitMode = size.X < size.Y
