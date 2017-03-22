@@ -21,6 +21,9 @@ local StyleWidgets = require(RobloxGui.Modules.StyleWidgets)
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 ----------- CONSTANTS --------------
 local HEADER_SPACING = 5
 if utility:IsSmallTouchScreen() then
@@ -113,7 +116,8 @@ local function Initialize()
 			this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-18)
 		end
 
-		if utility:IsPortrait() then
+		local isPortrait = enablePortraitMode and utility:IsPortrait()
+		if isPortrait then
 			this.TabHeader.Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
 			this.TabHeader.Icon.AnchorPoint = Vector2.new(0.5, 0.5)
 			this.TabHeader.Icon.Size = UDim2.new(0.5, 0, 0.5, 0)
@@ -123,7 +127,12 @@ local function Initialize()
 			this.TabHeader.Icon.Title.Visible = true
 		end
 	end
-	utility:OnResized(this.TabHeader, onResized)
+	if enablePortraitMode then
+		utility:OnResized(this.TabHeader, onResized)
+	else
+		--If the flag isn't on, just call onResized once.
+		onResized()
+	end
  
 	------ PAGE CREATION -------
 	this.Page = utility:Create'Frame'

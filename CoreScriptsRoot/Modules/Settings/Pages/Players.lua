@@ -16,6 +16,9 @@ RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local utility = require(RobloxGui.Modules.Settings.Utility)
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 ------------ Constants -------------------
 local frameDefaultTransparency = .85
 local frameSelectedTransparency = .65
@@ -195,19 +198,21 @@ local function Initialize()
 	resumeLabel.Size = UDim2.new(1, 0, 1, -6)
 	resumeButton.Parent = buttonsContainer
 
-	utility:OnResized(buttonsContainer, function(newSize, isPortrait)
-		if isPortrait or utility:IsSmallTouchScreen() then
-			local buttonsFontSize = isPortrait and 18 or 24
-			buttonsContainer.Visible = true
-			buttonsContainer.Size = UDim2.new(1, 0, 0, isPortrait and 50 or 62)
-			resetLabel.TextSize = buttonsFontSize
-			leaveLabel.TextSize = buttonsFontSize
-			resumeLabel.TextSize = buttonsFontSize
-		else
-			buttonsContainer.Visible = false
-			buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
-		end
-	end)
+	if enablePortraitMode then
+		utility:OnResized(buttonsContainer, function(newSize, isPortrait)
+			if isPortrait or utility:IsSmallTouchScreen() then
+				local buttonsFontSize = isPortrait and 18 or 24
+				buttonsContainer.Visible = true
+				buttonsContainer.Size = UDim2.new(1, 0, 0, isPortrait and 50 or 62)
+				resetLabel.TextSize = buttonsFontSize
+				leaveLabel.TextSize = buttonsFontSize
+				resumeLabel.TextSize = buttonsFontSize
+			else
+				buttonsContainer.Visible = false
+				buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
+			end
+		end)
+	end
 
 	local existingPlayerLabels = {}
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)

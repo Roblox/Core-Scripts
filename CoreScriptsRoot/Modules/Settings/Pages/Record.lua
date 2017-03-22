@@ -17,6 +17,9 @@ RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local utility = require(RobloxGui.Modules.Settings.Utility)
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 ------------ Variables -------------------
 local PageInstance = nil
 
@@ -115,8 +118,15 @@ local function Initialize()
 		local closeSettingsFunc = function()
 			this.HubRef:SetVisibility(false, true)
 		end
-		this.ScreenshotButtonRow, this.ScreenshotButton = utility:AddButtonRow(this, "ScreenshotButton", "Take Screenshot", UDim2.new(0, 300, 0, 44), closeSettingsFunc)
-		this.ScreenshotButtonRow.LayoutOrder = 3
+		if enablePortraitMode then
+			this.ScreenshotButtonRow, this.ScreenshotButton = utility:AddButtonRow(this, "ScreenshotButton", "Take Screenshot", UDim2.new(0, 300, 0, 44), closeSettingsFunc)
+			this.ScreenshotButtonRow.LayoutOrder = 3
+		else
+			this.ScreenshotButton = utility:MakeStyledButton("ScreenshotButton", "Take Screenshot", UDim2.new(0,300,0,44), closeSettingsFunc, this)
+	 		
+	 		this.ScreenshotButton.Position = UDim2.new(0,400,1,0)
+	 		this.ScreenshotButton.Parent = screenshotBody
+	 	end
 
 
 		---------------------------------- VIDEO -------------------------------------
@@ -141,11 +151,19 @@ local function Initialize()
 			end
 		end)
 		
-		local recordButtonRow, recordButton = utility:AddButtonRow(this, "RecordButton", "Record Video", UDim2.new(0, 300, 0, 44), closeSettingsFunc)
-		recordButtonRow.LayoutOrder = 6
-		recordButton.MouseButton1Click:connect(function()
-			recordingEvent:Fire(not isRecordingVideo)
-		end)
+		local recordButtonRow, recordButton
+		if enablePortraitMode then
+			recordButtonRow, recordButton = utility:AddButtonRow(this, "RecordButton", "Record Video", UDim2.new(0, 300, 0, 44), closeSettingsFunc)
+			recordButtonRow.LayoutOrder = 6
+			recordButton.MouseButton1Click:connect(function()
+				recordingEvent:Fire(not isRecordingVideo)
+			end)
+		else
+			recordButton = utility:MakeStyledButton("RecordButton", "Record Video", UDim2.new(0,300,0,44), closeSettingsFunc, this)
+	  		
+	 		recordButton.Position = UDim2.new(0,410,1,10)
+	 		recordButton.Parent = this.VideoSettingsMode.SelectorFrame.Parent
+	 	end
 
 		local gameOptions = settings():FindFirstChild("Game Options")
 		if gameOptions then
