@@ -30,6 +30,7 @@ end
 local Player = PlayersService.LocalPlayer
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 
+local Utility = require(RobloxGui.Modules.Settings.Utility)
 local StatsUtils = require(RobloxGui.Modules.Stats.StatsUtils)
 
 local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
@@ -105,7 +106,7 @@ if isTenFootInterface then
   StatEntrySizeX = 250
 end
 
-local IsSmallScreenDevice = UserInputService.TouchEnabled and GuiService:GetScreenResolution().Y <= 500
+local IsSmallScreenDevice = Utility:IsSmallTouchScreen()
 
 local BaseUrl = game:GetService('ContentProvider').BaseUrl:lower()
 BaseUrl = string.gsub(BaseUrl, "/m.", "/www.")

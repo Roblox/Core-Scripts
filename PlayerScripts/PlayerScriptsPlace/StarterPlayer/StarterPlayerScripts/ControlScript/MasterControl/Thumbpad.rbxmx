@@ -75,7 +75,8 @@ function Thumbpad:Create(parentFrame)
 		end
 	end
 	
-	local isSmallScreen = parentFrame.AbsoluteSize.y <= 500
+	local minAxis = math.min(parentFrame.AbsoluteSize.x, parentFrame.AbsoluteSize.y)
+	local isSmallScreen = minAxis <= 500
 	local thumbpadSize = isSmallScreen and 70 or 120
 	local position = isSmallScreen and UDim2.new(0, thumbpadSize * 1.25, 1, -thumbpadSize - 20) or
 		UDim2.new(0, thumbpadSize/2 - 10, 1, -thumbpadSize * 1.75 - 10)

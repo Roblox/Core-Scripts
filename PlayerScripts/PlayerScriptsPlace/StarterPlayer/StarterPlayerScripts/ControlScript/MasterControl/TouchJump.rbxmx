@@ -125,7 +125,8 @@ function TouchJump:Create(parentFrame)
 		JumpButton = nil
 	end
 	
-	local isSmallScreen = parentFrame.AbsoluteSize.y <= 500
+	local minAxis = math.min(parentFrame.AbsoluteSize.x, parentFrame.AbsoluteSize.y)
+	local isSmallScreen = minAxis <= 500
 	local jumpButtonSize = isSmallScreen and 70 or 120
 	
 	JumpButton = Instance.new('ImageButton')

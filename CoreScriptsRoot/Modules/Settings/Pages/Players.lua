@@ -216,6 +216,8 @@ local function Initialize()
 		if not utility:IsSmallTouchScreen() then
 			buttonsContainer.Visible = false
 			buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
+		else
+			buttonsContainer.Visible = true
 		end
 	end
 
