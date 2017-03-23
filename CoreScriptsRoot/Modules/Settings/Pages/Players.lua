@@ -16,6 +16,9 @@ RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local utility = require(RobloxGui.Modules.Settings.Utility)
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 ------------ Constants -------------------
 local frameDefaultTransparency = .85
 local frameSelectedTransparency = .65
@@ -43,22 +46,7 @@ local function Initialize()
 
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "PlayersTab"
-
-	this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/PlayersTabIcon.png"
-	if utility:IsSmallTouchScreen() then
-		this.TabHeader.Icon.Size = UDim2.new(0,34,0,28)
-		this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-14)
-		this.TabHeader.Size = UDim2.new(0,115,1,0)
-	elseif isTenFootInterface then
-		this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/PlayersTabIcon@2x.png"
-		this.TabHeader.Icon.Size = UDim2.new(0,88,0,74)
-		this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
-		this.TabHeader.Size = UDim2.new(0,280,1,0)
-	else
-		this.TabHeader.Icon.Size = UDim2.new(0,44,0,37)
-		this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-18)	-- -22
-		this.TabHeader.Size = UDim2.new(0,150,1,0)
-	end
+	this.TabHeader.Icon.Image = isTenFootInterface and "rbxasset://textures/ui/Settings/MenuBarIcons/PlayersTabIcon@2x.png" or "rbxasset://textures/ui/Settings/MenuBarIcons/PlayersTabIcon.png"
 
 	this.TabHeader.Icon.Title.Text = "Players"
 
@@ -174,36 +162,62 @@ local function Initialize()
 		end
 	end)
 
-	if utility:IsSmallTouchScreen() then
-		local spaceFor3Buttons = RobloxGui.AbsoluteSize.x >= 720	-- else there is only space for 2
+	local buttonsContainer = utility:Create("Frame") {
+		Name = "ButtonsContainer",
+		Size = UDim2.new(1, 0, 0, 62),
+		BackgroundTransparency = 1,
+		Parent = this.Page,
 
-		local resetFunc = function()
-			this.HubRef:SwitchToPage(this.HubRef.ResetCharacterPage, false, 1)
-		end
-		local resetButton, resetLabel = utility:MakeStyledButton("ResetButton", "Reset Character", UDim2.new(0, 200, 0, 62), resetFunc)
-		resetLabel.Size = UDim2.new(1, 0, 1, -6)
-		resetLabel.FontSize = Enum.FontSize.Size24
-		resetButton.Position = UDim2.new(0.5,spaceFor3Buttons and -340 or -220,0,14)
-		resetButton.Parent = this.Page
+		Visible = false
+	}
 
-		local leaveGameFunc = function()
-			this.HubRef:SwitchToPage(this.HubRef.LeaveGamePage, false, 1)
-		end
-		local leaveButton, leaveLabel = utility:MakeStyledButton("LeaveButton", "Leave Game", UDim2.new(0, 200, 0, 62), leaveGameFunc)
-		leaveLabel.Size = UDim2.new(1, 0, 1, -6)
-		leaveLabel.FontSize = Enum.FontSize.Size24
-		leaveButton.Position = UDim2.new(0.5,spaceFor3Buttons and -100 or 20,0,14)
-		leaveButton.Parent = this.Page
+	local leaveGameFunc = function()
+		this.HubRef:SwitchToPage(this.HubRef.LeaveGamePage, false, 1)
+	end
+	local leaveButton, leaveLabel = utility:MakeStyledButton("LeaveButton", "Leave Game", UDim2.new(1 / 3, -5, 1, 0), leaveGameFunc)
+	leaveButton.AnchorPoint = Vector2.new(0, 0)
+	leaveButton.Position = UDim2.new(0, 0, 0, 0)
+	leaveLabel.Size = UDim2.new(1, 0, 1, -6)
+	leaveButton.Parent = buttonsContainer
 
-		if spaceFor3Buttons then
-			local resumeGameFunc = function()
-				this.HubRef:SetVisibility(false)
+	local resetFunc = function()
+		this.HubRef:SwitchToPage(this.HubRef.ResetCharacterPage, false, 1)
+	end
+	local resetButton, resetLabel = utility:MakeStyledButton("ResetButton", "Reset Character", UDim2.new(1 / 3, -5, 1, 0), resetFunc)
+	resetButton.AnchorPoint = Vector2.new(0.5, 0)
+	resetButton.Position = UDim2.new(0.5, 0, 0, 0)
+	resetLabel.Size = UDim2.new(1, 0, 1, -6)
+	resetButton.Parent = buttonsContainer
+	
+	local resumeGameFunc = function()
+		this.HubRef:SetVisibility(false)
+	end
+	local resumeButton, resumeLabel = utility:MakeStyledButton("ResumeButton", "Resume Game", UDim2.new(1 / 3, -5, 1, 0), resumeGameFunc)
+	resumeButton.AnchorPoint = Vector2.new(1, 0)
+	resumeButton.Position = UDim2.new(1, 0, 0, 0)
+	resumeLabel.Size = UDim2.new(1, 0, 1, -6)
+	resumeButton.Parent = buttonsContainer
+
+	if enablePortraitMode then
+		utility:OnResized(buttonsContainer, function(newSize, isPortrait)
+			if isPortrait or utility:IsSmallTouchScreen() then
+				local buttonsFontSize = isPortrait and 18 or 24
+				buttonsContainer.Visible = true
+				buttonsContainer.Size = UDim2.new(1, 0, 0, isPortrait and 50 or 62)
+				resetLabel.TextSize = buttonsFontSize
+				leaveLabel.TextSize = buttonsFontSize
+				resumeLabel.TextSize = buttonsFontSize
+			else
+				buttonsContainer.Visible = false
+				buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
 			end
-			resumeButton, resumeLabel = utility:MakeStyledButton("ResumeButton", "Resume Game", UDim2.new(0, 200, 0, 62), resumeGameFunc)
-			resumeLabel.Size = UDim2.new(1, 0, 1, -6)
-			resumeLabel.FontSize = Enum.FontSize.Size24
-			resumeButton.Position = UDim2.new(0.5,140,0,14)
-			resumeButton.Parent = this.Page
+		end)
+	else
+		if not utility:IsSmallTouchScreen() then
+			buttonsContainer.Visible = false
+			buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
+		else
+			buttonsContainer.Visible = true
 		end
 	end
 
