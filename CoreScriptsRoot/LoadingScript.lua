@@ -444,9 +444,11 @@ function MainGui:GenerateMain()
 			if screenGui.AbsoluteSize.Y < screenGui.AbsoluteSize.X then
 				--Landscape
 				infoFrame.Position = UDim2.new(0, (isMobile == true and 20 or 100), 1, (isMobile == true and -120 or -150))
+				uiMessageFrame.Position = UDim2.new(0.25, 0, 1, -120)
 			else
 				--Portrait
 				infoFrame.Position = UDim2.new(0, 20, 0, 100)
+				uiMessageFrame.Position = UDim2.new(0.25, 0, 0.5, 0)
 			end
 		end
 	end
