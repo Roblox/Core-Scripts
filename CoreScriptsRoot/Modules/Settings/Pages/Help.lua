@@ -24,6 +24,9 @@ local PageInstance = nil
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 ----------- CLASS DECLARATION --------------
 
 local function Initialize()
@@ -420,8 +423,9 @@ do
   PageInstance = Initialize()
 
   PageInstance.Displayed.Event:connect(function()
+      local isPortrait = enablePortraitMode and utility:IsPortrait()
       if PageInstance:GetCurrentInputType() == TOUCH_TAG then
-        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() and not utility:IsPortrait() then
+        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() and not isPortrait then
           PageInstance.HubRef.BottomButtonFrame.Visible = false
         end
       end
@@ -433,8 +437,9 @@ do
 
       PageInstance.HubRef:ShowShield()
 
+      local isPortrait = enablePortraitMode and utility:IsPortrait()
       if PageInstance:GetCurrentInputType() == TOUCH_TAG then
-        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() and not utility:IsPortrait() then
+        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() and not isPortrait then
           PageInstance.HubRef.BottomButtonFrame.Visible = true
         end
       end
