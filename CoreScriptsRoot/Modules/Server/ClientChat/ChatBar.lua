@@ -10,7 +10,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 while not LocalPlayer do
-	Players.ChildAdded:wait()
+	Players.PlayerAdded:wait()
 	LocalPlayer = Players.LocalPlayer
 end
 
@@ -139,36 +139,24 @@ function methods:DoLockChatBar()
 	end
 	if self.TextBox then
 		self.TextBox.Active = false
-		local textboxfocusedConnection = self.TextBox.Focused:connect(function()
+		self.TextBox.Focused:connect(function()
 			self.TextBox:ReleaseFocus()
 		end)
-		table.insert(self.Connections, textboxfocusedConnection)
 	end
-end
-
-function methods:DisconnectConnections()
-	for i = 1, #self.Connections do
-		self.Connections[i]:Disconnect()
-	end
-	self.Connections = {}
 end
 
 function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
-	self:DisconnectConnections()
-
 	--// Code for getting back into general channel from other target channel when pressing backspace.
-	local inputBeganConnection = UserInputService.InputBegan:connect(function(inputObj, gpe)
+	UserInputService.InputBegan:connect(function(inputObj, gpe)
 		if (inputObj.KeyCode == Enum.KeyCode.Backspace) then
 			if (self:IsFocused() and TextBox.Text == "") then
 				self:SetChannelTarget(ChatSettings.GeneralChannelName)
 			end
 		end
 	end)
-	table.insert(self.Connections, inputBeganConnection)
-
 
 	local calculatingSizeLock = false
-	local textboxChangedConnection = TextBox.Changed:connect(function(prop)
+	TextBox.Changed:connect(function(prop)
 		if prop == "AbsoluteSize" and not calculatingSizeLock then
 			calculatingSizeLock = true
 			self:CalculateSize()
@@ -197,7 +185,6 @@ function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
 			self.CustomState:TextUpdated()
 		end
 	end)
-	table.insert(self.Connections, textboxChangedConnection)
 
 	local function UpdateOnFocusStatusChanged(isFocused)
 		if isFocused or TextBox.Text ~= "" then
@@ -207,29 +194,26 @@ function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
 		end
 	end
 
-	local messageModeConnection = MessageModeTextButton.MouseButton1Click:connect(function()
+	MessageModeTextButton.MouseButton1Click:connect(function()
 		if MessageModeTextButton.Text ~= "" then
 			self:SetChannelTarget(ChatSettings.GeneralChannelName)
 		end
 	end)
-	table.insert(self.Connections, messageModeConnection)
 
-	local textboxfocusedConnection = TextBox.Focused:connect(function()
+	TextBox.Focused:connect(function()
 		if not self.UserHasChatOff then
 			self:CalculateSize()
 			UpdateOnFocusStatusChanged(true)
 		end
 	end)
-	table.insert(self.Connections, textboxfocusedConnection)
 
-	local textboxFocusLostConnection = TextBox.FocusLost:connect(function(enterPressed, inputObject)
+	TextBox.FocusLost:connect(function(enterPressed, inputObject)
 		self:CalculateSize()
 		if (inputObject and inputObject.KeyCode == Enum.KeyCode.Escape) then
 			TextBox.Text = ""
 		end
 		UpdateOnFocusStatusChanged(false)
 	end)
-	table.insert(self.Connections, textboxFocusLostConnection)
 end
 
 function methods:GetTextBox()
@@ -287,12 +271,12 @@ function methods:GetEnabled()
 end
 
 function methods:SetEnabled(enabled)
-	if not self.UserHasChatOff then
-		self.GuiObject.Visible = enabled
-	else
+	if self.UserHasChatOff then
 		-- The chat bar can not be removed if a user has chat turned off so that
 		-- the chat bar can display a message explaining that chat is turned off.
 		self.GuiObject.Visible = true
+	else
+		self.GuiObject.Visible = enabled
 	end
 end
 
@@ -542,7 +526,6 @@ function module.new(CommandProcessor, ChatWindow)
 	obj.eGuiObjectsChanged = Instance.new("BindableEvent")
 	obj.GuiObjectsChanged = obj.eGuiObjectsChanged.Event
 
-	obj.Connections = {}
 	obj.InCustomState = false
 	obj.CustomState = nil
 
