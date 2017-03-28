@@ -60,6 +60,12 @@ A ChatChannel is an object that stores data about a single channel that Speakers
 
 	void SendSystemMessage(string message)
 
+	MessageObject[] GetHistoryLogForSpeaker(Speaker speaker)
+
+	void RegisterGetWelcomeMessageFunction(function func)
+	void UnRegisterGetWelcomeMessageFunction()
+	string GetWelcomeMessageForSpeaker(Speaker speaker)
+
 #### Events
 	MessagePosted(table messageObj)
 	SpeakerJoined(string speakerName)
