@@ -488,7 +488,9 @@ do
 
 	function moduleApiTable:SpecialKeyPressed(key, modifiers)
 		if (key == Enum.SpecialKey.ChatHotkey) then
-			DoChatBarFocus()
+			if canChat then
+				DoChatBarFocus()
+			end
 		end
 	end
 end
@@ -1038,9 +1040,6 @@ if chatPrivacySettingsEnabled then
 		end)
 		if success then
 			canChat = RunService:IsStudio() or canLocalUserChat
-			if canChat == false then
-				ChatBar:SetEnabled(canChat)
-			end
 		end
 	end)
 end

@@ -5,6 +5,14 @@
 local module = {}
 
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+while not LocalPlayer do
+	Players.ChildAdded:wait()
+	LocalPlayer = Players.LocalPlayer
+end
 
 --////////////////////////////// Include
 --//////////////////////////////////////
@@ -113,7 +121,29 @@ function methods:CreateGuiObjects(targetParent)
 
 	self:AnimGuiObjects()
 	self:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
+	if self.UserHasChatOff then
+		self:DoLockChatBar()
+	end
 	self.eGuiObjectsChanged:Fire()
+end
+
+-- Used to lock the chat bar when the user has chat turned off.
+function methods:DoLockChatBar()
+	if self.TextLabel then
+		if LocalPlayer.UserId > 0 then
+			self.TextLabel.Text = "To chat in game, turn on chat in your Privacy Settings."
+		else
+			self.TextLabel.Text = "Sign up to chat in game."
+		end
+		self:CalculateSize()
+	end
+	if self.TextBox then
+		self.TextBox.Active = false
+		local textboxfocusedConnection = self.TextBox.Focused:connect(function()
+			self.TextBox:ReleaseFocus()
+		end)
+		table.insert(self.Connections, textboxfocusedConnection)
+	end
 end
 
 function methods:DisconnectConnections()
@@ -129,14 +159,23 @@ function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
 	--// Code for getting back into general channel from other target channel when pressing backspace.
 	local inputBeganConnection = UserInputService.InputBegan:connect(function(inputObj, gpe)
 		if (inputObj.KeyCode == Enum.KeyCode.Backspace) then
-			if (TextBox:IsFocused() and TextBox.Text == "") then
+			if (self:IsFocused() and TextBox.Text == "") then
 				self:SetChannelTarget(ChatSettings.GeneralChannelName)
 			end
 		end
 	end)
 	table.insert(self.Connections, inputBeganConnection)
 
+
+	local calculatingSizeLock = false
 	local textboxChangedConnection = TextBox.Changed:connect(function(prop)
+		if prop == "AbsoluteSize" and not calculatingSizeLock then
+			calculatingSizeLock = true
+			self:CalculateSize()
+			calculatingSizeLock = false
+			return
+		end
+
 		if prop ~= "Text" then
 			return
 		end
@@ -176,13 +215,15 @@ function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
 	table.insert(self.Connections, messageModeConnection)
 
 	local textboxfocusedConnection = TextBox.Focused:connect(function()
-		self:CalculateSize()
-		UpdateOnFocusStatusChanged(true)
+		if not self.UserHasChatOff then
+			self:CalculateSize()
+			UpdateOnFocusStatusChanged(true)
+		end
 	end)
 	table.insert(self.Connections, textboxfocusedConnection)
 
 	local textboxFocusLostConnection = TextBox.FocusLost:connect(function(enterPressed, inputObject)
-		self:ResetSize()
+		self:CalculateSize()
 		if (inputObject and inputObject.KeyCode == Enum.KeyCode.Escape) then
 			TextBox.Text = ""
 		end
@@ -206,6 +247,10 @@ function methods:GetMessageModeTextLabel()
 end
 
 function methods:IsFocused()
+	if self.UserHasChatOff then
+		return false
+	end
+
 	-- Temporary hack while reparenting is necessary.
 	if not self.GuiObject:IsDescendantOf(game) then
 		if self.LastFocusedState then
@@ -220,7 +265,9 @@ function methods:GetVisible()
 end
 
 function methods:CaptureFocus()
-	self:GetTextBox():CaptureFocus()
+	if not self.UserHasChatOff then
+		self:GetTextBox():CaptureFocus()
+	end
 end
 
 function methods:ReleaseFocus(didRelease)
@@ -240,11 +287,19 @@ function methods:GetEnabled()
 end
 
 function methods:SetEnabled(enabled)
-	self.GuiObject.Visible = enabled
+	if not self.UserHasChatOff then
+		self.GuiObject.Visible = enabled
+	else
+		-- The chat bar can not be removed if a user has chat turned off so that
+		-- the chat bar can display a message explaining that chat is turned off.
+		self.GuiObject.Visible = true
+	end
 end
 
 function methods:SetTextLabelText(text)
-	self.TextLabel.Text = text
+	if not self.UserHasChatOff then
+		self.TextLabel.Text = text
+	end
 end
 
 function methods:SetTextBoxText(text)
@@ -264,8 +319,16 @@ function methods:CalculateSize()
 	local lastPos = self.GuiObject.Size
 	self.GuiObject.Size = UDim2.new(1, 0, 0, 1000)
 
-	local textSize = self.TextBox.TextSize
-	local bounds = self.TextBox.TextBounds.Y
+	local textSize = nil
+	local bounds = nil
+
+	if self:IsFocused() or self.TextBox.Text ~= "" then
+		textSize = self.TextBox.textSize
+		bounds = self.TextBox.TextBounds.Y
+	else
+		textSize = self.TextLabel.textSize
+		bounds = self.TextLabel.TextBounds.Y
+	end
 
 	self.GuiObject.Size = lastPos
 
@@ -382,7 +445,7 @@ end
 -- Temporary hack until ScreenGui.DisplayOrder is released.
 function methods:GetFocusedState()
 	local focusedState = {
-		Focused = self.TextBox:IsFocused(),
+		Focused = self:IsFocused(),
 		Text = self.TextBox.Text
 	}
 	self.LastFocusedState = focusedState
@@ -495,6 +558,8 @@ function module.new(CommandProcessor, ChatWindow)
 
 	obj.ChannelNameColors = {}
 
+	obj.UserHasChatOff = false
+
 	obj:InitializeAnimParams()
 
 	ChatSettings.SettingsChanged:connect(function(setting, value)
@@ -502,6 +567,17 @@ function module.new(CommandProcessor, ChatWindow)
 			obj:SetTextSize(value)
 		end
 	end)
+
+	coroutine.wrap(function()
+		local success, canLocalUserChat = pcall(function()
+			return Chat:CanUserChatAsync(LocalPlayer.UserId)
+		end)
+		local canChat = success and (RunService:IsStudio() or canLocalUserChat)
+		if canChat == false then
+			obj.UserHasChatOff = true
+			obj:DoLockChatBar()
+		end
+	end)()
 
 
 	return obj

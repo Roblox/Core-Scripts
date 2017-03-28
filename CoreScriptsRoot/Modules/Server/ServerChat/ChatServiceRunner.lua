@@ -299,7 +299,7 @@ allChannel.AutoJoin = true
 
 allChannel:RegisterGetWelcomeMessageFunction(function(speaker)
 	if RunService:IsStudio() then
-		return
+		return nil
 	end
 	local player = speaker:GetPlayer()
 	if player then
@@ -307,7 +307,7 @@ allChannel:RegisterGetWelcomeMessageFunction(function(speaker)
 			return Chat:CanUserChatAsync(player.UserId)
 		end)
 		if success and not canChat then
-			return "Enable in-game chat in your privacy settings to be able to chat."
+			return ""
 		end
 	end
 end)
