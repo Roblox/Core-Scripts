@@ -38,6 +38,9 @@ end
 ------------ VARIABLES -------------------
 local PageInstance = nil
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 ----------- CLASS DECLARATION --------------
 local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
@@ -128,6 +131,15 @@ local function Initialize()
 			this.AbuseDescriptionFrame,
 			this.AbuseDescriptionLabel,
 			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
+
+			if not enablePortraitMode then
+				this.AbuseDescription.Selection.Size = UDim2.new(0, 290, 0, 30)
+	 			this.AbuseDescription.Selection.Position = UDim2.new(1,-345,this.AbuseDescription.Selection.Position.Y.Scale, this.AbuseDescription.Selection.Position.Y.Offset)
+	 			this.AbuseDescriptionLabel = this.TypeOfAbuseLabel:clone()
+ 				this.AbuseDescriptionLabel.Text = "Abuse Description"
+				this.AbuseDescriptionLabel.Position = UDim2.new(this.AbuseDescriptionLabel.Position.X.Scale, this.AbuseDescriptionLabel.Position.X.Offset,0,50)
+				this.AbuseDescriptionLabel.Parent = this.Page
+			end
 		else
 			this.AbuseDescriptionFrame,
 			this.AbuseDescriptionLabel,
