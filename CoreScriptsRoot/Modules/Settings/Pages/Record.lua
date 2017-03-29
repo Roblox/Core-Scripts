@@ -92,6 +92,32 @@ local function Initialize()
 		return textLabel, container
 	end
 
+	local makeTextLabelOld
+	if not enablePortraitMode then
+		makeTextLabelOld = function(name, text, bold, size, pos, parent)
+			local textLabel = utility:Create'TextLabel'
+  			{
+	  			Name = name,
+	  			BackgroundTransparency = 1,
+	  			Text = text,
+	  			TextWrapped = true,
+	  			Font = Enum.Font.SourceSans,
+	  			FontSize = Enum.FontSize.Size24,
+	  			TextColor3 = Color3.new(1,1,1),
+	  			Size = size,
+	  			Position = pos,
+	  			TextXAlignment = Enum.TextXAlignment.Left,
+	  			TextYAlignment = Enum.TextYAlignment.Top,
+	  			ZIndex = 2,
+	  			Parent = parent
+	  		};
+	  		if bold then textLabel.Font = Enum.Font.SourceSansBold end
+
+	  		return textLabel
+		end
+	end
+
+
 	-- need to override this function from SettingsPageFactory
 	-- DropDown menus require hub to to be set when they are initialized
 	function this:SetHub(newHubRef)
@@ -107,40 +133,46 @@ local function Initialize()
 		end
 
 		---------------------------------- SCREENSHOT -------------------------------------
-		local screenshotTitle = makeTextLabel("ScreenshotTitle", 
-												"Screenshot",
-												true, this.Page, 1)
-
-		local screenshotBody = makeTextLabel("ScreenshotBody", 
-												"By clicking the 'Take Screenshot' button, the menu will close and take a screenshot and save it to your computer.",
-												false, this.Page, 2)
-
 		local closeSettingsFunc = function()
 			this.HubRef:SetVisibility(false, true)
 		end
+
+		local screenshotTitle, screenshotBody
 		if enablePortraitMode then
+			screenshotTitle = makeTextLabel("ScreenshotTitle", "Screenshot", true, this.Page, 1)
+
+			screenshotBody = makeTextLabel("ScreenshotBody", "By clicking the 'Take Screenshot' button, the menu will close and take a screenshot and save it to your computer.", false, this.Page, 2)
+
 			this.ScreenshotButtonRow, this.ScreenshotButton = utility:AddButtonRow(this, "ScreenshotButton", "Take Screenshot", UDim2.new(0, 300, 0, 44), closeSettingsFunc)
 			this.ScreenshotButtonRow.LayoutOrder = 3
 		else
-			this.ScreenshotButton = utility:MakeStyledButton("ScreenshotButton", "Take Screenshot", UDim2.new(0,300,0,44), closeSettingsFunc, this)
+			screenshotTitle = makeTextLabelOld("ScreenshotTitle", "Screenshot", true, UDim2.new(1,0,0,36), UDim2.new(0,10,0.05,0), this.Page)
+ 			screenshotTitle.FontSize = Enum.FontSize.Size36
+
+ 			screenshotBody = makeTextLabelOld("ScreenshotBody", "By clicking the 'Take Screenshot' button, the menu will close and take a screenshot and save it to your computer.", false, UDim2.new(1,-10,0,70), UDim2.new(0,0,1,0), screenshotTitle)
+
+ 			this.ScreenshotButton = utility:MakeStyledButton("ScreenshotButton", "Take Screenshot", UDim2.new(0,300,0,44), closeSettingsFunc, this)
 	 		
 	 		this.ScreenshotButton.Position = UDim2.new(0,400,1,0)
 	 		this.ScreenshotButton.Parent = screenshotBody
-	 	end
-
+ 		end
 
 		---------------------------------- VIDEO -------------------------------------
-		local videoTitle = makeTextLabel("VideoTitle", 
-												"Video",
-												true, this.Page, 4)
+		local videoTitle, videoBody
+		if enablePortraitMode then
+			videoTitle = makeTextLabel("VideoTitle", "Video", true, this.Page, 4)
 
-		local videoBody = makeTextLabel("VideoBody", 
-												"By clicking the 'Record Video' button, the menu will close and start recording your screen.",
-												false, this.Page, 5)
+			videoBody = makeTextLabel("VideoBody", "By clicking the 'Record Video' button, the menu will close and start recording your screen.", false, this.Page, 5)
+		else
+			videoTitle = makeTextLabelOld("VideoTitle", "Video", true, UDim2.new(1,0,0,36), UDim2.new(0,10,0.5,0), this.Page)
+ 			videoTitle.FontSize = Enum.FontSize.Size36
+
+ 			videoBody = makeTextLabelOld("VideoBody", "By clicking the 'Record Video' button, the menu will close and start recording your screen.", false, UDim2.new(1,-10,0,70), UDim2.new(0,0,1,0), videoTitle)
+		end
 
 		this.VideoSettingsFrame, 
 		this.VideoSettingsLabel,
-		this.VideoSettingsMode = utility:AddNewRow(this, "Video Settings", "Selector", recordEnumNames, startSetting)
+		this.VideoSettingsMode = utility:AddNewRow(this, "Video Settings", "Selector", recordEnumNames, startSetting, enablePortraitMode and nil or 270)
 		this.VideoSettingsFrame.LayoutOrder = 5
 
 		this.VideoSettingsMode.IndexChanged:connect(function(newIndex)
