@@ -260,6 +260,22 @@ local function CreateCamera()
 	function this:GetRenderCFrame(part)
 		GetRenderCFrame(part)
 	end
+	
+	local STATE_DEAD = Enum.HumanoidStateType.Dead
+	
+	-- HumanoidRootPart when alive, Torso part when dead
+	local function getHumanoidPartToFollow(humanoid, humanoidStateType)
+		if humanoidStateType ~= STATE_DEAD then
+			return humanoid.Torso
+		else
+			local character = humanoid.Parent
+			if humanoid.RigType == Enum.HumanoidRigType.R15 then
+				return character and character:FindFirstChild("UpperTorso") or humanoid.Torso
+			else
+				return character and character:FindFirstChild("Torso") or humanoid.Torso
+			end
+		end
+	end
 
 	function this:GetSubjectPosition()
 		local result = nil
@@ -282,10 +298,11 @@ local function CreateCamera()
 			elseif cameraSubject:IsA('Model') then
 				result = cameraSubject:GetModelCFrame().p
 			elseif cameraSubject:IsA('Humanoid') then
-				if cameraSubject:GetState() == Enum.HumanoidStateType.Dead and cameraSubject == this.lastSubject and VRService.VREnabled then
+				local humanoidStateType = cameraSubject:GetState()
+				if humanoidStateType == Enum.HumanoidStateType.Dead and cameraSubject == this.lastSubject and VRService.VREnabled then
 					result = this.lastSubjectPosition
 				else
-					local humanoidRootPart = cameraSubject.Torso
+					local humanoidRootPart = getHumanoidPartToFollow(cameraSubject, humanoidStateType)
 					if humanoidRootPart and humanoidRootPart:IsA('BasePart') then
 						local subjectCFrame = GetRenderCFrame(humanoidRootPart)
 						if cameraSubject.RigType == Enum.HumanoidRigType.R15 then
