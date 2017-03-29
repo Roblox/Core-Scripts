@@ -142,16 +142,18 @@ local function Initialize()
 		Size = UDim2.new(1,0,1,0)
 	};
 
-	this.PageListLayout = utility:Create'UIListLayout'
-	{
-		Name = "RowListLayout",
-		FillDirection = Enum.FillDirection.Vertical,
-		HorizontalAlignment = Enum.HorizontalAlignment.Center,
-		VerticalAlignment = Enum.VerticalAlignment.Top,
-		Padding = UDim.new(0, 3),
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Parent = this.Page
-	};
+	if enablePortraitMode then
+		this.PageListLayout = utility:Create'UIListLayout'
+		{
+			Name = "RowListLayout",
+			FillDirection = Enum.FillDirection.Vertical,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			VerticalAlignment = Enum.VerticalAlignment.Top,
+			Padding = UDim.new(0, 3),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Parent = this.Page
+		};
+	end
 
 
 	-- make sure each page has a unique selection group (for gamepad selection)

@@ -942,8 +942,10 @@ local function Initialize()
   ------ PAGE CUSTOMIZATION -------
   this.Page.ZIndex = 5
 
-  this.PageListLayout.Padding = UDim.new(0, 0)
-
+  if this.PageListLayout then
+    this.PageListLayout.Padding = UDim.new(0, 0)
+  end
+  
   return this
 end
 
