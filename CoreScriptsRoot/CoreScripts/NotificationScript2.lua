@@ -40,8 +40,8 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 local getTenFootBadgeNotifications, tenFootBadgeNotificationsValue = pcall(function() return settings():GetFFlag("TenFootBadgeNotifications") end)
 local tenFootBadgeNotifications = getTenFootBadgeNotifications and tenFootBadgeNotificationsValue
 
-local disableScreenshotPopup, disableScreenshotPopupValue = pcall(function() return settings():GetFFlag("DisableScreenshotPopup") end)
-local disableScreenshotPopup = disableScreenshotPopup and disableScreenshotPopupValue
+local getDisableScreenshotPopup, disableScreenshotPopupValue = pcall(function() return settings():GetFFlag("DisableScreenshotPopup") end)
+local disableScreenshotPopup = getDisableScreenshotPopup and disableScreenshotPopupValue
 
 --[[ Script Variables ]]--
 local LocalPlayer = nil
