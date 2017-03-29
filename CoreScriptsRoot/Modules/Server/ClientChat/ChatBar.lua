@@ -155,12 +155,9 @@ function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
 		end
 	end)
 
-	local calculatingSizeLock = false
 	TextBox.Changed:connect(function(prop)
-		if prop == "AbsoluteSize" and not calculatingSizeLock then
-			calculatingSizeLock = true
+		if prop == "AbsoluteSize" then
 			self:CalculateSize()
-			calculatingSizeLock = false
 			return
 		end
 
@@ -300,6 +297,11 @@ function methods:ResetSize()
 end
 
 function methods:CalculateSize()
+	if self.CalculatingSizeLock then
+		return
+	end
+	self.CalculatingSizeLock = true
+
 	local lastPos = self.GuiObject.Size
 	self.GuiObject.Size = UDim2.new(1, 0, 0, 1000)
 
@@ -322,6 +324,7 @@ function methods:CalculateSize()
 		self:TweenToTargetYSize()
 	end
 
+	self.CalculatingSizeLock = false
 end
 
 function methods:TweenToTargetYSize()
@@ -538,6 +541,7 @@ function module.new(CommandProcessor, ChatWindow)
 
 	obj.AnimParams = {}
 	obj.LastFocusedState = nil
+	obj.CalculatingSizeLock = false
 
 	obj.ChannelNameColors = {}
 
