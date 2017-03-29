@@ -40,6 +40,9 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 local getTenFootBadgeNotifications, tenFootBadgeNotificationsValue = pcall(function() return settings():GetFFlag("TenFootBadgeNotifications") end)
 local tenFootBadgeNotifications = getTenFootBadgeNotifications and tenFootBadgeNotificationsValue
 
+local getDisableScreenshotPopup, disableScreenshotPopupValue = pcall(function() return settings():GetFFlag("DisableScreenshotPopup") end)
+local disableScreenshotPopup = getDisableScreenshotPopup and disableScreenshotPopupValue
+
 --[[ Script Variables ]]--
 local LocalPlayer = nil
 while not Players.LocalPlayer do
@@ -719,6 +722,22 @@ if not isTenFootInterface then
 	end)
 end
 
+end
+
+if disableScreenshotPopup then
+	game.ScreenshotReady:Connect(function(path)
+		sendNotificationInfo {
+			Title = "Screenshot Taken",
+			Text = "Check out your screenshots folder to see it.",
+			Duration = 3.0,
+			Button1Text = "Open Folder",
+			Callback = function(text)
+				if text == "Open Folder" then
+					game:OpenScreenshotsFolder()
+				end
+			end
+		}
+	end)
 end
 
 GuiService.SendCoreUiNotification = function(title, text)
