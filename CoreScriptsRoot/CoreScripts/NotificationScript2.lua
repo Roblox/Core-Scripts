@@ -727,7 +727,7 @@ end
 if disableScreenshotPopup then
 	game.ScreenshotReady:Connect(function(path)
 		sendNotificationInfo {
-			Title = "Screenshot Ready",
+			Title = "Screenshot Taken",
 			Text = "Check out your screenshots folder to see it.",
 			Duration = 3.0,
 			Button1Text = "Open Folder",
