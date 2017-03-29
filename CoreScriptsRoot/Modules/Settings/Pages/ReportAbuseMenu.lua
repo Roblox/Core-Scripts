@@ -140,12 +140,14 @@ local function Initialize()
 				this.AbuseDescriptionLabel.Position = UDim2.new(this.AbuseDescriptionLabel.Position.X.Scale, this.AbuseDescriptionLabel.Position.X.Offset,0,50)
 				this.AbuseDescriptionLabel.Parent = this.Page
 			end
+
+			this.AbuseDescriptionLabel.Text = "Abuse Description"
 		else
 			this.AbuseDescriptionFrame,
 			this.AbuseDescriptionLabel,
 			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
 		end
-		this.AbuseDescriptionLabel.Text = "Abuse Description"
+		
 		this.AbuseDescriptionFrame.LayoutOrder = 4
 
 		this.AbuseDescription.Selection.FocusLost:connect(function()
