@@ -37,7 +37,7 @@ local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() retu
 local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
 
 if not enablePortraitMode then
-	return require(RobloxGui.Modules.Settings.UtilityOld)
+	return require(RobloxGui.Modules.Settings:WaitForChild("UtilityOld"))
 end
 
 
