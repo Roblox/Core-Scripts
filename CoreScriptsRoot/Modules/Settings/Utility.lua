@@ -1,5 +1,3 @@
-
-
 --[[
 		Filename: SettingsPage.lua
 		Written by: jeditkacheff
