@@ -264,7 +264,7 @@ local function CreateCamera()
 	
 	local STATE_DEAD = Enum.HumanoidStateType.Dead
 	
-	-- HumanoidRootPart when alive, Torso part when dead
+	-- HumanoidRootPart when alive, Head part when dead
 	local function getHumanoidPartToFollow(humanoid, humanoidStateType)
 		if humanoidStateType ~= STATE_DEAD then
 			return humanoid.Torso
