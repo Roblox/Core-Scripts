@@ -33,7 +33,7 @@ local RobloxGui = CoreGui:FindFirstChild("RobloxGui")
 local ContextActionService = game:GetService("ContextActionService")
 
 -- Enable the old Utility.lua if the EnablePortraitMode flag is off
-local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return UserSettings():IsUserFeatureEnabled("EnablePortraitMode") end)
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
 local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
 
 if not enablePortraitMode then
@@ -45,7 +45,7 @@ end
 local tenFootInterfaceEnabled = require(RobloxGui.Modules:WaitForChild("TenFootInterface")):IsEnabled()
 
 --------------- FLAGS ----------------
-local getFixSettingsMenuVRSuccess, fixSettingsMenuVRValue = pcall(function() return UserSettings():IsUserFeatureEnabled("FixSettingsMenuVRLua") end)
+local getFixSettingsMenuVRSuccess, fixSettingsMenuVRValue = pcall(function() return settings():GetFFlag("FixSettingsMenuVRLua") end)
 local fixSettingsMenuVR = getFixSettingsMenuVRSuccess and fixSettingsMenuVRValue
 
 ----------- UTILITIES --------------
@@ -110,7 +110,7 @@ local EaseInOutQuad = function(t, b, c, d)
 	if t >= d then return b + c end
 
 	t = t / (d/2);
-	if (t < 1) then return c/2*t*t + b end;
+	if t < 1 then return c/2*t*t + b end;
 	t = t - 1;
 	return -c/2 * (t*(t-2) - 1) + b;
 end
@@ -395,18 +395,12 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 
 	if clickFunc then
 		button.MouseButton1Click:Connect(function()
-			local lastInputType = nil
-			local success, lastInputType = pcall(UserInputService.GetLastInputType, UserInputService)
-			if success then
-				clickFunc(gamepadSet[lastInputType] or false)
-			else
-				clickFunc(false)
-			end
+			clickFunc(gamepadSet[UserInputService:GetLastInputType()] or false)
 		end)
 	end
 
 	local function isPointerInput(inputObject)
-		return (inputObject.UserInputType == Enum.UserInputType.MouseMovement or inputObject.UserInputType == Enum.UserInputType.Touch)
+		return inputObject.UserInputType == Enum.UserInputType.MouseMovement or inputObject.UserInputType == Enum.UserInputType.Touch
 	end
 
 	local rowRef = nil
@@ -422,7 +416,7 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 			end
 		end
 
-		if (hub and hub.Active or hub == nil) then
+		if hub and hub.Active or hub == nil then
 			button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButtonSelected.png"
 
 			local scrollTo = button
@@ -1378,7 +1372,8 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 	AlertViewBacking = Util.Create'ImageLabel'
 	{
 		Name = "AlertViewBacking",
-		Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png", ScaleType = Enum.ScaleType.Slice,
+		Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png", 
+		ScaleType = Enum.ScaleType.Slice,
 		SliceCenter = Rect.new(8,6,46,44),
 		BackgroundTransparency = 1,
 
@@ -1409,7 +1404,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		Size = UDim2.new(0.95, 0, 0.6, 0),
 		Position = UDim2.new(0.025, 0, 0.05, 0),
 		Font = Enum.Font.SourceSansBold,
-		TextSize = Enum.TextSize.Size36,
+		TextSize = 36,
 		Text = alertMessage,
 		TextWrapped = true,
 		TextColor3 = Color3.fromRGB(255, 255, 255),
@@ -2578,7 +2573,7 @@ function moduleApiTable:CreateSignal()
 end
 
 function  moduleApiTable:UsesSelectedObject()
-	return usesSelectedObject();
+	return usesSelectedObject()
 end
 
 function moduleApiTable:TweenProperty(instance, prop, start, final, duration, easingFunc, cbFunc)
