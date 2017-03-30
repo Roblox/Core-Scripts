@@ -93,26 +93,33 @@ function ClampVector2(low, high, input)
 end
 
 ---- TWEENZ ----
-local Linear = function(t, b, c, d)
-	if t >= d then return b + c end
+local function Linear(t, b, c, d)
+	if t >= d then
+		return b + c
+	end
 
 	return c*t/d + b
 end
 
-local EaseOutQuad = function(t, b, c, d)
-	if t >= d then return b + c end
+local function EaseOutQuad(t, b, c, d)
+	if t >= d then
+		return b + c
+	end
 
-	t = t/d;
-	return -c * t*(t-2) + b
+	t = t/d
+	return b - c*t*(t - 2)
 end
 
-local EaseInOutQuad = function(t, b, c, d)
-	if t >= d then return b + c end
+local function EaseInOutQuad(t, b, c, d)
+	if t >= d then
+		return b + c
+	end
 
-	t = t / (d/2);
-	if t < 1 then return c/2*t*t + b end;
-	t = t - 1;
-	return -c/2 * (t*(t-2) - 1) + b;
+	t = t/d
+	if t < 1/2 then
+		return 2*c*t*t + b
+	end
+	return b + c*(2*(2 - t)*t - 1)
 end
 
 function PropertyTweener(instance, prop, start, final, duration, easingFunc, cbFunc)
