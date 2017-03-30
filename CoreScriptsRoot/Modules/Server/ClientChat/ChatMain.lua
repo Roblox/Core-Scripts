@@ -488,7 +488,9 @@ do
 
 	function moduleApiTable:SpecialKeyPressed(key, modifiers)
 		if (key == Enum.SpecialKey.ChatHotkey) then
-			DoChatBarFocus()
+			if canChat then
+				DoChatBarFocus()
+			end
 		end
 	end
 end
@@ -508,6 +510,19 @@ moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	end
 end)
 
+function trimTrailingSpaces(str)
+	local lastSpace = #str
+	while lastSpace > 0 do
+		--- The pattern ^%s matches whitespace at the start of the string. (Starting from lastSpace)
+		if str:find("^%s", lastSpace) then
+			lastSpace = lastSpace - 1
+		else
+			break
+		end
+	end
+	return str:sub(1, lastSpace)
+end
+
 moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 	if (valueTable["Text"] and type(valueTable["Text"]) == "string") then
 		while (not DidFirstChannelsLoads) do wait() end
@@ -523,7 +538,7 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(valueTable.Text),
-				Message = valueTable.Text,
+				Message = trimTrailingSpaces(valueTable.Text),
 				MessageType = ChatConstants.MessageTypeSetCore,
 				Time = os.time(),
 				ExtraData = valueTable,
@@ -591,7 +606,7 @@ function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 			OriginalChannel = channelName,
 			IsFiltered = true,
 			MessageLength = string.len(message),
-			Message = message,
+			Message = trimTrailingSpaces(message),
 			MessageType = ChatConstants.MessageTypeSystem,
 			Time = os.time(),
 			ExtraData = extraData,
@@ -803,7 +818,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(welcomeMessage),
-				Message = welcomeMessage,
+				Message = trimTrailingSpaces(welcomeMessage),
 				MessageType = ChatConstants.MessageTypeWelcome,
 				Time = os.time(),
 				ExtraData = nil,
@@ -956,7 +971,7 @@ function SendSystemMessageToSelf(message)
 			OriginalChannel = currentChannel.Name,
 			IsFiltered = true,
 			MessageLength = string.len(message),
-			Message = message,
+			Message = trimTrailingSpaces(message),
 			MessageType = ChatConstants.MessageTypeSystem,
 			Time = os.time(),
 			ExtraData = nil,
@@ -1038,9 +1053,6 @@ if chatPrivacySettingsEnabled then
 		end)
 		if success then
 			canChat = RunService:IsStudio() or canLocalUserChat
-			if canChat == false then
-				ChatBar:SetEnabled(canChat)
-			end
 		end
 	end)
 end

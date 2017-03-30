@@ -935,28 +935,17 @@ local function Initialize()
 
   ------ TAB CUSTOMIZATION -------
   this.TabHeader.Name = "GameSettingsTab"
-
-  this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsTab.png"
-  if utility:IsSmallTouchScreen() then
-    this.TabHeader.Icon.Size = UDim2.new(0,34,0,34)
-    this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-17)
-    this.TabHeader.Size = UDim2.new(0,125,1,0)
-  elseif isTenFootInterface then
-    this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsTab@2x.png"
-    this.TabHeader.Icon.Size = UDim2.new(0,90,0,90)
-    this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
-    this.TabHeader.Size = UDim2.new(0,280,1,0)
-  else
-    this.TabHeader.Icon.Size = UDim2.new(0,45,0,45)
-    this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-22)
-  end
-
+  this.TabHeader.Icon.Image = isTenFootInterface and "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsTab@2x.png" or "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsTab.png"
 
   this.TabHeader.Icon.Title.Text = "Settings"
 
   ------ PAGE CUSTOMIZATION -------
   this.Page.ZIndex = 5
 
+  if this.PageListLayout then
+    this.PageListLayout.Padding = UDim.new(0, 0)
+  end
+  
   return this
 end
 

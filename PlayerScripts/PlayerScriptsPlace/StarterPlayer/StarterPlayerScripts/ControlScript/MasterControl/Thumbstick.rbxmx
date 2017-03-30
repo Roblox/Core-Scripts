@@ -58,8 +58,9 @@ function Thumbstick:Create(parentFrame)
 			OnTouchEndedCn = nil
 		end
 	end
-		
-	local isSmallScreen = parentFrame.AbsoluteSize.y <= 500
+	
+	local minAxis = math.min(parentFrame.AbsoluteSize.x, parentFrame.AbsoluteSize.y)
+	local isSmallScreen = minAxis <= 500
 	local thumbstickSize = isSmallScreen and 70 or 120
 	local position = isSmallScreen and UDim2.new(0, (thumbstickSize/2) - 10, 1, -thumbstickSize - 20) or
 		UDim2.new(0, thumbstickSize/2, 1, -thumbstickSize * 1.75)

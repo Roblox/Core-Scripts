@@ -7,6 +7,9 @@ local EventFolderParent = game:GetService("ReplicatedStorage")
 local modulesFolder = script
 
 local PlayersService = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Chat = game:GetService("Chat")
+
 local ChatService = require(modulesFolder:WaitForChild("ChatService"))
 
 local useEvents = {}
@@ -206,7 +209,7 @@ EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
 			local channelData =
 			{
 				channelName,
-				channelObj.WelcomeMessage,
+				channelObj:GetWelcomeMessageForSpeaker(speaker),
 				channelObj:GetHistoryLogForSpeaker(speaker),
 				channelObj.ChannelNameColor,
 			}
@@ -293,6 +296,21 @@ local systemChannel = ChatService:AddChannel("System")
 
 allChannel.Leavable = false
 allChannel.AutoJoin = true
+
+allChannel:RegisterGetWelcomeMessageFunction(function(speaker)
+	if RunService:IsStudio() then
+		return nil
+	end
+	local player = speaker:GetPlayer()
+	if player then
+		local success, canChat = pcall(function()
+			return Chat:CanUserChatAsync(player.UserId)
+		end)
+		if success and not canChat then
+			return ""
+		end
+	end
+end)
 
 systemChannel.Leavable = false
 systemChannel.AutoJoin = true
