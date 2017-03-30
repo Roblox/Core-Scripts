@@ -1,8 +1,8 @@
 --[[
-		Filename: SettingsPage.lua
+		Filename: Utility.lua
 		Written by: jeditkacheff
 		Version 1.0
-		Description: Base Page Functionality for all Settings Pages
+		Description: Utility module for CoreScripts
 --]]
 
 ------------------ CONSTANTS --------------------
