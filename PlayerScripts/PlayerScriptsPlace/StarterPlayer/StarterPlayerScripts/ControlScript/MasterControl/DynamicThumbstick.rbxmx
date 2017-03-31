@@ -25,7 +25,6 @@ while not Players.LocalPlayer do
 end
 local LocalPlayer = Players.LocalPlayer
 
-local Backpack = LocalPlayer:WaitForChild("Backpack")
 local Tools = {}
 local IsAToolEquipped = false
 
