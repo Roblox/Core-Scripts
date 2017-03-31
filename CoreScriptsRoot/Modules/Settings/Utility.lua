@@ -1,16 +1,16 @@
 --[[
-		Filename: SettingsPage.lua
+		Filename: Utility.lua
 		Written by: jeditkacheff
 		Version 1.0
-		Description: Base Page Functionality for all Settings Pages
+		Description: Utility module for CoreScripts
 --]]
 
 ------------------ CONSTANTS --------------------
-local SELECTED_COLOR = Color3.new(0,162/255,1)
-local NON_SELECTED_COLOR = Color3.new(78/255,84/255,96/255)
+local SELECTED_COLOR = Color3.fromRGB(0,162,255)
+local NON_SELECTED_COLOR = Color3.fromRGB(78,84,96)
 
-local ARROW_COLOR = Color3.new(0.8, 0.8, 0.8)
-local ARROW_COLOR_HOVER = Color3.new(1, 1, 1)
+local ARROW_COLOR = Color3.fromRGB(204, 204, 204)
+local ARROW_COLOR_HOVER = Color3.fromRGB(255, 255, 255)
 local ARROW_COLOR_TOUCH = ARROW_COLOR_HOVER
 
 local SELECTED_LEFT_IMAGE = "rbxasset://textures/ui/Settings/Slider/SelectedBarLeft.png"
@@ -42,11 +42,7 @@ end
 
 
 ------------------ VARIABLES --------------------
-local tenFootInterfaceEnabled = false
-do
-	RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
-	tenFootInterfaceEnabled = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
-end
+local tenFootInterfaceEnabled = require(RobloxGui.Modules:WaitForChild("TenFootInterface")):IsEnabled()
 
 --------------- FLAGS ----------------
 local getFixSettingsMenuVRSuccess, fixSettingsMenuVRValue = pcall(function() return settings():GetFFlag("FixSettingsMenuVRLua") end)
@@ -97,26 +93,33 @@ function ClampVector2(low, high, input)
 end
 
 ---- TWEENZ ----
-local Linear = function(t, b, c, d)
-	if t >= d then return b + c end
+local function Linear(t, b, c, d)
+	if t >= d then
+		return b + c
+	end
 
 	return c*t/d + b
 end
 
-local EaseOutQuad = function(t, b, c, d)
-	if t >= d then return b + c end
+local function EaseOutQuad(t, b, c, d)
+	if t >= d then
+		return b + c
+	end
 
-	t = t/d;
-	return -c * t*(t-2) + b
+	t = t/d
+	return b - c*t*(t - 2)
 end
 
-local EaseInOutQuad = function(t, b, c, d)
-	if t >= d then return b + c end
+local function EaseInOutQuad(t, b, c, d)
+	if t >= d then
+		return b + c
+	end
 
-	t = t / (d/2);
-	if (t < 1) then return c/2*t*t + b end;
-	t = t - 1;
-	return -c/2 * (t*(t-2) - 1) + b;
+	t = t/d
+	if t < 1/2 then
+		return 2*c*t*t + b
+	end
+	return b + c*(2*(2 - t)*t - 1)
 end
 
 function PropertyTweener(instance, prop, start, final, duration, easingFunc, cbFunc)
@@ -141,7 +144,7 @@ function PropertyTweener(instance, prop, start, final, duration, easingFunc, cbF
 
 	-- Initial set
 	instance[prop] = easingFunc(0, start, final - start, duration)
-	spawn(function()
+	coroutine.wrap(function()
 		local now = tick()
 		while now < this.EndTime and instance do
 			if this.Cancelled then
@@ -155,7 +158,7 @@ function PropertyTweener(instance, prop, start, final, duration, easingFunc, cbF
 		if this.Cancelled == false and instance then
 			finalize()
 		end
-	end)
+	end)()
 
 	function this:GetFinal()
 		return final
@@ -201,14 +204,16 @@ local function CreateSignal()
 
 	function sig:connect(f)
 		if not f then error("connect(nil)", 2) end
-		return mSignaler.Event:connect(function()
+		return mSignaler.Event:Connect(function()
 			f(unpack(mArgData, 1, mArgDataCount))
 		end)
 	end
 
 	function sig:wait()
 		mSignaler.Event:wait()
-		assert(mArgData, "Missing arg data, likely due to :TweenSize/Position corrupting threadrefs.")
+		if not mArgData then
+			error("Missing arg data, likely due to :TweenSize/Position corrupting threadrefs.")
+		end
 		return unpack(mArgData, 1, mArgDataCount)
 	end
 
@@ -216,18 +221,18 @@ local function CreateSignal()
 end
 
 local function getViewportSize()
-	while not game.Workspace.CurrentCamera do
-		game.Workspace.Changed:wait()
+	while not workspace.CurrentCamera do
+		workspace.Changed:wait()
 	end
 
 	-- ViewportSize is initally set to 1, 1 in Camera.cpp constructor.
 	-- Also check against 0, 0 incase this is changed in the future.
-	while game.Workspace.CurrentCamera.ViewportSize == Vector2.new(0,0) or
-		game.Workspace.CurrentCamera.ViewportSize == Vector2.new(1,1) do
-		game.Workspace.CurrentCamera.Changed:wait()
+	while workspace.CurrentCamera.ViewportSize == Vector2.new(0,0) or
+		workspace.CurrentCamera.ViewportSize == Vector2.new(1,1) do
+		workspace.CurrentCamera.Changed:wait()
 	end
 
-	return game.Workspace.CurrentCamera.ViewportSize
+	return workspace.CurrentCamera.ViewportSize
 end
 
 local function isSmallTouchScreen()
@@ -258,11 +263,7 @@ local function isPosOverGui(pos, gui, debug) -- does not account for rotation
 	local sx, sy = gui.AbsoluteSize.x, gui.AbsoluteSize.y
 	local bx, by = ax+sx, ay+sy
 
-	if pos.x > ax and pos.x < bx and pos.y > ay and pos.y < by then
-		return true
-	else
-		return false
-	end
+	return pos.x > ax and pos.x < bx and pos.y > ay and pos.y < by
 end
 
 local function isPosOverGuiWithClipping(pos, gui) -- isPosOverGui, accounts for clipping and visibility, does not account for rotation
@@ -295,11 +296,7 @@ local function isPosOverGuiWithClipping(pos, gui) -- isPosOverGui, accounts for 
 		check = check.Parent
 	end
 
-	if clipping then
-		return false
-	else
-		return true
-	end
+	return not clipping
 end
 
 local function areGuisIntersecting(a, b) -- does not account for rotation
@@ -343,21 +340,17 @@ local function isGuiVisible(gui, debug) -- true if any part of the gui is visibl
 		check = check.Parent
 	end
 
-	if clipping then
-		return false
-	else
-		return true
-	end
+	return not clipping
 end
 
 local function addHoverState(button, instance, onNormalButtonState, onHoverButtonState)
 	local function onNormalButtonStateCallback() onNormalButtonState(instance) end
 	local function onHoverButtonStateCallback() onHoverButtonState(instance) end
 
-	button.MouseEnter:connect(onHoverButtonStateCallback)
-	button.SelectionGained:connect(onHoverButtonStateCallback)
-	button.MouseLeave:connect(onNormalButtonStateCallback)
-	button.SelectionLost:connect(onNormalButtonStateCallback)
+	button.MouseEnter:Connect(onHoverButtonStateCallback)
+	button.SelectionGained:Connect(onHoverButtonStateCallback)
+	button.MouseLeave:Connect(onNormalButtonStateCallback)
+	button.SelectionLost:Connect(onNormalButtonStateCallback)
 
 	onNormalButtonState(instance)
 end
@@ -366,6 +359,17 @@ local function addOnResizedCallback(key, callback)
 	onResizedCallbacks[key] = callback
 	callback(getViewportSize(), isPortrait())
 end
+
+local gamepadSet = {
+	[Enum.UserInputType.Gamepad1] = true;
+	[Enum.UserInputType.Gamepad2] = true;
+	[Enum.UserInputType.Gamepad3] = true;
+	[Enum.UserInputType.Gamepad4] = true;
+	[Enum.UserInputType.Gamepad5] = true;
+	[Enum.UserInputType.Gamepad6] = true;
+	[Enum.UserInputType.Gamepad7] = true;
+	[Enum.UserInputType.Gamepad8] = true;
+}
 
 local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 	local SelectionOverrideObject = Util.Create'ImageLabel'
@@ -397,20 +401,18 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 	}
 
 	if clickFunc then
-		button.MouseButton1Click:connect(function()
-			local lastInputType = nil
-			pcall(function() lastInputType = UserInputService:GetLastInputType() end)
-			if lastInputType then
-				clickFunc(lastInputTypee == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
-					lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
-			else
-				clickFunc(false)
-			end
+		button.MouseButton1Click:Connect(function()
+			clickFunc(gamepadSet[UserInputService:GetLastInputType()] or false)
 		end)
 	end
 
 	local function isPointerInput(inputObject)
-		return (inputObject.UserInputType == Enum.UserInputType.MouseMovement or inputObject.UserInputType == Enum.UserInputType.Touch)
+		return inputObject.UserInputType == Enum.UserInputType.MouseMovement or inputObject.UserInputType == Enum.UserInputType.Touch
+	end
+
+	local rowRef = nil
+	local function setRowRef(ref)
+		rowRef = ref
 	end
 
 	local function selectButton()
@@ -421,7 +423,7 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 			end
 		end
 
-		if (hub and hub.Active or hub == nil) then
+		if hub and hub.Active or hub == nil then
 			button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButtonSelected.png"
 
 			local scrollTo = button
@@ -438,25 +440,22 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		button.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
 	end
 
-	button.InputBegan:connect(function(inputObject)
+	button.InputBegan:Connect(function(inputObject)
 		if button.Selectable and isPointerInput(inputObject) then
 			selectButton()
 		end
 	end)
-	button.InputEnded:connect(function(inputObject)
+	button.InputEnded:Connect(function(inputObject)
 		if button.Selectable and GuiService.SelectedCoreObject ~= button and isPointerInput(inputObject) then
 			deselectButton()
 		end
 	end)
 
-	local rowRef = nil
-	local function setRowRef(ref)
-		rowRef = ref
-	end
-	button.SelectionGained:connect(function()
+
+	button.SelectionGained:Connect(function()
 		selectButton()
 	end)
-	button.SelectionLost:connect(function()
+	button.SelectionLost:Connect(function()
 		deselectButton()
 	end)
 
@@ -467,10 +466,10 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 1, -8),
 		Position = UDim2.new(0,0,0,0),
-		TextColor3 = Color3.new(1,1,1),
+		TextColor3 = Color3.fromRGB(255,255,255),
 		TextYAlignment = Enum.TextYAlignment.Center,
 		Font = Enum.Font.SourceSansBold,
-		FontSize = Enum.FontSize.Size24,
+		TextSize = 24,
 		Text = text,
 		TextWrapped = true,
 		ZIndex = 2,
@@ -478,12 +477,12 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 	};
 
 	if isSmallTouchScreen() then
-		textLabel.FontSize = Enum.FontSize.Size18
+		textLabel.TextSize = 18
 	elseif isTenFootInterface() then
-		textLabel.FontSize = Enum.FontSize.Size36
+		textLabel.TextSize = 36
 	end
 
-	local guiServiceCon = GuiService.Changed:connect(function(prop)
+	local guiServiceCon = GuiService.Changed:Connect(function(prop)
 		if prop ~= "SelectedCoreObject" then return end
 		if not usesSelectedObject() then return end
 
@@ -519,9 +518,9 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	-------------------- CONSTANTS ------------------------
 	local DEFAULT_DROPDOWN_TEXT = "Choose One"
 	local SCROLLING_FRAME_PIXEL_OFFSET = 25
-	local SELECTION_TEXT_COLOR_NORMAL = Color3.new(0.7,0.7,0.7)
-	local SELECTION_TEXT_COLOR_NORMAL_VR = Color3.new(0.9, 0.9, 0.9)
-	local SELECTION_TEXT_COLOR_HIGHLIGHTED = Color3.new(1,1,1)
+	local SELECTION_TEXT_COLOR_NORMAL = Color3.fromRGB(178,178,178)
+	local SELECTION_TEXT_COLOR_NORMAL_VR = Color3.fromRGB(229,229,229)
+	local SELECTION_TEXT_COLOR_HIGHLIGHTED = Color3.fromRGB(255,255,255)
 
 	-------------------- VARIABLES ------------------------
 	local lastSelectedCoreObject= nil
@@ -534,7 +533,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	indexChangedEvent.Name = "IndexChanged"
 
 	if type(dropDownStringTable) ~= "table" then
-		error("CreateDropDown dropDownStringTable (first arg) is not a table")
+		error("CreateDropDown dropDownStringTable (first arg) is not a table", 2)
 		return this
 	end
 
@@ -555,7 +554,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		BackgroundTransparency = DROPDOWN_BG_TRANSPARENCY,
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundColor3 = Color3.new(0,0,0),
+		BackgroundColor3 = Color3.fromRGB(0,0,0),
 		ZIndex = 10,
 		Active = true,
 		Visible = false,
@@ -583,7 +582,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		end
 	end
 	if fixSettingsMenuVR then
-		UserInputService.Changed:connect(onVREnabled)
+		UserInputService.Changed:Connect(onVREnabled)
 		onVREnabled("VREnabled")
 	end
 
@@ -622,7 +621,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 			GuiService.SelectedCoreObject = lastSelectedCoreObject
 		end
 		DropDownFullscreenFrame.Visible = false
-		if guiServiceChangeCon then guiServiceChangeCon:disconnect() end
+		if guiServiceChangeCon then guiServiceChangeCon:Disconnect() end
 		ContextActionService:UnbindCoreAction(guid .. "Action")
 		ContextActionService:UnbindCoreAction(guid .. "FreezeAction")
 
@@ -655,7 +654,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		lastSelectedCoreObject = this.DropDownFrame
 		GuiService.SelectedCoreObject = this.Selections[this.CurrentIndex]
 
-		guiServiceChangeCon = GuiService.Changed:connect(function(prop)
+		guiServiceChangeCon = GuiService.Changed:Connect(function(prop)
 			if not prop == "SelectedCoreObject" then return end
 			for i = 1, #this.Selections do
 				if GuiService.SelectedCoreObject == this.Selections[i] then
@@ -810,7 +809,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 		local vrEnabled = UserInputService.VREnabled
 		local font = vrEnabled and Enum.Font.SourceSansBold or Enum.Font.SourceSans
-		local fontSize = vrEnabled and Enum.FontSize.Size36 or Enum.FontSize.Size24
+		local textSize = vrEnabled and 36 or 24
 
 		local itemHeight = vrEnabled and 70 or 50
 		local itemSpacing = itemHeight + 1
@@ -835,7 +834,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				Position = UDim2.new(0,14,0, (i - 1) * itemSpacing),
 				TextColor3 = UserInputService.VREnabled and SELECTION_TEXT_COLOR_NORMAL_VR or SELECTION_TEXT_COLOR_NORMAL,
 				Font = font,
-				FontSize = fontSize,
+				TextSize = textSize,
 				Text = v,
 				ZIndex = 10,
 				SelectionImageObject = SelectionOverrideObject,
@@ -857,9 +856,9 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 				indexChangedEvent:Fire(i)
 			end
 
-			nextSelection.MouseButton1Click:connect(clicked)
+			nextSelection.MouseButton1Click:Connect(clicked)
 
-			nextSelection.MouseEnter:connect(function()
+			nextSelection.MouseEnter:Connect(function()
 				if usesSelectedObject() then
 					GuiService.SelectedCoreObject = nextSelection
 				end
@@ -886,7 +885,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 			end
 		end
 
-		DropDownFullscreenFrame.Changed:connect(function(prop)
+		DropDownFullscreenFrame.Changed:Connect(function(prop)
 			if prop ~= "AbsoluteSize" then return end
 			updateDropDownSize()
 		end)
@@ -897,16 +896,16 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 	----------------------- CONNECTIONS/SETUP --------------------------------
 	this:UpdateDropDownList(dropDownStringTable)
 
-	DropDownFullscreenFrame.MouseButton1Click:connect(hideDropDownSelection)
+	DropDownFullscreenFrame.MouseButton1Click:Connect(hideDropDownSelection)
 
-	settingsHub.PoppedMenu:connect(function(poppedMenu)
+	settingsHub.PoppedMenu:Connect(function(poppedMenu)
 		if poppedMenu == DropDownFullscreenFrame then
 			hideDropDownSelection()
 		end
 	end)
 
-	UserInputService.InputBegan:connect(processInput)
-	UserInputService.InputEnded:connect(processInput)
+	UserInputService.InputBegan:Connect(processInput)
+	UserInputService.InputEnded:Connect(processInput)
 
 	return this
 end
@@ -923,7 +922,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 	this.HubRef = nil
 
 	if type(selectionStringTable) ~= "table" then
-		error("CreateSelector selectionStringTable (first arg) is not a table")
+		error("CreateSelector selectionStringTable (first arg) is not a table", 2)
 		return this
 	end
 
@@ -1026,11 +1025,11 @@ local function CreateSelector(selectionStringTable, startPosition)
 			BorderSizePixel = 0,
 			Size = UDim2.new(1,leftButton.Size.X.Offset * -2, 1, 0),
 			Position = UDim2.new(1,0,0,0),
-			TextColor3 = Color3.new(1,1,1),
+			TextColor3 = Color3.fromRGB(255, 255, 255),
 			TextYAlignment = Enum.TextYAlignment.Center,
 			TextTransparency = 0.5,
 			Font = Enum.Font.SourceSans,
-			FontSize = Enum.FontSize.Size24,
+			TextSize = 24,
 			TextSize = 16,
 			Text = v,
 			ZIndex = 2,
@@ -1038,7 +1037,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 			Parent = this.SelectorFrame
 		};
 		if isTenFootInterface() then
-			nextSelection.FontSize = Enum.FontSize.Size36
+			nextSelection.TextSize = 36
 		end
 
 		if i == startPosition then
@@ -1063,7 +1062,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 				Parent = this.SelectorFrame,
 				ZIndex = 2
 			}
-			autoSelectButton.MouseButton1Click:connect(function()
+			autoSelectButton.MouseButton1Click:Connect(function()
 				if not interactable then return end
 				local newIndex = this.CurrentIndex + 1
 				if newIndex > #this.Selections then
@@ -1095,7 +1094,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 			ZIndex = 2,
 			SelectionImageObject = noSelectionObject
 		}
-		autoSelectButton.MouseButton1Click:connect(function()
+		autoSelectButton.MouseButton1Click:Connect(function()
 			if not interactable then return end
 			local newIndex = this.CurrentIndex + 1
 			if newIndex > #this.Selections then
@@ -1181,7 +1180,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 	local guiServiceCon = nil
 	local function connectToGuiService()
-		guiServiceCon = GuiService.Changed:connect(function(prop)
+		guiServiceCon = GuiService.Changed:Connect(function(prop)
 			if prop == "SelectedCoreObject" then
 				if GuiService.SelectedCoreObject == this.SelectorFrame then
 					this.Selections[this.CurrentIndex].TextTransparency = 0
@@ -1227,11 +1226,11 @@ local function CreateSelector(selectionStringTable, startPosition)
 		this.SelectorFrame.Selectable = interactable
 		if not interactable then
 			for i, selectionLabel in pairs(this.Selections) do
-				selectionLabel.TextColor3 = Color3.new(49/255, 49/255, 49/255)
+				selectionLabel.TextColor3 = Color3.fromRGB(49, 49, 49)
 			end
 		else
 			for i, selectionLabel in pairs(this.Selections) do
-				selectionLabel.TextColor3 = Color3.new(1, 1, 1)
+				selectionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 			end
 		end
 	end
@@ -1247,26 +1246,26 @@ local function CreateSelector(selectionStringTable, startPosition)
 		autoSelectButton.Selectable = vrEnabled
 	end
 	if fixSettingsMenuVR then
-		UserInputService.Changed:connect(onVREnabled)
+		UserInputService.Changed:Connect(onVREnabled)
 		onVREnabled("VREnabled")
 	end
 
-	leftButton.InputBegan:connect(function(inputObject)
+	leftButton.InputBegan:Connect(function(inputObject)
 		if inputObject.UserInputType == Enum.UserInputType.Touch then
 			stepFunc(nil, -1)
 		end
 	end)
-	leftButton.MouseButton1Click:connect(function()
+	leftButton.MouseButton1Click:Connect(function()
 		if not UserInputService.TouchEnabled then
 			stepFunc(nil, -1)
 		end
 	end)
-	rightButton.InputBegan:connect(function(inputObject)
+	rightButton.InputBegan:Connect(function(inputObject)
 		if inputObject.UserInputType == Enum.UserInputType.Touch then
 			stepFunc(nil, 1)
 		end
 	end)
-	rightButton.MouseButton1Click:connect(function()
+	rightButton.MouseButton1Click:Connect(function()
 		if not UserInputService.TouchEnabled then
 			stepFunc(nil, 1)
 		end
@@ -1274,7 +1273,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 	local isInTree = true
 
-	UserInputService.InputBegan:connect(function(inputObject)
+	UserInputService.InputBegan:Connect(function(inputObject)
 		if not interactable then return end
 		if not isInTree then return end
 
@@ -1288,7 +1287,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 		end
 	end)
 
-	UserInputService.InputChanged:connect(function(inputObject)
+	UserInputService.InputChanged:Connect(function(inputObject)
 		if not interactable then return end
 		if not isInTree then lastInputDirection = 0 return end
 
@@ -1315,10 +1314,10 @@ local function CreateSelector(selectionStringTable, startPosition)
 		end
 	end)
 
-	this.SelectorFrame.AncestryChanged:connect(function(child, parent)
+	this.SelectorFrame.AncestryChanged:Connect(function(child, parent)
 		isInTree = parent
 		if not isInTree then
-			if guiServiceCon then guiServiceCon:disconnect() end
+			if guiServiceCon then guiServiceCon:Disconnect() end
 		else
 			connectToGuiService()
 		end
@@ -1371,16 +1370,16 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 	end
 	local vrEnabledConn = nil
 	if fixSettingsMenuVR then
-		vrEnabledConn = UserInputService.Changed:connect(onVREnabled)
+		vrEnabledConn = UserInputService.Changed:Connect(onVREnabled)
 	end
 
-	local NON_SELECTED_TEXT_COLOR = Color3.new(59/255, 166/255, 241/255)
-	local SELECTED_TEXT_COLOR = Color3.new(1,1,1)
+	local NON_SELECTED_TEXT_COLOR = Color3.fromRGB(59, 166, 241)
+	local SELECTED_TEXT_COLOR = Color3.fromRGB(255, 255, 255)
 
 	AlertViewBacking = Util.Create'ImageLabel'
 	{
 		Name = "AlertViewBacking",
-		Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png",
+		Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png", 
 		ScaleType = Enum.ScaleType.Slice,
 		SliceCenter = Rect.new(8,6,46,44),
 		BackgroundTransparency = 1,
@@ -1412,10 +1411,10 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		Size = UDim2.new(0.95, 0, 0.6, 0),
 		Position = UDim2.new(0.025, 0, 0.05, 0),
 		Font = Enum.Font.SourceSansBold,
-		FontSize = Enum.FontSize.Size36,
+		TextSize = 36,
 		Text = alertMessage,
 		TextWrapped = true,
-		TextColor3 = Color3.new(1,1,1),
+		TextColor3 = Color3.fromRGB(255, 255, 255),
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextYAlignment = Enum.TextYAlignment.Center,
 		ZIndex = 10,
@@ -1449,7 +1448,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 			settingsHub:ShowBar()
 		end
 		if vrEnabledConn then
-			vrEnabledConn:disconnect()
+			vrEnabledConn:Disconnect()
 		end
 	end
 
@@ -1505,7 +1504,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	startStep = ""
 
 	if steps <= 0 then
-		error("CreateNewSlider failed because numOfSteps (first arg) is 0 or negative, please supply a positive integer")
+		error("CreateNewSlider failed because numOfSteps (first arg) is 0 or negative, please supply a positive integer", 2)
 		return
 	end
 
@@ -1609,8 +1608,6 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	local stepXScale = 1 / steps
 	stepXSize = 0
 
-	local stepsAspectConstraints = {}
-
 	for i = 1, steps do
 		local nextStep = Util.Create'ImageButton'
 		{
@@ -1656,7 +1653,6 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		end
 
 		this.Steps[#this.Steps + 1] = nextStep
-		stepsAspectConstraints[#this.Steps] = aspectRatioConstraint
 	end
 
 
@@ -1752,7 +1748,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 				local mouseInputMovedCon = nil
 				local mouseInputEndedCon = nil
 
-				mouseInputMovedCon = UserInputService.InputChanged:connect(function(inputObject)
+				mouseInputMovedCon = UserInputService.InputChanged:Connect(function(inputObject)
 					if inputObject.UserInputType ~= Enum.UserInputType.MouseMovement then return end
 
 					local mousePos = inputObject.Position.X
@@ -1771,12 +1767,12 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 						end
 					end
 				end)
-				mouseInputEndedCon = UserInputService.InputEnded:connect(function(inputObject)
+				mouseInputEndedCon = UserInputService.InputEnded:Connect(function(inputObject)
 					if not isActivateEvent(inputObject) then return end
 
 					lastInputDirection = 0
-					mouseInputEndedCon:disconnect()
-					mouseInputMovedCon:disconnect()
+					mouseInputEndedCon:Disconnect()
+					mouseInputMovedCon:Disconnect()
 				end)
 			end
 		else
@@ -1847,10 +1843,10 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 
 	--------------------- SETUP -----------------------
 
-	leftButton.InputBegan:connect(function(inputObject) mouseDownFunc(inputObject, currentStep - 1, true) end)
-	leftButton.InputEnded:connect(function(inputObject) mouseUpFunc(inputObject) end)
-	rightButton.InputBegan:connect(function(inputObject) mouseDownFunc(inputObject, currentStep + 1, true) end)
-	rightButton.InputEnded:connect(function(inputObject) mouseUpFunc(inputObject) end)
+	leftButton.InputBegan:Connect(function(inputObject) mouseDownFunc(inputObject, currentStep - 1, true) end)
+	leftButton.InputEnded:Connect(function(inputObject) mouseUpFunc(inputObject) end)
+	rightButton.InputBegan:Connect(function(inputObject) mouseDownFunc(inputObject, currentStep + 1, true) end)
+	rightButton.InputEnded:Connect(function(inputObject) mouseUpFunc(inputObject) end)
 
 	local function onVREnabled(prop)
 		if prop ~= "VREnabled" then
@@ -1876,26 +1872,26 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		end
 	end
 	if fixSettingsMenuVR then
-		UserInputService.Changed:connect(onVREnabled)
+		UserInputService.Changed:Connect(onVREnabled)
 		onVREnabled("VREnabled")
 	end
 
 	for i = 1, steps do
-		this.Steps[i].InputBegan:connect(function(inputObject)
+		this.Steps[i].InputBegan:Connect(function(inputObject)
 			mouseDownFunc(inputObject, i)
 		end)
-		this.Steps[i].InputEnded:connect(function(inputObject)
+		this.Steps[i].InputEnded:Connect(function(inputObject)
 		 mouseUpFunc(inputObject) end)
 	end
 
-	this.SliderFrame.InputBegan:connect(function(inputObject)
+	this.SliderFrame.InputBegan:Connect(function(inputObject)
 		if fixSettingsMenuVR and UserInputService.VREnabled then
 			local selected = GuiService.SelectedCoreObject
 			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end
 		end
 		mouseDownFunc(inputObject, currentStep)
 	end)
-	this.SliderFrame.InputEnded:connect(function(inputObject)
+	this.SliderFrame.InputEnded:Connect(function(inputObject)
 		if fixSettingsMenuVR and UserInputService.VREnabled then
 			local selected = GuiService.SelectedCoreObject
 			if not selected or not selected:IsDescendantOf(this.SliderFrame.Parent) then return end
@@ -1928,7 +1924,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		[Enum.KeyCode.D] = navigateRight,
 		[Enum.KeyCode.ButtonA] = fixSettingsMenuVR --buttonA can be either direction
 	}
-	UserInputService.InputBegan:connect(function(inputObject)
+	UserInputService.InputBegan:Connect(function(inputObject)
 		if not interactable then return end
 		if not isInTree then return end
 
@@ -1949,7 +1945,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		end
 	end)
 
-	UserInputService.InputEnded:connect(function(inputObject)
+	UserInputService.InputEnded:Connect(function(inputObject)
 		if not interactable then return end
 
 		if inputObject.UserInputType ~= Enum.UserInputType.Gamepad1 and inputObject.UserInputType ~= Enum.UserInputType.Keyboard then return end
@@ -1965,7 +1961,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		end
 	end)
 
-	UserInputService.InputChanged:connect(function(inputObject)
+	UserInputService.InputChanged:Connect(function(inputObject)
 		if not interactable then
 			lastInputDirection = 0
 			return
@@ -1996,7 +1992,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 	end)
 
 	local isBound = false
-	GuiService.Changed:connect(function(prop)
+	GuiService.Changed:Connect(function(prop)
 		if prop ~= "SelectedCoreObject" then return end
 
 		local selected = GuiService.SelectedCoreObject
@@ -2017,7 +2013,7 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		end
 	end)
 
-	this.SliderFrame.AncestryChanged:connect(function(child, parent)
+	this.SliderFrame.AncestryChanged:Connect(function(child, parent)
 		isInTree = parent
 	end)
 
@@ -2057,7 +2053,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 
 	if RowFrame and extraSpacing then
 		RowFrame.Position = UDim2.new(RowFrame.Position.X.Scale,RowFrame.Position.X.Offset,
-										RowFrame.Position.Y.Scale,RowFrame.Position.Y.Offset + extraSpacing)
+			RowFrame.Position.Y.Scale,RowFrame.Position.Y.Offset + extraSpacing)
 	end
 
 	local RowLabel = nil
@@ -2066,9 +2062,8 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		Name = rowDisplayName .. "Label",
 		Text = rowDisplayName,
 		Font = Enum.Font.SourceSansBold,
-		FontSize = Enum.FontSize.Size24,
 		TextSize = 16,
-		TextColor3 = Color3.new(1,1,1),
+		TextColor3 = Color3.fromRGB(255,255,255),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0,200,1,0),
@@ -2122,14 +2117,14 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			Size = UDim2.new(0.6,0,1,0),
 			Position = UDim2.new(1,0,0.5,0),
 			Text = rowDisplayName,
-			TextColor3 = Color3.new(49/255, 49/255, 49/255),
+			TextColor3 = Color3.fromRGB(49, 49, 49),
 			BackgroundTransparency = 0.5,
 			BorderSizePixel = 0,
 			TextYAlignment = Enum.TextYAlignment.Top,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextWrapped = true,
 			Font = Enum.Font.SourceSans,
-			FontSize = Enum.FontSize.Size24,
+			TextSize = 24,
 			ZIndex = 2,
 			SelectionImageObject = SelectionOverrideObject,
 			ClearTextOnFocus = false,
@@ -2137,7 +2132,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		};
 		ValueChangerSelection = box
 
-		box.Focused:connect(function()
+		box.Focused:Connect(function()
 			if usesSelectedObject() then
 				GuiService.SelectedCoreObject = box
 			end
@@ -2146,7 +2141,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				box.Text = ""
 			end
 		end)
-		box.FocusLost:connect(function(enterPressed, inputObject)
+		box.FocusLost:Connect(function(enterPressed, inputObject)
 			if GuiService.SelectedCoreObject == box and (not isMouseOverRow or forceReturnSelectionOnFocusLost) then
 				GuiService.SelectedCoreObject = nil
 			end
@@ -2154,10 +2149,10 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		end)
 		if extraSpacing then
 			box.Position = UDim2.new(box.Position.X.Scale,box.Position.X.Offset,
-										box.Position.Y.Scale,box.Position.Y.Offset + extraSpacing)
+				box.Position.Y.Scale,box.Position.Y.Offset + extraSpacing)
 		end
 
-		ValueChangerSelection.SelectionGained:connect(function()
+		ValueChangerSelection.SelectionGained:Connect(function()
 			if usesSelectedObject() then
 				box.BackgroundTransparency = 0.1
 
@@ -2166,7 +2161,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				end
 			end
 		end)
-		ValueChangerSelection.SelectionLost:connect(function()
+		ValueChangerSelection.SelectionLost:Connect(function()
 			if usesSelectedObject() then
 				box.BackgroundTransparency = 0.5
 			end
@@ -2193,9 +2188,9 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				end
 			end
 		end
-		box.MouseEnter:connect(setRowSelection)
+		box.MouseEnter:Connect(setRowSelection)
 
-		UserInputService.InputBegan:connect(processInput)
+		UserInputService.InputBegan:Connect(processInput)
 
 	elseif selectionType == "TextEntry" then
 		local isMouseOverRow = false
@@ -2215,14 +2210,14 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			Size = UDim2.new(0.4,-10,0,40),
 			Position = UDim2.new(1,0,0.5,0),
 			Text = rowDisplayName,
-			TextColor3 = Color3.new(0.7, 0.7, 0.7),
+			TextColor3 = Color3.fromRGB(178, 178, 178),
 			BackgroundTransparency = 1.0,
 			BorderSizePixel = 0,
 			TextYAlignment = Enum.TextYAlignment.Center,
 			TextXAlignment = Enum.TextXAlignment.Center,
 			TextWrapped = false,
 			Font = Enum.Font.SourceSans,
-			FontSize = Enum.FontSize.Size24,
+			TextSize = 24,
 			ZIndex = 2,
 			SelectionImageObject = SelectionOverrideObject,
 			ClearTextOnFocus = false,
@@ -2230,7 +2225,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		};
 		ValueChangerSelection = box
 
-		box.Focused:connect(function()
+		box.Focused:Connect(function()
 			if usesSelectedObject() then
 				GuiService.SelectedCoreObject = box
 			end
@@ -2239,7 +2234,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				box.Text = ""
 			end
 		end)
-		box.FocusLost:connect(function(enterPressed, inputObject)
+		box.FocusLost:Connect(function(enterPressed, inputObject)
 			if GuiService.SelectedCoreObject == box and (not isMouseOverRow or forceReturnSelectionOnFocusLost) then
 				GuiService.SelectedCoreObject = nil
 			end
@@ -2250,7 +2245,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 										box.Position.Y.Scale,box.Position.Y.Offset + extraSpacing)
 		end
 
-		ValueChangerSelection.SelectionGained:connect(function()
+		ValueChangerSelection.SelectionGained:Connect(function()
 			if usesSelectedObject() then
 				box.BackgroundTransparency = 0.8
 
@@ -2259,7 +2254,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				end
 			end
 		end)
-		ValueChangerSelection.SelectionLost:connect(function()
+		ValueChangerSelection.SelectionLost:Connect(function()
 			if usesSelectedObject() then
 				box.BackgroundTransparency = 1.0
 			end
@@ -2286,20 +2281,19 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				end
 			end
 		end
-		RowFrame.MouseEnter:connect(setRowSelection)
+		RowFrame.MouseEnter:Connect(setRowSelection)
 
 		function ValueChangerInstance:SetZIndex(newZIndex)
 			box.ZIndex = newZIndex
 		end
 
-		function ValueChangerInstance:SetInteractable(value)
-			interactable = value
+		function ValueChangerInstance:SetInteractable(interactable)
 			box.Selectable = interactable
 			if not interactable then
-				box.TextColor3 = Color3.new(49/255, 49/255, 49/255)
+				box.TextColor3 = Color3.fromRGB(49,49,49)
 				box.ZIndex = 1
 			else
-				box.TextColor3 = Color3.new(0.7, 0.7, 0.7)
+				box.TextColor3 = Color3.fromRGB(178,178,178)
 				box.ZIndex = 2
 			end
 		end
@@ -2311,13 +2305,13 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		local valueChangedEvent = Instance.new("BindableEvent")
 		valueChangedEvent.Name = "ValueChanged"
 
-		box.FocusLost:connect(function()
+		box.FocusLost:Connect(function()
 			valueChangedEvent:Fire(box.Text)
 		end)
 
 		ValueChangerInstance.ValueChanged = valueChangedEvent.Event
 
-		UserInputService.InputBegan:connect(processInput)
+		UserInputService.InputBegan:Connect(processInput)
 	end
 
 	ValueChangerInstance.Name = rowDisplayName .. "ValueChanger"
@@ -2349,7 +2343,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				GuiService.SelectedCoreObject = valueFrame
 			end
 		end
-		RowFrame.MouseEnter:connect(setRowSelection)
+		RowFrame.MouseEnter:Connect(setRowSelection)
 
 		--Could this be cleaned up even more?
 		local function onVREnabled(prop)
@@ -2358,7 +2352,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 					RowFrame.Selectable = true
 					RowFrame.Active = true
 					ValueChangerSelection.Active = true
-					GuiService.Changed:connect(function(prop)
+					GuiService.Changed:Connect(function(prop)
 						if prop == "SelectedCoreObject" then
 							local selected = GuiService.SelectedCoreObject
 							if selected and (selected == RowFrame or selected:IsDescendantOf(RowFrame)) then
@@ -2375,11 +2369,11 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			end
 		end
 		if fixSettingsMenuVR then
-			UserInputService.Changed:connect(onVREnabled)
+			UserInputService.Changed:Connect(onVREnabled)
 			onVREnabled("VREnabled")
 		end
 
-		ValueChangerSelection.SelectionGained:connect(function()
+		ValueChangerSelection.SelectionGained:Connect(function()
 			if usesSelectedObject() then
 				RowFrame.BackgroundTransparency = 0.5
 
@@ -2388,7 +2382,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 				end
 			end
 		end)
-		ValueChangerSelection.SelectionLost:connect(function()
+		ValueChangerSelection.SelectionLost:Connect(function()
 			if usesSelectedObject() then
 				RowFrame.BackgroundTransparency = 1
 			end
@@ -2424,10 +2418,10 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 		SelectionImageObject = noSelectionObject,
 		Parent = pageToAddTo.Page
 	};
-	RowFrame.SelectionGained:connect(function()
+	RowFrame.SelectionGained:Connect(function()
 		RowFrame.BackgroundTransparency = 0.5
 	end)
-	RowFrame.SelectionLost:connect(function()
+	RowFrame.SelectionLost:Connect(function()
 		RowFrame.BackgroundTransparency = 1
 	end)
 
@@ -2437,7 +2431,7 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 		Text = rowDisplayName,
 		Font = Enum.Font.SourceSansBold,
 		TextSize = 16,
-		TextColor3 = Color3.new(1,1,1),
+		TextColor3 = Color3.fromRGB(255,255,255),
 		TextXAlignment = Enum.TextXAlignment.Left,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0,200,1,0),
@@ -2456,7 +2450,7 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 
 	if extraSpacing then
 		RowFrame.Position = UDim2.new(RowFrame.Position.X.Scale,RowFrame.Position.X.Offset,
-										RowFrame.Position.Y.Scale,RowFrame.Position.Y.Offset + extraSpacing)
+			RowFrame.Position.Y.Scale,RowFrame.Position.Y.Offset + extraSpacing)
 	end
 
 	nextRowPositionY = nextRowPositionY + ROW_HEIGHT
@@ -2471,14 +2465,14 @@ local function AddNewRowObject(pageToAddTo, rowDisplayName, rowObject, extraSpac
 			GuiService.SelectedCoreObject = RowFrame
 		end
 	end
-	RowFrame.MouseEnter:connect(setRowSelection)
+	RowFrame.MouseEnter:Connect(setRowSelection)
 
 	rowObject.SelectionImageObject = noSelectionObject
 
-	rowObject.SelectionGained:connect(function()
+	rowObject.SelectionGained:Connect(function()
 			RowFrame.BackgroundTransparency = 0.5
 		end)
-	rowObject.SelectionLost:connect(function()
+	rowObject.SelectionLost:Connect(function()
 		RowFrame.BackgroundTransparency = 1
 	end)
 
@@ -2494,12 +2488,18 @@ local moduleApiTable = {}
 function moduleApiTable:Create(instanceType)
 	return function(data)
 		local obj = Instance.new(instanceType)
+		local parent = nil
 		for k, v in pairs(data) do
 			if type(k) == 'number' then
 				v.Parent = obj
+			elseif k == 'Parent' then
+				parent = v
 			else
 				obj[k] = v
 			end
+		end
+		if parent then
+			obj.Parent = parent
 		end
 		return obj
 	end
@@ -2580,7 +2580,7 @@ function moduleApiTable:CreateSignal()
 end
 
 function  moduleApiTable:UsesSelectedObject()
-	return usesSelectedObject();
+	return usesSelectedObject()
 end
 
 function moduleApiTable:TweenProperty(instance, prop, start, final, duration, easingFunc, cbFunc)
