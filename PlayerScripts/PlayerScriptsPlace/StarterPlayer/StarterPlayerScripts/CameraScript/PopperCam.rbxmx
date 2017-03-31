@@ -32,6 +32,11 @@ local VALID_SUBJECTS = {
  
 local NEAR_CLIP_PLANE_OFFSET = 0.5 --NOTE: Not configurable here
 
+local portraitPopperFixFlagExists, portraitPopperFixFlagEnabled = pcall(function()
+	return UserSettings():IsUserFeatureEnabled("UserPortraitPopperFix")
+end)
+local FFlagUserPortraitPopperFix = portraitPopperFixFlagExists and portraitPopperFixFlagEnabled
+
 -----------------
 --| Variables |--
 -----------------
@@ -102,12 +107,14 @@ local function OnCameraChanged(property)
 				VehicleParts = newSubject:GetConnectedParts(true)
 			end
 			
-			if newSubject:IsA("BasePart") then
-				SubjectPart = newSubject
-			elseif newSubject:IsA("Model") then
-				SubjectPart = newSubject.PrimaryPart
-			elseif newSubject:IsA("Humanoid") then
-				SubjectPart = newSubject.Torso
+			if FFlagUserPortraitPopperFix then
+				if newSubject:IsA("BasePart") then
+					SubjectPart = newSubject
+				elseif newSubject:IsA("Model") then
+					SubjectPart = newSubject.PrimaryPart
+				elseif newSubject:IsA("Humanoid") then
+					SubjectPart = newSubject.Torso
+				end
 			end
 		end
 	end
@@ -156,12 +163,11 @@ end
 function PopperCam:Update()
 	if PopperEnabled then
 		-- First, prep some intermediate vars
-		local focusPoint
-		if SubjectPart then
-			focusPoint = SubjectPart.Position
-		else
-			focusPoint = Camera.Focus.p
+		local focusPoint = Camera.Focus.p
+		if FFlagUserPortraitPopperFix and SubjectPart then
+			focusPoint = SubjectPart.CFrame.p
 		end
+		
 		local cameraCFrame = Camera.CoordinateFrame
 		local cameraFrontPoint = cameraCFrame.p + (cameraCFrame.lookVector * NEAR_CLIP_PLANE_OFFSET)
 		local screenSize = Camera.ViewportSize
