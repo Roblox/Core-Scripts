@@ -266,15 +266,15 @@ local function CreateCamera()
 	
 	-- HumanoidRootPart when alive, Head part when dead
 	local function getHumanoidPartToFollow(humanoid, humanoidStateType)
-		if humanoidStateType ~= STATE_DEAD then
-			return humanoid.Torso
-		else
+		if humanoidStateType == STATE_DEAD then
 			local character = humanoid.Parent
 			if character then
 				return character:FindFirstChild("Head") or humanoid.Torso
 			else
 				return humanoid.Torso
 			end
+		else
+			return humanoid.Torso
 		end
 	end
 
