@@ -550,6 +550,14 @@ local function setupGamepadControls()
 
 		if input.KeyCode == Enum.KeyCode.Thumbstick1 then
 			inputVector = Vector2.new(input.Position.x, input.Position.y)
+		elseif input.KeyCode == Enum.KeyCode.DPadUp then
+			inputVector = Vector2.new(0, 1)
+		elseif input.KeyCode == Enum.KeyCode.DPadDown then
+			inputVector = Vector2.new(0, -1)
+		elseif input.KeyCode == Enum.KeyCode.DPadLeft then
+			inputVector = Vector2.new(-1, 0)
+		elseif input.KeyCode == Enum.KeyCode.DPadRight then
+			inputVector = Vector2.new(1, 0)
 		end
 
 		local selectedObject = nil
@@ -661,7 +669,7 @@ local function setupGamepadControls()
 			ContextActionService:BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
 			ContextActionService:BindCoreAction(radialAcceptActionName, radialSelectAccept, false, Enum.KeyCode.ButtonA)
 			ContextActionService:BindCoreAction(radialCancelActionName, radialSelectCancel, false, Enum.KeyCode.ButtonB)
-			ContextActionService:BindCoreAction(radialSelectActionName, radialSelect, false, Enum.KeyCode.Thumbstick1)
+			ContextActionService:BindCoreAction(radialSelectActionName, radialSelect, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown, Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight)
 			ContextActionService:BindCoreAction(thumbstick2RadialActionName, noOpFunc, false, Enum.KeyCode.Thumbstick2)
 			ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
 		else
