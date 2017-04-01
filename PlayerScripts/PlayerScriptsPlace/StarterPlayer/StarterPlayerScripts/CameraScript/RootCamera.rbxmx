@@ -87,7 +87,8 @@ local VR_HIGH_INTENSITY_ROTATION = Vector2.new(math.rad(45),0)
 local VR_LOW_INTENSITY_REPEAT = 0.1
 local VR_HIGH_INTENSITY_REPEAT = 0.4
 
-local ZERO_VECTOR2 = Vector2.new(0,0)
+local ZERO_VECTOR2 = Vector2.new(0, 0)
+local ZERO_VECTOR3 = Vector3.new(0, 0, 0)
 
 local TOUCH_SENSITIVTY = Vector2.new(math.pi*2.25, math.pi*2)
 local MOUSE_SENSITIVITY = Vector2.new(math.pi*4, math.pi*1.9)
@@ -260,6 +261,22 @@ local function CreateCamera()
 	function this:GetRenderCFrame(part)
 		GetRenderCFrame(part)
 	end
+	
+	local STATE_DEAD = Enum.HumanoidStateType.Dead
+	
+	-- HumanoidRootPart when alive, Head part when dead
+	local function getHumanoidPartToFollow(humanoid, humanoidStateType)
+		if humanoidStateType == STATE_DEAD then
+			local character = humanoid.Parent
+			if character then
+				return character:FindFirstChild("Head") or humanoid.Torso
+			else
+				return humanoid.Torso
+			end
+		else
+			return humanoid.Torso
+		end
+	end
 
 	function this:GetSubjectPosition()
 		local result = nil
@@ -282,19 +299,20 @@ local function CreateCamera()
 			elseif cameraSubject:IsA('Model') then
 				result = cameraSubject:GetModelCFrame().p
 			elseif cameraSubject:IsA('Humanoid') then
-				if cameraSubject:GetState() == Enum.HumanoidStateType.Dead and cameraSubject == this.lastSubject and VRService.VREnabled then
+				local humanoidStateType = cameraSubject:GetState()
+				if VRService.VREnabled and humanoidStateType == STATE_DEAD and cameraSubject == this.lastSubject then
 					result = this.lastSubjectPosition
 				else
-					local humanoidRootPart = cameraSubject.Torso
+					local humanoidRootPart = getHumanoidPartToFollow(cameraSubject, humanoidStateType)
 					if humanoidRootPart and humanoidRootPart:IsA('BasePart') then
 						local subjectCFrame = GetRenderCFrame(humanoidRootPart)
-						if cameraSubject.RigType == Enum.HumanoidRigType.R15 then
-							result = subjectCFrame.p +
-								subjectCFrame:vectorToWorldSpace(R15HeadHeight + cameraSubject.CameraOffset)
-						else
-							result = subjectCFrame.p +
-								subjectCFrame:vectorToWorldSpace(HEAD_OFFSET + cameraSubject.CameraOffset)
+						local heightOffset = ZERO_VECTOR3
+						if humanoidStateType ~= STATE_DEAD then
+							heightOffset = cameraSubject.RigType == Enum.HumanoidRigType.R15 and R15HeadHeight or HEAD_OFFSET
 						end
+
+						result = subjectCFrame.p +
+							subjectCFrame:vectorToWorldSpace(heightOffset + cameraSubject.CameraOffset)
 					end
 				end
 			end
