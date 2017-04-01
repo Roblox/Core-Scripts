@@ -31,6 +31,14 @@ local isTenFootInterface = tenFootInterface:IsEnabled()
 local radialButtons = {}
 local lastInputChangedCon = nil
 
+local D_PAD_BUTTONS =
+{
+	[Enum.KeyCode.DPadUp] = false;
+	[Enum.KeyCode.DPadDown] = false;
+	[Enum.KeyCode.DPadLeft] = false;
+	[Enum.KeyCode.DPadRight] = false;
+}
+
 local function getImagesForSlot(slot)
 	if slot == 1 then		return "rbxasset://textures/ui/Settings/Radial/Top.png", "rbxasset://textures/ui/Settings/Radial/TopSelected.png",
 									"rbxasset://textures/ui/Settings/Radial/Menu.png",
@@ -546,18 +554,51 @@ local function setupGamepadControls()
 	end
 
 	local radialSelect = function(name, state, input)
-		local inputVector = Vector2.new(0,0)
+		local inputVector = Vector2.new(0, 0)
 
 		if input.KeyCode == Enum.KeyCode.Thumbstick1 then
 			inputVector = Vector2.new(input.Position.x, input.Position.y)
-		elseif input.KeyCode == Enum.KeyCode.DPadUp then
-			inputVector = Vector2.new(0, 1)
-		elseif input.KeyCode == Enum.KeyCode.DPadDown then
-			inputVector = Vector2.new(0, -1)
-		elseif input.KeyCode == Enum.KeyCode.DPadLeft then
-			inputVector = Vector2.new(-1, 0)
-		elseif input.KeyCode == Enum.KeyCode.DPadRight then
-			inputVector = Vector2.new(1, 0)
+		elseif input.KeyCode == Enum.KeyCode.DPadUp or input.KeyCode == Enum.KeyCode.DPadDown or input.KeyCode == Enum.KeyCode.DPadLeft or input.KeyCode == Enum.KeyCode.DPadRight then
+			--set D_PAD_BUTTONS status: button down->true, button up->false 
+			if state == Enum.UserInputState.Begin then
+				D_PAD_BUTTONS[input.KeyCode] = true
+			else
+				D_PAD_BUTTONS[input.KeyCode] = false
+			end
+			
+			if input.KeyCode == Enum.KeyCode.DPadUp or input.KeyCode == Enum.KeyCode.DPadDown then
+				if D_PAD_BUTTONS[Enum.KeyCode.DPadLeft] then
+					--left up
+					inputVector = Vector2.new(-1, 1).unit
+				elseif D_PAD_BUTTONS[Enum.KeyCode.DPadRight] then
+					--right up
+					inputVector = Vector2.new(1, 1).unit
+				else
+					--up
+					inputVector = Vector2.new(0, 1)
+				end
+				
+				if input.KeyCode == Enum.KeyCode.DPadDown then
+					--down
+					inputVector = Vector2.new(inputVector.X, -inputVector.Y)
+				end
+			elseif input.KeyCode == Enum.KeyCode.DPadLeft or input.KeyCode == Enum.KeyCode.DPadRight then
+				if D_PAD_BUTTONS[Enum.KeyCode.DPadUp] then
+					--left up or up
+					inputVector = (state == Enum.UserInputState.Begin) and Vector2.new(-1, 1).unit or Vector2.new(0, 1)
+				elseif D_PAD_BUTTONS[Enum.KeyCode.DPadDown] then
+					--left down or down
+					inputVector = (state == Enum.UserInputState.Begin) and Vector2.new(-1, -1).unit or Vector2.new(0, -1)
+				else
+					--threshold
+					inputVector = Vector2.new(0, 0)
+				end
+				
+				if input.KeyCode == Enum.KeyCode.DPadRight then
+					--right
+					inputVector = Vector2.new(-inputVector.X, inputVector.Y)
+				end
+			end
 		end
 
 		local selectedObject = nil
