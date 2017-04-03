@@ -31,14 +31,6 @@ local isTenFootInterface = tenFootInterface:IsEnabled()
 local radialButtons = {}
 local lastInputChangedCon = nil
 
-local D_PAD_BUTTONS =
-{
-	[Enum.KeyCode.DPadUp] = false;
-	[Enum.KeyCode.DPadDown] = false;
-	[Enum.KeyCode.DPadLeft] = false;
-	[Enum.KeyCode.DPadRight] = false;
-}
-
 local function getImagesForSlot(slot)
 	if slot == 1 then		return "rbxasset://textures/ui/Settings/Radial/Top.png", "rbxasset://textures/ui/Settings/Radial/TopSelected.png",
 									"rbxasset://textures/ui/Settings/Radial/Menu.png",
@@ -559,46 +551,31 @@ local function setupGamepadControls()
 		if input.KeyCode == Enum.KeyCode.Thumbstick1 then
 			inputVector = Vector2.new(input.Position.x, input.Position.y)
 		elseif input.KeyCode == Enum.KeyCode.DPadUp or input.KeyCode == Enum.KeyCode.DPadDown or input.KeyCode == Enum.KeyCode.DPadLeft or input.KeyCode == Enum.KeyCode.DPadRight then
-			--set D_PAD_BUTTONS status: button down->true, button up->false 
-			if state == Enum.UserInputState.Begin then
-				D_PAD_BUTTONS[input.KeyCode] = true
-			else
-				D_PAD_BUTTONS[input.KeyCode] = false
+			local D_PAD_BUTTONS = {
+				[Enum.KeyCode.DPadUp] = false;
+				[Enum.KeyCode.DPadDown] = false;
+				[Enum.KeyCode.DPadLeft] = false;
+				[Enum.KeyCode.DPadRight] = false;
+			}
+			
+			--set D_PAD_BUTTONS status: button down->true, button up->false
+			local gamepadState = InputService:GetGamepadState(input.UserInputType)
+			for index, value in ipairs(gamepadState) do
+				if value.KeyCode == Enum.KeyCode.DPadUp or value.KeyCode == Enum.KeyCode.DPadDown or value.KeyCode == Enum.KeyCode.DPadLeft or value.KeyCode == Enum.KeyCode.DPadRight then
+					D_PAD_BUTTONS[value.KeyCode] = (value.UserInputState == Enum.UserInputState.Begin)
+				end
 			end
 			
-			if input.KeyCode == Enum.KeyCode.DPadUp or input.KeyCode == Enum.KeyCode.DPadDown then
+			if D_PAD_BUTTONS[Enum.KeyCode.DPadUp] or D_PAD_BUTTONS[Enum.KeyCode.DPadDown] then
+				inputVector = D_PAD_BUTTONS[Enum.KeyCode.DPadUp] and Vector2.new(0, 1) or Vector2.new(0, -1)
 				if D_PAD_BUTTONS[Enum.KeyCode.DPadLeft] then
-					--left up(button down) or nothing(button up)
-					inputVector = D_PAD_BUTTONS[input.KeyCode] and Vector2.new(-1, 1).unit or Vector2.new(0, 0)
+					inputVector = Vector2.new(-1, inputVector.Y)
 				elseif D_PAD_BUTTONS[Enum.KeyCode.DPadRight] then
-					--right up(button down) or nothing(button up)
-					inputVector = D_PAD_BUTTONS[input.KeyCode] and Vector2.new(1, 1).unit or Vector2.new(0, 0)
-				else
-					--up(button down) or nothing(button up)
-					inputVector = D_PAD_BUTTONS[input.KeyCode] and Vector2.new(0, 1) or Vector2.new(0, 0)
-				end
-				
-				if input.KeyCode == Enum.KeyCode.DPadDown then
-					--down
-					inputVector = Vector2.new(inputVector.X, -inputVector.Y)
-				end
-			elseif input.KeyCode == Enum.KeyCode.DPadLeft or input.KeyCode == Enum.KeyCode.DPadRight then
-				if D_PAD_BUTTONS[Enum.KeyCode.DPadUp] then
-					--left up(button down) or up(button up)
-					inputVector = D_PAD_BUTTONS[input.KeyCode] and Vector2.new(-1, 1).unit or Vector2.new(0, 1)
-				elseif D_PAD_BUTTONS[Enum.KeyCode.DPadDown] then
-					--left down(button down) or down(button up)
-					inputVector = D_PAD_BUTTONS[input.KeyCode] and Vector2.new(-1, -1).unit or Vector2.new(0, -1)
-				else
-					--threshold for only left/right in 6 options menu, do nothing
-					inputVector = Vector2.new(0, 0)
-				end
-				
-				if input.KeyCode == Enum.KeyCode.DPadRight then
-					--right
-					inputVector = Vector2.new(-inputVector.X, inputVector.Y)
+					inputVector = Vector2.new(1, inputVector.Y)
 				end
 			end
+			
+			inputVector = inputVector.unit
 		end
 
 		local selectedObject = nil
@@ -706,12 +683,6 @@ local function setupGamepadControls()
 			end
 
 			GuiService:SetMenuIsOpen(true)
-
-			D_PAD_BUTTONS[Enum.KeyCode.DPadUp] = false
-			D_PAD_BUTTONS[Enum.KeyCode.DPadDown] = false
-			D_PAD_BUTTONS[Enum.KeyCode.DPadLeft] = false
-			D_PAD_BUTTONS[Enum.KeyCode.DPadRight] = false
-
 
 			ContextActionService:BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
 			ContextActionService:BindCoreAction(radialAcceptActionName, radialSelectAccept, false, Enum.KeyCode.ButtonA)
