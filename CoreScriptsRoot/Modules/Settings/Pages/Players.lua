@@ -23,6 +23,9 @@ local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
 local frameDefaultTransparency = .85
 local frameSelectedTransparency = .65
 
+local friendRowHeight = 62
+local friendRowSpacing = 80
+
 ------------ Variables -------------------
 local PageInstance = nil
 local localPlayer = PlayersService.LocalPlayer
@@ -43,6 +46,10 @@ local function Initialize()
 	playerLabelFakeSelection.SliceCenter = Rect.new(31,31,31,31)]]
 	playerLabelFakeSelection.Image = ''
 	playerLabelFakeSelection.Size = UDim2.new(0,0,0,0)
+
+	if enablePortraitMode then
+		this.PageListLayout.Padding = UDim.new(0, friendRowSpacing - friendRowHeight)
+	end
 
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "PlayersTab"
@@ -246,8 +253,8 @@ local function Initialize()
 					frame.Image = "rbxasset://textures/ui/dialog_white.png"
 					frame.ScaleType = 'Slice'
 					frame.SliceCenter = Rect.new(10,10,10,10)
-					frame.Size = UDim2.new(1,0,0,60)
-					frame.Position = UDim2.new(0,0,0,(index-1)*80 + extraOffset)
+					frame.Size = UDim2.new(1,0,0,friendRowHeight)
+					frame.Position = UDim2.new(0,0,0,(index-1)*friendRowSpacing + extraOffset)
 					frame.BackgroundTransparency = 1
 					frame.ZIndex = 2
 
@@ -300,7 +307,7 @@ local function Initialize()
 			end
 		end
 
-		this.Page.Size = UDim2.new(1,0,0, extraOffset + 80 * #sortedPlayers - 5)
+		this.Page.Size = UDim2.new(1,0,0, extraOffset + friendRowSpacing * #sortedPlayers - 5)
 	end)
 
 	return this
