@@ -546,18 +546,36 @@ local function setupGamepadControls()
 	end
 
 	local radialSelect = function(name, state, input)
-		local inputVector = Vector2.new(0,0)
+		local inputVector = Vector2.new(0, 0)
 
 		if input.KeyCode == Enum.KeyCode.Thumbstick1 then
 			inputVector = Vector2.new(input.Position.x, input.Position.y)
-		elseif input.KeyCode == Enum.KeyCode.DPadUp then
-			inputVector = Vector2.new(0, 1)
-		elseif input.KeyCode == Enum.KeyCode.DPadDown then
-			inputVector = Vector2.new(0, -1)
-		elseif input.KeyCode == Enum.KeyCode.DPadLeft then
-			inputVector = Vector2.new(-1, 0)
-		elseif input.KeyCode == Enum.KeyCode.DPadRight then
-			inputVector = Vector2.new(1, 0)
+		elseif input.KeyCode == Enum.KeyCode.DPadUp or input.KeyCode == Enum.KeyCode.DPadDown or input.KeyCode == Enum.KeyCode.DPadLeft or input.KeyCode == Enum.KeyCode.DPadRight then
+			local D_PAD_BUTTONS = {
+				[Enum.KeyCode.DPadUp] = false;
+				[Enum.KeyCode.DPadDown] = false;
+				[Enum.KeyCode.DPadLeft] = false;
+				[Enum.KeyCode.DPadRight] = false;
+			}
+			
+			--set D_PAD_BUTTONS status: button down->true, button up->false
+			local gamepadState = InputService:GetGamepadState(input.UserInputType)
+			for index, value in ipairs(gamepadState) do
+				if value.KeyCode == Enum.KeyCode.DPadUp or value.KeyCode == Enum.KeyCode.DPadDown or value.KeyCode == Enum.KeyCode.DPadLeft or value.KeyCode == Enum.KeyCode.DPadRight then
+					D_PAD_BUTTONS[value.KeyCode] = (value.UserInputState == Enum.UserInputState.Begin)
+				end
+			end
+			
+			if D_PAD_BUTTONS[Enum.KeyCode.DPadUp] or D_PAD_BUTTONS[Enum.KeyCode.DPadDown] then
+				inputVector = D_PAD_BUTTONS[Enum.KeyCode.DPadUp] and Vector2.new(0, 1) or Vector2.new(0, -1)
+				if D_PAD_BUTTONS[Enum.KeyCode.DPadLeft] then
+					inputVector = Vector2.new(-1, inputVector.Y)
+				elseif D_PAD_BUTTONS[Enum.KeyCode.DPadRight] then
+					inputVector = Vector2.new(1, inputVector.Y)
+				end
+			end
+			
+			inputVector = inputVector.unit
 		end
 
 		local selectedObject = nil
