@@ -88,7 +88,7 @@ function Thumbstick:Enable()
 	local humanoid = MasterControl:GetHumanoid()
 	if humanoid then
 		local shouldRevert = humanoid.AutoJumpEnabled == false
-		shouldRevert = shouldRevert and humanoid.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
+		shouldRevert = shouldRevert and LocalPlayer.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
 		RevertAutoJumpEnabledToFalse = shouldRevert
 		humanoid.AutoJumpEnabled = true
 	end
