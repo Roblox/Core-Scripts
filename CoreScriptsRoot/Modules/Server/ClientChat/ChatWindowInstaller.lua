@@ -3,6 +3,7 @@ local bubbleChatScriptName = "BubbleChat"
 local installDirectory = game:GetService("Chat")
 
 local ChatService = game:GetService("Chat")
+local PlayersService = game:GetService("Players")
 local StarterPlayerScripts = game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts")
 
 local function LoadLocalScript(location, name, parent)
@@ -46,12 +47,6 @@ local function Install()
 		return
 	end
 
-	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptChatInsertDefaultBools") end)
-	local UseInsertDefaultBools = readFlagSuccess and flagEnabled
-
-	local useNewBubbleChatSuccess, useNewBubbleChatEnabled = pcall(function() return settings():GetFFlag("CorescriptNewBubbleChatEnabled") end)
-	useNewBubbleChatEnabled = useNewBubbleChatEnabled and useNewBubbleChatSuccess
-
 	local chatScriptArchivable = true
 	local ChatScript = installDirectory:FindFirstChild(runnerScriptName)
 	if not ChatScript then
@@ -74,7 +69,7 @@ local function Install()
 
 	local bubbleChatScriptArchivable = true
 	local BubbleChatScript = installDirectory:FindFirstChild(bubbleChatScriptName)
-	if not BubbleChatScript and useNewBubbleChatEnabled then
+	if not BubbleChatScript then
 		bubbleChatScriptArchivable = false
 		BubbleChatScript = LoadLocalScript(script.Parent.BubbleChat, bubbleChatScriptName, installDirectory)
 	end
@@ -104,30 +99,21 @@ local function Install()
 		MessageCreatorModules.Name = "MessageCreatorModules"
 		MessageCreatorModules.Archivable = false
 
-		if UseInsertDefaultBools then
-			local InsertDefaults = Instance.new("BoolValue")
-			InsertDefaults.Name = "InsertDefaultModules"
-			InsertDefaults.Value = true
-			InsertDefaults.Parent = MessageCreatorModules
-		else
-			local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
-			for i = 1, #creatorModules do
-				LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, MessageCreatorModules)
-			end
-		end
+		local InsertDefaults = Instance.new("BoolValue")
+		InsertDefaults.Name = "InsertDefaultModules"
+		InsertDefaults.Value = true
+		InsertDefaults.Parent = MessageCreatorModules
 
 		MessageCreatorModules.Parent = clientChatModules
 	end
 
-	if UseInsertDefaultBools then
-		local insertDefaultMessageCreators = GetBoolValue(MessageCreatorModules, "InsertDefaultModules", false)
+	local insertDefaultMessageCreators = GetBoolValue(MessageCreatorModules, "InsertDefaultModules", false)
 
-		if insertDefaultMessageCreators then
-			local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
-			for i = 1, #creatorModules do
-				if not MessageCreatorModules:FindFirstChild(creatorModules[i].Name) then
-					LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, MessageCreatorModules)
-				end
+	if insertDefaultMessageCreators then
+		local creatorModules = script.Parent.DefaultClientChatModules.MessageCreatorModules:GetChildren()
+		for i = 1, #creatorModules do
+			if not MessageCreatorModules:FindFirstChild(creatorModules[i].Name) then
+				LoadModule(script.Parent.DefaultClientChatModules.MessageCreatorModules, creatorModules[i].Name, MessageCreatorModules)
 			end
 		end
 	end
@@ -138,30 +124,21 @@ local function Install()
 		CommandModules.Name = "CommandModules"
 		CommandModules.Archivable = false
 
-		if UseInsertDefaultBools then
-			local InsertDefaults = Instance.new("BoolValue")
-			InsertDefaults.Name = "InsertDefaultModules"
-			InsertDefaults.Value = true
-			InsertDefaults.Parent = CommandModules
-		else
-			local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
-			for i = 1, #commandModules do
-				LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, CommandModules)
-			end
-		end
+		local InsertDefaults = Instance.new("BoolValue")
+		InsertDefaults.Name = "InsertDefaultModules"
+		InsertDefaults.Value = true
+		InsertDefaults.Parent = CommandModules
 
 		CommandModules.Parent = clientChatModules
 	end
 
-	if UseInsertDefaultBools then
-		local insertDefaultCommands = GetBoolValue(CommandModules, "InsertDefaultModules", false)
+	local insertDefaultCommands = GetBoolValue(CommandModules, "InsertDefaultModules", false)
 
-		if insertDefaultCommands then
-			local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
-			for i = 1, #commandModules do
-				if not CommandModules:FindFirstChild(commandModules[i].Name) then
-					LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, CommandModules)
-				end
+	if insertDefaultCommands then
+		local commandModules = script.Parent.DefaultClientChatModules.CommandModules:GetChildren()
+		for i = 1, #commandModules do
+			if not CommandModules:FindFirstChild(commandModules[i].Name) then
+				LoadModule(script.Parent.DefaultClientChatModules.CommandModules, commandModules[i].Name, CommandModules)
 			end
 		end
 	end
@@ -171,7 +148,7 @@ local function Install()
 		ChatScriptCopy.Parent = StarterPlayerScripts
 		ChatScriptCopy.Archivable = false
 
-		local currentPlayers = game:GetService("Players"):GetChildren()
+		local currentPlayers = PlayersService:GetPlayers()
 		for i, player in pairs(currentPlayers) do
 			if (player:IsA("Player") and player:FindFirstChild("PlayerScripts") and not player.PlayerScripts:FindFirstChild(runnerScriptName)) then
 				ChatScriptCopy = ChatScript:Clone()
@@ -183,24 +160,22 @@ local function Install()
 
 	ChatScript.Archivable = chatScriptArchivable
 
-	if useNewBubbleChatEnabled then
-		if not StarterPlayerScripts:FindFirstChild(bubbleChatScriptName) then
-			local BubbleChatScriptCopy = BubbleChatScript:Clone()
-			BubbleChatScriptCopy.Parent = StarterPlayerScripts
-			BubbleChatScriptCopy.Archivable = false
+	if not StarterPlayerScripts:FindFirstChild(bubbleChatScriptName) then
+		local BubbleChatScriptCopy = BubbleChatScript:Clone()
+		BubbleChatScriptCopy.Parent = StarterPlayerScripts
+		BubbleChatScriptCopy.Archivable = false
 
-			local currentPlayers = game:GetService("Players"):GetChildren()
-			for i, player in pairs(currentPlayers) do
-				if (player:IsA("Player") and player:FindFirstChild("PlayerScripts") and not player.PlayerScripts:FindFirstChild(bubbleChatScriptName)) then
-					BubbleChatScriptCopy = BubbleChatScript:Clone()
-					BubbleChatScriptCopy.Parent = player.PlayerScripts
-					BubbleChatScriptCopy.Archivable = false
-				end
+		local currentPlayers = PlayersService:GetPlayers()
+		for i, player in pairs(currentPlayers) do
+			if (player:IsA("Player") and player:FindFirstChild("PlayerScripts") and not player.PlayerScripts:FindFirstChild(bubbleChatScriptName)) then
+				BubbleChatScriptCopy = BubbleChatScript:Clone()
+				BubbleChatScriptCopy.Parent = player.PlayerScripts
+				BubbleChatScriptCopy.Archivable = false
 			end
 		end
-
-		BubbleChatScript.Archivable = bubbleChatScriptArchivable
 	end
+
+	BubbleChatScript.Archivable = bubbleChatScriptArchivable
 end
 
 return Install

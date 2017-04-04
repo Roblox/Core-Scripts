@@ -7,6 +7,9 @@ local EventFolderParent = game:GetService("ReplicatedStorage")
 local modulesFolder = script
 
 local PlayersService = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Chat = game:GetService("Chat")
+
 local ChatService = require(modulesFolder:WaitForChild("ChatService"))
 
 local useEvents = {}
@@ -75,7 +78,7 @@ local function CreatePlayerSpeakerObject(playerObj)
 		speaker:JoinChannel(channel.Name)
 	end
 
-	speaker.ReceivedMessage:connect(function(messageObj, channel)
+	speaker.ReceivedUnfilteredMessage:connect(function(messageObj, channel)
 		EventFolder.OnNewMessage:FireClient(playerObj, messageObj, channel)
 	end)
 
@@ -93,7 +96,7 @@ local function CreatePlayerSpeakerObject(playerObj)
 
 		local channelObject = ChatService:GetChannel(channel)
 		if (channelObject) then
-			log = channelObject:GetHistoryLog()
+			log = channelObject:GetHistoryLogForSpeaker(speaker)
 			channelNameColor = channelObject.ChannelNameColor
 		end
 		EventFolder.OnChannelJoined:FireClient(playerObj, channel, welcomeMessage, log, channelNameColor)
@@ -206,8 +209,8 @@ EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
 			local channelData =
 			{
 				channelName,
-				channelObj.WelcomeMessage,
-				channelObj:GetHistoryLog(),
+				channelObj:GetWelcomeMessageForSpeaker(speaker),
+				channelObj:GetHistoryLogForSpeaker(speaker),
 				channelObj.ChannelNameColor,
 			}
 
@@ -253,6 +256,7 @@ local function DoLeaveCommand(speakerName, channelName, fromChannelName)
 		if (speaker:IsInChannel(channelName)) then
 			if (channel.Leavable) then
 				speaker:LeaveChannel(channel.Name)
+				speaker:SendSystemMessage(string.format("You have left channel '%s'", channel.Name), "System")
 			else
 				speaker:SendSystemMessage("You cannot leave channel '" .. channelName .. "'.", fromChannelName)
 			end
@@ -292,6 +296,21 @@ local systemChannel = ChatService:AddChannel("System")
 
 allChannel.Leavable = false
 allChannel.AutoJoin = true
+
+allChannel:RegisterGetWelcomeMessageFunction(function(speaker)
+	if RunService:IsStudio() then
+		return nil
+	end
+	local player = speaker:GetPlayer()
+	if player then
+		local success, canChat = pcall(function()
+			return Chat:CanUserChatAsync(player.UserId)
+		end)
+		if success and not canChat then
+			return ""
+		end
+	end
+end)
 
 systemChannel.Leavable = false
 systemChannel.AutoJoin = true

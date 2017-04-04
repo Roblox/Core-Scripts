@@ -18,6 +18,21 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 local newChatVisiblePropSuccess, newChatVisiblePropValue =  pcall(function() return settings():GetFFlag("ChatVisiblePropertyEnabled") end)
 local newChatVisibleProp = (newChatVisiblePropSuccess and newChatVisiblePropValue)
 
+local showHealthWhenDamagedSuccess, showHealthWhenDamagedValue = pcall(function() return settings():GetFFlag("OnlyShowHealthWhenDamaged") end)
+local onlyShowHealthWhenDamagedEnabled = showHealthWhenDamagedSuccess and showHealthWhenDamagedValue
+
+local showVisibleAgeSuccess, showVisibleAgeValue = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAge") end)
+local showVisibleAgeEnabled = showVisibleAgeSuccess and showVisibleAgeValue
+
+local showVisibleAgeXboxSuccess, showVisibleAgeXboxValue = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAgeXbox") end)
+local showVisibleAgeEnabledXbox = showVisibleAgeXboxSuccess and showVisibleAgeXboxValue
+
+local showVisibleAgeV2Success, showVisibleAgeV2Value = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAgeV2") end)
+local showVisibleAgeV2Enabled = showVisibleAgeV2Success and showVisibleAgeV2Value
+
+local chatPrivacySettingSuccess, chatPrivacySettingValue = pcall(function() return settings():GetFFlag("UserChatPrivacySetting") end)
+local chatPrivacySettingEnabled = chatPrivacySettingSuccess and chatPrivacySettingValue
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -31,6 +46,7 @@ local StarterGui = game:GetService('StarterGui')
 local ContextActionService = game:GetService("ContextActionService")
 local RunService = game:GetService('RunService')
 local TextService = game:GetService('TextService')
+local ChatService = game:GetService('Chat')
 
 --[[ END OF SERVICES ]]
 
@@ -62,6 +78,20 @@ local Player = PlayersService.LocalPlayer
 while not Player do
 	PlayersService.ChildAdded:wait()
 	Player = PlayersService.LocalPlayer
+end
+
+local canChat = true
+
+local accountTypeText = showVisibleAgeV2Enabled and "Account: <13" or "Account: Under 13 yrs"
+local accountTypeTextShort = "<13"
+
+function calculateAccountText()
+	accountTypeText = showVisibleAgeV2Enabled and "Account: 13+" or "Account: Over 13 yrs"
+	accountTypeTextShort = "13+"
+	if Player:GetUnder13() then
+		accountTypeText = showVisibleAgeV2Enabled and "Account: <13" or "Account: Under 13 yrs"
+		accountTypeTextShort = "<13"
+	end
 end
 
 local TenFootInterface = require(GuiRoot.Modules.TenFootInterface)
@@ -610,7 +640,7 @@ local function createNormalHealthBar()
 	local username = Util.Create'TextLabel'{
 		Name = "Username";
 		Text = Player.Name;
-		Size = UDim2.new(1, -14, 0, 22);
+		Size = UDim2.new(1, -14, 0, showVisibleAgeEnabled and 18 or 22);
 		Position = UDim2.new(0, 7, 0, 0);
 		Font = Enum.Font.SourceSansBold;
 		FontSize = Enum.FontSize.Size14;
@@ -621,10 +651,35 @@ local function createNormalHealthBar()
 		Parent = container;
 	};
 
+
+	local accountType = nil
+
+	if showVisibleAgeEnabled then
+		accountType = Util.Create'TextLabel'{
+			Name = "AccountType";
+			Text = accountTypeText;
+			Size = UDim2.new(1, -14, 0, 9);
+			Position = UDim2.new(0, 7, 0, 20);
+			Font = Enum.Font.SourceSans;
+			TextSize = 11;
+			BackgroundTransparency = 1;
+			TextColor3 = TopbarConstants.FONT_COLOR;
+			TextYAlignment = Enum.TextYAlignment.Bottom;
+			TextXAlignment = Enum.TextXAlignment.Left;
+			Parent = container;
+		};
+	end
+
+	spawn(function()
+		wait()
+		calculateAccountText()
+		accountType.Text = accountTypeText
+	end)
+
 	local healthContainer = Util.Create'Frame'{
 		Name = "HealthContainer";
 		Size = UDim2.new(1, -14, 0, 3);
-		Position = UDim2.new(0, 7, 1, -9);
+		Position = UDim2.new(0, 7, 1, showVisibleAgeEnabled and -7 or -9);
 		BorderSizePixel = 0;
 		BackgroundColor3 = TopbarConstants.HEALTH_BACKGROUND_COLOR;
 		Parent = container;
@@ -638,7 +693,7 @@ local function createNormalHealthBar()
 		Parent = healthContainer;
 	};
 
-	return container, username, healthContainer, healthFill
+	return container, username, healthContainer, healthFill, accountType
 end
 
 ----- HEALTH -----
@@ -647,9 +702,9 @@ local function CreateUsernameHealthMenuItem()
 	local container, username, healthContainer, healthFill = nil
 
 	if isTenFootInterface then
-		container, username, healthContainer, healthFill = TenFootInterface:CreateHealthBar()
+		container, username, healthContainer, healthFill, accountType = TenFootInterface:CreateHealthBar()
 	else
-		container, username, healthContainer, healthFill = createNormalHealthBar()
+		container, username, healthContainer, healthFill, accountType = createNormalHealthBar()
 	end
 
 	local hurtOverlay = Util.Create'ImageLabel'
@@ -668,6 +723,9 @@ local function CreateUsernameHealthMenuItem()
 	--- EVENTS ---
 	local humanoidChangedConn, childAddedConn, childRemovedConn = nil
 	--------------
+
+	local HealthBarEnabled = true
+	local CurrentHumanoid = nil
 
 	local function AnimateHurtOverlay()
 		if hurtOverlay and not InputService.VREnabled then
@@ -736,9 +794,41 @@ local function CreateUsernameHealthMenuItem()
 		return Color3.new(result.x, result.y, result.z)
 	end
 
+	local function UpdateHealthVisible()
+		local isEnabled = HealthBarEnabled and CurrentHumanoid and CurrentHumanoid.Health ~= CurrentHumanoid.MaxHealth
+		healthContainer.Visible = isEnabled
+		if showVisibleAgeEnabled then
+			if showVisibleAgeV2Enabled then
+				return
+			end
+			if isEnabled then
+				username.Size = UDim2.new(1, -14, 0, 18);
+				username.TextYAlignment = Enum.TextYAlignment.Bottom;
+				accountType.Position = UDim2.new(0, 7, 0, 20);
+			else
+				username.Size = UDim2.new(1, -14, 1, -12);
+				username.TextYAlignment = Enum.TextYAlignment.Center;
+				accountType.Size = UDim2.new(1, -14, 0, 9);
+				accountType.Position = UDim2.new(0, 7, 1, -10);
+			end
+		else
+			if isEnabled then
+				username.Size = UDim2.new(1, -14, 0, 22);
+				username.TextYAlignment = Enum.TextYAlignment.Bottom;
+			else
+				username.Size = UDim2.new(1, -14, 1, 0);
+				username.TextYAlignment = Enum.TextYAlignment.Center;
+			end
+		end
+	end
+
 	local function OnHumanoidAdded(humanoid)
+		CurrentHumanoid = humanoid
 		local lastHealth = humanoid.Health
 		local function OnHumanoidHealthChanged(health)
+			if onlyShowHealthWhenDamagedEnabled then
+				UpdateHealthVisible()
+			end
 			if humanoid then
 				local healthDelta = lastHealth - health
 				local healthPercent = health / humanoid.MaxHealth
@@ -786,19 +876,27 @@ local function CreateUsernameHealthMenuItem()
 
 	rawset(this, "SetHealthbarEnabled",
 		function(self, enabled)
-			healthContainer.Visible = enabled
-			if enabled then
-				username.Size = UDim2.new(1, -14, 0, 22);
-				username.TextYAlignment = Enum.TextYAlignment.Bottom;
+			if onlyShowHealthWhenDamagedEnabled then
+				HealthBarEnabled = enabled
+				UpdateHealthVisible()
 			else
-				username.Size = UDim2.new(1, -14, 1, 0);
-				username.TextYAlignment = Enum.TextYAlignment.Center;
+				healthContainer.Visible = enabled
+				if enabled then
+					username.Size = UDim2.new(1, -14, 0, 22);
+					username.TextYAlignment = Enum.TextYAlignment.Bottom;
+				else
+					username.Size = UDim2.new(1, -14, 1, 0);
+					username.TextYAlignment = Enum.TextYAlignment.Center;
+				end
 			end
 		end)
 
 	rawset(this, "SetNameVisible",
 		function(self, visible)
 			username.Visible = visible
+			if showVisibleAgeEnabled then
+				accountType.Visible = visible
+			end
 		end)
 
 	-- Don't need to disconnect this one because we never reconnect it.
@@ -1117,16 +1215,12 @@ local function CreateUnreadMessagesNotifier(ChatModule)
 	return chatCounter
 end
 
-local useNewBubbleChatSuccess, useNewBubbleChatEnabled = pcall(function() return settings():GetFFlag("CorescriptNewBubbleChatEnabled") end)
-useNewBubbleChatEnabled = useNewBubbleChatEnabled and useNewBubbleChatSuccess
-
 local function CreateChatIcon()
 	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 	if not chatEnabled then return end
 
 	local ChatModule = require(GuiRoot.Modules.ChatSelector)
 
-	local bubbleChatIsOn = not PlayersService.ClassicChat and PlayersService.BubbleChat
 	local debounce = 0
 
 	local chatIconButton = Util.Create'ImageButton'
@@ -1172,7 +1266,7 @@ local function CreateChatIcon()
 	local function toggleChat()
 		if InputService.VREnabled then
 			ChatModule:ToggleVisibility()
-		elseif Util.IsTouchDevice() or useNewBubbleChatEnabled and ChatModule:IsBubbleChatOnly() or bubbleChatIsOn then
+		elseif Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
 			if debounce + TopbarConstants.DEBOUNCE_TIME < tick() then
 				if Util.IsTouchDevice() then
 					ChatModule:SetVisible(true)
@@ -1216,7 +1310,7 @@ local function CreateChatIcon()
 			end)
 		end
 	else
-		if Util.IsTouchDevice() or bubbleChatIsOn then
+		if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
 			if ChatModule.ChatBarFocusChanged then
 				ChatModule.ChatBarFocusChanged:connect(function(isFocused)
 					updateIcon(isFocused)
@@ -1231,15 +1325,16 @@ local function CreateChatIcon()
 		ChatModule.VisibilityStateChanged:connect(onChatStateChanged)
 	end
 
-	if not (Util.IsTouchDevice() or InputService.VREnabled) then
+	if not InputService.VREnabled then
 		-- check to see if the chat was disabled
 		local willEnableChat = true
+		if Util.IsTouchDevice() and GuiService:GetScreenResolution().Y < 700 then
+			willEnableChat = false
+		end
 		if newChatVisibleProp then
 			willEnableChat = GameSettings.ChatVisible
 		end
-		if willEnableChat then
-			ChatModule:SetVisible(true)
-		end
+		ChatModule:SetVisible(willEnableChat)
 	end
 
 	local menuItem = CreateMenuItem(chatIconButton)
@@ -1608,6 +1703,80 @@ local function CreateNotificationsIcon3D(topBarInstance, panel, menubar)
 
 	return menuItem
 end
+
+local function CreateNoTopBarAccountType()
+	local container = Util.Create'ImageButton'
+	{
+		Name = "AccountTypeContainer";
+		Size = UDim2.new(0, 0, 0, 0);
+		AutoButtonColor = false;
+		Image = "";
+		BackgroundTransparency = 1;
+	}
+
+	local bubble = nil
+
+	if not showVisibleAgeV2Enabled then
+		bubble = Util.Create'ImageButton'
+		{
+			Name = "AccountTypeBubble";
+			Size = UDim2.new(1, -10, 1, -16);
+			Position = UDim2.new(0, 10, 0, 8);
+			AutoButtonColor = false;
+			Image = "rbxasset://textures/ui/TopBar/Round.png";
+			ScaleType = Enum.ScaleType.Slice;
+			SliceCenter = Rect.new(10, 10, 10, 10);
+			ImageTransparency = 0;
+			BackgroundTransparency = 1;
+			Parent = container;
+		}
+	end
+
+	local accountTypeTextLabel = Util.Create'TextLabel'{
+		Name = "AccountTypeText";
+		Text = showVisibleAgeV2Enabled and accountTypeTextShort or accountTypeText;
+		Size = UDim2.new(1, -12, 1, -12);
+		Position = UDim2.new(0, showVisibleAgeV2Enabled and 0 or 6, 0, 6);
+		Font = Enum.Font.SourceSansBold;
+		FontSize = Enum.FontSize.Size14;
+		BackgroundTransparency = 1;
+		TextColor3 = TopbarConstants.FONT_COLOR;
+		TextYAlignment = Enum.TextYAlignment.Center;
+		TextXAlignment = Enum.TextXAlignment.Left;
+		Parent = showVisibleAgeV2Enabled and container or bubble;
+	};
+
+	spawn(function()
+		wait()
+		calculateAccountText()
+		accountTypeTextLabel.Text = showVisibleAgeV2Enabled and accountTypeTextShort or accountTypeText
+		if container.Visible then
+			local textBounds = accountTypeTextLabel.TextBounds.X
+			local containerSize = showVisibleAgeV2Enabled and textBounds or 22 + textBounds
+			container.Size = UDim2.new(0, containerSize, 1, 0)
+		end
+	end)
+
+	local function UpdateNoTopBarAccountType()
+		if isTopbarEnabled() then
+			container.Visible = false
+			container.Size = UDim2.new(0, 0, 0, 0)
+		else
+			container.Visible = true
+			local textBounds = accountTypeTextLabel.TextBounds.X
+			local containerSize = showVisibleAgeV2Enabled and textBounds or 22 + textBounds
+			container.Size = UDim2.new(0, containerSize, 1, 0)
+		end
+	end
+
+	topbarEnabledChangedEvent.Event:connect(UpdateNoTopBarAccountType)
+	UpdateNoTopBarAccountType()
+
+	local menuItem = CreateMenuItem(container)
+
+	return menuItem
+end
+
 ------------------------
 
 local TopBar = CreateTopBar()
@@ -1616,6 +1785,22 @@ local RightMenubar = CreateMenuBar(BarAlignmentEnum.Right)
 local Menubar3D = CreateMenuBar3D(BarAlignmentEnum.Left, TopbarPanel3D)
 
 local settingsIcon = CreateSettingsIcon(TopBar)
+local noTopBarAccountType = nil
+
+if isTenFootInterface and showVisibleAgeEnabledXbox then
+	spawn(function()
+		wait()
+		calculateAccountText()
+		if showVisibleAgeV2Enabled then
+			TenFootInterface:CreateAccountTypeV2(accountTypeTextShort)
+		else
+			TenFootInterface:CreateAccountType(accountTypeText)
+		end
+	end)
+elseif not isTenFootInterface and showVisibleAgeEnabled then
+	noTopBarAccountType = CreateNoTopBarAccountType()
+end
+
 local mobileShowChatIcon = Util.IsTouchDevice() and CreateMobileHideChatIcon() or nil
 local chatIcon = CreateChatIcon()
 local backpackIcon = CreateBackpackIcon()
@@ -1640,17 +1825,20 @@ local ITEM_ORDER_3D = {}
 if settingsIcon then
 	LEFT_ITEM_ORDER[settingsIcon] = 1
 end
+if noTopBarAccountType then
+	LEFT_ITEM_ORDER[noTopBarAccountType] = 2
+end
 if mobileShowChatIcon then
-	LEFT_ITEM_ORDER[mobileShowChatIcon] = 2
+	LEFT_ITEM_ORDER[mobileShowChatIcon] = 3
 end
 if chatIcon then
-	LEFT_ITEM_ORDER[chatIcon] = 3
+	LEFT_ITEM_ORDER[chatIcon] = 4
 end
 if backpackIcon then
-	LEFT_ITEM_ORDER[backpackIcon] = 4
+	LEFT_ITEM_ORDER[backpackIcon] = 5
 end
 if stopRecordingIcon then
-	LEFT_ITEM_ORDER[stopRecordingIcon] = 5
+	LEFT_ITEM_ORDER[stopRecordingIcon] = 6
 end
 
 if leaderstatsMenuItem then
@@ -1731,8 +1919,14 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 			end
 		end
 		if showTopbarChatIcon then
-			if chatIcon then
-				AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
+			if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
+				if chatIcon and canChat then
+					AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
+				end
+			else
+				if chatIcon then
+					AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
+				end
 			end
 			if mobileShowChatIcon and (useNewBubbleChatEnabled and ChatModule:ClassicChatEnabled() or PlayersService.ClassicChat) then
 				AddItemInOrder(LeftMenubar, mobileShowChatIcon, LEFT_ITEM_ORDER)
@@ -1751,7 +1945,7 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 		local playerListOn = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.PlayerList)
 		local healthbarOn = StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health)
 		-- Left-align the player's name if either playerlist or healthbar is shown
-		nameAndHealthMenuItem:SetNameVisible((playerListOn or healthbarOn) and topbarEnabled)
+		nameAndHealthMenuItem:SetNameVisible(topbarEnabled)
 	end
 end
 
@@ -1787,6 +1981,9 @@ end
 
 if settingsIcon then
 	AddItemInOrder(LeftMenubar, settingsIcon, LEFT_ITEM_ORDER)
+end
+if noTopBarAccountType and not isTenFootInterface then
+	AddItemInOrder(LeftMenubar, noTopBarAccountType, LEFT_ITEM_ORDER)
 end
 if nameAndHealthMenuItem and isTopbarEnabled() and not isTenFootInterface then
 	AddItemInOrder(RightMenubar, nameAndHealthMenuItem, RIGHT_ITEM_ORDER)
@@ -1935,6 +2132,26 @@ if defeatableTopbar then
 	end)
 else
 	topbarEnabledChanged()
+end
+
+if chatPrivacySettingEnabled then
+	spawn(function()
+		local success, localUserCanChat = pcall(function()
+			return ChatService:CanUserChatAsync(Player.UserId)
+		end)
+		canChat = RunService:IsStudio() or (success and localUserCanChat)
+		if canChat == false then
+			if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
+				if chatIcon then
+					LeftMenubar:RemoveItem(chatIcon)
+				end
+				if ChatModule:IsBubbleChatOnly() and mobileShowChatIcon then
+					LeftMenubar:RemoveItem(mobileShowChatIcon)
+				end
+			end
+			ChatModule:SetVisible(false)
+		end
+	end)
 end
 
 -- Hook-up coregui changing

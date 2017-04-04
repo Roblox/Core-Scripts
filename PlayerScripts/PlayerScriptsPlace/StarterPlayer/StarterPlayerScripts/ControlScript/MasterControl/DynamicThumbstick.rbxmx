@@ -1,0 +1,370 @@
+<roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
+	<External>null</External>
+	<External>nil</External>
+	<Item class="ModuleScript" referent="RBX1E3E090B922241488CF1527B6A17D7C7">
+		<Properties>
+			<string name="Name">DynamicThumbstick</string>
+			<ProtectedString name="Source"><![CDATA[--[[
+	// FileName: DynamicThumbstick
+	// Version 0.9
+	// Written by: jhelms
+	// Description: Implements dynamic thumbstick controls for touch devices
+--]]
+local Players = game:GetService('Players')
+local UserInputService = game:GetService('UserInputService')
+local GuiService = game:GetService('GuiService')
+local RunService = game:GetService('RunService')
+
+local MasterControl = require(script.Parent)
+
+local Thumbstick = {}
+
+--[[ Script Variables ]]--
+while not Players.LocalPlayer do
+	Players.PlayerAdded:wait()
+end
+local LocalPlayer = Players.LocalPlayer
+
+local Tools = {}
+local IsAToolEquipped = false
+
+local RevertAutoJumpEnabledToFalse = false
+
+local ThumbstickFrame = nil
+local ImageCenter = nil
+local ImageUnderThumb = nil
+local ImageRod = nil
+
+local IsFollowStick = false
+local ThumbstickFrame = nil
+local OnMoveTouchEnded = nil		-- defined in Create()
+local OnTouchMovedCn = nil
+local OnTouchEndedCn = nil
+local OnRenderSteppedCn = nil
+local currentMoveVector = Vector3.new(0,0,0)
+
+--[[ Constants ]]--
+
+local IMAGE_OUTER_URL = "rbxasset://textures/ui/Disk.png"
+local IMAGE_STICK_URL = "rbxasset://textures/ui/Disk.png"
+local IMAGE_ROD_URL = "rbxasset://textures/ui/Square.png"
+
+local TOUCH_IS_TAP_TIME_THRESHOLD = 0.5
+local TOUCH_IS_TAP_DISTANCE_THRESHOLD = 25
+
+local FadeInAndOutBackground = true
+local FadeInAndOutMaxCount = nil
+local FadeInAndOutMaxAlpha = 0.35
+local FadeInAndOutHalfDuration = 0.3
+
+--[[ Local functionality ]]--
+	
+do
+	local function onCharacterAdded(character)
+		for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
+			if child:IsA("Tool") then
+				IsAToolEquipped = true
+			end
+		end
+		character.ChildAdded:Connect(function(child)
+			if child:IsA("Tool") then
+				IsAToolEquipped = true
+			end
+		end)
+		character.ChildRemoved:Connect(function(child)
+			if child:IsA("Tool") then
+				IsAToolEquipped = false
+			end
+		end)
+	end
+	LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
+	if LocalPlayer.Character then
+		onCharacterAdded(LocalPlayer.Character)
+	end
+end
+
+--[[ Public API ]]--
+function Thumbstick:Enable()
+	local humanoid = MasterControl:GetHumanoid()
+	if humanoid then
+		local shouldRevert = humanoid.AutoJumpEnabled == false
+		shouldRevert = shouldRevert and humanoid.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
+		RevertAutoJumpEnabledToFalse = shouldRevert
+		humanoid.AutoJumpEnabled = true
+	end
+	ThumbstickFrame.Visible = true
+end
+
+function Thumbstick:Disable()
+	if RevertAutoJumpEnabledToFalse then
+		local humanoid = MasterControl:GetHumanoid()
+		if humanoid then
+			humanoid.AutoJumpEnabled = false
+		end
+	end
+	ThumbstickFrame.Visible = false
+	OnMoveTouchEnded()
+end
+
+function Thumbstick:Create(parentFrame)
+	if ThumbstickFrame then
+		ThumbstickFrame:Destroy()
+		ThumbstickFrame = nil
+		if OnTouchMovedCn then
+			OnTouchMovedCn:disconnect()
+			OnTouchMovedCn = nil
+		end
+		if OnTouchEndedCn then
+			OnTouchEndedCn:disconnect()
+			OnTouchEndedCn = nil
+		end
+		if OnRenderSteppedCn then
+			OnRenderSteppedCn:disconnect()
+			OnRenderSteppedCn = nil
+		end
+	end
+	
+	local ThumbstickSize = 40
+	local ImageRodMinSize = 5
+	local ImageRodMaxSize = 40
+	local RadiusOfDeadZone = 2
+	local RadiusOfMaxSpeed = 50	
+	
+	local screenSize = parentFrame.AbsoluteSize
+	local isBigScreen = math.min(screenSize.x, screenSize.y) > 500
+	if isBigScreen then
+		ThumbstickSize = ThumbstickSize*2
+		ImageRodMinSize = ImageRodMinSize*2
+		ImageRodMaxSize = ImageRodMaxSize*2
+		RadiusOfDeadZone = RadiusOfDeadZone*2
+		RadiusOfMaxSpeed = RadiusOfMaxSpeed*2
+	end
+	
+	local color = Color3.fromRGB(255, 255, 255)
+		
+	ThumbstickFrame = Instance.new('Frame')
+	ThumbstickFrame.Name = "ThumbstickFrame"
+	ThumbstickFrame.Active = false
+	ThumbstickFrame.Visible = false
+	ThumbstickFrame.BackgroundTransparency = 1.0
+	ThumbstickFrame.BackgroundColor3 = color
+	ThumbstickFrame.Size = UDim2.new(1, 0, .4, 0)
+	ThumbstickFrame.Position = UDim2.new(0, 0, 0.6, 0)
+	
+	ImageCenter = Instance.new('ImageLabel')
+	ImageCenter.Name = "ImageCenter"
+	ImageCenter.Image = IMAGE_OUTER_URL
+	ImageCenter.ImageColor3 = color
+	ImageCenter.BackgroundTransparency = 1
+	ImageCenter.Size = UDim2.new(0, ThumbstickSize, 0, ThumbstickSize)
+	ImageCenter.Position = UDim2.new(0, screenSize.x/2, 0, screenSize.y/2)
+	ImageCenter.Parent = ThumbstickFrame
+	ImageCenter.Visible = false
+	ImageCenter.ImageTransparency = 0
+	
+	ImageRod = Instance.new("ImageLabel")
+	ImageRod.Name = "ImageRod"
+	ImageRod.Image = IMAGE_ROD_URL
+	ImageRod.ImageColor3 = color
+	ImageRod.BackgroundTransparency = 1
+	ImageRod.Size = UDim2.new(0, ImageRodMinSize, 0, ImageRodMinSize)
+	ImageRod.Position = UDim2.new(0, screenSize.x/2, 0, screenSize.y/2)
+	ImageRod.Parent = ThumbstickFrame
+	ImageRod.Visible = false
+	ImageRod.ImageTransparency = 0.7	
+	
+	ImageUnderThumb = Instance.new('ImageLabel')
+	ImageUnderThumb.Name = "ImageUnderThumb"
+	ImageUnderThumb.Image = IMAGE_STICK_URL
+	ImageUnderThumb.ImageColor3 = color
+	ImageUnderThumb.BackgroundTransparency = 1
+	ImageUnderThumb.Size = UDim2.new(0, ThumbstickSize, 0, ThumbstickSize)
+	ImageUnderThumb.Position = UDim2.new(0, 20, 0, 20)
+	ImageUnderThumb.ZIndex = 2
+	ImageUnderThumb.Parent = ThumbstickFrame
+	ImageUnderThumb.Visible = false
+	ImageUnderThumb.ImageTransparency = 0
+	
+	
+	local JumpTouchObject = nil
+	local JumpTouchStartTime = nil
+	local JumpTouchStartPosition = nil
+	
+	local MoveTouchObject = nil
+	local MoveTouchStartTime = nil
+	local MoveTouchStartPosition = nil
+	
+	local fadeInAndOutCount = 0
+	
+	local function setGuiVisible(isVisible)
+		ImageCenter.Visible = isVisible
+		ImageUnderThumb.Visible = isVisible
+		ImageRod.Visible = isVisible
+	end
+	
+	local function doMove(direction)
+		MasterControl:AddToPlayerMovement(-currentMoveVector)
+		
+		currentMoveVector = direction
+		
+		-- Scaled Radial Dead Zone
+		local inputAxisMagnitude = currentMoveVector.magnitude
+		if inputAxisMagnitude < RadiusOfDeadZone then
+			currentMoveVector = Vector3.new()
+		else
+			currentMoveVector = currentMoveVector.unit*(1 - math.max(0, (RadiusOfMaxSpeed - currentMoveVector.magnitude)/RadiusOfMaxSpeed))
+			currentMoveVector = Vector3.new(currentMoveVector.x, 0, currentMoveVector.y)
+		end
+		
+		MasterControl:AddToPlayerMovement(currentMoveVector)
+	end
+	
+	local TweenInAlphaStart = nil
+	local TweenOutAlphaStart = nil
+	OnRenderSteppedCn = RunService.RenderStepped:Connect(function(step)
+		if TweenInAlphaStart ~= nil then
+			local delta = tick() - TweenInAlphaStart
+			ThumbstickFrame.BackgroundTransparency = 1 - FadeInAndOutMaxAlpha*math.min(delta/FadeInAndOutHalfDuration, 1)
+			if delta > FadeInAndOutHalfDuration then
+				TweenOutAlphaStart = tick()
+				TweenInAlphaStart = nil
+			end
+		elseif TweenOutAlphaStart ~= nil then
+			local delta = tick() - TweenOutAlphaStart
+			ThumbstickFrame.BackgroundTransparency = 1 - FadeInAndOutMaxAlpha + FadeInAndOutMaxAlpha*math.min(delta/FadeInAndOutHalfDuration, 1)
+			if delta > FadeInAndOutHalfDuration then
+				TweenOutAlphaStart = nil
+			end
+		end
+	end)
+	
+	local function moveStick(pos)
+		
+		local relativePosition = Vector2.new(pos.x - MoveTouchStartPosition.x, pos.y - MoveTouchStartPosition.y)
+		local length = relativePosition.magnitude
+		local maxLength = ThumbstickFrame.AbsoluteSize.X
+		
+		length = math.min(length, maxLength)
+		relativePosition = relativePosition*length
+		
+		local angle = -math.atan2(relativePosition.X/length, relativePosition.Y/length) + math.pi/2
+		local sinAngle = math.sin(angle)
+		local cosAngle = math.cos(angle)
+		if angle < -0.2 or angle > math.pi + 0.2 then
+			local y = MoveTouchStartPosition.Y - ThumbstickFrame.AbsolutePosition.Y
+			local adjustedAngle = math.fmod(math.abs(angle), math.pi/2)
+			
+			length = math.min(length, y/math.sin(adjustedAngle))
+		end
+		
+		local imageStickX = MoveTouchStartPosition.X - ImageUnderThumb.AbsoluteSize.X*0.5 - ThumbstickFrame.AbsolutePosition.X
+		local imageStickY = MoveTouchStartPosition.Y - ImageUnderThumb.AbsoluteSize.Y*0.5 - ThumbstickFrame.AbsolutePosition.Y
+		imageStickX = imageStickX + cosAngle*length
+		imageStickY = imageStickY + sinAngle*length
+		ImageUnderThumb.Position = UDim2.new(0, imageStickX, 0, imageStickY)
+		ImageUnderThumb.Visible = true
+		
+		ImageRod.Rotation = angle*180/math.pi
+		
+		local percent = (ThumbstickFrame.AbsoluteSize.X - length)/ThumbstickFrame.AbsoluteSize.X
+		local rodWidth = (ImageRodMaxSize - ImageRodMinSize)*math.max(0, percent) + ImageRodMinSize
+		ImageRod.Size = UDim2.new(0, length, 0, rodWidth)
+		
+		local rodImageX = MoveTouchStartPosition.X - ImageRod.AbsoluteSize.X/2 - ThumbstickFrame.AbsolutePosition.X
+		local rodImageY = MoveTouchStartPosition.Y - ImageRod.AbsoluteSize.Y/2 - ThumbstickFrame.AbsolutePosition.Y
+		rodImageX = rodImageX + cosAngle*length/2
+		rodImageY = rodImageY + sinAngle*length/2
+		ImageRod.Position = UDim2.new(0, rodImageX, 0, rodImageY)
+		ImageRod.Visible = true
+	end
+	
+	-- input connections
+	ThumbstickFrame.InputBegan:connect(function(inputObject)
+		if inputObject.UserInputType ~= Enum.UserInputType.Touch or inputObject.UserInputState ~= Enum.UserInputState.Begin then
+			return
+		end
+		if MoveTouchObject then
+			if not JumpTouchObject then
+				JumpTouchObject = inputObject
+				JumpTouchStartTime = tick()
+				JumpTouchStartPosition = inputObject.Position
+			end
+			return
+		end
+		
+		MoveTouchObject = inputObject
+		MoveTouchStartTime = tick()
+		MoveTouchStartPosition = inputObject.Position
+		local startPosVec2 = Vector2.new(inputObject.Position.X, inputObject.Position.Y)
+		
+		local imageOuterPos = startPosVec2 - ImageCenter.AbsoluteSize/2 - ThumbstickFrame.AbsolutePosition
+		ImageCenter.Position = UDim2.new(0, imageOuterPos.X, 0, imageOuterPos.Y)
+		ImageCenter.Visible = true
+		
+		local imageStickPos = startPosVec2 - ImageUnderThumb.AbsoluteSize/2 - ThumbstickFrame.AbsolutePosition
+		ImageUnderThumb.Position = UDim2.new(0, imageStickPos.X, 0, imageStickPos.Y)	
+		
+		local imageRodPos = startPosVec2 - ImageRod.AbsoluteSize/2 - ThumbstickFrame.AbsolutePosition
+		ImageRod.Position = UDim2.new(0, imageRodPos.X, 0, imageRodPos.Y)
+		ImageRod.Size = UDim2.new(0, 10, 0, 10)
+		
+		if FadeInAndOutBackground and (FadeInAndOutMaxCount == nil or fadeInAndOutCount < FadeInAndOutMaxCount) then
+			TweenInAlphaStart = tick()
+			fadeInAndOutCount = fadeInAndOutCount + 1
+		end
+	end)
+	
+	OnTouchMovedCn = UserInputService.TouchMoved:connect(function(inputObject, isProcessed)
+		if inputObject == MoveTouchObject then
+			
+			local direction = Vector2.new(inputObject.Position.x - MoveTouchStartPosition.x, inputObject.Position.y - MoveTouchStartPosition.y)
+			doMove(direction)
+			moveStick(inputObject.Position)
+		end
+	end)
+	
+	OnMoveTouchEnded = function()
+		
+		MoveTouchObject = nil
+		
+		MasterControl:AddToPlayerMovement(-currentMoveVector)
+		currentMoveVector = Vector3.new(0,0,0)
+		
+		setGuiVisible(false)
+	end
+	
+	local function JumpIfTouchIsTap(startTime, startPosition, position)
+		if (not IsAToolEquipped) and tick() - startTime < TOUCH_IS_TAP_TIME_THRESHOLD then
+			if (position - startPosition).magnitude < TOUCH_IS_TAP_DISTANCE_THRESHOLD then
+				MasterControl:DoJump()
+			end
+		end
+	end
+	
+	OnTouchEndedCn = UserInputService.TouchEnded:connect(function(inputObject, isProcessed)
+		if inputObject == MoveTouchObject then
+			JumpIfTouchIsTap(MoveTouchStartTime, MoveTouchStartPosition, inputObject.Position) 
+			OnMoveTouchEnded()
+		elseif inputObject == JumpTouchObject then
+			JumpIfTouchIsTap(JumpTouchStartTime, JumpTouchStartPosition, inputObject.Position)
+			JumpTouchObject = nil
+		end
+	end)
+	
+	GuiService.MenuOpened:connect(function()
+		if MoveTouchObject then
+			OnMoveTouchEnded()
+		end
+		if JumpTouchObject then
+			JumpTouchObject = nil
+		end
+	end)	
+	
+	ThumbstickFrame.Parent = parentFrame
+end
+
+return Thumbstick
+]]></ProtectedString>
+		</Properties>
+	</Item>
+</roblox>

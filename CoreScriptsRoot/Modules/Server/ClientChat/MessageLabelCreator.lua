@@ -109,10 +109,6 @@ function module.new()
 	return obj
 end
 
-function module:RegisterGuiRoot(root)
-	messageCreatorUtil:RegisterGuiRoot(root)
-end
-
 function module:GetStringTextBounds(text, font, textSize, sizeBounds)
 	return messageCreatorUtil:GetStringTextBounds(text, font, textSize, sizeBounds)
 end

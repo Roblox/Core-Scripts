@@ -20,7 +20,18 @@ StatsAggregatorManagerClass.__index = StatsAggregatorManagerClass
 StatsAggregatorManagerClass.SecondsBetweenUpdate = 1.0
 StatsAggregatorManagerClass.NumSamplesToKeep = 20
 
-function StatsAggregatorManagerClass.new() 
+local statsAggregatorManagerSingleton = nil
+
+function StatsAggregatorManagerClass.getSingleton()
+  if (statsAggregatorManagerSingleton == nil) then 
+    statsAggregatorManagerSingleton = StatsAggregatorManagerClass.__new()
+    -- Start listening for updates in stats.
+    statsAggregatorManagerSingleton:StartListening()
+  end
+  return statsAggregatorManagerSingleton
+end
+
+function StatsAggregatorManagerClass.__new() 
   local self = {}
   setmetatable(self, StatsAggregatorManagerClass)
   

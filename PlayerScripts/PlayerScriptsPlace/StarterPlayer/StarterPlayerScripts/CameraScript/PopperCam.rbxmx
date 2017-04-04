@@ -22,6 +22,11 @@ local VALID_SUBJECTS = {
 	'SkateboardPlatform',
 }
 
+local portraitPopperFixFlagExists, portraitPopperFixFlagEnabled = pcall(function()
+	return UserSettings():IsUserFeatureEnabled("UserPortraitPopperFix")
+end)
+local FFlagUserPortraitPopperFix = portraitPopperFixFlagExists and portraitPopperFixFlagEnabled
+
 -----------------
 --| Variables |--
 -----------------
@@ -30,6 +35,8 @@ local PlayersService = game:GetService('Players')
 
 local Camera = nil
 local CameraChangeConn = nil
+
+local SubjectPart = nil
 
 local PlayerCharacters = {} -- For ignoring in raycasts
 local VehicleParts = {} -- Also just for ignoring
@@ -64,6 +71,16 @@ local function OnCameraChanged(property)
 			-- Get all parts of the vehicle the player is controlling
 			if newSubject:IsA('VehicleSeat') then
 				VehicleParts = newSubject:GetConnectedParts(true)
+			end
+			
+			if FFlagUserPortraitPopperFix then
+				if newSubject:IsA("BasePart") then
+					SubjectPart = newSubject
+				elseif newSubject:IsA("Model") then
+					SubjectPart = newSubject.PrimaryPart
+				elseif newSubject:IsA("Humanoid") then
+					SubjectPart = newSubject.Torso
+				end
 			end
 		end
 	end
@@ -114,7 +131,11 @@ function PopperCam:Update()
 		-- First, prep some intermediate vars
 		local cameraCFrame = Camera.CFrame
 		local focusPoint = Camera.Focus.p
-			
+
+		if FFlagUserPortraitPopperFix and SubjectPart then
+			focusPoint = SubjectPart.CFrame.p
+		end
+
 		local ignoreList = {}
 		for i = 1, #PlayerCharacters do
 			ignoreList[#ignoreList + 1] = PlayerCharacters[i]

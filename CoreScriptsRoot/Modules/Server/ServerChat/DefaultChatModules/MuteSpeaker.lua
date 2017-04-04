@@ -2,7 +2,13 @@
 --	// Written by: TheGamer101
 --	// Description: Module that handles all the mute and unmute commands.
 
-local errorExtraData = {ChatColor = Color3.fromRGB(245, 50, 50)}
+local Chat = game:GetService("Chat")
+local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
+local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
+local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
+
+local errorTextColor = ChatSettings.ErrorMessageTextColor or Color3.fromRGB(245, 50, 50)
+local errorExtraData = {ChatColor = errorTextColor}
 
 local function Run(ChatService)
 
@@ -73,7 +79,7 @@ local function Run(ChatService)
 		return processedCommand
 	end
 
-	ChatService:RegisterProcessCommandsFunction("mute_commands", MuteCommandsFunction)
+	ChatService:RegisterProcessCommandsFunction("mute_commands", MuteCommandsFunction, ChatConstants.StandardPriority)
 end
 
 return Run

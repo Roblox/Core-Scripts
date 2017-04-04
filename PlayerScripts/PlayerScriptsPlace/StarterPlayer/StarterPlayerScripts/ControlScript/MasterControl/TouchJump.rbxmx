@@ -125,7 +125,8 @@ function TouchJump:Create(parentFrame)
 		JumpButton = nil
 	end
 	
-	local isSmallScreen = parentFrame.AbsoluteSize.y <= 500
+	local minAxis = math.min(parentFrame.AbsoluteSize.x, parentFrame.AbsoluteSize.y)
+	local isSmallScreen = minAxis <= 500
 	local jumpButtonSize = isSmallScreen and 70 or 120
 	
 	JumpButton = Instance.new('ImageButton')
@@ -147,7 +148,10 @@ function TouchJump:Create(parentFrame)
 	
 	local touchObject = nil	
 	JumpButton.InputBegan:connect(function(inputObject)
-		if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch then
+		--A touch that starts elsewhere on the screen will be sent to a frame's InputBegan event
+		--if it moves over the frame. So we check that this is actually a new touch (inputObject.UserInputState ~= Enum.UserInputState.Begin)
+		if touchObject or inputObject.UserInputType ~= Enum.UserInputType.Touch
+			or inputObject.UserInputState ~= Enum.UserInputState.Begin then
 			return
 		end
 		

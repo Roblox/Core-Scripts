@@ -40,6 +40,9 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 local getTenFootBadgeNotifications, tenFootBadgeNotificationsValue = pcall(function() return settings():GetFFlag("TenFootBadgeNotifications") end)
 local tenFootBadgeNotifications = getTenFootBadgeNotifications and tenFootBadgeNotificationsValue
 
+local getDisableScreenshotPopup, disableScreenshotPopupValue = pcall(function() return settings():GetFFlag("DisableScreenshotPopup") end)
+local disableScreenshotPopup = getDisableScreenshotPopup and disableScreenshotPopupValue
+
 --[[ Script Variables ]]--
 local LocalPlayer = nil
 while not Players.LocalPlayer do
@@ -721,6 +724,22 @@ end
 
 end
 
+if disableScreenshotPopup then
+	game.ScreenshotReady:Connect(function(path)
+		sendNotificationInfo {
+			Title = "Screenshot Taken",
+			Text = "Check out your screenshots folder to see it.",
+			Duration = 3.0,
+			Button1Text = "Open Folder",
+			Callback = function(text)
+				if text == "Open Folder" then
+					game:OpenScreenshotsFolder()
+				end
+			end
+		}
+	end)
+end
+
 GuiService.SendCoreUiNotification = function(title, text)
 	local notification = createNotification(title, text, "")
 	notification.BackgroundTransparency = .5
@@ -791,7 +810,7 @@ local function createDeveloperNotification(notificationTable)
 		if type(notificationTable.Title) == "string" and type(notificationTable.Text) == "string" then
 			local iconImage = (type(notificationTable.Icon) == "string" and notificationTable.Icon or "")
 			local duration = (type(notificationTable.Duration) == "number" and notificationTable.Duration or DEFAULT_NOTIFICATION_DURATION)
-			local success, bindable = pcall(function() return (notificationTable.Callback:IsA("BindableFunction") and notificationTable.Callback or nil) end)
+			local bindable = (typeof(notificationTable.Callback) == "Instance" and notificationTable.Callback:IsA("BindableFunction") and notificationTable.Callback or nil)
 			local button1Text = (type(notificationTable.Button1) == "string" and notificationTable.Button1 or "")
 			local button2Text = (type(notificationTable.Button2) == "string" and notificationTable.Button2 or "")
 			if newNotificationPath then

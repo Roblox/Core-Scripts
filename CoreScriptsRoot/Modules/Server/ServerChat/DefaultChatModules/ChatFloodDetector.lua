@@ -2,6 +2,10 @@
 --	// Written by: Xsitsu
 --	// Description: Module that limits the number of messages a speaker can send in a given period of time.
 
+local Chat = game:GetService("Chat")
+local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
+local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
+
 local doFloodCheckByChannel = true
 local informSpeakersOfWaitTimes = true
 local chatBotsBypassFloodCheck = true
@@ -62,7 +66,7 @@ local function Run(ChatService)
 		end
 	end
 
-	ChatService:RegisterProcessCommandsFunction("flood_detection", FloodDetectionProcessCommandsFunction)
+	ChatService:RegisterProcessCommandsFunction("flood_detection", FloodDetectionProcessCommandsFunction, ChatConstants.LowPriority)
 
 	ChatService.SpeakerRemoved:connect(function(speakerName)
 		floodCheckTable[speakerName] = nil
