@@ -824,7 +824,7 @@ local function CreateCamera()
 	end
 	
 	local function OnTouchTap(position)
-		if isDynamicThumbstickEnabled then
+		if isDynamicThumbstickEnabled and not IsAToolEquipped then
 			if lastTapTime and tick() - lastTapTime < MAX_TIME_FOR_DOUBLE_TAP then
 				local tween = {
 					from = this:GetCameraZoom(),
