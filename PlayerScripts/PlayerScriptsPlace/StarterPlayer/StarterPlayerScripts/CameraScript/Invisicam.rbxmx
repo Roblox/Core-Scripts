@@ -214,6 +214,7 @@ function Invisicam:Update()
 				Torso = nil
 				if ancestryChangedConn and ancestryChangedConn.Connected then
 					ancestryChangedConn:Disconnect()
+					ancestryChangedConn = nil
 				end
 			end
 		end)
