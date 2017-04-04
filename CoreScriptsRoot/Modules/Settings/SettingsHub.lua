@@ -336,6 +336,7 @@ local function CreateSettingsHub()
 		{
 			Name = 'MenuAspectRatio',
 			AspectRatio = 800 / 600,
+			AspectType = Enum.AspectType.ScaleWithParentSize,
 			Parent = this.MenuContainer
 		}
 

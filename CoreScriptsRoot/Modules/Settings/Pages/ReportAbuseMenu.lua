@@ -146,8 +146,10 @@ local function Initialize()
 			this.AbuseDescriptionFrame,
 			this.AbuseDescriptionLabel,
 			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
+
+			this.AbuseDescriptionFrame.Size = UDim2.new(1, -10, 0, 100)
+			this.AbuseDescription.Selection.Size = UDim2.new(1, 0, 1, 0)
 		end
-		
 		this.AbuseDescriptionFrame.LayoutOrder = 4
 
 		this.AbuseDescription.Selection.FocusLost:connect(function()
