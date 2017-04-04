@@ -147,7 +147,7 @@ local function Initialize()
 			this.AbuseDescriptionLabel,
 			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
 		end
-		
+
 		this.AbuseDescriptionFrame.LayoutOrder = 4
 
 		this.AbuseDescription.Selection.FocusLost:connect(function()
@@ -346,7 +346,12 @@ do
 					setReportPlayerConnection = nil
 				end
 			end)
-			PageInstance.HubRef:SetVisibility(true, false, PageInstance)
+
+			if not PageInstance.HubRef:GetVisibility() then
+				PageInstance.HubRef:SetVisibility(true, false, PageInstance)
+			else
+				PageInstance.HubRef:SwitchToPage(PageInstance, false)
+			end
 		end
 	end
 end

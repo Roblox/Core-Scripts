@@ -336,6 +336,7 @@ local function CreateSettingsHub()
 		{
 			Name = 'MenuAspectRatio',
 			AspectRatio = 800 / 600,
+			AspectType = Enum.AspectType.ScaleWithParentSize,
 			Parent = this.MenuContainer
 		}
 
@@ -456,9 +457,9 @@ local function CreateSettingsHub()
 					inviteToGameFunc, {Enum.KeyCode.ButtonX}
 				)
 				if RunService:IsStudio() then
-					this.InviteToGameButton.Selectable = value
-					this.InviteToGameButton.Active = value
-					this.InviteToGameButton.Enabled.Value = value
+					this.InviteToGameButton.Selectable = false
+					this.InviteToGameButton.Active = false
+					this.InviteToGameButton.Enabled.Value = false
 					local inviteHint = this.InviteToGameButton:FindFirstChild("InviteToGameHint")
 					if inviteHint then
 						inviteHint.ImageColor3 = Color3.fromRGB(100, 100, 100)
@@ -524,7 +525,7 @@ local function CreateSettingsHub()
 			end
 			local barSize = this.HubBar.Size.Y.Offset
 			local extraSpace = bufferSize*2+barSize*2
-			local isPortrait = utility:IsPortrait() 
+			local isPortrait = utility:IsPortrait()
 
 			if isPortrait then
 				this.MenuContainer.Size = UDim2.new(1, 0, 1, 0)
@@ -986,7 +987,7 @@ local function CreateSettingsHub()
 		end)
 	end
 
-	function setVisibilityInternal(visible, noAnimation, customStartPage)
+	function setVisibilityInternal(visible, noAnimation, customStartPage, switchedFromGamepadInput)
 		this.OpenStateChangedCount = this.OpenStateChangedCount + 1
 		local switchedFromGamepadInput = switchedFromGamepadInput or isTenFootInterface
 		this.Visible = visible
@@ -1109,6 +1110,10 @@ local function CreateSettingsHub()
 		if this.Visible == visible then return end
 
 		setVisibilityInternal(visible, noAnimation, customStartPage, switchedFromGamepadInput)
+	end
+
+	function this:GetVisibility()
+		return this.Visible
 	end
 
 	function this:ToggleVisibility(switchedFromGamepadInput)

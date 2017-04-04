@@ -367,7 +367,7 @@ local function addOnResizedCallback(key, callback)
 	callback(getViewportSize(), isPortrait())
 end
 
-local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
+local function MakeDefaultButton(name, size, clickFunc, pageRef, hubRef)
 	local SelectionOverrideObject = Util.Create'ImageLabel'
 	{
 		Image = "",
@@ -460,6 +460,26 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		deselectButton()
 	end)
 
+	local guiServiceCon = GuiService.Changed:connect(function(prop)
+		if prop ~= "SelectedCoreObject" then return end
+		if not usesSelectedObject() then return end
+
+		if GuiService.SelectedCoreObject == nil or GuiService.SelectedCoreObject ~= button then
+			deselectButton()
+			return
+		end
+
+		if button.Selectable then
+			selectButton()
+		end
+	end)
+
+	return button, setRowRef
+end
+
+local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
+	local button, setRowRef = MakeDefaultButton(name, size, clickFunc, pageRef, hubRef)
+
 	local textLabel = Util.Create'TextLabel'
 	{
 		Name = name .. "TextLabel",
@@ -483,21 +503,26 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		textLabel.FontSize = Enum.FontSize.Size36
 	end
 
-	local guiServiceCon = GuiService.Changed:connect(function(prop)
-		if prop ~= "SelectedCoreObject" then return end
-		if not usesSelectedObject() then return end
-
-		if GuiService.SelectedCoreObject == nil or GuiService.SelectedCoreObject ~= button then
-			deselectButton()
-			return
-		end
-
-		if button.Selectable then
-			selectButton()
-		end
-	end)
-
 	return button, textLabel, setRowRef
+end
+
+local function MakeImageButton(name, image, size, imageSize, clickFunc, pageRef, hubRef)
+	local button, setRowRef = MakeDefaultButton(name, size, clickFunc, pageRef, hubRef)
+
+	local imageLabel = Util.Create'ImageLabel'
+	{
+		Name = name .. "ImageLabel",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Size = imageSize,
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Image = image,
+		ZIndex = 2,
+		Parent = button
+	};
+
+	return button, imageLabel, setRowRef
 end
 
 local function AddButtonRow(pageToAddTo, name, text, size, clickFunc, hubRef)
@@ -2569,6 +2594,10 @@ end
 
 function moduleApiTable:MakeStyledButton(name, text, size, clickFunc, pageRef, hubRef)
 	return MakeButton(name, text, size, clickFunc, pageRef, hubRef)
+end
+
+function moduleApiTable:MakeStyledImageButton(name, image, size, imageSize, clickFunc, pageRef, hubRef)
+	return MakeImageButton(name, image, size, imageSize, clickFunc, pageRef, hubRef)
 end
 
 function moduleApiTable:AddButtonRow(pageToAddTo, name, text, size, clickFunc, hubRef)

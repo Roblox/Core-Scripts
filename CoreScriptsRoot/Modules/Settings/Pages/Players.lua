@@ -14,14 +14,16 @@ local UserInputService = game:GetService('UserInputService')
 ----------- UTILITIES --------------
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local utility = require(RobloxGui.Modules.Settings.Utility)
+local reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
 local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
 local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
 
 ------------ Constants -------------------
-local frameDefaultTransparency = .85
-local frameSelectedTransparency = .65
+local FRAME_DEFAULT_TRANSPARENCY = .85
+local FRAME_SELECTED_TRANSPARENCY = .65
+local REPORT_PLAYER_IMAGE = isTenFootInterface and "rbxasset://textures/ui/Settings/Players/ReportFlagIcon@2x.png" or "rbxasset://textures/ui/Settings/Players/ReportFlagIcon.png"
 
 ------------ Variables -------------------
 local PageInstance = nil
@@ -92,7 +94,7 @@ local function Initialize()
 				friendLabel.Text = ''
 				friendLabel.BackgroundTransparency = 1
 				friendLabel.Position = UDim2.new(1,-198,0,7)
-			elseif status == Enum.FriendStatus.Friend then 
+			elseif status == Enum.FriendStatus.Friend then
 				friendLabel = Instance.new('TextButton')
 				friendLabel.Text = 'Friend'
 				friendLabel.BackgroundTransparency = 1
@@ -127,15 +129,18 @@ local function Initialize()
 			end
 
 			if friendLabel then
+				local rightSideButtons = playerLabel:FindFirstChild("RightSideButtons")
+
 				friendLabel.Name = 'FriendStatus'
 				friendLabel.Size = UDim2.new(0,182,0,46)
 				friendLabel.ZIndex = 3
-				friendLabel.Parent = playerLabel
+				friendLabel.LayoutOrder = 1
+				friendLabel.Parent = rightSideButtons
 				friendLabel.SelectionImageObject = playerLabelFakeSelection
 
 				local updateHighlight = function()
 					if playerLabel then
-						playerLabel.ImageTransparency = friendLabel and GuiService.SelectedCoreObject == friendLabel and frameSelectedTransparency or frameDefaultTransparency
+						playerLabel.ImageTransparency = friendLabel and GuiService.SelectedCoreObject == friendLabel and FRAME_SELECTED_TRANSPARENCY or FRAME_DEFAULT_TRANSPARENCY
 					end
 				end
 				friendLabel.SelectionGained:connect(updateHighlight)
@@ -188,7 +193,7 @@ local function Initialize()
 	resetButton.Position = UDim2.new(0.5, 0, 0, 0)
 	resetLabel.Size = UDim2.new(1, 0, 1, -6)
 	resetButton.Parent = buttonsContainer
-	
+
 	local resumeGameFunc = function()
 		this.HubRef:SetVisibility(false)
 	end
@@ -221,6 +226,72 @@ local function Initialize()
 		end
 	end
 
+	local function createPlayerRow(player, yPosition)
+		local frame = Instance.new('ImageLabel')
+		frame.Image = "rbxasset://textures/ui/dialog_white.png"
+		frame.ScaleType = 'Slice'
+		frame.SliceCenter = Rect.new(10,10,10,10)
+		frame.Size = UDim2.new(1,0,0,60)
+		frame.Position = UDim2.new(0,0,0, yPosition)
+		frame.BackgroundTransparency = 1
+		frame.ZIndex = 2
+
+		local rightSideButtons = Instance.new("Frame")
+		rightSideButtons.Name = "RightSideButtons"
+		rightSideButtons.BackgroundTransparency = 1
+		rightSideButtons.ZIndex = 2
+		rightSideButtons.Position = UDim2.new(0, 0, 0, 0)
+		rightSideButtons.Size = UDim2.new(1, 0, 1, 0)
+		rightSideButtons.Parent = frame
+
+		local rightSideListLayout = Instance.new("UIListLayout")
+		rightSideListLayout.Name = "RightSideListLayout"
+		rightSideListLayout.FillDirection = Enum.FillDirection.Horizontal
+		rightSideListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+		rightSideListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+		rightSideListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		rightSideListLayout.Parent = rightSideButtons
+
+		local icon = Instance.new('ImageLabel')
+		icon.Name = 'Icon'
+		icon.BackgroundTransparency = 1
+		icon.Size = UDim2.new(0,36,0,36)
+		icon.Position = UDim2.new(0,12,0,12)
+		icon.ZIndex = 3
+		icon.Parent = frame
+
+		local nameLabel = Instance.new('TextLabel')
+		nameLabel.Name = 'NameLabel'
+		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+		nameLabel.Font = 'SourceSans'
+		nameLabel.FontSize = 'Size24'
+		nameLabel.TextColor3 = Color3.new(1,1,1)
+		nameLabel.BackgroundTransparency = 1
+		nameLabel.Position = UDim2.new(0,60,.5,0)
+		nameLabel.Size = UDim2.new(0,0,0,0)
+		nameLabel.ZIndex = 3
+		nameLabel.Parent = frame
+
+		frame.MouseEnter:connect(function()
+			frame.ImageTransparency = FRAME_SELECTED_TRANSPARENCY
+		end)
+		frame.MouseLeave:connect(function()
+			frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
+		end)
+
+		local reportPlayerFunction = function()
+			reportAbuseMenu:ReportPlayer(player)
+		end
+
+		local reportButton = utility:MakeStyledImageButton("ReportPlayer", REPORT_PLAYER_IMAGE,
+				UDim2.new(0, 46, 0, 46), UDim2.new(0, 28, 0, 28), reportPlayerFunction)
+		reportButton.Position = UDim2.new(1, -260, 0, 7)
+		reportButton.LayoutOrder = 2
+		reportButton.Parent = rightSideButtons
+
+		return frame
+	end
+
 	local existingPlayerLabels = {}
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
 		local sortedPlayers = PlayersService:GetPlayers()
@@ -242,41 +313,7 @@ local function Initialize()
 			if player then
 				-- create label (frame) for this player index if one does not exist
 				if not frame or not frame.Parent then
-					frame = Instance.new('ImageLabel')
-					frame.Image = "rbxasset://textures/ui/dialog_white.png"
-					frame.ScaleType = 'Slice'
-					frame.SliceCenter = Rect.new(10,10,10,10)
-					frame.Size = UDim2.new(1,0,0,60)
-					frame.Position = UDim2.new(0,0,0,(index-1)*80 + extraOffset)
-					frame.BackgroundTransparency = 1
-					frame.ZIndex = 2
-
-					local icon = Instance.new('ImageLabel')
-					icon.Name = 'Icon'
-					icon.BackgroundTransparency = 1
-					icon.Size = UDim2.new(0,36,0,36)
-					icon.Position = UDim2.new(0,12,0,12)
-					icon.ZIndex = 3
-					icon.Parent = frame
-
-					local nameLabel = Instance.new('TextLabel')
-					nameLabel.Name = 'NameLabel'
-					nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-					nameLabel.Font = 'SourceSans'
-					nameLabel.FontSize = 'Size24'
-					nameLabel.TextColor3 = Color3.new(1,1,1)
-					nameLabel.BackgroundTransparency = 1
-					nameLabel.Position = UDim2.new(0,60,.5,0)
-					nameLabel.Size = UDim2.new(0,0,0,0)
-					nameLabel.ZIndex = 3
-					nameLabel.Parent = frame
-
-					frame.MouseEnter:connect(function()
-						frame.ImageTransparency = frameSelectedTransparency
-					end)
-					frame.MouseLeave:connect(function()
-						frame.ImageTransparency = frameDefaultTransparency
-					end)
+					frame = createPlayerRow(player, (index-1)*80 + extraOffset)
 
 					frame.Parent = this.Page
 					table.insert(existingPlayerLabels, index, frame)
@@ -284,7 +321,7 @@ local function Initialize()
 				frame.Name = 'PlayerLabel'..player.Name
 				frame.Icon.Image = 'https://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId='..math.max(1, player.UserId)
 				frame.NameLabel.Text = player.Name
-				frame.ImageTransparency = frameDefaultTransparency
+				frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
 
 				friendStatusCreate(frame, player)
 			end
