@@ -9,8 +9,7 @@
 
 local function CreateScriptableCamera()
 	local module = RootCameraCreator()
-	
-	local lastUpdate = tick()
+
 	function module:Update()
 	end
 	

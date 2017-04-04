@@ -6,24 +6,27 @@
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">FollowCamera</string>
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
-local UserInputService = game:GetService('UserInputService')
-local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
-if not VRServiceExists or not VRService then
-	--No VRService? Fall back to UserInputService, it is the original VRService after all
-	VRService = UserInputService
-end
+local VRService = game:GetService("VRService")
 
 local RootCameraCreator = require(script.Parent)
 
+local CFrame_new = CFrame.new
+local Vector2_new = Vector2.new
+local Vector3_new = Vector3.new
+local math_min = math.min
+local math_max = math.max
+local math_atan2 = math.atan2
+local math_rad = math.rad
+local math_abs = math.abs
+
+local ZERO_VECTOR2 = Vector2.new(0, 0)
 local UP_VECTOR = Vector3.new(0, 1, 0)
-local XZ_VECTOR = Vector3.new(1,0,1)
+local XZ_VECTOR = Vector3.new(1, 0, 1)
+
+local HUMANOIDSTATE_CLIMBING = Enum.HumanoidStateType.Climbing
 
 local function clamp(low, high, num)
-	if low <= high then
-		return math.min(high, math.max(low, num))
-	end
-	print("Trying to clamp when low:", low , "is larger than high:" , high , "returning input value.")
-	return num
+	return num > high and high or num < low and low or num
 end
 
 local function IsFinite(num)
@@ -37,15 +40,15 @@ end
 -- May return NaN or inf or -inf
 local function findAngleBetweenXZVectors(vec2, vec1)
 	-- This is a way of finding the angle between the two vectors:
-	return math.atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
+	return math_atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
 end
 
 local function CreateFollowCamera()
 	local module = RootCameraCreator()	
 	
-	local tweenAcceleration = math.rad(220)
-	local tweenSpeed = math.rad(0)
-	local tweenMaxSpeed = math.rad(250)
+	local tweenAcceleration = math_rad(220)
+	local tweenSpeed = math_rad(0)
+	local tweenMaxSpeed = math_rad(250)
 	local timeBeforeAutoRotate = 2
 	
 	local lastUpdate = tick()
@@ -59,7 +62,7 @@ local function CreateFollowCamera()
 		local player = PlayersService.LocalPlayer
 		local humanoid = self:GetHumanoid()
 		local cameraSubject = camera and camera.CameraSubject
-		local isClimbing = humanoid and humanoid:GetState() == Enum.HumanoidStateType.Climbing
+		local isClimbing = humanoid and humanoid:GetState() == HUMANOIDSTATE_CLIMBING
 		local isInVehicle = cameraSubject and cameraSubject:IsA('VehicleSeat')
 		local isOnASkateboard = cameraSubject and cameraSubject:IsA('SkateboardPlatform')
 
@@ -74,7 +77,7 @@ local function CreateFollowCamera()
 				self.RotateInput = self.RotateInput + self:GetVRRotationInput()
 			else
 				-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
-				local delta = math.min(0.1, now - lastUpdate)
+				local delta = math_min(0.1, now - lastUpdate)
 				local angle = 0
 				-- NOTE: Traditional follow camera does not rotate with arrow keys
 				if not (isInVehicle or isOnASkateboard) then
@@ -90,7 +93,7 @@ local function CreateFollowCamera()
 				
 				if angle ~= 0 then
 					userPanningTheCamera = true
-					self.RotateInput = self.RotateInput + Vector2.new(math.rad(angle * delta), 0)
+					self.RotateInput = self.RotateInput + Vector2_new(math_rad(angle * delta), 0)
 				end
 			end
 		end
@@ -142,7 +145,7 @@ local function CreateFollowCamera()
 							end
 							local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
 							-- Check for NaN
-							if IsFinite(y) and math.abs(y) > 0.0001 then
+							if IsFinite(y) and math_abs(y) > 0.0001 then
 								self.RotateInput = self.RotateInput + Vector2.new(y * percent, 0)
 							end
 						end
@@ -150,17 +153,17 @@ local function CreateFollowCamera()
 						local lastVec = -(self.LastCameraTransform.p - subjectPosition)
 						local y = findAngleBetweenXZVectors(lastVec, self:GetCameraLook())
 						-- Check for NaNs
-						if IsFinite(y) and math.abs(y) > 0.0001 then
+						if IsFinite(y) and math_abs(y) > 0.0001 then
 							self.RotateInput = self.RotateInput + Vector2.new(y, 0)
 						end
 					end
 				end
 			end
 			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
-			self.RotateInput = Vector2.new()
+			self.RotateInput = ZERO_VECTOR2
 			
-			camera.Focus = VRService.VREnabled and self:GetVRFocus(subjectPosition, timeDelta) or CFrame.new(subjectPosition)
-			camera.CFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p) + Vector3.new(0, self:GetCameraHeight(), 0)
+			camera.Focus = VRService.VREnabled and self:GetVRFocus(subjectPosition, timeDelta) or CFrame_new(subjectPosition)
+			camera.CFrame = CFrame_new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p) + Vector3_new(0, self:GetCameraHeight(), 0)
 
 			self.LastCameraTransform = camera.CFrame
 			self.LastCameraFocus = camera.Focus

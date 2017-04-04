@@ -25,8 +25,22 @@ local MyMouse = Player:GetMouse()
 local DirectPathEnabled = false
 local SHOW_PATH = false
 
+local XZ_VECTOR3 = Vector3.new(1, 0, 1)
+local ZERO_VECTOR2 = Vector2.new(0, 0)
+
 local RayCastIgnoreList = workspace.FindPartOnRayWithIgnoreList
 local GetPartsTouchingExtents = workspace.FindPartsInRegion3
+
+local math_min = math.min
+local math_max = math.max
+local math_pi = math.pi
+local math_floor = math.floor
+local math_abs = math.abs
+local math_deg = math.deg
+local math_acos = math.acos
+local math_sin = math.sin
+local math_atan2 = math.atan2
+
 local CurrentSeatPart = nil
 local DrivingTo = nil
 
@@ -98,7 +112,7 @@ do
 	end
 
 	local function clamp(low, high, num)
-		return math.max(math.min(high, num), low)
+		return (num > high and high or num < low and low or num)
 	end
 	Utility.Clamp = clamp
 
@@ -157,7 +171,6 @@ do
 	end
 	Utility.GetUnitRay = GetUnitRay
 
-	local RayCastIgnoreList = workspace.FindPartOnRayWithIgnoreList
 	local function Raycast(ray, ignoreNonCollidable, ignoreList)
 		local ignoreList = ignoreList or {}
 		local hitPart, hitPos = RayCastIgnoreList(workspace, ray, ignoreList)
@@ -175,11 +188,11 @@ do
 
 	Utility.Round = function(num, roundToNearest)
 		roundToNearest = roundToNearest or 1
-		return math.floor((num + roundToNearest/2) / roundToNearest) * roundToNearest
+		return math_floor((num + roundToNearest/2) / roundToNearest) * roundToNearest
 	end
 
 	local function AveragePoints(positions)
-		local avgPos = Vector2.new(0,0)
+		local avgPos = ZERO_VECTOR2
 		if #positions > 0 then
 			for i = 1, #positions do
 				avgPos = avgPos + positions[i]
@@ -219,85 +232,38 @@ local function findPlayerHumanoid(player)
 			return resultHumanoid
 		else
 			humanoidCache[player] = nil -- Bust Old Cache
-			for _, child in pairs(character:GetChildren()) do
-				if child:IsA('Humanoid') then
-					humanoidCache[player] = child
-					return child
-				end
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoidCache[player] = humanoid
 			end
+			return humanoid
 		end
 	end
 end
 
-local function CFrameInterpolator(c0, c1) -- (CFrame from, CFrame to) -> (float theta, (float fraction -> CFrame between))
-	local fromAxisAngle = CFrame.fromAxisAngle
+local GetThetaBetweenCFrames; do
 	local components = CFrame.new().components
 	local inverse = CFrame.new().inverse
-	local v3 = Vector3.new
 	local acos = math.acos
-	local sqrt = math.sqrt
-	local invroot2 = 1 / math.sqrt(2)
-	-- The expanded matrix
-	local _, _, _, xx, yx, zx,
-	               xy, yy, zy,
-	               xz, yz, zz = components(inverse(c0)*c1)
-	-- The cos-theta of the axisAngles from
-	local cosTheta = (xx + yy + zz - 1)/2
-	-- Rotation axis
-	local rotationAxis = v3(yz-zy, zx-xz, xy-yx)
-	-- The position to tween through
-	local positionDelta = (c1.p - c0.p)
-	-- Theta
-	local theta;
-	-- Catch degenerate cases
-	if cosTheta >= 0.999 then
-		-- Case same rotation, just return an interpolator over the positions
-		return 0, function(t)
-			return c0 + positionDelta*t
-		end
-	elseif cosTheta <= -0.999 then
-		-- Case exactly opposite rotations, disambiguate
-		theta = math.pi
-		xx = (xx + 1) / 2
-		yy = (yy + 1) / 2
-		zz = (zz + 1) / 2
-		if xx > yy and xx > zz then
-			if xx < 0.001 then
-				rotationAxis = v3(0, invroot2, invroot2)
-			else
-				local x = sqrt(xx)
-				xy = (xy + yx) / 4
-				xz = (xz + zx) / 4
-				rotationAxis = v3(x, xy/x, xz/x)
-			end
-		elseif yy > zz then
-			if yy < 0.001 then
-				rotationAxis = v3(invroot2, 0, invroot2)
-			else
-				local y = sqrt(yy)
-				xy = (xy + yx) / 4
-				yz = (yz + zy) / 4
-				rotationAxis = v3(xy/y, y, yz/y)
-			end
+	
+	GetThetaBetweenCFrames = function(c0, c1) -- (CFrame from, CFrame to) -> (float theta)
+		local _, _, _, xx, yx, zx,
+		               xy, yy, zy,
+		               xz, yz, zz = components(inverse(c0)*c1)
+		local cosTheta = (xx + yy + zz - 1)/2
+	
+		if cosTheta >= 0.999 then
+			-- Same rotation
+			return 0
+		elseif cosTheta <= -0.999 then
+			-- Oposite rotations
+			return math_pi
 		else
-			if zz < 0.001 then
-				rotationAxis = v3(invroot2, invroot2, 0)
-			else
-				local z = sqrt(zz)
-				xz = (xz + zx) / 4
-				yz = (yz + zy) / 4
-				rotationAxis = v3(xz/z, yz/z, z)
-			end
+			return acos(cosTheta)
 		end
-	else
-		-- Normal case, get theta from cosTheta
-		theta = acos(cosTheta)
-	end
-	-- Return the interpolator
-	return theta, function(t)
-		return c0*fromAxisAngle(rotationAxis, theta*t) + positionDelta*t
 	end
 end
+
 ---------------------------------------------------------
 
 local Signal = Utility.Signal
@@ -436,9 +402,10 @@ local function vec3IsZero(vec3)
 end
 
 -- NOTE: This function is radically different from the engine's implementation
+local walkVelocityVector = Vector3.new(1,1,1)
 local function calcDesiredWalkVelocity()
 	-- TEMP
-	return Vector3.new(1,1,1)
+	return walkVelocityVector
 end
 
 local function preStepSimulatorSide(dt)
@@ -521,7 +488,7 @@ local function Pather(character, point)
 		local lastMoveTo = start
 		while torso and tick() - start < timeout and this.Cancelled == false do
 			local diffVector = (point - torso.CFrame.p)
-			local xzMagnitude = (diffVector * Vector3.new(1,0,1)).magnitude
+			local xzMagnitude = (diffVector * XZ_VECTOR3).magnitude
 			if xzMagnitude < 6 then
 				-- Jump if the path is telling is to go upwards
 				if diffVector.Y >= 2.2 then
@@ -575,7 +542,7 @@ local function Pather(character, point)
 		-- Make sure we have somewhere to stand on
 		local midPt = (point2 + point1) / 2
 		local studsBetweenSamples = 2
-		for i = 1, math.floor(diffVector.magnitude/studsBetweenSamples) do
+		for i = 1, math_floor(diffVector.magnitude/studsBetweenSamples) do
 			local downPart, _ = Utility.Raycast(Ray.new(point1 + directionVector * i * studsBetweenSamples, Vector3.new(0,-7,0)), true, {character})
 			if not downPart then
 				return false
@@ -666,9 +633,9 @@ local function Pather(character, point)
 	end
 
 	local function AllAxisInThreshhold(targetPt, otherPt, threshold)
-		return math.abs(targetPt.X - otherPt.X) <= threshold and
-			math.abs(targetPt.Y - otherPt.Y) <= threshold and
-			math.abs(targetPt.Z - otherPt.Z) <= threshold
+		return math_abs(targetPt.X - otherPt.X) <= threshold and
+			math_abs(targetPt.Y - otherPt.Y) <= threshold and
+			math_abs(targetPt.Z - otherPt.Z) <= threshold
 	end
 
 	function this:ComputePath()
@@ -802,8 +769,8 @@ local function Pather(character, point)
 
 							local distance = ((torso.CFrame.p - point) * Vector3.new(1,0,1)).magnitude
 							local approxTime = 10
-							if math.abs(humanoid.WalkSpeed) > 0 then
-								approxTime = distance / math.abs(humanoid.WalkSpeed)
+							if math_abs(humanoid.WalkSpeed) > 0 then
+								approxTime = distance / math_abs(humanoid.WalkSpeed)
 							end
 
 							local yielding = true
@@ -825,7 +792,7 @@ local function Pather(character, point)
 											local squashedLook = (look * Vector3.new(1,0,1)).unit
 											local direction = ((point - CameraModule.cframe.p) * Vector3.new(1,0,1)).unit
 
-											local theta = math.deg(math.acos(squashedLook:Dot(direction)))
+											local theta = math_deg(math_acos(squashedLook:Dot(direction)))
 
 											if tick() - Utility.GetLastInput() > 2 and theta > (workspace.CurrentCamera.FieldOfView / 2) then
 												local rotatedCFrame = CameraModule:LookAtPreserveHeight(point)
@@ -1244,7 +1211,7 @@ local function CreateClickToMoveModule()
 	end
 	
 	local function findAngleBetweenXZVectors(vec2, vec1)
-		return math.atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
+		return math_atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
 	end
 	
 	-- Setup the camera
@@ -1268,19 +1235,29 @@ local function CreateClickToMoveModule()
 			return CFrame.new(newCamPos, newCamPos + flippedLook)
 		end
 
+		local v3 = Vector3.new
+		local v2 = Vector2.new
+		local cf = CFrame.new
+		local lerp = CFrame.new().lerp
+		local zeroVector = v3()
+		local clamp = Utility.Clamp
+
 		function CameraModule:TweenCameraLook(desiredCFrame, speed)
 			local e = 2.718281828459
+			
 			local function SCurve(t)
 				return 1/(1 + e^(-t*1.5))
 			end
+
 			local function easeOutSine(t, b, c, d)
 				if t >= d then return b + c end
-				return c * math.sin(t/d * (math.pi/2)) + b;
+				return c * math_sin(t/d * (math_pi/2)) + b;
 			end
 
-			local theta, interper = CFrameInterpolator(CFrame.new(Vector3.new(), self:GetCameraLook()), desiredCFrame - desiredCFrame.p)
-			theta = Utility.Clamp(0, math.pi, theta)
-			local duration = 0.65 * SCurve(theta - math.pi/4) + 0.15
+			local c0, c1 = cf(zeroVector, self:GetCameraLook()), desiredCFrame - desiredCFrame.p
+			local theta = GetThetaBetweenCFrames(c0, c1)
+			theta = clamp(0, math_pi, theta)
+			local duration = 0.65 * SCurve(theta - math_pi/4) + 0.15
 			if speed then
 				duration = theta / speed
 			end
@@ -1289,11 +1266,11 @@ local function CreateClickToMoveModule()
 
 			self.UpdateTweenFunction = function()
 				local currTime = tick() - start
-				local alpha = Utility.Clamp(0, 1, easeOutSine(currTime, 0, 1, duration))
-				local newCFrame = interper(alpha)
+				local alpha = clamp(0, 1, easeOutSine(currTime, 0, 1, duration))
+				local newCFrame = lerp(c0, c1, alpha)
 				local y = findAngleBetweenXZVectors(newCFrame.lookVector, self:GetCameraLook())
-				if IsFinite(y) and math.abs(y) > 0.0001 then
-					self.RotateInput = self.RotateInput + Vector2.new(y, 0)
+				if IsFinite(y) and math_abs(y) > 0.0001 then
+					self.RotateInput = self.RotateInput + v2(y, 0)
 				end
 				return (currTime >= finish or alpha >= 1)
 			end
@@ -1412,7 +1389,7 @@ local function CreateClickToMoveModule()
 			local objectVector = Vector3.new(object.CFrame.lookVector.X, 0, object.CFrame.lookVector.Z).unit
 			local dirVector = lookVector - objectVector
 			local mag = dirVector.magnitude
-			local degrees = math.deg(math.acos(lookVector:Dot(objectVector)))
+			local degrees = math_deg(math_acos(lookVector:Dot(objectVector)))
 			local side = (object.CFrame:pointToObjectSpace(point).X > 0)
 			local throttle = 0
 			if mag < 0.25 then
@@ -1438,8 +1415,8 @@ local function CreateClickToMoveModule()
 					steer = -1
 				end
 			end
-			local rotatingAt = math.deg(CurrentSeatPart.RotVelocity.magnitude)
-			local degreesAway = math.max(math.min(degrees, 180 - degrees), 10)
+			local rotatingAt = math_deg(CurrentSeatPart.RotVelocity.magnitude)
+			local degreesAway = math_max(math_min(degrees, 180 - degrees), 10)
 			if (CurrentSeatPart.RotVelocity.X < 0)== (steer < 0) then
 				if rotatingAt*1.5 > degreesAway then
 					if rotatingAt*0.5 > degreesAway then
@@ -1466,6 +1443,7 @@ local function CreateClickToMoveModule()
 				end
 				CameraModule:Update()
 			end
+
 			if CurrentSeatPart then
 				if DrivingTo then
 					local throttle, steer = getThrottleAndSteer(CurrentSeatPart, DrivingTo)
