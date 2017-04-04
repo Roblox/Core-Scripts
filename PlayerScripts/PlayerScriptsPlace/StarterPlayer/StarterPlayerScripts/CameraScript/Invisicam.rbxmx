@@ -68,6 +68,9 @@ local Torso = nil
 local Mode = nil
 local BehaviorFunction = nil
 
+local childAddedConn = nil
+local childRemovedConn = nil
+
 local Behaviors = {} -- Map of modes to behavior fns
 local SavedHits = {} -- Objects currently being faded in/out
 local TrackedLimbs = {} -- Used in limb-tracking casting modes
@@ -147,6 +150,15 @@ local function LimbMoveBehavior(castPoints)
 end
 
 local function OnCharacterAdded(character)
+	if childAddedConn then
+		childAddedConn:disconnect()
+		childAddedConn = nil
+	end
+	if childRemovedConn then
+		childRemovedConn:disconnect()
+		childRemovedConn = nil
+	end
+
 	Character = character
 	
 	TrackedLimbs = {}
@@ -160,8 +172,8 @@ local function OnCharacterAdded(character)
 		TrackedLimbs[child] = nil
 	end	
 	
-	character.ChildAdded:connect(childAdded)
-	character.ChildRemoved:connect(childRemoved)
+	childAddedConn = character.ChildAdded:connect(childAdded)
+	childRemovedConn = character.ChildRemoved:connect(childRemoved)
 	
 	for _, child in pairs(Character:GetChildren()) do
 		childAdded(child)
