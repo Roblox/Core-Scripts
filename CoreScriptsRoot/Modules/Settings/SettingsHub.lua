@@ -965,6 +965,8 @@ local function CreateSettingsHub()
 		this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
 		if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
 			this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
+		else
+			this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)
 		end
 
 		pageChangeCon = this.Pages.CurrentPage.Page.Changed:connect(function(prop)
@@ -973,6 +975,8 @@ local function CreateSettingsHub()
 				this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
 				if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
 					this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
+				else
+					this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)
 				end
 			end
 		end)

@@ -83,10 +83,6 @@ local function Initialize()
 		end)
 
 		this.WhichPlayerMode:UpdateDropDownList(playerNames)
-		if nextPlayerToReport then
-			this.WhichPlayerMode:SetSelectionByValue(nextPlayerToReport.Name)
-			nextPlayerToReport = nil
-		end
 
 		if index == 1 then
 			this.GameOrPlayerMode:SetSelectionIndex(1)
@@ -98,6 +94,11 @@ local function Initialize()
 
 		this.WhichPlayerMode:SetInteractable(index > 1 and this.GameOrPlayerMode.CurrentIndex ~= 1)
 		this.GameOrPlayerMode:SetInteractable(index > 1)
+
+		if nextPlayerToReport then
+			this.WhichPlayerMode:SetSelectionByValue(nextPlayerToReport.Name)
+			nextPlayerToReport = nil
+		end
 	end
 
 	------ TAB CUSTOMIZATION -------
@@ -338,8 +339,8 @@ do
 	function PageInstance:ReportPlayer(player)
 		if player then
 			local setReportPlayerConnection = nil
+			PageInstance:SetNextPlayerToReport(player)
 			setReportPlayerConnection = PageInstance.Displayed.Event:connect(function()
-				PageInstance:SetNextPlayerToReport(player)
 				PageInstance.GameOrPlayerMode:SetSelectionIndex(2)
 
 				if setReportPlayerConnection then
