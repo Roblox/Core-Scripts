@@ -137,8 +137,8 @@ function PopperCam:Update()
 		end
 
 		local ignoreList = {}
-		for i = 1, #PlayerCharacters do
-			ignoreList[#ignoreList + 1] = PlayerCharacters[i]
+		for _, character in pairs(PlayerCharacters) do
+			ignoreList[#ignoreList + 1] = character
 		end
 		for i = 1, #VehicleParts do
 			ignoreList[#ignoreList + 1] = VehicleParts[i]
