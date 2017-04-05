@@ -58,9 +58,23 @@ local FadeInAndOutMaxAlpha = 0.35
 local FadeInAndOutHalfDuration = 0.3
 
 --[[ Local functionality ]]--
-	
+
+local function isDynamicThumbstickEnabled()
+	return ThumbstickFrame and ThumbstickFrame.Visible
+end
+
+local function enableAutoJump(humanoid)
+	if humanoid and isDynamicThumbstickEnabled() then
+		local shouldRevert = humanoid.AutoJumpEnabled == false
+		shouldRevert = shouldRevert and LocalPlayer.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
+		RevertAutoJumpEnabledToFalse = shouldRevert
+		humanoid.AutoJumpEnabled = true
+	end
+end
+
 do
-	local function onCharacterAdded(character)
+	local function onCharacterAdded(character)	
+		
 		for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
 			if child:IsA("Tool") then
 				IsAToolEquipped = true
@@ -76,6 +90,9 @@ do
 				IsAToolEquipped = false
 			end
 		end)
+		
+		local humanoid = character:WaitForChild("Humanoid")
+		enableAutoJump(humanoid)
 	end
 	LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
 	if LocalPlayer.Character then
@@ -85,14 +102,9 @@ end
 
 --[[ Public API ]]--
 function Thumbstick:Enable()
-	local humanoid = MasterControl:GetHumanoid()
-	if humanoid then
-		local shouldRevert = humanoid.AutoJumpEnabled == false
-		shouldRevert = shouldRevert and LocalPlayer.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
-		RevertAutoJumpEnabledToFalse = shouldRevert
-		humanoid.AutoJumpEnabled = true
-	end
 	ThumbstickFrame.Visible = true
+	local humanoid = MasterControl:GetHumanoid()
+	enableAutoJump(humanoid)
 end
 
 function Thumbstick:Disable()
