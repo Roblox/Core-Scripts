@@ -20,6 +20,9 @@ local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled
 local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
 local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
 
+local reportPlayerInMenuSuccess, reportPlayerInMenuValue = pcall(function() return settings():GetFFlag("CoreScriptReportPlayerInMenu") end)
+local enableReportPlayer = reportPlayerInMenuSuccess and reportPlayerInMenuValue
+
 ------------ Constants -------------------
 local FRAME_DEFAULT_TRANSPARENCY = .85
 local FRAME_SELECTED_TRANSPARENCY = .65
@@ -70,11 +73,13 @@ local function Initialize()
 
 	local selectionFound = nil
 	local function friendStatusCreate(playerLabel, player)
-		if playerLabel then
-			local rightSideButtons = playerLabel:FindFirstChild("RightSideButtons")
+		local friendLabelParent = playerLabel
+		if enableReportPlayer and playerLabel then
+			friendLabelParent = playerLabel:FindFirstChild("RightSideButtons")
+		end
 
 			-- remove any previous friend status labels
-			for _, item in pairs(rightSideButtons:GetChildren()) do
+			for _, item in pairs(friendLabelParent:GetChildren()) do
 				if item and item.Name == 'FriendStatus' then
 					if GuiService.SelectedCoreObject == item then
 						selectionFound = nil
@@ -86,13 +91,13 @@ local function Initialize()
 
 			-- create new friend status label
 			local status = nil
-			if player and player ~= localPlayer and player.UserId > 1 and (true or localPlayer.UserId > 1) then
+			if player and player ~= localPlayer and player.UserId > 1 and localPlayer.UserId > 1 then
 				status = getFriendStatus(player)
 			end
 
 			local friendLabel, friendLabelText = nil, nil
 			if not status then
-				if false then
+				if not enableReportPlayer then
 					friendLabel = Instance.new('TextButton')
 					friendLabel.Text = ''
 					friendLabel.BackgroundTransparency = 1
@@ -137,7 +142,7 @@ local function Initialize()
 				friendLabel.Size = UDim2.new(0,182,0,46)
 				friendLabel.ZIndex = 3
 				friendLabel.LayoutOrder = 2
-				friendLabel.Parent = rightSideButtons
+				friendLabel.Parent = friendLabelParent
 				friendLabel.SelectionImageObject = playerLabelFakeSelection
 
 				local updateHighlight = function()
@@ -282,16 +287,18 @@ local function Initialize()
 			frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
 		end)
 
-		local reportPlayerFunction = function()
-			reportAbuseMenu:ReportPlayer(player)
-		end
+		if enableReportPlayer then
+			local reportPlayerFunction = function()
+				reportAbuseMenu:ReportPlayer(player)
+			end
 
-		if player and player ~= localPlayer and player.UserId > 1 then
-			local reportButton = utility:MakeStyledImageButton("ReportPlayer", REPORT_PLAYER_IMAGE,
-					UDim2.new(0, 46, 0, 46), UDim2.new(0, 28, 0, 28), reportPlayerFunction)
-			reportButton.Position = UDim2.new(1, -260, 0, 7)
-			reportButton.LayoutOrder = 1
-			reportButton.Parent = rightSideButtons
+			if player and player ~= localPlayer and player.UserId > 1 then
+				local reportButton = utility:MakeStyledImageButton("ReportPlayer", REPORT_PLAYER_IMAGE,
+						UDim2.new(0, 46, 0, 46), UDim2.new(0, 28, 0, 28), reportPlayerFunction)
+				reportButton.Position = UDim2.new(1, -260, 0, 7)
+				reportButton.LayoutOrder = 1
+				reportButton.Parent = rightSideButtons
+			end
 		end
 
 		return frame
