@@ -78,6 +78,7 @@ local function Initialize()
 			friendLabelParent = playerLabel:FindFirstChild("RightSideButtons")
 		end
 
+		if friendLabelParent then
 			-- remove any previous friend status labels
 			for _, item in pairs(friendLabelParent:GetChildren()) do
 				if item and item.Name == 'FriendStatus' then
