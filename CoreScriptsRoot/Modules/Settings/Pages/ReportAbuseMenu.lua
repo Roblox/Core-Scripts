@@ -48,6 +48,7 @@ local function Initialize()
 
 	local playerNames = {}
 	local nameToRbxPlayer = {}
+	local nextPlayerToReport = nil
 
 	function this:GetPlayerFromIndex(index)
 		local playerName = playerNames[index]
@@ -56,6 +57,10 @@ local function Initialize()
 		end
 
 		return nil
+	end
+
+	function this:SetNextPlayerToReport(player)
+		nextPlayerToReport = player
 	end
 
 	function this:UpdatePlayerDropDown()
@@ -78,6 +83,10 @@ local function Initialize()
 		end)
 
 		this.WhichPlayerMode:UpdateDropDownList(playerNames)
+		if nextPlayerToReport then
+			this.WhichPlayerMode:SetSelectionByValue(nextPlayerToReport.Name)
+			nextPlayerToReport = nil
+		end
 
 		if index == 1 then
 			this.GameOrPlayerMode:SetSelectionIndex(1)
@@ -146,6 +155,9 @@ local function Initialize()
 			this.AbuseDescriptionFrame,
 			this.AbuseDescriptionLabel,
 			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
+
+			this.AbuseDescriptionFrame.Size = UDim2.new(1, -10, 0, 100)
+			this.AbuseDescription.Selection.Size = UDim2.new(1, 0, 1, 0)
 		end
 
 		this.AbuseDescriptionFrame.LayoutOrder = 4
@@ -327,18 +339,7 @@ do
 		if player then
 			local setReportPlayerConnection = nil
 			setReportPlayerConnection = PageInstance.Displayed.Event:connect(function()
-				-- When we change the SelectionIndex of GameOrPlayerMode it waits until the tween is done
-				-- before it fires the IndexChanged signal. The WhichPlayerMode dropdown listens to this signal
-				-- and resets when it is fired. Therefore we need to listen to this signal and set the player we want
-				-- to report the frame after the dropdown is reset
-				local indexChangedConnection = nil
-				indexChangedConnection = PageInstance.GameOrPlayerMode.IndexChanged:connect(function()
-					if indexChangedConnection then
-						indexChangedConnection:disconnect()
-						indexChangedConnection = nil
-					end
-					PageInstance.WhichPlayerMode:SetSelectionByValue(player.Name)
-				end)
+				PageInstance:SetNextPlayerToReport(player)
 				PageInstance.GameOrPlayerMode:SetSelectionIndex(2)
 
 				if setReportPlayerConnection then

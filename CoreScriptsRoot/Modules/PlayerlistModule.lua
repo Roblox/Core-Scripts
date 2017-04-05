@@ -170,7 +170,7 @@ local FOLLOWER_ICON = 'rbxasset://textures/ui/icon_follower-16.png'
 local FOLLOWING_ICON = 'rbxasset://textures/ui/icon_following-16.png'
 local MUTUAL_FOLLOWING_ICON = 'rbxasset://textures/ui/icon_mutualfollowing-16.png'
 
-local CHARACTER_BACKGROUND_IMAGE = 'rbxasset://textures/ui/PlayerList/CharacterBackgroundImage.png'
+local CHARACTER_BACKGROUND_IMAGE = 'rbxasset://textures/ui/PlayerList/CharacterImageBackground.png'
 
 --[[ Helper Functions ]]--
 local function clamp(value, min, max)
@@ -522,24 +522,26 @@ local function createImageIcon(image, name, xOffset, parent)
   local imageLabel = Instance.new('ImageLabel')
   imageLabel.Name = name
   if isTenFootInterface then
-    imageLabel.Size = UDim2.new(0, 64, 0, 64)
-    imageLabel.ZIndex = 2
-
-    local background = Instance.new("ImageLabel", imageLabel)
+    local background = Instance.new("ImageLabel", parent)
     background.Name = 'Background'
     background.BackgroundTransparency = 1
     background.Image = CHARACTER_BACKGROUND_IMAGE
     background.Size = UDim2.new(0, 66, 0, 66)
-    background.Position = UDim2.new(0.5, -66/2, 0.5, -66/2)
+    background.Position = UDim2.new(0.01, xOffset - 1, 0.5, -background.Size.Y.Offset/2)
     background.ZIndex = 2
+    
+    imageLabel.Size = UDim2.new(0, 64, 0, 64)
+    imageLabel.Position = UDim2.new(0.5, -64/2, 0.5, -64/2)
+    imageLabel.ZIndex = 2
+    imageLabel.Parent = background
   else
     imageLabel.Size = UDim2.new(0, 16, 0, 16)
+    imageLabel.Position = UDim2.new(0.01, xOffset, 0.5, -imageLabel.Size.Y.Offset/2)
+    imageLabel.Parent = parent
   end
-  imageLabel.Position = UDim2.new(0.01, xOffset, 0.5, -imageLabel.Size.Y.Offset/2)
   imageLabel.BackgroundTransparency = 1
   imageLabel.Image = image
   imageLabel.BorderSizePixel = 0
-  imageLabel.Parent = parent
 
   return imageLabel
 end

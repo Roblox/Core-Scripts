@@ -71,8 +71,10 @@ local function Initialize()
 	local selectionFound = nil
 	local function friendStatusCreate(playerLabel, player)
 		if playerLabel then
+			local rightSideButtons = playerLabel:FindFirstChild("RightSideButtons")
+
 			-- remove any previous friend status labels
-			for _, item in pairs(playerLabel:GetChildren()) do
+			for _, item in pairs(rightSideButtons:GetChildren()) do
 				if item and item.Name == 'FriendStatus' then
 					if GuiService.SelectedCoreObject == item then
 						selectionFound = nil
@@ -84,16 +86,18 @@ local function Initialize()
 
 			-- create new friend status label
 			local status = nil
-			if player and player ~= localPlayer and player.UserId > 1 and localPlayer.UserId > 1 then
+			if player and player ~= localPlayer and player.UserId > 1 and (true or localPlayer.UserId > 1) then
 				status = getFriendStatus(player)
 			end
 
 			local friendLabel, friendLabelText = nil, nil
 			if not status then
-				friendLabel = Instance.new('TextButton')
-				friendLabel.Text = ''
-				friendLabel.BackgroundTransparency = 1
-				friendLabel.Position = UDim2.new(1,-198,0,7)
+				if false then
+					friendLabel = Instance.new('TextButton')
+					friendLabel.Text = ''
+					friendLabel.BackgroundTransparency = 1
+					friendLabel.Position = UDim2.new(1,-198,0,7)
+				end
 			elseif status == Enum.FriendStatus.Friend then
 				friendLabel = Instance.new('TextButton')
 				friendLabel.Text = 'Friend'
@@ -129,12 +133,10 @@ local function Initialize()
 			end
 
 			if friendLabel then
-				local rightSideButtons = playerLabel:FindFirstChild("RightSideButtons")
-
 				friendLabel.Name = 'FriendStatus'
 				friendLabel.Size = UDim2.new(0,182,0,46)
 				friendLabel.ZIndex = 3
-				friendLabel.LayoutOrder = 1
+				friendLabel.LayoutOrder = 2
 				friendLabel.Parent = rightSideButtons
 				friendLabel.SelectionImageObject = playerLabelFakeSelection
 
@@ -241,7 +243,7 @@ local function Initialize()
 		rightSideButtons.BackgroundTransparency = 1
 		rightSideButtons.ZIndex = 2
 		rightSideButtons.Position = UDim2.new(0, 0, 0, 0)
-		rightSideButtons.Size = UDim2.new(1, 0, 1, 0)
+		rightSideButtons.Size = UDim2.new(1, -10, 1, 0)
 		rightSideButtons.Parent = frame
 
 		local rightSideListLayout = Instance.new("UIListLayout")
@@ -250,6 +252,7 @@ local function Initialize()
 		rightSideListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Right
 		rightSideListLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 		rightSideListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+		rightSideListLayout.Padding = UDim.new(0, 20)
 		rightSideListLayout.Parent = rightSideButtons
 
 		local icon = Instance.new('ImageLabel')
@@ -283,11 +286,13 @@ local function Initialize()
 			reportAbuseMenu:ReportPlayer(player)
 		end
 
-		local reportButton = utility:MakeStyledImageButton("ReportPlayer", REPORT_PLAYER_IMAGE,
-				UDim2.new(0, 46, 0, 46), UDim2.new(0, 28, 0, 28), reportPlayerFunction)
-		reportButton.Position = UDim2.new(1, -260, 0, 7)
-		reportButton.LayoutOrder = 2
-		reportButton.Parent = rightSideButtons
+		if player and player ~= localPlayer and player.UserId > 1 then
+			local reportButton = utility:MakeStyledImageButton("ReportPlayer", REPORT_PLAYER_IMAGE,
+					UDim2.new(0, 46, 0, 46), UDim2.new(0, 28, 0, 28), reportPlayerFunction)
+			reportButton.Position = UDim2.new(1, -260, 0, 7)
+			reportButton.LayoutOrder = 1
+			reportButton.Parent = rightSideButtons
+		end
 
 		return frame
 	end

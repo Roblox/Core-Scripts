@@ -404,6 +404,19 @@ local function CreateSettingsHub()
 			Selectable = false,
 			Parent = this.PageViewClipper,
 		};
+
+		this.PageViewInnerFrame = utility:Create'Frame'
+		{
+			Name = "PageViewInnerFrame",
+			Position = UDim2.new(0, 0, 0, 0),
+			Size = UDim2.new(1, 0, 1, 0),
+			ZIndex = this.Shield.ZIndex,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Selectable = false,
+			Parent = this.PageView,
+		};
+
 		if UserInputService.MouseEnabled then
 			this.PageViewClipper.Size = UDim2.new(this.HubBar.Size.X.Scale,this.HubBar.Size.X.Offset,
 				0.5, -(this.HubBar.Position.Y.Offset - this.HubBar.Size.Y.Offset))
@@ -945,16 +958,22 @@ local function CreateSettingsHub()
 
 		-- make sure page is visible
 		this.Pages.CurrentPage = pageToSwitchTo
-		this.Pages.CurrentPage:Display(this.PageView, skipAnimation)
+		this.Pages.CurrentPage:Display(this.PageViewInnerFrame, skipAnimation)
 		this.Pages.CurrentPage.Active = true
 
 		local pageSize = this.Pages.CurrentPage:GetSize()
 		this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
+		if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
+			this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
+		end
 
 		pageChangeCon = this.Pages.CurrentPage.Page.Changed:connect(function(prop)
 			if prop == "AbsoluteSize" then
 				local pageSize = this.Pages.CurrentPage:GetSize()
 				this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
+				if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
+					this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
+				end
 			end
 		end)
 
