@@ -27,7 +27,8 @@ local enableReportPlayer = reportPlayerInMenuSuccess and reportPlayerInMenuValue
 local FRAME_DEFAULT_TRANSPARENCY = .85
 local FRAME_SELECTED_TRANSPARENCY = .65
 local REPORT_PLAYER_IMAGE = isTenFootInterface and "rbxasset://textures/ui/Settings/Players/ReportFlagIcon@2x.png" or "rbxasset://textures/ui/Settings/Players/ReportFlagIcon.png"
-local ADD_FRIEND_IMAGE = isTenFootInterface and "rbxasset://textures/ui/Settings/Players/FriendIcon@2x.png" or "rbxasset://textures/ui/Settings/Players/FriendIcon.png"
+local ADD_FRIEND_IMAGE = isTenFootInterface and "rbxasset://textures/ui/Settings/Players/AddFriendIcon@2x.png" or "rbxasset://textures/ui/Settings/Players/AddFriendIcon.png"
+local FRIEND_IMAGE = isTenFootInterface and "rbxasset://textures/ui/Settings/Players/FriendIcon@2x.png" or "rbxasset://textures/ui/Settings/Players/FriendIcon.png"
 
 local PLAYER_ROW_HEIGHT = 62
 local PLAYER_ROW_SPACING = 80
@@ -83,7 +84,7 @@ local function Initialize()
 			friendLabel.Text = ""
 			friendLabel.BackgroundTransparency = 1
 			friendLabel.Position = UDim2.new(1,-198,0,7)
-		elseif status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestReceived then
+		elseif status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestSent then
 			friendLabel = Instance.new("TextButton")
 			friendLabel.BackgroundTransparency = 1
 			friendLabel.FontSize = "Size24"
@@ -120,8 +121,30 @@ local function Initialize()
 	end
 
 	local function createFriendStatusImageLabel(status, player)
-		if status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestReceived then
-			-- TODO: Add other icons here.
+		if status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestSent then
+			local friendLabel = Instance.new("ImageButton")
+			friendLabel.Name = "FriendStatus"
+			friendLabel.Size = UDim2.new(0, 46, 0, 46)
+			friendLabel.Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png"
+			friendLabel.ScaleType = Enum.ScaleType.Slice
+			friendLabel.SliceCenter = Rect.new(8,6,46,44)
+			friendLabel.AutoButtonColor = false
+			friendLabel.BackgroundTransparency = 1
+			friendLabel.ZIndex = 2
+			local friendImage = Instance.new("ImageLabel")
+			friendImage.BackgroundTransparency = 1
+			friendImage.Position = UDim2.new(0.5, 0, 0.5, 0)
+			friendImage.Size = UDim2.new(0, 28, 0, 28)
+			friendImage.AnchorPoint = Vector2.new(0.5, 0.5)
+			friendImage.ZIndex = 3
+			friendImage.Image = FRIEND_IMAGE
+			if status == Enum.FriendStatus.Friend then
+				friendImage.ImageTransparency = 0
+			else
+				friendImage.ImageTransparency = 0.5
+			end
+			friendImage.Parent = friendLabel
+			return friendLabel
 		elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend or status == Enum.FriendStatus.FriendRequestReceived then
 			local addFriendButton, addFriendImage = nil
 			local addFriendFunc = function()
