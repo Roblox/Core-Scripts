@@ -8,8 +8,8 @@
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
-local PlayersService = game:GetService('Players')
-local UserInputService = game:GetService('UserInputService')
+local PlayersService = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
 
 ----------- UTILITIES --------------
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
@@ -29,6 +29,9 @@ local FRAME_SELECTED_TRANSPARENCY = .65
 local REPORT_PLAYER_IMAGE = isTenFootInterface and "rbxasset://textures/ui/Settings/Players/ReportFlagIcon@2x.png" or "rbxasset://textures/ui/Settings/Players/ReportFlagIcon.png"
 local ADD_FRIEND_IMAGE = isTenFootInterface and "rbxasset://textures/ui/Settings/Players/FriendIcon@2x.png" or "rbxasset://textures/ui/Settings/Players/FriendIcon.png"
 
+local PLAYER_ROW_HEIGHT = 62
+local PLAYER_ROW_SPACING = 80
+
 ------------ Variables -------------------
 local PageInstance = nil
 local localPlayer = PlayersService.LocalPlayer
@@ -41,6 +44,10 @@ end
 local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
+
+	if enablePortraitMode then
+		this.PageListLayout.Padding = UDim.new(0, PLAYER_ROW_SPACING - PLAYER_ROW_HEIGHT)
+	end
 
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "PlayersTab"
@@ -72,26 +79,26 @@ local function Initialize()
 		local friendLabel = nil
 		if not status then
 			-- Remove with enableReportPlayer
-			friendLabel = Instance.new('TextButton')
-			friendLabel.Text = ''
+			friendLabel = Instance.new("TextButton")
+			friendLabel.Text = ""
 			friendLabel.BackgroundTransparency = 1
 			friendLabel.Position = UDim2.new(1,-198,0,7)
 		elseif status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestReceived then
-			friendLabel = Instance.new('TextButton')
+			friendLabel = Instance.new("TextButton")
 			friendLabel.BackgroundTransparency = 1
-			friendLabel.FontSize = 'Size24'
-			friendLabel.Font = 'SourceSans'
+			friendLabel.FontSize = "Size24"
+			friendLabel.Font = "SourceSans"
 			friendLabel.TextColor3 = Color3.new(1,1,1)
 			if status == Enum.FriendStatus.Friend then
-				friendLabel.Text = 'Friend'
+				friendLabel.Text = "Friend"
 			else
-				friendLabel.Text = 'Request Sent'
+				friendLabel.Text = "Request Sent"
 			end
 		elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend or status == Enum.FriendStatus.FriendRequestReceived then
 			local addFriendFunc = function()
-				if friendLabel and friendLabelText and friendLabelText.Text ~= '' then
+				if friendLabel and friendLabelText and friendLabelText.Text ~= "" then
 					friendLabel.ImageTransparency = 1
-					friendLabelText.Text = ''
+					friendLabelText.Text = ""
 					if localPlayer and player then
 						localPlayer:RequestFriendship(player)
 					end
@@ -104,7 +111,7 @@ local function Initialize()
 		end
 
 		if friendLabel then
-			friendLabel.Name = 'FriendStatus'
+			friendLabel.Name = "FriendStatus"
 			friendLabel.Size = UDim2.new(0,182,0,46)
 			friendLabel.Position = UDim2.new(1,-198,0,7)
 			friendLabel.ZIndex = 3
@@ -147,7 +154,7 @@ local function Initialize()
 		if friendLabelParent then
 			-- remove any previous friend status labels
 			for _, item in pairs(friendLabelParent:GetChildren()) do
-				if item and item.Name == 'FriendStatus' then
+				if item and item.Name == "FriendStatus" then
 					if GuiService.SelectedCoreObject == item then
 						friendSelectionFound = nil
 						GuiService.SelectedCoreObject = nil
@@ -179,7 +186,7 @@ local function Initialize()
 					end
 
 					if friendLabel then
-						friendLabel.Name = 'FriendStatus'
+						friendLabel.Name = "FriendStatus"
 						friendLabel.LayoutOrder = 2
 						friendLabel.Selectable = true
 						friendLabel.Parent = friendLabelParent
@@ -193,7 +200,7 @@ local function Initialize()
 			else
 				local friendLabel = createFriendStatusTextLabel(status, player)
 				if friendLabel then
-					friendLabel.Name = 'FriendStatus'
+					friendLabel.Name = "FriendStatus"
 					friendLabel.Size = UDim2.new(0,182,0,46)
 					friendLabel.ZIndex = 3
 					friendLabel.LayoutOrder = 2
@@ -220,7 +227,7 @@ local function Initialize()
 
 	localPlayer.FriendStatusChanged:connect(function(player, friendStatus)
 		if player then
-			local playerLabel = this.Page:FindFirstChild('PlayerLabel'..player.Name)
+			local playerLabel = this.Page:FindFirstChild("PlayerLabel"..player.Name)
 			if playerLabel then
 				friendStatusCreate(playerLabel, player)
 			end
@@ -319,12 +326,12 @@ local function Initialize()
 	end
 
 	local function createPlayerRow(yPosition)
-		local frame = Instance.new('ImageLabel')
+		local frame = Instance.new("ImageLabel")
 		frame.Image = "rbxasset://textures/ui/dialog_white.png"
-		frame.ScaleType = 'Slice'
-		frame.SliceCenter = Rect.new(10,10,10,10)
-		frame.Size = UDim2.new(1,0,0,60)
-		frame.Position = UDim2.new(0,0,0, yPosition)
+		frame.ScaleType = "Slice"
+		frame.SliceCenter = Rect.new(10, 10, 10, 10)
+		frame.Size = UDim2.new(1, 0, 0, PLAYER_ROW_HEIGHT)
+		frame.Position = UDim2.new(0, 0, 0, yPosition)
 		frame.BackgroundTransparency = 1
 		frame.ZIndex = 2
 
@@ -363,23 +370,23 @@ local function Initialize()
 		rightSideListLayout.Padding = UDim.new(0, 20)
 		rightSideListLayout.Parent = rightSideButtons
 
-		local icon = Instance.new('ImageLabel')
-		icon.Name = 'Icon'
+		local icon = Instance.new("ImageLabel")
+		icon.Name = "Icon"
 		icon.BackgroundTransparency = 1
-		icon.Size = UDim2.new(0,36,0,36)
-		icon.Position = UDim2.new(0,12,0,12)
+		icon.Size = UDim2.new(0, 36, 0, 36)
+		icon.Position = UDim2.new(0, 12, 0, 12)
 		icon.ZIndex = 3
 		icon.Parent = frame
 
-		local nameLabel = Instance.new('TextLabel')
-		nameLabel.Name = 'NameLabel'
+		local nameLabel = Instance.new("TextLabel")
+		nameLabel.Name = "NameLabel"
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-		nameLabel.Font = 'SourceSans'
-		nameLabel.FontSize = 'Size24'
-		nameLabel.TextColor3 = Color3.new(1,1,1)
+		nameLabel.Font = "SourceSans"
+		nameLabel.FontSize = "Size24"
+		nameLabel.TextColor3 = Color3.new(1, 1, 1)
 		nameLabel.BackgroundTransparency = 1
-		nameLabel.Position = UDim2.new(0,60,.5,0)
-		nameLabel.Size = UDim2.new(0,0,0,0)
+		nameLabel.Position = UDim2.new(0, 60, .5, 0)
+		nameLabel.Size = UDim2.new(0, 0, 0, 0)
 		nameLabel.ZIndex = 3
 		nameLabel.Parent = frame
 
@@ -396,12 +403,12 @@ local function Initialize()
 	local existingPlayerLabels = {}
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
 		local sortedPlayers = PlayersService:GetPlayers()
-		table.sort(sortedPlayers,function(item1,item2)
+		table.sort(sortedPlayers, function(item1,item2)
 			return item1.Name:lower() < item2.Name:lower()
 		end)
 
 		local extraOffset = 20
-		if utility:IsSmallTouchScreen() then
+		if utility:IsSmallTouchScreen() or utility:IsPortrait() then
 			extraOffset = 85
 		end
 
@@ -415,13 +422,12 @@ local function Initialize()
 			if player then
 				-- create label (frame) for this player index if one does not exist
 				if not frame or not frame.Parent then
-					frame = createPlayerRow((index-1)*80 + extraOffset)
-
+					frame = createPlayerRow((index - 1)*PLAYER_ROW_SPACING + extraOffset)
 					frame.Parent = this.Page
 					table.insert(existingPlayerLabels, index, frame)
 				end
-				frame.Name = 'PlayerLabel'..player.Name
-				frame.Icon.Image = 'https://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId='..math.max(1, player.UserId)
+				frame.Name = "PlayerLabel" ..player.Name
+				frame.Icon.Image = "https://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId="..math.max(1, player.UserId)
 				frame.NameLabel.Text = player.Name
 				frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
 
@@ -442,7 +448,17 @@ local function Initialize()
 			end
 		end
 
-		this.Page.Size = UDim2.new(1,0,0, extraOffset + 80 * #sortedPlayers - 5)
+		if enablePortraitMode then
+			utility:OnResized("MenuPlayerListExtraPageSize", function(newSize, isPortrait)
+				local extraOffset = 20
+				if utility:IsSmallTouchScreen() or utility:IsPortrait() then
+					extraOffset = 85
+				end
+				this.Page.Size = UDim2.new(1,0,0, extraOffset + PLAYER_ROW_SPACING * #sortedPlayers - 5)
+			end)
+		else
+			this.Page.Size = UDim2.new(1,0,0, extraOffset + PLAYER_ROW_SPACING * #sortedPlayers - 5)
+		end
 	end)
 
 	return this
