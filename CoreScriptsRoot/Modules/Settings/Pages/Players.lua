@@ -27,6 +27,7 @@ local enableReportPlayer = reportPlayerInMenuSuccess and reportPlayerInMenuValue
 local FRAME_DEFAULT_TRANSPARENCY = .85
 local FRAME_SELECTED_TRANSPARENCY = .65
 local REPORT_PLAYER_IMAGE = isTenFootInterface and "rbxasset://textures/ui/Settings/Players/ReportFlagIcon@2x.png" or "rbxasset://textures/ui/Settings/Players/ReportFlagIcon.png"
+local ADD_FRIEND_IMAGE = isTenFootInterface and "rbxasset://textures/ui/Settings/Players/FriendIcon@2x.png" or "rbxasset://textures/ui/Settings/Players/FriendIcon.png"
 
 ------------ Variables -------------------
 local PageInstance = nil
@@ -40,14 +41,6 @@ end
 local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
-
-	local playerLabelFakeSelection = Instance.new('ImageLabel')
-	playerLabelFakeSelection.BackgroundTransparency = 1
-	--[[playerLabelFakeSelection.Image = 'rbxasset://textures/ui/SelectionBox.png'
-	playerLabelFakeSelection.ScaleType = 'Slice'
-	playerLabelFakeSelection.SliceCenter = Rect.new(31,31,31,31)]]
-	playerLabelFakeSelection.Image = ''
-	playerLabelFakeSelection.Size = UDim2.new(0,0,0,0)
 
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "PlayersTab"
@@ -71,7 +64,80 @@ local function Initialize()
 	------ PAGE CUSTOMIZATION -------
 	this.Page.Name = "Players"
 
-	local selectionFound = nil
+	local function createFriendStatusTextLabel(status, player)
+		if enableReportPlayer and status == nil then
+			return nil
+		end
+
+		local friendLabel = nil
+		if not status then
+			-- Remove with enableReportPlayer
+			friendLabel = Instance.new('TextButton')
+			friendLabel.Text = ''
+			friendLabel.BackgroundTransparency = 1
+			friendLabel.Position = UDim2.new(1,-198,0,7)
+		elseif status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestReceived then
+			friendLabel = Instance.new('TextButton')
+			friendLabel.BackgroundTransparency = 1
+			friendLabel.FontSize = 'Size24'
+			friendLabel.Font = 'SourceSans'
+			friendLabel.TextColor3 = Color3.new(1,1,1)
+			if status == Enum.FriendStatus.Friend then
+				friendLabel.Text = 'Friend'
+			else
+				friendLabel.Text = 'Request Sent'
+			end
+		elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend or status == Enum.FriendStatus.FriendRequestReceived then
+			local addFriendFunc = function()
+				if friendLabel and friendLabelText and friendLabelText.Text ~= '' then
+					friendLabel.ImageTransparency = 1
+					friendLabelText.Text = ''
+					if localPlayer and player then
+						localPlayer:RequestFriendship(player)
+					end
+				end
+			end
+			local friendLabel2, friendLabelText = utility:MakeStyledButton("FriendStatus", "Add Friend", UDim2.new(0, 182, 0, 46), addFriendFunc)
+			friendLabel = friendLabel2
+			friendLabelText.ZIndex = 3
+			friendLabelText.Position = friendLabelText.Position + UDim2.new(0,0,0,1)
+		end
+
+		if friendLabel then
+			friendLabel.Name = 'FriendStatus'
+			friendLabel.Size = UDim2.new(0,182,0,46)
+			friendLabel.Position = UDim2.new(1,-198,0,7)
+			friendLabel.ZIndex = 3
+		end
+		return friendLabel
+	end
+
+	local function createFriendStatusImageLabel(status, player)
+		if status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestReceived then
+			-- TODO: Add other icons here.
+		elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend or status == Enum.FriendStatus.FriendRequestReceived then
+			local addFriendButton, addFriendImage = nil
+			local addFriendFunc = function()
+				if addFriendButton and addFriendImage and addFriendButton.ImageTransparency ~= 1 then
+					addFriendButton.ImageTransparency = 1
+					addFriendImage.ImageTransparency = 1
+					if localPlayer and player then
+						localPlayer:RequestFriendship(player)
+					end
+				end
+			end
+			addFriendButton, addFriendImage = utility:MakeStyledImageButton("FriendStatus", ADD_FRIEND_IMAGE,
+					UDim2.new(0, 46, 0, 46), UDim2.new(0, 28, 0, 28), addFriendFunc)
+			addFriendButton.Name = "FriendStatus"
+			addFriendButton.Selectable = true
+			return addFriendButton
+		end
+		return nil
+	end
+
+	--- Ideally we want to select the first add friend button, but select the first report button instead if none are available.
+	local reportSelectionFound = nil
+	local friendSelectionFound = nil
 	local function friendStatusCreate(playerLabel, player)
 		local friendLabelParent = playerLabel
 		if enableReportPlayer and playerLabel then
@@ -83,7 +149,7 @@ local function Initialize()
 			for _, item in pairs(friendLabelParent:GetChildren()) do
 				if item and item.Name == 'FriendStatus' then
 					if GuiService.SelectedCoreObject == item then
-						selectionFound = nil
+						friendSelectionFound = nil
 						GuiService.SelectedCoreObject = nil
 					end
 					item:Destroy()
@@ -96,70 +162,56 @@ local function Initialize()
 				status = getFriendStatus(player)
 			end
 
-			local friendLabel, friendLabelText = nil, nil
-			if not status then
-				if not enableReportPlayer then
-					friendLabel = Instance.new('TextButton')
-					friendLabel.Text = ''
-					friendLabel.BackgroundTransparency = 1
-					friendLabel.Position = UDim2.new(1,-198,0,7)
-				end
-			elseif status == Enum.FriendStatus.Friend then
-				friendLabel = Instance.new('TextButton')
-				friendLabel.Text = 'Friend'
-				friendLabel.BackgroundTransparency = 1
-				friendLabel.FontSize = 'Size24'
-				friendLabel.Font = 'SourceSans'
-				friendLabel.TextColor3 = Color3.new(1,1,1)
-				friendLabel.Position = UDim2.new(1,-198,0,7)
-			elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend or status == Enum.FriendStatus.FriendRequestReceived then
-				local addFriendFunc = function()
-					if friendLabel and friendLabelText and friendLabelText.Text ~= '' then
-						friendLabel.ImageTransparency = 1
-						friendLabelText.Text = ''
-						if localPlayer and player then
-							localPlayer:RequestFriendship(player)
+			if enableReportPlayer then
+				local friendLabel = nil
+				local wasIsPortrait = nil
+				utility:OnResized(playerLabel, function(newSize, isPortrait)
+					if friendLabel and isPortrait == wasIsPortrait then
+						return
+					end
+					if friendLabel then
+						friendLabel:Destroy()
+					end
+					if isPortrait then
+						friendLabel = createFriendStatusImageLabel(status, player)
+					else
+						friendLabel = createFriendStatusTextLabel(status, player)
+					end
+
+					if friendLabel then
+						friendLabel.Name = 'FriendStatus'
+						friendLabel.LayoutOrder = 2
+						friendLabel.Selectable = true
+						friendLabel.Parent = friendLabelParent
+
+						if UserInputService.GamepadEnabled and not friendSelectionFound then
+							friendSelectionFound = true
+							GuiService.SelectedCoreObject = friendLabel
 						end
 					end
-				end
-				local friendLabel2, friendLabelText2 = utility:MakeStyledButton("FriendStatus", "Add Friend", UDim2.new(0, 182, 0, 46), addFriendFunc)
-				friendLabel = friendLabel2
-				friendLabelText = friendLabelText2
-				friendLabelText.ZIndex = 3
-				friendLabelText.Position = friendLabelText.Position + UDim2.new(0,0,0,1)
-				friendLabel.Position = UDim2.new(1,-198,0,7)
-			elseif status == Enum.FriendStatus.FriendRequestSent then
-				friendLabel = Instance.new('TextButton')
-				friendLabel.Text = 'Request Sent'
-				friendLabel.BackgroundTransparency = 1
-				friendLabel.FontSize = 'Size24'
-				friendLabel.Font = 'SourceSans'
-				friendLabel.TextColor3 = Color3.new(1,1,1)
-				friendLabel.Position = UDim2.new(1,-198,0,7)
-			end
+				end)
+			else
+				local friendLabel = createFriendStatusTextLabel(status, player)
+				if friendLabel then
+					friendLabel.Name = 'FriendStatus'
+					friendLabel.Size = UDim2.new(0,182,0,46)
+					friendLabel.ZIndex = 3
+					friendLabel.LayoutOrder = 2
+					friendLabel.Selectable = true
+					friendLabel.Parent = friendLabelParent
 
-			if friendLabel then
-				friendLabel.Name = 'FriendStatus'
-				friendLabel.Size = UDim2.new(0,182,0,46)
-				friendLabel.ZIndex = 3
-				friendLabel.LayoutOrder = 2
-				friendLabel.Parent = friendLabelParent
-				friendLabel.SelectionImageObject = playerLabelFakeSelection
-
-				local updateHighlight = function()
-					if playerLabel then
-						playerLabel.ImageTransparency = friendLabel and GuiService.SelectedCoreObject == friendLabel and FRAME_SELECTED_TRANSPARENCY or FRAME_DEFAULT_TRANSPARENCY
+					local updateHighlight = function()
+						if playerLabel then
+							playerLabel.ImageTransparency = friendLabel and GuiService.SelectedCoreObject == friendLabel and FRAME_SELECTED_TRANSPARENCY or FRAME_DEFAULT_TRANSPARENCY
+						end
 					end
-				end
-				friendLabel.SelectionGained:connect(updateHighlight)
-				friendLabel.SelectionLost:connect(updateHighlight)
+					friendLabel.SelectionGained:connect(updateHighlight)
+					friendLabel.SelectionLost:connect(updateHighlight)
 
-				if UserInputService.GamepadEnabled and not selectionFound then
-					selectionFound = true
-					local fakeSize = 20
-					playerLabelFakeSelection.Size = UDim2.new(0,playerLabel.AbsoluteSize.X+fakeSize,0,playerLabel.AbsoluteSize.Y+fakeSize)
-					playerLabelFakeSelection.Position = UDim2.new(0, -(playerLabel.AbsoluteSize.X-198)-fakeSize*.5, 0, -8-fakeSize*.5)
-					GuiService.SelectedCoreObject = friendLabel
+					if UserInputService.GamepadEnabled and not friendSelectionFound then
+						friendSelectionFound = true
+						GuiService.SelectedCoreObject = friendLabel
+					end
 				end
 			end
 
@@ -234,7 +286,39 @@ local function Initialize()
 		end
 	end
 
-	local function createPlayerRow(player, yPosition)
+	local function reportAbuseButtonCreate(playerLabel, player)
+		local rightSideButtons = playerLabel:FindFirstChild("RightSideButtons")
+		if rightSideButtons then
+			local oldReportButton = rightSideButtons:FindFirstChild("ReportPlayer")
+			if oldReportButton then
+				if oldReportButton == GuiService.SelectedCoreObject then
+					reportSelectionFound = nil
+				end
+				oldReportButton:Destroy()
+			end
+
+			if player and player ~= localPlayer and player.UserId > 1 then
+				local reportPlayerFunction = function()
+					reportAbuseMenu:ReportPlayer(player)
+				end
+
+				local reportButton = utility:MakeStyledImageButton("ReportPlayer", REPORT_PLAYER_IMAGE,
+						UDim2.new(0, 46, 0, 46), UDim2.new(0, 28, 0, 28), reportPlayerFunction)
+				reportButton.Name = "ReportPlayer"
+				reportButton.Position = UDim2.new(1, -260, 0, 7)
+				reportButton.LayoutOrder = 1
+				reportButton.Selectable = true
+				reportButton.Parent = rightSideButtons
+
+				if not reportSelectionFound and not friendSelectionFound and UserInputService.GamepadEnabled then
+					reportSelectionFound = true
+					GuiService.SelectedCoreObject = reportButton
+				end
+			end
+		end
+	end
+
+	local function createPlayerRow(yPosition)
 		local frame = Instance.new('ImageLabel')
 		frame.Image = "rbxasset://textures/ui/dialog_white.png"
 		frame.ScaleType = 'Slice'
@@ -251,6 +335,24 @@ local function Initialize()
 		rightSideButtons.Position = UDim2.new(0, 0, 0, 0)
 		rightSideButtons.Size = UDim2.new(1, -10, 1, 0)
 		rightSideButtons.Parent = frame
+
+		-- Selection Highlighting logic:
+		local updateHighlight = function(lostSelectionObject)
+			if frame then
+				if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject ~= lostSelectionObject and GuiService.SelectedCoreObject.Parent == rightSideButtons then
+					frame.ImageTransparency = FRAME_SELECTED_TRANSPARENCY
+				else
+					frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
+				end
+			end
+		end
+
+		rightSideButtons.ChildAdded:connect(function(child)
+			if child:IsA("GuiObject") then
+				child.SelectionGained:connect(function() updateHighlight(nil) end)
+				child.SelectionLost:connect(function() updateHighlight(child) end)
+			end
+		end)
 
 		local rightSideListLayout = Instance.new("UIListLayout")
 		rightSideListLayout.Name = "RightSideListLayout"
@@ -288,20 +390,6 @@ local function Initialize()
 			frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
 		end)
 
-		if enableReportPlayer then
-			local reportPlayerFunction = function()
-				reportAbuseMenu:ReportPlayer(player)
-			end
-
-			if player and player ~= localPlayer and player.UserId > 1 then
-				local reportButton = utility:MakeStyledImageButton("ReportPlayer", REPORT_PLAYER_IMAGE,
-						UDim2.new(0, 46, 0, 46), UDim2.new(0, 28, 0, 28), reportPlayerFunction)
-				reportButton.Position = UDim2.new(1, -260, 0, 7)
-				reportButton.LayoutOrder = 1
-				reportButton.Parent = rightSideButtons
-			end
-		end
-
 		return frame
 	end
 
@@ -317,7 +405,8 @@ local function Initialize()
 			extraOffset = 85
 		end
 
-		selectionFound = nil
+		friendSelectionFound = nil
+		reportSelectionFound = nil
 
 		-- iterate through players to reuse or create labels for players
 		for index=1, #sortedPlayers do
@@ -326,7 +415,7 @@ local function Initialize()
 			if player then
 				-- create label (frame) for this player index if one does not exist
 				if not frame or not frame.Parent then
-					frame = createPlayerRow(player, (index-1)*80 + extraOffset)
+					frame = createPlayerRow((index-1)*80 + extraOffset)
 
 					frame.Parent = this.Page
 					table.insert(existingPlayerLabels, index, frame)
@@ -337,6 +426,9 @@ local function Initialize()
 				frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
 
 				friendStatusCreate(frame, player)
+				if enableReportPlayer then
+					reportAbuseButtonCreate(frame, player)
+				end
 			end
 		end
 

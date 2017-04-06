@@ -39,6 +39,9 @@ local VRService = game:GetService("VRService")
 local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
 local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
 
+local reportPlayerInMenuSuccess, reportPlayerInMenuValue = pcall(function() return settings():GetFFlag("CoreScriptReportPlayerInMenu") end)
+local enableReportPlayer = reportPlayerInMenuSuccess and reportPlayerInMenuValue
+
 if not enablePortraitMode then
 	return require(RobloxGui.Modules.Settings:WaitForChild("UtilityOld"))
 end
@@ -389,8 +392,10 @@ local function MakeDefaultButton(name, size, clickFunc, pageRef, hubRef)
 		ZIndex = 2,
 		SelectionImageObject = SelectionOverrideObject
 	};
-	button.NextSelectionLeft = button
-	button.NextSelectionRight = button
+	if not enableReportPlayer then
+		button.NextSelectionLeft = button
+		button.NextSelectionRight = button
+	end
 
 	local enabled = Util.Create'BoolValue'
 	{
