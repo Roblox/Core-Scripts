@@ -69,9 +69,6 @@ local GameSettings = Settings.GameSettings
 local playerDropDownEnabledSuccess, playerDropDownEnabledFlagValue = pcall(function() return settings():GetFFlag("PlayerDropDownEnabled") end)
 local IsPlayerDropDownEnabled = playerDropDownEnabledSuccess and playerDropDownEnabledFlagValue
 
-local getMoveChatSuccess, moveChatActiveValue = pcall(function() return settings():GetFFlag("SetCoreMoveChat") end)
-local allowMoveChat = getMoveChatSuccess and moveChatActiveValue
-
 local getDisableChatBarSuccess, disableChatBarValue = pcall(function() return settings():GetFFlag("SetCoreDisableChatBar") end)
 local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
 
@@ -2686,34 +2683,28 @@ local function CreateChat()
         return not PlayersService.ClassicChat and PlayersService.BubbleChat
       end
 
-      if allowMoveChat then
-        StarterGui:RegisterSetCore("ChatWindowPosition", 	function(value)
-            if this.ChatWindowWidget and this.ChatBarWidget then
-              value = isUDim2Value(value)
-              if value ~= nil and not isBubbleChatOn() then
-                chatRepositioned = true -- Prevent chat from moving back to the original position on screen resolution change
-                this.ChatWindowWidget.ChatContainer.Position = value
-                this.ChatBarWidget.ChatBarContainer.Position = value + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
-              end
+      StarterGui:RegisterSetCore("ChatWindowPosition", 	function(value)
+          if this.ChatWindowWidget and this.ChatBarWidget then
+            value = isUDim2Value(value)
+            if value ~= nil and not isBubbleChatOn() then
+              chatRepositioned = true -- Prevent chat from moving back to the original position on screen resolution change
+              this.ChatWindowWidget.ChatContainer.Position = value
+              this.ChatBarWidget.ChatBarContainer.Position = value + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
             end
-          end)
+          end
+        end)
 
-        StarterGui:RegisterSetCore("ChatWindowSize", 	function(value)
-            if this.ChatWindowWidget and this.ChatBarWidget then
-              value = isUDim2Value(value)
-              if value ~= nil and not isBubbleChatOn() then
-                chatRepositioned = true
-                this.ChatWindowWidget.ChatContainer.Size = value
-                this.ChatBarWidget.ChatBarContainer.Size = UDim2.new(this.ChatWindowWidget.ChatContainer.Size.X.Scale, this.ChatWindowWidget.ChatContainer.Size.X.Offset, this.ChatBarWidget.ChatBarContainer.Size.Y.Scale, this.ChatBarWidget.ChatBarContainer.Size.Y.Offset)
-                this.ChatBarWidget.ChatBarContainer.Position = this.ChatWindowWidget.ChatContainer.Position + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
-              end
+      StarterGui:RegisterSetCore("ChatWindowSize", 	function(value)
+          if this.ChatWindowWidget and this.ChatBarWidget then
+            value = isUDim2Value(value)
+            if value ~= nil and not isBubbleChatOn() then
+              chatRepositioned = true
+              this.ChatWindowWidget.ChatContainer.Size = value
+              this.ChatBarWidget.ChatBarContainer.Size = UDim2.new(this.ChatWindowWidget.ChatContainer.Size.X.Scale, this.ChatWindowWidget.ChatContainer.Size.X.Offset, this.ChatBarWidget.ChatBarContainer.Size.Y.Scale, this.ChatBarWidget.ChatBarContainer.Size.Y.Offset)
+              this.ChatBarWidget.ChatBarContainer.Position = this.ChatWindowWidget.ChatContainer.Position + UDim2.new(0, 0, this.ChatWindowWidget.ChatContainer.Size.Y.Scale, this.ChatWindowWidget.ChatContainer.Size.Y.Offset + 2)
             end
-          end)
-
-      else
-        StarterGui:RegisterSetCore("ChatWindowPosition", 	function() end)
-        StarterGui:RegisterSetCore("ChatWindowSize",		function() end)
-      end
+          end
+        end)
 
       StarterGui:RegisterGetCore("ChatWindowPosition", 	function()
           if this.ChatWindowWidget then

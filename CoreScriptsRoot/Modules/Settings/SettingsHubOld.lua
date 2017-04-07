@@ -42,8 +42,6 @@ local DeveloperConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
 
 local lastInputChangedCon = nil
 local chatWasVisible = false
-local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
-local useUserList = (userlistSuccess and userlistFlagValue == true)
 
 local resetButtonFlagSuccess, resetButtonFlagValue = pcall(function() return settings():GetFFlag("AllowResetButtonCustomization") end)
 local resetButtonCustomizationAllowed = (resetButtonFlagSuccess and resetButtonFlagValue == true)
@@ -532,7 +530,7 @@ local function CreateSettingsHub()
 				end
 			end
 
-			if useUserList and not isTenFootInterface then
+			if not isTenFootInterface then
 				if isSmallTouchScreen then
 					this.PageViewClipper.Size = UDim2.new(
 						this.PageViewClipper.Size.X.Scale,
@@ -948,7 +946,7 @@ local function CreateSettingsHub()
 				removeBottomBarBindings()
 				this:SwitchToPage(customStartPage, nil, 1, true)
 			else
-				if useUserList and not isTenFootInterface then
+				if not isTenFootInterface then
 					this:SwitchToPage(this.PlayersPage, nil, 1, true)
 				else
 					if this.HomePage then
@@ -1136,13 +1134,6 @@ local function CreateSettingsHub()
 	this.LeaveGamePage:SetHub(this)
 
 	-- full page initialization
-	if not useUserList then
-		if isSmallTouchScreen then
-			this.HomePage = require(RobloxGui.Modules.Settings.Pages.Home)
-			this.HomePage:SetHub(this)
-		end
-	end
-
 	this.GameSettingsPage = require(RobloxGui.Modules.Settings.Pages.GameSettings)
 	this.GameSettingsPage:SetHub(this)
 
@@ -1159,22 +1150,17 @@ local function CreateSettingsHub()
 		this.RecordPage:SetHub(this)
 	end
 
-	if useUserList and not isTenFootInterface then
+	if not isTenFootInterface then
 		this.PlayersPage = require(RobloxGui.Modules.Settings.Pages.Players)
 		this.PlayersPage:SetHub(this)
 	end
 
 	-- page registration
-	if useUserList and not isTenFootInterface then
+	if not isTenFootInterface then
 		this:AddPage(this.PlayersPage)
 	end
 	this:AddPage(this.ResetCharacterPage)
 	this:AddPage(this.LeaveGamePage)
-	if not useUserList then
-		if this.HomePage then
-			this:AddPage(this.HomePage)
-		end
-	end
 	this:AddPage(this.GameSettingsPage)
 	if this.ReportAbusePage then
 		this:AddPage(this.ReportAbusePage)
@@ -1184,7 +1170,7 @@ local function CreateSettingsHub()
 		this:AddPage(this.RecordPage)
 	end
 
-	if useUserList and not isTenFootInterface then
+	if not isTenFootInterface then
 		this:SwitchToPage(this.PlayerPage, true, 1)
 	else
 		if this.HomePage then
