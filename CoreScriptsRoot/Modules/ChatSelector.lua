@@ -45,10 +45,6 @@ local function GetUseLuaFlag()
 	return useNewChat
 end
 
-local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptNewLoadChat") end)
-local TryLoadNewChat = readFlagSuccess and flagEnabled
-
-
 local useModule = nil
 
 local state = {Visible = true}
@@ -176,7 +172,7 @@ end
 local isConsole = GuiService:IsTenFootInterface() or FORCE_IS_CONSOLE
 local isVR = UserInputService.VREnabled or FORCE_IS_VR
 
-if ( (TryLoadNewChat or FORCE_UseNewChat) and not isConsole and not isVR ) then
+if ( not isConsole and not isVR ) then
 	spawn(function()
 		local useNewChat = GetUseLuaFlag() or FORCE_UseNewChat
 		local useModuleScript = useNewChat and RobloxGui.Modules.NewChat or RobloxGui.Modules.Chat
