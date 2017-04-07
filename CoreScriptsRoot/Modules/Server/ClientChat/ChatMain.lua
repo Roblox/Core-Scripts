@@ -92,12 +92,6 @@ while not LocalPlayer do
 	LocalPlayer = Players.LocalPlayer
 end
 
-local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
-local chatPrivacySettingsEnabled = true
-if chatPrivacySettingsSuccess then
-	chatPrivacySettingsEnabled = chatPrivacySettingsValue
-end
-
 local canChat = true
 
 local ChatDisplayOrder = 6
@@ -1046,16 +1040,14 @@ spawn(function()
 	end
 end)
 
-if chatPrivacySettingsEnabled then
-	spawn(function()
-		local success, canLocalUserChat = pcall(function()
-			return Chat:CanUserChatAsync(LocalPlayer.UserId)
-		end)
-		if success then
-			canChat = RunService:IsStudio() or canLocalUserChat
-		end
+spawn(function()
+	local success, canLocalUserChat = pcall(function()
+		return Chat:CanUserChatAsync(LocalPlayer.UserId)
 	end)
-end
+	if success then
+		canChat = RunService:IsStudio() or canLocalUserChat
+	end
+end)
 
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
 
