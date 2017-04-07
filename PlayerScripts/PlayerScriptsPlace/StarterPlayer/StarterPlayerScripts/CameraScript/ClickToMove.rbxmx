@@ -25,7 +25,9 @@ local MyMouse = Player:GetMouse()
 local DirectPathEnabled = false
 local SHOW_PATH = false
 
+local Y_VECTOR3 = Vector3.new(0, 1, 0)
 local XZ_VECTOR3 = Vector3.new(1, 0, 1)
+local ZERO_VECTOR3 = Vector3.new(0, 0, 0)
 local ZERO_VECTOR2 = Vector2.new(0, 0)
 
 local RayCastIgnoreList = workspace.FindPartOnRayWithIgnoreList
@@ -40,6 +42,10 @@ local math_deg = math.deg
 local math_acos = math.acos
 local math_sin = math.sin
 local math_atan2 = math.atan2
+
+local Vector3_new = Vector3.new
+local Vector2_new = Vector2.new
+local CFrame_new = CFrame.new
 
 local CurrentSeatPart = nil
 local DrivingTo = nil
@@ -60,6 +66,9 @@ if UIS.TouchEnabled then
 	BindableEvent_EnableTouchJump.Parent = PlayerScripts
 end
 
+local function clamp(low, high, num)
+	return (num > high and high or num < low and low or num)
+end
 
 --------------------------UTIL LIBRARY-------------------------------
 local Utility = {}
@@ -110,11 +119,6 @@ do
 			return obj
 		end
 	end
-
-	local function clamp(low, high, num)
-		return (num > high and high or num < low and low or num)
-	end
-	Utility.Clamp = clamp
 
 	local function ViewSizeX()
 		local camera = workspace.CurrentCamera
@@ -305,7 +309,7 @@ local function CreateController()
 		local torso = humanoid and humanoid.Torso
 		if torso then
 			local lookVec = (point - torso.CFrame.p).unit
-			local squashedLookVec = Vector3.new(lookVec.X, 0, lookVec.Z).unit
+			local squashedLookVec = Vector3_new(lookVec.X, 0, lookVec.Z).unit
 			torso.CFrame = CFrame.new(torso.CFrame.p, torso.CFrame.p + squashedLookVec)
 		end
 	end
@@ -355,8 +359,8 @@ local function doAutoJump()
 	local torsoLookVector = torsoCFrame.lookVector;
 	local torsoPos = torsoCFrame.p;
 
-	local torsoRay = Ray.new(torsoPos + Vector3.new(0, -torso.Size.Y/2, 0), torsoLookVector * rayLength);
-	local jumpRay = Ray.new(torsoPos + Vector3.new(0, jumpHeight - torso.Size.Y, 0), torsoLookVector * rayLength);
+	local torsoRay = Ray.new(torsoPos + Vector3_new(0, -torso.Size.Y/2, 0), torsoLookVector * rayLength);
+	local jumpRay = Ray.new(torsoPos + Vector3_new(0, jumpHeight - torso.Size.Y, 0), torsoLookVector * rayLength);
 
 	local hitPart, _ = RayCastIgnoreList(workspace, torsoRay, {character}, false)
 	local jumpHitPart, _ = RayCastIgnoreList(workspace, jumpRay, {character}, false)
@@ -402,7 +406,7 @@ local function vec3IsZero(vec3)
 end
 
 -- NOTE: This function is radically different from the engine's implementation
-local walkVelocityVector = Vector3.new(1,1,1)
+local walkVelocityVector = Vector3_new(1,1,1)
 local function calcDesiredWalkVelocity()
 	-- TEMP
 	return walkVelocityVector
@@ -458,7 +462,7 @@ local function CreateDestinationIndicator(pos)
 		BottomSurface = 'Smooth';
 		Shape = 'Ball';
 		CanCollide = false;
-		Size = Vector3.new(2,2,2);
+		Size = Vector3_new(2,2,2);
 		BrickColor = BrickColor.new('Institutional white');
 		Transparency = 0;
 		Anchored = true;
@@ -523,13 +527,13 @@ local function Pather(character, point)
 		local humanoid = findPlayerHumanoid(Player)
 		local torso = humanoid and humanoid.Torso
 		if torsoRadius == nil then
-			torsoRadius = torso and Vector3.new(torso.Size.X/2,0,torso.Size.Z/2) or Vector3.new(1,0,1)
+			torsoRadius = torso and Vector3_new(torso.Size.X/2,0,torso.Size.Z/2) or XZ_VECTOR3
 		end
 
 		local diffVector = point2 - point1
 		local directionVector = diffVector.unit
 
-		local rightVector = Vector3.new(0,1,0):Cross(directionVector) * torsoRadius
+		local rightVector = Y_VECTOR3:Cross(directionVector) * torsoRadius
 
 		local rightPart, _ = Utility.Raycast(Ray.new(point1 + rightVector, diffVector + rightVector), true, {character})
 		local hitPart, _ = Utility.Raycast(Ray.new(point1, diffVector), true, {character})
@@ -543,7 +547,7 @@ local function Pather(character, point)
 		local midPt = (point2 + point1) / 2
 		local studsBetweenSamples = 2
 		for i = 1, math_floor(diffVector.magnitude/studsBetweenSamples) do
-			local downPart, _ = Utility.Raycast(Ray.new(point1 + directionVector * i * studsBetweenSamples, Vector3.new(0,-7,0)), true, {character})
+			local downPart, _ = Utility.Raycast(Ray.new(point1 + directionVector * i * studsBetweenSamples, Vector3_new(0,-7,0)), true, {character})
 			if not downPart then
 				return false
 			end
@@ -570,7 +574,7 @@ local function Pather(character, point)
 
 				local lastPoint = result[i-1]
 				if lastPoint == nil then
-					lastPoint = torso and Vector3.new(torso.CFrame.p.X, thisPoint.Y, torso.CFrame.p.Z)
+					lastPoint = torso and Vector3_new(torso.CFrame.p.X, thisPoint.Y, torso.CFrame.p.Z)
 				end
 
 				if lastPoint and Utility.FuzzyEquals(thisPoint.Y, lastPoint.Y) and Utility.FuzzyEquals(thisPoint.Y, nextPoint.Y) then
@@ -594,15 +598,15 @@ local function Pather(character, point)
 			local torsoCFrame = torso.CFrame
 			local torsoPos = torsoCFrame.p
 			-- Minus and plus 2 is so we can get it into the cell-corner space and then translate it back into cell-center space
-			local roundedPos = Vector3.new(Utility.Round(torsoPos.X-2,4)+2, Utility.Round(torsoPos.Y-2,4)+2, Utility.Round(torsoPos.Z-2,4)+2)
+			local roundedPos = Vector3_new(Utility.Round(torsoPos.X-2,4)+2, Utility.Round(torsoPos.Y-2,4)+2, Utility.Round(torsoPos.Z-2,4)+2)
 			local neighboringCells = {}
 			for x = -4, 4, 8 do
 				for z = -4, 4, 8 do
-					table.insert(neighboringCells, roundedPos + Vector3.new(x,0,z))
+					table.insert(neighboringCells, roundedPos + Vector3_new(x,0,z))
 				end
 			end
 			for _, testPoint in pairs(neighboringCells) do
-				local pathable = this:CheckOcclusion(roundedPos, testPoint, character, Vector3.new(0,0,0))
+				local pathable = this:CheckOcclusion(roundedPos, testPoint, character, ZERO_VECTOR3)
 				if pathable then
 					table.insert(pathablePoints, testPoint)
 				end
@@ -620,7 +624,7 @@ local function Pather(character, point)
 			if (finishPt - startPt).magnitude < 150 then
 				-- move back the destination by 2 studs or otherwise the pather will collide with the object we are trying to reach
 				finishPt = finishPt - (finishPt - startPt).unit * 2
-				if this:CheckOcclusion(startPt, finishPt, character, Vector3.new(0,0,0)) then
+				if this:CheckOcclusion(startPt, finishPt, character, ZERO_VECTOR3) then
 					local pathResult = {}
 					pathResult.Status = Enum.PathStatus.Success
 					function pathResult:GetPointCoordinates()
@@ -649,12 +653,12 @@ local function Pather(character, point)
 			-- Try to use the smooth function, but it may not exist yet :(
 			local success = pcall(function()
 				-- 3 is height from torso cframe to ground
-				this.pathResult = PathfindingService:ComputeSmoothPathAsync(torso.CFrame.p - Vector3.new(0,3,0), point, 400)
+				this.pathResult = PathfindingService:ComputeSmoothPathAsync(torso.CFrame.p - Vector3_new(0,3,0), point, 400)
 				smoothed = true
 			end)
 			if not success then
 				-- 3 is height from torso cframe to ground
-				this.pathResult = PathfindingService:ComputeRawPathAsync(torso.CFrame.p - Vector3.new(0,3,0), point, 400)
+				this.pathResult = PathfindingService:ComputeRawPathAsync(torso.CFrame.p - Vector3_new(0,3,0), point, 400)
 				smoothed = false
 			end
 			this.pointList = this.pathResult and this.pathResult:GetPointCoordinates()
@@ -767,7 +771,7 @@ local function Pather(character, point)
 
 							humanoid:MoveTo(point)
 
-							local distance = ((torso.CFrame.p - point) * Vector3.new(1,0,1)).magnitude
+							local distance = ((torso.CFrame.p - point) * XZ_VECTOR3).magnitude
 							local approxTime = 10
 							if math_abs(humanoid.WalkSpeed) > 0 then
 								approxTime = distance / math_abs(humanoid.WalkSpeed)
@@ -789,8 +793,8 @@ local function Pather(character, point)
 									while yielding and this.Cancelled == false do
 										if CameraModule then
 											local look = CameraModule:GetCameraLook()
-											local squashedLook = (look * Vector3.new(1,0,1)).unit
-											local direction = ((point - CameraModule.cframe.p) * Vector3.new(1,0,1)).unit
+											local squashedLook = (look * XZ_VECTOR3).unit
+											local direction = ((point - CameraModule.cframe.p) * XZ_VECTOR3).unit
 
 											local theta = math_deg(math_acos(squashedLook:Dot(direction)))
 
@@ -949,14 +953,14 @@ local function getExtentsSize(Parts)
 	local minY = Parts[1].Position.Y
 	local minZ = Parts[1].Position.Z
 	for i = 2, #Parts do
-		maxX = math.max(maxX, Parts[i].Position.X)
-		maxY = math.max(maxY, Parts[i].Position.Y)
-		maxZ = math.max(maxZ, Parts[i].Position.Z)
-		minX = math.min(minX, Parts[i].Position.X)
-		minY = math.min(minY, Parts[i].Position.Y)
-		minZ = math.min(minZ, Parts[i].Position.Z)
+		maxX = math_max(maxX, Parts[i].Position.X)
+		maxY = math_max(maxY, Parts[i].Position.Y)
+		maxZ = math_max(maxZ, Parts[i].Position.Z)
+		minX = math_min(minX, Parts[i].Position.X)
+		minY = math_min(minY, Parts[i].Position.Y)
+		minZ = math_min(minZ, Parts[i].Position.Z)
 	end
-	return Region3.new(Vector3.new(minX, minY, minZ), Vector3.new(maxX, maxY, maxZ))
+	return Region3.new(Vector3_new(minX, minY, minZ), Vector3_new(maxX, maxY, maxZ))
 end
 
 local function inExtents(Extents, Position)
@@ -1020,8 +1024,8 @@ local function OnTap(tapPositions, goToPoint)
 				if thisPather:IsValidPath() then
 					FailCount = 0
 					-- TODO: Remove when bug in engine is fixed
-					Player:Move(Vector3.new(1, 0, 0))
-					Player:Move(Vector3.new(0, 0, 0))
+					Player:Move(Vector3_new(1, 0, 0))
+					Player:Move(ZERO_VECTOR3)
 					thisPather:Start()
 					if BindableEvent_OnFailStateChanged then
 						BindableEvent_OnFailStateChanged:Fire(false)
@@ -1065,7 +1069,7 @@ local function OnTap(tapPositions, goToPoint)
 						end
 						local finishPos = torso and torso.CFrame.p --hitPt
 						if finishPos and startPos and tick() - Utility.GetLastInput() > 2 then
-							local exploreResults = ExploreWithRayCast(finishPos, ((startPos - finishPos) * Vector3.new(1,0,1)).unit)
+							local exploreResults = ExploreWithRayCast(finishPos, ((startPos - finishPos) * XZ_VECTOR3).unit)
 							-- Check for Nans etc..
 							if exploreResults[1] and exploreResults[1]["Vector"] and exploreResults[1]["Vector"].magnitude >= 0.5 and exploreResults[1]["Distance"] > 3 then
 								if CameraModule then
@@ -1225,9 +1229,9 @@ local function CreateClickToMoveModule()
 			local focus = camera.Focus.p
 
 			local cameraCFrame = CameraModule.cframe
-			local mag = Vector3.new(cameraCFrame.lookVector.x, 0, cameraCFrame.lookVector.z).magnitude
-			local newLook = (Vector3.new(newLookAtPt.x, focus.y, newLookAtPt.z) - focus).unit * mag
-			local flippedLook = newLook + Vector3.new(0, cameraCFrame.lookVector.y, 0)
+			local mag = Vector3_new(cameraCFrame.lookVector.x, 0, cameraCFrame.lookVector.z).magnitude
+			local newLook = (Vector3_new(newLookAtPt.x, focus.y, newLookAtPt.z) - focus).unit * mag
+			local flippedLook = newLook + Vector3_new(0, cameraCFrame.lookVector.y, 0)
 
 			local distance = (focus - cameraCFrame.p).magnitude
 
@@ -1235,13 +1239,7 @@ local function CreateClickToMoveModule()
 			return CFrame.new(newCamPos, newCamPos + flippedLook)
 		end
 
-		local v3 = Vector3.new
-		local v2 = Vector2.new
-		local cf = CFrame.new
 		local lerp = CFrame.new().lerp
-		local zeroVector = v3()
-		local clamp = Utility.Clamp
-
 		function CameraModule:TweenCameraLook(desiredCFrame, speed)
 			local e = 2.718281828459
 			
@@ -1254,7 +1252,7 @@ local function CreateClickToMoveModule()
 				return c * math_sin(t/d * (math_pi/2)) + b;
 			end
 
-			local c0, c1 = cf(zeroVector, self:GetCameraLook()), desiredCFrame - desiredCFrame.p
+			local c0, c1 = CFrame_new(ZERO_VECTOR3, self:GetCameraLook()), desiredCFrame - desiredCFrame.p
 			local theta = GetThetaBetweenCFrames(c0, c1)
 			theta = clamp(0, math_pi, theta)
 			local duration = 0.65 * SCurve(theta - math_pi/4) + 0.15
@@ -1270,7 +1268,7 @@ local function CreateClickToMoveModule()
 				local newCFrame = lerp(c0, c1, alpha)
 				local y = findAngleBetweenXZVectors(newCFrame.lookVector, self:GetCameraLook())
 				if IsFinite(y) and math_abs(y) > 0.0001 then
-					self.RotateInput = self.RotateInput + v2(y, 0)
+					self.RotateInput = self.RotateInput + Vector2_new(y, 0)
 				end
 				return (currTime >= finish or alpha >= 1)
 			end
@@ -1385,8 +1383,8 @@ local function CreateClickToMoveModule()
 		
 		local function getThrottleAndSteer(object, point)
 			local lookVector = (point - object.Position)
-			lookVector = Vector3.new(lookVector.X, 0, lookVector.Z).unit
-			local objectVector = Vector3.new(object.CFrame.lookVector.X, 0, object.CFrame.lookVector.Z).unit
+			lookVector = Vector3_new(lookVector.X, 0, lookVector.Z).unit
+			local objectVector = Vector3_new(object.CFrame.lookVector.X, 0, object.CFrame.lookVector.Z).unit
 			local dirVector = lookVector - objectVector
 			local mag = dirVector.magnitude
 			local degrees = math_deg(math_acos(lookVector:Dot(objectVector)))
