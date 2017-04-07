@@ -48,6 +48,7 @@ local function Initialize()
 
 	local playerNames = {}
 	local nameToRbxPlayer = {}
+	local nextPlayerToReport = nil
 
 	function this:GetPlayerFromIndex(index)
 		local playerName = playerNames[index]
@@ -56,6 +57,10 @@ local function Initialize()
 		end
 
 		return nil
+	end
+
+	function this:SetNextPlayerToReport(player)
+		nextPlayerToReport = player
 	end
 
 	function this:UpdatePlayerDropDown()
@@ -89,6 +94,11 @@ local function Initialize()
 
 		this.WhichPlayerMode:SetInteractable(index > 1 and this.GameOrPlayerMode.CurrentIndex ~= 1)
 		this.GameOrPlayerMode:SetInteractable(index > 1)
+
+		if nextPlayerToReport then
+			this.WhichPlayerMode:SetSelectionByValue(nextPlayerToReport.Name)
+			nextPlayerToReport = nil
+		end
 	end
 
 	------ TAB CUSTOMIZATION -------
@@ -150,6 +160,7 @@ local function Initialize()
 			this.AbuseDescriptionFrame.Size = UDim2.new(1, -10, 0, 100)
 			this.AbuseDescription.Selection.Size = UDim2.new(1, 0, 1, 0)
 		end
+
 		this.AbuseDescriptionFrame.LayoutOrder = 4
 
 		this.AbuseDescription.Selection.FocusLost:connect(function()
@@ -328,19 +339,8 @@ do
 	function PageInstance:ReportPlayer(player)
 		if player then
 			local setReportPlayerConnection = nil
+			PageInstance:SetNextPlayerToReport(player)
 			setReportPlayerConnection = PageInstance.Displayed.Event:connect(function()
-				-- When we change the SelectionIndex of GameOrPlayerMode it waits until the tween is done
-				-- before it fires the IndexChanged signal. The WhichPlayerMode dropdown listens to this signal
-				-- and resets when it is fired. Therefore we need to listen to this signal and set the player we want
-				-- to report the frame after the dropdown is reset
-				local indexChangedConnection = nil
-				indexChangedConnection = PageInstance.GameOrPlayerMode.IndexChanged:connect(function()
-					if indexChangedConnection then
-						indexChangedConnection:disconnect()
-						indexChangedConnection = nil
-					end
-					PageInstance.WhichPlayerMode:SetSelectionByValue(player.Name)
-				end)
 				PageInstance.GameOrPlayerMode:SetSelectionIndex(2)
 
 				if setReportPlayerConnection then
@@ -348,7 +348,12 @@ do
 					setReportPlayerConnection = nil
 				end
 			end)
-			PageInstance.HubRef:SetVisibility(true, false, PageInstance)
+
+			if not PageInstance.HubRef:GetVisibility() then
+				PageInstance.HubRef:SetVisibility(true, false, PageInstance)
+			else
+				PageInstance.HubRef:SwitchToPage(PageInstance, false)
+			end
 		end
 	end
 end

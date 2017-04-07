@@ -1011,6 +1011,10 @@ local function CreateSettingsHub()
 		setVisibilityInternal(visible, noAnimation, customStartPage, switchedFromGamepadInput)
 	end
 
+	function this:GetVisibility()
+		return this.Visible
+	end
+
 	function this:ToggleVisibility(switchedFromGamepadInput)
 		setVisibilityInternal(not this.Visible, nil, nil, switchedFromGamepadInput)
 	end

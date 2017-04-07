@@ -35,6 +35,9 @@ if not enablePortraitMode then
 	return require(RobloxGui.Modules.Settings.SettingsHubOld)
 end
 
+local reportPlayerInMenuSuccess, reportPlayerInMenuValue = pcall(function() return settings():GetFFlag("CoreScriptReportPlayerInMenu") end)
+local enableReportPlayer = reportPlayerInMenuSuccess and reportPlayerInMenuValue
+
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
@@ -402,6 +405,19 @@ local function CreateSettingsHub()
 			Selectable = false,
 			Parent = this.PageViewClipper,
 		};
+
+		this.PageViewInnerFrame = utility:Create'Frame'
+		{
+			Name = "PageViewInnerFrame",
+			Position = UDim2.new(0, 0, 0, 0),
+			Size = UDim2.new(1, 0, 1, 0),
+			ZIndex = this.Shield.ZIndex,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Selectable = false,
+			Parent = this.PageView,
+		};
+
 		if UserInputService.MouseEnabled then
 			this.PageViewClipper.Size = UDim2.new(this.HubBar.Size.X.Scale,this.HubBar.Size.X.Offset,
 				0.5, -(this.HubBar.Position.Y.Offset - this.HubBar.Size.Y.Offset))
@@ -455,9 +471,9 @@ local function CreateSettingsHub()
 					inviteToGameFunc, {Enum.KeyCode.ButtonX}
 				)
 				if RunService:IsStudio() then
-					this.InviteToGameButton.Selectable = value
-					this.InviteToGameButton.Active = value
-					this.InviteToGameButton.Enabled.Value = value
+					this.InviteToGameButton.Selectable = false
+					this.InviteToGameButton.Active = false
+					this.InviteToGameButton.Enabled.Value = false
 					local inviteHint = this.InviteToGameButton:FindFirstChild("InviteToGameHint")
 					if inviteHint then
 						inviteHint.ImageColor3 = Color3.fromRGB(100, 100, 100)
@@ -943,16 +959,28 @@ local function CreateSettingsHub()
 
 		-- make sure page is visible
 		this.Pages.CurrentPage = pageToSwitchTo
-		this.Pages.CurrentPage:Display(this.PageView, skipAnimation)
+		this.Pages.CurrentPage:Display(this.PageViewInnerFrame, skipAnimation)
 		this.Pages.CurrentPage.Active = true
 
 		local pageSize = this.Pages.CurrentPage:GetSize()
 		this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
+		if enableReportPlayer then
+			if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
+				this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
+			else
+				this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)
+			end
+		end
 
 		pageChangeCon = this.Pages.CurrentPage.Page.Changed:connect(function(prop)
 			if prop == "AbsoluteSize" then
 				local pageSize = this.Pages.CurrentPage:GetSize()
 				this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
+				if enableReportPlayer and this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
+					this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
+				else
+					this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)
+				end
 			end
 		end)
 
@@ -985,7 +1013,7 @@ local function CreateSettingsHub()
 		end)
 	end
 
-	function setVisibilityInternal(visible, noAnimation, customStartPage)
+	function setVisibilityInternal(visible, noAnimation, customStartPage, switchedFromGamepadInput)
 		this.OpenStateChangedCount = this.OpenStateChangedCount + 1
 		local switchedFromGamepadInput = switchedFromGamepadInput or isTenFootInterface
 		this.Visible = visible
@@ -1108,6 +1136,10 @@ local function CreateSettingsHub()
 		if this.Visible == visible then return end
 
 		setVisibilityInternal(visible, noAnimation, customStartPage, switchedFromGamepadInput)
+	end
+
+	function this:GetVisibility()
+		return this.Visible
 	end
 
 	function this:ToggleVisibility(switchedFromGamepadInput)
