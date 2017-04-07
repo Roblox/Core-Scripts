@@ -35,6 +35,9 @@ if not enablePortraitMode then
 	return require(RobloxGui.Modules.Settings.SettingsHubOld)
 end
 
+local reportPlayerInMenuSuccess, reportPlayerInMenuValue = pcall(function() return settings():GetFFlag("CoreScriptReportPlayerInMenu") end)
+local enableReportPlayer = reportPlayerInMenuSuccess and reportPlayerInMenuValue
+
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
@@ -963,17 +966,19 @@ local function CreateSettingsHub()
 
 		local pageSize = this.Pages.CurrentPage:GetSize()
 		this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
-		if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
-			this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
-		else
-			this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)
+		if enableReportPlayer then
+			if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
+				this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
+			else
+				this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)
+			end
 		end
 
 		pageChangeCon = this.Pages.CurrentPage.Page.Changed:connect(function(prop)
 			if prop == "AbsoluteSize" then
 				local pageSize = this.Pages.CurrentPage:GetSize()
 				this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
-				if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
+				if enableReportPlayer and this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
 					this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
 				else
 					this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)

@@ -199,6 +199,7 @@ local function Initialize()
 					if friendLabel and isPortrait == wasIsPortrait then
 						return
 					end
+					wasIsPortrait = isPortrait
 					if friendLabel then
 						friendLabel:Destroy()
 					end
