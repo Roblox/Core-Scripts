@@ -45,8 +45,6 @@ local LastPopAmount = 0
 local LastZoomLevel = 0
 local PopperEnabled = false
 
-local Pi = math.pi
-
 -----------------------
 --| Local Functions |--
 -----------------------
