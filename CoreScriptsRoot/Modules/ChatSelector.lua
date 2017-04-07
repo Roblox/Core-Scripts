@@ -151,6 +151,7 @@ end
 local function NonFunc() end
 StarterGui:RegisterSetCore("ChatMakeSystemMessage", MakeSystemMessageQueueingFunction)
 StarterGui:RegisterSetCore("ChatWindowPosition", NonFunc)
+StarterGui:RegisterGetCore("ChatWindowPosition", NonFunc)
 StarterGui:RegisterSetCore("ChatWindowSize", NonFunc)
 StarterGui:RegisterGetCore("ChatWindowSize", NonFunc)
 StarterGui:RegisterSetCore("ChatBarDisabled", NonFunc)
