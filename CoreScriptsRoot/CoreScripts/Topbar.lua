@@ -6,9 +6,6 @@
 
 --[[ FFLAG VALUES ]]
 
-local defeatableTopbarSuccess, defeatableTopbarFlagValue = pcall(function() return settings():GetFFlag("EnableSetCoreTopbarEnabled") end)
-local defeatableTopbar = (defeatableTopbarSuccess and defeatableTopbarFlagValue == true)
-
 local vr3dGuisSuccess, vr3dGuisFlagValue = pcall(function() return settings():GetFFlag("RenderUserGuiIn3DSpace") end)
 local vr3dGuis = (vr3dGuisSuccess and vr3dGuisFlagValue == true)
 
@@ -17,21 +14,6 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 
 local newChatVisiblePropSuccess, newChatVisiblePropValue =  pcall(function() return settings():GetFFlag("ChatVisiblePropertyEnabled") end)
 local newChatVisibleProp = (newChatVisiblePropSuccess and newChatVisiblePropValue)
-
-local showHealthWhenDamagedSuccess, showHealthWhenDamagedValue = pcall(function() return settings():GetFFlag("OnlyShowHealthWhenDamaged") end)
-local onlyShowHealthWhenDamagedEnabled = showHealthWhenDamagedSuccess and showHealthWhenDamagedValue
-
-local showVisibleAgeSuccess, showVisibleAgeValue = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAge") end)
-local showVisibleAgeEnabled = showVisibleAgeSuccess and showVisibleAgeValue
-
-local showVisibleAgeXboxSuccess, showVisibleAgeXboxValue = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAgeXbox") end)
-local showVisibleAgeEnabledXbox = showVisibleAgeXboxSuccess and showVisibleAgeXboxValue
-
-local showVisibleAgeV2Success, showVisibleAgeV2Value = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAgeV2") end)
-local showVisibleAgeV2Enabled = showVisibleAgeV2Success and showVisibleAgeV2Value
-
-local chatPrivacySettingSuccess, chatPrivacySettingValue = pcall(function() return settings():GetFFlag("UserChatPrivacySetting") end)
-local chatPrivacySettingEnabled = chatPrivacySettingSuccess and chatPrivacySettingValue
 
 --[[ END OF FFLAG VALUES ]]
 
@@ -62,13 +44,11 @@ local function isTopbarEnabled()
 	return topbarEnabled and not InputService.VREnabled
 end
 
-if defeatableTopbar then
-	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled) -- registers a placeholder setcore function that keeps track of players enabling/disabling the topbar before it's ready.
-		if type(enabled) == "boolean" then
-			topbarEnabled = enabled
-		end
-	end)
-end
+StarterGui:RegisterSetCore("TopbarEnabled", function(enabled) -- registers a placeholder setcore function that keeps track of players enabling/disabling the topbar before it's ready.
+	if type(enabled) == "boolean" then
+		topbarEnabled = enabled
+	end
+end)
 local lookMenuEnabled = true
 
 local settingsActive = false
@@ -82,14 +62,14 @@ end
 
 local canChat = true
 
-local accountTypeText = showVisibleAgeV2Enabled and "Account: <13" or "Account: Under 13 yrs"
+local accountTypeText = "Account: <13"
 local accountTypeTextShort = "<13"
 
 function calculateAccountText()
-	accountTypeText = showVisibleAgeV2Enabled and "Account: 13+" or "Account: Over 13 yrs"
+	accountTypeText = "Account: 13+"
 	accountTypeTextShort = "13+"
 	if Player:GetUnder13() then
-		accountTypeText = showVisibleAgeV2Enabled and "Account: <13" or "Account: Under 13 yrs"
+		accountTypeText = "Account: <13"
 		accountTypeTextShort = "<13"
 	end
 end
@@ -640,7 +620,7 @@ local function createNormalHealthBar()
 	local username = Util.Create'TextLabel'{
 		Name = "Username";
 		Text = Player.Name;
-		Size = UDim2.new(1, -14, 0, showVisibleAgeEnabled and 18 or 22);
+		Size = UDim2.new(1, -14, 0, 18);
 		Position = UDim2.new(0, 7, 0, 0);
 		Font = Enum.Font.SourceSansBold;
 		FontSize = Enum.FontSize.Size14;
@@ -652,23 +632,19 @@ local function createNormalHealthBar()
 	};
 
 
-	local accountType = nil
-
-	if showVisibleAgeEnabled then
-		accountType = Util.Create'TextLabel'{
-			Name = "AccountType";
-			Text = accountTypeText;
-			Size = UDim2.new(1, -14, 0, 9);
-			Position = UDim2.new(0, 7, 0, 20);
-			Font = Enum.Font.SourceSans;
-			TextSize = 11;
-			BackgroundTransparency = 1;
-			TextColor3 = TopbarConstants.FONT_COLOR;
-			TextYAlignment = Enum.TextYAlignment.Bottom;
-			TextXAlignment = Enum.TextXAlignment.Left;
-			Parent = container;
-		};
-	end
+	local accountType = Util.Create'TextLabel'{
+		Name = "AccountType";
+		Text = accountTypeText;
+		Size = UDim2.new(1, -14, 0, 9);
+		Position = UDim2.new(0, 7, 0, 20);
+		Font = Enum.Font.SourceSans;
+		TextSize = 11;
+		BackgroundTransparency = 1;
+		TextColor3 = TopbarConstants.FONT_COLOR;
+		TextYAlignment = Enum.TextYAlignment.Bottom;
+		TextXAlignment = Enum.TextXAlignment.Left;
+		Parent = container;
+	};
 
 	spawn(function()
 		wait()
@@ -679,7 +655,7 @@ local function createNormalHealthBar()
 	local healthContainer = Util.Create'Frame'{
 		Name = "HealthContainer";
 		Size = UDim2.new(1, -14, 0, 3);
-		Position = UDim2.new(0, 7, 1, showVisibleAgeEnabled and -7 or -9);
+		Position = UDim2.new(0, 7, 1, -7);
 		BorderSizePixel = 0;
 		BackgroundColor3 = TopbarConstants.HEALTH_BACKGROUND_COLOR;
 		Parent = container;
@@ -797,38 +773,13 @@ local function CreateUsernameHealthMenuItem()
 	local function UpdateHealthVisible()
 		local isEnabled = HealthBarEnabled and CurrentHumanoid and CurrentHumanoid.Health ~= CurrentHumanoid.MaxHealth
 		healthContainer.Visible = isEnabled
-		if showVisibleAgeEnabled then
-			if showVisibleAgeV2Enabled then
-				return
-			end
-			if isEnabled then
-				username.Size = UDim2.new(1, -14, 0, 18);
-				username.TextYAlignment = Enum.TextYAlignment.Bottom;
-				accountType.Position = UDim2.new(0, 7, 0, 20);
-			else
-				username.Size = UDim2.new(1, -14, 1, -12);
-				username.TextYAlignment = Enum.TextYAlignment.Center;
-				accountType.Size = UDim2.new(1, -14, 0, 9);
-				accountType.Position = UDim2.new(0, 7, 1, -10);
-			end
-		else
-			if isEnabled then
-				username.Size = UDim2.new(1, -14, 0, 22);
-				username.TextYAlignment = Enum.TextYAlignment.Bottom;
-			else
-				username.Size = UDim2.new(1, -14, 1, 0);
-				username.TextYAlignment = Enum.TextYAlignment.Center;
-			end
-		end
 	end
 
 	local function OnHumanoidAdded(humanoid)
 		CurrentHumanoid = humanoid
 		local lastHealth = humanoid.Health
 		local function OnHumanoidHealthChanged(health)
-			if onlyShowHealthWhenDamagedEnabled then
-				UpdateHealthVisible()
-			end
+			UpdateHealthVisible()
 			if humanoid then
 				local healthDelta = lastHealth - health
 				local healthPercent = health / humanoid.MaxHealth
@@ -876,27 +827,14 @@ local function CreateUsernameHealthMenuItem()
 
 	rawset(this, "SetHealthbarEnabled",
 		function(self, enabled)
-			if onlyShowHealthWhenDamagedEnabled then
-				HealthBarEnabled = enabled
-				UpdateHealthVisible()
-			else
-				healthContainer.Visible = enabled
-				if enabled then
-					username.Size = UDim2.new(1, -14, 0, 22);
-					username.TextYAlignment = Enum.TextYAlignment.Bottom;
-				else
-					username.Size = UDim2.new(1, -14, 1, 0);
-					username.TextYAlignment = Enum.TextYAlignment.Center;
-				end
-			end
+			HealthBarEnabled = enabled
+			UpdateHealthVisible()
 		end)
 
 	rawset(this, "SetNameVisible",
 		function(self, visible)
 			username.Visible = visible
-			if showVisibleAgeEnabled then
-				accountType.Visible = visible
-			end
+			accountType.Visible = visible
 		end)
 
 	-- Don't need to disconnect this one because we never reconnect it.
@@ -1714,45 +1652,27 @@ local function CreateNoTopBarAccountType()
 		BackgroundTransparency = 1;
 	}
 
-	local bubble = nil
-
-	if not showVisibleAgeV2Enabled then
-		bubble = Util.Create'ImageButton'
-		{
-			Name = "AccountTypeBubble";
-			Size = UDim2.new(1, -10, 1, -16);
-			Position = UDim2.new(0, 10, 0, 8);
-			AutoButtonColor = false;
-			Image = "rbxasset://textures/ui/TopBar/Round.png";
-			ScaleType = Enum.ScaleType.Slice;
-			SliceCenter = Rect.new(10, 10, 10, 10);
-			ImageTransparency = 0;
-			BackgroundTransparency = 1;
-			Parent = container;
-		}
-	end
-
 	local accountTypeTextLabel = Util.Create'TextLabel'{
 		Name = "AccountTypeText";
-		Text = showVisibleAgeV2Enabled and accountTypeTextShort or accountTypeText;
+		Text = accountTypeTextShort;
 		Size = UDim2.new(1, -12, 1, -12);
-		Position = UDim2.new(0, showVisibleAgeV2Enabled and 0 or 6, 0, 6);
+		Position = UDim2.new(0, 0, 0, 6);
 		Font = Enum.Font.SourceSansBold;
 		FontSize = Enum.FontSize.Size14;
 		BackgroundTransparency = 1;
 		TextColor3 = TopbarConstants.FONT_COLOR;
 		TextYAlignment = Enum.TextYAlignment.Center;
 		TextXAlignment = Enum.TextXAlignment.Left;
-		Parent = showVisibleAgeV2Enabled and container or bubble;
+		Parent = container;
 	};
 
 	spawn(function()
 		wait()
 		calculateAccountText()
-		accountTypeTextLabel.Text = showVisibleAgeV2Enabled and accountTypeTextShort or accountTypeText
+		accountTypeTextLabel.Text = accountTypeTextShort
 		if container.Visible then
 			local textBounds = accountTypeTextLabel.TextBounds.X
-			local containerSize = showVisibleAgeV2Enabled and textBounds or 22 + textBounds
+			local containerSize = textBounds
 			container.Size = UDim2.new(0, containerSize, 1, 0)
 		end
 	end)
@@ -1764,7 +1684,7 @@ local function CreateNoTopBarAccountType()
 		else
 			container.Visible = true
 			local textBounds = accountTypeTextLabel.TextBounds.X
-			local containerSize = showVisibleAgeV2Enabled and textBounds or 22 + textBounds
+			local containerSize = textBounds
 			container.Size = UDim2.new(0, containerSize, 1, 0)
 		end
 	end
@@ -1787,17 +1707,13 @@ local Menubar3D = CreateMenuBar3D(BarAlignmentEnum.Left, TopbarPanel3D)
 local settingsIcon = CreateSettingsIcon(TopBar)
 local noTopBarAccountType = nil
 
-if isTenFootInterface and showVisibleAgeEnabledXbox then
+if isTenFootInterface then
 	spawn(function()
 		wait()
 		calculateAccountText()
-		if showVisibleAgeV2Enabled then
-			TenFootInterface:CreateAccountTypeV2(accountTypeTextShort)
-		else
-			TenFootInterface:CreateAccountType(accountTypeText)
-		end
+		TenFootInterface:CreateAccountType(accountTypeTextShort)
 	end)
-elseif not isTenFootInterface and showVisibleAgeEnabled then
+elseif not isTenFootInterface then
 	noTopBarAccountType = CreateNoTopBarAccountType()
 end
 
@@ -2122,37 +2038,31 @@ local function OnVREnabled(prop)
 end
 UISChanged = InputService.Changed:connect(OnVREnabled)
 
-if defeatableTopbar then
-	topbarEnabledChanged() -- if it was set before this point, enable/disable it now
-	StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
-		if type(enabled) == "boolean" then
-			topbarEnabled = enabled
-			topbarEnabledChanged()
-		end
-	end)
-else
-	topbarEnabledChanged()
-end
+topbarEnabledChanged() -- if it was set before this point, enable/disable it now
+StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
+	if type(enabled) == "boolean" then
+		topbarEnabled = enabled
+		topbarEnabledChanged()
+	end
+end)
 
-if chatPrivacySettingEnabled then
-	spawn(function()
-		local success, localUserCanChat = pcall(function()
-			return ChatService:CanUserChatAsync(Player.UserId)
-		end)
-		canChat = RunService:IsStudio() or (success and localUserCanChat)
-		if canChat == false then
-			if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
-				if chatIcon then
-					LeftMenubar:RemoveItem(chatIcon)
-				end
-				if ChatModule:IsBubbleChatOnly() and mobileShowChatIcon then
-					LeftMenubar:RemoveItem(mobileShowChatIcon)
-				end
-			end
-			ChatModule:SetVisible(false)
-		end
+spawn(function()
+	local success, localUserCanChat = pcall(function()
+		return ChatService:CanUserChatAsync(Player.UserId)
 	end)
-end
+	canChat = RunService:IsStudio() or (success and localUserCanChat)
+	if canChat == false then
+		if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
+			if chatIcon then
+				LeftMenubar:RemoveItem(chatIcon)
+			end
+			if ChatModule:IsBubbleChatOnly() and mobileShowChatIcon then
+				LeftMenubar:RemoveItem(mobileShowChatIcon)
+			end
+		end
+		ChatModule:SetVisible(false)
+	end
+end)
 
 -- Hook-up coregui changing
 StarterGui.CoreGuiChangedSignal:connect(OnCoreGuiChanged)

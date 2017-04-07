@@ -151,21 +151,19 @@ end
 local function NonFunc() end
 StarterGui:RegisterSetCore("ChatMakeSystemMessage", MakeSystemMessageQueueingFunction)
 StarterGui:RegisterSetCore("ChatWindowPosition", NonFunc)
-StarterGui:RegisterSetCore("ChatWindowSize", NonFunc)
 StarterGui:RegisterGetCore("ChatWindowPosition", NonFunc)
+StarterGui:RegisterSetCore("ChatWindowSize", NonFunc)
 StarterGui:RegisterGetCore("ChatWindowSize", NonFunc)
 StarterGui:RegisterSetCore("ChatBarDisabled", NonFunc)
 StarterGui:RegisterGetCore("ChatBarDisabled", NonFunc)
 
-local readChatActiveFlagSuccess, chatActiveEnabled = pcall(function() return settings():GetFFlag("CorescriptSetCoreChatActiveEnabled") end)
-if readChatActiveFlagSuccess and chatActiveEnabled then
-	StarterGui:RegisterGetCore("ChatActive", function()
-		return interface:GetVisibility()
-	end)
-	StarterGui:RegisterSetCore("ChatActive", function(visible)
-		return interface:SetVisible(visible)
-	end)
-end
+
+StarterGui:RegisterGetCore("ChatActive", function()
+	return interface:GetVisibility()
+end)
+StarterGui:RegisterSetCore("ChatActive", function(visible)
+	return interface:SetVisible(visible)
+end)
 
 
 local function ConnectSignals(useModule, interface, sigName)

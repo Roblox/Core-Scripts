@@ -13,19 +13,7 @@ local errorExtraData = {ChatColor = errorTextColor}
 
 local function Run(ChatService)
 
-	local function ChatSettingsEnabled()
-		local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
-		local chatPrivacySettingsEnabled = true
-		if chatPrivacySettingsSuccess then
-			chatPrivacySettingsEnabled = chatPrivacySettingsValue
-		end
-		return chatPrivacySettingsEnabled
-	end
-
 	local function CanCommunicate(fromSpeaker, toSpeaker)
-		if ChatSettingsEnabled() == false then
-			return true
-		end
 		if RunService:IsStudio() then
 			return true
 		end
