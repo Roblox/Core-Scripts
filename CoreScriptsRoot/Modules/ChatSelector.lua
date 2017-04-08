@@ -30,7 +30,7 @@ local state = {Visible = true}
 local interface = {}
 do
 	function interface:GetNewLuaChatFlag()
-		return GetUseLuaFlag() or FORCE_UseNewChat
+		return true
 	end
 	
 	function interface:ToggleVisibility()
