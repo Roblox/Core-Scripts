@@ -29,6 +29,10 @@ local useModule = nil
 local state = {Visible = true}
 local interface = {}
 do
+	function interface:GetNewLuaChatFlag()
+		return GetUseLuaFlag() or FORCE_UseNewChat
+	end
+	
 	function interface:ToggleVisibility()
 		if (useModule) then
 			useModule:ToggleVisibility()
