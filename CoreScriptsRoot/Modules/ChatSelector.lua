@@ -153,7 +153,7 @@ local isVR = UserInputService.VREnabled or FORCE_IS_VR
 
 if ( not isConsole and not isVR ) then
 	spawn(function()
-		local useModuleScript = RobloxGui.Modules.NewChat
+		local useModuleScript = RobloxGui.Modules.NewChat or RobloxGui.Modules.Chat
 		useModule = require(useModuleScript)
 
 		ConnectSignals(useModule, interface, "ChatBarFocusChanged")
