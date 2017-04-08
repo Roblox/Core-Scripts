@@ -11,7 +11,6 @@ local CoreGuiService = game:GetService("CoreGui")
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 local Modules = RobloxGui:WaitForChild("Modules")
 local Common = Modules:WaitForChild("Common")
-local FORCE_UseNewChat = require(Common:WaitForChild("ForceUseNewChat"))
 
 local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
@@ -25,35 +24,11 @@ local Util = require(RobloxGui.Modules.ChatUtil)
 local ClassicChatEnabled = Players.ClassicChat
 local BubbleChatEnabled = Players.BubbleChat
 
-local function GetUseLuaFlag()
-	local loop_continue = true
-	while loop_continue do
-		local success, retVal = pcall(function()
-			return game.IsSFFlagsLoaded
-		end)
-		if not success then
-			loop_continue = false
-		elseif retVal then
-			loop_continue = false
-		else
-			wait(0.1)
-		end
-	end
-
-	local success, retVal = pcall(function() return game:GetService("Chat"):GetShouldUseLuaChat() end)
-	local useNewChat = success and retVal
-	return useNewChat
-end
-
 local useModule = nil
 
 local state = {Visible = true}
 local interface = {}
 do
-	function interface:GetNewLuaChatFlag()
-		return GetUseLuaFlag() or FORCE_UseNewChat
-	end
-
 	function interface:ToggleVisibility()
 		if (useModule) then
 			useModule:ToggleVisibility()
@@ -174,8 +149,7 @@ local isVR = UserInputService.VREnabled or FORCE_IS_VR
 
 if ( not isConsole and not isVR ) then
 	spawn(function()
-		local useNewChat = GetUseLuaFlag() or FORCE_UseNewChat
-		local useModuleScript = useNewChat and RobloxGui.Modules.NewChat or RobloxGui.Modules.Chat
+		local useModuleScript = RobloxGui.Modules.NewChat
 		useModule = require(useModuleScript)
 
 		ConnectSignals(useModule, interface, "ChatBarFocusChanged")
