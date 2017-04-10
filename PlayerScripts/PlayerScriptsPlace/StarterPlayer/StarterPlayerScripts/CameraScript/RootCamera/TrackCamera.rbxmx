@@ -8,6 +8,11 @@
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
 local RootCameraCreator = require(script.Parent)
 
+local ZERO_VECTOR2 = Vector2.new(0, 0)
+
+local CFrame_new = CFrame.new
+local math_min = math.min
+
 local function CreateTrackCamera()
 	local module = RootCameraCreator()
 
@@ -16,7 +21,7 @@ local function CreateTrackCamera()
 		local now = tick()
 		
 		local userPanningTheCamera = (self.UserPanningTheCamera == true)
-		local camera = 	workspace.CurrentCamera
+		local camera = workspace.CurrentCamera
 		local player = PlayersService.LocalPlayer
 		
 		if lastUpdate == nil or now - lastUpdate > 1 then
@@ -26,9 +31,9 @@ local function CreateTrackCamera()
 		
 		if lastUpdate then
 			-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
-			local delta = math.min(0.1, now - lastUpdate)
+			local delta = math_min(0.1, now - lastUpdate)
 			local gamepadRotation = self:UpdateGamepad()
-			if gamepadRotation ~= Vector2.new(0,0) then
+			if gamepadRotation ~= ZERO_VECTOR2 then
 				userPanningTheCamera = true
 				self.RotateInput = self.RotateInput + (gamepadRotation * delta)
 			end
@@ -41,10 +46,10 @@ local function CreateTrackCamera()
 				zoom = 0.1
 			end
 			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
-			self.RotateInput = Vector2.new()
+			self.RotateInput = ZERO_VECTOR2
 			
-			camera.Focus = CFrame.new(subjectPosition)
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
+			camera.Focus = CFrame_new(subjectPosition)
+			camera.CFrame = CFrame_new(subjectPosition - (zoom * newLookVector), subjectPosition)
 			self.LastCameraTransform = camera.CoordinateFrame
 		end
 		lastUpdate = now

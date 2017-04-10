@@ -8,6 +8,10 @@
 			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
 local RootCameraCreator = require(script.Parent)
 
+local ZERO_VECTOR2 = Vector2.new(0, 0)
+
+local CFrame_new = CFrame.new
+local math_min = math.min
 
 local function CreateFixedCamera()
 	local module = RootCameraCreator()
@@ -25,7 +29,7 @@ local function CreateFixedCamera()
 		
 		if lastUpdate then
 			-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
-			local delta = math.min(0.1, now - lastUpdate)
+			local delta = math_min(0.1, now - lastUpdate)
 			local gamepadRotation = self:UpdateGamepad()		
 			self.RotateInput = self.RotateInput + (gamepadRotation * delta)
 		end		
@@ -37,10 +41,10 @@ local function CreateFixedCamera()
 				zoom = 0.1
 			end
 			local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
-			self.RotateInput = Vector2.new()
+			self.RotateInput = ZERO_VECTOR2
 			
-			camera.CoordinateFrame = CFrame.new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
-			self.LastCameraTransform = camera.CoordinateFrame
+			camera.CoordinateFrame = CFrame_new(camera.Focus.p - (zoom * newLookVector), camera.Focus.p)
+			self.LastCameraTransform = camera.CFrame
 		end
 		lastUpdate = now
 	end
