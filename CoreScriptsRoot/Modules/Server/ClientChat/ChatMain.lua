@@ -349,7 +349,7 @@ UserInputService.Changed:connect(function(prop)
 		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
 			local windowPos = ChatWindow.GuiObject.AbsolutePosition
 			local windowSize = ChatWindow.GuiObject.AbsoluteSize
-			local screenSize = GuiParent.DestroyGuardFrame.AbsoluteSize
+			local screenSize = GuiParent.AbsoluteSize
 
 			local centerScreenIsInWindow = CheckIfPointIsInSquare(screenSize/2, windowPos, windowPos + windowSize)
 			if centerScreenIsInWindow then
