@@ -6,28 +6,28 @@
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ClassicCamera</string>
 			<string name="ScriptGuid"></string>
-			<ProtectedString name="Source"><![CDATA[local PlayersService = game:GetService('Players')
-local UserInputService = game:GetService('UserInputService')
-local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
-if not VRServiceExists or not VRService then
-	--No VRService? Fall back to UserInputService, it is the original VRService after all
-	VRService = UserInputService
-end
+			<ProtectedString name="Source"><![CDATA[
+local PlayersService = game:GetService('Players')
+local VRService = game:GetService("VRService")
 
 local RootCameraCreator = require(script.Parent)
 
 local UP_VECTOR = Vector3.new(0, 1, 0)
-local XZ_VECTOR = Vector3.new(1,0,1)
-local ZERO_VECTOR2 = Vector2.new(0,0)
+local XZ_VECTOR = Vector3.new(1, 0, 1)
+local ZERO_VECTOR2 = Vector2.new(0, 0)
 
 local VR_PITCH_FRACTION = 0.25
 
+local Vector3_new = Vector3.new
+local CFrame_new = CFrame.new
+local math_min = math.min
+local math_max = math.max
+local math_atan2 = math.atan2
+local math_rad = math.rad
+local math_abs = math.abs
+
 local function clamp(low, high, num)
-	if low <= high then
-		return math.min(high, math.max(low, num))
-	end
-	print("Trying to clamp when low:", low , "is larger than high:" , high , "returning input value.")
-	return num
+	return (num > high and high or num < low and low or num)
 end
 
 local function IsFinite(num)
@@ -41,20 +41,21 @@ end
 -- May return NaN or inf or -inf
 -- This is a way of finding the angle between the two vectors:
 local function findAngleBetweenXZVectors(vec2, vec1)
-	return math.atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
+	return math_atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
 end
 
 local function CreateClassicCamera()
 	local module = RootCameraCreator()
 	
-	local tweenAcceleration = math.rad(220)
-	local tweenSpeed = math.rad(0)
-	local tweenMaxSpeed = math.rad(250)
+	local tweenAcceleration = math_rad(220)
+	local tweenSpeed = math_rad(0)
+	local tweenMaxSpeed = math_rad(250)
 	local timeBeforeAutoRotate = 2
-
+	
 	local lastUpdate = tick()
 	module.LastUserPanCamera = tick()
 	function module:Update()
+		module:ProcessTweens()
 		local now = tick()
 		local timeDelta = (now - lastUpdate)
 		
@@ -78,7 +79,7 @@ local function CreateClassicCamera()
 				self.RotateInput = self.RotateInput + self:GetVRRotationInput()
 			else
 				-- Cap out the delta to 0.1 so we don't get some crazy things when we re-resume from
-				local delta = math.min(0.1, now - lastUpdate)
+				local delta = math_min(0.1, now - lastUpdate)
 				
 				if gamepadRotation ~= ZERO_VECTOR2 then
 					userPanningTheCamera = true
@@ -92,7 +93,7 @@ local function CreateClassicCamera()
 				end
 				
 				if angle ~= 0 then
-					self.RotateInput = self.RotateInput +  Vector2.new(math.rad(angle * delta), 0)
+					self.RotateInput = self.RotateInput +  Vector2.new(math_rad(angle * delta), 0)
 					userPanningTheCamera = true
 				end
 			end
@@ -122,7 +123,7 @@ local function CreateClassicCamera()
 					subjectPosition = subjectPosition + offset
 				end
 			else
-				if self.LastCameraTransform and not userPanningTheCamera then
+				if not userPanningTheCamera and self.LastCameraTransform then
 					local isInFirstPerson = self:IsInFirstPerson()
 					if (isInVehicle or isOnASkateboard) and lastUpdate and humanoid and humanoid.Torso then
 						if isInFirstPerson then
@@ -147,7 +148,7 @@ local function CreateClassicCamera()
 							end
 							
 							local y = findAngleBetweenXZVectors(forwardVector, self:GetCameraLook())
-							if IsFinite(y) and math.abs(y) > 0.0001 then
+							if IsFinite(y) and math_abs(y) > 0.0001 then
 								self.RotateInput = self.RotateInput + Vector2.new(y * percent, 0)
 							end
 						end
@@ -155,19 +156,19 @@ local function CreateClassicCamera()
 				end
 			end
 
-			camera.Focus = VRService.VREnabled and self:GetVRFocus(subjectPosition, timeDelta) or CFrame.new(subjectPosition)
-			
-			local cameraHeight = self:GetCameraHeight()
-			local cameraFocusP = camera.Focus.p
+			local VREnabled = VRService.VREnabled
+			camera.Focus = VREnabled and self:GetVRFocus(subjectPosition, timeDelta) or CFrame_new(subjectPosition)
 
-			if VRService.VREnabled and not self:IsInFirstPerson() then
+			local cameraFocusP = camera.Focus.p
+			if VREnabled and not self:IsInFirstPerson() then
+				local cameraHeight = self:GetCameraHeight()
 				local vecToSubject = (subjectPosition - camera.CFrame.p)
 				local distToSubject = vecToSubject.magnitude
 
-				--Only move the camera if it exceeded a maximum distance to the subject in VR
+				-- Only move the camera if it exceeded a maximum distance to the subject in VR
 				if distToSubject > zoom or self.RotateInput.x ~= 0 then
-					local desiredDist = math.min(distToSubject, zoom)
-					vecToSubject = self:RotateCamera(vecToSubject.unit * Vector3.new(1, 0, 1), Vector2.new(self.RotateInput.x, 0)) * desiredDist
+					local desiredDist = math_min(distToSubject, zoom)
+					vecToSubject = self:RotateCamera(vecToSubject.unit * XZ_VECTOR, Vector2.new(self.RotateInput.x, 0)) * desiredDist
 					local newPos = cameraFocusP - vecToSubject
 					local desiredLookDir = camera.CFrame.lookVector
 					if self.RotateInput.x ~= 0 then
@@ -176,17 +177,17 @@ local function CreateClassicCamera()
 					local lookAt = Vector3.new(newPos.x + desiredLookDir.x, newPos.y, newPos.z + desiredLookDir.z)
 					self.RotateInput = ZERO_VECTOR2
 					
-					camera.CFrame = CFrame.new(newPos, lookAt) + Vector3.new(0, cameraHeight, 0)
+					camera.CFrame = CFrame_new(newPos, lookAt) + Vector3_new(0, cameraHeight, 0)
 				end
 			else
 				local newLookVector = self:RotateCamera(self:GetCameraLook(), self.RotateInput)
 				self.RotateInput = ZERO_VECTOR2
-				camera.CFrame = CFrame.new(cameraFocusP - (zoom * newLookVector), cameraFocusP) + Vector3.new(0, cameraHeight, 0)
+				camera.CFrame = CFrame_new(cameraFocusP - (zoom * newLookVector), cameraFocusP)
 			end
 
 			self.LastCameraTransform = camera.CFrame
 			self.LastCameraFocus = camera.Focus
-			if isInVehicle or isOnASkateboard and cameraSubject:IsA('BasePart') then
+			if (isInVehicle or isOnASkateboard) and cameraSubject:IsA('BasePart') then
 				self.LastSubjectCFrame = cameraSubject.CFrame
 			else
 				self.LastSubjectCFrame = nil

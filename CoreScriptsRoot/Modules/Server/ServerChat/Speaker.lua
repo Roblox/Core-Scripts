@@ -45,7 +45,7 @@ function methods:JoinChannel(channelName)
 	self.Channels[channelName:lower()] = channel
 	channel:InternalAddSpeaker(self)
 	local success, err = pcall(function()
-		self.eChannelJoined:Fire(channel.Name, channel.WelcomeMessage)
+		self.eChannelJoined:Fire(channel.Name, channel:GetWelcomeMessageForSpeaker(self))
 	end)
 	if not success and err then
 		print("Error joining channel: " ..err)

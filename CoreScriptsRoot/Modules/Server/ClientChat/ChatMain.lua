@@ -92,12 +92,6 @@ while not LocalPlayer do
 	LocalPlayer = Players.LocalPlayer
 end
 
-local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
-local chatPrivacySettingsEnabled = true
-if chatPrivacySettingsSuccess then
-	chatPrivacySettingsEnabled = chatPrivacySettingsValue
-end
-
 local canChat = true
 
 local ChatDisplayOrder = 6
@@ -355,7 +349,7 @@ UserInputService.Changed:connect(function(prop)
 		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
 			local windowPos = ChatWindow.GuiObject.AbsolutePosition
 			local windowSize = ChatWindow.GuiObject.AbsoluteSize
-			local screenSize = GuiParent.DestroyGuardFrame.AbsoluteSize
+			local screenSize = GuiParent.AbsoluteSize
 
 			local centerScreenIsInWindow = CheckIfPointIsInSquare(screenSize/2, windowPos, windowPos + windowSize)
 			if centerScreenIsInWindow then
@@ -488,7 +482,9 @@ do
 
 	function moduleApiTable:SpecialKeyPressed(key, modifiers)
 		if (key == Enum.SpecialKey.ChatHotkey) then
-			DoChatBarFocus()
+			if canChat then
+				DoChatBarFocus()
+			end
 		end
 	end
 end
@@ -508,6 +504,19 @@ moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	end
 end)
 
+function trimTrailingSpaces(str)
+	local lastSpace = #str
+	while lastSpace > 0 do
+		--- The pattern ^%s matches whitespace at the start of the string. (Starting from lastSpace)
+		if str:find("^%s", lastSpace) then
+			lastSpace = lastSpace - 1
+		else
+			break
+		end
+	end
+	return str:sub(1, lastSpace)
+end
+
 moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 	if (valueTable["Text"] and type(valueTable["Text"]) == "string") then
 		while (not DidFirstChannelsLoads) do wait() end
@@ -523,7 +532,7 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(valueTable.Text),
-				Message = valueTable.Text,
+				Message = trimTrailingSpaces(valueTable.Text),
 				MessageType = ChatConstants.MessageTypeSetCore,
 				Time = os.time(),
 				ExtraData = valueTable,
@@ -591,7 +600,7 @@ function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 			OriginalChannel = channelName,
 			IsFiltered = true,
 			MessageLength = string.len(message),
-			Message = message,
+			Message = trimTrailingSpaces(message),
 			MessageType = ChatConstants.MessageTypeSystem,
 			Time = os.time(),
 			ExtraData = extraData,
@@ -803,7 +812,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(welcomeMessage),
-				Message = welcomeMessage,
+				Message = trimTrailingSpaces(welcomeMessage),
 				MessageType = ChatConstants.MessageTypeWelcome,
 				Time = os.time(),
 				ExtraData = nil,
@@ -860,74 +869,6 @@ coroutine.wrap(function()
 end)()
 
 
-local reparentingLock = false
-function connectGuiParent(GuiParent)
-	local DestroyGuardFrame = Instance.new("Frame")
-	DestroyGuardFrame.Name = "DestroyGuardFrame"
-	DestroyGuardFrame.BackgroundTransparency = 1
-	DestroyGuardFrame.Size = UDim2.new(1, 0, 1, 0)
-	DestroyGuardFrame.Parent = GuiParent
-
-	for i, v in pairs(GuiParent:GetChildren()) do
-		if (v ~= DestroyGuardFrame) then
-			v.Parent = DestroyGuardFrame
-		end
-	end
-
-end
-
-connectGuiParent(GuiParent)
-
-GuiParent.Changed:connect(function(prop)
-	if (prop == "Parent" and not reparentingLock) then
-		reparentingLock = true
-
-		local children = GuiParent.DestroyGuardFrame:GetChildren()
-		for i, v in pairs(children) do
-			v.Parent = nil
-		end
-
-		LocalPlayer.CharacterAdded:wait()
-		GuiParent.Parent = PlayerGui
-
-		for i, v in pairs(children) do
-			v.Parent = GuiParent
-		end
-
-		connectGuiParent(GuiParent)
-
-		reparentingLock = false
-	end
-end)
-
-local ChatBarFocusedState = nil
-
---// Always on top behavior that relies on parenting order of ScreenGuis
---// This would end up really bad if something else tried to do the exact same thing however.
-PlayerGui.ChildAdded:connect(function(child)
-	if (child ~= GuiParent and not reparentingLock) then
-		reparentingLock = true
-
-		GuiParent.Parent = nil
-		RunService.RenderStepped:wait()
-		GuiParent.Parent = PlayerGui
-
-		reparentingLock = false
-	elseif child == GuiParent then
-		if ChatBarFocusedState then
-			RunService.RenderStepped:wait()
-			ChatBar:RestoreFocusedState(ChatBarFocusedState)
-		end
-	end
-end)
-
-PlayerGui.DescendantRemoving:connect(function(descendant)
-	if descendant == GuiParent then
-		ChatBarFocusedState = ChatBar:GetFocusedState()
-	end
-end)
-
-
 --- Interaction with SetCore Player events.
 
 local PlayerBlockedEvent = nil
@@ -956,7 +897,7 @@ function SendSystemMessageToSelf(message)
 			OriginalChannel = currentChannel.Name,
 			IsFiltered = true,
 			MessageLength = string.len(message),
-			Message = message,
+			Message = trimTrailingSpaces(message),
 			MessageType = ChatConstants.MessageTypeSystem,
 			Time = os.time(),
 			ExtraData = nil,
@@ -1031,19 +972,14 @@ spawn(function()
 	end
 end)
 
-if chatPrivacySettingsEnabled then
-	spawn(function()
-		local success, canLocalUserChat = pcall(function()
-			return Chat:CanUserChatAsync(LocalPlayer.UserId)
-		end)
-		if success then
-			canChat = RunService:IsStudio() or canLocalUserChat
-			if canChat == false then
-				ChatBar:SetEnabled(canChat)
-			end
-		end
+spawn(function()
+	local success, canLocalUserChat = pcall(function()
+		return Chat:CanUserChatAsync(LocalPlayer.UserId)
 	end)
-end
+	if success then
+		canChat = RunService:IsStudio() or canLocalUserChat
+	end
+end)
 
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
 

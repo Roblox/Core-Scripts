@@ -28,17 +28,14 @@ local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
 --[[ Fast Flags ]]--
-local getNotificationDisableSuccess, notificationsDisableActiveValue = pcall(function() return settings():GetFFlag("SetCoreDisableNotifications") end)
-local allowDisableNotifications = getNotificationDisableSuccess and notificationsDisableActiveValue
-
-local getSendNotificationSuccess, sendNotificationActiveValue = pcall(function() return settings():GetFFlag("SetCoreSendNotifications") end)
-local allowSendNotifications = getSendNotificationSuccess and sendNotificationActiveValue
-
 local getNewNotificationPathSuccess, newNotificationPathValue = pcall(function() return settings():GetFFlag("UseNewNotificationPathLua") end)
 local newNotificationPath = getNewNotificationPathSuccess and newNotificationPathValue
 
 local getTenFootBadgeNotifications, tenFootBadgeNotificationsValue = pcall(function() return settings():GetFFlag("TenFootBadgeNotifications") end)
 local tenFootBadgeNotifications = getTenFootBadgeNotifications and tenFootBadgeNotificationsValue
+
+local getDisableScreenshotPopup, disableScreenshotPopupValue = pcall(function() return settings():GetFFlag("DisableScreenshotPopup") end)
+local disableScreenshotPopup = getDisableScreenshotPopup and disableScreenshotPopupValue
 
 --[[ Script Variables ]]--
 local LocalPlayer = nil
@@ -479,10 +476,10 @@ end)
 
 local checkFriendRequestIsThrottled; do
 	local friendRequestThrottlingMap = {}
-	
+
 	checkFriendRequestIsThrottled = function(fromPlayer)
 		local throttleFinishedTime = friendRequestThrottlingMap[fromPlayer]
-		
+
 		if throttleFinishedTime then
 			if tick() < throttleFinishedTime then
 				return true
@@ -500,7 +497,7 @@ local function sendFriendNotification(fromPlayer)
 		if checkFriendRequestIsThrottled(fromPlayer) then
 			return
 		end
-	
+
 		local acceptText = "Accept"
 		local declineText = "Decline"
 		sendNotificationInfo {
@@ -721,6 +718,22 @@ end
 
 end
 
+if disableScreenshotPopup then
+	game.ScreenshotReady:Connect(function(path)
+		sendNotificationInfo {
+			Title = "Screenshot Taken",
+			Text = "Check out your screenshots folder to see it.",
+			Duration = 3.0,
+			Button1Text = "Open Folder",
+			Callback = function(text)
+				if text == "Open Folder" then
+					game:OpenScreenshotsFolder()
+				end
+			end
+		}
+	end)
+end
+
 GuiService.SendCoreUiNotification = function(title, text)
 	local notification = createNotification(title, text, "")
 	notification.BackgroundTransparency = .5
@@ -812,22 +825,13 @@ local function createDeveloperNotification(notificationTable)
 	end
 end
 
-if allowDisableNotifications then
-	StarterGui:RegisterSetCore("PointsNotificationsActive", function(value) if type(value) == "boolean" then pointsNotificationsActive = value end end)
-	StarterGui:RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
-else
-	StarterGui:RegisterSetCore("PointsNotificationsActive", function() end)
-	StarterGui:RegisterSetCore("BadgesNotificationsActive", function() end)
-end
+StarterGui:RegisterSetCore("PointsNotificationsActive", function(value) if type(value) == "boolean" then pointsNotificationsActive = value end end)
+StarterGui:RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
 
 StarterGui:RegisterGetCore("PointsNotificationsActive", function() return pointsNotificationsActive end)
 StarterGui:RegisterGetCore("BadgesNotificationsActive", function() return badgesNotificationsActive end)
 
-if allowSendNotifications then
-	StarterGui:RegisterSetCore("SendNotification", createDeveloperNotification)
-else
-	StarterGui:RegisterSetCore("SendNotification", function() end)
-end
+StarterGui:RegisterSetCore("SendNotification", createDeveloperNotification)
 
 
 if not isTenFootInterface then
@@ -913,4 +917,3 @@ if Platform == Enum.Platform.XBoxOne then
 		end
 	end
 end
-

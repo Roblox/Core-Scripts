@@ -24,6 +24,9 @@ local PageInstance = nil
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 ----------- CLASS DECLARATION --------------
 
 local function Initialize()
@@ -397,21 +400,6 @@ local function Initialize()
 
   this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/HelpTab.png"
 
-  if utility:IsSmallTouchScreen() then
-    this.TabHeader.Icon.Size = UDim2.new(0,33,0,33)
-    this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-16)
-    this.TabHeader.Size = UDim2.new(0,100,1,0)
-  elseif isTenFootInterface then
-    this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/HelpTab@2x.png"
-    this.TabHeader.Icon.Size = UDim2.new(0,90,0,90)
-    this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
-    this.TabHeader.Size = UDim2.new(0,210,1,0)
-  else
-    this.TabHeader.Icon.Size = UDim2.new(0,44,0,44)
-    this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-22)
-    this.TabHeader.Size = UDim2.new(0,130,1,0)
-  end
-
   this.TabHeader.Icon.Title.Text = "Help"
 
 
@@ -435,8 +423,9 @@ do
   PageInstance = Initialize()
 
   PageInstance.Displayed.Event:connect(function()
+      local isPortrait = enablePortraitMode and utility:IsPortrait()
       if PageInstance:GetCurrentInputType() == TOUCH_TAG then
-        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() then
+        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() and not isPortrait then
           PageInstance.HubRef.BottomButtonFrame.Visible = false
         end
       end
@@ -448,8 +437,9 @@ do
 
       PageInstance.HubRef:ShowShield()
 
+      local isPortrait = enablePortraitMode and utility:IsPortrait()
       if PageInstance:GetCurrentInputType() == TOUCH_TAG then
-        if PageInstance.HubRef.BottomButtonFrame then
+        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() and not isPortrait then
           PageInstance.HubRef.BottomButtonFrame.Visible = true
         end
       end

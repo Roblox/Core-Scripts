@@ -10,16 +10,14 @@
 local MAX_TWEEN_RATE = 2.8 -- per second
 
 local function clamp(low, high, num)
-	if low <= high then
-		return math.min(high, math.max(low, num))
-	end
-	return num
+	return (num > high and high or num < low and low or num)
 end
 
+local math_floor = math.floor
+
 local function Round(num, places)
-	places = places or 0
 	local decimalPivot = 10^places
-	return math.floor(num * decimalPivot + 0.5) / decimalPivot
+	return math_floor(num * decimalPivot + 0.5) / decimalPivot
 end
 
 local function CreateTransparencyController()

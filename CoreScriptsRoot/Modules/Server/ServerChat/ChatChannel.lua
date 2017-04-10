@@ -58,20 +58,8 @@ function methods:SendMessageObjToFilters(message, messageObj, fromSpeaker)
 	return newMessage
 end
 
-function ChatSettingsEnabled()
-	local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
-	local chatPrivacySettingsEnabled = true
-	if chatPrivacySettingsSuccess then
-		chatPrivacySettingsEnabled = chatPrivacySettingsValue
-	end
-	return chatPrivacySettingsEnabled
-end
-
 function methods:CanCommunicateByUserId(userId1, userId2)
 	if RunService:IsStudio() then
-		return true
-	end
-	if ChatSettingsEnabled() == false then
 		return true
 	end
 	-- UserId is set as 0 for non player speakers.
@@ -527,6 +515,27 @@ function methods:SetChannelNameColor(color)
 	end
 end
 
+function methods:GetWelcomeMessageForSpeaker(speaker)
+	if self.GetWelcomeMessageFunction then
+		local welcomeMessage = self.GetWelcomeMessageFunction(speaker)
+		if welcomeMessage then
+			return welcomeMessage
+		end
+	end
+	return self.WelcomeMessage
+end
+
+function methods:RegisterGetWelcomeMessageFunction(func)
+	if type(func) ~= "function" then
+		error("RegisterGetWelcomeMessageFunction must be called with a function.")
+	end
+	self.GetWelcomeMessageFunction = func
+end
+
+function methods:UnRegisterGetWelcomeMessageFunction()
+	self.GetWelcomeMessageFunction = nil
+end
+
 --///////////////////////// Constructors
 --//////////////////////////////////////
 
@@ -537,6 +546,7 @@ function module.new(vChatService, name, welcomeMessage, channelNameColor)
 
 	obj.Name = name
 	obj.WelcomeMessage = welcomeMessage or ""
+	obj.GetWelcomeMessageFunction = nil
 	obj.ChannelNameColor = channelNameColor
 
 	obj.Joinable = true

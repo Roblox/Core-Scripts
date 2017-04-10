@@ -21,6 +21,9 @@ local StyleWidgets = require(RobloxGui.Modules.StyleWidgets)
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 ----------- CONSTANTS --------------
 local HEADER_SPACING = 5
 if utility:IsSmallTouchScreen() then
@@ -62,11 +65,17 @@ local function Initialize()
 	{
 		Name = "Icon",
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0,44,0,37),
+		Size = UDim2.new(0.75, 0, 0.75, 0),
 		Position = UDim2.new(0,10,0.5,-18),
 		Image = "",
 		ImageTransparency = 0.5,
 		Parent = this.TabHeader
+	};
+	local iconAspectRatio = utility:Create'UIAspectRatioConstraint'
+	{
+		Name = "AspectRatioConstraint",
+		AspectRatio = 1,
+		Parent = icon
 	};
 
 	local title = utility:Create'TextLabel'
@@ -90,6 +99,40 @@ local function Initialize()
 	end
 
 	local tabSelection = StyleWidgets.MakeTabSelectionWidget(this.TabHeader)
+
+	local function onResized()
+		if not this.TabHeader then
+			return
+		end
+
+		if utility:IsSmallTouchScreen() then
+			this.TabHeader.Icon.Size = UDim2.new(0,34,0,28)
+			this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-14)
+		elseif isTenFootInterface then
+			this.TabHeader.Icon.Size = UDim2.new(0,88,0,74)
+			this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
+		else
+			this.TabHeader.Icon.Size = UDim2.new(0,44,0,37)
+			this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-18)
+		end
+
+		local isPortrait = enablePortraitMode and utility:IsPortrait()
+		if isPortrait then
+			this.TabHeader.Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
+			this.TabHeader.Icon.AnchorPoint = Vector2.new(0.5, 0.5)
+			this.TabHeader.Icon.Size = UDim2.new(0.5, 0, 0.5, 0)
+			this.TabHeader.Icon.Title.Visible = false
+		else
+			this.TabHeader.Icon.AnchorPoint = Vector2.new(0, 0)
+			this.TabHeader.Icon.Title.Visible = true
+		end
+	end
+	if enablePortraitMode then
+		utility:OnResized(this.TabHeader, onResized)
+	else
+		--If the flag isn't on, just call onResized once.
+		onResized()
+	end
  
 	------ PAGE CREATION -------
 	this.Page = utility:Create'Frame'
@@ -98,6 +141,20 @@ local function Initialize()
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1,0,1,0)
 	};
+
+	if enablePortraitMode then
+		this.PageListLayout = utility:Create'UIListLayout'
+		{
+			Name = "RowListLayout",
+			FillDirection = Enum.FillDirection.Vertical,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			VerticalAlignment = Enum.VerticalAlignment.Top,
+			Padding = UDim.new(0, 3),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Parent = this.Page
+		};
+	end
+
 
 	-- make sure each page has a unique selection group (for gamepad selection)
 	GuiService:AddSelectionParent(HttpService:GenerateGUID(false), this.Page)
