@@ -29,10 +29,6 @@ local useModule = nil
 local state = {Visible = true}
 local interface = {}
 do
-	function interface:GetNewLuaChatFlag()
-		return true
-	end
-	
 	function interface:ToggleVisibility()
 		if (useModule) then
 			useModule:ToggleVisibility()
@@ -163,13 +159,9 @@ if ( not isConsole and not isVR ) then
 		while Players.LocalPlayer == nil do Players.ChildAdded:wait() end
 		local LocalPlayer = Players.LocalPlayer
 
-		if (LocalPlayer.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio()) then
-			ConnectSignals(useModule, interface, "MessagesChanged")
-			StarterGui:RegisterGetCore("UseNewLuaChat", function() return useNewChat end)
-		else
-			--// Cause new chat window UI to not be created in Studio Start Server
-			StarterGui:RegisterGetCore("UseNewLuaChat", function() return false end)
-		end
+		ConnectSignals(useModule, interface, "MessagesChanged")
+		-- Retained for legacy reasons, no longer used by the chat scripts.
+		StarterGui:RegisterGetCore("UseNewLuaChat", function() return true end)
 
 		useModule:SetVisible(state.Visible)
 		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Chat))
