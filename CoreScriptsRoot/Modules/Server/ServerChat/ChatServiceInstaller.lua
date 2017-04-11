@@ -32,21 +32,11 @@ local function GetBoolValue(parent, name, defaultValue)
 	return defaultValue
 end
 
-local function loadDefaultChatDisabled()
-	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("LoadDefaultChatEnabled") end)
-	if readFlagSuccess and flagEnabled then
-		return not ChatService.LoadDefaultChat
-	end
-	return false
-end
 
 local function Install()
-	if loadDefaultChatDisabled() then
+	if not ChatService.LoadDefaultChat then
 		return
 	end
-
-	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptChatInsertDefaultBools") end)
-	local UseInsertDefaultBools = readFlagSuccess and flagEnabled
 
 	local chatServiceRunnerArchivable = true
 	local ChatServiceRunner = installDirectory:FindFirstChild(runnerScriptName)
@@ -57,6 +47,7 @@ local function Install()
 		LoadModule(script.Parent, "ChatService", ChatServiceRunner)
 		LoadModule(script.Parent, "ChatChannel", ChatServiceRunner)
 		LoadModule(script.Parent, "Speaker", ChatServiceRunner)
+		LoadModule(script.Parent, "Util", ChatServiceRunner)
 	end
 
 	local ChatModules = installDirectory:FindFirstChild("ChatModules")
@@ -65,30 +56,21 @@ local function Install()
 		ChatModules.Name = "ChatModules"
 		ChatModules.Archivable = false
 
-		if UseInsertDefaultBools then
-			local InsertDefaults = Instance.new("BoolValue")
-			InsertDefaults.Name = "InsertDefaultModules"
-			InsertDefaults.Value = true
-			InsertDefaults.Parent = ChatModules
-		else
-			local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()		  		local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
-  		for i = 1, #defaultChatModules do
-				LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
-			end
-		end
+		local InsertDefaults = Instance.new("BoolValue")
+		InsertDefaults.Name = "InsertDefaultModules"
+		InsertDefaults.Value = true
+		InsertDefaults.Parent = ChatModules
 
 		ChatModules.Parent = installDirectory
 	end
 
-	if UseInsertDefaultBools then
-		local shouldInsertDefaultModules = GetBoolValue(ChatModules, "InsertDefaultModules", false)
+	local shouldInsertDefaultModules = GetBoolValue(ChatModules, "InsertDefaultModules", false)
 
-		if shouldInsertDefaultModules then
-			local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
-			for i = 1, #defaultChatModules do
-				if not ChatModules:FindFirstChild(defaultChatModules[i].Name) then
-					LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
-				end
+	if shouldInsertDefaultModules then
+		local defaultChatModules = script.Parent.DefaultChatModules:GetChildren()
+		for i = 1, #defaultChatModules do
+			if not ChatModules:FindFirstChild(defaultChatModules[i].Name) then
+				LoadModule(script.Parent.DefaultChatModules, defaultChatModules[i].Name, ChatModules)
 			end
 		end
 	end

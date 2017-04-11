@@ -28,8 +28,9 @@ local ShiftLockController = {}
 
 --[[ Script Variables ]]--
 while not Players.LocalPlayer do
-	wait()
+	Players.PlayerAdded:wait()
 end
+
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local PlayerGui = LocalPlayer:WaitForChild('PlayerGui')

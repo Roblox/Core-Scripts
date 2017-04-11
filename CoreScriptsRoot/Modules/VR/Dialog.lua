@@ -5,6 +5,7 @@
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local InputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local Utility = require(RobloxGui.Modules.Settings.Utility)
 local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 
@@ -77,8 +78,8 @@ local function updatePanelPosition()
 	positionDialogPanel(newPanelAngle)
 end
 
-
-game:GetService("RunService"):BindToRenderStep("DialogPanel", Enum.RenderPriority.First.Value, function()
+-- RenderStep update function for the DialogPanel
+function dialogPanelRenderUpdate()	
 	if DialogPanel.transparency == 1 or resetBaseAngle then
 		updatePanelPosition()
 	end
@@ -95,7 +96,7 @@ game:GetService("RunService"):BindToRenderStep("DialogPanel", Enum.RenderPriorit
 			guiElement.BackgroundTransparency = transparency
 		end
 	end
-end)
+end
 
 local DialogQueue = {}
 
@@ -167,7 +168,12 @@ function Dialog:SetContent(guiElement)
 	self.content = guiElement
 end
 
+local renderFuncBound = false
 function Dialog:Show(shouldTakeover)
+	if not renderFuncBound then
+		renderFuncBound = true
+		RunService:BindToRenderStep("DialogPanel", Enum.RenderPriority.First.Value, dialogPanelRenderUpdate)
+	end
 	if shouldTakeover then
 		table.insert(DialogQueue, 1, self)
 	else
@@ -183,6 +189,10 @@ function Dialog:Close()
 			break
 		end
 	end
+	if renderFuncBound and #DialogQueue == 0 then
+		renderFuncBound = false
+		RunService:UnbindFromRenderStep("DialogPanel")
+	end	
 	updatePanel()
 end
 

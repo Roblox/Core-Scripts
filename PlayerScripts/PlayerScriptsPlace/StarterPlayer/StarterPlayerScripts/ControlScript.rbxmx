@@ -1,11 +1,12 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="LocalScript" referent="RBX6ECBB953392B4C62B547B37A9AEBD054">
+	<Item class="LocalScript" referent="RBX07897057CB3E4B75952AC6E3D364A6C2">
 		<Properties>
 			<bool name="Disabled">false</bool>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">ControlScript</string>
+			<string name="ScriptGuid">{EFAAF843-127B-494C-8C86-A346B5963EA7}</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: ControlScript.lua
 	// Version 1.1
@@ -58,6 +59,10 @@ local IsModalEnabled = UserInputService.ModalEnabled
 local BindableEvent_OnFailStateChanged = nil
 local isJumpEnabled = false
 
+local DynamicThumbstickAvailable = pcall(function() 
+	return Enum.DevTouchMovementMode.DynamicThumbstick and Enum.TouchMovementMode.DynamicThumbstick
+end)
+
 local ControlState = {}
 ControlState.Current = nil
 function ControlState:SwitchTo(newControl)
@@ -74,17 +79,25 @@ function ControlState:SwitchTo(newControl)
 	end
 end
 
+function ControlState:IsTouchJumpModuleUsed()
+	return isJumpEnabled
+end
+
 --[[ Modules ]]--
 local ClickToMoveTouchControls = nil
 local ControlModules = {}
 
 local MasterControl = require(script:WaitForChild('MasterControl'))
+--MasterControl needs access to ControlState in order to be able to fully enable and disable control
+MasterControl.ControlState = ControlState
 
+local DynamicThumbstickModule = require(script.MasterControl:WaitForChild('DynamicThumbstick'))
 local ThumbstickModule = require(script.MasterControl:WaitForChild('Thumbstick'))
 local ThumbpadModule = require(script.MasterControl:WaitForChild('Thumbpad'))
 local DPadModule = require(script.MasterControl:WaitForChild('DPad'))
 local DefaultModule = ControlModules.Thumbstick
 local TouchJumpModule = require(script.MasterControl:WaitForChild('TouchJump'))
+MasterControl.TouchJumpModule = TouchJumpModule
 
 local keyboardModule = require(script.MasterControl:WaitForChild('KeyboardMovement'))
 ControlModules.Gamepad = require(script.MasterControl:WaitForChild('Gamepad'))
@@ -92,7 +105,10 @@ ControlModules.Gamepad = require(script.MasterControl:WaitForChild('Gamepad'))
 function getTouchModule()
 	local module = nil
 	if not IsUserChoice then
-		if DevMovementMode == Enum.DevTouchMovementMode.Thumbstick then
+		if DynamicThumbstickAvailable and DevMovementMode == Enum.DevTouchMovementMode.DynamicThumbstick then
+			module = DynamicThumbstickModule
+			isJumpEnabled = false
+		elseif DevMovementMode == Enum.DevTouchMovementMode.Thumbstick then
 			module = ThumbstickModule
 			isJumpEnabled = true
 		elseif DevMovementMode == Enum.DevTouchMovementMode.Thumbpad then
@@ -108,7 +124,10 @@ function getTouchModule()
 			module = nil
 		end
 	else
-		if UserMovementMode == Enum.TouchMovementMode.Default or UserMovementMode == Enum.TouchMovementMode.Thumbstick then
+		if DynamicThumbstickAvailable and UserMovementMode == Enum.TouchMovementMode.DynamicThumbstick then
+			module = DynamicThumbstickModule
+			isJumpEnabled = false
+		elseif UserMovementMode == Enum.TouchMovementMode.Default or UserMovementMode == Enum.TouchMovementMode.Thumbstick then
 			module = ThumbstickModule
 			isJumpEnabled = true
 		elseif UserMovementMode == Enum.TouchMovementMode.Thumbpad then
@@ -209,7 +228,8 @@ function ControlModules.Touch:Disable()
 	
 	if newModuleToDisable == ThumbstickModule or
 		newModuleToDisable == DPadModule or
-		newModuleToDisable == ThumbpadModule then
+		newModuleToDisable == ThumbpadModule or
+		newModuleToDisable == DynamicThumbstickModule then
 			newModuleToDisable:Disable()
 			setJumpModule(false)
 			TouchJumpModule:Disable()
@@ -301,6 +321,7 @@ local function createTouchGuiContainer()
 	-- Container for all touch device guis
 	TouchGui = Instance.new('ScreenGui')
 	TouchGui.Name = "TouchGui"
+	TouchGui.ResetOnSpawn = false
 	TouchGui.Parent = PlayerGui
 	
 	TouchControlFrame = Instance.new('Frame')
@@ -313,6 +334,7 @@ local function createTouchGuiContainer()
 	DPadModule:Create(TouchControlFrame)
 	ThumbpadModule:Create(TouchControlFrame)
 	TouchJumpModule:Create(TouchControlFrame)
+	DynamicThumbstickModule:Create(TouchControlFrame)
 end
 
 --[[ Settings Changed Connections ]]--
@@ -337,28 +359,6 @@ GameSettings.Changed:connect(function(property)
 end)
 
 --[[ Touch Events ]]--
--- On touch devices we need to recreate the guis on character load.
-local lastControlState = nil
-LocalPlayer.CharacterAdded:connect(function(character)
-	if ControlState.Current then -- only do this if it wasn't done through CharacterRemoving
-		lastControlState = ControlState.Current
-		ControlState:SwitchTo(nil)
-	end
-	
-	if UserInputService.TouchEnabled then
-		createTouchGuiContainer()
-	end
-	
-	if ControlState.Current == nil then
-		ControlState:SwitchTo(lastControlState)
-	end
-end)
-
-LocalPlayer.CharacterRemoving:connect(function()
-	lastControlState = ControlState.Current
-	ControlState:SwitchTo(nil)
-end)
-	
 UserInputService.Changed:connect(function(property)
 	if property == 'ModalEnabled' then
 		IsModalEnabled = UserInputService.ModalEnabled

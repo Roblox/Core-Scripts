@@ -16,21 +16,16 @@ local PopperCam = {} -- Guarantees your players won't see outside the bounds of 
 
 local POP_RESTORE_RATE = 0.3
 
-local CAST_SCREEN_SCALES = { -- (Relative)
-	Vector2.new(1, 1) / 2, -- Center
-	Vector2.new(0, 0), -- Top left
-	Vector2.new(1, 0), -- Top right
-	Vector2.new(1, 1), -- Bottom right
-	Vector2.new(0, 1), -- Bottom left
-}
-
 local VALID_SUBJECTS = {
 	'Humanoid',
 	'VehicleSeat',
 	'SkateboardPlatform',
 }
- 
-local NEAR_CLIP_PLANE_OFFSET = 0.5 --NOTE: Not configurable here
+
+local portraitPopperFixFlagExists, portraitPopperFixFlagEnabled = pcall(function()
+	return UserSettings():IsUserFeatureEnabled("UserPortraitPopperFix")
+end)
+local FFlagUserPortraitPopperFix = portraitPopperFixFlagExists and portraitPopperFixFlagEnabled
 
 -----------------
 --| Variables |--
@@ -40,6 +35,8 @@ local PlayersService = game:GetService('Players')
 
 local Camera = nil
 local CameraChangeConn = nil
+
+local SubjectPart = nil
 
 local PlayerCharacters = {} -- For ignoring in raycasts
 local VehicleParts = {} -- Also just for ignoring
@@ -52,38 +49,12 @@ local PopperEnabled = false
 --| Local Functions |--
 -----------------------
 
-local function CastRay(fromPoint, toPoint, ignoreList)
-	local vector = toPoint - fromPoint
-	local ray = Ray.new(fromPoint, vector.Unit * math.min(vector.Magnitude, 999))
-	return workspace:FindPartOnRayWithIgnoreList(ray, ignoreList or {}, false, true)
-end
-
--- Casts and recasts until it hits either: nothing, or something not transparent or collidable
-local function PiercingCast(fromPoint, toPoint, ignoreList) --NOTE: Modifies ignoreList!
-	repeat
-		local hitPart, hitPoint = CastRay(fromPoint, toPoint, ignoreList)
-		if hitPart and (hitPart.Transparency > 0.95 or hitPart.CanCollide == false) then
-			table.insert(ignoreList, hitPart)
-		else
-			return hitPart, hitPoint
-		end
-	until false
-end
-
-local function ScreenToWorld(screenPoint, screenSize, pushDepth)
-	local cameraFOV, cameraCFrame = Camera.FieldOfView, Camera.CoordinateFrame
-	local imagePlaneDepth = screenSize.y / (2 * math.tan(math.rad(cameraFOV) / 2))
-	local direction = Vector3.new(screenPoint.x - (screenSize.x / 2), (screenSize.y / 2) - screenPoint.y, -imagePlaneDepth)
-	local worldDirection = (cameraCFrame:vectorToWorldSpace(direction)).Unit
-	local theta = math.acos(math.min(1, worldDirection:Dot(cameraCFrame.lookVector)))
-	local fixedPushDepth = pushDepth / math.sin((math.pi / 2) - theta)
-	return cameraCFrame.p + worldDirection * fixedPushDepth
-end
+local math_abs = math.abs
 
 local function OnCameraChanged(property)
 	if property == 'CameraSubject' then
 		VehicleParts = {}
-		
+
 		local newSubject = Camera.CameraSubject
 		if newSubject then
 			-- Determine if we should be popping at all
@@ -98,6 +69,16 @@ local function OnCameraChanged(property)
 			-- Get all parts of the vehicle the player is controlling
 			if newSubject:IsA('VehicleSeat') then
 				VehicleParts = newSubject:GetConnectedParts(true)
+			end
+			
+			if FFlagUserPortraitPopperFix then
+				if newSubject:IsA("BasePart") then
+					SubjectPart = newSubject
+				elseif newSubject:IsA("Model") then
+					SubjectPart = newSubject.PrimaryPart
+				elseif newSubject:IsA("Humanoid") then
+					SubjectPart = newSubject.Torso
+				end
 			end
 		end
 	end
@@ -146,45 +127,45 @@ end
 function PopperCam:Update()
 	if PopperEnabled then
 		-- First, prep some intermediate vars
+		local cameraCFrame = Camera.CFrame
 		local focusPoint = Camera.Focus.p
-		local cameraCFrame = Camera.CoordinateFrame
-		local cameraFrontPoint = cameraCFrame.p + (cameraCFrame.lookVector * NEAR_CLIP_PLANE_OFFSET)
-		local screenSize = Camera.ViewportSize
+
+		if FFlagUserPortraitPopperFix and SubjectPart then
+			focusPoint = SubjectPart.CFrame.p
+		end
+
 		local ignoreList = {}
 		for _, character in pairs(PlayerCharacters) do
-			table.insert(ignoreList, character)
+			ignoreList[#ignoreList + 1] = character
 		end
-		for _, basePart in pairs(VehicleParts) do
-			table.insert(ignoreList, basePart)
-		end
-		
-		-- Cast rays at the near clip plane, from corresponding points near the focus point,
-		-- and find the direct line that is the most cut off
-		local largest = 0
-		for _, screenScale in pairs(CAST_SCREEN_SCALES) do
-			local clipWorldPoint = ScreenToWorld(screenSize * screenScale, screenSize, NEAR_CLIP_PLANE_OFFSET)
-			local rayStartPoint = focusPoint + (clipWorldPoint - cameraFrontPoint)
-			local _, hitPoint = PiercingCast(rayStartPoint, clipWorldPoint, ignoreList)
-			local cutoffAmount = (hitPoint - clipWorldPoint).Magnitude
-			if cutoffAmount > largest then
-				largest = cutoffAmount
-			end
+		for i = 1, #VehicleParts do
+			ignoreList[#ignoreList + 1] = VehicleParts[i]
 		end
 		
+		-- Get largest cutoff distance
+		local largest = Camera:GetLargestCutoffDistance(ignoreList)
+
 		-- Then check if the player zoomed since the last frame,
 		-- and if so, reset our pop history so we stop tweening
 		local zoomLevel = (cameraCFrame.p - focusPoint).Magnitude
-		if math.abs(zoomLevel - LastZoomLevel) > 0.001 then
+		if math_abs(zoomLevel - LastZoomLevel) > 0.001 then
 			LastPopAmount = 0
-		end
+		end		
 		
 		-- Finally, zoom the camera in (pop) by that most-cut-off amount, or the last pop amount if that's more
-		local popAmount = math.max(largest, LastPopAmount)
-		if popAmount > 0 then
-			Camera.CoordinateFrame = cameraCFrame + (cameraCFrame.lookVector * popAmount)
-			LastPopAmount = math.max(0, popAmount - POP_RESTORE_RATE) -- Shrink it for the next frame
+		local popAmount = largest
+		if LastPopAmount > popAmount then
+			popAmount = LastPopAmount	
 		end
-		
+
+		if popAmount > 0 then
+			Camera.CFrame = cameraCFrame + (cameraCFrame.lookVector * popAmount)
+			LastPopAmount = popAmount - POP_RESTORE_RATE -- Shrink it for the next frame
+			if LastPopAmount < 0 then
+				LastPopAmount = 0
+			end
+		end
+
 		LastZoomLevel = zoomLevel
 	end
 end

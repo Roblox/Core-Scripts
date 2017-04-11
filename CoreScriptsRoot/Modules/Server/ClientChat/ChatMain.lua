@@ -22,6 +22,7 @@ local DefaultChatSystemChatEvents = ReplicatedStorage:WaitForChild("DefaultChatS
 local EventFolder = ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents")
 local clientChatModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
+local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
 local MessageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 
@@ -40,6 +41,9 @@ local waitChildren =
 	SayMessageRequest = "RemoteEvent",
 	GetInitDataRequest = "RemoteFunction",
 }
+-- waitChildren/EventFolder does not contain all the remote events, because the server version could be older than the client version.
+-- In that case it would not create the new events.
+-- These events are accessed directly from DefaultChatSystemChatEvents
 
 local useEvents = {}
 
@@ -88,10 +92,18 @@ while not LocalPlayer do
 	LocalPlayer = Players.LocalPlayer
 end
 
+local canChat = true
+
+local ChatDisplayOrder = 6
+if ChatSettings.ScreenGuiDisplayOrder ~= nil then
+	ChatDisplayOrder = ChatSettings.ScreenGuiDisplayOrder
+end
+
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 local GuiParent = Instance.new("ScreenGui")
 GuiParent.Name = "Chat"
 GuiParent.ResetOnSpawn = false
+GuiParent.DisplayOrder = ChatDisplayOrder
 GuiParent.Parent = PlayerGui
 
 local DidFirstChannelsLoads = false
@@ -106,8 +118,6 @@ local moduleMessageLogDisplay = require(modulesFolder:WaitForChild("MessageLogDi
 local moduleChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local moduleCommandProcessor = require(modulesFolder:WaitForChild("CommandProcessor"))
 
-moduleMessageLabelCreator:RegisterGuiRoot(GuiParent)
-
 local ChatWindow = moduleChatWindow.new()
 local ChannelsBar = moduleChannelsBar.new()
 local MessageLogDisplay = moduleMessageLogDisplay.new()
@@ -121,10 +131,6 @@ ChatWindow:RegisterChannelsBar(ChannelsBar)
 ChatWindow:RegisterMessageLogDisplay(MessageLogDisplay)
 
 MessageCreatorUtil:RegisterChatWindow(ChatWindow)
-
-local Chat = game:GetService("Chat")
-local clientChatModules = Chat:WaitForChild("ClientChatModules")
-local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 MessageSender:RegisterSayMessageFunction(EventFolder.SayMessageRequest)
@@ -181,12 +187,10 @@ function DoBackgroundFadeIn(setFadingTime)
 	lastBackgroundFadeTime = tick()
 	backgroundIsFaded = false
 	fadedChanged:Fire()
-	ChatWindow:EnableResizable()
 	ChatWindow:FadeInBackground((setFadingTime or ChatSettings.ChatDefaultFadeDuration))
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
-		ChatWindow.GuiObject.Active = true
 
 		local Scroller = MessageLogDisplay.Scroller
 		Scroller.ScrollingEnabled = true
@@ -198,12 +202,10 @@ function DoBackgroundFadeOut(setFadingTime)
 	lastBackgroundFadeTime = tick()
 	backgroundIsFaded = true
 	fadedChanged:Fire()
-	ChatWindow:DisableResizable()
 	ChatWindow:FadeOutBackground((setFadingTime or ChatSettings.ChatDefaultFadeDuration))
 
 	local currentChannelObject = ChatWindow:GetCurrentChannel()
 	if (currentChannelObject) then
-		ChatWindow.GuiObject.Active = false
 
 		local Scroller = MessageLogDisplay.Scroller
 		Scroller.ScrollingEnabled = false
@@ -334,12 +336,12 @@ UserInputService.InputChanged:connect(function(inputObject)
 end)
 
 UserInputService.TouchTap:connect(function(tapPos, gameProcessedEvent)
-	local last = mouseIsInWindow
-
 	UpdateMousePosition(tapPos[1])
-	if (not mouseIsInWindow and last ~= mouseIsInWindow) then
-		DoBackgroundFadeOut()
-	end
+end)
+
+UserInputService.TouchMoved:connect(function(inputObject, gameProcessedEvent)
+	local tapPos = Vector2.new(inputObject.Position.X, inputObject.Position.Y)
+	UpdateMousePosition(tapPos)
 end)
 
 UserInputService.Changed:connect(function(prop)
@@ -347,7 +349,7 @@ UserInputService.Changed:connect(function(prop)
 		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
 			local windowPos = ChatWindow.GuiObject.AbsolutePosition
 			local windowSize = ChatWindow.GuiObject.AbsoluteSize
-			local screenSize = GuiParent.DestroyGuardFrame.AbsoluteSize
+			local screenSize = GuiParent.AbsoluteSize
 
 			local centerScreenIsInWindow = CheckIfPointIsInSquare(screenSize/2, windowPos, windowPos + windowSize)
 			if centerScreenIsInWindow then
@@ -480,12 +482,12 @@ do
 
 	function moduleApiTable:SpecialKeyPressed(key, modifiers)
 		if (key == Enum.SpecialKey.ChatHotkey) then
-			DoChatBarFocus()
+			if canChat then
+				DoChatBarFocus()
+			end
 		end
 	end
 end
-
-spawn(function() moduleApiTable:SetVisible(false) moduleApiTable:SetVisible(true) end)
 
 moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	moduleApiTable.IsCoreGuiEnabled = enabled
@@ -502,6 +504,19 @@ moduleApiTable.CoreGuiEnabled:connect(function(enabled)
 	end
 end)
 
+function trimTrailingSpaces(str)
+	local lastSpace = #str
+	while lastSpace > 0 do
+		--- The pattern ^%s matches whitespace at the start of the string. (Starting from lastSpace)
+		if str:find("^%s", lastSpace) then
+			lastSpace = lastSpace - 1
+		else
+			break
+		end
+	end
+	return str:sub(1, lastSpace)
+end
+
 moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 	if (valueTable["Text"] and type(valueTable["Text"]) == "string") then
 		while (not DidFirstChannelsLoads) do wait() end
@@ -513,10 +528,11 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 			local messageObject = {
 				ID = -1,
 				FromSpeaker = nil,
+				SpeakerUserId = 0,
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(valueTable.Text),
-				Message = valueTable.Text,
+				Message = trimTrailingSpaces(valueTable.Text),
 				MessageType = ChatConstants.MessageTypeSetCore,
 				Time = os.time(),
 				ExtraData = valueTable,
@@ -531,9 +547,11 @@ moduleApiTable.ChatMakeSystemMessageEvent:connect(function(valueTable)
 end)
 
 moduleApiTable.ChatBarDisabledEvent:connect(function(disabled)
-	ChatBar:SetEnabled(not disabled)
-	if (disabled) then
-		ChatBar:ReleaseFocus()
+	if canChat then
+		ChatBar:SetEnabled(not disabled)
+		if (disabled) then
+			ChatBar:ReleaseFocus()
+		end
 	end
 end)
 
@@ -555,6 +573,7 @@ function DoChatBarFocus()
 
 	if (not ChatBar:IsFocused() and ChatBar:GetVisible()) then
 		moduleApiTable:SetVisible(true)
+		InstantFadeIn()
 		ChatBar:CaptureFocus()
 		moduleApiTable.ChatBarFocusChanged:fire(true)
 	end
@@ -577,10 +596,11 @@ function SendMessageToSelfInTargetChannel(message, channelName, extraData)
 		{
 			ID = -1,
 			FromSpeaker = nil,
+			SpeakerUserId = 0,
 			OriginalChannel = channelName,
 			IsFiltered = true,
 			MessageLength = string.len(message),
-			Message = message,
+			Message = trimTrailingSpaces(message),
 			MessageType = ChatConstants.MessageTypeSystem,
 			Time = os.time(),
 			ExtraData = extraData,
@@ -632,7 +652,11 @@ function chatBarFocusLost(enterPressed, inputObject)
 			if not CommandProcessor:ProcessCompletedChatMessage(message, ChatWindow) then
 				if ChatSettings.DisallowedWhiteSpace then
 					for i = 1, #ChatSettings.DisallowedWhiteSpace do
-						message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], "")
+						if ChatSettings.DisallowedWhiteSpace[i] == "\t" then
+							message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], " ")
+						else
+							message = string.gsub(message, ChatSettings.DisallowedWhiteSpace[i], "")
+						end
 					end
 				end
 				message = string.gsub(message, "\n", "")
@@ -667,12 +691,25 @@ end
 setupChatBarConnections()
 ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
 
--- Wrap the OnMessageDoneFiltering event so that we do not back up the remote event invocation queue.
--- This is in cases where we are sent OnMessageDoneFiltering events but we have stopped listening/timed out.
--- BindableEvents do not queue, while RemoteEvents do.
-local FilteredMessageReceived = Instance.new("BindableEvent")
 EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
-	FilteredMessageReceived:Fire(messageData)
+	if not ChatSettings.ShowUserOwnFilteredMessage then
+		if messageData.FromSpeaker == LocalPlayer.Name then
+			return
+		end
+	end
+
+	local channelName = messageData.OriginalChannel
+	local channelObj = ChatWindow:GetChannel(channelName)
+	if channelObj then
+		channelObj:UpdateMessageFiltered(messageData)
+	end
+
+	if ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
+		local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+		if generalChannel then
+			generalChannel:UpdateMessageFiltered(messageData)
+		end
+	end
 end)
 
 EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName)
@@ -696,34 +733,6 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 		moduleApiTable.MessagesChanged:fire(moduleApiTable.MessageCount)
 
 		DoFadeInFromNewInformation()
-
-		if messageData.IsFiltered and not (messageData.FromSpeaker == LocalPlayer.Name) then
-			return
-		end
-
-		if not ChatSettings.ShowUserOwnFilteredMessage then
-			if (messageData.FromSpeaker == LocalPlayer.Name) then
-				return
-			end
-		end
-
-		local filterData = {}
-		local filterWaitStartTime = tick()
-		while (filterData.ID ~= messageData.ID) do
-			if tick() - filterWaitStartTime > FILTER_MESSAGE_TIMEOUT then
-				return
-			end
-			filterData = FilteredMessageReceived.Event:wait()
-		end
-
-		--// Speaker may leave these channels during the time it takes to filter.
-		if (not channelObj.Destroyed) then
-			channelObj:UpdateMessageFiltered(filterData)
-		end
-
-		if (generalChannel and not generalChannel.Destroyed) then
-			generalChannel:UpdateMessageFiltered(filterData)
-		end
 	end
 end)
 
@@ -753,9 +762,19 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, chann
 end)
 
 
-function HandleChannelJoined(channel, welcomeMessage, messageLog)
+function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameColor, addHistoryToGeneralChannel,
+	addWelcomeMessageToGeneralChannel)
+	if ChatWindow:GetChannel(channel) then
+		--- If the channel has already been added, remove it first.
+		ChatWindow:RemoveChannel(channel)
+	end
+
 	if (channel == ChatSettings.GeneralChannelName) then
 		DidFirstChannelsLoads = true
+	end
+
+	if channelNameColor then
+		ChatBar:SetChannelNameColor(channel, channelNameColor)
 	end
 
 	local channelObj = ChatWindow:AddChannel(channel)
@@ -770,8 +789,18 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog)
 			if #messageLog > ChatSettings.MessageHistoryLengthPerChannel then
 				startIndex = #messageLog - ChatSettings.MessageHistoryLengthPerChannel
 			end
+
 			for i = startIndex, #messageLog do
 				channelObj:AddMessageToChannel(messageLog[i])
+			end
+
+			if addHistoryToGeneralChannel then
+				if ChatSettings.GeneralChannelName and channel ~= ChatSettings.GeneralChannelName then
+					local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+					if generalChannel then
+						generalChannel:AddMessagesToChannelByTimeStamp(messageLog, startIndex)
+					end
+				end
 			end
 		end
 
@@ -779,15 +808,25 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog)
 			local welcomeMessageObject = {
 				ID = -1,
 				FromSpeaker = nil,
+				SpeakerUserId = 0,
 				OriginalChannel = channel,
 				IsFiltered = true,
 				MessageLength = string.len(welcomeMessage),
-				Message = welcomeMessage,
+				Message = trimTrailingSpaces(welcomeMessage),
 				MessageType = ChatConstants.MessageTypeWelcome,
 				Time = os.time(),
 				ExtraData = nil,
 			}
 			channelObj:AddMessageToChannel(welcomeMessageObject)
+
+			if addWelcomeMessageToGeneralChannel and not ChatSettings.ShowChannelsBar then
+				if channel ~= ChatSettings.GeneralChannelName then
+					local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+					if generalChannel then
+						generalChannel:AddMessageToChannel(welcomeMessageObject)
+					end
+				end
+			end
 		end
 
 		DoFadeInFromNewInformation()
@@ -795,7 +834,9 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog)
 
 end
 
-EventFolder.OnChannelJoined.OnClientEvent:connect(HandleChannelJoined)
+EventFolder.OnChannelJoined.OnClientEvent:connect(function(channel, welcomeMessage, messageLog, channelNameColor)
+	HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameColor, false, true)
+end)
 
 EventFolder.OnChannelLeft.OnClientEvent:connect(function(channel)
 	ChatWindow:RemoveChannel(channel)
@@ -817,74 +858,15 @@ EventFolder.OnMainChannelSet.OnClientEvent:connect(function(channel)
 	DoSwitchCurrentChannel(channel)
 end)
 
-
-
-local reparentingLock = false
-function connectGuiParent(GuiParent)
-	local DestroyGuardFrame = Instance.new("Frame")
-	DestroyGuardFrame.Name = "DestroyGuardFrame"
-	DestroyGuardFrame.BackgroundTransparency = 1
-	DestroyGuardFrame.Size = UDim2.new(1, 0, 1, 0)
-	DestroyGuardFrame.Parent = GuiParent
-
-	for i, v in pairs(GuiParent:GetChildren()) do
-		if (v ~= DestroyGuardFrame) then
-			v.Parent = DestroyGuardFrame
-		end
+coroutine.wrap(function()
+	-- ChannelNameColorUpdated may not exist if the client version is older than the server version.
+	local ChannelNameColorUpdated = DefaultChatSystemChatEvents:WaitForChild("ChannelNameColorUpdated", 5)
+	if ChannelNameColorUpdated then
+		ChannelNameColorUpdated.OnClientEvent:connect(function(channelName, channelNameColor)
+			ChatBar:SetChannelNameColor(channelName, channelNameColor)
+		end)
 	end
-
-end
-
-connectGuiParent(GuiParent)
-
-GuiParent.Changed:connect(function(prop)
-	if (prop == "Parent" and not reparentingLock) then
-		reparentingLock = true
-
-		local children = GuiParent.DestroyGuardFrame:GetChildren()
-		for i, v in pairs(children) do
-			v.Parent = nil
-		end
-
-		LocalPlayer.CharacterAdded:wait()
-		GuiParent.Parent = PlayerGui
-
-		for i, v in pairs(children) do
-			v.Parent = GuiParent
-		end
-
-		connectGuiParent(GuiParent)
-
-		reparentingLock = false
-	end
-end)
-
-local ChatBarFocusedState = nil
-
---// Always on top behavior that relies on parenting order of ScreenGuis
---// This would end up really bad if something else tried to do the exact same thing however.
-PlayerGui.ChildAdded:connect(function(child)
-	if (child ~= GuiParent and not reparentingLock) then
-		reparentingLock = true
-
-		GuiParent.Parent = nil
-		RunService.RenderStepped:wait()
-		GuiParent.Parent = PlayerGui
-
-		reparentingLock = false
-	elseif child == GuiParent then
-		if ChatBarFocusedState then
-			RunService.RenderStepped:wait()
-			ChatBar:RestoreFocusedState(ChatBarFocusedState)
-		end
-	end
-end)
-
-PlayerGui.DescendantRemoving:connect(function(descendant)
-	if descendant == GuiParent then
-		ChatBarFocusedState = ChatBar:GetFocusedState()
-	end
-end)
+end)()
 
 
 --- Interaction with SetCore Player events.
@@ -911,10 +893,11 @@ function SendSystemMessageToSelf(message)
 		{
 			ID = -1,
 			FromSpeaker = nil,
+			SpeakerUserId = 0,
 			OriginalChannel = currentChannel.Name,
 			IsFiltered = true,
 			MessageLength = string.len(message),
-			Message = message,
+			Message = trimTrailingSpaces(message),
 			MessageType = ChatConstants.MessageTypeSystem,
 			Time = os.time(),
 			ExtraData = nil,
@@ -976,21 +959,41 @@ end
 -- Spawned because this method can yeild.
 spawn(function()
 	-- Pcalled because this method is not released on all platforms yet.
-	pcall(function()
-		local blockedUserIds = StarterGui:GetCore("GetBlockedUserIds")
-		if #blockedUserIds > 0 then
-			local setInitalBlockedUserIds = DefaultChatSystemChatEvents:FindFirstChild("SetBlockedUserIdsRequest")
-			if setInitalBlockedUserIds then
-				setInitalBlockedUserIds:FireServer(blockedUserIds)
+	if LocalPlayer.UserId > 0 then
+		pcall(function()
+			local blockedUserIds = StarterGui:GetCore("GetBlockedUserIds")
+			if #blockedUserIds > 0 then
+				local setInitalBlockedUserIds = DefaultChatSystemChatEvents:FindFirstChild("SetBlockedUserIdsRequest")
+				if setInitalBlockedUserIds then
+					setInitalBlockedUserIds:FireServer(blockedUserIds)
+				end
 			end
-		end
+		end)
+	end
+end)
+
+spawn(function()
+	local success, canLocalUserChat = pcall(function()
+		return Chat:CanUserChatAsync(LocalPlayer.UserId)
 	end)
+	if success then
+		canChat = RunService:IsStudio() or canLocalUserChat
+	end
 end)
 
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
 
+-- Handle joining general channel first.
 for i, channelData in pairs(initData.Channels) do
-	HandleChannelJoined(unpack(channelData))
+	if channelData[1] == ChatSettings.GeneralChannelName then
+		HandleChannelJoined(channelData[1], channelData[2], channelData[3], channelData[4], true, false)
+	end
+end
+
+for i, channelData in pairs(initData.Channels) do
+	if channelData[1] ~= ChatSettings.GeneralChannelName then
+		HandleChannelJoined(channelData[1], channelData[2], channelData[3], channelData[4], true, false)
+	end
 end
 
 return moduleApiTable

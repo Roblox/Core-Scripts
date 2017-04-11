@@ -12,9 +12,6 @@ local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local PlayersService = game:GetService('Players')
 local StarterGui = game:GetService("StarterGui")
 
-local newBlockFunctionSuccess, newBlockFunctionValue = pcall(function() return settings():GetFFlag("UseNewBlockFunction") end)
-local useNewBlockFunction = (newBlockFunctionSuccess == true and newBlockFunctionValue == true)
-
 --[[ Script Variables ]]--
 local LocalPlayer = PlayersService.LocalPlayer
 
@@ -245,19 +242,10 @@ local function BlockPlayerAsync(playerToBlock)
 			if not isBlocked(blockUserId) then
 				BlockedList[blockUserId] = true
 				BlockStatusChanged:fire(blockUserId, true)
-				local success = false
-				local wasBlocked = false
-				if not useNewBlockFunction then
-					success, wasBlocked = pcall(function()
-						local playerBlocked = PlayersService:BlockUser(LocalPlayer.userId, blockUserId)
-						return playerBlocked
-					end)
-				else
-					success, wasBlocked = pcall(function()
-						local playerBlocked = LocalPlayer:BlockUser(playerToBlock)
-						return playerBlocked
-					end)
-				end
+				local success, wasBlocked = pcall(function()
+					local playerBlocked = LocalPlayer:BlockUser(playerToBlock)
+					return playerBlocked
+				end)
 				return success and wasBlocked
 			else
 				return true
@@ -274,19 +262,10 @@ local function UnblockPlayerAsync(playerToUnblock)
 		if isBlocked(unblockUserId) then
 			BlockedList[unblockUserId] = nil
 			BlockStatusChanged:fire(unblockUserId, false)
-			local success = false
-			local wasUnBlocked = false
-			if not useNewBlockFunction then
-				success, wasUnBlocked = pcall(function()
-					local playerUnblocked = PlayersService:UnblockUser(LocalPlayer.userId, unblockUserId)
-					return playerUnblocked
-				end)
-			else
-				success, wasUnBlocked = pcall(function()
-					local playerUnblocked = LocalPlayer:UnblockUser(playerToUnblock)
-					return playerUnblocked
-				end)
-			end
+			local success, wasUnBlocked = pcall(function()
+				local playerUnblocked = LocalPlayer:UnblockUser(playerToUnblock)
+				return playerUnblocked
+			end)
 			return success and wasUnBlocked
 		else
 			return true
@@ -573,54 +552,49 @@ end
 
 --- GetCore Blocked/Muted/Friended events.
 
-local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptGetCorePlayerEvents") end)
-local CorescriptPlayerEventsEnabled = readFlagSuccess and flagEnabled
+local PlayerBlockedEvent = Instance.new("BindableEvent")
+local PlayerUnblockedEvent = Instance.new("BindableEvent")
+local PlayerMutedEvent = Instance.new("BindableEvent")
+local PlayerUnMutedEvent = Instance.new("BindableEvent")
+local PlayerFriendedEvent = Instance.new("BindableEvent")
+local PlayerUnFriendedEvent = Instance.new("BindableEvent")
 
-if CorescriptPlayerEventsEnabled then
-	local PlayerBlockedEvent = Instance.new("BindableEvent")
-	local PlayerUnblockedEvent = Instance.new("BindableEvent")
-	local PlayerMutedEvent = Instance.new("BindableEvent")
-	local PlayerUnMutedEvent = Instance.new("BindableEvent")
-	local PlayerFriendedEvent = Instance.new("BindableEvent")
-	local PlayerUnFriendedEvent = Instance.new("BindableEvent")
-
-	BlockStatusChanged:connect(function(userId, isBlocked)
-		local player = PlayersService:GetPlayerByUserId(userId)
-		if player then
-			if isBlocked then
-				PlayerBlockedEvent:Fire(player)
-			else
-				PlayerUnblockedEvent:Fire(player)
-			end
+BlockStatusChanged:connect(function(userId, isBlocked)
+	local player = PlayersService:GetPlayerByUserId(userId)
+	if player then
+		if isBlocked then
+			PlayerBlockedEvent:Fire(player)
+		else
+			PlayerUnblockedEvent:Fire(player)
 		end
-	end)
+	end
+end)
 
-	MuteStatusChanged:connect(function(userId, isMuted)
-		local player = PlayersService:GetPlayerByUserId(userId)
-		if player then
-			if isMuted then
-				PlayerMutedEvent:Fire(player)
-			else
-				PlayerUnMutedEvent:Fire(player)
-			end
+MuteStatusChanged:connect(function(userId, isMuted)
+	local player = PlayersService:GetPlayerByUserId(userId)
+	if player then
+		if isMuted then
+			PlayerMutedEvent:Fire(player)
+		else
+			PlayerUnMutedEvent:Fire(player)
 		end
-	end)
+	end
+end)
 
-	LocalPlayer.FriendStatusChanged:connect(function(player, friendStatus)
-		if friendStatus == Enum.FriendStatus.Friend then
-			PlayerFriendedEvent:Fire(player)
-		elseif friendStatus == Enum.FriendStatus.NotFriend then
-			PlayerUnFriendedEvent:Fire(player)
-		end
-	end)
+LocalPlayer.FriendStatusChanged:connect(function(player, friendStatus)
+	if friendStatus == Enum.FriendStatus.Friend then
+		PlayerFriendedEvent:Fire(player)
+	elseif friendStatus == Enum.FriendStatus.NotFriend then
+		PlayerUnFriendedEvent:Fire(player)
+	end
+end)
 
-	StarterGui:RegisterGetCore("PlayerBlockedEvent", function() return PlayerBlockedEvent end)
-	StarterGui:RegisterGetCore("PlayerUnblockedEvent", function() return PlayerUnblockedEvent end)
-	StarterGui:RegisterGetCore("PlayerMutedEvent", function() return PlayerMutedEvent end)
-	StarterGui:RegisterGetCore("PlayerUnmutedEvent", function() return PlayerUnMutedEvent end)
-	StarterGui:RegisterGetCore("PlayerFriendedEvent", function() return PlayerFriendedEvent end)
-	StarterGui:RegisterGetCore("PlayerUnfriendedEvent", function() return PlayerUnFriendedEvent end)
-end
+StarterGui:RegisterGetCore("PlayerBlockedEvent", function() return PlayerBlockedEvent end)
+StarterGui:RegisterGetCore("PlayerUnblockedEvent", function() return PlayerUnblockedEvent end)
+StarterGui:RegisterGetCore("PlayerMutedEvent", function() return PlayerMutedEvent end)
+StarterGui:RegisterGetCore("PlayerUnmutedEvent", function() return PlayerUnMutedEvent end)
+StarterGui:RegisterGetCore("PlayerFriendedEvent", function() return PlayerFriendedEvent end)
+StarterGui:RegisterGetCore("PlayerUnfriendedEvent", function() return PlayerUnFriendedEvent end)
 
 do
 	moduleApiTable.FollowerStatusChanged = createSignal()

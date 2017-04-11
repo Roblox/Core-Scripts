@@ -24,6 +24,9 @@ local PageInstance = nil
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 ----------- CLASS DECLARATION --------------
 
 local function Initialize()
@@ -169,7 +172,7 @@ local function Initialize()
         [4] = {["Mouselock"] = "Shift"},
         [5] = {["Graphics Level"] = isOSX and "F10/fn + F10" or "F10"},
         [6] = {["Fullscreen"] = isOSX and "F11/fn + F11" or "F11"},
-        [7] = {["Perf. Stats"] = isOSX and "F9/fn + F9" or "F9"}, 
+        [7] = {["Perf. Stats"] = isOSX and "Fn+Opt+Cmd+F7" or "Ctrl + Shift + F7"}, 
       }
     )
 
@@ -183,7 +186,7 @@ local function Initialize()
     camFrame.Position = UDim2.new(0,0,charMoveFrame.Size.Y.Scale,charMoveFrame.Size.Y.Offset + rowOffset)
     camFrame.Parent = parentFrame
 
-    local menuFrame = createPCGroup("Menu Items", {		[1] = {["ROBLOX Menu"] = "ESC"}, 
+    local menuFrame = createPCGroup("Menu Items", {		[1] = {["Roblox Menu"] = "ESC"}, 
         [2] = {["Backpack"] = "~"},
         [3] = {["Playerlist"] = "TAB"},
         [4] = {["Chat"] = "/"} })
@@ -244,7 +247,7 @@ local function Initialize()
       createGamepadLabel("Move", UDim2.new(0,-80,0.31,-textVerticalSize/2), UDim2.new(0,46,0,textVerticalSize))
       createGamepadLabel("Menu Navigation", UDim2.new(0,-50,0.46,-textVerticalSize/2), UDim2.new(0,164,0,textVerticalSize))
       createGamepadLabel("Use Tool", UDim2.new(0.96,0,0,-textVerticalSize/2), UDim2.new(0,73,0,textVerticalSize))
-      createGamepadLabel("ROBLOX Menu", UDim2.new(0.96,0,0.15,-textVerticalSize/2), UDim2.new(0,122,0,textVerticalSize))
+      createGamepadLabel("Roblox Menu", UDim2.new(0.96,0,0.15,-textVerticalSize/2), UDim2.new(0,122,0,textVerticalSize))
       createGamepadLabel("Back", UDim2.new(0.96,0,0.31,-textVerticalSize/2), UDim2.new(0,43,0,textVerticalSize))
       createGamepadLabel("Jump", UDim2.new(0.96,0,0.46,-textVerticalSize/2), UDim2.new(0,49,0,textVerticalSize))
       createGamepadLabel("Rotate Camera", UDim2.new(1,0,0.62,-textVerticalSize/2), UDim2.new(0,132,0,textVerticalSize))
@@ -255,7 +258,7 @@ local function Initialize()
       createGamepadLabel("Move", UDim2.new(-0.08,0,0.31,-textVerticalSize/2), UDim2.new(0,46,0,textVerticalSize))
       createGamepadLabel("Menu Navigation", UDim2.new(-0.125,0,0.46,-textVerticalSize/2), UDim2.new(0,164,0,textVerticalSize))
       createGamepadLabel("Use Tool", UDim2.new(0.96,0,0,-textVerticalSize/2), UDim2.new(0,73,0,textVerticalSize))
-      createGamepadLabel("ROBLOX Menu", UDim2.new(0.9,0,0.15,-textVerticalSize/2), UDim2.new(0,122,0,textVerticalSize))
+      createGamepadLabel("Roblox Menu", UDim2.new(0.9,0,0.15,-textVerticalSize/2), UDim2.new(0,122,0,textVerticalSize))
       createGamepadLabel("Back", UDim2.new(1.01,0,0.31,-textVerticalSize/2), UDim2.new(0,43,0,textVerticalSize))
       createGamepadLabel("Jump", UDim2.new(0.91,0,0.46,-textVerticalSize/2), UDim2.new(0,49,0,textVerticalSize))
       createGamepadLabel("Rotate Camera", UDim2.new(0.91,0,0.62,-textVerticalSize/2), UDim2.new(0,132,0,textVerticalSize))
@@ -397,21 +400,6 @@ local function Initialize()
 
   this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/HelpTab.png"
 
-  if utility:IsSmallTouchScreen() then
-    this.TabHeader.Icon.Size = UDim2.new(0,33,0,33)
-    this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-16)
-    this.TabHeader.Size = UDim2.new(0,100,1,0)
-  elseif isTenFootInterface then
-    this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/HelpTab@2x.png"
-    this.TabHeader.Icon.Size = UDim2.new(0,90,0,90)
-    this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
-    this.TabHeader.Size = UDim2.new(0,210,1,0)
-  else
-    this.TabHeader.Icon.Size = UDim2.new(0,44,0,44)
-    this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-22)
-    this.TabHeader.Size = UDim2.new(0,130,1,0)
-  end
-
   this.TabHeader.Icon.Title.Text = "Help"
 
 
@@ -435,8 +423,9 @@ do
   PageInstance = Initialize()
 
   PageInstance.Displayed.Event:connect(function()
+      local isPortrait = enablePortraitMode and utility:IsPortrait()
       if PageInstance:GetCurrentInputType() == TOUCH_TAG then
-        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() then
+        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() and not isPortrait then
           PageInstance.HubRef.BottomButtonFrame.Visible = false
         end
       end
@@ -448,8 +437,9 @@ do
 
       PageInstance.HubRef:ShowShield()
 
+      local isPortrait = enablePortraitMode and utility:IsPortrait()
       if PageInstance:GetCurrentInputType() == TOUCH_TAG then
-        if PageInstance.HubRef.BottomButtonFrame then
+        if PageInstance.HubRef.BottomButtonFrame and not utility:IsSmallTouchScreen() and not isPortrait then
           PageInstance.HubRef.BottomButtonFrame.Visible = true
         end
       end

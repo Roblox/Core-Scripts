@@ -23,7 +23,7 @@ local TopbarConstants = require(CoreGuiService.RobloxGui.Modules.TopbarConstants
 local masterFrame = Instance.new("Frame")
 masterFrame.Name = "PerformanceStats"
 
-local statsAggregatorManager = StatsAggregatorManagerClass.new()
+local statsAggregatorManager = StatsAggregatorManagerClass.getSingleton()
 local statsViewer = StatsViewerClass.new()
 local statsButtonsByType ={}
 local currentStatType = nil
@@ -157,10 +157,10 @@ function UpdatePerformanceStatsVisibility()
   end
   
   -- Let the children respond to the transition that they are/are not visible.
-  statsViewer:OnVisibilityChanged()
+  statsViewer:OnPerformanceStatsShouldBeVisibleChanged()
   for i, buttonType in ipairs(StatsUtils.AllStatTypes) do
       local button = statsButtonsByType[buttonType]
-      button:OnVisibilityChanged()
+      button:OnPerformanceStatsShouldBeVisibleChanged()
   end  
 
   -- track it.
@@ -181,12 +181,10 @@ ConfigureMasterFrame()
 ConfigureStatButtonsInMasterFrame()
 ConfigureStatViewerInMasterFrame()
 
+
 -- Watch for changes in performance stats visibility.
 GameSettings.PerformanceStatsVisibleChanged:connect(
   UpdatePerformanceStatsVisibility)
-
--- Start listening for updates in stats.
-statsAggregatorManager:StartListening()
 
 -- Make sure we're showing buttons and viewer based on current selection.
 UpdateButtonSelectedStates()

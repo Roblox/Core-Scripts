@@ -51,6 +51,9 @@ local goodbyeChoiceActiveFlagSuccess, goodbyeChoiceActiveFlagValue = pcall(funct
 end)
 local goodbyeChoiceActiveFlag = (goodbyeChoiceActiveFlagSuccess and goodbyeChoiceActiveFlagValue)
 
+local dialogMultiplePlayersFlagSuccess, dialogMultiplePlayersFlagValue = pcall(function() return settings():GetFFlag("DialogMultiplePlayers") end)
+local dialogMultiplePlayersFlag = (dialogMultiplePlayersFlagSuccess and dialogMultiplePlayersFlagValue)
+
 local mainFrame
 local choices = {}
 local lastChoice
@@ -106,6 +109,11 @@ else
 	gui = RobloxGui
 end
 local touchEnabled = game:GetService("UserInputService").TouchEnabled
+
+local function isDialogMultiplePlayers(dialog)
+	local success, value = pcall(function() return dialog.BehaviorType == Enum.DialogBehaviorType.MultiplePlayers end)
+	return success and value or false
+end
 
 function currentTone()
 	if currentConversationDialog then
@@ -289,22 +297,30 @@ function sanitizeMessage(msg)
 	end
 end
 
+local function chatFunc(dialog, ...)
+	if dialogMultiplePlayersFlag and isDialogMultiplePlayers(dialog) then
+		game:GetService("Chat"):ChatLocal(...)
+	else
+		game:GetService("Chat"):Chat(...)
+	end
+end
+
 function selectChoice(choice)
 	renewKillswitch(currentConversationDialog)
 
 	--First hide the Gui
 	mainFrame.Visible = false
 	if choice == lastChoice then
-		game:GetService("Chat"):Chat(game:GetService("Players").LocalPlayer.Character, lastChoice.UserPrompt.Text, getChatColor(currentTone()))
+		chatFunc(currentConversationDialog, game:GetService("Players").LocalPlayer.Character, lastChoice.UserPrompt.Text, getChatColor(currentTone()))
 
 		normalEndDialog()
 	else
 		local dialogChoice = choiceMap[choice]
 
-		game:GetService("Chat"):Chat(game:GetService("Players").LocalPlayer.Character, sanitizeMessage(dialogChoice.UserDialog), getChatColor(currentTone()))
+		chatFunc(currentConversationDialog, game:GetService("Players").LocalPlayer.Character, sanitizeMessage(dialogChoice.UserDialog), getChatColor(currentTone()))
 		wait(1)
 		currentConversationDialog:SignalDialogChoiceSelected(player, dialogChoice)
-		game:GetService("Chat"):Chat(currentConversationPartner, sanitizeMessage(dialogChoice.ResponseDialog), getChatColor(currentTone()))
+		chatFunc(currentConversationDialog, currentConversationPartner, sanitizeMessage(dialogChoice.ResponseDialog), getChatColor(currentTone()))
 
 		variableDelay(dialogChoice.ResponseDialog)
 		presentDialogChoices(currentConversationPartner, dialogChoice:GetChildren(), dialogChoice)
@@ -464,9 +480,19 @@ function presentDialogChoices(talkingPart, dialogChoices, parentDialog)
 end
 
 function doDialog(dialog)
-	if dialog.InUse then
+	if dialog.InitialPrompt == "" then
+		warn("Can't start a dialog with an empty InitialPrompt")
+		return
+	end
+
+	local isMultiplePlayers = dialogMultiplePlayersFlag and isDialogMultiplePlayers(dialog)
+
+	if dialog.InUse and not isMultiplePlayers then
 		return
 	else
+		if dialogMultiplePlayersFlag then
+			currentConversationDialog = dialog
+		end
 		dialog.InUse = true
 		-- only bind if we actual enter the dialog
 		contextActionService:BindCoreAction("Nothing", function()
@@ -474,14 +500,10 @@ function doDialog(dialog)
 		-- Immediately sets InUse to true on the server
 		setDialogInUseEvent:FireServer(dialog, true, 0)
 	end
-
-	if dialog.InitialPrompt == "" then
-		warn("Can't start a dialog with an empty InitialPrompt")
-		return
+	if not dialogMultiplePlayersFlag then
+		currentConversationDialog = dialog
 	end
-
-	currentConversationDialog = dialog
-	game:GetService("Chat"):Chat(dialog.Parent, dialog.InitialPrompt, getChatColor(dialog.Tone))
+	chatFunc(dialog, dialog.Parent, dialog.InitialPrompt, getChatColor(dialog.Tone))
 	variableDelay(dialog.InitialPrompt)
 
 	presentDialogChoices(dialog.Parent, dialog:GetChildren(), dialog)
@@ -550,9 +572,14 @@ function addDialog(dialog)
 	if dialog.Parent then
 		if dialog.Parent:IsA("BasePart") and dialog:IsDescendantOf(game.Workspace) then
 			local chatGui = chatNotificationGui:clone()
-			chatGui.Enabled = not dialog.InUse
 			chatGui.Adornee = dialog.Parent
 			chatGui.RobloxLocked = true
+
+			if dialogMultiplePlayersFlag then
+				chatGui.Enabled = not dialog.InUse or isDialogMultiplePlayers(dialog)
+			else
+				chatGui.Enabled = not dialog.InUse
+			end
 
 			chatGui.Parent = CoreGui
 
@@ -569,9 +596,23 @@ function addDialog(dialog)
 					removeDialog(dialog)
 					addDialog(dialog)
 				elseif prop == "InUse" then
-					chatGui.Enabled = not currentConversationDialog and not dialog.InUse
-					if dialog == currentConversationDialog then
-						timeoutDialog()
+					if dialogMultiplePlayersFlag then
+						if not isDialogMultiplePlayers(dialog) then
+							chatGui.Enabled = (currentConversationDialog == nil) and not dialog.InUse
+						else
+							chatGui.Enabled = (currentConversationDialog ~= dialog)
+						end
+					else
+						chatGui.Enabled = not currentConversationDialog and not dialog.InUse
+					end
+					if dialogMultiplePlayersFlag then
+						if not dialog.InUse and not isDialogMultiplePlayers(player) and dialog == currentConversationDialog then
+							timeoutDialog()
+						end
+					else
+						if dialog == currentConversationDialog and currentConversationDialog.InUse == false then
+							timeoutDialog()
+						end
 					end
 				elseif prop == "Tone" or prop == "Purpose" then
 					setChatNotificationTone(chatGui, dialog.Purpose, dialog.Tone)

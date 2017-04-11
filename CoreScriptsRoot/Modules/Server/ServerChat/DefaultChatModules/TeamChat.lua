@@ -2,7 +2,13 @@
 --	// Written by: Xsitsu
 --	// Description: Module that handles all team chat.
 
-local errorExtraData = {ChatColor = Color3.fromRGB(245, 50, 50)}
+local Chat = game:GetService("Chat")
+local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
+local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
+local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
+
+local errorTextColor = ChatSettings.ErrorMessageTextColor or Color3.fromRGB(245, 50, 50)
+local errorExtraData = {ChatColor = errorTextColor}
 
 local function Run(ChatService)
 
@@ -50,7 +56,7 @@ local function Run(ChatService)
 		return true
 	end
 
-	channel:RegisterProcessCommandsFunction("replication_function", TeamChatReplicationFunction)
+	channel:RegisterProcessCommandsFunction("replication_function", TeamChatReplicationFunction, ChatConstants.LowPriority)
 
 	local function DoTeamCommand(fromSpeaker, message, channel)
 		if message == nil then
@@ -106,41 +112,66 @@ local function Run(ChatService)
 		return processedCommand
 	end
 
-	ChatService:RegisterProcessCommandsFunction("team_commands", TeamCommandsFunction)
+	ChatService:RegisterProcessCommandsFunction("team_commands", TeamCommandsFunction, ChatConstants.StandardPriority)
+
+	local function GetDefaultChannelNameColor()
+		if ChatSettings.DefaultChannelNameColor then
+			return ChatSettings.DefaultChannelNameColor
+		end
+		return Color3.fromRGB(35, 76, 142)
+	end
 
 	local function PutSpeakerInCorrectTeamChatState(speakerObj, playerObj)
-		if (playerObj.Neutral or playerObj.Team == nil) and speakerObj:IsInChannel(channel.Name) then
-			speakerObj:LeaveChannel(channel.Name)
+		if playerObj.Neutral or playerObj.Team == nil then
+			speakerObj:UpdateChannelNameColor(channel.Name, GetDefaultChannelNameColor())
 
-		elseif not playerObj.Neutral and playerObj.Team and not speakerObj:IsInChannel(channel.Name) then
-			speakerObj:JoinChannel(channel.Name)
+			if speakerObj:IsInChannel(channel.Name) then
+				speakerObj:LeaveChannel(channel.Name)
+			end
+		elseif not playerObj.Neutral and playerObj.Team then
+			speakerObj:UpdateChannelNameColor(channel.Name, playerObj.Team.TeamColor.Color)
 
+			if not speakerObj:IsInChannel(channel.Name) then
+				speakerObj:JoinChannel(channel.Name)
+			end
 		end
 	end
 
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speakerObj = ChatService:GetSpeaker(speakerName)
-		if (speakerObj) then
+		if speakerObj then
 			local player = speakerObj:GetPlayer()
-			if (player) then
-				player.Changed:connect(function(property)
-					if (property == "Neutral") then
-						PutSpeakerInCorrectTeamChatState(speakerObj, player)
-
-					elseif (property == "Team") then
-						PutSpeakerInCorrectTeamChatState(speakerObj, player)
-						if (speakerObj:IsInChannel(channel.Name)) then
-							speakerObj:SendSystemMessage(string.format("You are now on the '%s' team.", player.Team.Name), channel.Name)
-						end
-
-					end
-				end)
-
+			if player then
 				PutSpeakerInCorrectTeamChatState(speakerObj, player)
 			end
 		end
 	end)
 
+	local PlayerChangedConnections = {}
+	Players.PlayerAdded:connect(function(player)
+		local changedConn = player.Changed:connect(function(property)
+			local speakerObj = ChatService:GetSpeaker(player.Name)
+			if speakerObj then
+				if property == "Neutral" then
+					PutSpeakerInCorrectTeamChatState(speakerObj, player)
+				elseif property == "Team" then
+					PutSpeakerInCorrectTeamChatState(speakerObj, player)
+					if speakerObj:IsInChannel(channel.Name) then
+						speakerObj:SendSystemMessage(string.format("You are now on the '%s' team.", player.Team.Name), channel.Name)
+					end
+				end
+			end
+		end)
+		PlayerChangedConnections[player] = changedConn
+	end)
+
+	Players.PlayerRemoving:connect(function(player)
+		local changedConn = PlayerChangedConnections[player]
+		if changedConn then
+			changedConn:Disconnect()
+		end
+		PlayerChangedConnections[player] = nil
+	end)
 end
 
 return Run

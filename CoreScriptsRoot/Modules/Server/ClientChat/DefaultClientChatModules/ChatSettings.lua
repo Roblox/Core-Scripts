@@ -4,6 +4,9 @@
 
 local PlayersService = game:GetService("Players")
 
+local clientChatModules = script.Parent
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
+
 local module = {}
 
 ---[[ Chat Behaviour Settings ]]
@@ -14,6 +17,7 @@ module.GamepadNavigationEnabled = false
 module.ShowUserOwnFilteredMessage = true	--Show a user the filtered version of their message rather than the original.
 -- Make the chat work when the top bar is off
 module.ChatOnWithTopBarOff = false
+module.ScreenGuiDisplayOrder = 6 -- The DisplayOrder value for the ScreenGui containing the chat.
 
 --- Replace with true/false to force the chat type. Otherwise this will default to the setting on the website.
 module.BubbleChatEnabled = PlayersService.BubbleChat
@@ -40,6 +44,9 @@ module.ChatBarBoxColor = Color3.new(1, 1, 1)
 module.ChatBarTextColor = Color3.new(0, 0, 0)
 module.ChannelsTabUnselectedColor = Color3.new(0, 0, 0)
 module.ChannelsTabSelectedColor = Color3.new(30/255, 30/255, 30/255)
+module.DefaultChannelNameColor = Color3.fromRGB(35, 76, 142)
+module.WhisperChannelNameColor = Color3.fromRGB(102, 14, 102)
+module.ErrorMessageTextColor = Color3.fromRGB(245, 50, 50)
 
 ---[[ Window Settings ]]
 module.MinimumWindowSize = UDim2.new(0.3, 0, 0.25, 0)
@@ -64,12 +71,19 @@ module.MaxChannelNameLength = 12
 --// Although this feature is pretty much ready, it needs some UI design still.
 module.RightClickToLeaveChannelEnabled = false
 module.MessageHistoryLengthPerChannel = 50
+-- Show the help text for joining and leaving channels. This is not useful unless custom channels have been added.
+-- So it is turned off by default.
+module.ShowJoinAndLeaveHelpText = false
 
 ---[[ Message Settings ]]
 module.MaximumMessageLength = 200
 module.DisallowedWhiteSpace = {"\n", "\r", "\t", "\v", "\f"}
 module.ClickOnPlayerNameToWhisper = true
 module.ClickOnChannelNameToSetMainChannel = true
+module.BubbleChatMessageTypes = {ChatConstants.MessageTypeDefault, ChatConstants.MessageTypeWhisper}
+
+---[[ Misc Settings ]]
+module.WhisperCommandAutoCompletePlayerNames = true
 
 local ChangedEvent = Instance.new("BindableEvent")
 

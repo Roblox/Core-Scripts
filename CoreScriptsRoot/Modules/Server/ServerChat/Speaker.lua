@@ -45,7 +45,7 @@ function methods:JoinChannel(channelName)
 	self.Channels[channelName:lower()] = channel
 	channel:InternalAddSpeaker(self)
 	local success, err = pcall(function()
-		self.eChannelJoined:Fire(channel.Name, channel.WelcomeMessage)
+		self.eChannelJoined:Fire(channel.Name, channel:GetWelcomeMessageForSpeaker(self))
 	end)
 	if not success and err then
 		print("Error joining channel: " ..err)
@@ -145,6 +145,20 @@ function methods:InternalDestroy()
 	end
 
 	self.eDestroyed:Fire()
+
+	self.eDestroyed:Destroy()
+	self.eSaidMessage:Destroy()
+	self.eReceivedMessage:Destroy()
+	self.eReceivedUnfilteredMessage:Destroy()
+	self.eMessageDoneFiltering:Destroy()
+	self.eReceivedSystemMessage:Destroy()
+	self.eChannelJoined:Destroy()
+	self.eChannelLeft:Destroy()
+	self.eMuted:Destroy()
+	self.eUnmuted:Destroy()
+	self.eExtraDataUpdated:Destroy()
+	self.eMainChannelSet:Destroy()
+	self.eChannelNameColorUpdated:Destroy()
 end
 
 function methods:InternalAssignPlayerObject(playerObj)
@@ -153,7 +167,7 @@ end
 
 function methods:InternalSendMessage(messageObj, channelName)
 	local success, err = pcall(function()
-		self.eReceivedMessage:Fire(messageObj, channelName)
+		self.eReceivedUnfilteredMessage:Fire(messageObj, channelName)
 	end)
 	if not success and err then
 		print("Error sending internal message: " ..err)
@@ -162,6 +176,7 @@ end
 
 function methods:InternalSendFilteredMessage(messageObj, channelName)
 	local success, err = pcall(function()
+		self.eReceivedMessage:Fire(messageObj, channelName)
 		self.eMessageDoneFiltering:Fire(messageObj, channelName)
 	end)
 	if not success and err then
@@ -176,6 +191,10 @@ function methods:InternalSendSystemMessage(messageObj, channelName)
 	if not success and err then
 		print("Error sending internal system message: " ..err)
 	end
+end
+
+function methods:UpdateChannelNameColor(channelName, channelNameColor)
+	self.eChannelNameColorUpdated:Fire(channelName, channelNameColor)
 end
 
 --///////////////////////// Constructors
@@ -194,11 +213,11 @@ function module.new(vChatService, name)
 	obj.Channels = {}
 	obj.MutedSpeakers = {}
 
+	-- Make sure to destroy added binadable events in the InternalDestroy method.
 	obj.eDestroyed = Instance.new("BindableEvent")
-	obj.Destroyed = obj.eDestroyed.Event
-
 	obj.eSaidMessage = Instance.new("BindableEvent")
 	obj.eReceivedMessage = Instance.new("BindableEvent")
+	obj.eReceivedUnfilteredMessage = Instance.new("BindableEvent")
 	obj.eMessageDoneFiltering = Instance.new("BindableEvent")
 	obj.eReceivedSystemMessage = Instance.new("BindableEvent")
 	obj.eChannelJoined = Instance.new("BindableEvent")
@@ -207,9 +226,12 @@ function module.new(vChatService, name)
 	obj.eUnmuted = Instance.new("BindableEvent")
 	obj.eExtraDataUpdated = Instance.new("BindableEvent")
 	obj.eMainChannelSet = Instance.new("BindableEvent")
+	obj.eChannelNameColorUpdated = Instance.new("BindableEvent")
 
+	obj.Destroyed = obj.eDestroyed.Event
 	obj.SaidMessage = obj.eSaidMessage.Event
 	obj.ReceivedMessage = obj.eReceivedMessage.Event
+	obj.ReceivedUnfilteredMessage = obj.eReceivedUnfilteredMessage.Event
 	obj.MessageDoneFiltering = obj.eMessageDoneFiltering.Event
 	obj.ReceivedSystemMessage = obj.eReceivedSystemMessage.Event
 	obj.ChannelJoined = obj.eChannelJoined.Event
@@ -218,6 +240,11 @@ function module.new(vChatService, name)
 	obj.Unmuted = obj.eUnmuted.Event
 	obj.ExtraDataUpdated = obj.eExtraDataUpdated.Event
 	obj.MainChannelSet = obj.eMainChannelSet.Event
+	obj.ChannelNameColorUpdated = obj.eChannelNameColorUpdated.Event
+
+	--- DEPRECATED:
+	--- Mispelled version of ReceivedUnfilteredMessage, retained for compatibility with legacy versions.
+	obj.RecievedUnfilteredMessage = obj.eReceivedUnfilteredMessage.Event
 
 	return obj
 end

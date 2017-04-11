@@ -2,6 +2,8 @@
 --	// Written by: Partixel/TheGamer101
 --	// Description: Team chat bar manipulation.
 
+local PlayersService = game:GetService("Players")
+
 local TEAM_COMMANDS = {"/team ", "/t ", "% "}
 
 function IsTeamCommand(message)
@@ -23,10 +25,12 @@ local TeamCustomState = {}
 
 function teamStateMethods:EnterTeamChat()
 	self.TeamChatEntered = true
-	self.MessageModeLabel.Size = UDim2.new(0, 1000, 1, 0)
-	self.MessageModeLabel.Text = "[Team]"
-	local xSize = self.MessageModeLabel.TextBounds.X
-	self.MessageModeLabel.Size = UDim2.new(0, xSize, 1, 0)
+	self.MessageModeButton.Size = UDim2.new(0, 1000, 1, 0)
+	self.MessageModeButton.Text = "[Team]"
+	self.MessageModeButton.TextColor3 = self:GetTeamChatColor()
+
+	local xSize = self.MessageModeButton.TextBounds.X
+	self.MessageModeButton.Size = UDim2.new(0, xSize, 1, 0)
 	self.TextBox.Size = UDim2.new(1, -xSize, 1, 0)
 	self.TextBox.Position = UDim2.new(0, xSize, 0, 0)
 	self.OriginalTeamText = self.TextBox.Text
@@ -41,8 +45,8 @@ function teamStateMethods:TextUpdated()
 		end
 	else
 		if newText == "" then
-			self.MessageModeLabel.Text = ""
-			self.MessageModeLabel.Size = UDim2.new(0, 0, 0, 0)
+			self.MessageModeButton.Text = ""
+			self.MessageModeButton.Size = UDim2.new(0, 0, 0, 0)
 			self.TextBox.Size = UDim2.new(1, 0, 1, 0)
 			self.TextBox.Position = UDim2.new(0, 0, 0, 0)
 			self.TextBox.Text = ""
@@ -68,7 +72,19 @@ function teamStateMethods:ProcessCompletedMessage()
 end
 
 function teamStateMethods:Destroy()
+	self.MessageModeConnection:disconnect()
 	self.Destroyed = true
+end
+
+function teamStateMethods:GetTeamChatColor()
+	local LocalPlayer = PlayersService.LocalPlayer
+	if LocalPlayer.Team then
+		return LocalPlayer.Team.TeamColor.Color
+	end
+	if self.ChatSettings.DefaultChannelNameColor then
+		return self.ChatSettings.DefaultChannelNameColor
+	end
+	return Color3.fromRGB(35, 76, 142)
 end
 
 function TeamCustomState.new(ChatWindow, ChatBar, ChatSettings)
@@ -78,9 +94,19 @@ function TeamCustomState.new(ChatWindow, ChatBar, ChatSettings)
 	obj.ChatBar = ChatBar
 	obj.ChatSettings = ChatSettings
 	obj.TextBox = ChatBar:GetTextBox()
-	obj.MessageModeLabel = ChatBar:GetMessageModeTextLabel()
+	obj.MessageModeButton = ChatBar:GetMessageModeTextButton()
 	obj.OriginalTeamText = ""
 	obj.TeamChatEntered = false
+
+	obj.MessageModeConnection = obj.MessageModeButton.MouseButton1Click:connect(function()
+		local chatBarText = obj.TextBox.Text
+		if string.sub(chatBarText, 1, 1) == " " then
+			chatBarText = string.sub(chatBarText, 2)
+		end
+		obj.ChatBar:ResetCustomState()
+		obj.ChatBar:SetTextBoxText(chatBarText)
+		obj.ChatBar:CaptureFocus()
+	end)
 
 	obj:EnterTeamChat()
 

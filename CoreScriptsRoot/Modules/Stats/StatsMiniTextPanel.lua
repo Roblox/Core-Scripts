@@ -101,9 +101,31 @@ function StatsMiniTextPanelClass:SetStatsAggregator(aggregator)
   
   self._aggregator = aggregator
     
-  self:OnVisibilityChanged()
+  self:_refreshVisibility()
 end
 
+function StatsMiniTextPanelClass:SetVisible(visible)
+  self.frame.Visible = visible
+  self:_refreshVisibility()
+end
+
+function StatsMiniTextPanelClass:_shouldBeVisible()
+  if StatsUtils.PerformanceStatsShouldBeVisible() then 
+    return self._frame.Visible
+  else
+    return false
+  end
+end
+
+
+function StatsMiniTextPanelClass:_refreshVisibility()
+  if self:_shouldBeVisible() then
+    self:_startListening()
+    self:_updateFromAggregator()
+  else
+    self:_stopListening()
+  end
+end
 
 function StatsMiniTextPanelClass:_stopListening()
   if (self._aggregator == nil) then
@@ -132,13 +154,8 @@ function StatsMiniTextPanelClass:_startListening()
   end)  
 end
 
-function StatsMiniTextPanelClass:OnVisibilityChanged()
-  if StatsUtils.PerformanceStatsShouldBeVisible() then
-    self:_startListening()
-    self:_updateFromAggregator()
-  else
-    self:_stopListening()
-  end
+function StatsMiniTextPanelClass:OnPerformanceStatsShouldBeVisibleChanged()
+  self:_refreshVisibility()
 end
 
 function StatsMiniTextPanelClass:_updateFromAggregator()

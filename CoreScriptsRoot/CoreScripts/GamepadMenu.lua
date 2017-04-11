@@ -14,12 +14,14 @@ local HttpService = game:GetService('HttpService')
 local StarterGui = game:GetService('StarterGui')
 local Players = game:GetService('Players')
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
+local TextService = game:GetService('TextService')
 --[[ END OF SERVICES ]]
 
 --[[ MODULES ]]
 local tenFootInterface = require(GuiRoot.Modules.TenFootInterface)
 local utility = require(GuiRoot.Modules.Settings.Utility)
 local recordPage = require(GuiRoot.Modules.Settings.Pages.Record)
+local businessLogic = require(GuiRoot.Modules.BusinessLogic)
 
 --[[ VARIABLES ]]
 local gamepadSettingsFrame = nil
@@ -105,6 +107,44 @@ local function setButtonVisible(button, visible)
 	end
 end
 
+local kidSafeHint = nil;
+local function getVRKidSafeHint()
+	if not kidSafeHint then
+		local text = businessLogic.GetVisibleAgeForPlayer(Players.LocalPlayer)
+		local textSize = TextService:GetTextSize(text, 24, Enum.Font.SourceSansBold, Vector2.new(800,800))
+
+		local bubble = utility:Create'ImageLabel'
+		{
+			Name = "AccountTypeBubble";
+			Size = UDim2.new(0, textSize.x + 20, 0, 50);
+			Image = "rbxasset://textures/ui/TopBar/Round.png";
+			ScaleType = Enum.ScaleType.Slice;
+			SliceCenter = Rect.new(10, 10, 10, 10);
+			ImageTransparency = 0.3;
+			BackgroundTransparency = 1;
+			Parent = container;
+		}
+		bubble.Position = UDim2.new(0.5, -bubble.Size.X.Offset/2, 1, 10);
+
+		local accountTypeTextLabel = utility:Create'TextLabel'{
+			Name = "AccountTypeText";
+			Text = text;
+			Size = UDim2.new(1, -20, 1, -20);
+			Position = UDim2.new(0, 10, 0, 10);
+			Font = Enum.Font.SourceSansBold;
+			FontSize = Enum.FontSize.Size24;
+			BackgroundTransparency = 1;
+			TextColor3 = Color3.new(1,1,1);
+			TextYAlignment = Enum.TextYAlignment.Center;
+			TextXAlignment = Enum.TextXAlignment.Center;
+			Parent = bubble;
+		}
+		kidSafeHint = bubble
+	end
+
+	return kidSafeHint
+end
+
 local function enableVR()
 	local visibleButtons = {
 		Settings = true, LeaveGame = true,
@@ -116,6 +156,14 @@ local function enableVR()
 			setButtonVisible(button, visibleButtons[button.Name])
 		end
 	end
+
+	local hint = getVRKidSafeHint()
+	hint.Parent = gamepadSettingsFrame
+end
+
+local function disableVR()
+	local hint = getVRKidSafeHint()
+	hint.Parent = nil
 end
 
 local emptySelectedImageObject = utility:Create'ImageLabel'
@@ -388,9 +436,18 @@ local function createGamepadMenuGui()
 		end
 	end)
 
-	if InputService.VREnabled then
-		enableVR()
+	local function onVREnabled(prop)
+		if prop == "VREnabled" then
+			if InputService.VREnabled then
+				enableVR()
+			else
+				disableVR()
+			end
+		end
 	end
+	InputService.Changed:connect(onVREnabled)
+	onVREnabled("VREnabled")
+
 end
 
 local function isCoreGuiDisabled()
@@ -489,10 +546,36 @@ local function setupGamepadControls()
 	end
 
 	local radialSelect = function(name, state, input)
-		local inputVector = Vector2.new(0,0)
+		local inputVector = Vector2.new(0, 0)
 
 		if input.KeyCode == Enum.KeyCode.Thumbstick1 then
 			inputVector = Vector2.new(input.Position.x, input.Position.y)
+		elseif input.KeyCode == Enum.KeyCode.DPadUp or input.KeyCode == Enum.KeyCode.DPadDown or input.KeyCode == Enum.KeyCode.DPadLeft or input.KeyCode == Enum.KeyCode.DPadRight then
+			local D_PAD_BUTTONS = {
+				[Enum.KeyCode.DPadUp] = false;
+				[Enum.KeyCode.DPadDown] = false;
+				[Enum.KeyCode.DPadLeft] = false;
+				[Enum.KeyCode.DPadRight] = false;
+			}
+			
+			--set D_PAD_BUTTONS status: button down->true, button up->false
+			local gamepadState = InputService:GetGamepadState(input.UserInputType)
+			for index, value in ipairs(gamepadState) do
+				if value.KeyCode == Enum.KeyCode.DPadUp or value.KeyCode == Enum.KeyCode.DPadDown or value.KeyCode == Enum.KeyCode.DPadLeft or value.KeyCode == Enum.KeyCode.DPadRight then
+					D_PAD_BUTTONS[value.KeyCode] = (value.UserInputState == Enum.UserInputState.Begin)
+				end
+			end
+			
+			if D_PAD_BUTTONS[Enum.KeyCode.DPadUp] or D_PAD_BUTTONS[Enum.KeyCode.DPadDown] then
+				inputVector = D_PAD_BUTTONS[Enum.KeyCode.DPadUp] and Vector2.new(0, 1) or Vector2.new(0, -1)
+				if D_PAD_BUTTONS[Enum.KeyCode.DPadLeft] then
+					inputVector = Vector2.new(-1, inputVector.Y)
+				elseif D_PAD_BUTTONS[Enum.KeyCode.DPadRight] then
+					inputVector = Vector2.new(1, inputVector.Y)
+				end
+			end
+			
+			inputVector = inputVector.unit
 		end
 
 		local selectedObject = nil
@@ -604,7 +687,7 @@ local function setupGamepadControls()
 			ContextActionService:BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
 			ContextActionService:BindCoreAction(radialAcceptActionName, radialSelectAccept, false, Enum.KeyCode.ButtonA)
 			ContextActionService:BindCoreAction(radialCancelActionName, radialSelectCancel, false, Enum.KeyCode.ButtonB)
-			ContextActionService:BindCoreAction(radialSelectActionName, radialSelect, false, Enum.KeyCode.Thumbstick1)
+			ContextActionService:BindCoreAction(radialSelectActionName, radialSelect, false, Enum.KeyCode.Thumbstick1, Enum.KeyCode.DPadUp, Enum.KeyCode.DPadDown, Enum.KeyCode.DPadLeft, Enum.KeyCode.DPadRight)
 			ContextActionService:BindCoreAction(thumbstick2RadialActionName, noOpFunc, false, Enum.KeyCode.Thumbstick2)
 			ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
 		else
