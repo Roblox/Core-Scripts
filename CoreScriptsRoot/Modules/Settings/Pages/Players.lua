@@ -141,6 +141,7 @@ local function Initialize()
 			if status == Enum.FriendStatus.Friend then
 				friendImage.ImageTransparency = 0
 			else
+				friendImage.Image = ADD_FRIEND_IMAGE
 				friendImage.ImageTransparency = 0.5
 			end
 			friendImage.Parent = friendLabel
