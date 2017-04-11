@@ -15,6 +15,7 @@ local PopperCam = {} -- Guarantees your players won't see outside the bounds of 
 -----------------
 
 local POP_RESTORE_RATE = 0.3
+local MIN_CAMERA_ZOOM = 0.5
 
 local VALID_SUBJECTS = {
 	'Humanoid',
@@ -44,6 +45,8 @@ local VehicleParts = {} -- Also just for ignoring
 local LastPopAmount = 0
 local LastZoomLevel = 0
 local PopperEnabled = false
+
+local CFrame_new = CFrame.new
 
 -----------------------
 --| Local Functions |--
@@ -124,7 +127,7 @@ end
 --| Exposed Functions |--
 -------------------------
 
-function PopperCam:Update()
+function PopperCam:Update(EnabledCamera)
 	if PopperEnabled then
 		-- First, prep some intermediate vars
 		local cameraCFrame = Camera.CFrame
@@ -150,12 +153,12 @@ function PopperCam:Update()
 		local zoomLevel = (cameraCFrame.p - focusPoint).Magnitude
 		if math_abs(zoomLevel - LastZoomLevel) > 0.001 then
 			LastPopAmount = 0
-		end		
+		end
 		
 		-- Finally, zoom the camera in (pop) by that most-cut-off amount, or the last pop amount if that's more
 		local popAmount = largest
 		if LastPopAmount > popAmount then
-			popAmount = LastPopAmount	
+			popAmount = LastPopAmount
 		end
 
 		if popAmount > 0 then
@@ -167,6 +170,17 @@ function PopperCam:Update()
 		end
 
 		LastZoomLevel = zoomLevel
+		
+		-- Stop shift lock being able to see through walls by manipulating Camera focus inside the wall
+		if EnabledCamera and EnabledCamera:GetShiftLock() and not EnabledCamera:IsInFirstPerson() then
+			if EnabledCamera:GetCameraActualZoom() < 1 then
+				local subjectPosition = EnabledCamera.lastSubjectPosition 
+				if subjectPosition then
+					Camera.Focus = CFrame_new(subjectPosition)
+					Camera.CFrame = CFrame_new(subjectPosition - MIN_CAMERA_ZOOM*EnabledCamera:GetCameraLook(), subjectPosition)
+				end
+			end
+		end
 	end
 end
 
