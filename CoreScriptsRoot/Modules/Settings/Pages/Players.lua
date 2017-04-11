@@ -78,6 +78,7 @@ local function Initialize()
 		end
 
 		local friendLabel = nil
+		local friendLabelText = nil
 		if not status then
 			-- Remove with enableReportPlayer
 			friendLabel = Instance.new("TextButton")
@@ -105,8 +106,7 @@ local function Initialize()
 					end
 				end
 			end
-			local friendLabel2, friendLabelText = utility:MakeStyledButton("FriendStatus", "Add Friend", UDim2.new(0, 182, 0, 46), addFriendFunc)
-			friendLabel = friendLabel2
+			friendLabel, friendLabelText = utility:MakeStyledButton("FriendStatus", "Add Friend", UDim2.new(0, 182, 0, 46), addFriendFunc)
 			friendLabelText.ZIndex = 3
 			friendLabelText.Position = friendLabelText.Position + UDim2.new(0,0,0,1)
 		end
