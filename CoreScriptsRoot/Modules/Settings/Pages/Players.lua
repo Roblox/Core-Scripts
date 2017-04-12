@@ -425,6 +425,47 @@ local function Initialize()
 		return frame
 	end
 
+	-- Manage cutting off a players name if it is too long when switching into portrait mode.
+	local function managePlayerNameCutoff(frame, player)
+		local wasIsPortrait = nil
+		local reportFlagAddedConnection = nil
+		local reportFlagChangedConnection = nil
+		local function reportFlagChanged(reportFlag, prop)
+			if prop == "AbsolutePosition" and wasIsPortrait then
+				local maxPlayerNameSize = reportFlag.AbsolutePosition.X - 20 - frame.NameLabel.AbsolutePosition.X
+				frame.NameLabel.Text = player.Name
+				local newNameLength = string.len(player.Name)
+				while frame.NameLabel.TextBounds.X > maxPlayerNameSize and newNameLength > 0 do
+					frame.NameLabel.Text = string.sub(player.Name, 1, newNameLength) .. "..."
+					newNameLength = newNameLength - 1
+				end
+			end
+		end
+		utility:OnResized(frame.NameLabel, function(newSize, isPortrait)
+			if wasIsPortrait ~= nil and wasIsPortrait == isPortrait then
+				return
+			end
+			wasIsPortrait = isPortrait
+			if isPortrait then
+				if reportFlagAddedConnection == nil then
+					reportFlagAddedConnection = frame.RightSideButtons.ChildAdded:connect(function(child)
+						if child.Name == "ReportPlayer" then
+							reportFlagChangedConnection = child.Changed:connect(function(prop) reportFlagChanged(child, prop) end)
+							reportFlagChanged(child, "AbsolutePosition")
+						end
+					end)
+				end
+				local reportFlag = frame.RightSideButtons:FindFirstChild("ReportPlayer")
+				if reportFlag then
+					reportFlagChangedConnection = reportFlag.Changed:connect(function(prop) reportFlagChanged(reportFlag, prop) end)
+					reportFlagChanged(reportFlag, "AbsolutePosition")
+				end
+			else
+				frame.NameLabel.Text = player.Name
+			end
+		end)
+	end
+
 	local existingPlayerLabels = {}
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
 		local sortedPlayers = PlayersService:GetPlayers()
@@ -456,6 +497,10 @@ local function Initialize()
 				frame.NameLabel.Text = player.Name
 				frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
 
+				if enableReportPlayer then
+					managePlayerNameCutoff(frame, player)
+				end
+
 				friendStatusCreate(frame, player)
 				if enableReportPlayer then
 					reportAbuseButtonCreate(frame, player)
@@ -468,7 +513,7 @@ local function Initialize()
 			local player = sortedPlayers[index]
 			local frame = existingPlayerLabels[index]
 			if frame and not player then
-				table.remove(existingPlayerLabels, i)
+				table.remove(existingPlayerLabels, index)
 				frame:Destroy()
 			end
 		end
