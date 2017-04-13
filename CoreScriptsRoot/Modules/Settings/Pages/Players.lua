@@ -474,7 +474,7 @@ local function Initialize()
 		end)
 
 		local extraOffset = 20
-		if utility:IsSmallTouchScreen() or utility:IsPortrait() then
+		if utility:IsSmallTouchScreen() or (enablePortraitMode and utility:IsPortrait()) then
 			extraOffset = 85
 		end
 
