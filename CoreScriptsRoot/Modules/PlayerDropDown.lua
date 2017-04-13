@@ -14,6 +14,10 @@ local StarterGui = game:GetService("StarterGui")
 
 --[[ Script Variables ]]--
 local LocalPlayer = PlayersService.LocalPlayer
+while not LocalPlayer do
+	PlayersService.PlayerAdded:wait()
+	LocalPlayer = PlayersService.LocalPlayer
+end
 
 --[[ Constants ]]--
 local POPUP_ENTRY_SIZE_Y = 24

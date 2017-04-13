@@ -77,6 +77,9 @@ local function Initialize()
 			return nil
 		end
 
+		local fakeSelection = Instance.new("Frame")
+		fakeSelection.BackgroundTransparency = 1
+
 		local friendLabel = nil
 		local friendLabelText = nil
 		if not status then
@@ -85,12 +88,14 @@ local function Initialize()
 			friendLabel.Text = ""
 			friendLabel.BackgroundTransparency = 1
 			friendLabel.Position = UDim2.new(1,-198,0,7)
+			friendLabel.SelectionImageObject = fakeSelection
 		elseif status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestSent then
 			friendLabel = Instance.new("TextButton")
 			friendLabel.BackgroundTransparency = 1
 			friendLabel.FontSize = Enum.FontSize.Size24
 			friendLabel.Font = Enum.Font.SourceSans
 			friendLabel.TextColor3 = Color3.new(1,1,1)
+			friendLabel.SelectionImageObject = fakeSelection
 			if status == Enum.FriendStatus.Friend then
 				friendLabel.Text = "Friend"
 			else
@@ -379,12 +384,26 @@ local function Initialize()
 			end
 		end
 
+	 	local fakeSelectionObject = nil
 		rightSideButtons.ChildAdded:connect(function(child)
 			if child:IsA("GuiObject") then
+				if fakeSelectionObject and child ~= fakeSelectionObject then
+					fakeSelectionObject:Destroy()
+					fakeSelectionObject = nil
+				end
 				child.SelectionGained:connect(function() updateHighlight(nil) end)
 				child.SelectionLost:connect(function() updateHighlight(child) end)
 			end
 		end)
+
+		if enableReportPlayer then
+			fakeSelectionObject = Instance.new("Frame")
+			fakeSelectionObject.Selectable = true
+			fakeSelectionObject.Size = UDim2.new(0, 100, 0, 100)
+			fakeSelectionObject.BackgroundTransparency = 1
+			fakeSelectionObject.SelectionImageObject = fakeSelectionObject:Clone()
+			fakeSelectionObject.Parent = rightSideButtons
+		end
 
 		local rightSideListLayout = Instance.new("UIListLayout")
 		rightSideListLayout.Name = "RightSideListLayout"
