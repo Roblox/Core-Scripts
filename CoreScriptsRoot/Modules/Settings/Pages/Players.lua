@@ -77,8 +77,8 @@ local function Initialize()
 			return nil
 		end
 
-		local fakeSelction = Instance.new("Frame")
-		fakeSelction.BackgroundTransparency = 1
+		local fakeSelection = Instance.new("Frame")
+		fakeSelection.BackgroundTransparency = 1
 
 		local friendLabel = nil
 		local friendLabelText = nil
@@ -88,14 +88,14 @@ local function Initialize()
 			friendLabel.Text = ""
 			friendLabel.BackgroundTransparency = 1
 			friendLabel.Position = UDim2.new(1,-198,0,7)
-			friendLabel.SelectionImageObject = fakeSelction
+			friendLabel.SelectionImageObject = fakeSelection
 		elseif status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestSent then
 			friendLabel = Instance.new("TextButton")
 			friendLabel.BackgroundTransparency = 1
 			friendLabel.FontSize = Enum.FontSize.Size24
 			friendLabel.Font = Enum.Font.SourceSans
 			friendLabel.TextColor3 = Color3.new(1,1,1)
-			friendLabel.SelectionImageObject = fakeSelction
+			friendLabel.SelectionImageObject = fakeSelection
 			if status == Enum.FriendStatus.Friend then
 				friendLabel.Text = "Friend"
 			else
