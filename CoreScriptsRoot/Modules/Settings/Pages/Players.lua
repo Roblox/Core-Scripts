@@ -88,8 +88,8 @@ local function Initialize()
 		elseif status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestSent then
 			friendLabel = Instance.new("TextButton")
 			friendLabel.BackgroundTransparency = 1
-			friendLabel.FontSize = "Size24"
-			friendLabel.Font = "SourceSans"
+			friendLabel.FontSize = Enum.FontSize.Size24
+			friendLabel.Font = Enum.Font.SourceSans
 			friendLabel.TextColor3 = Color3.new(1,1,1)
 			if status == Enum.FriendStatus.Friend then
 				friendLabel.Text = "Friend"
@@ -406,8 +406,8 @@ local function Initialize()
 		local nameLabel = Instance.new("TextLabel")
 		nameLabel.Name = "NameLabel"
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-		nameLabel.Font = "SourceSans"
-		nameLabel.FontSize = "Size24"
+		nameLabel.Font = Enum.Font.SourceSans
+		nameLabel.FontSize = Enum.FontSize.Size24
 		nameLabel.TextColor3 = Color3.new(1, 1, 1)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.Position = UDim2.new(0, 60, .5, 0)
@@ -474,7 +474,7 @@ local function Initialize()
 		end)
 
 		local extraOffset = 20
-		if utility:IsSmallTouchScreen() or utility:IsPortrait() then
+		if utility:IsSmallTouchScreen() or (enablePortraitMode and utility:IsPortrait()) then
 			extraOffset = 85
 		end
 
