@@ -46,14 +46,6 @@ local chatWasVisible = false
 local resetButtonFlagSuccess, resetButtonFlagValue = pcall(function() return settings():GetFFlag("AllowResetButtonCustomization") end)
 local resetButtonCustomizationAllowed = (resetButtonFlagSuccess and resetButtonFlagValue == true)
 
-local function IsPlayMyPlaceEnabled()
-	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
-		local playMyPlaceSuccess, playMyPlaceFlagValue = pcall(function() return settings():GetFFlag("XboxPlayMyPlace") end)
-		return (playMyPlaceSuccess and playMyPlaceFlagValue == true)
-	end
-	return false
-end
-
 
 --[[ CORE MODULES ]]
 local chat = require(RobloxGui.Modules.ChatSelector)
@@ -424,18 +416,20 @@ local function CreateSettingsHub()
 					end
 				end
 
-				if IsPlayMyPlaceEnabled() then
-					spawn(function()
-							local PlatformService = nil
-							pcall(function() PlatformService = game:GetService('PlatformService') end)
-							local pmpCreatorId = PlatformService and PlatformService:BeginGetPMPCreatorId()
-							if pmpCreatorId == 0 then
-								createInviteButton()
-							end
-						end)
-				else
-					createInviteButton()
-				end
+				-- only show invite button on non-PMP games. Some users games may not be enabled for console, so inviting to
+				-- to the game session will not work.
+				spawn(function()
+					local PlatformService = nil
+					pcall(function() PlatformService = game:GetService('PlatformService') end)
+					if not PlatformService then return end
+
+					pcall(function()
+						local pmpCreatorId = PlatformService:BeginGetPMPCreatorId()
+						if pmpCreatorId == 0 then
+							createInviteButton()
+						end
+					end)
+				end)
 			else
 				addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
 					"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
