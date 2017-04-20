@@ -5,6 +5,7 @@
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">RootCamera</string>
+			<string name="ScriptGuid">{2e4a16d4-eec6-4c7d-8634-129239012e9d}</string>
 			<ProtectedString name="Source"><![CDATA[
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
@@ -43,6 +44,14 @@ end
 
 local function IsFinite(num)
 	return num == num and num ~= 1/0 and num ~= -1/0
+end
+
+local function GetCameraYInverted()
+	local inverted = false
+	pcall(function()
+		inverted = GameSettings.CameraYInverted
+	end)
+	return inverted
 end
 
 local THUMBSTICK_DEADZONE = 0.2
@@ -771,7 +780,12 @@ local function CreateCamera()
 				lastPos = lastPos or startPos
 				this.UserPanningTheCamera = true
 
-				local delta = input.Position - lastPos
+				local delta = input.Position - lastPos		
+				
+				if GetCameraYInverted() then
+					delta = Vector2.new(delta.X,-delta.Y)
+				end
+				
 				if this.PanEnabled then
 					local desiredXYVector = this:ScreenTranslationToAngle(delta) * TOUCH_SENSITIVTY
 					this.RotateInput = this.RotateInput + desiredXYVector
@@ -955,17 +969,23 @@ local function CreateCamera()
 		if not hasGameLoaded and VRService.VREnabled then
 			return
 		end
+		
+		local inputDelta = input.Delta
+		if GetCameraYInverted() then
+			inputDelta = Vector2.new(inputDelta.X,-inputDelta.Y)
+		end
+		
 		if startPos and lastPos and panBeginLook then
 			local currPos = lastPos + input.Delta
 			local totalTrans = currPos - startPos
 			if this.PanEnabled then
-				local desiredXYVector = this:MouseTranslationToAngle(input.Delta) * MOUSE_SENSITIVITY
+				local desiredXYVector = this:MouseTranslationToAngle(inputDelta) * MOUSE_SENSITIVITY
 				this.RotateInput = this.RotateInput + desiredXYVector
 			end
 			lastPos = currPos
 		elseif this:IsInFirstPerson() or this:GetShiftLock() then
 			if this.PanEnabled then
-				local desiredXYVector = this:MouseTranslationToAngle(input.Delta) * MOUSE_SENSITIVITY
+				local desiredXYVector = this:MouseTranslationToAngle(inputDelta) * MOUSE_SENSITIVITY
 				this.RotateInput = this.RotateInput + desiredXYVector
 			end
 		end
@@ -1328,15 +1348,20 @@ local function CreateCamera()
 
 		local getGamepadPan = function(name, state, input)
 			if input.UserInputType == activateGamepad and input.KeyCode == Enum.KeyCode.Thumbstick2 then
-
+				
 				if state == Enum.UserInputState.Cancel then
 					this.GamepadPanningCamera = ZERO_VECTOR2
 					return
 				end
-
-				local inputVector = Vector2.new(input.Position.X, -input.Position.Y)
+				
+				local inputYMult = 1
+				if GetCameraYInverted() == true then
+					inputYMult = -1
+				end				
+				
+				local inputVector = Vector2.new(input.Position.X, input.Position.Y * inputYMult)
 				if inputVector.magnitude > THUMBSTICK_DEADZONE then
-					this.GamepadPanningCamera = Vector2_new(input.Position.X, -input.Position.Y)
+					this.GamepadPanningCamera = Vector2_new(input.Position.X, input.Position.Y)
 				else
 					this.GamepadPanningCamera = ZERO_VECTOR2
 				end
