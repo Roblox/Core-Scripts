@@ -12,6 +12,9 @@ local Chat = game:GetService("Chat")
 
 local ChatService = require(modulesFolder:WaitForChild("ChatService"))
 
+local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
+local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
+
 local useEvents = {}
 
 local EventFolder = EventFolderParent:FindFirstChild(EventFolderName)
@@ -290,28 +293,29 @@ ChatService:RegisterProcessCommandsFunction("default_commands", function(fromSpe
 	return false
 end)
 
+if ChatSettings.GeneralChannelName and ChatSettings.GeneralChannelName ~= "" then
+	local allChannel = ChatService:AddChannel(ChatSettings.GeneralChannelName)
 
-local allChannel = ChatService:AddChannel("All")
-local systemChannel = ChatService:AddChannel("System")
+	allChannel.Leavable = false
+	allChannel.AutoJoin = true
 
-allChannel.Leavable = false
-allChannel.AutoJoin = true
-
-allChannel:RegisterGetWelcomeMessageFunction(function(speaker)
-	if RunService:IsStudio() then
-		return nil
-	end
-	local player = speaker:GetPlayer()
-	if player then
-		local success, canChat = pcall(function()
-			return Chat:CanUserChatAsync(player.UserId)
-		end)
-		if success and not canChat then
-			return ""
+	allChannel:RegisterGetWelcomeMessageFunction(function(speaker)
+		if RunService:IsStudio() then
+			return nil
 		end
-	end
-end)
+		local player = speaker:GetPlayer()
+		if player then
+			local success, canChat = pcall(function()
+				return Chat:CanUserChatAsync(player.UserId)
+			end)
+			if success and not canChat then
+				return ""
+			end
+		end
+	end)
+end
 
+local systemChannel = ChatService:AddChannel("System")
 systemChannel.Leavable = false
 systemChannel.AutoJoin = true
 systemChannel.WelcomeMessage = "This channel is for system and game notifications."

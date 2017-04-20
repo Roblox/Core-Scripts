@@ -780,7 +780,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 	local channelObj = ChatWindow:AddChannel(channel)
 
 	if (channelObj) then
-		if (channel == "All") then
+		if (channel == ChatSettings.GeneralChannelName) then
 			DoSwitchCurrentChannel(channel)
 		end
 
