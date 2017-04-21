@@ -631,7 +631,18 @@ local function Initialize()
   end
   
   local function createCameraInvertedOptions()
-    _,_,this.CameraInvertedSelector = utility:AddNewRow(this, "Camera Inverted", "Selector", {"Off", "On"}, 1)
+    local initialIndex = 1
+    local success = pcall(function()
+      if GameSettings.CameraYInverted == true then
+        initialIndex = 2
+      end
+    end)
+    
+    if success == false then
+      return
+    end
+    
+    _,_,this.CameraInvertedSelector = utility:AddNewRow(this, "Camera Inverted", "Selector", {"Off", "On"}, initialIndex)
     this.CameraInvertedSelector.IndexChanged:connect(function(newIndex)
       if newIndex == 2 then
         GameSettings.CameraYInverted = true
@@ -919,7 +930,10 @@ local function Initialize()
     createMouseOptions()
   end
   
-  createCameraInvertedOptions()
+  local CameraYInvertedSuccess,CameraYInvertedEnabled = pcall(function() return settings():GetFFlag("CameraYInvertedEnabled") end)
+  if CameraYInvertedSuccess and CameraYInvertedEnabled then
+    createCameraInvertedOptions()
+  end
 
   createVolumeOptions()
 
