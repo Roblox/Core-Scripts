@@ -32,42 +32,25 @@ end
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------
---makes a wedge at location x, y, z
---sets cell x, y, z to default material if parameter is provided, if not sets cell x, y, z to be whatever material it previously w
---returns true if made a wedge, false if the cell remains a block
-t.MakeWedge = function(x, y, z, defaultmaterial)
-	return game:GetService("Terrain"):AutoWedgeCell(x,y,z)
-end
 
 t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, selectionParent)
-	local terrain = game:GetService("Workspace"):FindFirstChild("Terrain")
-	if not terrain then return end
+	local terrain = workspace.Terrain
 
-	assert(regionToSelect)
-	assert(color)
-
-	if not type(regionToSelect) == "Region3" then
-		error("regionToSelect (first arg), should be of type Region3, but is type",type(regionToSelect))
+	if typeof(regionToSelect) ~= "Region3" then
+		error("bad argument #1 to SelectTerrainRegion (expected Region3, got " .. typeof(color) ..  ")", 2)
 	end
-	if not type(color) == "BrickColor" then
-		error("color (second arg), should be of type BrickColor, but is type",type(color))
+	if typeof(color) ~= "BrickColor" then
+		error("bad argument #2 to SelectTerrainRegion (expected BrickColor, got " .. typeof(color) ..  ")", 2)
 	end
 
 	-- frequently used terrain calls (speeds up call, no lookup necessary)
-	local GetCell = terrain.GetCell
-	local WorldToCellPreferSolid = terrain.WorldToCellPreferSolid
-	local CellCenterToWorld = terrain.CellCenterToWorld
 	local emptyMaterial = Enum.CellMaterial.Empty
 
 	-- container for all adornments, passed back to user
 	local selectionContainer = Instance.new("Model")
 	selectionContainer.Name = "SelectionContainer"
 	selectionContainer.Archivable = false
-	if selectionParent then
-		selectionContainer.Parent = selectionParent
-	else
-		selectionContainer.Parent = game:GetService("Workspace")
-	end
+	selectionContainer.Parent = selectionParent or workspace
 
 	local updateSelection = nil -- function we return to allow user to update selection
 	local currentKeepAliveTag = nil -- a tag that determines whether adorns should be destroyed
@@ -89,10 +72,10 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 	-- srs translation from region3 to region3int16
 	function Region3ToRegion3int16(region3)
 		local theLowVec = region3.CFrame.p - (region3.Size/2) + Vector3.new(2,2,2)
-		local lowCell = WorldToCellPreferSolid(terrain,theLowVec)
+		local lowCell = terrain:WorldToCellPreferSolid(theLowVec)
 
 		local theHighVec = region3.CFrame.p + (region3.Size/2) - Vector3.new(2,2,2)
-		local highCell = WorldToCellPreferSolid(terrain, theHighVec)
+		local highCell = terrain:WorldToCellPreferSolid(theHighVec)
 
 		local highIntVec = Vector3int16.new(highCell.x,highCell.y,highCell.z)
 		local lowIntVec = Vector3int16.new(lowCell.x,lowCell.y,lowCell.z)
@@ -117,12 +100,7 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 
 			selectionBoxClone = selectionBox:Clone()
 			selectionBoxClone.Archivable = false
-
 			selectionBoxClone.Adornee = selectionPartClone
-			selectionBoxClone.Parent = selectionContainer
-
-			selectionBoxClone.Adornee = selectionPartClone
-
 			selectionBoxClone.Parent = selectionContainer
 		end
 			
@@ -159,17 +137,17 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 		local regionBegin = region.CFrame.p - (region.Size/2) + Vector3.new(2,2,2)
 		local regionEnd = region.CFrame.p + (region.Size/2) - Vector3.new(2,2,2)
 
-		local cellPosBegin = WorldToCellPreferSolid(terrain, regionBegin)
-		local cellPosEnd = WorldToCellPreferSolid(terrain, regionEnd)
+		local cellPosBegin = terrain:WorldToCellPreferSolid(regionBegin)
+		local cellPosEnd = terrain:WorldToCellPreferSolid(regionEnd)
 
 		currentKeepAliveTag = incrementAliveCounter()
 		for y = cellPosBegin.y, cellPosEnd.y do
 			for z = cellPosBegin.z, cellPosEnd.z do
 				for x = cellPosBegin.x, cellPosEnd.x do
-					local cellMaterial = GetCell(terrain, x, y, z)
+					local cellMaterial = terrain:GetCell(x, y, z)
 					
 					if cellMaterial ~= emptyMaterial then
-						local cframePos = CellCenterToWorld(terrain, x, y, z)
+						local cframePos = terrain:CellCenterToWorld(x, y, z)
 						local cellPos = Vector3int16.new(x,y,z)
 
 						local updated = false
@@ -240,9 +218,9 @@ t.SelectTerrainRegion = function(regionToSelect, color, selectEmptyCells, select
 		adornments = nil
 	end
 
+	
 	return updateSelection, destroyFunc
 end
-
 -----------------------------Terrain Utilities End-----------------------------
 
 
@@ -547,13 +525,6 @@ t.Help =
 			return "Function EncodeJSON.  " ..
 			       "Arguments: (table).  " .. 
 			       "Side effect: returns a string composed of argument table in JSON data format" 
-		end  
-		if funcNameOrFunc == "MakeWedge" or funcNameOrFunc == t.MakeWedge then
-			return "Function MakeWedge. " ..
-			       "Arguments: (x, y, z, [default material]). " ..
-			       "Description: Makes a wedge at location x, y, z. Sets cell x, y, z to default material if "..
-			       "parameter is provided, if not sets cell x, y, z to be whatever material it previously was. "..
-			       "Returns true if made a wedge, false if the cell remains a block "
 		end
 		if funcNameOrFunc == "SelectTerrainRegion" or funcNameOrFunc == t.SelectTerrainRegion then
 			return "Function SelectTerrainRegion. " ..
@@ -620,29 +591,3 @@ t.Help =
 --------------------------------------------Documentation Ends----------------------------------------------------------
 
 return t
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
