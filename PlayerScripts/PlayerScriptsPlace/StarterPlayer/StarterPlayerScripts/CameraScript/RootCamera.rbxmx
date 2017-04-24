@@ -102,34 +102,18 @@ local hasGameLoaded = false
 local GestureArea = nil
 
 do
-	-- Check for changes in ViewportSize to decide if PortraitMode
-	local CameraChangedConn = nil
-	local function onWorkspaceChanged(property)
-		if property == 'CurrentCamera' then
-			if CameraChangedConn then
-				CameraChangedConn:Disconnect()
-				CameraChangedConn = nil
-			end
-			local newCamera = workspace.CurrentCamera
-			if newCamera then
-				local size = newCamera.ViewportSize
-				PortraitMode = size.X < size.Y
-				DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
-				CameraChangedConn = newCamera.Changed:Connect(function(property)
-					if property == 'ViewportSize' then
-						size = newCamera.ViewportSize
-						PortraitMode = size.X < size.Y
-						DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
-					end
-				end)
+	local function layoutGestureArea(portraitMode)
+		if GestureArea then
+			if portraitMode then
+				GestureArea.Size = UDim2.new(1, 0, .6, 0)
+				GestureArea.Position = UDim2.new(0, 0, 0, 0)
+			else
+				GestureArea.Size = UDim2.new(1, 0, .5, -18)
+				GestureArea.Position = UDim2.new(0, 0, 0, 0)
 			end
 		end
 	end
-	workspace.Changed:Connect(onWorkspaceChanged)
-	if workspace.CurrentCamera then
-		onWorkspaceChanged('CurrentCamera')
-	end
-
+	
 	-- Setup gesture area that camera uses while DynamicThumbstick is enabled
 	local function OnCharacterAdded(character)
 		if PlayerGui then
@@ -140,9 +124,9 @@ do
 			GestureArea.BackgroundTransparency = 1.0
 			GestureArea.Visible = true
 			GestureArea.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-			GestureArea.Size = UDim2.new(1, 0, .6, 0)
-			GestureArea.Position = UDim2.new(0, 0, 0, 0)
 			GestureArea.Parent = ScreenGui
+			layoutGestureArea(PortraitMode)
+			
 		end
 		for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
 			if child:IsA("Tool") then
@@ -168,6 +152,36 @@ do
 		LocalPlayer.CharacterAdded:connect(function(character)
 			OnCharacterAdded(character)
 		end)
+	end
+	
+	-- Check for changes in ViewportSize to decide if PortraitMode
+	local CameraChangedConn = nil
+	local function onWorkspaceChanged(property)
+		if property == 'CurrentCamera' then
+			if CameraChangedConn then
+				CameraChangedConn:Disconnect()
+				CameraChangedConn = nil
+			end
+			local newCamera = workspace.CurrentCamera
+			if newCamera then
+				local size = newCamera.ViewportSize
+				PortraitMode = size.X < size.Y
+				layoutGestureArea(PortraitMode)
+				DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
+				CameraChangedConn = newCamera.Changed:Connect(function(property)
+					if property == 'ViewportSize' then
+						size = newCamera.ViewportSize
+						PortraitMode = size.X < size.Y
+						layoutGestureArea(PortraitMode)
+						DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
+					end
+				end)
+			end
+		end
+	end
+	workspace.Changed:Connect(onWorkspaceChanged)
+	if workspace.CurrentCamera then
+		onWorkspaceChanged('CurrentCamera')
 	end
 end
 	

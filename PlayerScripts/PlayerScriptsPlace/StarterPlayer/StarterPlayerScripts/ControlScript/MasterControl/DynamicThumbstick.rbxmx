@@ -159,15 +159,52 @@ function Thumbstick:Create(parentFrame)
 	end
 	
 	local color = Color3.fromRGB(255, 255, 255)
+	
+	local function layoutThumbstickFrame(portraitMode)
+		if portraitMode then
+			ThumbstickFrame.Size = UDim2.new(1, 0, .4, 0)
+			ThumbstickFrame.Position = UDim2.new(0, 0, 0.6, 0)
+		else
+			ThumbstickFrame.Size = UDim2.new(1, 0, .5, 18)
+			ThumbstickFrame.Position = UDim2.new(0, 0, 0.5, -18)
+		end
+	end
 		
 	ThumbstickFrame = Instance.new('Frame')
 	ThumbstickFrame.Name = "ThumbstickFrame"
 	ThumbstickFrame.Active = false
 	ThumbstickFrame.Visible = false
 	ThumbstickFrame.BackgroundTransparency = 1.0
-	ThumbstickFrame.BackgroundColor3 = color
-	ThumbstickFrame.Size = UDim2.new(1, 0, .4, 0)
-	ThumbstickFrame.Position = UDim2.new(0, 0, 0.6, 0)
+	ThumbstickFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+	layoutThumbstickFrame()	
+	--ThumbstickFrame.Size = UDim2.new(1, 0, .5, 18)
+	--ThumbstickFrame.Position = UDim2.new(0, 0, 0.5, -18)
+	local CameraChangedConn = nil
+	local function onWorkspaceChanged(property)
+		if property == 'CurrentCamera' then
+			if CameraChangedConn then
+				CameraChangedConn:Disconnect()
+				CameraChangedConn = nil
+			end
+			local newCamera = workspace.CurrentCamera
+			if newCamera then
+				local size = newCamera.ViewportSize
+				local portraitMode = size.X < size.Y
+				layoutThumbstickFrame(portraitMode)
+				CameraChangedConn = newCamera.Changed:Connect(function(property)
+					if property == 'ViewportSize' then
+						size = newCamera.ViewportSize
+						portraitMode = size.X < size.Y
+						layoutThumbstickFrame(portraitMode)
+					end
+				end)
+			end
+		end
+	end
+	workspace.Changed:Connect(onWorkspaceChanged)
+	if workspace.CurrentCamera then
+		onWorkspaceChanged('CurrentCamera')
+	end
 	
 	ImageCenter = Instance.new('ImageLabel')
 	ImageCenter.Name = "ImageCenter"
