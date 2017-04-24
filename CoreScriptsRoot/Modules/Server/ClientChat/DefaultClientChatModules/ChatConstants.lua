@@ -23,4 +23,6 @@ module.StandardPriority = 10
 module.HighPriority = 20
 module.VeryHighPriority = 25
 
+module.WhisperChannelPrefix = "To "
+
 return module
