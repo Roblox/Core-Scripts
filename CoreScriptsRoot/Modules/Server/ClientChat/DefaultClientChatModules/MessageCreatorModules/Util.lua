@@ -47,6 +47,7 @@ end
 
 local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
+local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
 
 local module = {}
 local methods = {}
@@ -165,6 +166,13 @@ function methods:AddChannelButtonToBaseMessage(BaseMessage, channelColor, format
 	return ChannelButton
 end
 
+function GetWhisperChannelPrefix()
+	if ChatConstants.WhisperChannelPrefix then
+		return ChatConstants.WhisperChannelPrefix
+	end
+	return "To "
+end
+
 function methods:NameButtonClicked(nameButton, playerName)
 	if not self.ChatWindow then
 		return
@@ -173,7 +181,7 @@ function methods:NameButtonClicked(nameButton, playerName)
 	if ChatSettings.ClickOnPlayerNameToWhisper then
 		local player = Players:FindFirstChild(playerName)
 		if player and player ~= LocalPlayer then
-			local whisperChannel = "To " ..playerName
+			local whisperChannel = GetWhisperChannelPrefix() ..playerName
 			if self.ChatWindow:GetChannel(whisperChannel) then
 				self.ChatBar:ResetCustomState()
 				local targetChannelName = self.ChatWindow:GetTargetMessageChannel()
