@@ -176,9 +176,8 @@ function Thumbstick:Create(parentFrame)
 	ThumbstickFrame.Visible = false
 	ThumbstickFrame.BackgroundTransparency = 1.0
 	ThumbstickFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-	layoutThumbstickFrame()	
-	--ThumbstickFrame.Size = UDim2.new(1, 0, .5, 18)
-	--ThumbstickFrame.Position = UDim2.new(0, 0, 0.5, -18)
+	layoutThumbstickFrame()
+	
 	local CameraChangedConn = nil
 	local function onWorkspaceChanged(property)
 		if property == 'CurrentCamera' then
@@ -213,9 +212,9 @@ function Thumbstick:Create(parentFrame)
 	ImageCenter.BackgroundTransparency = 1
 	ImageCenter.Size = UDim2.new(0, ThumbstickSize, 0, ThumbstickSize)
 	ImageCenter.Position = UDim2.new(0, screenSize.x/2, 0, screenSize.y/2)
-	ImageCenter.Parent = ThumbstickFrame
 	ImageCenter.Visible = false
 	ImageCenter.ImageTransparency = 0
+	ImageCenter.Parent = ThumbstickFrame
 	
 	ImageRod = Instance.new("ImageLabel")
 	ImageRod.Name = "ImageRod"
@@ -224,9 +223,9 @@ function Thumbstick:Create(parentFrame)
 	ImageRod.BackgroundTransparency = 1
 	ImageRod.Size = UDim2.new(0, ImageRodMinSize, 0, ImageRodMinSize)
 	ImageRod.Position = UDim2.new(0, screenSize.x/2, 0, screenSize.y/2)
-	ImageRod.Parent = ThumbstickFrame
 	ImageRod.Visible = false
-	ImageRod.ImageTransparency = 0.7	
+	ImageRod.ImageTransparency = 0.7
+	ImageRod.Parent = ThumbstickFrame	
 	
 	ImageUnderThumb = Instance.new('ImageLabel')
 	ImageUnderThumb.Name = "ImageUnderThumb"
@@ -236,10 +235,9 @@ function Thumbstick:Create(parentFrame)
 	ImageUnderThumb.Size = UDim2.new(0, ThumbstickSize, 0, ThumbstickSize)
 	ImageUnderThumb.Position = UDim2.new(0, 20, 0, 20)
 	ImageUnderThumb.ZIndex = 2
-	ImageUnderThumb.Parent = ThumbstickFrame
 	ImageUnderThumb.Visible = false
 	ImageUnderThumb.ImageTransparency = 0
-	
+	ImageUnderThumb.Parent = ThumbstickFrame
 	
 	local JumpTouchObject = nil
 	local JumpTouchStartTime = nil
