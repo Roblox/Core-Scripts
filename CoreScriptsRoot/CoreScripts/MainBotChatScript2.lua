@@ -720,7 +720,10 @@ game:GetService("RunService").Heartbeat:connect(function()
 				closestDialog.Parent.Position + dialogTriggerOffset
 			)
 			
-			if dialogTriggerDistance ~= 0 and distanceFromCharacterWithOffset < dialogTriggerDistance then
+			if dialogTriggerDistance ~= 0 and 
+				distanceFromCharacterWithOffset < closestDialog.ConversationDistance and 
+				distanceFromCharacterWithOffset < dialogTriggerDistance then
+					
 				startDialog(closestDialog)
 			end
 		end
