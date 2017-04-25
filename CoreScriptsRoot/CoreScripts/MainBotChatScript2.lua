@@ -693,7 +693,7 @@ game:GetService("RunService").Heartbeat:connect(function()
 	local closestDistance = math.huge
 	local closestDialog = nil
 	
-	if (distanceOffsetFlag == false and usingGamepad == true) or (distanceOffsetFlag == true) then
+	if usingGamepad or distanceOffsetFlag then
 		if game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.Character and game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
 			local characterPosition = game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position
 			closestDialog = getClosestDialogToPosition(guiService, characterPosition)
@@ -709,12 +709,8 @@ game:GetService("RunService").Heartbeat:connect(function()
 				closestDialog.Parent:IsA("BasePart") and
 				currentConversationDialog == nil then
 			
-			local dialogTriggerDistance = 0
-			local dialogTriggerOffset = Vector3.new(0,0,0)
-			pcall(function()
-				dialogTriggerDistance = closestDialog.TriggerDistance
-				dialogTriggerOffset = closestDialog.TriggerOffset
-			end)
+			local dialogTriggerDistance = closestDialog.TriggerDistance
+			local dialogTriggerOffset = closestDialog.TriggerOffset
 			
 			local distanceFromCharacterWithOffset = game:GetService("Players").LocalPlayer:DistanceFromCharacter(
 				closestDialog.Parent.Position + dialogTriggerOffset
