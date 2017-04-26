@@ -51,6 +51,11 @@ local goodbyeChoiceActiveFlagSuccess, goodbyeChoiceActiveFlagValue = pcall(funct
 end)
 local goodbyeChoiceActiveFlag = (goodbyeChoiceActiveFlagSuccess and goodbyeChoiceActiveFlagValue)
 
+local distanceOffsetFlagSuccess, distanceOffsetFlagValue = pcall(function()
+	return settings():GetFFlag("DialogTriggerDistanceOffsetEnabled")
+end)
+local distanceOffsetFlag = (distanceOffsetFlagSuccess and distanceOffsetFlagValue)
+
 local dialogMultiplePlayersFlagSuccess, dialogMultiplePlayersFlagValue = pcall(function() return settings():GetFFlag("DialogMultiplePlayers") end)
 local dialogMultiplePlayersFlag = (dialogMultiplePlayersFlagSuccess and dialogMultiplePlayersFlagValue)
 
@@ -687,32 +692,60 @@ local getClosestDialogToPosition = guiService.GetClosestDialogToPosition
 game:GetService("RunService").Heartbeat:connect(function()
 	local closestDistance = math.huge
 	local closestDialog = nil
-	if usingGamepad == true then
+	
+	if usingGamepad or distanceOffsetFlag then
 		if game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.Character and game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
 			local characterPosition = game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position
 			closestDialog = getClosestDialogToPosition(guiService, characterPosition)
 		end
 	end
-
-	if closestDialog ~= lastClosestDialog then
-		if dialogMap[lastClosestDialog] then
-			dialogMap[lastClosestDialog].Background.ActivationButton.Visible = false
-		end
-		lastClosestDialog = closestDialog
-		contextActionService:UnbindCoreAction("StartDialogAction")
-		if closestDialog ~= nil then
-			contextActionService:BindCoreAction("StartDialogAction", function(actionName, userInputState, inputObject)
-				if userInputState == Enum.UserInputState.Begin then
-					if closestDialog and closestDialog.Parent then
-						startDialog(closestDialog)
-					end
-				end
-			end, false, Enum.KeyCode.ButtonX)
-			if dialogMap[closestDialog] then
-				dialogMap[closestDialog].Background.ActivationButton.Visible = true
+	
+	if distanceOffsetFlag then
+		if game:GetService("Players").LocalPlayer and 
+				game:GetService("Players").LocalPlayer.Character and
+				game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and
+				closestDialog ~= nil and
+				closestDialog.Parent ~= nil and
+				closestDialog.Parent:IsA("BasePart") and
+				currentConversationDialog == nil then
+			
+			local dialogTriggerDistance = closestDialog.TriggerDistance
+			local dialogTriggerOffset = closestDialog.TriggerOffset
+			
+			local distanceFromCharacterWithOffset = game:GetService("Players").LocalPlayer:DistanceFromCharacter(
+				closestDialog.Parent.Position + dialogTriggerOffset
+			)
+			
+			if dialogTriggerDistance ~= 0 and 
+				distanceFromCharacterWithOffset < closestDialog.ConversationDistance and 
+				distanceFromCharacterWithOffset < dialogTriggerDistance then
+					
+				startDialog(closestDialog)
 			end
 		end
 	end
+	
+	if (distanceOffsetFlag == false) or (distanceOffsetFlag == true and usingGamepad == true) then
+		if closestDialog ~= lastClosestDialog then
+			if dialogMap[lastClosestDialog] then
+				dialogMap[lastClosestDialog].Background.ActivationButton.Visible = false
+			end
+			lastClosestDialog = closestDialog
+			contextActionService:UnbindCoreAction("StartDialogAction")
+			if closestDialog ~= nil then
+				contextActionService:BindCoreAction("StartDialogAction", function(actionName, userInputState, inputObject)
+					if userInputState == Enum.UserInputState.Begin then
+						if closestDialog and closestDialog.Parent then
+							startDialog(closestDialog)
+						end
+					end
+				end, false, Enum.KeyCode.ButtonX)
+				if dialogMap[closestDialog] then
+					dialogMap[closestDialog].Background.ActivationButton.Visible = true
+				end
+			end -- closestDialog ~= nil
+		end -- closestDialog ~= lastClosestDialog
+	end -- usingGamepad == true
 end)
 
 local lastSelectedChoice = nil
