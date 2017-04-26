@@ -643,7 +643,6 @@ function addDialog(dialog)
 end
 
 function onLoad()
-	player = localPlayer
 	waitForProperty(localPlayer, "Character")
 
 	createChatNotificationGui()
