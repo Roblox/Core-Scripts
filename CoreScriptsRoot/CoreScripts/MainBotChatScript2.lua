@@ -23,10 +23,17 @@ local FRAME_WIDTH = 350
 local WIDTH_BONUS = (STYLE_PADDING * 2) - BAR_THICKNESS
 local XPOS_OFFSET = -(STYLE_PADDING - BAR_THICKNESS)
 
+local playerService = game:GetService("Players")
 local contextActionService = game:GetService("ContextActionService")
 local guiService = game:GetService("GuiService")
 local YPOS_OFFSET = -math.floor(STYLE_PADDING / 2)
 local usingGamepad = false
+
+local localPlayer = playerService.LocalPlayer
+while localPlayer == nil do
+	playerService.PlayerAdded:wait()
+	localPlayer = playerService.LocalPlayer
+end
 
 function setUsingGamepad(input, processed)
 	if input.UserInputType == Enum.UserInputType.Gamepad1 or input.UserInputType == Enum.UserInputType.Gamepad2 or
@@ -316,13 +323,13 @@ function selectChoice(choice)
 	--First hide the Gui
 	mainFrame.Visible = false
 	if choice == lastChoice then
-		chatFunc(currentConversationDialog, game:GetService("Players").LocalPlayer.Character, lastChoice.UserPrompt.Text, getChatColor(currentTone()))
+		chatFunc(currentConversationDialog, localPlayer.Character, lastChoice.UserPrompt.Text, getChatColor(currentTone()))
 
 		normalEndDialog()
 	else
 		local dialogChoice = choiceMap[choice]
 
-		chatFunc(currentConversationDialog, game:GetService("Players").LocalPlayer.Character, sanitizeMessage(dialogChoice.UserDialog), getChatColor(currentTone()))
+		chatFunc(currentConversationDialog, localPlayer.Character, sanitizeMessage(dialogChoice.UserDialog), getChatColor(currentTone()))
 		wait(1)
 		currentConversationDialog:SignalDialogChoiceSelected(player, dialogChoice)
 		chatFunc(currentConversationDialog, currentConversationPartner, sanitizeMessage(dialogChoice.ResponseDialog), getChatColor(currentTone()))
@@ -467,7 +474,7 @@ function presentDialogChoices(talkingPart, dialogChoices, parentDialog)
 
 	mainFrame.Position = UDim2.new(0, 20, 1.0, -mainFrame.Size.Y.Offset - 20)
 	if isSmallTouchScreen then
-		local touchScreenGui = game:GetService("Players").LocalPlayer.PlayerGui:FindFirstChild("TouchGui")
+		local touchScreenGui = localPlayer.PlayerGui:FindFirstChild("TouchGui")
 		if touchScreenGui then
 			touchControlGui = touchScreenGui:FindFirstChild("TouchControlFrame")
 			if touchControlGui then
@@ -636,8 +643,7 @@ function addDialog(dialog)
 end
 
 function onLoad()
-	waitForProperty(game:GetService("Players"), "LocalPlayer")
-	player = game:GetService("Players").LocalPlayer
+	player = localPlayer
 	waitForProperty(player, "Character")
 
 	createChatNotificationGui()
@@ -686,45 +692,50 @@ function onLoad()
 	end
 end
 
+function getLocalHumanoidRootPart()
+	if localPlayer.Character then
+		return localPlayer.Character:FindFirstChild("HumanoidRootPart")
+	end
+end
+
+function dialogIsValid(dialog)
+	return dialog and dialog.Parent and dialog.Parent:IsA("BasePart")
+end
+
 local lastClosestDialog = nil
 local getClosestDialogToPosition = guiService.GetClosestDialogToPosition
 
 game:GetService("RunService").Heartbeat:connect(function()
 	local closestDistance = math.huge
 	local closestDialog = nil
-	
+
 	if usingGamepad or distanceOffsetFlag then
-		if game:GetService("Players").LocalPlayer and game:GetService("Players").LocalPlayer.Character and game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-			local characterPosition = game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart").Position
+		local humanoidRootPart = getLocalHumanoidRootPart()
+		if humanoidRootPart then
+			local characterPosition = humanoidRootPart.Position
 			closestDialog = getClosestDialogToPosition(guiService, characterPosition)
 		end
 	end
-	
+
 	if distanceOffsetFlag then
-		if game:GetService("Players").LocalPlayer and 
-				game:GetService("Players").LocalPlayer.Character and
-				game:GetService("Players").LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and
-				closestDialog ~= nil and
-				closestDialog.Parent ~= nil and
-				closestDialog.Parent:IsA("BasePart") and
-				currentConversationDialog == nil then
-			
+		if getLocalHumanoidRootPart() and dialogIsValid(closestDialog) and currentConversationDialog == nil then
+
 			local dialogTriggerDistance = closestDialog.TriggerDistance
 			local dialogTriggerOffset = closestDialog.TriggerOffset
-			
-			local distanceFromCharacterWithOffset = game:GetService("Players").LocalPlayer:DistanceFromCharacter(
+
+			local distanceFromCharacterWithOffset = localPlayer:DistanceFromCharacter(
 				closestDialog.Parent.Position + dialogTriggerOffset
 			)
-			
-			if dialogTriggerDistance ~= 0 and 
-				distanceFromCharacterWithOffset < closestDialog.ConversationDistance and 
+
+			if dialogTriggerDistance ~= 0 and
+				distanceFromCharacterWithOffset < closestDialog.ConversationDistance and
 				distanceFromCharacterWithOffset < dialogTriggerDistance then
-					
+
 				startDialog(closestDialog)
 			end
 		end
 	end
-	
+
 	if (distanceOffsetFlag == false) or (distanceOffsetFlag == true and usingGamepad == true) then
 		if closestDialog ~= lastClosestDialog then
 			if dialogMap[lastClosestDialog] then
