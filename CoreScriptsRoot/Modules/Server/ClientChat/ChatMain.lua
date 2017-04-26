@@ -92,12 +92,6 @@ while not LocalPlayer do
 	LocalPlayer = Players.LocalPlayer
 end
 
-local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
-local chatPrivacySettingsEnabled = true
-if chatPrivacySettingsSuccess then
-	chatPrivacySettingsEnabled = chatPrivacySettingsValue
-end
-
 local canChat = true
 
 local ChatDisplayOrder = 6
@@ -355,7 +349,7 @@ UserInputService.Changed:connect(function(prop)
 		if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
 			local windowPos = ChatWindow.GuiObject.AbsolutePosition
 			local windowSize = ChatWindow.GuiObject.AbsoluteSize
-			local screenSize = GuiParent.DestroyGuardFrame.AbsoluteSize
+			local screenSize = GuiParent.AbsoluteSize
 
 			local centerScreenIsInWindow = CheckIfPointIsInSquare(screenSize/2, windowPos, windowPos + windowSize)
 			if centerScreenIsInWindow then
@@ -697,6 +691,13 @@ end
 setupChatBarConnections()
 ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
 
+function getEchoMessagesInGeneral()
+	if ChatSettings.EchoMessagesInGeneralChannel == nil then
+		return true
+	end
+	return ChatSettings.EchoMessagesInGeneralChannel
+end
+
 EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
 	if not ChatSettings.ShowUserOwnFilteredMessage then
 		if messageData.FromSpeaker == LocalPlayer.Name then
@@ -710,7 +711,7 @@ EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
 		channelObj:UpdateMessageFiltered(messageData)
 	end
 
-	if ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
+	if getEchoMessagesInGeneral() and ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
 		local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 		if generalChannel then
 			generalChannel:UpdateMessageFiltered(messageData)
@@ -727,10 +728,9 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 			ChannelsBar:UpdateMessagePostedInChannel(channelName)
 		end
 
-		local generalChannel = nil
-		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
-			generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
-			if (generalChannel) then
+		if getEchoMessagesInGeneral() and ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
+			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+			if generalChannel then
 				generalChannel:AddMessageToChannel(messageData)
 			end
 		end
@@ -756,9 +756,9 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, chann
 
 		DoFadeInFromNewInformation()
 
-		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
+		if getEchoMessagesInGeneral() and ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
 			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
-			if (generalChannel) then
+			if generalChannel then
 				generalChannel:AddMessageToChannel(messageData)
 			end
 		end
@@ -786,7 +786,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 	local channelObj = ChatWindow:AddChannel(channel)
 
 	if (channelObj) then
-		if (channel == "All") then
+		if (channel == ChatSettings.GeneralChannelName) then
 			DoSwitchCurrentChannel(channel)
 		end
 
@@ -800,7 +800,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 				channelObj:AddMessageToChannel(messageLog[i])
 			end
 
-			if addHistoryToGeneralChannel then
+			if getEchoMessagesInGeneral() and addHistoryToGeneralChannel then
 				if ChatSettings.GeneralChannelName and channel ~= ChatSettings.GeneralChannelName then
 					local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 					if generalChannel then
@@ -825,7 +825,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 			}
 			channelObj:AddMessageToChannel(welcomeMessageObject)
 
-			if addWelcomeMessageToGeneralChannel and not ChatSettings.ShowChannelsBar then
+			if getEchoMessagesInGeneral() and addWelcomeMessageToGeneralChannel and not ChatSettings.ShowChannelsBar then
 				if channel ~= ChatSettings.GeneralChannelName then
 					local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 					if generalChannel then
@@ -873,74 +873,6 @@ coroutine.wrap(function()
 		end)
 	end
 end)()
-
-
-local reparentingLock = false
-function connectGuiParent(GuiParent)
-	local DestroyGuardFrame = Instance.new("Frame")
-	DestroyGuardFrame.Name = "DestroyGuardFrame"
-	DestroyGuardFrame.BackgroundTransparency = 1
-	DestroyGuardFrame.Size = UDim2.new(1, 0, 1, 0)
-	DestroyGuardFrame.Parent = GuiParent
-
-	for i, v in pairs(GuiParent:GetChildren()) do
-		if (v ~= DestroyGuardFrame) then
-			v.Parent = DestroyGuardFrame
-		end
-	end
-
-end
-
-connectGuiParent(GuiParent)
-
-GuiParent.Changed:connect(function(prop)
-	if (prop == "Parent" and not reparentingLock) then
-		reparentingLock = true
-
-		local children = GuiParent.DestroyGuardFrame:GetChildren()
-		for i, v in pairs(children) do
-			v.Parent = nil
-		end
-
-		LocalPlayer.CharacterAdded:wait()
-		GuiParent.Parent = PlayerGui
-
-		for i, v in pairs(children) do
-			v.Parent = GuiParent
-		end
-
-		connectGuiParent(GuiParent)
-
-		reparentingLock = false
-	end
-end)
-
-local ChatBarFocusedState = nil
-
---// Always on top behavior that relies on parenting order of ScreenGuis
---// This would end up really bad if something else tried to do the exact same thing however.
-PlayerGui.ChildAdded:connect(function(child)
-	if (child ~= GuiParent and not reparentingLock) then
-		reparentingLock = true
-
-		GuiParent.Parent = nil
-		RunService.RenderStepped:wait()
-		GuiParent.Parent = PlayerGui
-
-		reparentingLock = false
-	elseif child == GuiParent then
-		if ChatBarFocusedState then
-			RunService.RenderStepped:wait()
-			ChatBar:RestoreFocusedState(ChatBarFocusedState)
-		end
-	end
-end)
-
-PlayerGui.DescendantRemoving:connect(function(descendant)
-	if descendant == GuiParent then
-		ChatBarFocusedState = ChatBar:GetFocusedState()
-	end
-end)
 
 
 --- Interaction with SetCore Player events.
@@ -1046,16 +978,14 @@ spawn(function()
 	end
 end)
 
-if chatPrivacySettingsEnabled then
-	spawn(function()
-		local success, canLocalUserChat = pcall(function()
-			return Chat:CanUserChatAsync(LocalPlayer.UserId)
-		end)
-		if success then
-			canChat = RunService:IsStudio() or canLocalUserChat
-		end
+spawn(function()
+	local success, canLocalUserChat = pcall(function()
+		return Chat:CanUserChatAsync(LocalPlayer.UserId)
 	end)
-end
+	if success then
+		canChat = RunService:IsStudio() or canLocalUserChat
+	end
+end)
 
 local initData = EventFolder.GetInitDataRequest:InvokeServer()
 

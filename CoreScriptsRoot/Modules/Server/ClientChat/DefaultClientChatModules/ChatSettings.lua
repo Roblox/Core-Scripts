@@ -66,6 +66,8 @@ module.ChatAnimationFPS = 20.0
 
 ---[[ Channel Settings ]]
 module.GeneralChannelName = "All" -- You can set to nil to turn off echoing to a general channel.
+module.EchoMessagesInGeneralChannel = true -- Should messages to channels other than general be echoed into the general channel.
+-- 																						Setting this to false should be used with ShowChannelsBar
 module.ChannelsBarFullTabSize = 4 -- number of tabs in bar before it starts to scroll
 module.MaxChannelNameLength = 12
 --// Although this feature is pretty much ready, it needs some UI design still.

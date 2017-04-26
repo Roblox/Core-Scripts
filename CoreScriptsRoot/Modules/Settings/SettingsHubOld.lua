@@ -42,19 +42,9 @@ local DeveloperConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
 
 local lastInputChangedCon = nil
 local chatWasVisible = false
-local userlistSuccess, userlistFlagValue = pcall(function() return settings():GetFFlag("UseUserListMenu") end)
-local useUserList = (userlistSuccess and userlistFlagValue == true)
 
 local resetButtonFlagSuccess, resetButtonFlagValue = pcall(function() return settings():GetFFlag("AllowResetButtonCustomization") end)
 local resetButtonCustomizationAllowed = (resetButtonFlagSuccess and resetButtonFlagValue == true)
-
-local function IsPlayMyPlaceEnabled()
-	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
-		local playMyPlaceSuccess, playMyPlaceFlagValue = pcall(function() return settings():GetFFlag("XboxPlayMyPlace") end)
-		return (playMyPlaceSuccess and playMyPlaceFlagValue == true)
-	end
-	return false
-end
 
 
 --[[ CORE MODULES ]]
@@ -426,18 +416,20 @@ local function CreateSettingsHub()
 					end
 				end
 
-				if IsPlayMyPlaceEnabled() then
-					spawn(function()
-							local PlatformService = nil
-							pcall(function() PlatformService = game:GetService('PlatformService') end)
-							local pmpCreatorId = PlatformService and PlatformService:BeginGetPMPCreatorId()
-							if pmpCreatorId == 0 then
-								createInviteButton()
-							end
-						end)
-				else
-					createInviteButton()
-				end
+				-- only show invite button on non-PMP games. Some users games may not be enabled for console, so inviting to
+				-- to the game session will not work.
+				spawn(function()
+					local PlatformService = nil
+					pcall(function() PlatformService = game:GetService('PlatformService') end)
+					if not PlatformService then return end
+
+					pcall(function()
+						local pmpCreatorId = PlatformService:BeginGetPMPCreatorId()
+						if pmpCreatorId == 0 then
+							createInviteButton()
+						end
+					end)
+				end)
 			else
 				addBottomBarButton("LeaveGame", "Leave Game", "rbxasset://textures/ui/Settings/Help/XButtonLight" .. buttonImageAppend .. ".png",
 					"rbxasset://textures/ui/Settings/Help/LeaveIcon.png", UDim2.new(0.5,isTenFootInterface and -160 or -130,0.5,-25),
@@ -532,7 +524,7 @@ local function CreateSettingsHub()
 				end
 			end
 
-			if useUserList and not isTenFootInterface then
+			if not isTenFootInterface then
 				if isSmallTouchScreen then
 					this.PageViewClipper.Size = UDim2.new(
 						this.PageViewClipper.Size.X.Scale,
@@ -948,7 +940,7 @@ local function CreateSettingsHub()
 				removeBottomBarBindings()
 				this:SwitchToPage(customStartPage, nil, 1, true)
 			else
-				if useUserList and not isTenFootInterface then
+				if not isTenFootInterface then
 					this:SwitchToPage(this.PlayersPage, nil, 1, true)
 				else
 					if this.HomePage then
@@ -1011,6 +1003,10 @@ local function CreateSettingsHub()
 		if this.Visible == visible then return end
 
 		setVisibilityInternal(visible, noAnimation, customStartPage, switchedFromGamepadInput)
+	end
+
+	function this:GetVisibility()
+		return this.Visible
 	end
 
 	function this:ToggleVisibility(switchedFromGamepadInput)
@@ -1136,13 +1132,6 @@ local function CreateSettingsHub()
 	this.LeaveGamePage:SetHub(this)
 
 	-- full page initialization
-	if not useUserList then
-		if isSmallTouchScreen then
-			this.HomePage = require(RobloxGui.Modules.Settings.Pages.Home)
-			this.HomePage:SetHub(this)
-		end
-	end
-
 	this.GameSettingsPage = require(RobloxGui.Modules.Settings.Pages.GameSettings)
 	this.GameSettingsPage:SetHub(this)
 
@@ -1159,22 +1148,17 @@ local function CreateSettingsHub()
 		this.RecordPage:SetHub(this)
 	end
 
-	if useUserList and not isTenFootInterface then
+	if not isTenFootInterface then
 		this.PlayersPage = require(RobloxGui.Modules.Settings.Pages.Players)
 		this.PlayersPage:SetHub(this)
 	end
 
 	-- page registration
-	if useUserList and not isTenFootInterface then
+	if not isTenFootInterface then
 		this:AddPage(this.PlayersPage)
 	end
 	this:AddPage(this.ResetCharacterPage)
 	this:AddPage(this.LeaveGamePage)
-	if not useUserList then
-		if this.HomePage then
-			this:AddPage(this.HomePage)
-		end
-	end
 	this:AddPage(this.GameSettingsPage)
 	if this.ReportAbusePage then
 		this:AddPage(this.ReportAbusePage)
@@ -1184,7 +1168,7 @@ local function CreateSettingsHub()
 		this:AddPage(this.RecordPage)
 	end
 
-	if useUserList and not isTenFootInterface then
+	if not isTenFootInterface then
 		this:SwitchToPage(this.PlayerPage, true, 1)
 	else
 		if this.HomePage then

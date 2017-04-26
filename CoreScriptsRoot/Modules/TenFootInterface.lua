@@ -31,9 +31,6 @@ if FORCE_TEN_FOOT_INTERFACE then
 	tenFootInterfaceEnabled = true
 end
 
-local showVisibleAgeV2Success, showVisibleAgeV2Value = pcall(function() return settings():GetFFlag("CoreScriptShowVisibleAgeV2") end)
-local showVisibleAgeV2Enabled = showVisibleAgeV2Success and showVisibleAgeV2Value
-
 local Util = {}
 do
 	function Util.Create(instanceType)
@@ -65,7 +62,7 @@ local function CreateModule()
 			{
 				Name = "TopRightContainer";
 				Size = UDim2.new(0, 350, 0, 100);
-				Position = showVisibleAgeV2Enabled and UDim2.new(1,-415,0,10) or UDim2.new(1,-360,0,10);
+				Position = UDim2.new(1,-415,0,10);
 				AutoButtonColor = false;
 				Image = "";
 				Active = false;
@@ -206,7 +203,7 @@ local function CreateModule()
 		return this.Container, username, this.HealthContainer, healthFill, accountType
 	end
 
-	function this:CreateAccountTypeV2(accountTypeTextShort)
+	function this:CreateAccountType(accountTypeTextShort)
 		this.AccountTypeContainer = Util.Create'Frame'{
 			Name = "AccountTypeContainer";
 			Size = UDim2.new(0, 50, 0, 50);
@@ -232,68 +229,6 @@ local function CreateModule()
 			TextXAlignment = Enum.TextXAlignment.Center;
 			TextYAlignment = Enum.TextYAlignment.Center;
 		};
-	end
-
-	function this:CreateAccountType(accountTypeText)
-		local container = Util.Create'ImageButton'
-		{
-			Name = "AccountTypeContainer";
-			Position = UDim2.new(1,-370,0,10);
-			AutoButtonColor = false;
-			Image = "";
-			BackgroundTransparency = 1;
-			Parent = RobloxGui;
-		}
-
-		local bubble = Util.Create'ImageButton'
-		{
-			Name = "AccountTypeBubble";
-			Size = UDim2.new(1, -10, 1, -16);
-			Position = UDim2.new(0, 10, 0, 8);
-			AutoButtonColor = false;
-			Image = "rbxasset://textures/ui/TopBar/Round.png";
-			ScaleType = Enum.ScaleType.Slice;
-			SliceCenter = Rect.new(10, 10, 10, 10);
-			ImageTransparency = 0;
-			BackgroundTransparency = 1;
-			Parent = container;
-		}
-
-		local accountTypeTextLabel = Util.Create'TextLabel'{
-			Name = "AccountTypeText";
-			Text = accountTypeText;
-			Size = UDim2.new(1, -12, 1, -12);
-			Position = UDim2.new(0, 6, 0, 6);
-			Font = Enum.Font.SourceSansBold;
-			FontSize = Enum.FontSize.Size14;
-			BackgroundTransparency = 1;
-			TextColor3 = Color3.new(1,1,1);
-			TextYAlignment = Enum.TextYAlignment.Center;
-			TextXAlignment = Enum.TextXAlignment.Left;
-			Parent = bubble;
-		};
-
-		local function repositionAccountType()
-			local negativeYOffset = 375
-			if #displayStack == 0 then
-				negativeYOffset = 15
-			elseif #displayStack == 1 and displayStack[1] == this.HealthContainer then
-				if this.HealthContainer.Visible == false then
-					negativeYOffset = 10
-				end
-			end
-
-			local containerSize = 22 + accountTypeTextLabel.TextBounds.X
-			container.Size = UDim2.new(0, containerSize, 0, 50)
-			container.Position = UDim2.new(1,- (negativeYOffset + containerSize),0,10);
-		end
-
-		repositionAccountType()
-
-		displayStackChanged.Event:connect(repositionAccountType)
-		healthContainerPropertyChanged.Event:connect(repositionAccountType)
-
-		return nil
 	end
 
 	function this:SetupTopStat()
@@ -443,10 +378,6 @@ local moduleApiTable = {}
 
 	function moduleApiTable:CreateAccountType(accountTypeText)
 		return TenFootInterfaceModule:CreateAccountType(accountTypeText)
-	end
-
-	function moduleApiTable:CreateAccountTypeV2(accountTypeTextShort)
-		return TenFootInterfaceModule:CreateAccountTypeV2(accountTypeTextShort)
 	end
 
 	function moduleApiTable:SetupTopStat()

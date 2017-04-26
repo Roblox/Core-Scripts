@@ -1,9 +1,11 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBX1E3E090B922241488CF1527B6A17D7C7">
+	<Item class="ModuleScript" referent="RBX4B0C8C744A2F4E4DA45785ED1416E208">
 		<Properties>
+			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">DynamicThumbstick</string>
+			<string name="ScriptGuid">{1A211679-B90E-480E-8DE1-31C18D774A22}</string>
 			<ProtectedString name="Source"><![CDATA[--[[
 	// FileName: DynamicThumbstick
 	// Version 0.9
@@ -58,9 +60,23 @@ local FadeInAndOutMaxAlpha = 0.35
 local FadeInAndOutHalfDuration = 0.3
 
 --[[ Local functionality ]]--
-	
+
+local function isDynamicThumbstickEnabled()
+	return ThumbstickFrame and ThumbstickFrame.Visible
+end
+
+local function enableAutoJump(humanoid)
+	if humanoid and isDynamicThumbstickEnabled() then
+		local shouldRevert = humanoid.AutoJumpEnabled == false
+		shouldRevert = shouldRevert and LocalPlayer.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
+		RevertAutoJumpEnabledToFalse = shouldRevert
+		humanoid.AutoJumpEnabled = true
+	end
+end
+
 do
-	local function onCharacterAdded(character)
+	local function onCharacterAdded(character)	
+		
 		for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
 			if child:IsA("Tool") then
 				IsAToolEquipped = true
@@ -69,6 +85,8 @@ do
 		character.ChildAdded:Connect(function(child)
 			if child:IsA("Tool") then
 				IsAToolEquipped = true
+			elseif child:IsA("Humanoid") then
+				enableAutoJump(child)
 			end
 		end)
 		character.ChildRemoved:Connect(function(child)
@@ -76,6 +94,11 @@ do
 				IsAToolEquipped = false
 			end
 		end)
+		
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			enableAutoJump(humanoid)
+		end
 	end
 	LocalPlayer.CharacterAdded:Connect(onCharacterAdded)
 	if LocalPlayer.Character then
@@ -85,14 +108,9 @@ end
 
 --[[ Public API ]]--
 function Thumbstick:Enable()
-	local humanoid = MasterControl:GetHumanoid()
-	if humanoid then
-		local shouldRevert = humanoid.AutoJumpEnabled == false
-		shouldRevert = shouldRevert and LocalPlayer.DevTouchMovementMode == Enum.DevTouchMovementMode.UserChoice
-		RevertAutoJumpEnabledToFalse = shouldRevert
-		humanoid.AutoJumpEnabled = true
-	end
 	ThumbstickFrame.Visible = true
+	local humanoid = MasterControl:GetHumanoid()
+	enableAutoJump(humanoid)
 end
 
 function Thumbstick:Disable()

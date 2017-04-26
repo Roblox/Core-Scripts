@@ -34,16 +34,8 @@ local function GetBoolValue(parent, name, defaultValue)
 	return defaultValue
 end
 
-local function loadDefaultChatDisabled()
-	local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("LoadDefaultChatEnabled") end)
-	if readFlagSuccess and flagEnabled then
-		return not ChatService.LoadDefaultChat
-	end
-	return false
-end
-
 local function Install()
-	if loadDefaultChatDisabled() then
+	if not ChatService.LoadDefaultChat then
 		return
 	end
 

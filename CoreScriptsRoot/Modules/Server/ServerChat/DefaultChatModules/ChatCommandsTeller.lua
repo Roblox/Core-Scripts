@@ -43,9 +43,11 @@ local function Run(ChatService)
 
 	ChatService:RegisterProcessCommandsFunction("chat_commands_inquiry", ProcessCommandsFunction, ChatConstants.StandardPriority)
 
-	local allChannel = ChatService:GetChannel("All")
-	if (allChannel) then
-		allChannel.WelcomeMessage = "Chat '/?' or '/help' for a list of chat commands."
+	if ChatSettings.GeneralChannelName then
+		local allChannel = ChatService:GetChannel(ChatSettings.GeneralChannelName)
+		if (allChannel) then
+			allChannel.WelcomeMessage = "Chat '/?' or '/help' for a list of chat commands."
+		end
 	end
 end
 

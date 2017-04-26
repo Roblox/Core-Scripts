@@ -1,27 +1,23 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXA74A5A1BA29543E288C039551D27D876">
+	<Item class="ModuleScript" referent="RBX0D38EF2FE7EE4991A91A45E21FB3841D">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">RootCamera</string>
+			<string name="ScriptGuid">{8F8307A5-008F-4CE7-A7AA-D96A39DD504B}</string>
 			<ProtectedString name="Source"><![CDATA[
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
 local StarterGui = game:GetService('StarterGui')
 local GuiService = game:GetService('GuiService')
 local ContextActionService = game:GetService('ContextActionService')
+local VRService = game:GetService("VRService")
 
 local LocalPlayer = PlayersService.LocalPlayer
 local PlayerGui = nil
 if LocalPlayer then
 	PlayerGui = PlayersService.LocalPlayer:WaitForChild("PlayerGui")
-end
-
-local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
-if not VRServiceExists or not VRService then
-	--No VRService? Fall back to UserInputService, it is the original VRService after all
-	VRService = UserInputService
 end
 
 local PortraitMode = false
@@ -38,14 +34,12 @@ end)
 local FFlagSpawnLocationFixEnabled = spawnLocationFixFlagExists and spawnLocationFixFlagEnabled
 
 local function clamp(low, high, num)
-	if low <= high then
-		return math.min(high, math.max(low, num))
-	end
-	return num
+	return (num > high and high or num < low and low or num)
 end
 
+local math_atan2 = math.atan2
 local function findAngleBetweenXZVectors(vec2, vec1)
-	return math.atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
+	return math_atan2(vec1.X*vec2.Z-vec1.Z*vec2.X, vec1.X*vec2.X + vec1.Z*vec2.Z)
 end
 
 local function IsFinite(num)
@@ -67,12 +61,11 @@ local function findPlayerHumanoid(player)
 			return resultHumanoid
 		else
 			humanoidCache[player] = nil -- Bust Old Cache
-			for _, child in pairs(character:GetChildren()) do
-				if child:IsA('Humanoid') then
-					humanoidCache[player] = child
-					return child
-				end
+			local humanoid = character:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				humanoidCache[player] = humanoid
 			end
+			return humanoid
 		end
 	end
 end
@@ -82,8 +75,8 @@ local MAX_Y = math.rad(80)
 
 local VR_ANGLE = math.rad(15)
 
-local VR_LOW_INTENSITY_ROTATION = Vector2.new(math.rad(15),0)
-local VR_HIGH_INTENSITY_ROTATION = Vector2.new(math.rad(45),0)
+local VR_LOW_INTENSITY_ROTATION = Vector2.new(math.rad(15), 0)
+local VR_HIGH_INTENSITY_ROTATION = Vector2.new(math.rad(45), 0)
 local VR_LOW_INTENSITY_REPEAT = 0.1
 local VR_HIGH_INTENSITY_REPEAT = 0.4
 
@@ -232,7 +225,7 @@ local function CreateCamera()
 	local isFirstPerson = false
 	local isRightMouseDown = false
 	local isMiddleMouseDown = false
-	this.RotateInput = Vector2.new()
+	this.RotateInput = ZERO_VECTOR2
 	
 	local tweens = {}
 
@@ -278,27 +271,14 @@ local function CreateCamera()
 		end
 	end
 
+	local HUMANOID_STATE_DEAD = Enum.HumanoidStateType.Dead
+	
 	function this:GetSubjectPosition()
 		local result = nil
 		local camera = workspace.CurrentCamera
 		local cameraSubject = camera and camera.CameraSubject
 		if cameraSubject then
-			if cameraSubject:IsA('VehicleSeat') then
-				local subjectCFrame = GetRenderCFrame(cameraSubject)
-				local offset = SEAT_OFFSET
-				if VRService.VREnabled then
-					offset = VR_SEAT_OFFSET
-				end
-				result = subjectCFrame.p + subjectCFrame:vectorToWorldSpace(offset)
-			elseif cameraSubject:IsA('SkateboardPlatform') then
-				local subjectCFrame = GetRenderCFrame(cameraSubject)
-				result = subjectCFrame.p + SEAT_OFFSET
-			elseif cameraSubject:IsA('BasePart') then
-				local subjectCFrame = GetRenderCFrame(cameraSubject)
-				result = subjectCFrame.p
-			elseif cameraSubject:IsA('Model') then
-				result = cameraSubject:GetModelCFrame().p
-			elseif cameraSubject:IsA('Humanoid') then
+			if cameraSubject:IsA('Humanoid') then
 				local humanoidStateType = cameraSubject:GetState()
 				if VRService.VREnabled and humanoidStateType == STATE_DEAD and cameraSubject == this.lastSubject then
 					result = this.lastSubjectPosition
@@ -314,7 +294,22 @@ local function CreateCamera()
 						result = subjectCFrame.p +
 							subjectCFrame:vectorToWorldSpace(heightOffset + cameraSubject.CameraOffset)
 					end
+				end	
+			elseif cameraSubject:IsA('VehicleSeat') then
+				local subjectCFrame = GetRenderCFrame(cameraSubject)
+				local offset = SEAT_OFFSET
+				if VRService.VREnabled then
+					offset = VR_SEAT_OFFSET
 				end
+				result = subjectCFrame.p + subjectCFrame:vectorToWorldSpace(offset)
+			elseif cameraSubject:IsA('SkateboardPlatform') then
+				local subjectCFrame = GetRenderCFrame(cameraSubject)
+				result = subjectCFrame.p + SEAT_OFFSET
+			elseif cameraSubject:IsA('BasePart') then
+				local subjectCFrame = GetRenderCFrame(cameraSubject)
+				result = subjectCFrame.p
+			elseif cameraSubject:IsA('Model') then
+				result = cameraSubject:GetModelCFrame().p
 			end
 		end
 		this.lastSubject = cameraSubject
@@ -345,7 +340,7 @@ local function CreateCamera()
 	end
 
 	function this:GetCameraHeight()
-		if not this:IsInFirstPerson() and VRService.VREnabled then
+		if VRService.VREnabled and not this:IsInFirstPerson() then
 			local zoom = this:GetCameraZoom()
 			return math.sin(VR_ANGLE) * zoom
 		end
@@ -370,34 +365,45 @@ local function CreateCamera()
 		return result
 	end
 
+	
+	local math_asin = math.asin
+	local math_atan2 = math.atan2
+	local math_floor = math.floor
+	local math_max = math.max
+	local math_pi = math.pi
+	local Vector2_new = Vector2.new
+	local Vector3_new = Vector3.new
+	local CFrame_Angles = CFrame.Angles
+	local CFrame_new = CFrame.new
+
 	function this:ScreenTranslationToAngle(translationVector)
 		local screenX = this:ViewSizeX()
 		local screenY = this:ViewSizeY()
 		local xTheta = (translationVector.x / screenX)
 		local yTheta = (translationVector.y / screenY)
-		return Vector2.new(xTheta, yTheta)
+		return Vector2_new(xTheta, yTheta)
 	end
 
 	function this:MouseTranslationToAngle(translationVector)
 		local xTheta = (translationVector.x / 1920)
 		local yTheta = (translationVector.y / 1200)
-		return Vector2.new(xTheta, yTheta)
+		return Vector2_new(xTheta, yTheta)
 	end
 
 	function this:RotateVector(startVector, xyRotateVector)
-		local startCFrame = CFrame.new(Vector3.new(), startVector)
-		local resultLookVector = (CFrame.Angles(0, -xyRotateVector.x, 0) * startCFrame * CFrame.Angles(-xyRotateVector.y,0,0)).lookVector
-		return resultLookVector, Vector2.new(xyRotateVector.x, xyRotateVector.y)
+		local startCFrame = CFrame_new(ZERO_VECTOR3, startVector)
+		local resultLookVector = (CFrame_Angles(0, -xyRotateVector.x, 0) * startCFrame * CFrame_Angles(-xyRotateVector.y,0,0)).lookVector
+		return resultLookVector, Vector2_new(xyRotateVector.x, xyRotateVector.y)
 	end
 
 	function this:RotateCamera(startLook, xyRotateVector)
 		if VRService.VREnabled then
 			local yawRotatedVector, xyRotateVector = self:RotateVector(startLook, Vector2.new(xyRotateVector.x, 0))
-			return Vector3.new(yawRotatedVector.x, 0, yawRotatedVector.z).unit, xyRotateVector
+			return Vector3_new(yawRotatedVector.x, 0, yawRotatedVector.z).unit, xyRotateVector
 		else
-			local startVertical = math.asin(startLook.y)
+			local startVertical = math_asin(startLook.y)
 			local yTheta = clamp(-MAX_Y + startVertical, -MIN_Y + startVertical, xyRotateVector.y)
-			return self:RotateVector(startLook, Vector2.new(xyRotateVector.x, yTheta))
+			return self:RotateVector(startLook, Vector2_new(xyRotateVector.x, yTheta))
 		end
 	end
 
@@ -444,7 +450,7 @@ local function CreateCamera()
 	local function rk4Integrator(position, velocity, t)
 		local direction = velocity < 0 and -1 or 1
 		local function acceleration(p, v)
-			local accel = direction * math.max(1, (p / 3.3) + 0.5)
+			local accel = direction * math_max(1, (p / 3.3) + 0.5)
 			return accel
 		end
 
@@ -575,7 +581,7 @@ local function CreateCamera()
 		return vrRotateSum
 	end
 
-	local cameraTranslationConstraints = Vector3.new(1,1,1)
+	local cameraTranslationConstraints = Vector3.new(1, 1, 1)
 	local humanoidJumpOrigin = nil
 	local trackingHumanoid = nil
 	local cameraFrozen = false
@@ -658,7 +664,7 @@ local function CreateCamera()
 			end
 
 			subjectStateChangedConn = humanoid.StateChanged:connect(function(oldState, newState)
-				if newState == Enum.HumanoidStateType.Jumping and not this:IsInFirstPerson() and VRService.VREnabled then
+				if VRService.VREnabled and newState == Enum.HumanoidStateType.Jumping and not this:IsInFirstPerson() then
 					startCameraFreeze(this:GetSubjectPosition(), humanoid)
 				elseif newState ~= Enum.HumanoidStateType.Jumping and newState ~= Enum.HumanoidStateType.Freefall then
 					cancelCameraFreeze(true)
@@ -790,7 +796,7 @@ local function CreateCamera()
 			if #unsunkTouches == 2 then
 				local difference = (unsunkTouches[1].Position - unsunkTouches[2].Position).magnitude
 				if StartingDiff and pinchBeginZoom then
-					local scale = difference / math.max(0.01, StartingDiff)
+					local scale = difference / math_max(0.01, StartingDiff)
 					local clampedScale = clamp(0.1, 10, scale)
 					if this.ZoomEnabled then
 						this:ZoomCamera(pinchBeginZoom / clampedScale)
@@ -824,7 +830,7 @@ local function CreateCamera()
 	end
 	
 	local function OnTouchTap(position)
-		if isDynamicThumbstickEnabled then
+		if isDynamicThumbstickEnabled and not IsAToolEquipped then
 			if lastTapTime and tick() - lastTapTime < MAX_TIME_FOR_DOUBLE_TAP then
 				local tween = {
 					from = this:GetCameraZoom(),
@@ -869,11 +875,14 @@ local function CreateCamera()
 	end
 	
 	local function IsTouchTap(input)
-		local posDelta = (inputStartPositions[input] - input.Position).magnitude
-		if posDelta < MAX_TAP_POS_DELTA then
-			local timeDelta = inputStartTimes[input] - tick()
-			if timeDelta < MAX_TAP_TIME_DELTA then
-				return true
+		-- We can't make the assumption that the input exists in the inputStartPositions because we may have switched from a different camera type.
+		if inputStartPositions[input] then
+			local posDelta = (inputStartPositions[input] - input.Position).magnitude
+			if posDelta < MAX_TAP_POS_DELTA then
+				local timeDelta = inputStartTimes[input] - tick()
+				if timeDelta < MAX_TAP_TIME_DELTA then
+					return true
+				end
 			end
 		end
 		return false
@@ -982,16 +991,16 @@ local function CreateCamera()
 	end
 
 	local function round(num)
-		return math.floor(num + 0.5)
+		return math_floor(num + 0.5)
 	end
 
-	local eight2Pi = math.pi / 4
+	local eight2Pi = math_pi / 4
 
 	local function rotateVectorByAngleAndRound(camLook, rotateAngle, roundAmount)
-		if camLook ~= Vector3.new(0,0,0) then
+		if camLook ~= ZERO_VECTOR3 then
 			camLook = camLook.unit
-			local currAngle = math.atan2(camLook.z, camLook.x)
-			local newAngle = round((math.atan2(camLook.z, camLook.x) + rotateAngle) / roundAmount) * roundAmount
+			local currAngle = math_atan2(camLook.z, camLook.x)
+			local newAngle = round((math_atan2(camLook.z, camLook.x) + rotateAngle) / roundAmount) * roundAmount
 			return newAngle - currAngle
 		end
 		return 0
@@ -1088,9 +1097,9 @@ local function CreateCamera()
 			end
 			local point = fromSCurveSpace(SCurveTranform(toSCurveSpace(math.abs(axisValue))))
 			point = point * sign
-			return clamp(-1,1,point)
+			return clamp(-1, 1, point)
 		end
-		return Vector2.new(onAxis(thumbstickPosition.x), onAxis(thumbstickPosition.y))
+		return Vector2_new(onAxis(thumbstickPosition.x), onAxis(thumbstickPosition.y))
 	end
 
 	function this:UpdateGamepad()
@@ -1100,9 +1109,9 @@ local function CreateCamera()
 			local currentTime = tick()
 			if gamepadPan.X ~= 0 or gamepadPan.Y ~= 0 then
 				this.userPanningTheCamera = true
-			elseif gamepadPan == Vector2.new(0,0) then
+			elseif gamepadPan == ZERO_VECTOR2 then
 				lastThumbstickRotate = nil
-				if lastThumbstickPos == Vector2.new(0,0) then
+				if lastThumbstickPos == ZERO_VECTOR2 then
 					currentSpeed = 0
 				end
 			end
@@ -1136,10 +1145,10 @@ local function CreateCamera()
 			lastThumbstickPos = gamepadPan
 			lastThumbstickRotate = currentTime
 
-			return Vector2.new( gamepadPan.X * finalConstant, gamepadPan.Y * finalConstant * ySensitivity)
+			return Vector2_new( gamepadPan.X * finalConstant, gamepadPan.Y * finalConstant * ySensitivity)
 		end
 
-		return Vector2.new(0,0)
+		return ZERO_VECTOR2
 	end
 
 	local InputBeganConn, InputChangedConn, InputEndedConn, MenuOpenedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn = nil, nil, nil, nil, nil, nil, nil
@@ -1325,15 +1334,15 @@ local function CreateCamera()
 			if input.UserInputType == activateGamepad and input.KeyCode == Enum.KeyCode.Thumbstick2 then
 
 				if state == Enum.UserInputState.Cancel then
-					this.GamepadPanningCamera = Vector2.new(0,0)
+					this.GamepadPanningCamera = ZERO_VECTOR2
 					return
 				end
 
 				local inputVector = Vector2.new(input.Position.X, -input.Position.Y)
 				if inputVector.magnitude > THUMBSTICK_DEADZONE then
-					this.GamepadPanningCamera = Vector2.new(input.Position.X, -input.Position.Y)
+					this.GamepadPanningCamera = Vector2_new(input.Position.X, -input.Position.Y)
 				else
-					this.GamepadPanningCamera = Vector2.new(0,0)
+					this.GamepadPanningCamera = ZERO_VECTOR2
 				end
 			end
 		end
@@ -1376,7 +1385,7 @@ local function CreateCamera()
 			self.Enabled = newState
 			if self.Enabled then
 				self:ConnectInputEvents()
-				self.cframe = workspace.CurrentCamera.CoordinateFrame
+				self.cframe = workspace.CurrentCamera.CFrame
 			else
 				self:DisconnectInputEvents()
 			end

@@ -1189,13 +1189,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
   
 	do -- Client Memory tab
     
-    local getFlagSuccess, flagValue = pcall(function() 
-        return settings():GetFFlag("EnableClientMemoryUIInDevConsole") 
-      end)		
-        
-    local showClientMemoryTab = getFlagSuccess and flagValue
- 
-    if (showClientMemoryTab) then
       local tabBody = Primitives.FolderFrame(body, 'ClientMemory')
       
       local memoryAnalyzer = MemoryAnalyzerClass.new(tabBody)
@@ -1234,7 +1227,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
       devConsole.VisibleChanged:connect(function(visible)
           syncMemoryAnalyzerVisibility()
       end)
-    end 
 	end
 
 

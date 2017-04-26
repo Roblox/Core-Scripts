@@ -58,20 +58,8 @@ function methods:SendMessageObjToFilters(message, messageObj, fromSpeaker)
 	return newMessage
 end
 
-function ChatSettingsEnabled()
-	local chatPrivacySettingsSuccess, chatPrivacySettingsValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserChatPrivacySetting") end)
-	local chatPrivacySettingsEnabled = true
-	if chatPrivacySettingsSuccess then
-		chatPrivacySettingsEnabled = chatPrivacySettingsValue
-	end
-	return chatPrivacySettingsEnabled
-end
-
 function methods:CanCommunicateByUserId(userId1, userId2)
 	if RunService:IsStudio() then
-		return true
-	end
-	if ChatSettingsEnabled() == false then
 		return true
 	end
 	-- UserId is set as 0 for non player speakers.
@@ -487,6 +475,8 @@ function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, e
 			local player = speaker:GetPlayer()
 			if player then
 				speakerUserId = player.UserId
+			else
+				speakerUserId = 0
 			end
 		end
 	end

@@ -16,9 +16,6 @@ local BubbleChatEnabled = PlayersService.BubbleChat
 
 local Util = require(RobloxGui.Modules.ChatUtil)
 
-local readFlagSuccess, flagEnabled = pcall(function() return settings():GetFFlag("CorescriptNewChatSetCoresEnabled") end)
-local EnableChatSetCoreAPIs = readFlagSuccess and flagEnabled
-
 local moduleApiTable = {}
 do
 		local ChatWindowState =
@@ -31,8 +28,6 @@ do
 
 		local communicationsConnections = {}
 		local eventConnections = {}
-
-		local MakeSystemMessageCache = {} -- Remove with CorescriptNewChatSetCoresEnabled
 
 		local SetCoreCache = {}
 
@@ -176,17 +171,6 @@ do
 			DispatchEvent("SpecialKeyPressed", key, modifiers)
 		end)
 
-		if EnableChatSetCoreAPIs == false then
-			StarterGui:RegisterSetCore("ChatMakeSystemMessage", function(data)
-				local event = FindInCollectionByKeyAndType(communicationsConnections.SetCore, "ChatMakeSystemMessage", "BindableEvent")
-				if (event) then
-					event:Fire(data)
-				else
-					table.insert(MakeSystemMessageCache, data)
-				end
-			end)
-		end
-
 		function DoConnectSetCore(setCoreName)
 			StarterGui:RegisterSetCore(setCoreName, function(data)
 				local event = FindInCollectionByKeyAndType(communicationsConnections.SetCore, setCoreName, "BindableEvent")
@@ -201,12 +185,10 @@ do
 			end)
 		end
 
-		if EnableChatSetCoreAPIs then
-			DoConnectSetCore("ChatMakeSystemMessage")
-			DoConnectSetCore("ChatWindowPosition")
-			DoConnectSetCore("ChatWindowSize")
-			DoConnectSetCore("ChatBarDisabled")
-		end
+		DoConnectSetCore("ChatMakeSystemMessage")
+		DoConnectSetCore("ChatWindowPosition")
+		DoConnectSetCore("ChatWindowSize")
+		DoConnectSetCore("ChatBarDisabled")
 
 		DoConnectGetCore("ChatWindowPosition")
 		DoConnectGetCore("ChatWindowSize")
@@ -275,17 +257,6 @@ do
 					communicationsConnections.SetCore = {}
 					communicationsConnections.GetCore = {}
 
-					if EnableChatSetCoreAPIs == false then
-						local event = FindInCollectionByKeyAndType(setCoreCollection, "ChatMakeSystemMessage", "BindableEvent")
-						if (event) then
-							communicationsConnections.SetCore.ChatMakeSystemMessage = event
-							for i, messageData in pairs(MakeSystemMessageCache) do
-								pcall(function() StarterGui:SetCore("ChatMakeSystemMessage", messageData) end)
-							end
-							MakeSystemMessageCache = {}
-						end
-					end
-
 					local function addSetCore(setCoreName)
 						local event = FindInCollectionByKeyAndType(setCoreCollection, setCoreName, "BindableEvent")
 						if (event) then
@@ -299,12 +270,10 @@ do
 						end
 					end
 
-					if EnableChatSetCoreAPIs then
-						addSetCore("ChatMakeSystemMessage")
-						addSetCore("ChatWindowPosition")
-						addSetCore("ChatWindowSize")
-						addSetCore("ChatBarDisabled")
-					end
+					addSetCore("ChatMakeSystemMessage")
+					addSetCore("ChatWindowPosition")
+					addSetCore("ChatWindowSize")
+					addSetCore("ChatBarDisabled")
 
 					communicationsConnections.GetCore.ChatWindowPosition = FindInCollectionByKeyAndType(getCoreCollection, "ChatWindowPosition", "BindableFunction")
 					communicationsConnections.GetCore.ChatWindowSize = FindInCollectionByKeyAndType(getCoreCollection, "ChatWindowSize", "BindableFunction")

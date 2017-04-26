@@ -39,6 +39,9 @@ local VRService = game:GetService("VRService")
 local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
 local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
 
+local reportPlayerInMenuSuccess, reportPlayerInMenuValue = pcall(function() return settings():GetFFlag("CoreScriptReportPlayerInMenu") end)
+local enableReportPlayer = reportPlayerInMenuSuccess and reportPlayerInMenuValue
+
 if not enablePortraitMode then
 	return require(RobloxGui.Modules.Settings:WaitForChild("UtilityOld"))
 end
@@ -370,7 +373,7 @@ local gamepadSet = {
 	[Enum.UserInputType.Gamepad8] = true;
 }
 
-local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
+local function MakeDefaultButton(name, size, clickFunc, pageRef, hubRef)
 	local SelectionOverrideObject = Util.Create'ImageLabel'
 	{
 		Image = "",
@@ -389,8 +392,10 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		ZIndex = 2,
 		SelectionImageObject = SelectionOverrideObject
 	};
-	button.NextSelectionLeft = button
-	button.NextSelectionRight = button
+	if not enableReportPlayer then
+		button.NextSelectionLeft = button
+		button.NextSelectionRight = button
+	end
 
 	local enabled = Util.Create'BoolValue'
 	{
@@ -458,6 +463,26 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		deselectButton()
 	end)
 
+	local guiServiceCon = GuiService.Changed:Connect(function(prop)
+		if prop ~= "SelectedCoreObject" then return end
+		if not usesSelectedObject() then return end
+
+		if GuiService.SelectedCoreObject == nil or GuiService.SelectedCoreObject ~= button then
+			deselectButton()
+			return
+		end
+
+		if button.Selectable then
+			selectButton()
+		end
+	end)
+
+	return button, setRowRef
+end
+
+local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
+	local button, setRowRef = MakeDefaultButton(name, size, clickFunc, pageRef, hubRef)
+
 	local textLabel = Util.Create'TextLabel'
 	{
 		Name = name .. "TextLabel",
@@ -481,21 +506,26 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		textLabel.TextSize = 36
 	end
 
-	local guiServiceCon = GuiService.Changed:Connect(function(prop)
-		if prop ~= "SelectedCoreObject" then return end
-		if not usesSelectedObject() then return end
-
-		if GuiService.SelectedCoreObject == nil or GuiService.SelectedCoreObject ~= button then
-			deselectButton()
-			return
-		end
-
-		if button.Selectable then
-			selectButton()
-		end
-	end)
-
 	return button, textLabel, setRowRef
+end
+
+local function MakeImageButton(name, image, size, imageSize, clickFunc, pageRef, hubRef)
+	local button, setRowRef = MakeDefaultButton(name, size, clickFunc, pageRef, hubRef)
+
+	local imageLabel = Util.Create'ImageLabel'
+	{
+		Name = name .. "ImageLabel",
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Size = imageSize,
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Image = image,
+		ZIndex = 2,
+		Parent = button
+	};
+
+	return button, imageLabel, setRowRef
 end
 
 local function AddButtonRow(pageToAddTo, name, text, size, clickFunc, hubRef)
@@ -1328,7 +1358,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 	AlertViewBacking = Util.Create'ImageLabel'
 	{
 		Name = "AlertViewBacking",
-		Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png", 
+		Image = "rbxasset://textures/ui/Settings/MenuBarAssets/MenuButton.png",
 		ScaleType = Enum.ScaleType.Slice,
 		SliceCenter = Rect.new(8,6,46,44),
 		BackgroundTransparency = 1,
@@ -2495,6 +2525,10 @@ end
 
 function moduleApiTable:MakeStyledButton(name, text, size, clickFunc, pageRef, hubRef)
 	return MakeButton(name, text, size, clickFunc, pageRef, hubRef)
+end
+
+function moduleApiTable:MakeStyledImageButton(name, image, size, imageSize, clickFunc, pageRef, hubRef)
+	return MakeImageButton(name, image, size, imageSize, clickFunc, pageRef, hubRef)
 end
 
 function moduleApiTable:AddButtonRow(pageToAddTo, name, text, size, clickFunc, hubRef)
