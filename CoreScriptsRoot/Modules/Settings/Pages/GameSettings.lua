@@ -629,6 +629,28 @@ local function Initialize()
         GameSettings.MasterVolume = soundPercent
       end)
   end
+  
+  local function createCameraInvertedOptions()
+    local initialIndex = 1
+    local success = pcall(function()
+      if GameSettings.CameraYInverted == true then
+        initialIndex = 2
+      end
+    end)
+    
+    if success == false then
+      return
+    end
+    
+    _,_,this.CameraInvertedSelector = utility:AddNewRow(this, "Camera Inverted", "Selector", {"Off", "On"}, initialIndex)
+    this.CameraInvertedSelector.IndexChanged:connect(function(newIndex)
+      if newIndex == 2 then
+        GameSettings.CameraYInverted = true
+      else
+        GameSettings.CameraYInverted = false
+      end
+    end)
+  end
 
   local function createMouseOptions()
     local MouseSteps = 10
@@ -906,6 +928,11 @@ local function Initialize()
 
   if UserInputService.MouseEnabled and not isTenFootInterface then
     createMouseOptions()
+  end
+  
+  local CameraYInvertedSuccess,CameraYInvertedEnabled = pcall(function() return settings():GetFFlag("CameraYInvertedEnabled") end)
+  if CameraYInvertedSuccess and CameraYInvertedEnabled then
+    createCameraInvertedOptions()
   end
 
   createVolumeOptions()
