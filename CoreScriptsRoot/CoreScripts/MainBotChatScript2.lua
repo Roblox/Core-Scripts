@@ -644,7 +644,7 @@ end
 
 function onLoad()
 	player = localPlayer
-	waitForProperty(player, "Character")
+	waitForProperty(localPlayer, "Character")
 
 	createChatNotificationGui()
 
