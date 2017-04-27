@@ -559,7 +559,7 @@ local function CreateSettingsHub()
 			--to update, or we can just avoid using it so soon.
 			RunService.Heartbeat:wait()
 
-			if shouldShowBottomBar() then
+			if this.Visible and shouldShowBottomBar() then
 				setBottomBarBindings()
 			else
 				removeBottomBarBindings()
