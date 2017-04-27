@@ -74,6 +74,7 @@ local function CreateSettingsHub()
 	this.MenuStack = {}
 	this.TabHeaders = {}
 	this.BottomBarButtons = {}
+	this.ResizedConnection = nil
 	this.TabConnection = nil
 	this.LeaveGamePage = require(RobloxGui.Modules.Settings.Pages.LeaveGame)
 	this.ResetCharacterPage = require(RobloxGui.Modules.Settings.Pages.ResetCharacter)
@@ -516,156 +517,6 @@ local function CreateSettingsHub()
 			resumeFunc, {Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart}
 		)
 
-		local function onScreenSizeChanged()
-			local largestPageSize = 600
-			local fullScreenSize = RobloxGui.AbsoluteSize.y
-			local bufferSize = (1-0.95) * fullScreenSize
-			local isPortrait = utility:IsPortrait()
-			if isTenFootInterface then
-				largestPageSize = 800
-				bufferSize = 0.07 * fullScreenSize
-				this.MenuContainer.Size = UDim2.new(0.95, 0, 0.95, 0)
-			elseif isSmallTouchScreen then
-				bufferSize = math.min(10, (1-0.99) * fullScreenSize)
-				this.MenuContainer.Size = UDim2.new(1, 0, 0.99, 0)
-			else
-				this.MenuContainer.Size = UDim2.new(0.95, 0, 0.95, 0)
-			end
-			local barSize = this.HubBar.Size.Y.Offset
-			local extraSpace = bufferSize*2+barSize*2
-			local isPortrait = utility:IsPortrait()
-
-			if isPortrait then
-				this.MenuContainer.Size = UDim2.new(1, 0, 1, 0)
-				this.MenuAspectRatio.Parent = nil
-				this.HubBar.Position = UDim2.new(0.5, 0, 0, 10)
-				this.HubBar.Size = UDim2.new(1, -20, 0, 40)
-			else
-				if isTenFootInterface then
-					this.HubBar.Size = UDim2.new(0, 1200, 0, 100)
-					this.MenuAspectRatio.Parent = this.MenuContainer
-				elseif isSmallTouchScreen then
-					this.HubBar.Size = UDim2.new(1, -10, 0, 40)
-					this.MenuAspectRatio.Parent = nil
-				else
-					this.HubBar.Size = UDim2.new(0, 800, 0, 60)
-					this.MenuAspectRatio.Parent = this.MenuContainer
-				end
-			end
-
-			--We need to wait and let the HubBar AbsoluteSize actually update.
-			--This is in the same frame, so the delay should be very minimal.
-			--Maybe in the future we need to have a way to force AbsoluteSize
-			--to update, or we can just avoid using it so soon.
-			RunService.Heartbeat:wait()
-
-			if this.Visible and shouldShowBottomBar() then
-				setBottomBarBindings()
-			else
-				removeBottomBarBindings()
-			end
-
-			local usableScreenHeight = fullScreenSize - extraSpace
-			local minimumPageSize = 150
-			local usePageSize = nil
-
-			if not isPortrait then
-				if largestPageSize < usableScreenHeight then
-					usePageSize = largestPageSize
-					this.HubBar.Position = UDim2.new(
-						this.HubBar.Position.X.Scale,
-						this.HubBar.Position.X.Offset,
-						0.5,
-						-largestPageSize/2 - this.HubBar.Size.Y.Offset
-					)
-					if this.BottomButtonFrame then
-						this.BottomButtonFrame.Position = UDim2.new(
-							this.BottomButtonFrame.Position.X.Scale,
-							this.BottomButtonFrame.Position.X.Offset,
-							0.5,
-							largestPageSize/2
-						)
-					end
-				elseif usableScreenHeight < minimumPageSize then
-					usePageSize = minimumPageSize
-					this.HubBar.Position = UDim2.new(
-						this.HubBar.Position.X.Scale,
-						this.HubBar.Position.X.Offset,
-						0.5,
-						-minimumPageSize/2 - this.HubBar.Size.Y.Offset
-					)
-					if this.BottomButtonFrame then
-						this.BottomButtonFrame.Position = UDim2.new(
-							this.BottomButtonFrame.Position.X.Scale,
-							this.BottomButtonFrame.Position.X.Offset,
-							0.5,
-							minimumPageSize/2
-						)
-					end
-				else
-					usePageSize = usableScreenHeight
-					this.HubBar.Position = UDim2.new(
-						this.HubBar.Position.X.Scale,
-						this.HubBar.Position.X.Offset,
-						0,
-						bufferSize
-					)
-					if this.BottomButtonFrame then
-						this.BottomButtonFrame.Position = UDim2.new(
-							this.BottomButtonFrame.Position.X.Scale,
-							this.BottomButtonFrame.Position.X.Offset,
-							1,
-							-(bufferSize + barSize)
-						)
-					end
-				end
-			else
-				usePageSize = usableScreenHeight
-			end
-
-			if not isTenFootInterface then
-				if isSmallTouchScreen then
-					this.PageViewClipper.Size = UDim2.new(
-						0,
-						this.HubBar.AbsoluteSize.X,
-						0,
-						usePageSize + 44
-					)
-				else
-					this.PageViewClipper.Size = UDim2.new(
-						0,
-						this.HubBar.AbsoluteSize.X,
-						0,
-						usePageSize
-					)
-				end
-			else
-				this.PageViewClipper.Size = UDim2.new(
-					0,
-						this.HubBar.AbsoluteSize.X,
-					0,
-					usePageSize
-				)
-			end
-			if not isPortrait then
-				this.PageViewClipper.Position = UDim2.new(
-					this.PageViewClipper.Position.X.Scale,
-					this.PageViewClipper.Position.X.Offset,
-					0.5,
-					-usePageSize/2
-				)
-			else
-				this.PageViewClipper.Position = UDim2.new(0.5, 0, 0, this.HubBar.Position.Y.Offset + this.HubBar.AbsoluteSize.Y)
-			end
-		end
-		-- TODO: disconnect this event?
-		RobloxGui.Changed:connect(function(prop)
-			if prop == "AbsoluteSize" then
-				onScreenSizeChanged()
-			end
-		end)
-		onScreenSizeChanged()
-
 		local function cameraViewportChanged(prop)
 			if prop == "ViewportSize" then
 				utility:FireOnResized()
@@ -679,6 +530,149 @@ local function CreateSettingsHub()
 		end
 		onWorkspaceChanged("CurrentCamera")
 		workspace.Changed:connect(onWorkspaceChanged)
+	end
+
+	local function onScreenSizeChanged()
+		local largestPageSize = 600
+		local fullScreenSize = RobloxGui.AbsoluteSize.y
+		local bufferSize = (1-0.95) * fullScreenSize
+		local isPortrait = utility:IsPortrait()
+		if isTenFootInterface then
+			largestPageSize = 800
+			bufferSize = 0.07 * fullScreenSize
+			this.MenuContainer.Size = UDim2.new(0.95, 0, 0.95, 0)
+		elseif isSmallTouchScreen then
+			bufferSize = math.min(10, (1-0.99) * fullScreenSize)
+			this.MenuContainer.Size = UDim2.new(1, 0, 0.99, 0)
+		else
+			this.MenuContainer.Size = UDim2.new(0.95, 0, 0.95, 0)
+		end
+		local barSize = this.HubBar.Size.Y.Offset
+		local extraSpace = bufferSize*2+barSize*2
+		local isPortrait = utility:IsPortrait()
+
+		if isPortrait then
+			this.MenuContainer.Size = UDim2.new(1, 0, 1, 0)
+			this.MenuAspectRatio.Parent = nil
+			this.HubBar.Position = UDim2.new(0.5, 0, 0, 10)
+			this.HubBar.Size = UDim2.new(1, -20, 0, 40)
+		else
+			if isTenFootInterface then
+				this.HubBar.Size = UDim2.new(0, 1200, 0, 100)
+				this.MenuAspectRatio.Parent = this.MenuContainer
+			elseif isSmallTouchScreen then
+				this.HubBar.Size = UDim2.new(1, -10, 0, 40)
+				this.MenuAspectRatio.Parent = nil
+			else
+				this.HubBar.Size = UDim2.new(0, 800, 0, 60)
+				this.MenuAspectRatio.Parent = this.MenuContainer
+			end
+		end
+
+		--We need to wait and let the HubBar AbsoluteSize actually update.
+		--This is in the same frame, so the delay should be very minimal.
+		--Maybe in the future we need to have a way to force AbsoluteSize
+		--to update, or we can just avoid using it so soon.
+		RunService.Heartbeat:wait()
+
+		if shouldShowBottomBar() then
+			setBottomBarBindings()
+		else
+			removeBottomBarBindings()
+		end
+
+		local usableScreenHeight = fullScreenSize - extraSpace
+		local minimumPageSize = 150
+		local usePageSize = nil
+
+		if not isPortrait then
+			if largestPageSize < usableScreenHeight then
+				usePageSize = largestPageSize
+				this.HubBar.Position = UDim2.new(
+					this.HubBar.Position.X.Scale,
+					this.HubBar.Position.X.Offset,
+					0.5,
+					-largestPageSize/2 - this.HubBar.Size.Y.Offset
+				)
+				if this.BottomButtonFrame then
+					this.BottomButtonFrame.Position = UDim2.new(
+						this.BottomButtonFrame.Position.X.Scale,
+						this.BottomButtonFrame.Position.X.Offset,
+						0.5,
+						largestPageSize/2
+					)
+				end
+			elseif usableScreenHeight < minimumPageSize then
+				usePageSize = minimumPageSize
+				this.HubBar.Position = UDim2.new(
+					this.HubBar.Position.X.Scale,
+					this.HubBar.Position.X.Offset,
+					0.5,
+					-minimumPageSize/2 - this.HubBar.Size.Y.Offset
+				)
+				if this.BottomButtonFrame then
+					this.BottomButtonFrame.Position = UDim2.new(
+						this.BottomButtonFrame.Position.X.Scale,
+						this.BottomButtonFrame.Position.X.Offset,
+						0.5,
+						minimumPageSize/2
+					)
+				end
+			else
+				usePageSize = usableScreenHeight
+				this.HubBar.Position = UDim2.new(
+					this.HubBar.Position.X.Scale,
+					this.HubBar.Position.X.Offset,
+					0,
+					bufferSize
+				)
+				if this.BottomButtonFrame then
+					this.BottomButtonFrame.Position = UDim2.new(
+						this.BottomButtonFrame.Position.X.Scale,
+						this.BottomButtonFrame.Position.X.Offset,
+						1,
+						-(bufferSize + barSize)
+					)
+				end
+			end
+		else
+			usePageSize = usableScreenHeight
+		end
+
+		if not isTenFootInterface then
+			if isSmallTouchScreen then
+				this.PageViewClipper.Size = UDim2.new(
+					0,
+					this.HubBar.AbsoluteSize.X,
+					0,
+					usePageSize + 44
+				)
+			else
+				this.PageViewClipper.Size = UDim2.new(
+					0,
+					this.HubBar.AbsoluteSize.X,
+					0,
+					usePageSize
+				)
+			end
+		else
+			this.PageViewClipper.Size = UDim2.new(
+				0,
+					this.HubBar.AbsoluteSize.X,
+				0,
+				usePageSize
+			)
+		end
+		if not isPortrait then
+			this.PageViewClipper.Position = UDim2.new(
+				this.PageViewClipper.Position.X.Scale,
+				this.PageViewClipper.Position.X.Offset,
+				0.5,
+				-usePageSize/2
+			)
+		else
+			this.PageViewClipper.Position = UDim2.new(0.5, 0, 0, this.HubBar.Position.Y.Offset + this.HubBar.AbsoluteSize.Y)
+		end
 	end
 
 	local function toggleQuickProfilerFromHotkey(actionName, inputState, inputObject)
@@ -1012,6 +1006,10 @@ local function CreateSettingsHub()
 		local switchedFromGamepadInput = switchedFromGamepadInput or isTenFootInterface
 		this.Visible = visible
 
+		if this.ResizedConnection then
+			this.ResizedConnection:disconnect()
+			this.ResizedConnection = nil
+		end
 
 		this.Modal.Visible = this.Visible
 
@@ -1023,6 +1021,13 @@ local function CreateSettingsHub()
 		local playerList = require(RobloxGui.Modules.PlayerlistModule)
 
 		if this.Visible then
+			this.ResizedConnection = RobloxGui.Changed:connect(function(prop)
+				if prop == "AbsoluteSize" then
+					onScreenSizeChanged()
+				end
+			end)
+			onScreenSizeChanged()
+
 			this.SettingsShowSignal:fire(this.Visible)
 
 			pcall(function() GuiService:SetMenuIsOpen(true) end)
