@@ -21,7 +21,8 @@ local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() retu
 local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
 
 local reportPlayerInMenuSuccess, reportPlayerInMenuValue = pcall(function() return settings():GetFFlag("CoreScriptReportPlayerInMenu") end)
-local enableReportPlayer = reportPlayerInMenuSuccess and reportPlayerInMenuValue
+-- The player report flag relies on portrait mode being enabled.
+local enableReportPlayer = enablePortraitMode and reportPlayerInMenuSuccess and reportPlayerInMenuValue
 
 ------------ Constants -------------------
 local FRAME_DEFAULT_TRANSPARENCY = .85
