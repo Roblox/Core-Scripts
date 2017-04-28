@@ -19,6 +19,8 @@ module.ShowUserOwnFilteredMessage = true	--Show a user the filtered version of t
 module.ChatOnWithTopBarOff = false
 module.ScreenGuiDisplayOrder = 6 -- The DisplayOrder value for the ScreenGui containing the chat.
 
+module.ShowFriendJoinNotification = false -- Show a notification in the chat when a players friend joins the game.
+
 --- Replace with true/false to force the chat type. Otherwise this will default to the setting on the website.
 module.BubbleChatEnabled = PlayersService.BubbleChat
 module.ClassicChatEnabled = PlayersService.ClassicChat
