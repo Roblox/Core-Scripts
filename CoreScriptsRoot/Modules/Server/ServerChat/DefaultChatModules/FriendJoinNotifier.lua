@@ -28,17 +28,21 @@ local function Run(ChatService)
 		end
 	end
 
+	local function TrySendFriendNotification(player, joinedPlayer)
+		if player ~= joinedPlayer then
+			coroutine.wrap(function()
+				if player:IsFriendsWith(joinedPlayer.UserId) then
+					SendFriendJoinNotification(player, joinedPlayer)
+				end
+			end)()
+		end
+	end
+
 	if ShowFriendJoinNotification() then
 		Players.PlayerAdded:connect(function(player)
 			local possibleFriends = Players:GetPlayers()
 			for i = 1, #possibleFriends do
-				if player ~= possibleFriends[i] then
-					coroutine.wrap(function()
-						if possibleFriends[i]:IsFriendsWith(player.UserId) then
-							SendFriendJoinNotification(possibleFriends[i], player)
-						end
-					end)()
-				end
+				TrySendFriendNotification(possibleFriends[i], player)
 			end
 		end)
 	end
