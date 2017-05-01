@@ -171,7 +171,7 @@ if ( not isConsole and not isVR ) then
 			pcall(function() StarterGui:SetCore("ChatMakeSystemMessage", messageData) end)
 		end
 	end)
-else
+elseif not isConsole then
 	useModule = require(RobloxGui.Modules.Chat)
 
 	ConnectSignals(useModule, interface, "ChatBarFocusChanged")
