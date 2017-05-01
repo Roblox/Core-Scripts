@@ -283,7 +283,7 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 				return nil
 			end
 			local backoffInterval = FILTER_BACKOFF_INTERVALS[math.min(#FILTER_BACKOFF_INTERVALS, filterRetries)]
-			-- backoffWait = backoffInterval +/- backoffInterval
+			-- backoffWait = backoffInterval +/- (0 -> backoffInterval)
 			local backoffWait = backoffInterval + ((math.random()*2 - 1) * backoffInterval)
 			wait(backoffWait)
 		end
