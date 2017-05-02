@@ -314,8 +314,6 @@ end
 
 -- Open/Close the console
 function Methods.SetVisible(devConsole, visible, animate)
-  print("DBANKS: calling SetVisible ", visible)
-  
 	if devConsole.Visible == visible then
 		return
 	end
@@ -328,8 +326,6 @@ function Methods.SetVisible(devConsole, visible, animate)
 		devConsole:ResetFrameDimensions()
   
     local tab = devConsole:GetCurrentOpenTab()
-    print("DBANKS: active tab = ", tab)
-    
     if (tab ~= nil) then 
       tab:RecordInitialOpen()
     end
@@ -2316,20 +2312,16 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 
   function tab.RecordInitialOpen(tab)
     local analyticsService = game:GetService("AnalyticsService")
-    print("DBANKS: hi 003")
     analyticsService:trackEvent(AnalyticsCategory_Game, 
       AnalyticsAction_InitialOpenTab, 
       tab.Body.Name)
-    print("DBANKS: hi 004")
  end
 
   function tab.RecordClickToOpen(tab)
     local analyticsService = game:GetService("AnalyticsService")
-    print("DBANKS: hi 001")
     analyticsService:trackEvent(AnalyticsCategory_Game, 
       AnalyticsAction_ClickToOpenOpenTab, 
       tab.Body.Name)
-    print("DBANKS: hi 002")
   end
 
 	function tab.SetOpen(tab, open)
