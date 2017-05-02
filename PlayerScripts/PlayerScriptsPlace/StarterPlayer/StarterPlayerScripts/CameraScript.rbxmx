@@ -142,7 +142,7 @@ local function Update()
 	end
 
 	if EnabledOcclusion then
-		EnabledOcclusion:Update()
+		EnabledOcclusion:Update(EnabledCamera)
 	end
 	
 	if shouldUsePlayerScriptsCamera() then

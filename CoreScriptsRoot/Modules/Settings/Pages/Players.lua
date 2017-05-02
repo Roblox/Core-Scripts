@@ -21,7 +21,8 @@ local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() retu
 local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
 
 local reportPlayerInMenuSuccess, reportPlayerInMenuValue = pcall(function() return settings():GetFFlag("CoreScriptReportPlayerInMenu") end)
-local enableReportPlayer = reportPlayerInMenuSuccess and reportPlayerInMenuValue
+-- The player report flag relies on portrait mode being enabled.
+local enableReportPlayer = enablePortraitMode and reportPlayerInMenuSuccess and reportPlayerInMenuValue
 
 ------------ Constants -------------------
 local FRAME_DEFAULT_TRANSPARENCY = .85
@@ -77,19 +78,25 @@ local function Initialize()
 			return nil
 		end
 
+		local fakeSelection = Instance.new("Frame")
+		fakeSelection.BackgroundTransparency = 1
+
 		local friendLabel = nil
+		local friendLabelText = nil
 		if not status then
 			-- Remove with enableReportPlayer
 			friendLabel = Instance.new("TextButton")
 			friendLabel.Text = ""
 			friendLabel.BackgroundTransparency = 1
 			friendLabel.Position = UDim2.new(1,-198,0,7)
+			friendLabel.SelectionImageObject = fakeSelection
 		elseif status == Enum.FriendStatus.Friend or status == Enum.FriendStatus.FriendRequestSent then
 			friendLabel = Instance.new("TextButton")
 			friendLabel.BackgroundTransparency = 1
-			friendLabel.FontSize = "Size24"
-			friendLabel.Font = "SourceSans"
+			friendLabel.FontSize = Enum.FontSize.Size24
+			friendLabel.Font = Enum.Font.SourceSans
 			friendLabel.TextColor3 = Color3.new(1,1,1)
+			friendLabel.SelectionImageObject = fakeSelection
 			if status == Enum.FriendStatus.Friend then
 				friendLabel.Text = "Friend"
 			else
@@ -105,8 +112,7 @@ local function Initialize()
 					end
 				end
 			end
-			local friendLabel2, friendLabelText = utility:MakeStyledButton("FriendStatus", "Add Friend", UDim2.new(0, 182, 0, 46), addFriendFunc)
-			friendLabel = friendLabel2
+			friendLabel, friendLabelText = utility:MakeStyledButton("FriendStatus", "Add Friend", UDim2.new(0, 182, 0, 46), addFriendFunc)
 			friendLabelText.ZIndex = 3
 			friendLabelText.Position = friendLabelText.Position + UDim2.new(0,0,0,1)
 		end
@@ -141,6 +147,7 @@ local function Initialize()
 			if status == Enum.FriendStatus.Friend then
 				friendImage.ImageTransparency = 0
 			else
+				friendImage.Image = ADD_FRIEND_IMAGE
 				friendImage.ImageTransparency = 0.5
 			end
 			friendImage.Parent = friendLabel
@@ -378,12 +385,26 @@ local function Initialize()
 			end
 		end
 
+	 	local fakeSelectionObject = nil
 		rightSideButtons.ChildAdded:connect(function(child)
 			if child:IsA("GuiObject") then
+				if fakeSelectionObject and child ~= fakeSelectionObject then
+					fakeSelectionObject:Destroy()
+					fakeSelectionObject = nil
+				end
 				child.SelectionGained:connect(function() updateHighlight(nil) end)
 				child.SelectionLost:connect(function() updateHighlight(child) end)
 			end
 		end)
+
+		if enableReportPlayer then
+			fakeSelectionObject = Instance.new("Frame")
+			fakeSelectionObject.Selectable = true
+			fakeSelectionObject.Size = UDim2.new(0, 100, 0, 100)
+			fakeSelectionObject.BackgroundTransparency = 1
+			fakeSelectionObject.SelectionImageObject = fakeSelectionObject:Clone()
+			fakeSelectionObject.Parent = rightSideButtons
+		end
 
 		local rightSideListLayout = Instance.new("UIListLayout")
 		rightSideListLayout.Name = "RightSideListLayout"
@@ -405,8 +426,8 @@ local function Initialize()
 		local nameLabel = Instance.new("TextLabel")
 		nameLabel.Name = "NameLabel"
 		nameLabel.TextXAlignment = Enum.TextXAlignment.Left
-		nameLabel.Font = "SourceSans"
-		nameLabel.FontSize = "Size24"
+		nameLabel.Font = Enum.Font.SourceSans
+		nameLabel.FontSize = Enum.FontSize.Size24
 		nameLabel.TextColor3 = Color3.new(1, 1, 1)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.Position = UDim2.new(0, 60, .5, 0)
@@ -424,6 +445,47 @@ local function Initialize()
 		return frame
 	end
 
+	-- Manage cutting off a players name if it is too long when switching into portrait mode.
+	local function managePlayerNameCutoff(frame, player)
+		local wasIsPortrait = nil
+		local reportFlagAddedConnection = nil
+		local reportFlagChangedConnection = nil
+		local function reportFlagChanged(reportFlag, prop)
+			if prop == "AbsolutePosition" and wasIsPortrait then
+				local maxPlayerNameSize = reportFlag.AbsolutePosition.X - 20 - frame.NameLabel.AbsolutePosition.X
+				frame.NameLabel.Text = player.Name
+				local newNameLength = string.len(player.Name)
+				while frame.NameLabel.TextBounds.X > maxPlayerNameSize and newNameLength > 0 do
+					frame.NameLabel.Text = string.sub(player.Name, 1, newNameLength) .. "..."
+					newNameLength = newNameLength - 1
+				end
+			end
+		end
+		utility:OnResized(frame.NameLabel, function(newSize, isPortrait)
+			if wasIsPortrait ~= nil and wasIsPortrait == isPortrait then
+				return
+			end
+			wasIsPortrait = isPortrait
+			if isPortrait then
+				if reportFlagAddedConnection == nil then
+					reportFlagAddedConnection = frame.RightSideButtons.ChildAdded:connect(function(child)
+						if child.Name == "ReportPlayer" then
+							reportFlagChangedConnection = child.Changed:connect(function(prop) reportFlagChanged(child, prop) end)
+							reportFlagChanged(child, "AbsolutePosition")
+						end
+					end)
+				end
+				local reportFlag = frame.RightSideButtons:FindFirstChild("ReportPlayer")
+				if reportFlag then
+					reportFlagChangedConnection = reportFlag.Changed:connect(function(prop) reportFlagChanged(reportFlag, prop) end)
+					reportFlagChanged(reportFlag, "AbsolutePosition")
+				end
+			else
+				frame.NameLabel.Text = player.Name
+			end
+		end)
+	end
+
 	local existingPlayerLabels = {}
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
 		local sortedPlayers = PlayersService:GetPlayers()
@@ -432,7 +494,7 @@ local function Initialize()
 		end)
 
 		local extraOffset = 20
-		if utility:IsSmallTouchScreen() or utility:IsPortrait() then
+		if utility:IsSmallTouchScreen() or (enablePortraitMode and utility:IsPortrait()) then
 			extraOffset = 85
 		end
 
@@ -455,6 +517,10 @@ local function Initialize()
 				frame.NameLabel.Text = player.Name
 				frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
 
+				if enableReportPlayer then
+					managePlayerNameCutoff(frame, player)
+				end
+
 				friendStatusCreate(frame, player)
 				if enableReportPlayer then
 					reportAbuseButtonCreate(frame, player)
@@ -467,7 +533,7 @@ local function Initialize()
 			local player = sortedPlayers[index]
 			local frame = existingPlayerLabels[index]
 			if frame and not player then
-				table.remove(existingPlayerLabels, i)
+				table.remove(existingPlayerLabels, index)
 				frame:Destroy()
 			end
 		end

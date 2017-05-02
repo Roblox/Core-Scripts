@@ -3,6 +3,7 @@
 --	// Description: Manages creating and destroying ChatChannels and Speakers.
 
 local MAX_FILTER_RETRIES = 3
+local FILTER_BACKOFF_INTERVALS = {50/1000, 100/1000, 200/1000}
 local MAX_FILTER_DURATION = 60
 
 --- Constants used to decide when to notify that the chat filter is having issues filtering messages.
@@ -281,6 +282,10 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 				self:InternalNotifyFilterIssue()
 				return nil
 			end
+			local backoffInterval = FILTER_BACKOFF_INTERVALS[math.min(#FILTER_BACKOFF_INTERVALS, filterRetries)]
+			-- backoffWait = backoffInterval +/- (0 -> backoffInterval)
+			local backoffWait = backoffInterval + ((math.random()*2 - 1) * backoffInterval)
+			wait(backoffWait)
 		end
 	else
 		--// Simulate filtering latency.

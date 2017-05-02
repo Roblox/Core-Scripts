@@ -691,6 +691,13 @@ end
 setupChatBarConnections()
 ChatBar.GuiObjectsChanged:connect(setupChatBarConnections)
 
+function getEchoMessagesInGeneral()
+	if ChatSettings.EchoMessagesInGeneralChannel == nil then
+		return true
+	end
+	return ChatSettings.EchoMessagesInGeneralChannel
+end
+
 EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
 	if not ChatSettings.ShowUserOwnFilteredMessage then
 		if messageData.FromSpeaker == LocalPlayer.Name then
@@ -704,7 +711,7 @@ EventFolder.OnMessageDoneFiltering.OnClientEvent:connect(function(messageData)
 		channelObj:UpdateMessageFiltered(messageData)
 	end
 
-	if ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
+	if getEchoMessagesInGeneral() and ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
 		local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 		if generalChannel then
 			generalChannel:UpdateMessageFiltered(messageData)
@@ -721,10 +728,9 @@ EventFolder.OnNewMessage.OnClientEvent:connect(function(messageData, channelName
 			ChannelsBar:UpdateMessagePostedInChannel(channelName)
 		end
 
-		local generalChannel = nil
-		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
-			generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
-			if (generalChannel) then
+		if getEchoMessagesInGeneral() and ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
+			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
+			if generalChannel then
 				generalChannel:AddMessageToChannel(messageData)
 			end
 		end
@@ -750,9 +756,9 @@ EventFolder.OnNewSystemMessage.OnClientEvent:connect(function(messageData, chann
 
 		DoFadeInFromNewInformation()
 
-		if (ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName) then
+		if getEchoMessagesInGeneral() and ChatSettings.GeneralChannelName and channelName ~= ChatSettings.GeneralChannelName then
 			local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
-			if (generalChannel) then
+			if generalChannel then
 				generalChannel:AddMessageToChannel(messageData)
 			end
 		end
@@ -780,7 +786,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 	local channelObj = ChatWindow:AddChannel(channel)
 
 	if (channelObj) then
-		if (channel == "All") then
+		if (channel == ChatSettings.GeneralChannelName) then
 			DoSwitchCurrentChannel(channel)
 		end
 
@@ -794,7 +800,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 				channelObj:AddMessageToChannel(messageLog[i])
 			end
 
-			if addHistoryToGeneralChannel then
+			if getEchoMessagesInGeneral() and addHistoryToGeneralChannel then
 				if ChatSettings.GeneralChannelName and channel ~= ChatSettings.GeneralChannelName then
 					local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 					if generalChannel then
@@ -819,7 +825,7 @@ function HandleChannelJoined(channel, welcomeMessage, messageLog, channelNameCol
 			}
 			channelObj:AddMessageToChannel(welcomeMessageObject)
 
-			if addWelcomeMessageToGeneralChannel and not ChatSettings.ShowChannelsBar then
+			if getEchoMessagesInGeneral() and addWelcomeMessageToGeneralChannel and not ChatSettings.ShowChannelsBar then
 				if channel ~= ChatSettings.GeneralChannelName then
 					local generalChannel = ChatWindow:GetChannel(ChatSettings.GeneralChannelName)
 					if generalChannel then
