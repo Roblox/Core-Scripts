@@ -22,9 +22,6 @@ local PRESSED_KEY_COLOR = Color3.new(0,162/255,1)
 local SET_KEY_COLOR = Color3.new(0,162/255,1)
 
 local KEY_TEXT_COLOR = Color3.new(1,1,1)
-
-local useSetTextFromInputSuccess, useSetTextFromInputValue = pcall(function() return settings():GetFFlag("UseSetTextFromInputForVrKeyboard") end)
-local useSetTextFromInput = useSetTextFromInputSuccess and useSetTextFromInputValue
 ---------------------------------------- KEYBOARD LAYOUT --------------------------------------
 local MINIMAL_KEYBOARD_LAYOUT = HttpService:JSONDecode([==[
 [
@@ -971,15 +968,7 @@ local function ConstructKeyboardUI(keyboardLayoutDefinitions)
 	end
 
 	local function UpdateTextEntryFieldText(newText)
-		local textSet = false
-		if useSetTextFromInput then
-			textSet = pcall(function() textEntryField:SetTextFromInput(newText) end)
-		end
-
-		if not textSet then
-			textEntryField.Text = newText
-		end
-
+		textEntryField:SetTextFromInput(newText)
 		SetTextFieldCursorPosition(textfieldCursorPosition)
 	end
 
