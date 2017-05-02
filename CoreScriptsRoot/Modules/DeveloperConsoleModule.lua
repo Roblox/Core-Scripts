@@ -12,6 +12,10 @@ local os_time = os.time
 
 local DEBUG = false
 
+local AnalyticsCategory_Game = "Game"
+local AnalyticsAction_InitialOpenTab = "DeveloperConsole_InitialOpenTab"
+local AnalyticsAction_ClickToOpenOpenTab = "DeveloperConsole_ClickToOpenOpenTab"
+
 --[[ Services ]]--
 local CoreGui = game:GetService('CoreGui')
 local RobloxGui = CoreGui:FindFirstChild('RobloxGui')
@@ -310,6 +314,8 @@ end
 
 -- Open/Close the console
 function Methods.SetVisible(devConsole, visible, animate)
+  print("DBANKS: calling SetVisible ", visible)
+  
 	if devConsole.Visible == visible then
 		return
 	end
@@ -320,7 +326,16 @@ function Methods.SetVisible(devConsole, visible, animate)
 	end	
 	if visible then -- Open the console
 		devConsole:ResetFrameDimensions()
+  
+    local tab = devConsole:GetCurrentOpenTab()
+    print("DBANKS: active tab = ", tab)
+    
+    if (tab ~= nil) then 
+      tab:RecordInitialOpen()
+    end
+
 	end
+  
 end
 
 -----------------
@@ -864,7 +879,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				devConsole.MessagesAndStats.OutputMessageSyncLocal,
 				permissions.ClientCodeExecutionEnabled
 			)
-			tab:SetVisible(true)
+			tab:SetVisible(true)      
 			tab:SetOpen(true)
 		end
 		
@@ -2219,6 +2234,22 @@ end
 ----------
 -- Tabs --
 ----------
+function Methods.GetCurrentOpenTab(devConsole)
+	local tabs = devConsole.Tabs
+  if tabs == nil then 
+    return nil
+  end
+  
+	for i = 1, #tabs do
+		local tab = tabs[i]
+		if tab.Open then
+      return tab
+		end
+	end
+  return nil
+end
+
+
 function Methods.RefreshTabs(devConsole)
 	-- Go through and reposition them
 	local x = Style.BorderSize
@@ -2282,6 +2313,25 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 		end
 	end
 
+
+  function tab.RecordInitialOpen(tab)
+    local analyticsService = game:GetService("AnalyticsService")
+    print("DBANKS: hi 003")
+    analyticsService:trackEvent(AnalyticsCategory_Game, 
+      AnalyticsAction_InitialOpenTab, 
+      tab.Body.Name)
+    print("DBANKS: hi 004")
+ end
+
+  function tab.RecordClickToOpen(tab)
+    local analyticsService = game:GetService("AnalyticsService")
+    print("DBANKS: hi 001")
+    analyticsService:trackEvent(AnalyticsCategory_Game, 
+      AnalyticsAction_ClickToOpenOpenTab, 
+      tab.Body.Name)
+    print("DBANKS: hi 002")
+  end
+
 	function tab.SetOpen(tab, open)
 		if open == tab.Open then
 			return
@@ -2329,6 +2379,7 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 	
 	buttonFrame.MouseButton1Click:connect(function()
 		if tab.Visible then
+      tab:RecordClickToOpen()
 			tab:SetOpen(true)
 		end
 	end)
