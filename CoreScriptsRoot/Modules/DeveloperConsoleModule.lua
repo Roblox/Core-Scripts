@@ -325,11 +325,10 @@ function Methods.SetVisible(devConsole, visible, animate)
 	if visible then -- Open the console
 		devConsole:ResetFrameDimensions()
   
-    local tab = devConsole:GetCurrentOpenTab()
-    if (tab ~= nil) then 
-      tab:RecordInitialOpen()
-    end
-
+		local tab = devConsole:GetCurrentOpenTab()
+		if (tab ~= nil) then 
+			tab:RecordInitialOpen()
+		end
 	end
   
 end
@@ -2232,17 +2231,17 @@ end
 ----------
 function Methods.GetCurrentOpenTab(devConsole)
 	local tabs = devConsole.Tabs
-  if tabs == nil then 
-    return nil
-  end
-  
+	if tabs == nil then 
+		return nil
+	end
+
 	for i = 1, #tabs do
 		local tab = tabs[i]
 		if tab.Open then
-      return tab
+			return tab
 		end
 	end
-  return nil
+	return nil
 end
 
 
@@ -2309,20 +2308,19 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 		end
 	end
 
+	function tab.RecordInitialOpen(tab)
+		local analyticsService = game:GetService("AnalyticsService")
+		analyticsService:trackEvent(AnalyticsCategory_Game, 
+			AnalyticsAction_InitialOpenTab, 
+			tab.Body.Name)
+	end
 
-  function tab.RecordInitialOpen(tab)
-    local analyticsService = game:GetService("AnalyticsService")
-    analyticsService:trackEvent(AnalyticsCategory_Game, 
-      AnalyticsAction_InitialOpenTab, 
-      tab.Body.Name)
- end
-
-  function tab.RecordClickToOpen(tab)
-    local analyticsService = game:GetService("AnalyticsService")
-    analyticsService:trackEvent(AnalyticsCategory_Game, 
-      AnalyticsAction_ClickToOpenOpenTab, 
-      tab.Body.Name)
-  end
+	function tab.RecordClickToOpen(tab)
+		local analyticsService = game:GetService("AnalyticsService")
+		analyticsService:trackEvent(AnalyticsCategory_Game, 
+			AnalyticsAction_ClickToOpenOpenTab, 
+			tab.Body.Name)
+	end
 
 	function tab.SetOpen(tab, open)
 		if open == tab.Open then
@@ -2370,11 +2368,11 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 	end
 	
 	buttonFrame.MouseButton1Click:connect(function()
-		if tab.Visible then
-      tab:RecordClickToOpen()
-			tab:SetOpen(true)
-		end
-	end)
+			if tab.Visible then
+				tab:RecordClickToOpen()
+				tab:SetOpen(true)
+			end
+		end)
 	
 	table.insert(devConsole.Tabs, tab)
 	
