@@ -140,9 +140,11 @@ local function Update()
 		EnabledCamera:Update()
 		EnabledCamera:ApplyVRTransform()
 	end
+
 	if EnabledOcclusion then
-		EnabledOcclusion:Update()
+		EnabledOcclusion:Update(EnabledCamera)
 	end
+	
 	if shouldUsePlayerScriptsCamera() then
 		TransparencyController:Update()
 	end
@@ -220,6 +222,7 @@ local function OnNewCamera()
 		if currentCameraConn then
 			currentCameraConn:disconnect()
 		end
+		
 		currentCameraConn = currentCamera.Changed:connect(function(prop)
 			if prop == 'CameraType' then
 				OnCameraMovementModeChange(getCurrentCameraMode())
@@ -257,7 +260,7 @@ local function OnPlayerAdded(player)
 end
 
 do
-	while PlayersService.LocalPlayer == nil do wait() end
+	while PlayersService.LocalPlayer == nil do PlayersService.PlayerAdded:wait() end
 	hasLastInput = pcall(function()
 		lastInputType = UserInputService:GetLastInputType()
 		UserInputService.LastInputTypeChanged:connect(function(newLastInputType) 

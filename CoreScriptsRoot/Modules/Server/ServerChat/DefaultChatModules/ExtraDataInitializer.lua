@@ -28,27 +28,23 @@ local SpecialChatColors = {
 local function MakeIsInGroup(groupId, requiredRank)
 	assert(type(requiredRank) == "nil" or type(requiredRank) == "number", "requiredRank must be a number or nil")
 
-	local inGroupCache = {}
 	return function(player)
 		if player and player.UserId then
 			local userId = player.UserId
 
-			if inGroupCache[userId] == nil then
-				local inGroup = false
-				local success, err = pcall(function() -- Many things can error is the IsInGroup check
-					if requiredRank then
-						inGroup = player:GetRankInGroup(groupId) > requiredRank
-					else
-						inGroup = player:IsInGroup(groupId)
-					end
-				end)
-				if not success and err then
-					print("Error checking in group: " ..err)
+			local inGroup = false
+			local success, err = pcall(function() -- Many things can error is the IsInGroup check
+				if requiredRank then
+					inGroup = player:GetRankInGroup(groupId) > requiredRank
+				else
+					inGroup = player:IsInGroup(groupId)
 				end
-				inGroupCache[userId] = inGroup
+			end)
+			if not success and err then
+				print("Error checking in group: " ..err)
 			end
 
-			return inGroupCache[userId]
+			return inGroup
 		end
 
 		return false
@@ -132,29 +128,39 @@ local function Run(ChatService)
 
 	ChatService.SpeakerAdded:connect(function(speakerName)
 		local speaker = ChatService:GetSpeaker(speakerName)
-		local player = speaker:GetPlayer()
-
-		if (not speaker:GetExtraData("NameColor")) then
+		if not speaker:GetExtraData("NameColor") then
 			speaker:SetExtraData("NameColor", GetNameColor(speaker))
 		end
-		if (player) then
-			player.Changed:connect(function(property)
-				if property == "TeamColor" or property == "Neutral" or property == "Team" then
-					speaker:SetExtraData("NameColor", GetNameColor(speaker))
-				end
-			end)
-		end
-		if (not speaker:GetExtraData("ChatColor")) then
+		if not speaker:GetExtraData("ChatColor") then
 			local specialChatColor = GetSpecialChatColor(speakerName)
 			if specialChatColor then
 				speaker:SetExtraData("ChatColor", specialChatColor)
 			end
 		end
-		if (not speaker:GetExtraData("Tags")) then
+		if not speaker:GetExtraData("Tags") then
 			speaker:SetExtraData("Tags", {})
 		end
+	end)
 
+	local PlayerChangedConnections = {}
+	Players.PlayerAdded:connect(function(player)
+		local changedConn = player.Changed:connect(function(property)
+			local speaker = ChatService:GetSpeaker(player.Name)
+			if speaker then
+				if property == "TeamColor" or property == "Neutral" or property == "Team" then
+					speaker:SetExtraData("NameColor", GetNameColor(speaker))
+				end
+			end
+		end)
+		PlayerChangedConnections[player] = changedConn
+	end)
 
+	Players.PlayerRemoving:connect(function(player)
+		local changedConn = PlayerChangedConnections[player]
+		if changedConn then
+			changedConn:Disconnect()
+		end
+		PlayerChangedConnections[player] = nil
 	end)
 end
 

@@ -3,7 +3,7 @@
 This is the main singleton object that runs the server sided chat service. It manages both ChatChannels and Speakers.
 
 #### Methods
-	ChatChannel AddChannel(string channelName)
+	ChatChannel AddChannel(string channelName, bool autoJoin)
 	void RemoveChannel(string channelName)
 	ChatChannel GetChannel(string channelName)
 
@@ -14,9 +14,12 @@ This is the main singleton object that runs the server sided chat service. It ma
 	string[] GetChannelList()
 	string[] GetAutoJoinChannelList()
 
-	void RegisterFilterMessageFunction(string functionId, function func)
+	void RegisterFilterMessageFunction(string functionId, function func, int priority)
+	bool FilterMessageFunctionExists(string functionId)
 	void UnregisterFilterMessageFunction(string functionId)
-	void RegisterProcessCommandsFunction(string functionId, function func)
+
+	void RegisterProcessCommandsFunction(string functionId, function func, int priority)
+	bool ProcessCommandsFunctionExists(string functionId)
 	void UnregisterProcessCommandsFunction(string functionId)
 
 
@@ -40,9 +43,12 @@ A ChatChannel is an object that stores data about a single channel that Speakers
 	bool Private
 
 #### Methods
-	void RegisterFilterMessageFunction(string functionId, function func)
+	void RegisterFilterMessageFunction(string functionId, function func, int priority)
+	bool FilterMessageFunctionExists(string functionId)
 	void UnregisterFilterMessageFunction(string functionId)
-	void RegisterProcessCommandsFunction(string functionId, function func)
+
+	void RegisterProcessCommandsFunction(string functionId, function func, int priority)
+	bool ProcessCommandsFunctionExists(string functionId)
 	void UnregisterProcessCommandsFunction(string functionId)
 
 	void KickSpeaker(string speakerName, string reason)
@@ -53,6 +59,12 @@ A ChatChannel is an object that stores data about a single channel that Speakers
 	string[] GetSpeakerList()
 
 	void SendSystemMessage(string message)
+
+	MessageObject[] GetHistoryLogForSpeaker(Speaker speaker)
+
+	void RegisterGetWelcomeMessageFunction(function func)
+	void UnRegisterGetWelcomeMessageFunction()
+	string GetWelcomeMessageForSpeaker(Speaker speaker)
 
 #### Events
 	MessagePosted(table messageObj)
@@ -102,6 +114,7 @@ ___
 {
     int ID
     string FromSpeaker
+		int SpeakerUserId
     string OriginalChannel
     bool IsFiltered
 		int MessageLength
@@ -118,3 +131,4 @@ ___
 }
 ```
 	Note: Message will not exist on the client if IsFiltered is False
+	SpeakerUserId will be 0 if the speaker is not a player.

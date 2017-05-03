@@ -21,11 +21,16 @@ if LoadLibrary then
 end
 
 while not PlayersService.LocalPlayer do
-  PlayersService.ChildAdded:Wait()
+	-- This does not follow the usual pattern of PlayersService:PlayerAdded:Wait()
+	-- because it caused a bug where the local players name would show as Player in game.
+	-- The local players name is not yet set when the PlayerAdded event fires.
+  wait()
 end
+
 local Player = PlayersService.LocalPlayer
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 
+local Utility = require(RobloxGui.Modules.Settings.Utility)
 local StatsUtils = require(RobloxGui.Modules.Stats.StatsUtils)
 
 local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
@@ -101,7 +106,7 @@ if isTenFootInterface then
   StatEntrySizeX = 250
 end
 
-local IsSmallScreenDevice = UserInputService.TouchEnabled and GuiService:GetScreenResolution().Y <= 500
+local IsSmallScreenDevice = Utility:IsSmallTouchScreen()
 
 local BaseUrl = game:GetService('ContentProvider').BaseUrl:lower()
 BaseUrl = string.gsub(BaseUrl, "/m.", "/www.")
@@ -165,7 +170,7 @@ local FOLLOWER_ICON = 'rbxasset://textures/ui/icon_follower-16.png'
 local FOLLOWING_ICON = 'rbxasset://textures/ui/icon_following-16.png'
 local MUTUAL_FOLLOWING_ICON = 'rbxasset://textures/ui/icon_mutualfollowing-16.png'
 
-local CHARACTER_BACKGROUND_IMAGE = 'rbxasset://textures/ui/PlayerList/CharacterBackgroundImage.png'
+local CHARACTER_BACKGROUND_IMAGE = 'rbxasset://textures/ui/PlayerList/CharacterImageBackground.png'
 
 --[[ Helper Functions ]]--
 local function clamp(value, min, max)
@@ -517,24 +522,26 @@ local function createImageIcon(image, name, xOffset, parent)
   local imageLabel = Instance.new('ImageLabel')
   imageLabel.Name = name
   if isTenFootInterface then
-    imageLabel.Size = UDim2.new(0, 64, 0, 64)
-    imageLabel.ZIndex = 2
-
-    local background = Instance.new("ImageLabel", imageLabel)
+    local background = Instance.new("ImageLabel", parent)
     background.Name = 'Background'
     background.BackgroundTransparency = 1
     background.Image = CHARACTER_BACKGROUND_IMAGE
     background.Size = UDim2.new(0, 66, 0, 66)
-    background.Position = UDim2.new(0.5, -66/2, 0.5, -66/2)
+    background.Position = UDim2.new(0.01, xOffset - 1, 0.5, -background.Size.Y.Offset/2)
     background.ZIndex = 2
+    
+    imageLabel.Size = UDim2.new(0, 64, 0, 64)
+    imageLabel.Position = UDim2.new(0.5, -64/2, 0.5, -64/2)
+    imageLabel.ZIndex = 2
+    imageLabel.Parent = background
   else
     imageLabel.Size = UDim2.new(0, 16, 0, 16)
+    imageLabel.Position = UDim2.new(0.01, xOffset, 0.5, -imageLabel.Size.Y.Offset/2)
+    imageLabel.Parent = parent
   end
-  imageLabel.Position = UDim2.new(0.01, xOffset, 0.5, -imageLabel.Size.Y.Offset/2)
   imageLabel.BackgroundTransparency = 1
   imageLabel.Image = image
   imageLabel.BorderSizePixel = 0
-  imageLabel.Parent = parent
 
   return imageLabel
 end
@@ -1251,6 +1258,9 @@ local function createPlayerEntry(player, isTopStat)
 
   -- Some functions yield, so we need to spawn off in order to not cause a race condition with other events like PlayersService.ChildRemoved
   spawn(function()
+      -- don't make rank/grp calls on console
+      if isTenFootInterface then return end
+
       local success, result = pcall(function()
           return player:GetRankInGroup(game.CreatorId) == 255
         end)

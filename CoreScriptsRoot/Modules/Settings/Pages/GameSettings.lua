@@ -10,6 +10,7 @@ local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 local PlatformService = nil
 pcall(function() PlatformService = game:GetService("PlatformService") end)
 local ContextActionService = game:GetService("ContextActionService")
@@ -293,7 +294,7 @@ local function Initialize()
     ------------------------------------------------------
     ------------------
     ------------------ Shift Lock Switch -----------------
-    if UserInputService.MouseEnabled then
+    if UserInputService.MouseEnabled and not isTenFootInterface then
       this.ShiftLockFrame,
       this.ShiftLockLabel,
       this.ShiftLockMode,
@@ -806,7 +807,10 @@ local function Initialize()
   end
 
   local function createOverscanOption()
-    local showOverscanScreen = function()
+      local showOverscanScreen = function()
+      if RunService:IsStudio() then
+        return
+      end
 
       if not overscanScreen then
         local overscanModule = RobloxGui.Modules:FindFirstChild('OverscanScreen')
@@ -848,6 +852,13 @@ local function Initialize()
     local adjustButton, adjustText, setButtonRowRef = utility:MakeStyledButton("AdjustButton", "Adjust", UDim2.new(0,300,1,-20), showOverscanScreen, this)
     adjustText.Font = Enum.Font.SourceSans
     adjustButton.Position = UDim2.new(1,-400,0,12)
+
+    if RunService:IsStudio() then
+      adjustButton.Selectable = value
+      adjustButton.Active = value
+      adjustButton.Enabled.Value = value
+      adjustText.TextColor3 = Color3.fromRGB(100, 100, 100)
+    end
 
     local row = utility:AddNewRowObject(this, "Safe Zone", adjustButton)
     setButtonRowRef(row)
@@ -893,7 +904,7 @@ local function Initialize()
   createCameraModeOptions(not isTenFootInterface and
     (UserInputService.TouchEnabled or UserInputService.MouseEnabled or UserInputService.KeyboardEnabled))
 
-  if UserInputService.MouseEnabled then
+  if UserInputService.MouseEnabled and not isTenFootInterface then
     createMouseOptions()
   end
 
@@ -924,28 +935,17 @@ local function Initialize()
 
   ------ TAB CUSTOMIZATION -------
   this.TabHeader.Name = "GameSettingsTab"
-
-  this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsTab.png"
-  if utility:IsSmallTouchScreen() then
-    this.TabHeader.Icon.Size = UDim2.new(0,34,0,34)
-    this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-17)
-    this.TabHeader.Size = UDim2.new(0,125,1,0)
-  elseif isTenFootInterface then
-    this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsTab@2x.png"
-    this.TabHeader.Icon.Size = UDim2.new(0,90,0,90)
-    this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
-    this.TabHeader.Size = UDim2.new(0,280,1,0)
-  else
-    this.TabHeader.Icon.Size = UDim2.new(0,45,0,45)
-    this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-22)
-  end
-
+  this.TabHeader.Icon.Image = isTenFootInterface and "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsTab@2x.png" or "rbxasset://textures/ui/Settings/MenuBarIcons/GameSettingsTab.png"
 
   this.TabHeader.Icon.Title.Text = "Settings"
 
   ------ PAGE CUSTOMIZATION -------
   this.Page.ZIndex = 5
 
+  if this.PageListLayout then
+    this.PageListLayout.Padding = UDim.new(0, 0)
+  end
+  
   return this
 end
 

@@ -28,17 +28,14 @@ local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
 --[[ Fast Flags ]]--
-local getNotificationDisableSuccess, notificationsDisableActiveValue = pcall(function() return settings():GetFFlag("SetCoreDisableNotifications") end)
-local allowDisableNotifications = getNotificationDisableSuccess and notificationsDisableActiveValue
-
-local getSendNotificationSuccess, sendNotificationActiveValue = pcall(function() return settings():GetFFlag("SetCoreSendNotifications") end)
-local allowSendNotifications = getSendNotificationSuccess and sendNotificationActiveValue
-
 local getNewNotificationPathSuccess, newNotificationPathValue = pcall(function() return settings():GetFFlag("UseNewNotificationPathLua") end)
 local newNotificationPath = getNewNotificationPathSuccess and newNotificationPathValue
 
 local getTenFootBadgeNotifications, tenFootBadgeNotificationsValue = pcall(function() return settings():GetFFlag("TenFootBadgeNotifications") end)
 local tenFootBadgeNotifications = getTenFootBadgeNotifications and tenFootBadgeNotificationsValue
+
+local getDisableScreenshotPopup, disableScreenshotPopupValue = pcall(function() return settings():GetFFlag("DisableScreenshotPopup") end)
+local disableScreenshotPopup = getDisableScreenshotPopup and disableScreenshotPopupValue
 
 --[[ Script Variables ]]--
 local LocalPlayer = nil
@@ -68,17 +65,27 @@ local badgesNotificationsActive = true
 --[[ Constants ]]--
 local BG_TRANSPARENCY = 0.7
 local MAX_NOTIFICATIONS = 3
-local NOTIFICATION_Y_OFFSET = isTenFootInterface and 128 or 64
-local NOTIFICATION_TITLE_Y_OFFSET = isTenFootInterface and 24 or 12
+
+local NOTIFICATION_Y_OFFSET = isTenFootInterface and 145 or 64
+local NOTIFICATION_TITLE_Y_OFFSET = isTenFootInterface and 40 or 12
+local NOTIFICATION_TEXT_Y_OFFSET = isTenFootInterface and -16 or 1
 local NOTIFICATION_FRAME_WIDTH = isTenFootInterface and 450 or 200
+local NOTIFICATION_TEXT_HEIGHT = isTenFootInterface and 85 or 28
 local NOTIFICATION_TITLE_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size42 or Enum.FontSize.Size18
-local NOTIFICATION_TEXT_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size32 or Enum.FontSize.Size14
+local NOTIFICATION_TEXT_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size14
+
 local IMAGE_SIZE = isTenFootInterface and 72 or 48
 
 local EASE_DIR = Enum.EasingDirection.InOut
 local EASE_STYLE = Enum.EasingStyle.Sine
 local TWEEN_TIME = 0.35
 local DEFAULT_NOTIFICATION_DURATION = 5
+local FRIEND_REQUEST_NOTIFICATION_THROTTLE = 5
+
+local friendRequestNotificationFIntSuccess, friendRequestNotificationFIntValue = pcall(function() return tonumber(settings():GetFVariable("FriendRequestNotificationThrottle")) end)
+if friendRequestNotificationFIntSuccess and friendRequestNotificationFIntValue ~= nil then
+	FRIEND_REQUEST_NOTIFICATION_THROTTLE = friendRequestNotificationFIntValue
+end
 
 --[[ Images ]]--
 local PLAYER_POINTS_IMG = 'https://www.roblox.com/asset?id=206410433'
@@ -221,8 +228,8 @@ local function createNotification(title, text, image)
 		notificationTitle.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, -NOTIFICATION_TITLE_Y_OFFSET)
 		notificationTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-		notificationText.Size = UDim2.new(1, -IMAGE_SIZE - 16, 0, 28)
-		notificationText.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, 1)
+		notificationText.Size = UDim2.new(1, -IMAGE_SIZE - 16, 0, NOTIFICATION_TEXT_HEIGHT)
+		notificationText.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, NOTIFICATION_TEXT_Y_OFFSET)
 		notificationText.TextXAlignment = Enum.TextXAlignment.Left
 	end
 
@@ -445,6 +452,11 @@ BindableEvent_SendNotificationInfo.Event:connect(onSendNotificationInfo)
 
 -- New follower notification
 spawn(function()
+	if isTenFootInterface then
+		--If on console, New follower notification should be blocked
+		return
+	end
+	
 	local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
 	local RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower', 86400) or RobloxReplicatedStorage:WaitForChild('NewFollower')
 	--
@@ -467,9 +479,30 @@ spawn(function()
 	end)
 end)
 
+local checkFriendRequestIsThrottled; do
+	local friendRequestThrottlingMap = {}
+
+	checkFriendRequestIsThrottled = function(fromPlayer)
+		local throttleFinishedTime = friendRequestThrottlingMap[fromPlayer]
+
+		if throttleFinishedTime then
+			if tick() < throttleFinishedTime then
+				return true
+			end
+		end
+
+		friendRequestThrottlingMap[fromPlayer] = tick() + FRIEND_REQUEST_NOTIFICATION_THROTTLE
+		return false
+	end
+end
+
 local function sendFriendNotification(fromPlayer)
 	--TODO: remove this flag check when stable
 	if newNotificationPath then
+		if checkFriendRequestIsThrottled(fromPlayer) then
+			return
+		end
+
 		local acceptText = "Accept"
 		local declineText = "Decline"
 		sendNotificationInfo {
@@ -690,6 +723,22 @@ end
 
 end
 
+if disableScreenshotPopup then
+	game.ScreenshotReady:Connect(function(path)
+		sendNotificationInfo {
+			Title = "Screenshot Taken",
+			Text = "Check out your screenshots folder to see it.",
+			Duration = 3.0,
+			Button1Text = "Open Folder",
+			Callback = function(text)
+				if text == "Open Folder" then
+					game:OpenScreenshotsFolder()
+				end
+			end
+		}
+	end)
+end
+
 GuiService.SendCoreUiNotification = function(title, text)
 	local notification = createNotification(title, text, "")
 	notification.BackgroundTransparency = .5
@@ -760,7 +809,7 @@ local function createDeveloperNotification(notificationTable)
 		if type(notificationTable.Title) == "string" and type(notificationTable.Text) == "string" then
 			local iconImage = (type(notificationTable.Icon) == "string" and notificationTable.Icon or "")
 			local duration = (type(notificationTable.Duration) == "number" and notificationTable.Duration or DEFAULT_NOTIFICATION_DURATION)
-			local success, bindable = pcall(function() return (notificationTable.Callback:IsA("BindableFunction") and notificationTable.Callback or nil) end)
+			local bindable = (typeof(notificationTable.Callback) == "Instance" and notificationTable.Callback:IsA("BindableFunction") and notificationTable.Callback or nil)
 			local button1Text = (type(notificationTable.Button1) == "string" and notificationTable.Button1 or "")
 			local button2Text = (type(notificationTable.Button2) == "string" and notificationTable.Button2 or "")
 			if newNotificationPath then
@@ -781,22 +830,13 @@ local function createDeveloperNotification(notificationTable)
 	end
 end
 
-if allowDisableNotifications then
-	StarterGui:RegisterSetCore("PointsNotificationsActive", function(value) if type(value) == "boolean" then pointsNotificationsActive = value end end)
-	StarterGui:RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
-else
-	StarterGui:RegisterSetCore("PointsNotificationsActive", function() end)
-	StarterGui:RegisterSetCore("BadgesNotificationsActive", function() end)
-end
+StarterGui:RegisterSetCore("PointsNotificationsActive", function(value) if type(value) == "boolean" then pointsNotificationsActive = value end end)
+StarterGui:RegisterSetCore("BadgesNotificationsActive", function(value) if type(value) == "boolean" then badgesNotificationsActive = value end end)
 
 StarterGui:RegisterGetCore("PointsNotificationsActive", function() return pointsNotificationsActive end)
 StarterGui:RegisterGetCore("BadgesNotificationsActive", function() return badgesNotificationsActive end)
 
-if allowSendNotifications then
-	StarterGui:RegisterSetCore("SendNotification", createDeveloperNotification)
-else
-	StarterGui:RegisterSetCore("SendNotification", function() end)
-end
+StarterGui:RegisterSetCore("SendNotification", createDeveloperNotification)
 
 
 if not isTenFootInterface then

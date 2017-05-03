@@ -52,6 +52,8 @@ local function CreateModule()
 	local this = {}
 	local nextObjectDisplayYPos = DISPLAY_POS_INIT_INSET
 	local displayStack = {}
+	local displayStackChanged = Instance.new("BindableEvent")
+	local healthContainerPropertyChanged = Instance.new("BindableEvent")
 
 	-- setup base gui
 	local function createContainer()
@@ -60,7 +62,7 @@ local function CreateModule()
 			{
 				Name = "TopRightContainer";
 				Size = UDim2.new(0, 350, 0, 100);
-				Position = UDim2.new(1,-360,0,10);
+				Position = UDim2.new(1,-415,0,10);
 				AutoButtonColor = false;
 				Image = "";
 				Active = false;
@@ -87,6 +89,7 @@ local function CreateModule()
 												objectToMoveUp.Position.Y.Scale, prevObject.AbsolutePosition.Y)
 			prevObject = objectToMoveUp
 		end
+		displayStackChanged:Fire()
 	end
 
 	function addBackToDisplayStack(displayObject)
@@ -105,6 +108,7 @@ local function CreateModule()
 												objectToMoveDown.Position.Y.Scale, nextDisplayPos)
 			prevObject = objectToMoveDown
 		end
+		displayStackChanged:Fire()
 	end
 
 	function addToDisplayStack(displayObject)
@@ -134,6 +138,7 @@ local function CreateModule()
 				end
 			end
 		end)
+		displayStackChanged:Fire()
 	end
 
 	function this:CreateHealthBar()
@@ -184,10 +189,46 @@ local function CreateModule()
 			Visible = false
 		}
 
+		local accountType = Util.Create'TextLabel'{
+			Visible = false
+		}
+
 		addToDisplayStack(this.HealthContainer)
 		createContainer()
 
-		return this.Container, username, this.HealthContainer, healthFill
+		this.HealthContainer.Changed:connect(function()
+			healthContainerPropertyChanged:Fire()
+		end)
+
+		return this.Container, username, this.HealthContainer, healthFill, accountType
+	end
+
+	function this:CreateAccountType(accountTypeTextShort)
+		this.AccountTypeContainer = Util.Create'Frame'{
+			Name = "AccountTypeContainer";
+			Size = UDim2.new(0, 50, 0, 50);
+			Position = UDim2.new(1, -55, 0, 10);
+			BorderSizePixel = 0;
+			BackgroundColor3 = Color3.new(0,0,0);
+			BackgroundTransparency = 0.5;
+			Parent = RobloxGui;
+		};
+
+		local accountTypeTextLabel = Util.Create'TextLabel'{
+			Name = "AccountTypeText";
+			Size = UDim2.new(1, 0, 1, 0);
+			Position = UDim2.new(0, 0, 0, 0);
+			BackgroundTransparency = 1;
+			BackgroundColor3 = Color3.new(0,0,0);
+			Font = Enum.Font.SourceSans;
+			FontSize = Enum.FontSize.Size36;
+			Text = accountTypeTextShort;
+			TextColor3 = Color3.new(1,1,1);
+			BorderSizePixel = 0;
+			Parent = this.AccountTypeContainer;
+			TextXAlignment = Enum.TextXAlignment.Center;
+			TextYAlignment = Enum.TextYAlignment.Center;
+		};
 	end
 
 	function this:SetupTopStat()
@@ -333,6 +374,10 @@ local moduleApiTable = {}
 
 	function moduleApiTable:CreateHealthBar()
 		return TenFootInterfaceModule:CreateHealthBar()
+	end
+
+	function moduleApiTable:CreateAccountType(accountTypeText)
+		return TenFootInterfaceModule:CreateAccountType(accountTypeText)
 	end
 
 	function moduleApiTable:SetupTopStat()

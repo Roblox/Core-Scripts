@@ -50,7 +50,7 @@ end
 function methods:CreateGuiObjects(targetParent)
 	local BaseFrame = Instance.new("Frame")
 	BaseFrame.BackgroundTransparency = 1
-	BaseFrame.Active = true
+	BaseFrame.Active = ChatSettings.WindowDraggable
 	BaseFrame.Parent = targetParent
 
 	local ChatBarParentFrame = Instance.new("Frame")
@@ -291,6 +291,7 @@ function methods:CreateGuiObjects(targetParent)
 	end
 
 	local function UpdateDraggable(enabled)
+		BaseFrame.Active = enabled
 		BaseFrame.Draggable = enabled
 	end
 
@@ -511,6 +512,9 @@ function methods:SwitchCurrentChannel(channelName)
 
 	local cur = self:GetCurrentChannel()
 	local new = self:GetChannel(channelName)
+	if new == nil then
+		error(string.format("Channel '%s' does not exist.", channelName))
+	end
 
 	if (new ~= cur) then
 		if (cur) then

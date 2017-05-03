@@ -38,6 +38,9 @@ end
 ------------ VARIABLES -------------------
 local PageInstance = nil
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 ----------- CLASS DECLARATION --------------
 local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
@@ -45,6 +48,7 @@ local function Initialize()
 
 	local playerNames = {}
 	local nameToRbxPlayer = {}
+	local nextPlayerToReport = nil
 
 	function this:GetPlayerFromIndex(index)
 		local playerName = playerNames[index]
@@ -53,6 +57,10 @@ local function Initialize()
 		end
 
 		return nil
+	end
+
+	function this:SetNextPlayerToReport(player)
+		nextPlayerToReport = player
 	end
 
 	function this:UpdatePlayerDropDown()
@@ -70,6 +78,10 @@ local function Initialize()
 			end
 		end
 
+		table.sort(playerNames, function(a, b)
+			return a:lower() < b:lower()
+		end)
+
 		this.WhichPlayerMode:UpdateDropDownList(playerNames)
 
 		if index == 1 then
@@ -82,21 +94,16 @@ local function Initialize()
 
 		this.WhichPlayerMode:SetInteractable(index > 1 and this.GameOrPlayerMode.CurrentIndex ~= 1)
 		this.GameOrPlayerMode:SetInteractable(index > 1)
+
+		if nextPlayerToReport then
+			this.WhichPlayerMode:SetSelectionByValue(nextPlayerToReport.Name)
+			nextPlayerToReport = nil
+		end
 	end
 
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "ReportAbuseTab"
-
 	this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/ReportAbuseTab.png"
-	if utility:IsSmallTouchScreen() then
-		this.TabHeader.Icon.Size = UDim2.new(0,27,0,32)
-		this.TabHeader.Size = UDim2.new(0,120,1,0)
-	else
-		this.TabHeader.Size = UDim2.new(0,150,1,0)
-		this.TabHeader.Icon.Size = UDim2.new(0,36,0,43)
-	end
-	this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale, this.TabHeader.Icon.Position.X.Offset + 10, 0.5,-this.TabHeader.Icon.Size.Y.Offset/2)
-
 	this.TabHeader.Icon.Title.Text = "Report"
 
 	------ PAGE CUSTOMIZATION -------
@@ -116,43 +123,51 @@ local function Initialize()
 			this.GameOrPlayerLabel,
 			this.GameOrPlayerMode = utility:AddNewRow(this, "Game or Player?", "Selector", {"Game", "Player"}, 2, 3)
 		end
+		this.GameOrPlayerMode.Selection.LayoutOrder = 1
 
 		this.WhichPlayerFrame,
 		this.WhichPlayerLabel,
 		this.WhichPlayerMode = utility:AddNewRow(this, "Which Player?", "DropDown", {"update me"})
 		this.WhichPlayerMode:SetInteractable(false)
 		this.WhichPlayerLabel.ZIndex = 1
+		this.WhichPlayerFrame.LayoutOrder = 2
 
 		this.TypeOfAbuseFrame,
 		this.TypeOfAbuseLabel,
 		this.TypeOfAbuseMode = utility:AddNewRow(this, "Type Of Abuse", "DropDown", ABUSE_TYPES_GAME, 1)
+		this.TypeOfAbuseFrame.LayoutOrder = 3
 
 		if utility:IsSmallTouchScreen() then
 			this.AbuseDescriptionFrame,
 			this.AbuseDescriptionLabel,
-			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil)
+			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
+
+			if not enablePortraitMode then
+				this.AbuseDescription.Selection.Size = UDim2.new(0, 290, 0, 30)
+	 			this.AbuseDescription.Selection.Position = UDim2.new(1,-345,this.AbuseDescription.Selection.Position.Y.Scale, this.AbuseDescription.Selection.Position.Y.Offset)
+	 			this.AbuseDescriptionLabel = this.TypeOfAbuseLabel:clone()
+ 				this.AbuseDescriptionLabel.Text = "Abuse Description"
+				this.AbuseDescriptionLabel.Position = UDim2.new(this.AbuseDescriptionLabel.Position.X.Scale, this.AbuseDescriptionLabel.Position.X.Offset,0,50)
+				this.AbuseDescriptionLabel.Parent = this.Page
+			end
+
+			this.AbuseDescriptionLabel.Text = "Abuse Description"
 		else
 			this.AbuseDescriptionFrame,
 			this.AbuseDescriptionLabel,
 			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
+
+			this.AbuseDescriptionFrame.Size = UDim2.new(1, -10, 0, 100)
+			this.AbuseDescription.Selection.Size = UDim2.new(1, 0, 1, 0)
 		end
+
+		this.AbuseDescriptionFrame.LayoutOrder = 4
 
 		this.AbuseDescription.Selection.FocusLost:connect(function()
 			if this.AbuseDescription.Selection.Text == "" then
 				this.AbuseDescription.Selection.Text = DEFAULT_ABUSE_DESC_TEXT
 			end
 		end)
-
-		if utility:IsSmallTouchScreen() then
-			this.AbuseDescription.Selection.Size = UDim2.new(0, 290, 0, 30)
-			this.AbuseDescription.Selection.Position = UDim2.new(1,-345,this.AbuseDescription.Selection.Position.Y.Scale, this.AbuseDescription.Selection.Position.Y.Offset)
-
-			this.AbuseDescriptionLabel = this.TypeOfAbuseLabel:clone()
-			this.AbuseDescriptionLabel.Text = "Abuse Description"
-			this.AbuseDescriptionLabel.Position = UDim2.new(this.AbuseDescriptionLabel.Position.X.Scale, this.AbuseDescriptionLabel.Position.X.Offset,
-														0,50)
-			this.AbuseDescriptionLabel.Parent = this.Page
-		end
 
 		local SelectionOverrideObject = utility:Create'ImageLabel'
 		{
@@ -324,19 +339,8 @@ do
 	function PageInstance:ReportPlayer(player)
 		if player then
 			local setReportPlayerConnection = nil
+			PageInstance:SetNextPlayerToReport(player)
 			setReportPlayerConnection = PageInstance.Displayed.Event:connect(function()
-				-- When we change the SelectionIndex of GameOrPlayerMode it waits until the tween is done
-				-- before it fires the IndexChanged signal. The WhichPlayerMode dropdown listens to this signal
-				-- and resets when it is fired. Therefore we need to listen to this signal and set the player we want
-				-- to report the frame after the dropdown is reset
-				local indexChangedConnection = nil
-				indexChangedConnection = PageInstance.GameOrPlayerMode.IndexChanged:connect(function()
-					if indexChangedConnection then
-						indexChangedConnection:disconnect()
-						indexChangedConnection = nil
-					end
-					PageInstance.WhichPlayerMode:SetSelectionByValue(player.Name)
-				end)
 				PageInstance.GameOrPlayerMode:SetSelectionIndex(2)
 
 				if setReportPlayerConnection then
@@ -344,7 +348,12 @@ do
 					setReportPlayerConnection = nil
 				end
 			end)
-			PageInstance.HubRef:SetVisibility(true, false, PageInstance)
+
+			if not PageInstance.HubRef:GetVisibility() then
+				PageInstance.HubRef:SetVisibility(true, false, PageInstance)
+			else
+				PageInstance.HubRef:SwitchToPage(PageInstance, false)
+			end
 		end
 	end
 end

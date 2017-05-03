@@ -908,7 +908,7 @@ local function getProductInfo()
 	end
 
 	if not success or not result then
-		print("PurchasePromptScript: getProductInfo failed because", result)
+		warn("PurchasePromptScript: getProductInfo failed because", result, "Make sure a valid ID was specified")
 		return nil
 	end
 
@@ -1053,7 +1053,7 @@ local function canPurchase(disableUpsell)
 			return false
 		end
 	else
-		if game.Players.LocalPlayer.UserId < 0 then
+		if Players.LocalPlayer.UserId < 0 then
 			onPurchaseFailed(PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST)
 			return false
 		end
@@ -1079,7 +1079,7 @@ local function canPurchase(disableUpsell)
 
 	PurchaseData.ProductInfo = getProductInfo()
 	if not PurchaseData.ProductInfo then
-		onPurchaseFailed(PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED)
+		onPurchaseFailed(PURCHASE_FAILED.DEFAULT_ERROR)
 		return false
 	end
 
