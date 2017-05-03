@@ -1254,11 +1254,11 @@ local function CreateChatIcon()
 	if not InputService.VREnabled then
 		-- check to see if the chat was disabled
 		local willEnableChat = true
-		if Util.IsTouchDevice() and GuiService:GetScreenResolution().Y < 700 then
-			willEnableChat = false
-		end
 		if newChatVisibleProp then
 			willEnableChat = GameSettings.ChatVisible
+		end
+		if Util.IsTouchDevice() and GuiService:GetScreenResolution().Y < 700 then
+			willEnableChat = false
 		end
 		ChatModule:SetVisible(willEnableChat)
 	end
@@ -1317,13 +1317,13 @@ local function CreateMobileHideChatIcon()
 
 	local function onChatStateChanged(visible)
 		updateIcon(visible)
-		if newChatVisibleProp then
-			GameSettings.ChatVisible = visible
-		end
 	end
 
 	chatHideIconButton.MouseButton1Click:connect(function()
 		toggleChat()
+		if newChatVisibleProp then
+			GameSettings.ChatVisible = ChatModule:GetVisibility()
+		end
 	end)
 
 	if ChatModule.VisibilityStateChanged then
