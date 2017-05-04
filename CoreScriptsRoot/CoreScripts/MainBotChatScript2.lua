@@ -331,7 +331,7 @@ function selectChoice(choice)
 
 		chatFunc(currentConversationDialog, localPlayer.Character, sanitizeMessage(dialogChoice.UserDialog), getChatColor(currentTone()))
 		wait(1)
-		currentConversationDialog:SignalDialogChoiceSelected(player, dialogChoice)
+		currentConversationDialog:SignalDialogChoiceSelected(localPlayer, dialogChoice)
 		chatFunc(currentConversationDialog, currentConversationPartner, sanitizeMessage(dialogChoice.ResponseDialog), getChatColor(currentTone()))
 
 		variableDelay(dialogChoice.ResponseDialog)
@@ -542,7 +542,7 @@ end
 
 function checkForLeaveArea()
 	while currentConversationDialog do
-		if currentConversationDialog.Parent and (player:DistanceFromCharacter(currentConversationDialog.Parent.Position) >= currentConversationDialog.ConversationDistance) then
+		if currentConversationDialog.Parent and (localPlayer:DistanceFromCharacter(currentConversationDialog.Parent.Position) >= currentConversationDialog.ConversationDistance) then
 			wanderDialog()
 		end
 		wait(1)
@@ -551,7 +551,7 @@ end
 
 function startDialog(dialog)
 	if dialog.Parent and dialog.Parent:IsA("BasePart") then
-		if player:DistanceFromCharacter(dialog.Parent.Position) >= dialog.ConversationDistance then
+		if localPlayer:DistanceFromCharacter(dialog.Parent.Position) >= dialog.ConversationDistance then
 			showMessage(tooFarAwayMessage, tooFarAwaySize)
 			return
 		end
