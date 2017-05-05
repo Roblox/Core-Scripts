@@ -723,12 +723,9 @@ local function CreateSettingsHub()
 
 		local sizeOfTab = 1/#this.TabHeaders
 		for i = 1, #this.TabHeaders do
-			local tabMaxPos = (sizeOfTab * i)
-			local tabMinPos = (sizeOfTab * (i - 1))
-			local pos = ((tabMaxPos - tabMinPos)/2) + tabMinPos
-
 			local tab = this.TabHeaders[i]
-			tab.Position = UDim2.new(pos,-tab.Size.X.Offset/2,0,0)
+			tab.Size = UDim2.new(sizeOfTab, 0, 1, 0)
+			tab.Position = UDim2.new(sizeOfTab * (i - 1), 0, 0, 0)
 		end
 
 		setZIndex(SETTINGS_BASE_ZINDEX + 1, newHeader)

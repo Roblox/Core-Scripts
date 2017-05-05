@@ -47,8 +47,8 @@ local function Initialize()
 		Name = "Header",
 		Text = "",
 		BackgroundTransparency = 1,
-		Size = UDim2.new(0,169,1,0),
-		Position = UDim2.new(0.5,0,0,0)
+		Size = UDim2.new(1/5, 0,1,0),
+		Position = UDim2.new(0,0,0,0)
 	};
 	if utility:IsSmallTouchScreen() then
 		this.TabHeader.Size = UDim2.new(0,84,1,0)
