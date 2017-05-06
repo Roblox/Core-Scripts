@@ -88,6 +88,11 @@ do
 		return InputService.TouchEnabled
 	end
 
+	function Util.IsSmallTouchScreen()
+		local screenResolution = GuiService:GetScreenResolution()
+		return InputService.TouchEnabled and (screenResolution.Y < 500 or screenResolution.X < 700)
+	end
+
 	function Util.Create(instanceType)
 		return function(data)
 			local obj = Instance.new(instanceType)
@@ -873,7 +878,7 @@ local function CreateLeaderstatsMenuItem()
 	rawset(this, "SetColumns",
 		function(self, columnsList)
 			-- Should we handle is the screen dimensions change and it is no longer a small touch device after we set columns?
-			local isSmallTouchDevice = Util.IsTouchDevice() and GuiService:GetScreenResolution().Y < 500
+			local isSmallTouchDevice = Util.IsSmallTouchScreen()
 			local numColumns = #columnsList
 
 			-- Destroy old columns
@@ -1257,7 +1262,7 @@ local function CreateChatIcon()
 		if newChatVisibleProp then
 			willEnableChat = GameSettings.ChatVisible
 		end
-		if Util.IsTouchDevice() and GuiService:GetScreenResolution().Y < 700 then
+		if Util.IsSmallTouchScreen() then
 			willEnableChat = false
 		end
 		ChatModule:SetVisible(willEnableChat)
