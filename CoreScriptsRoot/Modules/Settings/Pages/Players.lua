@@ -12,10 +12,12 @@ local PlayersService = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
 ----------- UTILITIES --------------
-RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
-local utility = require(RobloxGui.Modules.Settings.Utility)
-local reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
-local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
+local coreGuiModules = RobloxGui:WaitForChild("Modules")
+local utility = require(coreGuiModules.Settings:WaitForChild("Utility"))
+local isTenFootInterface = require(coreGuiModules:WaitForChild("TenFootInterface")):IsEnabled()
+local PromptCreator = require(coreGuiModules:WaitForChild("PromptCreator"))
+local PlayerDropDownModule = require(coreGuiModules:WaitForChild("PlayerDropDown"))
+
 
 local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
 local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
@@ -33,6 +35,9 @@ local FRIEND_IMAGE = isTenFootInterface and "rbxasset://textures/ui/Settings/Pla
 
 local PLAYER_ROW_HEIGHT = 62
 local PLAYER_ROW_SPACING = 80
+
+local THUMBNAIL_URL = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&userId="
+local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=420&height=420&userId="
 
 ------------ Variables -------------------
 local PageInstance = nil
@@ -68,6 +73,17 @@ local function Initialize()
 		else
 			return Enum.FriendStatus.NotFriend
 		end
+	end
+	
+	local function AtFriendLimit(player)
+		local friendCount = PlayerDropDownModule:GetFriendCountAsync(player)
+		if friendCount == nil then
+			return false
+		end
+		if friendCount >= PlayerDropDownModule:MaxFriendCount() then
+			return true
+		end
+		return false
 	end
 
 	------ PAGE CUSTOMIZATION -------
@@ -195,8 +211,76 @@ local function Initialize()
 
 			-- create new friend status label
 			local status = nil
-			if player and player ~= localPlayer and player.UserId > 1 and localPlayer.UserId > 1 then
+			if player and player ~= localPlayer and player.UserId > 0 and localPlayer.UserId > 0 then
 				status = getFriendStatus(player)
+			end
+
+			local friendLabel, friendLabelText = nil, nil
+			if not status then
+				friendLabel = Instance.new('TextButton')
+				friendLabel.Text = ''
+				friendLabel.BackgroundTransparency = 1
+				friendLabel.Position = UDim2.new(1,-198,0,7)
+			elseif status == Enum.FriendStatus.Friend then 
+				friendLabel = Instance.new('TextButton')
+				friendLabel.Text = 'Friend'
+				friendLabel.BackgroundTransparency = 1
+				friendLabel.FontSize = 'Size24'
+				friendLabel.Font = 'SourceSans'
+				friendLabel.TextColor3 = Color3.new(1,1,1)
+				friendLabel.Position = UDim2.new(1,-198,0,7)
+			elseif status == Enum.FriendStatus.Unknown or status == Enum.FriendStatus.NotFriend or status == Enum.FriendStatus.FriendRequestReceived then
+				local addFriendFunc = function()
+					if friendLabel and friendLabelText and friendLabelText.Text ~= '' then
+						friendLabel.ImageTransparency = 1
+						friendLabelText.Text = ''
+					end
+					if AtFriendLimit(localPlayer) then
+						while PromptCreator:IsCurrentlyPrompting() do
+							wait()
+						end
+						PromptCreator:CreatePrompt({
+							WindowTitle = "Friend Limit Reached",
+							MainText = string.format("You can not send a friend request to %s because you are at the max friend limit.", player.Name),
+							ConfirmationText = "Okay",
+							CancelActive = false,
+							Image = BUST_THUMBNAIL_URL ..player.UserId,
+							ImageConsoleVR = THUMBNAIL_URL ..player.UserId,
+							StripeColor = Color3.fromRGB(183, 34, 54),
+						})
+						friendStatusCreate(playerLabel, player)
+					else
+						if AtFriendLimit(player) then
+							while PromptCreator:IsCurrentlyPrompting() do
+								wait()
+							end
+							PromptCreator:CreatePrompt({
+								WindowTitle = "Error Sending Friend Request",
+								MainText = string.format("You can not send a friend request to %s because they are at the max friend limit.",  player.Name),
+								ConfirmationText = "Okay",
+								CancelActive = false,
+								Image = BUST_THUMBNAIL_URL ..player.UserId,
+								ImageConsoleVR = THUMBNAIL_URL ..player.UserId,
+								StripeColor = Color3.fromRGB(183, 34, 54),
+							})
+							friendStatusCreate(playerLabel, player)
+						else
+							localPlayer:RequestFriendship(player)
+						end
+					end
+				end
+				friendLabel, friendLabelText = utility:MakeStyledButton("FriendStatus", status == Enum.FriendStatus.FriendRequestReceived and "Accept Request" or "Add Friend", UDim2.new(0, 182, 0, 46), addFriendFunc)
+				friendLabelText.ZIndex = 3
+				friendLabelText.Position = friendLabelText.Position + UDim2.new(0,0,0,1)
+				friendLabel.Position = UDim2.new(1,-198,0,7)
+			elseif status == Enum.FriendStatus.FriendRequestSent then
+				friendLabel = Instance.new('TextButton')
+				friendLabel.Text = 'Request Sent'
+				friendLabel.BackgroundTransparency = 1
+				friendLabel.FontSize = 'Size24'
+				friendLabel.Font = 'SourceSans'
+				friendLabel.TextColor3 = Color3.new(1,1,1)
+				friendLabel.Position = UDim2.new(1,-198,0,7)
 			end
 
 			if enableReportPlayer then
