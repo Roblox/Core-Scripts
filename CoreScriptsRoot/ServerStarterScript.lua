@@ -83,6 +83,7 @@ game:GetService("Players").PlayerRemoving:connect(function(player)
 	end
 end)
 
-
-require(game:GetService("CoreGui").RobloxGui.Modules.Server.ClientChat.ChatWindowInstaller)()
-require(game:GetService("CoreGui").RobloxGui.Modules.Server.ServerChat.ChatServiceInstaller)()
+if game:GetService("Chat").LoadDefaultChat then
+	require(game:GetService("CoreGui").RobloxGui.Modules.Server.ClientChat.ChatWindowInstaller)()
+	require(game:GetService("CoreGui").RobloxGui.Modules.Server.ServerChat.ChatServiceInstaller)()
+end
