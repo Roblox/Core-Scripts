@@ -15,6 +15,9 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 local newChatVisiblePropSuccess, newChatVisiblePropValue =  pcall(function() return settings():GetFFlag("ChatVisiblePropertyEnabled") end)
 local newChatVisibleProp = (newChatVisiblePropSuccess and newChatVisiblePropValue)
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -668,6 +671,24 @@ local function createNormalHealthBar()
 		BackgroundColor3 = TopbarConstants.HEALTH_GREEN_COLOR;
 		Parent = healthContainer;
 	};
+
+	if enablePortraitMode then
+		local function onResized(viewportSize, isPortrait)
+			if isPortrait then
+				username.TextXAlignment = Enum.TextXAlignment.Right
+				accountType.TextXAlignment = Enum.TextXAlignment.Right
+				container.Size = UDim2.new(0.3, 0, 1, 0)
+				container.AnchorPoint = Vector2.new(1, 0)
+			else
+				username.TextXAlignment = Enum.TextXAlignment.Left
+				accountType.TextXAlignment = Enum.TextXAlignment.Left
+				container.Size = UDim2.new(0, TopbarConstants.USERNAME_CONTAINER_WIDTH, 1, 0)
+				container.AnchorPoint = Vector2.new(0, 0)
+			end
+		end
+		local Utility = require(GuiRoot:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("Utility"))
+		Utility:OnResized(container, onResized)
+	end
 
 	return container, username, healthContainer, healthFill, accountType
 end
