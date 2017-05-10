@@ -2055,10 +2055,8 @@ if enablePortraitMode then
 	local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
 	local function onResized(viewportSize, isPortrait)
 		if isPortrait then
-			print("Wat")
 			leaderstatsMenuItem:SetColumns({})
 		else
-			print("not portrait")
 			leaderstatsMenuItem:SetColumns(PlayerlistModule.GetStats())
 		end
 		RightMenubar:ArrangeItems()
