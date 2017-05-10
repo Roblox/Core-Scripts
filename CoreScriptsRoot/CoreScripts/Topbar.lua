@@ -975,6 +975,12 @@ local function CreateLeaderstatsMenuItem()
 
 	this:SetColumns(PlayerlistModule.GetStats())
 	PlayerlistModule.OnLeaderstatsChanged.Event:connect(function(newStatColumns)
+		--This check is temporary until we have a better design for portrait mode.
+		local Utility = require(GuiRoot:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("Utility"))
+		if enablePortraitMode and Utility:IsPortrait() then
+			return
+		end
+
 		this:SetColumns(newStatColumns)
 	end)
 
