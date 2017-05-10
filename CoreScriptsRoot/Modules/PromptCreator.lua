@@ -48,6 +48,9 @@ local WasCoreGuiNavigationEnabled = false
 local WasGuiNavigationEnabled = false
 local WasAutoSelectGuiEnabled = false
 
+local useNewThumbnailApiSuccess, useNewThumbnailApiValue = pcall(function() return settings():GetFFlag("CoreScriptsUseNewUserThumbnailAPI") end)
+local useNewUserThumbnailAPI = useNewThumbnailApiSuccess and useNewThumbnailApiValue
+
 -- Inital prompt options. These are passed to CreatePrompt.
 local DefaultPromptOptions = {
 	WindowTitle = "Confirm",
@@ -195,7 +198,7 @@ local function createScrollingTextLabel(name, size, position, font, textSize, te
 end
 
 
-local function createImageLabel(name, size, position, image)
+local function createImageLabel(name, size, position, image, fetchImageFunction)
 	local imageLabel = Instance.new('ImageLabel')
 	imageLabel.Name = name
 	imageLabel.Size = size
@@ -203,6 +206,10 @@ local function createImageLabel(name, size, position, image)
 	imageLabel.Position = position
 	imageLabel.Image = image
 
+	if useNewUserThumbnailAPI and fetchImageFunction then
+		fetchImageFunction(imageLabel)
+	end
+	
 	return imageLabel
 end
 
@@ -268,7 +275,7 @@ function CreatePromptVRorConsole(promptOptions)
 	local xOffset = 90
 
 	if promptOptions.ImageConsoleVR then
-		local image = createImageLabel("Image", UDim2.new(0, 600, 0, 600), UDim2.new(0, 100, 0, 45), promptOptions.ImageConsoleVR)
+		local image = createImageLabel("Image", UDim2.new(0, 600, 0, 600), UDim2.new(0, 100, 0, 45), promptOptions.ImageConsoleVR, promptOptions.FetchImageFunctionConsoleVR)
 		image.ZIndex = 9
 		image.Parent = ContainerFrame
 
@@ -335,7 +342,7 @@ function CreatePromptPCorTablet(promptOptions)
 	local image = nil
 
 	if promptOptions.Image then
-		image = createImageLabel("Image", UDim2.new(0, 150, 0, 150), UDim2.new(0, 15, 0, TITLE_HEIGHT + 17), promptOptions.Image)
+		image = createImageLabel("Image", UDim2.new(0, 150, 0, 150), UDim2.new(0, 15, 0, TITLE_HEIGHT + 17), promptOptions.Image, promptOptions.FetchImageFunction)
 		image.ZIndex = 9
 		image.Parent = ContainerFrame
 
@@ -428,7 +435,7 @@ function CreatePromptPhone(promptOptions)
 	local image = nil
 
 	if promptOptions.Image then
-		image = createImageLabel("Image", UDim2.new(0, 120, 0, 120), UDim2.new(0, 15, 0, TITLE_HEIGHT + 17), promptOptions.Image)
+		image = createImageLabel("Image", UDim2.new(0, 120, 0, 120), UDim2.new(0, 15, 0, TITLE_HEIGHT + 17), promptOptions.Image, promptOptions.FetchImageFunction)
 		image.ZIndex = 9
 		image.Parent = ContainerFrame
 

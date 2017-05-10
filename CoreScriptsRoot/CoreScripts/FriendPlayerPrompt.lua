@@ -23,6 +23,23 @@ local PlayerDropDownModule = require(CoreGuiModules:WaitForChild("PlayerDropDown
 local THUMBNAIL_URL = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&format=png&userId="
 local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=420&height=420&format=png&userId="
 
+local REGULAR_THUMBNAIL_IMAGE_SIZE = Enum.ThumbnailSize.Size420x420
+local CONSOLE_THUMBNAIL_IMAGE_SIZE = Enum.ThumbnailSize.Size180x180
+
+local REGULAR_THUMBNAIL_IMAGE_TYPE = Enum.ThumnailType.AvatarBust
+local CONSOLE_THUMBNAIL_IMAGE_TYPE = Enum.ThumbnailType.AvatarThumbnail
+
+function createFetchImageFunction(...)
+	return function(imageLabel)
+		spawn(function()
+			local imageUrl = SocialUtil.GetPlayerImage(...)
+			if imageLabel and imageLabel.Parent then
+				frame.Icon.Image = imageUrl
+			end
+		end)
+	end
+end
+
 function SendFriendRequest(playerToFriend)
 	local success = pcall(function()
 		LocalPlayer:RequestFriendship(playerToFriend)
@@ -58,6 +75,8 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 					CancelActive = false,
 					Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
 					ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
+					FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+					FetchImageFunctionConsoleVR = createFetchImageFunction(playerToFriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 					StripeColor = Color3.fromRGB(183, 34, 54),
 				})
 			else
@@ -69,6 +88,8 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 						CancelActive = false,
 						Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
 						ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
+						FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+						FetchImageFunctionConsoleVR = createFetchImageFunction(playerToFriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 						StripeColor = Color3.fromRGB(183, 34, 54),
 					})
 				else
@@ -84,6 +105,8 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 							CancelActive = false,
 							Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
 							ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
+							FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+							FetchImageFunctionConsoleVR = createFetchImageFunction(playerToFriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 							StripeColor = Color3.fromRGB(183, 34, 54),
 						})
 					end
@@ -99,6 +122,8 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 		CancelActive = true,
 		Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
 		ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
+		FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+		FetchImageFunctionConsoleVR = createFetchImageFunction(playerToFriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 		PromptCompletedCallback = promptCompletedCallback,
 	})
 end
@@ -145,6 +170,8 @@ function DoPromptUnfriendPlayer(playerToUnfriend)
 					CancelActive = false,
 					Image = BUST_THUMBNAIL_URL ..playerToUnfriend.UserId,
 					ImageConsoleVR = THUMBNAIL_URL ..playerToUnfriend.UserId,
+					FetchImageFunction = createFetchImageFunction(playerToUnfriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+					FetchImageFunctionConsoleVR = createFetchImageFunction(playerToUnfriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 					StripeColor = Color3.fromRGB(183, 34, 54),
 				})
 			end
@@ -158,6 +185,8 @@ function DoPromptUnfriendPlayer(playerToUnfriend)
 		CancelActive = true,
 		Image = BUST_THUMBNAIL_URL ..playerToUnfriend.UserId,
 		ImageConsoleVR = THUMBNAIL_URL ..playerToUnfriend.UserId,
+		FetchImageFunction = createFetchImageFunction(playerToUnfriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+		FetchImageFunctionConsoleVR = createFetchImageFunction(playerToUnfriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 		PromptCompletedCallback = promptCompletedCallback,
 	})
 end

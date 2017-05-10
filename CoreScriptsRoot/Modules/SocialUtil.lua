@@ -65,13 +65,19 @@ end
 function SocialUtil.GetFallbackPlayerImageUrl(userId, thumbnailSize, thumbnailType)
 	local sizeNumber = THUMBNAIL_SIZE_MAP[thumbnailSize]
 	if not sizeNumber then
-		warn("SocialUtil.GetPlayerImage: No thumbnail size in map for " ..tostring(thumbnailSize))
+		if thumbnailSize then
+			warn("SocialUtil.GetPlayerImage: No thumbnail size in map for " ..tostring(thumbnailSize))
+		end
+
 		sizeNumber = THUMBNAIL_SIZE_MAP[DEFAULT_THUMBNAIL_SIZE]
 	end
 	
 	local thumbnailFallbackUrl = THUMBNAIL_FALLBACK_URLS[thumbnailType]
 	if not thumbnailFallbackUrl then
-		warn("SocialUtil.GetPlayerImage: No thumbnail fallback url in map for " ..tostring(thumbnailType))
+		if thumbnailType then
+			warn("SocialUtil.GetPlayerImage: No thumbnail fallback url in map for " ..tostring(thumbnailType))
+		end
+
 		thumbnailFallbackUrl = THUMBNAIL_FALLBACK_URLS[DEFAULT_THUMBNAIL_TYPE]
 	end
 	
