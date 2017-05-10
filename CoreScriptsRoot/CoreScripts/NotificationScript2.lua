@@ -37,6 +37,9 @@ local tenFootBadgeNotifications = getTenFootBadgeNotifications and tenFootBadgeN
 local getDisableScreenshotPopup, disableScreenshotPopupValue = pcall(function() return settings():GetFFlag("DisableScreenshotPopup") end)
 local disableScreenshotPopup = getDisableScreenshotPopup and disableScreenshotPopupValue
 
+local useNewThumbnailApiSuccess, useNewThumbnailApiValue = pcall(function() return settings():GetFFlag("CoreScriptsUseNewUserThumbnailAPI") end)
+local useNewUserThumbnailAPI = useNewThumbnailApiSuccess and useNewThumbnailApiValue
+
 --[[ Script Variables ]]--
 local LocalPlayer = nil
 while not Players.LocalPlayer do
@@ -62,6 +65,9 @@ local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled
 local pointsNotificationsActive = true
 local badgesNotificationsActive = true
 
+--[[ Modules ]]--
+local SocialUtil = require(RobloxGui.Modules:WaitForChild("SocialUtil"))
+
 --[[ Constants ]]--
 local BG_TRANSPARENCY = 0.7
 local MAX_NOTIFICATIONS = 3
@@ -80,6 +86,7 @@ local EASE_DIR = Enum.EasingDirection.InOut
 local EASE_STYLE = Enum.EasingStyle.Sine
 local TWEEN_TIME = 0.35
 local DEFAULT_NOTIFICATION_DURATION = 5
+local MAX_GET_FRIEND_IMAGE_YIELD_TIME = 5
 local FRIEND_REQUEST_NOTIFICATION_THROTTLE = 5
 
 local friendRequestNotificationFIntSuccess, friendRequestNotificationFIntValue = pcall(function() return tonumber(settings():GetFVariable("FriendRequestNotificationThrottle")) end)
@@ -202,9 +209,14 @@ PopupText.Parent = PopupFrame
 local insertNotification = nil
 local removeNotification = nil
 
-local function getFriendImage(playerId, size)
-	size = size or 48
-	return ("http://www.roblox.com/thumbs/avatar.ashx?userId=%d&x=%d&y=%d"):format(playerId, size, size)
+local function getFriendImage(playerId)
+	if useNewUserThumbnailAPI then
+		-- SocialUtil.GetPlayerImage can yield for up to  MAX_GET_FRIEND_IMAGE_YIELD_TIME seconds while waiting for thumbnail to be final.
+		-- It will just return an invalid thumbnail if a valid one can not be generated in time.
+		return SocialUtil.GetPlayerImage(playerId, Enum.ThumbnailSize.Size48x48, Enum.ThumbnailType.AvatarThumbnail, --[[timeOut = ]] MAX_GET_FRIEND_IMAGE_YIELD_TIME)
+	else
+		return ("http://www.roblox.com/thumbs/avatar.ashx?userId=%d&x=%d&y=%d"):format(playerId, 48, 48)
+	end
 end
 
 --

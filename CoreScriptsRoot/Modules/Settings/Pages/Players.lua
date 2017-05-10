@@ -15,6 +15,7 @@ local UserInputService = game:GetService("UserInputService")
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local utility = require(RobloxGui.Modules.Settings.Utility)
 local reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
+local SocialUtil = require(RobloxGui.Modules:WaitForChild("SocialUtil"))
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
 local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
@@ -23,6 +24,9 @@ local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
 local reportPlayerInMenuSuccess, reportPlayerInMenuValue = pcall(function() return settings():GetFFlag("CoreScriptReportPlayerInMenu") end)
 -- The player report flag relies on portrait mode being enabled.
 local enableReportPlayer = enablePortraitMode and reportPlayerInMenuSuccess and reportPlayerInMenuValue
+
+local useNewThumbnailApiSuccess, useNewThumbnailApiValue = pcall(function() return settings():GetFFlag("CoreScriptsUseNewUserThumbnailAPI") end)
+local useNewUserThumbnailAPI = useNewThumbnailApiSuccess and useNewThumbnailApiValue
 
 ------------ Constants -------------------
 local FRAME_DEFAULT_TRANSPARENCY = .85
@@ -513,7 +517,19 @@ local function Initialize()
 					table.insert(existingPlayerLabels, index, frame)
 				end
 				frame.Name = "PlayerLabel" ..player.Name
-				frame.Icon.Image = "https://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId="..math.max(1, player.UserId)
+				if useNewUserThumbnailAPI then
+					-- Immediately assign the image to an image that isn't guaranteed to be generated
+					frame.Icon.Image = SocialUtil.GetFallbackPlayerImageUrl(math.max(1, player.UserId), Enum.ThumbnailSize.Size180x180, Enum.ThumbnailType.AvatarThumbnail)
+					-- Spawn a function to get the generated image
+					spawn(function()
+						local imageUrl = SocialUtil.GetPlayerImage(math.max(1, player.UserId), Enum.ThumbnailSize.Size180x180, Enum.ThumbnailType.AvatarThumbnail)
+						if frame and frame.Parent and frame.Parent == this.Page then
+							frame.Icon.Image = imageUrl
+						end
+					end)
+				else
+					frame.Icon.Image = "https://www.roblox.com/Thumbs/Avatar.ashx?x=100&y=100&userId="..math.max(1, player.UserId)
+				end
 				frame.NameLabel.Text = player.Name
 				frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
 
