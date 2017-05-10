@@ -26,39 +26,6 @@ local DEFAULT_THUMBNAIL_SIZE = Enum.ThumbnailSize.Size48x48
 local DEFAULT_THUMBNAIL_TYPE = Enum.ThumbnailType.AvatarThumbnail
 local GET_USER_THUMBNAIL_ASYNC_RETRY_TIME = 1
 
---[[ Utility ]]--
-local function CreateSignal()
-	local sig = {}
-
-	local mSignaler = Instance.new('BindableEvent')
-
-	local mArgData = nil
-	local mArgDataCount = nil
-
-	function sig:fire(...)
-		mArgData = {...}
-		mArgDataCount = select('#', ...)
-		mSignaler:Fire()
-	end
-
-	function sig:connect(f)
-		if not f then error("connect(nil)", 2) end
-		return mSignaler.Event:Connect(function()
-			f(unpack(mArgData, 1, mArgDataCount))
-		end)
-	end
-
-	function sig:wait()
-		mSignaler.Event:wait()
-		if not mArgData then
-			error("Missing arg data, likely due to :TweenSize/Position corrupting threadrefs.")
-		end
-		return unpack(mArgData, 1, mArgDataCount)
-	end
-
-	return sig
-end
-
 --[[ Functions ]]--
 
 -- The thumbanil isn't guaranteed to be generated, this will just create the url using string.format and immediately return it.
@@ -92,12 +59,12 @@ function SocialUtil.GetPlayerImage(userId, thumbnailSize, thumbnailType, timeOut
 	if not timeOut then timeOut = GET_PLAYER_IMAGE_DEFAULT_TIMEOUT end
 
 	local finished = false
-	local finishedSignal = CreateSignal() -- fired with one parameter: imageUrl
+	local finishedBindable = Instance.new("BindableEvent") -- fired with one parameter: imageUrl
 
 	delay(timeOut, function()
 		if not finished then
 			finished = true
-			finishedSignal:fire(SocialUtil.GetFallbackPlayerImageUrl(userId, thumbnailSize, thumbnailType))
+			finishedBindable:Fire(SocialUtil.GetFallbackPlayerImageUrl(userId, thumbnailSize, thumbnailType))
 		end
 	end)
 
@@ -115,7 +82,7 @@ function SocialUtil.GetPlayerImage(userId, thumbnailSize, thumbnailType, timeOut
 
 			if isFinal then
 				finished = true
-				finishedSignal:fire(thumbnailUrl)
+				finishedBindable:Fire(thumbnailUrl)
 				break
 			end
 			
@@ -123,7 +90,7 @@ function SocialUtil.GetPlayerImage(userId, thumbnailSize, thumbnailType, timeOut
 		end
 	end)
 
-	local imageUrl = finishedSignal:wait()
+	local imageUrl = finishedBindable.Event:Wait()
 	return imageUrl
 end
 
