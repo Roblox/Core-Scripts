@@ -973,15 +973,13 @@ local function CreateLeaderstatsMenuItem()
 		PlayerlistModule.TopbarEnabledChanged(enabled and not InputService.VREnabled) --We don't show the playerlist at all in VR
 	end)
 
+	local Utility = require(GuiRoot:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("Utility"))
+
 	this:SetColumns(PlayerlistModule.GetStats())
 	PlayerlistModule.OnLeaderstatsChanged.Event:connect(function(newStatColumns)
-		--This check is temporary until we have a better design for portrait mode.
-		local Utility = require(GuiRoot:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("Utility"))
-		if enablePortraitMode and Utility:IsPortrait() then
-			return
+		if not enablePortraitMode or not Utility:IsPortrait() then
+			this:SetColumns(newStatColumns)
 		end
-
-		this:SetColumns(newStatColumns)
 	end)
 
 	PlayerlistModule.OnStatChanged.Event:connect(function(statName, statValueAsString)
@@ -2050,6 +2048,24 @@ local function OnVREnabled(prop)
 	end
 end
 UISChanged = InputService.Changed:connect(OnVREnabled)
+
+if enablePortraitMode then
+	--Temporarily disable the leaderstats while in portrait mode.
+	--Will come back to this when a new design is ready.
+	local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
+	local function onResized(viewportSize, isPortrait)
+		if isPortrait then
+			print("Wat")
+			leaderstatsMenuItem:SetColumns({})
+		else
+			print("not portrait")
+			leaderstatsMenuItem:SetColumns(PlayerlistModule.GetStats())
+		end
+		RightMenubar:ArrangeItems()
+	end
+	local Utility = require(GuiRoot:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("Utility"))
+	Utility:OnResized(leaderstatsMenuItem, onResized)
+end
 
 topbarEnabledChanged() -- if it was set before this point, enable/disable it now
 StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
