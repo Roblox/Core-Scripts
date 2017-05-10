@@ -15,6 +15,9 @@ local newNotificationPath = getNewNotificationPathSuccess and newNotificationPat
 local newChatVisiblePropSuccess, newChatVisiblePropValue =  pcall(function() return settings():GetFFlag("ChatVisiblePropertyEnabled") end)
 local newChatVisibleProp = (newChatVisiblePropSuccess and newChatVisiblePropValue)
 
+local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
+local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
 --[[ END OF FFLAG VALUES ]]
 
 
@@ -35,6 +38,7 @@ local ChatService = game:GetService('Chat')
 --[[ MODULES ]]--
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 local TopbarConstants = require(GuiRoot.Modules.TopbarConstants)
+local Utility = require(GuiRoot.Modules.Settings.Utility)
 --[[ END OF MODULES ]]
 
 local topbarEnabled = true
@@ -669,6 +673,23 @@ local function createNormalHealthBar()
 		Parent = healthContainer;
 	};
 
+	if enablePortraitMode then
+		local function onResized(viewportSize, isPortrait)
+			if isPortrait then
+				username.TextXAlignment = Enum.TextXAlignment.Right
+				accountType.TextXAlignment = Enum.TextXAlignment.Right
+				container.Size = UDim2.new(0.3, 0, 1, 0)
+				container.AnchorPoint = Vector2.new(1, 0)
+			else
+				username.TextXAlignment = Enum.TextXAlignment.Left
+				accountType.TextXAlignment = Enum.TextXAlignment.Left
+				container.Size = UDim2.new(0, TopbarConstants.USERNAME_CONTAINER_WIDTH, 1, 0)
+				container.AnchorPoint = Vector2.new(0, 0)
+			end
+		end
+		Utility:OnResized(container, onResized)
+	end
+
 	return container, username, healthContainer, healthFill, accountType
 end
 
@@ -954,7 +975,9 @@ local function CreateLeaderstatsMenuItem()
 
 	this:SetColumns(PlayerlistModule.GetStats())
 	PlayerlistModule.OnLeaderstatsChanged.Event:connect(function(newStatColumns)
-		this:SetColumns(newStatColumns)
+		if not enablePortraitMode or not Utility:IsPortrait() then
+			this:SetColumns(newStatColumns)
+		end
 	end)
 
 	PlayerlistModule.OnStatChanged.Event:connect(function(statName, statValueAsString)
@@ -2023,6 +2046,21 @@ local function OnVREnabled(prop)
 	end
 end
 UISChanged = InputService.Changed:connect(OnVREnabled)
+
+if enablePortraitMode then
+	--Temporarily disable the leaderstats while in portrait mode.
+	--Will come back to this when a new design is ready.
+	local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
+	local function onResized(viewportSize, isPortrait)
+		if isPortrait then
+			leaderstatsMenuItem:SetColumns({})
+		else
+			leaderstatsMenuItem:SetColumns(PlayerlistModule.GetStats())
+		end
+		RightMenubar:ArrangeItems()
+	end
+	Utility:OnResized(leaderstatsMenuItem, onResized)
+end
 
 topbarEnabledChanged() -- if it was set before this point, enable/disable it now
 StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)
