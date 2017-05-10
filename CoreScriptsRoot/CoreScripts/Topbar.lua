@@ -38,6 +38,7 @@ local ChatService = game:GetService('Chat')
 --[[ MODULES ]]--
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 local TopbarConstants = require(GuiRoot.Modules.TopbarConstants)
+local Utility = require(GuiRoot.Modules.Settings.Utility)
 --[[ END OF MODULES ]]
 
 local topbarEnabled = true
@@ -686,7 +687,6 @@ local function createNormalHealthBar()
 				container.AnchorPoint = Vector2.new(0, 0)
 			end
 		end
-		local Utility = require(GuiRoot:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("Utility"))
 		Utility:OnResized(container, onResized)
 	end
 
@@ -972,8 +972,6 @@ local function CreateLeaderstatsMenuItem()
 	topbarEnabledChangedEvent.Event:connect(function(enabled)
 		PlayerlistModule.TopbarEnabledChanged(enabled and not InputService.VREnabled) --We don't show the playerlist at all in VR
 	end)
-
-	local Utility = require(GuiRoot:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("Utility"))
 
 	this:SetColumns(PlayerlistModule.GetStats())
 	PlayerlistModule.OnLeaderstatsChanged.Event:connect(function(newStatColumns)
@@ -2061,7 +2059,6 @@ if enablePortraitMode then
 		end
 		RightMenubar:ArrangeItems()
 	end
-	local Utility = require(GuiRoot:WaitForChild("Modules"):WaitForChild("Settings"):WaitForChild("Utility"))
 	Utility:OnResized(leaderstatsMenuItem, onResized)
 end
 
