@@ -1,10 +1,11 @@
 <roblox xmlns:xmime="http://www.w3.org/2005/05/xmlmime" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.roblox.com/roblox.xsd" version="4">
 	<External>null</External>
 	<External>nil</External>
-	<Item class="ModuleScript" referent="RBXA74A5A1BA29543E288C039551D27D876">
+	<Item class="ModuleScript" referent="RBX0D38EF2FE7EE4991A91A45E21FB3841D">
 		<Properties>
 			<Content name="LinkedSource"><null></null></Content>
 			<string name="Name">RootCamera</string>
+			<string name="ScriptGuid">{8F8307A5-008F-4CE7-A7AA-D96A39DD504B}</string>
 			<ProtectedString name="Source"><![CDATA[
 local PlayersService = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
@@ -102,63 +103,49 @@ local hasGameLoaded = false
 local GestureArea = nil
 
 do
-	-- Check for changes in ViewportSize to decide if PortraitMode
-	local CameraChangedConn = nil
-	local function onWorkspaceChanged(property)
-		if property == 'CurrentCamera' then
-			if CameraChangedConn then
-				CameraChangedConn:Disconnect()
-				CameraChangedConn = nil
-			end
-			local newCamera = workspace.CurrentCamera
-			if newCamera then
-				local size = newCamera.ViewportSize
-				PortraitMode = size.X < size.Y
-				DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
-				CameraChangedConn = newCamera.Changed:Connect(function(property)
-					if property == 'ViewportSize' then
-						size = newCamera.ViewportSize
-						PortraitMode = size.X < size.Y
-						DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
-					end
-				end)
+	local function layoutGestureArea(portraitMode)
+		if GestureArea then
+			if portraitMode then
+				GestureArea.Size = UDim2.new(1, 0, .6, 0)
+				GestureArea.Position = UDim2.new(0, 0, 0, 0)
+			else
+				GestureArea.Size = UDim2.new(1, 0, .5, -18)
+				GestureArea.Position = UDim2.new(0, 0, 0, 0)
 			end
 		end
 	end
-	workspace.Changed:Connect(onWorkspaceChanged)
-	if workspace.CurrentCamera then
-		onWorkspaceChanged('CurrentCamera')
-	end
-
+	
 	-- Setup gesture area that camera uses while DynamicThumbstick is enabled
 	local function OnCharacterAdded(character)
-		if PlayerGui then
-			local ScreenGui = Instance.new("ScreenGui")
-			ScreenGui.Parent = PlayerGui
-			
-			GestureArea = Instance.new("Frame")
-			GestureArea.BackgroundTransparency = 1.0
-			GestureArea.Visible = true
-			GestureArea.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-			GestureArea.Size = UDim2.new(1, 0, .6, 0)
-			GestureArea.Position = UDim2.new(0, 0, 0, 0)
-			GestureArea.Parent = ScreenGui
+		if UserInputService.TouchEnabled then
+			if PlayerGui then
+				local ScreenGui = Instance.new("ScreenGui")
+				ScreenGui.Parent = PlayerGui
+				
+				GestureArea = Instance.new("Frame")
+				GestureArea.BackgroundTransparency = 1.0
+				GestureArea.Visible = true
+				GestureArea.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+				layoutGestureArea(PortraitMode)
+				GestureArea.Parent = ScreenGui
+				
+			end
+			for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
+				if child:IsA("Tool") then
+					IsAToolEquipped = true
+				end
+			end
+			character.ChildAdded:Connect(function(child)
+				if child:IsA("Tool") then
+					IsAToolEquipped = true
+				end
+			end)
+			character.ChildRemoved:Connect(function(child)
+				if child:IsA("Tool") then
+					IsAToolEquipped = false
+				end
+			end)
 		end
-		for _, child in ipairs(LocalPlayer.Character:GetChildren()) do
-			if child:IsA("Tool") then
-				IsAToolEquipped = true
-			end
-		end
-		character.ChildAdded:Connect(function(child)
-			if child:IsA("Tool") then
-				IsAToolEquipped = true
-			end
-		end)
-		character.ChildRemoved:Connect(function(child)
-			if child:IsA("Tool") then
-				IsAToolEquipped = false
-			end
-		end)
 	end
 	
 	if LocalPlayer then
@@ -168,6 +155,36 @@ do
 		LocalPlayer.CharacterAdded:connect(function(character)
 			OnCharacterAdded(character)
 		end)
+	end
+	
+	-- Check for changes in ViewportSize to decide if PortraitMode
+	local CameraChangedConn = nil
+	local function onWorkspaceChanged(property)
+		if property == 'CurrentCamera' and UserInputService.TouchEnabled then
+			if CameraChangedConn then
+				CameraChangedConn:Disconnect()
+				CameraChangedConn = nil
+			end
+			local newCamera = workspace.CurrentCamera
+			if newCamera then
+				local size = newCamera.ViewportSize
+				PortraitMode = size.X < size.Y
+				layoutGestureArea(PortraitMode)
+				DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
+				CameraChangedConn = newCamera.Changed:Connect(function(property)
+					if property == 'ViewportSize' then
+						size = newCamera.ViewportSize
+						PortraitMode = size.X < size.Y
+						layoutGestureArea(PortraitMode)
+						DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
+					end
+				end)
+			end
+		end
+	end
+	workspace.Changed:Connect(onWorkspaceChanged)
+	if workspace.CurrentCamera then
+		onWorkspaceChanged('CurrentCamera')
 	end
 end
 	
@@ -874,11 +891,14 @@ local function CreateCamera()
 	end
 	
 	local function IsTouchTap(input)
-		local posDelta = (inputStartPositions[input] - input.Position).magnitude
-		if posDelta < MAX_TAP_POS_DELTA then
-			local timeDelta = inputStartTimes[input] - tick()
-			if timeDelta < MAX_TAP_TIME_DELTA then
-				return true
+		-- We can't make the assumption that the input exists in the inputStartPositions because we may have switched from a different camera type.
+		if inputStartPositions[input] then
+			local posDelta = (inputStartPositions[input] - input.Position).magnitude
+			if posDelta < MAX_TAP_POS_DELTA then
+				local timeDelta = inputStartTimes[input] - tick()
+				if timeDelta < MAX_TAP_TIME_DELTA then
+					return true
+				end
 			end
 		end
 		return false

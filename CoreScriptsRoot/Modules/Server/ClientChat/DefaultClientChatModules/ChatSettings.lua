@@ -19,6 +19,8 @@ module.ShowUserOwnFilteredMessage = true	--Show a user the filtered version of t
 module.ChatOnWithTopBarOff = false
 module.ScreenGuiDisplayOrder = 6 -- The DisplayOrder value for the ScreenGui containing the chat.
 
+module.ShowFriendJoinNotification = false -- Show a notification in the chat when a players friend joins the game.
+
 --- Replace with true/false to force the chat type. Otherwise this will default to the setting on the website.
 module.BubbleChatEnabled = PlayersService.BubbleChat
 module.ClassicChatEnabled = PlayersService.ClassicChat
@@ -66,6 +68,8 @@ module.ChatAnimationFPS = 20.0
 
 ---[[ Channel Settings ]]
 module.GeneralChannelName = "All" -- You can set to nil to turn off echoing to a general channel.
+module.EchoMessagesInGeneralChannel = true -- Should messages to channels other than general be echoed into the general channel.
+-- 																						Setting this to false should be used with ShowChannelsBar
 module.ChannelsBarFullTabSize = 4 -- number of tabs in bar before it starts to scroll
 module.MaxChannelNameLength = 12
 --// Although this feature is pretty much ready, it needs some UI design still.

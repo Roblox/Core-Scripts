@@ -1224,39 +1224,27 @@ local function CreateChatIcon()
 		toggleChat()
 	end)
 
-	if useNewBubbleChatEnabled then
-		if ChatModule.ChatBarFocusChanged then
-			ChatModule.ChatBarFocusChanged:connect(function(isFocused)
-				if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
-					updateIcon(isFocused)
-					debounce = tick()
-				end
-			end)
-		end
-
-		if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
-			updateIcon(false)
-		end
-
-		if ChatModule.BubbleChatOnlySet then
-			ChatModule.BubbleChatOnlySet:connect(function()
-				if ChatModule:IsBubbleChatOnly() then
-					updateIcon(false)
-				elseif not Util.IsTouchDevice() then
-					updateIcon(true)
-				end
-			end)
-		end
-	else
-		if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
-			if ChatModule.ChatBarFocusChanged then
-				ChatModule.ChatBarFocusChanged:connect(function(isFocused)
-					updateIcon(isFocused)
-					debounce = tick()
-				end)
+	if ChatModule.ChatBarFocusChanged then
+		ChatModule.ChatBarFocusChanged:connect(function(isFocused)
+			if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
+				updateIcon(isFocused)
+				debounce = tick()
 			end
-			updateIcon(false)
-		end
+		end)
+	end
+
+	if Util.IsTouchDevice() or ChatModule:IsBubbleChatOnly() then
+		updateIcon(false)
+	end
+
+	if ChatModule.BubbleChatOnlySet then
+		ChatModule.BubbleChatOnlySet:connect(function()
+			if ChatModule:IsBubbleChatOnly() then
+				updateIcon(false)
+			elseif not Util.IsTouchDevice() then
+				updateIcon(true)
+			end
+		end)
 	end
 
 	if ChatModule.VisibilityStateChanged then
@@ -1822,7 +1810,7 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 	if coreGuiType == Enum.CoreGuiType.Chat or coreGuiType == Enum.CoreGuiType.All then
 		enabled = enabled and (not ChatModule:IsDisabled())
 		local ChatSelector = require(GuiRoot.Modules.ChatSelector)
-		local showTopbarChatIcon = enabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or ChatSelector:GetNewLuaChatFlag() or RunService:IsStudio())
+		local showTopbarChatIcon = enabled
 		local showThree3DChatIcon = coreGuiEnabled and InputService.VREnabled and (Player.ChatMode == Enum.ChatMode.TextAndMenu or RunService:IsStudio())
 
 		if showThree3DChatIcon then
@@ -1844,7 +1832,7 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 					AddItemInOrder(LeftMenubar, chatIcon, LEFT_ITEM_ORDER)
 				end
 			end
-			if mobileShowChatIcon and (useNewBubbleChatEnabled and ChatModule:ClassicChatEnabled() or PlayersService.ClassicChat) then
+			if mobileShowChatIcon and ChatModule:ClassicChatEnabled() then
 				AddItemInOrder(LeftMenubar, mobileShowChatIcon, LEFT_ITEM_ORDER)
 			end
 		else
@@ -1877,12 +1865,10 @@ local function OnChatModuleDisabled()
 	end
 end
 
-if useNewBubbleChatEnabled then
-	if ChatModule.ChatDisabled then
-		ChatModule.ChatDisabled:connect(function()
-			OnChatModuleDisabled()
-		end)
-	end
+if ChatModule.ChatDisabled then
+	ChatModule.ChatDisabled:connect(function()
+		OnChatModuleDisabled()
+	end)
 end
 
 TopBar:UpdateBackgroundTransparency()

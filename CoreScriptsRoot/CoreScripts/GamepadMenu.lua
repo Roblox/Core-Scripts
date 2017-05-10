@@ -31,6 +31,10 @@ local isTenFootInterface = tenFootInterface:IsEnabled()
 local radialButtons = {}
 local lastInputChangedCon = nil
 
+--[[ Fast Flags ]]--
+local getRadialMenuAfterLoadingScreen, radialMenuAfterLoadingScreenValue = pcall(function() return settings():GetFFlag("RadialMenuAfterLoadingScreen") end)
+local radialMenuAfterLoadingScreen = getRadialMenuAfterLoadingScreen and radialMenuAfterLoadingScreenValue
+
 local function getImagesForSlot(slot)
 	if slot == 1 then		return "rbxasset://textures/ui/Settings/Radial/Top.png", "rbxasset://textures/ui/Settings/Radial/TopSelected.png",
 									"rbxasset://textures/ui/Settings/Radial/Menu.png",
@@ -741,6 +745,48 @@ local function setupGamepadControls()
 		end
 	end
 
+if radialMenuAfterLoadingScreen then
+	local removeDefaultLoadingGuiConnection = nil
+	local loadedConnection = nil
+	local isLoadingGuiRemoved = false
+	local isPlayerAdded = false
+
+	local function updateRadialMenuActionBinding()
+		if isLoadingGuiRemoved and isPlayerAdded then
+			ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
+		end
+	end
+
+	local function handlePlayerAdded()
+		loadedConnection:disconnect()
+		isPlayerAdded = true
+		updateRadialMenuActionBinding()
+	end
+
+	loadedConnection = Players.PlayerAdded:connect(
+		function(plr)
+			if Players.LocalPlayer and plr == Players.LocalPlayer then
+				handlePlayerAdded()
+			end
+		end
+	)
+
+	if Players.LocalPlayer then
+		handlePlayerAdded()
+	end
+
+	local function handleRemoveDefaultLoadingGui()
+		removeDefaultLoadingGuiConnection:disconnect()
+		isLoadingGuiRemoved = true
+		updateRadialMenuActionBinding()
+	end
+
+	removeDefaultLoadingGuiConnection = game:GetService("ReplicatedFirst").RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
+	if game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
+		handleRemoveDefaultLoadingGui()
+	end
+
+else
 	local loadedConnection
 	local function enableRadialMenu()
 		ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
@@ -756,6 +802,7 @@ local function setupGamepadControls()
 	if Players.LocalPlayer then
 		enableRadialMenu()
 	end
+end
 
 	StarterGui.CoreGuiChangedSignal:connect(setRadialButtonEnabled)
 end

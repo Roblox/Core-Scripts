@@ -1258,6 +1258,9 @@ local function createPlayerEntry(player, isTopStat)
 
   -- Some functions yield, so we need to spawn off in order to not cause a race condition with other events like PlayersService.ChildRemoved
   spawn(function()
+      -- don't make rank/grp calls on console
+      if isTenFootInterface then return end
+
       local success, result = pcall(function()
           return player:GetRankInGroup(game.CreatorId) == 255
         end)

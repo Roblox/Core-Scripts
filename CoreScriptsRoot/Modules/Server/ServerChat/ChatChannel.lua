@@ -475,6 +475,8 @@ function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, e
 			local player = speaker:GetPlayer()
 			if player then
 				speakerUserId = player.UserId
+			else
+				speakerUserId = 0
 			end
 		end
 	end

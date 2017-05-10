@@ -464,6 +464,11 @@ BindableEvent_SendNotificationInfo.Event:connect(onSendNotificationInfo)
 
 -- New follower notification
 spawn(function()
+	if isTenFootInterface then
+		--If on console, New follower notification should be blocked
+		return
+	end
+	
 	local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
 	local RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower', 86400) or RobloxReplicatedStorage:WaitForChild('NewFollower')
 	--

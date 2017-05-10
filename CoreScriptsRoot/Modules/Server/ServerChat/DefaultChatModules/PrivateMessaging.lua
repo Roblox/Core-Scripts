@@ -11,6 +11,13 @@ local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
 local errorTextColor = ChatSettings.ErrorMessageTextColor or Color3.fromRGB(245, 50, 50)
 local errorExtraData = {ChatColor = errorTextColor}
 
+function GetWhisperChannelPrefix()
+	if ChatConstants.WhisperChannelPrefix then
+		return ChatConstants.WhisperChannelPrefix
+	end
+	return "To "
+end
+
 local function Run(ChatService)
 
 	local function CanCommunicate(fromSpeaker, toSpeaker)
@@ -48,14 +55,14 @@ local function Run(ChatService)
 
 		local speaker = ChatService:GetSpeaker(fromSpeaker)
 		local otherSpeaker = ChatService:GetSpeaker(otherSpeakerName)
-		local channelObj = ChatService:GetChannel("To " .. otherSpeakerName)
+		local channelObj = ChatService:GetChannel(GetWhisperChannelPrefix() .. otherSpeakerName)
 		if channelObj and otherSpeaker then
 			if not CanCommunicate(speaker, otherSpeaker) then
 				speaker:SendSystemMessage("You are not able to chat with this player.", channel, errorExtraData)
 				return
 			end
 
-			if (channelObj.Name == "To " .. speaker.Name) then
+			if (channelObj.Name == GetWhisperChannelPrefix() .. speaker.Name) then
 				speaker:SendSystemMessage("You cannot whisper to yourself.", channel, errorExtraData)
 			else
 				if (not speaker:IsInChannel(channelObj.Name)) then
@@ -99,10 +106,10 @@ local function Run(ChatService)
 
 		local toSpeaker = ChatService:GetSpeaker(string.sub(channelName, 4))
 		if (toSpeaker) then
-			if (not toSpeaker:IsInChannel("To " .. fromSpeaker)) then
-				toSpeaker:JoinChannel("To " .. fromSpeaker)
+			if (not toSpeaker:IsInChannel(GetWhisperChannelPrefix() .. fromSpeaker)) then
+				toSpeaker:JoinChannel(GetWhisperChannelPrefix() .. fromSpeaker)
 			end
-			toSpeaker:SendMessage(message, "To " .. fromSpeaker, fromSpeaker, extraData)
+			toSpeaker:SendMessage(message, GetWhisperChannelPrefix() .. fromSpeaker, fromSpeaker, extraData)
 		end
 
 		return true
@@ -124,11 +131,11 @@ local function Run(ChatService)
 	end
 
 	ChatService.SpeakerAdded:connect(function(speakerName)
-		if (ChatService:GetChannel("To " .. speakerName)) then
-			ChatService:RemoveChannel("To " .. speakerName)
+		if (ChatService:GetChannel(GetWhisperChannelPrefix() .. speakerName)) then
+			ChatService:RemoveChannel(GetWhisperChannelPrefix() .. speakerName)
 		end
 
-		local channel = ChatService:AddChannel("To " .. speakerName)
+		local channel = ChatService:AddChannel(GetWhisperChannelPrefix() .. speakerName)
 		channel.Joinable = false
 		channel.Leavable = true
 		channel.AutoJoin = false
@@ -142,8 +149,8 @@ local function Run(ChatService)
 	end)
 
 	ChatService.SpeakerRemoved:connect(function(speakerName)
-		if (ChatService:GetChannel("To " .. speakerName)) then
-			ChatService:RemoveChannel("To " .. speakerName)
+		if (ChatService:GetChannel(GetWhisperChannelPrefix() .. speakerName)) then
+			ChatService:RemoveChannel(GetWhisperChannelPrefix() .. speakerName)
 		end
 	end)
 end

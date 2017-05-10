@@ -1112,10 +1112,13 @@ changeToolFunc = function(actionName, inputState, inputObject)
 			if hotbarSlot:IsEquipped() then
 
 				local newSlotPosition = moveDirection + i
+				local hitEdge = false
 				if newSlotPosition > NumberOfHotbarSlots then
 					newSlotPosition = 1
+					hitEdge = true
 				elseif newSlotPosition < 1 then
 					newSlotPosition = NumberOfHotbarSlots
+					hitEdge = true
 				end
 
 				local origNewSlotPos = newSlotPosition
@@ -1125,12 +1128,19 @@ changeToolFunc = function(actionName, inputState, inputObject)
 
 					if newSlotPosition > NumberOfHotbarSlots then
 						newSlotPosition = 1
+						hitEdge = true
 					elseif newSlotPosition < 1 then
 						newSlotPosition = NumberOfHotbarSlots
+						hitEdge = true
 					end
 				end
 
-				Slots[newSlotPosition]:Select()
+				if hitEdge then
+					UnequipAllTools()
+					lastEquippedSlot = nil
+				else
+					Slots[newSlotPosition]:Select()
+				end
 				return
 			end
 		end
@@ -1140,7 +1150,9 @@ changeToolFunc = function(actionName, inputState, inputObject)
 			return
 		end
 
-		for i = 1, NumberOfHotbarSlots do
+		local startIndex = moveDirection == -1 and NumberOfHotbarSlots or 1
+		local endIndex = moveDirection == -1 and 1 or NumberOfHotbarSlots
+		for i = startIndex, endIndex, moveDirection do
 			if Slots[i].Tool then
 				Slots[i]:Select()
 				return
