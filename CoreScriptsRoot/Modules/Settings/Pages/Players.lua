@@ -461,6 +461,7 @@ local function Initialize()
 					-- Spawn a function to get the generated image
 					spawn(function()
 						local imageUrl = SocialUtil.GetPlayerImage(math.max(1, player.UserId), Enum.ThumbnailSize.Size180x180, Enum.ThumbnailType.AvatarThumbnail)
+						if frame and frame.Parent and frame.Parent == this.Page then
 							frame.Icon.Image = imageUrl
 						end
 					end)
