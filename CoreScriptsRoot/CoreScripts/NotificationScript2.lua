@@ -40,6 +40,9 @@ local disableScreenshotPopup = getDisableScreenshotPopup and disableScreenshotPo
 local useNewThumbnailApiSuccess, useNewThumbnailApiValue = pcall(function() return settings():GetFFlag("CoreScriptsUseNewUserThumbnailAPI") end)
 local useNewUserThumbnailAPI = useNewThumbnailApiSuccess and useNewThumbnailApiValue
 
+local getDisableVideoRecordPopup, disableVideoRecordPopupValue = pcall(function() return settings():GetFFlag("DisableVideoRecordPopup") end)
+local disableVideoRecordPopup = getDisableVideoRecordPopup and disableVideoRecordPopupValue
+
 --[[ Script Variables ]]--
 local LocalPlayer = nil
 while not Players.LocalPlayer do
@@ -748,6 +751,24 @@ if disableScreenshotPopup then
 				end
 			end
 		}
+	end)
+end
+
+if disableVideoRecordPopup then
+	settings():GetService("GameSettings").VideoRecordingChangeRequest:Connect(function(value)
+		if not value then
+			sendNotificationInfo {
+				Title = "Video Recorded",
+				Text = "Check out your videos folder to see it.",
+				Duration = 3.0,
+				Button1Text = "Open Folder",
+				Callback = function(text)
+					if text == "Open Folder" then
+						game:OpenVideosFolder()
+					end
+				end
+			}
+		end
 	end)
 end
 
