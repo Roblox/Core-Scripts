@@ -35,7 +35,7 @@ local FFlagUserPortraitPopperFix = portraitPopperFixFlagExists and portraitPoppe
 local PlayersService = game:GetService('Players')
 
 local Camera = nil
-local CameraChangeConn = nil
+local CameraSubjectChangeConn = nil
 
 local SubjectPart = nil
 
@@ -54,34 +54,32 @@ local CFrame_new = CFrame.new
 
 local math_abs = math.abs
 
-local function OnCameraChanged(property)
-	if property == 'CameraSubject' then
-		VehicleParts = {}
+local function OnCameraSubjectChanged()
+	VehicleParts = {}
 
-		local newSubject = Camera.CameraSubject
-		if newSubject then
-			-- Determine if we should be popping at all
-			PopperEnabled = false
-			for _, subjectType in pairs(VALID_SUBJECTS) do
-				if newSubject:IsA(subjectType) then
-					PopperEnabled = true
-					break
-				end
+	local newSubject = Camera.CameraSubject
+	if newSubject then
+		-- Determine if we should be popping at all
+		PopperEnabled = false
+		for _, subjectType in pairs(VALID_SUBJECTS) do
+			if newSubject:IsA(subjectType) then
+				PopperEnabled = true
+				break
 			end
-			
-			-- Get all parts of the vehicle the player is controlling
-			if newSubject:IsA('VehicleSeat') then
-				VehicleParts = newSubject:GetConnectedParts(true)
-			end
-			
-			if FFlagUserPortraitPopperFix then
-				if newSubject:IsA("BasePart") then
-					SubjectPart = newSubject
-				elseif newSubject:IsA("Model") then
-					SubjectPart = newSubject.PrimaryPart
-				elseif newSubject:IsA("Humanoid") then
-					SubjectPart = newSubject.Torso
-				end
+		end
+		
+		-- Get all parts of the vehicle the player is controlling
+		if newSubject:IsA('VehicleSeat') then
+			VehicleParts = newSubject:GetConnectedParts(true)
+		end
+		
+		if FFlagUserPortraitPopperFix then
+			if newSubject:IsA("BasePart") then
+				SubjectPart = newSubject
+			elseif newSubject:IsA("Model") then
+				SubjectPart = newSubject.PrimaryPart
+			elseif newSubject:IsA("Humanoid") then
+				SubjectPart = newSubject.Torso
 			end
 		end
 	end
@@ -114,11 +112,11 @@ local function OnWorkspaceChanged(property)
 		if newCamera then
 			Camera = newCamera
 			
-			if CameraChangeConn then
-				CameraChangeConn:disconnect()
+			if CameraSubjectChangeConn then
+				CameraSubjectChangeConn:disconnect()
 			end
-			CameraChangeConn = Camera.Changed:connect(OnCameraChanged)
-			OnCameraChanged('CameraSubject')
+			CameraSubjectChangeConn = CameracurrentCamera:GetPropertyChangedSignal("CameraSubject"):connect(OnCameraSubjectChanged)
+			OnCameraSubjectChanged()
 		end
 	end
 end

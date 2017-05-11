@@ -1052,24 +1052,22 @@ RunService.Heartbeat:connect(onHeartbeat)
 
 
 local cameraChangedConnection = nil
-local function onCameraChanged(prop)
-	if prop == "HeadScale" then
-		pcall(function()
-			currentHeadScale = workspace.CurrentCamera.HeadScale
-		end)
-		for i, v in pairs(panels) do
-			v:OnHeadScaleChanged(currentHeadScale)
-		end
+local function onHeadScalePropChanged(prop)
+	pcall(function()
+		currentHeadScale = workspace.CurrentCamera.HeadScale
+	end)
+	for i, v in pairs(panels) do
+		v:OnHeadScaleChanged(currentHeadScale)
 	end
 end
 
 local function onWorkspaceChanged(prop)
 	if prop == "CurrentCamera" then
-		onCameraChanged("HeadScale")
+		onHeadScalePropChanged()
 		if cameraChangedConnection then
 			cameraChangedConnection:disconnect()
 		end
-		cameraChangedConnection = workspace.CurrentCamera.Changed:connect(onCameraChanged)
+		cameraChangedConnection = workspace.CurrentCamera:GetPropertyChangedSignal("HeadScale"):connect(onHeadScalePropChanged)
 
 		if UserInputService.VREnabled then
 			partFolder.Parent = workspace.CurrentCamera

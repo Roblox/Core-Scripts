@@ -171,13 +171,11 @@ do
 				PortraitMode = size.X < size.Y
 				layoutGestureArea(PortraitMode)
 				DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
-				CameraChangedConn = newCamera.Changed:Connect(function(property)
-					if property == 'ViewportSize' then
-						size = newCamera.ViewportSize
-						PortraitMode = size.X < size.Y
-						layoutGestureArea(PortraitMode)
-						DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
-					end
+				CameraChangedConn = newCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+					size = newCamera.ViewportSize
+					PortraitMode = size.X < size.Y
+					layoutGestureArea(PortraitMode)
+					DefaultZoom = PortraitMode and PORTRAIT_DEFAULT_ZOOM or LANDSCAPE_DEFAULT_ZOOM
 				end)
 			end
 		end
@@ -602,7 +600,7 @@ local function CreateCamera()
 	local trackingHumanoid = nil
 	local cameraFrozen = false
 	local subjectStateChangedConn = nil
-	local cameraChangedConn = nil
+	local cameraSubjectChangedConn = nil
 	local workspaceChangedConn = nil
 	local humanoidChildAddedConn = nil
 	local humanoidChildRemovedConn = nil
@@ -689,21 +687,15 @@ local function CreateCamera()
 		end
 	end
 
-	local function onCameraChanged(prop)
-		if prop == 'CameraSubject' then
-			onNewCameraSubject()
-		end
-	end
-
 	local function onCurrentCameraChanged()
-		if cameraChangedConn then
-			cameraChangedConn:disconnect()
-			cameraChangedConn = nil
+		if cameraSubjectChangedConn then
+			cameraSubjectChangedConn:disconnect()
+			cameraSubjectChangedConn = nil
 		end
 		local camera = workspace.CurrentCamera
 		if camera then
-			camera.Changed:connect(onCameraChanged)
-			onCameraChanged('CameraSubject')
+			cameraSubjectChangedConn = camera:GetPropertyChangedSignal("CameraSubject"):connect(onNewCameraSubject)
+			onNewCameraSubject()
 		end
 	end
 
