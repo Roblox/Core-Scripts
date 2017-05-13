@@ -32,9 +32,10 @@ local REGULAR_THUMBNAIL_IMAGE_TYPE = Enum.ThumnailType.AvatarBust
 local CONSOLE_THUMBNAIL_IMAGE_TYPE = Enum.ThumbnailType.AvatarThumbnail
 
 function createFetchImageFunction(...)
+	local args = {...}
 	return function(imageLabel)
 		spawn(function()
-			local imageUrl = SocialUtil.GetPlayerImage(...)
+			local imageUrl = SocialUtil.GetPlayerImage(unpack(args))
 			if imageLabel and imageLabel.Parent then
 				frame.Icon.Image = imageUrl
 			end
