@@ -27,7 +27,7 @@ local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=42
 local REGULAR_THUMBNAIL_IMAGE_SIZE = Enum.ThumbnailSize.Size420x420
 local CONSOLE_THUMBNAIL_IMAGE_SIZE = Enum.ThumbnailSize.Size180x180
 
-local REGULAR_THUMBNAIL_IMAGE_TYPE = Enum.ThumnailType.AvatarBust
+local REGULAR_THUMBNAIL_IMAGE_TYPE = Enum.ThumbnailType.AvatarBust
 local CONSOLE_THUMBNAIL_IMAGE_TYPE = Enum.ThumbnailType.AvatarThumbnail
 
 function createFetchImageFunction(...)
