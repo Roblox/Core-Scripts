@@ -16,7 +16,7 @@ local function CreateScriptableCamera()
 	return module
 end
 
-return CreateScriptableCamera
+return CreateScriptableCamera()
 ]]></ProtectedString>
 		</Properties>
 	</Item>

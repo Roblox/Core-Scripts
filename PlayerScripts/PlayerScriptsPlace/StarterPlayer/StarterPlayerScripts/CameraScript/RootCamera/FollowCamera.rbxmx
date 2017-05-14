@@ -196,7 +196,7 @@ local function CreateFollowCamera()
 	return module
 end
 
-return CreateFollowCamera
+return CreateFollowCamera()
 ]]></ProtectedString>
 		</Properties>
 	</Item>
