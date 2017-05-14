@@ -1,23 +1,24 @@
 --[[ 
 	This script controls the gui the player sees in regards to his or her health.
-	Can be turned with Game.StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health,false)
 	Copyright ROBLOX 2014. Written by Ben Tkacheff.
 --]]
 
 ---------------------------------------------------------------------
 -- Initialize/Variables
-while not game do
-	wait(1/60)
-end
-while not game:GetService("Players") do
-	wait(1/60)
-end
+---------------------------------------------------------------------
 
-local useCoreHealthBar = false
-local success = pcall(function() useCoreHealthBar = game:GetService("Players"):GetUseCoreScriptHealthBar() end)
-if not success or not useCoreHealthBar then
-	return
-end
+repeat wait() until game
+repeat wait() until game:GetService("Players").LocalPlayer
+
+local Player = game:GetService("Players").LocalPlayer
+
+-- NOTE: If you want to use this health script in your own game:
+-- 1) Copy the contents of this file into a module.
+-- 2) Create a localscript and parent it to StarterGui.
+-- 3) In the localscript require() the chat module you made in step 1.
+-- 4) Set the following variable to true.
+
+local useDefault = false
 
 local currentHumanoid = nil
 
@@ -39,24 +40,25 @@ local greenBarImageLeft = "rbxasset://textures/ui/Health-BKG-Left-Cap.png"
 local greenBarImageRight = "rbxasset://textures/ui/Health-BKG-Right-Cap.png"
 local hurtOverlayImage = "https://www.roblox.com/asset/?id=34854607"
 
+local capHeight = 15
+local capWidth = 4
+
 game:GetService("ContentProvider"):Preload(greenBarImage)
 game:GetService("ContentProvider"):Preload(hurtOverlayImage)
 
-while not game:GetService("Players").LocalPlayer do
-	wait(1/60)
-end
+---------------------------------------------------------------------
+-- Services
+---------------------------------------------------------------------
+
+local Players = game:GetService("Players")
+local CoreGui = game:GetService('CoreGui')
+local StarterGui = game:GetService('StarterGui')
 
 ---------------------------------------------------------------------
 -- Functions
-
-local capHeight = 15
-local capWidth = 7
+---------------------------------------------------------------------
 
 function CreateGui()
-	if HealthGui and #HealthGui:GetChildren() > 0 then 
-		HealthGui.Parent = game:GetService("CoreGui").RobloxGui
-		return 
-	end
 
 	local hurtOverlay = Instance.new("ImageLabel")
 	hurtOverlay.Name = "HurtOverlay"
@@ -76,7 +78,6 @@ function CreateGui()
 	healthFrame.Position = UDim2.new(0.5,-85,1,-20)
 	healthFrame.Size = UDim2.new(0,170,0,capHeight)
 	healthFrame.Parent = HealthGui
-
 
 	local healthBarBackCenter = Instance.new("ImageLabel")
 	healthBarBackCenter.Name = "healthBarBackCenter"
@@ -105,7 +106,6 @@ function CreateGui()
 	healthBarBackRight.Parent = healthFrame
 	healthBarBackRight.ImageColor3 = Color3.new(1,1,1)
 
-
 	local healthBar = Instance.new("Frame")
 	healthBar.Name = "HealthBar"
 	healthBar.BackgroundTransparency = 1
@@ -116,7 +116,6 @@ function CreateGui()
 	healthBar.Position = UDim2.new(0, 0, 0, 0)
 	healthBar.Size = UDim2.new(1,0,1,0)
 	healthBar.Parent = healthFrame
-
 
 	local healthBarCenter = Instance.new("ImageLabel")
 	healthBarCenter.Name = "healthBarCenter"
@@ -145,17 +144,16 @@ function CreateGui()
 	healthBarRight.Parent = healthBar
 	healthBarRight.ImageColor3 = greenColor
 
-	HealthGui.Parent = game:GetService("CoreGui").RobloxGui
 end
 
 function UpdateGui(health)
-	if not HealthGui then return end
+	if not HealthGui then return nil end
 	
 	local healthFrame = HealthGui:FindFirstChild("HealthFrame")
-	if not healthFrame then return end
+	if not healthFrame then return nil end
 	
 	local healthBar = healthFrame:FindFirstChild("HealthBar")
-	if not healthBar then return end
+	if not healthBar then return nil end
 	
 	-- If more than 1/4 health, bar = green.  Else, bar = red.
 	local percentHealth = (health/currentHumanoid.MaxHealth)
@@ -212,10 +210,10 @@ function UpdateGui(health)
 end
 
 function AnimateHurtOverlay()
-	if not HealthGui then return end
+	if not HealthGui then return nil end
 	
 	local overlay = HealthGui:FindFirstChild("HurtOverlay")
-	if not overlay then return end
+	if not overlay then return nil end
 	
 	local newSize = UDim2.new(20, 0, 20, 0)
 	local newPos = UDim2.new(-10, 0, -10, 0)
@@ -262,55 +260,71 @@ function newPlayerCharacter()
 end
 
 function startGui()
-	characterAddedConnection = game:GetService("Players").LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
+	characterAddedConnection = Players.LocalPlayer.CharacterAdded:connect(newPlayerCharacter)
 
-	local character = game:GetService("Players").LocalPlayer.Character
+	local character = Players.LocalPlayer.Character
 	if not character then
-		return
+		return nil
 	end
 
 	currentHumanoid = character:WaitForChild("Humanoid")
 	if not currentHumanoid then
-		return
+		return nil
 	end
 
-	if not game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
-		return
+	if not StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
+		if useDefault == false then
+			return nil
+		end		
 	end
-
+	
 	healthChangedConnection = currentHumanoid.HealthChanged:connect(UpdateGui)
 	humanoidDiedConnection = currentHumanoid.Died:connect(humanoidDied)
 	UpdateGui(currentHumanoid.Health)
-		
 	CreateGui()
 end
 
-
-
 ---------------------------------------------------------------------
 -- Start Script
+---------------------------------------------------------------------
 
-HealthGui = Instance.new("Frame")
-HealthGui.Name = "HealthGui"
-HealthGui.BackgroundTransparency = 1
-HealthGui.Size = UDim2.new(1,0,1,0)
-
-game:GetService("StarterGui").CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
-	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
-		if guiEnabled and not enabled then
-			if HealthGui then
-				HealthGui.Parent = nil
-			end
-			disconnectPlayerConnections()
-		elseif not guiEnabled and enabled then
+function begin()
+	if StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) == true or StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) == true then
+		if useDefault == false then
+			guiEnabled = true
+			HealthGui = Instance.new("ScreenGui")
+			HealthGui.Name = "HealthGui"
+			HealthGui.Parent = Player.PlayerGui
+			startGui()
+		else
+			guiEnabled = true
+			HealthGui = Instance.new("ScreenGui")
+			HealthGui.Name = "HealthGui"
+			HealthGui.Parent = CoreGui.RobloxGui
 			startGui()
 		end
-		
-		guiEnabled = enabled
+	elseif StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) == false or StarterGui:GetCoreGuiEnabled(Enum.CoreGuiType.Health) == false then
+		if useDefault == false then
+			guiEnabled = true
+			HealthGui = Instance.new("ScreenGui")
+			HealthGui.Name = "HealthGui"
+			HealthGui.Parent = Player.PlayerGui
+			startGui()
+		end
+	end
+end
+
+pcall(function()StarterGui.CoreGuiChangedSignal:connect(function(coreGuiType,enabled)
+	if coreGuiType == Enum.CoreGuiType.Health or coreGuiType == Enum.CoreGuiType.All then
+		if game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) == true then
+			begin()
+		elseif game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) == false then
+			begin()
+		end
 	end
 end)
+end)
 
-if game:GetService("StarterGui"):GetCoreGuiEnabled(Enum.CoreGuiType.Health) then
-	guiEnabled = true
-	startGui()
-end
+begin()
+
+return true
