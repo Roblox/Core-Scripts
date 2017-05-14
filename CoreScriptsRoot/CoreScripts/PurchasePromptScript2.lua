@@ -57,6 +57,8 @@ local PurchaseData = {
 	ItemDescription = nil,
 }
 
+print("test")
+
 --[[ Constants ]]--
 local BASE_URL = game:GetService('ContentProvider').BaseUrl:lower()
 BASE_URL = string.gsub(BASE_URL, "/m.", "/www.")
