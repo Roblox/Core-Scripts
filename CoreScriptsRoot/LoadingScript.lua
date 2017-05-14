@@ -5,88 +5,81 @@
 -- Constants
 local PLACEID = game.PlaceId
 
-local MPS = game:GetService('MarketplaceService')
-local UIS = game:GetService('UserInputService')
-local guiService = game:GetService("GuiService")
+local MarketplaceService = game:GetService('MarketplaceService')
+local InputService = game:GetService('UserInputService')
+local guiService = game:GetService('GuiService')
 local ContextActionService = game:GetService('ContextActionService')
-local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
+local ReplicatedFirst = game:GetService('ReplicatedFirst')
+local RobloxGui = game:GetService('CoreGui'):WaitForChild('RobloxGui')
+local RunService = game:GetService('RunService')
 
 local startTime = tick()
 
 local COLORS = {
-	BLACK = Color3.new(0, 0, 0),
-	BACKGROUND_COLOR = Color3.new(45/255, 45/255, 45/255),
-	WHITE = Color3.new(1, 1, 1),
-	ERROR = Color3.new(253/255,68/255,72/255)
+	BLACK = Color3.fromRGB(0, 0, 0),
+	BACKGROUND_COLOR = Color3.fromRGB(45, 45, 45),
+	WHITE = Color3.fromRGB(255, 255, 255),
+	ERROR = Color3.fromRGB(253, 68, 72)
 }
 
 local function getViewportSize()
-	while not game.Workspace.CurrentCamera do
-		game.Workspace.Changed:wait()
+	while not workspace.CurrentCamera do
+		workspace.Changed:wait()
 	end
-
+	local camera = workspace.CurrentCamera
+	local viewportSize = camera.ViewportSize
 	-- ViewportSize is initally set to 1, 1 in Camera.cpp constructor.
 	-- Also check against 0, 0 incase this is changed in the future.
-	while game.Workspace.CurrentCamera.ViewportSize == Vector2.new(0,0) or
-		game.Workspace.CurrentCamera.ViewportSize == Vector2.new(1,1) do
-		game.Workspace.CurrentCamera.Changed:wait()
+	while viewportSize == Vector2.new(0,0) or viewportSize == Vector2.new(1,1) do
+		workspace.CurrentCamera.Changed:wait()
+		viewportSize = camera.ViewportSize
 	end
 
-	return game.Workspace.CurrentCamera.ViewportSize
+	return viewportSize
 end
 
 --
 -- Variables
 local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
+local heartbeat = RunService.Heartbeat
 local currScreenGui, renderSteppedConnection = nil, nil
 local destroyingBackground, destroyedLoadingGui, hasReplicatedFirstElements = false, false, false
 local backgroundImageTransparency = 0
-local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
+local isMobile = (InputService.TouchEnabled and not InputService.MouseEnabled and getViewportSize().Y <= 500)
 local isTenFootInterface = guiService:IsTenFootInterface()
-local platform = UIS:GetPlatform()
+local platform = InputService:GetPlatform()
+local Settings = UserSettings()
 
 local function IsConvertMyPlaceNameInXboxAppEnabled()
-	if UIS:GetPlatform() == Enum.Platform.XBoxOne then
-		local success, flagValue = pcall(function() return settings():GetFFlag("ConvertMyPlaceNameInXboxApp") end)
-		return (success and flagValue == true)
+	if InputService:GetPlatform() == Enum.Platform.XBoxOne then
+		local success, flagValue = pcall(Settings.IsUserFeatureEnabled, Settings, "ConvertMyPlaceNameInXboxApp")
+		return success and flagValue
 	end
 	return false
 end
 
 --
 -- Utility functions
-local create = function(className, defaultParent)
+local function create(className)
 	return function(propertyList)
 		local object = Instance.new(className)
-		local parent = nil
 
-		for index, value in next, propertyList do
-			if type(index) == 'string' then
-				if index == 'Parent' then
-					parent = value
-				else
-					object[index] = value
-				end
+		local parent = propertyList.Parent
+		propertyList.Parent = nil
+
+		for key, value in next, propertyList do
+			if type(key) ~= 'number' then
+				object[key] = value
 			else
-				if type(value) == 'function' then
-					value(object)
-				elseif type(value) == 'userdata' then
-					value.Parent = object
-				end
+				value.Parent = object
 			end
 		end
-
-		if parent then
-			object.Parent = parent
-		end
-
-		if object.Parent == nil then
-			object.Parent = defaultParent
-		end
+		object.Parent = parent
 
 		return object
 	end
 end
+
 
 --
 -- Create objects
@@ -96,7 +89,7 @@ local InfoProvider = {}
 
 
 function ExtractGeneratedUsername(gameName)
-	local tempUsername = string.match(gameName, "^([0-9a-fA-F]+)'s Place$")
+	local tempUsername = string.match(gameName, "^([_0-9a-fA-F]+)'s Place$")
 	if tempUsername and #tempUsername == 32 then
 		return tempUsername
 	end
@@ -118,7 +111,7 @@ end
 
 
 function InfoProvider:GetGameName()
-	if GameAssetInfo ~= nil then
+	if GameAssetInfo then
 		if IsConvertMyPlaceNameInXboxAppEnabled() then
 			return GetFilteredGameName(GameAssetInfo.Name, self:GetCreatorName())
 		else
@@ -130,7 +123,7 @@ function InfoProvider:GetGameName()
 end
 
 function InfoProvider:GetCreatorName()
-	if GameAssetInfo ~= nil then
+	if GameAssetInfo then
 		return GameAssetInfo.Creator.Name
 	else
 		return ''
@@ -138,24 +131,23 @@ function InfoProvider:GetCreatorName()
 end
 
 function InfoProvider:LoadAssets()
-	spawn(function()
+	coroutine.wrap(function()
 		if PLACEID <= 0 then
 			while game.PlaceId <= 0 do
-				wait()
+				heartbeat:wait()
 			end
 			PLACEID = game.PlaceId
 		end
 
 		-- load game asset info
 		coroutine.resume(coroutine.create(function()
-			local success, result = pcall(function()
-				GameAssetInfo = MPS:GetProductInfo(PLACEID)
-			end)
+			local success, GameAssetInfo = pcall(MarketplaceService.GetProductInfo, MarketplaceService, PLACEID)
 			if not success then
 				print("LoadingScript->InfoProvider:LoadAssets:", result)
+				GameAssetInfo = nil
 			end
 		end))
-	end)
+	end)()
 end
 
 function MainGui:tileBackgroundTexture(frameToFill)
@@ -182,16 +174,14 @@ end
 
 -- create a cancel binding for console to be able to cancel anytime while loading
 local function createTenfootCancelGui()
-	local cancelLabel = create'ImageLabel'
-	{
+	local cancelLabel = create 'ImageLabel' {
 		Name = "CancelLabel";
 		Size = UDim2.new(0, 83, 0, 83);
 		Position = UDim2.new(1, -32 - 83, 0, 32);
 		BackgroundTransparency = 1;
 		Image = 'rbxasset://textures/ui/Shell/ButtonIcons/BButton.png';
 	}
-	local cancelText = create'TextLabel'
-	{
+	local cancelText = create 'TextLabel' {
 		Name = "CancelText";
 		Size = UDim2.new(0, 0, 0, 0);
 		Position = UDim2.new(1, -131, 0, 64);
@@ -202,7 +192,7 @@ local function createTenfootCancelGui()
 		Text = "Cancel";
 	}
 
-	if not game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
+	if not ReplicatedFirst:IsFinishedReplicating() then
 		local seenBButtonBegin = false
 		ContextActionService:BindCoreAction("CancelGameLoad",
 			function(actionName, inputState, inputObject)
@@ -229,7 +219,7 @@ local function createTenfootCancelGui()
 				break
 			end
 		end
-		wait()
+		heartbeat:wait()
 	end
 end
 
@@ -252,7 +242,7 @@ function MainGui:GenerateMain()
 		Parent = screenGui,
 	}
 
-		local closeButton =	create 'ImageButton' {
+		local closeButton = create 'ImageButton' {
 			Name = 'CloseButton',
 			Image = 'rbxasset://textures/loading/cancelButton.png',
 			ImageTransparency = 1,
@@ -268,8 +258,8 @@ function MainGui:GenerateMain()
 			Name = 'GraphicsFrame',
 			BorderSizePixel = 0,
 			BackgroundTransparency = 1,
-			Position = UDim2.new(1, (isMobile == true and -75 or (isTenFootInterface and -245 or -225)), 1, (isMobile == true and -75 or (isTenFootInterface and -185 or -165))),
-			Size = UDim2.new(0, (isMobile == true and 70 or (isTenFootInterface and 140 or 120)), 0, (isMobile == true and 70 or (isTenFootInterface and 140 or 120))),
+			Position = UDim2.new(1, (isMobile and -75 or (isTenFootInterface and -245 or -225)), 1, (isMobile and -75 or (isTenFootInterface and -185 or -165))),
+			Size = UDim2.new(0, (isMobile and 70 or (isTenFootInterface and 140 or 120)), 0, (isMobile and 70 or (isTenFootInterface and 140 or 120))),
 			ZIndex = 2,
 			Parent = mainBackgroundContainer,
 		}
@@ -350,7 +340,7 @@ function MainGui:GenerateMain()
 			}
 
 			if isTenFootInterface then
-				local byLabel = create'TextLabel' {
+				local byLabel = create 'TextLabel' {
 					Name = "ByLabel",
 					BackgroundTransparency = 1,
 					Size = UDim2.new(0, 36, 0, 30),
@@ -367,7 +357,7 @@ function MainGui:GenerateMain()
 					Visible = false,
 					Parent = infoFrame,
 				}
-				local creatorIcon = create'ImageLabel' {
+				local creatorIcon = create 'ImageLabel' {
 					Name = "CreatorIcon",
 					BackgroundTransparency = 1,
 					Size = UDim2.new(0, 30, 0, 30),
@@ -434,7 +424,7 @@ function MainGui:GenerateMain()
 		}
 
 	while not game:GetService("CoreGui") do
-		wait()
+		heartbeat:wait()
 	end
 	screenGui.Parent = game:GetService("CoreGui")
 	currScreenGui = screenGui
@@ -456,9 +446,9 @@ function MainGui:GenerateMain()
 	screenGui.Changed:connect(onResized)
 end
 
-function round(num, idp)
-  local mult = 10^(idp or 0)
-  return math.floor(num * mult + 0.5) / mult
+local function round(num, idp)
+	local mult = 10^(idp or 0)
+	return math.floor(num * mult + 0.5) / mult
 end
 
 ---------------------------------------------------------
@@ -510,9 +500,7 @@ renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(fu
 				if isTenFootInterface then
 					local showDevName = true
 					if platform == Enum.Platform.XBoxOne then
-						local success, result = pcall(function()
-							return settings():GetFFlag("ShowDevNameInXboxApp")
-						end)
+						local success, result = pcall(Settings.IsUserFeatureEnabled, Settings, "ShowDevNameInXboxApp")
 						if success then
 							showDevName = result
 						end
@@ -576,7 +564,9 @@ renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(fu
 	end
 end)
 
-spawn(function()
+coroutine.wrap(function()
+	coroutine.yield()
+
 	local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 	local guiInsetChangedEvent = Instance.new("BindableEvent")
 	guiInsetChangedEvent.Name = "GuiInsetChanged"
@@ -587,7 +577,7 @@ spawn(function()
 			currScreenGui.BlackFrame.Size = UDim2.new(1, x1 + x2, 1, y1 + y2)
 		end
 	end)
-end)
+end)()
 
 local leaveGameButton, leaveGameTextLabel, errorImage = nil
 
@@ -712,7 +702,7 @@ function fadeAndDestroyBlackFrame(blackFrame)
 
 				lastUpdateTime = newTime
 			end
-			wait()
+			heartbeat:wait()
 		end
 		if blackFrame ~= nil then
 			stopListeningToRenderingStep()
@@ -740,19 +730,13 @@ function destroyLoadingElements(instant)
 end
 
 function handleFinishedReplicating()
-	hasReplicatedFirstElements = (#game:GetService("ReplicatedFirst"):GetChildren() > 0)
+	hasReplicatedFirstElements = (#ReplicatedFirst:GetChildren() > 0)
 
 	if not hasReplicatedFirstElements then
-		if game:IsLoaded() then
-			handleRemoveDefaultLoadingGui()
-		else
-			local gameLoadedCon = nil
-			gameLoadedCon = game.Loaded:connect(function()
-				gameLoadedCon:disconnect()
-				gameLoadedCon = nil
-				handleRemoveDefaultLoadingGui()
-			end)
+		if not game:IsLoaded() then
+			game.Loaded:wait()
 		end
+		handleRemoveDefaultLoadingGui()
 	else
 		wait(5) -- make sure after 5 seconds we remove the default gui, even if the user doesn't
 		handleRemoveDefaultLoadingGui()
@@ -766,13 +750,13 @@ function handleRemoveDefaultLoadingGui(instant)
 	destroyLoadingElements(instant)
 end
 
-game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
-if game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
+ReplicatedFirst.FinishedReplicating:connect(handleFinishedReplicating)
+if ReplicatedFirst:IsFinishedReplicating() then
 	handleFinishedReplicating()
 end
 
-game:GetService("ReplicatedFirst").RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
-if game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
+ReplicatedFirst.RemoveDefaultLoadingGuiSignal:connect(handleRemoveDefaultLoadingGui)
+if ReplicatedFirst:IsDefaultLoadingGuiRemoved() then
 	handleRemoveDefaultLoadingGui()
 end
 
@@ -780,7 +764,7 @@ local UserInputServiceChangedConn;
 local function onUserInputServiceChanged(prop)
 	if prop == 'VREnabled' then
 		local UseVr = false
-		pcall(function() UseVr = UIS.VREnabled end)
+		pcall(function() UseVr = InputService.VREnabled end)
 
 		if UseVr then
 			if UserInputServiceChangedConn then
@@ -793,5 +777,5 @@ local function onUserInputServiceChanged(prop)
 	end
 end
 
-UserInputServiceChangedConn = UIS.Changed:connect(onUserInputServiceChanged)
+UserInputServiceChangedConn = InputService.Changed:connect(onUserInputServiceChanged)
 onUserInputServiceChanged('VREnabled')
