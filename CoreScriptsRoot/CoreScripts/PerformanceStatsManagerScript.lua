@@ -5,6 +5,8 @@
 		Description: Handles performance stats gui.
 --]]
 
+-- HI there.
+
 --[[ Services ]]--
 local PlayersService = game:GetService("Players")
 local Settings = UserSettings()
