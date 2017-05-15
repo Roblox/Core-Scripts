@@ -61,6 +61,15 @@ local INVENTORY_ARROWS_BUFFER_VR = 40
 local SEARCH_BUFFER = 5
 local SEARCH_WIDTH = 200
 local SEARCH_TEXT = "   Search"
+pcall(function()
+	local LocalizationService = game:GetService("LocalizationService")
+	local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+	SEARCH_TEXT = CorescriptLocalization:GetString(
+		LocalizationService.LocaleId,
+		"BACKPACK_SEARCH"
+	)
+end)
+
 local SEARCH_TEXT_OFFSET_FROMLEFT = 0
 local SEARCH_BACKGROUND_COLOR = Color3.new(0.37, 0.37, 0.37)
 local SEARCH_BACKGROUND_FADE = 0.15

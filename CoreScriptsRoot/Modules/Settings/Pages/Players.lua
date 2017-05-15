@@ -39,6 +39,7 @@ local PLAYER_ROW_HEIGHT = 62
 local PLAYER_ROW_SPACING = 80
 
 ------------ Variables -------------------
+local platform = UserInputService:GetPlatform()
 local PageInstance = nil
 local localPlayer = PlayersService.LocalPlayer
 while not localPlayer do
@@ -538,7 +539,7 @@ local function Initialize()
 				end
 
 				friendStatusCreate(frame, player)
-				if enableReportPlayer then
+				if enableReportPlayer and platform ~= Enum.Platform.XBoxOne and platform ~= Enum.Platform.PS4 then
 					reportAbuseButtonCreate(frame, player)
 				end
 			end

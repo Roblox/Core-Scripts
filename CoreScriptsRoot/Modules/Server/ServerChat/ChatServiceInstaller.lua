@@ -1,6 +1,5 @@
 local runnerScriptName = "ChatServiceRunner"
 
-local ChatService = game:GetService("Chat")
 local installDirectory = game:GetService("Chat")
 local ServerScriptService = game:GetService("ServerScriptService")
 
@@ -34,10 +33,6 @@ end
 
 
 local function Install()
-	if not ChatService.LoadDefaultChat then
-		return
-	end
-
 	local chatServiceRunnerArchivable = true
 	local ChatServiceRunner = installDirectory:FindFirstChild(runnerScriptName)
 	if not ChatServiceRunner then
