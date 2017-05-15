@@ -2,7 +2,6 @@ local runnerScriptName = "ChatScript"
 local bubbleChatScriptName = "BubbleChat"
 local installDirectory = game:GetService("Chat")
 
-local ChatService = game:GetService("Chat")
 local PlayersService = game:GetService("Players")
 local StarterPlayerScripts = game:GetService("StarterPlayer"):WaitForChild("StarterPlayerScripts")
 
@@ -35,10 +34,6 @@ local function GetBoolValue(parent, name, defaultValue)
 end
 
 local function Install()
-	if not ChatService.LoadDefaultChat then
-		return
-	end
-
 	local chatScriptArchivable = true
 	local ChatScript = installDirectory:FindFirstChild(runnerScriptName)
 	if not ChatScript then
