@@ -11,6 +11,17 @@ if vrPurchasePromptsEnabled then
 	return --Don't enable this file if the VR Purchase Prompts flag is ON
 end
 
+local success, result = pcall(function() return settings():GetFFlag('UsePurchasePromptLocalization') end)
+local FFlagUsePurchasePromptLocalization = success and result
+local function LocalizedGetString(key, rtv)
+	pcall(function()
+		local LocalizationService = game:GetService("LocalizationService")
+		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+		rtv = CorescriptLocalization:GetString(LocalizationService.LocaleId, key)
+	end)
+	return rtv
+end
+
 --[[ Services ]]--
 local GuiService = game:GetService('GuiService')
 local HttpService = game:GetService('HttpService')
@@ -307,9 +318,20 @@ PurchaseDialog.Parent = RobloxGui
 		local ItemPreviewImage = isTenFootInterface and createImageLabel("ItemPreviewImage", UDim2.new(0, 64*scaleFactor, 0, 64*scaleFactor), UDim2.new(0, 27*scaleFactor, 0, 20*scaleFactor), "") or createImageLabel("ItemPreviewImage", UDim2.new(0, 64, 0, 64), UDim2.new(0, 27, 0, 20), "")
 		ItemPreviewImage.ZIndex = 9
 		ItemPreviewImage.Parent = ContainerFrame
-
-		local ItemDescriptionText = createTextLabel("ItemDescriptionText", isTenFootInterface and UDim2.new(0, 210*scaleFactor - 20, 0, 96*scaleFactor) or UDim2.new(0, 210, 0, 96), isTenFootInterface and UDim2.new(0, 110*scaleFactor, 0, 18*scaleFactor) or UDim2.new(0, 110, 0, 18),
-			Enum.Font.SourceSans, isTenFootInterface and Enum.FontSize.Size48 or Enum.FontSize.Size18, PURCHASE_MSG.PURCHASE)
+		
+		local ItemDescriptionText_str = PURCHASE_MSG.PURCHASE
+		if FFlagUsePurchasePromptLocalization then
+			ItemDescriptionText_str = LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.PURCHASE",ItemDescriptionText_str)
+		end
+		
+		local ItemDescriptionText = createTextLabel(
+			"ItemDescriptionText", 
+			isTenFootInterface and UDim2.new(0, 210*scaleFactor - 20, 0, 96*scaleFactor) or UDim2.new(0, 210, 0, 96),
+			isTenFootInterface and UDim2.new(0, 110*scaleFactor, 0, 18*scaleFactor) or UDim2.new(0, 110, 0, 18),
+			Enum.Font.SourceSans, 
+			isTenFootInterface and Enum.FontSize.Size48 or Enum.FontSize.Size18, 
+			ItemDescriptionText_str
+		)
 		ItemDescriptionText.TextXAlignment = Enum.TextXAlignment.Left
 		ItemDescriptionText.TextYAlignment = Enum.TextYAlignment.Top
 		ItemDescriptionText.TextWrapped = true
@@ -602,9 +624,17 @@ local function stopPurchaseAnimation()
 end
 
 local function setPurchaseDataInGui(isFree, invalidBC)
-	local  descriptionText = PurchaseData.CurrencyType == Enum.CurrencyType.Tix and PURCHASE_MSG.PURCHASE_TIX or PURCHASE_MSG.PURCHASE
+	local descriptionText = PurchaseData.CurrencyType == Enum.CurrencyType.Tix and PURCHASE_MSG.PURCHASE_TIX or PURCHASE_MSG.PURCHASE
+	if FFlagUsePurchasePromptLocalization then
+		descriptionText = LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.PURCHASE",descriptionText)
+	end
+	
 	if isFree then
 		descriptionText = PURCHASE_MSG.FREE
+		if FFlagUsePurchasePromptLocalization then
+			descriptionText = LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.FREE",descriptionText)
+		end
+		
 		PostBalanceText.Text = PURCHASE_MSG.FREE_BALANCE
 	end
 
@@ -612,8 +642,14 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 	if not productInfo then
 		return false
 	end
-	local itemDescription = string.gsub(descriptionText, "itemName", string.sub(productInfo["Name"], 1, 20))
-	itemDescription = string.gsub(itemDescription, "assetType", ASSET_TO_STRING[productInfo["AssetTypeId"]] or "Unknown")
+	local itemDescription = ""
+	if FFlagUsePurchasePromptLocalization then
+		itemDescription = string.gsub(descriptionText, "{RBX_NAME2}", string.sub(productInfo["Name"], 1, 20))
+		itemDescription = string.gsub(itemDescription, "{RBX_NAME1}", ASSET_TO_STRING[productInfo["AssetTypeId"]] or "Unknown")
+	else
+		itemDescription = string.gsub(descriptionText, "itemName", string.sub(productInfo["Name"], 1, 20))
+		itemDescription = string.gsub(itemDescription, "assetType", ASSET_TO_STRING[productInfo["AssetTypeId"]] or "Unknown")
+	end
 	ItemDescriptionText.Text = itemDescription
 
 	if not isFree then
@@ -639,6 +675,10 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 	if invalidBC then
 		local neededBcLevel = PurchaseData.ProductInfo["MinimumMembershipLevel"]
 		PostBalanceText.Text = "This item requires "..BC_LVL_TO_STRING[neededBcLevel]..".\nClick 'Upgrade' to upgrade your Builders Club!"
+		if FFlagUsePurchasePromptLocalization then
+			PostBalanceText.Text = LocalizedGetString("PurchasePromptScript.setPurchaseDataInGui.invalidBC",PostBalanceText.Text)
+			PostBalanceText.Text = string.gsub(PostBalanceText.Text, "{RBX_NAME}", BC_LVL_TO_STRING[neededBcLevel])
+		end
 		purchaseState = PURCHASE_STATE.BUYBC
 		setButtonsVisible(BuyBCButton, CancelButton)
 	end
@@ -744,11 +784,28 @@ local function setBuyMoreRobuxDialog(playerBalance)
 		else
 			local remainder = playerBalanceInt + productCost - PurchaseData.CurrencyAmount
 			descriptionText = descriptionText..". Would you like to buy "..formatNumber(productCost).." ROBUX?"
+			if FFlagUsePurchasePromptLocalization then
+				descriptionText = LocalizedGetString("PurchasePromptScript.setBuyMoreRobuxDialog.descriptionText",descriptionText)
+				descriptionText = string.gsub(descriptionText, "{RBX_NUMBER}", formatNumber(neededRobux))
+				descriptionText = string.gsub(descriptionText, "{RBX_NAME1}", productInfo["Name"])
+				descriptionText = string.gsub(descriptionText, "{RBX_NAME2}", ASSET_TO_STRING[productInfo["AssetTypeId"]])
+			end
+			
 			PostBalanceText.Text = "The remaining "..formatNumber(remainder).." ROBUX will be credited to your balance."
+			if FFlagUsePurchasePromptLocalization then
+				PostBalanceText.Text = LocalizedGetString("PurchasePromptScript.setBuyMoreRobuxDialog.PostBalanceText",PostBalanceText.Text)
+				PostBalanceText.Text = string.gsub(PostBalanceText.Text,"{RBX_NUMBER}",formatNumber(remainder))
+			end
 			PostBalanceText.Visible = true
 		end
 	else
 		descriptionText = descriptionText..". Would you like to buy more ROBUX?"
+		if FFlagUsePurchasePromptLocalization then
+			descriptionText = LocalizedGetString("PurchasePromptScript.setBuyMoreRobuxDialog.descriptionText", descriptionText)
+			descriptionText = string.gsub(descriptionText, "{RBX_NUMBER}", formatNumber(neededRobux))
+			descriptionText = string.gsub(descriptionText, "{RBX_NAME1}", productInfo["Name"])
+			descriptionText = string.gsub(descriptionText, "{RBX_NAME2}", ASSET_TO_STRING[productInfo["AssetTypeId"]])
+		end
 	end
 	ItemDescriptionText.Text = descriptionText
 	setPreviewImage(productInfo, PurchaseData.AssetId)
@@ -772,40 +829,93 @@ local function onPurchaseFailed(failType)
 	PostBalanceText.Text = ""
 
 	local itemName = PurchaseData.ProductInfo and PurchaseData.ProductInfo["Name"] or ""
-	local failedText = string.gsub(PURCHASE_MSG.FAILED, "itemName", string.sub(itemName, 1, 20))
-	
-	if itemName == "" then
-		failedText = string.gsub(failedText, " of ", "")
-	end
+	local failedText = ""
+	if FFlagUsePurchasePromptLocalization then
+		failedText = string.gsub(LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.FAILED",PURCHASE_MSG.FAILED), "{RBX_NAME1}", string.sub(itemName, 1, 20))
+		if itemName == "" then
+			failedText = string.gsub(failedText, " of ", "")
+		end
+			
+		if failType == PURCHASE_FAILED.DEFAULT_ERROR then
+			failedText = string.gsub(failedText, "{RBX_NAME2}", LocalizedGetString("PurchasePromptScript.ERROR_MSG.UNKNOWN",ERROR_MSG.UNKNWON_FAILURE))
+		elseif failType == PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED then
+			failedText = string.gsub(failedText, "{RBX_NAME2}", LocalizedGetString("PurchasePromptScript.ERROR_MSG.PURCHASE_DISABLED",ERROR_MSG.PURCHASE_DISABLED))
+		elseif failType == PURCHASE_FAILED.CANNOT_GET_BALANCE then
+			failedText = LocalizedGetString(
+				"PurchasePromptScript.PURCHASE_FAILED.CANNOT_GET_BALANCE",
+				"Cannot retrieve your balance at this time. Your account has not been charged. Please try again later.") 
+		elseif failType == PURCHASE_FAILED.CANNOT_GET_ITEM_PRICE then
+			failedText = LocalizedGetString(
+				"PurchasePromptScript.PURCHASE_FAILED.CANNOT_GET_ITEM_PRICE",
+				"We couldn't retrieve the price of the item at this time. Your account has not been charged. Please try again later.") 
+		elseif failType == PURCHASE_FAILED.NOT_FOR_SALE then
+			failedText = LocalizedGetString(
+				"PurchasePromptScript.PURCHASE_FAILED.NOT_FOR_SALE",
+				"This item is not currently for sale. Your account has not been charged.") 
+			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
+		elseif failType == PURCHASE_FAILED.NOT_ENOUGH_TIX then
+			failedText = LocalizedGetString(
+				"PurchasePromptScript.PURCHASE_FAILED.NOT_ENOUGH_TIX",
+				"This item cost more tickets than you currently have. Try trading currency on www.roblox.com to get more tickets.") 
+			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
+		elseif failType == PURCHASE_FAILED.UNDER_13 then
+			failedText = LocalizedGetString(
+				"PurchasePromptScript.PURCHASE_FAILED.UNDER_13",
+				"Your account is under 13. Purchase of this item is not allowed. Your account has not been charged.") 
+		elseif failType == PURCHASE_FAILED.LIMITED then
+			failedText = LocalizedGetString(
+				"PurchasePromptScript.PURCHASE_FAILED.LIMITED",
+				"This limited item has no more copies. Try buying from another user on www.roblox.com. Your account has not been charged.") 
+			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
+		elseif failType == PURCHASE_FAILED.DID_NOT_BUY_ROBUX then
+			failedText = string.gsub(failedText, "{RBX_NAME2}", LocalizedGetString("PurchasePromptScript.ERROR_MSG.INVALID_FUNDS",ERROR_MSG.INVALID_FUNDS))
+		elseif failType == PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST then
+			failedText = LocalizedGetString(
+				"PurchasePromptScript.PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST",
+				"You need to create a ROBLOX account to buy items, visit www.roblox.com for more info.")
+		elseif failType == PURCHASE_FAILED.THIRD_PARTY_DISABLED then
+			failedText = LocalizedGetString(
+				"PurchasePromptScript.PURCHASE_FAILED.THIRD_PARTY_DISABLED",
+				"Third-party item sales have been disabled for this place. Your account has not been charged.")
+			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
+		end
 		
-	if failType == PURCHASE_FAILED.DEFAULT_ERROR then
-		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.UNKNWON_FAILURE)
-	elseif failType == PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED then
-		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.PURCHASE_DISABLED)
-	elseif failType == PURCHASE_FAILED.CANNOT_GET_BALANCE then
-		failedText = "Cannot retrieve your balance at this time. Your account has not been charged. Please try again later."
-	elseif failType == PURCHASE_FAILED.CANNOT_GET_ITEM_PRICE then
-		failedText = "We couldn't retrieve the price of the item at this time. Your account has not been charged. Please try again later."
-	elseif failType == PURCHASE_FAILED.NOT_FOR_SALE then
-		failedText = "This item is not currently for sale. Your account has not been charged."
-		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
-	elseif failType == PURCHASE_FAILED.NOT_ENOUGH_TIX then
-		failedText = "This item cost more tickets than you currently have. Try trading currency on www.roblox.com to get more tickets."
-		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
-	elseif failType == PURCHASE_FAILED.UNDER_13 then
-		failedText = "Your account is under 13. Purchase of this item is not allowed. Your account has not been charged."
-	elseif failType == PURCHASE_FAILED.LIMITED then
-		failedText = "This limited item has no more copies. Try buying from another user on www.roblox.com. Your account has not been charged."
-		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
-	elseif failType == PURCHASE_FAILED.DID_NOT_BUY_ROBUX then
-		failedText = string.gsub(failedText, "errorReason", ERROR_MSG.INVALID_FUNDS)
-	elseif failType == PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST then
-		failedText = "You need to create a ROBLOX account to buy items, visit www.roblox.com for more info."
-	elseif failType == PURCHASE_FAILED.THIRD_PARTY_DISABLED then
-		failedText = "Third-party item sales have been disabled for this place. Your account has not been charged."
-		setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
+	else --FFlagUsePurchasePromptLocalization == false
+		
+		failedText = string.gsub(PURCHASE_MSG.FAILED, "itemName", string.sub(itemName, 1, 20))
+		if itemName == "" then
+			failedText = string.gsub(failedText, " of ", "")
+		end
+			
+		if failType == PURCHASE_FAILED.DEFAULT_ERROR then
+			failedText = string.gsub(failedText, "errorReason", ERROR_MSG.UNKNWON_FAILURE)
+		elseif failType == PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED then
+			failedText = string.gsub(failedText, "errorReason", ERROR_MSG.PURCHASE_DISABLED)
+		elseif failType == PURCHASE_FAILED.CANNOT_GET_BALANCE then
+			failedText = "Cannot retrieve your balance at this time. Your account has not been charged. Please try again later."
+		elseif failType == PURCHASE_FAILED.CANNOT_GET_ITEM_PRICE then
+			failedText = "We couldn't retrieve the price of the item at this time. Your account has not been charged. Please try again later."
+		elseif failType == PURCHASE_FAILED.NOT_FOR_SALE then
+			failedText = "This item is not currently for sale. Your account has not been charged."
+			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
+		elseif failType == PURCHASE_FAILED.NOT_ENOUGH_TIX then
+			failedText = "This item cost more tickets than you currently have. Try trading currency on www.roblox.com to get more tickets."
+			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
+		elseif failType == PURCHASE_FAILED.UNDER_13 then
+			failedText = "Your account is under 13. Purchase of this item is not allowed. Your account has not been charged."
+		elseif failType == PURCHASE_FAILED.LIMITED then
+			failedText = "This limited item has no more copies. Try buying from another user on www.roblox.com. Your account has not been charged."
+			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
+		elseif failType == PURCHASE_FAILED.DID_NOT_BUY_ROBUX then
+			failedText = string.gsub(failedText, "errorReason", ERROR_MSG.INVALID_FUNDS)
+		elseif failType == PURCHASE_FAILED.PROMPT_PURCHASE_ON_GUEST then
+			failedText = "You need to create a ROBLOX account to buy items, visit www.roblox.com for more info."
+		elseif failType == PURCHASE_FAILED.THIRD_PARTY_DISABLED then
+			failedText = "Third-party item sales have been disabled for this place. Your account has not been charged."
+			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
+		end
 	end
-
+	
 	RobuxIcon.Visible = false
 	TixIcon.Visible = false
 	CostText.Visible = false
@@ -1018,6 +1128,12 @@ local function playerHasFundsForPurchase(playerBalance)
 	else
 		PostBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..currencyStr..formatNumber(afterBalanceAmount).."."
 	end
+	
+	if FFlagUsePurchasePromptLocalization then
+		PostBalanceText.Text = LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.BALANCE_FUTURE",PostBalanceText.Text)
+		PostBalanceText.Text = string.gsub(PostBalanceText.Text, "{RBX_NUMBER}", currencyStr..formatNumber(afterBalanceAmount))
+	end
+	
 	if studioMockPurchasesEnabled() then
 		PostBalanceText.Text = PURCHASE_MSG.MOCK_PURCHASE
 	end
@@ -1202,8 +1318,13 @@ end
 local function onPurchaseSuccess()
 	IsCheckingPlayerFunds = false
 	local descriptionText = PURCHASE_MSG.SUCCEEDED
-
-	descriptionText = string.gsub(descriptionText, "itemName", string.sub(PurchaseData.ProductInfo["Name"], 1, 20))
+	if FFlagUsePurchasePromptLocalization then
+		descriptionText = LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.SUCCEEDED", descriptionText)
+		descriptionText = string.gsub(descriptionText, "{RBX_NAME1}", string.sub(PurchaseData.ProductInfo["Name"], 1, 20))
+	else
+		descriptionText = string.gsub(descriptionText, "itemName", string.sub(PurchaseData.ProductInfo["Name"], 1, 20))
+	end
+	
 	ItemDescriptionText.Text = descriptionText
 
 	local playerBalance = getPlayerBalance()
@@ -1211,9 +1332,13 @@ local function onPurchaseSuccess()
 	local newBalance = playerBalance[currencyType]
 
 	if currencyType == "robux" then
-		PostBalanceText.Text = PURCHASE_MSG.BALANCE_NOW..getCurrencyString(PurchaseData.CurrencyType)..formatNumber(newBalance).."."
+		PostBalanceText.Text = PURCHASE_MSG.BALANCE_NOW..getCurrencyString(PurchaseData.CurrencyType)..formatNumber(newBalance).."."	
 	else
 		PostBalanceText.Text = PURCHASE_MSG.BALANCE_NOW..formatNumber(newBalance).." "..getCurrencyString(PurchaseData.CurrencyType).."."
+	end
+	if FFlagUsePurchasePromptLocalization then
+		PostBalanceText.Text = LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.BALANCE_NOW",PostBalanceText.Text)
+		PostBalanceText.Text = string.gsub(PostBalanceText.Text, "{RBX_NUMBER}", getCurrencyString(PurchaseData.CurrencyType) .. formatNumber(newBalance))
 	end
 
 	if studioMockPurchasesEnabled() then
