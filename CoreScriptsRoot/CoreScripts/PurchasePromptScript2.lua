@@ -675,6 +675,10 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 	if invalidBC then
 		local neededBcLevel = PurchaseData.ProductInfo["MinimumMembershipLevel"]
 		PostBalanceText.Text = "This item requires "..BC_LVL_TO_STRING[neededBcLevel]..".\nClick 'Upgrade' to upgrade your Builders Club!"
+		if FFlagUsePurchasePromptLocalization then
+			PostBalanceText.Text = LocalizedGetString("PurchasePromptScript.setPurchaseDataInGui.invalidBC",PostBalanceText.Text)
+			PostBalanceText.Text = string.gsub(PostBalanceText.Text, "{RBX_NAME}", BC_LVL_TO_STRING[neededBcLevel])
+		end
 		purchaseState = PURCHASE_STATE.BUYBC
 		setButtonsVisible(BuyBCButton, CancelButton)
 	end
@@ -780,11 +784,28 @@ local function setBuyMoreRobuxDialog(playerBalance)
 		else
 			local remainder = playerBalanceInt + productCost - PurchaseData.CurrencyAmount
 			descriptionText = descriptionText..". Would you like to buy "..formatNumber(productCost).." ROBUX?"
+			if FFlagUsePurchasePromptLocalization then
+				descriptionText = LocalizedGetString("PurchasePromptScript.setBuyMoreRobuxDialog.descriptionText",descriptionText)
+				descriptionText = string.gsub(descriptionText, "{RBX_NUMBER}", formatNumber(neededRobux))
+				descriptionText = string.gsub(descriptionText, "{RBX_NAME1}", productInfo["Name"])
+				descriptionText = string.gsub(descriptionText, "{RBX_NAME2}", ASSET_TO_STRING[productInfo["AssetTypeId"]])
+			end
+			
 			PostBalanceText.Text = "The remaining "..formatNumber(remainder).." ROBUX will be credited to your balance."
+			if FFlagUsePurchasePromptLocalization then
+				PostBalanceText.Text = LocalizedGetString("PurchasePromptScript.setBuyMoreRobuxDialog.PostBalanceText",PostBalanceText.Text)
+				PostBalanceText.Text = string.gsub(PostBalanceText.Text,"{RBX_NUMBER}",formatNumber(remainder))
+			end
 			PostBalanceText.Visible = true
 		end
 	else
 		descriptionText = descriptionText..". Would you like to buy more ROBUX?"
+		if FFlagUsePurchasePromptLocalization then
+			descriptionText = LocalizedGetString("PurchasePromptScript.setBuyMoreRobuxDialog.descriptionText", descriptionText)
+			descriptionText = string.gsub(descriptionText, "{RBX_NUMBER}", formatNumber(neededRobux))
+			descriptionText = string.gsub(descriptionText, "{RBX_NAME1}", productInfo["Name"])
+			descriptionText = string.gsub(descriptionText, "{RBX_NAME2}", ASSET_TO_STRING[productInfo["AssetTypeId"]])
+		end
 	end
 	ItemDescriptionText.Text = descriptionText
 	setPreviewImage(productInfo, PurchaseData.AssetId)
