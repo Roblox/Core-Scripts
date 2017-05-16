@@ -39,7 +39,7 @@ pcall(function()
 	local LocalizationService = game:GetService("LocalizationService")
 	local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
 	DEFAULT_ABUSE_DESC_TEXT = CorescriptLocalization:GetString(
-		LocalizationService.LocaleId, 
+		LocalizationService.SystemLocaleId, 
 		"KEY_DESCRIPTION_OPTIONAL")
 end)
 

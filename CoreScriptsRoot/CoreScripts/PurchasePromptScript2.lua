@@ -17,7 +17,7 @@ local function LocalizedGetString(key, rtv)
 	pcall(function()
 		local LocalizationService = game:GetService("LocalizationService")
 		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-		rtv = CorescriptLocalization:GetString(LocalizationService.LocaleId, key)
+		rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
 	end)
 	return rtv
 end
