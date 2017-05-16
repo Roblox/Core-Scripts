@@ -3,7 +3,7 @@
 --revised/refactored 5/11/16
 
 local UserInputService = game:GetService("UserInputService")
-local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
+local VRService = game:GetService("VRService")
 local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 local CoreGui = game:GetService("CoreGui")
@@ -952,10 +952,7 @@ local function onRenderStep()
 	local userHeadCF = UserInputService:GetUserCFrame(Enum.UserCFrame.Head)
 	local lookRay = Ray.new(cameraRenderCF.p, cameraRenderCF.lookVector)
 
-	local inputUserCFrame = Enum.UserCFrame.Head
-	if VRServiceExists then
-		inputUserCFrame = VRService.GuiInputUserCFrame
-	end
+	local inputUserCFrame = VRService.GuiInputUserCFrame
 	local inputCF = cameraCF * UserInputService:GetUserCFrame(inputUserCFrame)
 	local pointerRay = Ray.new(inputCF.p, inputCF.lookVector)
 
@@ -1053,9 +1050,7 @@ RunService.Heartbeat:connect(onHeartbeat)
 
 local cameraChangedConnection = nil
 local function onHeadScalePropChanged(prop)
-	pcall(function()
-		currentHeadScale = workspace.CurrentCamera.HeadScale
-	end)
+	currentHeadScale = workspace.CurrentCamera.HeadScale
 	for i, v in pairs(panels) do
 		v:OnHeadScaleChanged(currentHeadScale)
 	end
