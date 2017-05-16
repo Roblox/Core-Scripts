@@ -440,13 +440,14 @@ local function Initialize()
 		nameLabel.ZIndex = 3
 		nameLabel.Parent = frame
 
-		frame.MouseEnter:connect(function()
-			frame.ImageTransparency = FRAME_SELECTED_TRANSPARENCY
-		end)
-		frame.MouseLeave:connect(function()
-			frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
-		end)
 
+		--[[frame.MouseEnter:connect(function()
+				frame.ImageTransparency = FRAME_SELECTED_TRANSPARENCY
+			end)
+			frame.MouseLeave:connect(function()
+				frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
+			end)
+		end]]
 		return frame
 	end
 
