@@ -439,14 +439,7 @@ local function Initialize()
 		nameLabel.Size = UDim2.new(0, 0, 0, 0)
 		nameLabel.ZIndex = 3
 		nameLabel.Parent = frame
-
-		frame.MouseEnter:connect(function()
-			frame.ImageTransparency = FRAME_SELECTED_TRANSPARENCY
-		end)
-		frame.MouseLeave:connect(function()
-			frame.ImageTransparency = FRAME_DEFAULT_TRANSPARENCY
-		end)
-
+		
 		return frame
 	end
 
