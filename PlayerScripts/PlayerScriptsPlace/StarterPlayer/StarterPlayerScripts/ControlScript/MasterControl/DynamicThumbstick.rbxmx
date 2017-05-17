@@ -54,8 +54,9 @@ local IMAGE_ROD_URL = "rbxasset://textures/ui/Square.png"
 local TOUCH_IS_TAP_TIME_THRESHOLD = 0.5
 local TOUCH_IS_TAP_DISTANCE_THRESHOLD = 25
 
+local HasFadedBackgroundInPortrait = false
+local HasFadedBackgroundInLandscape = false
 local FadeInAndOutBackground = true
-local FadeInAndOutMaxCount = nil
 local FadeInAndOutMaxAlpha = 0.35
 local FadeInAndOutHalfDuration = 0.3
 
@@ -247,8 +248,6 @@ function Thumbstick:Create(parentFrame)
 	local MoveTouchStartTime = nil
 	local MoveTouchStartPosition = nil
 	
-	local fadeInAndOutCount = 0
-	
 	local function setGuiVisible(isVisible)
 		ImageCenter.Visible = isVisible
 		ImageUnderThumb.Visible = isVisible
@@ -361,9 +360,26 @@ function Thumbstick:Create(parentFrame)
 		ImageRod.Position = UDim2.new(0, imageRodPos.X, 0, imageRodPos.Y)
 		ImageRod.Size = UDim2.new(0, 10, 0, 10)
 		
-		if FadeInAndOutBackground and (FadeInAndOutMaxCount == nil or fadeInAndOutCount < FadeInAndOutMaxCount) then
-			TweenInAlphaStart = tick()
-			fadeInAndOutCount = fadeInAndOutCount + 1
+		if FadeInAndOutBackground then
+			local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+			local hasFadedBackgroundInOrientation = false
+
+			-- only fade in/out the background once per orientation
+			if playerGui then
+				if playerGui.CurrentScreenOrientation == Enum.ScreenOrientation.LandscapeLeft or 
+					playerGui.CurrentScreenOrientation == Enum.ScreenOrientation.LandscapeRight then
+						hasFadedBackgroundInOrientation = HasFadedBackgroundInLandscape
+						HasFadedBackgroundInLandscape = true
+				elseif playerGui.CurrentScreenOrientation == Enum.ScreenOrientation.Portrait then
+						hasFadedBackgroundInOrientation = HasFadedBackgroundInPortrait
+						HasFadedBackgroundInPortrait = true
+				end
+			end
+
+			-- todo: convert to generic tween system when that goes live
+			if not hasFadedBackgroundInOrientation then
+				TweenInAlphaStart = tick()
+			end
 		end
 	end)
 	
