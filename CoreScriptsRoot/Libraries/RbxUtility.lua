@@ -1,8 +1,5 @@
 local t = {}
 
-local rbxUtilitySetParentLastFlagSuccess, rbxUtilitySetParentLastFlagValue = pcall(function() return UserSettings():IsUserFeatureEnabled("UserRbxUtilityCreateSetParentLast") end)
-local rbxUtilitySetParentLast = (rbxUtilitySetParentLastFlagSuccess == true and rbxUtilitySetParentLastFlagValue == true)
-
 local rbxUtilityRemoveJsonLibrarySuccess, rbxUtilityRemoveJsonLibraryValue = pcall(function() return settings():GetFFlag("RbxUtilityRemoveJsonLibrary") end)
 local rbxUtilityRemoveJsonLibrary = rbxUtilityRemoveJsonLibrarySuccess and rbxUtilityRemoveJsonLibraryValue
 
@@ -17,6 +14,20 @@ local rbxUtilityRemoveJsonLibrary = rbxUtilityRemoveJsonLibrarySuccess and rbxUt
 
 
 if rbxUtilityRemoveJsonLibrary then
+
+	local HttpService = game:GetService("HttpService")
+
+	t.DecodeJSON = function(jsonString)
+		warn("RbxUtility.DecodeJSON is deprecated, please use Game:GetService('HttpService'):JSONDecode() instead.")
+		return HttpService:JSONDecode(jsonString)
+	end
+
+	t.EncodeJSON = function(jsonTable)
+		warn("RbxUtility.EncodeJSON is deprecated, please use Game:GetService('HttpService'):JSONEncode() instead.")
+		return HttpService:JSONEncode(jsonTable)
+	end
+
+else
 
 	 --JSON Encoder and Parser for Lua 5.1
 	 --
@@ -506,20 +517,6 @@ if rbxUtilityRemoveJsonLibrary then
 		pcall(function() warn("RbxUtility.EncodeJSON is deprecated, please use Game:GetService('HttpService'):JSONEncode() instead.") end)
 		return Encode(jsonTable)
 	end
-	
-else
-
-	local HttpService = game:GetService("HttpService")
-
-	t.DecodeJSON = function(jsonString)
-		warn("RbxUtility.DecodeJSON is deprecated, please use Game:GetService('HttpService'):JSONDecode() instead.")
-		return HttpService:JSONDecode(jsonString)
-	end
-
-	t.EncodeJSON = function(jsonTable)
-		warn("RbxUtility.EncodeJSON is deprecated, please use Game:GetService('HttpService'):JSONEncode() instead.")
-		return HttpService:JSONEncode(jsonTable)
-	end
 end
 
 ------------------------------------------------------------------------------------------------------------------------
@@ -931,7 +928,7 @@ local function Create_PrivImpl(objectType)
 		for k, v in pairs(dat) do
 			--add property
 			if type(k) == 'string' then
-				if rbxUtilitySetParentLast and k == 'Parent' then
+				if k == 'Parent' then
 					-- Parent should always be set last, setting the Parent of a new object
 					-- immediately makes performance worse for all subsequent property updates.
 					parent = v
@@ -979,7 +976,7 @@ local function Create_PrivImpl(objectType)
 			ctor(obj)
 		end
 		
-		if rbxUtilitySetParentLast and parent then
+		if parent then
 			obj.Parent = parent
 		end
 
@@ -989,7 +986,11 @@ local function Create_PrivImpl(objectType)
 end
 
 --now, create the functor:
-t.Create = setmetatable({}, {__call = function(tb, ...) return Create_PrivImpl(...) end})
+t.Create = setmetatable({}, {
+	__call = function(tb, className)
+		return Create_PrivImpl(className)
+	end
+})
 
 --and create the "Event.E" syntax stub. Really it's just a stub to construct a table which our Create
 --function can recognize as special.
