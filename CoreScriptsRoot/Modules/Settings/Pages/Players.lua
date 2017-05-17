@@ -439,7 +439,8 @@ local function Initialize()
 		nameLabel.Size = UDim2.new(0, 0, 0, 0)
 		nameLabel.ZIndex = 3
 		nameLabel.Parent = frame
-
+		
+		
 		return frame
 	end
 
