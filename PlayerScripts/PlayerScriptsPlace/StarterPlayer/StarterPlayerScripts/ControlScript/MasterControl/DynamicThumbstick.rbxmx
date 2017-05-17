@@ -303,12 +303,6 @@ function Thumbstick:Create(parentFrame)
 		local angle = -math.atan2(relativePosition.X/length, relativePosition.Y/length) + math.pi/2
 		local sinAngle = math.sin(angle)
 		local cosAngle = math.cos(angle)
-		if angle < -0.2 or angle > math.pi + 0.2 then
-			local y = MoveTouchStartPosition.Y - ThumbstickFrame.AbsolutePosition.Y
-			local adjustedAngle = math.fmod(math.abs(angle), math.pi/2)
-			
-			length = math.min(length, y/math.sin(adjustedAngle))
-		end
 		
 		local imageStickX = MoveTouchStartPosition.X - ImageUnderThumb.AbsoluteSize.X*0.5 - ThumbstickFrame.AbsolutePosition.X
 		local imageStickY = MoveTouchStartPosition.Y - ImageUnderThumb.AbsoluteSize.Y*0.5 - ThumbstickFrame.AbsolutePosition.Y
