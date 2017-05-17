@@ -58,7 +58,7 @@ pcall(function()
 	local LocalizationService = game:GetService("LocalizationService")
 	local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
 	SEARCH_TEXT = CorescriptLocalization:GetString(
-		LocalizationService.LocaleId,
+		LocalizationService.SystemLocaleId,
 		"BACKPACK_SEARCH"
 	)
 end)
