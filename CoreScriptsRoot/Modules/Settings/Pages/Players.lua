@@ -440,7 +440,6 @@ local function Initialize()
 		nameLabel.ZIndex = 3
 		nameLabel.Parent = frame
 		
-		
 		return frame
 	end
 
