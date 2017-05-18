@@ -50,15 +50,16 @@ local currentMoveVector = Vector3.new(0,0,0)
 local IMAGE_DISK = "rbxasset://textures/ui/Input/Disk_padded.png"
 local IMAGE_RING = "rbxasset://textures/ui/Input/Ring_padded.png"
 
-local NUM_MIDDLE_IMAGES = 6
 local MIDDLE_TRANSPARENCIES = {
 	1 - 0.69,
 	1 - 0.50,
 	1 - 0.40,
 	1 - 0.30,
 	1 - 0.20,
-	1 - 0.10
+	1 - 0.10,
+	1 - 0.05
 }
+local NUM_MIDDLE_IMAGES = #MIDDLE_TRANSPARENCIES
 
 local TOUCH_IS_TAP_TIME_THRESHOLD = 0.5
 local TOUCH_IS_TAP_DISTANCE_THRESHOLD = 25
