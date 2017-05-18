@@ -85,9 +85,17 @@ if isTenFootInterface then
 end
 local TempHideKeys = {}
 
+local function IsXboxUseCrossPlatformPlayEnabled()
+  local success, flagValue = pcall(function() return settings():GetFFlag("XboxUseCrossPlatformPlay") end)
+  return (success and flagValue == true)
+end
+
+local AllowPlatformName = IsXboxUseCrossPlatformPlayEnabled() and
+  game:GetService('UserInputService'):GetPlatform() == Enum.Platform.XBoxOne
+
 local PlayerEntrySizeY = 24
 if isTenFootInterface then
-  PlayerEntrySizeY = 80
+  PlayerEntrySizeY = AllowPlatformName and 100 or 80
 end
 
 local TeamEntrySizeY = 18
@@ -426,18 +434,24 @@ local function createEntryFrame(name, sizeYOffset, isTopStat)
   return containerFrame, nameFrame
 end
 
-local function createEntryNameText(name, text, sizeXOffset, posXOffset)
+local function createEntryNameText(name, text, position, size, fontSize)
   local nameLabel = Instance.new('TextLabel')
   nameLabel.Name = name
-  nameLabel.Size = UDim2.new(-0.01, sizeXOffset, 1, 0)
-  nameLabel.Position = UDim2.new(0.01, posXOffset, 0, 0)
+  nameLabel.Position = position
+  nameLabel.Size = size
   nameLabel.BackgroundTransparency = 1
   nameLabel.Font = Enum.Font.SourceSans
-  if isTenFootInterface then
-    nameLabel.FontSize = Enum.FontSize.Size32
+
+  if fontSize then
+    nameLabel.FontSize = fontSize
   else
-    nameLabel.FontSize = Enum.FontSize.Size14
+    if isTenFootInterface then
+      nameLabel.FontSize = Enum.FontSize.Size32
+    else
+      nameLabel.FontSize = Enum.FontSize.Size14
+    end
   end
+
   nameLabel.TextColor3 = TEXT_COLOR
   nameLabel.TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY
   nameLabel.TextStrokeColor3 = TEXT_STROKE_COLOR
@@ -1238,14 +1252,15 @@ local function createPlayerEntry(player, isTopStat)
       onEntryFrameSelected(containerFrame, player)
     end)
 
-  local currentXOffset = 1
+  local currentXOffset = AllowPlatformName and 14 or 1
 
   -- check membership
   local membershipIconImage = getMembershipIcon(player)
   local membershipIcon = nil
+
   if membershipIconImage then
     membershipIcon = createImageIcon(membershipIconImage, "MembershipIcon", currentXOffset, entryFrame)
-    currentXOffset = currentXOffset + membershipIcon.Size.X.Offset + 2
+    currentXOffset = currentXOffset + membershipIcon.Size.X.Offset + (AllowPlatformName and 4 or 2)
   else
     currentXOffset = currentXOffset + offsetSize
   end
@@ -1289,9 +1304,77 @@ local function createPlayerEntry(player, isTopStat)
       -- the case that we are not friends with the new player who is joining.
     end)
 
-  local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
-  local playerName = createEntryNameText("PlayerName", name, playerNameXSize, currentXOffset)
-  playerName.Parent = entryFrame
+  local playerName
+  local playerPlatformName
+  local PlatformLogo
+
+  if AllowPlatformName then
+    if  game:GetService('UserInputService'):GetPlatform() == Enum.Platform.XBoxOne and
+        player.OsPlatform == "Durango" and
+        player.DisplayName ~= ""
+    then
+      local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
+
+      playerName = createEntryNameText("PlayerName", name,
+        UDim2.new(0.01, currentXOffset, -0.20, 0),
+        UDim2.new(-0.01, playerNameXSize, 1, 0))
+      playerName.Parent = entryFrame
+
+      PlatformLogo = Instance.new('ImageButton')
+      PlatformLogo.Position = UDim2.new(0.01, currentXOffset, 0.21, 30)
+      PlatformLogo.Size = UDim2.new(0, 24, 0, 24)
+      PlatformLogo.Image = "rbxasset://textures/ui/Shell/Icons/PlayerlistXboxLogo.png"
+      PlatformLogo.BackgroundTransparency = 1
+      PlatformLogo.ImageColor3 = Color3.new(1,1,1)
+      PlatformLogo.Selectable = false
+      PlatformLogo.ZIndex = 2
+      PlatformLogo.Parent = entryFrame
+
+      playerPlatformName = createEntryNameText("PlayerPlatformName", player.DisplayName,
+        UDim2.new(0.01, currentXOffset + PlatformLogo.Size.X.Offset + 6, 0.12, 0),
+        UDim2.new(-0.01, playerNameXSize, 1, 0),
+        Enum.FontSize.Size24)
+      playerPlatformName.Parent = entryFrame
+    else
+      playerName = createEntryNameText("PlayerName", name,
+        UDim2.new(0.01, currentXOffset, 0, 0),
+        UDim2.new(-0.01, entryFrame.Size.X.Offset - currentXOffset, 1, 0))
+
+      playerName.Parent = entryFrame
+    end
+  else
+    playerName = createEntryNameText("PlayerName", name,
+        UDim2.new(0.01, currentXOffset, 0, 0),
+        UDim2.new(-0.01, entryFrame.Size.X.Offset - currentXOffset, 1, 0))
+
+    playerName.Parent = entryFrame
+  end
+
+  local ColorConstants = {
+    SelectedButtonColor = Color3.new(50/255, 181/255, 1);
+    TextSelectedColor = Color3.new(19/255, 19/255, 19/255);
+    IconSelectedColor = Color3.new(19/255, 19/255, 19/255);
+    ButtonUnselectedColor = Color3.new(78/255, 84/255, 96/255);
+    TextUnselectedColor = Color3.new(1,1,1);
+    IconUnselectedColor = Color3.new(1,1,1);
+  }
+
+  if IsXboxUseCrossPlatformPlayEnabled() then
+    entryFrame.SelectionImageObject = noSelectionObject
+    entryFrame.SelectionGained:connect(function()
+      entryFrame.BackgroundColor3 = ColorConstants.SelectedButtonColor
+      playerName.TextColor3 = ColorConstants.TextSelectedColor
+      playerPlatformName.TextColor3 = ColorConstants.TextSelectedColor
+      PlatformLogo.ImageColor3 = ColorConstants.IconSelectedColor
+    end)
+    entryFrame.SelectionLost:connect(function()
+      entryFrame.BackgroundColor3 = ColorConstants.ButtonUnselectedColor
+      playerName.TextColor3 = ColorConstants.TextUnselectedColor
+      playerPlatformName.TextColor3 = ColorConstants.TextUnselectedColor
+      PlatformLogo.ImageColor3 = ColorConstants.IconUnselectedColor
+    end)
+  end
+
   playerEntry.Player = player
   playerEntry.Frame = containerFrame
 
@@ -1323,7 +1406,10 @@ local function createTeamEntry(team)
   entryFrame.Selectable = false	-- dont allow gamepad selection of team frames
   entryFrame.BackgroundColor3 = team.TeamColor.Color
 
-  local teamName = createEntryNameText("TeamName", team.Name, entryFrame.AbsoluteSize.x, 1)
+  local teamName = createEntryNameText("TeamName", team.Name,
+    UDim2.new(0.01, 1, 0, 0),
+    UDim2.new(-0.01, entryFrame.AbsoluteSize.x, 1, 0))
+
   teamName.Parent = entryFrame
 
   teamEntry.Frame = containerFrame
