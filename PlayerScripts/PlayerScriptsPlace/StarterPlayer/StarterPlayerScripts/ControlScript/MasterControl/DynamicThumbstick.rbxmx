@@ -33,9 +33,9 @@ local IsAToolEquipped = false
 local RevertAutoJumpEnabledToFalse = false
 
 local ThumbstickFrame = nil
-local ImageCenter = nil
-local ImageUnderThumb = nil
-local ImageRod = nil
+local StartImage = nil
+local EndImage = nil
+local MiddleImages = {}
 
 local IsFollowStick = false
 local ThumbstickFrame = nil
@@ -47,17 +47,32 @@ local currentMoveVector = Vector3.new(0,0,0)
 
 --[[ Constants ]]--
 
-local IMAGE_OUTER_URL = "rbxasset://textures/ui/Disk.png"
-local IMAGE_STICK_URL = "rbxasset://textures/ui/Disk.png"
-local IMAGE_ROD_URL = "rbxasset://textures/ui/Square.png"
+local IMAGE_DISK = "rbxasset://textures/ui/Input/Disk_padded.png"
+local IMAGE_RING = "rbxasset://textures/ui/Input/Ring_padded.png"
+
+local NUM_MIDDLE_IMAGES = 6
+local MIDDLE_TRANSPARENCIES = {
+	1 - 0.69,
+	1 - 0.50,
+	1 - 0.40,
+	1 - 0.30,
+	1 - 0.20,
+	1 - 0.10
+}
 
 local TOUCH_IS_TAP_TIME_THRESHOLD = 0.5
 local TOUCH_IS_TAP_DISTANCE_THRESHOLD = 25
 
+local HasFadedBackgroundInPortrait = false
+local HasFadedBackgroundInLandscape = false
 local FadeInAndOutBackground = true
-local FadeInAndOutMaxCount = nil
 local FadeInAndOutMaxAlpha = 0.35
-local FadeInAndOutHalfDuration = 0.3
+
+local FADE_IN_OUT_HALF_DURATION_DEFAULT = 0.3
+local FADE_IN_OUT_HALF_DURATION_ORIENTATION_CHANGE = 2
+local FADE_IN_OUT_BALANCE_DEFAULT = 0.5
+local FadeInAndOutHalfDuration = FADE_IN_OUT_HALF_DURATION_DEFAULT
+local FadeInAndOutBalance = FADE_IN_OUT_BALANCE_DEFAULT
 
 --[[ Local functionality ]]--
 
@@ -143,19 +158,21 @@ function Thumbstick:Create(parentFrame)
 	end
 	
 	local ThumbstickSize = 40
-	local ImageRodMinSize = 5
-	local ImageRodMaxSize = 40
+	local ThumbstickRingSize = 58
+	local MiddleSize = 13
+	local MiddleSpacing = MiddleSize + 5
 	local RadiusOfDeadZone = 2
 	local RadiusOfMaxSpeed = 50	
 	
 	local screenSize = parentFrame.AbsoluteSize
 	local isBigScreen = math.min(screenSize.x, screenSize.y) > 500
 	if isBigScreen then
-		ThumbstickSize = ThumbstickSize*2
-		ImageRodMinSize = ImageRodMinSize*2
-		ImageRodMaxSize = ImageRodMaxSize*2
-		RadiusOfDeadZone = RadiusOfDeadZone*2
-		RadiusOfMaxSpeed = RadiusOfMaxSpeed*2
+		ThumbstickSize = ThumbstickSize * 2
+		ThumbstickRingSize = ThumbstickRingSize * 2
+		MiddleSize = MiddleSize * 2
+		MiddleSpacing = MiddleSpacing * 2
+		RadiusOfDeadZone = RadiusOfDeadZone * 2
+		RadiusOfMaxSpeed = RadiusOfMaxSpeed * 2
 	end
 	
 	local color = Color3.fromRGB(255, 255, 255)
@@ -171,12 +188,40 @@ function Thumbstick:Create(parentFrame)
 	end
 		
 	ThumbstickFrame = Instance.new('Frame')
-	ThumbstickFrame.Name = "ThumbstickFrame"
+	ThumbstickFrame.Name = "DynamicThumbstickFrame"
 	ThumbstickFrame.Active = false
 	ThumbstickFrame.Visible = false
 	ThumbstickFrame.BackgroundTransparency = 1.0
 	ThumbstickFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	layoutThumbstickFrame()
+	
+	StartImage = Instance.new("ImageLabel")
+	StartImage.Name = "ThumbstickStart"
+	StartImage.Visible = false
+	StartImage.BackgroundTransparency = 1
+	StartImage.Image = IMAGE_RING
+	StartImage.AnchorPoint = Vector2.new(0.5, 0.5)
+	StartImage.Parent = ThumbstickFrame
+	
+	EndImage = Instance.new("ImageLabel")
+	EndImage.Name = "ThumbstickEnd"
+	EndImage.Visible = false
+	EndImage.BackgroundTransparency = 1
+	EndImage.Image = IMAGE_DISK
+	EndImage.ImageTransparency = 0.20
+	EndImage.AnchorPoint = Vector2.new(0.5, 0.5)
+	EndImage.Parent = ThumbstickFrame
+	
+	for i = 1, NUM_MIDDLE_IMAGES do
+		MiddleImages[i] = Instance.new("ImageLabel")
+		MiddleImages[i].Name = "ThumbstickMiddle"
+		MiddleImages[i].Visible = false
+		MiddleImages[i].BackgroundTransparency = 1
+		MiddleImages[i].Image = IMAGE_DISK
+		MiddleImages[i].ImageTransparency = MIDDLE_TRANSPARENCIES[i]
+		MiddleImages[i].AnchorPoint = Vector2.new(0.5, 0.5)
+		MiddleImages[i].Parent = ThumbstickFrame
+	end
 	
 	local CameraChangedConn = nil
 	local function onWorkspaceChanged(property)
@@ -205,40 +250,6 @@ function Thumbstick:Create(parentFrame)
 		onWorkspaceChanged('CurrentCamera')
 	end
 	
-	ImageCenter = Instance.new('ImageLabel')
-	ImageCenter.Name = "ImageCenter"
-	ImageCenter.Image = IMAGE_OUTER_URL
-	ImageCenter.ImageColor3 = color
-	ImageCenter.BackgroundTransparency = 1
-	ImageCenter.Size = UDim2.new(0, ThumbstickSize, 0, ThumbstickSize)
-	ImageCenter.Position = UDim2.new(0, screenSize.x/2, 0, screenSize.y/2)
-	ImageCenter.Visible = false
-	ImageCenter.ImageTransparency = 0
-	ImageCenter.Parent = ThumbstickFrame
-	
-	ImageRod = Instance.new("ImageLabel")
-	ImageRod.Name = "ImageRod"
-	ImageRod.Image = IMAGE_ROD_URL
-	ImageRod.ImageColor3 = color
-	ImageRod.BackgroundTransparency = 1
-	ImageRod.Size = UDim2.new(0, ImageRodMinSize, 0, ImageRodMinSize)
-	ImageRod.Position = UDim2.new(0, screenSize.x/2, 0, screenSize.y/2)
-	ImageRod.Visible = false
-	ImageRod.ImageTransparency = 0.7
-	ImageRod.Parent = ThumbstickFrame	
-	
-	ImageUnderThumb = Instance.new('ImageLabel')
-	ImageUnderThumb.Name = "ImageUnderThumb"
-	ImageUnderThumb.Image = IMAGE_STICK_URL
-	ImageUnderThumb.ImageColor3 = color
-	ImageUnderThumb.BackgroundTransparency = 1
-	ImageUnderThumb.Size = UDim2.new(0, ThumbstickSize, 0, ThumbstickSize)
-	ImageUnderThumb.Position = UDim2.new(0, 20, 0, 20)
-	ImageUnderThumb.ZIndex = 2
-	ImageUnderThumb.Visible = false
-	ImageUnderThumb.ImageTransparency = 0
-	ImageUnderThumb.Parent = ThumbstickFrame
-	
 	local JumpTouchObject = nil
 	local JumpTouchStartTime = nil
 	local JumpTouchStartPosition = nil
@@ -246,14 +257,6 @@ function Thumbstick:Create(parentFrame)
 	local MoveTouchObject = nil
 	local MoveTouchStartTime = nil
 	local MoveTouchStartPosition = nil
-	
-	local fadeInAndOutCount = 0
-	
-	local function setGuiVisible(isVisible)
-		ImageCenter.Visible = isVisible
-		ImageUnderThumb.Visible = isVisible
-		ImageRod.Visible = isVisible
-	end
 	
 	local function doMove(direction)
 		MasterControl:AddToPlayerMovement(-currentMoveVector)
@@ -277,58 +280,68 @@ function Thumbstick:Create(parentFrame)
 	OnRenderSteppedCn = RunService.RenderStepped:Connect(function(step)
 		if TweenInAlphaStart ~= nil then
 			local delta = tick() - TweenInAlphaStart
-			ThumbstickFrame.BackgroundTransparency = 1 - FadeInAndOutMaxAlpha*math.min(delta/FadeInAndOutHalfDuration, 1)
-			if delta > FadeInAndOutHalfDuration then
+			local fadeInTime = (FadeInAndOutHalfDuration * 2 * FadeInAndOutBalance)
+			ThumbstickFrame.BackgroundTransparency = 1 - FadeInAndOutMaxAlpha*math.min(delta/fadeInTime, 1)
+			if delta > fadeInTime then
 				TweenOutAlphaStart = tick()
 				TweenInAlphaStart = nil
 			end
 		elseif TweenOutAlphaStart ~= nil then
 			local delta = tick() - TweenOutAlphaStart
-			ThumbstickFrame.BackgroundTransparency = 1 - FadeInAndOutMaxAlpha + FadeInAndOutMaxAlpha*math.min(delta/FadeInAndOutHalfDuration, 1)
-			if delta > FadeInAndOutHalfDuration then
+			local fadeOutTime = (FadeInAndOutHalfDuration * 2) - (FadeInAndOutHalfDuration * 2 * FadeInAndOutBalance)
+			ThumbstickFrame.BackgroundTransparency = 1 - FadeInAndOutMaxAlpha + FadeInAndOutMaxAlpha*math.min(delta/fadeOutTime, 1)
+			if delta > fadeOutTime  then
 				TweenOutAlphaStart = nil
 			end
 		end
 	end)
 	
-	local function moveStick(pos)
+	local function layoutMiddleImages(startPos, endPos)
+		local startDist = (ThumbstickSize / 2) + MiddleSize
+		local dist = startDist
+		local vector = endPos - startPos
+		local totalDist = vector.magnitude - (ThumbstickSize / 2) - (ThumbstickRingSize / 2) - (MiddleSize / 2)
+		local direction = vector.unit
+
+		local distNeeded = dist + (MiddleSpacing * NUM_MIDDLE_IMAGES)		
+		local spacing = 0
 		
-		local relativePosition = Vector2.new(pos.x - MoveTouchStartPosition.x, pos.y - MoveTouchStartPosition.y)
+		if distNeeded > totalDist then
+			spacing = MiddleSpacing
+		else
+			spacing = totalDist / NUM_MIDDLE_IMAGES
+		end
+			
+		for i = 1, NUM_MIDDLE_IMAGES do
+			local image = MiddleImages[i]
+			local currentDist = startDist + (spacing * (i - 1))	
+				
+			if currentDist < totalDist then
+				local pos = endPos - direction * currentDist
+				
+				image.Visible = true
+				image.Position = UDim2.new(0, pos.X, 0, pos.Y)
+				image.Size = UDim2.new(0, MiddleSize, 0, MiddleSize)
+			else
+				image.Visible = false
+			end
+		end
+	end
+	
+	local function moveStick(pos)
+		local startPos = Vector2.new(MoveTouchStartPosition.X, MoveTouchStartPosition.Y) - ThumbstickFrame.AbsolutePosition
+		local endPos = Vector2.new(pos.X, pos.Y) - ThumbstickFrame.AbsolutePosition
+		local relativePosition = endPos - startPos
 		local length = relativePosition.magnitude
 		local maxLength = ThumbstickFrame.AbsoluteSize.X
 		
 		length = math.min(length, maxLength)
 		relativePosition = relativePosition*length
 		
-		local angle = -math.atan2(relativePosition.X/length, relativePosition.Y/length) + math.pi/2
-		local sinAngle = math.sin(angle)
-		local cosAngle = math.cos(angle)
-		if angle < -0.2 or angle > math.pi + 0.2 then
-			local y = MoveTouchStartPosition.Y - ThumbstickFrame.AbsolutePosition.Y
-			local adjustedAngle = math.fmod(math.abs(angle), math.pi/2)
-			
-			length = math.min(length, y/math.sin(adjustedAngle))
-		end
+		EndImage.Position = UDim2.new(0, endPos.X, 0, endPos.Y)
+		EndImage.Size = UDim2.new(0, ThumbstickSize, 0, ThumbstickSize)
 		
-		local imageStickX = MoveTouchStartPosition.X - ImageUnderThumb.AbsoluteSize.X*0.5 - ThumbstickFrame.AbsolutePosition.X
-		local imageStickY = MoveTouchStartPosition.Y - ImageUnderThumb.AbsoluteSize.Y*0.5 - ThumbstickFrame.AbsolutePosition.Y
-		imageStickX = imageStickX + cosAngle*length
-		imageStickY = imageStickY + sinAngle*length
-		ImageUnderThumb.Position = UDim2.new(0, imageStickX, 0, imageStickY)
-		ImageUnderThumb.Visible = true
-		
-		ImageRod.Rotation = angle*180/math.pi
-		
-		local percent = (ThumbstickFrame.AbsoluteSize.X - length)/ThumbstickFrame.AbsoluteSize.X
-		local rodWidth = (ImageRodMaxSize - ImageRodMinSize)*math.max(0, percent) + ImageRodMinSize
-		ImageRod.Size = UDim2.new(0, length, 0, rodWidth)
-		
-		local rodImageX = MoveTouchStartPosition.X - ImageRod.AbsoluteSize.X/2 - ThumbstickFrame.AbsolutePosition.X
-		local rodImageY = MoveTouchStartPosition.Y - ImageRod.AbsoluteSize.Y/2 - ThumbstickFrame.AbsolutePosition.Y
-		rodImageX = rodImageX + cosAngle*length/2
-		rodImageY = rodImageY + sinAngle*length/2
-		ImageRod.Position = UDim2.new(0, rodImageX, 0, rodImageY)
-		ImageRod.Visible = true
+		layoutMiddleImages(startPos, endPos)
 	end
 	
 	-- input connections
@@ -348,22 +361,36 @@ function Thumbstick:Create(parentFrame)
 		MoveTouchObject = inputObject
 		MoveTouchStartTime = tick()
 		MoveTouchStartPosition = inputObject.Position
-		local startPosVec2 = Vector2.new(inputObject.Position.X, inputObject.Position.Y)
+		local startPosVec2 = Vector2.new(inputObject.Position.X - ThumbstickFrame.AbsolutePosition.X, inputObject.Position.Y - ThumbstickFrame.AbsolutePosition.Y)
+
+		StartImage.Visible = true
+		StartImage.Position = UDim2.new(0, startPosVec2.X, 0, startPosVec2.Y)
+		StartImage.Size = UDim2.new(0, ThumbstickRingSize, 0, ThumbstickRingSize)
+		EndImage.Visible = true
+		EndImage.Position = StartImage.Position
+		EndImage.Size = UDim2.new(0, ThumbstickSize, 0, ThumbstickSize)
 		
-		local imageOuterPos = startPosVec2 - ImageCenter.AbsoluteSize/2 - ThumbstickFrame.AbsolutePosition
-		ImageCenter.Position = UDim2.new(0, imageOuterPos.X, 0, imageOuterPos.Y)
-		ImageCenter.Visible = true
-		
-		local imageStickPos = startPosVec2 - ImageUnderThumb.AbsoluteSize/2 - ThumbstickFrame.AbsolutePosition
-		ImageUnderThumb.Position = UDim2.new(0, imageStickPos.X, 0, imageStickPos.Y)	
-		
-		local imageRodPos = startPosVec2 - ImageRod.AbsoluteSize/2 - ThumbstickFrame.AbsolutePosition
-		ImageRod.Position = UDim2.new(0, imageRodPos.X, 0, imageRodPos.Y)
-		ImageRod.Size = UDim2.new(0, 10, 0, 10)
-		
-		if FadeInAndOutBackground and (FadeInAndOutMaxCount == nil or fadeInAndOutCount < FadeInAndOutMaxCount) then
-			TweenInAlphaStart = tick()
-			fadeInAndOutCount = fadeInAndOutCount + 1
+		if FadeInAndOutBackground then
+			local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+			local hasFadedBackgroundInOrientation = false
+
+			-- only fade in/out the background once per orientation
+			if playerGui then
+				if playerGui.CurrentScreenOrientation == Enum.ScreenOrientation.LandscapeLeft or 
+					playerGui.CurrentScreenOrientation == Enum.ScreenOrientation.LandscapeRight then
+						hasFadedBackgroundInOrientation = HasFadedBackgroundInLandscape
+						HasFadedBackgroundInLandscape = true
+				elseif playerGui.CurrentScreenOrientation == Enum.ScreenOrientation.Portrait then
+						hasFadedBackgroundInOrientation = HasFadedBackgroundInPortrait
+						HasFadedBackgroundInPortrait = true
+				end
+			end
+
+			if not hasFadedBackgroundInOrientation then
+				FadeInAndOutHalfDuration = FADE_IN_OUT_HALF_DURATION_DEFAULT
+				FadeInAndOutBalance = FADE_IN_OUT_BALANCE_DEFAULT
+				TweenInAlphaStart = tick()
+			end
 		end
 	end)
 	
@@ -371,19 +398,25 @@ function Thumbstick:Create(parentFrame)
 		if inputObject == MoveTouchObject then
 			
 			local direction = Vector2.new(inputObject.Position.x - MoveTouchStartPosition.x, inputObject.Position.y - MoveTouchStartPosition.y)
-			doMove(direction)
-			moveStick(inputObject.Position)
+			if math.abs(direction.x) > 0 or math.abs(direction.y) > 0 then
+				doMove(direction)
+				moveStick(inputObject.Position)
+			end
 		end
 	end)
 	
 	OnMoveTouchEnded = function()
+		StartImage.Visible = false
+		EndImage.Visible = false
+		
+		for i = 1, NUM_MIDDLE_IMAGES do
+			MiddleImages[i].Visible = false
+		end
 		
 		MoveTouchObject = nil
 		
 		MasterControl:AddToPlayerMovement(-currentMoveVector)
 		currentMoveVector = Vector3.new(0,0,0)
-		
-		setGuiVisible(false)
 	end
 	
 	local function JumpIfTouchIsTap(startTime, startPosition, position)
@@ -411,9 +444,50 @@ function Thumbstick:Create(parentFrame)
 		if JumpTouchObject then
 			JumpTouchObject = nil
 		end
-	end)	
+	end)
+
+	local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	while not playerGui do
+		LocalPlayer.ChildAdded:wait()
+		playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+	end
+
+	local playerGuiChangedConn = nil
+	local originalScreenOrientationWasLandscape = playerGui.CurrentScreenOrientation == Enum.ScreenOrientation.LandscapeLeft or
+													playerGui.CurrentScreenOrientation == Enum.ScreenOrientation.LandscapeRight
+
+	local function longShowBackground()
+		FadeInAndOutHalfDuration = 2.5
+		FadeInAndOutBalance = 0.05
+		TweenInAlphaStart = tick()
+	end
+
+	playerGuiChangedConn = playerGui.Changed:connect(function(prop)
+		if prop == "CurrentScreenOrientation" then
+			if (originalScreenOrientationWasLandscape and playerGui.CurrentScreenOrientation == Enum.ScreenOrientation.Portrait) or
+				(not originalScreenOrientationWasLandscape and playerGui.CurrentScreenOrientation ~= Enum.ScreenOrientation.Portrait) then
+					playerGuiChangedConn:disconnect()
+					longShowBackground()
+
+					if originalScreenOrientationWasLandscape then
+						HasFadedBackgroundInPortrait = true
+					else
+						HasFadedBackgroundInLandscape = true
+					end
+			end
+		end
+	end)
 	
 	ThumbstickFrame.Parent = parentFrame
+
+	spawn(function()
+		if game:IsLoaded() then
+			longShowBackground()
+		else
+			game.Loaded:wait()
+			longShowBackground()
+		end
+	end)
 end
 
 return Thumbstick
