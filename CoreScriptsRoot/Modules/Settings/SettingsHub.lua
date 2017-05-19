@@ -38,6 +38,9 @@ end
 local reportPlayerInMenuSuccess, reportPlayerInMenuValue = pcall(function() return settings():GetFFlag("CoreScriptReportPlayerInMenu") end)
 local enableReportPlayer = reportPlayerInMenuSuccess and reportPlayerInMenuValue
 
+local enableResponsiveUIFixSuccess, enableResponsiveUIFixValue = pcall(function() return settings():GetFFlag("EnableResponsiveUIFix") end)
+local enableResponsiveUI = enableResponsiveUIFixSuccess and enableResponsiveUIFixValue
+
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
@@ -326,15 +329,17 @@ local function CreateSettingsHub()
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Parent = this.Shield
 		}
-		this.MenuListLayout = utility:Create'UIListLayout'
-		{
-			Name = "MenuListLayout",
-			FillDirection = Enum.FillDirection.Vertical,
-			VerticalAlignment = Enum.VerticalAlignment.Center,
-			HorizontalAlignment = Enum.HorizontalAlignment.Center,
-			SortOrder = Enum.SortOrder.LayoutOrder,
-			Parent = this.MenuContainer
-		}
+		if enableResponsiveUI then
+			this.MenuListLayout = utility:Create'UIListLayout'
+			{
+				Name = "MenuListLayout",
+				FillDirection = Enum.FillDirection.Vertical,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Parent = this.MenuContainer
+			}
+		end
 		this.MenuAspectRatio = utility:Create'UIAspectRatioConstraint'
 		{
 			Name = 'MenuAspectRatio',
