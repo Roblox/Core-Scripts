@@ -326,6 +326,15 @@ local function CreateSettingsHub()
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Parent = this.Shield
 		}
+		this.MenuListLayout = utility:Create'UIListLayout'
+		{
+			Name = "MenuListLayout",
+			FillDirection = Enum.FillDirection.Vertical,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Parent = this.MenuContainer
+		}
 		this.MenuAspectRatio = utility:Create'UIAspectRatioConstraint'
 		{
 			Name = 'MenuAspectRatio',
@@ -345,6 +354,7 @@ local function CreateSettingsHub()
 			ScaleType = Enum.ScaleType.Slice,
 			SliceCenter = Rect.new(4,4,6,6),
 			AnchorPoint = Vector2.new(0.5, 0),
+			LayoutOrder = 0,
 			Parent = this.MenuContainer
 		}
 		this.HubBarListLayout = utility:Create'UIListLayout'
@@ -376,6 +386,7 @@ local function CreateSettingsHub()
 				this.HubBar.Position.Y.Scale, this.HubBar.Position.Y.Offset + this.HubBar.Size.Y.Offset + 1),
 			AnchorPoint = Vector2.new(0.5, 0),
 			ClipsDescendants = true,
+			LayoutOrder = 1,
 			Parent = this.MenuContainer,
 
 			utility:Create'ImageButton'{
@@ -427,6 +438,7 @@ local function CreateSettingsHub()
 			Position = UDim2.new(0.5, -this.HubBar.Size.X.Offset/2, 1-this.HubBar.Position.Y.Scale-this.HubBar.Size.Y.Scale, -this.HubBar.Position.Y.Offset-this.HubBar.Size.Y.Offset),
 			ZIndex = this.Shield.ZIndex + 1,
 			BackgroundTransparency = 1,
+			LayoutOrder = 2,
 			Parent = this.MenuContainer
 		};
 
