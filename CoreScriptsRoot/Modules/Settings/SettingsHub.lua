@@ -958,7 +958,11 @@ local function CreateSettingsHub()
 		end
 
 		if this.BottomButtonFrame then
-			this.BottomButtonFrame.Visible = shouldShowBottomBar(pageToSwitchTo) --this causes an issue, figure out why
+			if shouldShowBottomBar(pageToSwitchTo) then
+				setBottomBarBindings()
+			else
+				this.BottomButtonFrame.Visible = false
+			end
 			this.HubBar.Visible = not (pageToSwitchTo == this.LeaveGamePage or pageToSwitchTo == this.ResetCharacterPage)
 		end
 
@@ -1175,10 +1179,6 @@ local function CreateSettingsHub()
 
 			if type(lastStackItem) ~= "table" then
 				PoppedMenuEvent:Fire(lastStackItem)
-			end
-
-			if shouldShowBottomBar(lastStackItem) then
-				setBottomBarBindings()
 			end
 
 			table.remove(this.MenuStack, #this.MenuStack)
