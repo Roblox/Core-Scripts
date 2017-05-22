@@ -3,7 +3,7 @@
 --revised/refactored 5/11/16
 
 local UserInputService = game:GetService("UserInputService")
-local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
+local VRService = game:GetService("VRService")
 local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 local CoreGui = game:GetService("CoreGui")
@@ -952,10 +952,7 @@ local function onRenderStep()
 	local userHeadCF = UserInputService:GetUserCFrame(Enum.UserCFrame.Head)
 	local lookRay = Ray.new(cameraRenderCF.p, cameraRenderCF.lookVector)
 
-	local inputUserCFrame = Enum.UserCFrame.Head
-	if VRServiceExists then
-		inputUserCFrame = VRService.GuiInputUserCFrame
-	end
+	local inputUserCFrame = VRService.GuiInputUserCFrame
 	local inputCF = cameraCF * UserInputService:GetUserCFrame(inputUserCFrame)
 	local pointerRay = Ray.new(inputCF.p, inputCF.lookVector)
 
@@ -1052,24 +1049,20 @@ RunService.Heartbeat:connect(onHeartbeat)
 
 
 local cameraChangedConnection = nil
-local function onCameraChanged(prop)
-	if prop == "HeadScale" then
-		pcall(function()
-			currentHeadScale = workspace.CurrentCamera.HeadScale
-		end)
-		for i, v in pairs(panels) do
-			v:OnHeadScaleChanged(currentHeadScale)
-		end
+local function onHeadScalePropChanged(prop)
+	currentHeadScale = workspace.CurrentCamera.HeadScale
+	for i, v in pairs(panels) do
+		v:OnHeadScaleChanged(currentHeadScale)
 	end
 end
 
 local function onWorkspaceChanged(prop)
 	if prop == "CurrentCamera" then
-		onCameraChanged("HeadScale")
+		onHeadScalePropChanged()
 		if cameraChangedConnection then
 			cameraChangedConnection:disconnect()
 		end
-		cameraChangedConnection = workspace.CurrentCamera.Changed:connect(onCameraChanged)
+		cameraChangedConnection = workspace.CurrentCamera:GetPropertyChangedSignal("HeadScale"):connect(onHeadScalePropChanged)
 
 		if UserInputService.VREnabled then
 			partFolder.Parent = workspace.CurrentCamera

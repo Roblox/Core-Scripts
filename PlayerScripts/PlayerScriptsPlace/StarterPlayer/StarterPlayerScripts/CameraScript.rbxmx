@@ -51,7 +51,8 @@ local CameraTypeEnumMap =
 local EnabledCamera = nil
 local EnabledOcclusion = nil
 
-local currentCameraConn = nil
+local cameraSubjectChangedConn = nil
+local cameraTypeChangedConn = nil
 local renderSteppedConn = nil
 
 local lastInputType = nil
@@ -219,17 +220,21 @@ local function OnNewCamera()
 
 	local currentCamera = workspace.CurrentCamera
 	if currentCamera then
-		if currentCameraConn then
-			currentCameraConn:disconnect()
+		if cameraSubjectChangedConn then
+			cameraSubjectChangedConn:disconnect()
 		end
 		
-		currentCameraConn = currentCamera.Changed:connect(function(prop)
-			if prop == 'CameraType' then
-				OnCameraMovementModeChange(getCurrentCameraMode())
-				OnCameraTypeChanged(currentCamera.CameraType)
-			elseif prop == 'CameraSubject' then
-				OnCameraSubjectChanged(currentCamera.CameraSubject)
-			end
+		if cameraTypeChangedConn then
+			cameraTypeChangedConn:disconnect()
+		end
+		
+		cameraSubjectChangedConn = currentCamera:GetPropertyChangedSignal("CameraSubject"):connect(function()
+			OnCameraSubjectChanged(currentCamera.CameraSubject)
+		end)
+		
+		cameraTypeChangedConn = currentCamera:GetPropertyChangedSignal("CameraType"):connect(function()
+			OnCameraMovementModeChange(getCurrentCameraMode())
+			OnCameraTypeChanged(currentCamera.CameraType)
 		end)
 
 		OnCameraSubjectChanged(currentCamera.CameraSubject)

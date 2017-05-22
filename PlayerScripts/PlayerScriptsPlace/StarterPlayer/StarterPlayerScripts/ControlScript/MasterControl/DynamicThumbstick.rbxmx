@@ -236,12 +236,10 @@ function Thumbstick:Create(parentFrame)
 				local size = newCamera.ViewportSize
 				local portraitMode = size.X < size.Y
 				layoutThumbstickFrame(portraitMode)
-				CameraChangedConn = newCamera.Changed:Connect(function(property)
-					if property == 'ViewportSize' then
-						size = newCamera.ViewportSize
-						portraitMode = size.X < size.Y
-						layoutThumbstickFrame(portraitMode)
-					end
+				CameraChangedConn = newCamera:GetPropertyChangedSignal("ViewportSize"):Connect(function()
+					size = newCamera.ViewportSize
+					portraitMode = size.X < size.Y
+					layoutThumbstickFrame(portraitMode)
 				end)
 			end
 		end

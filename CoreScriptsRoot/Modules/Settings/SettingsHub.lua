@@ -535,14 +535,15 @@ local function CreateSettingsHub()
 		)
 
 		local function cameraViewportChanged(prop)
-			if prop == "ViewportSize" then
-				utility:FireOnResized()
-			end
+			utility:FireOnResized()
 		end
+
+		local viewportSizeChangedConn = nil
 		local function onWorkspaceChanged(prop)
 			if prop == "CurrentCamera" then
-				cameraViewportChanged("ViewportSize")
-				workspace.CurrentCamera.Changed:connect(cameraViewportChanged)
+				cameraViewportChanged()
+				if viewportSizeChangedConn then viewportSizeChangedConn:disconnect() end
+				viewportSizeChangedConn = workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):connect(cameraViewportChanged)
 			end
 		end
 		onWorkspaceChanged("CurrentCamera")

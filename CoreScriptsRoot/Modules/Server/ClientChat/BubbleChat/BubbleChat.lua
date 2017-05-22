@@ -602,13 +602,6 @@ function this:ShowOwnFilteredMessage()
 	return false
 end
 
-function this:CameraChanged(prop)
-	if prop == "CoordinateFrame" then
-		this:CameraCFrameChanged()
-	end
-end
-
-
 function findPlayer(playerName)
 	for i,v in pairs(PlayersService:GetPlayers()) do
 		if v.Name == playerName then
@@ -621,14 +614,14 @@ ChatService.Chatted:connect(function(origin, message, color) this:OnGameChatMess
 
 local cameraChangedCon = nil
 if game.Workspace.CurrentCamera then
-	cameraChangedCon = game.Workspace.CurrentCamera.Changed:connect(function(prop) this:CameraChanged(prop) end)
+	cameraChangedCon = game.Workspace.CurrentCamera:GetPropertyChangedSignal("CFrame"):connect(function(prop) this:CameraCFrameChanged() end)
 end
 
 game.Workspace.Changed:connect(function(prop)
 	if prop == "CurrentCamera" then
 		if cameraChangedCon then cameraChangedCon:disconnect() end
 		if game.Workspace.CurrentCamera then
-			cameraChangedCon = game.Workspace.CurrentCamera.Changed:connect(function(prop) this:CameraChanged(prop) end)
+			cameraChangedCon = game.Workspace.CurrentCamera:GetPropertyChangedSignal("CFrame"):connect(function(prop) this:CameraCFrameChanged() end)
 		end
 	end
 end)
