@@ -13,22 +13,20 @@
 --]]
 local Players = game:GetService('Players')
 local UserInputService = game:GetService('UserInputService')
-local ContextActionService = game:GetService('ContextActionService')
-local StarterPlayer = game:GetService('StarterPlayer')
-local Settings = UserSettings()
-local GameSettings = Settings.GameSettings
 
 local KeyboardMovement = {}
 
 while not Players.LocalPlayer do
 	wait()
 end
+
 local LocalPlayer = Players.LocalPlayer
 local CachedHumanoid = nil
-local SeatJumpCn = nil
 local TextFocusReleasedCn = nil
 local TextFocusGainedCn = nil
 local WindowFocusReleasedCn = nil
+local InputBeganCn = nil
+local InputEndedCn = nil
 
 local MasterControl = require(script.Parent)
 local currentMoveVector = Vector3.new(0,0,0)
@@ -73,53 +71,45 @@ function KeyboardMovement:Enable()
 		end
 	end
 	
-	local moveForwardFunc = function(actionName, inputState, inputObject)			
-		if inputState == Enum.UserInputState.Begin then
+	local moveForwardFunc = function(inputObject)		
+		if inputObject.UserInputState == Enum.UserInputState.Begin then
 			forwardValue = -1
-		elseif inputState == Enum.UserInputState.End then
+		elseif inputObject.UserInputState == Enum.UserInputState.End then
 			forwardValue = 0
 		end
 		updateMovement(inputState)
 	end
 	
-	local moveBackwardFunc = function(actionName, inputState, inputObject)	
-		if inputState == Enum.UserInputState.Begin then
+	local moveBackwardFunc = function(inputObject)	
+		if inputObject.UserInputState == Enum.UserInputState.Begin then
 			backwardValue = 1
-		elseif inputState == Enum.UserInputState.End then
+		elseif inputObject.UserInputState == Enum.UserInputState.End then
 			backwardValue = 0
 		end
 		updateMovement(inputState)
 	end
 	
-	local moveLeftFunc = function(actionName, inputState, inputObject)	
-		if inputState == Enum.UserInputState.Begin then
+	local moveLeftFunc = function(inputObject)
+		if inputObject.UserInputState == Enum.UserInputState.Begin then
 			leftValue = -1
-		elseif inputState == Enum.UserInputState.End then
+		elseif inputObject.UserInputState == Enum.UserInputState.End then
 			leftValue = 0
 		end
 		updateMovement(inputState)
 	end
 	
-	local moveRightFunc = function(actionName, inputState, inputObject)	
-		if inputState == Enum.UserInputState.Begin then
+	local moveRightFunc = function(inputObject)	
+		if inputObject.UserInputState == Enum.UserInputState.Begin then
 			rightValue = 1
-		elseif inputState == Enum.UserInputState.End then
+		elseif inputObject.UserInputState == Enum.UserInputState.End then
 			rightValue = 0
 		end
 		updateMovement(inputState)
 	end
-	
-	local jumpFunc = function(actionName, inputState, inputObject)
-		MasterControl:SetIsJumping(inputState == Enum.UserInputState.Begin)
+
+	local jumpFunc = function(inputObject)
+		MasterControl:SetIsJumping(inputObject.UserInputState == Enum.UserInputState.Begin)
 	end
-	
-	-- TODO: remove up and down arrows, these seem unnecessary
-	ContextActionService:BindActionToInputTypes("forwardMovement", moveForwardFunc, false, Enum.PlayerActions.CharacterForward)
-	ContextActionService:BindActionToInputTypes("backwardMovement", moveBackwardFunc, false, Enum.PlayerActions.CharacterBackward)
-	ContextActionService:BindActionToInputTypes("leftMovement", moveLeftFunc, false, Enum.PlayerActions.CharacterLeft)
-	ContextActionService:BindActionToInputTypes("rightMovement", moveRightFunc, false, Enum.PlayerActions.CharacterRight)
-	ContextActionService:BindActionToInputTypes("jumpAction", jumpFunc, false, Enum.PlayerActions.CharacterJump)
-	-- TODO: make sure we check key state before binding to check if key is already down
 	
 	local function onFocusReleased()
 		local humanoid = getHumanoid()
@@ -134,32 +124,62 @@ function KeyboardMovement:Enable()
 	local function onTextFocusGained(textboxFocused)
 		MasterControl:SetIsJumping(false)
 	end
-	
-	SeatJumpCn = UserInputService.InputBegan:connect(function(inputObject, isProcessed)
-		if inputObject.KeyCode == Enum.KeyCode.Backspace and not isProcessed then
-			local humanoid = getHumanoid()
-			if humanoid and (humanoid.Sit or humanoid.PlatformStand) then
-				MasterControl:DoJump()
+		
+	InputBeganCn = UserInputService.InputBegan:connect(function(inputObject, isProcessed)
+			if not isProcessed then
+				if inputObject.KeyCode == Enum.KeyCode.Backspace then
+					local humanoid = getHumanoid()
+					if humanoid and (humanoid.Sit or humanoid.PlatformStand) then
+						MasterControl:DoJump()
+					end
+				elseif inputObject.KeyCode == Enum.KeyCode.Space then
+					jumpFunc(inputObject)
+				elseif inputObject.KeyCode == Enum.KeyCode.W then
+					moveForwardFunc(inputObject)
+				elseif inputObject.KeyCode == Enum.KeyCode.S then
+					moveBackwardFunc(inputObject)
+				elseif inputObject.KeyCode == Enum.KeyCode.A then
+					moveLeftFunc(inputObject)
+				elseif inputObject.KeyCode == Enum.KeyCode.D then
+					moveRightFunc(inputObject)
+				end
+			end
+		end)
+
+	InputEndedCn = UserInputService.InputEnded:connect(function(inputObject, isProcessed)
+		if not isProcessed then
+			if inputObject.KeyCode == Enum.KeyCode.Backspace then
+				local humanoid = getHumanoid()
+				if humanoid and (humanoid.Sit or humanoid.PlatformStand) then
+					MasterControl:DoJump()
+				end
+			elseif inputObject.KeyCode == Enum.KeyCode.Space then
+				jumpFunc(inputObject)
+			elseif inputObject.KeyCode == Enum.KeyCode.W then
+				moveForwardFunc(inputObject)
+			elseif inputObject.KeyCode == Enum.KeyCode.S then
+				moveBackwardFunc(inputObject)
+			elseif inputObject.KeyCode == Enum.KeyCode.A then
+				moveLeftFunc(inputObject)
+			elseif inputObject.KeyCode == Enum.KeyCode.D then
+				moveRightFunc(inputObject)
 			end
 		end
 	end)
 	
 	TextFocusReleasedCn = UserInputService.TextBoxFocusReleased:connect(onFocusReleased)
 	TextFocusGainedCn = UserInputService.TextBoxFocused:connect(onTextFocusGained)
-	-- TODO: remove pcall when API is live
 	WindowFocusReleasedCn = UserInputService.WindowFocused:connect(onFocusReleased)
 end
 
 function KeyboardMovement:Disable()
-	ContextActionService:UnbindAction("forwardMovement")
-	ContextActionService:UnbindAction("backwardMovement")
-	ContextActionService:UnbindAction("leftMovement")
-	ContextActionService:UnbindAction("rightMovement")
-	ContextActionService:UnbindAction("jumpAction")
-	
-	if SeatJumpCn then
-		SeatJumpCn:disconnect()
-		SeatJumpCn = nil
+	if InputBeganCn then
+		InputBeganCn:disconnect()
+		InputBeganCn = nil
+	end
+	if InputEndedCn then
+		InputEndedCn:disconnect()
+		InputEndedCn = nil
 	end
 	if TextFocusReleasedCn then
 		TextFocusReleasedCn:disconnect()
