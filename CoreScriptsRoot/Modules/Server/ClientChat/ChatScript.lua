@@ -125,7 +125,7 @@ function checkBothChatTypesDisabled()
 	return false
 end
 
-if not GuiService:IsTenFootInterface() then
+if (not GuiService:IsTenFootInterface()) or (not game:GetService('UserInputService').VREnabled) then
 	if not checkBothChatTypesDisabled() then
 		DoEverything()
 	else
