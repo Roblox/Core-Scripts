@@ -102,19 +102,17 @@ local function DoEverything()
 end
 
 function SetCoreGuiChatConnections(containerTable)
-	if not UserInputService.VREnabled then
-		local tries = 0
-		while tries < MAX_COREGUI_CONNECTION_ATTEMPTS do
-			tries = tries + 1
-			local success, ret = pcall(function() StarterGui:SetCore("CoreGuiChatConnections", containerTable) end)
-			if success then
-				break
-			end
-			if not success and tries == MAX_COREGUI_CONNECTION_ATTEMPTS then
-				error("Error calling SetCore CoreGuiChatConnections: " .. ret)
-			end
-			wait()
+	local tries = 0
+	while tries < MAX_COREGUI_CONNECTION_ATTEMPTS do
+		tries = tries + 1
+		local success, ret = pcall(function() StarterGui:SetCore("CoreGuiChatConnections", containerTable) end)
+		if success then
+			break
 		end
+		if not success and tries == MAX_COREGUI_CONNECTION_ATTEMPTS then
+			error("Error calling SetCore CoreGuiChatConnections: " .. ret)
+		end
+		wait()
 	end
 end
 
