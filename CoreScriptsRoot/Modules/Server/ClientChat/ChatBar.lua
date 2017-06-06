@@ -146,8 +146,14 @@ function methods:DoLockChatBar()
 end
 
 function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
+	-- Clean up events from a previous setup.
+	for name, conn in pairs(self.TextBoxConnections) do
+		conn:disconnect()
+		self.TextBoxConnections[name] = nil
+	end
+
 	--// Code for getting back into general channel from other target channel when pressing backspace.
-	UserInputService.InputBegan:connect(function(inputObj, gpe)
+	self.TextBoxConnections.UserInputBegan = UserInputService.InputBegan:connect(function(inputObj, gpe)
 		if (inputObj.KeyCode == Enum.KeyCode.Backspace) then
 			if (self:IsFocused() and TextBox.Text == "") then
 				self:SetChannelTarget(ChatSettings.GeneralChannelName)
@@ -155,7 +161,7 @@ function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
 		end
 	end)
 
-	TextBox.Changed:connect(function(prop)
+	self.TextBoxConnections.TextBoxChanged = TextBox.Changed:connect(function(prop)
 		if prop == "AbsoluteSize" then
 			self:CalculateSize()
 			return
@@ -191,20 +197,20 @@ function methods:SetUpTextBoxEvents(TextBox, TextLabel, MessageModeTextButton)
 		end
 	end
 
-	MessageModeTextButton.MouseButton1Click:connect(function()
+	self.TextBoxConnections.MessageModeClick = MessageModeTextButton.MouseButton1Click:connect(function()
 		if MessageModeTextButton.Text ~= "" then
 			self:SetChannelTarget(ChatSettings.GeneralChannelName)
 		end
 	end)
 
-	TextBox.Focused:connect(function()
+	self.TextBoxConnections.TextBoxFocused = TextBox.Focused:connect(function()
 		if not self.UserHasChatOff then
 			self:CalculateSize()
 			UpdateOnFocusStatusChanged(true)
 		end
 	end)
 
-	TextBox.FocusLost:connect(function(enterPressed, inputObject)
+	self.TextBoxConnections.TextBoxFocusLost = TextBox.FocusLost:connect(function(enterPressed, inputObject)
 		self:CalculateSize()
 		if (inputObject and inputObject.KeyCode == Enum.KeyCode.Escape) then
 			TextBox.Text = ""
@@ -505,6 +511,7 @@ function module.new(CommandProcessor, ChatWindow)
 	obj.GuiObjects = {}
 	obj.eGuiObjectsChanged = Instance.new("BindableEvent")
 	obj.GuiObjectsChanged = obj.eGuiObjectsChanged.Event
+	obj.TextBoxConnections = {}
 
 	obj.InCustomState = false
 	obj.CustomState = nil
