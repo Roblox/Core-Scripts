@@ -81,6 +81,7 @@ game:GetService("Players").PlayerRemoving:connect(function(player)
 			end
 		end
 	end
+	player:Kick()
 end)
 
 if game:GetService("Chat").LoadDefaultChat then
