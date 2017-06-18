@@ -582,7 +582,7 @@ local function formatNumber(value)
 end
 
 local function formatStatString(text)
-  if tostring(text) == "inf" then
+  if tostring(text) ~= "inf" then
     local numberValue = tonumber(text)
     if numberValue then
       text = formatNumber(numberValue)
