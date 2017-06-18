@@ -582,15 +582,19 @@ local function formatNumber(value)
 end
 
 local function formatStatString(text)
-  local numberValue = tonumber(text)
-  if numberValue then
-    text = formatNumber(numberValue)
-  end
+  if tostring(text) == "inf" then
+    local numberValue = tonumber(text)
+    if numberValue then
+      text = formatNumber(numberValue)
+    end
 
-  if strWidth(text) <= MAX_STR_LEN then
-    return text
+    if strWidth(text) <= MAX_STR_LEN then
+      return text
+    else
+      return string.sub(text, 1, MAX_STR_LEN - 3).."..."
+    end
   else
-    return string.sub(text, 1, MAX_STR_LEN - 3).."..."
+    return "∞"
   end
 end
 
