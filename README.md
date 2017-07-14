@@ -1,4 +1,6 @@
 Core-Scripts
 ============
 
-All of ROBLOX's Core Scripts. These control in-game UI among other things.
+All of ROBLOX's core client scripts.
+
+These scripts are responsible for character & camera control, as well as in-game UI and other things.

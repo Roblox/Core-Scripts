@@ -1,0 +1,36 @@
+*~
+
+*.gem
+*.rbc
+.bundle
+.config
+coverage
+InstalledFiles
+lib/bundler/man
+pkg
+rdoc
+spec/reports
+test/tmp
+test/version_tmp
+tmp
+
+# Project Specific Ignores #
+###########################
+*_output.rbxlx
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# YARD artifacts
+.yardoc
+_yardoc
+doc/
+*.sublime-project
+*.sublime-workspace
