@@ -289,6 +289,12 @@ do
 
 		StarterGui:RegisterSetCore("CoreGuiChatConnections", RegisterCoreGuiConnections)
 
+		-- Register ShowStatsBasedOnInputString for the /togglestats commands
+		StarterGui:RegisterSetCore("ShowStatsBasedOnInputString",function (statName)
+			assert(typeof(statName) == "string","ShowStatsBasedOnInputString expects a string to be passed.")
+			GuiService:ShowStatsBasedOnInputString(statName)
+		end)
+
 end
 
 return moduleApiTable
