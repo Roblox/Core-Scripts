@@ -20,7 +20,7 @@ end
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
 --[[ SCRIPT VARIABLES ]]
-local CHAT_BUBBLE_FONT = Enum.Font.SourceSans
+local CHAT_BUBBLE_FONT = Enum.Font.SourceSansBold -- changed because SourceSans cannot display certain unicode charachters correctly
 local CHAT_BUBBLE_FONT_SIZE = Enum.FontSize.Size24 -- if you change CHAT_BUBBLE_FONT_SIZE_INT please change this to match
 local CHAT_BUBBLE_FONT_SIZE_INT = 24 -- if you change CHAT_BUBBLE_FONT_SIZE please change this to match
 local CHAT_BUBBLE_LINE_HEIGHT = CHAT_BUBBLE_FONT_SIZE_INT + 10
