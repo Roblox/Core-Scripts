@@ -644,48 +644,13 @@ local function MakeSlot(parent, index)
 		end
 	end
 
+
 	do -- Dragging Logic
 		local startPoint = SlotFrame.Position
 		local lastUpTime = 0
 		local startParent = nil
 
-		SlotFrame.DragBegin:connect(function(dragPoint)
-			Dragging[SlotFrame] = true
-			startPoint = dragPoint
-
-			SlotFrame.BorderSizePixel = 2
-
-			-- Raise above other slots
-			SlotFrame.ZIndex = 2
-			ToolIcon.ZIndex = 2
-			ToolName.ZIndex = 2
-			if SlotNumber then
-				SlotNumber.ZIndex = 2
-			end
-			if HighlightFrame then
-				HighlightFrame.ZIndex = 2
-				for _, child in pairs(HighlightFrame:GetChildren()) do
-					child.ZIndex = 2
-				end
-			end
-
-			-- Circumvent the ScrollingFrame's ClipsDescendants property
-			startParent = SlotFrame.Parent
-			if startParent == UIGridFrame then
-				local oldAbsolutPos = SlotFrame.AbsolutePosition
-				local newPosition = UDim2.new(0, SlotFrame.AbsolutePosition.X - InventoryFrame.AbsolutePosition.X, 0, SlotFrame.AbsolutePosition.Y - InventoryFrame.AbsolutePosition.Y)
-				SlotFrame.Parent = InventoryFrame
-				SlotFrame.Position = newPosition
-
-				FakeSlotFrame = NewGui('Frame', 'FakeSlot')
-				FakeSlotFrame.LayoutOrder = SlotFrame.LayoutOrder
-				FakeSlotFrame.Size = SlotFrame.Size
-				FakeSlotFrame.BackgroundTransparency = 1
-				FakeSlotFrame.Parent = UIGridFrame
-			end
-		end)
-
-		SlotFrame.DragStopped:connect(function(x, y)
+		function slot:DraggingStopped(x, y)
 			if FakeSlotFrame then
 				FakeSlotFrame:Destroy()
 			end
@@ -772,6 +737,46 @@ local function MakeSlot(parent, index)
 			end
 
 			lastUpTime = now
+		end
+	
+		SlotFrame.DragBegin:connect(function(dragPoint)
+			Dragging[SlotFrame] = true
+			startPoint = dragPoint
+
+			SlotFrame.BorderSizePixel = 2
+
+			-- Raise above other slots
+			SlotFrame.ZIndex = 2
+			ToolIcon.ZIndex = 2
+			ToolName.ZIndex = 2
+			if SlotNumber then
+				SlotNumber.ZIndex = 2
+			end
+			if HighlightFrame then
+				HighlightFrame.ZIndex = 2
+				for _, child in pairs(HighlightFrame:GetChildren()) do
+					child.ZIndex = 2
+				end
+			end
+
+			-- Circumvent the ScrollingFrame's ClipsDescendants property
+			startParent = SlotFrame.Parent
+			if startParent == UIGridFrame then
+				local oldAbsolutPos = SlotFrame.AbsolutePosition
+				local newPosition = UDim2.new(0, SlotFrame.AbsolutePosition.X - InventoryFrame.AbsolutePosition.X, 0, SlotFrame.AbsolutePosition.Y - InventoryFrame.AbsolutePosition.Y)
+				SlotFrame.Parent = InventoryFrame
+				SlotFrame.Position = newPosition
+
+				FakeSlotFrame = NewGui('Frame', 'FakeSlot')
+				FakeSlotFrame.LayoutOrder = SlotFrame.LayoutOrder
+				FakeSlotFrame.Size = SlotFrame.Size
+				FakeSlotFrame.BackgroundTransparency = 1
+				FakeSlotFrame.Parent = UIGridFrame
+			end
+		end)
+
+		SlotFrame.DragStopped:connect(function(x, y)
+				slot:DraggingStopped(x, y)
 		end)
 	end
 
@@ -929,9 +934,11 @@ local function OnChildRemoved(child) -- From Character or Backpack
 	end
 
 	local slot = SlotsByTool[tool]
+	
 	if slot then
 		slot:Clear()
 		if slot.Index > NumberOfHotbarSlots then -- Inventory slot
+			slot:DraggingStopped(0, 0)
 			slot:Delete()
 		elseif not InventoryFrame.Visible then
 			AdjustHotbarFrames()
