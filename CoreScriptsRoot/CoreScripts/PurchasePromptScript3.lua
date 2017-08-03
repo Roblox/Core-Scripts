@@ -943,9 +943,10 @@ local function onPromptEnded(isSuccess)
 	closePurchaseDialog()
 	if IsPurchasingConsumable then
 		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.UserId, PurchaseData.ProductId, didPurchase)
-	else
-		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, didPurchase)
 	end
+	
+	MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, didPurchase)
+
 	clearPurchaseData()
 	enableControllerMovement()
 	disableControllerInput()
