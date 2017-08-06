@@ -26,7 +26,7 @@ local GuiService = game:GetService('GuiService')
 local isTenFootInterface = GuiService:IsTenFootInterface()
 
 --[[ Modules ]]--
-local MemoryAnalyzerClass = require(CoreGui.RobloxGui.Modules.Stats.MemoryAnalyzer)
+local MemoryAnalyzerClass = require(RobloxGui.Modules.Stats.MemoryAnalyzer)
 
 
 -- Eye candy uses RenderStepped
