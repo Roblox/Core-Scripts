@@ -69,12 +69,6 @@ local GameSettings = Settings.GameSettings
 local playerDropDownEnabledSuccess, playerDropDownEnabledFlagValue = pcall(function() return settings():GetFFlag("PlayerDropDownEnabled") end)
 local IsPlayerDropDownEnabled = playerDropDownEnabledSuccess and playerDropDownEnabledFlagValue
 
-local getDisableChatBarSuccess, disableChatBarValue = pcall(function() return settings():GetFFlag("SetCoreDisableChatBar") end)
-local allowDisableChatBar = getDisableChatBarSuccess and disableChatBarValue
-
-local chatLayoutChangeSuccess,chatLayoutChangeValue = pcall(function() return settings():GetFFlag("ChatLayoutChange") end) -- remember to make a new fflag
-local allowChatLayoutChange = chatLayoutChangeSuccess and chatLayoutChangeValue
-
 --[[ SCRIPT VARIABLES ]]
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
@@ -1755,9 +1749,7 @@ local function CreateChatWindowWidget(settings)
             this.MessageContainer.Size.X.Offset,
             0,
             ySize)
-          if not allowChatLayoutChange then
-            this.MessageContainer.Position = UDim2.new(0, 0, 1, -this.MessageContainer.Size.Y.Offset)
-          end
+          this.MessageContainer.Position = UDim2.new(0, 0, 1, -this.MessageContainer.Size.Y.Offset)
           this.ScrollingFrame.CanvasSize = UDim2.new(this.ScrollingFrame.CanvasSize.X.Scale, this.ScrollingFrame.CanvasSize.X.Offset, this.ScrollingFrame.CanvasSize.Y.Scale, ySize)
         end
       end
@@ -1883,9 +1875,6 @@ local function CreateChatWindowWidget(settings)
           if guiObj then
             local ySize = guiObj.Size.Y.Offset
             this.ScrollingFrame.CanvasSize = this.ScrollingFrame.CanvasSize - UDim2.new(0,0,0,ySize)
-            if allowChatLayoutChange then
-              this.MessageContainer.Position = this.MessageContainer.Position - UDim2.new(0,0,0,ySize)
-            end
             -- Clamp the canvasposition
             this:SetCanvasPosition(this.ScrollingFrame.CanvasPosition)
             guiObj.Parent = nil
@@ -1975,7 +1964,7 @@ local function CreateChatWindowWidget(settings)
     {
       Name = 'MessageContainer';
       Size = UDim2.new(1, -SCROLLBAR_THICKNESS - 1, 0, 0);
-      Position = allowChatLayoutChange and UDim2.new(0, 0, 0, 0) or UDim2.new(0, 0, 1, 0);
+      Position = UDim2.new(0, 0, 1, 0);
       ZIndex = 1;
       BackgroundColor3 = Color3.new(0, 0, 0);
       BackgroundTransparency = 1;
@@ -1983,10 +1972,8 @@ local function CreateChatWindowWidget(settings)
     };
 
     local function OnChatWindowResize(prop)
-      if not allowChatLayoutChange then
-        if prop == 'AbsoluteSize' then
-          messageContainer.Position = UDim2.new(0, 0, 1, -messageContainer.Size.Y.Offset)
-        end
+      if prop == 'AbsoluteSize' then
+        messageContainer.Position = UDim2.new(0, 0, 1, -messageContainer.Size.Y.Offset)
       end
       if prop == 'CanvasPosition' then
         if this.ScrollingFrame then
@@ -2398,9 +2385,7 @@ local function CreateChat()
       if Util.IsTouchDevice() then
         this.ChatWindowWidget:AddSystemChatMessage("Please press the '...' icon to chat", true)
       end
-      if not allowChatLayoutChange then
-        this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
-      end
+      this.ChatWindowWidget:AddSystemChatMessage("Please chat '/?' for a list of commands", true)
     end
   end
 
@@ -2722,20 +2707,16 @@ local function CreateChat()
           end
         end)
 
-      if allowDisableChatBar then
-        StarterGui:RegisterSetCore("ChatBarDisabled", 	function(value)
-            if this.ChatBarWidget then
-              if type(value) == "boolean" then
-                chatBarDisabled = value
-                if value == true then
-                  this.ChatBarWidget:ToggleVisibility(false)
-                end
+      StarterGui:RegisterSetCore("ChatBarDisabled", 	function(value)
+          if this.ChatBarWidget then
+            if type(value) == "boolean" then
+              chatBarDisabled = value
+              if value == true then
+                this.ChatBarWidget:ToggleVisibility(false)
               end
             end
-          end)
-      else
-        StarterGui:RegisterSetCore("ChatBarDisabled", 	function() end)
-      end
+          end
+        end)
 
       StarterGui:RegisterGetCore("ChatBarDisabled", function() return chatBarDisabled end)
     end

@@ -12,9 +12,6 @@ local GuiService = game:GetService("GuiService")
 local VRServiceExists, VRService = pcall(function() return game:GetService("VRService") end)
 local Utility = require(RobloxGui.Modules.Settings.Utility) --todo: use common utility module when it's done
 
-local getRaycastWhitelistSuccess, getRaycastWhitelistEnabled = pcall(function() return settings():GetFFlag("EnableGetHitWhitelist") end)
-local isRaycastWhitelistEnabled = getRaycastWhitelistSuccess and getRaycastWhitelistEnabled
-
 local getTestControlSchemesSuccess, getTestControlSchemesEnabled = pcall(function() return settings():GetFFlag("VRTestControlSchemes") end)
 local areTestControlSchemesEnabled = getTestControlSchemesSuccess and getTestControlSchemesEnabled
 
@@ -712,11 +709,8 @@ do --Laser/teleport functions
 	function LaserPointer:checkHeadMountedTeleportMode(originPos, originLook)
 		local ray = Ray.new(originPos, originLook * 999)
 		local hitPart = nil
-		if isRaycastWhitelistEnabled then
-			hitPart = workspace:FindPartOnRayWithWhitelist(ray, { GuiService.CoreGuiFolder })
-		else
-			hitPart = workspace:FindPartOnRayWithIgnoreList(ray, { LocalPlayer.Character })
-		end
+        hitPart = workspace:FindPartOnRayWithWhitelist(ray, { GuiService.CoreGuiFolder })
+
 		if hitPart and self:shouldShowLaser() then
 			self:setTeleportMode(false)
 			self:tweenLaserLength(1)

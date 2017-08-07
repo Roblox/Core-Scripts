@@ -83,6 +83,11 @@ function methods:CreateGuiObjects(targetParent)
 	ChatResizerFrame.Visible = false
 	ChatResizerFrame.BackgroundColor3 = ChatSettings.BackGroundColor
 	ChatResizerFrame.Active = true
+	if bubbleChatOnly() then
+		ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 0, 0)
+	else
+		ChatResizerFrame.Position = UDim2.new(1, -ChatResizerFrame.AbsoluteSize.X, 1, -ChatResizerFrame.AbsoluteSize.Y)
+	end
 	ChatResizerFrame.Parent = BaseFrame
 
 	local ResizeIcon = Instance.new("ImageLabel")

@@ -5,14 +5,14 @@
 		// Written by: jeditkacheff/jmargh
 		// Description: Handles in game purchases
 ]]--
-local vrPurchasePromptsEnabledSuccess, vrPurchasePromptsEnabled = pcall(function() return settings():GetFFlag("VRPurchasePromptsEnabled") end)
-vrPurchasePromptsEnabled = vrPurchasePromptsEnabled and vrPurchasePromptsEnabledSuccess
-if vrPurchasePromptsEnabled then
-	return --Don't enable this file if the VR Purchase Prompts flag is ON
-end
-
 local success, result = pcall(function() return settings():GetFFlag('UsePurchasePromptLocalization') end)
 local FFlagUsePurchasePromptLocalization = success and result
+
+local FFlagEnableNewGamePassEndpoints do
+	local success, result = pcall(function() return settings():GetFFlag"EnableGamePassFunctions" end)
+	FFlagEnableNewGamePassEndpoints = success and result
+end
+
 local function LocalizedGetString(key, rtv)
 	pcall(function()
 		local LocalizationService = game:GetService("LocalizationService")
@@ -46,6 +46,7 @@ local IsNativePurchasing = platform == Enum.Platform.XBoxOne or
 local IsCurrentlyPrompting = false
 local IsCurrentlyPurchasing = false
 local IsPurchasingConsumable = false
+local IsPurchasingGamePass = false
 local IsCheckingPlayerFunds = false
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
 local TenFootInterface = require(RobloxGui.Modules.TenFootInterface)
@@ -202,6 +203,9 @@ local ASSET_TO_STRING = {
 	[53] = "Run Animation";
 	[54] = "Swim Animation";
 	[55] = "Walk Animation";
+	[56] = "Pose Animation";
+	[57] = "Ear Accessory";
+	[58] = "Eye Accessory";
 	[0]  = "Product";
 	-- NOTE: GamePass and Plugin AssetTypeIds are now in sync on ST1, ST2 and ST3
 }
@@ -232,7 +236,7 @@ local function lerp( start, finish, t)
 end
 
 local function formatNumber(value)
-	return tostring(value):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", "")
+	return tostring(tostring(value):reverse():gsub("%d%d%d", "%1,"):reverse():gsub("^,", ""))
 end
 
 --[[ Gui Creation Functions ]]--
@@ -286,9 +290,20 @@ local function createImageButtonWithText(name, position, image, imageDown, text,
 	imageButton.ZIndex = 8
 	imageButton.Modal = true
 
-	local textLabel = createTextLabel(name.."Text", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), font, isTenFootInterface and largeFont or Enum.FontSize.Size24, text)
-	textLabel.ZIndex = 9
-	textLabel.Parent = imageButton
+	local textLabel = nil
+	if FFlagUsePurchasePromptLocalization then
+		textLabel = createTextLabel(name.."Text", UDim2.new(0.6, 0, 0.8, 0), UDim2.new(0.2, 0, 0.1, 0), font, isTenFootInterface and largeFont or Enum.FontSize.Size24, text)
+		textLabel.ZIndex = 9
+		textLabel.Parent = imageButton
+		textLabel.TextScaled = true
+		textLabel.TextWrapped = true
+		local textSizeConstraint = Instance.new("UITextSizeConstraint",textLabel)
+		textSizeConstraint.MaxTextSize = textLabel.TextSize
+	else
+		textLabel = createTextLabel(name.."Text", UDim2.new(1, 0, 1, 0), UDim2.new(0, 0, 0, 0), font, isTenFootInterface and largeFont or Enum.FontSize.Size24, text)
+		textLabel.ZIndex = 9
+		textLabel.Parent = imageButton
+	end
 
 	imageButton.MouseEnter:connect(function()
 		imageButton.Image = imageDown
@@ -361,18 +376,31 @@ PurchaseDialog.Parent = RobloxGui
 		local BuyButton = createImageButtonWithText("BuyButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Buy Now", Enum.Font.SourceSansBold)
 		BuyButton.Parent = ContainerFrame
 		local BuyButtonText = BuyButton:FindFirstChild("BuyButtonText")
-
+		
 		local gamepadButtonXLocation = (BuyButton.AbsoluteSize.X/2 - BuyButtonText.TextBounds.X/2)/2
 		local buyButtonGamepadImage = Instance.new("ImageLabel")
-		buyButtonGamepadImage.BackgroundTransparency = 1
-		buyButtonGamepadImage.Image = A_BUTTON
-		buyButtonGamepadImage.Size = UDim2.new(1, -8, 1, -8)
-		buyButtonGamepadImage.SizeConstraint = Enum.SizeConstraint.RelativeYY
-		buyButtonGamepadImage.Parent = BuyButton
-		buyButtonGamepadImage.Position = UDim2.new(0, gamepadButtonXLocation - buyButtonGamepadImage.AbsoluteSize.X/2, 0, 5)
-		buyButtonGamepadImage.Visible = false
-		buyButtonGamepadImage.ZIndex = BuyButton.ZIndex
-		table.insert(GAMEPAD_BUTTONS, buyButtonGamepadImage)
+		if FFlagUsePurchasePromptLocalization then
+			buyButtonGamepadImage.BackgroundTransparency = 1
+			buyButtonGamepadImage.Image = A_BUTTON
+			buyButtonGamepadImage.Size = UDim2.new(0.75, -8, 0.75, -8)
+			buyButtonGamepadImage.SizeConstraint = Enum.SizeConstraint.RelativeYY
+			buyButtonGamepadImage.Parent = BuyButton
+			buyButtonGamepadImage.Position = UDim2.new(0, buyButtonGamepadImage.AbsoluteSize.x * 0.65, 0.5, 0)
+			buyButtonGamepadImage.AnchorPoint = Vector2.new(0.5,0.5)
+			buyButtonGamepadImage.Visible = false
+			buyButtonGamepadImage.ZIndex = BuyButton.ZIndex
+			table.insert(GAMEPAD_BUTTONS, buyButtonGamepadImage)
+		else
+			buyButtonGamepadImage.BackgroundTransparency = 1
+			buyButtonGamepadImage.Image = A_BUTTON
+			buyButtonGamepadImage.Size = UDim2.new(1, -8, 1, -8)
+			buyButtonGamepadImage.SizeConstraint = Enum.SizeConstraint.RelativeYY
+			buyButtonGamepadImage.Parent = BuyButton
+			buyButtonGamepadImage.Position = UDim2.new(0, gamepadButtonXLocation - buyButtonGamepadImage.AbsoluteSize.X/2, 0, 5)
+			buyButtonGamepadImage.Visible = false
+			buyButtonGamepadImage.ZIndex = BuyButton.ZIndex
+			table.insert(GAMEPAD_BUTTONS, buyButtonGamepadImage)
+		end
 
 		local CancelButton = createImageButtonWithText("CancelButton", isTenFootInterface and BTN_R_POS_TENFOOT or BTN_R_POS, BUTTON_RIGHT, BUTTON_RIGHT_DOWN, "Cancel", Enum.Font.SourceSans)
 		CancelButton.Parent = ContainerFrame
@@ -464,13 +492,18 @@ local function getCurrencyString(currencyType)
 	return currencyType == Enum.CurrencyType.Tix and "Tix" or "R$"
 end
 
-local function setInitialPurchaseData(assetId, productId, currencyType, equipOnPurchase)
+local function setInitialPurchaseData(assetId, productId, gamePassId, currencyType, equipOnPurchase)
 	PurchaseData.AssetId = assetId
 	PurchaseData.ProductId = productId
+	PurchaseData.GamePassId = gamePassId
 	PurchaseData.CurrencyType = currencyType
 	PurchaseData.EquipOnPurchase = equipOnPurchase
 
 	IsPurchasingConsumable = productId ~= nil
+	
+	if FFlagEnableNewGamePassEndpoints then
+		IsPurchasingGamePass = gamePassId ~= nil
+	end
 end
 
 local function setCurrencyData(playerBalance)
@@ -677,7 +710,7 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 		PostBalanceText.Text = "This item requires "..BC_LVL_TO_STRING[neededBcLevel]..".\nClick 'Upgrade' to upgrade your Builders Club!"
 		if FFlagUsePurchasePromptLocalization then
 			PostBalanceText.Text = LocalizedGetString("PurchasePromptScript.setPurchaseDataInGui.invalidBC",PostBalanceText.Text)
-			PostBalanceText.Text = string.gsub(PostBalanceText.Text, "{RBX_NAME}", BC_LVL_TO_STRING[neededBcLevel])
+			PostBalanceText.Text = string.gsub(PostBalanceText.Text, "{RBX_NAME1}", BC_LVL_TO_STRING[neededBcLevel])
 		end
 		purchaseState = PURCHASE_STATE.BUYBC
 		setButtonsVisible(BuyBCButton, CancelButton)
@@ -946,6 +979,8 @@ local function onPromptEnded(isSuccess)
 	closePurchaseDialog()
 	if IsPurchasingConsumable then
 		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.UserId, PurchaseData.ProductId, didPurchase)
+	elseif IsPurchasingGamePass then
+		MarketplaceService:SignalPromptGamePassPurchaseFinished(Players.LocalPlayer, PurchaseData.GamePassId, didPurchase)
 	else
 		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer, PurchaseData.AssetId, didPurchase)
 	end
@@ -990,7 +1025,8 @@ end
 local function isMarketplaceAvailable()
 	local success, result = pcall(function()
 		return HttpRbxApiService:GetAsync("my/economy-status",
-			Enum.ThrottlingPriority.Extreme)
+			Enum.ThrottlingPriority.Extreme,
+            Enum.HttpRequestType.MarketplaceService)
 	end)
 	if not success then
 		print("PurchasePromptScript: isMarketplaceAvailable() failed because", result)
@@ -1011,6 +1047,10 @@ local function getProductInfo()
 		success, result = pcall(function()
 			return MarketplaceService:GetProductInfo(PurchaseData.ProductId, Enum.InfoType.Product)
 		end)
+	elseif IsPurchasingGamePass then
+		success, result = pcall(function()
+			return MarketplaceService:GetProductInfo(PurchaseData.GamePassId, Enum.InfoType.GamePass)
+		end)
 	else
 		success, result = pcall(function()
 			return MarketplaceService:GetProductInfo(PurchaseData.AssetId)
@@ -1029,10 +1069,32 @@ local function getProductInfo()
 	return result
 end
 
+local function doesPlayerOwnGamePass()
+	if (not PurchaseData.GamePassId) or (PurchaseData.GamePassId <= 0) then
+		return false, nil
+	end
+	
+	local success, result = pcall(function()
+		local gamePassService = game:GetService("GamePassService")
+		return gamePassService:PlayerHasPass(game.Players.LocalPlayer, PurchaseData.GamePassId)
+	end)
+	
+	if not success then
+		print("PurchasePromptScript: doesPlayerOwnGamePass() failed because", result)
+		return false, nil
+	end
+	
+	return true, (result == true) or (result == "true")
+end
+
 -- returns success, doesOwnItem
 local function doesPlayerOwnItem()
 	if not PurchaseData.AssetId or PurchaseData.AssetId <= 0 then
-		return false, nil
+		if PurchaseData.GamePassId then
+			return doesPlayerOwnGamePass()
+		else
+			return false, nil
+		end
 	end
 
 	local success, result = pcall(function()
@@ -1073,7 +1135,9 @@ else
 		local apiPath = platform == Enum.Platform.XBoxOne and 'my/platform-currency-budget' or 'currency/balance'
 
 		local success, result = pcall(function()
-			return HttpRbxApiService:GetAsync(apiPath)
+			return HttpRbxApiService:GetAsync(apiPath, 
+                Enum.ThrottlingPriority.Default, 
+                Enum.HttpRequestType.MarketplaceService)
 		end)
 
 		if not success then
@@ -1394,7 +1458,9 @@ local function onAcceptPurchase()
 		end
 	else
 		submitPurchase = function()
-			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+			return HttpRbxApiService:PostAsync(apiPath, params, 
+                Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded,
+                Enum.HttpRequestType.MarketplaceService)
 		end
 	end
 
@@ -1459,6 +1525,9 @@ local function onAcceptPurchase()
 			return
 		end
 		MarketplaceService:SignalClientPurchaseSuccess(tostring(result["receipt"]), Players.LocalPlayer.UserId, productId)
+	elseif IsPurchasingGamePass then
+		onPurchaseSuccess()
+		MarketplaceService:ReportAssetSale(PurchaseData.GamePassId, PurchaseData.CurrencyAmount)
 	else
 		onPurchaseSuccess()
 		if PurchaseData.CurrencyType == Enum.CurrencyType.Robux then
@@ -1468,10 +1537,10 @@ local function onAcceptPurchase()
 end
 
 -- main entry point
-local function onPurchasePrompt(player, assetId, equipIfPurchased, currencyType, productId)
+local function onPurchasePrompt(player, assetId, equipIfPurchased, currencyType, productId, gamePassId)
 	if player == Players.LocalPlayer and not IsCurrentlyPrompting then
 		IsCurrentlyPrompting = true
-		setInitialPurchaseData(assetId, productId, currencyType, equipIfPurchased)
+		setInitialPurchaseData(assetId, productId, gamePassId, currencyType, equipIfPurchased)
 		if canPurchase() then
 			showPurchasePrompt()
 		end
@@ -1678,6 +1747,9 @@ MarketplaceService.PromptProductPurchaseRequested:connect(function(player, produ
 end)
 MarketplaceService.PromptPurchaseRequested:connect(function(player, assetId, equipIfPurchased, currencyType)
 	onPurchasePrompt(player, assetId, equipIfPurchased, currencyType, nil)
+end)
+MarketplaceService.PromptGamePassPurchaseRequested:connect(function(player, gamePassId)
+	onPurchasePrompt(player, nil, false, Enum.CurrencyType.Default, nil, gamePassId)
 end)
 MarketplaceService.ServerPurchaseVerification:connect(function(serverResponseTable)
 	if not serverResponseTable then

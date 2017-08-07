@@ -1,18 +1,18 @@
 --[[
-  Filename: MemoryAnalyzer.lua
+  Filename: BaseMemoryAnalyzer.lua
   Written by: dbanks
-  Description: Widget to display a table of who's-using-how-much-memory
+  Description: Base class for a widget that displays data about memory usage.
 --]]
 
+
 --[[ Globals ]]--
-local RowHeight = 30
+local RowHeight = 20
 local ValueWidthInPix = 100
 local StdRowColor3 = Color3.new(0.25, 0.75, 0.75)
 local AltRowColor3 = Color3.new(0.25, 0.25, 0.75)
 local RowLabelTextColor3 = Color3.new(1, 1, 1)
 local RowLabelBorderColor3 = Color3.new(1, 1, 1)
 local RowLabelBorderWidth = 1
-
 
 local LabelUDim2Position = UDim2.new(0, 0, 0, 0)
 local LabelUDim2Size = UDim2.new(1, -ValueWidthInPix, 0, RowHeight)
@@ -21,41 +21,8 @@ local ValueUDim2Size = UDim2.new(0, ValueWidthInPix, 0, RowHeight)
 
 --[[ Services ]]--
 local CoreGuiService = game:GetService('CoreGui')
-local StatsService = game:GetService("Stats")
-
---[[ Modules ]]--
-local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
 
 --[[ Helper functions ]]--
--- Read out the entire breakdown of memory data from performance
--- stats, in the form of an ordered array of {memory stat type, value}
--- pairs.
-function __GetMemoryTypeValuePairs()
-  local retVal = {}
-          
-  if StatsService == nil then
-    return retVal
-  end
-
-  local performanceStats = StatsService:FindFirstChild("PerformanceStats")
-  if performanceStats == nil then
-    return retVal
-  end  
-
-  local memoryStats = performanceStats:FindFirstChild("Memory")          
-  if memoryStats == nil then
-    return retVal
-  end
-  
-  local childen = memoryStats:GetChildren()
-  for i, child in ipairs(childen) do
-    local statType = child.Name
-    local statValue = child:GetValue()
-    table.insert(retVal, {statType, statValue})
-  end
-  
-  return retVal
-end
 
 function __StyleLabel(label)
   label.TextXAlignment = Enum.TextXAlignment.Left
@@ -83,7 +50,7 @@ local MemoryAnalyzerRowClass = {}
 MemoryAnalyzerRowClass.__index = MemoryAnalyzerRowClass
 
 
-function MemoryAnalyzerRowClass.new(statType) 
+function MemoryAnalyzerRowClass.new(statType, statLabel) 
   local self = {}
   setmetatable(self, MemoryAnalyzerRowClass)
       
@@ -105,7 +72,7 @@ function MemoryAnalyzerRowClass.new(statType)
   self._labelTextLabel.Parent = self._labelFrame
   __StyleLabel(self._labelTextLabel)
   
-  self._labelTextLabel.Text = StatsUtils.GetMemoryAnalyzerStatName(statType)
+  self._labelTextLabel.Text = statLabel
 
   -- The value
   self._valueFrame = Instance.new("Frame")
@@ -149,21 +116,22 @@ end
 
 --////////////////////////////////////
 --
--- MemoryAnalyzerClass
+-- BaseMemoryAnalyzerClass
 -- The whole table.
 --
 --////////////////////////////////////
-local MemoryAnalyzerClass = {}
-MemoryAnalyzerClass.__index = MemoryAnalyzerClass
+local BaseMemoryAnalyzerClass = {}
+BaseMemoryAnalyzerClass.__index = BaseMemoryAnalyzerClass
 
-function MemoryAnalyzerClass.new(parentFrame) 
+BaseMemoryAnalyzerClass.Indent = string.rep(" ", 4) 
+
+function BaseMemoryAnalyzerClass.new(parentFrame) 
   local self = {}
-  setmetatable(self, MemoryAnalyzerClass)
-      
+  setmetatable(self, BaseMemoryAnalyzerClass)
+  
   -- The gui widget containing the whole thing.
   self._frame = Instance.new("Frame")
   self._frame.Name = "MemoryAnalyzerClass"
-  self._frame.Parent = parentFrame
   self._frame.ZIndex = parentFrame.ZIndex
   self._frame.BackgroundTransparency = 1
 
@@ -173,9 +141,6 @@ function MemoryAnalyzerClass.new(parentFrame)
   -- ordered array of rows.
   self._orderedRows = {}
   
-  -- am I currently listening for updates?
-  self._listenForUpdates = false
-  
   -- things need to be laid out, either because I have new content or 
   -- the size of my parent container changed.
   -- Starts out as 'false' because there's no rows -> nothing to lay out.
@@ -184,16 +149,23 @@ function MemoryAnalyzerClass.new(parentFrame)
   self._heightChangedCallback = nil
   self._heightInPix = 0
   
+  self._frame.Parent = parentFrame
+
   return self
 end
 
-function MemoryAnalyzerClass:setHeightChangedCallback(callback)
+-- This needs to be overridden in derived classes.
+function BaseMemoryAnalyzerClass:getMemoryTypeNameValueTriplets()
+    return {}
+end
+
+function BaseMemoryAnalyzerClass:setHeightChangedCallback(callback)
   self._heightChangedCallback  = callback
 end
 
-function MemoryAnalyzerClass:__getOrMakeRowForStatType(statType) 
+function BaseMemoryAnalyzerClass:__getOrMakeRowForStatType(statType, statLabel) 
   if (self._rowsByStatType[statType] == nil) then
-    local row = MemoryAnalyzerRowClass.new(statType)
+    local row = MemoryAnalyzerRowClass.new(statType, statLabel)
     self._rowsByStatType[statType] = row
     table.insert(self._orderedRows, row)
     self._layoutDirty = true
@@ -201,16 +173,16 @@ function MemoryAnalyzerClass:__getOrMakeRowForStatType(statType)
   return self._rowsByStatType[statType]
 end
       
-function MemoryAnalyzerClass:__updateStatValue(statType, value) 
-  row = self:__getOrMakeRowForStatType(statType) 
+function BaseMemoryAnalyzerClass:__updateStatValue(statType, statLabel, value) 
+  row = self:__getOrMakeRowForStatType(statType, statLabel) 
   row:setRowValue(value)
 end
       
 -- Write latest stat values into each row.
-function MemoryAnalyzerClass:renderUpdates()
-  local typeValuePairs = __GetMemoryTypeValuePairs()
-  for i, pair in ipairs(typeValuePairs) do
-    self:__updateStatValue(pair[1], pair[2])
+function BaseMemoryAnalyzerClass:renderUpdates()
+  local typeNameValueTriplets = self:getMemoryTypeNameValueTriplets()
+  for i, triplet in ipairs(typeNameValueTriplets) do
+    self:__updateStatValue(triplet[1], triplet[2], triplet[3])
   end
   
   if self._layoutDirty then 
@@ -218,7 +190,7 @@ function MemoryAnalyzerClass:renderUpdates()
   end
 end
       
-function MemoryAnalyzerClass:__layoutRows()    
+function BaseMemoryAnalyzerClass:__layoutRows()    
   self._layoutDirty = false
   self._frame:ClearAllChildren()
   for i, row in ipairs(self._orderedRows) do 
@@ -239,29 +211,8 @@ function MemoryAnalyzerClass:__layoutRows()
   end
 end
 
-function MemoryAnalyzerClass:getHeightInPix()
+function BaseMemoryAnalyzerClass:getHeightInPix()
   return self._heightInPix
 end
-
--- Start a thread that wakes up every n seconds
--- and updates contents of stats widget.
-function MemoryAnalyzerClass:startListeningForUpdates()
-  if (self._listenForUpdates) then 
-    return
-  end
-  self._listenForUpdates = true
-  
-  spawn(function()
-    while(self._listenForUpdates) do 
-      self:renderUpdates()
-      wait(1)
-    end
-  end)
-end
-
--- Stop the thread that does the updates.
-function MemoryAnalyzerClass:stopListeningForUpdates()        
-  self._listenForUpdates = false
-end
       
-return MemoryAnalyzerClass
+return BaseMemoryAnalyzerClass

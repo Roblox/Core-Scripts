@@ -15,6 +15,19 @@ local GameSettings = Settings.GameSettings
 local TopbarConstants = require(CoreGuiService.RobloxGui.Modules.TopbarConstants)
 local StyleWidgets = require(CoreGuiService.RobloxGui.Modules.StyleWidgets)
 
+function LocalizedGetKey(key)
+  local rtv = key
+  pcall(function()
+		local LocalizationService = game:GetService("LocalizationService")
+		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+		rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
+	end)
+	return rtv
+end
+
+local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
+local FFlagUseNotificationsLocalization = success and result
+
 --[[ Classes ]]--
 local StatsUtils = {}
 
@@ -107,12 +120,22 @@ StatsUtils.StatMaxNames = {
 
 StatsUtils.NumButtonTypes = table.getn(StatsUtils.AllStatTypes)
 
+local strSentNetwork = ""
+local strReceivedNetwork = ""
+if FFlagUseNotificationsLocalization then
+  strSentNetwork = LocalizedGetKey("Sent") .. "\n" .. LocalizedGetKey("Network")
+  strReceivedNetwork = LocalizedGetKey("Received") .. "\n" .. LocalizedGetKey("Network")
+else
+  strSentNetwork = "Sent\n(Network)"
+  strReceivedNetwok = "Received\n(Network)"
+end
+
 StatsUtils.TypeToName = {
   [StatsUtils.StatType_Memory] = "Memory",
   [StatsUtils.StatType_CPU] = "CPU",
   [StatsUtils.StatType_GPU] = "GPU",
-  [StatsUtils.StatType_NetworkSent] = "Sent\n(Network)",
-  [StatsUtils.StatType_NetworkReceived] = "Received\n(Network)",
+  [StatsUtils.StatType_NetworkSent] = strSentNetwork,
+  [StatsUtils.StatType_NetworkReceived] = strReceivedNetwork,
   [StatsUtils.StatType_Physics] = "Physics",
 }
 
@@ -168,8 +191,29 @@ function StatsUtils.StyleButtonSelected(frame, isSelected)
   end
 end
 
-function StatsUtils.FormatTypedValue(value, statType)   
-  if statType == StatsUtils.StatType_Memory then 
+local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
+local FFlagUseNotificationsLocalization = success and result
+local function LocalizedGetString(key, rtv)
+	pcall(function()
+		local LocalizationService = game:GetService("LocalizationService")
+		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+		rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
+	end)
+	return rtv
+end
+
+function StatsUtils.FormatTypedValue(value, statType)
+  if FFlagUseNotificationsLocalization then
+    if statType == StatsUtils.StatType_CPU or statType == StatsUtils.StatType_GPU then 
+      return string.gsub(LocalizedGetString("StatsUtil.ms",string.format("%.2f MB", value)),"{RBX_NUMBER}",string.format("%.2f",value))
+    elseif statType == StatsUtils.StatType_PlaceMemory then
+      return string.gsub(LocalizedGetString("StatsUtil.MB",string.format("%.2f ms", value)),"{RBX_NUMBER}",string.format("%.2f",value))
+    elseif statType == StatsUtils.StatType_NetworkSent or statType == StatsUtils.StatType_NetworkReceived then
+      return string.gsub(LocalizedGetString("StatsUtil.KBps",string.format("%.2f KB/s", value)),"{RBX_NUMBER}",string.format("%.2f",value))
+    end
+  end
+  
+  if statType == StatsUtils.StatType_Memory then
     return string.format("%.2f MB", value)
   elseif statType == StatsUtils.StatType_CPU then
     return string.format("%.2f ms", value)

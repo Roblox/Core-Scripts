@@ -12,12 +12,32 @@ local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local PlayersService = game:GetService('Players')
 local StarterGui = game:GetService("StarterGui")
 
+--[[ Fast Flags ]]--
+local fixPlayerlistFollowingSuccess, fixPlayerlistFollowingFlagValue = pcall(function() return settings():GetFFlag("FixPlayerlistFollowing") end)
+local fixPlayerlistFollowingEnabled = fixPlayerlistFollowingSuccess and fixPlayerlistFollowingFlagValue
+
 --[[ Script Variables ]]--
 local LocalPlayer = PlayersService.LocalPlayer
 while not LocalPlayer do
 	PlayersService.PlayerAdded:wait()
 	LocalPlayer = PlayersService.LocalPlayer
 end
+
+local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
+local FFlagUseNotificationsLocalization = success and result
+local function LocalizedGetString(key, rtv)
+	pcall(function()
+		local LocalizationService = game:GetService("LocalizationService")
+		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+		rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
+	end)
+	return rtv
+end
+
+local recentApiRequests = -- stores requests for target players by userId
+{
+	Following = {};
+}
 
 --[[ Constants ]]--
 local POPUP_ENTRY_SIZE_Y = 24
@@ -117,7 +137,8 @@ local function getFriendCountAsync(userId)
 		if userId then
 			str = str..'?userId='..tostring(userId)
 		end
-		return HttpRbxApiService:GetAsync(str)
+		return HttpRbxApiService:GetAsync(str, Enum.ThrottlingPriority.Default,
+            Enum.HttpRequestType.Players)
 	end)
 	if not wasSuccess then
 		print("getFriendCountAsync() failed because", result)
@@ -160,11 +181,21 @@ local function isFollowing(userId, followerUserId)
 	local apiPath = "user/following-exists?userId="
 	local params = userId.."&followerUserId="..followerUserId
 	local success, result = pcall(function()
-		return HttpRbxApiService:GetAsync(apiPath..params)
+		return HttpRbxApiService:GetAsync(apiPath..params,
+            Enum.ThrottlingPriority.Default, Enum.HttpRequestType.Players)
 	end)
 	if not success then
 		print("isFollowing() failed because", result)
 		return false
+	else
+		if fixPlayerlistFollowingEnabled then
+			-- check to make sure the result isn't cached by checking the most recent response
+			if followerUserId == LocalPlayer.UserId then
+				if recentApiRequests["Following"][tostring(userId)] ~= nil then
+					return recentApiRequests["Following"][tostring(userId)]
+				end
+			end
+		end
 	end
 
 	-- can now parse web response
@@ -182,7 +213,8 @@ local function GetBlockedPlayersAsync()
 	if userId > 0 then
 		local blockList = nil
 		local success, msg = pcall(function()
-			local request = HttpRbxApiService:GetAsync(apiPath)
+			local request = HttpRbxApiService:GetAsync(apiPath,
+                Enum.ThrottlingPriority.Default, Enum.HttpRequestType.Players)
 			blockList = request and game:GetService('HttpService'):JSONDecode(request)
 		end)
 		if blockList and blockList['success'] == true and blockList['userList'] then
@@ -247,8 +279,11 @@ local function BlockPlayerAsync(playerToBlock)
 				BlockedList[blockUserId] = true
 				BlockStatusChanged:fire(blockUserId, true)
 				local success, wasBlocked = pcall(function()
-					local playerBlocked = LocalPlayer:BlockUser(playerToBlock)
-					return playerBlocked
+					local apiPath = "userblock/block"
+					local params = "userId=" ..tostring(playerToBlock.UserId)
+					local request = HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+					response = request and game:GetService('HttpService'):JSONDecode(request)
+					return response and response.success
 				end)
 				return success and wasBlocked
 			else
@@ -267,8 +302,11 @@ local function UnblockPlayerAsync(playerToUnblock)
 			BlockedList[unblockUserId] = nil
 			BlockStatusChanged:fire(unblockUserId, false)
 			local success, wasUnBlocked = pcall(function()
-				local playerUnblocked = LocalPlayer:UnblockUser(playerToUnblock)
-				return playerUnblocked
+				local apiPath = "userblock/unblock"
+				local params = "userId=" ..tostring(playerToUnblock.UserId)
+				local request = HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+				response = request and game:GetService('HttpService'):JSONDecode(request)
+				return response and response.success
 			end)
 			return success and wasUnBlocked
 		else
@@ -346,10 +384,12 @@ function createPlayerDropDown()
 	local function onUnfollowButtonPressed()
 		if not playerDropDown.Player then return end
 		--
+		local followedUserId = tostring(playerDropDown.Player.UserId)
 		local apiPath = "user/unfollow"
-		local params = "followedUserId="..tostring(playerDropDown.Player.UserId)
+		local params = "followedUserId="..followedUserId
 		local success, result = pcall(function()
-			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default,
+                Enum.HttpContentType.ApplicationUrlEncoded, Enum.HttpRequestType.Players)
 		end)
 		if not success then
 			print("unfollowPlayer() failed because", result)
@@ -359,6 +399,14 @@ function createPlayerDropDown()
 
 		result = HttpService:JSONDecode(result)
 		if result["success"] then
+			if fixPlayerlistFollowingEnabled then
+				recentApiRequests["Following"][followedUserId] = false
+				local text = "no longer following "..playerDropDown.Player.Name
+				if FFlagUseNotificationsLocalization then
+					text = string.gsub(LocalizedGetString("PlayerDropDown.onUnfollowButtonPress.success",text),"{RBX_NAME}",playerDropDown.Player.Name)
+				end
+				sendNotification("You are", text, FRIEND_IMAGE..followedUserId.."&x=48&y=48", 5, function() end)
+			end
 			if RemoteEvent_NewFollower then
 				RemoteEvent_NewFollower:FireServer(playerDropDown.Player, false)
 			end
@@ -366,7 +414,6 @@ function createPlayerDropDown()
 		end
 
 		playerDropDown:Hide()
-		-- no need to send notification when someone unfollows
 	end
 
 	local function onBlockButtonPressed()
@@ -404,7 +451,8 @@ function createPlayerDropDown()
 		local apiPath = "user/follow"
 		local params = "followedUserId="..followedUserId
 		local success, result = pcall(function()
-			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded)
+			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default,
+                Enum.HttpContentType.ApplicationUrlEncoded, Enum.HttpRequestType.Players)
 		end)
 		if not success then
 			print("followPlayer() failed because", result)
@@ -414,7 +462,14 @@ function createPlayerDropDown()
 
 		result = HttpService:JSONDecode(result)
 		if result["success"] then
-			sendNotification("You are", "now following "..playerDropDown.Player.Name, FRIEND_IMAGE..followedUserId.."&x=48&y=48", 5, function() end)
+			if fixPlayerlistFollowingEnabled then
+				recentApiRequests["Following"][followedUserId] = true
+			end
+			local text = "now following "..playerDropDown.Player.Name
+			if FFlagUseNotificationsLocalization then
+				text = string.gsub(LocalizedGetString("PlayerDropDown.onFollowButtonPress.success",text),"{RBX_NAME}",playerDropDown.Player.Name)
+			end
+			sendNotification("You are", text, FRIEND_IMAGE..followedUserId.."&x=48&y=48", 5, function() end)
 			if RemoteEvent_NewFollower then
 				RemoteEvent_NewFollower:FireServer(playerDropDown.Player, true)
 			end

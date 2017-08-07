@@ -8,6 +8,14 @@ local modulesFolder = script.Parent
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
+local function ShallowCopy(table)
+	local copy = {}
+	for i, v in pairs(table) do
+		copy[i] = v
+	end
+	return copy
+end
+
 local methods = {}
 methods.__index = methods
 
@@ -181,6 +189,38 @@ function methods:InternalSendFilteredMessage(messageObj, channelName)
 	end)
 	if not success and err then
 		print("Error sending internal filtered message: " ..err)
+	end
+end
+
+--// This method is to be used with the new filter API. This method takes the 
+--// TextFilterResult objects and converts them into the appropriate string
+--// messages for each player.
+function methods:InternalSendFilteredMessageWithFilterResult(inMessageObj, channelName)
+	local messageObj = ShallowCopy(inMessageObj)
+
+	local oldFilterResult = messageObj.FilterResult
+	local player = self:GetPlayer()
+
+	local msg = ""
+	pcall(function()
+		if (messageObj.IsFilterResult) then
+			if (player) then
+				msg = oldFilterResult:GetChatForUserAsync(player.UserId)
+			else
+				msg = oldFilterResult:GetNonChatStringForBroadcastAsync()
+			end
+		else
+			msg = oldFilterResult
+		end
+	end)
+
+	--// Messages of 0 length are the result of two users not being allowed
+	--// to chat, or GetChatForUserAsync() failing. In both of these situations,
+	--// messages with length of 0 should not be sent.
+	if (#msg > 0) then
+		messageObj.Message = msg
+		messageObj.FilterResult = nil
+		self:InternalSendFilteredMessage(messageObj, channelName)
 	end
 end
 

@@ -9,6 +9,10 @@ local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
 local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
 
+local ChatLocalization = nil
+pcall(function() ChatLocalization = require(game:GetService("Chat").ClientChatModules.ChatLocalization) end)
+if ChatLocalization == nil then ChatLocalization = {} function ChatLocalization:Get(key,default) return default end end
+
 local FriendMessageTextColor = Color3.fromRGB(255, 255, 255)
 local FriendMessageExtraData = {ChatColor = FriendMessageTextColor}
 
@@ -24,7 +28,18 @@ local function Run(ChatService)
 	local function SendFriendJoinNotification(player, joinedFriend)
 		local speakerObj = ChatService:GetSpeaker(player.Name)
 		if speakerObj then
-			speakerObj:SendSystemMessage(string.format("Your friend %s has joined the game.", joinedFriend.Name), "System", FriendMessageExtraData)
+			speakerObj:SendSystemMessage(
+				string.gsub(
+					ChatLocalization:Get(
+						"GameChat_FriendChatNotifier_JoinMessage",
+						string.format("Your friend %s has joined the game.", joinedFriend.Name)
+					),
+					"{RBX_NAME}",
+					joinedFriend.Name
+				),
+				"System",
+				FriendMessageExtraData
+			)
 		end
 	end
 

@@ -2,6 +2,15 @@
 --	// Written by: Xsitsu
 --	// Description: A representation of one channel that speakers can chat in.
 
+local forceNewFilterAPI = false
+local IN_GAME_CHAT_USE_NEW_FILTER_API
+do
+	local textServiceExists = (game:GetService("TextService") ~= nil)
+	local success, enabled = pcall(function() return UserSettings():IsUserFeatureEnabled("UserInGameChatUseNewFilterAPI") end)
+	local flagEnabled = (success and enabled)
+	IN_GAME_CHAT_USE_NEW_FILTER_API = (forceNewFilterAPI or flagEnabled) and textServiceExists
+end
+
 local module = {}
 
 local modulesFolder = script.Parent
@@ -14,6 +23,10 @@ local replicatedModules = Chat:WaitForChild("ClientChatModules")
 --//////////////////////////////////////
 local ChatConstants = require(replicatedModules:WaitForChild("ChatConstants"))
 local Util = require(modulesFolder:WaitForChild("Util"))
+
+local ChatLocalization = nil
+pcall(function() ChatLocalization = require(game:GetService("Chat").ClientChatModules.ChatLocalization) end)
+if ChatLocalization == nil then ChatLocalization = { Get = function(key,default) return default end } end
 
 --////////////////////////////// Methods
 --//////////////////////////////////////
@@ -100,12 +113,28 @@ function methods:SendMessageToSpeaker(message, speakerName, fromSpeakerName, ext
 		message = self:SendMessageObjToFilters(message, messageObj, fromSpeakerName)
 		speakerTo:InternalSendMessage(messageObj, self.Name)
 
+		--// START FFLAG
+		if (not IN_GAME_CHAT_USE_NEW_FILTER_API) then --// USES FFLAG
+		--// OLD BEHAVIOR
 		local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
 		if filteredMessage then
 			messageObj.Message = filteredMessage
 			messageObj.IsFiltered = true
 			speakerTo:InternalSendFilteredMessage(messageObj, self.Name)
 		end
+		--// OLD BEHAVIOR
+		else
+		--// NEW BEHAVIOR
+			local filterSuccess, isFilterResult, filteredMessage = self.ChatService:InternalApplyRobloxFilterNewAPI(messageObj.FromSpeaker, message)
+			if (filterSuccess) then
+				messageObj.FilterResult = filteredMessage
+				messageObj.IsFilterResult = isFilterResult
+				messageObj.IsFiltered = true
+				speakerTo:InternalSendFilteredMessageWithFilterResult(messageObj, self.Name)
+			end
+		--// NEW BEHAVIOR
+		end
+		--// END FFLAG
 	else
 		warn(string.format("Speaker '%s' is not in channel '%s' and cannot be sent a message", speakerName, self.Name))
 	end
@@ -230,20 +259,16 @@ function methods:UnregisterProcessCommandsFunction(funcId)
 	self.ProcessCommandsFunctions:RemoveFunction(funcId)
 end
 
-local function DeepCopy(table)
-	local copy =	{}
+local function ShallowCopy(table)
+	local copy = {}
 	for i, v in pairs(table) do
-		if (type(v) == table) then
-			copy[i] = DeepCopy(v)
-		else
-			copy[i] = v
-		end
+		copy[i] = v
 	end
 	return copy
 end
 
 function methods:GetHistoryLog()
-	return DeepCopy(self.ChatHistory)
+	return ShallowCopy(self.ChatHistory)
 end
 
 function methods:GetHistoryLogForSpeaker(speaker)
@@ -253,12 +278,46 @@ function methods:GetHistoryLogForSpeaker(speaker)
 		userId = player.UserId
 	end
 	local chatlog = {}
+	--// START FFLAG
+	if (not IN_GAME_CHAT_USE_NEW_FILTER_API) then --// USES FFLAG
+	--// OLD BEHAVIOR
 	for i = 1, #self.ChatHistory do
 		local logUserId = self.ChatHistory[i].SpeakerUserId
 		if self:CanCommunicateByUserId(userId, logUserId) then
-			table.insert(chatlog, DeepCopy(self.ChatHistory[i]))
+			table.insert(chatlog, ShallowCopy(self.ChatHistory[i]))
 		end
 	end
+	--// OLD BEHAVIOR
+	else
+	--// NEW BEHAVIOR
+		for i = 1, #self.ChatHistory do
+			local logUserId = self.ChatHistory[i].SpeakerUserId
+			if self:CanCommunicateByUserId(userId, logUserId) then
+				local messageObj = ShallowCopy(self.ChatHistory[i])
+
+				--// Since we're using the new filter API, we need to convert the stored filter result
+				--// into an actual string message to send to players for their chat history.
+				--// System messages aren't filtered the same way, so they just have a regular 
+				--// text value in the Message field.
+				if (messageObj.MessageType == ChatConstants.MessageTypeDefault) then
+					local filterResult = messageObj.FilterResult
+					if (messageObj.IsFilterResult) then
+						if (player) then
+							messageObj.Message = filterResult:GetChatForUserAsync(player.UserId)
+						else
+							messageObj.Message = filterResult:GetNonChatStringForBroadcastAsync()
+						end
+					else
+						messageObj.Message = filterResult
+					end
+				end
+
+				table.insert(chatlog, messageObj)
+			end
+		end
+	--// NEW BEHAVIOR
+	end
+	--// END FFLAG
 	return chatlog
 end
 
@@ -321,7 +380,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		if (t > 0 and os.time() > t) then
 			self:UnmuteSpeaker(fromSpeaker.Name)
 		else
-			self:SendSystemMessageToSpeaker("You are muted and cannot talk in this channel", fromSpeaker.Name)
+			self:SendSystemMessageToSpeaker(ChatLocalization:Get("GameChat_ChatChannel_MutedInChannel","You are muted and cannot talk in this channel"), fromSpeaker.Name)
 			return false
 		end
 	end
@@ -336,7 +395,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 			table.insert(sentToList, speaker.Name)
 			if speaker.Name == fromSpeaker.Name then
 				-- Send unfiltered message to speaker who sent the message.
-				local cMessageObj = DeepCopy(messageObj)
+				local cMessageObj = ShallowCopy(messageObj)
 				cMessageObj.Message = message
 				cMessageObj.IsFiltered = true
 				-- We need to claim the message is filtered even if it not in this case for compatibility with legacy client side code.
@@ -352,6 +411,9 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		print("Error posting message: " ..err)
 	end
 
+	--// START FFLAG
+	if (not IN_GAME_CHAT_USE_NEW_FILTER_API) then --// USES FFLAG
+	--// OLD BEHAVIOR
 	local filteredMessages = {}
 	for i, speakerName in pairs(sentToList) do
 		local filteredMessage = self.ChatService:InternalApplyRobloxFilter(messageObj.FromSpeaker, message, speakerName)
@@ -365,7 +427,7 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	for i, speakerName in pairs(sentToList) do
 		local speaker = self.Speakers[speakerName]
 		if (speaker) then
-			local cMessageObj = DeepCopy(messageObj)
+			local cMessageObj = ShallowCopy(messageObj)
 			cMessageObj.Message = filteredMessages[speakerName]
 			cMessageObj.IsFiltered = true
 			speaker:InternalSendFilteredMessage(cMessageObj, self.Name)
@@ -380,6 +442,28 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 	end
 	messageObj.IsFiltered = true
 	self:InternalAddMessageToHistoryLog(messageObj)
+	--// OLD BEHAVIOR
+	else
+	--// NEW BEHAVIOR
+		local filterSuccess, isFilterResult, filteredMessage = self.ChatService:InternalApplyRobloxFilterNewAPI(messageObj.FromSpeaker, message)
+		if (filterSuccess) then
+			messageObj.FilterResult = filteredMessage
+			messageObj.IsFilterResult = isFilterResult
+		else
+			return false
+		end
+		messageObj.IsFiltered = true
+		self:InternalAddMessageToHistoryLog(messageObj)
+
+		for _, speakerName in pairs(sentToList) do
+			local speaker = self.Speakers[speakerName]
+			if (speaker) then
+				speaker:InternalSendFilteredMessageWithFilterResult(messageObj, self.Name)
+			end
+		end
+	--// NEW BEHAVIOR
+	end
+	--// END FFLAG
 
 	-- One more pass is needed to ensure that no speakers do not recieve the message.
 	-- Otherwise a user could join while the message is being filtered who had not originally been sent the message.
@@ -400,6 +484,9 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 		end
 	end
 
+	--// START FFLAG
+	if (not IN_GAME_CHAT_USE_NEW_FILTER_API) then --// USES FFLAG
+	--// OLD BEHAVIOR
 	for _, speakerName in pairs(speakersMissingMessage) do
 		local speaker = self.Speakers[speakerName]
 		if speaker then
@@ -407,12 +494,24 @@ function methods:InternalPostMessage(fromSpeaker, message, extraData)
 			if filteredMessage == nil then
 				return false
 			end
-			local cMessageObj = DeepCopy(messageObj)
+			local cMessageObj = ShallowCopy(messageObj)
 			cMessageObj.Message = filteredMessage
 			cMessageObj.IsFiltered = true
 			speaker:InternalSendFilteredMessage(cMessageObj, self.Name)
 		end
 	end
+	--// OLD BEHAVIOR
+	else
+	--// NEW BEHAVIOR
+		for _, speakerName in pairs(speakersMissingMessage) do
+			local speaker = self.Speakers[speakerName]
+			if speaker then
+				speaker:InternalSendFilteredMessageWithFilterResult(cMessageObj, self.Name)
+			end
+		end
+	--// NEW BEHAVIOR
+	end
+	--// END FFLAG
 
 	return messageObj
 end
@@ -491,6 +590,12 @@ function methods:InternalCreateMessageObject(message, fromSpeaker, isFiltered, e
 		MessageType = messageType,
 		IsFiltered = isFiltered,
 		Message = isFiltered and message or nil,
+		--// These two get set by the new API. The comments are just here
+		--// to remind readers that they will exist so it's not super
+		--// confusing if they find them in the code but cannot find them
+		--// here.
+		--FilterResult = nil,
+		--IsFilterResult = false,
 		Time = os.time(),
 		ExtraData = {},
 	}
