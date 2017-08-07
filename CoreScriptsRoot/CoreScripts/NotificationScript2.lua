@@ -18,6 +18,7 @@ local Players = game:GetService('Players')
 local PointsService = game:GetService('PointsService')
 local MarketplaceService = game:GetService('MarketplaceService')
 local TeleportService = game:GetService('TeleportService')
+local TextService = game:GetService("TextService")
 local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
@@ -27,21 +28,26 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
+local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
+local FFlagUseNotificationsLocalization = success and result
+local function LocalizedGetString(key, rtv)
+	pcall(function()
+		local LocalizationService = game:GetService("LocalizationService")
+		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+		rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
+	end)
+	return rtv
+end
+
+local FixBadgeTextBeingCutOffSuccess, FixBadgeTextBeingCutOffValue = pcall(function() return settings():GetFFlag("CoreScriptFixBadgeTextBeingCutOff") end)
+local FixBadgeTextBeingCutOff = FixBadgeTextBeingCutOffSuccess and FixBadgeTextBeingCutOffValue
+
 --[[ Fast Flags ]]--
 local getNewNotificationPathSuccess, newNotificationPathValue = pcall(function() return settings():GetFFlag("UseNewNotificationPathLua") end)
 local newNotificationPath = getNewNotificationPathSuccess and newNotificationPathValue
 
-local getTenFootBadgeNotifications, tenFootBadgeNotificationsValue = pcall(function() return settings():GetFFlag("TenFootBadgeNotifications") end)
-local tenFootBadgeNotifications = getTenFootBadgeNotifications and tenFootBadgeNotificationsValue
-
-local getDisableScreenshotPopup, disableScreenshotPopupValue = pcall(function() return settings():GetFFlag("DisableScreenshotPopup") end)
-local disableScreenshotPopup = getDisableScreenshotPopup and disableScreenshotPopupValue
-
 local useNewThumbnailApiSuccess, useNewThumbnailApiValue = pcall(function() return settings():GetFFlag("CoreScriptsUseNewUserThumbnailAPI") end)
 local useNewUserThumbnailAPI = useNewThumbnailApiSuccess and useNewThumbnailApiValue
-
-local getDisableVideoRecordPopup, disableVideoRecordPopupValue = pcall(function() return settings():GetFFlag("DisableVideoRecordPopup") end)
-local disableVideoRecordPopup = getDisableVideoRecordPopup and disableVideoRecordPopupValue
 
 --[[ Script Variables ]]--
 local LocalPlayer = nil
@@ -80,6 +86,7 @@ local NOTIFICATION_TITLE_Y_OFFSET = isTenFootInterface and 40 or 12
 local NOTIFICATION_TEXT_Y_OFFSET = isTenFootInterface and -16 or 1
 local NOTIFICATION_FRAME_WIDTH = isTenFootInterface and 450 or 200
 local NOTIFICATION_TEXT_HEIGHT = isTenFootInterface and 85 or 28
+local NOTIFICATION_TEXT_HEIGHT_MAX = isTenFootInterface and 170 or 56
 local NOTIFICATION_TITLE_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size42 or Enum.FontSize.Size18
 local NOTIFICATION_TEXT_FONT_SIZE = isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size14
 
@@ -234,6 +241,18 @@ local function createNotification(title, text, image)
 	local notificationText = NotificationText:Clone()
 	notificationText.Text = text
 	notificationText.Parent = notificationFrame
+	if FixBadgeTextBeingCutOff and (image == nil or image == "") then
+		notificationFrame.Parent = NotificationFrame
+		if not notificationText.TextFits then
+			local textSize = TextService:GetTextSize(notificationText.Text, notificationText.TextSize, notificationText.Font, Vector2.new(notificationText.AbsoluteSize.X, 1000))
+			local addHeight = math.min(textSize.Y - notificationText.Size.Y.Offset, NOTIFICATION_TEXT_HEIGHT_MAX - notificationText.Size.Y.Offset)
+			notificationTitle.Position = notificationTitle.Position - UDim2.new(0, 0, 0, addHeight/2)
+			notificationText.Position = notificationText.Position - UDim2.new(0, 0, 0, addHeight/2)
+			notificationFrame.Size = notificationFrame.Size + UDim2.new(0, 0, 0, addHeight)
+			notificationText.Size = notificationText.Size + UDim2.new(0, 0, 0, addHeight)
+		end
+		notificationFrame.Parent = nil
+	end
 
 	if image and image ~= "" then
 		local notificationImage = NotificationImage:Clone()
@@ -243,9 +262,49 @@ local function createNotification(title, text, image)
 		notificationTitle.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, -NOTIFICATION_TITLE_Y_OFFSET)
 		notificationTitle.TextXAlignment = Enum.TextXAlignment.Left
 
-		notificationText.Size = UDim2.new(1, -IMAGE_SIZE - 16, 0, NOTIFICATION_TEXT_HEIGHT)
-		notificationText.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, NOTIFICATION_TEXT_Y_OFFSET)
-		notificationText.TextXAlignment = Enum.TextXAlignment.Left
+		if FixBadgeTextBeingCutOff then
+			notificationFrame.Parent = NotificationFrame
+			notificationText.Size = UDim2.new(1, -IMAGE_SIZE - 16, 0, NOTIFICATION_TEXT_HEIGHT)
+			notificationText.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, NOTIFICATION_TEXT_Y_OFFSET)
+			notificationText.TextXAlignment = Enum.TextXAlignment.Left
+			if not notificationText.TextFits then
+				local extraText = nil
+				local text = notificationText.Text
+				for i = string.len(text) - 1, 2, -1 do
+					if string.sub(text, i, i) == " " then
+						notificationText.Text = string.sub(text, 1, i - 1)
+						if notificationText.TextFits then
+							extraText = string.sub(text, i + 1)
+							break
+						end
+					end
+				end
+				if extraText then
+					local notificationText2 = NotificationText:Clone()
+					notificationText2.TextXAlignment = Enum.TextXAlignment.Left
+					notificationText2.Text = extraText
+					notificationText2.Name = "ExtraText"
+					notificationText2.Parent = notificationFrame
+
+					local textSize = TextService:GetTextSize(extraText, notificationText2.TextSize, notificationText2.Font, Vector2.new(notificationText2.AbsoluteSize.X, 1000))
+					local addHeight = math.min(textSize.Y, NOTIFICATION_TEXT_HEIGHT_MAX - notificationText.Size.Y.Offset)
+					notificationTitle.Position = notificationTitle.Position - UDim2.new(0, 0, 0, addHeight/2)
+					notificationText.Position = notificationText.Position - UDim2.new(0, 0, 0, addHeight/2)
+					notificationFrame.Size = notificationFrame.Size + UDim2.new(0, 0, 0, addHeight)
+
+					notificationText2.Size = UDim2.new(notificationText2.Size.X.Scale, notificationText2.Size.X.Offset, 0, addHeight)
+					notificationText2.AnchorPoint = Vector2.new(0.5, 0)
+					notificationText2.Position = UDim2.new(0.5, 0, notificationText.Position.Y.Scale, notificationText.Position.Y.Offset + notificationText.AbsoluteSize.Y)
+				else
+					notificationText.Text = text
+				end
+			end
+			notificationFrame.Parent = nil
+		else
+			notificationText.Size = UDim2.new(1, -IMAGE_SIZE - 16, 0, NOTIFICATION_TEXT_HEIGHT)
+			notificationText.Position = UDim2.new(0, (4.0/3.0) * IMAGE_SIZE, 0.5, NOTIFICATION_TEXT_Y_OFFSET)
+			notificationText.TextXAlignment = Enum.TextXAlignment.Left
+		end
 	end
 
 	GuiService:AddSelectionParent(HttpService:GenerateGUID(false), notificationFrame)
@@ -271,6 +330,9 @@ local function updateNotifications()
 			local frame = currentNotification.Frame
 			if frame and frame.Parent then
 				local thisOffset = currentNotification.IsFriend and (NOTIFICATION_Y_OFFSET + 2) * 1.5 or NOTIFICATION_Y_OFFSET
+				if FixBadgeTextBeingCutOff then
+					thisOffset = currentNotification.IsFriend and frame.Size.Y.Offset + ((NOTIFICATION_Y_OFFSET + 2) * 0.5) or frame.Size.Y.Offset
+				end
 				yOffset = yOffset + thisOffset
 				frame:TweenPosition(UDim2.new(0, 0, 1, -yOffset - (pos * 4)), EASE_DIR, EASE_STYLE, TWEEN_TIME, true,
 					function()
@@ -471,13 +533,16 @@ spawn(function()
 		--If on console, New follower notification should be blocked
 		return
 	end
-	
+
 	local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
 	local RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower', 86400) or RobloxReplicatedStorage:WaitForChild('NewFollower')
 	--
 	RemoteEvent_NewFollower.OnClientEvent:connect(function(followerRbxPlayer)
 		if newNotificationPath then
 			local message = ("%s is now following you"):format(followerRbxPlayer.Name)
+			if FFlagUseNotificationsLocalization then
+				message = string.gsub(LocalizedGetString("NotificationScript2.NewFollower",message),"{RBX_NAME}",followerRbxPlayer.Name)
+			end
 			local image = getFriendImage(followerRbxPlayer.UserId)
 			sendNotificationInfo {
 				GroupName = "Friends",
@@ -581,12 +646,16 @@ local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 	if fromPlayer == LocalPlayer then
 		if event == Enum.FriendRequestEvent.Accept then
 			if newNotificationPath then
+				local detailText = "You are now friends with " .. toPlayer.Name .. "!"
+				if FFlagUseNotificationsLocalization then
+					detailText = string.gsub(LocalizedGetString("NotificationScript2.FriendRequestEvent.Accept",detailText), "{RBX_NAME}", toPlayer.Name)
+				end
+
 				sendNotificationInfo {
 					GroupName = "Friends",
 					Title = "New Friend",
 					Text = toPlayer.Name,
-					DetailText = "You are now friends with " .. toPlayer.Name .. "!",
-
+					DetailText = detailText,
 
 					Image = getFriendImage(toPlayer.UserId),
 					Duration = DEFAULT_NOTIFICATION_DURATION
@@ -602,6 +671,10 @@ local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 			sendFriendNotification(fromPlayer)
 		elseif event == Enum.FriendRequestEvent.Accept then
 			if newNotificationPath then
+				local detailText = "You are now friends with " .. fromPlayer.Name .. "!"
+				if FFlagUseNotificationsLocalization then
+					detailText = string.gsub(LocalizedGetString("NotificationScript2.FriendRequestEvent.Accept",detailText), "{RBX_NAME}", fromPlayer.Name)
+				end
 				sendNotificationInfo {
 					GroupName = "Friends",
 					Title = "New Friend",
@@ -627,12 +700,21 @@ local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTot
 			if pointsAwarded == 1 then
 				title = "Point Awarded"
 				text = "You received 1 point!"
+				if FFlagUseNotificationsLocalization then
+					text = string.gsub(LocalizedGetString("NotificationScript2.onPointsAwarded.single",text),"{RBX_NUMBER}",pointsAwarded)
+				end
 			elseif pointsAwarded > 0 then
 				title = "Points Awarded"
 				text = ("You received %d points!"):format(pointsAwarded)
+				if FFlagUseNotificationsLocalization then
+					text = string.gsub(LocalizedGetString("NotificationScript2.onPointsAwarded.multiple",text),"{RBX_NUMBER}",pointsAwarded)
+				end
 			elseif pointsAwarded < 0 then
 				title = "Points Lost"
 				text = ("You lost %d points!"):format(math.abs(pointsAwarded))
+				if FFlagUseNotificationsLocalization then
+					text = string.gsub(LocalizedGetString("NotificationScript2.onPointsAwarded.negative",text),"{RBX_NUMBER}",math.abs(pointsAwarded))
+				end
 			else
 				--don't notify for 0 points, shouldn't even happen
 				return
@@ -666,6 +748,7 @@ local function onBadgeAwarded(message, userId, badgeId)
 	if not BadgeBlacklist[badgeId] and badgesNotificationsActive and userId == LocalPlayer.UserId then
 		BadgeBlacklist[badgeId] = true
 		if newNotificationPath then
+			--SPTODO: Badge notifications are generated on the web and are not (for now) localized.
 			sendNotificationInfo {
 				GroupName = "BadgeAwards",
 				Title = "Badge Awarded",
@@ -693,6 +776,15 @@ function onGameSettingsChanged(property, amount)
 		if level > 0 and level ~= CurrentGraphicsQualityLevel and GameSettings.SavedQualityLevel ~= Enum.SavedQualitySetting.Automatic then
 			local action = (level > CurrentGraphicsQualityLevel) and "Increased" or "Decreased"
 			local message = ("%s to (%d)"):format(action, level)
+
+			if FFlagUseNotificationsLocalization then
+				if level > CurrentGraphicsQualityLevel then
+					message = string.gsub(LocalizedGetString("NotificationScrip2.onCurrentGraphicsQualityLevelChanged.Increased",message),"{RBX_NUMBER}",tostring(level))
+				else
+					message = string.gsub(LocalizedGetString("NotificationScrip2.onCurrentGraphicsQualityLevelChanged.Decreased",message),"{RBX_NUMBER}",tostring(level))
+				end
+			end
+
 			if newNotificationPath then
 				sendNotificationInfo {
 					GroupName = "Graphics",
@@ -712,8 +804,6 @@ end
 
 --[[ Connections ]]--
 
-if tenFootBadgeNotifications then
-
 BadgeService.BadgeAwarded:connect(onBadgeAwarded)
 if not isTenFootInterface then
 	Players.FriendRequestEvent:connect(onFriendRequestEvent)
@@ -724,53 +814,35 @@ if not isTenFootInterface then
 	end)
 end
 
-else
+game.ScreenshotReady:Connect(function(path)
+	sendNotificationInfo {
+		Title = "Screenshot Taken",
+		Text = "Check out your screenshots folder to see it.",
+		Duration = 3.0,
+		Button1Text = "Open Folder",
+		Callback = function(text)
+			if text == "Open Folder" then
+				game:OpenScreenshotsFolder()
+			end
+		end
+	}
+end)
 
-if not isTenFootInterface then
-	Players.FriendRequestEvent:connect(onFriendRequestEvent)
-	PointsService.PointsAwarded:connect(onPointsAwarded)
-	BadgeService.BadgeAwarded:connect(onBadgeAwarded)
-	--GameSettings.Changed:connect(onGameSettingsChanged)
-	game.GraphicsQualityChangeRequest:connect(function(graphicsIncrease) --graphicsIncrease is a boolean
-		onGameSettingsChanged("SavedQualityLevel", graphicsIncrease == true and 1 or -1)
-	end)
-end
-
-end
-
-if disableScreenshotPopup then
-	game.ScreenshotReady:Connect(function(path)
+settings():GetService("GameSettings").VideoRecordingChangeRequest:Connect(function(value)
+	if not value then
 		sendNotificationInfo {
-			Title = "Screenshot Taken",
-			Text = "Check out your screenshots folder to see it.",
+			Title = "Video Recorded",
+			Text = "Check out your videos folder to see it.",
 			Duration = 3.0,
 			Button1Text = "Open Folder",
 			Callback = function(text)
 				if text == "Open Folder" then
-					game:OpenScreenshotsFolder()
+					game:OpenVideosFolder()
 				end
 			end
 		}
-	end)
-end
-
-if disableVideoRecordPopup then
-	settings():GetService("GameSettings").VideoRecordingChangeRequest:Connect(function(value)
-		if not value then
-			sendNotificationInfo {
-				Title = "Video Recorded",
-				Text = "Check out your videos folder to see it.",
-				Duration = 3.0,
-				Button1Text = "Open Folder",
-				Callback = function(text)
-					if text == "Open Folder" then
-						game:OpenVideosFolder()
-					end
-				end
-			}
-		end
-	end)
-end
+	end
+end)
 
 GuiService.SendCoreUiNotification = function(title, text)
 	local notification = createNotification(title, text, "")

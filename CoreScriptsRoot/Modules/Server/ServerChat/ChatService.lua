@@ -32,6 +32,10 @@ local ChatChannel = require(modulesFolder:WaitForChild("ChatChannel"))
 local Speaker = require(modulesFolder:WaitForChild("Speaker"))
 local Util = require(modulesFolder:WaitForChild("Util"))
 
+local ChatLocalization = nil
+pcall(function() ChatLocalization = require(game:GetService("Chat").ClientChatModules.ChatLocalization) end)
+if ChatLocalization == nil then ChatLocalization = {} function ChatLocalization:Get(key,default) return default end end
+
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
@@ -49,9 +53,17 @@ function methods:AddChannel(channelName, autoJoin)
 			if (channel and speaker) then
 				if (channel.Leavable) then
 					speaker:LeaveChannel(channelName)
-					speaker:SendSystemMessage(string.format("You have left channel '%s'", channelName), "System")
+					speaker:SendSystemMessage(
+						string.gsub(
+							ChatLocalization:Get(
+								"GameChat_ChatService_YouHaveLeftChannel",
+								string.format("You have left channel '%s'", channelName)
+							),
+						"{RBX_NAME}",channelName),
+						"System"
+					)
 				else
-					speaker:SendSystemMessage("You cannot leave this channel.", channelName)
+					speaker:SendSystemMessage(ChatLocalization:Get("GameChat_ChatService_CannotLeaveChannel","You cannot leave this channel."), channelName)
 				end
 			end
 
@@ -234,7 +246,13 @@ function methods:InternalNotifyFilterIssue()
 			LastFilterNoficationTime = tick()
 			local systemChannel = self:GetChannel("System")
 			if systemChannel then
-				systemChannel:SendSystemMessage("The chat filter is currently experiencing issues and messages may be slow to appear.", errorExtraData)
+				systemChannel:SendSystemMessage(
+					ChatLocalization:Get(
+						"GameChat_ChatService_ChatFilterIssues",
+						"The chat filter is currently experiencing issues and messages may be slow to appear."
+					), 
+					errorExtraData
+				)
 			end
 		end
 	end
@@ -246,7 +264,7 @@ local StudioMessageFilteredCache = {}
 --//////////////////////////////////////
 --DO NOT REMOVE THIS. Chat must be filtered or your game will face
 --moderation.
-function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
+function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName) --// USES FFLAG
 	if (RunService:IsServer() and not RunService:IsStudio()) then
 		local fromSpeaker = self:GetSpeaker(speakerName)
 		local toSpeaker = toSpeakerName and self:GetSpeaker(toSpeakerName)
@@ -295,6 +313,42 @@ function methods:InternalApplyRobloxFilter(speakerName, message, toSpeakerName)
 			wait(0.2)
 		end
 		return message
+	end
+
+	return nil
+end
+
+--// Return values: bool filterSuccess, bool resultIsFilterObject, variant result
+function methods:InternalApplyRobloxFilterNewAPI(speakerName, message) --// USES FFLAG
+	local alwaysRunFilter = false
+	local runFilter = RunService:IsServer() and not RunService:IsStudio()
+	if (alwaysRunFilter or runFilter) then
+		local fromSpeaker = self:GetSpeaker(speakerName)
+		if fromSpeaker == nil then
+			return false, nil, nil
+		end
+		
+		local fromPlayerObj = fromSpeaker:GetPlayer()
+		if fromPlayerObj == nil then
+			return true, false, message
+		end
+
+		local success, filterResult = pcall(function()
+			local ts = game:GetService("TextService")
+			local result = ts:FilterStringAsync(message, fromPlayerObj.UserId)
+			return result
+		end)
+		if (success) then
+			return true, true, filterResult
+		else
+			warn("Error filtering message:", message)
+			self:InternalNotifyFilterIssue()
+			return false, nil, nil
+		end
+	else
+		--// Simulate filtering latency.
+		wait(0.2)
+		return true, false, message
 	end
 
 	return nil

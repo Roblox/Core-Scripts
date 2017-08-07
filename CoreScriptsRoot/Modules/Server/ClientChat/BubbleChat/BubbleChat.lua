@@ -351,7 +351,7 @@ end
 function this:SetBillboardLODNear(billboardGui)
 	local isLocalPlayer = isPartOfLocalPlayer(billboardGui.Adornee)
 	billboardGui.Size = UDim2.new(0, BILLBOARD_MAX_WIDTH, 0, BILLBOARD_MAX_HEIGHT)
-	billboardGui.StudsOffset = Vector3.new(0, isLocalPlayer and 1.5 or 2.5, isLocalPlayer and 2 or 0)
+	billboardGui.StudsOffset = Vector3.new(0, isLocalPlayer and 1.5 or 2.5, isLocalPlayer and 2 or 0.1)
 	billboardGui.Enabled = true
 	local billChildren = billboardGui.BillboardFrame:GetChildren()
 	for i = 1, #billChildren do
@@ -363,7 +363,7 @@ end
 function this:SetBillboardLODDistant(billboardGui)
 	local isLocalPlayer = isPartOfLocalPlayer(billboardGui.Adornee)
 	billboardGui.Size = UDim2.new(4,0,3,0)
-	billboardGui.StudsOffset = Vector3.new(0, 3, isLocalPlayer and 2 or 0)
+	billboardGui.StudsOffset = Vector3.new(0, 3, isLocalPlayer and 2 or 0.1)
 	billboardGui.Enabled = true
 	local billChildren = billboardGui.BillboardFrame:GetChildren()
 	for i = 1, #billChildren do
@@ -421,7 +421,8 @@ end
 function this:CreateSmallTalkBubble(chatBubbleType)
 	local smallTalkBubble = this.ScalingChatBubbleWithTail[chatBubbleType]:Clone()
 	smallTalkBubble.Name = "SmallTalkBubble"
-	smallTalkBubble.Position = UDim2.new(0,0,1,-40)
+	smallTalkBubble.AnchorPoint = Vector2.new(0, 0.5)
+	smallTalkBubble.Position = UDim2.new(0,0,0.5,0)
 	smallTalkBubble.Visible = false
 	local text = this:CreateBubbleText("...")
 	text.TextScaled = true
@@ -602,13 +603,6 @@ function this:ShowOwnFilteredMessage()
 	return false
 end
 
-function this:CameraChanged(prop)
-	if prop == "CoordinateFrame" then
-		this:CameraCFrameChanged()
-	end
-end
-
-
 function findPlayer(playerName)
 	for i,v in pairs(PlayersService:GetPlayers()) do
 		if v.Name == playerName then
@@ -621,14 +615,14 @@ ChatService.Chatted:connect(function(origin, message, color) this:OnGameChatMess
 
 local cameraChangedCon = nil
 if game.Workspace.CurrentCamera then
-	cameraChangedCon = game.Workspace.CurrentCamera.Changed:connect(function(prop) this:CameraChanged(prop) end)
+	cameraChangedCon = game.Workspace.CurrentCamera:GetPropertyChangedSignal("CFrame"):connect(function(prop) this:CameraCFrameChanged() end)
 end
 
 game.Workspace.Changed:connect(function(prop)
 	if prop == "CurrentCamera" then
 		if cameraChangedCon then cameraChangedCon:disconnect() end
 		if game.Workspace.CurrentCamera then
-			cameraChangedCon = game.Workspace.CurrentCamera.Changed:connect(function(prop) this:CameraChanged(prop) end)
+			cameraChangedCon = game.Workspace.CurrentCamera:GetPropertyChangedSignal("CFrame"):connect(function(prop) this:CameraCFrameChanged() end)
 		end
 	end
 end)

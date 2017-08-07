@@ -8,6 +8,10 @@ local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
 local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
 
+local ChatLocalization = nil
+pcall(function() ChatLocalization = require(game:GetService("Chat").ClientChatModules.ChatLocalization) end)
+if ChatLocalization == nil then ChatLocalization = {} function ChatLocalization:Get(key,default) return default end end
+
 local DISALLOWED_WHITESPACE = {"\n", "\r", "\t", "\v", "\f"}
 
 if ChatSettings.DisallowedWhiteSpace then
@@ -37,18 +41,18 @@ local function Run(ChatService)
 		end
 
 		if not CanUserChat(playerObj) then
-			speakerObj:SendSystemMessage("Your chat settings prevent you from sending messages.", channel)
+			speakerObj:SendSystemMessage(ChatLocalization:Get("GameChat_ChatMessageValidator_SettingsError","Your chat settings prevent you from sending messages."), channel)
 			return true
 		end
 
 		if message:len() > ChatSettings.MaximumMessageLength + 1 then
-			speakerObj:SendSystemMessage("Your message exceeds the maximum message length.", channel)
+			speakerObj:SendSystemMessage(ChatLocalization:Get("GameChat_ChatMessageValidator_MaxLengthError","Your message exceeds the maximum message length."), channel)
 			return true
 		end
 
 		for i = 1, #DISALLOWED_WHITESPACE do
 			if string.find(message, DISALLOWED_WHITESPACE[i]) then
-				speakerObj:SendSystemMessage("Your message contains whitespace that is not allowed.", channel)
+				speakerObj:SendSystemMessage(ChatLocalization:Get("GameChat_ChatMessageValidator_WhitespaceError","Your message contains whitespace that is not allowed."), channel)
 				return true
 			end
 		end

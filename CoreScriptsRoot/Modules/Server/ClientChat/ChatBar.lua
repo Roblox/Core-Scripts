@@ -24,6 +24,10 @@ local CurveUtil = require(modulesFolder:WaitForChild("CurveUtil"))
 
 local MessageSender = require(modulesFolder:WaitForChild("MessageSender"))
 
+local ChatLocalization = nil
+pcall(function() ChatLocalization = require(game:GetService("Chat").ClientChatModules.ChatLocalization) end)
+if ChatLocalization == nil then ChatLocalization = {} function ChatLocalization:Get(key,default) return default end end
+
 --////////////////////////////// Methods
 --//////////////////////////////////////
 local methods = {}
@@ -106,7 +110,7 @@ function methods:CreateGuiObjects(targetParent)
 	TextLabel.TextStrokeTransparency = TextBox.TextStrokeTransparency
 	TextLabel.TextXAlignment = TextBox.TextXAlignment
 	TextLabel.TextYAlignment = TextBox.TextYAlignment
-	TextLabel.Text = "This value needs to be set with :SetTextLabelText()"
+	TextLabel.Text = "..."
 	TextLabel.Parent = TextBoxHolderFrame
 
 	self.GuiObject = BaseFrame
@@ -131,9 +135,15 @@ end
 function methods:DoLockChatBar()
 	if self.TextLabel then
 		if LocalPlayer.UserId > 0 then
-			self.TextLabel.Text = "To chat in game, turn on chat in your Privacy Settings."
+			self.TextLabel.Text = ChatLocalization:Get(
+				"GameChat_ChatMessageValidator_SettingsError",
+				"To chat in game, turn on chat in your Privacy Settings."
+			)
 		else
-			self.TextLabel.Text = "Sign up to chat in game."
+			self.TextLabel.Text = ChatLocalization:Get(
+				"GameChat_SwallowGuestChat_Message",
+				"Sign up to chat in game."
+			)
 		end
 		self:CalculateSize()
 	end
@@ -411,7 +421,12 @@ function methods:ResetCustomState()
 
 		self.ChatBarParentFrame:ClearAllChildren()
 		self:CreateGuiObjects(self.ChatBarParentFrame)
-		self:SetTextLabelText('To chat click here or press "/" key')
+		self:SetTextLabelText(
+			ChatLocalization:Get(
+				"GameChat_ChatMain_ChatBarText",
+				'To chat click here or press "/" key'
+			)
+		)
 	end
 end
 

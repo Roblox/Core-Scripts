@@ -79,6 +79,11 @@ local function Install()
 	if not chatConstants then
 		LoadModule(script.Parent.DefaultClientChatModules, "ChatConstants", clientChatModules)
 	end
+	
+	local ChatLocalization = clientChatModules:FindFirstChild("ChatLocalization")
+	if not ChatLocalization then
+		LoadModule(script.Parent.DefaultClientChatModules, "ChatLocalization", clientChatModules)
+	end
 
 	local MessageCreatorModules = clientChatModules:FindFirstChild("MessageCreatorModules")
 	if not MessageCreatorModules then

@@ -327,10 +327,8 @@ do
 			if CameraChangedConn then
 				CameraChangedConn:disconnect()
 			end
-			CameraChangedConn = workspace.CurrentCamera.Changed:connect(function(prop)
-				if prop == 'CFrame' then
-					UpdateSurfaceGuiPosition()
-				end
+			CameraChangedConn = workspace.CurrentCamera:GetPropertyChangedSignal("CFrame"):connect(function()
+				UpdateSurfaceGuiPosition()
 			end)
 		end
 	end

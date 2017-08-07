@@ -22,17 +22,35 @@ local RobloxGui = CoreGui:FindFirstChild('RobloxGui')
 local Modules = RobloxGui:FindFirstChild('Modules')
 
 local ContextActionService = game:GetService("ContextActionService")
+local TextService = game:GetService("TextService")
 local GuiService = game:GetService('GuiService')
 local isTenFootInterface = GuiService:IsTenFootInterface()
 
 --[[ Modules ]]--
-local MemoryAnalyzerClass = require(CoreGui.RobloxGui.Modules.Stats.MemoryAnalyzer)
+local ClientMemoryAnalyzerClass = require(CoreGui.RobloxGui.Modules.Stats.ClientMemoryAnalyzer)
+local ServerMemoryAnalyzerClass = require(CoreGui.RobloxGui.Modules.Stats.ServerMemoryAnalyzer)
+local StatsUtils = require(CoreGui.RobloxGui.Modules.Stats.StatsUtils)
 
+--[[ Flags ]]--
+local function checkFFlag(flagName) 
+	local flagSuccess, flagValue = pcall(function() 
+			return settings():GetFFlag(flagName)
+		end)
+	return (flagSuccess and flagValue)
+end
+
+local enableActionBindingsTab = checkFFlag("EnableActionBindingsTab")
+local forceDevConsoleInStudio = checkFFlag("ForceDevConsoleInStudio")
+local enableDevConsoleDataStoreStats = checkFFlag("EnableDevConsoleDataStoreStats")
 
 -- Eye candy uses RenderStepped
 local EYECANDY_ENABLED = true
 
 local ZINDEX = 6
+
+local AUTO_TAB_WIDTH = -1
+local TAB_TEXT_SIZE = 14
+local TAB_TEXT_PADDING = 8
 
 local Style; do
 	local function c3(r, g, b)
@@ -206,7 +224,55 @@ local Primitives = {}; do
 	end
 end
 
-local CreateSignal = assert(LoadLibrary('RbxUtility')).CreateSignal
+local function CreateSignal()
+	local this = {}
+
+	local mBindableEvent = Instance.new('BindableEvent')
+	local mAllCns = {} --all connection objects returned by mBindableEvent::connect
+
+	--main functions
+	function this:connect(func)
+		if self ~= this then error("connect must be called with `:`, not `.`", 2) end
+		if type(func) ~= 'function' then
+			error("Argument #1 of connect must be a function, got a "..type(func), 2)
+		end
+		local cn = mBindableEvent.Event:Connect(func)
+		mAllCns[cn] = true
+		local pubCn = {}
+		function pubCn:disconnect()
+			cn:Disconnect()
+			mAllCns[cn] = nil
+		end
+		pubCn.Disconnect = pubCn.disconnect
+		
+		return pubCn
+	end
+	
+	function this:disconnect()
+		if self ~= this then error("disconnect must be called with `:`, not `.`", 2) end
+		for cn, _ in pairs(mAllCns) do
+			cn:Disconnect()
+			mAllCns[cn] = nil
+		end
+	end
+	
+	function this:wait()
+		if self ~= this then error("wait must be called with `:`, not `.`", 2) end
+		return mBindableEvent.Event:Wait()
+	end
+	
+	function this:fire(...)
+		if self ~= this then error("fire must be called with `:`, not `.`", 2) end
+		mBindableEvent:Fire(...)
+	end
+	
+	this.Connect = this.connect
+	this.Disconnect = this.disconnect
+	this.Wait = this.wait
+	this.Fire = this.fire
+
+	return this
+end
 
 -- This is a Signal that only calls once, then forgets about the function. It also accepts event listeners as functions
 local CreateDisconnectSignal; do
@@ -784,7 +850,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		-- Wrapper for :AddTab
 		local function createConsoleTab(name, 
         text, 
-        width,
         outputMessageSync, 
         commandLineVisible, 
         commandInputtedCallback,
@@ -793,7 +858,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			local output, commandLine;
 			local disconnector = CreateDisconnectSignal()
 			
-			local tab = devConsole:AddTab(text, width, tabBody, function(open)
+			local tab = devConsole:AddTab(text, tabBody, function(open)
 				if commandLine then
 					commandLine.Frame.Visible = open
 				end
@@ -870,7 +935,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		-- Client Log tab --
 		if permissions.MayViewClientLog then
 			local tab = createConsoleTab(
-				'ClientLog', "Client Log", 60,
+				'ClientLog', "Client Log",
 				devConsole.MessagesAndStats.OutputMessageSyncLocal,
 				permissions.ClientCodeExecutionEnabled
 			)
@@ -882,7 +947,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		if permissions.MayViewServerLog then
 			local LogService = game:GetService('LogService')
 			local tab = createConsoleTab(
-				'ServerLog', "Server Log", 70,
+				'ServerLog', "Server Log",
 				devConsole.MessagesAndStats.OutputMessageSyncServer,
 				permissions.ServerCodeExecutionEnabled,
 				function(text)
@@ -924,8 +989,10 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		end
 		
 		-- Wrapper for :AddTab
-		local function createStatsTab(name, text, width, config, 
-        openCallback, filterStats, shownOptionTypes)
+		local function createStatsTab(name, text, 
+			config, openCallback,
+			filterStats, shownOptionTypes)
+		
 			local statsSyncServer = devConsole.MessagesAndStats.StatsSyncServer
 			
 			local open = false
@@ -947,7 +1014,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				end
 			end)
 			
-			local tab = devConsole:AddTab(text, width, tabBody, function(openNew)
+			local tab = devConsole:AddTab(text, tabBody, function(openNew)
 				open = openNew
 				if open then
 					devConsole.WindowScrollbar:SetValue(0)
@@ -1036,12 +1103,11 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				open = openNew
 			end
 			
-			local tab, statList = createStatsTab('ServerScripts', "Server Scripts",
-          80, config, openCallback, filterStats, 
-          { 
-            Scripts = true;
-            Search = true;
-          })
+			local tab, statList = createStatsTab('ServerScripts', "Server Scripts", config, openCallback, filterStats, 
+          	{ 
+            	Scripts = true;
+            	Search = true;
+          	})
 
 			textFilterChanged:connect(function()
 				statList:Refresh()
@@ -1103,12 +1169,11 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				open = openNew
 			end
 
-			local tab, statList = createStatsTab('ServerStats', "Server Stats",
-        70, config, openCallback, filterStats, 
-        {
-          Stats = true;
-          Search = true; 
-        })
+			local tab, statList = createStatsTab('ServerStats', "Server Stats", config, openCallback, filterStats, 
+        	{
+         		Stats = true;
+          		Search = true; 
+        	})
 			
 			textFilterChanged:connect(function()
 				statList:Refresh()
@@ -1116,6 +1181,118 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 						
 			tab:SetVisible(true)
 		end	
+
+		-- Server Memory --
+		if (enableDevConsoleDataStoreStats and permissions.MayViewServerMemory) then
+			local tabBody = Primitives.FolderFrame(body, 'ServerMemory')
+			local serverMemoryAnalyzer = ServerMemoryAnalyzerClass.new(tabBody)
+
+			-- When memory analyzer decides its new size, we get notified.
+			serverMemoryAnalyzer:setHeightChangedCallback(function(newHeight)
+					body.Size = UDim2.new(1, 0, 0, newHeight)
+				end)
+
+			-- Considering all state (is dev console even showing, which tab is showing), 
+			-- do I need to update the memory stats tab right now, and should I be listening
+			-- for regular update?
+			function syncServerMemoryAnalyzerVisibility()
+				if (tab.Open and tab.Visible and devConsole.Visible) then 
+					serverMemoryAnalyzer:renderUpdates()
+					body.Size = UDim2.new(1, 0, 0, serverMemoryAnalyzer:getHeightInPix())
+				end
+			end
+
+			-- Every time 'open' state changes, call syncVisibility.
+			local tabName = "Server Memory"
+
+			tab = devConsole:AddTab(tabName, tabBody, function(open)
+					if (open) then
+						devConsole.WindowScrollbar:SetValue(0)
+						setShownOptionTypes({})
+					end
+					syncServerMemoryAnalyzerVisibility()
+				end)
+			tab:SetVisible(true)   
+
+			-- Every time dev console's open state changes, call syncVisibility.
+			devConsole.VisibleChanged:connect(function(visible)
+					syncServerMemoryAnalyzerVisibility()
+				end)
+			
+			-- Ensure server stats are being collected.
+			local statsSyncServer = devConsole.MessagesAndStats.StatsSyncServer
+			statsSyncServer:GetStats()
+			-- Listen to the "new server stats" event.
+			statsSyncServer.StatsReceived:connect(function(stats)
+				local filteredStats = serverMemoryAnalyzer:filterServerMemoryStats(stats)
+				if filteredStats then
+					serverMemoryAnalyzer:updateStats(filteredStats)
+				end
+			end)			
+		end
+		  
+
+		-- DataStoreBudget -- 
+		if permissions.MayViewDataStoreBudget then 
+			local open = false
+			
+			local config = {
+				GetNotifyColor = function(chartButton)
+					return Color3.new(0.5, 0.5, 0.5)
+				end;
+				CreateChartPage = function(chartButton, statsBody)
+					local chartStat = chartButton.ChartStat
+					local chart1 = devConsole:CreateChart(chartStat.Stats, chartStat.Name, 1)
+					
+					local y = 16
+					chart1.Frame.Parent = statsBody
+					chart1.Frame.Position = UDim2_new(0, 16, 0, y)
+					y = y + 16 + chart1.Frame.Size.Y.Offset
+
+					local this = {}
+					function this.OnPointAdded(this)
+						chart1:OnPointAdded()
+					end
+					function this.SetVisible(this, visible)
+						chart1:SetVisible(visible)
+						body.Size = open and UDim2_new(1, 0, 0, y) or UDim2_new(1, 0, 1, 0)
+					end
+					function this.Dispose(this)
+						this:SetVisible(false)
+					end
+					return this
+				end;
+				FilterButton = function(chartButton)
+					return textFilter(chartButton.ChartStat.Name)
+				end;
+			}
+			
+			local function filterStats(stats)
+				local statsFiltered = {}
+				for k, v in pairs(stats.DataStoreBudget) do
+					if type(v) == 'number' then
+						statsFiltered[k] = {v}
+					end
+				end
+				return statsFiltered
+			end
+			
+			local function openCallback(openNew)
+				open = openNew
+			end
+
+			local tab, statList = createStatsTab('DataStoreBudget', "DataStore Budget", config, openCallback, filterStats, 
+        	{
+         		Stats = true;
+          		Search = true; 
+        	})
+			
+			textFilterChanged:connect(function()
+				statList:Refresh()
+			end)
+						
+			tab:SetVisible(true)
+		end
 
 		-- Server Jobs --
 		if permissions.MayViewServerJobs then
@@ -1181,12 +1358,11 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 				open = openNew
 			end
 			
-			local tab, statList = createStatsTab('ServerJobs', "Server Jobs", 70, 
-        config, openCallback, filterStats, 
-        {
-          Stats = true;
-          Search = true; 
-        })
+			local tab, statList = createStatsTab('ServerJobs', "Server Jobs", config, openCallback, filterStats, 
+        	{
+          		Stats = true;
+          		Search = true; 
+        	})
 			
 			textFilterChanged:connect(function()
 				statList:Refresh()
@@ -1201,52 +1377,105 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
     
       local tabBody = Primitives.FolderFrame(body, 'ClientMemory')
       
-      local memoryAnalyzer = MemoryAnalyzerClass.new(tabBody)
+      local clientMemoryAnalyzer = ClientMemoryAnalyzerClass.new(tabBody)
             
       -- When memory analyzer decides it's new size, we get notified.
-      memoryAnalyzer:setHeightChangedCallback(function(newHeight)
+      clientMemoryAnalyzer:setHeightChangedCallback(function(newHeight)
           body.Size = UDim2.new(1, 0, 0, newHeight)
           -- body.Size = UDim2.new(1, 0, 0, newHeight)
         end)
       
       -- Considering all state (is dev console even showing, which tab is showing), 
       -- do I need to update the memory stats tab right now, and should I be listening
-      -- for regular updats?
-      function syncMemoryAnalyzerVisibility()
+      -- for regular updates?
+      function syncClientMemoryAnalyzerVisibility()
         if (tab.Open and tab.Visible and devConsole.Visible) then 
-          memoryAnalyzer:renderUpdates()
-          memoryAnalyzer:startListeningForUpdates()
-          body.Size = UDim2.new(1, 0, 0, memoryAnalyzer:getHeightInPix())
+          clientMemoryAnalyzer:renderUpdates()
+          clientMemoryAnalyzer:startListeningForUpdates()
+          body.Size = UDim2.new(1, 0, 0, clientMemoryAnalyzer:getHeightInPix())
         else
-          memoryAnalyzer:stopListeningForUpdates()
+          clientMemoryAnalyzer:stopListeningForUpdates()
         end
       end
       
-      -- 80 is the tab width
       -- Every time 'open' state changes, call syncVisibility.
-      tab = devConsole:AddTab("Client Memory", 80, tabBody, function(open)      
+      local tabName = "Client Memory"
+
+      tab = devConsole:AddTab(tabName, tabBody, function(open)
           if (open) then
+			devConsole.WindowScrollbar:SetValue(0)
             setShownOptionTypes({})
           end
           
-          syncMemoryAnalyzerVisibility()
+          syncClientMemoryAnalyzerVisibility()
         end)
       tab:SetVisible(true)   
       
       -- Every time dev console's open state changes, call syncVisibility.
       devConsole.VisibleChanged:connect(function(visible)
-          syncMemoryAnalyzerVisibility()
+          syncClientMemoryAnalyzerVisibility()
       end)
 	end
+	
+	do -- Client Http Results tab
+		if permissions.MayViewHttpResultClient then
+			local tabBody = Primitives.FolderFrame(body, 'HttpResult')
+			local tabOpen = false
+			local httpResultListClass = require(CoreGui.RobloxGui.Modules.HttpAnalyticsTab)
+			local httpResultListClient = httpResultListClass.new(tabBody, function ( newHeight )
+				-- update the body.Size only when tab is open so it won't disturb other tab
+				if tabOpen then
+					body.Size = UDim2.new(1, 0, 0, newHeight)
+				end
+			end)
 
+			local logService = game:GetService('LogService')
+			-- add http result when client got a http result
+          	logService.HttpResultOut:connect(function (httpResult)
+          		httpResultListClient:addHttpResult(httpResult)
+          	end)
+          	-- add http results client got before console was opened
+          	local history = logService:GetHttpResultHistory()
+			for i = 1, #history do
+				httpResultListClient:addHttpResult(history[i])
+			end
 
+			local tab = devConsole:AddTab('Client Http Result', tabBody, function(open)
+				tabOpen = open
+				-- update the 'body.Size', so the scrollbar will work
+				if open then				
+					body.Size = UDim2.new(1, 0, 0, httpResultListClient:getHeightInPix())
+				end
+	        end)
+      	
+			tab:SetVisible(true)
+		end
+	end
+
+	do -- ContextActionService debugging
+		if permissions.MayViewContextActionBindings and enableActionBindingsTab then
+			local tabBody = Primitives.FolderFrame(body, "ActionBindings")
+			local tab = devConsole:AddTab("Action Bindings", tabBody)
+			
+
+			local success, result = pcall(function()
+				local ActionBindingsTab = require(RobloxGui.Modules.ActionBindingsTab)
+				ActionBindingsTab.initializeGui(tabBody)
+			end)
+			if not success then
+				warn(result)
+				warn("Action Bindings tab was hidden")
+			else
+				tab:SetVisible(true)
+			end
+		end
+	end
   
 	--[[
 	do -- Sample tab
 		local tabBody = Primitives.FolderFrame(body, 'TabName')
 		
-		-- 80 is the tab width
-		local tab = devConsole:AddTab("Tab Name", 80, tabBody)
+		local tab = devConsole:AddTab("Tab Name", tabBody)
 		tab:SetVisible(true)
 		--tab:SetOpen(true)
 	end
@@ -2259,7 +2488,7 @@ function Methods.RefreshTabs(devConsole)
 	end
 end
 
-function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCallback)
+function Methods.AddTab(devConsole, text, body, openCallback, visibleCallback)
 	-- Body is a frame that contains the tab contents
 	body.Visible = false
 	
@@ -2270,6 +2499,9 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 		VisibleCallback = visibleCallback;
 		Body = body;
 	}
+
+	local nominalSize = TextService:GetTextSize(text, TAB_TEXT_SIZE, Enum.Font.SourceSans, Vector2.new(1e3, 1e3))
+	local width = nominalSize.x + (TAB_TEXT_PADDING * 2)
 	
 	local buttonFrame = Primitives.InvisibleButton(devConsole.Frame.Interior.Tabs, 'Tab_' .. text)
 	tab.ButtonFrame = buttonFrame
@@ -2277,7 +2509,7 @@ function Methods.AddTab(devConsole, text, width, body, openCallback, visibleCall
 	buttonFrame.Visible = false
 	
 	local textLabel = Primitives.TextLabel(buttonFrame, 'Label', text)
-	textLabel.FontSize = Enum.FontSize.Size14
+	textLabel.TextSize = TAB_TEXT_SIZE
 	--textLabel.TextYAlignment = Enum.TextYAlignment.Top
 	
 	devConsole:ConnectButtonHover(buttonFrame, devConsole:CreateButtonEffectFunction(textLabel))
@@ -2867,41 +3099,30 @@ do
 		
 		permissions = {}
 		permissionsLoading = true
-		
-		pcall(function()
-			permissions.CreatorFlagValue = settings():GetFFlag("UseCanManageApiToDetermineConsoleAccess")
+		permissions.IsCreator = false
+
+		local success, result = pcall(function()
+			local url = string.format("/users/%d/canmanage/%d", game:GetService("Players").LocalPlayer.UserId, game.PlaceId)
+			return game:GetService('HttpRbxApiService'):GetAsync(url, Enum.ThrottlingPriority.Default, Enum.HttpRequestType.Default, true)
 		end)
-	
-		pcall(function()
-			-- This might not support group games, I'll leave it up to "UseCanManageApiToDetermineConsoleAccess"
-			permissions.IsCreator = permissions.CreatorFlagValue or game:GetService("Players").LocalPlayer.UserId == game.CreatorId
-		end)
-		
-		if permissions.CreatorFlagValue then -- Use the new API
-			permissions.IsCreator = false
-			local success, result = pcall(function()
-				local url = string.format("/users/%d/canmanage/%d", game:GetService("Players").LocalPlayer.UserId, game.PlaceId)
-				return game:GetService('HttpRbxApiService'):GetAsync(url, Enum.ThrottlingPriority.Default)
+		if success and type(result) == "string" then
+			-- API returns: {"Success":BOOLEAN,"CanManage":BOOLEAN}
+			-- Convert from JSON to a table
+			-- pcall in case of invalid JSON
+			success, result = pcall(function()
+				return game:GetService('HttpService'):JSONDecode(result)
 			end)
-			if success and type(result) == "string" then
-				-- API returns: {"Success":BOOLEAN,"CanManage":BOOLEAN}
-				-- Convert from JSON to a table
-				-- pcall in case of invalid JSON
-				success, result = pcall(function()
-					return game:GetService('HttpService'):JSONDecode(result)
-				end)
-				if success and result.CanManage == true then
-					permissions.IsCreator = result.CanManage
-				end
+			if success and result.CanManage == true then
+				permissions.IsCreator = result.CanManage
 			end
 		end
 		
 		permissions.ClientCodeExecutionEnabled = false
 		pcall(function()
-			permissions.ServerCodeExecutionEnabled = permissions.IsCreator and settings():GetFFlag("ConsoleCodeExecutionEnabled")
+			permissions.ServerCodeExecutionEnabled = permissions.IsCreator and (not settings():GetFFlag("DebugDisableLogServiceExecuteScript"))
 		end)
 		
-		if DEBUG then
+		if DEBUG or (forceDevConsoleInStudio and RunService:IsStudio()) then
 			permissions.IsCreator = true
 			permissions.ServerCodeExecutionEnabled = true
 		end
@@ -2910,8 +3131,20 @@ do
 		permissions.MayViewClientLog = true
 		
 		permissions.MayViewServerStats = permissions.IsCreator
+		permissions.MayViewServerMemory = permissions.IsCreator
 		permissions.MayViewServerScripts = permissions.IsCreator
 		permissions.MayViewServerJobs = permissions.IsCreator
+
+		permissions.MayViewDataStoreBudget = false
+		pcall(function()
+			permissions.MayViewDataStoreBudget = permissions.IsCreator and settings():GetFFlag("EnableDevConsoleDataStoreStats")
+		end)
+		permissions.MayViewHttpResultClient = false
+		pcall(function()
+			permissions.MayViewHttpResultClient = permissions.IsCreator and settings():GetFFlag("EnableClientHttpAnalytics")
+		end)
+
+		permissions.MayViewContextActionBindings = permissions.IsCreator
 		
 		permissionsLoading = false
 		
@@ -3059,7 +3292,10 @@ do
 		end
 	
 		local statsSyncServer;
-		if permissions.MayViewServerStats or permissions.MayViewServerScripts then
+		if (permissions.MayViewServerStats or 
+			permissions.MayViewServerScripts or 
+			permissions.MayViewServerMemory) then
+			
 			statsSyncServer = {
 				Stats = nil; -- Private member, use GetStats instead
 				StatsReceived = CreateSignal();

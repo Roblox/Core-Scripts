@@ -26,6 +26,10 @@ local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local messageCreatorModules = clientChatModules:WaitForChild("MessageCreatorModules")
 local MessageCreatorUtil = require(messageCreatorModules:WaitForChild("Util"))
 
+local ChatLocalization = nil
+pcall(function() ChatLocalization = require(game:GetService("Chat").ClientChatModules.ChatLocalization) end)
+if ChatLocalization == nil then ChatLocalization = {} function ChatLocalization:Get(key,default) return default end end
+
 local numChildrenRemaining = 10 -- #waitChildren returns 0 because it's a dictionary
 local waitChildren =
 {
@@ -138,9 +142,9 @@ MessageSender:RegisterSayMessageFunction(EventFolder.SayMessageRequest)
 
 
 if (UserInputService.TouchEnabled) then
-	ChatBar:SetTextLabelText('Tap here to chat')
+	ChatBar:SetTextLabelText(ChatLocalization:Get("GameChat_ChatMain_ChatBarText",'Tap here to chat'))
 else
-	ChatBar:SetTextLabelText('To chat click here or press "/" key')
+	ChatBar:SetTextLabelText(ChatLocalization:Get("GameChat_ChatMain_ChatBarTextTouch",'To chat click here or press "/" key'))
 end
 
 spawn(function()
@@ -924,7 +928,15 @@ end
 if PlayerBlockedEvent then
 	PlayerBlockedEvent.Event:connect(function(player)
 		if MutePlayer(player) then
-			SendSystemMessageToSelf(string.format("Speaker '%s' has been blocked.", player.Name))
+			SendSystemMessageToSelf(
+				string.gsub(
+					ChatLocalization:Get(
+						"GameChat_ChatMain_SpeakerHasBeenBlocked", 
+						string.format("Speaker '%s' has been blocked.", player.Name)
+					),
+					"{RBX_NAME}",player.Name
+				)
+			)
 		end
 	end)
 end
@@ -932,7 +944,15 @@ end
 if PlayerMutedEvent then
 	PlayerMutedEvent.Event:connect(function(player)
 		if MutePlayer(player) then
-			SendSystemMessageToSelf(string.format("Speaker '%s' has been muted.", player.Name))
+			SendSystemMessageToSelf(
+				string.gsub(
+					ChatLocalization:Get(
+						"GameChat_ChatMain_SpeakerHasBeenMuted", 
+						string.format("Speaker '%s' has been muted.", player.Name)
+					),
+					"{RBX_NAME}", player.Name
+				)
+			)
 		end
 	end)
 end
@@ -948,7 +968,15 @@ end
 if PlayerUnBlockedEvent then
 	PlayerUnBlockedEvent.Event:connect(function(player)
 		if UnmutePlayer(player) then
-			SendSystemMessageToSelf(string.format("Speaker '%s' has been unblocked.", player.Name))
+			SendSystemMessageToSelf(
+				string.gsub(
+					ChatLocalization:Get(
+						"GameChat_ChatMain_SpeakerHasBeenUnBlocked", 
+						string.format("Speaker '%s' has been unblocked.", player.Name)
+					),
+					"{RBX_NAME}",player.Name
+				)
+			)
 		end
 	end)
 end
@@ -956,7 +984,15 @@ end
 if PlayerUnMutedEvent then
 	PlayerUnMutedEvent.Event:connect(function(player)
 		if UnmutePlayer(player) then
-			SendSystemMessageToSelf(string.format("Speaker '%s' has been unmuted.", player.Name))
+			SendSystemMessageToSelf(
+				string.gsub(
+					ChatLocalization:Get(
+						"GameChat_ChatMain_SpeakerHasBeenUnMuted", 
+						string.format("Speaker '%s' has been unmuted.", player.Name)
+					),
+					"{RBX_NAME}",player.Name
+				)
+			)
 		end
 	end)
 end
