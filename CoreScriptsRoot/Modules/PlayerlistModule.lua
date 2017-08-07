@@ -1504,6 +1504,7 @@ local function removePlayerEntry(player)
       break
     end
   end
+  updateAllTeamScores()
   setEntryPositions()
   setScrollListSize()
 end
