@@ -1786,12 +1786,14 @@ local blockStatusChanged = function(userId, isBlocked)
 
   for _,playerEntry in ipairs(PlayerEntries) do
     if playerEntry.Player.UserId == userId then
-      playerEntry.Frame.BGFrame.MembershipIcon.Image = getMembershipIcon(playerEntry.Player)
+      local membershipIcon  = getMembershipIcon(playerEntry.Player)
+      local iconImage       = getCustomPlayerIcon(playerEntry.Player)
+
+      playerEntry.Frame.BGFrame.MembershipIcon.Image = iconImage ~= nil and iconImage or membershipIcon
       return
     end
   end
 end
-
 blockingUtility:GetBlockedStatusChangedEvent():connect(blockStatusChanged)
 
 return Playerlist
