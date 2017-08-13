@@ -15,6 +15,10 @@ local ChatService = require(modulesFolder:WaitForChild("ChatService"))
 local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
 
+local ChatLocalization = nil
+pcall(function() ChatLocalization = require(game:GetService("Chat").ClientChatModules.ChatLocalization) end)
+if ChatLocalization == nil then ChatLocalization = { Get = function(key,default) return default end } end
+
 local useEvents = {}
 
 local EventFolder = EventFolderParent:FindFirstChild(EventFolderName)
@@ -240,13 +244,37 @@ local function DoJoinCommand(speakerName, channelName, fromChannelName)
 					speaker:JoinChannel(channel.Name)
 				else
 					speaker:SetMainChannel(channel.Name)
-					speaker:SendSystemMessage(string.format("You are now chatting in channel: '%s'", channel.Name), channel.Name)
+					speaker:SendSystemMessage(
+						string.gsub(
+							ChatLocalization:Get(
+								"GameChat_SwitchChannel_NowInChannel",
+								string.format("You are now chatting in channel: '%s'", channel.Name)
+							),
+						"{RBX_NAME}",channel.Name),
+						channel.Name
+					)
 				end
 			else
-				speaker:SendSystemMessage("You cannot join channel '" .. channelName .. "'.", fromChannelName)
+				speaker:SendSystemMessage(
+					string.gsub(
+						ChatLocalization:Get(
+							"GameChat_ChatServiceRunner_YouCannotJoinChannel",
+							("You cannot join channel '" .. channelName .. "'.")
+						),
+					"{RBX_NAME}",channelName),
+					fromChannelName
+				)
 			end
 		else
-			speaker:SendSystemMessage("Channel '" .. channelName .. "' does not exist.", fromChannelName)
+			speaker:SendSystemMessage(
+				string.gsub(
+					ChatLocalization:Get(
+						"GameChat_ChatServiceRunner_ChannelDoesNotExist",
+						("Channel '" .. channelName .. "' does not exist.")
+					),
+				"{RBX_NAME}",channelName),
+				fromChannelName
+			)
 		end
 	end
 end
@@ -259,12 +287,36 @@ local function DoLeaveCommand(speakerName, channelName, fromChannelName)
 		if (speaker:IsInChannel(channelName)) then
 			if (channel.Leavable) then
 				speaker:LeaveChannel(channel.Name)
-				speaker:SendSystemMessage(string.format("You have left channel '%s'", channel.Name), "System")
+				speaker:SendSystemMessage(
+					string.gsub(
+						ChatLocalization:Get(
+							"GameChat_ChatService_YouHaveLeftChannel",
+							string.format("You have left channel '%s'", channelName)
+						),
+					"{RBX_NAME}",channel.Name),
+					"System"
+				)
 			else
-				speaker:SendSystemMessage("You cannot leave channel '" .. channelName .. "'.", fromChannelName)
+				speaker:SendSystemMessage(
+					string.gsub(
+						ChatLocalization:Get(
+							"GameChat_ChatServiceRunner_YouCannotLeaveChannel",
+							("You cannot leave channel '" .. channelName .. "'.")
+						),
+					"{RBX_NAME}",channelName),
+					fromChannelName
+				)
 			end
 		else
-			speaker:SendSystemMessage("You are not in channel '" .. channelName .. "'.", fromChannelName)
+			speaker:SendSystemMessage(
+				string.gsub(
+					ChatLocalization:Get(
+						"GameChat_ChatServiceRunner_YouAreNotInChannel",
+						("You are not in channel '" .. channelName .. "'.")
+					),
+				"{RBX_NAME}",channelName),
+				fromChannelName
+			)
 		end
 	end
 end
@@ -318,7 +370,7 @@ end
 local systemChannel = ChatService:AddChannel("System")
 systemChannel.Leavable = false
 systemChannel.AutoJoin = true
-systemChannel.WelcomeMessage = "This channel is for system and game notifications."
+systemChannel.WelcomeMessage = ChatLocalization:Get("GameChat_ChatServiceRunner_SystemChannelWelcomeMessage","This channel is for system and game notifications.")
 
 systemChannel.SpeakerJoined:connect(function(speakerName)
 	systemChannel:MuteSpeaker(speakerName)

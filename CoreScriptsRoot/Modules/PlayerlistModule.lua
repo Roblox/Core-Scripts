@@ -15,10 +15,8 @@ local PlayersService = game:GetService('Players')
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
-local RbxGuiLibrary = nil
-if LoadLibrary then
-  RbxGuiLibrary = LoadLibrary("RbxGui")
-end
+local fixPlayerlistFollowingSuccess, fixPlayerlistFollowingFlagValue = pcall(function() return settings():GetFFlag("FixPlayerlistFollowing") end)
+local fixPlayerlistFollowingEnabled = fixPlayerlistFollowingSuccess and fixPlayerlistFollowingFlagValue
 
 while not PlayersService.LocalPlayer do
 	-- This does not follow the usual pattern of PlayersService:PlayerAdded:Wait()
@@ -85,17 +83,9 @@ if isTenFootInterface then
 end
 local TempHideKeys = {}
 
-local function IsXboxUseCrossPlatformPlayEnabled()
-  local success, flagValue = pcall(function() return settings():GetFFlag("XboxUseCrossPlatformPlay") end)
-  return (success and flagValue == true)
-end
-
-local AllowPlatformName = IsXboxUseCrossPlatformPlayEnabled() and
-  game:GetService('UserInputService'):GetPlatform() == Enum.Platform.XBoxOne
-
 local PlayerEntrySizeY = 24
 if isTenFootInterface then
-  PlayerEntrySizeY = AllowPlatformName and 100 or 80
+  PlayerEntrySizeY = 100
 end
 
 local TeamEntrySizeY = 18
@@ -220,12 +210,6 @@ end
 local function setAvatarIconAsync(player, iconImage)
   -- this function is pretty much for xbox right now and makes use of modules that are part
   -- of the xbox app. Please see Kip or Jason if you have any questions
-  local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function() return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
-  local thumbsUrl = BaseUrl
-  if(useSubdomainsFlagExists and useSubdomainsFlagValue and AssetGameUrl~=nil) then
-    thumbsUrl = AssetGameUrl
-  end
-
   local thumbnailLoader = nil
   pcall(function()
     thumbnailLoader = require(RobloxGui.Modules.Shell.ThumbnailLoader)
@@ -854,7 +838,7 @@ local function setFollowRelationshipsView(relationshipTable)
       end
     end
 
-	if icon then
+	if icon or fixPlayerlistFollowingEnabled then
 		local frame = entry.Frame
 		local bgFrame = frame:FindFirstChild('BGFrame')
 		if bgFrame then
@@ -1244,6 +1228,7 @@ if isTenFootInterface then offsetSize = 32 end
 local function createPlayerEntry(player, isTopStat)
   local playerEntry = {}
   local name = player.Name
+  local hasXboxGamertag = isTenFootInterface and player.DisplayName ~= ""
 
   local containerFrame, entryFrame = createEntryFrame(name, PlayerEntrySizeY, isTopStat)
   entryFrame.Active = true
@@ -1252,7 +1237,7 @@ local function createPlayerEntry(player, isTopStat)
       onEntryFrameSelected(containerFrame, player)
     end)
 
-  local currentXOffset = AllowPlatformName and 14 or 1
+  local currentXOffset = hasXboxGamertag and 14 or 1
 
   -- check membership
   local membershipIconImage = getMembershipIcon(player)
@@ -1260,7 +1245,7 @@ local function createPlayerEntry(player, isTopStat)
 
   if membershipIconImage then
     membershipIcon = createImageIcon(membershipIconImage, "MembershipIcon", currentXOffset, entryFrame)
-    currentXOffset = currentXOffset + membershipIcon.Size.X.Offset + (AllowPlatformName and 4 or 2)
+    currentXOffset = currentXOffset + membershipIcon.Size.X.Offset + (hasXboxGamertag and 4 or 2)
   else
     currentXOffset = currentXOffset + offsetSize
   end
@@ -1308,44 +1293,36 @@ local function createPlayerEntry(player, isTopStat)
   local playerPlatformName
   local PlatformLogo
 
-  if AllowPlatformName then
-    if  game:GetService('UserInputService'):GetPlatform() == Enum.Platform.XBoxOne and
-        player.OsPlatform == "Durango" and
-        player.DisplayName ~= ""
-    then
-      local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
+  if  game:GetService('UserInputService'):GetPlatform() == Enum.Platform.XBoxOne and
+      player.OsPlatform == "Durango" and
+      player.DisplayName ~= ""
+  then
+    local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
 
-      playerName = createEntryNameText("PlayerName", name,
-        UDim2.new(0.01, currentXOffset, -0.20, 0),
-        UDim2.new(-0.01, playerNameXSize, 1, 0))
-      playerName.Parent = entryFrame
+    playerName = createEntryNameText("PlayerName", name,
+      UDim2.new(0.01, currentXOffset, -0.20, 0),
+      UDim2.new(-0.01, playerNameXSize, 1, 0))
+    playerName.Parent = entryFrame
 
-      PlatformLogo = Instance.new('ImageButton')
-      PlatformLogo.Position = UDim2.new(0.01, currentXOffset, 0.21, 30)
-      PlatformLogo.Size = UDim2.new(0, 24, 0, 24)
-      PlatformLogo.Image = "rbxasset://textures/ui/Shell/Icons/PlayerlistXboxLogo.png"
-      PlatformLogo.BackgroundTransparency = 1
-      PlatformLogo.ImageColor3 = Color3.new(1,1,1)
-      PlatformLogo.Selectable = false
-      PlatformLogo.ZIndex = 2
-      PlatformLogo.Parent = entryFrame
+    PlatformLogo = Instance.new('ImageButton')
+    PlatformLogo.Position = UDim2.new(0.01, currentXOffset, 0.21, 30)
+    PlatformLogo.Size = UDim2.new(0, 24, 0, 24)
+    PlatformLogo.Image = "rbxasset://textures/ui/Shell/Icons/PlayerlistXboxLogo.png"
+    PlatformLogo.BackgroundTransparency = 1
+    PlatformLogo.ImageColor3 = Color3.new(1,1,1)
+    PlatformLogo.Selectable = false
+    PlatformLogo.ZIndex = 2
+    PlatformLogo.Parent = entryFrame
 
-      playerPlatformName = createEntryNameText("PlayerPlatformName", player.DisplayName,
-        UDim2.new(0.01, currentXOffset + PlatformLogo.Size.X.Offset + 6, 0.12, 0),
-        UDim2.new(-0.01, playerNameXSize, 1, 0),
-        Enum.FontSize.Size24)
-      playerPlatformName.Parent = entryFrame
-    else
-      playerName = createEntryNameText("PlayerName", name,
-        UDim2.new(0.01, currentXOffset, 0, 0),
-        UDim2.new(-0.01, entryFrame.Size.X.Offset - currentXOffset, 1, 0))
-
-      playerName.Parent = entryFrame
-    end
+    playerPlatformName = createEntryNameText("PlayerPlatformName", player.DisplayName,
+      UDim2.new(0.01, currentXOffset + PlatformLogo.Size.X.Offset + 6, 0.12, 0),
+      UDim2.new(-0.01, playerNameXSize, 1, 0),
+      Enum.FontSize.Size24)
+    playerPlatformName.Parent = entryFrame
   else
     playerName = createEntryNameText("PlayerName", name,
-        UDim2.new(0.01, currentXOffset, 0, 0),
-        UDim2.new(-0.01, entryFrame.Size.X.Offset - currentXOffset, 1, 0))
+      UDim2.new(0.01, currentXOffset, 0, 0),
+      UDim2.new(-0.01, entryFrame.Size.X.Offset - currentXOffset, 1, 0))
 
     playerName.Parent = entryFrame
   end
@@ -1359,19 +1336,27 @@ local function createPlayerEntry(player, isTopStat)
     IconUnselectedColor = Color3.new(1,1,1);
   }
 
-  if IsXboxUseCrossPlatformPlayEnabled() then
-    entryFrame.SelectionImageObject = noSelectionObject
+  -- update selection for consoles
+  if isTenFootInterface then
     entryFrame.SelectionGained:connect(function()
       entryFrame.BackgroundColor3 = ColorConstants.SelectedButtonColor
       playerName.TextColor3 = ColorConstants.TextSelectedColor
-      playerPlatformName.TextColor3 = ColorConstants.TextSelectedColor
-      PlatformLogo.ImageColor3 = ColorConstants.IconSelectedColor
+      if playerPlatformName then
+        playerPlatformName.TextColor3 = ColorConstants.TextSelectedColor
+      end
+      if PlatformLogo then
+        PlatformLogo.ImageColor3 = ColorConstants.IconSelectedColor
+      end
     end)
     entryFrame.SelectionLost:connect(function()
       entryFrame.BackgroundColor3 = ColorConstants.ButtonUnselectedColor
       playerName.TextColor3 = ColorConstants.TextUnselectedColor
-      playerPlatformName.TextColor3 = ColorConstants.TextUnselectedColor
-      PlatformLogo.ImageColor3 = ColorConstants.IconUnselectedColor
+      if playerPlatformName then
+        playerPlatformName.TextColor3 = ColorConstants.TextUnselectedColor
+      end
+      if PlatformLogo then
+        PlatformLogo.ImageColor3 = ColorConstants.IconUnselectedColor
+      end
     end)
   end
 

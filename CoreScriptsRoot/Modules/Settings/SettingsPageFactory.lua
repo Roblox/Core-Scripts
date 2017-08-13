@@ -108,12 +108,15 @@ local function Initialize()
 		if utility:IsSmallTouchScreen() then
 			this.TabHeader.Icon.Size = UDim2.new(0,34,0,28)
 			this.TabHeader.Icon.Position = UDim2.new(this.TabHeader.Icon.Position.X.Scale,this.TabHeader.Icon.Position.X.Offset,0.5,-14)
+			this.TabHeader.Icon.AnchorPoint = Vector2.new(0, 0)
 		elseif isTenFootInterface then
 			this.TabHeader.Icon.Size = UDim2.new(0,88,0,74)
-			this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,-43)
+			this.TabHeader.Icon.Position = UDim2.new(0,0,0.5,0)
+			this.TabHeader.Icon.AnchorPoint = Vector2.new(0, 0.5)
 		else
 			this.TabHeader.Icon.Size = UDim2.new(0,44,0,37)
 			this.TabHeader.Icon.Position = UDim2.new(0,15,0.5,-18)
+			this.TabHeader.Icon.AnchorPoint = Vector2.new(0, 0)
 		end
 
 		local isPortrait = enablePortraitMode and utility:IsPortrait()
@@ -123,7 +126,6 @@ local function Initialize()
 			this.TabHeader.Icon.Size = UDim2.new(0.5, 0, 0.5, 0)
 			this.TabHeader.Icon.Title.Visible = false
 		else
-			this.TabHeader.Icon.AnchorPoint = Vector2.new(0, 0)
 			this.TabHeader.Icon.Title.Visible = true
 		end
 	end
