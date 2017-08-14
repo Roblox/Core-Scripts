@@ -1186,7 +1186,8 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		if (enableDevConsoleDataStoreStats and permissions.MayViewServerMemory) then
 			local tabBody = Primitives.FolderFrame(body, 'ServerMemory')
 			local serverMemoryAnalyzer = ServerMemoryAnalyzerClass.new(tabBody)
-
+			local serverTab = nil
+			
 			-- When memory analyzer decides its new size, we get notified.
 			serverMemoryAnalyzer:setHeightChangedCallback(function(newHeight)
 					body.Size = UDim2.new(1, 0, 0, newHeight)
@@ -1195,8 +1196,8 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			-- Considering all state (is dev console even showing, which tab is showing), 
 			-- do I need to update the memory stats tab right now, and should I be listening
 			-- for regular update?
-			function syncServerMemoryAnalyzerVisibility()
-				if (tab.Open and tab.Visible and devConsole.Visible) then 
+			local function syncServerMemoryAnalyzerVisibility()
+				if (serverTab.Open and serverTab.Visible and devConsole.Visible) then 
 					serverMemoryAnalyzer:renderUpdates()
 					body.Size = UDim2.new(1, 0, 0, serverMemoryAnalyzer:getHeightInPix())
 				end
@@ -1205,14 +1206,14 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			-- Every time 'open' state changes, call syncVisibility.
 			local tabName = "Server Memory"
 
-			tab = devConsole:AddTab(tabName, tabBody, function(open)
+			serverTab = devConsole:AddTab(tabName, tabBody, function(open)
 					if (open) then
 						devConsole.WindowScrollbar:SetValue(0)
 						setShownOptionTypes({})
 					end
 					syncServerMemoryAnalyzerVisibility()
 				end)
-			tab:SetVisible(true)   
+			serverTab:SetVisible(true)   
 
 			-- Every time dev console's open state changes, call syncVisibility.
 			devConsole.VisibleChanged:connect(function(visible)
@@ -1376,7 +1377,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	do -- Client Memory tab
     
       local tabBody = Primitives.FolderFrame(body, 'ClientMemory')
-      
+      local clientTab = nil
       local clientMemoryAnalyzer = ClientMemoryAnalyzerClass.new(tabBody)
             
       -- When memory analyzer decides it's new size, we get notified.
@@ -1388,8 +1389,8 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
       -- Considering all state (is dev console even showing, which tab is showing), 
       -- do I need to update the memory stats tab right now, and should I be listening
       -- for regular updates?
-      function syncClientMemoryAnalyzerVisibility()
-        if (tab.Open and tab.Visible and devConsole.Visible) then 
+      local function syncClientMemoryAnalyzerVisibility()
+        if (clientTab.Open and clientTab.Visible and devConsole.Visible) then 
           clientMemoryAnalyzer:renderUpdates()
           clientMemoryAnalyzer:startListeningForUpdates()
           body.Size = UDim2.new(1, 0, 0, clientMemoryAnalyzer:getHeightInPix())
@@ -1401,7 +1402,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
       -- Every time 'open' state changes, call syncVisibility.
       local tabName = "Client Memory"
 
-      tab = devConsole:AddTab(tabName, tabBody, function(open)
+      clientTab = devConsole:AddTab(tabName, tabBody, function(open)
           if (open) then
 			devConsole.WindowScrollbar:SetValue(0)
             setShownOptionTypes({})
@@ -1409,7 +1410,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
           
           syncClientMemoryAnalyzerVisibility()
         end)
-      tab:SetVisible(true)   
+      clientTab:SetVisible(true)   
       
       -- Every time dev console's open state changes, call syncVisibility.
       devConsole.VisibleChanged:connect(function(visible)
@@ -1419,36 +1420,92 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	
 	do -- Client Http Results tab
 		if permissions.MayViewHttpResultClient then
+			local logService = game:GetService('LogService')
 			local tabBody = Primitives.FolderFrame(body, 'HttpResult')
 			local tabOpen = false
-			local httpResultListClass = require(CoreGui.RobloxGui.Modules.HttpAnalyticsTab)
-			local httpResultListClient = httpResultListClass.new(tabBody, function ( newHeight )
+			local httpAnalyzerClass = require(CoreGui.RobloxGui.Modules.HttpAnalyticsTab)
+			local httpAnalyzer = httpAnalyzerClass.new(tabBody, function ( newHeight )
 				-- update the body.Size only when tab is open so it won't disturb other tab
 				if tabOpen then
+					if newHeight < window.AbsoluteSize.Y then
+						newHeight = window.AbsoluteSize.Y
+					end
 					body.Size = UDim2.new(1, 0, 0, newHeight)
 				end
 			end)
 
-			local logService = game:GetService('LogService')
 			-- add http result when client got a http result
           	logService.HttpResultOut:connect(function (httpResult)
-          		httpResultListClient:addHttpResult(httpResult)
+          		httpAnalyzer:addHttpResult(httpResult)
           	end)
-          	-- add http results client got before console was opened
+          	-- add http results that client got before console was opened
           	local history = logService:GetHttpResultHistory()
 			for i = 1, #history do
-				httpResultListClient:addHttpResult(history[i])
+				httpAnalyzer:addHttpResult(history[i])
 			end
 
-			local tab = devConsole:AddTab('Client Http Result', tabBody, function(open)
+			local tab = devConsole:AddTab('Client Http', tabBody, function(open)
 				tabOpen = open
 				-- update the 'body.Size', so the scrollbar will work
-				if open then				
-					body.Size = UDim2.new(1, 0, 0, httpResultListClient:getHeightInPix())
+				if open then
+					local newHeight = httpAnalyzer:getHeightInPix()
+					if newHeight < window.AbsoluteSize.Y then
+						newHeight = window.AbsoluteSize.Y
+					end
+					body.Size = UDim2.new(1, 0, 0, newHeight)
 				end
 	        end)
-      	
 			tab:SetVisible(true)
+		end
+	end
+
+	do -- Server Http Results tab
+		local logService = game:GetService('LogService')
+		local showServerHttp = function ()
+			if permissions.MayViewHttpResultServer then
+				local tabBody = Primitives.FolderFrame(body, 'Server Http Result')
+				local tabOpen = false
+				local httpAnalyzerClass = require(CoreGui.RobloxGui.Modules.HttpAnalyticsTab)
+				local httpAnalyzer = httpAnalyzerClass.new(tabBody, function ( newHeight )
+					-- update the body.Size only when tab is open so it won't disturb other tab
+					if tabOpen then
+						if newHeight < window.AbsoluteSize.Y then
+							newHeight = window.AbsoluteSize.Y
+						end
+						body.Size = UDim2.new(1, 0, 0, newHeight)
+					end
+				end)
+
+				-- add http result when got a http result from server
+	          	logService.ServerHttpResultOut:connect(function (httpResult)
+	          		httpAnalyzer:addHttpResult(httpResult)
+	          	end)
+		        logService:RequestServerHttpResult()
+
+				local tab = devConsole:AddTab('Server Http', tabBody, function(open)
+					tabOpen = open
+					-- update the 'body.Size', so the scrollbar will work
+					if open then
+						local newHeight = httpAnalyzer:getHeightInPix()
+						if newHeight < window.AbsoluteSize.Y then
+							newHeight = window.AbsoluteSize.Y
+						end
+						body.Size = UDim2.new(1, 0, 0, httpAnalyzer:getHeightInPix())
+					end
+		        end)
+	      	
+				tab:SetVisible(true)
+			end
+		end
+		-- show server http results with user in the DFStringHttpResultsApprovedUserIDs
+		if not permissions.MayViewHttpResultServer then
+			logService.OnHttpResultApproved:connect(function (isApproved)
+				permissions.MayViewHttpResultServer = isApproved
+				showServerHttp()
+			end)
+			logService:RequestHttpResultApproved()
+		else
+			showServerHttp()
 		end
 	end
 
@@ -3142,6 +3199,12 @@ do
 		permissions.MayViewHttpResultClient = false
 		pcall(function()
 			permissions.MayViewHttpResultClient = permissions.IsCreator and settings():GetFFlag("EnableClientHttpAnalytics")
+		end)
+		permissions.MayViewHttpResultServer = false
+		pcall(function()
+			permissions.MayViewHttpResultServer = permissions.IsCreator and
+								settings():GetFFlag("EnableClientHttpAnalytics") and
+								settings():GetFFlag("EnableServerHttpAnalytics")
 		end)
 
 		permissions.MayViewContextActionBindings = permissions.IsCreator
