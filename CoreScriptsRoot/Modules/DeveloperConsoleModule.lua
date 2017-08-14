@@ -27,9 +27,9 @@ local GuiService = game:GetService('GuiService')
 local isTenFootInterface = GuiService:IsTenFootInterface()
 
 --[[ Modules ]]--
-local ClientMemoryAnalyzerClass = require(CoreGui.RobloxGui.Modules.Stats.ClientMemoryAnalyzer)
-local ServerMemoryAnalyzerClass = require(CoreGui.RobloxGui.Modules.Stats.ServerMemoryAnalyzer)
-local StatsUtils = require(CoreGui.RobloxGui.Modules.Stats.StatsUtils)
+local ClientMemoryAnalyzerClass = require(Modules.Stats.ClientMemoryAnalyzer)
+local ServerMemoryAnalyzerClass = require(Modules.Stats.ServerMemoryAnalyzer)
+local StatsUtils = require(Modules.Stats.StatsUtils)
 
 --[[ Flags ]]--
 local function checkFFlag(flagName) 
@@ -1421,7 +1421,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		if permissions.MayViewHttpResultClient then
 			local tabBody = Primitives.FolderFrame(body, 'HttpResult')
 			local tabOpen = false
-			local httpResultListClass = require(CoreGui.RobloxGui.Modules.HttpAnalyticsTab)
+			local httpResultListClass = require(Modules.HttpAnalyticsTab)
 			local httpResultListClient = httpResultListClass.new(tabBody, function ( newHeight )
 				-- update the body.Size only when tab is open so it won't disturb other tab
 				if tabOpen then
@@ -1459,7 +1459,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			
 
 			local success, result = pcall(function()
-				local ActionBindingsTab = require(RobloxGui.Modules.ActionBindingsTab)
+				local ActionBindingsTab = require(Modules.ActionBindingsTab)
 				ActionBindingsTab.initializeGui(tabBody)
 			end)
 			if not success then

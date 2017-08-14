@@ -826,7 +826,7 @@ local function Initialize()
     this.VolumeLabel,
     this.VolumeSlider = utility:AddNewRow(this, "Volume", "Slider", 10, startVolumeLevel)
 
-    local volumeSound = Instance.new("Sound", game:GetService("CoreGui").RobloxGui.Sounds)
+    local volumeSound = Instance.new("Sound", RobloxGui.Sounds)
     volumeSound.Name = "VolumeChangeSound"
     volumeSound.SoundId = "rbxasset://sounds/uuhhh.mp3"
 

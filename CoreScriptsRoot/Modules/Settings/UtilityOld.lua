@@ -526,7 +526,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		Visible = false,
 		Selectable = false,
 		AutoButtonColor = false,
-		Parent = CoreGui.RobloxGui
+		Parent = RobloxGui
 	};
 
 	local function onVREnabled(prop)
@@ -534,11 +534,11 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 			return
 		end
 		if UserInputService.VREnabled then
-			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
+			local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 			DropDownFullscreenFrame.Parent = Panel3D.Get("SettingsMenu"):GetGUI()
 			DropDownFullscreenFrame.BackgroundTransparency = 1
 		else
-			DropDownFullscreenFrame.Parent = CoreGui.RobloxGui
+			DropDownFullscreenFrame.Parent = RobloxGui
 			DropDownFullscreenFrame.BackgroundTransparency = DROPDOWN_BG_TRANSPARENCY
 		end
 
@@ -596,7 +596,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 		active = false
 
 		if fixSettingsMenuVR and UserInputService.VREnabled then
-			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
+			local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 			Panel3D.Get("SettingsMenu"):SetSubpanelDepth(DropDownFullscreenFrame, 0)
 		end
 	end
@@ -610,7 +610,7 @@ local function CreateDropDown(dropDownStringTable, startPosition, settingsHub)
 
 		DropDownFullscreenFrame.Visible = true
 		if fixSettingsMenuVR and UserInputService.VREnabled then
-			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
+			local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 			Panel3D.Get("SettingsMenu"):SetSubpanelDepth(DropDownFullscreenFrame, 0.5)
 		end
 		if not this.CurrentIndex then this.CurrentIndex = 1 end
@@ -1282,7 +1282,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 end
 
 local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc, hasBackground)
-	local parent = CoreGui.RobloxGui
+	local parent = RobloxGui
 	if parent:FindFirstChild("AlertViewFullScreen") then return end
 
 	--Declare AlertViewBacking so onVREnabled can take it as an upvalue
@@ -1294,11 +1294,11 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		if prop ~= "VREnabled" then return end
 		local Panel3D, settingsPanel = nil, nil
 		if UserInputService.VREnabled then
-			Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
+			Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 			settingsPanel = Panel3D.Get("SettingsMenu")
 			parent = settingsPanel:GetGUI()
 		else
-			parent = CoreGui.RobloxGui
+			parent = RobloxGui
 		end
 		if AlertViewBacking and AlertViewBacking.Parent ~= nil then
 			AlertViewBacking.Parent = parent
@@ -1337,9 +1337,9 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 		AlertViewBacking.Position = UDim2.new(0.1, 0, 0.1, 0)
 	end
 
-	if CoreGui.RobloxGui.AbsoluteSize.Y <= AlertViewBacking.Size.Y.Offset then
+	if RobloxGui.AbsoluteSize.Y <= AlertViewBacking.Size.Y.Offset then
 		AlertViewBacking.Size = UDim2.new(AlertViewBacking.Size.X.Scale, AlertViewBacking.Size.X.Offset,
-											AlertViewBacking.Size.Y.Scale, CoreGui.RobloxGui.AbsoluteSize.Y)
+											AlertViewBacking.Size.Y.Scale, RobloxGui.AbsoluteSize.Y)
 		AlertViewBacking.Position = UDim2.new(AlertViewBacking.Position.X.Scale, -AlertViewBacking.Size.X.Offset/2, 0.5, -AlertViewBacking.Size.Y.Offset/2)
 	end
 
@@ -1373,7 +1373,7 @@ local function ShowAlert(alertMessage, okButtonText, settingsHub, okPressedFunc,
 			return
 		end
 		if fixSettingsMenuVR and UserInputService.VREnabled then
-			local Panel3D = require(CoreGui.RobloxGui.Modules.VR.Panel3D)
+			local Panel3D = require(RobloxGui.Modules.VR.Panel3D)
 			Panel3D.Get("SettingsMenu"):SetSubpanelDepth(AlertViewBacking, 0)
 		end
 		AlertViewBacking:Destroy()
@@ -2105,7 +2105,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		end)
 
 		local setRowSelection = function()
-			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
+			local fullscreenDropDown = RobloxGui:FindFirstChild("DropDownFullscreenFrame")
 			if fullscreenDropDown and fullscreenDropDown.Visible then return end
 
 			local valueFrame = ValueChangerSelection
@@ -2198,7 +2198,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		end)
 
 		local setRowSelection = function()
-			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
+			local fullscreenDropDown = RobloxGui:FindFirstChild("DropDownFullscreenFrame")
 			if fullscreenDropDown and fullscreenDropDown.Visible then return end
 
 			local valueFrame = ValueChangerSelection
@@ -2263,7 +2263,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 
 	if isARealRow then
 		local setRowSelection = function()
-			local fullscreenDropDown = CoreGui.RobloxGui:FindFirstChild("DropDownFullscreenFrame")
+			local fullscreenDropDown = RobloxGui:FindFirstChild("DropDownFullscreenFrame")
 			if fullscreenDropDown and fullscreenDropDown.Visible then return end
 
 			local valueFrame = ValueChangerInstance.SliderFrame
