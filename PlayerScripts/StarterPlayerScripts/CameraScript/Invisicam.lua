@@ -489,7 +489,7 @@ function Invisicam:Update()
 	-- rays coming from the camera would not be considered as hitting the part. This code adds all parts
 	-- that touch a 2x2x2 box around the camera position.
 	local region3 = Region3.new(Camera.CFrame.p + Vector3_new(-1,-1,-1), Camera.CFrame.p + Vector3_new(1,1,1))
-	local partsTouchingCamera = game.Workspace:FindPartsInRegion3(region3,nil,10)	
+	local partsTouchingCamera = game.Workspace:FindPartsInRegion3(region3,Character,10)	
 	for _,part in pairs(partsTouchingCamera) do
 		hitParts[#hitParts+1] = part
 		partIsTouchingCamera[part] = true
