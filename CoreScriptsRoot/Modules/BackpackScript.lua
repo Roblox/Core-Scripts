@@ -306,8 +306,7 @@ local function EquipNewTool(tool) --NOTE: HopperBin
 		SlotsByTool[tool]:UpdateEquipView()
 		ActiveHopper = tool
 	else
-		--Humanoid:EquipTool(tool) --NOTE: This would also unequip current Tool
-		tool.Parent = Character --TODO: Switch back to above line after EquipTool is fixed!
+		Humanoid:EquipTool(tool) --NOTE: This would also unequip current TooL
 	end
 end
 
