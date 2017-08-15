@@ -45,6 +45,9 @@ scriptContext:AddCoreScriptLocal("CoreScripts/PurchasePromptScript2", RobloxGui)
 scriptContext:AddCoreScriptLocal("CoreScripts/BlockPlayerPrompt", RobloxGui)
 scriptContext:AddCoreScriptLocal("CoreScripts/FriendPlayerPrompt", RobloxGui)
 
+-- ReportPlayer SetCore functionality
+scriptContext:AddCoreScriptLocal("CoreScripts/ReportPlayer", script.Parent)
+
 -- Backpack!
 spawn(function() safeRequire(RobloxGui.Modules.BackpackScript) end)
 
