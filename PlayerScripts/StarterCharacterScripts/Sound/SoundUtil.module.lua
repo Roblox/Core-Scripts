@@ -9,10 +9,6 @@ local SoundConstants = require(script.Parent.SoundConstants)
 
 local SoundUtil = {}
 
-local function useNewSystem()
-	return SoundService:FindFirstChild("UseNewSoundSystem") and workspace.FilteringEnabled --TODO: This should be replaced by a property. We check FilteringEnabled because our security serves no purpose with it off
-end
-
 local function createNewSound(parent, name, id, looped, playbackSpeed)
 	local sound = Instance.new("Sound")
 	sound.SoundId = id
@@ -28,7 +24,9 @@ local function createNewSound(parent, name, id, looped, playbackSpeed)
 	return sound
 end
 
-SoundUtil.UseNewSystem = useNewSystem
+SoundUtil.UseNewSystem = function()
+	return SoundService:FindFirstChild("UseNewSoundSystem") and workspace.FilteringEnabled --TODO: This should be replaced by a property. FilteringEnabled is checked because the security serves no purpose with it off.
+end
 
 SoundUtil.CreateNewSound = createNewSound
 
