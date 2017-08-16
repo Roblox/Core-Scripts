@@ -46,6 +46,8 @@ local chatWasVisible = false
 local resetButtonFlagSuccess, resetButtonFlagValue = pcall(function() return settings():GetFFlag("AllowResetButtonCustomization") end)
 local resetButtonCustomizationAllowed = (resetButtonFlagSuccess and resetButtonFlagValue == true)
 
+local enableConsoleReportAbusePageSuccess, enableConsoleReportAbusePageValue = pcall(function() return settings():GetFFlag("EnableConsoleReportAbusePage") end)
+local enableConsoleReportAbusePage = enableConsoleReportAbusePageSuccess and enableConsoleReportAbusePageValue
 
 --[[ CORE MODULES ]]
 local chat = require(RobloxGui.Modules.ChatSelector)
@@ -446,7 +448,7 @@ local function CreateSettingsHub()
 				end
 			end
 
-			addBottomBarButton("ResetCharacter", "		Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png",
+			addBottomBarButton("ResetCharacter", "Reset Character", "rbxasset://textures/ui/Settings/Help/YButtonLight" .. buttonImageAppend .. ".png",
 				"rbxasset://textures/ui/Settings/Help/ResetIcon.png", UDim2.new(0.5,isTenFootInterface and -550 or -400,0.5,-25),
 				resetCharFunc, {Enum.KeyCode.R, Enum.KeyCode.ButtonY}
 			)
@@ -1132,7 +1134,7 @@ local function CreateSettingsHub()
 	this.GameSettingsPage = require(RobloxGui.Modules.Settings.Pages.GameSettings)
 	this.GameSettingsPage:SetHub(this)
 
-	if platform ~= Enum.Platform.XBoxOne and platform ~= Enum.Platform.PS4 then
+	if platform ~= Enum.Platform.XBoxOne or enableConsoleReportAbusePage then
 		this.ReportAbusePage = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
 		this.ReportAbusePage:SetHub(this)
 	end

@@ -15,6 +15,10 @@ local decayTimePeriod = 15
 local floodCheckTable = {}
 local whitelistedSpeakers = {}
 
+local ChatLocalization = nil
+pcall(function() ChatLocalization = require(game:GetService("Chat").ClientChatModules.ChatLocalization) end)
+if ChatLocalization == nil then ChatLocalization = {} function ChatLocalization:Get(key,default) return default end end
+
 local function EnterTimeIntoLog(tbl)
 	table.insert(tbl, tick() + decayTimePeriod)
 end
@@ -54,13 +58,25 @@ local function Run(ChatService)
 		else
 
 			local timeDiff = math.ceil(t[1] - now)
-			local msg = ""
+			
 			if (informSpeakersOfWaitTimes) then
-				msg = string.format("You must wait %d %s before sending another message!", timeDiff, (timeDiff > 1) and "seconds" or "second")
+				local msg = string.gsub(
+					ChatLocalization:Get(
+						"GameChat_ChatFloodDetector_MessageDisplaySeconds",
+						string.format("You must wait %d %s before sending another message!", timeDiff, (timeDiff > 1) and "seconds" or "second")
+					),
+					"{RBX_NUMBER}",
+					tostring(timeDiff)
+				)
+				speakerObj:SendSystemMessage(msg, channel)
 			else
-				msg = "You must wait before sending another message!"
+				speakerObj:SendSystemMessage(
+					ChatLocalization:Get(
+						"GameChat_ChatFloodDetector_Message",
+						"You must wait before sending another message!"
+					)
+				,channel)
 			end
-			speakerObj:SendSystemMessage(msg, channel)
 
 			return true
 		end

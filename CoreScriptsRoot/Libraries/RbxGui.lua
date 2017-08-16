@@ -2766,18 +2766,12 @@ t.CreateSetPanel = function(userIdsForSets, objectSelected, dialogClosed, size, 
 	local BaseUrl = game:GetService("ContentProvider").BaseUrl:lower()
 	local AssetGameUrl = string.gsub(BaseUrl, "www", "assetgame")
 	
-	local useSubdomainsFlagExists, useSubdomainsFlagValue = pcall(function () return settings():GetFFlag("UseNewSubdomainsInCoreScripts") end)
-	local gameToolsUrl = BaseUrl
-	if(useSubdomainsFlagExists and useSubdomainsFlagValue and AssetGameUrl~=nil) then
-		gameToolsUrl = AssetGameUrl
-	end
-	
 	if useAssetVersionId then
-		LargeThumbnailUrl = gameToolsUrl .. "Game/Tools/ThumbnailAsset.ashx?fmt=png&wd=420&ht=420&assetversionid="
-		SmallThumbnailUrl = gameToolsUrl .. "Game/Tools/ThumbnailAsset.ashx?fmt=png&wd=75&ht=75&assetversionid="
+		LargeThumbnailUrl = AssetGameUrl .. "Game/Tools/ThumbnailAsset.ashx?fmt=png&wd=420&ht=420&assetversionid="
+		SmallThumbnailUrl = AssetGameUrl .. "Game/Tools/ThumbnailAsset.ashx?fmt=png&wd=75&ht=75&assetversionid="
 	else
-		LargeThumbnailUrl = gameToolsUrl .. "Game/Tools/ThumbnailAsset.ashx?fmt=png&wd=420&ht=420&aid="
-		SmallThumbnailUrl = gameToolsUrl .. "Game/Tools/ThumbnailAsset.ashx?fmt=png&wd=75&ht=75&aid="
+		LargeThumbnailUrl = AssetGameUrl .. "Game/Tools/ThumbnailAsset.ashx?fmt=png&wd=420&ht=420&aid="
+		SmallThumbnailUrl = AssetGameUrl .. "Game/Tools/ThumbnailAsset.ashx?fmt=png&wd=75&ht=75&aid="
 	end
 		
 	local function drillDownSetZIndex(parent, index)

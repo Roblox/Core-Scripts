@@ -12,6 +12,7 @@ local ScriptableCamera = require(RootCamera:WaitForChild('ScriptableCamera'))()
 local TrackCamera = require(RootCamera:WaitForChild('TrackCamera'))()
 local WatchCamera = require(RootCamera:WaitForChild('WatchCamera'))()
 
+local OrbitalCamera = require(RootCamera:WaitForChild('OrbitalCamera'))()
 local ClassicCamera = require(RootCamera:WaitForChild('ClassicCamera'))()
 local FollowCamera = require(RootCamera:WaitForChild('FollowCamera'))()
 local PopperCam = require(script:WaitForChild('PopperCam'))
@@ -29,6 +30,22 @@ if not success then
 	print("Couldn't get feature UserAllCamerasInLua because:" , msg) 
 end
 
+local isOrbitalCameraEnabled = pcall(function() local test = Enum.CameraType.Orbital end)
+
+-- register what camera scripts we are using
+do
+	local PlayerScripts = PlayersService.LocalPlayer:WaitForChild("PlayerScripts")
+	local canRegisterCameras = pcall(function() PlayerScripts:RegisterTouchCameraMovementMode(Enum.TouchCameraMovementMode.Default) end)
+
+	if canRegisterCameras then
+		PlayerScripts:RegisterTouchCameraMovementMode(Enum.TouchCameraMovementMode.Follow)
+		PlayerScripts:RegisterTouchCameraMovementMode(Enum.TouchCameraMovementMode.Classic)
+
+		PlayerScripts:RegisterComputerCameraMovementMode(Enum.ComputerCameraMovementMode.Default)
+		PlayerScripts:RegisterComputerCameraMovementMode(Enum.ComputerCameraMovementMode.Follow)
+		PlayerScripts:RegisterComputerCameraMovementMode(Enum.ComputerCameraMovementMode.Classic)
+	end
+end
 
 local CameraTypeEnumMap = 
 {
@@ -39,6 +56,10 @@ local CameraTypeEnumMap =
 	[Enum.CameraType.Watch] = WatchCamera;
 	[Enum.CameraType.Follow] = FollowCamera;
 }
+
+if isOrbitalCameraEnabled then
+	CameraTypeEnumMap[Enum.CameraType.Orbital] = OrbitalCamera;
+end
 
 local EnabledCamera = nil
 local EnabledOcclusion = nil
@@ -61,7 +82,8 @@ local function shouldUsePlayerScriptsCamera()
 		return true
 	else
 		if player then
-			if currentCamera == nil or (currentCamera and currentCamera.CameraType == Enum.CameraType.Custom) then
+			if currentCamera == nil or (currentCamera.CameraType == Enum.CameraType.Custom)
+						or (isOrbitalCameraEnabled and currentCamera.CameraType == Enum.CameraType.Orbital) then
 				return true
 			end
 		end
@@ -164,16 +186,17 @@ local function OnCameraMovementModeChange(newCameraMode)
 		local currentCameraType = workspace.CurrentCamera and workspace.CurrentCamera.CameraType
 		
 		if (currentCameraType == Enum.CameraType.Custom or not AllCamerasInLua) and newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
-			SetEnabledCamera(ClassicCamera)
+			SetEnabledCamera(ClassicCamera)			
 			TransparencyController:SetEnabled(true)
 		elseif (currentCameraType == Enum.CameraType.Custom or not AllCamerasInLua) and newCameraMode == Enum.ComputerCameraMovementMode.Follow.Name then
 			SetEnabledCamera(FollowCamera)
 			TransparencyController:SetEnabled(true)
-
+		elseif (currentCameraType == Enum.CameraType.Custom or not AllCamerasInLua) and (isOrbitalCameraEnabled and (newCameraMode == Enum.ComputerCameraMovementMode.Orbital.Name)) then
+			SetEnabledCamera(OrbitalCamera)
+			TransparencyController:SetEnabled(true)
 		elseif AllCamerasInLua and CameraTypeEnumMap[currentCameraType] then
 			SetEnabledCamera(CameraTypeEnumMap[currentCameraType])
 			TransparencyController:SetEnabled(false)
-
 		else -- Our camera movement code was disabled by the developer
 			SetEnabledCamera(nil)
 			TransparencyController:SetEnabled(false)
@@ -185,7 +208,9 @@ local function OnCameraMovementModeChange(newCameraMode)
 	if EnabledOcclusion == Invisicam and newOcclusionMode ~= Enum.DevCameraOcclusionMode.Invisicam then
 		Invisicam:Cleanup()
 	end
-	if newOcclusionMode == Enum.DevCameraOcclusionMode.Zoom then
+	
+	-- PopperCam does not work with OrbitalCamera, as OrbitalCamera's distance can be fixed.
+	if newOcclusionMode == Enum.DevCameraOcclusionMode.Zoom and ( isOrbitalCameraEnabled and newCameraMode ~= Enum.ComputerCameraMovementMode.Orbital.Name ) then
 		EnabledOcclusion = PopperCam
 	elseif newOcclusionMode == Enum.DevCameraOcclusionMode.Invisicam then
 		EnabledOcclusion = Invisicam

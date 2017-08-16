@@ -51,7 +51,7 @@ local function Initialize()
 
 	------ PAGE CUSTOMIZATION -------
 	this.Page.Name = "ResetCharacter"
-
+	
 	local resetCharacterText =  utility:Create'TextLabel'
 	{
 		Name = "ResetCharacterText",
@@ -63,8 +63,31 @@ local function Initialize()
 		Size = UDim2.new(1,0,0,200),
 		TextWrapped = true,
 		ZIndex = 2,
-		Parent = this.Page
+		Parent = this.Page,
+		Position = isTenFootInterface and UDim2.new(0,0,0,100) or UDim2.new(0,0,0,0)
 	};
+	
+	local resetButtonContainer = utility:Create"Frame"
+	{
+		Name = "ResetButtonContainer",
+		Parent = resetCharacterText,
+		Size = UDim2.new(1,0,0,400),
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0,0,1,0)
+	};
+	
+	local resetButtonLayout = utility:Create'UIGridLayout'
+	{
+		Name = "ResetButtonsLayout",
+		CellSize = isTenFootInterface and UDim2.new(0, 300, 0, 80) or UDim2.new(0, 200, 0, 50),
+		CellPadding = UDim2.new(0,20,0,20),
+		FillDirection = Enum.FillDirection.Horizontal,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		VerticalAlignment = Enum.VerticalAlignment.Top,
+		Parent = resetButtonContainer
+	};
+	
 	if utility:IsSmallTouchScreen() then
 		resetCharacterText.FontSize = Enum.FontSize.Size24
 		resetCharacterText.Size = UDim2.new(1,0,0,100)
@@ -98,32 +121,15 @@ local function Initialize()
 			this.ResetBindable:Fire()
 		end
 	end
-
-	local buttonSpacing = 20
-	local buttonSize = UDim2.new(0, 200, 0, 50)
-	if isTenFootInterface then
-		resetCharacterText.Position = UDim2.new(0,0,0,100)
-		buttonSize = UDim2.new(0, 300, 0, 80)
-	end
-
+	
 	this.ResetCharacterButton = utility:MakeStyledButton("ResetCharacter", "Reset", buttonSize, onResetFunction)
 	this.ResetCharacterButton.NextSelectionRight = nil
-	if utility:IsSmallTouchScreen() then
-		this.ResetCharacterButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, 0)
-	else
-		this.ResetCharacterButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, -30)
-	end
-	this.ResetCharacterButton.Parent = resetCharacterText
+	this.ResetCharacterButton.Parent = resetButtonContainer
 
 
 	local dontResetCharacterButton = utility:MakeStyledButton("DontResetCharacter", "Don't Reset", buttonSize, this.DontResetCharFromButton)
 	dontResetCharacterButton.NextSelectionLeft = nil
-	if utility:IsSmallTouchScreen() then
-		dontResetCharacterButton.Position = UDim2.new(0.5, buttonSpacing, 1, 0)
-	else
-		dontResetCharacterButton.Position = UDim2.new(0.5, buttonSpacing, 1, -30)
-	end
-	dontResetCharacterButton.Parent = resetCharacterText
+	dontResetCharacterButton.Parent = resetButtonContainer
 
 	this.Page.Size = UDim2.new(1,0,0,dontResetCharacterButton.AbsolutePosition.Y + dontResetCharacterButton.AbsoluteSize.Y)
 	

@@ -39,15 +39,21 @@ pcall(function()
 	local LocalizationService = game:GetService("LocalizationService")
 	local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
 	DEFAULT_ABUSE_DESC_TEXT = CorescriptLocalization:GetString(
-		LocalizationService.SystemLocaleId, 
+		LocalizationService.SystemLocaleId,
 		"KEY_DESCRIPTION_OPTIONAL")
 end)
 
 ------------ VARIABLES -------------------
 local PageInstance = nil
 
+local enableReportAbuseMenuFixSuccess, enableReportAbuseMenuFixValue = pcall(function() return settings():GetFFlag("EnableReportAbuseMenuFix") end)
+local enableReportAbuseMenuFix = enableReportAbuseMenuFixSuccess and enableReportAbuseMenuFixValue
+
 local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
 local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+
+local reportPlayerAutoSelectSuccess, reportPlayerAutoSelectValue = pcall(function() return settings():GetFFlag("ReportPlayerAutoSelect") end)
+local reportPlayerAutoSelect = reportPlayerAutoSelectSuccess and reportPlayerAutoSelectValue
 
 ----------- CLASS DECLARATION --------------
 local function Initialize()
@@ -73,7 +79,7 @@ local function Initialize()
 
 	function this:UpdatePlayerDropDown()
 		playerNames = {}
-	    	nameToRbxPlayer = {}
+	    nameToRbxPlayer = {}
 
 		local players = PlayersService:GetPlayers()
 		local index = 1
@@ -92,20 +98,51 @@ local function Initialize()
 
 		this.WhichPlayerMode:UpdateDropDownList(playerNames)
 
-		if index == 1 then
-			this.GameOrPlayerMode:SetSelectionIndex(1)
-			this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
+		if not enableReportAbuseMenuFix then
+			if index == 1 then
+				this.GameOrPlayerMode:SetSelectionIndex(1)
+				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
+			else
+				this.WhichPlayerLabel.ZIndex = 2
+				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
+			end
+
+			this.WhichPlayerMode:SetInteractable(index > 1 and this.GameOrPlayerMode.CurrentIndex ~= 1)
+			this.GameOrPlayerMode:SetInteractable(index > 1)
 		else
-			this.WhichPlayerLabel.ZIndex = 2
-			this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
+			--Reset GameOrPlayerMode to Game if no other players
+			if index == 1 then
+				this.GameOrPlayerMode:SetSelectionIndex(1)
+			end
+
+			this.GameOrPlayerMode:SetInteractable(index > 1)
+
+			if this.GameOrPlayerMode.CurrentIndex == 1 then
+				this.WhichPlayerMode:SetInteractable(false)
+				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
+				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_GAME > 1)
+			else
+				this.WhichPlayerLabel.ZIndex = 2
+				this.WhichPlayerMode:SetInteractable(index > 1)
+				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
+				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_PLAYER > 1)
+			end
 		end
 
-		this.WhichPlayerMode:SetInteractable(index > 1 and this.GameOrPlayerMode.CurrentIndex ~= 1)
-		this.GameOrPlayerMode:SetInteractable(index > 1)
-
 		if nextPlayerToReport then
-			this.WhichPlayerMode:SetSelectionByValue(nextPlayerToReport.Name)
+			local playerSelected = this.WhichPlayerMode:SetSelectionByValue(nextPlayerToReport.Name)
 			nextPlayerToReport = nil
+
+			if this.GameOrPlayerMode.CurrentIndex == 2 then
+				if reportPlayerAutoSelect then
+					if playerSelected then --if the reported player is still in game
+						--Auto select type of abuse when report a player
+						GuiService.SelectedCoreObject = this.TypeOfAbuseMode.DropDownFrame
+					else
+						GuiService.SelectedCoreObject = this.WhichPlayerMode.DropDownFrame
+					end
+				end
+			end
 		end
 	end
 
@@ -209,7 +246,9 @@ local function Initialize()
 
 				this.WhichPlayerMode:SetInteractable(false)
 				this.WhichPlayerLabel.ZIndex = 1
-				this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
+				if not enableReportAbuseMenuFix then
+					this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
+				end
 				makeSubmitButtonActive()
 			else
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
@@ -219,15 +258,18 @@ local function Initialize()
 				if #playerNames > 0 then
 					this.WhichPlayerMode:SetInteractable(true)
 					this.WhichPlayerLabel.ZIndex = 2
-					this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.WhichPlayerMode.DropDownFrame
+					if not enableReportAbuseMenuFix then
+						this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.WhichPlayerMode.DropDownFrame
+					end
 				else
 					this.WhichPlayerMode:SetInteractable(false)
 					this.WhichPlayerLabel.ZIndex = 1
-					this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
+					if not enableReportAbuseMenuFix then
+						this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
+					end
 				end
 				makeSubmitButtonInactive()
 			end
-
 		end
 
 		local function cleanupReportAbuseMenu()
@@ -286,11 +328,9 @@ local function Initialize()
 		end
 
 		submitButton, submitText = utility:MakeStyledButton("SubmitButton", "Submit", UDim2.new(0,198,0,50), onReportSubmitted, this)
-		if utility:IsSmallTouchScreen() then
-			submitButton.Position = UDim2.new(1,-220,1,5)
-		else
-			submitButton.Position = UDim2.new(1,-194,1,5)
-		end
+
+		submitButton.AnchorPoint = Vector2.new(0.5,0)
+		submitButton.Position = UDim2.new(0.5,0,1,5)
 
 		if this.GameOrPlayerMode.CurrentIndex == 1 then
 			makeSubmitButtonActive()

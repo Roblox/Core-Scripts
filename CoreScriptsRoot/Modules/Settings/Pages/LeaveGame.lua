@@ -76,8 +76,31 @@ local function Initialize()
 		Size = UDim2.new(1,0,0,200),
 		TextWrapped = true,
 		ZIndex = 2,
-		Parent = this.Page
+		Parent = this.Page,
+		Position = isTenFootInterface and UDim2.new(0,0,0,100) or UDim2.new(0,0,0,0)
 	};
+	
+	local leaveButtonContainer = utility:Create"Frame"
+	{
+		Name = "LeaveButtonContainer",
+		Parent = leaveGameText,
+		Size = UDim2.new(1,0,0,400),
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0,0,1,0)
+	};
+	
+	local leaveButtonLayout = utility:Create'UIGridLayout'
+	{
+		Name = "LeavetButtonsLayout",
+		CellSize = isTenFootInterface and UDim2.new(0, 300, 0, 80) or UDim2.new(0, 200, 0, 50),
+		CellPadding = UDim2.new(0,20,0,20),
+		FillDirection = Enum.FillDirection.Horizontal,
+		HorizontalAlignment = Enum.HorizontalAlignment.Center,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		VerticalAlignment = Enum.VerticalAlignment.Top,
+		Parent = leaveButtonContainer
+	};
+	
 	if utility:IsSmallTouchScreen() then
 		leaveGameText.FontSize = Enum.FontSize.Size24
 		leaveGameText.Size = UDim2.new(1,0,0,100)
@@ -85,34 +108,15 @@ local function Initialize()
 		leaveGameText.FontSize = Enum.FontSize.Size48
 	end
 
-	local buttonSpacing = 20
-	local buttonSize = UDim2.new(0, 200, 0, 50)
-	if isTenFootInterface then
-		leaveGameText.Position = UDim2.new(0,0,0,100)
-		buttonSize = UDim2.new(0, 300, 0, 80)
-	end
-
 	this.LeaveGameButton = utility:MakeStyledButton("LeaveGame", "Leave", buttonSize, this.LeaveFunc)
 	this.LeaveGameButton.NextSelectionRight = nil
-	
-	if utility:IsSmallTouchScreen() then
-		this.LeaveGameButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, 0)
-	else
-		this.LeaveGameButton.Position = UDim2.new(0.5, -buttonSize.X.Offset - buttonSpacing, 1, -30)
-	end
-	this.LeaveGameButton.Parent = leaveGameText
-
+	this.LeaveGameButton.Parent = leaveButtonContainer
 
 	------------- Init ----------------------------------
 	
 	local dontleaveGameButton = utility:MakeStyledButton("DontLeaveGame", "Don't Leave", buttonSize, this.DontLeaveFromButton)
 	dontleaveGameButton.NextSelectionLeft = nil
-	if utility:IsSmallTouchScreen() then
-		dontleaveGameButton.Position = UDim2.new(0.5, buttonSpacing, 1, 0)
-	else
-		dontleaveGameButton.Position = UDim2.new(0.5, buttonSpacing, 1, -30)
-	end
-	dontleaveGameButton.Parent = leaveGameText
+	dontleaveGameButton.Parent = leaveButtonContainer
 
 	this.Page.Size = UDim2.new(1,0,0,dontleaveGameButton.AbsolutePosition.Y + dontleaveGameButton.AbsoluteSize.Y)
 

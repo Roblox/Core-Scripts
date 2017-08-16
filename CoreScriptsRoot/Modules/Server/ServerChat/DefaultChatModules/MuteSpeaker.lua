@@ -7,6 +7,10 @@ local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatConstants = require(ReplicatedModules:WaitForChild("ChatConstants"))
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
 
+local ChatLocalization = nil
+pcall(function() ChatLocalization = require(game:GetService("Chat").ClientChatModules.ChatLocalization) end)
+if ChatLocalization == nil then ChatLocalization = {} function ChatLocalization:Get(key,default) return default end end
+
 local errorTextColor = ChatSettings.ErrorMessageTextColor or Color3.fromRGB(245, 50, 50)
 local errorExtraData = {ChatColor = errorTextColor}
 
@@ -33,16 +37,35 @@ local function Run(ChatService)
 		local speaker = ChatService:GetSpeaker(speakerName)
 		if speaker then
 			if muteSpeakerName:lower() == speakerName:lower() then
-				speaker:SendSystemMessage("You cannot mute yourself.", channel, errorExtraData)
+				speaker:SendSystemMessage(ChatLocalization:Get("GameChat_DoMuteCommand_CannotMuteSelf","You cannot mute yourself."), channel, errorExtraData)
 				return
 			end
 
 			local muteSpeaker = ChatService:GetSpeaker(muteSpeakerName)
 			if muteSpeaker then
 				speaker:AddMutedSpeaker(muteSpeaker.Name)
-				speaker:SendSystemMessage(string.format("Speaker '%s' has been muted.", muteSpeaker.Name), channel)
+				speaker:SendSystemMessage(
+					string.gsub(
+						ChatLocalization:Get(
+							"GameChat_ChatMain_SpeakerHasBeenMuted", 
+							string.format("Speaker '%s' has been muted.", muteSpeaker.Name)
+						),
+						"{RBX_NAME}",muteSpeaker.Name
+					),
+					channel
+				)
 			else
-				speaker:SendSystemMessage(string.format("Speaker '%s' does not exist.", tostring(muteSpeakerName)), channel, errorExtraData)
+				speaker:SendSystemMessage(
+					string.gsub(
+						ChatLocalization:Get(
+							"GameChat_MuteSpeaker_SpeakerDoesNotExist", 
+							string.format("Speaker '%s' does not exist.", tostring(muteSpeakerName))
+						),
+						"{RBX_NAME}",tostring(muteSpeakerName)
+					),
+					channel,
+					errorExtraData
+				)
 			end
 		end
 	end
@@ -52,16 +75,35 @@ local function Run(ChatService)
 		local speaker = ChatService:GetSpeaker(speakerName)
 		if speaker then
 			if unmuteSpeakerName:lower() == speakerName:lower() then
-				speaker:SendSystemMessage("You cannot mute yourself.", channel, errorExtraData)
+				speaker:SendSystemMessage(ChatLocalization:Get("GameChat_DoMuteCommand_CannotMuteSelf","You cannot mute yourself."), channel, errorExtraData)
 				return
 			end
 
 			local unmuteSpeaker = ChatService:GetSpeaker(unmuteSpeakerName)
 			if unmuteSpeaker then
 				speaker:RemoveMutedSpeaker(unmuteSpeaker.Name)
-				speaker:SendSystemMessage(string.format("Speaker '%s' has been unmuted.", unmuteSpeaker.Name), channel)
+				speaker:SendSystemMessage(
+					string.gsub(
+						ChatLocalization:Get(
+							"GameChat_ChatMain_SpeakerHasBeenUnMuted", 
+							string.format("Speaker '%s' has been unmuted.", unmuteSpeaker.Name)
+						),
+						"{RBX_NAME}",unmuteSpeaker.Name
+					),
+					channel
+				)
 			else
-				speaker:SendSystemMessage(string.format("Speaker '%s' does not exist.", tostring(unmuteSpeakerName)), channel, errorExtraData)
+				speaker:SendSystemMessage(
+					string.gsub(
+						ChatLocalization:Get(
+							"GameChat_MuteSpeaker_SpeakerDoesNotExist", 
+							string.format("Speaker '%s' does not exist.", tostring(unmuteSpeakerName))
+						),
+						"{RBX_NAME}",tostring(unmuteSpeakerName)
+					),
+					channel,
+					errorExtraData
+				)
 			end
 		end
 	end

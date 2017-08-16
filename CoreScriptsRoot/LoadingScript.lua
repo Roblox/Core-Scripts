@@ -5,20 +5,72 @@
 -- Constants
 local PLACEID = game.PlaceId
 
-local MPS = game:GetService('MarketplaceService')
-local UIS = game:GetService('UserInputService')
-local guiService = game:GetService("GuiService")
-local ContextActionService = game:GetService('ContextActionService')
+local MarketplaceService = game:GetService("MarketplaceService")
+local UserInputService = game:GetService("UserInputService")
+local VRService = game:GetService("VRService")
+local GuiService = game:GetService("GuiService")
+local ContextActionService = game:GetService("ContextActionService")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local ContentProvider = game:GetService("ContentProvider")
 local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 
+--FFlags
+local enableNewLoadingScreenSuccess, enableNewLoadingScreenValue = pcall(function() return settings():GetFFlag("EnableNewLoadingScreen") end)
+local enableNewLoadingScreen = enableNewLoadingScreenSuccess and enableNewLoadingScreenValue
+
+local newLoadingScreenWhiteThemeSuccess, newLoadingScreenWhiteThemeValue = pcall(function() return settings():GetFFlag("NewLoadingScreenWhiteTheme") end)
+local newLoadingScreenWhiteTheme = newLoadingScreenWhiteThemeSuccess and newLoadingScreenWhiteThemeValue
+
+local enableLoadingScreenPlaceIconTweenSuccess, enableLoadingScreenPlaceIconTweenValue = pcall(function() return settings():GetFFlag("EnableLoadingScreenPlaceIconTween") end)
+local enableLoadingScreenPlaceIconTween = enableLoadingScreenPlaceIconTweenSuccess and enableLoadingScreenPlaceIconTweenValue
+
+local enableNetworkJoinHealthStatsSuccess, enableNetworkJoinHealthStatsValue = pcall(function() return settings():GetFFlag("NetworkJoinHealthStats") end)
+local enableNetworkJoinHealthStats = enableNetworkJoinHealthStatsSuccess and enableNetworkJoinHealthStatsValue
+
+local enableNewLoadingScreenShowStatusSuccess, enableNewLoadingScreenShowStatusValue = pcall(function() return settings():GetFFlag("NewLoadingScreenShowStatus") end)
+local enableNewLoadingScreenShowStatus = enableNewLoadingScreenShowStatusSuccess and enableNewLoadingScreenShowStatusValue
+
+local loadingScriptStopUsingVerbsSuccess, loadingScriptStopUsingVerbsValue = pcall(function() return settings():GetFFlag("LoadingScriptStopUsingVerbs") end)
+local loadingScriptStopUsingVerbs = loadingScriptStopUsingVerbsSuccess and loadingScriptStopUsingVerbsValue
+
+--Turn this on if you want to test the loading screen in Play Solo and have FFlagLoadingScreenInStudio
+local debugMode = false
+
 local startTime = tick()
+local loadingImageCon = nil
 
 local COLORS = {
 	BLACK = Color3.new(0, 0, 0),
 	BACKGROUND_COLOR = Color3.new(45/255, 45/255, 45/255),
+	TEXT_COLOR = Color3.new(1, 1, 1),
 	WHITE = Color3.new(1, 1, 1),
 	ERROR = Color3.new(253/255,68/255,72/255)
 }
+local TEXT_STROKE_TRANSPARENCY = enableNewLoadingScreen and 1 or 0
+local PLACE_ICON_TWEEN_INFO = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut)
+local spinnerImageId = ""
+
+local gameIconSubstitutionType = {
+	None = 0;
+	Unapproved = 1;
+	PendingReview = 2;
+	Broken = 3;
+	Unavailable = 4;
+	Unknown = 5;
+}
+
+if enableNewLoadingScreen then
+	if newLoadingScreenWhiteTheme then
+		COLORS.BACKGROUND_COLOR = COLORS.WHITE
+		COLORS.TEXT_COLOR = COLORS.BLACK
+		spinnerImageId = "rbxasset://textures/loading/robloxTiltRed.png"
+	else
+		COLORS.BACKGROUND_COLOR = Color3.new(45 / 255, 45 / 255, 45 / 255)
+		COLORS.TEXT_COLOR = COLORS.WHITE
+		spinnerImageId = "rbxasset://textures/loading/robloxTilt.png"
+	end
+end
 
 local function getViewportSize()
 	while not game.Workspace.CurrentCamera do
@@ -41,12 +93,16 @@ local GameAssetInfo -- loaded by InfoProvider:LoadAssets()
 local currScreenGui, renderSteppedConnection = nil, nil
 local destroyingBackground, destroyedLoadingGui, hasReplicatedFirstElements = false, false, false
 local backgroundImageTransparency = 0
-local isMobile = (UIS.TouchEnabled == true and UIS.MouseEnabled == false and getViewportSize().Y <= 500)
-local isTenFootInterface = guiService:IsTenFootInterface()
-local platform = UIS:GetPlatform()
+local isMobile = (UserInputService.TouchEnabled == true and UserInputService.MouseEnabled == false and getViewportSize().Y <= 500)
+local isTenFootInterface = GuiService:IsTenFootInterface()
+local platform = UserInputService:GetPlatform()
+
+local placeLabel, creatorLabel = nil, nil
+local backgroundFadeStarted = false
+local tweenPlaceIcon = nil
 
 local function IsConvertMyPlaceNameInXboxAppEnabled()
-	if UIS:GetPlatform() == Enum.Platform.XBoxOne then
+	if UserInputService:GetPlatform() == Enum.Platform.XBoxOne then
 		local success, flagValue = pcall(function() return settings():GetFFlag("ConvertMyPlaceNameInXboxApp") end)
 		return (success and flagValue == true)
 	end
@@ -149,7 +205,7 @@ function InfoProvider:LoadAssets()
 		-- load game asset info
 		coroutine.resume(coroutine.create(function()
 			local success, result = pcall(function()
-				GameAssetInfo = MPS:GetProductInfo(PLACEID)
+				GameAssetInfo = MarketplaceService:GetProductInfo(PLACEID)
 			end)
 			if not success then
 				print("LoadingScript->InfoProvider:LoadAssets:", result)
@@ -201,6 +257,13 @@ local function createTenfootCancelGui()
 		TextColor3 = COLORS.WHITE;
 		Text = "Cancel";
 	}
+	if enableNewLoadingScreen then
+		cancelText.Font = Enum.Font.SourceSans
+		cancelText.TextSize = 48
+		cancelText.AnchorPoint = Vector2.new(1, 0)
+		cancelText.Size = UDim2.new(0, 400, 0, 83)
+		cancelText.Position = UDim2.new(1, -131, 0, 32)
+	end
 
 	if not game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
 		local seenBButtonBegin = false
@@ -211,7 +274,7 @@ local function createTenfootCancelGui()
 				elseif inputState == Enum.UserInputState.End and seenBButtonBegin then
 					cancelLabel:Destroy()
 					cancelText.Text = "Canceling..."
-					cancelText.Position = UDim2.new(1, -32, 0, 64)
+					cancelText.Position = UDim2.new(1, -32, 0, enableNewLoadingScreen and 32 or 64)
 					ContextActionService:UnbindCoreAction('CancelGameLoad')
 					game:Shutdown()
 				end
@@ -251,6 +314,10 @@ function MainGui:GenerateMain()
 		Active = true,
 		Parent = screenGui,
 	}
+	if debugMode then
+		mainBackgroundContainer.Size = UDim2.new(1, 0, 1, 36)
+		mainBackgroundContainer.Position = UDim2.new(0, 0, 0, -36)
+	end
 
 		local closeButton =	create 'ImageButton' {
 			Name = 'CloseButton',
@@ -263,6 +330,12 @@ function MainGui:GenerateMain()
 			ZIndex = 10,
 			Parent = mainBackgroundContainer,
 		}
+
+        if loadingScriptStopUsingVerbs then
+            closeButton.MouseButton1Click:connect(function()
+                game:Shutdown()
+            end)
+        end
 
 		local graphicsFrame = create 'Frame' {
 			Name = 'GraphicsFrame',
@@ -284,6 +357,29 @@ function MainGui:GenerateMain()
 				Parent = graphicsFrame,
 			}
 
+            local numberOfTaps = 0
+            local lastTapTime = math.huge
+            local doubleTapTimeThreshold = 0.5
+
+            if enableNetworkJoinHealthStats then
+                loadingImageCon = loadingImage.InputBegan:connect(function()
+                    if numberOfTaps == 0 then
+                        numberOfTaps = 1
+                        lastTapTime = tick()
+                        return
+                    end
+
+                    if UserInputService.TouchEnabled == true and UserInputService.MouseEnabled == false then
+                        if tick() - lastTapTime <= doubleTapTimeThreshold then
+                            GuiService:ShowStatsBasedOnInputString("ConnectionHealth")
+                        end
+                    end
+
+                    numberOfTaps = 0
+                    lastTapTime = math.huge
+                end)
+            end
+
 			local loadingText = create 'TextLabel' {
 				Name = 'LoadingText',
 				BackgroundTransparency = 1,
@@ -300,27 +396,24 @@ function MainGui:GenerateMain()
 				Parent = graphicsFrame,
 			}
 
-		local uiMessageFrame = create 'Frame' {
-			Name = 'UiMessageFrame',
-			BackgroundTransparency = 1,
-			Position = UDim2.new(0.25, 0, 1, -120),
-			Size = UDim2.new(0.5, 0, 0, 80),
-			ZIndex = 2,
-			Parent = mainBackgroundContainer,
-		}
+		if enableNewLoadingScreen then
+			loadingImage.Position = UDim2.new(0.5, 0, 0.5, 0)
+			loadingImage.AnchorPoint = Vector2.new(0.5, 0.5)
+			loadingImage.Image = spinnerImageId
+			loadingText.Visible = false
 
-			local uiMessage = create 'TextLabel' {
-				Name = 'UiMessage',
-				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 1, 0),
-				Font = Enum.Font.SourceSansBold,
-				FontSize = Enum.FontSize.Size18,
-				TextWrapped = true,
-				TextColor3 = COLORS.WHITE,
-				Text = "",
-				ZIndex = 2,
-				Parent = uiMessageFrame,
+			graphicsFrame.Position = UDim2.new(0.95, 0, 0.95, 0)
+			graphicsFrame.AnchorPoint = Vector2.new(1, 1)
+			graphicsFrame.Size = UDim2.new(0.15, 0, 0.15, 0)
+			create("UIAspectRatioConstraint") {
+				AspectRatio = 1,
+				Parent = graphicsFrame
 			}
+			create("UISizeConstraint") {
+				MaxSize = Vector2.new(100, 100),
+				Parent = graphicsFrame
+			}
+		end
 
 		local infoFrame = create 'Frame' {
 			Name = 'InfoFrame',
@@ -331,7 +424,135 @@ function MainGui:GenerateMain()
 			Parent = mainBackgroundContainer,
 		}
 
-			local placeLabel = create 'TextLabel' {
+		local uiMessageFrame = create 'Frame' {
+			Name = 'UiMessageFrame',
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0.25, 0, 1, -120),
+			Size = enableNewLoadingScreenShowStatus and UDim2.new(1, 0, 0, 35) or UDim2.new(0.5, 0, 0, 80),
+			ZIndex = 2,
+			LayoutOrder = 5,
+			Parent = enableNewLoadingScreenShowStatus and infoFrame or mainBackgroundContainer,
+		}
+
+			local uiMessage = create 'TextLabel' {
+				Name = 'UiMessage',
+				BackgroundTransparency = 1,
+				Position = enableNewLoadingScreenShowStatus and UDim2.new(0, 0, 0, 10) or UDim2.new(0, 0, 0, 0),
+				Size = enableNewLoadingScreenShowStatus and UDim2.new(1, 0, 0, 25) or UDim2.new(1, 0, 1, 0),
+				Font = Enum.Font.SourceSansBold,
+				FontSize = Enum.FontSize.Size18,
+				TextScaled = enableNewLoadingScreenShowStatus,
+				TextWrapped = true,
+				TextColor3 = COLORS.WHITE,
+				Text = "",
+				ZIndex = 2,
+				Parent = uiMessageFrame,
+
+				Visible = enableNewLoadingScreenShowStatus,
+			}
+
+		local infoFrameAspect, infoFrameList = nil, nil
+		local textContainer = nil
+		if enableNewLoadingScreen then
+			infoFrameAspect = create("UIAspectRatioConstraint") {
+				AspectRatio = 3 / 2,
+				Parent = infoFrame
+			}
+			infoFrameList = create("UIListLayout") {
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				FillDirection = Enum.FillDirection.Vertical,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				Padding = UDim.new(0.05, 0),
+				Parent = infoFrame
+			}
+
+			textContainer = create("Frame") {
+				BackgroundTransparency = 1,
+				Size = UDim2.new(2/3, 0, 1, 0),
+				LayoutOrder = 2,
+				Parent = nil
+			}
+			create("UIListLayout") {
+				FillDirection = Enum.FillDirection.Vertical,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				HorizontalAlignment = Enum.HorizontalAlignment.Left,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Parent = textContainer
+			}
+		end
+
+			local placeIcon = nil
+			if enableNewLoadingScreen then
+				placeIcon = create("ImageLabel") {
+					Name = "PlaceIcon",
+					BackgroundTransparency = 1,
+					Size = UDim2.new(1, 0, 1, 0),
+					Position = UDim2.new(0.5, 0, 0, 0),
+					AnchorPoint = Vector2.new(0.5, 0),
+					LayoutOrder = 1,
+					Parent = infoFrame,
+
+					ImageTransparency = 1,
+					Image = ""
+				}
+				local placeIconAspect = create("UIAspectRatioConstraint") {
+					AspectRatio = 576 / 324,
+					AspectType = Enum.AspectType.ScaleWithParentSize,
+					DominantAxis = Enum.DominantAxis.Width,
+					Parent = placeIcon
+				}
+				local placeIconSize = create("UISizeConstraint") {
+					MaxSize = Vector2.new(400, 400),
+					Parent = placeIcon
+				}
+
+				--Start trying to load the place icon image
+				--Web might not have this icon size generated, so we can poll asset-thumbnail/json and check
+				--the JSON result for thumbnailFinal/Final to see when it's done being generated so we never
+				--show a N/A image. This is how the console AppShell does it!
+				coroutine.wrap(function()
+					local httpService = game:GetService("HttpService")
+					local rbxApiService = game:GetService("HttpRbxApiService")
+
+					while PLACEID <= 0 do RunService.RenderStepped:wait() end
+
+					local assetGameUrl = ContentProvider.BaseUrl:gsub("www", "assetgame")
+					local assetJsonUrl = string.format("%sasset-thumbnail/json?assetId=%d&width=576&height=324&format=png", assetGameUrl, PLACEID)
+					local imageUrl = string.format("%sThumbs/GameIcon.ashx?assetId=%d&width=576&height=324&ignorePlaceMediaItems=true", assetGameUrl, PLACEID)
+
+					local function tryGetFinalAsync()
+						local resultStr = game:HttpGetAsync(assetJsonUrl)
+						local parseSuccess, result = pcall(function() return httpService:JSONDecode(resultStr) end)
+
+						if parseSuccess and result then
+							local isFinal = result.Final or result.thumbnailFinal
+							local substitutionType = result.substitutionType or result.substitutionType
+
+							if isFinal and (substitutionType == nil or substitutionType == gameIconSubstitutionType.None) then
+								ContentProvider:PreloadAsync { imageUrl }
+								placeIcon.Image = imageUrl
+
+								if not backgroundFadeStarted then
+									if enableLoadingScreenPlaceIconTween then
+										tweenPlaceIcon = TweenService:Create(placeIcon, PLACE_ICON_TWEEN_INFO, { ImageTransparency = 0 })
+										tweenPlaceIcon:Play()
+									else
+										placeIcon.ImageTransparency = 0
+									end
+								end
+
+								return true
+							end
+						end
+						return false
+					end
+
+					while not tryGetFinalAsync() do end
+				end)()
+			end
+
+			placeLabel = create 'TextLabel' {
 				Name = 'PlaceLabel',
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 80),
@@ -340,47 +561,66 @@ function MainGui:GenerateMain()
 				FontSize = (isTenFootInterface and Enum.FontSize.Size48 or Enum.FontSize.Size24),
 				TextWrapped = true,
 				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
+				TextColor3 = COLORS.TEXT_COLOR,
+				TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY,
 				Text = "",
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Bottom,
 				ZIndex = 2,
+				LayoutOrder = 2,
 				Parent = infoFrame,
 			}
 
+			local creatorContainer = create 'Frame' {
+				Name = "Creator",
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 48),
+				LayoutOrder = 3
+			}
+			local creatorContainerList = create 'UIListLayout' {
+				Parent = creatorContainer,
+				FillDirection = Enum.FillDirection.Horizontal,
+				HorizontalAlignment = Enum.HorizontalAlignment.Center,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 5)
+			}
+
+			local byLabel, creatorIcon = nil, nil
 			if isTenFootInterface then
-				local byLabel = create'TextLabel' {
+				byLabel = create'TextLabel' {
 					Name = "ByLabel",
 					BackgroundTransparency = 1,
 					Size = UDim2.new(0, 36, 0, 30),
 					Position = UDim2.new(0, 0, 0, 80),
-					Font = Enum.Font.SourceSans,
+					Font = Enum.Font.SourceSansLight,
 					FontSize = Enum.FontSize.Size36,
 					TextScaled = true,
-					TextColor3 = COLORS.WHITE,
-					TextStrokeTransparency = 0,
+					TextColor3 = COLORS.TEXT_COLOR,
+					TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY,
 					Text = "By",
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextYAlignment = Enum.TextYAlignment.Top,
 					ZIndex = 2,
-					Visible = false,
+					Visible = true,
 					Parent = infoFrame,
+					LayoutOrder = 1
 				}
-				local creatorIcon = create'ImageLabel' {
+				creatorIcon = create'ImageLabel' {
 					Name = "CreatorIcon",
 					BackgroundTransparency = 1,
 					Size = UDim2.new(0, 30, 0, 30),
 					Position = UDim2.new(0, 38, 0, 80),
 					ImageTransparency = 0,
-					Image = 'rbxasset://textures/ui/Shell/Icons/RobloxIcon32.png',
+					Image = 'rbxasset://textures/ui/Shell/Icons/RobloxIcon24.png',
 					ZIndex = 2,
-					Visible = false,
+					Visible = true,
 					Parent = infoFrame,
+					LayoutOrder = 2
 				}
 			end
 
-			local creatorLabel = create 'TextLabel' {
+			creatorLabel = create 'TextLabel' {
 				Name = 'CreatorLabel',
 				BackgroundTransparency = 1,
 				Size = UDim2.new(1, 0, 0, 30),
@@ -389,14 +629,31 @@ function MainGui:GenerateMain()
 				FontSize = (isTenFootInterface and Enum.FontSize.Size36 or Enum.FontSize.Size18),
 				TextWrapped = true,
 				TextScaled = true,
-				TextColor3 = COLORS.WHITE,
-				TextStrokeTransparency = 0,
+				TextColor3 = COLORS.TEXT_COLOR,
+				TextStrokeTransparency = TEXT_STROKE_TRANSPARENCY,
 				Text = "",
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextYAlignment = Enum.TextYAlignment.Top,
 				ZIndex = 2,
+				LayoutOrder = 4,
 				Parent = infoFrame,
 			}
+
+			if enableNewLoadingScreen and isTenFootInterface then
+				creatorContainer.Parent = infoFrame
+
+				byLabel.TextScaled = false
+				byLabel.Parent = creatorContainer
+				byLabel.TextXAlignment = Enum.TextXAlignment.Center
+				byLabel.TextYAlignment = Enum.TextYAlignment.Center
+
+				creatorIcon.Parent = creatorContainer
+
+				creatorLabel.Parent = creatorContainer
+				creatorLabel.TextScaled = false
+				creatorLabel.Size = UDim2.new(0, creatorLabel.TextBounds.X, 1, 0)
+			end
+
 
 		local backgroundTextureFrame = create 'Frame' {
 			Name = 'BackgroundTextureFrame',
@@ -406,8 +663,11 @@ function MainGui:GenerateMain()
 			ClipsDescendants = true,
 			ZIndex = 1,
 			BackgroundTransparency = 1,
-			Parent = mainBackgroundContainer,
+			Parent = mainBackgroundContainer
 		}
+		if enableNewLoadingScreen then
+			backgroundTextureFrame.Visible = false
+		end
 
 	local errorFrame = create 'Frame' {
 		Name = 'ErrorFrame',
@@ -427,7 +687,7 @@ function MainGui:GenerateMain()
 			Font = Enum.Font.SourceSansBold,
 			FontSize = Enum.FontSize.Size14,
 			TextWrapped = true,
-			TextColor3 = COLORS.WHITE,
+			TextColor3 = COLORS.TEXT_COLOR,
 			Text = "",
 			ZIndex = 8,
 			Parent = errorFrame,
@@ -439,16 +699,51 @@ function MainGui:GenerateMain()
 	screenGui.Parent = game:GetService("CoreGui")
 	currScreenGui = screenGui
 
+	if enableNewLoadingScreen then
+		placeLabel.TextStrokeTransparency = 1
+		placeLabel.Font = Enum.Font.SourceSansLight
+		placeLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+		creatorLabel.TextStrokeTransparency = 1
+		creatorLabel.Font = Enum.Font.SourceSansLight
+		creatorLabel.TextXAlignment = Enum.TextXAlignment.Center
+		creatorLabel.TextYAlignment = Enum.TextYAlignment.Center
+	end
+
 	local function onResized(prop)
 		if prop == "AbsoluteSize" then
-			if screenGui.AbsoluteSize.Y < screenGui.AbsoluteSize.X then
-				--Landscape
-				infoFrame.Position = UDim2.new(0, (isMobile == true and 20 or 100), 1, (isMobile == true and -120 or -150))
-				uiMessageFrame.Position = UDim2.new(0.25, 0, 1, -120)
+			if enableNewLoadingScreen then
+				infoFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+				infoFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+				infoFrame.Size = UDim2.new(0.75, 0, 1, 0)
+				infoFrameAspect.AspectRatio = 2/3
+
+				placeLabel.Size = UDim2.new(1, 0, 0, isTenFootInterface and 120 or 80)
+
+				if isTenFootInterface then
+					creatorLabel.Size = UDim2.new(0, creatorLabel.TextBounds.X, 1, 0)
+				else
+					creatorLabel.Size = UDim2.new(1, 0, 0, 30)
+				end
+
+				infoFrameList.FillDirection = Enum.FillDirection.Vertical
+				infoFrameList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+				infoFrameList.Padding = UDim.new(0, 0)
+				textContainer.Parent = nil
+				infoFrameList:ApplyLayout()
+
+				placeLabel.TextXAlignment = Enum.TextXAlignment.Center
+				creatorLabel.TextXAlignment = Enum.TextXAlignment.Center
 			else
-				--Portrait
-				infoFrame.Position = UDim2.new(0, 20, 0, 100)
-				uiMessageFrame.Position = UDim2.new(0.25, 0, 0.5, 0)
+				if screenGui.AbsoluteSize.Y < screenGui.AbsoluteSize.X then
+ 					--Landscape
+ 					infoFrame.Position = UDim2.new(0, (isMobile == true and 20 or 100), 1, (isMobile == true and -120 or -150))
+ 					uiMessageFrame.Position = UDim2.new(0.25, 0, 1, -120)
+ 				else
+ 					--Portrait
+ 					infoFrame.Position = UDim2.new(0, 20, 0, 100)
+ 					uiMessageFrame.Position = UDim2.new(0.25, 0, 0.5, 0)
+				end
 			end
 		end
 	end
@@ -471,6 +766,7 @@ if isTenFootInterface then
 	createTenfootCancelGui()
 end
 
+-- todo: remove setVerb when removing loadingScriptStopUsingVerbs
 local setVerb = true
 local lastRenderTime, lastDotUpdateTime, brickCountChange = nil, nil, nil
 local fadeCycleTime = 1.7
@@ -480,14 +776,39 @@ local loadingDots = "..."
 local dotChangeTime = .2
 local lastBrickCount = 0
 
+local function spinnerEasingFunc1(a, b, t)
+	--quick and dirty quadratic in-out
+	t = t * 2
+	if t < 1 then
+		return b / 2 * t * t + a
+	else
+		t = t - 1
+		return -b / 2 * (t * (t - 2) - 1) + a
+	end
+end
+
+local function spinnerEasingFunc2(a, b, t)
+	t = t * 2
+	if t < 1 then
+		return b / 2 * t*t*t + a
+	else
+		t = t - 2
+		return b / 2 * (t * t * t + 2) + b
+	end
+end
+
+local spinnerEasingFunc = spinnerEasingFunc2
+
 renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(function()
 	if not currScreenGui then return end
 	if not currScreenGui:FindFirstChild("BlackFrame") then return end
 
-	if setVerb then
-		currScreenGui.BlackFrame.CloseButton:SetVerb("Exit")
-		setVerb = false
-	end
+    if not loadingScriptStopUsingVerbs then
+        if setVerb then
+            currScreenGui.BlackFrame.CloseButton:SetVerb("Exit")
+            setVerb = false
+        end
+    end
 
 	if currScreenGui.BlackFrame:FindFirstChild("BackgroundTextureFrame") and currScreenGui.BlackFrame.BackgroundTextureFrame.AbsoluteSize ~= lastAbsoluteSize then
 		lastAbsoluteSize = currScreenGui.BlackFrame.BackgroundTextureFrame.AbsoluteSize
@@ -497,31 +818,19 @@ renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(fu
 	local infoFrame = currScreenGui.BlackFrame:FindFirstChild('InfoFrame')
 	if infoFrame then
 		-- set place name
-		local placeLabel = infoFrame:FindFirstChild('PlaceLabel')
 		if placeLabel and placeLabel.Text == "" then
 			placeLabel.Text = InfoProvider:GetGameName()
 		end
 
 		-- set creator name
-		local creatorLabel = infoFrame:FindFirstChild('CreatorLabel')
 		if creatorLabel and creatorLabel.Text == "" then
 			local creatorName = InfoProvider:GetCreatorName()
 			if creatorName ~= "" then
 				if isTenFootInterface then
-					local showDevName = true
-					if platform == Enum.Platform.XBoxOne then
-						local success, result = pcall(function()
-							return settings():GetFFlag("ShowDevNameInXboxApp")
-						end)
-						if success then
-							showDevName = result
-						end
+					creatorLabel.Text = creatorName
+					if enableNewLoadingScreen then
+						creatorLabel.Size = UDim2.new(0, creatorLabel.TextBounds.X, 1, 0)
 					end
-					creatorLabel.Text = showDevName and creatorName or ""
-					local creatorIcon = infoFrame:FindFirstChild('CreatorIcon')
-					local byLabel = infoFrame:FindFirstChild('ByLabel')
-					if creatorIcon then creatorIcon.Visible = showDevName end
-					if byLabel then byLabel.Visible = showDevName end
 				else
 					creatorLabel.Text = "By "..creatorName
 				end
@@ -540,7 +849,14 @@ renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(fu
 	local turnAmount = (currentTime - lastRenderTime) * (360/turnCycleTime)
 	lastRenderTime = currentTime
 
-	currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.Rotation = currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.Rotation + turnAmount
+	if enableNewLoadingScreen then
+		local spinnerImage = currScreenGui.BlackFrame.GraphicsFrame.LoadingImage
+		local timeInCycle = currentTime % turnCycleTime
+		local cycleAlpha = spinnerEasingFunc(0, 1, timeInCycle / turnCycleTime)
+		spinnerImage.Rotation = cycleAlpha * 360
+	else
+		currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.Rotation = currScreenGui.BlackFrame.GraphicsFrame.LoadingImage.Rotation + turnAmount
+	end
 
 	local updateLoadingDots =  function()
 		loadingDots = loadingDots.. "."
@@ -554,12 +870,12 @@ renderSteppedConnection = game:GetService("RunService").RenderStepped:connect(fu
 		lastDotUpdateTime = currentTime
 		updateLoadingDots()
 	else
-		if guiService:GetBrickCount() > 0 then
+		if GuiService:GetBrickCount() > 0 then
 			if brickCountChange == nil then
-				brickCountChange = guiService:GetBrickCount()
+				brickCountChange = GuiService:GetBrickCount()
 			end
-			if guiService:GetBrickCount() - lastBrickCount >= brickCountChange then
-				lastBrickCount = guiService:GetBrickCount()
+			if GuiService:GetBrickCount() - lastBrickCount >= brickCountChange then
+				lastBrickCount = GuiService:GetBrickCount()
 				updateLoadingDots()
 			end
 		end
@@ -591,8 +907,9 @@ end)
 
 local leaveGameButton, leaveGameTextLabel, errorImage = nil
 
-guiService.ErrorMessageChanged:connect(function()
-	if guiService:GetErrorMessage() ~= '' then
+GuiService.ErrorMessageChanged:connect(function()
+	if GuiService:GetErrorMessage() ~= '' then
+		local utility = require(RobloxGui.Modules.Settings.Utility)
 		if isTenFootInterface then
 			currScreenGui.ErrorFrame.Size = UDim2.new(1, 0, 0, 144)
 			currScreenGui.ErrorFrame.Position = UDim2.new(0, 0, 0, 0)
@@ -610,30 +927,10 @@ guiService.ErrorMessageChanged:connect(function()
 				errorImage.BackgroundTransparency = 1
 				errorImage.Parent = currScreenGui.ErrorFrame
 			end
-			-- we show a B button to kill game data model on console
-			if not isTenFootInterface then
-				if leaveGameButton == nil then
-					local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
-					local utility = require(RobloxGui.Modules.Settings.Utility)
-					local textLabel = nil
-					leaveGameButton, leaveGameTextLabel = utility:MakeStyledButton("LeaveGame", "Leave", UDim2.new(0, 288, 0, 78))
-					leaveGameButton:SetVerb("Exit")
-					leaveGameButton.NextSelectionDown = leaveGameButton
-					leaveGameButton.NextSelectionLeft = leaveGameButton
-					leaveGameButton.NextSelectionRight = leaveGameButton
-					leaveGameButton.NextSelectionUp = leaveGameButton
-					leaveGameButton.ZIndex = 9
-					leaveGameButton.Position = UDim2.new(0.771875, 0, 0, 37)
-					leaveGameButton.Parent = currScreenGui.ErrorFrame
-					leaveGameTextLabel.FontSize = Enum.FontSize.Size36
-					leaveGameTextLabel.ZIndex = 10
-					game:GetService("GuiService").SelectedCoreObject = leaveGameButton
-				else
-					game:GetService("GuiService").SelectedCoreObject = leaveGameButton
-				end
-			end
+		elseif utility:IsSmallTouchScreen() then
+			currScreenGui.ErrorFrame.Size = UDim2.new(0.5, 0, 0, 40)
 		end
-		currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
+		currScreenGui.ErrorFrame.ErrorText.Text = GuiService:GetErrorMessage()
 		currScreenGui.ErrorFrame.Visible = true
 		local blackFrame = currScreenGui:FindFirstChild('BlackFrame')
 		if blackFrame then
@@ -645,22 +942,32 @@ guiService.ErrorMessageChanged:connect(function()
 	end
 end)
 
-guiService.UiMessageChanged:connect(function(type, newMessage)
+GuiService.UiMessageChanged:connect(function(type, newMessage)
 	if type == Enum.UiMessageType.UiMessageInfo then
 		local blackFrame = currScreenGui and currScreenGui:FindFirstChild('BlackFrame')
 		if blackFrame then
-			blackFrame.UiMessageFrame.UiMessage.Text = newMessage
-			if newMessage ~= '' then
-				blackFrame.UiMessageFrame.Visible = true
+			local infoFrame = blackFrame:FindFirstChild("InfoFrame")
+			if enableNewLoadingScreenShowStatus and infoFrame then
+				infoFrame.UiMessageFrame.UiMessage.Text = newMessage
+				if newMessage ~= '' then
+					infoFrame.UiMessageFrame.Visible = true
+				else
+					infoFrame.UiMessageFrame.Visible = false
+				end
 			else
-				blackFrame.UiMessageFrame.Visible = false
+				blackFrame.UiMessageFrame.UiMessage.Text = newMessage
+				if newMessage ~= '' then
+					blackFrame.UiMessageFrame.Visible = true
+				else
+					blackFrame.UiMessageFrame.Visible = false
+				end
 			end
 		end
 	end
 end)
 
-if guiService:GetErrorMessage() ~= '' then
-	currScreenGui.ErrorFrame.ErrorText.Text = guiService:GetErrorMessage()
+if GuiService:GetErrorMessage() ~= '' then
+	currScreenGui.ErrorFrame.ErrorText.Text = GuiService:GetErrorMessage()
 	currScreenGui.ErrorFrame.Visible = true
 end
 
@@ -679,12 +986,30 @@ function fadeAndDestroyBlackFrame(blackFrame)
 		local infoFrame = blackFrame:FindFirstChild("InfoFrame")
 		local graphicsFrame = blackFrame:FindFirstChild("GraphicsFrame")
 
-		local infoFrameChildren = infoFrame:GetChildren()
+		local function getDescendants(root, children)
+			children = children or {}
+			for i, v in pairs(root:GetChildren()) do
+				children[#children + 1] = v
+				getDescendants(v, children)
+			end
+			return children
+		end
+		local infoFrameChildren = enableNewLoadingScreen and getDescendants(infoFrame) or infoFrame:GetChildren()
 		local transparency = 0
 		local rateChange = 1.8
 		local lastUpdateTime = nil
 
+		--Notify everything else to stop messing with transparency to avoid ugly fighting effects
+		backgroundFadeStarted = true
+		if tweenPlaceIcon then
+			tweenPlaceIcon:Cancel()
+			tweenPlaceIcon = nil
+		end
+
 		while transparency < 1 do
+			if enableNewLoadingScreen then
+				RunService.RenderStepped:wait()
+			end
 			if not lastUpdateTime then
 				lastUpdateTime = tick()
 			else
@@ -694,7 +1019,9 @@ function fadeAndDestroyBlackFrame(blackFrame)
 					local child = infoFrameChildren[i]
 					if child:IsA('TextLabel') then
 						child.TextTransparency = transparency
-						child.TextStrokeTransparency = transparency
+						if not enableNewLoadingScreen then
+							child.TextStrokeTransparency = transparency
+						end
 					elseif child:IsA('ImageLabel') then
 						child.ImageTransparency = transparency
 					end
@@ -712,13 +1039,19 @@ function fadeAndDestroyBlackFrame(blackFrame)
 
 				lastUpdateTime = newTime
 			end
-			wait()
+			if not enableNewLoadingScreen then
+				wait()
+			end
 		end
 		if blackFrame ~= nil then
 			stopListeningToRenderingStep()
 			blackFrame:Destroy()
 		end
-	end)
+        if enableNetworkJoinHealthStats then
+            loadingImageCon:disconnect()
+            GuiService:CloseStatsBasedOnInputString("ConnectionHealth")
+        end
+    end)
 end
 
 function destroyLoadingElements(instant)
@@ -764,8 +1097,13 @@ function handleRemoveDefaultLoadingGui(instant)
 		ContextActionService:UnbindCoreAction('CancelGameLoad')
 	end
 	destroyLoadingElements(instant)
+	game:GetService("ReplicatedFirst"):SetDefaultLoadingGuiRemoved()
 end
 
+if debugMode then
+	warn("Not destroying loading screen because debugMode is true")
+	return
+end
 game:GetService("ReplicatedFirst").FinishedReplicating:connect(handleFinishedReplicating)
 if game:GetService("ReplicatedFirst"):IsFinishedReplicating() then
 	handleFinishedReplicating()
@@ -776,11 +1114,11 @@ if game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
 	handleRemoveDefaultLoadingGui()
 end
 
-local UserInputServiceChangedConn;
-local function onUserInputServiceChanged(prop)
+local VREnabledConn;
+local function onVREnabled(prop)
 	if prop == 'VREnabled' then
 		local UseVr = false
-		pcall(function() UseVr = UIS.VREnabled end)
+		pcall(function() UseVr = VRService.VREnabled end)
 
 		if UseVr then
 			if UserInputServiceChangedConn then
@@ -793,5 +1131,5 @@ local function onUserInputServiceChanged(prop)
 	end
 end
 
-UserInputServiceChangedConn = UIS.Changed:connect(onUserInputServiceChanged)
-onUserInputServiceChanged('VREnabled')
+VREnabledConn = VRService.Changed:connect(onVREnabled)
+onVREnabled('VREnabled')

@@ -29,6 +29,10 @@ local guiService = game:GetService("GuiService")
 local YPOS_OFFSET = -math.floor(STYLE_PADDING / 2)
 local usingGamepad = false
 
+local FlagHasReportedPlace = false
+local StatTrackingSuccess, StatTrackingEnabled = pcall(function() return settings():GetFFlag("EnableOldDialogueStatTracking") end)
+StatTrackingEnabled = StatTrackingEnabled and StatTrackingSuccess
+
 local localPlayer = playerService.LocalPlayer
 while localPlayer == nil do
 	playerService.PlayerAdded:wait()
@@ -551,6 +555,10 @@ end
 
 function startDialog(dialog)
 	if dialog.Parent and dialog.Parent:IsA("BasePart") then
+		if StatTrackingEnabled then
+			game:ReportInGoogleAnalytics("Dialogue", "Old Dialogue", "Conversation Initiated")
+		end
+		
 		if localPlayer:DistanceFromCharacter(dialog.Parent.Position) >= dialog.ConversationDistance then
 			showMessage(tooFarAwayMessage, tooFarAwaySize)
 			return
@@ -583,6 +591,11 @@ end
 function addDialog(dialog)
 	if dialog.Parent then
 		if dialog.Parent:IsA("BasePart") and dialog:IsDescendantOf(game.Workspace) then
+			if StatTrackingEnabled and (not FlagHasReportedPlace) then
+				FlagHasReportedPlace = true
+				game:ReportInGoogleAnalytics("Dialogue", "Old Dialogue", "Used In Place", nil, game.PlaceId)
+			end
+			
 			local chatGui = chatNotificationGui:clone()
 			chatGui.Adornee = dialog.Parent
 			chatGui.RobloxLocked = true

@@ -12,6 +12,7 @@ local RunService = game:GetService('RunService')
 local MasterControl = require(script.Parent)
 
 local Thumbstick = {}
+local Enabled = false
 
 --[[ Script Variables ]]--
 while not Players.LocalPlayer do
@@ -34,6 +35,7 @@ local ThumbstickFrame = nil
 local OnMoveTouchEnded = nil		-- defined in Create()
 local OnTouchMovedCn = nil
 local OnTouchEndedCn = nil
+local TouchActivateCn = nil
 local OnRenderSteppedCn = nil
 local currentMoveVector = Vector3.new(0,0,0)
 
@@ -116,12 +118,14 @@ end
 
 --[[ Public API ]]--
 function Thumbstick:Enable()
+	Enabled = true
 	ThumbstickFrame.Visible = true
 	local humanoid = MasterControl:GetHumanoid()
 	enableAutoJump(humanoid)
 end
 
 function Thumbstick:Disable()
+	Enabled = false
 	if RevertAutoJumpEnabledToFalse then
 		local humanoid = MasterControl:GetHumanoid()
 		if humanoid then
@@ -147,6 +151,10 @@ function Thumbstick:Create(parentFrame)
 		if OnRenderSteppedCn then
 			OnRenderSteppedCn:disconnect()
 			OnRenderSteppedCn = nil
+		end
+		if TouchActivateCn then
+			TouchActivateCn:disconnect()
+			TouchActivateCn = nil
 		end
 	end
 	
@@ -187,7 +195,7 @@ function Thumbstick:Create(parentFrame)
 	ThumbstickFrame.BackgroundTransparency = 1.0
 	ThumbstickFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	layoutThumbstickFrame()
-	
+
 	StartImage = Instance.new("ImageLabel")
 	StartImage.Name = "ThumbstickStart"
 	StartImage.Visible = false
@@ -409,24 +417,53 @@ function Thumbstick:Create(parentFrame)
 		MasterControl:AddToPlayerMovement(-currentMoveVector)
 		currentMoveVector = Vector3.new(0,0,0)
 	end
-	
-	local function JumpIfTouchIsTap(startTime, startPosition, position)
-		if (not IsAToolEquipped) and tick() - startTime < TOUCH_IS_TAP_TIME_THRESHOLD then
-			if (position - startPosition).magnitude < TOUCH_IS_TAP_DISTANCE_THRESHOLD then
+
+	--todo: remove this pcall when TouchTapInWorld is on for all platforms
+	local success = pcall(function() 
+		local function positionIntersectsGuiObject(position, guiObject)
+			if position.X < guiObject.AbsolutePosition.X + guiObject.AbsoluteSize.X
+				and position.X > guiObject.AbsolutePosition.X
+				and position.Y < guiObject.AbsolutePosition.Y + guiObject.AbsoluteSize.Y
+				and position.Y > guiObject.AbsolutePosition.Y then
+				return true
+			end
+			return false
+		end
+
+		TouchActivateCn = UserInputService.TouchTapInWorld:connect(function(touchPos, processed)
+			if not processed and Enabled and not IsAToolEquipped and positionIntersectsGuiObject(touchPos, ThumbstickFrame) then
 				MasterControl:DoJump()
 			end
-		end
-	end
-	
-	OnTouchEndedCn = UserInputService.TouchEnded:connect(function(inputObject, isProcessed)
-		if inputObject == MoveTouchObject then
-			JumpIfTouchIsTap(MoveTouchStartTime, MoveTouchStartPosition, inputObject.Position) 
-			OnMoveTouchEnded()
-		elseif inputObject == JumpTouchObject then
-			JumpIfTouchIsTap(JumpTouchStartTime, JumpTouchStartPosition, inputObject.Position)
-			JumpTouchObject = nil
-		end
+		end)
 	end)
+
+	if not success then
+		local function JumpIfTouchIsTap(startTime, startPosition, position)
+			if (not IsAToolEquipped) and tick() - startTime < TOUCH_IS_TAP_TIME_THRESHOLD then
+				if (position - startPosition).magnitude < TOUCH_IS_TAP_DISTANCE_THRESHOLD then
+					MasterControl:DoJump()
+				end
+			end
+		end
+		
+		OnTouchEndedCn = UserInputService.TouchEnded:connect(function(inputObject, isProcessed)
+			if inputObject == MoveTouchObject then
+				JumpIfTouchIsTap(MoveTouchStartTime, MoveTouchStartPosition, inputObject.Position) 
+				OnMoveTouchEnded()
+			elseif inputObject == JumpTouchObject then
+				JumpIfTouchIsTap(JumpTouchStartTime, JumpTouchStartPosition, inputObject.Position)
+				JumpTouchObject = nil
+			end
+		end)
+	else
+		OnTouchEndedCn = UserInputService.TouchEnded:connect(function(inputObject, isProcessed)
+			if inputObject == MoveTouchObject then
+				OnMoveTouchEnded()
+			elseif inputObject == JumpTouchObject then
+				JumpTouchObject = nil
+			end
+		end)
+	end
 	
 	GuiService.MenuOpened:connect(function()
 		if MoveTouchObject then

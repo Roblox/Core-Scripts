@@ -43,6 +43,11 @@ function createContextActionGui()
 	if not buttonScreenGui and isTouchDevice then
 		buttonScreenGui = Instance.new("ScreenGui")
 		buttonScreenGui.Name = "ContextActionGui"
+		buttonScreenGui.AncestryChanged:connect(function(child, newParent)
+			if newParent == nil then
+				buttonScreenGui = nil
+			end
+		end)
 
 		buttonFrame = Instance.new("Frame")
 		buttonFrame.BackgroundTransparency = 1
