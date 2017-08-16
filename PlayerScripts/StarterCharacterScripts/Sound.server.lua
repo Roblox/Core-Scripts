@@ -7,13 +7,13 @@
 	The default Sound script loaded for every character will then be replaced with your copy of the script.
 ]]--
 
-function CreateNewSound(name, id, looped, pitch, parent)
+function CreateNewSound(name, id, looped, playbackSpeed, parent)
 	local sound = Instance.new("Sound")
 	sound.SoundId = id
 	sound.Name = name
 	sound.Archivable = false
 	sound.Parent = parent
-	sound.Pitch = pitch
+	sound.PlaybackSpeed = playbackSpeed
 	sound.Looped = looped
 	
 	sound.MinDistance = 5
