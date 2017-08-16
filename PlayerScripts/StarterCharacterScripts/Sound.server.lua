@@ -11,7 +11,7 @@ function CreateNewSound(name, id, looped, pitch, parent)
 	local sound = Instance.new("Sound")
 	sound.SoundId = id
 	sound.Name = name
-	sound.archivable = false
+	sound.Archivable = false
 	sound.Parent = parent
 	sound.Pitch = pitch
 	sound.Looped = looped
