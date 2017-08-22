@@ -1,7 +1,7 @@
 ------------------------------------------------
 --
 -- Freecam.lua
--- Written by: Quenty
+-- Written by: Fractality
 -- Edited by: TheGamer101, to make it work without the screen gui, remove the Class library
 -- and add alternative key bindings.
 ------------------------------------------------
