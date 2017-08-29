@@ -163,6 +163,13 @@ function MasterControl:GetMoveVector()
 	return moveValue
 end
 
+function MasterControl:GetMoveFunction()
+	return moveFunc
+end
+function MasterControl:SetMoveFunction(func)
+	moveFunc = func
+end
+
 function MasterControl:SetIsJumping(jumping)
 	if not isJumpEnabled then return end
 	isJumping = jumping
