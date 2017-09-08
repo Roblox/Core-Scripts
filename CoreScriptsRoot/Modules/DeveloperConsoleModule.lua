@@ -908,6 +908,11 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 					body.Size = UDim2_new(1, 0, 0, output.Height)
 					
 					disconnector:connect(outputMessageSync.MessageAdded:connect(function(message)
+						if not devConsole.Visible then
+							output:SetMessagesDirty(#messages)
+							return
+						end
+					
 						output:RefreshMessages(#messages)
 					end))
 					
@@ -2349,6 +2354,8 @@ do
 			Visible = false;
 			Height = 0;
 			HeightChanged = heightChanged;
+			MessagesDirty = false;
+			MessagesDirtyPosition = 1;
 		}
 		
 		local function setHeight(height)
@@ -2468,6 +2475,27 @@ do
 			end
 			
 			setHeight(y)
+		end
+		
+		function output.SetMessagesDirty(output, messageStartPosition)
+			if output.MessagesDirty then
+				return
+			end
+			
+			output.MessagesDirty = true
+			output.MessagesDirtyPosition = messageStartPosition
+		end
+		
+		-- Refresh messages if there are new messages when devConsole is re-opened
+		do
+			devConsole.VisibleChanged:connect(function(visible)
+				if visible then
+					if output.MessagesDirty then
+						output.MessagesDirty = false
+						output:RefreshMessages(output.MessagesDirtyPosition)
+					end
+				end
+			end)
 		end
 		
 		local refreshHandle;
