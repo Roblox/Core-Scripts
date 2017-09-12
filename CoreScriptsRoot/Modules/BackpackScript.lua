@@ -1490,7 +1490,7 @@ ScrollUpInventoryButton.Icon.Position = ScrollUpInventoryButton.Icon.Position - 
 ScrollUpInventoryButton.MouseButton1Click:connect(function()
 	ScrollingFrame.CanvasPosition = Vector2.new(
 		ScrollingFrame.CanvasPosition.X,
-		math.clamp(0, ScrollingFrame.CanvasSize.Y.Offset - ScrollingFrame.AbsoluteWindowSize.Y, ScrollingFrame.CanvasPosition.Y - (ICON_BUFFER + ICON_SIZE)))
+		math.clamp(ScrollingFrame.CanvasSize.Y.Offset - ScrollingFrame.AbsoluteWindowSize.Y, ScrollingFrame.CanvasPosition.Y - (ICON_BUFFER + ICON_SIZE), 0))
 end)
 
 ScrollDownInventoryButton = MakeVRRoundButton('ScrollDownButton', 'rbxasset://textures/ui/Backpack/ScrollUpArrow.png')
@@ -1501,7 +1501,7 @@ ScrollDownInventoryButton.Position = UDim2.new(0.5, -ScrollDownInventoryButton.S
 ScrollDownInventoryButton.MouseButton1Click:connect(function()
 	ScrollingFrame.CanvasPosition = Vector2.new(
 		ScrollingFrame.CanvasPosition.X,
-		math.clamp(0, ScrollingFrame.CanvasSize.Y.Offset - ScrollingFrame.AbsoluteWindowSize.Y, ScrollingFrame.CanvasPosition.Y + (ICON_BUFFER + ICON_SIZE)))
+		math.clamp(ScrollingFrame.CanvasSize.Y.Offset - ScrollingFrame.AbsoluteWindowSize.Y, ScrollingFrame.CanvasPosition.Y + (ICON_BUFFER + ICON_SIZE), 0))
 end)
 
 ScrollingFrame.Changed:connect(function(prop)
