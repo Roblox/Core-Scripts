@@ -18,6 +18,9 @@ local ScriptContext = game:GetService('ScriptContext')
 --[[ Add Server CoreScript ]]--
 ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerSocialScript", script.Parent)
 
+-- Prevent potentially critical server scripts from failing due to malicious players
+ScriptContext:SetTimeout(0)
+
 --[[ Remote Events ]]--
 local RemoteEvent_SetDialogInUse = Instance.new("RemoteEvent")
 RemoteEvent_SetDialogInUse.Name = "SetDialogInUse"
