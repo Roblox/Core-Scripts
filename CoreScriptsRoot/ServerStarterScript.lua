@@ -4,22 +4,21 @@
 		// Description: Server core script that handles core script server side logic.
 ]]--
 
-local runService = game:GetService('RunService')
+--[[ Services ]]--
+local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
+local RunService = game:GetService('RunService')
+local ScriptContext = game:GetService('ScriptContext')
 
 -- Prevent server script from running in Studio when not in run mode
-while not runService:IsRunning() do
+while not RunService:IsRunning() do
 	wait()
 end
 
---[[ Services ]]--
-local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
-local ScriptContext = game:GetService('ScriptContext')
+-- Prevent potentially critical server scripts from failing due to malicious players
+ScriptContext:SetTimeout(0)
 
 --[[ Add Server CoreScript ]]--
 ScriptContext:AddCoreScriptLocal("ServerCoreScripts/ServerSocialScript", script.Parent)
-
--- Prevent potentially critical server scripts from failing due to malicious players
-ScriptContext:SetTimeout(0)
 
 --[[ Remote Events ]]--
 local RemoteEvent_SetDialogInUse = Instance.new("RemoteEvent")
