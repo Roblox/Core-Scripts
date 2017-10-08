@@ -30,12 +30,12 @@ if head == nil then
 end
 
 
-CreateNewSound("GettingUp", 	"rbxasset://sounds/action_get_up.mp3",					false, 	1,		head)
-CreateNewSound("Died", 		"rbxasset://sounds/uuhhh.mp3",							false, 	1,		head) 
-CreateNewSound("FreeFalling", 	"rbxasset://sounds/action_falling.mp3",				true,	1,		head)
-CreateNewSound("Jumping", 		"rbxasset://sounds/action_jump.mp3",					false,	1,		head)
-CreateNewSound("Landing", 		"rbxasset://sounds/action_jump_land.mp3",				false,	1,		head)
-CreateNewSound("Splash", 		"rbxasset://sounds/impact_water.mp3",					false, 	1,		head)
-CreateNewSound("Running", 		"rbxasset://sounds/action_footsteps_plastic.mp3",		true, 	1.85,	head)
-CreateNewSound("Swimming", 	"rbxasset://sounds/action_swim.mp3",					true,	1.6,	head)
-CreateNewSound("Climbing", 	"rbxasset://sounds/action_footsteps_plastic.mp3",		true,	1,		head)
+CreateNewSound("GettingUp","rbxasset://sounds/action_get_up.mp3",false,1,head)
+CreateNewSound("Died","rbxasset://sounds/uuhhh.mp3",false, 1,head) 
+CreateNewSound("FreeFalling","rbxasset://sounds/action_falling.mp3",true,1,head)
+CreateNewSound("Jumping","rbxasset://sounds/action_jump.mp3",false,1,head)
+CreateNewSound("Landing","rbxasset://sounds/action_jump_land.mp3",false,1,head)
+CreateNewSound("Splash","rbxasset://sounds/impact_water.mp3",false,1,head)
+CreateNewSound("Running","rbxasset://sounds/action_footsteps_plastic.mp3",true,1.85,head)
+CreateNewSound("Swimming","rbxasset://sounds/action_swim.mp3",true,1.6,head)
+CreateNewSound("Climbing","rbxasset://sounds/action_footsteps_plastic.mp3",true,1,head)
