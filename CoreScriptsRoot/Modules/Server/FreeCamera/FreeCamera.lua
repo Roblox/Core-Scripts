@@ -17,8 +17,8 @@ local RS  = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
 
-local Spring = require(script:WaitForChild("Spring"))
-local Maid = require(script:WaitForChild("Maid"))
+local Spring = require(script:WaitForChild("Spring", 5))
+local Maid = require(script:WaitForChild("Maid", 5))
 
 local WasGuiVisible = {}
 function ToggleGui(on)
