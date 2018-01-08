@@ -978,7 +978,7 @@ local function onPromptEnded(isSuccess)
 
 	closePurchaseDialog()
 	if IsPurchasingConsumable then
-		MarketplaceService:SignalPromptProductPurchaseFinished(Players.LocalPlayer.UserId, PurchaseData.ProductId, didPurchase)
+		MarketplaceService:SignalPromptPurchaseFinished(Players.LocalPlayer.UserId, PurchaseData.ProductId, didPurchase)
 	elseif IsPurchasingGamePass then
 		MarketplaceService:SignalPromptGamePassPurchaseFinished(Players.LocalPlayer, PurchaseData.GamePassId, didPurchase)
 	else
