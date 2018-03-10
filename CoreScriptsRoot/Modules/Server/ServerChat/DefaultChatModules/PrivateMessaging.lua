@@ -50,8 +50,18 @@ local function Run(ChatService)
 				sendMessage = string.sub(message, pos + 2)
 			end
 		else
+			local first2 = string.match(message,"^[^%s+]+ [^%s+]+")
 			local first = string.match(message, "^[^%s]+")
-			if (first) then
+			if (first2) then
+				local checkForNameWithWhiteSpace = ChatService:GetSpeaker(first2)
+				if checkForNameWithWhiteSpace then
+					otherSpeakerName = first2
+					sendMessage = string.sub(message, string.len(otherSpeakerName) + 2)
+				elseif (first) then
+					otherSpeakerName = first
+					sendMessage = string.sub(message, string.len(otherSpeakerName) + 2)
+				end
+			elseif (first) then
 				otherSpeakerName = first
 				sendMessage = string.sub(message, string.len(otherSpeakerName) + 2)
 			end
