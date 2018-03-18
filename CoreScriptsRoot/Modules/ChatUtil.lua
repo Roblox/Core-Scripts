@@ -14,21 +14,11 @@ do
 			mSignaler:Fire()
 		end
 		
-		-- deprecated
-		function sig:fire(...)
-			self:Fire(...)
-		end
-		
 		function sig:Connect(f)
 			if not f then error("connect(nil)", 2) end
 			return mSignaler.Event:connect(function()
 				f(unpack(mArgData, 1, mArgDataCount))
 			end)
-		end
-		
-		-- deprecated
-		function sig:connect(f)
-			self:Connect(f)
 		end
 		
 		function sig:Wait()
@@ -37,11 +27,10 @@ do
 			return unpack(mArgData, 1, mArgDataCount)
 		end
 		
-		-- deprecated
-		function sig:wait()
-			sig:Wait();
-		end
-
+		sig.fire = sig.Fire;
+		sig.connect = sig.Connect;
+		sig.wait = sig.Wait;
+		
 		return sig
 	end
 end
