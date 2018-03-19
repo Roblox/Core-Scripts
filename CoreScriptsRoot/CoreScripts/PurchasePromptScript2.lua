@@ -5,6 +5,8 @@
 		// Written by: jeditkacheff/jmargh
 		// Description: Handles in game purchases
 ]]--
+local FFlagClientAppsUseRobloxLocale = settings():GetFFlag('ClientAppsUseRobloxLocale')
+
 local success, result = pcall(function() return settings():GetFFlag('UsePurchasePromptLocalization') end)
 local FFlagUsePurchasePromptLocalization = success and result
 
@@ -13,16 +15,25 @@ local FFlagEnableNewGamePassEndpoints do
 	FFlagEnableNewGamePassEndpoints = success and result
 end
 
+local FFlagThwartPurchasePromptScams = settings():GetFFlag("ThwartPurchasePromptScams")
+local FFlagThwartPurchasePromptScamsGamepad = settings():GetFFlag("ThwartPurchasePromptScamsGamepad")
+local FFlagDelayPurchasePromptActivation = settings():GetFFlag("DelayPurchasePromptActivation")
+
 local function LocalizedGetString(key, rtv)
 	pcall(function()
 		local LocalizationService = game:GetService("LocalizationService")
 		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-		rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
+		if FFlagClientAppsUseRobloxLocale then
+			rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
+		else
+			rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
+		end
 	end)
 	return rtv
 end
 
 --[[ Services ]]--
+local AssetService = game:GetService('AssetService')
 local GuiService = game:GetService('GuiService')
 local HttpService = game:GetService('HttpService')
 local HttpRbxApiService = game:GetService('HttpRbxApiService')
@@ -38,8 +49,8 @@ local ThirdPartyProductName = nil
 
 --[[ Flags ]]--
 local platform = UserInputService:GetPlatform()
-local IsNativePurchasing = platform == Enum.Platform.XBoxOne or 
-							platform == Enum.Platform.IOS or 
+local IsNativePurchasing = platform == Enum.Platform.XBoxOne or
+							platform == Enum.Platform.IOS or
 							platform == Enum.Platform.Android or
 							platform == Enum.Platform.UWP
 
@@ -58,6 +69,7 @@ local _,largeFont = pcall(function() return Enum.FontSize.Size42 end)
 largeFont = largeFont or Enum.FontSize.Size36
 local scaleFactor = 3
 local purchaseState = nil
+local buttonsActive = false
 
 --[[ Purchase Data ]]--
 local PurchaseData = {
@@ -142,10 +154,11 @@ local function studioMockPurchasesEnabled()
 end
 
 local function useNewMarketplaceMethods()
+	local flagExists, flagValue = false, false
 	if game:GetService("RunService"):IsStudio() then
 		flagExists, flagValue = pcall(function() return settings():GetFFlag("StudioUseMarketplaceApiClient") end)
 	else
-		flagExists, flagValue = pcall(function() return settings():GetFFlag("RCCUseMarketplaceApiClient") end)
+		flagExists, flagValue = pcall(function() return settings():GetFFlag("RCCUseMarketplaceApiClient2") end)
 	end
 	return flagExists and flagValue
 end
@@ -185,7 +198,7 @@ local ASSET_TO_STRING = {
 	[31] = "Right Leg";
 	[32] = "Package";
 	[33] = "YouTube Video";
-	[34] = "Game Pass";	
+	[34] = "Game Pass";
 	[38] = "Plugin";
 	[39] = "SolidModel";
 	[40] = "MeshPart";
@@ -330,21 +343,26 @@ PurchaseDialog.Parent = RobloxGui
 		ContainerImage.ZIndex = 8
 		ContainerImage.Parent = ContainerFrame
 
-		local ItemPreviewImage = isTenFootInterface and createImageLabel("ItemPreviewImage", UDim2.new(0, 64*scaleFactor, 0, 64*scaleFactor), UDim2.new(0, 27*scaleFactor, 0, 20*scaleFactor), "") or createImageLabel("ItemPreviewImage", UDim2.new(0, 64, 0, 64), UDim2.new(0, 27, 0, 20), "")
+		local ItemPreviewImage
+		if isTenFootInterface then
+			ItemPreviewImage = createImageLabel("ItemPreviewImage", UDim2.new(0, 64*scaleFactor, 0, 64*scaleFactor), UDim2.new(0, 27*scaleFactor, 0, 20*scaleFactor), "")
+		else
+			ItemPreviewImage = createImageLabel("ItemPreviewImage", UDim2.new(0, 64, 0, 64), UDim2.new(0, 27, 0, 20), "")
+		end
 		ItemPreviewImage.ZIndex = 9
 		ItemPreviewImage.Parent = ContainerFrame
-		
+
 		local ItemDescriptionText_str = PURCHASE_MSG.PURCHASE
 		if FFlagUsePurchasePromptLocalization then
 			ItemDescriptionText_str = LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.PURCHASE",ItemDescriptionText_str)
 		end
-		
+
 		local ItemDescriptionText = createTextLabel(
-			"ItemDescriptionText", 
+			"ItemDescriptionText",
 			isTenFootInterface and UDim2.new(0, 210*scaleFactor - 20, 0, 96*scaleFactor) or UDim2.new(0, 210, 0, 96),
 			isTenFootInterface and UDim2.new(0, 110*scaleFactor, 0, 18*scaleFactor) or UDim2.new(0, 110, 0, 18),
-			Enum.Font.SourceSans, 
-			isTenFootInterface and Enum.FontSize.Size48 or Enum.FontSize.Size18, 
+			Enum.Font.SourceSans,
+			isTenFootInterface and Enum.FontSize.Size48 or Enum.FontSize.Size18,
 			ItemDescriptionText_str
 		)
 		ItemDescriptionText.TextXAlignment = Enum.TextXAlignment.Left
@@ -376,7 +394,7 @@ PurchaseDialog.Parent = RobloxGui
 		local BuyButton = createImageButtonWithText("BuyButton", isTenFootInterface and BTN_L_POS_TENFOOT or BTN_L_POS, BUTTON_LEFT, BUTTON_LEFT_DOWN, "Buy Now", Enum.Font.SourceSansBold)
 		BuyButton.Parent = ContainerFrame
 		local BuyButtonText = BuyButton:FindFirstChild("BuyButtonText")
-		
+
 		local gamepadButtonXLocation = (BuyButton.AbsoluteSize.X/2 - BuyButtonText.TextBounds.X/2)/2
 		local buyButtonGamepadImage = Instance.new("ImageLabel")
 		if FFlagUsePurchasePromptLocalization then
@@ -472,7 +490,6 @@ PurchaseDialog.Parent = RobloxGui
 			xOffset = xOffset + 32
 		end
 
-
 local function noOpFunc() end
 
 local function enableControllerMovement()
@@ -485,6 +502,113 @@ local function disableControllerMovement()
 	game:GetService("ContextActionService"):BindCoreAction(freezeControllerActionName, noOpFunc, false, Enum.UserInputType.Gamepad1)
 	game:GetService("ContextActionService"):BindCoreAction(freezeThumbstick1Name, noOpFunc, false, Enum.KeyCode.Thumbstick1)
 	game:GetService("ContextActionService"):BindCoreAction(freezeThumbstick2Name, noOpFunc, false, Enum.KeyCode.Thumbstick2)
+end
+
+-- isClickerScam() returns true if any of the following conditions are met:
+--   1. The user has pressed ButtonA or clicked on the buy button area `TRACKED_CLICKS` times in the past `REACTION_TIME` seconds
+--   2. Mouse is over the button and UserInputService.MouseBehavior has changed to LockCurrentPosition in the past `REACTION_TIME` seconds
+local isClickerScam do
+	local REACTION_TIME = 1.1 -- Give the user this many seconds to stop clicking
+	local TRACKED_CLICKS = 3 -- How many clicks recorded in the last `REACTION_TIME` will count as a clicker scam
+
+	local isOverBuyButton do
+		local btnPos0 = Vector2.new() -- Upper-left corner of BuyButton
+		local btnPos1 = Vector2.new() -- Lower-right corner of BuyButton
+
+		do -- Update btnPos0 & btnPos1
+			local function getOffsetAxes(ud2)
+				return Vector2.new(ud2.X.Offset, ud2.Y.Offset)
+			end
+
+			local function getScaleAxes(ud2)
+				return Vector2.new(ud2.X.Scale, ud2.Y.Scale)
+			end
+
+			-- simulatePixelBounds calculates screen-space AABB corners from a hierarchy of gui sizes and positions
+			local function simulatePixelBounds(absoluteSize, guis)
+				local absolutePosition = Vector2.new()
+				for _, elem in ipairs(guis) do
+					absolutePosition = absolutePosition + getOffsetAxes(elem.Position) + getScaleAxes(elem.Position)*absoluteSize
+					absoluteSize = getOffsetAxes(elem.Size) + getScaleAxes(elem.Size)*absoluteSize
+				end
+				return absolutePosition, absolutePosition + absoluteSize
+			end
+
+			local function updateBuyButtonBounds()
+				btnPos0, btnPos1 = simulatePixelBounds(RobloxGui.AbsoluteSize, {
+					{ -- PurchaseDialog
+						Position = SHOW_POSITION,
+						Size = DIALOG_SIZE,
+					},
+					{ -- BuyButton
+						Position = BTN_L_POS,
+						Size = BTN_SIZE,
+					},
+				})
+			end
+
+			RobloxGui:GetPropertyChangedSignal("AbsoluteSize"):Connect(updateBuyButtonBounds)
+			updateBuyButtonBounds()
+		end
+
+		function isOverBuyButton(mousePos)
+			local mouseX, mouseY = mousePos.X, mousePos.Y
+			return mouseY >= btnPos0.Y and mouseY < btnPos1.Y and mouseX >= btnPos0.X and mouseX < btnPos1.X
+		end
+	end
+
+	do
+		local lastMouseBehaviorChange = 0 -- Timestamp of when the mouse was last locked into position over the buy button area
+		local clickStack = {} -- Fixed-size array of timestamps from recent clicks in the BuyButton area, ordered from earliest to latest
+		for i = 1, TRACKED_CLICKS do
+			clickStack[i] = 0
+		end
+
+		do -- Input capturing
+			local INPUT_MB1 = Enum.UserInputType.MouseButton1
+			local INPUT_MMOVE = Enum.UserInputType.MouseMovement
+			local INPUT_TOUCH = Enum.UserInputType.Touch
+			local INPUT_BTN_A = Enum.KeyCode.ButtonA
+
+			UserInputService.InputBegan:Connect(function(input, gpe)
+				if buttonsActive then return end -- Don't capture input if the purchase prompt is active
+				local inputType = input.UserInputType
+
+				local isGamepad = FFlagThwartPurchasePromptScamsGamepad and input.KeyCode == INPUT_BTN_A
+				local isMouseOrTouch = inputType == INPUT_MB1 or inputType == INPUT_TOUCH
+
+				if isGamepad or (isMouseOrTouch and isOverBuyButton(input.Position)) then
+					-- Push current timestamp to the click stack
+					for i = 2, TRACKED_CLICKS do
+						clickStack[i - 1] = clickStack[i]
+					end
+					clickStack[TRACKED_CLICKS] = tick()
+				end
+			end)
+
+			UserInputService:GetPropertyChangedSignal("MouseBehavior"):Connect(function()
+				local lastInputType = UserInputService:GetLastInputType()
+				local isMouseInput = lastInputType == INPUT_MB1 or lastInputType == INPUT_MMOVE
+				local mousePos = UserInputService:GetMouseLocation() - GuiService:GetGuiInset()
+				if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCurrentPosition and isMouseInput and isOverBuyButton(mousePos) then
+					lastMouseBehaviorChange = tick()
+				end
+			end)
+		end
+
+		function isClickerScam()
+			if not FFlagThwartPurchasePromptScams then
+				return false
+			end
+			-- fastclick: User is told to click the buy button area rapidly.
+			-- The purchase prompt slides down and they unwittingly confirm the purchase.
+			local fastclick = tick() < REACTION_TIME + clickStack[1]
+			-- lockmouse: User is told to click different parts of the screen rapidly.
+			-- The mouse locks up over the buy button area, the purchase prompt slides down, and they unwittingly confirm the purchase.
+			local lockmouse = tick() < REACTION_TIME + lastMouseBehaviorChange
+			return fastclick or lockmouse
+		end
+	end
 end
 
 --[[ Purchase Data Functions ]]--
@@ -500,7 +624,7 @@ local function setInitialPurchaseData(assetId, productId, gamePassId, currencyTy
 	PurchaseData.EquipOnPurchase = equipOnPurchase
 
 	IsPurchasingConsumable = productId ~= nil
-	
+
 	if FFlagEnableNewGamePassEndpoints then
 		IsPurchasingGamePass = gamePassId ~= nil
 	end
@@ -525,31 +649,17 @@ local function setPreviewImageXbox(productInfo, assetId)
 	else
 		ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
 		return
-	end
+    end
 
-	local path = 'asset-thumbnail/json?assetId=%d&width=100&height=100&format=png'
-	path = BASE_URL..string.format(path, id)
-	spawn(function()
-		-- check if thumb has been generated, if not generated or if anything fails
-		-- set to the default image
-		local success, result = pcall(function()
-			return game:HttpGetAsync(path)
+    spawn(function()
+		local imageUrl = nil
+		local isGenerated = false
+		local success, msg = pcall(function()
+			imageUrl, isGenerated = AssetService:GetAssetThumbnailAsync(id, Vector2.new(100, 100))
 		end)
-		if not success then
-			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
-			return
-		end
 
-		local decodeSuccess, decodeResult = pcall(function()
-			return HttpService:JSONDecode(result)
-		end)
-		if not decodeSuccess then
-			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
-			return
-		end
-
-		if decodeResult["Final"] == true then
-			ItemPreviewImage.Image = THUMBNAIL_URL..tostring(id).."&x=100&y=100&format=png"
+		if success and isGenerated == true and imageUrl then
+			ItemPreviewImage.Image = imageUrl
 		else
 			ItemPreviewImage.Image = DEFAULT_XBOX_IMAGE
 		end
@@ -661,13 +771,13 @@ local function setPurchaseDataInGui(isFree, invalidBC)
 	if FFlagUsePurchasePromptLocalization then
 		descriptionText = LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.PURCHASE",descriptionText)
 	end
-	
+
 	if isFree then
 		descriptionText = PURCHASE_MSG.FREE
 		if FFlagUsePurchasePromptLocalization then
 			descriptionText = LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.FREE",descriptionText)
 		end
-		
+
 		PostBalanceText.Text = PURCHASE_MSG.FREE_BALANCE
 	end
 
@@ -757,7 +867,7 @@ local function getRobuxProductToBuyItem(amountNeeded)
 
 	--todo: we should clean all this up at some point so all the platforms have the
 	-- same product names, or at least names that are very similar
-	
+
 	local isUsingNewProductId = (platform == Enum.Platform.Android) or (platform == Enum.Platform.UWP)
 
 	local prependStr, appendStr, appPrefix = "", "", ""
@@ -823,7 +933,7 @@ local function setBuyMoreRobuxDialog(playerBalance)
 				descriptionText = string.gsub(descriptionText, "{RBX_NAME1}", productInfo["Name"])
 				descriptionText = string.gsub(descriptionText, "{RBX_NAME2}", ASSET_TO_STRING[productInfo["AssetTypeId"]])
 			end
-			
+
 			PostBalanceText.Text = "The remaining "..formatNumber(remainder).." ROBUX will be credited to your balance."
 			if FFlagUsePurchasePromptLocalization then
 				PostBalanceText.Text = LocalizedGetString("PurchasePromptScript.setBuyMoreRobuxDialog.PostBalanceText",PostBalanceText.Text)
@@ -850,7 +960,11 @@ local function showPurchasePrompt()
 	if isTenFootInterface then
 		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 	end
-	PurchaseDialog:TweenPosition(isTenFootInterface and SHOW_POSITION_TENFOOT or SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true)
+	PurchaseDialog:TweenPosition(isTenFootInterface and SHOW_POSITION_TENFOOT or SHOW_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true, function(tweenStatus)
+		if tweenStatus == Enum.TweenStatus.Completed then
+			buttonsActive = true
+		end
+	end)
 	disableControllerMovement()
 	enableControllerInput()
 end
@@ -868,7 +982,7 @@ local function onPurchaseFailed(failType)
 		if itemName == "" then
 			failedText = string.gsub(failedText, " of ", "")
 		end
-			
+
 		if failType == PURCHASE_FAILED.DEFAULT_ERROR then
 			failedText = string.gsub(failedText, "{RBX_NAME2}", LocalizedGetString("PurchasePromptScript.ERROR_MSG.UNKNOWN",ERROR_MSG.UNKNWON_FAILURE))
 		elseif failType == PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED then
@@ -876,29 +990,29 @@ local function onPurchaseFailed(failType)
 		elseif failType == PURCHASE_FAILED.CANNOT_GET_BALANCE then
 			failedText = LocalizedGetString(
 				"PurchasePromptScript.PURCHASE_FAILED.CANNOT_GET_BALANCE",
-				"Cannot retrieve your balance at this time. Your account has not been charged. Please try again later.") 
+				"Cannot retrieve your balance at this time. Your account has not been charged. Please try again later.")
 		elseif failType == PURCHASE_FAILED.CANNOT_GET_ITEM_PRICE then
 			failedText = LocalizedGetString(
 				"PurchasePromptScript.PURCHASE_FAILED.CANNOT_GET_ITEM_PRICE",
-				"We couldn't retrieve the price of the item at this time. Your account has not been charged. Please try again later.") 
+				"We couldn't retrieve the price of the item at this time. Your account has not been charged. Please try again later.")
 		elseif failType == PURCHASE_FAILED.NOT_FOR_SALE then
 			failedText = LocalizedGetString(
 				"PurchasePromptScript.PURCHASE_FAILED.NOT_FOR_SALE",
-				"This item is not currently for sale. Your account has not been charged.") 
+				"This item is not currently for sale. Your account has not been charged.")
 			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 		elseif failType == PURCHASE_FAILED.NOT_ENOUGH_TIX then
 			failedText = LocalizedGetString(
 				"PurchasePromptScript.PURCHASE_FAILED.NOT_ENOUGH_TIX",
-				"This item cost more tickets than you currently have. Try trading currency on www.roblox.com to get more tickets.") 
+				"This item cost more tickets than you currently have. Try trading currency on www.roblox.com to get more tickets.")
 			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 		elseif failType == PURCHASE_FAILED.UNDER_13 then
 			failedText = LocalizedGetString(
 				"PurchasePromptScript.PURCHASE_FAILED.UNDER_13",
-				"Your account is under 13. Purchase of this item is not allowed. Your account has not been charged.") 
+				"Your account is under 13. Purchase of this item is not allowed. Your account has not been charged.")
 		elseif failType == PURCHASE_FAILED.LIMITED then
 			failedText = LocalizedGetString(
 				"PurchasePromptScript.PURCHASE_FAILED.LIMITED",
-				"This limited item has no more copies. Try buying from another user on www.roblox.com. Your account has not been charged.") 
+				"This limited item has no more copies. Try buying from another user on www.roblox.com. Your account has not been charged.")
 			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 		elseif failType == PURCHASE_FAILED.DID_NOT_BUY_ROBUX then
 			failedText = string.gsub(failedText, "{RBX_NAME2}", LocalizedGetString("PurchasePromptScript.ERROR_MSG.INVALID_FUNDS",ERROR_MSG.INVALID_FUNDS))
@@ -912,14 +1026,14 @@ local function onPurchaseFailed(failType)
 				"Third-party item sales have been disabled for this place. Your account has not been charged.")
 			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 		end
-		
+
 	else --FFlagUsePurchasePromptLocalization == false
-		
+
 		failedText = string.gsub(PURCHASE_MSG.FAILED, "itemName", string.sub(itemName, 1, 20))
 		if itemName == "" then
 			failedText = string.gsub(failedText, " of ", "")
 		end
-			
+
 		if failType == PURCHASE_FAILED.DEFAULT_ERROR then
 			failedText = string.gsub(failedText, "errorReason", ERROR_MSG.UNKNWON_FAILURE)
 		elseif failType == PURCHASE_FAILED.IN_GAME_PURCHASE_DISABLED then
@@ -948,7 +1062,7 @@ local function onPurchaseFailed(failType)
 			setPreviewImage(PurchaseData.ProductInfo, PurchaseData.AssetId)
 		end
 	end
-	
+
 	RobuxIcon.Visible = false
 	TixIcon.Visible = false
 	CostText.Visible = false
@@ -960,16 +1074,19 @@ local function onPurchaseFailed(failType)
 end
 
 local function closePurchaseDialog()
-	PurchaseDialog:TweenPosition(isTenFootInterface and HIDE_POSITION_TENFOOT or HIDE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true, function()
+	buttonsActive = false
+	purchaseState = PURCHASE_STATE.DEFAULT
+	if isTenFootInterface then
+		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
+	end
+	PurchaseDialog:TweenPosition(isTenFootInterface and HIDE_POSITION_TENFOOT or HIDE_POSITION, Enum.EasingDirection.InOut, Enum.EasingStyle.Quad, TWEEN_TIME, true, function(tweenStatus)
+		if tweenStatus == Enum.TweenStatus.Completed then
 			PurchaseDialog.Visible = false
 			IsCurrentlyPrompting = false
 			IsCurrentlyPurchasing = false
 			IsCheckingPlayerFunds = false
-			purchaseState = PURCHASE_STATE.DEFAULT
-			if isTenFootInterface then
-				UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
-			end
-		end)
+		end
+	end)
 end
 
 -- Main exit point
@@ -1073,17 +1190,17 @@ local function doesPlayerOwnGamePass()
 	if (not PurchaseData.GamePassId) or (PurchaseData.GamePassId <= 0) then
 		return false, nil
 	end
-	
+
 	local success, result = pcall(function()
 		local gamePassService = game:GetService("GamePassService")
 		return gamePassService:PlayerHasPass(game.Players.LocalPlayer, PurchaseData.GamePassId)
 	end)
-	
+
 	if not success then
 		print("PurchasePromptScript: doesPlayerOwnGamePass() failed because", result)
 		return false, nil
 	end
-	
+
 	return true, (result == true) or (result == "true")
 end
 
@@ -1135,8 +1252,8 @@ else
 		local apiPath = platform == Enum.Platform.XBoxOne and 'my/platform-currency-budget' or 'currency/balance'
 
 		local success, result = pcall(function()
-			return HttpRbxApiService:GetAsync(apiPath, 
-                Enum.ThrottlingPriority.Default, 
+			return HttpRbxApiService:GetAsync(apiPath,
+                Enum.ThrottlingPriority.Default,
                 Enum.HttpRequestType.MarketplaceService)
 		end)
 
@@ -1192,12 +1309,12 @@ local function playerHasFundsForPurchase(playerBalance)
 	else
 		PostBalanceText.Text = PURCHASE_MSG.BALANCE_FUTURE..currencyStr..formatNumber(afterBalanceAmount).."."
 	end
-	
+
 	if FFlagUsePurchasePromptLocalization then
 		PostBalanceText.Text = LocalizedGetString("PurchasePromptScript.PURCHASE_MSG.BALANCE_FUTURE",PostBalanceText.Text)
 		PostBalanceText.Text = string.gsub(PostBalanceText.Text, "{RBX_NUMBER}", currencyStr..formatNumber(afterBalanceAmount))
 	end
-	
+
 	if studioMockPurchasesEnabled() then
 		PostBalanceText.Text = PURCHASE_MSG.MOCK_PURCHASE
 	end
@@ -1287,7 +1404,7 @@ local function canPurchase(disableUpsell)
 			setButtonsVisible(OkButton)
 			return true
 		end
-		
+
 		-- most places will not need to sell third party assets.
 		if areThirdPartySalesRestricted() and not game:GetService("Workspace").AllowThirdPartySales then
 			local ProductCreator = tonumber(PurchaseData.ProductInfo["Creator"]["Id"])
@@ -1302,7 +1419,7 @@ local function canPurchase(disableUpsell)
 
 	if not isFree and isRestrictedThirdParty then
 		onPurchaseFailed(PURCHASE_FAILED.THIRD_PARTY_DISABLED)
-		return false    
+		return false
 	end
 
 	local playerBalance = getPlayerBalance()
@@ -1388,7 +1505,7 @@ local function onPurchaseSuccess()
 	else
 		descriptionText = string.gsub(descriptionText, "itemName", string.sub(PurchaseData.ProductInfo["Name"], 1, 20))
 	end
-	
+
 	ItemDescriptionText.Text = descriptionText
 
 	local playerBalance = getPlayerBalance()
@@ -1396,7 +1513,7 @@ local function onPurchaseSuccess()
 	local newBalance = playerBalance[currencyType]
 
 	if currencyType == "robux" then
-		PostBalanceText.Text = PURCHASE_MSG.BALANCE_NOW..getCurrencyString(PurchaseData.CurrencyType)..formatNumber(newBalance).."."	
+		PostBalanceText.Text = PURCHASE_MSG.BALANCE_NOW..getCurrencyString(PurchaseData.CurrencyType)..formatNumber(newBalance).."."
 	else
 		PostBalanceText.Text = PURCHASE_MSG.BALANCE_NOW..formatNumber(newBalance).." "..getCurrencyString(PurchaseData.CurrencyType).."."
 	end
@@ -1418,7 +1535,9 @@ local function onPurchaseSuccess()
 end
 
 local function onAcceptPurchase()
+	if not buttonsActive and FFlagDelayPurchasePromptActivation then return end
 	if IsCurrentlyPurchasing then return end
+	if isClickerScam() then return end
 
 	if purchaseState ~= PURCHASE_STATE.BUYITEM then
 		return
@@ -1458,7 +1577,7 @@ local function onAcceptPurchase()
 		end
 	else
 		submitPurchase = function()
-			return HttpRbxApiService:PostAsync(apiPath, params, 
+			return HttpRbxApiService:PostAsync(apiPath, params,
                 Enum.ThrottlingPriority.Default, Enum.HttpContentType.ApplicationUrlEncoded,
                 Enum.HttpRequestType.MarketplaceService)
 		end
@@ -1590,6 +1709,7 @@ function nativePurchaseFinished(wasPurchased)
 end
 
 local function onBuyRobuxPrompt()
+	if not buttonsActive and FFlagDelayPurchasePromptActivation then return end
 	if purchaseState ~= PURCHASE_STATE.BUYROBUX then
 		return
 	end
@@ -1628,6 +1748,7 @@ local function onBuyRobuxPrompt()
 end
 
 local function onUpgradeBCPrompt()
+	if not buttonsActive and FFlagDelayPurchasePromptActivation then return end
 	if purchaseState ~= PURCHASE_STATE.BUYBC then
 		return
 	end
@@ -1644,7 +1765,7 @@ function enableControllerInput()
 		CONTROLLER_CONFIRM_ACTION_NAME,
 		function(actionName, inputState, inputObject)
 			if inputState ~= Enum.UserInputState.Begin then return end
-			
+
 			if purchaseState == PURCHASE_STATE.SUCCEEDED then
 				onPromptEnded()
 			elseif purchaseState == PURCHASE_STATE.FAILED then
@@ -1724,17 +1845,20 @@ hideGamepadButtons()
 
 --[[ Event Connections ]]--
 CancelButton.MouseButton1Click:connect(function()
+	if not buttonsActive and FFlagDelayPurchasePromptActivation then return end
 	if IsCurrentlyPurchasing then return end
 	onPromptEnded(false)
 end)
 BuyButton.MouseButton1Click:connect(onAcceptPurchase)
 FreeButton.MouseButton1Click:connect(onAcceptPurchase)
 OkButton.MouseButton1Click:connect(function()
+	if not buttonsActive and FFlagDelayPurchasePromptActivation then return end
 	if purchaseState == PURCHASE_STATE.FAILED then
 		onPromptEnded(false)
 	end
 end)
 OkPurchasedButton.MouseButton1Click:connect(function()
+	if not buttonsActive and FFlagDelayPurchasePromptActivation then return end
 	if purchaseState == PURCHASE_STATE.SUCCEEDED then
 		onPromptEnded(true)
 	end

@@ -15,6 +15,9 @@ local MarketplaceService = game:GetService("MarketplaceService")
 ----------- UTILITIES --------------
 local utility = require(RobloxGui.Modules.Settings.Utility)
 
+------------ FAST FLAGS ------------------
+local FFlagClientAppsUseRobloxLocale = settings():GetFFlag('ClientAppsUseRobloxLocale')
+
 ------------ CONSTANTS -------------------
 local ABUSE_TYPES_PLAYER = {
 	"Swearing",
@@ -38,22 +41,22 @@ end
 pcall(function()
 	local LocalizationService = game:GetService("LocalizationService")
 	local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-	DEFAULT_ABUSE_DESC_TEXT = CorescriptLocalization:GetString(
-		LocalizationService.SystemLocaleId,
-		"KEY_DESCRIPTION_OPTIONAL")
+	if FFlagClientAppsUseRobloxLocale then
+		DEFAULT_ABUSE_DESC_TEXT = CorescriptLocalization:GetString(
+			LocalizationService.RobloxLocaleId,
+			"KEY_DESCRIPTION_OPTIONAL")
+	else
+		DEFAULT_ABUSE_DESC_TEXT = CorescriptLocalization:GetString(
+			LocalizationService.SystemLocaleId,
+			"KEY_DESCRIPTION_OPTIONAL")
+	end
 end)
 
 ------------ VARIABLES -------------------
 local PageInstance = nil
 
-local enableReportAbuseMenuFixSuccess, enableReportAbuseMenuFixValue = pcall(function() return settings():GetFFlag("EnableReportAbuseMenuFix") end)
-local enableReportAbuseMenuFix = enableReportAbuseMenuFixSuccess and enableReportAbuseMenuFixValue
-
-local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
-local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
-
-local reportPlayerAutoSelectSuccess, reportPlayerAutoSelectValue = pcall(function() return settings():GetFFlag("ReportPlayerAutoSelect") end)
-local reportPlayerAutoSelect = reportPlayerAutoSelectSuccess and reportPlayerAutoSelectValue
+local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
+local FFlagUseNotificationsLocalization = success and result
 
 ----------- CLASS DECLARATION --------------
 local function Initialize()
@@ -96,37 +99,24 @@ local function Initialize()
 			return a:lower() < b:lower()
 		end)
 
-		this.WhichPlayerMode:UpdateDropDownList(playerNames)
+        this.WhichPlayerMode:UpdateDropDownList(playerNames)
 
-		if not enableReportAbuseMenuFix then
-			if index == 1 then
-				this.GameOrPlayerMode:SetSelectionIndex(1)
-				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
-			else
-				this.WhichPlayerLabel.ZIndex = 2
-				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
-			end
+        --Reset GameOrPlayerMode to Game if no other players
+        if index == 1 then
+			this.GameOrPlayerMode:SetSelectionIndex(1)
+		end
 
-			this.WhichPlayerMode:SetInteractable(index > 1 and this.GameOrPlayerMode.CurrentIndex ~= 1)
-			this.GameOrPlayerMode:SetInteractable(index > 1)
+		this.GameOrPlayerMode:SetInteractable(index > 1)
+
+		if this.GameOrPlayerMode.CurrentIndex == 1 then
+			this.WhichPlayerMode:SetInteractable(false)
+			this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
+			this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_GAME > 1)
 		else
-			--Reset GameOrPlayerMode to Game if no other players
-			if index == 1 then
-				this.GameOrPlayerMode:SetSelectionIndex(1)
-			end
-
-			this.GameOrPlayerMode:SetInteractable(index > 1)
-
-			if this.GameOrPlayerMode.CurrentIndex == 1 then
-				this.WhichPlayerMode:SetInteractable(false)
-				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_GAME)
-				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_GAME > 1)
-			else
-				this.WhichPlayerLabel.ZIndex = 2
-				this.WhichPlayerMode:SetInteractable(index > 1)
-				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
-				this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_PLAYER > 1)
-			end
+			this.WhichPlayerLabel.ZIndex = 2
+			this.WhichPlayerMode:SetInteractable(index > 1)
+			this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
+			this.TypeOfAbuseMode:SetInteractable(#ABUSE_TYPES_PLAYER > 1)
 		end
 
 		if nextPlayerToReport then
@@ -134,13 +124,11 @@ local function Initialize()
 			nextPlayerToReport = nil
 
 			if this.GameOrPlayerMode.CurrentIndex == 2 then
-				if reportPlayerAutoSelect then
-					if playerSelected then --if the reported player is still in game
-						--Auto select type of abuse when report a player
-						GuiService.SelectedCoreObject = this.TypeOfAbuseMode.DropDownFrame
-					else
-						GuiService.SelectedCoreObject = this.WhichPlayerMode.DropDownFrame
-					end
+				if playerSelected then --if the reported player is still in game
+					--Auto select type of abuse when report a player
+					GuiService.SelectedCoreObject = this.TypeOfAbuseMode.DropDownFrame
+				else
+					GuiService.SelectedCoreObject = this.WhichPlayerMode.DropDownFrame
 				end
 			end
 		end
@@ -149,7 +137,11 @@ local function Initialize()
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "ReportAbuseTab"
 	this.TabHeader.Icon.Image = "rbxasset://textures/ui/Settings/MenuBarIcons/ReportAbuseTab.png"
-	this.TabHeader.Icon.Title.Text = "Report"
+	if FFlagUseNotificationsLocalization then
+		this.TabHeader.Title.Text = "Report"
+	else
+		this.TabHeader.Icon.Title.Text = "Report"
+	end
 
 	------ PAGE CUSTOMIZATION -------
 	this.Page.Name = "ReportAbusePage"
@@ -186,15 +178,6 @@ local function Initialize()
 			this.AbuseDescriptionFrame,
 			this.AbuseDescriptionLabel,
 			this.AbuseDescription = utility:AddNewRow(this, DEFAULT_ABUSE_DESC_TEXT, "TextBox", nil, nil, 5)
-
-			if not enablePortraitMode then
-				this.AbuseDescription.Selection.Size = UDim2.new(0, 290, 0, 30)
-	 			this.AbuseDescription.Selection.Position = UDim2.new(1,-345,this.AbuseDescription.Selection.Position.Y.Scale, this.AbuseDescription.Selection.Position.Y.Offset)
-	 			this.AbuseDescriptionLabel = this.TypeOfAbuseLabel:clone()
- 				this.AbuseDescriptionLabel.Text = "Abuse Description"
-				this.AbuseDescriptionLabel.Position = UDim2.new(this.AbuseDescriptionLabel.Position.X.Scale, this.AbuseDescriptionLabel.Position.X.Offset,0,50)
-				this.AbuseDescriptionLabel.Parent = this.Page
-			end
 
 			this.AbuseDescriptionLabel.Text = "Abuse Description"
 		else
@@ -246,9 +229,6 @@ local function Initialize()
 
 				this.WhichPlayerMode:SetInteractable(false)
 				this.WhichPlayerLabel.ZIndex = 1
-				if not enableReportAbuseMenuFix then
-					this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
-				end
 				makeSubmitButtonActive()
 			else
 				this.TypeOfAbuseMode:UpdateDropDownList(ABUSE_TYPES_PLAYER)
@@ -258,15 +238,9 @@ local function Initialize()
 				if #playerNames > 0 then
 					this.WhichPlayerMode:SetInteractable(true)
 					this.WhichPlayerLabel.ZIndex = 2
-					if not enableReportAbuseMenuFix then
-						this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.WhichPlayerMode.DropDownFrame
-					end
 				else
 					this.WhichPlayerMode:SetInteractable(false)
 					this.WhichPlayerLabel.ZIndex = 1
-					if not enableReportAbuseMenuFix then
-						this.GameOrPlayerMode.SelectorFrame.NextSelectionDown = this.TypeOfAbuseMode.DropDownFrame
-					end
 				end
 				makeSubmitButtonInactive()
 			end

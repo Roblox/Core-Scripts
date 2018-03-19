@@ -1,6 +1,7 @@
 local RunService = game:GetService('RunService')
 local UserInputService = game:GetService('UserInputService')
 local PlayersService = game:GetService('Players')
+local VRService = game:GetService("VRService")
 local StarterPlayer = game:GetService('StarterPlayer')
 
 
@@ -17,8 +18,9 @@ local ClassicCamera = require(RootCamera:WaitForChild('ClassicCamera'))()
 local FollowCamera = require(RootCamera:WaitForChild('FollowCamera'))()
 local PopperCam = require(script:WaitForChild('PopperCam'))
 local Invisicam = require(script:WaitForChild('Invisicam'))
-local ClickToMove = require(script:WaitForChild('ClickToMove'))()
 local TransparencyController = require(script:WaitForChild('TransparencyController'))()
+
+local VRCamera = require(RootCamera:WaitForChild("VRCamera"))()
 
 local GameSettings = UserSettings().GameSettings
 
@@ -29,6 +31,10 @@ end)
 if not success then
 	print("Couldn't get feature UserAllCamerasInLua because:" , msg) 
 end
+
+local FFlagUserNoCameraClickToMoveSuccess, FFlagUserNoCameraClickToMoveResult = pcall(function() return UserSettings():IsUserFeatureEnabled("UserNoCameraClickToMove") end)
+local FFlagUserNoCameraClickToMove = FFlagUserNoCameraClickToMoveSuccess and FFlagUserNoCameraClickToMoveResult
+local ClickToMove = FFlagUserNoCameraClickToMove and nil or require(script:WaitForChild('ClickToMove'))()
 
 local isOrbitalCameraEnabled = pcall(function() local test = Enum.CameraType.Orbital end)
 
@@ -115,7 +121,7 @@ local function getCurrentCameraMode()
 	local player = PlayersService.LocalPlayer
 	if usePlayerScripts and player then
 		if (hasLastInput and lastInputType == Enum.UserInputType.Touch) or IsTouch() then -- Touch (iPad, etc...)
-			if isClickToMoveOn() then
+			if not FFlagUserNoCameraClickToMove and isClickToMoveOn() then
 				return Enum.DevTouchMovementMode.ClickToMove.Name
 			elseif player.DevTouchCameraMode == Enum.DevTouchCameraMovementMode.UserChoice then
 				local touchMovementMode = GameSettings.TouchCameraMovementMode
@@ -127,7 +133,7 @@ local function getCurrentCameraMode()
 				return player.DevTouchCameraMode.Name
 			end
 		else -- Computer
-			if isClickToMoveOn() then
+			if not FFlagUserNoCameraClickToMove and isClickToMoveOn() then
 				return Enum.DevComputerMovementMode.ClickToMove.Name
 			elseif player.DevComputerCameraMode == Enum.DevComputerCameraMovementMode.UserChoice then
 				local computerMovementMode = GameSettings.ComputerCameraMovementMode
@@ -153,13 +159,10 @@ end
 local function Update()
 	if EnabledCamera then
 		EnabledCamera:Update()
-		EnabledCamera:ApplyVRTransform()
 	end
-
-	if EnabledOcclusion then
+	if EnabledOcclusion and not VRService.VREnabled then
 		EnabledOcclusion:Update(EnabledCamera)
 	end
-	
 	if shouldUsePlayerScriptsCamera() then
 		TransparencyController:Update()
 	end
@@ -179,13 +182,19 @@ end
 
 local function OnCameraMovementModeChange(newCameraMode)
 	if newCameraMode == Enum.DevComputerMovementMode.ClickToMove.Name then
+		if FFlagUserNoCameraClickToMove then
+			--No longer responding to ClickToMove here!
+			return
+		end
 		ClickToMove:Start()
 		SetEnabledCamera(nil)
 		TransparencyController:SetEnabled(true)
 	else
 		local currentCameraType = workspace.CurrentCamera and workspace.CurrentCamera.CameraType
-		
-		if (currentCameraType == Enum.CameraType.Custom or not AllCamerasInLua) and newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
+		if VRService.VREnabled and currentCameraType ~= Enum.CameraType.Scriptable then
+			SetEnabledCamera(VRCamera)
+			TransparencyController:SetEnabled(false)		
+		elseif (currentCameraType == Enum.CameraType.Custom or not AllCamerasInLua) and newCameraMode == Enum.ComputerCameraMovementMode.Classic.Name then
 			SetEnabledCamera(ClassicCamera)			
 			TransparencyController:SetEnabled(true)
 		elseif (currentCameraType == Enum.CameraType.Custom or not AllCamerasInLua) and newCameraMode == Enum.ComputerCameraMovementMode.Follow.Name then
@@ -291,3 +300,9 @@ do
 	end)
 	OnPlayerAdded(PlayersService.LocalPlayer)
 end
+
+local function OnVREnabled()
+	OnCameraMovementModeChange(getCurrentCameraMode())
+end
+
+VRService:GetPropertyChangedSignal("VREnabled"):connect(OnVREnabled)

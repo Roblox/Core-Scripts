@@ -16,7 +16,7 @@ local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))
 
 local ChatLocalization = nil
-pcall(function() ChatLocalization = require(game:GetService("Chat").ClientChatModules.ChatLocalization) end)
+pcall(function() ChatLocalization = require(Chat.ClientChatModules.ChatLocalization) end)
 if ChatLocalization == nil then ChatLocalization = { Get = function(key,default) return default end } end
 
 local useEvents = {}
@@ -29,8 +29,14 @@ if (not EventFolder) then
 	EventFolder.Parent = EventFolderParent
 end
 
+--// No-opt connect Server>Client RemoteEvents to ensure they cannot be called
+--// to fill the remote event queue.
+local function emptyFunction()
+	--intentially empty
+end
+
 local function GetObjectWithNameAndType(parentObject, objectName, objectType)
-	for i, child in pairs(parentObject:GetChildren()) do
+	for _, child in pairs(parentObject:GetChildren()) do
 		if (child:IsA(objectType) and child.Name == objectName) then
 			return child
 		end
@@ -51,24 +57,30 @@ local function CreateIfDoesntExist(parentObject, objectName, objectType)
 	return obj
 end
 
-CreateIfDoesntExist(EventFolder, "OnNewMessage", "RemoteEvent")
-CreateIfDoesntExist(EventFolder, "OnMessageDoneFiltering", "RemoteEvent")
-CreateIfDoesntExist(EventFolder, "OnNewSystemMessage", "RemoteEvent")
-CreateIfDoesntExist(EventFolder, "OnChannelJoined", "RemoteEvent")
-CreateIfDoesntExist(EventFolder, "OnChannelLeft", "RemoteEvent")
-CreateIfDoesntExist(EventFolder, "OnMuted", "RemoteEvent")
-CreateIfDoesntExist(EventFolder, "OnUnmuted", "RemoteEvent")
-CreateIfDoesntExist(EventFolder, "OnMainChannelSet", "RemoteEvent")
-CreateIfDoesntExist(EventFolder, "ChannelNameColorUpdated", "RemoteEvent")
+--// All remote events will have a no-opt OnServerEvent connecdted on construction
+local function CreateEventIfItDoesntExist(parentObject, objectName)
+	local obj = CreateIfDoesntExist(parentObject, objectName, "RemoteEvent")
+	obj.OnServerEvent:Connect(emptyFunction)
+	return obj
+end
 
-CreateIfDoesntExist(EventFolder, "SayMessageRequest", "RemoteEvent")
+CreateEventIfItDoesntExist(EventFolder, "OnNewMessage")
+CreateEventIfItDoesntExist(EventFolder, "OnMessageDoneFiltering")
+CreateEventIfItDoesntExist(EventFolder, "OnNewSystemMessage")
+CreateEventIfItDoesntExist(EventFolder, "OnChannelJoined")
+CreateEventIfItDoesntExist(EventFolder, "OnChannelLeft")
+CreateEventIfItDoesntExist(EventFolder, "OnMuted")
+CreateEventIfItDoesntExist(EventFolder, "OnUnmuted")
+CreateEventIfItDoesntExist(EventFolder, "OnMainChannelSet")
+CreateEventIfItDoesntExist(EventFolder, "ChannelNameColorUpdated")
+
+CreateEventIfItDoesntExist(EventFolder, "SayMessageRequest")
+CreateEventIfItDoesntExist(EventFolder, "SetBlockedUserIdsRequest")
 CreateIfDoesntExist(EventFolder, "GetInitDataRequest", "RemoteFunction")
 CreateIfDoesntExist(EventFolder, "MutePlayerRequest", "RemoteFunction")
 CreateIfDoesntExist(EventFolder, "UnMutePlayerRequest", "RemoteFunction")
-CreateIfDoesntExist(EventFolder, "SetBlockedUserIdsRequest", "RemoteEvent")
 
 EventFolder = useEvents
-
 
 local function CreatePlayerSpeakerObject(playerObj)
 	--// If a developer already created a speaker object with the
@@ -81,7 +93,7 @@ local function CreatePlayerSpeakerObject(playerObj)
 
 	speaker = ChatService:InternalAddSpeakerWithPlayerObject(playerObj.Name, playerObj, false)
 
-	for i, channel in pairs(ChatService:GetAutoJoinChannelList()) do
+	for _, channel in pairs(ChatService:GetAutoJoinChannelList()) do
 		speaker:JoinChannel(channel.Name)
 	end
 
@@ -133,6 +145,13 @@ local function CreatePlayerSpeakerObject(playerObj)
 end
 
 EventFolder.SayMessageRequest.OnServerEvent:connect(function(playerObj, message, channel)
+	if type(message) ~= "string" then
+		return
+	end
+	if type(channel) ~= "string" then
+		return
+	end
+
 	local speaker = ChatService:GetSpeaker(playerObj.Name)
 	if (speaker) then
 		return speaker:SayMessage(message, channel)
@@ -142,6 +161,10 @@ EventFolder.SayMessageRequest.OnServerEvent:connect(function(playerObj, message,
 end)
 
 EventFolder.MutePlayerRequest.OnServerInvoke = function(playerObj, muteSpeakerName)
+	if type(muteSpeakerName) ~= "string" then
+		return
+	end
+
 	local speaker = ChatService:GetSpeaker(playerObj.Name)
 	if speaker then
 		local muteSpeaker = ChatService:GetSpeaker(muteSpeakerName)
@@ -154,6 +177,10 @@ EventFolder.MutePlayerRequest.OnServerInvoke = function(playerObj, muteSpeakerNa
 end
 
 EventFolder.UnMutePlayerRequest.OnServerInvoke = function(playerObj, unmuteSpeakerName)
+	if type(unmuteSpeakerName) ~= "string" then
+		return
+	end
+
 	local speaker = ChatService:GetSpeaker(playerObj.Name)
 	if speaker then
 		local unmuteSpeaker = ChatService:GetSpeaker(unmuteSpeakerName)
@@ -187,13 +214,19 @@ PlayersService.PlayerRemoving:connect(function(removingPlayer)
 end)
 
 EventFolder.SetBlockedUserIdsRequest.OnServerEvent:connect(function(player, blockedUserIdsList)
+	if type(blockedUserIdsList) ~= "table" then
+		return
+	end
+
 	BlockedUserIdsMap[player] = blockedUserIdsList
 	local speaker = ChatService:GetSpeaker(player.Name)
 	if speaker then
 		for i = 1, #blockedUserIdsList do
-			local blockedPlayer = PlayersService:GetPlayerByUserId(blockedUserIdsList[i])
-			if blockedPlayer then
-				speaker:AddMutedSpeaker(blockedPlayer.Name)
+			if type(blockedUserIdsList[i]) == "number" then
+				local blockedPlayer = PlayersService:GetPlayerByUserId(blockedUserIdsList[i])
+				if blockedPlayer then
+					speaker:AddMutedSpeaker(blockedPlayer.Name)
+				end
 			end
 		end
 	end
@@ -210,7 +243,7 @@ EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
 	data.Channels = {}
 	data.SpeakerExtraData = {}
 
-	for i, channelName in pairs(speaker:GetChannelList()) do
+	for _, channelName in pairs(speaker:GetChannelList()) do
 		local channelObj = ChatService:GetChannel(channelName)
 		if (channelObj) then
 			local channelData =
@@ -225,7 +258,7 @@ EventFolder.GetInitDataRequest.OnServerInvoke = (function(playerObj)
 		end
 	end
 
-	for i, oSpeakerName in pairs(ChatService:GetSpeakerList()) do
+	for _, oSpeakerName in pairs(ChatService:GetSpeakerList()) do
 		local oSpeaker = ChatService:GetSpeaker(oSpeakerName)
 		data.SpeakerExtraData[oSpeakerName] = oSpeaker.ExtraData
 	end
@@ -370,7 +403,9 @@ end
 local systemChannel = ChatService:AddChannel("System")
 systemChannel.Leavable = false
 systemChannel.AutoJoin = true
-systemChannel.WelcomeMessage = ChatLocalization:Get("GameChat_ChatServiceRunner_SystemChannelWelcomeMessage","This channel is for system and game notifications.")
+systemChannel.WelcomeMessage = ChatLocalization:Get(
+	"GameChat_ChatServiceRunner_SystemChannelWelcomeMessage", "This channel is for system and game notifications."
+)
 
 systemChannel.SpeakerJoined:connect(function(speakerName)
 	systemChannel:MuteSpeaker(speakerName)
@@ -386,7 +421,7 @@ local function TryRunModule(module)
 	end
 end
 
-local modules = game:GetService("Chat"):WaitForChild("ChatModules")
+local modules = Chat:WaitForChild("ChatModules")
 modules.ChildAdded:connect(function(child)
 	local success, returnval = pcall(TryRunModule, child)
 	if not success and returnval then
@@ -394,15 +429,14 @@ modules.ChildAdded:connect(function(child)
 	end
 end)
 
-for i, module in pairs(modules:GetChildren()) do
+for _, module in pairs(modules:GetChildren()) do
 	local success, returnval = pcall(TryRunModule, module)
 	if not success and returnval then
 		print("Error running module " ..module.Name.. ": " ..returnval)
 	end
 end
 
-local Players = game:GetService("Players")
-Players.PlayerRemoving:connect(function(playerObj)
+PlayersService.PlayerRemoving:connect(function(playerObj)
 	if (ChatService:GetSpeaker(playerObj.Name)) then
 		ChatService:RemoveSpeaker(playerObj.Name)
 	end

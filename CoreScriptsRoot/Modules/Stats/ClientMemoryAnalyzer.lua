@@ -12,9 +12,10 @@ local CoreGuiService = game:GetService('CoreGui')
 local BaseMemoryAnalyzerClass = require(CoreGuiService.RobloxGui.Modules.Stats.BaseMemoryAnalyzer)
 local CommonUtils = require(CoreGuiService.RobloxGui.Modules.Common.CommonUtil)
 local StatsUtils = require(CoreGuiService.RobloxGui.Modules.Stats.StatsUtils)
+local TreeViewItem = require(CoreGuiService.RobloxGui.Modules.Stats.TreeViewItem)
 
 --[[ Helper functions ]]--
-function __GetMemoryPerformanceStatsItem()
+local function __GetMemoryPerformanceStatsItem()
   local performanceStats = StatsService and StatsService:FindFirstChild("PerformanceStats")
   if performanceStats == nil then
     return nil
@@ -25,42 +26,22 @@ function __GetMemoryPerformanceStatsItem()
   return memoryStats
 end
 
-function __GetMemoryTypeNameValueTripletsRecursive(statsItem, prefix)
-  local retVal = {}
-
-  local statType = statsItem.Name
-  local statName = StatsUtils.GetMemoryAnalyzerStatName(statType)
+local function __FillInMemoryUsageTreeRecursive(treeViewItem, statsItem)
+  local statId = statsItem.Name
+  local statLabel = StatsUtils.GetMemoryAnalyzerStatName(statId)
   local statValue = statsItem:GetValue()
 
-  table.insert(retVal, {statType, prefix .. statName, statValue})
-
+  treeViewItem:setLabelAndValue(statLabel, statValue)
+  
   local rawChildren = statsItem:GetChildren()
   -- sort children by name.
   local sortedChildren = CommonUtils.SortByName(rawChildren)
   
-  for i, childItem in ipairs(sortedChildren) do
-    local childTriplets = __GetMemoryTypeNameValueTripletsRecursive(childItem,
-        prefix .. BaseMemoryAnalyzerClass.Indent)
-    retVal = CommonUtils.TableConcat(retVal, childTriplets)
+  for i, childStatItem in ipairs(sortedChildren) do
+    local childStatId = childStatItem.Name
+    local childTreeItem = treeViewItem:getOrMakeChildById(childStatId)
+    __FillInMemoryUsageTreeRecursive(childTreeItem, childStatItem)
   end
-
-  return retVal
-end
-
--- Read out the entire breakdown of memory data from performance
--- stats, in the form of an ordered array of {memory stat type, value}
--- pairs.
-function __GetMemoryTypeNameValueTriplets()
-  local retVal = {}
-          
-  local memoryStats = __GetMemoryPerformanceStatsItem()
-  if memoryStats == nil then
-    return retVal
-  end
-  
-  retVal = __GetMemoryTypeNameValueTripletsRecursive(memoryStats, "")
-
-  return retVal
 end
 
 --[[ Classes ]]--
@@ -80,6 +61,8 @@ function ClientMemoryAnalyzerClass.new(parentFrame)
     local self = BaseMemoryAnalyzerClass.new(parentFrame)
     setmetatable(self, ClientMemoryAnalyzerClass)
 
+    self._rootTreeViewItem = nil
+    
     -- am I currently listening for updates?
     self._shouldListenForUpdates = false
     
@@ -106,10 +89,11 @@ function ClientMemoryAnalyzerClass:startListeningForUpdates()
     if (self._spawnedLoopScheduled) then 
         return
     end
-    _spawnedLoopScheduled = true
+    self._spawnedLoopScheduled = true
     
     spawn(function()
             while(self._shouldListenForUpdates) do 
+                self:refreshMemoryUsageTree()
                 self:renderUpdates()
                 wait(1)
             end
@@ -122,11 +106,23 @@ end
 function ClientMemoryAnalyzerClass:stopListeningForUpdates()        
   self._shouldListenForUpdates = false
 end
-      
--- Override: where do we get type/name/value triplets?
-function ClientMemoryAnalyzerClass:getMemoryTypeNameValueTriplets()
-    -- We pull them out of the stats service.
-    return __GetMemoryTypeNameValueTriplets()
+
+-- Generate the memory usage tree.
+function ClientMemoryAnalyzerClass:refreshMemoryUsageTree()
+    if (self._rootTreeViewItem == nil) then 
+        self._rootTreeViewItem = TreeViewItem.new("root", nil)
+    end
+    
+    local statsItem = __GetMemoryPerformanceStatsItem()
+    if statsItem == nil then
+        return nil
+    end
+    
+    __FillInMemoryUsageTreeRecursive(self._rootTreeViewItem, statsItem)
+end
+
+function ClientMemoryAnalyzerClass:getMemoryUsageTree()
+    return self._rootTreeViewItem
 end
 
 return ClientMemoryAnalyzerClass

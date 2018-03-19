@@ -1,6 +1,8 @@
 -- Backpack Version 5.1
 -- OnlyTwentyCharacters, SolarCrane
 
+local FFlagClientAppsUseRobloxLocale = settings():GetFFlag('ClientAppsUseRobloxLocale')
+
 -------------------
 --| Exposed API |--
 -------------------
@@ -64,10 +66,17 @@ local SEARCH_TEXT = "   Search"
 pcall(function()
 	local LocalizationService = game:GetService("LocalizationService")
 	local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-	SEARCH_TEXT = CorescriptLocalization:GetString(
-		LocalizationService.SystemLocaleId,
-		"BACKPACK_SEARCH"
-	)
+	if FFlagClientAppsUseRobloxLocale then
+		SEARCH_TEXT = CorescriptLocalization:GetString(
+			LocalizationService.RobloxLocaleId,
+			"BACKPACK_SEARCH"
+		)
+	else
+		SEARCH_TEXT = CorescriptLocalization:GetString(
+			LocalizationService.SystemLocaleId,
+			"BACKPACK_SEARCH"
+		)
+	end
 end)
 
 local SEARCH_TEXT_OFFSET_FROMLEFT = 0
@@ -166,11 +175,8 @@ local function EvaluateBackpackPanelVisibility(enabled)
 end
 
 local function ShowVRBackpackPopup()
-	if BackpackPanel then
-		BackpackPanel:SetVisible(EvaluateBackpackPanelVisibility(true))
-		if BackpackPanel.transparency > 0.5 then
-			BackpackPanel:RequestPositionUpdate()
-		end
+	if BackpackPanel and EvaluateBackpackPanelVisibility(true) then
+		BackpackPanel:ForceShowForSeconds(2)
 	end
 end
 
@@ -885,8 +891,8 @@ local function OnChildAdded(child) -- To Character or Backpack
 	end
 	local tool = child
 
-	if tool.Parent == character then
-		ShowVRBackpackPopup()		
+	if tool.Parent == Character then
+		ShowVRBackpackPopup()
 		TimeOfLastToolChange = tick()
 	end
 
@@ -1431,6 +1437,7 @@ CloseInventoryButton.Position = UDim2.new(0, 0, 0, -50)
 CloseInventoryButton.MouseButton1Click:connect(function()
 	if InventoryFrame.Visible then
 		BackpackScript.OpenClose()
+		spawn(function() GuiService:SetMenuIsOpen(false) end)
 	end
 end)
 
@@ -1897,7 +1904,7 @@ local function OnVREnabled()
 			local timeSinceToolChange = now - TimeOfLastToolChange
 			local transparency = math.clamp(timeSinceToolChange / VR_FADE_TIME, 0, 1)
 
-			if transparency == 1 and BackpackPanel:IsVisible() then
+			if transparency == 1 and BackpackPanel:IsVisible() and not InventoryFrame.Visible then
 				BackpackPanel:SetVisible(false)
 			end
 
