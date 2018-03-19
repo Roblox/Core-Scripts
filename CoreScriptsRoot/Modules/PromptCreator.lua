@@ -48,7 +48,7 @@ local WasCoreGuiNavigationEnabled = false
 local WasGuiNavigationEnabled = false
 local WasAutoSelectGuiEnabled = false
 
-local useNewThumbnailApiSuccess, useNewThumbnailApiValue = pcall(function() return settings():GetFFlag("CoreScriptsUseNewUserThumbnailAPI") end)
+local useNewThumbnailApiSuccess, useNewThumbnailApiValue = pcall(function() return settings():GetFFlag("CoreScriptsUseNewUserThumbnailAPI2") end)
 local useNewUserThumbnailAPI = useNewThumbnailApiSuccess and useNewThumbnailApiValue
 
 -- Inital prompt options. These are passed to CreatePrompt.
@@ -142,7 +142,7 @@ local function createTextLabel(name, size, position, font, textSize, text)
 end
 
 local function createScrollingTextLabel(name, size, position, font, textSize, text, scrollBarThickness)
-	textLabel = createTextLabel(name, size, position, font, textSize, text)
+	local textLabel = createTextLabel(name, size, position, font, textSize, text)
 	textLabel.TextXAlignment = Enum.TextXAlignment.Left
 	textLabel.TextYAlignment = Enum.TextYAlignment.Top
 	textLabel.TextWrapped = true

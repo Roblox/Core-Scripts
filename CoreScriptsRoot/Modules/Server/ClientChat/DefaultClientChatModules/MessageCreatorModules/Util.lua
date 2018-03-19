@@ -49,6 +49,9 @@ local clientChatModules = script.Parent.Parent
 local ChatSettings = require(clientChatModules:WaitForChild("ChatSettings"))
 local ChatConstants = require(clientChatModules:WaitForChild("ChatConstants"))
 
+local okShouldClipInGameChat, valueShouldClipInGameChat = pcall(function() return UserSettings():IsUserFeatureEnabled("UserShouldClipInGameChat") end)
+local shouldClipInGameChat = okShouldClipInGameChat and valueShouldClipInGameChat
+
 local module = {}
 local methods = {}
 methods.__index = methods
@@ -93,6 +96,9 @@ function methods:CreateBaseMessage(message, font, textSize, chatColor)
 	BaseMessage.TextStrokeTransparency = 0.75
 	BaseMessage.TextColor3 = chatColor
 	BaseMessage.TextWrapped = true
+	if shouldClipInGameChat then
+		BaseMessage.ClipsDescendants = true
+	end
 	BaseMessage.Text = message
 	BaseMessage.Visible = true
 	BaseMessage.Parent = BaseFrame
@@ -209,12 +215,16 @@ function methods:NameButtonClicked(nameButton, playerName)
 				if targetChannelName ~= whisperChannel then
 					self.ChatWindow:SwitchCurrentChannel(whisperChannel)
 				end
-				self.ChatBar:ResetText()
+
+				local whisperMessage = "/w " ..playerName
+				self.ChatBar:SetText(whisperMessage)
+
 				self.ChatBar:CaptureFocus()
 			elseif not self.ChatBar:IsInCustomState() then
 				local whisperMessage = "/w " ..playerName
-				self.ChatBar:CaptureFocus()
 				self.ChatBar:SetText(whisperMessage)
+
+				self.ChatBar:CaptureFocus()
 			end
 		end
 	end

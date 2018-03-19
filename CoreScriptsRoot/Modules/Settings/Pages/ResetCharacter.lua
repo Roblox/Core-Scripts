@@ -112,22 +112,22 @@ local function Initialize()
 	this.ResetBindable = true
 	
 	local onResetFunction = function()
-		if this.HubRef then
-			this.HubRef:SetVisibility(false, true)
-		end
 		if this.ResetBindable == true then
 			resetCharFunc()
 		elseif this.ResetBindable then
 			this.ResetBindable:Fire()
 		end
+		if this.HubRef then
+			this.HubRef:SetVisibility(false, true)
+		end
 	end
 	
-	this.ResetCharacterButton = utility:MakeStyledButton("ResetCharacter", "Reset", buttonSize, onResetFunction)
+	this.ResetCharacterButton = utility:MakeStyledButton("ResetCharacter", "Reset", nil, onResetFunction)
 	this.ResetCharacterButton.NextSelectionRight = nil
 	this.ResetCharacterButton.Parent = resetButtonContainer
 
 
-	local dontResetCharacterButton = utility:MakeStyledButton("DontResetCharacter", "Don't Reset", buttonSize, this.DontResetCharFromButton)
+	local dontResetCharacterButton = utility:MakeStyledButton("DontResetCharacter", "Don't Reset", nil, this.DontResetCharFromButton)
 	dontResetCharacterButton.NextSelectionLeft = nil
 	dontResetCharacterButton.Parent = resetButtonContainer
 

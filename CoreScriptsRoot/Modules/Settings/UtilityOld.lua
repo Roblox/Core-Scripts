@@ -42,8 +42,6 @@ end
 --------------- FLAGS ----------------
 local getFixSettingsMenuVRSuccess, fixSettingsMenuVRValue = pcall(function() return settings():GetFFlag("FixSettingsMenuVRLua") end)
 local fixSettingsMenuVR = getFixSettingsMenuVRSuccess and fixSettingsMenuVRValue
-local getUpdateSliderButtonImagesSuccess, updateSliderButtonImagesValue = pcall(function() return settings():GetFFlag("UpdateSliderButtonImages") end)
-local updateSliderButtonImages = getUpdateSliderButtonImagesSuccess and updateSliderButtonImagesValue
 
 ----------- UTILITIES --------------
 local Util = {}
@@ -348,6 +346,8 @@ local function addHoverState(button, instance, onNormalButtonState, onHoverButto
 end
 
 local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
+	local rowRef = nil
+
 	local SelectionOverrideObject = Util.Create'ImageLabel'
 	{
 		Image = "",
@@ -381,7 +381,7 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 			local lastInputType = nil
 			pcall(function() lastInputType = UserInputService:GetLastInputType() end)
 			if lastInputType then
-				clickFunc(lastInputTypee == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
+				clickFunc(lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
 					lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
 			else
 				clickFunc(false)
@@ -429,7 +429,6 @@ local function MakeButton(name, text, size, clickFunc, pageRef, hubRef)
 		end
 	end)
 
-	local rowRef = nil
 	local function setRowRef(ref)
 		rowRef = ref
 	end
@@ -1517,17 +1516,15 @@ local function CreateNewSlider(numOfSteps, startStep, minStep)
 		ImageColor3 = UserInputService.TouchEnabled and ARROW_COLOR_TOUCH or ARROW_COLOR
 	};
 
-	if updateSliderButtonImages then
-		leftButtonImage.AnchorPoint = Vector2.new(0.5, 0.5)
-		leftButtonImage.Position = UDim2.new(0.5,0,0.5,0)
-		leftButtonImage.Size =  UDim2.new(0,30,0,30)
-		leftButtonImage.Image =  "rbxasset://textures/ui/Settings/Slider/Less.png"
+	leftButtonImage.AnchorPoint = Vector2.new(0.5, 0.5)
+	leftButtonImage.Position = UDim2.new(0.5,0,0.5,0)
+	leftButtonImage.Size =  UDim2.new(0,30,0,30)
+	leftButtonImage.Image =  "rbxasset://textures/ui/Settings/Slider/Less.png"
 
-		rightButtonImage.AnchorPoint = Vector2.new(0.5, 0.5)
-		rightButtonImage.Position = UDim2.new(0.5,0,0.5,0)
-		rightButtonImage.Size =  UDim2.new(0,30,0,30)
-		rightButtonImage.Image =  "rbxasset://textures/ui/Settings/Slider/More.png"
-	end
+	rightButtonImage.AnchorPoint = Vector2.new(0.5, 0.5)
+	rightButtonImage.Position = UDim2.new(0.5,0,0.5,0)
+	rightButtonImage.Size =  UDim2.new(0,30,0,30)
+	rightButtonImage.Image =  "rbxasset://textures/ui/Settings/Slider/More.png"
 
 	if not UserInputService.TouchEnabled and fixSettingsMenuVR then
 		local onNormalButtonState, onHoverButtonState =
@@ -2225,7 +2222,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		end
 
 		function ValueChangerInstance:SetInteractable(value)
-			interactable = value
+			local interactable = value
 			box.Selectable = interactable
 			if not interactable then
 				box.TextColor3 = Color3.new(49/255, 49/255, 49/255)

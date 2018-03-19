@@ -8,7 +8,7 @@ local RunService = game:GetService("RunService")
 local GuiService = game:GetService("GuiService")
 local CoreGui = game:GetService("CoreGui")
 local RobloxGui = CoreGui:WaitForChild("RobloxGui")
-local PlayersService = game:GetService("Players")
+local Players = game:GetService("Players")
 local Utility = require(RobloxGui.Modules.Settings.Utility)
 
 --Panel3D State variables
@@ -46,7 +46,7 @@ local cursor = Utility:Create "ImageLabel" {
 	Image = "rbxasset://textures/Cursors/Gamepad/Pointer.png",
 	Size = UDim2.new(0, 8, 0, 8),
 	BackgroundTransparency = 1,
-	ZIndex = 10
+	ZIndex = 1e9
 }
 local partFolder = Utility:Create "Folder" {
 	Name = "VRCorePanelParts",
@@ -159,79 +159,6 @@ end
 
 --End of Panel3D Declaration and enumerations
 
-
---Cursor autohiding methods
-local cursorHidden = false
-local hasTool = false
-local lastMouseActivity = tick()
-local lastMouseBehavior = Enum.MouseBehavior.Default
-
-local function OnCharacterAdded(character)
-	hasTool = false
-	for i, v in ipairs(character:GetChildren()) do
-		if v:IsA("Tool") then
-			hasTool = true
-		end
-	end
-	character.ChildAdded:connect(function(child)
-		if child:IsA("Tool") then
-			hasTool = true
-			lastMouseActivity = tick() --kick the mouse when a tool is equipped
-		end
-	end)
-	character.ChildRemoved:connect(function(child)
-		if child:IsA("Tool") then
-			hasTool = false
-		end
-	end)
-end
-spawn(function()
-	while not PlayersService.LocalPlayer do wait() end
-	PlayersService.LocalPlayer.CharacterAdded:connect(OnCharacterAdded)
-	if PlayersService.LocalPlayer.Character then OnCharacterAdded(PlayersService.LocalPlayer.Character) end
-end)
-local function autoHideCursor(hide)
-	if not PlayersService.LocalPlayer then
-		cursorHidden = false
-		return
-	end
-	if not VRService.VREnabled then
-		cursorHidden = false
-		return
-	end
-	if hide then
-		--don't hide if there's a tool in the character
-		local character = PlayersService.LocalPlayer.Character
-		if character and hasTool then
-			return
-		end
-		cursorHidden = true
-		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
-	else
-		cursorHidden = false
-		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
-	end
-end
-
-local function isCursorVisible()
-	--if ForceShow, the cursor is definitely visible at all times
-	if UserInputService.OverrideMouseIconBehavior == Enum.OverrideMouseIconBehavior.ForceShow then
-		return true
-	end
-	--if ForceHide, the cursor is definitely NOT visible
-	if UserInputService.OverrideMouseIconBehavior == Enum.OverrideMouseIconBehavior.ForceHide then
-		return false
-	end
-	--Otherwise, we need to check if the developer set MouseIconEnabled=false
-	if UserInputService.MouseIconEnabled and UserInputService.OverrideMouseIconBehavior == Enum.OverrideMouseIconBehavior.None then
-		return true
-	end
-	return false
-end
-
---End of cursor autohiding methods
-
-
 --Panel class implementation
 local Panel = {}
 Panel.__index = Panel
@@ -254,13 +181,13 @@ function Panel.new(name)
 	self.shouldFindLookAtGuiElement = false
 	self.ignoreModal = false
 	self.needsPositionUpdate = false
-	self.needsLocalPositionUpdate = false
 
 	self.linkedTo = false
 	self.subpanels = {}
 
 	self.transparency = 1
 	self.forceShowUntilLookedAt = false
+	self.forceShowUntilTick = 0
 	self.isLookedAt = false
 	self.isOffscreen = true
 	self.lookAtPixel = Vector2.new(-1, -1)
@@ -380,16 +307,13 @@ function Panel:EvaluatePositioning(cameraCF, cameraRenderCF, userHeadCF)
 		cf = cf + (self.localCF.p * currentHeadScale)
 		self:SetPartCFrame(cameraRenderCF * cf)
 	elseif self.panelType == Panel3D.Type.Standard then
-		local shouldUpdate = self.needsPositionUpdate or self.needsLocalPositionUpdate
 		if self.needsPositionUpdate then
 			self.needsPositionUpdate = false
 			local headLookXZ = Panel3D.GetHeadLookXZ(true)
 			self.originCF = headLookXZ * standardOriginCF
 		end
-		if shouldUpdate then
-			self.needsLocalPositionUpdate = false
-			self:SetPartCFrame(cameraCF * self.originCF * self.localCF)
-		end
+
+		self:SetPartCFrame(cameraCF * self.originCF * self.localCF)
 	end
 end
 
@@ -481,7 +405,7 @@ end
 
 function Panel:EvaluateTransparency()
 	--Early exit if force shown
-	if self.forceShowUntilLookedAt or not self.canFade then
+	if self.forceShowUntilLookedAt or not self.canFade or self.forceShowUntilTick > tick() then
 		self.transparency = 0
 		return
 	end
@@ -500,7 +424,7 @@ function Panel:EvaluateTransparency()
 end
 
 function Panel:Update(cameraCF, cameraRenderCF, userHeadCF, lookRay, pointerRay, dt)
-	if self.forceShowUntilLookedAt and not self.part then
+	if (self.forceShowUntilLookedAt or self.forceShowUntilTick >  tick()) and not self.part then
 		self:GetPart()
 		self:GetGUI()
 	end
@@ -668,7 +592,7 @@ function Panel:SetVisible(visible, modal)
 		Panel3D.SetModalPanel(self)
 	end
 	if not visible and currentModal == self then
-		if modal and not doNotRestore then
+		if modal then
 			--restore last modal panel
 			Panel3D.SetModalPanel(lastModal)
 		else
@@ -706,7 +630,19 @@ function Panel:ForceShowUntilLookedAt(makeModal)
 	self:GetGUI()
 
 	self:SetVisible(true, makeModal)
+	self:RequestPositionUpdate()
 	self.forceShowUntilLookedAt = true
+end
+
+function Panel:ForceShowForSeconds(seconds)
+	self:GetPart()
+	self:GetGUI()
+
+	self:SetVisible(true)
+	if self.forceShowUntilTick < tick() then
+		self:RequestPositionUpdate()
+	end
+	self.forceShowUntilTick = tick() + seconds
 end
 
 function Panel:SetCanFade(canFade)
@@ -1050,16 +986,7 @@ local function onRenderStep()
 		v:OnUpdate(dt)
 	end
 
-	--place the cursor on the closest panel (for now)
-	if not currentClosest and lastClosest then
-		UserInputService.MouseBehavior = lastMouseBehavior
-	elseif currentClosest and not lastClosest then
-		lastMouseBehavior = UserInputService.MouseBehavior
-	end
-
 	if currentClosest then
-		UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-		UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
 		cursor.Parent = currentCursorParent
 
 		local x, y = currentCursorPos.X, currentCursorPos.Y
@@ -1072,24 +999,11 @@ local function onRenderStep()
 	lastClosest = currentClosest
 end
 
---Implement cursor autohide functionality
-UserInputService.InputChanged:connect(function(inputObj, processed)
-	if inputObj.UserInputType == Enum.UserInputType.MouseMovement then
-		lastMouseActivity = tick()
-		autoHideCursor(false)
-	end
-end)
-local function onHeartbeat()
-	if isCursorVisible() then
-		cursorHidden = false
-	end
-	if lastMouseActivity + cursorHideTime < tick() and not GuiService.MenuIsOpen and not cursorHidden then
-		autoHideCursor(true)
-	end
+local isCameraReady = false
+local function putFoldersIn(parent)
+	partFolder.Parent = parent
+	effectFolder.Parent = parent
 end
-RunService.Heartbeat:connect(onHeartbeat)
-
-
 
 local headscaleChangedConn = nil
 local function onHeadScaleChanged()
@@ -1106,9 +1020,8 @@ local function onCurrentCameraChanged()
 	end
 	headscaleChangedConn = workspace.CurrentCamera:GetPropertyChangedSignal("HeadScale"):connect(onHeadScaleChanged)
 
-	if VRService.VREnabled then
-		partFolder.Parent = workspace.CurrentCamera
-		effectFolder.Parent = workspace.CurrentCamera
+	if VRService.VREnabled and isCameraReady then
+		putFoldersIn(workspace.CurrentCamera)
 	end
 end
 
@@ -1116,14 +1029,17 @@ local currentCameraChangedConn = nil
 local renderStepFuncBound = false
 local function onVREnabledChanged()
 	if VRService.VREnabled then
+		while not isCameraReady do
+			wait()
+		end
+
 		if workspace.CurrentCamera then
 			onCurrentCameraChanged()
 		end
 		currentCameraChangedConn = workspace:GetPropertyChangedSignal("CurrentCamera"):connect(onCurrentCameraChanged)
 
-		partFolder.Parent = workspace.CurrentCamera
-		effectFolder.Parent = workspace.CurrentCamera
-		
+		putFoldersIn(workspace.CurrentCamera)
+				
 		if not renderStepFuncBound then
 			RunService:BindToRenderStep(renderStepName, Enum.RenderPriority.Last.Value, onRenderStep)
 			renderStepFuncBound = true
@@ -1133,8 +1049,7 @@ local function onVREnabledChanged()
 			currentCameraChangedConn:disconnect()
 			currentCameraChangedConn = nil
 		end
-		partFolder.Parent = nil
-		effectFolder.Parent = nil
+		putFoldersIn(nil)
 		
 		if renderStepFuncBound then
 			RunService:UnbindFromRenderStep(renderStepName)
@@ -1143,6 +1058,21 @@ local function onVREnabledChanged()
 	end
 end
 VRService:GetPropertyChangedSignal("VREnabled"):connect(onVREnabledChanged)
-onVREnabledChanged()
+spawn(onVREnabledChanged)
+
+coroutine.wrap(function()
+	while true do
+		if workspace.CurrentCamera then
+			if workspace.CurrentCamera.CameraSubject ~= nil or workspace.CurrentCamera.CameraType == Enum.CameraType.Scriptable then
+				break
+			end
+			workspace.CurrentCamera.Changed:wait()
+		else
+			wait()
+		end
+	end
+
+	isCameraReady = true
+end)()
 
 return Panel3D

@@ -4,6 +4,7 @@
 
 local Chat = game:GetService("Chat")
 local Players = game:GetService("Players")
+local FriendService = game:GetService("FriendService")
 
 local ReplicatedModules = Chat:WaitForChild("ClientChatModules")
 local ChatSettings = require(ReplicatedModules:WaitForChild("ChatSettings"))

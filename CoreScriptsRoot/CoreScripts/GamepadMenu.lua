@@ -8,17 +8,6 @@
 --NOTICE: This file has been branched! If you're implementing changes in this file, please consider also implementing them in the other
 --version.
 
---Handle branching early so we do as little work as possible:
-local useNewRadialMenuSuccess, useNewRadialMenuValue = pcall(function() return settings():GetFFlag("UseNewRadialMenu") end)
-local FFlagUseNewRadialMenu = useNewRadialMenuSuccess and useNewRadialMenuValue
-if not FFlagUseNewRadialMenu then
-	--This file is now inactive because the flag IS NOT on
-	return
-end
-
-local fixGamePadPlayerlistSuccess, fixGamePadPlayerlistValue = pcall(function() return settings():GetFFlag("FixGamePadPlayerlist") end)
-local fixGamePadPlayerlist = fixGamePadPlayerlistSuccess and fixGamePadPlayerlistValue
-
 --[[ SERVICES ]]
 local GuiService = game:GetService('GuiService')
 local CoreGuiService = game:GetService('CoreGui')
@@ -61,9 +50,6 @@ local PANEL_RESOLUTION = 250
 
 
 --[[ Fast Flags ]]--
-local getRadialMenuAfterLoadingScreen, radialMenuAfterLoadingScreenValue = pcall(function() return settings():GetFFlag("RadialMenuAfterLoadingScreen2") end)
-local radialMenuAfterLoadingScreen = getRadialMenuAfterLoadingScreen and radialMenuAfterLoadingScreenValue
-
 local function getImagesForSlot(slot)
 	if slot == 1 then		return "rbxasset://textures/ui/Settings/Radial/Top.png", "rbxasset://textures/ui/Settings/Radial/TopSelected.png",
 									"rbxasset://textures/ui/Settings/Radial/Menu.png",
@@ -226,6 +212,13 @@ local function radialSelectCancel(name, state, input)
 	end
 end
 
+local D_PAD_VR_DIRS = {
+	[Enum.KeyCode.DPadUp] = Vector2.new(0, 1),
+	[Enum.KeyCode.DPadDown] = Vector2.new(0, -1),
+	[Enum.KeyCode.DPadRight] = Vector2.new(1, 0),
+	[Enum.KeyCode.DPadLeft] = Vector2.new(-1, 0)
+}
+
 local function radialSelect(name, state, input)
 	local inputVector = Vector2.new(0, 0)
 
@@ -290,7 +283,7 @@ local function unbindAllRadialActions()
 	ContextActionService:UnbindCoreAction(radialAcceptActionName)
 	ContextActionService:UnbindCoreAction(freezeControllerActionName)
 	ContextActionService:UnbindCoreAction(thumbstick2RadialActionName)
-	ContextActionService:UnbindCoreAction(radialSelectActionName .. "VR")
+	ContextActionService:UnbindCoreAction(radialAcceptActionName .. "VR")
 end
 
 local function bindAllRadialActions()
@@ -304,7 +297,7 @@ local function bindAllRadialActions()
 	ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
 
 	if VRService.VREnabled then
-		ContextActionService:BindCoreAction(radialAcceptActionName .. "VR", radialSelectAccept, false, Enum.KeyCode.ButtonL3)
+		ContextActionService:BindCoreAction(radialAcceptActionName .. "VR", radialSelectAccept, false, Enum.KeyCode.ButtonR2)
 	end
 end
 
@@ -434,7 +427,6 @@ local function getVRKidSafeHint()
 			SliceCenter = Rect.new(10, 10, 10, 10);
 			ImageTransparency = 0.3;
 			BackgroundTransparency = 1;
-			Parent = container;
 		}
 		bubble.Position = UDim2.new(0.5, -bubble.Size.X.Offset/2, 1, 10);
 
@@ -723,20 +715,12 @@ local function createGamepadMenuGui()
 			local MenuModule = require(GuiRoot.Modules.Settings.SettingsHub)
 			MenuModule:SetVisibility(true, nil, MenuModule.Instance.PlayersPage, true)
 		else
-			if not fixGamePadPlayerlist then
+			local PlayerListModule = require(GuiRoot.Modules.PlayerlistModule)
+			if PlayerListModule and not PlayerListModule:IsOpen() then
 				toggleCoreGuiRadial(true)
-				local PlayerListModule = require(GuiRoot.Modules.PlayerlistModule)
-				if PlayerListModule and not PlayerListModule:IsOpen() then
-					PlayerListModule:ToggleVisibility()
-				end
+				PlayerListModule:ToggleVisibility()
 			else
-				local PlayerListModule = require(GuiRoot.Modules.PlayerlistModule)
-				if PlayerListModule and not PlayerListModule:IsOpen() then
-					toggleCoreGuiRadial(true)
-					PlayerListModule:ToggleVisibility()
-				else
-					toggleCoreGuiRadial()
-				end
+				toggleCoreGuiRadial()
 			end
 		end
 	end
@@ -917,13 +901,6 @@ local function isCoreGuiDisabled()
 	return true
 end
 
-local D_PAD_VR_DIRS = {
-	[Enum.KeyCode.DPadUp] = Vector2.new(0, 1),
-	[Enum.KeyCode.DPadDown] = Vector2.new(0, -1),
-	[Enum.KeyCode.DPadRight] = Vector2.new(1, 0),
-	[Enum.KeyCode.DPadLeft] = Vector2.new(-1, 0)
-}
-
 function updateGuiVisibility()
 	if VRService.VREnabled and vrPanel and isVisible then
 		vrPanel:SetVisible(true, true)
@@ -960,67 +937,48 @@ else
 	end)
 end
 
-if radialMenuAfterLoadingScreen then
-	local defaultLoadingGuiRemovedConnection = nil
-	local loadedConnection = nil
-	local isLoadingGuiRemoved = false
-	local isPlayerAdded = false
+local defaultLoadingGuiRemovedConnection = nil
+local loadedConnection = nil
+local isLoadingGuiRemoved = false
+local isPlayerAdded = false
 
-	local function updateRadialMenuActionBinding()
-		if isLoadingGuiRemoved and isPlayerAdded then
-			createGamepadMenuGui()
-			ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
-		end
-	end
-
-	local function handlePlayerAdded()
-		loadedConnection:disconnect()
-		isPlayerAdded = true
-		updateRadialMenuActionBinding()
-	end
-
-	loadedConnection = Players.PlayerAdded:connect(
-		function(plr)
-			if Players.LocalPlayer and plr == Players.LocalPlayer then
-				handlePlayerAdded()
-			end
-		end
-	)
-
-	if Players.LocalPlayer then
-		handlePlayerAdded()
-	end
-
-	local function handleDefaultLoadingGuiRemoved()
-		if defaultLoadingGuiRemovedConnection then
-			defaultLoadingGuiRemovedConnection:disconnect()
-		end
-		isLoadingGuiRemoved = true
-		updateRadialMenuActionBinding()
-	end
-
-	if game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
-		handleDefaultLoadingGuiRemoved()
-	else
-		defaultLoadingGuiRemovedConnection = game:GetService("ReplicatedFirst").DefaultLoadingGuiRemoved:connect(handleDefaultLoadingGuiRemoved)
-	end
-else
-	local loadedConnection
-	local function enableRadialMenu()
+local function updateRadialMenuActionBinding()
+	if isLoadingGuiRemoved and isPlayerAdded then
 		createGamepadMenuGui()
 		ContextActionService:BindCoreAction(toggleMenuActionName, doGamepadMenuButton, false, Enum.KeyCode.ButtonStart)
-		loadedConnection:disconnect()
 	end
+end
 
-	loadedConnection = Players.PlayerAdded:connect(function(plr)
+local function handlePlayerAdded()
+	loadedConnection:disconnect()
+	isPlayerAdded = true
+	updateRadialMenuActionBinding()
+end
+
+loadedConnection = Players.PlayerAdded:connect(
+	function(plr)
 		if Players.LocalPlayer and plr == Players.LocalPlayer then
-			enableRadialMenu()
+			handlePlayerAdded()
 		end
-	end)
-
-	if Players.LocalPlayer then
-		enableRadialMenu()
 	end
+)
+
+if Players.LocalPlayer then
+	handlePlayerAdded()
+end
+
+local function handleDefaultLoadingGuiRemoved()
+	if defaultLoadingGuiRemovedConnection then
+		defaultLoadingGuiRemovedConnection:disconnect()
+	end
+	isLoadingGuiRemoved = true
+	updateRadialMenuActionBinding()
+end
+
+if game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
+	handleDefaultLoadingGuiRemoved()
+else
+	defaultLoadingGuiRemovedConnection = game:GetService("ReplicatedFirst").DefaultLoadingGuiRemoved:connect(handleDefaultLoadingGuiRemoved)
 end
 
 -- some buttons always show/hide depending on platform
