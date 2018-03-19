@@ -29,9 +29,9 @@ local function ScopedConnect(parentInstance, instance, event, signalFunc, syncFu
 	return connection
 end
 
-local function getScreenGuiAncestor(instance)
+local function getLayerCollectorAncestor(instance)
 	local localInstance = instance
-	while localInstance and not localInstance:IsA("ScreenGui") do
+	while localInstance and not localInstance:IsA("LayerCollector") do
 		localInstance = localInstance.Parent
 	end
 	return localInstance
@@ -107,7 +107,6 @@ end
 
 local function cancelSlide(areaSoak)
 	areaSoak.Visible = false
-	if areaSoakMouseMoveCon then areaSoakMouseMoveCon:disconnect() end
 end
 
 t.CreateStyledMessageDialog = function(title, message, style, buttons)
@@ -397,32 +396,23 @@ t.CreateScrollingDropDownMenu = function(onSelectedCallback, size, position, bas
 			btn.AutoButtonColor = false
 			btn.Parent = listMenu
 
-			if IsTouchClient then
-				btn.TouchTap:connect(function()
-					currentSelectionName.Text = btn.Text
-					onEntrySelected()
-					btn.Font = Enum.Font.SourceSans
-					onSelectedCallback(btn.Text)
-				end)
-			else
-				btn.MouseButton1Click:connect(function()
-					currentSelectionName.Text = btn.Text
-					onEntrySelected()
-					btn.Font = Enum.Font.SourceSans
-					btn.TextColor3 = Color3.new(0.5, 0.5, 0.5)
-					btn.BackgroundColor3 = Color3.new(1, 1, 1)
-					onSelectedCallback(btn.Text)
-				end)
+			btn.MouseButton1Click:connect(function()
+				currentSelectionName.Text = btn.Text
+				onEntrySelected()
+				btn.Font = Enum.Font.SourceSans
+				btn.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+				btn.BackgroundColor3 = Color3.new(1, 1, 1)
+				onSelectedCallback(btn.Text)
+			end)
 
-				btn.MouseEnter:connect(function()
-					btn.TextColor3 = Color3.new(1, 1, 1)
-					btn.BackgroundColor3 = Color3.new(0.75, 0.75, 0.75)
-				end)
-				btn.MouseLeave:connect(function()
-					btn.TextColor3 = Color3.new(0.5, 0.5, 0.5)
-					btn.BackgroundColor3 = Color3.new(1, 1, 1)
-				end)
-			end
+			btn.MouseEnter:connect(function()
+				btn.TextColor3 = Color3.new(1, 1, 1)
+				btn.BackgroundColor3 = Color3.new(0.75, 0.75, 0.75)
+			end)
+			btn.MouseLeave:connect(function()
+				btn.TextColor3 = Color3.new(0.5, 0.5, 0.5)
+				btn.BackgroundColor3 = Color3.new(1, 1, 1)
+			end)
 		end
 	end
 
@@ -785,7 +775,7 @@ t.CreateDropDownMenu = function(items, onSelect, forRoblox, whiteSkin, baseZ)
 		if parent == nil then
 			areaSoak.Parent = nil
 		else
-			areaSoak.Parent = getScreenGuiAncestor(frame)
+			areaSoak.Parent = getLayerCollectorAncestor(frame)
 		end
 	end)
 
@@ -961,7 +951,7 @@ t.CreateSlider = function(steps,width,position)
 		if parent == nil then
 			areaSoak.Parent = nil
 		else
-			areaSoak.Parent = getScreenGuiAncestor(sliderGui)
+			areaSoak.Parent = getLayerCollectorAncestor(sliderGui)
 		end
 	end)
 	
@@ -1062,7 +1052,7 @@ t.CreateSliderNew = function(steps,width,position)
 		if parent == nil then
 			areaSoak.Parent = nil
 		else
-			areaSoak.Parent = getScreenGuiAncestor(sliderGui)
+			areaSoak.Parent = getLayerCollectorAncestor(sliderGui)
 		end
 	end)
 	
@@ -1501,7 +1491,7 @@ t.CreateTrueScrollingFrame = function()
 				mouseDrag.Parent = nil
 				upCon:disconnect()
 			end)
-			mouseDrag.Parent = getScreenGuiAncestor(scrollbar)
+			mouseDrag.Parent = getLayerCollectorAncestor(scrollbar)
 			doScrollUp()
 			wait(0.2)
 			local t = tick()
@@ -1532,7 +1522,7 @@ t.CreateTrueScrollingFrame = function()
 				mouseDrag.Parent = nil
 				downCon:disconnect()
 			end)
-			mouseDrag.Parent = getScreenGuiAncestor(scrollbar)
+			mouseDrag.Parent = getLayerCollectorAncestor(scrollbar)
 			doScrollDown()
 			wait(0.2)
 			local t = tick()
@@ -1577,7 +1567,7 @@ t.CreateTrueScrollingFrame = function()
 				dragCon:disconnect(); dragCon = nil
 				upCon:disconnect(); drag = nil
 			end)
-			mouseDrag.Parent = getScreenGuiAncestor(scrollbar)
+			mouseDrag.Parent = getLayerCollectorAncestor(scrollbar)
 		end
 	end)
 
@@ -2036,7 +2026,7 @@ t.CreateScrollingFrame = function(orderList,scrollStyle)
 				mouseDrag.Parent = nil
 				upCon:disconnect()
 			end)
-			mouseDrag.Parent = getScreenGuiAncestor(scrollbar)
+			mouseDrag.Parent = getLayerCollectorAncestor(scrollbar)
 			doScrollUp()
 			wait(0.2)
 			local t = tick()
@@ -2067,7 +2057,7 @@ t.CreateScrollingFrame = function(orderList,scrollStyle)
 				mouseDrag.Parent = nil
 				downCon:disconnect()
 			end)
-			mouseDrag.Parent = getScreenGuiAncestor(scrollbar)
+			mouseDrag.Parent = getLayerCollectorAncestor(scrollbar)
 			doScrollDown()
 			wait(0.2)
 			local t = tick()
@@ -2136,7 +2126,7 @@ t.CreateScrollingFrame = function(orderList,scrollStyle)
 				dragCon:disconnect(); dragCon = nil
 				upCon:disconnect(); drag = nil
 			end)
-			mouseDrag.Parent = getScreenGuiAncestor(scrollbar)
+			mouseDrag.Parent = getLayerCollectorAncestor(scrollbar)
 		end
 	end)
 
@@ -2362,7 +2352,7 @@ local function TransitionTutorialPages(fromPage, toPage, transitionFrame, curren
 	transitionFrame.Visible = true
 	currentPageValue.Value = nil
 
-	local newsize, newPosition
+	local newSize, newPosition
 	if toPage then
 		--Make it visible so it resizes
 		toPage.Visible = true
@@ -3490,7 +3480,7 @@ t.CreateSetPanel = function(userIdsForSets, objectSelected, dialogClosed, size, 
 
 	populateSetsFrame()
 
-	insertPanelCloseCon = setGui.SetPanel.CancelButton.MouseButton1Click:connect(function()
+	setGui.SetPanel.CancelButton.MouseButton1Click:connect(function()
 		setGui.SetPanel.Visible = false
 		if dialogClosed then dialogClosed() end
 	end)
@@ -3844,7 +3834,7 @@ t.CreateLoadingFrame = function(name,size,position)
 end
 
 t.CreatePluginFrame = function (name,size,position,scrollable,parent)
-	function createMenuButton(size,position,text,fontsize,name,parent)
+	local function createMenuButton(size,position,text,fontsize,name,parent)
 		local button = Instance.new("TextButton",parent)
 		button.AutoButtonColor = false
 		button.Name = name
@@ -3931,7 +3921,7 @@ t.CreatePluginFrame = function (name,size,position,scrollable,parent)
 		if helpFrame.Visible then
 			helpButton.Selected = true
 			helpButton.BackgroundTransparency = 0
-			local screenGui = getScreenGuiAncestor(helpFrame)
+			local screenGui = getLayerCollectorAncestor(helpFrame)
 			if screenGui then
 				if helpFrame.AbsolutePosition.X + helpFrame.AbsoluteSize.X > screenGui.AbsoluteSize.X then --position on left hand side
 					helpFrame.Position = UDim2.new(0,-5 - helpFrame.AbsoluteSize.X,0,0)
@@ -4063,7 +4053,7 @@ t.CreatePluginFrame = function (name,size,position,scrollable,parent)
 		scrubThree.Position = UDim2.new(0.5,-5,0.5,2)
 		scrubThree.Parent = verticalDragger
 
-		local areaSoak = Instance.new("TextButton",getScreenGuiAncestor(parent))
+		local areaSoak = Instance.new("TextButton",getLayerCollectorAncestor(parent))
 		areaSoak.Name = "AreaSoak"
 		areaSoak.Size = UDim2.new(1,0,1,0)
 		areaSoak.BackgroundTransparency = 1

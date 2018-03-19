@@ -11,8 +11,10 @@ local HttpService = game:GetService('HttpService')
 local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local PlayersService = game:GetService('Players')
 local StarterGui = game:GetService("StarterGui")
+local AnalyticsService = game:GetService("AnalyticsService")
 
 --[[ Fast Flags ]]--
+local FFlagClientAppsUseRobloxLocale = settings():GetFFlag('ClientAppsUseRobloxLocale')
 local fixPlayerlistFollowingSuccess, fixPlayerlistFollowingFlagValue = pcall(function() return settings():GetFFlag("FixPlayerlistFollowing") end)
 local fixPlayerlistFollowingEnabled = fixPlayerlistFollowingSuccess and fixPlayerlistFollowingFlagValue
 
@@ -29,7 +31,11 @@ local function LocalizedGetString(key, rtv)
 	pcall(function()
 		local LocalizationService = game:GetService("LocalizationService")
 		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-		rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
+		if FFlagClientAppsUseRobloxLocale then
+			rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
+		else
+			rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
+		end
 	end)
 	return rtv
 end
@@ -359,13 +365,22 @@ function createPlayerDropDown()
 					-- check for max friends before letting them send the request
 					if canSendFriendRequestAsync(cachedLastSelectedPlayer) then 	-- Yields
 						if cachedLastSelectedPlayer and cachedLastSelectedPlayer.Parent == PlayersService then
+                            AnalyticsService:ReportCounter("PlayerDropDown-RequestFriendship")
+                            AnalyticsService:TrackEvent("Game", "RequestFriendship", "PlayerDropDown")
+                      
 							LocalPlayer:RequestFriendship(cachedLastSelectedPlayer)
 						end
 					end
 				end)
 			elseif status == Enum.FriendStatus.FriendRequestSent then
+                AnalyticsService:ReportCounter("PlayerDropDown-RevokeFriendship")
+                AnalyticsService:TrackEvent("Game", "RevokeFriendship", "PlayerDropDown")
+                
 				LocalPlayer:RevokeFriendship(playerDropDown.Player)
 			elseif status == Enum.FriendStatus.FriendRequestReceived then
+                AnalyticsService:ReportCounter("PlayerDropDown-RequestFriendship")
+                AnalyticsService:TrackEvent("Game", "RequestFriendship", "PlayerDropDown")
+                
 				LocalPlayer:RequestFriendship(playerDropDown.Player)
 			end
 
@@ -508,6 +523,8 @@ function createPlayerDropDown()
 
 		return frame
 	end
+
+	local TWEEN_TIME = 0.25
 
 	--[[ PlayerDropDown Functions ]]--
 	function playerDropDown:Hide()

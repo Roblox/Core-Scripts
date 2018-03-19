@@ -9,8 +9,7 @@
 local getNewNotificationPathSuccess, newNotificationPathValue = pcall(function() return settings():GetFFlag("UseNewNotificationPathLua") end)
 local newNotificationPath = getNewNotificationPathSuccess and newNotificationPathValue
 
-local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
-local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
+local FFlagSetGuiInsetInLoadingScript = settings():GetFFlag("SetGuiInsetInLoadingScript2")
 
 --[[ END OF FFLAG VALUES ]]
 
@@ -358,19 +357,6 @@ local function CreateMenuChangedNotifier()
 		return findScreenGuiAncestor(parent)
 	end
 
-
-	local userGuiModuleName = require(GuiRoot.Modules.VR.UserGui).ModuleName
-	GuiService.Changed:connect(function(prop)
-		-- Notify if the selected object has changed and we are not observing it
-		if prop == 'SelectedObject' and GuiService.SelectedObject then
-			if findScreenGuiAncestor(GuiService.SelectedObject) then
-				if not VRHub:IsModuleOpened(userGuiModuleName) then
-					this:PromptNotification()
-				end
-			end
-		end
-	end)
-
 	InputService.TextBoxFocused:connect(function(textbox)
 		local myScreenGui = findScreenGuiAncestor(textbox)
 		local myScreenGuiParent = myScreenGui and myScreenGui.Parent
@@ -483,22 +469,20 @@ local function createNormalHealthBar()
 		Parent = healthContainer;
 	};
 
-	if enablePortraitMode then
-		local function onResized(viewportSize, isPortrait)
-			if isPortrait then
-				username.TextXAlignment = Enum.TextXAlignment.Right
-				accountType.TextXAlignment = Enum.TextXAlignment.Right
-				container.Size = UDim2.new(0.3, 0, 1, 0)
-				container.AnchorPoint = Vector2.new(1, 0)
-			else
-				username.TextXAlignment = Enum.TextXAlignment.Left
-				accountType.TextXAlignment = Enum.TextXAlignment.Left
-				container.Size = UDim2.new(0, TopbarConstants.USERNAME_CONTAINER_WIDTH, 1, 0)
-				container.AnchorPoint = Vector2.new(0, 0)
-			end
+	local function onResized(viewportSize, isPortrait)
+		if isPortrait then
+			username.TextXAlignment = Enum.TextXAlignment.Right
+			accountType.TextXAlignment = Enum.TextXAlignment.Right
+			container.Size = UDim2.new(0.3, 0, 1, 0)
+			container.AnchorPoint = Vector2.new(1, 0)
+		else
+			username.TextXAlignment = Enum.TextXAlignment.Left
+			accountType.TextXAlignment = Enum.TextXAlignment.Left
+			container.Size = UDim2.new(0, TopbarConstants.USERNAME_CONTAINER_WIDTH, 1, 0)
+			container.AnchorPoint = Vector2.new(0, 0)
 		end
-		Utility:OnResized(container, onResized)
 	end
+	Utility:OnResized(container, onResized)
 
 	return container, username, healthContainer, healthFill, accountType
 end
@@ -799,7 +783,7 @@ local function CreateLeaderstatsMenuItem()
 
 	this:SetColumns(PlayerlistModule.GetStats())
 	PlayerlistModule.OnLeaderstatsChanged.Event:connect(function(newStatColumns)
-		if not enablePortraitMode or not Utility:IsPortrait() then
+		if not Utility:IsPortrait() then
 			this:SetColumns(newStatColumns)
 		end
 	end)
@@ -965,6 +949,14 @@ local function CreateUnreadMessagesNotifier(ChatModule)
 	return chatCounter
 end
 
+local function GetChatIcon(chatIconName)
+    if Player:GetUnder13() then
+        return "rbxasset://textures/ui/Chat/" .. chatIconName .. "Flip.png"
+    else
+        return "rbxasset://textures/ui/Chat/" .. chatIconName .. ".png"
+    end
+end
+
 local function CreateChatIcon()
 	local chatEnabled = game:GetService("UserInputService"):GetPlatform() ~= Enum.Platform.XBoxOne
 	if not chatEnabled then return end
@@ -988,7 +980,7 @@ local function CreateChatIcon()
 		Size = UDim2.new(0, 28, 0, 27);
 		Position = UDim2.new(0.5, -14, 0.5, -13);
 		BackgroundTransparency = 1;
-		Image = "rbxasset://textures/ui/Chat/Chat.png";
+        Image = GetChatIcon("Chat");
 		Parent = chatIconButton;
 	};
 	if not Util.IsTouchDevice() then
@@ -998,9 +990,9 @@ local function CreateChatIcon()
 
 	local function updateIcon(down)
 		if down then
-			chatIconImage.Image = "rbxasset://textures/ui/Chat/ChatDown.png";
+			chatIconImage.Image = GetChatIcon("ChatDown")
 		else
-			chatIconImage.Image = "rbxasset://textures/ui/Chat/Chat.png";
+			chatIconImage.Image = GetChatIcon("Chat")
 		end
 	end
 
@@ -1104,7 +1096,7 @@ local function CreateMobileHideChatIcon()
 		Size = UDim2.new(0, 28, 0, 27);
 		Position = UDim2.new(0.5, -14, 0.5, -13);
 		BackgroundTransparency = 1;
-		Image = "rbxasset://textures/ui/Chat/ToggleChat.png";
+        Image = GetChatIcon("ToggleChat");
 		Parent = chatHideIconButton;
 	};
 
@@ -1113,9 +1105,9 @@ local function CreateMobileHideChatIcon()
 
 	local function updateIcon(down)
 		if down then
-			chatIconImage.Image = "rbxasset://textures/ui/Chat/ToggleChatDown.png";
+			chatIconImage.Image = GetChatIcon("ToggleChatDown")
 		else
-			chatIconImage.Image = "rbxasset://textures/ui/Chat/ToggleChat.png";
+			chatIconImage.Image = GetChatIcon("ToggleChat")
 		end
 	end
 
@@ -1414,9 +1406,6 @@ local function OnCoreGuiChanged(coreGuiType, coreGuiEnabled)
 end
 
 local function OnChatModuleDisabled()
-	if chatIcon3D then
-		Menubar3D:RemoveItem(chatIcon3D)
-	end
 	if chatIcon then
 		LeftMenubar:RemoveItem(chatIcon)
 	end
@@ -1436,7 +1425,7 @@ TopBar:UpdateBackgroundTransparency()
 LeftMenubar:SetDock(TopBar:GetInstance())
 RightMenubar:SetDock(TopBar:GetInstance())
 
-if not isTenFootInterface then
+if not isTenFootInterface and not FFlagSetGuiInsetInLoadingScript then
 	Util.SetGUIInsetBounds(0, TopbarConstants.TOPBAR_THICKNESS, 0, 0)
 end
 
@@ -1484,20 +1473,18 @@ local function topbarEnabledChanged()
 	end
 end
 
-if enablePortraitMode then
-	--Temporarily disable the leaderstats while in portrait mode.
-	--Will come back to this when a new design is ready.
-	local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
-	local function onResized(viewportSize, isPortrait)
-		if isPortrait then
-			leaderstatsMenuItem:SetColumns({})
-		else
-			leaderstatsMenuItem:SetColumns(PlayerlistModule.GetStats())
-		end
-		RightMenubar:ArrangeItems()
+--Temporarily disable the leaderstats while in portrait mode.
+--Will come back to this when a new design is ready.
+local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
+local function onResized(viewportSize, isPortrait)
+	if isPortrait then
+		leaderstatsMenuItem:SetColumns({})
+	else
+		leaderstatsMenuItem:SetColumns(PlayerlistModule.GetStats())
 	end
-	Utility:OnResized(leaderstatsMenuItem, onResized)
+	RightMenubar:ArrangeItems()
 end
+Utility:OnResized(leaderstatsMenuItem, onResized)
 
 topbarEnabledChanged() -- if it was set before this point, enable/disable it now
 StarterGui:RegisterSetCore("TopbarEnabled", function(enabled)

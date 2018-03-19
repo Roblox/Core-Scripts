@@ -17,19 +17,23 @@ local AnalyticsAction_InitialOpenTab = "DeveloperConsole_InitialOpenTab"
 local AnalyticsAction_ClickToOpenOpenTab = "DeveloperConsole_ClickToOpenOpenTab"
 
 --[[ Services ]]--
-local CoreGui = game:GetService('CoreGui')
-local RobloxGui = CoreGui:FindFirstChild('RobloxGui')
-local Modules = RobloxGui:FindFirstChild('Modules')
+local CoreGui = game:GetService("CoreGui")
+local RobloxGui = CoreGui:FindFirstChild("RobloxGui")
+local Modules = RobloxGui:FindFirstChild("Modules")
 
 local ContextActionService = game:GetService("ContextActionService")
 local TextService = game:GetService("TextService")
-local GuiService = game:GetService('GuiService')
+local GuiService = game:GetService("GuiService")
+local VRService = game:GetService("VRService")
 local isTenFootInterface = GuiService:IsTenFootInterface()
 
 --[[ Modules ]]--
 local ClientMemoryAnalyzerClass = require(CoreGui.RobloxGui.Modules.Stats.ClientMemoryAnalyzer)
 local ServerMemoryAnalyzerClass = require(CoreGui.RobloxGui.Modules.Stats.ServerMemoryAnalyzer)
+
 local StatsUtils = require(CoreGui.RobloxGui.Modules.Stats.StatsUtils)
+local Style = require(CoreGui.RobloxGui.Modules.Stats.DeveloperConsoleStyle)
+local Primitives = require(CoreGui.RobloxGui.Modules.Stats.DeveloperConsolePrimitives)
 
 --[[ Flags ]]--
 local function checkFFlag(flagName) 
@@ -39,190 +43,15 @@ local function checkFFlag(flagName)
 	return (flagSuccess and flagValue)
 end
 
-local enableActionBindingsTab = checkFFlag("EnableActionBindingsTab")
-local forceDevConsoleInStudio = checkFFlag("ForceDevConsoleInStudio")
-local enableDevConsoleDataStoreStats = checkFFlag("EnableDevConsoleDataStoreStats")
+local disablePassiveClientLogProcessing = checkFFlag("DisablePassiveClientLogProcessing")
 
 -- Eye candy uses RenderStepped
 local EYECANDY_ENABLED = true
-
-local ZINDEX = 6
 
 local AUTO_TAB_WIDTH = -1
 local TAB_TEXT_SIZE = 14
 local TAB_TEXT_PADDING = 8
 
-local Style; do
-	local function c3(r, g, b)
-		return Color3_new(r / 255, g / 255, b / 255)
-	end
-	local frameColor = Color3_new(0.1, 0.1, 0.1)
-	local textColor = Color3_new(1, 1, 1)
-	local optionsFrameColor = Color3_new(1, 1, 1)
-	
-	pcall(function() -- Fun window colors for cool people
-		local Players = game:GetService("Players")
-		if not Players or not Players.LocalPlayer then
-			return
-		end
-		local FunColors = {
-			[56449]   = {c3(255, 63,  127)}; -- ReeseMcBlox
-			[6949935] = {c3(255, 63,  127)}; -- NobleDragon
-		}
-		local funColor = FunColors[Players.LocalPlayer.UserId]
-		if funColor then
-			frameColor = funColor[1] or frameColor
-			textColor = funColor[2] or textColor
-		end
-	end)
-	
-	Style = {
-		Font = Enum.Font.SourceSans;
-		FontBold = Enum.Font.SourceSansBold;
-		
-		HandleHeight = 24; -- How tall the top window handle is, as well as the width of the scroll bar
-		TabHeight = 28;
-		GearSize = 24;
-		BorderSize = 2;
-		CommandLineHeight = 22;
-		
-		OptionAreaHeight = 56;
-		
-		FrameColor = frameColor; -- Applies to pretty much everything, including buttons
-		FrameTransparency = 0.5;
-		OptionsFrameColor = optionsFrameColor;
-		
-		TextColor = textColor;
-		
-		MessageColors = {
-			[0] = Color3_new(1, 1, 1); -- Enum.MessageType.MessageOutput
-			[1] = Color3_new(0.4, 0.5, 1); -- Enum.MessageType.MessageInfo
-			[2] = Color3_new(1, 0.6, 0.4); -- Enum.MessageType.MessageWarning
-			[3] = Color3_new(1, 0, 0); -- Enum.MessageType.MessageError
-		};
-		
-		ScrollbarFrameColor = frameColor;
-		ScrollbarBarColor = frameColor;
-		
-		ScriptButtonHeight = 32;
-		ScriptButtonColor = Color3_new(0, 1/3, 2/3);
-		ScriptButtonTransparency = 0.5;
-		
-		CheckboxSize = 24;
-		
-		ChartTitleHeight = 20;
-		ChartGraphHeight = 64;
-		ChartDataHeight = 24;
-		ChartHeight = 0; -- This gets added up at end and set at end of block
-		ChartWidth = 620;
-		
-		-- (-1) means right to left
-		-- (1) means left to right
-		ChartGraphDirection = 1; -- the direction the bars move
-		
-		
-		GetButtonDownColor = function(normalColor)
-			local r, g, b = normalColor.r, normalColor.g, normalColor.b
-			return Color3_new(1 - 0.75 * (1 - r), 1 - 0.75 * (1 - g), 1 - 0.75 * (1 - b))
-		end;
-		GetButtonHoverColor = function(normalColor)
-			local r, g, b = normalColor.r, normalColor.g, normalColor.b
-			return Color3_new(1 - 0.875 * (1 - r), 1 - 0.875 * (1 - g), 1 - 0.875 * (1 - b))
-		end;
-
-	}
-	
-	Style.ChartHeight = Style.ChartTitleHeight + Style.ChartGraphHeight + Style.ChartDataHeight + Style.BorderSize
-
-end
-
--- This provides an easy way to create GUI objects without writing insanely redundant code
-local Primitives = {}; do
-	local function new(className, parent, name)
-		local n = Instance_new(className, parent)
-		n.ZIndex = ZINDEX
-		if name then
-			n.Name = name
-		end
-		return n
-	end
-	local unitSize = UDim2_new(1, 0, 1, 0)
-	
-	local function setupFrame(n)
-		n.BackgroundColor3 = Style.FrameColor
-		n.BackgroundTransparency = Style.FrameTransparency
-		n.BorderSizePixel = 0
-	end
-	local function setupText(n, text)
-		n.Font = Style.Font
-		n.TextColor3 = Style.TextColor
-		n.Text = text or n.Text
-	end
-	
-	function Primitives.Frame(parent, name)
-		local n = new('Frame', parent, name)
-		setupFrame(n)
-		return n
-	end
-	function Primitives.TextLabel(parent, name, text)
-		local n = new('TextLabel', parent, name)
-		setupFrame(n)
-		setupText(n, text)
-		return n
-	end
-	function Primitives.TextBox(parent, name, text)
-		local n = new('TextBox', parent, name)
-		setupFrame(n)
-		setupText(n, text)
-		return n
-	end
-	function Primitives.TextButton(parent, name, text)
-		local n = new('TextButton', parent, name)
-		setupFrame(n)
-		setupText(n, text)
-		return n
-	end
-	function Primitives.Button(parent, name)
-		local n = new('TextButton', parent, name)
-		setupFrame(n)
-		n.Text = ""
-		return n
-	end
-	function Primitives.ImageButton(parent, name, image)
-		local n = new('ImageButton', parent, name)
-		setupFrame(n)
-		n.Image = image or ""
-		n.Size = unitSize
-		return n
-	end
-	
-	-- An invisible frame of size (1, 0, 1, 0)
-	function Primitives.FolderFrame(parent, name) -- Should this be called InvisibleFrame? lol
-		local n = new('Frame', parent, name)
-		n.BackgroundTransparency = 1
-		n.Size = unitSize
-		return n
-	end
-	function Primitives.InvisibleTextLabel(parent, name, text)
-		local n = new('TextLabel', parent, name)
-		setupText(n, text)
-		n.BackgroundTransparency = 1
-		return n
-	end
-	function Primitives.InvisibleButton(parent, name, text)
-		local n = new('TextButton', parent, name)
-		n.BackgroundTransparency = 1
-		n.Text = ""
-		return n
-	end
-	function Primitives.InvisibleImageLabel(parent, name, image)
-		local n = new('ImageLabel', parent, name)
-		n.BackgroundTransparency = 1
-		n.Image = image or ""
-		n.Size = unitSize
-		return n
-	end
-end
 
 local function CreateSignal()
 	local this = {}
@@ -396,7 +225,13 @@ function Methods.SetVisible(devConsole, visible, animate)
 			tab:RecordInitialOpen()
 		end
 	end
-  
+  	if VRService.VREnabled then
+  		if visible then
+			UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceShow
+		else
+			UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
+		end
+	end
 end
 
 -----------------
@@ -427,6 +262,13 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	--frame.ClipsDescendants = true
 	frame.Visible = devConsole.Visible
 	frame.Selectable = not isTenFootInterface
+
+	local function onVREnabled()
+		frame.Modal = VRService.VREnabled
+	end
+	onVREnabled()
+	VRService:GetPropertyChangedSignal("VREnabled"):connect(onVREnabled)
+
 	devConsole.Frame = frame
 	devConsole:ResetFrameDimensions()
 	
@@ -908,6 +750,12 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 					body.Size = UDim2_new(1, 0, 0, output.Height)
 					
 					disconnector:connect(outputMessageSync.MessageAdded:connect(function(message)
+                        if disablePassiveClientLogProcessing then
+                            if not devConsole.Visible then
+                                output:SetMessagesDirty(#messages)
+                                return
+                            end
+                        end
 						output:RefreshMessages(#messages)
 					end))
 					
@@ -1028,8 +876,55 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			tab:SetVisible(true)
 			
 			return tab, statList
+				end
+
+
+		do -- Client Memory tab
+
+			local tabBody = Primitives.FolderFrame(body, 'ClientMemory')
+			local clientTab = nil
+			local clientMemoryAnalyzer = nil
+
+            clientMemoryAnalyzer = ClientMemoryAnalyzerClass.new(tabBody)
+
+			-- When memory analyzer decides it's new size, we get notified.
+			clientMemoryAnalyzer:setHeightChangedCallback(function(newHeight)
+					body.Size = UDim2.new(1, 0, 0, newHeight)
+				end)
+
+			-- Considering all state (is dev console even showing, which tab is showing), 
+			-- do I need to update the memory stats tab right now, and should I be listening
+			-- for regular updates?
+			local function syncClientMemoryAnalyzerVisibility()
+				if (clientTab.Open and clientTab.Visible and devConsole.Visible) then
+                    clientMemoryAnalyzer:refreshMemoryUsageTree()
+					clientMemoryAnalyzer:renderUpdates()
+					clientMemoryAnalyzer:startListeningForUpdates()
+					body.Size = UDim2.new(1, 0, 0, clientMemoryAnalyzer:getHeightInPix())
+				else
+					clientMemoryAnalyzer:stopListeningForUpdates()
+				end
+			end
+
+			-- Every time 'open' state changes, call syncVisibility.
+			local tabName = "Client Memory"
+
+			clientTab = devConsole:AddTab(tabName, tabBody, function(open)
+					if (open) then
+						devConsole.WindowScrollbar:SetValue(0)
+						setShownOptionTypes({})
+					end
+
+					syncClientMemoryAnalyzerVisibility()
+				end)
+			clientTab:SetVisible(true)   
+
+			-- Every time dev console's open state changes, call syncVisibility.
+			devConsole.VisibleChanged:connect(function(visible)
+					syncClientMemoryAnalyzerVisibility()
+				end)
 		end
-		
+
 		-- Server Scripts --
 		if permissions.MayViewServerScripts then
 			
@@ -1183,11 +1078,14 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		end	
 
 		-- Server Memory --
-		if (enableDevConsoleDataStoreStats and permissions.MayViewServerMemory) then
-			local tabBody = Primitives.FolderFrame(body, 'ServerMemory')
-			local serverMemoryAnalyzer = ServerMemoryAnalyzerClass.new(tabBody)
-			local serverTab = nil
+		if (permissions.MayViewServerMemory) then
+			local tabBody = Primitives.FolderFrame(body, "ServerMemory")
 			
+			local serverTab = nil
+			local serverMemoryAnalyzer = nil
+
+            serverMemoryAnalyzer = ServerMemoryAnalyzerClass.new(tabBody)
+
 			-- When memory analyzer decides its new size, we get notified.
 			serverMemoryAnalyzer:setHeightChangedCallback(function(newHeight)
 					body.Size = UDim2.new(1, 0, 0, newHeight)
@@ -1197,9 +1095,11 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			-- do I need to update the memory stats tab right now, and should I be listening
 			-- for regular update?
 			local function syncServerMemoryAnalyzerVisibility()
-				if (serverTab.Open and serverTab.Visible and devConsole.Visible) then 
-					serverMemoryAnalyzer:renderUpdates()
+				if (serverTab.Open and serverTab.Visible and devConsole.Visible) then
+                    serverMemoryAnalyzer:setVisible(true)
 					body.Size = UDim2.new(1, 0, 0, serverMemoryAnalyzer:getHeightInPix())
+				else
+                    serverMemoryAnalyzer:setVisible(false)
 				end
 			end
 
@@ -1225,10 +1125,10 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 			statsSyncServer:GetStats()
 			-- Listen to the "new server stats" event.
 			statsSyncServer.StatsReceived:connect(function(stats)
-				local filteredStats = serverMemoryAnalyzer:filterServerMemoryStats(stats)
-				if filteredStats then
-					serverMemoryAnalyzer:updateStats(filteredStats)
-				end
+                local filteredTreeStats = serverMemoryAnalyzer:filterServerMemoryTreeStats(stats)
+                if filteredTreeStats then
+                    serverMemoryAnalyzer:updateWithTreeStats(filteredTreeStats)
+                end
 			end)			
 		end
 		  
@@ -1373,51 +1273,6 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 		end
 	end
 	
-  
-	do -- Client Memory tab
-    
-      local tabBody = Primitives.FolderFrame(body, 'ClientMemory')
-      local clientTab = nil
-      local clientMemoryAnalyzer = ClientMemoryAnalyzerClass.new(tabBody)
-            
-      -- When memory analyzer decides it's new size, we get notified.
-      clientMemoryAnalyzer:setHeightChangedCallback(function(newHeight)
-          body.Size = UDim2.new(1, 0, 0, newHeight)
-          -- body.Size = UDim2.new(1, 0, 0, newHeight)
-        end)
-      
-      -- Considering all state (is dev console even showing, which tab is showing), 
-      -- do I need to update the memory stats tab right now, and should I be listening
-      -- for regular updates?
-      local function syncClientMemoryAnalyzerVisibility()
-        if (clientTab.Open and clientTab.Visible and devConsole.Visible) then 
-          clientMemoryAnalyzer:renderUpdates()
-          clientMemoryAnalyzer:startListeningForUpdates()
-          body.Size = UDim2.new(1, 0, 0, clientMemoryAnalyzer:getHeightInPix())
-        else
-          clientMemoryAnalyzer:stopListeningForUpdates()
-        end
-      end
-      
-      -- Every time 'open' state changes, call syncVisibility.
-      local tabName = "Client Memory"
-
-      clientTab = devConsole:AddTab(tabName, tabBody, function(open)
-          if (open) then
-			devConsole.WindowScrollbar:SetValue(0)
-            setShownOptionTypes({})
-          end
-          
-          syncClientMemoryAnalyzerVisibility()
-        end)
-      clientTab:SetVisible(true)   
-      
-      -- Every time dev console's open state changes, call syncVisibility.
-      devConsole.VisibleChanged:connect(function(visible)
-          syncClientMemoryAnalyzerVisibility()
-      end)
-	end
-	
 	do -- Client Http Results tab
 		if permissions.MayViewHttpResultClient then
 			local logService = game:GetService('LogService')
@@ -1510,7 +1365,7 @@ function DeveloperConsole.new(screenGui, permissions, messagesAndStats)
 	end
 
 	do -- ContextActionService debugging
-		if permissions.MayViewContextActionBindings and enableActionBindingsTab then
+		if permissions.MayViewContextActionBindings then
 			local tabBody = Primitives.FolderFrame(body, "ActionBindings")
 			local tab = devConsole:AddTab("Action Bindings", tabBody)
 			
@@ -1553,7 +1408,7 @@ do -- This doesn't support multiple windows very well
 		label.Size = UDim2.new(0, 64, 0, 64)
 		label.Image = "rbxasset://Textures/ArrowFarCursor.png"
 		label.Name = "BackupMouse"
-		label.ZIndex = ZINDEX + 2
+		label.ZIndex = Style.ZINDEX + 2
 		
 		local disconnector = CreateDisconnectSignal()
 		
@@ -1752,7 +1607,7 @@ do -- Script performance/Chart list
 		
 		local scrollingFrame = Instance.new("ScrollingFrame", sideMenu)
 		scrollingFrame.BorderSizePixel = 0
-		scrollingFrame.ZIndex = ZINDEX
+		scrollingFrame.ZIndex = Style.ZINDEX
 		scrollingFrame.ScrollBarThickness = 12
 		scrollingFrame.Selectable = false
 		this.ScrollingFrame = scrollingFrame
@@ -1948,7 +1803,7 @@ do -- Chart
 				local height = getReferenceHeight(position)
 				if height ~= 0 then
 					local notch = Instance_new('Frame', frame)
-					notch.ZIndex = ZINDEX
+					notch.ZIndex = Style.ZINDEX
 					notch.BorderSizePixel = 0
 					notch.BackgroundColor3 = Color3_new(1, 1, 1)
 					notch.Size = UDim2_new(0, 1, 0, height)
@@ -2349,6 +2204,8 @@ do
 			Visible = false;
 			Height = 0;
 			HeightChanged = heightChanged;
+            MessagesDirty = false;
+            MessagesDirtyPosition = 1;
 		}
 		
 		local function setHeight(height)
@@ -2434,7 +2291,7 @@ do
 					local label = labels[labelPosition]
 					if not label then
 						label = Instance_new('TextLabel', frame)
-						label.ZIndex = ZINDEX
+						label.ZIndex = Style.ZINDEX
 						label.BackgroundTransparency = 1
 						--label.Font = Style.Font
 						label.FontSize = 'Size10'
@@ -2470,6 +2327,29 @@ do
 			setHeight(y)
 		end
 		
+        function output.SetMessagesDirty(output, messageStartPosition)
+            if output.MessagesDirty then
+                return
+            end
+            output.MessagesDirty = true
+            output.MessagesDirtyPosition = messageStartPosition
+        end
+		
+        if disablePassiveClientLogProcessing then
+            -- Refresh messages if there are new messages when devConsole is re-opened
+            do
+                devConsole.VisibleChanged:connect(function(visible)
+                    if visible then
+                        if output.MessagesDirty then
+                            output.MessagesDirty = false
+                            output:RefreshMessages(output.MessagesDirtyPosition)
+                        end
+                    end
+                end)
+            end
+		end
+		
+
 		local refreshHandle;
 		function output.RefreshMessages(output, messageStartPosition)
 			if not output.Visible then
@@ -2755,7 +2635,8 @@ end
 function Methods.CreateScrollbar(devConsole, rotation)
 	local scrollbar = {}
 
-	local main = Primitives.FolderFrame(main, 'Scrollbar')
+	local main = nil
+	main = Primitives.FolderFrame(main, 'Scrollbar')
 	scrollbar.Frame = main
 
 	local frame = Primitives.Button(main, 'Frame')
@@ -3179,7 +3060,7 @@ do
 			permissions.ServerCodeExecutionEnabled = permissions.IsCreator and (not settings():GetFFlag("DebugDisableLogServiceExecuteScript"))
 		end)
 		
-		if DEBUG or (forceDevConsoleInStudio and RunService:IsStudio()) then
+		if DEBUG or (RunService:IsStudio()) then
 			permissions.IsCreator = true
 			permissions.ServerCodeExecutionEnabled = true
 		end
@@ -3194,18 +3075,12 @@ do
 
 		permissions.MayViewDataStoreBudget = false
 		pcall(function()
-			permissions.MayViewDataStoreBudget = permissions.IsCreator and settings():GetFFlag("EnableDevConsoleDataStoreStats")
+			permissions.MayViewDataStoreBudget = permissions.IsCreator
 		end)
 		permissions.MayViewHttpResultClient = false
-		pcall(function()
-			permissions.MayViewHttpResultClient = permissions.IsCreator and settings():GetFFlag("EnableClientHttpAnalytics")
-		end)
+		permissions.MayViewHttpResultClient = permissions.IsCreator
 		permissions.MayViewHttpResultServer = false
-		pcall(function()
-			permissions.MayViewHttpResultServer = permissions.IsCreator and
-								settings():GetFFlag("EnableClientHttpAnalytics") and
-								settings():GetFFlag("EnableServerHttpAnalytics")
-		end)
+		permissions.MayViewHttpResultServer = permissions.IsCreator
 
 		permissions.MayViewContextActionBindings = permissions.IsCreator
 		

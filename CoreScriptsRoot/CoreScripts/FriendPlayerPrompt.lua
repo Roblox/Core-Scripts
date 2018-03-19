@@ -8,6 +8,7 @@
 local StarterGui = game:GetService("StarterGui")
 local PlayersService = game:GetService("Players")
 local CoreGuiService = game:GetService("CoreGui")
+local AnalyticsService = game:GetService("AnalyticsService")
 
 local RobloxGui = CoreGuiService:WaitForChild("RobloxGui")
 local LocalPlayer = PlayersService.LocalPlayer
@@ -21,6 +22,8 @@ local PromptCreator = require(CoreGuiModules:WaitForChild("PromptCreator"))
 local SocialUtil = require(CoreGuiModules:WaitForChild("SocialUtil"))
 local PlayerDropDownModule = require(CoreGuiModules:WaitForChild("PlayerDropDown"))
 
+local FFlagClientAppsUseRobloxLocale = settings():GetFFlag('ClientAppsUseRobloxLocale')
+
 local THUMBNAIL_URL = "https://www.roblox.com/Thumbs/Avatar.ashx?x=200&y=200&format=png&userId="
 local BUST_THUMBNAIL_URL = "https://www.roblox.com/bust-thumbnail/image?width=420&height=420&format=png&userId="
 
@@ -32,11 +35,16 @@ local CONSOLE_THUMBNAIL_IMAGE_TYPE = Enum.ThumbnailType.AvatarThumbnail
 
 local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
 local FFlagUseNotificationsLocalization = success and result
+
 local function LocalizedGetString(key, rtv)
 	pcall(function()
 		local LocalizationService = game:GetService("LocalizationService")
 		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-		rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
+		if FFlagClientAppsUseRobloxLocale then
+			rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
+		else
+			rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
+		end
 	end)
 	return rtv
 end
@@ -47,13 +55,16 @@ function createFetchImageFunction(...)
 		spawn(function()
 			local imageUrl = SocialUtil.GetPlayerImage(unpack(args))
 			if imageLabel and imageLabel.Parent then
-				frame.Icon.Image = imageUrl
+				imageLabel.Icon.Image = imageUrl
 			end
 		end)
 	end
 end
 
 function SendFriendRequest(playerToFriend)
+    AnalyticsService:ReportCounter("FriendPlayerPrompt-RequestFriendship")
+    AnalyticsService:TrackEvent("Game", "RequestFriendship", "FriendPlayerPrompt")
+    
 	local success = pcall(function()
 		LocalPlayer:RequestFriendship(playerToFriend)
 	end)
@@ -88,18 +99,18 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 					CancelActive = false,
 					Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
 					ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
-					FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+					FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMBNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
 					FetchImageFunctionConsoleVR = createFetchImageFunction(playerToFriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 					StripeColor = Color3.fromRGB(183, 34, 54),
 				})
 			else
 				if AtFriendLimit(playerToFriend) then
-					
+
 					local mainText = string.format("You can not send a friend request to %s because they are at the max friend limit.",  playerToFriend.Name)
 					if FFlagUseNotificationsLocalization then
 						mainText = string.gsub(LocalizedGetString("FriendPlayerPrompt.promptCompletedCallback.AtFriendLimit",mainText),"{RBX_NAME}",playerToFriend.Name)
 					end
-					
+
 					PromptCreator:CreatePrompt({
 						WindowTitle = "Error Sending Friend Request",
 						MainText = mainText,
@@ -107,7 +118,7 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 						CancelActive = false,
 						Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
 						ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
-						FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+						FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMBNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
 						FetchImageFunctionConsoleVR = createFetchImageFunction(playerToFriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 						StripeColor = Color3.fromRGB(183, 34, 54),
 					})
@@ -117,12 +128,12 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 						while PromptCreator:IsCurrentlyPrompting() do
 							wait()
 						end
-						
+
 						local mainText = string.format("An error occurred while sending %s a friend request. Please try again later.", playerToFriend.Name)
 						if FFlagUseNotificationsLocalization then
 							mainText = string.gsub(LocalizedGetString("FriendPlayerPrompt.promptCompletedCallback.UnknownError",mainText),"{RBX_NAME}",playerToFriend.Name)
 						end
-						
+
 						PromptCreator:CreatePrompt({
 							WindowTitle = "Error Sending Friend Request",
 							MainText = mainText,
@@ -130,7 +141,7 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 							CancelActive = false,
 							Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
 							ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
-							FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+							FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMBNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
 							FetchImageFunctionConsoleVR = createFetchImageFunction(playerToFriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 							StripeColor = Color3.fromRGB(183, 34, 54),
 						})
@@ -139,12 +150,12 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 			end
 		end
 	end
-	
+
 	local mainText = string.format("Would you like to send %s a Friend Request?", playerToFriend.Name)
 	if FFlagUseNotificationsLocalization then
 		mainText = string.gsub(LocalizedGetString("FriendPlayerPrompt.DoPromptRequestFriendPlayer",mainText),"{RBX_NAME}",playerToFriend.Name)
 	end
-	
+
 	PromptCreator:CreatePrompt({
 		WindowTitle = "Send Friend Request?",
 		MainText = mainText,
@@ -153,7 +164,7 @@ function DoPromptRequestFriendPlayer(playerToFriend)
 		CancelActive = true,
 		Image = BUST_THUMBNAIL_URL ..playerToFriend.UserId,
 		ImageConsoleVR = THUMBNAIL_URL ..playerToFriend.UserId,
-		FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+		FetchImageFunction = createFetchImageFunction(playerToFriend.UserId, REGULAR_THUMBNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
 		FetchImageFunctionConsoleVR = createFetchImageFunction(playerToFriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 		PromptCompletedCallback = promptCompletedCallback,
 	})
@@ -194,12 +205,12 @@ function DoPromptUnfriendPlayer(playerToUnfriend)
 				while PromptCreator:IsCurrentlyPrompting() do
 					wait()
 				end
-				
+
 				local mainText = string.format("An error occurred while unfriending %s. Please try again later.", playerToUnfriend.Name)
 				if FFlagUseNotificationsLocalization then
 					mainText = string.gsub(LocalizedGetString("FriendPlayerPrompt.promptCompletedCallback.UnknownError",mainText),"{RBX_NAME}",playerToUnfriend.Name)
 				end
-				
+
 				PromptCreator:CreatePrompt({
 					WindowTitle = "Error Unfriending Player",
 					MainText = mainText,
@@ -207,19 +218,19 @@ function DoPromptUnfriendPlayer(playerToUnfriend)
 					CancelActive = false,
 					Image = BUST_THUMBNAIL_URL ..playerToUnfriend.UserId,
 					ImageConsoleVR = THUMBNAIL_URL ..playerToUnfriend.UserId,
-					FetchImageFunction = createFetchImageFunction(playerToUnfriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+					FetchImageFunction = createFetchImageFunction(playerToUnfriend.UserId, REGULAR_THUMBNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
 					FetchImageFunctionConsoleVR = createFetchImageFunction(playerToUnfriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 					StripeColor = Color3.fromRGB(183, 34, 54),
 				})
 			end
 		end
 	end
-	
+
 	local mainText = string.format("Would you like to remove %s from your friends list?", playerToUnfriend.Name)
 	if FFlagUseNotificationsLocalization then
 		mainText = string.gsub(LocalizedGetString("FriendPlayerPrompt.DoPromptUnfriendPlayer",mainText),"{RBX_NAME}",playerToUnfriend.Name)
 	end
-	
+
 	PromptCreator:CreatePrompt({
 		WindowTitle = "Unfriend Player?",
 		MainText = mainText,
@@ -228,7 +239,7 @@ function DoPromptUnfriendPlayer(playerToUnfriend)
 		CancelActive = true,
 		Image = BUST_THUMBNAIL_URL ..playerToUnfriend.UserId,
 		ImageConsoleVR = THUMBNAIL_URL ..playerToUnfriend.UserId,
-		FetchImageFunction = createFetchImageFunction(playerToUnfriend.UserId, REGULAR_THUMNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
+		FetchImageFunction = createFetchImageFunction(playerToUnfriend.UserId, REGULAR_THUMBNAIL_IMAGE_SIZE, REGULAR_THUMBNAIL_IMAGE_TYPE),
 		FetchImageFunctionConsoleVR = createFetchImageFunction(playerToUnfriend.UserId, CONSOLE_THUMBNAIL_IMAGE_SIZE, CONSOLE_THUMBNAIL_IMAGE_TYPE),
 		PromptCompletedCallback = promptCompletedCallback,
 	})
