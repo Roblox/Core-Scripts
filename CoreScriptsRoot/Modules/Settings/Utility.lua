@@ -12,6 +12,7 @@ local NON_SELECTED_COLOR = Color3.fromRGB(78,84,96)
 local ARROW_COLOR = Color3.fromRGB(204, 204, 204)
 local ARROW_COLOR_HOVER = Color3.fromRGB(255, 255, 255)
 local ARROW_COLOR_TOUCH = ARROW_COLOR_HOVER
+local ARROW_COLOR_INACTIVE = Color3.fromRGB(150, 150, 150)
 
 local SELECTED_LEFT_IMAGE = "rbxasset://textures/ui/Settings/Slider/SelectedBarLeft.png"
 local NON_SELECTED_LEFT_IMAGE = "rbxasset://textures/ui/Settings/Slider/BarLeft.png"
@@ -34,24 +35,14 @@ local ContextActionService = game:GetService("ContextActionService")
 local VRService = game:GetService("VRService")
 
 --------------- FLAGS ----------------
-
-local fixTextBoxLoseSelectionSuccess, fixTextBoxLoseSelectionValue = pcall(function() return settings():GetFFlag("FixTextBoxLoseSelection") end)
-local fixTextBoxLoseSelection = fixTextBoxLoseSelectionSuccess and fixTextBoxLoseSelectionValue
-
--- Enable the old Utility.lua if the EnablePortraitMode flag is off
-local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
-local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
-
 local fixSettingsMenuDropdownsSuccess, fixSettingsMenuDropdownsValue = pcall(function() return settings():GetFFlag("FixSettingsMenuDropdowns") end)
 local fixSettingsMenuDropdowns = fixSettingsMenuDropdownsSuccess and fixSettingsMenuDropdownsValue
 
-if not enablePortraitMode then
-	return require(RobloxGui.Modules.Settings:WaitForChild("UtilityOld"))
-end
+local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
+local FFlagUseNotificationsLocalization = success and result
 
-local dynamicMovementAndCameraOptions, dynamicMovementAndCameraOptionsSuccess = pcall(function() return settings():GetFFlag("DynamicMovementAndCameraOptions") end)
-dynamicMovementAndCameraOptions = dynamicMovementAndCameraOptions and dynamicMovementAndCameraOptionsSuccess
-
+local FFlagFixInactiveSelectorArrowsSuccess, FFlagFixInactiveSelectorArrowsResult = pcall(function() return settings():GetFFlag("FixInactiveSelectorArrows") end)
+local FFlagFixInactiveSelectorArrows = FFlagFixInactiveSelectorArrowsSuccess and FFlagFixInactiveSelectorArrowsResult
 
 ------------------ VARIABLES --------------------
 local tenFootInterfaceEnabled = require(RobloxGui.Modules:WaitForChild("TenFootInterface")):IsEnabled()
@@ -352,8 +343,24 @@ local function isGuiVisible(gui, debug) -- true if any part of the gui is visibl
 end
 
 local function addHoverState(button, instance, onNormalButtonState, onHoverButtonState)
-	local function onNormalButtonStateCallback() onNormalButtonState(instance) end
-	local function onHoverButtonStateCallback() onHoverButtonState(instance) end
+	local function onNormalButtonStateCallback() 
+		if FFlagFixInactiveSelectorArrows then
+			if button.Active then 
+				onNormalButtonState(instance) 
+			end
+		else
+			onNormalButtonState(instance)
+		end
+	end
+	local function onHoverButtonStateCallback() 
+		if FFlagFixInactiveSelectorArrows then
+			if button.Active then 
+				onHoverButtonState(instance) 
+			end
+		else
+			onHoverButtonState(instance)
+		end
+	end
 
 	button.MouseEnter:Connect(onHoverButtonStateCallback)
 	button.SelectionGained:Connect(onHoverButtonStateCallback)
@@ -1072,43 +1079,6 @@ local function CreateSelector(selectionStringTable, startPosition)
 	local isSelectionLabelVisible = {}
 	local isAutoSelectButton = {}
 
-	if not dynamicMovementAndCameraOptions then
-		for i,v in pairs(selectionStringTable) do
-			local nextSelection = Util.Create'TextLabel'
-			{
-				Name = "Selection" .. tostring(i),
-				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				Size = UDim2.new(1,leftButton.Size.X.Offset * -2, 1, 0),
-				Position = UDim2.new(1,0,0,0),
-				TextColor3 = Color3.fromRGB(255, 255, 255),
-				TextYAlignment = Enum.TextYAlignment.Center,
-				TextTransparency = 0.5,
-				Font = Enum.Font.SourceSans,
-				TextSize = 24,
-				Text = v,
-				ZIndex = 2,
-				Visible = false,
-				Parent = this.SelectorFrame
-			};
-			if isTenFootInterface() then
-				nextSelection.TextSize = 36
-			end
-
-			if i == startPosition then
-				this.CurrentIndex = i
-				nextSelection.Position = UDim2.new(0,leftButton.Size.X.Offset,0,0)
-				nextSelection.Visible = true
-
-				isSelectionLabelVisible[nextSelection] = true
-			else
-				isSelectionLabelVisible[nextSelection] = false
-			end
-
-			this.Selections[i] = nextSelection
-		end
-	end
-
 	local autoSelectButton = Util.Create'ImageButton'{
 		Name = 'AutoSelectButton',
 		BackgroundTransparency = 1,
@@ -1121,6 +1091,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 	}
 	autoSelectButton.MouseButton1Click:Connect(function()
 		if not interactable then return end
+		if #this.Selections <= 1 then return end
 		local newIndex = this.CurrentIndex + 1
 		if newIndex > #this.Selections then
 			newIndex = 1
@@ -1204,20 +1175,22 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 	local guiServiceCon = nil
 	local function connectToGuiService()
-		guiServiceCon = GuiService.Changed:Connect(function(prop)
-			if prop == "SelectedCoreObject" then
-				if GuiService.SelectedCoreObject == this.SelectorFrame then
-					this.Selections[this.CurrentIndex].TextTransparency = 0
-				else
-					if GuiService.SelectedCoreObject ~= nil and isAutoSelectButton[GuiService.SelectedCoreObject] then
-						if VRService.VREnabled then
-							this.Selections[this.CurrentIndex].TextTransparency = 0
-						else
-							GuiService.SelectedCoreObject = this.SelectorFrame
-						end
+		guiServiceCon = GuiService:GetPropertyChangedSignal("SelectedCoreObject"):Connect(function()
+			if #this.Selections <= 0 then
+				return
+			end
+
+			if GuiService.SelectedCoreObject == this.SelectorFrame then
+				this.Selections[this.CurrentIndex].TextTransparency = 0
+			else
+				if GuiService.SelectedCoreObject ~= nil and isAutoSelectButton[GuiService.SelectedCoreObject] then
+					if VRService.VREnabled then
+						this.Selections[this.CurrentIndex].TextTransparency = 0
 					else
-						this.Selections[this.CurrentIndex].TextTransparency = 0.5
+						GuiService.SelectedCoreObject = this.SelectorFrame
 					end
+				else
+					this.Selections[this.CurrentIndex].TextTransparency = 0.5
 				end
 			end
 		end)
@@ -1248,20 +1221,32 @@ local function CreateSelector(selectionStringTable, startPosition)
 	function this:SetInteractable(value)
 		interactable = value
 		this.SelectorFrame.Selectable = interactable
+
+		if FFlagFixInactiveSelectorArrows then
+			leftButton.Active = interactable
+			rightButton.Active = interactable
+		end
+		
 		if not interactable then
 			for i, selectionLabel in pairs(this.Selections) do
 				selectionLabel.TextColor3 = Color3.fromRGB(49, 49, 49)
+			end
+			if FFlagFixInactiveSelectorArrows then
+				leftButtonImage.ImageColor3 = ARROW_COLOR_INACTIVE
+				rightButtonImage.ImageColor3 = ARROW_COLOR_INACTIVE
 			end
 		else
 			for i, selectionLabel in pairs(this.Selections) do
 				selectionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 			end
+			if FFlagFixInactiveSelectorArrows then
+				leftButtonImage.ImageColor3 = ARROW_COLOR
+				rightButtonImage.ImageColor3 = ARROW_COLOR
+			end
 		end
 	end
 
 	function this:UpdateOptions(selectionStringTable)
-		if not dynamicMovementAndCameraOptions then return end
-
 		for i,v in pairs(this.Selections) do
 			v:Destroy()
 		end
@@ -1303,6 +1288,10 @@ local function CreateSelector(selectionStringTable, startPosition)
 
 			this.Selections[i] = nextSelection
 		end
+
+		local hasMoreThanOneSelection = #this.Selections > 1
+		leftButton.Visible = hasMoreThanOneSelection
+		rightButton.Visible = hasMoreThanOneSelection
 	end
 
 	--------------------- SETUP -----------------------
@@ -1340,10 +1329,7 @@ local function CreateSelector(selectionStringTable, startPosition)
 	end)
 
 	local isInTree = true
-
-	if dynamicMovementAndCameraOptions then
-		this:UpdateOptions(selectionStringTable)
-	end
+	this:UpdateOptions(selectionStringTable)
 
 	UserInputService.InputBegan:Connect(function(inputObject)
 		if not interactable then return end
@@ -2119,6 +2105,16 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		ZIndex = 2,
 		Parent = RowFrame
 	};
+	
+	local RowLabelTextSizeConstraint = Instance.new("UITextSizeConstraint")
+	if FFlagUseNotificationsLocalization then
+		RowLabel.Size = UDim2.new(0.35,0,1,0)
+		RowLabel.TextScaled = true
+		RowLabel.TextWrapped = true
+		RowLabelTextSizeConstraint.Parent = RowLabel
+		RowLabelTextSizeConstraint.MaxTextSize = 16
+	end
+	
 	if not isARealRow then
 		RowLabel.Text = ''
 	end
@@ -2129,6 +2125,7 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 		else
 			RowLabel.TextSize = isTenFootInterface() and 36 or 24
 		end
+		RowLabelTextSizeConstraint.MaxTextSize = RowLabel.TextSize
 	end
 	onResized(getViewportSize(), isPortrait())
 	addOnResizedCallback(RowFrame, onResized)
@@ -2190,9 +2187,6 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			end
 		end)
 		box.FocusLost:Connect(function(enterPressed, inputObject)
-			if not fixTextBoxLoseSelection and GuiService.SelectedCoreObject == box and (not isMouseOverRow or forceReturnSelectionOnFocusLost) then
-				GuiService.SelectedCoreObject = nil
-			end
 			forceReturnSelectionOnFocusLost = false
 		end)
 		if extraSpacing then
@@ -2283,9 +2277,6 @@ local function AddNewRow(pageToAddTo, rowDisplayName, selectionType, rowValues, 
 			end
 		end)
 		box.FocusLost:Connect(function(enterPressed, inputObject)
-			if not fixTextBoxLoseSelection and GuiService.SelectedCoreObject == box and (not isMouseOverRow or forceReturnSelectionOnFocusLost) then
-				GuiService.SelectedCoreObject = nil
-			end
 			forceReturnSelectionOnFocusLost = false
 		end)
 		if extraSpacing then

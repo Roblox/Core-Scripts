@@ -81,6 +81,8 @@ local VR_SEAT_OFFSET = Vector3.new(0, 4, 0)
 local HEAD_OFFSET = Vector3.new(0, 1.5, 0)
 local R15_HEAD_OFFSET = Vector3.new(0, 2.0, 0)
 
+local PORTRAIT_MODE_CAMERA_OFFSET = 2
+
 -- Reset the camera look vector when the camera is enabled for the first time
 local SetCameraOnSpawn = true
 
@@ -108,6 +110,7 @@ local function OnCharacterAdded(character)
 	if UserInputService.TouchEnabled then
 		if PlayerGui then
 			local ScreenGui = Instance.new("ScreenGui")
+			ScreenGui.Name = "GestureArea"
 			ScreenGui.Parent = PlayerGui
 			
 			GestureArea = Instance.new("Frame")
@@ -297,6 +300,10 @@ local function CreateCamera()
 							heightOffset = cameraSubject.RigType == Enum.HumanoidRigType.R15 and R15HeadHeight or HEAD_OFFSET
 						end
 
+						if PortraitMode then
+							heightOffset = heightOffset + Vector3.new(0, PORTRAIT_MODE_CAMERA_OFFSET, 0)
+						end
+
 						result = subjectCFrame.p +
 							subjectCFrame:vectorToWorldSpace(heightOffset + cameraSubject.CameraOffset)
 					end
@@ -483,11 +490,7 @@ local function CreateCamera()
 		
 		if zoom then
 			-- Can break into more steps to get more accurate integration
-			if UserSettings():IsUserFeatureEnabled("UserBetterInertialScrolling") then
-				zoom = self:rk4Integrator(zoom, zoomScale, 1/10)
-			else
-				zoom = self:rk4Integrator(zoom, zoomScale, 1)
-			end
+            zoom = self:rk4Integrator(zoom, zoomScale, 1)
 			self:ZoomCamera(zoom)
 		end
 		return self:GetCameraZoom()
@@ -993,11 +996,7 @@ local function CreateCamera()
 		end
 		if not processed then
 			if this.ZoomEnabled then
-				if UserSettings():IsUserFeatureEnabled("UserBetterInertialScrolling") then
-					this:ZoomCameraBy(-input.Position.Z/15)
-				else
-					this:ZoomCameraBy(clamp(-1, 1, -input.Position.Z) * 1.4)
-				end
+                this:ZoomCameraBy(clamp(-1, 1, -input.Position.Z) * 1.4)
 			end
 		end
 	end
@@ -1197,10 +1196,6 @@ local function CreateCamera()
 		if subjectStateChangedConn then
 			subjectStateChangedConn:disconnect()
 			subjectStateChangedConn = nil
-		end
-		if cameraChangedConn then
-			cameraChangedConn:disconnect()
-			cameraChangedConn = nil
 		end
 		if workspaceChangedConn then
 			workspaceChangedConn:disconnect()

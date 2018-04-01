@@ -33,14 +33,8 @@ local playerDialogMap = {}
 local dialogInUseFixFlagSuccess, dialogInUseFixValue = pcall(function() return settings():GetFFlag("DialogInUseFix") end)
 local dialogInUseFixFlag = (dialogInUseFixFlagSuccess and dialogInUseFixValue)
 
-local dialogMultiplePlayersFlagSuccess, dialogMultiplePlayersFlagValue = pcall(function() return settings():GetFFlag("DialogMultiplePlayers") end)
-local dialogMultiplePlayersFlag = (dialogMultiplePlayersFlagSuccess and dialogMultiplePlayersFlagValue)
-
 local freeCameraFlagSuccess, freeCameraFlagValue = pcall(function() return settings():GetFFlag("FreeCameraForAdmins") end)
 local freeCameraFlag = (freeCameraFlagSuccess and freeCameraFlagValue)
-
-local displayServerVersionSuccess, displayServerVersionValue = pcall(function() return settings():GetFFlag("DisplayVersionInformation") end)
-local displayServerVersionFlag = (displayServerVersionSuccess and displayServerVersionValue)
 
 local function setDialogInUse(player, dialog, value, waitTime)
 	if typeof(dialog) ~= "Instance" or not dialog:IsA("Dialog") then
@@ -60,11 +54,7 @@ local function setDialogInUse(player, dialog, value, waitTime)
 		wait(waitTime)
 	end
 	if dialog ~= nil then
-		if dialogMultiplePlayersFlag then
-			dialog:SetPlayerIsUsing(player, value)
-		else
-			dialog.InUse = value
-		end
+		dialog:SetPlayerIsUsing(player, value)
 
 		if dialogInUseFixFlag then
 			if value == true then
@@ -92,18 +82,14 @@ local function getServerVersion()
 	return displayVersion
 end
 
-RemoteFunction_GetServerVersion.OnServerInvoke = displayServerVersionFlag and getServerVersion or function() return "" end
+RemoteFunction_GetServerVersion.OnServerInvoke = getServerVersion
 
 game:GetService("Players").PlayerRemoving:connect(function(player)
 	if dialogInUseFixFlag then
 		if player then
 			local dialog = playerDialogMap[player]
 			if dialog then
-				if dialogMultiplePlayersFlag then
-					dialog:SetPlayerIsUsing(player, false)
-				else
-					dialog.InUse = false
-				end
+				dialog:SetPlayerIsUsing(player, false)
 				playerDialogMap[player] = nil
 			end
 		end
@@ -118,3 +104,8 @@ end
 if freeCameraFlag then
 	require(game:GetService("CoreGui").RobloxGui.Modules.Server.FreeCamera.FreeCameraInstaller)()
 end
+
+if UserSettings():IsUserFeatureEnabled("UserUseSoundDispatcher") then
+	require(game:GetService("CoreGui").RobloxGui.Modules.Server.ServerSound.SoundDispatcherInstaller)()
+end
+

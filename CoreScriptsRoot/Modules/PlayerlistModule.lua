@@ -18,14 +18,6 @@ local GameSettings = Settings.GameSettings
 local fixPlayerlistFollowingSuccess, fixPlayerlistFollowingFlagValue = pcall(function() return settings():GetFFlag("FixPlayerlistFollowing") end)
 local fixPlayerlistFollowingEnabled = fixPlayerlistFollowingSuccess and fixPlayerlistFollowingFlagValue
 
-local enableConsolePlayerSideBarSuccess, enableConsolePlayerSideBarValue = pcall(function() return settings():GetFFlag("EnableConsolePlayerSideBar") end)
-local enableConsolePlayerSideBar = enableConsolePlayerSideBarSuccess and enableConsolePlayerSideBarValue
-local enableConsoleReportAbusePageSuccess, enableConsoleReportAbusePageValue = pcall(function() return settings():GetFFlag("EnableConsoleReportAbusePage") end)
-local enableConsoleReportAbusePage = enableConsoleReportAbusePageSuccess and enableConsoleReportAbusePageValue
-
-local fixGamePadPlayerlistSuccess, fixGamePadPlayerlistValue = pcall(function() return settings():GetFFlag("FixGamePadPlayerlist") end)
-local fixGamePadPlayerlist = fixGamePadPlayerlistSuccess and fixGamePadPlayerlistValue
-
 while not PlayersService.LocalPlayer do
 	-- This does not follow the usual pattern of PlayersService:PlayerAdded:Wait()
 	-- because it caused a bug where the local players name would show as Player in game.
@@ -47,7 +39,6 @@ local blockingUtility = playerDropDownModule:CreateBlockingUtility()
 local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 
 local PlayerPermissionsModule = require(RobloxGui.Modules.PlayerPermissionsModule)
-local reportAbuseMenu = enableConsoleReportAbusePage and require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
 
 --[[ Remotes ]]--
 local RemoveEvent_OnFollowRelationshipChanged = nil
@@ -121,6 +112,7 @@ AssetGameUrl = string.gsub(BaseUrl, 'www', 'assetgame')
 
 --Make SideBar if on Console
 local SideBar = nil
+local reportAbuseMenu = nil
 
 --Set Visible Func
 local setVisible = nil
@@ -189,6 +181,15 @@ local MUTUAL_FOLLOWING_ICON = 'rbxasset://textures/ui/icon_mutualfollowing-16.pn
 local CHARACTER_BACKGROUND_IMAGE = 'rbxasset://textures/ui/PlayerList/CharacterImageBackground.png'
 
 --[[ Helper Functions ]]--
+
+local function rbx_profilebegin(name)
+  debug.profilebegin(name)
+end
+
+local function rbx_profileend()
+  debug.profileend()
+end
+
 local function clamp(value, min, max)
   if value < min then
     value = min
@@ -235,7 +236,7 @@ local function setAvatarIconAsync(player, iconImage)
 
   local isFinalSuccess = false
   if thumbnailLoader then
-    local loader = thumbnailLoader:Create(iconImage, player.UserId,
+    local loader = thumbnailLoader:Create(iconImage, math.max(1, player.UserId),
       thumbnailLoader.Sizes.Small, thumbnailLoader.AssetType.Avatar, true)
     isFinalSuccess = loader:LoadAsync(false, true, nil)
   end
@@ -432,6 +433,9 @@ local function createEntryFrame(name, sizeYOffset, isTopStat)
   nameFrame.Text = ""
   nameFrame.Parent = containerFrame
   nameFrame.ZIndex = isTenFootInterface and 2 or 1
+  pcall(function()
+    nameFrame.Localize = false
+  end)
 
   return containerFrame, nameFrame
 end
@@ -461,6 +465,9 @@ local function createEntryNameText(name, text, position, size, fontSize)
   nameLabel.ClipsDescendants = true
   nameLabel.Text = text
   nameLabel.ZIndex = isTenFootInterface and 2 or 1
+  pcall(function()
+    nameLabel.Localize = false
+  end)
 
   return nameLabel
 end
@@ -474,6 +481,9 @@ local function createStatFrame(offset, parent, name, isTopStat)
   statFrame.BackgroundColor3 = isTopStat and BG_COLOR_TOP or BG_COLOR
   statFrame.BorderSizePixel = 0
   statFrame.Parent = parent
+  pcall(function()
+    statFrame.Localize = false
+  end)
 
   if isTenFootInterface then
     statFrame.ZIndex = 2
@@ -510,6 +520,10 @@ local function createStatText(parent, text, isTopStat, isTeamStat)
   statText.Text = text
   statText.Active = true
   statText.Parent = parent
+  pcall(function()
+    statText.Localize = false
+  end)
+
   if isTenFootInterface then
     statText.ZIndex = 2
   end
@@ -761,28 +775,49 @@ end
 local function createPlayerSideBarOption(player)
   --Make sure the player is valid and isn't a guest
   if player and player.UserId and player.UserId >= 1 then
-    local savedSelectedGuiObject = GuiService.SelectedCoreObject
-    if not SideBar then
-      local sideBarModule = RobloxGui.Modules:FindFirstChild('SideBar') or RobloxGui.Modules.Shell.SideBar
-      local createSideBarFunc = require(sideBarModule)
-      SideBar = createSideBarFunc()
-    end
-    --Get modules
-    local screenManagerModule = RobloxGui.Modules:FindFirstChild('ScreenManager') or RobloxGui.Modules.Shell.ScreenManager
-    local ScreenManager = require(screenManagerModule)
-    local utilModule = RobloxGui.Modules:FindFirstChild('Utility') or RobloxGui.Modules.Shell.Utility
-    local Util = require(utilModule)
-    local stringsModule = RobloxGui.Modules:FindFirstChild('LocalizedStrings') or RobloxGui.Modules.Shell.LocalizedStrings
-    local Strings = require(stringsModule)
-
-    SideBar:RemoveAllItems()
-    SideBar:AddItem(Util.Upper(Strings:LocalizedString("ViewGamerCardWord")), function()
-      openPlatformProfileUI(player.UserId)
+    local platformId = nil
+    pcall(function()
+      local platformService = game:GetService('PlatformService')
+      platformId = platformService:GetPlatformId(player.UserId)
     end)
+    local addReportItem = false
+    if player ~= PlayersService.LocalPlayer then
+      addReportItem = true
+    end
+    local addGamerCardItem = false
+    if platformId and #platformId > 0 then
+      addGamerCardItem = true
+    end
 
-    if reportAbuseMenu then
+    --Add sidebar only if we have item(s) to add
+    if addReportItem or addGamerCardItem then
+      local savedSelectedGuiObject = GuiService.SelectedCoreObject
+      if not SideBar then
+        local sideBarModule = RobloxGui.Modules:FindFirstChild('SideBar') or RobloxGui.Modules.Shell.SideBar
+        local createSideBarFunc = require(sideBarModule)
+        SideBar = createSideBarFunc()
+      end
+      --Get modules
+      local screenManagerModule = RobloxGui.Modules:FindFirstChild('ScreenManager') or RobloxGui.Modules.Shell.ScreenManager
+      local ScreenManager = require(screenManagerModule)
+      local utilModule = RobloxGui.Modules:FindFirstChild('Utility') or RobloxGui.Modules.Shell.Utility
+      local Util = require(utilModule)
+      local stringsModule = RobloxGui.Modules:FindFirstChild('LocalizedStrings') or RobloxGui.Modules.Shell.LocalizedStrings
+      local Strings = require(stringsModule)
+
+      SideBar:RemoveAllItems()
+      if addGamerCardItem then
+        SideBar:AddItem(Util.Upper(Strings:LocalizedString("ViewGamerCardWord")), function()
+          openPlatformProfileUI(player.UserId)
+        end)
+      end
+
+      if not reportAbuseMenu then
+        reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
+      end
+
       --We can't report guests/localplayer
-      if player ~= PlayersService.LocalPlayer then
+      if addReportItem then
         SideBar:AddItem(Util.Upper(Strings:LocalizedString("Report Player")), function()
           --Force closing player list before open the report tab
           isOpen = false
@@ -791,23 +826,23 @@ local function createPlayerSideBarOption(player)
           reportAbuseMenu:ReportPlayer(player)
         end)
       end
-    end
 
-    local closedCon = nil
-    --Will fire when sidebar closes, fires before the item callback
-    closedCon = SideBar.Closed:connect(function()
-      closedCon:disconnect()
-      if Container.Visible then
-        if savedSelectedGuiObject and savedSelectedGuiObject.Parent then
-          GuiService.SelectedCoreObject = savedSelectedGuiObject
-        else
-          --SavedSelectedGuiObject gets removed, selects the first frame
-          setVisible(true)
+      local closedCon = nil
+      --Will fire when sidebar closes, fires before the item callback
+      closedCon = SideBar.Closed:connect(function()
+        closedCon:disconnect()
+        if Container.Visible then
+          if savedSelectedGuiObject and savedSelectedGuiObject.Parent then
+            GuiService.SelectedCoreObject = savedSelectedGuiObject
+          else
+            --SavedSelectedGuiObject gets removed, selects the local player's frame
+            setVisible(true)
+          end
         end
-      end
-    end)
+      end)
 
-    ScreenManager:OpenScreen(SideBar, false)
+      ScreenManager:OpenScreen(SideBar, false)
+    end
   end
 end
 
@@ -815,11 +850,7 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
   if isTenFootInterface then
     -- open the profile UI for the selected user. On console we allow user to select themselves
     -- they may want quick access to platform profile features
-    if enableConsolePlayerSideBar then
-      createPlayerSideBarOption(selectedPlayer)
-    else
-      openPlatformProfileUI(selectedPlayer.UserId)
-    end
+    createPlayerSideBarOption(selectedPlayer)
     return
   end
 
@@ -1061,6 +1092,7 @@ local function initializeStatText(stat, statObject, entry, statFrame, index, isT
   end
 
   statObject.Changed:connect(function(newValue)
+      rbx_profilebegin("statObject.Changed")
       local scoreValue = getScoreValue(statObject)
       statText.Text = formatStatString(tostring(scoreValue))
       if statObject.Name == GameStats[1].Name then
@@ -1073,8 +1105,10 @@ local function initializeStatText(stat, statObject, entry, statFrame, index, isT
       end
       updateAllTeamScores()
       setEntryPositions()
+      rbx_profileend()
     end)
   statObject.ChildAdded:connect(function(child)
+      rbx_profilebegin("statObject.ChildAdded")
       if child.Name == "IsPrimary" then
         GameStats[1].IsPrimary = false
         stat.IsPrimary = true
@@ -1082,6 +1116,7 @@ local function initializeStatText(stat, statObject, entry, statFrame, index, isT
         if updateLeaderstatFrames then updateLeaderstatFrames() end
         Playerlist.OnLeaderstatsChanged:Fire(GameStats)
       end
+      rbx_profileend()
     end)
 end
 
@@ -1096,7 +1131,7 @@ updateLeaderstatFrames = function()
     end
   end
 
-  for _,entry in ipairs(PlayerEntries) do
+  for index,entry in ipairs(PlayerEntries) do
     local player = entry.Player
     local mainFrame = entry.Frame
     local offset = NameEntrySizeX
@@ -1111,12 +1146,12 @@ updateLeaderstatFrames = function()
         if not statFrame then
           statFrame = createStatFrame(offset, mainFrame, stat.Name, isTopStat)
           if statObject then
-            initializeStatText(stat, statObject, entry, statFrame, _, isTopStat)
+            initializeStatText(stat, statObject, entry, statFrame, index, isTopStat)
           end
         elseif statObject then
           local statText = statFrame:FindFirstChild('StatText')
           if not statText then
-            initializeStatText(stat, statObject, entry, statFrame, _, isTopStat)
+            initializeStatText(stat, statObject, entry, statFrame, index, isTopStat)
           end
         end
         statFrame.Position = UDim2.new(0, offset + TILE_SPACING, 0, 0)
@@ -1278,22 +1313,34 @@ local function setLeaderStats(entry)
   end
 
   player.ChildAdded:connect(function(child)
+      rbx_profilebegin("player.ChildAdded")
       if child.Name == 'leaderstats' then
         onStatAdded(child, entry)
       end
-      child.Changed:connect(function(property) onPlayerChildChanged(property, child) end)
+      rbx_profileend()
+      child.Changed:connect(function(property)
+        rbx_profilebegin("child.Changed-1")
+        onPlayerChildChanged(property, child)
+        rbx_profileend()
+      end)
     end)
   for _,child in pairs(player:GetChildren()) do
-    child.Changed:connect(function(property) onPlayerChildChanged(property, child) end)
+    child.Changed:connect(function(property)
+      rbx_profilebegin("child.Changed-2")
+      onPlayerChildChanged(property, child)
+      rbx_profileend()
+    end)
   end
 
   player.ChildRemoved:connect(function(child)
+      rbx_profilebegin("player.ChildRemoved-1")
       if child.Name == 'leaderstats' then
         for i,stat in ipairs(child:GetChildren()) do
           onStatRemoved(stat, entry)
         end
         updateLeaderstatFrames()
       end
+      rbx_profileend()
     end)
 end
 
@@ -1312,7 +1359,7 @@ local function createPlayerEntry(player, isTopStat)
       onEntryFrameSelected(containerFrame, player)
     end)
 
-  local currentXOffset = hasXboxGamertag and 14 or 1
+  local currentXOffset = isTenFootInterface and 14 or 1
 
   -- check membership
   local membershipIconImage = getMembershipIcon(player)
@@ -1320,7 +1367,7 @@ local function createPlayerEntry(player, isTopStat)
 
   if membershipIconImage then
     membershipIcon = createImageIcon(membershipIconImage, "MembershipIcon", currentXOffset, entryFrame)
-    currentXOffset = currentXOffset + membershipIcon.Size.X.Offset + (hasXboxGamertag and 4 or 2)
+    currentXOffset = currentXOffset + membershipIcon.Size.X.Offset + (isTenFootInterface and 4 or 2)
   else
     currentXOffset = currentXOffset + offsetSize
   end
@@ -1368,19 +1415,25 @@ local function createPlayerEntry(player, isTopStat)
   local playerPlatformName
   local robloxIcon
 
-  if  game:GetService('UserInputService'):GetPlatform() == Enum.Platform.XBoxOne and
-      player.OsPlatform == "Durango" and
-      player.DisplayName ~= ""
-  then
+  -- Only show new layout if...
+  -- 1) It's TenFootInterface
+  -- 2) Our client has a DisplayName (this implies we have a gamertag and backend cross play is enabled)
+  if game:GetService('UserInputService'):GetPlatform() == Enum.Platform.XBoxOne and Player.DisplayName ~= "" then
     local playerNameXSize = entryFrame.Size.X.Offset - currentXOffset
 
-    playerPlatformName = createEntryNameText("PlayerPlatformName", player.DisplayName,
-      UDim2.new(0.01, currentXOffset, -0.20, 0),
-      UDim2.new(-0.01, playerNameXSize, 1, 0))
-    playerPlatformName.Parent = entryFrame
+    if hasXboxGamertag then
+      playerPlatformName = createEntryNameText("PlayerPlatformName", player.DisplayName,
+        UDim2.new(0.01, currentXOffset, -0.20, 0),
+        UDim2.new(-0.01, playerNameXSize, 1, 0))
+      playerPlatformName.Parent = entryFrame
+    end
 
     robloxIcon = Instance.new('ImageButton')
-    robloxIcon.Position = UDim2.new(0.01, currentXOffset, 0.21, 30)
+    if hasXboxGamertag then
+      robloxIcon.Position = UDim2.new(0.01, currentXOffset, 0.21, 30)
+    else
+      robloxIcon.Position = UDim2.new(0.01, currentXOffset, 0.5, -12)
+    end
     robloxIcon.Size = UDim2.new(0, 24, 0, 24)
     robloxIcon.Image = "rbxasset://textures/ui/Shell/Icons/RobloxIcon24.png"
     robloxIcon.BackgroundTransparency = 1
@@ -1390,10 +1443,10 @@ local function createPlayerEntry(player, isTopStat)
     robloxIcon.Parent = entryFrame
 
     playerName = createEntryNameText("PlayerName", name,
-      UDim2.new(0.01, currentXOffset + robloxIcon.Size.X.Offset + 6, 0.12, 0),
-      UDim2.new(-0.01, playerNameXSize, 1, 0))
-    playerName.Parent = entryFrame
-
+      UDim2.new(0.01, robloxIcon.Size.X.Offset + 6, 0, 0),
+      UDim2.new(0, playerNameXSize, 1, 0))
+    playerName.ClipsDescendants = false
+    playerName.Parent = robloxIcon
   else
     playerName = createEntryNameText("PlayerName", name,
       UDim2.new(0.01, currentXOffset, 0, 0),
@@ -1487,6 +1540,7 @@ local function createTeamEntry(team)
 
   -- connections
   team.Changed:connect(function(property)
+      rbx_profilebegin("team.Changed")
       if property == 'Name' then
         teamName.Text = team.Name
       elseif property == 'TeamColor' then
@@ -1501,6 +1555,7 @@ local function createTeamEntry(team)
         setEntryPositions()
         setScrollListSize()
       end
+      rbx_profileend()
     end)
 
   return teamEntry
@@ -1532,12 +1587,14 @@ local function setupEntry(player, newEntry, isTopStat)
   updateLeaderstatFrames()
 
   player.Changed:connect(function(property)
+      rbx_profilebegin("player.Changed-4")
       if #TeamEntries > 0 and (property == 'Neutral' or property == 'TeamColor') then
         setTeamEntryPositions()
         updateAllTeamScores()
         setEntryPositions()
         setScrollListSize()
       end
+      rbx_profileend()
     end)
 end
 
@@ -1558,16 +1615,14 @@ end
 local function removePlayerEntry(player)
   for i = 1, #PlayerEntries do
     if PlayerEntries[i].Player == player then
-      local prevSelectedCoreObject = GuiService.SelectedCoreObject
+      local hadSelectedObject = GuiService.SelectedCoreObject and GuiService.SelectedCoreObject.Parent
       PlayerEntries[i].Frame:Destroy()
-      if fixGamePadPlayerlist then
-        --Fix lose selection
-        if Container.Visible then
-          --prevSelectedCoreObject get removed, reset selection
-          if prevSelectedCoreObject and not GuiService.SelectedCoreObject then
-            --SelectedCoreObject gets removed, selects the first frame
-            setVisible(true)
-          end
+      --Fix lose selection
+      if Container.Visible then
+        --previous SelectedCoreObject get removed, reset selection
+        if hadSelectedObject and (not GuiService.SelectedCoreObject or not GuiService.SelectedCoreObject.Parent) then
+          --SelectedCoreObject gets removed, selects the first frame
+          setVisible(true)
         end
       end
       table.remove(PlayerEntries, i)
@@ -1638,14 +1693,17 @@ local function resizePlayerList()
 end
 
 RobloxGui.Changed:connect(function(property)
+    rbx_profilebegin("RobloxGui.Changed")
     if property == 'AbsoluteSize' then
       spawn(function()	-- must spawn because F11 delays when abs size is set
           resizePlayerList()
         end)
     end
+    rbx_profileend()
   end)
 
 UserInputService.InputBegan:connect(function(inputObject, isProcessed)
+    rbx_profilebegin("UserInputService.InputBegan")
     if isProcessed then return end
     local inputType = inputObject.UserInputType
     if (inputType == Enum.UserInputType.Touch and  inputObject.UserInputState == Enum.UserInputState.Begin) or
@@ -1654,13 +1712,16 @@ UserInputService.InputBegan:connect(function(inputObject, isProcessed)
         playerDropDown:Hide()
       end
     end
+    rbx_profileend()
   end)
 
 -- NOTE: Core script only
 
 --[[ Player Add/Remove Connections ]]--
 PlayersService.PlayerAdded:connect(function(child)
+  rbx_profilebegin("PlayersService.PlayerAdded")
   insertPlayerEntry(child)
+  rbx_profileend()
 end)
 
 for _, player in ipairs(PlayersService:GetPlayers()) do
@@ -1677,7 +1738,9 @@ if not isTenFootInterface then
     RemoteFunc_GetFollowRelationships = RobloxReplicatedStorage:WaitForChild('GetFollowRelationships')
 
     RemoveEvent_OnFollowRelationshipChanged.OnClientEvent:connect(function(result)
+      rbx_profilebegin("RemoveEvent_OnFollowRelationshipChanged.OnClientEvent")
       setFollowRelationshipsView(result)
+      rbx_profileend()
     end)
 
     local result = getFollowRelationships()
@@ -1686,12 +1749,14 @@ if not isTenFootInterface then
 end
 
 PlayersService.ChildRemoved:connect(function(child)
+  rbx_profilebegin("PlayersService.ChildRemoved")
   if child:IsA("Player") then
     if LastSelectedPlayer and child == LastSelectedPlayer then
       playerDropDown:Hide()
     end
     removePlayerEntry(child)
   end
+  rbx_profileend()
 end)
 
 --[[ Teams ]]--
@@ -1719,9 +1784,11 @@ if TeamsService then
 end
 
 game.ChildAdded:connect(function(child)
+    rbx_profilebegin("game.ChildAdded")
     if child:IsA('Teams') then
       initializeTeams(child)
     end
+    rbx_profileend()
   end)
 
 --[[ Public API ]]--
@@ -1746,8 +1813,7 @@ local closeListFunc = function(name, state, input)
   UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
 end
 
---fromTemp is always false when fixGamePadPlayerlist is on, remove the second arg when removing FFlagfixGamePadPlayerlist
-setVisible = function(state, fromTemp)
+setVisible = function(state)
   Container.Visible = state
   local lastInputType = UserInputService:GetLastInputType()
   local isUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
@@ -1760,20 +1826,16 @@ setVisible = function(state, fromTemp)
       local frameChildren = frame:GetChildren()
       for i = 1, #frameChildren do
         if frameChildren[i]:IsA("TextButton") then
-          if isUsingGamepad and not fromTemp then
+          if isUsingGamepad then
             GuiService.SelectedCoreObject = frameChildren[i]
             GuiService:AddSelectionParent("PlayerlistGuiSelection", ScrollList)
-            if not fixGamePadPlayerlist then
-              ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
-              ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
-            end
           end
           break
         end
       end
     end
     --We need to OverrideMouseIcon and rebind core action even if the ScrollList is empty
-    if fixGamePadPlayerlist and isUsingGamepad then
+    if isUsingGamepad then
       UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.ForceHide
       ContextActionService:UnbindCoreAction("CloseList")
       ContextActionService:UnbindCoreAction("StopAction")
@@ -1819,11 +1881,11 @@ Playerlist.HideTemp = function(self, key, hidden)
 
   if next(TempHideKeys) == nil then
     if isOpen then
-      setVisible(true, not fixGamePadPlayerlist)
+      setVisible(true)
     end
   else
     if isOpen then
-      setVisible(false, not fixGamePadPlayerlist)
+      setVisible(false)
     end
   end
 end
@@ -1835,6 +1897,7 @@ end
 --[[ Core Gui Changed events ]]--
 -- NOTE: Core script only
 local function onCoreGuiChanged(coreGuiType, enabled)
+  rbx_profilebegin("onCoreGuiChanged")
   if coreGuiType == Enum.CoreGuiType.All or coreGuiType == Enum.CoreGuiType.PlayerList then
     -- on console we can always toggle on/off, ignore change
     if isTenFootInterface then
@@ -1862,6 +1925,7 @@ local function onCoreGuiChanged(coreGuiType, enabled)
       ContextActionService:UnbindCoreAction("RbxPlayerListToggle")
     end
   end
+  rbx_profileend()
 end
 
 Playerlist.TopbarEnabledChanged = function(enabled)

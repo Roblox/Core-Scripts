@@ -10,6 +10,7 @@ local RobloxGui = CoreGui:WaitForChild("RobloxGui")
 local GuiService = game:GetService("GuiService")
 local PlayersService = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
+local AnalyticsService = game:GetService("AnalyticsService")
 
 ----------- UTILITIES --------------
 RobloxGui:WaitForChild("Modules"):WaitForChild("TenFootInterface")
@@ -18,11 +19,10 @@ local reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu
 local SocialUtil = require(RobloxGui.Modules:WaitForChild("SocialUtil"))
 local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled()
 
-local enablePortraitModeSuccess, enablePortraitModeValue = pcall(function() return settings():GetFFlag("EnablePortraitMode") end)
-local enablePortraitMode = enablePortraitModeSuccess and enablePortraitModeValue
-
-local useNewThumbnailApiSuccess, useNewThumbnailApiValue = pcall(function() return settings():GetFFlag("CoreScriptsUseNewUserThumbnailAPI") end)
+local useNewThumbnailApiSuccess, useNewThumbnailApiValue = pcall(function() return settings():GetFFlag("CoreScriptsUseNewUserThumbnailAPI2") end)
 local useNewUserThumbnailAPI = useNewThumbnailApiSuccess and useNewThumbnailApiValue
+
+local preventFriendingRemovedPlayers = settings():GetFFlag("PreventFriendingRemovedPlayers2")
 
 ------------ Constants -------------------
 local FRAME_DEFAULT_TRANSPARENCY = .85
@@ -43,20 +43,25 @@ while not localPlayer do
 	localPlayer = PlayersService.LocalPlayer
 end
 
+local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
+local FFlagUseNotificationsLocalization = success and result
+
 ----------- CLASS DECLARATION --------------
 local function Initialize()
 	local settingsPageFactory = require(RobloxGui.Modules.Settings.SettingsPageFactory)
 	local this = settingsPageFactory:CreateNewPage()
 
-	if enablePortraitMode then
-		this.PageListLayout.Padding = UDim.new(0, PLAYER_ROW_SPACING - PLAYER_ROW_HEIGHT)
-	end
+	this.PageListLayout.Padding = UDim.new(0, PLAYER_ROW_SPACING - PLAYER_ROW_HEIGHT)
 
 	------ TAB CUSTOMIZATION -------
 	this.TabHeader.Name = "PlayersTab"
 	this.TabHeader.Icon.Image = isTenFootInterface and "rbxasset://textures/ui/Settings/MenuBarIcons/PlayersTabIcon@2x.png" or "rbxasset://textures/ui/Settings/MenuBarIcons/PlayersTabIcon.png"
-
-	this.TabHeader.Icon.Title.Text = "Players"
+	
+	if FFlagUseNotificationsLocalization then
+		this.TabHeader.Title.Text = "Players"
+	else
+		this.TabHeader.Icon.Title.Text = "Players"
+	end
 
 	----- FRIENDSHIP FUNCTIONS ------
 	local function getFriendStatus(selectedPlayer)
@@ -73,6 +78,10 @@ local function Initialize()
 
 	------ PAGE CUSTOMIZATION -------
 	this.Page.Name = "Players"
+
+	local function showRightSideButtons(player)
+		return player and player ~= localPlayer and player.UserId > 1 and localPlayer.UserId > 1
+	end
 
 	local function createFriendStatusTextLabel(status, player)
 		if status == nil then
@@ -102,6 +111,9 @@ local function Initialize()
 					friendLabel.ImageTransparency = 1
 					friendLabelText.Text = ""
 					if localPlayer and player then
+                        AnalyticsService:ReportCounter("PlayersMenu-RequestFriendship")
+                        AnalyticsService:TrackEvent("Game", "RequestFriendship", "PlayersMenu")
+                        
 						localPlayer:RequestFriendship(player)
 					end
 				end
@@ -153,6 +165,9 @@ local function Initialize()
 					addFriendButton.ImageTransparency = 1
 					addFriendImage.ImageTransparency = 1
 					if localPlayer and player then
+                        AnalyticsService:ReportCounter("PlayersMenu-RequestFriendship")
+                        AnalyticsService:TrackEvent("Game", "RequestFriendship", "PlayersMenu")
+                        
 						localPlayer:RequestFriendship(player)
 					end
 				end
@@ -189,7 +204,7 @@ local function Initialize()
 
 			-- create new friend status label
 			local status = nil
-			if player and player ~= localPlayer and player.UserId > 1 and localPlayer.UserId > 1 then
+			if showRightSideButtons(player) then
 				status = getFriendStatus(player)
 			end
 
@@ -269,27 +284,30 @@ local function Initialize()
 	resumeLabel.Size = UDim2.new(1, 0, 1, -6)
 	resumeButton.Parent = buttonsContainer
 
-	if enablePortraitMode then
-		utility:OnResized(buttonsContainer, function(newSize, isPortrait)
-			if isPortrait or utility:IsSmallTouchScreen() then
-				local buttonsFontSize = isPortrait and 18 or 24
-				buttonsContainer.Visible = true
-				buttonsContainer.Size = UDim2.new(1, 0, 0, isPortrait and 50 or 62)
-				resetLabel.TextSize = buttonsFontSize
-				leaveLabel.TextSize = buttonsFontSize
-				resumeLabel.TextSize = buttonsFontSize
-			else
-				buttonsContainer.Visible = false
-				buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
-			end
-		end)
-	else
-		if not utility:IsSmallTouchScreen() then
+	utility:OnResized(buttonsContainer, function(newSize, isPortrait)
+		if isPortrait or utility:IsSmallTouchScreen() then
+			local buttonsFontSize = isPortrait and 18 or 24
+			buttonsContainer.Visible = true
+			buttonsContainer.Size = UDim2.new(1, 0, 0, isPortrait and 50 or 62)
+			resetLabel.TextSize = buttonsFontSize
+			leaveLabel.TextSize = buttonsFontSize
+			resumeLabel.TextSize = buttonsFontSize
+		else
 			buttonsContainer.Visible = false
 			buttonsContainer.Size = UDim2.new(1, 0, 0, 0)
-		else
-			buttonsContainer.Visible = true
 		end
+	end)
+
+	
+	if FFlagUseNotificationsLocalization then
+		local function ApplyLocalizeTextSettingsToLabel(label)
+			label.AnchorPoint = Vector2.new(0.5,0.5)
+			label.Position = UDim2.new(0.5, 0, 0.5, -3)
+			label.Size = UDim2.new(0.75, 0, 0.5, 0)
+		end
+		ApplyLocalizeTextSettingsToLabel(leaveLabel)
+		ApplyLocalizeTextSettingsToLabel(resetLabel)
+		ApplyLocalizeTextSettingsToLabel(resetLabel)
 	end
 
 	local function reportAbuseButtonCreate(playerLabel, player)
@@ -303,7 +321,7 @@ local function Initialize()
 				oldReportButton:Destroy()
 			end
 
-			if player and player ~= localPlayer and player.UserId > 1 then
+			if showRightSideButtons(player) then
 				local reportPlayerFunction = function()
 					reportAbuseMenu:ReportPlayer(player)
 				end
@@ -403,6 +421,9 @@ local function Initialize()
 		nameLabel.Size = UDim2.new(0, 0, 0, 0)
 		nameLabel.ZIndex = 3
 		nameLabel.Parent = frame
+		pcall(function()
+			nameLabel.Localize = false
+		end)
 
 		return frame
 	end
@@ -448,15 +469,16 @@ local function Initialize()
 		end)
 	end
 
+	local sortedPlayers
 	local existingPlayerLabels = {}
 	this.Displayed.Event:connect(function(switchedFromGamepadInput)
-		local sortedPlayers = PlayersService:GetPlayers()
+		sortedPlayers = PlayersService:GetPlayers()
 		table.sort(sortedPlayers, function(item1,item2)
 			return item1.Name:lower() < item2.Name:lower()
 		end)
 
 		local extraOffset = 20
-		if utility:IsSmallTouchScreen() or (enablePortraitMode and utility:IsPortrait()) then
+		if utility:IsSmallTouchScreen() or utility:IsPortrait() then
 			extraOffset = 85
 		end
 
@@ -510,18 +532,55 @@ local function Initialize()
 			end
 		end
 
-		if enablePortraitMode then
-			utility:OnResized("MenuPlayerListExtraPageSize", function(newSize, isPortrait)
-				local extraOffset = 20
-				if utility:IsSmallTouchScreen() or utility:IsPortrait() then
-					extraOffset = 85
-				end
-				this.Page.Size = UDim2.new(1,0,0, extraOffset + PLAYER_ROW_SPACING * #sortedPlayers - 5)
-			end)
-		else
+		utility:OnResized("MenuPlayerListExtraPageSize", function(newSize, isPortrait)
+			local extraOffset = 20
+			if utility:IsSmallTouchScreen() or utility:IsPortrait() then
+				extraOffset = 85
+			end
 			this.Page.Size = UDim2.new(1,0,0, extraOffset + PLAYER_ROW_SPACING * #sortedPlayers - 5)
-		end
+		end)
+
 	end)
+
+	if preventFriendingRemovedPlayers then
+		PlayersService.PlayerRemoving:Connect(function (player)
+			if sortedPlayers then
+				for index=1, #sortedPlayers do
+					if sortedPlayers[index] == player then
+						local playerLabel = existingPlayerLabels[index]
+						if not playerLabel then
+							break
+						end
+
+						local buttons = playerLabel:FindFirstChild("RightSideButtons")
+						if not buttons then
+							break
+						end
+
+						local friendStatus = buttons:FindFirstChild("FriendStatus")
+						if friendStatus then
+							if GuiService.SelectedCoreObject == friendStatus then
+								friendSelectionFound = nil
+								GuiService.SelectedCoreObject = nil
+							end
+							friendStatus:Destroy()
+						end
+
+						local reportPlayer = buttons:FindFirstChild("ReportPlayer")
+						if reportPlayer then
+							if GuiService.SelectedCoreObject == reportPlayer then
+								reportSelectionFound = nil
+								GuiService.SelectedCoreObject = nil
+							end
+							reportPlayer:Destroy()
+						end
+
+						break
+					end
+				end
+			end
+		end)
+	end
 
 	return this
 end
