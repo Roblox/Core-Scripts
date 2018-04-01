@@ -398,8 +398,10 @@ local function CreateCamera()
 	end
 
 	function this:MouseTranslationToAngle(translationVector)
-		local xTheta = (translationVector.x / 1920)
-		local yTheta = (translationVector.y / 1200)
+		local screenX = this:ViewSizeX()
+		local screenY = this:ViewSizeY()
+		local xTheta = (translationVector.x / screenX)
+		local yTheta = (translationVector.y / screenY)
 		return Vector2_new(xTheta, yTheta)
 	end
 
