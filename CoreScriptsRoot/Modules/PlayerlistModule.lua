@@ -4,6 +4,8 @@
   // Written by: jmargh
   // Description: Implementation of in game player list and leaderboard
 ]]
+local XboxToggleVoiceChatHotkey = settings():GetFFlag("XboxToggleVoiceChatHotkey")
+local XboxUserStateRoduxEnabled = settings():GetFFlag("XboxUserStateRodux")
 
 local CoreGui = game:GetService('CoreGui')
 local GuiService = game:GetService('GuiService')	-- NOTE: Can only use in core scripts
@@ -12,6 +14,7 @@ local TeamsService = game:FindService('Teams')
 local ContextActionService = game:GetService('ContextActionService')
 local StarterGui = game:GetService('StarterGui')
 local PlayersService = game:GetService('Players')
+local AnalyticsService = game:GetService("AnalyticsService")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
@@ -182,6 +185,15 @@ local CHARACTER_BACKGROUND_IMAGE = 'rbxasset://textures/ui/PlayerList/CharacterI
 
 --[[ Helper Functions ]]--
 
+local function LocalizedGetString(key, rtv)
+	pcall(function()
+		local LocalizationService = game:GetService("LocalizationService")
+		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+		rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
+	end)
+	return rtv
+end
+
 local function rbx_profilebegin(name)
   debug.profilebegin(name)
 end
@@ -227,8 +239,8 @@ local function getCustomPlayerIcon(player)
 end
 
 local function setAvatarIconAsync(player, iconImage)
-  -- this function is pretty much for xbox right now and makes use of modules that are part
-  -- of the xbox app. Please see Kip or Jason if you have any questions
+  -- this function is only used on Xbox
+  -- we require here with pcall because the module is only loaded on Xbox
   local thumbnailLoader = nil
   pcall(function()
     thumbnailLoader = require(RobloxGui.Modules.Shell.ThumbnailLoader)
@@ -236,8 +248,8 @@ local function setAvatarIconAsync(player, iconImage)
 
   local isFinalSuccess = false
   if thumbnailLoader then
-    local loader = thumbnailLoader:Create(iconImage, math.max(1, player.UserId),
-      thumbnailLoader.Sizes.Small, thumbnailLoader.AssetType.Avatar, true)
+    local loader = thumbnailLoader:LoadAvatarThumbnailAsync(iconImage, math.max(1, player.UserId),
+      Enum.ThumbnailType.AvatarThumbnail, Enum.ThumbnailSize.Size100x100, true)
     isFinalSuccess = loader:LoadAsync(false, true, nil)
   end
 
@@ -408,6 +420,80 @@ PopupClipFrame.BackgroundTransparency = 1
 PopupClipFrame.ClipsDescendants = true
 PopupClipFrame.Parent = Container
 
+-- Xbox exclusive functions/variables, need to declare here so they can be used elsewhere in file
+local xboxSetShieldVisibility = nil
+local xboxEnableHotkeys = nil
+local xboxDisableHotkeys = nil
+
+local hasPermissionToVoiceChat = false
+if isTenFootInterface then
+  pcall(function()
+    local platformService = game:GetService('PlatformService')
+    hasPermissionToVoiceChat = platformService:BeginCheckXboxPrivilege(252).PrivilegeCheckResult == "NoIssue"
+  end)
+end
+
+-- Area to set up Xbox disable voice chat
+if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
+  local CreateHintActionView = require(RobloxGui.Modules.Shell.HintActionView)
+  local voiceChatService = game:GetService('VoiceChatService')
+
+  -- Player shield
+  local xboxPlayerlistShield = Instance.new("Frame", RobloxGui)
+  xboxPlayerlistShield.AutoLocalize = false
+  xboxPlayerlistShield.Size = UDim2.new(1, 0, 1, 0)
+  xboxPlayerlistShield.BackgroundColor3 = Color3.fromRGB(41, 41, 41)  -- Copied from: SETTINGS_SHIELD_COLOR in SettingsHub.lua
+  xboxPlayerlistShield.BackgroundTransparency = 0.2  -- Copied from: SETTINGS_SHIELD_TRANSPARENCY in SettingsHub.lua
+  xboxPlayerlistShield.Visible = false
+
+  local xboxMuteAllState = false
+  local seenYButtonPressed = false
+
+  local EnableVoicePhrase = "Enable Voice Chat"
+  local DisableVoicePhrase = "Disable Voice Chat"
+  EnableVoicePhrase = LocalizedGetString("EnableVoiceKey", EnableVoicePhrase)
+  DisableVoicePhrase = LocalizedGetString("DisableVoiceKey", DisableVoicePhrase)
+
+  local function getVoiceEnabledString()
+    return xboxMuteAllState and EnableVoicePhrase or DisableVoicePhrase
+  end
+
+  -- Set up "toggle voice" hotkey using HintActionView module from the xbox AppShell
+  local xboxToggleVoiceHotkey = CreateHintActionView(xboxPlayerlistShield, "ToggleVoiceChat", UDim2.new(0.96, -1, 0.96, -1))
+  xboxToggleVoiceHotkey:SetText(getVoiceEnabledString())
+  xboxToggleVoiceHotkey:SetImage('rbxasset://textures/ui/Shell/ButtonIcons/YButton.png')
+
+  -- Callback for when the "toggle voice" hotkey is activated
+  local function onToggleVoice(actionName, inputState, inputObject)
+    if inputState == Enum.UserInputState.Begin then
+      seenYButtonPressed = true
+    elseif inputState == Enum.UserInputState.End and seenYButtonPressed then
+      xboxMuteAllState = not xboxMuteAllState
+      voiceChatService:VoiceChatSetMuteAllState(xboxMuteAllState)
+      xboxToggleVoiceHotkey:SetText(getVoiceEnabledString())
+      seenYButtonPressed = false
+
+      -- Analytics
+      local eventName = xboxMuteAllState and "XboxDisableVoiceChat" or "XboxEnableVoiceChat"
+      AnalyticsService:ReportCounter(eventName, 1)
+      AnalyticsService:SetRBXEventStream("console", "XboxOne", eventName, {})
+    end
+  end
+
+  -- Define the Functions that can be used outside of this block
+  xboxSetShieldVisibility = function(state)
+    xboxPlayerlistShield.Visible = state
+  end
+
+  xboxEnableHotkeys = function()
+    xboxToggleVoiceHotkey:BindAction(onToggleVoice, Enum.KeyCode.ButtonY)
+  end
+
+  xboxDisableHotkeys = function()
+    xboxToggleVoiceHotkey:UnbindAction()
+    seenYButtonPressed = false
+  end
+end
 
 --[[ Creation Helper Functions ]]--
 local function createEntryFrame(name, sizeYOffset, isTopStat)
@@ -800,14 +886,12 @@ local function createPlayerSideBarOption(player)
       --Get modules
       local screenManagerModule = RobloxGui.Modules:FindFirstChild('ScreenManager') or RobloxGui.Modules.Shell.ScreenManager
       local ScreenManager = require(screenManagerModule)
-      local utilModule = RobloxGui.Modules:FindFirstChild('Utility') or RobloxGui.Modules.Shell.Utility
-      local Util = require(utilModule)
       local stringsModule = RobloxGui.Modules:FindFirstChild('LocalizedStrings') or RobloxGui.Modules.Shell.LocalizedStrings
       local Strings = require(stringsModule)
 
       SideBar:RemoveAllItems()
       if addGamerCardItem then
-        SideBar:AddItem(Util.Upper(Strings:LocalizedString("ViewGamerCardWord")), function()
+        SideBar:AddItem(Strings:LocalizedString("ViewGamerCardWord"), function()
           openPlatformProfileUI(player.UserId)
         end)
       end
@@ -818,7 +902,7 @@ local function createPlayerSideBarOption(player)
 
       --We can't report guests/localplayer
       if addReportItem then
-        SideBar:AddItem(Util.Upper(Strings:LocalizedString("Report Player")), function()
+        SideBar:AddItem(Strings:LocalizedString("Report Player"), function()
           --Force closing player list before open the report tab
           isOpen = false
           setVisible(false)
@@ -1805,6 +1889,10 @@ local closeListFunc = function(name, state, input)
 
   isOpen = false
   Container.Visible = false
+  if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
+    xboxSetShieldVisibility(false)
+    xboxDisableHotkeys()
+  end
   spawn(function() GuiService:SetMenuIsOpen(false) end)
   ContextActionService:UnbindCoreAction("CloseList")
   ContextActionService:UnbindCoreAction("StopAction")
@@ -1815,6 +1903,9 @@ end
 
 setVisible = function(state)
   Container.Visible = state
+  if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
+    xboxSetShieldVisibility(state)
+  end
   local lastInputType = UserInputService:GetLastInputType()
   local isUsingGamepad = (lastInputType == Enum.UserInputType.Gamepad1 or lastInputType == Enum.UserInputType.Gamepad2 or
     lastInputType == Enum.UserInputType.Gamepad3 or lastInputType == Enum.UserInputType.Gamepad4)
@@ -1842,6 +1933,9 @@ setVisible = function(state)
       ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
       ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
     end
+    if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
+      xboxEnableHotkeys()
+    end
   else
     if isUsingGamepad then
       UserInputService.OverrideMouseIconBehavior = Enum.OverrideMouseIconBehavior.None
@@ -1849,6 +1943,9 @@ setVisible = function(state)
 
     ContextActionService:UnbindCoreAction("CloseList")
     ContextActionService:UnbindCoreAction("StopAction")
+    if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
+      xboxDisableHotkeys()
+    end
 
     if GuiService.SelectedCoreObject and GuiService.SelectedCoreObject:IsDescendantOf(Container) then
       GuiService.SelectedCoreObject = nil

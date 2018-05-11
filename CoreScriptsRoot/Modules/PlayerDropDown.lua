@@ -14,7 +14,6 @@ local StarterGui = game:GetService("StarterGui")
 local AnalyticsService = game:GetService("AnalyticsService")
 
 --[[ Fast Flags ]]--
-local FFlagClientAppsUseRobloxLocale = settings():GetFFlag('ClientAppsUseRobloxLocale')
 local fixPlayerlistFollowingSuccess, fixPlayerlistFollowingFlagValue = pcall(function() return settings():GetFFlag("FixPlayerlistFollowing") end)
 local fixPlayerlistFollowingEnabled = fixPlayerlistFollowingSuccess and fixPlayerlistFollowingFlagValue
 
@@ -31,11 +30,7 @@ local function LocalizedGetString(key, rtv)
 	pcall(function()
 		local LocalizationService = game:GetService("LocalizationService")
 		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-		if FFlagClientAppsUseRobloxLocale then
-			rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
-		else
-			rtv = CorescriptLocalization:GetString(LocalizationService.SystemLocaleId, key)
-		end
+		rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
 	end)
 	return rtv
 end
@@ -63,9 +58,9 @@ local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 local reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
 
 --[[ Bindables ]]--
-local BindableEvent_SendNotification = nil
+local BindableEvent_SendNotificationInfo = nil
 spawn(function()
-	BindableEvent_SendNotification = RobloxGui:WaitForChild("SendNotification")
+	BindableEvent_SendNotificationInfo = RobloxGui:WaitForChild("SendNotificationInfo")
 end)
 
 --[[ Remotes ]]--
@@ -113,8 +108,8 @@ local MuteStatusChanged = createSignal()
 
 --[[ Follower Notifications ]]--
 local function sendNotification(title, text, image, duration, callback)
-	if BindableEvent_SendNotification then
-		BindableEvent_SendNotification:Fire(title, text, image, duration, callback)
+	if BindableEvent_SendNotificationInfo then
+		BindableEvent_SendNotificationInfo:Fire { Title = title, Text = text, Image = image, Duration = duration, Callback = callback }
 	end
 end
 
