@@ -69,10 +69,6 @@ if UIS.TouchEnabled then
 	BindableEvent_EnableTouchJump.Parent = PlayerScripts
 end
 
-local function clamp(low, high, num)
-	return (num > high and high or num < low and low or num)
-end
-
 --------------------------UTIL LIBRARY-------------------------------
 local Utility = {}
 do
@@ -461,9 +457,9 @@ local function CreateDestinationIndicator(pos)
 	local destinationGlobe = Create'Part'
 	{
 		Name = 'PathGlobe';
-		TopSurface = 'Smooth';
-		BottomSurface = 'Smooth';
-		Shape = 'Ball';
+		TopSurface = Enum.SurfaceType.Smooth;
+		BottomSurface = Enum.SurfaceType.Smooth;
+		Shape = Enum.PartType.Ball;
 		CanCollide = false;
 		Size = Vector3_new(2,2,2);
 		BrickColor = BrickColor.new('Institutional white');
@@ -698,7 +694,7 @@ local function Pather(character, point)
 			if (this.pathResult.Status == Enum.PathStatus.FailStartNotEmpty or this.pathResult.Status == Enum.PathStatus.ClosestNoPath) and pathFound == false then
 				local pathablePoints = this:CheckNeighboringCells(character)
 				for _, otherStart in pairs(pathablePoints) do
-					local pathResult;
+					local pathResult
 					local success = pcall(function()
 						pathResult = PathfindingService:ComputeSmoothPathAsync(otherStart, point, 400)
 						smoothed = true
@@ -1257,7 +1253,7 @@ local function CreateClickToMoveModule()
 
 			local c0, c1 = CFrame_new(ZERO_VECTOR3, self:GetCameraLook()), desiredCFrame - desiredCFrame.p
 			local theta = GetThetaBetweenCFrames(c0, c1)
-			theta = clamp(0, math_pi, theta)
+			theta = math.clamp(theta, 0, math_pi)
 			local duration = 0.65 * SCurve(theta - math_pi/4) + 0.15
 			if speed then
 				duration = theta / speed
@@ -1267,7 +1263,7 @@ local function CreateClickToMoveModule()
 
 			self.UpdateTweenFunction = function()
 				local currTime = tick() - start
-				local alpha = clamp(0, 1, easeOutSine(currTime, 0, 1, duration))
+				local alpha = math.clamp(easeOutSine(currTime, 0, 1, duration), 0, 1)
 				local newCFrame = lerp(c0, c1, alpha)
 				local y = findAngleBetweenXZVectors(newCFrame.lookVector, self:GetCameraLook())
 				if IsFinite(y) and math_abs(y) > 0.0001 then
