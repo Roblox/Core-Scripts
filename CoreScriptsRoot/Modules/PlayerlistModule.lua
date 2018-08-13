@@ -4,9 +4,6 @@
   // Written by: jmargh
   // Description: Implementation of in game player list and leaderboard
 ]]
-local XboxToggleVoiceChatHotkey = settings():GetFFlag("XboxToggleVoiceChatHotkey")
-local XboxUserStateRoduxEnabled = settings():GetFFlag("XboxUserStateRodux")
-
 local CoreGui = game:GetService('CoreGui')
 local GuiService = game:GetService('GuiService')	-- NOTE: Can only use in core scripts
 local UserInputService = game:GetService('UserInputService')
@@ -20,6 +17,8 @@ local GameSettings = Settings.GameSettings
 
 local fixPlayerlistFollowingSuccess, fixPlayerlistFollowingFlagValue = pcall(function() return settings():GetFFlag("FixPlayerlistFollowing") end)
 local fixPlayerlistFollowingEnabled = fixPlayerlistFollowingSuccess and fixPlayerlistFollowingFlagValue
+
+local FFlagCoreScriptTranslateGameText2 = settings():GetFFlag("CoreScriptTranslateGameText2")
 
 while not PlayersService.LocalPlayer do
 	-- This does not follow the usual pattern of PlayersService:PlayerAdded:Wait()
@@ -43,20 +42,18 @@ local playerDropDown = playerDropDownModule:CreatePlayerDropDown()
 
 local PlayerPermissionsModule = require(RobloxGui.Modules.PlayerPermissionsModule)
 
---[[ Remotes ]]--
+local GameTranslator = require(RobloxGui.Modules.GameTranslator)
+
 local RemoveEvent_OnFollowRelationshipChanged = nil
 local RemoteFunc_GetFollowRelationships = nil
 
---[[ Start Module ]]--
 local Playerlist = {}
 
---[[ Public Event API ]]--
 -- Parameters: Sorted Array - see GameStats below
 Playerlist.OnLeaderstatsChanged = Instance.new('BindableEvent')
 -- Parameters: nameOfStat(string), formatedStringOfStat(string)
 Playerlist.OnStatChanged = Instance.new('BindableEvent')
 
---[[ Client Stat Table ]]--
 -- Sorted Array of tables
 local GameStats = {}
 -- Fields
@@ -68,7 +65,6 @@ local GameStats = {}
 -- NOTE: IsPrimary and Priority are unofficially supported. They are left over legacy from the old player list.
 -- They can be un-supported at anytime. You should prefer using child add order to order your stats in the leader board.
 
---[[ Script Variables ]]--
 local topbarEnabled = true
 local playerlistCoreGuiEnabled = true
 local MyPlayerEntryTopFrame = nil
@@ -123,7 +119,6 @@ local setVisible = nil
 --Whether the playerlist is still open (isOpen is true if the playerlist is hidden in the background)
 local isOpen = not isTenFootInterface
 
---[[ Constants ]]--
 local ENTRY_PAD = 2
 local BG_TRANSPARENCY = 0.5
 local BG_COLOR = Color3.new(31/255, 31/255, 31/255)
@@ -164,10 +159,10 @@ local ABUSES = {
   "Bad Username",
 }
 
---[[ Images ]]--
 local CHAT_ICON = 'rbxasset://textures/ui/chat_teamButton.png'
 local ADMIN_ICON = 'rbxasset://textures/ui/icon_admin-16.png'
 local INTERN_ICON = 'rbxasset://textures/ui/icon_intern-16.png'
+local STAR_ICON = 'rbxasset://textures/ui/icon_star-16.png'
 local PLACE_OWNER_ICON = 'rbxasset://textures/ui/icon_placeowner.png'
 local BC_ICON = 'rbxasset://textures/ui/icon_BC-16.png'
 local TBC_ICON = 'rbxasset://textures/ui/icon_TBC-16.png'
@@ -183,15 +178,23 @@ local MUTUAL_FOLLOWING_ICON = 'rbxasset://textures/ui/icon_mutualfollowing-16.pn
 
 local CHARACTER_BACKGROUND_IMAGE = 'rbxasset://textures/ui/PlayerList/CharacterImageBackground.png'
 
---[[ Helper Functions ]]--
+local RobloxTranslator
+local FFlagCoreScriptsUseLocalizationModule = settings():GetFFlag('CoreScriptsUseLocalizationModule')
+if FFlagCoreScriptsUseLocalizationModule then
+  RobloxTranslator = require(RobloxGui.Modules.RobloxTranslator)
+end
 
 local function LocalizedGetString(key, rtv)
-	pcall(function()
-		local LocalizationService = game:GetService("LocalizationService")
-		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-		rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
-	end)
-	return rtv
+	if FFlagCoreScriptsUseLocalizationModule then
+		return RobloxTranslator:FormatByKey(key)
+	else
+		pcall(function()
+			local LocalizationService = game:GetService("LocalizationService")
+			local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+			rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
+		end)
+		return rtv
+	end
 end
 
 local function rbx_profilebegin(name)
@@ -235,6 +238,8 @@ local function getCustomPlayerIcon(player)
     return ADMIN_ICON
   elseif PlayerPermissionsModule.IsPlayerInternAsync(player) then
     return INTERN_ICON
+  elseif PlayerPermissionsModule.IsPlayerStarAsync(player) then
+    return STAR_ICON
   end
 end
 
@@ -434,7 +439,7 @@ if isTenFootInterface then
 end
 
 -- Area to set up Xbox disable voice chat
-if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
+if hasPermissionToVoiceChat then
   local CreateHintActionView = require(RobloxGui.Modules.Shell.HintActionView)
   local voiceChatService = game:GetService('VoiceChatService')
 
@@ -495,7 +500,6 @@ if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
   end
 end
 
---[[ Creation Helper Functions ]]--
 local function createEntryFrame(name, sizeYOffset, isTopStat)
   local containerFrame = Instance.new('Frame')
   containerFrame.Name = name
@@ -617,7 +621,12 @@ local function createStatText(parent, text, isTopStat, isTeamStat)
   if isTopStat then
     local statName = statText:Clone()
     statName.Name = "StatName"
-    statName.Text = tostring(parent.Name)
+
+    if FFlagCoreScriptTranslateGameText2 then
+        GameTranslator:TranslateAndRegister(statName, CoreGui, parent.Name)
+    else
+        statName.Text = GameTranslator:TranslateGameText(CoreGui, parent.Name)
+    end
     statName.Position = UDim2.new(0,0,0,0)
     statName.Font = Enum.Font.SourceSans
     statName.ClipsDescendants = true
@@ -696,7 +705,6 @@ local function formatStatString(text)
   end
 end
 
---[[ Resize Functions ]]--
 local LastMaxScrollSize = 0
 local function setScrollListSize()
   local teamSize = #TeamEntries * TeamEntrySizeY
@@ -718,7 +726,6 @@ local function setScrollListSize()
   LastMaxScrollSize = newScrollListSize
 end
 
---[[ Re-position Functions ]]--
 local function setPlayerEntryPositions()
   local position = 0
   for i = 1, #PlayerEntries do
@@ -938,7 +945,7 @@ local function onEntryFrameSelected(selectedFrame, selectedPlayer)
     return
   end
 
-  if selectedPlayer ~= Player and selectedPlayer.UserId > 1 and Player.UserId > 1 then
+  if selectedPlayer ~= Player and selectedPlayer.UserId > 0 and Player.UserId > 0 then
     if LastSelectedFrame ~= selectedFrame then
       if LastSelectedFrame then
         for _,childFrame in pairs(LastSelectedFrame:GetChildren()) do
@@ -999,7 +1006,6 @@ if not isTenFootInterface then
   Player.FriendStatusChanged:connect(onFriendshipChanged)
 end
 
---[[ Begin New Server Followers ]]--
 local function setFollowRelationshipsView(relationshipTable)
   if not relationshipTable then
     return
@@ -1045,8 +1051,6 @@ local function getFollowRelationships()
   end
   return result
 end
-
---[[ End New Server Followers ]]--
 
 local function updateAllTeamScores()
   local teamScores = {}
@@ -1602,9 +1606,23 @@ local function createTeamEntry(team)
   entryFrame.Selectable = false	-- dont allow gamepad selection of team frames
   entryFrame.BackgroundColor3 = team.TeamColor.Color
 
-  local teamName = createEntryNameText("TeamName", team.Name,
-    UDim2.new(0.01, 1, 0, 0),
-    UDim2.new(-0.01, entryFrame.AbsoluteSize.x, 1, 0))
+  local teamName
+
+  if FFlagCoreScriptTranslateGameText2 then
+    teamName = createEntryNameText(
+      "TeamName",
+      team.Name,
+      UDim2.new(0.01, 1, 0, 0),
+      UDim2.new(-0.01, entryFrame.AbsoluteSize.x, 1, 0))
+
+    GameTranslator:TranslateAndRegister(teamName, team, team.Name)
+  else
+    teamName = createEntryNameText(
+      "TeamName",
+      GameTranslator:TranslateGameText(team, team.Name),
+      UDim2.new(0.01, 1, 0, 0),
+      UDim2.new(-0.01, entryFrame.AbsoluteSize.x, 1, 0))
+  end
 
   teamName.Parent = entryFrame
 
@@ -1626,7 +1644,11 @@ local function createTeamEntry(team)
   team.Changed:connect(function(property)
       rbx_profilebegin("team.Changed")
       if property == 'Name' then
-        teamName.Text = team.Name
+      if FFlagCoreScriptTranslateGameText2 then
+          GameTranslator:TranslateAndRegister(teamName, team, team.Name)
+      else
+          teamName.Text = GameTranslator:TranslateGameText(team, team.Name)
+      end
       elseif property == 'TeamColor' then
         for _,childFrame in pairs(containerFrame:GetChildren()) do
           if childFrame:IsA('GuiObject') then
@@ -1655,7 +1677,6 @@ local function createNeutralTeam()
   end
 end
 
---[[ Insert/Remove Player Functions ]]--
 local function setupEntry(player, newEntry, isTopStat)
   setLeaderStats(newEntry)
 
@@ -1718,7 +1739,6 @@ local function removePlayerEntry(player)
   setScrollListSize()
 end
 
---[[ Team Functions ]]--
 local function onTeamAdded(team)
   for i = 1, #TeamEntries do
     if TeamEntries[i].Team.TeamColor == team.TeamColor then
@@ -1763,7 +1783,6 @@ local function onTeamRemoved(removedTeam)
   setScrollListSize()
 end
 
---[[ Resize/Position Functions ]]--
 local function clampCanvasPosition()
   local maxCanvasPosition = ScrollList.CanvasSize.Y.Offset - ScrollList.Size.Y.Offset
   if maxCanvasPosition >= 0 and ScrollList.CanvasPosition.y > maxCanvasPosition then
@@ -1801,7 +1820,6 @@ UserInputService.InputBegan:connect(function(inputObject, isProcessed)
 
 -- NOTE: Core script only
 
---[[ Player Add/Remove Connections ]]--
 PlayersService.PlayerAdded:connect(function(child)
   rbx_profilebegin("PlayersService.PlayerAdded")
   insertPlayerEntry(child)
@@ -1812,7 +1830,6 @@ for _, player in ipairs(PlayersService:GetPlayers()) do
   insertPlayerEntry(player)
 end
 
---[[ Begin new Server Followers ]]--
 -- Don't listen/show rbx followers status on console
 if not isTenFootInterface then
   -- spawn so we don't block script
@@ -1843,7 +1860,6 @@ PlayersService.ChildRemoved:connect(function(child)
   rbx_profileend()
 end)
 
---[[ Teams ]]--
 local function initializeTeams(teams)
   for _,team in pairs(teams:GetTeams()) do
     onTeamAdded(team)
@@ -1875,7 +1891,6 @@ game.ChildAdded:connect(function(child)
     rbx_profileend()
   end)
 
---[[ Public API ]]--
 Playerlist.GetStats = function()
   return GameStats
 end
@@ -1889,7 +1904,7 @@ local closeListFunc = function(name, state, input)
 
   isOpen = false
   Container.Visible = false
-  if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
+  if hasPermissionToVoiceChat then
     xboxSetShieldVisibility(false)
     xboxDisableHotkeys()
   end
@@ -1903,7 +1918,7 @@ end
 
 setVisible = function(state)
   Container.Visible = state
-  if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
+  if hasPermissionToVoiceChat then
     xboxSetShieldVisibility(state)
   end
   local lastInputType = UserInputService:GetLastInputType()
@@ -1933,7 +1948,7 @@ setVisible = function(state)
       ContextActionService:BindCoreAction("StopAction", noOpFunc, false, Enum.UserInputType.Gamepad1)
       ContextActionService:BindCoreAction("CloseList", closeListFunc, false, Enum.KeyCode.ButtonB, Enum.KeyCode.ButtonStart)
     end
-    if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
+    if hasPermissionToVoiceChat then
       xboxEnableHotkeys()
     end
   else
@@ -1943,7 +1958,7 @@ setVisible = function(state)
 
     ContextActionService:UnbindCoreAction("CloseList")
     ContextActionService:UnbindCoreAction("StopAction")
-    if hasPermissionToVoiceChat and XboxToggleVoiceChatHotkey then
+    if hasPermissionToVoiceChat then
       xboxDisableHotkeys()
     end
 
@@ -1991,7 +2006,6 @@ if isTenFootInterface then
   topStat = TenFootInterface:SetupTopStat()
 end
 
---[[ Core Gui Changed events ]]--
 -- NOTE: Core script only
 local function onCoreGuiChanged(coreGuiType, enabled)
   rbx_profilebegin("onCoreGuiChanged")

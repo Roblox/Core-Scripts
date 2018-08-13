@@ -7,6 +7,7 @@
 --[[ FFLAG VALUES ]]
 
 local FFlagSetGuiInsetInLoadingScript = settings():GetFFlag("SetGuiInsetInLoadingScript3")
+local FFlagCoreScriptTranslateGameText2 = settings():GetFFlag("CoreScriptTranslateGameText2")
 
 --[[ END OF FFLAG VALUES ]]
 
@@ -30,6 +31,7 @@ local VRService = game:GetService('VRService')
 local GuiRoot = CoreGuiService:WaitForChild('RobloxGui')
 local TopbarConstants = require(GuiRoot.Modules.TopbarConstants)
 local Utility = require(GuiRoot.Modules.Settings.Utility)
+local GameTranslator = require(GuiRoot.Modules.GameTranslator)
 --[[ END OF MODULES ]]
 
 local topbarEnabled = true
@@ -681,6 +683,7 @@ end
 ----- END OF HEALTH -----
 
 ----- LEADERSTATS -----
+
 local function CreateLeaderstatsMenuItem()
 	local PlayerlistModule = require(GuiRoot.Modules.PlayerlistModule)
 
@@ -714,22 +717,12 @@ local function CreateLeaderstatsMenuItem()
 					local columnName = columnData.Name
 					local columnValue = columnData.Text
 
-					local columnframe = Util.Create'Frame'
-					{
-						Name = "Column" .. tostring(index);
-						Size = UDim2.new(0,
-              TopbarConstants.COLUMN_WIDTH + (index == numColumns and 0 or TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH),
-              1, 0);
-						Position = UDim2.new(0,
-              TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH + (TopbarConstants.COLUMN_WIDTH + TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH) * (index-1),
-              0, 0);
-						BackgroundTransparency = 1;
-						Parent = leaderstatsContainer;
+					local columnNameLabel
 
-						Util.Create'TextLabel'
+					if FFlagCoreScriptTranslateGameText2 then
+						columnNameLabel = Util.Create'TextLabel'
 						{
 							Name = "ColumnName";
-							Text = columnName;
 							Size = UDim2.new(1, 0, 0, 10);
 							Position = UDim2.new(0, 0, 0, 4);
 							Font = Enum.Font.SourceSans;
@@ -739,7 +732,36 @@ local function CreateLeaderstatsMenuItem()
 							TextColor3 = TopbarConstants.FONT_COLOR;
 							TextYAlignment = Enum.TextYAlignment.Center;
 							TextXAlignment = Enum.TextXAlignment.Center;
-						};
+						}
+
+						GameTranslator:TranslateAndRegister(columnNameLabel, CoreGuiService, columnName);
+					else
+						columnNameLabel = Util.Create'TextLabel'
+						{
+							Name = "ColumnName";
+							Text = GameTranslator:TranslateGameText(CoreGuiService, columnName);
+							Size = UDim2.new(1, 0, 0, 10);
+							Position = UDim2.new(0, 0, 0, 4);
+							Font = Enum.Font.SourceSans;
+							FontSize = Enum.FontSize.Size14;
+							BorderSizePixel = 0;
+							BackgroundTransparency = 1;
+							TextColor3 = TopbarConstants.FONT_COLOR;
+							TextYAlignment = Enum.TextYAlignment.Center;
+							TextXAlignment = Enum.TextXAlignment.Center;
+						}
+					end
+
+
+					local columnframe = Util.Create'Frame'
+					{
+						Name = "Column" .. tostring(index);
+						Size = UDim2.new(0, TopbarConstants.COLUMN_WIDTH + (index == numColumns and 0 or TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH), 1, 0);
+						Position = UDim2.new(0, TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH + (TopbarConstants.COLUMN_WIDTH + TopbarConstants.NAME_LEADERBOARD_SEP_WIDTH) * (index-1),  0, 0);
+						BackgroundTransparency = 1;
+						Parent = leaderstatsContainer;
+
+						columnNameLabel;
 
 						Util.Create'TextLabel'
 						{

@@ -15,9 +15,15 @@ local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 local FFlagLoadTheLoadingScreenFasterSuccess, FFlagLoadTheLoadingScreenFasterValue = pcall(function() return settings():GetFFlag("LoadTheLoadingScreenFaster") end)
 local FFlagLoadTheLoadingScreenFaster = FFlagLoadTheLoadingScreenFasterSuccess and FFlagLoadTheLoadingScreenFasterValue
 
+-- Remove when remove PresetInGameGuiInset
 local FFlagSetGuiInsetInLoadingScript = settings():GetFFlag("SetGuiInsetInLoadingScript3")
 local FFlagFixLoadingScreenJankiness = settings():GetFFlag("FixLoadingScreenJankiness")
+local FFlagLoadingScreenUseLocalizationTable = settings():GetFFlag("LoadingScreenUseLocalizationTable")
+local FFlagPresetInGameGuiInset = settings():GetFFlag("PresetInGameGuiInset")
+local FFlagLoadingScreenNewTextLayout = settings():GetFFlag("LoadingScreenNewTextLayout")
+local FFlagShowConnectionErrorCode = settings():GetFFlag("ShowConnectionErrorCode")
 
+-- Remove when removing PresetInGameGuiInset
 if FFlagSetGuiInsetInLoadingScript then
 	coroutine.wrap(function()
 		local TopbarConstants = require(RobloxGui:WaitForChild("Modules"):WaitForChild("TopbarConstants"))
@@ -262,15 +268,31 @@ function MainGui:GenerateMain()
 
 	--
 	-- create descendant frames
-	local mainBackgroundContainer = create 'Frame' {
-		Name = 'BlackFrame',
-		BackgroundColor3 = COLORS.BACKGROUND_COLOR,
-		BackgroundTransparency = 0,
-		Size = UDim2.new(1, 0, 1, 0),
-		Position = UDim2.new(0, 0, 0, 0),
-		Active = true,
-		Parent = screenGui
-	}
+	local mainBackgroundContainer
+	if FFlagPresetInGameGuiInset then
+		local inGameGlobalGuiInset = settings():GetFVariable("InGameGlobalGuiInset")
+		mainBackgroundContainer = create 'Frame' {
+			Name = 'BlackFrame',
+			BackgroundColor3 = COLORS.BACKGROUND_COLOR,
+			BackgroundTransparency = 0,
+			Size = UDim2.new(1, 0, 1, inGameGlobalGuiInset),
+			Position = UDim2.new(0, 0, 0, -inGameGlobalGuiInset),
+			Active = true,
+			Parent = screenGui
+		}
+	else
+		mainBackgroundContainer = create 'Frame' {
+			Name = 'BlackFrame',
+			BackgroundColor3 = COLORS.BACKGROUND_COLOR,
+			BackgroundTransparency = 0,
+			Size = UDim2.new(1, 0, 1, 0),
+			Position = UDim2.new(0, 0, 0, 0),
+			Active = true,
+			Parent = screenGui
+		}
+	end
+
+	-- Remove when remove FFlagPresetInGameGuiInset
 	if FFlagSetGuiInsetInLoadingScript then
 		coroutine.wrap(function()
 			local TopbarConstants = require(RobloxGui:WaitForChild("Modules"):WaitForChild("TopbarConstants"))
@@ -353,7 +375,11 @@ function MainGui:GenerateMain()
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		Size = UDim2.new(0.75, 0, 1, 0),
 		ZIndex = 2,
-		Parent = mainBackgroundContainer
+		Parent = mainBackgroundContainer,
+		FFlagLoadingScreenNewTextLayout and create 'UIPadding' {
+			Name = 'UiMessagePadding',
+			PaddingBottom = UDim.new(0, 25),
+		} or nil
 	}
 
 
@@ -369,7 +395,7 @@ function MainGui:GenerateMain()
 		create 'TextLabel' {
 			Name = 'UiMessage',
 			BackgroundTransparency = 1,
-			Position = UDim2.new(0, 0, 0, 10),
+			Position = UDim2.new(0, 0, 0, FFlagLoadingScreenNewTextLayout and 5 or 10),
 			Size = UDim2.new(1, 0, 0, 25),
 			Font = Enum.Font.SourceSansLight,
 			FontSize = Enum.FontSize.Size18,
@@ -612,7 +638,14 @@ function MainGui:GenerateMain()
 			wait()
 		end
 	end
-	screenGui.Parent = game:GetService("CoreGui")
+
+	local CoreGui = game:GetService("CoreGui");
+	screenGui.Parent = CoreGui
+
+	if FFlagLoadingScreenUseLocalizationTable then
+		infoFrame.RootLocalizationTable = CoreGui:FindFirstChild("CoreScriptLocalization")
+	end
+
 	currScreenGui = screenGui
 
 	local function onResized()
@@ -712,6 +745,7 @@ renderSteppedConnection = RunService.RenderStepped:connect(function(dt)
 end)
 
 --TODO: Evaluate whether or not this is still necessary
+-- Remove when remove FFlagPresetInGameGuiInset
 coroutine.wrap(function()
 	local RobloxGui = game:GetService("CoreGui"):WaitForChild("RobloxGui")
 	local guiInsetChangedEvent = Instance.new("BindableEvent")
@@ -751,7 +785,19 @@ GuiService.ErrorMessageChanged:connect(function()
 		elseif utility:IsSmallTouchScreen() then
 			currScreenGui.ErrorFrame.Size = UDim2.new(0.5, 0, 0, 40)
 		end
-		currScreenGui.ErrorFrame.ErrorText.Text = GuiService:GetErrorMessage()
+
+		local errorCode = GuiService:GetErrorCode()
+		local errorMessage = GuiService:GetErrorMessage()
+		if not FFlagShowConnectionErrorCode then
+			currScreenGui.ErrorFrame.ErrorText.Text = errorMessage
+		else
+			if not errorCode then
+				currScreenGui.ErrorFrame.ErrorText.Text = ("%s (Error Code: -1)"):format(errorMessage)
+			else
+				currScreenGui.ErrorFrame.ErrorText.Text = ("%s (Error Code: %d)"):format(errorMessage, errorCode.Value)
+			end
+		end
+
 		currScreenGui.ErrorFrame.Visible = true
 		local blackFrame = currScreenGui:FindFirstChild('BlackFrame')
 		if blackFrame then
@@ -948,7 +994,7 @@ if game:GetService("ReplicatedFirst"):IsDefaultLoadingGuiRemoved() then
 	handleRemoveDefaultLoadingGui()
 end
 
-local VREnabledConn;
+local VREnabledConn
 local function onVREnabled()
 	if VRService.VREnabled then
 		handleRemoveDefaultLoadingGui(true)

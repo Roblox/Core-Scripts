@@ -5,19 +5,17 @@
 ]]
 local moduleApiTable = {}
 
---[[ Services ]]--
 local CoreGui = game:GetService('CoreGui')
 local HttpService = game:GetService('HttpService')
 local HttpRbxApiService = game:GetService('HttpRbxApiService')
 local PlayersService = game:GetService('Players')
 local StarterGui = game:GetService("StarterGui")
 local AnalyticsService = game:GetService("AnalyticsService")
+local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
 
---[[ Fast Flags ]]--
 local fixPlayerlistFollowingSuccess, fixPlayerlistFollowingFlagValue = pcall(function() return settings():GetFFlag("FixPlayerlistFollowing") end)
 local fixPlayerlistFollowingEnabled = fixPlayerlistFollowingSuccess and fixPlayerlistFollowingFlagValue
 
---[[ Script Variables ]]--
 local LocalPlayer = PlayersService.LocalPlayer
 while not LocalPlayer do
 	PlayersService.PlayerAdded:wait()
@@ -26,21 +24,14 @@ end
 
 local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
 local FFlagUseNotificationsLocalization = success and result
-local function LocalizedGetString(key, rtv)
-	pcall(function()
-		local LocalizationService = game:GetService("LocalizationService")
-		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-		rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
-	end)
-	return rtv
-end
+local FFlagHandlePlayerBlockListsInternalPermissive = settings():GetFFlag('HandlePlayerBlockListsInternalPermissive')
+local FFlagCoreScriptsUseLocalizationModule = settings():GetFFlag('CoreScriptsUseLocalizationModule')
 
 local recentApiRequests = -- stores requests for target players by userId
 {
 	Following = {};
 }
 
---[[ Constants ]]--
 local POPUP_ENTRY_SIZE_Y = 24
 local ENTRY_PAD = 2
 local BG_TRANSPARENCY = 0.5
@@ -53,25 +44,44 @@ local FRIEND_IMAGE = 'https://www.roblox.com/thumbs/avatar.ashx?userId='
 
 local GET_BLOCKED_USERIDS_TIMEOUT = 5
 
---[[ Modules ]]--
 local RobloxGui = CoreGui:WaitForChild('RobloxGui')
 local reportAbuseMenu = require(RobloxGui.Modules.Settings.Pages.ReportAbuseMenu)
 
---[[ Bindables ]]--
+local RobloxTranslator
+if FFlagCoreScriptsUseLocalizationModule then
+	RobloxTranslator = require(RobloxGui.Modules.RobloxTranslator)
+end
+
+local function LocalizedGetString(key, rtv)
+	pcall(function()
+		if FFlagCoreScriptsUseLocalizationModule then
+			rtv = RobloxTranslator:FormatByKey(key)
+		else
+			local LocalizationService = game:GetService("LocalizationService")
+			local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+			rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
+		end
+	end)
+	return rtv
+end
+
+
 local BindableEvent_SendNotificationInfo = nil
 spawn(function()
 	BindableEvent_SendNotificationInfo = RobloxGui:WaitForChild("SendNotificationInfo")
 end)
 
---[[ Remotes ]]--
 local RemoteEvent_NewFollower = nil
+local RemoteEvent_UpdatePlayerBlockList = nil
 
 spawn(function()
-	local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
 	RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower', 86400) or RobloxReplicatedStorage:WaitForChild('NewFollower')
+	if FFlagHandlePlayerBlockListsInternalPermissive then
+		RemoteEvent_UpdatePlayerBlockList = RobloxReplicatedStorage:WaitForChild('UpdatePlayerBlockList')
+	end
 end)
 
---[[ Utility Functions ]]--
+
 local function createSignal()
 	local sig = {}
 
@@ -102,18 +112,15 @@ local function createSignal()
 	return sig
 end
 
---[[ Events ]]--
 local BlockStatusChanged = createSignal()
 local MuteStatusChanged = createSignal()
 
---[[ Follower Notifications ]]--
 local function sendNotification(title, text, image, duration, callback)
 	if BindableEvent_SendNotificationInfo then
 		BindableEvent_SendNotificationInfo:Fire { Title = title, Text = text, Image = image, Duration = duration, Callback = callback }
 	end
 end
 
---[[ Friend Functions ]]--
 local function getFriendStatus(selectedPlayer)
 	if selectedPlayer == LocalPlayer then
 		return Enum.FriendStatus.NotFriend
@@ -175,8 +182,6 @@ local function canSendFriendRequestAsync(otherPlayer)
 	end
 end
 
---[[ Follower Functions ]]--
-
 -- Returns whether followerUserId is following userId
 local function isFollowing(userId, followerUserId)
 	local apiPath = "user/following-exists?userId="
@@ -204,7 +209,6 @@ local function isFollowing(userId, followerUserId)
 	return result["success"] and result["isFollowing"]
 end
 
---[[ Functions for Blocking users ]]--
 local BlockedList = {}
 local MutedList = {}
 
@@ -229,10 +233,12 @@ local function GetBlockedPlayersAsync()
 	return {}
 end
 
-spawn(function()
-	BlockedList = GetBlockedPlayersAsync()
-	GetBlockedPlayersCompleted = true
-end)
+if FFlagHandlePlayerBlockListsInternalPermissive == false then
+	spawn(function()
+		BlockedList = GetBlockedPlayersAsync()
+		GetBlockedPlayersCompleted = true
+	end)
+end
 
 local function getBlockedUserIdsFromBlockedList()
 	local userIdList = {}
@@ -258,6 +264,19 @@ local function getBlockedUserIds()
 	return {}
 end
 
+local function initializeBlockList()
+	if FFlagHandlePlayerBlockListsInternalPermissive then
+		spawn(function()
+			BlockedList = GetBlockedPlayersAsync()
+			GetBlockedPlayersCompleted = true
+
+			local RemoteEvent_SetPlayerBlockList = RobloxReplicatedStorage:WaitForChild('SetPlayerBlockList')
+			local blockedUserIds = getBlockedUserIds()
+			RemoteEvent_SetPlayerBlockList:FireServer(blockedUserIds)
+		end)
+	end
+end
+
 local function isBlocked(userId)
 	if (BlockedList[userId]) then
 		return true
@@ -279,6 +298,13 @@ local function BlockPlayerAsync(playerToBlock)
 			if not isBlocked(blockUserId) then
 				BlockedList[blockUserId] = true
 				BlockStatusChanged:fire(blockUserId, true)
+
+				if FFlagHandlePlayerBlockListsInternalPermissive then
+					if RemoteEvent_UpdatePlayerBlockList then
+						RemoteEvent_UpdatePlayerBlockList:FireServer(blockUserId, true)
+					end
+				end
+
 				local success, wasBlocked = pcall(function()
 					local apiPath = "userblock/block"
 					local params = "userId=" ..tostring(playerToBlock.UserId)
@@ -302,6 +328,13 @@ local function UnblockPlayerAsync(playerToUnblock)
 		if isBlocked(unblockUserId) then
 			BlockedList[unblockUserId] = nil
 			BlockStatusChanged:fire(unblockUserId, false)
+
+			if FFlagHandlePlayerBlockListsInternalPermissive then
+				if RemoteEvent_UpdatePlayerBlockList then
+					RemoteEvent_UpdatePlayerBlockList:FireServer(unblockUserId, false)
+				end
+			end
+
 			local success, wasUnBlocked = pcall(function()
 				local apiPath = "userblock/unblock"
 				local params = "userId=" ..tostring(playerToUnblock.UserId)
@@ -337,7 +370,6 @@ local function UnmutePlayer(playerToUnmute)
 	end
 end
 
---[[ Function to create DropDown class ]]--
 function createPlayerDropDown()
 	local playerDropDown = {}
 	playerDropDown.Player = nil
@@ -393,13 +425,13 @@ function createPlayerDropDown()
 	-- Client unfollows followedUserId
 	local function onUnfollowButtonPressed()
 		if not playerDropDown.Player then return end
-		--
+
 		local followedUserId = tostring(playerDropDown.Player.UserId)
 		local apiPath = "user/unfollow"
 		local params = "followedUserId="..followedUserId
 		local success, result = pcall(function()
 			return HttpRbxApiService:PostAsync(apiPath, params, Enum.ThrottlingPriority.Default,
-                Enum.HttpContentType.ApplicationUrlEncoded, Enum.HttpRequestType.Players)
+				Enum.HttpContentType.ApplicationUrlEncoded, Enum.HttpRequestType.Players)
 		end)
 		if not success then
 			print("unfollowPlayer() failed because", result)
@@ -521,7 +553,6 @@ function createPlayerDropDown()
 
 	local TWEEN_TIME = 0.25
 
-	--[[ PlayerDropDown Functions ]]--
 	function playerDropDown:Hide()
 		if playerDropDown.PopupFrame then
 			local offscreenPosition = (playerDropDown.PopupFrameOffScreenPosition ~= nil and playerDropDown.PopupFrameOffScreenPosition or UDim2.new(1, 1, 0, playerDropDown.PopupFrame.Position.Y.Offset))
@@ -611,7 +642,6 @@ function createPlayerDropDown()
 		return playerDropDown.PopupFrame
 	end
 
-	--[[ PlayerRemoving Connection ]]--
 	PlayersService.PlayerRemoving:connect(function(leavingPlayer)
 		if playerDropDown.Player == leavingPlayer then
 			playerDropDown:Hide()
@@ -676,6 +706,10 @@ do
 
 	function moduleApiTable:GetFriendCountAsync(player)
 		return getFriendCountAsync(player.UserId)
+	end
+
+	function moduleApiTable:InitBlockListAsync()
+		initializeBlockList()
 	end
 
 	function moduleApiTable:MaxFriendCount()

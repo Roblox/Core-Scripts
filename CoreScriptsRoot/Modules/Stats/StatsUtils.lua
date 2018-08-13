@@ -4,23 +4,35 @@
   Description: Common work in the performance stats world.
 --]]
 
---[[ Services ]]--
 local CoreGuiService = game:GetService('CoreGui')
 local PlayersService = game:GetService("Players")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
 
-
---[[ Modules ]]--
 local TopbarConstants = require(CoreGuiService.RobloxGui.Modules.TopbarConstants)
 local StyleWidgets = require(CoreGuiService.RobloxGui.Modules.StyleWidgets)
+
+local FFlagStatUtilsUseFormatByKey = settings():GetFFlag('StatUtilsUseFormatByKey')
+local RobloxTranslator
+if FFlagStatUtilsUseFormatByKey then
+  RobloxTranslator = require(CoreGuiService.RobloxGui.Modules.RobloxTranslator)
+end
 
 function LocalizedGetKey(key)
   local rtv = key
   pcall(function()
     local LocalizationService = game:GetService("LocalizationService")
     local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-    rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
+
+    if FFlagStatUtilsUseFormatByKey then
+        rtv = RobloxTranslator:FormatByKey(key)
+    else
+       pcall(function()
+         local LocalizationService = game:GetService("LocalizationService")
+         local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+         rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
+       end)
+    end
   end)
   return rtv
 end
@@ -89,7 +101,7 @@ StatsUtils.StatType_CPU =               "st_CPU"
 StatsUtils.StatType_GPU =               "st_GPU"
 StatsUtils.StatType_NetworkSent =       "st_NetworkSent"
 StatsUtils.StatType_NetworkReceived =   "st_NetworkReceived"
-StatsUtils.StatType_Physics =           "st_Physics"
+StatsUtils.StatType_Ping =              "st_Ping"
 
 StatsUtils.AllStatTypes = {
   StatsUtils.StatType_Memory,
@@ -97,7 +109,7 @@ StatsUtils.AllStatTypes = {
   StatsUtils.StatType_GPU,
   StatsUtils.StatType_NetworkSent,
   StatsUtils.StatType_NetworkReceived,
-  StatsUtils.StatType_Physics,
+  StatsUtils.StatType_Ping,
 }
 
 StatsUtils.StatNames = {
@@ -106,7 +118,7 @@ StatsUtils.StatNames = {
   [StatsUtils.StatType_GPU] = "GPU",
   [StatsUtils.StatType_NetworkSent] = "NetworkSent",
   [StatsUtils.StatType_NetworkReceived] = "NetworkReceived",
-  [StatsUtils.StatType_Physics] = "Physics",
+  [StatsUtils.StatType_Ping] = "Ping",
 }
 
 StatsUtils.StatMaxNames = {
@@ -115,20 +127,23 @@ StatsUtils.StatMaxNames = {
   [StatsUtils.StatType_GPU] = "MaxGPU",
   [StatsUtils.StatType_NetworkSent] = "MaxNetworkSent",
   [StatsUtils.StatType_NetworkReceived] = "MaxNetworkReceived",
-  [StatsUtils.StatType_Physics] = "MaxPhysics",
+  [StatsUtils.StatType_Ping] = "MaxPing",
 }
 
 StatsUtils.NumButtonTypes = table.getn(StatsUtils.AllStatTypes)
 
 local strSentNetwork = ""
 local strReceivedNetwork = ""
-if FFlagUseNotificationsLocalization then
+if FFlagUseNotificationsLocalization or FFlagStatUtilsUseFormatByKey then
   strSentNetwork = LocalizedGetKey("Sent") .. "\n" .. LocalizedGetKey("Network")
   strReceivedNetwork = LocalizedGetKey("Received") .. "\n" .. LocalizedGetKey("Network")
 else
   strSentNetwork = "Sent\n(Network)"
-  strReceivedNetwok = "Received\n(Network)"
+  strReceivedNetwork = "Received\n(Network)"
 end
+
+local success, result = pcall(function() return settings():GetFFlag('PerfWidgetReportPing') end)
+local FFlagPerfWidgetReportPing = success and result
 
 StatsUtils.TypeToName = {
   [StatsUtils.StatType_Memory] = "Memory",
@@ -136,7 +151,7 @@ StatsUtils.TypeToName = {
   [StatsUtils.StatType_GPU] = "GPU",
   [StatsUtils.StatType_NetworkSent] = strSentNetwork,
   [StatsUtils.StatType_NetworkReceived] = strReceivedNetwork,
-  [StatsUtils.StatType_Physics] = "Physics",
+  [StatsUtils.StatType_Ping] = "Phys",
 }
 
 StatsUtils.TypeToShortName = {
@@ -145,8 +160,13 @@ StatsUtils.TypeToShortName = {
   [StatsUtils.StatType_GPU] = "GPU",
   [StatsUtils.StatType_NetworkSent] = "Sent",
   [StatsUtils.StatType_NetworkReceived] = "Recv",
-  [StatsUtils.StatType_Physics] = "Phys",
+  [StatsUtils.StatType_Ping] = "Phys",
 }
+
+if FFlagPerfWidgetReportPing then
+  StatsUtils.TypeToName[StatsUtils.StatType_Ping] = "Ping"
+  StatsUtils.TypeToShortName[StatsUtils.StatType_Ping] = "Ping"
+end
 
 StatsUtils.MemoryAnalyzerTypeToName = {
   ["HumanoidTexture"] = "Humanoid Textures",
@@ -224,7 +244,7 @@ function StatsUtils.FormatTypedValue(value, statType)
     return string.format("%.2f KB/s", value)
   elseif statType == StatsUtils.StatType_NetworkReceived then
     return string.format("%.2f KB/s", value)
-  elseif statType == StatsUtils.StatType_Physics then
+  elseif statType == StatsUtils.StatType_Ping then
     return string.format("%.2f ms", value)
   end
 end
