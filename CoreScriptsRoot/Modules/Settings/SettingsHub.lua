@@ -12,6 +12,7 @@ local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled
 --[[ UTILITIES ]]
 local utility = require(RobloxGui.Modules.Settings.Utility)
 local VRHub = require(RobloxGui.Modules.VR.VRHub)
+local FlagSettings = require(CoreGui.RobloxGui.Modules.Settings.Pages.ShareGame.FlagSettings)
 
 --[[ CONSTANTS ]]
 local SETTINGS_SHIELD_COLOR = Color3.new(41/255,41/255,41/255)
@@ -26,8 +27,15 @@ local QUICK_PROFILER_ACTION_NAME = "Show Quick Profiler"
 
 local VERSION_BAR_HEIGHT = isTenFootInterface and 32 or (utility:IsSmallTouchScreen() and 24 or 26)
 
-local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
-local FFlagUseNotificationsLocalization = success and result
+-- [[ FAST FLAGS ]]
+local FFlagUseNotificationsLocalization = settings():GetFFlag('UseNotificationsLocalization')
+local FFlagSettingsHubBarsRefactor = settings():GetFFlag('SettingsHubBarsRefactor4')
+local FFlagEnableNewDevConsole = settings():GetFFlag("EnableNewDevConsole")
+local FFlagHelpMenuShowPlaceVersion = settings():GetFFlag("HelpMenuShowPlaceVersion")
+local FFlagSettingsHubPlayersHorizontalScroll = settings():GetFFlag("SettingsHubPlayersHorizontalScroll")
+
+local enableResponsiveUIFixSuccess, enableResponsiveUIFixValue = pcall(function() return settings():GetFFlag("EnableResponsiveUIFix") end)
+local FFlagEnableResponsiveUIFix = enableResponsiveUIFixSuccess and enableResponsiveUIFixValue
 
 --[[ SERVICES ]]
 local RobloxReplicatedStorage = game:GetService("RobloxReplicatedStorage")
@@ -38,11 +46,10 @@ local GuiService = game:GetService("GuiService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local VRService = game:GetService("VRService")
+local HttpRbxApiService = game:GetService("HttpRbxApiService")
+local HttpService = game:GetService("HttpService")
 local Settings = UserSettings()
 local GameSettings = Settings.GameSettings
-
-local enableResponsiveUIFixSuccess, enableResponsiveUIFixValue = pcall(function() return settings():GetFFlag("EnableResponsiveUIFix") end)
-local enableResponsiveUI = enableResponsiveUIFixSuccess and enableResponsiveUIFixValue
 
 --[[ REMOTES ]]
 local GetServerVersionRemote = nil
@@ -58,11 +65,14 @@ local platform = UserInputService:GetPlatform()
 local baseUrl = ContentProvider.BaseUrl
 local isTestEnvironment = not string.find(baseUrl, "www.roblox.com")
 local DeveloperConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
+local DevConsoleMaster = require(RobloxGui.Modules.DevConsoleMaster)
 
 local lastInputChangedCon = nil
 local chatWasVisible = false
 
 local connectedServerVersion = nil
+
+local IsShareGamePageEnabledByPlatform = FlagSettings.IsShareGamePageEnabledByPlatform(platform)
 
 --[[ CORE MODULES ]]
 local chat = require(RobloxGui.Modules.ChatSelector)
@@ -70,6 +80,16 @@ local chat = require(RobloxGui.Modules.ChatSelector)
 if utility:IsSmallTouchScreen() or isTenFootInterface then
 	SETTINGS_SHIELD_ACTIVE_POSITION = UDim2.new(0,0,0,0)
 	SETTINGS_SHIELD_SIZE = UDim2.new(1,0,1,0)
+end
+
+local function GetCorePackagesLoaded(packageList)
+	local CorePackages = game:GetService("CorePackages")
+	for _, moduleName in pairs(packageList) do
+		if not CorePackages:FindFirstChild(moduleName) then
+			return false
+		end
+	end
+	return true
 end
 
 local function GetServerVersionBlocking()
@@ -83,6 +103,19 @@ local function GetServerVersionBlocking()
 	end
 	connectedServerVersion = GetServerVersionRemote:InvokeServer()
 	return connectedServerVersion
+end
+
+local function GetPlaceVersionText()
+	local text = game.PlaceVersion
+
+	pcall(function()
+		local json = HttpRbxApiService:GetAsync(string.format("assets/%d/versions", game.PlaceId))
+		local versionData = HttpService:JSONDecode(json)
+		local latestVersion = versionData[1].VersionNumber
+		text = string.format("%s (Latest: %d)", text, latestVersion)
+	end)
+
+	return text
 end
 
 local function CreateSettingsHub()
@@ -106,17 +139,29 @@ local function CreateSettingsHub()
 	PoppedMenuEvent.Name = "PoppedMenu"
 	this.PoppedMenu = PoppedMenuEvent.Event
 
+	local function shouldShowHubBar(whichPage)
+		whichPage = whichPage or this.Pages.CurrentPage
+		return whichPage.ShouldShowBottomBar == true
+	end
+
 	local function shouldShowBottomBar(whichPage)
 		whichPage = whichPage or this.Pages.CurrentPage
-		if whichPage == this.LeaveGamePage or whichPage == this.ResetCharacterPage then
-			return false
+
+		if not FFlagSettingsHubBarsRefactor then
+			if whichPage == this.LeaveGamePage or whichPage == this.ResetCharacterPage then
+				return false
+			end
 		end
 
 		if utility:IsPortrait() or utility:IsSmallTouchScreen() then
 			return false
 		end
 
-		return true
+		if FFlagSettingsHubBarsRefactor then
+			return whichPage.ShouldShowBottomBar == true
+		else
+			return true
+		end
 	end
 
 	local function setBottomBarBindings()
@@ -336,6 +381,16 @@ local function CreateSettingsHub()
 			Visible = false
 		}
 
+		local size = UDim2.new(0.5, -6, 1, -6)
+		local clientPosition = UDim2.new(0.5, 3, 0, 3)
+		local clientTextAlignment = Enum.TextXAlignment.Right
+
+		if FFlagHelpMenuShowPlaceVersion then
+			size = UDim2.new(0.333, -6, 1, -6)
+			clientPosition = UDim2.new(0.333, 3, 0, 3)
+			clientTextAlignment = Enum.TextXAlignment.Center
+		end
+
 		this.ServerVersionLabel = utility:Create("TextLabel") {
 			Name = "ServerVersionLabel",
 			Parent = this.VersionContainer,
@@ -344,7 +399,7 @@ local function CreateSettingsHub()
 			TextColor3 = Color3.new(1,1,1),
 			TextSize = isTenFootInterface and 28 or (utility:IsSmallTouchScreen() and 14 or 20),
 			Text = "Server Version: ...",
-			Size = UDim2.new(.5,-6,1,-6),
+			Size = size,
 			Font = Enum.Font.SourceSans,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			ZIndex = 5
@@ -356,16 +411,37 @@ local function CreateSettingsHub()
 		this.ClientVersionLabel = utility:Create("TextLabel") {
 			Name = "ClientVersionLabel",
 			Parent = this.VersionContainer,
-			Position = UDim2.new(0.5,3,0,3),
+			Position = clientPosition,
 			BackgroundTransparency = 1,
 			TextColor3 = Color3.new(1,1,1),
 			TextSize = isTenFootInterface and 28 or (utility:IsSmallTouchScreen() and 14 or 20),
 			Text = "Client Version: "..RunService:GetRobloxVersion(),
-			Size = UDim2.new(.5,-6,1,-6),
+			Size = size,
 			Font = Enum.Font.SourceSans,
-			TextXAlignment = Enum.TextXAlignment.Right,
+			TextXAlignment = clientTextAlignment,
 			ZIndex = 5
 		}
+
+		if FFlagHelpMenuShowPlaceVersion then
+			this.PlaceVersionLabel = utility:Create("TextLabel") {
+				Name = "PlaceVersionLabel",
+				Parent = this.VersionContainer,
+				Position = UDim2.new(0.666, 3, 0, 3),
+				BackgroundTransparency = 1,
+				TextColor3 = Color3.new(1, 1, 1),
+				TextSize = isTenFootInterface and 28 or (utility:IsSmallTouchScreen() and 14 or 20),
+				Text = "Place Version: ...",
+				Size = UDim2.new(.333, -6, 1, -6),
+				Font = Enum.Font.SourceSans,
+				TextXAlignment = Enum.TextXAlignment.Right,
+				ZIndex = 5,
+			}
+			local function setPlaceVersionText()
+				this.PlaceVersionLabel.Text = "Place Version: "..GetPlaceVersionText()
+			end
+			game:GetPropertyChangedSignal("PlaceVersion"):Connect(setPlaceVersionText)
+			spawn(setPlaceVersionText)
+		end
 
 		this.EnvironmentLabel = utility:Create("TextLabel") {
 			Name = "EnvironmentLabel",
@@ -405,7 +481,7 @@ local function CreateSettingsHub()
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Parent = this.Shield
 		}
-		if enableResponsiveUI then
+		if FFlagEnableResponsiveUIFix then
 			this.MenuListLayout = utility:Create'UIListLayout'
 			{
 				Name = "MenuListLayout",
@@ -490,6 +566,9 @@ local function CreateSettingsHub()
 			Selectable = false,
 			Parent = this.PageViewClipper,
 		};
+		if FFlagSettingsHubPlayersHorizontalScroll then
+			this.PageView.VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar
+		end
 
 		this.PageViewInnerFrame = utility:Create'Frame'
 		{
@@ -627,7 +706,7 @@ local function CreateSettingsHub()
 	end
 
 	local function onScreenSizeChanged()
-		
+
 		local largestPageSize = 600
 		local fullScreenSize = RobloxGui.AbsoluteSize.y
 		local bufferSize = (1-0.95) * fullScreenSize
@@ -789,8 +868,12 @@ local function CreateSettingsHub()
 	local function toggleDevConsole(actionName, inputState, inputObject)
 		if actionName == DEV_CONSOLE_ACTION_NAME then	 -- ContextActionService->F9
 			if inputState and inputState == Enum.UserInputState.Begin then
-				local devConsoleVisible = DeveloperConsoleModule:GetVisibility()
-				DeveloperConsoleModule:SetVisibility(not devConsoleVisible)
+				if FFlagEnableNewDevConsole then
+					DevConsoleMaster:ToggleVisibility()
+				else
+					local devConsoleVisible = DeveloperConsoleModule:GetVisibility()
+					DeveloperConsoleModule:SetVisibility(not devConsoleVisible)
+				end
 			end
 		end
 	end
@@ -1035,13 +1118,27 @@ local function CreateSettingsHub()
 			end
 		end
 
+		-- set top & bottom bar visibility
 		if this.BottomButtonFrame then
 			if shouldShowBottomBar(pageToSwitchTo) then
 				setBottomBarBindings()
 			else
 				this.BottomButtonFrame.Visible = false
 			end
-			this.HubBar.Visible = not (pageToSwitchTo == this.LeaveGamePage or pageToSwitchTo == this.ResetCharacterPage)
+
+			if FFlagSettingsHubBarsRefactor then
+				this.HubBar.Visible = shouldShowHubBar(pageToSwitchTo)
+			else
+				this.HubBar.Visible = not (pageToSwitchTo == this.LeaveGamePage or pageToSwitchTo == this.ResetCharacterPage)
+			end
+		end
+
+		if FFlagSettingsHubBarsRefactor then
+			-- set whether the page should be clipped
+			local isClipped = pageToSwitchTo.IsPageClipped == true
+			this.PageViewClipper.ClipsDescendants = isClipped
+			this.PageView.ClipsDescendants = isClipped
+			this.PageViewInnerFrame.ClipsDescendants = isClipped
 		end
 
 		-- make sure page is visible
@@ -1051,20 +1148,24 @@ local function CreateSettingsHub()
 
 		local pageSize = this.Pages.CurrentPage:GetSize()
 		this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
-		if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
-			this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
-		else
-			this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)
+		if not FFlagSettingsHubPlayersHorizontalScroll then
+			if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
+				this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
+			else
+				this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)
+			end
 		end
 
 		pageChangeCon = this.Pages.CurrentPage.Page.Changed:connect(function(prop)
 			if prop == "AbsoluteSize" then
 				local pageSize = this.Pages.CurrentPage:GetSize()
 				this.PageView.CanvasSize = UDim2.new(0,pageSize.X,0,pageSize.Y)
-				if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
-					this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
-				else
-					this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)
+				if not FFlagSettingsHubPlayersHorizontalScroll then
+					if this.PageView.CanvasSize.Y.Offset > this.PageView.AbsoluteSize.Y then
+						this.PageViewInnerFrame.Size = UDim2.new(1, -this.PageView.ScrollBarThickness, 1, 0)
+					else
+						this.PageViewInnerFrame.Size = UDim2.new(1, 0, 1, 0)
+					end
 				end
 			end
 		end)
@@ -1371,6 +1472,26 @@ local function CreateSettingsHub()
 	if not isTenFootInterface then
 		this.PlayersPage = require(RobloxGui.Modules.Settings.Pages.Players)
 		this.PlayersPage:SetHub(this)
+
+		if IsShareGamePageEnabledByPlatform then
+			local shareGameCorePackages = {
+				"Roact",
+				"Rodux",
+				"RoactRodux",
+			}
+			if GetCorePackagesLoaded(shareGameCorePackages) then
+				-- Create the embedded Roact app for the ShareGame page
+				-- This is accomplished via a Roact Portal into the ShareGame page frame
+				local ShareGameMaster = require(RobloxGui.Modules.Settings.ShareGameMaster)
+				this.ShareGameApp = ShareGameMaster.createApp(this.PageViewClipper)
+
+
+				this.ShareGamePage = require(RobloxGui.Modules.Settings.Pages.ShareGamePlaceholderPage)
+				this.ShareGamePage:ConnectHubToApp(this, this.ShareGameApp)
+
+				this:AddPage(this.ShareGamePage)
+			end
+		end
 	end
 
 	-- page registration

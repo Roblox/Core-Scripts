@@ -92,9 +92,6 @@ local hasGameLoaded = false
 local GestureArea = nil
 local GestureAreaManagedByControlScript = false
 
---todo: remove this once TouchTapInWorld is on all platforms
-local touchWorkspaceEventEnabled = pcall(function() local test = UserInputService.TouchTapInWorld end)
-
 local function layoutGestureArea(portraitMode)
 	if GestureArea and not GestureAreaManagedByControlScript then
 		if portraitMode then
@@ -138,7 +135,7 @@ local function OnCharacterAdded(character)
 				ScreenGui.Parent = PlayerGui
 				
 				GestureArea = Instance.new("Frame")
-				GestureArea.BackgroundTransparency = 1.0
+                GestureArea.BackgroundTransparency = 1.0
 				GestureArea.Visible = true
 				GestureArea.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 				layoutGestureArea(PortraitMode)
@@ -452,6 +449,11 @@ local function CreateCamera()
 	-- there are several cases to consider based on the state of input and camera rotation mode
 	function this:UpdateMouseBehavior()
 		-- first time transition to first person mode or shiftlock
+		local camera = workspace.CurrentCamera
+		if camera.CameraType == Enum.CameraType.Scriptable then
+			return
+		end
+		
 		if isFirstPerson or self:GetShiftLock() then
 			pcall(function() GameSettings.RotationType = Enum.RotationType.CameraRelative end)
 			if UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter then
@@ -774,7 +776,24 @@ local function CreateCamera()
 		--If isDynamicThumbstickEnabled, then only process TouchBegan event if it starts in GestureArea
 		
 		local dtFrame = getDynamicThumbstickFrame()
-		if (not touchWorkspaceEventEnabled and not isDynamicThumbstickEnabled) or positionIntersectsGuiObject(input.Position, GestureArea) and (not dtFrame or not positionIntersectsGuiObject(input.Position, dtFrame)) then
+        
+        local isDynamicThumbstickUsingThisInput = false
+        if isDynamicThumbstickEnabled then
+            local ControlScript = CameraScript.Parent:FindFirstChild("ControlScript")
+            if ControlScript then
+                local MasterControl = ControlScript:FindFirstChild("MasterControl")
+                if MasterControl then
+                    local DynamicThumbstickModule = MasterControl:FindFirstChild("DynamicThumbstick")
+                    if DynamicThumbstickModule then
+                        DynamicThumbstickModule = require(DynamicThumbstickModule)
+                        local dynamicInputObject = DynamicThumbstickModule:GetInputObject()
+                        isDynamicThumbstickUsingThisInput = (dynamicInputObject == input)
+                    end
+                end
+            end
+        end
+        
+		if not isDynamicThumbstickUsingThisInput then
 			fingerTouches[input] = processed
 			if not processed then
 				inputStartPositions[input] = input.Position
@@ -862,54 +881,6 @@ local function CreateCamera()
 		end
 		return nil
 	end
-
-	local OnTouchTap = nil
-	if not touchWorkspaceEventEnabled then
-		OnTouchTap = function(position)
-			if isDynamicThumbstickEnabled and not IsAToolEquipped then
-				if lastTapTime and tick() - lastTapTime < MAX_TIME_FOR_DOUBLE_TAP then
-					local tween = {
-						from = this:GetCameraZoom(),
-						to = DefaultZoom,
-						start = tick(),
-						duration = 0.2,
-						func = function(from, to, alpha)
-							this:ZoomCamera(from + (to - from)*alpha)
-							return to
-						end
-					}
-					tweens["Zoom"] = tween
-				else
-					local humanoid = this:GetHumanoid()
-					if humanoid then
-						local player = PlayersService.LocalPlayer
-						if player and player.Character then
-							if humanoid and humanoid.Torso then
-								local tween = {
-									from = this.RotateInput,
-									to = calcLookBehindRotateInput(humanoid.Torso),
-									start = tick(),
-									duration = 0.2,
-									func = function(from, to, alpha)
-										to = calcLookBehindRotateInput(humanoid.Torso)
-										if to then
-											this.RotateInput = from + (to - from)*alpha
-										end
-										return to
-									end
-								}
-								tweens["Rotate"] = tween
-								
-								-- reset old camera info so follow cam doesn't rotate us
-								this.LastCameraTransform = nil
-							end
-						end
-					end
-				end
-				lastTapTime = tick()
-			end
-		end
-	end
 	
 	local function IsTouchTap(input)
 		-- We can't make the assumption that the input exists in the inputStartPositions because we may have switched from a different camera type.
@@ -933,9 +904,6 @@ local function CreateCamera()
 				startPos = nil
 				lastPos = nil
 				this.UserPanningTheCamera = false
-				if not touchWorkspaceEventEnabled and IsTouchTap(input) then
-					OnTouchTap(input.Position)
-				end
 			elseif NumUnsunkTouches == 2 then
 				StartingDiff = nil
 				pinchBeginZoom = nil
@@ -1095,6 +1063,10 @@ local function CreateCamera()
 		end
 	end
 
+	local function onWindowFocusReleased()
+		this:ResetInputStates()
+	end
+
 	local lastThumbstickRotate = nil
 	local numOfSeconds = 0.7
 	local currentSpeed = 0
@@ -1189,7 +1161,7 @@ local function CreateCamera()
 		return ZERO_VECTOR2
 	end
 
-	local InputBeganConn, InputChangedConn, InputEndedConn, MenuOpenedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn, TouchActivateConn = nil, nil, nil, nil, nil, nil, nil, nil
+	local InputBeganConn, InputChangedConn, InputEndedConn, WindowUnfocusConn, MenuOpenedConn, ShiftLockToggleConn, GamepadConnectedConn, GamepadDisconnectedConn, TouchActivateConn = nil, nil, nil, nil, nil, nil, nil, nil, nil
 
 	function this:DisconnectInputEvents()
 		if InputBeganConn then
@@ -1204,6 +1176,10 @@ local function CreateCamera()
 			InputEndedConn:disconnect()
 			InputEndedConn = nil
 		end
+		if WindowUnfocusConn then
+			WindowUnfocusConn:disconnect()
+			WindowUnfocusConn = nil
+		end 
 		if MenuOpenedConn then
 			MenuOpenedConn:disconnect()
 			MenuOpenedConn = nil
@@ -1263,6 +1239,8 @@ local function CreateCamera()
 	function this:ResetInputStates()
 		isRightMouseDown = false
 		isMiddleMouseDown = false
+		this.TurningRight = false
+		this.TurningLeft = false
 		OnMousePanButtonReleased() -- this function doesn't seem to actually need parameters
 
 		if UserInputService.TouchEnabled then
@@ -1353,6 +1331,8 @@ local function CreateCamera()
 				OnKeyUp(input, processed)
 			end
 		end)
+
+		WindowUnfocusConn = UserInputService.WindowFocusReleased:connect(onWindowFocusReleased)
 
 		MenuOpenedConn = GuiService.MenuOpened:connect(function()
 			this:ResetInputStates()

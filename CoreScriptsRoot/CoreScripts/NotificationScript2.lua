@@ -11,7 +11,6 @@
 			CreatePlaceInPlayerInventoryAsync
 --]]
 
---[[ Services ]]--
 local BadgeService = game:GetService('BadgeService')
 local GuiService = game:GetService('GuiService')
 local Players = game:GetService('Players')
@@ -32,20 +31,28 @@ local GameSettings = Settings.GameSettings
 
 local success, result = pcall(function() return settings():GetFFlag('UseNotificationsLocalization') end)
 local FFlagUseNotificationsLocalization = success and result
+
+local FFlagCoreScriptsUseLocalizationModule = settings():GetFFlag('CoreScriptsUseLocalizationModule')
+local FFlagNotificationScript2UseFormatByKey = settings():GetFFlag('NotificationScript2UseFormatByKey')
+
+local RobloxTranslator
+if FFlagCoreScriptsUseLocalizationModule then
+	RobloxTranslator = require(RobloxGui:WaitForChild("Modules"):WaitForChild("RobloxTranslator"))
+end
+
 local function LocalizedGetString(key, rtv)
 	pcall(function()
-		local LocalizationService = game:GetService("LocalizationService")
-		local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
-		rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
+		if FFlagCoreScriptsUseLocalizationModule then
+			rtv = RobloxTranslator:FormatByKey(key)
+		else
+			local LocalizationService = game:GetService("LocalizationService")
+			local CorescriptLocalization = LocalizationService:GetCorescriptLocalizations()[1]
+			rtv = CorescriptLocalization:GetString(LocalizationService.RobloxLocaleId, key)
+		end
 	end)
 	return rtv
 end
 
---[[ Fast Flags ]]--
-local useNewThumbnailApiSuccess, useNewThumbnailApiValue = pcall(function() return settings():GetFFlag("CoreScriptsUseNewUserThumbnailAPI2") end)
-local useNewUserThumbnailAPI = useNewThumbnailApiSuccess and useNewThumbnailApiValue
-
---[[ Script Variables ]]--
 local LocalPlayer = nil
 while not Players.LocalPlayer do
 	wait()
@@ -67,10 +74,9 @@ local isTenFootInterface = require(RobloxGui.Modules.TenFootInterface):IsEnabled
 local pointsNotificationsActive = true
 local badgesNotificationsActive = true
 
---[[ Modules ]]--
 local SocialUtil = require(RobloxGui.Modules:WaitForChild("SocialUtil"))
+local GameTranslator = require(RobloxGui.Modules.GameTranslator)
 
---[[ Constants ]]--
 local BG_TRANSPARENCY = 0.7
 local MAX_NOTIFICATIONS = 3
 
@@ -97,12 +103,12 @@ if friendRequestNotificationFIntSuccess and friendRequestNotificationFIntValue ~
 	FRIEND_REQUEST_NOTIFICATION_THROTTLE = friendRequestNotificationFIntValue
 end
 
---[[ Images ]]--
+local FFlagCoreScriptTranslateGameText2 = settings():GetFFlag("CoreScriptTranslateGameText2")
+
 local PLAYER_POINTS_IMG = 'https://www.roblox.com/asset?id=206410433'
 local BADGE_IMG = 'https://www.roblox.com/asset?id=206410289'
 local FRIEND_IMAGE = 'https://www.roblox.com/thumbs/avatar.ashx?userId='
 
---[[ Gui Creation ]]--
 local function createFrame(name, size, position, bgt)
 	local frame = Instance.new('Frame')
 	frame.Name = name
@@ -113,7 +119,8 @@ local function createFrame(name, size, position, bgt)
 	return frame
 end
 
-local function createTextButton(name, text, position)
+--remove along with FFlagCoreScriptTranslateGameText2
+local function createTextButtonOld(name, text, position)
 	local button = Instance.new('TextButton')
 	button.Name = name
 	button.Size = UDim2.new(0.5, -2, 0.5, 0)
@@ -124,6 +131,20 @@ local function createTextButton(name, text, position)
 	button.FontSize = Enum.FontSize.Size18
 	button.TextColor3 = Color3.new(1, 1, 1)
 	button.Text = text
+
+	return button
+end
+
+local function createTextButton(name, position)
+	local button = Instance.new('TextButton')
+	button.Name = name
+	button.Size = UDim2.new(0.5, -2, 0.5, 0)
+	button.Position = position
+	button.BackgroundTransparency = BG_TRANSPARENCY
+	button.BackgroundColor3 = Color3.new(0, 0, 0)
+	button.Font = Enum.Font.SourceSansBold
+	button.FontSize = Enum.FontSize.Size18
+	button.TextColor3 = Color3.new(1, 1, 1)
 
 	return button
 end
@@ -208,25 +229,20 @@ PopupText.TextYAlignment = Enum.TextYAlignment.Top
 PopupText.Text = "This is a popup"
 PopupText.Parent = PopupFrame
 
---[[ Helper Functions ]]--
-local insertNotification = nil
-local removeNotification = nil
+local insertNotification
+local removeNotification
 
 local function getFriendImage(playerId)
-	if useNewUserThumbnailAPI then
-		-- SocialUtil.GetPlayerImage can yield for up to  MAX_GET_FRIEND_IMAGE_YIELD_TIME seconds while waiting for thumbnail to be final.
-		-- It will just return an invalid thumbnail if a valid one can not be generated in time.
-		return SocialUtil.GetPlayerImage(playerId, Enum.ThumbnailSize.Size48x48, Enum.ThumbnailType.HeadShot, --[[timeOut = ]] MAX_GET_FRIEND_IMAGE_YIELD_TIME)
-	else
-		return ("http://www.roblox.com/thumbs/avatar.ashx?userId=%d&x=%d&y=%d"):format(playerId, 48, 48)
-	end
+    -- SocialUtil.GetPlayerImage can yield for up to  MAX_GET_FRIEND_IMAGE_YIELD_TIME seconds while waiting for thumbnail to be final.
+    -- It will just return an invalid thumbnail if a valid one can not be generated in time.
+    return SocialUtil.GetPlayerImage(playerId, Enum.ThumbnailSize.Size48x48, Enum.ThumbnailType.HeadShot, --[[timeOut = ]] MAX_GET_FRIEND_IMAGE_YIELD_TIME)
 end
 
---
+
 local function createNotification(title, text, image)
 	local notificationFrame = DefaultNotification:Clone()
 	notificationFrame.Position = UDim2.new(1, 4, 1, -NOTIFICATION_Y_OFFSET - 4)
-	--
+
 	local notificationTitle = NotificationTitle:Clone()
 	notificationTitle.Text = title
 	notificationTitle.Parent = notificationFrame
@@ -299,6 +315,7 @@ local function createNotification(title, text, image)
 	return notificationFrame
 end
 
+
 local function findNotification(notification)
 	local index = nil
 	for i = 1, #NotificationQueue do
@@ -359,16 +376,12 @@ insertNotification = function(notification)
 
 			removeNotification(notification)
 		end)
---[[
-		delay(notification.Duration, function()
-			removeNotification(notification)
-		end)
-]]
+
 		while tick() - lastTimeInserted < TWEEN_TIME do
 			wait()
 		end
 		lastTimeInserted = tick()
-		--
+
 		updateNotifications()
 	end)
 end
@@ -424,17 +437,38 @@ local function onSendNotificationInfo(notificationInfo)
 		return
 	end
 	local callback = notificationInfo.Callback
+
 	local button1Text = notificationInfo.Button1Text
 	local button2Text = notificationInfo.Button2Text
+	local localizedButton1Text = notificationInfo.Button1TextLocalized --remove along with FFlagCoreScriptTranslateGameText2
+	local localizedButton2Text = notificationInfo.Button2TextLocalized --remove along with FFlagCoreScriptTranslateGameText2
 
 	local notification = {}
-	local notificationFrame = createNotification(notificationInfo.Title, notificationInfo.Text, notificationInfo.Image)
-	--
+	local notificationFrame
 
-	local button1 = nil
+	if FFlagCoreScriptTranslateGameText2 then
+		notificationFrame = createNotification(
+			GameTranslator:TranslateGameText(CoreGui, notificationInfo.Title),
+			GameTranslator:TranslateGameText(CoreGui, notificationInfo.Text),
+			notificationInfo.Image)
+	else
+		notificationFrame = createNotification(notificationInfo.Title, notificationInfo.Text, notificationInfo.Image)
+	end
+
+	local button1
 	if button1Text and button1Text ~= "" then
 		notification.IsFriend = true -- Prevents other notifications overlapping the buttons
-		button1 = createTextButton("Button1", button1Text, UDim2.new(0, 0, 1, 2))
+		if FFlagCoreScriptTranslateGameText2 then
+			button1 = createTextButton("Button1", UDim2.new(0, 0, 1, 2))
+			if notificationInfo.AutoLocalize then
+				GameTranslator:TranslateAndRegister(button1, CoreGui, button1Text)
+			else
+				button1.Text = button1Text
+			end
+		else
+			button1 = createTextButtonOld("Button1", localizedButton1Text or button1Text, UDim2.new(0, 0, 1, 2))
+		end
+
 		button1.Parent = notificationFrame
 		local button1ClickedConnection = nil
 		button1ClickedConnection = button1.MouseButton1Click:connect(function()
@@ -451,9 +485,22 @@ local function onSendNotificationInfo(notificationInfo)
 		end)
 	end
 
+	local button2
 	if button2Text and button2Text ~= "" then
 		notification.IsFriend = true
-		local button2 = createTextButton("Button1", button2Text, UDim2.new(0.5, 2, 1, 2))
+
+		if FFlagCoreScriptTranslateGameText2 then
+			button2 = createTextButton("Button2", UDim2.new(0.5, 2, 1, 2))
+
+			if notificationInfo.AutoLocalize then
+				GameTranslator:TranslateAndRegister(button2, CoreGui, button2Text)
+			else
+				button2.Text = button2Text
+			end
+		else
+			button2 = createTextButtonOld("Button1", localizedButton2Text or button2Text, UDim2.new(0.5, 2, 1, 2))
+		end
+
 		button2.Parent = notificationFrame
 		local button2ClickedConnection = nil
 		button2ClickedConnection = button2.MouseButton1Click:connect(function()
@@ -490,12 +537,17 @@ spawn(function()
 
 	local RobloxReplicatedStorage = game:GetService('RobloxReplicatedStorage')
 	local RemoteEvent_NewFollower = RobloxReplicatedStorage:WaitForChild('NewFollower', 86400) or RobloxReplicatedStorage:WaitForChild('NewFollower')
-	--
+
 	RemoteEvent_NewFollower.OnClientEvent:connect(function(followerRbxPlayer)
 		local message = ("%s is now following you"):format(followerRbxPlayer.Name)
-		if FFlagUseNotificationsLocalization then
-			message = string.gsub(LocalizedGetString("NotificationScript2.NewFollower",message),"{RBX_NAME}",followerRbxPlayer.Name)
+		if FFlagNotificationScript2UseFormatByKey then
+			message = RobloxTranslator:FormatByKey("NotificationScript2.NewFollower", {RBX_NAME = followerRbxPlayer.Name})
+		else
+			if FFlagUseNotificationsLocalization then
+				message = string.gsub(LocalizedGetString("NotificationScript2.NewFollower",message),"{RBX_NAME}",followerRbxPlayer.Name)
+			end
 		end
+
 		local image = getFriendImage(followerRbxPlayer.UserId)
 		sendNotificationInfo {
 			GroupName = "Friends",
@@ -558,15 +610,21 @@ local function sendFriendNotification(fromPlayer)
 	}
 end
 
---[[ Friend Notifications ]]--
 local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 	if fromPlayer ~= LocalPlayer and toPlayer ~= LocalPlayer then return end
 	--
 	if fromPlayer == LocalPlayer then
 		if event == Enum.FriendRequestEvent.Accept then
 			local detailText = "You are now friends with " .. toPlayer.Name .. "!"
-			if FFlagUseNotificationsLocalization then
-				detailText = string.gsub(LocalizedGetString("NotificationScript2.FriendRequestEvent.Accept",detailText), "{RBX_NAME}", toPlayer.Name)
+
+			if FFlagNotificationScript2UseFormatByKey then
+				detailText = RobloxTranslator:FormatByKey(
+					"NotificationScript2.FriendRequestEvent.Accept",
+					{RBX_NAME = toPlayer.Name})
+			else
+				if FFlagUseNotificationsLocalization then
+					detailText = string.gsub(LocalizedGetString("NotificationScript2.FriendRequestEvent.Accept",detailText), "{RBX_NAME}", toPlayer.Name)
+				end
 			end
 
 			sendNotificationInfo {
@@ -586,43 +644,74 @@ local function onFriendRequestEvent(fromPlayer, toPlayer, event)
 			sendFriendNotification(fromPlayer)
 		elseif event == Enum.FriendRequestEvent.Accept then
 			local detailText = "You are now friends with " .. fromPlayer.Name .. "!"
-			if FFlagUseNotificationsLocalization then
-				detailText = string.gsub(LocalizedGetString("NotificationScript2.FriendRequestEvent.Accept",detailText), "{RBX_NAME}", fromPlayer.Name)
-			end
-			sendNotificationInfo {
-				GroupName = "Friends",
-				Title = "New Friend",
-				Text = fromPlayer.Name,
-				DetailText = "You are now friends with " .. fromPlayer.Name .. "!",
 
-				Image = getFriendImage(fromPlayer.UserId),
-				Duration = DEFAULT_NOTIFICATION_DURATION
-			}
+			if FFlagNotificationScript2UseFormatByKey then
+				detailText = RobloxTranslator:FormatByKey("NotificationScript2.FriendRequestEvent.Accept", {RBX_NAME = fromPlayer.Name})
+
+				sendNotificationInfo {
+					GroupName = "Friends",
+					Title = "New Friend",
+					Text = fromPlayer.Name,
+					DetailText = detailText,
+
+					Image = getFriendImage(fromPlayer.UserId),
+					Duration = DEFAULT_NOTIFICATION_DURATION
+				}
+			else
+				if FFlagUseNotificationsLocalization then
+					detailText = string.gsub(LocalizedGetString("NotificationScript2.FriendRequestEvent.Accept",detailText), "{RBX_NAME}", fromPlayer.Name)
+				end
+
+				sendNotificationInfo {
+					GroupName = "Friends",
+					Title = "New Friend",
+					Text = fromPlayer.Name,
+					DetailText = "You are now friends with " .. fromPlayer.Name .. "!",
+
+					Image = getFriendImage(fromPlayer.UserId),
+					Duration = DEFAULT_NOTIFICATION_DURATION
+				}
+			end
+
 		end
 	end
 end
 
---[[ Player Points Notifications ]]--
 local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTotalBalance)
 	if pointsNotificationsActive and userId == LocalPlayer.UserId then
 		local title, text, detailText
 		if pointsAwarded == 1 then
 			title = "Point Awarded"
 			text = "You received 1 point!"
-			if FFlagUseNotificationsLocalization then
-				text = string.gsub(LocalizedGetString("NotificationScript2.onPointsAwarded.single",text),"{RBX_NUMBER}",pointsAwarded)
+
+			if FFlagNotificationScript2UseFormatByKey then
+				text = RobloxTranslator:FormatByKey("NotificationScript2.onPointsAwarded.single", {RBX_NUMBER = tostring(pointsAwarded)})
+			else
+				if FFlagUseNotificationsLocalization then
+					text = string.gsub(LocalizedGetString("NotificationScript2.onPointsAwarded.single",text),"{RBX_NUMBER}",pointsAwarded)
+				end
 			end
 		elseif pointsAwarded > 0 then
 			title = "Points Awarded"
 			text = ("You received %d points!"):format(pointsAwarded)
-			if FFlagUseNotificationsLocalization then
-				text = string.gsub(LocalizedGetString("NotificationScript2.onPointsAwarded.multiple",text),"{RBX_NUMBER}",pointsAwarded)
+
+			if FFlagNotificationScript2UseFormatByKey then
+				text = RobloxTranslator:FormatByKey("NotificationScript2.onPointsAwarded.multiple", {RBX_NUMBER = tostring(pointsAwarded)})
+			else
+				if FFlagUseNotificationsLocalization then
+					text = string.gsub(LocalizedGetString("NotificationScript2.onPointsAwarded.multiple",text),"{RBX_NUMBER}",pointsAwarded)
+				end
 			end
 		elseif pointsAwarded < 0 then
 			title = "Points Lost"
 			text = ("You lost %d points!"):format(math.abs(pointsAwarded))
-			if FFlagUseNotificationsLocalization then
-				text = string.gsub(LocalizedGetString("NotificationScript2.onPointsAwarded.negative",text),"{RBX_NUMBER}",math.abs(pointsAwarded))
+
+			if FFlagNotificationScript2UseFormatByKey then
+				text = RobloxTranslator:FormatByKey("NotificationScript2.onPointsAwarded.negative", {RBX_NUMBER = tostring(pointsAwarded)})
+			else
+				if FFlagUseNotificationsLocalization then
+					text = string.gsub(LocalizedGetString("NotificationScript2.onPointsAwarded.negative",text),"{RBX_NUMBER}",math.abs(pointsAwarded))
+				end
 			end
 		else
 			--don't notify for 0 points, shouldn't even happen
@@ -641,7 +730,6 @@ local function onPointsAwarded(userId, pointsAwarded, userBalanceInGame, userTot
 	end
 end
 
---[[ Badge Notification ]]--
 local function onBadgeAwarded(message, userId, badgeId)
 	if not BadgeBlacklist[badgeId] and badgesNotificationsActive and userId == LocalPlayer.UserId then
 		BadgeBlacklist[badgeId] = true
@@ -657,7 +745,6 @@ local function onBadgeAwarded(message, userId, badgeId)
 	end
 end
 
---[[ Graphics Changes Notification ]]--
 function onGameSettingsChanged(property, amount)
 	if property == "SavedQualityLevel" then
 		local level = GameSettings.SavedQualityLevel.Value + amount
@@ -671,11 +758,19 @@ function onGameSettingsChanged(property, amount)
 			local action = (level > CurrentGraphicsQualityLevel) and "Increased" or "Decreased"
 			local message = ("%s to (%d)"):format(action, level)
 
-			if FFlagUseNotificationsLocalization then
+			if FFlagNotificationScript2UseFormatByKey then
 				if level > CurrentGraphicsQualityLevel then
-					message = string.gsub(LocalizedGetString("NotificationScrip2.onCurrentGraphicsQualityLevelChanged.Increased",message),"{RBX_NUMBER}",tostring(level))
+					message = RobloxTranslator:FormatByKey("NotificationScrip2.onCurrentGraphicsQualityLevelChanged.Increased", {RBX_NUMBER = tostring(level)})
 				else
-					message = string.gsub(LocalizedGetString("NotificationScrip2.onCurrentGraphicsQualityLevelChanged.Decreased",message),"{RBX_NUMBER}",tostring(level))
+					message = RobloxTranslator:FormatByKey("NotificationScrip2.onCurrentGraphicsQualityLevelChanged.Decreased", {RBX_NUMBER = tostring(level)})
+				end
+			else
+				if FFlagUseNotificationsLocalization then
+					if level > CurrentGraphicsQualityLevel then
+						message = string.gsub(LocalizedGetString("NotificationScrip2.onCurrentGraphicsQualityLevelChanged.Increased",message),"{RBX_NUMBER}",tostring(level))
+					else
+						message = string.gsub(LocalizedGetString("NotificationScrip2.onCurrentGraphicsQualityLevelChanged.Decreased",message),"{RBX_NUMBER}",tostring(level))
+					end
 				end
 			end
 
@@ -691,8 +786,6 @@ function onGameSettingsChanged(property, amount)
 		end
 	end
 end
-
---[[ Connections ]]--
 
 BadgeService.BadgeAwarded:connect(onBadgeAwarded)
 if not isTenFootInterface then
@@ -749,7 +842,6 @@ GuiService.SendCoreUiNotification = function(title, text)
 	end
 end
 
---[[ Market Place Events ]]--
 -- This is used for when a player calls CreatePlaceInPlayerInventoryAsync
 local function onClientLuaDialogRequested(msg, accept, decline)
 	PopupText.Text = msg
@@ -798,7 +890,6 @@ local function onClientLuaDialogRequested(msg, accept, decline)
 end
 MarketplaceService.ClientLuaDialogRequested:connect(onClientLuaDialogRequested)
 
---[[ Developer customization API ]]--
 local function createDeveloperNotification(notificationTable)
 	if type(notificationTable) == "table" then
 		if type(notificationTable.Title) == "string" and type(notificationTable.Text) == "string" then
@@ -807,15 +898,22 @@ local function createDeveloperNotification(notificationTable)
 			local bindable = (typeof(notificationTable.Callback) == "Instance" and notificationTable.Callback:IsA("BindableFunction") and notificationTable.Callback or nil)
 			local button1Text = (type(notificationTable.Button1) == "string" and notificationTable.Button1 or "")
 			local button2Text = (type(notificationTable.Button2) == "string" and notificationTable.Button2 or "")
+
+			-- AutoLocalize allows developers to disable automatic localization if they have pre-localized it. Defaults true.
+			local autoLocalize = notificationTable.AutoLocalize == nil or notificationTable.AutoLocalize == true
+			local title = notificationTable.Title
+			local text = notificationTable.Text
+
 			sendNotificationInfo {
 				GroupName = "Developer",
-				Title = notificationTable.Title,
-				Text = notificationTable.Text,
+				Title = title,
+				Text = text,
 				Image = iconImage,
 				Duration = duration,
 				Callback = bindable,
 				Button1Text = button1Text,
-				Button2Text = button2Text
+				Button2Text = button2Text,
+				AutoLocalize = autoLocalize,
 			}
 		end
 	end

@@ -73,6 +73,8 @@ local success, result =
 )
 local FFlagUseNotificationsLocalization = success and result
 
+local FFlagEnableNewDevConsole = settings():GetFFlag("EnableNewDevConsole")
+
 local UseMicroProfiler = false 
 local isDesktopClient = (platform == Enum.Platform.Windows) or (platform == Enum.Platform.OSX) or (platform == Enum.Platform.UWP)
 local isMobileClient = (platform == Enum.Platform.IOS) or (platform == Enum.Platform.Android)
@@ -81,7 +83,7 @@ if isMobileClient then
 elseif isDesktopClient then
   UseMicroProfiler = settings():GetFFlag("EnableDesktopMicroProfilerApi")
 end
-local FixCameraControlSetting = settings():GetFFlag("FixCameraControlSetting")
+local EnableWebServerOnStart = settings():GetFFlag("EnableWebServerOnStart")
 
 --------------- FLAGS ----------------
 
@@ -121,6 +123,7 @@ local function Initialize()
 
     this.FullscreenFrame, this.FullscreenLabel, this.FullscreenEnabler =
       utility:AddNewRow(this, "Fullscreen", "Selector", {"On", "Off"}, fullScreenInit)
+    this.FullscreenFrame.LayoutOrder = 6
 
     settingsDisabledInVR[this.FullscreenFrame] = true
 
@@ -162,10 +165,12 @@ local function Initialize()
 
     this.GraphicsEnablerFrame, this.GraphicsEnablerLabel, this.GraphicsQualityEnabler =
       utility:AddNewRow(this, "Graphics Mode", "Selector", {"Automatic", "Manual"}, graphicsEnablerStart)
+    this.GraphicsEnablerFrame.LayoutOrder = 7
 
     ------------------ Gfx Slider GUI Setup  ------------------
     this.GraphicsQualityFrame, this.GraphicsQualityLabel, this.GraphicsQualitySlider =
       utility:AddNewRow(this, "Graphics Quality", "Slider", GRAPHICS_QUALITY_LEVELS, 1)
+    this.GraphicsQualityFrame.LayoutOrder = 8
     this.GraphicsQualitySlider:SetMinStep(1)
 
     ------------------------------------------------------
@@ -282,6 +287,7 @@ local function Initialize()
 
     this.PerformanceStatsFrame, this.PerformanceStatsLabel, this.PerformanceStatsMode =
       utility:AddNewRow(this, "Performance Stats", "Selector", {"On", "Off"}, startIndex)
+    this.PerformanceStatsFrame.LayoutOrder = 9
 
     this.PerformanceStatsOverrideText =
       utility:Create "TextLabel" {
@@ -318,11 +324,12 @@ local function Initialize()
     )
   end -- of createPerformanceStats
 
-  -- Create UI element to show IPs and port a player need to access the 
+  -- Create UI element to show IPs and port a player need to access the
   -- web server for micro profiler
   local function createWebServerInformationRow()
     this.InformationFrame, this.InformationLabel, this.InformationTextBox =
       utility:AddNewRow(this, "MicroProfiler Information", "TextBox", nil, nil, 5)
+    this.InformationFrame.LayoutOrder = 99 -- I want this always to be the last shown
 
     -- Override the default position
     -- todo replace this with TextX and TextYAlignment to centerlise the text
@@ -349,57 +356,20 @@ local function Initialize()
     ------------------ Micro Profiler Web Server -----------------
     this.MicroProfilerFrame, this.MicroProfilerLabel, this.MicroProfilerMode, this.MicroProfilerOverrideText = nil
 
-    -- This should be off default.
-    local function GetDesiredWebServerIndex()
-      if GameSettings.MicroProfilerEnabled then
-        return 1
-      else
-        return 2
+    local function tryContentLabel()
+      local port = GameSettings.MicroProfilerWebServerPort
+      if port ~= 0 then
+        -- Need to create this each time.
+        this.InformationFrame, this.InformationText = createWebServerInformationRow()
+        this.InformationText.Text = GameSettings.MicroProfilerWebServerIP .. port
+        return true
+      else 
+        return false
       end
     end
 
-    this.WebServerInformationText = nil
-
-    this.MicroProfilerFrame, this.MicroProfilerLabel, this.MicroProfilerMode =
-      utility:AddNewRow(this, "Micro Profiler", "Selector", {"On", "Off"}, GetDesiredWebServerIndex()) -- This can be set to override defualt micro profiler state
-
-    this.MicroProfilerMode.IndexChanged:connect(
-      function(newIndex)
-       if isMobileClient then
-        if newIndex == 1 then -- Show Web Server Content Label
-          GameSettings.MicroProfilerWebServerEnabled = true
-
-          -- Try poll every 0.1 seconds until 3 seconds passed
-          local tryPollCount = 30
-          local port = 0
-          while(tryPollCount > 1) do
-            port = GameSettings.MicroProfilerWebServerPort
-            if port ~= 0 then
-              -- Need to create this each time.
-              this.InformationFrame, this.InformationText = createWebServerInformationRow()
-              this.InformationText.Text = GameSettings.MicroProfilerWebServerIP .. port
-              break
-            end
-
-            tryPollCount = tryPollCount - 1
-            wait(0.1)
-          end
-
-          if tryPollCount <= 0 or port == 0 then
-            -- if the web server has not been started, we will just set the switch and try to stop the
-            -- web server
-            this.MicroProfilerMode:SetSelectionIndex(2)
-            GameSettings.MicroProfilerWebServerEnabled = false
-
-            if this.InformationFrame or this.InformationText then
-              this.InformationFrame.Visible = false
-              this.InformationFrame.Parent = nil
-              this.InformationText.Parent = nil
-              this.InformationFrame = nil
-              this.InformationText = nil
-            end
-          end
-        else -- Hide Web Server Content Label
+    local function setMicroProfilerIndex(newIndex)
+      local function hideContentLabel()
           GameSettings.MicroProfilerWebServerEnabled = false
            
           if this.InformationFrame or this.InformationText then 
@@ -409,11 +379,66 @@ local function Initialize()
             this.InformationFrame = nil
             this.InformationText = nil
           end
+      end
+
+      if isMobileClient then
+        if newIndex == 1 then -- Show Web Server Content Label
+          GameSettings.MicroProfilerWebServerEnabled = true
+
+          -- Try poll every 0.1 seconds until 3 seconds passed
+          local tryPollCount = 30
+          while(tryPollCount >= 1) do
+            if tryContentLabel() then
+              break
+            end
+
+            tryPollCount = tryPollCount - 1
+            wait(0.1)
+          end
+
+          if tryPollCount <= 0 then
+            -- if the web server has not been started, we will just set the switch and try to stop the
+            -- web server
+            this.MicroProfilerMode:SetSelectionIndex(2)
+            hideContentLabel()
+          end
+        else -- Hide Web Server Content Label
+            hideContentLabel()
         end
       elseif isDesktopClient then
-        GameSettings.MicroProfilerEnabled = (newIndex == 1)
+        GameSettings.OnScreenProfilerEnabled = (newIndex == 1)
       end
     end
+
+    -- This should be off default.
+    local function GetDesiredWebServerIndex()
+      if isMobileClient then
+        if GameSettings.MicroProfilerWebServerEnabled then
+          return 1
+        else
+          return 2
+        end
+      elseif isDesktopClient then
+        if GameSettings.OnScreenProfilerEnabled then
+          return 1
+        else
+          return 2
+        end
+      end
+    end
+
+    local webServerIndex = GetDesiredWebServerIndex()
+
+    this.MicroProfilerFrame, this.MicroProfilerLabel, this.MicroProfilerMode =
+      utility:AddNewRow(this, "Micro Profiler", "Selector", {"On", "Off"}, webServerIndex) -- This can be set to override defualt micro profiler state
+    this.MicroProfilerFrame.LayoutOrder = 10
+
+    if EnableWebServerOnStart then
+      tryContentLabel()
+    end
+
+    this.MicroProfilerMode.IndexChanged:connect(
+      setMicroProfilerIndex
     )
   end -- of create Micro Profiler Web Server
 
@@ -432,6 +457,7 @@ local function Initialize()
 
         this.ShiftLockFrame, this.ShiftLockLabel, this.ShiftLockMode =
           utility:AddNewRow(this, "Shift Lock Switch", "Selector", {"On", "Off"}, startIndex)
+        this.ShiftLockFrame.LayoutOrder = 1
 
         settingsDisabledInVR[this.ShiftLockFrame] = true
 
@@ -476,8 +502,6 @@ local function Initialize()
     end
 
     do
-      local startingCameraEnumItem = 1 --todo: remove with FixCameraControlSetting
-
       local PlayerScripts = LocalPlayer:WaitForChild("PlayerScripts")
 
       local cameraEnumNames = {}
@@ -511,16 +535,10 @@ local function Initialize()
           enumsToAdd = PlayerScripts:GetRegisteredComputerCameraMovementModes()
         end
 
-        if FixCameraControlSetting then
-          cameraEnumNames = {}
-          cameraEnumNameToItem = {}
-        end
+        cameraEnumNames = {}
+        cameraEnumNameToItem = {}
 
         if #enumsToAdd <= 0 then
-          if not FixCameraControlSetting then
-            cameraEnumNames = {}
-            cameraEnumNameToItem = {}
-          end
           setCameraModeVisible(false)
           return
         end
@@ -534,18 +552,6 @@ local function Initialize()
             displayName = CAMERA_MODE_DEFAULT_STRING
           end
 
-          if not FixCameraControlSetting then
-            if UserInputService.TouchEnabled then
-              if GameSettings.TouchCameraMovementMode == newCameraMode then
-                startingCameraEnumItem = i
-              end
-            else
-              if GameSettings.ComputerCameraMovementMode == newCameraMode then
-                startingCameraEnumItem = i
-              end
-            end
-          end
-
           cameraEnumNames[#cameraEnumNames + 1] = displayName
           cameraEnumNameToItem[displayName] = newCameraMode.Value
         end
@@ -554,41 +560,27 @@ local function Initialize()
           this.CameraMode:UpdateOptions(cameraEnumNames)
         end
 
-        if FixCameraControlSetting then
-          local currentSavedMode = -1
+        local currentSavedMode = -1
 
-          if UserInputService.TouchEnabled then
-            currentSavedMode = GameSettings.TouchCameraMovementMode.Value
-          else
-            currentSavedMode = GameSettings.ComputerCameraMovementMode.Value
-          end
-
-          if currentSavedMode > -1 then
-            currentSavedMode = currentSavedMode + 1
-            local savedEnum = nil
-            local exists =
-              pcall(
-              function()
-                savedEnum = enumsToAdd[currentSavedMode]
-              end
-            )
-            if exists and savedEnum then
-              updateCurrentCameraMovementIndex(savedEnum.Value + 1)
-              this.CameraMode:SetSelectionIndex(savedEnum.Value + 1)
-            end
-          end
+        if UserInputService.TouchEnabled then
+          currentSavedMode = GameSettings.TouchCameraMovementMode.Value
         else
-          updateCurrentCameraMovementIndex(this.CameraMode.CurrentIndex)
+          currentSavedMode = GameSettings.ComputerCameraMovementMode.Value
+        end
+
+        if currentSavedMode > -1 then
+          currentSavedMode = currentSavedMode + 1
+          local savedEnum = nil
+          local exists = pcall(function() savedEnum = enumsToAdd[currentSavedMode] end)
+          if exists and savedEnum then
+            updateCurrentCameraMovementIndex(savedEnum.Value + 1)
+            this.CameraMode:SetSelectionIndex(savedEnum.Value + 1)
+          end
         end
       end
 
-      if FixCameraControlSetting then
-        this.CameraModeFrame, this.CameraModeLabel, this.CameraMode =
-          utility:AddNewRow(this, "Camera Mode", "Selector", cameraEnumNames, 1)
-      else
-        this.CameraModeFrame, this.CameraModeLabel, this.CameraMode =
-          utility:AddNewRow(this, "Camera Mode", "Selector", cameraEnumNames, startingCameraEnumItem)
-      end
+      this.CameraModeFrame, this.CameraModeLabel, this.CameraMode = utility:AddNewRow(this, "Camera Mode", "Selector", cameraEnumNames, 1)
+      this.CameraModeFrame.LayoutOrder = 2
 
       settingsDisabledInVR[this.CameraMode] = true
 
@@ -652,6 +644,7 @@ local function Initialize()
 
         this.VREnabledFrame, this.VREnabledLabel, this.VREnabledSelector =
           utility:AddNewRow(this, "VR", "Selector", optionNames, GameSettings.VREnabled and 1 or 2)
+        this.VREnabledFrame.LayoutOrder = 12
 
         this.VREnabledSelector.IndexChanged:connect(
           function(newIndex)
@@ -692,7 +685,6 @@ local function Initialize()
     end
 
     if movementModeEnabled then
-      local startingMovementEnumItem = 1 --todo: remove with FixCameraControlSetting
       local movementEnumNames = {}
       local movementEnumNameToItem = {}
 
@@ -713,13 +705,8 @@ local function Initialize()
         return displayName
       end
 
-      if FixCameraControlSetting then
-        this.MovementModeFrame, this.MovementModeLabel, this.MovementMode =
-          utility:AddNewRow(this, "Movement Mode", "Selector", movementEnumNames, 1)
-      else
-        this.MovementModeFrame, this.MovementModeLabel, this.MovementMode =
-          utility:AddNewRow(this, "Movement Mode", "Selector", movementEnumNames, startingMovementEnumItem)
-      end
+      this.MovementModeFrame, this.MovementModeLabel, this.MovementMode = utility:AddNewRow(this, "Movement Mode", "Selector", movementEnumNames, 1)
+      this.MovementModeFrame.LayoutOrder = 3
 
       settingsDisabledInVR[this.MovementMode] = true
 
@@ -782,18 +769,6 @@ local function Initialize()
 
           local displayName = getDisplayName(movementMode.Name)
 
-          if not FixCameraControlSetting then
-            if UserInputService.TouchEnabled then
-              if GameSettings.TouchMovementMode == movementMode then
-                startingMovementEnumItem = movementMode.Value + 1
-              end
-            else
-              if GameSettings.ComputerMovementMode == movementModes[i] then
-                startingMovementEnumItem = movementMode.Value + 1
-              end
-            end
-          end
-
           movementEnumNames[#movementEnumNames + 1] = displayName
           movementEnumNameToItem[displayName] = movementMode
         end
@@ -802,31 +777,22 @@ local function Initialize()
           this.MovementMode:UpdateOptions(movementEnumNames)
         end
 
-        if FixCameraControlSetting then
-          local currentSavedMode = -1
+        local currentSavedMode = -1
 
-          if UserInputService.TouchEnabled then
-            currentSavedMode = GameSettings.TouchMovementMode.Value
-          else
-            currentSavedMode = GameSettings.ComputerMovementMode.Value
-          end
-
-          if currentSavedMode > -1 then
-            currentSavedMode = currentSavedMode + 1
-            local savedEnum = nil
-            local exists =
-              pcall(
-              function()
-                savedEnum = movementEnumNameToItem[movementEnumNames[currentSavedMode]]
-              end
-            )
-            if exists and savedEnum then
-              setMovementModeToIndex(savedEnum.Value + 1)
-              this.MovementMode:SetSelectionIndex(savedEnum.Value + 1)
-            end
-          end
+        if UserInputService.TouchEnabled then
+          currentSavedMode = GameSettings.TouchMovementMode.Value
         else
-          setMovementModeToIndex(this.MovementMode.CurrentIndex)
+          currentSavedMode = GameSettings.ComputerMovementMode.Value
+        end
+
+        if currentSavedMode > -1 then
+          currentSavedMode = currentSavedMode + 1
+          local savedEnum = nil
+          local exists = pcall(function() savedEnum = movementEnumNameToItem[movementEnumNames[currentSavedMode]] end)
+          if exists and savedEnum then
+            setMovementModeToIndex(savedEnum.Value + 1)
+            this.MovementMode:SetSelectionIndex(savedEnum.Value + 1)
+          end
         end
       end
 
@@ -952,6 +918,7 @@ local function Initialize()
     local startVolumeLevel = math.floor(GameSettings.MasterVolume * 10)
     this.VolumeFrame, this.VolumeLabel, this.VolumeSlider =
       utility:AddNewRow(this, "Volume", "Slider", 10, startVolumeLevel)
+    this.VolumeFrame.LayoutOrder = 5
 
     local volumeSound = Instance.new("Sound", game:GetService("CoreGui").RobloxGui.Sounds)
     volumeSound.Name = "VolumeChangeSound"
@@ -984,6 +951,7 @@ local function Initialize()
 
     this.CameraInvertedFrame, _, this.CameraInvertedSelector =
       utility:AddNewRow(this, "Camera Inverted", "Selector", {"Off", "On"}, initialIndex)
+    this.CameraInvertedFrame.LayoutOrder = 11
     settingsDisabledInVR[this.CameraInvertedFrame] = true
 
     this.CameraInvertedSelector.IndexChanged:connect(
@@ -1051,6 +1019,7 @@ local function Initialize()
 
       this.MouseSensitivityFrame, this.MouseSensitivityLabel, this.MouseSensitivitySlider =
         utility:AddNewRow(this, SliderLabel, "Slider", MouseSteps, startMouseLevel)
+      this.MouseSensitivityFrame.LayoutOrder = 4
 
       this.MouseSensitivitySlider.ValueChanged:connect(
         function(newValue)
@@ -1067,6 +1036,7 @@ local function Initialize()
 
       this.MouseAdvancedFrame, this.MouseAdvancedLabel, this.MouseAdvancedEntry =
         utility:AddNewRow(this, "Camera Sensitivity", "Slider", AdvancedMouseSteps, startMouseLevel)
+      this.MouseAdvancedFrame.LayoutOrder = 4
       settingsDisabledInVR[this.MouseAdvancedFrame] = true
 
       this.MouseAdvancedEntry.SliderFrame.Size =
@@ -1204,6 +1174,7 @@ local function Initialize()
     local SliderLabel = "Camera Sensitivity"
     this.GamepadSensitivityFrame, this.GamepadSensitivityLabel, this.GamepadSensitivitySlider =
       utility:AddNewRow(this, SliderLabel, "Slider", GamepadSteps, startGamepadLevel)
+    this.GamepadSensitivityFrame.LayoutOrder = 4
     this.GamepadSensitivitySlider.ValueChanged:connect(
       function(newValue)
         setCameraSensitivity(translateGuiGamepadSensitivityToEngine(newValue))
@@ -1269,13 +1240,24 @@ local function Initialize()
   local function createDeveloperConsoleOption()
     -- makes button in settings menu to open dev console
     local function makeDevConsoleOption()
-      local devConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
       local function onOpenDevConsole()
-        if devConsoleModule then
-          devConsoleModule:SetVisibility(true)
-          local MenuModule = require(RobloxGui.Modules.Settings.SettingsHub)
-          if MenuModule then
-            MenuModule:SetVisibility(false)
+        if FFlagEnableNewDevConsole then
+          local devConsoleMaster = require(script.Parent.Parent.Parent.DevConsoleMaster)
+          if devConsoleMaster then
+            devConsoleMaster:SetVisibility(true)
+            local MenuModule = require(script.Parent.Parent.SettingsHub)
+            if MenuModule then
+              MenuModule:SetVisibility(false)
+            end
+          end
+        else
+          local devConsoleModule = require(RobloxGui.Modules.DeveloperConsoleModule)
+          if devConsoleModule then
+            devConsoleModule:SetVisibility(true)
+            local MenuModule = require(RobloxGui.Modules.Settings.SettingsHub)
+            if MenuModule then
+              MenuModule:SetVisibility(false)
+            end
           end
         end
       end
@@ -1285,6 +1267,7 @@ local function Initialize()
       devConsoleText.Font = Enum.Font.SourceSans
       devConsoleButton.Position = UDim2.new(1, -400, 0, 12)
       local row = utility:AddNewRowObject(this, "Developer Console", devConsoleButton)
+      row.LayoutOrder = 13
       setButtonRowRef(row)
     end
 
