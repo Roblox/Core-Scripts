@@ -9,7 +9,7 @@
 -- To exit and enter free camera, use key shortcut Left Shift + P
 
 local player = game:GetService("Players")
-while not player.LocalPlayer do player.Changed:wait() end
+while not player.LocalPlayer do player.Changed:Wait() end
 player = player.LocalPlayer
 local camera = workspace.CurrentCamera
 
@@ -21,7 +21,7 @@ local Spring = require(script:WaitForChild("Spring"))
 local Maid = require(script:WaitForChild("Maid"))
 
 local WasGuiVisible = {}
-function ToggleGui(on)
+local function ToggleGui(on)
 	if not on then
 		WasGuiVisible["PointsNotificationsActive"] = StarterGui:GetCore("PointsNotificationsActive")
 		WasGuiVisible["BadgesNotificationsActive"] = StarterGui:GetCore("BadgesNotificationsActive")
@@ -32,7 +32,7 @@ function ToggleGui(on)
 	end
 
 	local function GuiOn(name)
-		if on == false then
+		if not on then
 			return false
 		end
 		if WasGuiVisible[name] ~= nil then
@@ -50,12 +50,10 @@ function ToggleGui(on)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Chat, GuiOn("Chat"))
 end
 
-------------------------------------------------
-
 local DEF_FOV = 70
-local NM_ZOOM = math.tan(DEF_FOV * math.pi/360)
+local NM_ZOOM = math.tan(DEF_FOV * math.pi / 360)
 local LVEL_GAIN = Vector3.new(1, 0.75, 1)
-local RVEL_GAIN = Vector2.new(0.85, 1)/128
+local RVEL_GAIN = Vector2.new(0.85, 1) / 128
 local FVEL_GAIN = -330
 local DEADZONE = 0.125
 local FOCUS_OFFSET = CFrame.new(0, 0, -16)
@@ -73,10 +71,10 @@ local KEY_MAPPINGS = {
 	[DIRECTION_FORWARD] = {Enum.KeyCode.W, Enum.KeyCode.U},
 	[DIRECTION_BACKWARD] = {Enum.KeyCode.S, Enum.KeyCode.J},
 	[DIRECTION_UP] = {Enum.KeyCode.E, Enum.KeyCode.I},
-	[DIRECTION_DOWN] = {Enum.KeyCode.Q, Enum.KeyCode.Y},
+	[DIRECTION_DOWN] = {Enum.KeyCode.Q, Enum.KeyCode.Y}
 }
 
-function CreateLetterBox()
+local function CreateLetterBox()
 	local topBar = Instance.new("Frame")
 	topBar.Name = "TopBar"
 	topBar.Position = UDim2.new(0, 0, 0, -36)
@@ -94,8 +92,6 @@ function CreateLetterBox()
 	return script.Parent
 end
 
-------------------------------------------------
-
 local screenGuis = {}
 local freeCamEnabled = false
 local letterBoxEnabled = true
@@ -104,25 +100,19 @@ local stateRot = Vector2.new()
 local panDeltaGamepad = Vector2.new()
 local panDeltaMouse = Vector2.new()
 
-local velSpring = Spring.new(7/9, 1/3, 1, Vector3.new())
-local rotSpring = Spring.new(7/9, 1/3, 1, Vector2.new())
-local fovSpring = Spring.new(2,   1/3, 1, 0)
+local velSpring = Spring.new(7 / 9, 1 / 3, 1, Vector3.new())
+local rotSpring = Spring.new(7 / 9, 1 / 3, 1, Vector2.new())
+local fovSpring = Spring.new(2, 1 / 3, 1, 0)
 
 local letterbox = CreateLetterBox()
 
-local gp_x  = 0
-local gp_z  = 0
+local gp_x = 0
+local gp_z = 0
 local gp_l1 = 0
 local gp_r1 = 0
 local rate_fov = 0
 
 local SpeedModifier = 1
-
-------------------------------------------------
-
-local function Clamp(x, min, max)
-	return x < min and min or x > max and max or x
-end
 
 local function GetChar()
 	local character = player.Character
@@ -132,15 +122,13 @@ local function GetChar()
 end
 
 local function InputCurve(x)
-	local s = math.abs(x)
+	local s = x >= x and x or -x
 	if s > DEADZONE then
-		s = 0.255000975*(2^(2.299113817*s) - 1)
+		s = 0.255000975 * (2 ^ (2.299113817 * s) - 1)
 		return x > 0 and (s > 1 and 1 or s) or (s > 1 and -1 or -s)
 	end
 	return 0
 end
-
-------------------------------------------------
 
 local function ProcessInput(input, processed)
 	local userInputType = input.UserInputType
@@ -148,15 +136,15 @@ local function ProcessInput(input, processed)
 		local keycode = input.KeyCode
 		if keycode == Enum.KeyCode.Thumbstick2 then
 			local pos = input.Position
-			panDeltaGamepad = Vector2.new(InputCurve(pos.y), InputCurve(-pos.x))*7
+			panDeltaGamepad = Vector2.new(InputCurve(pos.Y), InputCurve(-pos.X)) * 7
 		elseif keycode == Enum.KeyCode.Thumbstick1 then
 			local pos = input.Position
-			gp_x = InputCurve(pos.x)
-			gp_z = InputCurve(-pos.y)
+			gp_x = InputCurve(pos.X)
+			gp_z = InputCurve(-pos.Y)
 		elseif keycode == Enum.KeyCode.ButtonL2 then
-			gp_l1 = input.Position.z
+			gp_l1 = input.Position.Z
 		elseif keycode == Enum.KeyCode.ButtonR2 then
-			gp_r1 = input.Position.z
+			gp_r1 = input.Position.Z
 		end
 	elseif userInputType == Enum.UserInputType.MouseWheel then
 		rate_fov = input.Position.Z
@@ -166,8 +154,6 @@ end
 UIS.InputChanged:Connect(ProcessInput)
 UIS.InputEnded:Connect(ProcessInput)
 UIS.InputBegan:Connect(ProcessInput)
-
-------------------------------------------------
 
 local function IsDirectionDown(direction)
 	for i = 1, #KEY_MAPPINGS[direction] do
@@ -179,7 +165,7 @@ local function IsDirectionDown(direction)
 end
 
 local UpdateFreecam do
-	local dt = 1/60
+	local dt = 1 / 60
 	RS.RenderStepped:Connect(function(_dt)
 		dt = _dt
 	end)
@@ -191,8 +177,8 @@ local UpdateFreecam do
 		local ky = (IsDirectionDown(DIRECTION_UP) and 1 or 0) - (IsDirectionDown(DIRECTION_DOWN) and 1 or 0)
 		local kz = (IsDirectionDown(DIRECTION_BACKWARD) and 1 or 0) - (IsDirectionDown(DIRECTION_FORWARD) and 1 or 0)
 		local km = (kx * kx) + (ky * ky) + (kz * kz)
-		if km > 1e-15 then
-			km = ((UIS:IsKeyDown(Enum.KeyCode.LeftShift) or UIS:IsKeyDown(Enum.KeyCode.RightShift)) and 1/4 or 1)/math.sqrt(km)
+		if km > 1E-15 then
+			km = ((UIS:IsKeyDown(Enum.KeyCode.LeftShift) or UIS:IsKeyDown(Enum.KeyCode.RightShift)) and 0.25 or 1) / (km ^ 0.5)
 			kx = kx * km
 			ky = ky * km
 			kz = kz * km
@@ -204,36 +190,32 @@ local UpdateFreecam do
 
 		velSpring.t = Vector3.new(dx, dy, dz) * SpeedModifier
 		rotSpring.t = panDeltaMouse + panDeltaGamepad
-		fovSpring.t = Clamp(fovSpring.t + dt * rate_fov*FVEL_GAIN, 5, 120)
+		fovSpring.t = math.clamp(fovSpring.t + dt * rate_fov * FVEL_GAIN, 5, 120)
 
-		local fov  = fovSpring:Update(dt)
+		local fov = fovSpring:Update(dt)
 		local dPos = velSpring:Update(dt) * LVEL_GAIN
-		local dRot = rotSpring:Update(dt) * (RVEL_GAIN * math.tan(fov * math.pi/360) * NM_ZOOM)
+		local dRot = rotSpring:Update(dt) * (RVEL_GAIN * math.tan(fov * math.pi / 360) * NM_ZOOM)
 
 		rate_fov = 0
 		panDeltaMouse = Vector2.new()
 
 		stateRot = stateRot + dRot
-		stateRot = Vector2.new(Clamp(stateRot.x, -3/2, 3/2), stateRot.y)
+		stateRot = Vector2.new(math.clamp(stateRot.X, -1.5, 1.5), stateRot.Y)
 
-		local c = CFrame.new(camCFrame.p) * CFrame.Angles(0, stateRot.y, 0) * CFrame.Angles(stateRot.x, 0, 0) * CFrame.new(dPos)
+		local c = CFrame.new(camCFrame.Position) * CFrame.Angles(0, stateRot.Y, 0) * CFrame.Angles(stateRot.X, 0, 0) * CFrame.new(dPos)
 
 		camera.CFrame = c
-		camera.Focus = c*FOCUS_OFFSET
+		camera.Focus = c * FOCUS_OFFSET
 		camera.FieldOfView = fov
 	end
 end
 
-------------------------------------------------
-
 local function Panned(input, processed)
 	if not processed and input.UserInputType == Enum.UserInputType.MouseMovement then
 		local delta = input.Delta
-		panDeltaMouse = Vector2.new(-delta.y, -delta.x)
+		panDeltaMouse = Vector2.new(-delta.Y, -delta.X)
 	end
 end
-
-------------------------------------------------
 
 local function EnterFreecam()
 	ToggleGui(false)
@@ -243,7 +225,7 @@ local function EnterFreecam()
 			UIS.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
 			local conn = UIS.InputChanged:Connect(Panned)
 			repeat
-				input = UIS.InputEnded:wait()
+				input = UIS.InputEnded:Wait()
 			until input.UserInputType == Enum.UserInputType.MouseButton2 or not freeCamEnabled
 			panDeltaMouse = Vector2.new()
 			panDeltaGamepad = Vector2.new()
@@ -282,11 +264,11 @@ local function EnterFreecam()
 	fovSpring.t, fovSpring.v, fovSpring.x = camera.FieldOfView, 0, camera.FieldOfView
 
 	local camCFrame = camera.CFrame
-	local lookVector = camCFrame.lookVector.unit
+	local lookVector = camCFrame.LookVector.Unit
 
 	stateRot = Vector2.new(
-		math.asin(lookVector.y),
-		math.atan2(-lookVector.z, lookVector.x) - math.pi/2
+		math.asin(lookVector.Y),
+		math.atan2(-lookVector.Z, lookVector.X) - math.pi / 2
 	)
 	panDeltaMouse = Vector2.new()
 
@@ -328,8 +310,6 @@ local function ExitFreecam()
 	screenGuis = {}
 	ToggleGui(true)
 end
-
-------------------------------------------------
 
 UIS.InputBegan:Connect(function(input, processed)
 	if not processed then
