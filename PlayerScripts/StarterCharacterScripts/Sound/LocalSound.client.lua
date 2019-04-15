@@ -9,6 +9,10 @@
 	This script is optimized to reduce network traffic through minimizing the amount of property replication.
 ]]--
 
+--Roblox Services
+local Workspace=game:GetService("Workspace")
+local Players=game:GetService("Players")
+
 --All sounds are referenced by this ID
 local SFX = {
 	Died = 0;
@@ -61,8 +65,8 @@ if useSoundDispatcher then
 	AddCharacterLoadedEvent:FireServer()
 
 	-- Notify the sound dispatcher this character has left.
-	game.Players.LocalPlayer.CharacterRemoving:connect(function(character)
-		RemoveCharacterEvent:FireServer(game.Players.LocalPlayer)
+	Players.LocalPlayer.CharacterRemoving:connect(function(character)
+		RemoveCharacterEvent:FireServer(Players.LocalPlayer)
 	end)
 end
 
@@ -109,7 +113,7 @@ do
 end
 
 local IsSoundFilteringEnabled = function()
-	return game.Workspace.FilteringEnabled and SoundService.RespectFilteringEnabled
+	return Workspace.FilteringEnabled and SoundService.RespectFilteringEnabled
 end
 
 local Util
