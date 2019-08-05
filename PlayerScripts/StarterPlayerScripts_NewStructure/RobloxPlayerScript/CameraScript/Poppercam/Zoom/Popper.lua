@@ -23,10 +23,14 @@ local nearZ, projX, projY do
 	local function updateProjection()
 		local fov = rad(camera.FieldOfView)
 		local view = camera.ViewportSize
-		local ar = view.X/view.Y
-		
-		projY = 2*tan(fov/2)
-		projX = ar*projY
+		local arx = view.X/view.Y
+		local ary = arx / arx
+		local car = 1.7777777777778
+		if arx < car then
+			ary = ary * arx / car
+		end
+		projY = 2*(tan(fov/2) / ary)
+		projX = arx*projY
 	end
 	
 	camera:GetPropertyChangedSignal('FieldOfView'):Connect(updateProjection)
