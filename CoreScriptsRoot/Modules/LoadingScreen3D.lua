@@ -185,7 +185,12 @@ local function ScreenDimsAtDepth(depth)
 	local camera = workspace.CurrentCamera
 	if camera then
 		local aspectRatio = camera.ViewportSize.x / camera.ViewportSize.y
-		local studHeight = 2 * depth * math.tan(math.rad(camera.FieldOfView/2))
+		local conditionalAspect = 1.77777777777778
+		local aspectYScale = aspectRatio / aspectRatio
+		if aspect < conditionalAspect then
+			aspectYScale = aspectYScale * aspectRatio / conditionalAspect
+		end
+		local studHeight = 2 * depth * (math.tan(math.rad(camera.FieldOfView/2)) / aspectYScale
 		local studWidth = studHeight * aspectRatio
 
 		return Vector2.new(studWidth, studHeight)
